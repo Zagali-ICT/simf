@@ -406,7 +406,7 @@ public sealed class Journey01DelegationToSignInTests : IClassFixture<SimfApiFact
                 && code.Purpose == AccountCodePurpose.BadgeActivationOtp
                 && code.ConsumedAt == null)
             .OrderByDescending(code => code.CreatedAt)
-            .Select(code => code.CodeHash)
+            .Select(code => code.Code)
             .FirstOrDefaultAsync();
         return hash is null ? null : AuthFlow.RecoverPlaintextCode(hash);
     }

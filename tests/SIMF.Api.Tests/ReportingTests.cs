@@ -687,12 +687,13 @@ public sealed class ReportingTests : IClassFixture<SimfApiFactory>
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var attendeeProfileId = await TestAttendeeProfiles.EnsureForAccountAsync(db, userId);
         db.HallAttendances.Add(new HallAttendance
         {
             Id = Guid.NewGuid(),
             SessionId = sessionId,
             HallId = hallId,
-            UserId = userId,
+            UserProfileId = attendeeProfileId,
             Method = AttendanceMethod.QrScan,
             Enter = enterUtc,
             Leave = left ? enterUtc.AddMinutes(30) : null,

@@ -195,7 +195,7 @@ internal sealed class AdminSessionService(
             .AsNoTracking()
             .Where(reservation =>
                 reservation.SessionId == sessionId && reservation.ReleasedAt == null)
-            .GroupBy(reservation => reservation.ReservedForUserId == null)
+            .GroupBy(reservation => reservation.ReservedForProfileId == null)
             .Select(group => new { IsAdminBlock = group.Key, Count = group.Count() })
             .ToListAsync(cancellationToken);
         return (
@@ -417,7 +417,7 @@ internal sealed class AdminSessionService(
                 .CountAsync(reservation =>
                     reservation.SessionId == id
                     && reservation.ReleasedAt == null
-                    && reservation.ReservedForUserId != null,
+                    && reservation.ReservedForProfileId != null,
                     cancellationToken);
             if (heldVisitorBookings > 0)
             {
@@ -564,7 +564,7 @@ internal sealed class AdminSessionService(
         // Record WHAT was destroyed as its own audit row, and hand the counts back on
         // the response so the Control Panel can say so.
         var releasedForVisitors = releasedReservations
-            .Count(reservation => reservation.ReservedForUserId is not null);
+            .Count(reservation => reservation.ReservedForProfileId is not null);
         var releasedAdminBlocks = releasedReservations.Count - releasedForVisitors;
         if (releasedReservations.Count > 0)
         {
@@ -625,7 +625,7 @@ internal sealed class AdminSessionService(
             .CountAsync(reservation =>
                 reservation.SessionId == id
                 && reservation.ReleasedAt == null
-                && reservation.ReservedForUserId != null,
+                && reservation.ReservedForProfileId != null,
                 cancellationToken);
         if (activeBookings > 0)
         {
@@ -676,8 +676,12 @@ internal sealed class AdminSessionService(
     /// <summary>Everyone who must be told a session was cancelled: the holders of
     /// an active seat reservation, plus everyone who favourited it. Both audiences lose
     /// the session card from their app agenda the moment the row is hidden, and neither
-    /// was told anything before. Distinct user ids, both queries on the App DB only
-    /// (a favourite / reservation carries a bare Guid to the Identity DB).</summary>
+    /// was told anything before. Distinct ACCOUNT ids, because that is what a notice is
+    /// delivered to; both queries stay on the App DB.
+    ///
+    /// <para>A booking is held by an attendee PROFILE, so the booked half joins
+    /// through UserProfile to reach an account. A holder with no account drops out:
+    /// the notice would have nowhere to go.</para></summary>
     private async Task<List<Guid>> ResolveCancellationAudienceAsync(
         Guid sessionId, CancellationToken cancellationToken)
     {
@@ -686,8 +690,13 @@ internal sealed class AdminSessionService(
             .Where(reservation =>
                 reservation.SessionId == sessionId
                 && reservation.ReleasedAt == null
-                && reservation.ReservedForUserId != null)
-            .Select(reservation => reservation.ReservedForUserId!.Value)
+                && reservation.ReservedForProfileId != null)
+            .Join(dbContext.UserProfiles.AsNoTracking(),
+                reservation => reservation.ReservedForProfileId!.Value,
+                profile => profile.Id,
+                (reservation, profile) => profile.UserId)
+            .Where(userId => userId != null)
+            .Select(userId => userId!.Value)
             .Distinct()
             .ToListAsync(cancellationToken);
 
@@ -1294,15 +1303,27 @@ internal sealed class AdminSessionService(
     private async Task TryNotifyBookingReleasedAsync(
         SeatReservation reservation, Session session, CancellationToken cancellationToken)
     {
-        if (reservation.ReservedForUserId is not { } userId)
+        if (reservation.ReservedForProfileId is not { } holderProfileId)
         {
             return; // an admin row-block has no attendee to notify
+        }
+
+        // The notice goes to an ACCOUNT. A walk-in holds a seat and no account, so
+        // there is nobody to tell; the release itself already stands.
+        var userId = await dbContext.UserProfiles
+            .AsNoTracking()
+            .Where(profile => profile.Id == holderProfileId)
+            .Select(profile => profile.UserId)
+            .SingleOrDefaultAsync(cancellationToken);
+        if (userId is not { } recipientId)
+        {
+            return;
         }
         try
         {
             await notifications.DispatchAsync(new NotificationRequest
             {
-                UserId = userId,
+                UserId = recipientId,
                 Kind = NotificationKind.BookingRejected,
                 Title = "Seat reservation released",
                 TitleArabic = "تم إلغاء حجز المقعد",

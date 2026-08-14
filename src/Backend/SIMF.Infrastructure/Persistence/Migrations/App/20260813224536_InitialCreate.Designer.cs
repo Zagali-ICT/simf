@@ -12,7 +12,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Persistence.Migrations.App
 {
     [DbContext(typeof(SimfAppDbContext))]
-    [Migration("20260813195615_InitialCreate")]
+    [Migration("20260813224536_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -2827,16 +2827,18 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("VisitorUserId")
+                    b.Property<Guid>("VisitorProfileId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ExhibitorId", "VisitorUserId")
+                    b.HasIndex("VisitorProfileId");
+
+                    b.HasIndex("ExhibitorId", "VisitorProfileId")
                         .IsUnique()
                         .HasFilter("[IsActive] = 1 AND [ExhibitorId] IS NOT NULL");
 
-                    b.HasIndex("ExhibitorUserId", "VisitorUserId");
+                    b.HasIndex("ExhibitorUserId", "VisitorProfileId");
 
                     b.ToTable("ExhibitorVisitorScans", (string)null);
                 });
@@ -4036,9 +4038,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
 
-                    b.Property<string>("IdImageRelativePath")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                    b.Property<Guid?>("IdImageFileId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("InternationalMobile")
                         .HasMaxLength(256)
@@ -4164,15 +4165,16 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid?>("UserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("VipPhotoRelativePath")
-                        .HasMaxLength(260)
-                        .HasColumnType("nvarchar(260)");
+                    b.Property<Guid?>("VipPhotoFileId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
                     b.HasIndex("AdmissionState");
 
                     b.HasIndex("BadgeBatchId");
+
+                    b.HasIndex("IdImageFileId");
 
                     b.HasIndex("IqamaNumberHash")
                         .IsUnique()
@@ -4205,6 +4207,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.HasIndex("UserId")
                         .IsUnique()
                         .HasFilter("[UserId] IS NOT NULL");
+
+                    b.HasIndex("VipPhotoFileId");
 
                     b.ToTable("UserProfiles", (string)null);
                 });
@@ -4444,16 +4448,16 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("UserId")
+                    b.Property<Guid>("UserProfileId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserProfileId");
 
                     b.HasIndex("HallId", "Leave");
 
-                    b.HasIndex("SessionId", "UserId")
+                    b.HasIndex("SessionId", "UserProfileId")
                         .IsUnique()
                         .HasFilter("[Leave] IS NULL");
 
@@ -5657,7 +5661,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<DateTime?>("ReleasedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid?>("ReservedForUserId")
+                    b.Property<Guid?>("ReservedForProfileId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime?>("ReviewedAt")
@@ -5684,13 +5688,13 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.HasIndex("Expires")
                         .HasFilter("[ReleasedAt] IS NULL AND [Expires] IS NOT NULL");
 
-                    b.HasIndex("ReservedForUserId", "ReleasedAt");
+                    b.HasIndex("ReservedForProfileId", "ReleasedAt");
 
                     b.HasIndex("SessionId", "ReleasedAt");
 
-                    b.HasIndex("SessionId", "ReservedForUserId")
+                    b.HasIndex("SessionId", "ReservedForProfileId")
                         .IsUnique()
-                        .HasFilter("[ReleasedAt] IS NULL AND [ReservedForUserId] IS NOT NULL");
+                        .HasFilter("[ReleasedAt] IS NULL AND [ReservedForProfileId] IS NOT NULL");
 
                     b.HasIndex("Status", "ReleasedAt");
 
@@ -6377,7 +6381,15 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasForeignKey("ExhibitorId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("SIMF.Domain.Profiles.UserProfile", "VisitorProfile")
+                        .WithMany()
+                        .HasForeignKey("VisitorProfileId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.Navigation("Exhibitor");
+
+                    b.Navigation("VisitorProfile");
                 });
 
             modelBuilder.Entity("SIMF.Domain.Faq.FaqEntry", b =>
@@ -6479,6 +6491,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasForeignKey("BadgeBatchId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("SIMF.Domain.Files.StoredFile", null)
+                        .WithMany()
+                        .HasForeignKey("IdImageFileId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("SIMF.Domain.Organisations.Organisation", "Organisation")
                         .WithMany()
                         .HasForeignKey("OrganisationId")
@@ -6492,6 +6509,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.HasOne("SIMF.Domain.Regions.Region", "Region")
                         .WithMany()
                         .HasForeignKey("RegionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("SIMF.Domain.Files.StoredFile", null)
+                        .WithMany()
+                        .HasForeignKey("VipPhotoFileId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("BadgeBatch");
@@ -6517,9 +6539,17 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("SIMF.Domain.Profiles.UserProfile", "UserProfile")
+                        .WithMany()
+                        .HasForeignKey("UserProfileId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.Navigation("Hall");
 
                     b.Navigation("Session");
+
+                    b.Navigation("UserProfile");
                 });
 
             modelBuilder.Entity("SIMF.Domain.Programme.Session", b =>
@@ -6677,11 +6707,18 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
             modelBuilder.Entity("SIMF.Domain.SeatReservations.SeatReservation", b =>
                 {
+                    b.HasOne("SIMF.Domain.Profiles.UserProfile", "ReservedForProfile")
+                        .WithMany()
+                        .HasForeignKey("ReservedForProfileId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("SIMF.Domain.Programme.Session", "Session")
                         .WithMany()
                         .HasForeignKey("SessionId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("ReservedForProfile");
 
                     b.Navigation("Session");
                 });

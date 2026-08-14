@@ -362,12 +362,15 @@ public sealed class ExhibitorLeadManagementTests : IClassFixture<SimfApiFactory>
     {
         using var scope = _factory.Services.CreateScope();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        // A capture names its subject by PROFILE — the row every attendee has.
+        var visitorProfileId =
+            await TestAttendeeProfiles.EnsureForAccountAsync(appDb, visitorUserId);
         appDb.ExhibitorVisitorScans.Add(new ExhibitorVisitorScan
         {
             Id = Guid.NewGuid(),
             ExhibitorUserId = exhibitorUserId,
             ExhibitorId = null,
-            VisitorUserId = visitorUserId,
+            VisitorProfileId = visitorProfileId,
             Note = "captured before the booth column existed",
             IsActive = true,
             CreatedAt = SimfClock.Now.AddDays(-1),

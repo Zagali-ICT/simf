@@ -43,7 +43,7 @@ public static class AccountCodeHasher
     }
 
     /// <summary>The keyed-HMAC hash of a verification code — the value stored in
-    /// <c>AccountCode.CodeHash</c> and compared on redemption. Lowercase hex, 16 chars.</summary>
+    /// <c>AccountCode.Code</c> and compared on redemption. Lowercase hex, 16 chars.</summary>
     public static string Hash(string? code) =>
         Convert.ToHexStringLower(
             HMACSHA256.HashData(_key, Encoding.UTF8.GetBytes(code ?? string.Empty)))[..16];

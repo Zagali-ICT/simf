@@ -91,7 +91,7 @@ repeated in every list.
 | `RolePermission` | — | links `Role` and `Permission` |
 | `UserRole` | — | links `User` and `Role` |
 | `RefreshToken` | `TokenHash`, `ExpiresAt`, `RevokedAt`, `RotatedFromId` | belongs to `User` |
-| `EmailVerificationCode` | `CodeHash`, `ExpiresAt`, `ConsumedAt` | belongs to `User` |
+| `EmailVerificationCode` | `Code`, `ExpiresAt`, `ConsumedAt` | belongs to `User` |
 | `TotpSecret` | `Secret` | belongs to `User` (internal users) |
 
 `AccountState` enum: Registered, EmailVerified, PendingApproval, Approved,
@@ -443,7 +443,7 @@ Identity. This records how the §5.1 entities map onto the implementation.
   table.
 - `EmailVerificationCode` is realised as **`AccountCode`** with the `Purpose`
   field (Amendment A.4) and an `AttemptCount` for the per-code attempt cap. Its
-  code column is `CodeHash` and stores a keyed HMAC, never the code itself: the
+  code column is `Code` and stores a keyed HMAC, never the code itself: the
   code is emailed and never persisted, and nothing queries the column — the row
   is found by `(UserId, Purpose, ConsumedAt)` and the submitted value is
   re-hashed and compared in constant time.

@@ -2193,6 +2193,7 @@
   <data name="Admin.Vips.Action.AddVip" xml:space="preserve"><value>New VIP</value></data>
   <data name="Admin.Vips.Edit.Title" xml:space="preserve"><value>Edit VIP</value></data>
   <data name="Admin.Vips.Edit.Saved" xml:space="preserve"><value>VIP updated.</value></data>
+  <data name="Admin.Vips.Edit.NoAccount" xml:space="preserve"><value>This guest has no app account yet, so there is no account to edit. Their registration details are on the walk-in and bulk-order pages.</value></data>
   <data name="Admin.Vips.Notify.Title" xml:space="preserve"><value>Notify VIPs</value></data>
   <data name="Admin.Vips.Notify.TitleField" xml:space="preserve"><value>Title (English)</value></data>
   <data name="Admin.Vips.Notify.TitleArabicField" xml:space="preserve"><value>Title (Arabic)</value></data>

@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using SIMF.Application.Auditing;
@@ -317,14 +317,14 @@ public sealed class IdentitySeederTests : IClassFixture<SimfApiFactory>
             var user = await users.FindByEmailAsync(email);
             Assert.NotNull(user);
             Assert.False(
-                string.IsNullOrEmpty(user!.AvatarRelativePath),
+                user!.AvatarFileId is null,
                 $"{email} must carry a seeded face photo");
 
             var profile = await database.UserProfiles
                 .Include(p => p.Interests)
                 .SingleAsync(p => p.UserId == user.Id);
             Assert.False(
-                string.IsNullOrEmpty(profile.IdImageRelativePath),
+                profile.IdImageFileId is null,
                 $"{email} must carry a seeded ID document");
             Assert.NotEmpty(profile.Interests);
 
@@ -336,12 +336,12 @@ public sealed class IdentitySeederTests : IClassFixture<SimfApiFactory>
         // Idempotent — a re-seed uploads nothing new (the pointers stay put).
         var pointersBefore = await database.UserProfiles
             .Where(p => p.NationalId!.StartsWith("100000000"))
-            .Select(p => p.IdImageRelativePath)
+            .Select(p => p.IdImageFileId)
             .ToListAsync();
         await seeder.SeedAsync();
         var pointersAfter = await database.UserProfiles
             .Where(p => p.NationalId!.StartsWith("100000000"))
-            .Select(p => p.IdImageRelativePath)
+            .Select(p => p.IdImageFileId)
             .ToListAsync();
         Assert.Equal(pointersBefore, pointersAfter);
     }
@@ -356,7 +356,11 @@ public sealed class IdentitySeederTests : IClassFixture<SimfApiFactory>
         // root moves / the working folder is cleaned (bytes gone, row intact), and a
         // database is restored past its file store (row gone too) — both produced a
         // pointer no re-seed could ever repair. That is the "can't connect store/file"
-        // 404 seen after a deployment reset. Both shapes are exercised here.
+        // 404 seen after a deployment reset.
+        //
+        // The second shape is now unreachable for the ID document, because its
+        // pointer became a real foreign key into StoredFiles. This test asserts
+        // that too, so the guarantee is pinned rather than assumed.
         using var scope = _factory.Services.CreateScope();
         var seeder = scope.ServiceProvider.GetRequiredService<IdentitySeeder>();
         var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
@@ -370,28 +374,36 @@ public sealed class IdentitySeederTests : IClassFixture<SimfApiFactory>
         Assert.NotNull(user);
         var profile = await database.UserProfiles.SingleAsync(p => p.UserId == user!.Id);
 
-        var avatarBefore = user!.AvatarRelativePath;
-        var idDocumentBefore = profile.IdImageRelativePath;
-        Assert.False(string.IsNullOrEmpty(avatarBefore));
-        Assert.False(string.IsNullOrEmpty(idDocumentBefore));
+        var avatarBefore = user!.AvatarFileId;
+        var idDocumentBefore = profile.IdImageFileId;
+        Assert.NotNull(avatarBefore);
+        Assert.NotNull(idDocumentBefore);
 
-        // Shape 1 — the avatar's bytes vanish, its row survives (a moved root).
-        var avatarKey = await database.StoredFiles.AsNoTracking()
-            .Where(f => f.Id == Guid.Parse(avatarBefore!))
-            .Select(f => f.StorageKey)
-            .SingleAsync();
-        await storage.DeleteAsync(avatarKey!);
+        // Shape 1, for both pointers — the bytes vanish and the rows survive (a
+        // moved storage root, a cleaned working folder).
+        foreach (var fileId in new[] { avatarBefore!.Value, idDocumentBefore!.Value })
+        {
+            var storageKey = await database.StoredFiles.AsNoTracking()
+                .Where(f => f.Id == fileId)
+                .Select(f => f.StorageKey)
+                .SingleAsync();
+            await storage.DeleteAsync(storageKey!);
+        }
 
-        // Shape 2 — the ID document's row vanishes too (a restore past the store).
-        var orphanedId = Guid.NewGuid();
-        profile.IdImageRelativePath = orphanedId.ToString();
-        await database.SaveChangesAsync();
+        // Shape 2 — the row vanishing under a healthy-looking pointer — is no
+        // longer reachable for the ID document, and that is a change worth
+        // asserting rather than quietly dropping. UserProfiles.IdImageFileId is
+        // now a real foreign key into StoredFiles, so the database refuses to
+        // hold a pointer to a row that is not there. The seeder's repair still
+        // has to handle shape 1; shape 2 has stopped being possible.
+        profile.IdImageFileId = Guid.NewGuid();
+        await Assert.ThrowsAsync<DbUpdateException>(() => database.SaveChangesAsync());
+        database.ChangeTracker.Clear();
 
         // The pre-condition the old guard could not see: both pointers still look
-        // perfectly healthy — non-empty, well-formed — and both resolve to nothing.
-        Assert.False(string.IsNullOrEmpty(user.AvatarRelativePath));
-        Assert.False(await files.ContentExistsAsync(Guid.Parse(avatarBefore!)));
-        Assert.False(await files.ContentExistsAsync(orphanedId));
+        // perfectly healthy — set, well-formed — and both resolve to nothing.
+        Assert.False(await files.ContentExistsAsync(avatarBefore.Value));
+        Assert.False(await files.ContentExistsAsync(idDocumentBefore.Value));
 
         await seeder.SeedAsync();
 
@@ -400,13 +412,13 @@ public sealed class IdentitySeederTests : IClassFixture<SimfApiFactory>
         var repairedProfile = await database.UserProfiles
             .AsNoTracking().SingleAsync(p => p.UserId == user.Id);
 
-        Assert.NotEqual(avatarBefore, repairedUser!.AvatarRelativePath);
-        Assert.NotEqual(orphanedId.ToString(), repairedProfile.IdImageRelativePath);
+        Assert.NotEqual(avatarBefore, repairedUser!.AvatarFileId);
+        Assert.NotEqual(idDocumentBefore, repairedProfile.IdImageFileId);
         Assert.True(
-            await files.ContentExistsAsync(Guid.Parse(repairedUser.AvatarRelativePath!)),
+            await files.ContentExistsAsync(repairedUser.AvatarFileId!.Value),
             "the re-seeded avatar must resolve to bytes that exist");
         Assert.True(
-            await files.ContentExistsAsync(Guid.Parse(repairedProfile.IdImageRelativePath!)),
+            await files.ContentExistsAsync(repairedProfile.IdImageFileId!.Value),
             "the re-seeded ID document must resolve to bytes that exist");
 
         // Still idempotent: a healthy pointer is left alone, so repair never becomes
@@ -414,7 +426,7 @@ public sealed class IdentitySeederTests : IClassFixture<SimfApiFactory>
         await seeder.SeedAsync();
         var afterThirdSeed = await database.UserProfiles
             .AsNoTracking().SingleAsync(p => p.UserId == user.Id);
-        Assert.Equal(repairedProfile.IdImageRelativePath, afterThirdSeed.IdImageRelativePath);
+        Assert.Equal(repairedProfile.IdImageFileId, afterThirdSeed.IdImageFileId);
     }
 
     [Fact]

@@ -1215,93 +1215,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 });
 
             migrationBuilder.CreateTable(
-                name: "UserProfiles",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    Name = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    NameArabic = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    Gender = table.Column<int>(type: "int", nullable: false),
-                    DateOfBirth = table.Column<DateOnly>(type: "date", nullable: true),
-                    PlaceOfBirth = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
-                    NationalityId = table.Column<int>(type: "int", nullable: false),
-                    IsSaudi = table.Column<bool>(type: "bit", nullable: false),
-                    NationalId = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    IqamaNumber = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    PassportNumber = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    NationalIdHash = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
-                    IqamaNumberHash = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
-                    PassportNumberHash = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
-                    JobTitle = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    JobTitleArabic = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    OrganisationId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    RegionId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    BadgeBatchId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    ShowInMeetLikeYou = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
-                    SaudiMobile = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    InternationalMobile = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    PlateNumber = table.Column<string>(type: "nvarchar(7)", maxLength: 7, nullable: true),
-                    ReferenceNumber = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
-                    MawjId = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
-                    Honorific = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
-                    HonorificArabic = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
-                    PreferredLanguage = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: true),
-                    VipPhotoRelativePath = table.Column<string>(type: "nvarchar(260)", maxLength: 260, nullable: true),
-                    IsDelegate = table.Column<bool>(type: "bit", nullable: false),
-                    AllowsDelegationMeeting = table.Column<bool>(type: "bit", nullable: false),
-                    AllowsSpeakerMeeting = table.Column<bool>(type: "bit", nullable: false),
-                    ProfileTypeId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    AdmissionState = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: false),
-                    StateChangedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    StateChangedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    QrId = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: true),
-                    RejectionReason = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    RejectionReasonArabic = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    IdImageRelativePath = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    AccessibilityTextSize = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false, defaultValue: "normal"),
-                    AccessibilityHighContrast = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
-                    AccessibilityReduceMotion = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
-                    AccessibilityScreenReaderAssist = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
-                    AccessibilityCaptions = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
-                    AccessibilityConfiguredAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_UserProfiles", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_UserProfiles_BadgeBatches_BadgeBatchId",
-                        column: x => x.BadgeBatchId,
-                        principalTable: "BadgeBatches",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_UserProfiles_Organisations_OrganisationId",
-                        column: x => x.OrganisationId,
-                        principalTable: "Organisations",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_UserProfiles_ProfileTypes_ProfileTypeId",
-                        column: x => x.ProfileTypeId,
-                        principalTable: "ProfileTypes",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_UserProfiles_Regions_RegionId",
-                        column: x => x.RegionId,
-                        principalTable: "Regions",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Sessions",
                 columns: table => new
                 {
@@ -1359,6 +1272,105 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         name: "FK_Sessions_SessionCategories_CategoryId",
                         column: x => x.CategoryId,
                         principalTable: "SessionCategories",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "UserProfiles",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    Name = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    NameArabic = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Gender = table.Column<int>(type: "int", nullable: false),
+                    DateOfBirth = table.Column<DateOnly>(type: "date", nullable: true),
+                    PlaceOfBirth = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
+                    NationalityId = table.Column<int>(type: "int", nullable: false),
+                    IsSaudi = table.Column<bool>(type: "bit", nullable: false),
+                    NationalId = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    IqamaNumber = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    PassportNumber = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    NationalIdHash = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
+                    IqamaNumberHash = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
+                    PassportNumberHash = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
+                    JobTitle = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    JobTitleArabic = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    OrganisationId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    RegionId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    BadgeBatchId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    ShowInMeetLikeYou = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
+                    SaudiMobile = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    InternationalMobile = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    PlateNumber = table.Column<string>(type: "nvarchar(7)", maxLength: 7, nullable: true),
+                    ReferenceNumber = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
+                    MawjId = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
+                    Honorific = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
+                    HonorificArabic = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
+                    PreferredLanguage = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: true),
+                    VipPhotoFileId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    IsDelegate = table.Column<bool>(type: "bit", nullable: false),
+                    AllowsDelegationMeeting = table.Column<bool>(type: "bit", nullable: false),
+                    AllowsSpeakerMeeting = table.Column<bool>(type: "bit", nullable: false),
+                    ProfileTypeId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    AdmissionState = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: false),
+                    StateChangedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    StateChangedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    QrId = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: true),
+                    RejectionReason = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    RejectionReasonArabic = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    IdImageFileId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    AccessibilityTextSize = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false, defaultValue: "normal"),
+                    AccessibilityHighContrast = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
+                    AccessibilityReduceMotion = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
+                    AccessibilityScreenReaderAssist = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
+                    AccessibilityCaptions = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
+                    AccessibilityConfiguredAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserProfiles", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_UserProfiles_BadgeBatches_BadgeBatchId",
+                        column: x => x.BadgeBatchId,
+                        principalTable: "BadgeBatches",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_UserProfiles_Organisations_OrganisationId",
+                        column: x => x.OrganisationId,
+                        principalTable: "Organisations",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_UserProfiles_ProfileTypes_ProfileTypeId",
+                        column: x => x.ProfileTypeId,
+                        principalTable: "ProfileTypes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_UserProfiles_Regions_RegionId",
+                        column: x => x.RegionId,
+                        principalTable: "Regions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_UserProfiles_StoredFiles_IdImageFileId",
+                        column: x => x.IdImageFileId,
+                        principalTable: "StoredFiles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_UserProfiles_StoredFiles_VipPhotoFileId",
+                        column: x => x.VipPhotoFileId,
+                        principalTable: "StoredFiles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -1473,190 +1485,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         principalTable: "RatingTypes",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Countries",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false),
-                    Code = table.Column<string>(type: "nvarchar(2)", maxLength: 2, nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
-                    NameArabic = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
-                    PhonePrefix = table.Column<string>(type: "nvarchar(8)", maxLength: 8, nullable: true),
-                    DisplayOrder = table.Column<int>(type: "int", nullable: false),
-                    IsInvited = table.Column<bool>(type: "bit", nullable: false),
-                    DelegationArrivalDate = table.Column<DateOnly>(type: "date", nullable: true),
-                    DelegationDepartureDate = table.Column<DateOnly>(type: "date", nullable: true),
-                    HeadOfDelegationUserProfileId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Countries", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Countries_UserProfiles_HeadOfDelegationUserProfileId",
-                        column: x => x.HeadOfDelegationUserProfileId,
-                        principalTable: "UserProfiles",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "GateScans",
-                columns: table => new
-                {
-                    Id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    GateId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UserProfileId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    QrIdAtScan = table.Column<string>(type: "nvarchar(96)", maxLength: 96, nullable: false),
-                    ScannedDisplayName = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: true),
-                    ScannedProfileTypeName = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: true),
-                    Direction = table.Column<int>(type: "int", nullable: false),
-                    Outcome = table.Column<int>(type: "int", nullable: false),
-                    DenialReasonCode = table.Column<int>(type: "int", nullable: true),
-                    Source = table.Column<int>(type: "int", nullable: false),
-                    CorrelationId = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
-                    UserAgent = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: true),
-                    IpAddress = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
-                    IdempotencyKey = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
-                    ScannedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ScannedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ClientScannedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_GateScans", x => x.Id);
-                    table.CheckConstraint("CK_GateScans_DenialPin", "([Outcome] = 1 AND [DenialReasonCode] IS NOT NULL) OR ([Outcome] = 0 AND [DenialReasonCode] IS NULL)");
-                    table.ForeignKey(
-                        name: "FK_GateScans_Gates_GateId",
-                        column: x => x.GateId,
-                        principalTable: "Gates",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_GateScans_UserProfiles_UserProfileId",
-                        column: x => x.UserProfileId,
-                        principalTable: "UserProfiles",
-                        principalColumn: "Id");
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Invitations",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    SentByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    SentToUserProfileId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    State = table.Column<int>(type: "int", nullable: false),
-                    Notes = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
-                    RespondedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Invitations", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Invitations_UserProfiles_SentToUserProfileId",
-                        column: x => x.SentToUserProfileId,
-                        principalTable: "UserProfiles",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "UserProfileInterests",
-                columns: table => new
-                {
-                    UserProfileId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    InterestId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_UserProfileInterests", x => new { x.UserProfileId, x.InterestId });
-                    table.ForeignKey(
-                        name: "FK_UserProfileInterests_Interests_InterestId",
-                        column: x => x.InterestId,
-                        principalTable: "Interests",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_UserProfileInterests_UserProfiles_UserProfileId",
-                        column: x => x.UserProfileId,
-                        principalTable: "UserProfiles",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "HallAttendances",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    SessionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    HallId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Method = table.Column<int>(type: "int", nullable: false),
-                    Enter = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Leave = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_HallAttendances", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_HallAttendances_Halls_HallId",
-                        column: x => x.HallId,
-                        principalTable: "Halls",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_HallAttendances_Sessions_SessionId",
-                        column: x => x.SessionId,
-                        principalTable: "Sessions",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "SeatReservations",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    SessionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    RowLabel = table.Column<string>(type: "nvarchar(8)", maxLength: 8, nullable: true),
-                    SeatNumber = table.Column<int>(type: "int", nullable: true),
-                    Kind = table.Column<int>(type: "int", nullable: false),
-                    ReservedForUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    CreatedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ReleasedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    Status = table.Column<int>(type: "int", nullable: false),
-                    ReviewedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    ReviewedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    RejectionReason = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: true),
-                    Expires = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    GuestHint = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    GuestHintArabic = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_SeatReservations", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_SeatReservations_Sessions_SessionId",
-                        column: x => x.SessionId,
-                        principalTable: "Sessions",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -1822,6 +1650,202 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         principalTable: "Themes",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Countries",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false),
+                    Code = table.Column<string>(type: "nvarchar(2)", maxLength: 2, nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
+                    NameArabic = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
+                    PhonePrefix = table.Column<string>(type: "nvarchar(8)", maxLength: 8, nullable: true),
+                    DisplayOrder = table.Column<int>(type: "int", nullable: false),
+                    IsInvited = table.Column<bool>(type: "bit", nullable: false),
+                    DelegationArrivalDate = table.Column<DateOnly>(type: "date", nullable: true),
+                    DelegationDepartureDate = table.Column<DateOnly>(type: "date", nullable: true),
+                    HeadOfDelegationUserProfileId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Countries", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Countries_UserProfiles_HeadOfDelegationUserProfileId",
+                        column: x => x.HeadOfDelegationUserProfileId,
+                        principalTable: "UserProfiles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "GateScans",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    GateId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserProfileId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    QrIdAtScan = table.Column<string>(type: "nvarchar(96)", maxLength: 96, nullable: false),
+                    ScannedDisplayName = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: true),
+                    ScannedProfileTypeName = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: true),
+                    Direction = table.Column<int>(type: "int", nullable: false),
+                    Outcome = table.Column<int>(type: "int", nullable: false),
+                    DenialReasonCode = table.Column<int>(type: "int", nullable: true),
+                    Source = table.Column<int>(type: "int", nullable: false),
+                    CorrelationId = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
+                    UserAgent = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: true),
+                    IpAddress = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
+                    IdempotencyKey = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
+                    ScannedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ScannedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ClientScannedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_GateScans", x => x.Id);
+                    table.CheckConstraint("CK_GateScans_DenialPin", "([Outcome] = 1 AND [DenialReasonCode] IS NOT NULL) OR ([Outcome] = 0 AND [DenialReasonCode] IS NULL)");
+                    table.ForeignKey(
+                        name: "FK_GateScans_Gates_GateId",
+                        column: x => x.GateId,
+                        principalTable: "Gates",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_GateScans_UserProfiles_UserProfileId",
+                        column: x => x.UserProfileId,
+                        principalTable: "UserProfiles",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "HallAttendances",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    SessionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    HallId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserProfileId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Method = table.Column<int>(type: "int", nullable: false),
+                    Enter = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Leave = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_HallAttendances", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_HallAttendances_Halls_HallId",
+                        column: x => x.HallId,
+                        principalTable: "Halls",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_HallAttendances_Sessions_SessionId",
+                        column: x => x.SessionId,
+                        principalTable: "Sessions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_HallAttendances_UserProfiles_UserProfileId",
+                        column: x => x.UserProfileId,
+                        principalTable: "UserProfiles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Invitations",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    SentByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    SentToUserProfileId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    State = table.Column<int>(type: "int", nullable: false),
+                    Notes = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
+                    RespondedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Invitations", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Invitations_UserProfiles_SentToUserProfileId",
+                        column: x => x.SentToUserProfileId,
+                        principalTable: "UserProfiles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "SeatReservations",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    SessionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    RowLabel = table.Column<string>(type: "nvarchar(8)", maxLength: 8, nullable: true),
+                    SeatNumber = table.Column<int>(type: "int", nullable: true),
+                    Kind = table.Column<int>(type: "int", nullable: false),
+                    ReservedForProfileId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    CreatedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ReleasedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    ReviewedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    ReviewedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    RejectionReason = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: true),
+                    Expires = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    GuestHint = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    GuestHintArabic = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SeatReservations", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_SeatReservations_Sessions_SessionId",
+                        column: x => x.SessionId,
+                        principalTable: "Sessions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_SeatReservations_UserProfiles_ReservedForProfileId",
+                        column: x => x.ReservedForProfileId,
+                        principalTable: "UserProfiles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "UserProfileInterests",
+                columns: table => new
+                {
+                    UserProfileId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    InterestId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserProfileInterests", x => new { x.UserProfileId, x.InterestId });
+                    table.ForeignKey(
+                        name: "FK_UserProfileInterests_Interests_InterestId",
+                        column: x => x.InterestId,
+                        principalTable: "Interests",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_UserProfileInterests_UserProfiles_UserProfileId",
+                        column: x => x.UserProfileId,
+                        principalTable: "UserProfiles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -2279,7 +2303,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ExhibitorUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ExhibitorId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    VisitorUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    VisitorProfileId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Note = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
@@ -2295,6 +2319,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         name: "FK_ExhibitorVisitorScans_Exhibitors_ExhibitorId",
                         column: x => x.ExhibitorId,
                         principalTable: "Exhibitors",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_ExhibitorVisitorScans_UserProfiles_VisitorProfileId",
+                        column: x => x.VisitorProfileId,
+                        principalTable: "UserProfiles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -2902,16 +2932,21 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 columns: new[] { "IsActive", "NameArabic" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_ExhibitorVisitorScans_ExhibitorId_VisitorUserId",
+                name: "IX_ExhibitorVisitorScans_ExhibitorId_VisitorProfileId",
                 table: "ExhibitorVisitorScans",
-                columns: new[] { "ExhibitorId", "VisitorUserId" },
+                columns: new[] { "ExhibitorId", "VisitorProfileId" },
                 unique: true,
                 filter: "[IsActive] = 1 AND [ExhibitorId] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ExhibitorVisitorScans_ExhibitorUserId_VisitorUserId",
+                name: "IX_ExhibitorVisitorScans_ExhibitorUserId_VisitorProfileId",
                 table: "ExhibitorVisitorScans",
-                columns: new[] { "ExhibitorUserId", "VisitorUserId" });
+                columns: new[] { "ExhibitorUserId", "VisitorProfileId" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ExhibitorVisitorScans_VisitorProfileId",
+                table: "ExhibitorVisitorScans",
+                column: "VisitorProfileId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_FaqEntries_FaqGroupId_IsActive_DisplayOrder",
@@ -3005,16 +3040,16 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 columns: new[] { "HallId", "Leave" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_HallAttendances_SessionId_UserId",
+                name: "IX_HallAttendances_SessionId_UserProfileId",
                 table: "HallAttendances",
-                columns: new[] { "SessionId", "UserId" },
+                columns: new[] { "SessionId", "UserProfileId" },
                 unique: true,
                 filter: "[Leave] IS NULL");
 
             migrationBuilder.CreateIndex(
-                name: "IX_HallAttendances_UserId",
+                name: "IX_HallAttendances_UserProfileId",
                 table: "HallAttendances",
-                column: "UserId");
+                column: "UserProfileId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_HallAvailabilityWindows_HallId_IsActive_Start",
@@ -3299,9 +3334,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 filter: "[ReleasedAt] IS NULL AND [Expires] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
-                name: "IX_SeatReservations_ReservedForUserId_ReleasedAt",
+                name: "IX_SeatReservations_ReservedForProfileId_ReleasedAt",
                 table: "SeatReservations",
-                columns: new[] { "ReservedForUserId", "ReleasedAt" });
+                columns: new[] { "ReservedForProfileId", "ReleasedAt" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_SeatReservations_SessionId_ReleasedAt",
@@ -3309,11 +3344,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 columns: new[] { "SessionId", "ReleasedAt" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_SeatReservations_SessionId_ReservedForUserId",
+                name: "IX_SeatReservations_SessionId_ReservedForProfileId",
                 table: "SeatReservations",
-                columns: new[] { "SessionId", "ReservedForUserId" },
+                columns: new[] { "SessionId", "ReservedForProfileId" },
                 unique: true,
-                filter: "[ReleasedAt] IS NULL AND [ReservedForUserId] IS NOT NULL");
+                filter: "[ReleasedAt] IS NULL AND [ReservedForProfileId] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_SeatReservations_SessionId_RowLabel_SeatNumber",
@@ -3570,6 +3605,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 column: "BadgeBatchId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_UserProfiles_IdImageFileId",
+                table: "UserProfiles",
+                column: "IdImageFileId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_UserProfiles_IqamaNumberHash",
                 table: "UserProfiles",
                 column: "IqamaNumberHash",
@@ -3630,6 +3670,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 column: "UserId",
                 unique: true,
                 filter: "[UserId] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserProfiles_VipPhotoFileId",
+                table: "UserProfiles",
+                column: "VipPhotoFileId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_VenueMapNodes_BoothId",
@@ -3821,9 +3866,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 name: "Sponsors");
 
             migrationBuilder.DropTable(
-                name: "StoredFiles");
-
-            migrationBuilder.DropTable(
                 name: "SystemSettings");
 
             migrationBuilder.DropTable(
@@ -3921,6 +3963,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
             migrationBuilder.DropTable(
                 name: "Regions");
+
+            migrationBuilder.DropTable(
+                name: "StoredFiles");
 
             migrationBuilder.DropSequence(
                 name: "RegistrationReferenceSequence");

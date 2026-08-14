@@ -316,7 +316,7 @@ internal static class AuthFlow
                 && code.ConsumedAt == null)
             .OrderByDescending(code => code.CreatedAt)
             .First()
-            .CodeHash;
+            .Code;
         return RecoverPlaintextCode(storedHash);
     }
 

@@ -2186,6 +2186,7 @@
   <data name="Admin.Vips.Action.AddVip" xml:space="preserve"><value>إضافة شخصية بارزة</value></data>
   <data name="Admin.Vips.Edit.Title" xml:space="preserve"><value>تعديل بيانات الشخصية البارزة</value></data>
   <data name="Admin.Vips.Edit.Saved" xml:space="preserve"><value>تم تحديث بيانات الشخصية البارزة.</value></data>
+  <data name="Admin.Vips.Edit.NoAccount" xml:space="preserve"><value>لا يملك هذا الضيف حساباً في التطبيق بعد، لذلك لا يوجد حساب لتعديله. بيانات تسجيله متاحة في صفحتي التسجيل الميداني والطلبات المجمّعة.</value></data>
   <data name="Admin.Vips.Notify.Title" xml:space="preserve"><value>إشعار كبار الضيوف</value></data>
   <data name="Admin.Vips.Notify.TitleField" xml:space="preserve"><value>العنوان (الإنجليزية)</value></data>
   <data name="Admin.Vips.Notify.TitleArabicField" xml:space="preserve"><value>العنوان (العربية)</value></data>

@@ -153,7 +153,7 @@ internal sealed class StatisticsService(
             .CountAsync(b => b.IsActive, cancellationToken);
 
         var totalAttended = await appDbContext.HallAttendances.AsNoTracking()
-            .Select(a => a.UserId)
+            .Select(a => a.UserProfileId)
             .Distinct()
             .CountAsync(cancellationToken);
 
@@ -213,7 +213,7 @@ internal sealed class StatisticsService(
             // Distinct people who arrived at any hall that day.
             var attended = await appDbContext.HallAttendances.AsNoTracking()
                 .Where(a => a.Enter >= startUtc && a.Enter < endUtc)
-                .Select(a => a.UserId)
+                .Select(a => a.UserProfileId)
                 .Distinct()
                 .CountAsync(cancellationToken);
 

@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/UserProfileTests.cs (upsert round-trip, ID image
+﻿// Tests: SIMF.Api.Tests/UserProfileTests.cs (upsert round-trip, ID image
 //        round-trip, get-empty-when-not-saved-yet, nationality-unknown,
 //        Me_profileComplete flip + male-without-photo,
 //        DisplayName-placeholder-replaced + admin-name-preserved,
@@ -73,7 +73,7 @@ internal sealed class UserProfileService(
         var nationalityCode = await profiles.ResolveCountryCodeAsync(profile.NationalityId, cancellationToken);
         var (isVip, isForVisitor) = await ResolveProfileTypeFlagsAsync(profile.ProfileTypeId, cancellationToken);
         return ToResponse(profile, profile.QrId, nationalityCode,
-            !string.IsNullOrEmpty(user.AvatarRelativePath), isVip, isForVisitor);
+            user.AvatarFileId is not null, isVip, isForVisitor);
     }
 
     public async Task<UserProfileResponse> UpsertMineAsync(
@@ -200,13 +200,13 @@ internal sealed class UserProfileService(
 
         // Two-photo split — the profile carries two distinct
         // images, each uploaded BEFORE this save:
-        //   • The FACE photo (SimfUser.AvatarRelativePath, live capture) is HARD-
+        //   • The FACE photo (SimfUser.AvatarFileId, live capture) is HARD-
         //     required for MALE registrants here — the direct successor of the
         //     male-photo gate that closed the save-then-bounce login loop
         //     (the loop the owner reported was the male photo). Avatar upload
         //     does NOT seed a profile stub, so this gate does not interfere with
         //     the first-submit account-state transition below.
-        //   • The ID DOCUMENT (IdImageRelativePath, gallery upload) is mandatory
+        //   • The ID DOCUMENT (IdImageFileId, gallery upload) is mandatory
         //     for EVERY registrant but is enforced by the client form + the
         //     server completeness flag (IsProfileCompleteAsync below), NOT a hard
         //     reject here: the ID upload seeds the stub row, so hard-gating it
@@ -226,7 +226,7 @@ internal sealed class UserProfileService(
 
         if (isAudienceRegistrant
             && request.Gender == Gender.Male
-            && string.IsNullOrEmpty(user.AvatarRelativePath))
+            && user.AvatarFileId is null)
         {
             throw new ApiException(
                 ErrorCodes.VisitorFaceImageMissing, 400,
@@ -471,7 +471,7 @@ internal sealed class UserProfileService(
 
         var (isVip, isForVisitor) = await ResolveProfileTypeFlagsAsync(profile.ProfileTypeId, cancellationToken);
         return ToResponse(profile, profile.QrId, request.NationalityCode.ToUpperInvariant(),
-            !string.IsNullOrEmpty(user.AvatarRelativePath), isVip, isForVisitor);
+            user.AvatarFileId is not null, isVip, isForVisitor);
     }
 
     /// <summary>
@@ -559,13 +559,13 @@ internal sealed class UserProfileService(
             return hasNames;
         }
 
-        var hasIdImage = !string.IsNullOrEmpty(facts.IdImageRelativePath);
+        var hasIdImage = facts.IdImageFileId is not null;
         var maleFaceSatisfied = facts.Gender != Gender.Male;
         if (!maleFaceSatisfied)
         {
             var user = await accounts.FindByIdAsync(userId, cancellationToken);
             maleFaceSatisfied = user is not null
-                && !string.IsNullOrEmpty(user.AvatarRelativePath);
+                && user.AvatarFileId is not null;
         }
         return hasNames && facts.HasInterests && hasIdImage && maleFaceSatisfied;
     }
@@ -642,7 +642,7 @@ internal sealed class UserProfileService(
         // unified StoredFile store (App DB, owner = the user, Confidential/encrypted),
         // whose upload pipeline runs the malware scan + magic-byte allow-list +
         // canonical MIME + SHA-256 + audit — so the standalone scanner call is gone.
-        // IdImageRelativePath is repurposed as the bare-Guid pointer + "has ID image"
+        // IdImageFileId is the typed pointer + "has ID image"
         // presence sentinel (the completeness rule reads it null-vs-non-empty).
         var profile = await profiles.FindAsync(actorUserId, cancellationToken);
         if (profile is null)
@@ -657,12 +657,12 @@ internal sealed class UserProfileService(
             profiles.Add(profile);
         }
 
-        var priorFileId = ParseFileId(profile.IdImageRelativePath);
+        var priorFileId = profile.IdImageFileId;
         var result = await fileService.UploadAsync(
             new UploadFileCommand(
                 FileService.IdDocument, actorUserId, content, null, contentType, actorUserId, FailClosed: false),
             cancellationToken);
-        profile.IdImageRelativePath = result.Id.ToString();
+        profile.IdImageFileId = result.Id;
         profile.UpdatedAt = timeProvider.SimfNow();
         // UserProfile is on the App DB.
         await profiles.SaveAppChangesAsync(cancellationToken);
@@ -733,14 +733,14 @@ internal sealed class UserProfileService(
         // Store the bytes in the unified StoredFile store (App DB, owner
         // = the subject, Confidential/encrypted). IFileService runs the full pipeline
         // (malware scan, magic-byte allow-list, canonical MIME, SHA-256, audit), so
-        // the standalone scanner call is gone. IdImageRelativePath is the bare-Guid
+        // the standalone scanner call is gone. IdImageFileId is the typed
         // pointer + presence sentinel.
-        var priorFileId = ParseFileId(profile.IdImageRelativePath);
+        var priorFileId = profile.IdImageFileId;
         var result = await fileService.UploadAsync(
             new UploadFileCommand(
                 FileService.IdDocument, subjectUserId, content, null, contentType, actorUserId, FailClosed: false),
             cancellationToken);
-        profile.IdImageRelativePath = result.Id.ToString();
+        profile.IdImageFileId = result.Id;
         profile.UpdatedAt = timeProvider.SimfNow();
         // UserProfile is on the App DB.
         await profiles.SaveAppChangesAsync(cancellationToken);
@@ -832,14 +832,14 @@ internal sealed class UserProfileService(
         // Store the bytes in the unified StoredFile store (App DB,
         // owner = subject userId, encrypted at rest). IFileService runs the full
         // pipeline (malware scan, magic-byte allow-list, canonical MIME, SHA-256,
-        // audit). VipPhotoRelativePath is repurposed as the bare-Guid pointer +
+        // audit). VipPhotoFileId is the typed pointer +
         // "has VIP photo" presence sentinel, so VipRosterService keeps working.
-        var priorFileId = ParseFileId(profile.VipPhotoRelativePath);
+        var priorFileId = profile.VipPhotoFileId;
         var result = await fileService.UploadAsync(
             new UploadFileCommand(
                 FileService.VipPhoto, subjectUserId, content, null, contentType, actorUserId, FailClosed: false),
             cancellationToken);
-        profile.VipPhotoRelativePath = result.Id.ToString();
+        profile.VipPhotoFileId = result.Id;
         profile.UpdatedAt = timeProvider.SimfNow();
         // UserProfile is on the App DB.
         await profiles.SaveAppChangesAsync(cancellationToken);
@@ -896,10 +896,6 @@ internal sealed class UserProfileService(
         return new VipPhotoImage(bytes, file.ContentType ?? "image/png");
     }
 
-    /// <summary>The VIP-photo / avatar / ID-image pointer columns
-    /// hold a StoredFile GUID. Returns it when parseable, else null.</summary>
-    private static Guid? ParseFileId(string? pointer) =>
-        Guid.TryParse(pointer, out var id) ? id : null;
 
     /// <summary>Best-effort retirement of a replaced owner-scoped
     /// file so one-active-per-owner holds. The new file is already the committed
@@ -963,7 +959,7 @@ internal sealed class UserProfileService(
             OrganisationId = profile.OrganisationId,
             RegionId = profile.RegionId,
             Gender = profile.Gender,
-            HasIdImage = !string.IsNullOrEmpty(profile.IdImageRelativePath),
+            HasIdImage = profile.IdImageFileId != null,
             HasAvatar = hasAvatar,
             QrId = qrId,
             IsVip = isVip,

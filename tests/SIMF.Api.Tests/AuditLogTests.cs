@@ -141,6 +141,6 @@ public sealed class AuditLogTests : IClassFixture<SimfApiFactory>
                 && code.ConsumedAt == null)
             .OrderByDescending(code => code.CreatedAt)
             .First()
-            .CodeHash);
+            .Code);
     }
 }

@@ -286,20 +286,32 @@ internal sealed class RatingFormService(
     /// in-hall check-in OR any venue-gate Check-In scan.</item>
     /// </list></summary>
     private async Task<bool> IsAttendedAsync(
-        RatingType type, Guid targetId, Guid userId, CancellationToken cancellationToken) =>
-        type.Scope switch
+        RatingType type, Guid targetId, Guid userId, CancellationToken cancellationToken)
+    {
+        // Hall attendance and gate scans are BOTH keyed by the attendee profile
+        // now, so one lookup answers every scope below. The caller is a signed-in
+        // account; no profile means no attendance of any kind to find.
+        var profileId = await ProfileIdAsync(userId, cancellationToken);
+        if (profileId is null)
+        {
+            return false;
+        }
+        return type.Scope switch
         {
             RatingScope.PerSession => await dbContext.HallAttendances.AnyAsync(
-                a => a.UserId == userId && a.SessionId == targetId, cancellationToken),
-            RatingScope.PerDay => await AttendedDayAsync(targetId, userId, cancellationToken),
-            RatingScope.Global => await AttendedEventAsync(userId, cancellationToken),
+                a => a.UserProfileId == profileId && a.SessionId == targetId,
+                cancellationToken),
+            RatingScope.PerDay => await AttendedDayAsync(
+                targetId, profileId.Value, cancellationToken),
+            RatingScope.Global => await AttendedEventAsync(profileId.Value, cancellationToken),
             _ => false,
         };
+    }
 
     /// <summary>Attended the event-local day of <paramref name="dayId"/>: an in-hall
     /// check-in on a session that day, or a venue-gate Check-In scan that day.</summary>
     private async Task<bool> AttendedDayAsync(
-        Guid dayId, Guid userId, CancellationToken cancellationToken)
+        Guid dayId, Guid profileId, CancellationToken cancellationToken)
     {
         var date = await dbContext.ProgrammeDays.AsNoTracking()
             .Where(d => d.Id == dayId)
@@ -313,7 +325,7 @@ internal sealed class RatingFormService(
         var dayEnd = dayStart.AddDays(1);
 
         var inHall = await dbContext.HallAttendances.AnyAsync(
-            a => a.UserId == userId
+            a => a.UserProfileId == profileId
                 && a.Session!.Start >= dayStart
                 && a.Session!.Start < dayEnd,
             cancellationToken);
@@ -322,11 +334,6 @@ internal sealed class RatingFormService(
             return true;
         }
 
-        var profileId = await ProfileIdAsync(userId, cancellationToken);
-        if (profileId is null)
-        {
-            return false;
-        }
         return await dbContext.GateScans.AnyAsync(
             g => g.UserProfileId == profileId
                 && g.Direction == ScanDirection.CheckIn
@@ -338,18 +345,13 @@ internal sealed class RatingFormService(
 
     /// <summary>Attended the event at all: any in-hall check-in or any venue-gate
     /// Check-In scan.</summary>
-    private async Task<bool> AttendedEventAsync(Guid userId, CancellationToken cancellationToken)
+    private async Task<bool> AttendedEventAsync(Guid profileId, CancellationToken cancellationToken)
     {
         var inHall = await dbContext.HallAttendances.AnyAsync(
-            a => a.UserId == userId, cancellationToken);
+            a => a.UserProfileId == profileId, cancellationToken);
         if (inHall)
         {
             return true;
-        }
-        var profileId = await ProfileIdAsync(userId, cancellationToken);
-        if (profileId is null)
-        {
-            return false;
         }
         return await dbContext.GateScans.AnyAsync(
             g => g.UserProfileId == profileId

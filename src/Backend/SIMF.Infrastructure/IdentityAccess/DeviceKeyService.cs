@@ -11,6 +11,7 @@ using SIMF.Application.Auditing;
 using SIMF.Application.Email;
 using SIMF.Application.IdentityAccess;
 using SIMF.Application.IdentityAccess.Abstractions;
+using SIMF.Application.Security;
 using SIMF.Application.Notifications;
 using SIMF.Common;
 using SIMF.Common.Enums;
@@ -257,7 +258,7 @@ internal sealed class DeviceKeyService(
             Id = Guid.NewGuid(),
             UserId = callerUserId,
             Purpose = AccountCodePurpose.BiometricEnrolStepUp,
-            CodeHash = AccountCodeHasher.Hash(plaintext),
+            Code = AccountCodeHasher.Hash(plaintext),
             CreatedAt = now,
             ExpiresAt = now.Add(StepUpLifetime),
         }, cancellationToken);
@@ -715,7 +716,7 @@ internal sealed class DeviceKeyService(
                 "انتهت صلاحية رمز التحقق. اطلب رمزاً جديداً.");
         }
 
-        if (!CodesMatch(code.CodeHash, AccountCodeHasher.Hash(suppliedCode.Trim())))
+        if (!CodesMatch(code.Code, AccountCodeHasher.Hash(suppliedCode.Trim())))
         {
             // Burn the code once the attempt budget is spent so the 10^6 code
             // space can't be ground down across repeated register calls — the
@@ -763,9 +764,7 @@ internal sealed class DeviceKeyService(
     /// <summary>Compares the stored + supplied code hashes in constant time,
     /// so no timing side channel leaks.</summary>
     private static bool CodesMatch(string stored, string supplied) =>
-        CryptographicOperations.FixedTimeEquals(
-            Encoding.UTF8.GetBytes(stored),
-            Encoding.UTF8.GetBytes(supplied));
+        ConstantTime.Matches(stored, supplied);
 
     private static DeviceKeyEntry ToEntry(DeviceKey deviceKey) =>
         new(deviceKey.Id, deviceKey.UserId, deviceKey.Algorithm,

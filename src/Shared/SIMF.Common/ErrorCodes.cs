@@ -456,6 +456,11 @@ public static class ErrorCodes
     // Operator QR-door-scan — unknown badge / non-approved attendee.
     public const string AttendeeQrUnknown = "ATTENDEE_QR_UNKNOWN";
     public const string AttendeeNotApproved = "ATTENDEE_NOT_APPROVED";
+    // The signed-in account carries no attendee profile. Attendance, seating and
+    // lead capture are keyed by the profile, which is the row every ATTENDEE has;
+    // an admin-typed account has none and is therefore not an attendee at all.
+    // Additive code; the app/CP render the server message.
+    public const string AttendeeProfileMissing = "ATTENDEE_PROFILE_MISSING";
     // SESSION_NOT_LIVE: hall arrival attempted outside the session's live time
     // window (± grace). HALL_AT_CAPACITY: the hall is at its physical capacity.
     // Additive codes; the app/CP render the server message and fall back on an

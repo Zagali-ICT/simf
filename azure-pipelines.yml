@@ -33,17 +33,151 @@
 #
 # PLACEHOLDERS to confirm before the Deploy stage can run (see deploy/README.md):
 #   * `pool` name - the self-hosted build/deploy agent;
-#   * the Deploy `environment` name;
 #   * the IIS site names and physical paths passed to deploy/iis-deploy.ps1.
+# The Deploy `environment` names are NO LONGER placeholders: they are the two
+# real Azure DevOps Environments, `Pre-production` and `Production` (D-886).
 
 trigger:
 - main
 
+# --- Which environments this run deploys to (chosen in the Run pipeline dialog).
+#
+#     Both default to TRUE, so an ordinary CI run off `main` deploys to both
+#     servers at once. Untick one to hold it back - to rehearse on
+#     pre-production without touching production, or to push a hotfix to
+#     production when pre-production is mid-test.
+#
+#     Untick BOTH and the whole Deploy stage is omitted - build, test and
+#     publish still run, and the artifact is still produced, so a build-only run
+#     needs no separate pipeline.
+#
+#     Why these are `parameters` and why the Deploy jobs use `${{ if }}` rather
+#     than `condition:` is explained once, at the Deploy stage that depends on
+#     it. Not repeated here: a file that states the same rule twice is a file
+#     that can disagree with itself.
+parameters:
+- name: deployPreProduction
+  displayName: 'Deploy to Pre-production'
+  type: boolean
+  default: true
+- name: deployProduction
+  displayName: 'Deploy to Production'
+  type: boolean
+  default: true
+
+# --- Whether this run executes the test gates. DEFAULT FALSE (owner decision,
+#     D-887): a deploy should be quick, and the gates below cost far more than
+#     everything else in the pipeline put together - SIMF.Api.Tests alone runs
+#     38 minutes when it has the agent to itself.
+#
+#     WHAT THIS TURNS OFF, AND WHAT IT COSTS. Read this before assuming a green
+#     run means anything about correctness:
+#       * the fast suites - Domain, Application, ApiClient, ControlPanel, Web,
+#         E2E. About a minute between them. These include the Control Panel
+#         permission and navigation gates, which are the checks that stop an
+#         admin page shipping ungated, and the E2E-catalogue integrity ratchet.
+#         (No test count is quoted here on purpose: nothing pins one, so a
+#         number written into a comment is wrong by the next sprint.)
+#       * SIMF.Api.Tests - 2272 integration tests, the whole admin + app API
+#         surface, including the anonymous-endpoint allow-list that fails the
+#         build when an 18th unauthenticated entry point appears.
+#       * the LocalDB provisioning that exists only to serve those.
+#       * the Flutter and BadgeDesk stages.
+#
+#     A run with this OFF proves the code COMPILES and the packages publish.
+#     It proves nothing about behaviour, permissions or the security surface.
+#
+#     THIS IS A `condition:`, NOT `enabled: false`, DELIBERATELY. A disabled step
+#     vanishes from the run summary; a condition leaves it listed as skipped, so
+#     the run says out loud that it did not test. That rule is enforced by
+#     PipelineTestGateTests.No_pipeline_step_is_disabled, which exists because
+#     the last silent switch-off went unnoticed for five weeks.
+#
+#     Tick it back on for any run that gates a merge to main, or before a
+#     production publish. SIMF-OPS-001 section 5 and the NCA Secure App-Dev
+#     Standard section 3-20 both require a failing test to stop the pipeline,
+#     and neither is satisfied while this is off.
+- name: runTests
+  displayName: 'Run the test gates (slow)'
+  type: boolean
+  default: false
+
+# --- The two non-.NET stages. BOTH DEFAULT FALSE (owner decision, D-889), and
+#     both are INDEPENDENT of `runTests` above: ticking the test gates on for a
+#     merge-gating run does NOT bring these back. They are disabled, not
+#     deferred, and each needs its own tick box to run.
+#
+#     They are separate parameters rather than one, because they fail for
+#     different reasons and will come back at different times: the Flutter stage
+#     needs the Flutter SDK and the Android SDK on the agent, the badge desk
+#     needs only the .NET SDK it already has.
+#
+#     WHAT STOPS BEING CHECKED, stated plainly because both of these are the
+#     ONLY signal of their kind:
+#
+#       * MobileApp - the only CI proof that the shippable Flutter app analyses,
+#         passes its suites, and still COMPILES for Android from a clean
+#         checkout. That last one exists because of a real escape: a `.gitignore`
+#         rule for build output also matched a Pigeon source that ships with the
+#         vendored video plugin, so `flutter build apk` failed on a clean clone
+#         while every developer machine stayed green. analyze and test could not
+#         see it - the Android implementation of a federated plugin is never
+#         compiled on the host VM. With this stage off, that class of defect is
+#         invisible again until someone builds a release by hand.
+#
+#       * BadgeDesk - the only build signal for SIMF.BadgeDesk, which sits
+#         outside SIMF.slnx deliberately (Windows-only: WinForms + DPAPI +
+#         native printing) and references SIMF.Common and SIMF.Contracts, both
+#         of which change constantly. With this stage off, renaming
+#         EventBadgeCodec, OfflineBadgeId or OfflineBadgeRegistration breaks the
+#         ONLY tool that mints badges and nothing reports it until a desk fails
+#         to open at the venue.
+#
+#     Neither stage is a dependency of Deploy, so neither ever blocked a
+#     deployment; on the single self-hosted `Default` agent they did compete for
+#     it, which is the wall-clock this buys back.
+- name: runMobileApp
+  displayName: 'Run the Flutter app stage'
+  type: boolean
+  default: false
+- name: runBadgeDesk
+  displayName: 'Run the offline badge desk stage'
+  type: boolean
+  default: false
+
+# The `Default` pool has an agent on BOTH SIMF servers, so this job runs on
+# whichever is free - including the PRODUCTION box, while it is serving traffic.
+# That is why a run can die with "We stopped hearing from agent": a four-app
+# Release build plus the vulnerability scan and the SBOM is a heavy, bursty load
+# to put on a live IIS server, and which server gets it changes run to run.
+#
+# TO PIN THE BUILD TO ONE MACHINE (recommended - do this on the agent, then
+# uncomment `demands` below; adding it before the capability exists leaves the
+# job queued forever with no agent to match, which is why it ships commented,
+# the same reason the SAST/DAST blocks further down are scaffolds):
+#
+#   1. Azure DevOps -> Project settings -> Agent pools -> Default -> the
+#      PRE-PRODUCTION agent -> Capabilities -> add a user capability
+#      `SIMF_ROLE` = `build`.
+#   2. Uncomment the two `demands` lines.
+#
+# Deployment jobs are unaffected: they bind to their environment's VM resource,
+# not to this pool, so pinning the build does not pin the deploy.
 pool:
   name: Default   # PLACEHOLDER: self-hosted agent pool with the .NET 10 SDK (build) + IIS (deploy)
+  # demands:
+  # - SIMF_ROLE -equals build
 
 variables:
   buildConfiguration: 'Release'
+  # Stop MSBuild leaving worker processes alive after a build.
+  #
+  # Node reuse is a developer-machine optimisation: msbuild.exe stays resident
+  # for about 15 minutes so the next build starts faster. On a build agent it
+  # buys nothing - the next run is usually not for hours - and on THESE agents
+  # it is actively harmful, because they are also the IIS servers. Idle MSBuild
+  # nodes hold memory on a live box between runs and accumulate across runs.
+  MSBUILDDISABLENODEREUSE: 1
 
 stages:
 - stage: Build
@@ -239,6 +373,9 @@ stages:
           throw 'MSSQLLocalDB is not Running - the integration tests cannot reach SQL Server.'
         }
       displayName: 'Provision SQL Server LocalDB (integration tests)'
+      # Exists only to serve SIMF.Api.Tests below. Provisioning LocalDB for a run
+      # that will not touch it is pure wall-clock, so it follows the same switch.
+      condition: and(succeeded(), eq('${{ parameters.runTests }}', 'true'))
 
     # --- Test gate, part 1: the FAST suites (NCA Secure App-Dev Standard §3-20;
     #     SIMF-OPS-001 §5). A failing test stops the pipeline.
@@ -272,8 +409,41 @@ stages:
     #     _TOTP_SECRET as secret variables, and add a browser-install step:
     #       pwsh tests/SIMF.E2E.Tests/bin/$(buildConfiguration)/net10.0/playwright.ps1 install chromium
     #     ---
+    # --- Pipeline integrity guards. UNCONDITIONAL, and deliberately NOT behind
+    #     `runTests` (D-888).
+    #
+    #     These are static assertions over azure-pipelines.yml itself: that no
+    #     step is disabled, that every test project is still referenced, that the
+    #     Deploy stage names only the two real Environments, and that every
+    #     referenced YAML template exists. They assert nothing about the product.
+    #
+    #     They were briefly gated with everything else, which put them in a
+    #     strange position: `Every_yaml_template_the_pipeline_references_exists`
+    #     says a missing template means "the pipeline does not compile at all, so
+    #     nothing runs, including the gates that would have reported it" - and a
+    #     gated version of that test IS one of the gates that would not report
+    #     it. A fifth environment or a moved template would land green.
+    #
+    #     D-887 priced the SLOW suites out of a deploy run: 2272 integration
+    #     tests at 38 minutes. It did not price these out, and they are not the
+    #     same purchase. The cost here is building SIMF.ControlPanel.Tests plus a
+    #     filtered run of one class - tens of seconds, against a pipeline that
+    #     otherwise cannot tell you it has stopped testing.
+    - task: DotNetCoreCLI@2
+      displayName: 'Pipeline integrity guards (always run)'
+      inputs:
+        command: 'test'
+        projects: '$(Build.SourcesDirectory)/tests/SIMF.ControlPanel.Tests/SIMF.ControlPanel.Tests.csproj'
+        arguments: '--configuration $(buildConfiguration) --filter FullyQualifiedName~PipelineTestGateTests'
+
     - task: DotNetCoreCLI@2
       displayName: 'Run tests (fast suites)'
+      # OFF BY DEFAULT (D-887). These suites cost about a minute, so they are not
+      # what makes a run slow - they are here because the owner asked for the
+      # test gates off for quick deploys, and leaving them on would give a green
+      # tick that looks like the full gate ran. They come back on with the
+      # `runTests` tick box.
+      condition: and(succeeded(), eq('${{ parameters.runTests }}', 'true'))
       inputs:
         command: 'test'
         # Listed explicitly rather than as `tests/**/*.csproj` minus an
@@ -312,8 +482,12 @@ stages:
     #     step is invisible, a condition states its own rule.
     - task: DotNetCoreCLI@2
       displayName: 'Run tests (SIMF.Api.Tests, integration)'
+      # The `runTests` clause is ADDITIONAL to the pull-request rule, not a
+      # replacement for it: this suite stays off PR validation even when the
+      # gates are switched on, because nobody should wait ~38 minutes per push.
       condition: >-
         and(succeeded(),
+            eq('${{ parameters.runTests }}', 'true'),
             ne(variables['Build.Reason'], 'PullRequest'))
       inputs:
         command: 'test'
@@ -364,6 +538,32 @@ stages:
         arguments: '--configuration $(buildConfiguration) --no-restore --output $(Build.ArtifactStagingDirectory)/edge'
         zipAfterPublish: true
 
+    # --- The two deploy scripts travel WITH the packages (D-888).
+    #
+    #     The deploy jobs need `pipeline-deploy-one.ps1` and the `iis-deploy.ps1`
+    #     it calls, and a deployment job does not clone the repository. The first
+    #     fix for that was `checkout: self` in the deploy template, which pulled
+    #     the whole repo - hundreds of MB of history and ~5,000 files, re-cleaned
+    #     every run - onto each production server to obtain 12 KB of PowerShell.
+    #     On a changeset whose purpose is a quick deploy, that was the wrong
+    #     trade: the artifact already travels to both servers, so the scripts
+    #     ride along and the clone disappears.
+    #
+    #     NAMED INDIVIDUALLY, NOT `deploy/*.ps1`. The filled
+    #     `set-env-{api,cp,web,edge}.ps1` carry production secrets and live in
+    #     this folder, kept out of the repository by .gitignore. A wildcard would
+    #     put any that ever appeared on an agent's working tree into a build
+    #     artifact, which is a place secrets must never reach. Two names cannot
+    #     do that. A new script the deploy jobs need must be added here by name.
+    - task: CopyFiles@2
+      displayName: 'Stage the deploy scripts into the artifact'
+      inputs:
+        SourceFolder: '$(Build.SourcesDirectory)/deploy'
+        Contents: |
+          pipeline-deploy-one.ps1
+          iis-deploy.ps1
+        TargetFolder: '$(Build.ArtifactStagingDirectory)/deploy'
+
     - task: PublishBuildArtifacts@1
       displayName: 'Publish Artifacts'
       inputs:
@@ -372,6 +572,12 @@ stages:
 
 - stage: MobileApp
   displayName: 'Flutter app (analyze & test)'
+  # DISABLED (D-889). Its own tick box, deliberately NOT `runTests`: a
+  # merge-gating run with the test gates on still does not run this. What that
+  # gives up - including the clean-clone Android compile gate, which is the only
+  # thing that can see a missing platform source - is spelled out at
+  # `runMobileApp` at the top of this file.
+  condition: eq('${{ parameters.runMobileApp }}', 'true')
   # BUG-010 — until now NOTHING in CI touched src/Mobile/simf_app, so the only
   # proof the shippable mobile artefact still compiles lived on one developer
   # machine. This stage restores from the committed pubspec.lock, analyses the
@@ -546,6 +752,11 @@ stages:
 
 - stage: BadgeDesk
   displayName: 'Offline badge desk (build & test)'
+  # DISABLED (D-889). Its own tick box, deliberately NOT `runTests`: a
+  # merge-gating run with the test gates on still does not run this. This is the
+  # ONLY build signal for SIMF.BadgeDesk; the consequence is spelled out at
+  # `runBadgeDesk` at the top of this file.
+  condition: eq('${{ parameters.runBadgeDesk }}', 'true')
   # D-813 - SIMF.BadgeDesk is deliberately outside SIMF.slnx because it is
   # Windows-only (WinForms + DPAPI + native printing) and the solution has to
   # keep building on any host. The cost of that was NO build signal at all: the
@@ -587,107 +798,78 @@ stages:
       displayName: 'dotnet build + test (src/Tools/SIMF.BadgeDesk)'
 
 # =============================================================================
-# Deploy - ONE JOB PER SERVER
+# Deploy - ONE JOB PER ENVIRONMENT
 # =============================================================================
-# Each package runs on its own box, so each gets its own deployment job bound to
-# its own Azure DevOps Environment. A single job deploying four packages assumed
-# one machine: it extracted every zip onto the same agent, and repointing it at
-# four servers would have meant one agent reaching across the estate.
+# SIMF has exactly TWO Azure DevOps Environments, because the estate is two
+# servers: `Pre-production` and `Production` (D-886). Each server hosts all four
+# SIMF sites, so each job deploys all four packages to its own machine.
 #
-# Ordering is explicit rather than incidental. The API goes first because
-# everything else calls it; the Control Panel and Website follow in parallel,
-# since neither depends on the other; the mobile edge goes LAST because it is the
-# public front door and should only start accepting traffic once the API behind
-# it is already answering.
+# WHY THIS IS PINNED BY A TEST. Azure DevOps CREATES an environment on first
+# reference: a name that matches no real machine does not fail the run, it
+# quietly registers another environment with no resources behind it. This file
+# previously named four - `SIMF-Prod-Api`, `-Cp`, `-Web`, `-Edge` - on the
+# earlier one-server-per-package reading of the estate, and the portal duly
+# listed four environments nobody had registered. A wrong name here is therefore
+# invisible in the run and visible only in the portal weeks later, which is why
+# `PipelineTestGateTests.The_pipeline_deploys_only_to_the_two_real_environments`
+# fails the build on a fifth rather than leaving it to be noticed.
 #
-# PLACEHOLDERS: register four Azure DevOps Environments, one per server, and bind
-# each to that machine's agent. See deploy/README.md.
-- stage: Deploy
-  displayName: 'Deploy to IIS'
-  dependsOn: Build
-  condition: succeeded()
-  jobs:
-  - deployment: DeployApi
-    displayName: 'API server'
-    environment: 'SIMF-Prod-Api'
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - download: current
-            artifact: drop
+# THE TWO JOBS RUN IN PARALLEL. There is deliberately no `dependsOn` between
+# them: pre-production and production deploy at the same time, off the same
+# build, rather than production waiting on a pre-production rehearsal. The
+# per-package ordering that does matter (API first, mobile edge last) is kept
+# WITHIN each job by deploy/deploy-all-packages.yml.
+#
+# Which of the two a run touches is chosen at queue time by the `parameters` at
+# the top of this file. `${{ if }}` omits the job rather than a `condition:`
+# skipping it, so an unticked environment records no deployment against itself
+# at all - a skipped job still writes to the environment's history and would
+# read as a deployment that happened.
+#
+# EACH JOB NAMES `resourceType`, NOT THE ENVIRONMENT ALONE. A bare
+# `environment: Production` is also legal - as "an abstract shell to record
+# deployment history" - and then the steps run on the POOL agent declared at the
+# top of this file. That would have iis-deploy.ps1 stop, mirror and restart IIS
+# sites ON THE BUILD BOX and report success, which is the exact shape of failure
+# this pipeline pins tests against: a provisioning problem wearing a green tick.
+# Naming the resource type removes the ambiguity - "Any steps that you define in
+# a deployment job with a virtual machine resource runs against that virtual
+# machine and not against the agent in the pool" (Azure Pipelines, Deployment
+# jobs). Each environment holds ONE server, so the type alone selects it and no
+# resource name has to be repeated here.
+#
+# If a run reports NO MATCHING RESOURCES, that server is not registered as a VM
+# resource in its environment. Register it - do NOT drop back to the bare form,
+# which converts a loud failure into a deploy onto the wrong machine. Azure's
+# own documentation disagrees with itself on the casing of this value while
+# warning that it is case-sensitive, so `VirtualMachine` is the first thing to
+# try if the resource IS registered and still does not match.
+- ${{ if or(eq(parameters.deployPreProduction, true), eq(parameters.deployProduction, true)) }}:
+  - stage: Deploy
+    displayName: 'Deploy to IIS'
+    dependsOn: Build
+    condition: succeeded()
+    jobs:
+    - ${{ if eq(parameters.deployPreProduction, true) }}:
+      - deployment: DeployPreProduction
+        displayName: 'Pre-production server'
+        environment:
+          name: 'Pre-production'
+          resourceType: virtualMachine
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+              - template: deploy/deploy-all-packages.yml
 
-          - powershell: |
-              ./deploy/pipeline-deploy-one.ps1 `
-                -Package  "api" `
-                -ZipName  "SIMF.Api.zip" `
-                -SiteName "SIMF.API" `
-                -SitePath "D:\System\v1.0.1\api" `
-                -Drop     "$(Pipeline.Workspace)\drop" `
-                -Root     "$(Pipeline.Workspace)\drop_root"
-            displayName: 'Deploy the API'
-
-  - deployment: DeployCp
-    displayName: 'Control Panel server'
-    environment: 'SIMF-Prod-Cp'
-    dependsOn: DeployApi
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - download: current
-            artifact: drop
-
-          - powershell: |
-              ./deploy/pipeline-deploy-one.ps1 `
-                -Package  "cp" `
-                -ZipName  "SIMF.ControlPanel.zip" `
-                -SiteName "SIMF.CP" `
-                -SitePath "D:\System\v1.0.1\cp" `
-                -Drop     "$(Pipeline.Workspace)\drop" `
-                -Root     "$(Pipeline.Workspace)\drop_root"
-            displayName: 'Deploy the Control Panel'
-
-  - deployment: DeployWeb
-    displayName: 'Website server'
-    environment: 'SIMF-Prod-Web'
-    dependsOn: DeployApi
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - download: current
-            artifact: drop
-
-          - powershell: |
-              ./deploy/pipeline-deploy-one.ps1 `
-                -Package  "web" `
-                -ZipName  "SIMF.Web.zip" `
-                -SiteName "SIMF.WEB" `
-                -SitePath "D:\System\v1.0.1\web" `
-                -Drop     "$(Pipeline.Workspace)\drop" `
-                -Root     "$(Pipeline.Workspace)\drop_root"
-            displayName: 'Deploy the Website'
-
-  - deployment: DeployEdge
-    displayName: 'Mobile edge server'
-    environment: 'SIMF-Prod-Edge'
-    dependsOn:
-    - DeployCp
-    - DeployWeb
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - download: current
-            artifact: drop
-
-          - powershell: |
-              ./deploy/pipeline-deploy-one.ps1 `
-                -Package  "edge" `
-                -ZipName  "SIMF.MobileEdge.zip" `
-                -SiteName "SIMF.EDGE" `
-                -SitePath "D:\System\v1.0.1\edge" `
-                -Drop     "$(Pipeline.Workspace)\drop" `
-                -Root     "$(Pipeline.Workspace)\drop_root"
-            displayName: 'Deploy the mobile edge'
+    - ${{ if eq(parameters.deployProduction, true) }}:
+      - deployment: DeployProduction
+        displayName: 'Production server (SIMF APP 01)'
+        environment:
+          name: 'Production'
+          resourceType: virtualMachine
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+              - template: deploy/deploy-all-packages.yml

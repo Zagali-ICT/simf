@@ -9,7 +9,15 @@ namespace SIMF.Application.Programme.Abstractions;
 /// and an operator scanning the badge QR at the hall door
 /// (<see cref="RecordQrArrivalAsync"/>, <c>AttendanceMethod.QrScan</c>). Both
 /// merge into the one open row. Feeds session attendance and the
-/// question-gating-on-arrival check.</summary>
+/// question-gating-on-arrival check.
+///
+/// <para><b>Two id kinds cross this interface, and both are
+/// <see cref="Guid"/>.</b> The self-service methods take the signed-in
+/// <c>userId</c> (an Identity account), because that is all a JWT carries; the
+/// operator and gate methods take an <c>attendeeProfileId</c>, because the badge
+/// in front of them resolves to the profile and its holder may have no account
+/// at all. The parameter name is the only thing that tells them apart, so read
+/// it before passing an id through.</para></summary>
 public interface IHallAttendanceService
 {
     /// <summary>Claim arrival at the session's hall from a reported GPS point.
@@ -33,9 +41,11 @@ public interface IHallAttendanceService
     /// <summary>An operator records a hall arrival by
     /// scanning an attendee's badge QR at the door. Resolves the QR to the attendee
     /// (<see cref="SIMF.Application.AccessControl.Abstractions.IQrResolver"/>),
-    /// requires an Approved, non-locked account, and opens (or returns the existing
+    /// requires an Approved, non-locked attendee, and opens (or returns the existing
     /// open) attendance row with <c>Method = QrScan</c> — merging with any geofence
-    /// row. No geofence is required (the operator is physically at the door).
+    /// row. The badge resolves straight to the attendee profile, so a walk-in or a
+    /// bulk-minted badge with no account behind it is recorded like any other. No
+    /// geofence is required (the operator is physically at the door).
     /// 400 unknown/blank QR; 403 non-approved attendee; 404 unknown session.</summary>
     Task<QrArrivalResult> RecordQrArrivalAsync(
         Guid operatorUserId, Guid sessionId, string qrId,
@@ -66,8 +76,9 @@ public interface IHallAttendanceService
     /// the existing open) row with <c>Method = QrScan</c>,
     /// <see cref="ScanDirection.CheckOut"/> closes it.</para>
     /// Idempotent and safe to call after the gate scan is already committed.
-    /// <paramref name="attendeeUserId"/> is the Identity <c>SimfUser.Id</c>
-    /// (QrResolution.UserId), NOT the App UserProfile id.
+    /// <paramref name="attendeeProfileId"/> is the App <c>UserProfile.Id</c>
+    /// (QrResolution.UserProfileId), NOT the Identity SimfUser id — attendance is
+    /// keyed by the profile so that an attendee with no account can be recorded.
     /// <para>Returns <c>true</c> only when hall attendance was
     /// ACTUALLY recorded: a row was opened, merged into, or closed. It returns
     /// <c>false</c> when nothing could be recorded — no session was live in the
@@ -77,7 +88,7 @@ public interface IHallAttendanceService
     /// notice: entry was still allowed, but the session attendance is not being
     /// counted. Allowing entry is never affected — only the signal.</para></summary>
     Task<bool> RecordGateDoorScanAsync(
-        Guid attendeeUserId, Guid hallId, ScanDirection direction,
+        Guid attendeeProfileId, Guid hallId, ScanDirection direction,
         bool directionInferred, Guid operatorUserId,
         CancellationToken cancellationToken = default);
 
@@ -105,9 +116,13 @@ public interface IHallAttendanceService
     ///
     /// <para>Callers must apply this only to an ENTRY. A departure is never
     /// blocked: someone already inside must always be able to leave.</para>
+    ///
+    /// <para><paramref name="attendeeProfileId"/> is the App
+    /// <c>UserProfile.Id</c>. Seat reservations are keyed by it too, so an
+    /// attendee holding no account can still be found registered.</para>
     /// </summary>
     Task<HallEntryEligibility> CheckHallEntryEligibilityAsync(
-        Guid attendeeUserId, Guid hallId,
+        Guid attendeeProfileId, Guid hallId,
         CancellationToken cancellationToken = default);
 }
 

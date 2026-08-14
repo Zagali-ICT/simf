@@ -124,26 +124,26 @@ internal sealed class RecommendationService(
             .ToListAsync(cancellationToken);
 
         // 3b) Shared-session overlap: the approved, un-released seats
-        //     the caller and the candidate pool hold. SeatReservation owners are
-        //     Identity user ids (like the pool), so the overlap is keyed on user
-        //     id; one query covers the whole pool + the caller.
-        var poolUserIds = approvedIds.ToHashSet();
-        poolUserIds.Add(callerUserId);
+        //     the caller and the candidate pool hold. A seat is held by an attendee
+        //     PROFILE, and the candidates above already carry theirs, so the overlap
+        //     is keyed on profile id; one query covers the whole pool + the caller.
+        var poolProfileIds = candidates.Select(c => c.Id).ToHashSet();
+        poolProfileIds.Add(caller.Id);
         var reservations = await appDbContext.SeatReservations
             .AsNoTracking()
-            .Where(r => r.ReservedForUserId != null
-                && poolUserIds.Contains(r.ReservedForUserId.Value)
+            .Where(r => r.ReservedForProfileId != null
+                && poolProfileIds.Contains(r.ReservedForProfileId.Value)
                 && r.ReleasedAt == null
                 && r.Status == BookingStatus.Approved)
-            .Select(r => new { UserId = r.ReservedForUserId!.Value, r.SessionId })
+            .Select(r => new { ProfileId = r.ReservedForProfileId!.Value, r.SessionId })
             .ToListAsync(cancellationToken);
         var callerSessions = reservations
-            .Where(r => r.UserId == callerUserId)
+            .Where(r => r.ProfileId == caller.Id)
             .Select(r => r.SessionId)
             .ToHashSet();
-        var sessionsByUser = reservations
-            .Where(r => r.UserId != callerUserId)
-            .GroupBy(r => r.UserId)
+        var sessionsByProfile = reservations
+            .Where(r => r.ProfileId != caller.Id)
+            .GroupBy(r => r.ProfileId)
             .ToDictionary(g => g.Key, g => g.Select(r => r.SessionId).ToHashSet());
 
         // 4) Score each candidate by Jaccard over the interest sets;
@@ -177,7 +177,7 @@ internal sealed class RecommendationService(
 
             var sharedSessionCount = 0;
             if (callerSessions.Count > 0
-                && sessionsByUser.TryGetValue(candidate.UserId, out var candidateSessions))
+                && sessionsByProfile.TryGetValue(candidate.Id, out var candidateSessions))
             {
                 foreach (var sessionId in candidateSessions)
                 {

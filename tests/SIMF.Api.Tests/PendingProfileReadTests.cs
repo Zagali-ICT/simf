@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
@@ -208,7 +208,7 @@ public sealed class PendingProfileReadTests : IClassFixture<SimfApiFactory>
         // D-727 (owner item 5) — the CP view / pending-review renders the staff
         // photo only when HasAvatar is true, so the full-profile read
         // (GET /admin/others/{id}/profile → AdminUserProfileView) must reflect
-        // the subject's avatar (SimfUser.AvatarRelativePath) presence.
+        // the subject's avatar (SimfUser.AvatarFileId) presence.
         var adminToken = await CreateAdministratorAndSignInAsync();
         var otherId = await CreatePendingOtherAsync(adminToken);
 
@@ -225,7 +225,7 @@ public sealed class PendingProfileReadTests : IClassFixture<SimfApiFactory>
         {
             var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
             var user = await db.Users.SingleAsync(u => u.Id == otherId);
-            user.AvatarRelativePath = "storedfile:" + Guid.NewGuid().ToString("N");
+            user.AvatarFileId = Guid.NewGuid();
             await db.SaveChangesAsync();
         }
 
@@ -243,7 +243,7 @@ public sealed class PendingProfileReadTests : IClassFixture<SimfApiFactory>
     {
         // Phase B (D-568 parity) — the pending queue grid renders the applicant's
         // photo thumbnail, so the pending-list row (AdminPendingUserSummary) must
-        // carry HasAvatar from the SimfUser.AvatarRelativePath sentinel, not only
+        // carry HasAvatar from the SimfUser.AvatarFileId sentinel, not only
         // the single-profile read.
         var adminToken = await CreateAdministratorAndSignInAsync();
         var otherId = await CreatePendingOtherAsync(adminToken);
@@ -256,7 +256,7 @@ public sealed class PendingProfileReadTests : IClassFixture<SimfApiFactory>
         {
             var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
             var user = await db.Users.SingleAsync(u => u.Id == otherId);
-            user.AvatarRelativePath = "storedfile:" + Guid.NewGuid().ToString("N");
+            user.AvatarFileId = Guid.NewGuid();
             await db.SaveChangesAsync();
         }
 

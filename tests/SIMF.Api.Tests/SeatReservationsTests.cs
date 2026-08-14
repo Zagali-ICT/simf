@@ -636,7 +636,7 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Admin_release_of_admin_reserved_row_does_not_notify()
     {
-        // M-4 — an admin block has no attendee (ReservedForUserId null), so releasing
+        // M-4 — an admin block has no attendee (ReservedForProfileId null), so releasing
         // it sets Cancelled but dispatches no BookingReleased notification.
         var (session, _) = await SeedSessionWithLayoutAsync(new[] { "A" }, seatsPerRow: 3);
         var admin = await CreateAdministratorAndSignInAsync();
@@ -1230,17 +1230,16 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            // The hold names its holder by PROFILE id, and that profile already
+            // exists — the booking was made by a signed-in visitor. So the name the
+            // seat plan must show is set on the existing row rather than on a second
+            // profile, which the filtered unique index would reject anyway.
             holderId = (await db.SeatReservations
                 .SingleAsync(r => r.SessionId == session.Id))
-                .ReservedForUserId!.Value;
-            db.UserProfiles.Add(new UserProfile
-            {
-                Id = Guid.NewGuid(),
-                UserId = holderId,
-                Name = "Faisal Al-Harbi",
-                NameArabic = "فيصل الحربي",
-                CreatedAt = SimfClock.Now,
-            });
+                .ReservedForProfileId!.Value;
+            var holderProfile = await db.UserProfiles.SingleAsync(p => p.Id == holderId);
+            holderProfile.Name = "Faisal Al-Harbi";
+            holderProfile.NameArabic = "فيصل الحربي";
             // An OPEN attendance row = the holder scanned in at the hall gate,
             // which is exactly what "confirmed" means on the seat plan.
             db.HallAttendances.Add(new HallAttendance
@@ -1248,7 +1247,7 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
                 Id = Guid.NewGuid(),
                 SessionId = session.Id,
                 HallId = hall.Id,
-                UserId = holderId,
+                UserProfileId = holderId,
                 Method = AttendanceMethod.QrScan,
                 Enter = SimfClock.Now,
                 CreatedAt = SimfClock.Now,
@@ -1264,7 +1263,7 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
             .ReadFromJsonAsync<ApiResult<GridPage<SeatPlanCell>>>())!.Data!;
 
         var cell = Assert.Single(page.Items);
-        Assert.Equal(holderId, cell.HolderUserId);
+        Assert.Equal(holderId, cell.HolderProfileId);
         Assert.Equal("Faisal Al-Harbi", cell.HolderName);
         Assert.Equal("فيصل الحربي", cell.HolderNameArabic);
         // A11 — real values, not the record defaults.
@@ -1300,7 +1299,7 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
             .ReadFromJsonAsync<ApiResult<GridPage<SeatPlanCell>>>())!.Data!;
 
         var cell = Assert.Single(page.Items);
-        Assert.Null(cell.HolderUserId);
+        Assert.Null(cell.HolderProfileId);
         Assert.Equal(string.Empty, cell.HolderName);
         Assert.Equal("Reserved for the Minister", cell.GuestHint);
         Assert.Equal("محجوز لمعالي الوزير", cell.GuestHintArabic);
@@ -1555,6 +1554,17 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
         // D-373 — registration enables 2FA; this auth plumbing needs the
         // direct-token path (the admin-disabled scenario).
         AuthFlow.DisableTwoFactor(_factory, email);
+        // A seat is held by the ATTENDEE record, which real approval stubs into
+        // existence; this fixture approves the account directly, so it creates the
+        // same row rather than leaving a visitor who cannot hold a seat at all.
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            var users = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+            var userId = await users.Users.AsNoTracking()
+                .Where(u => u.Email == email).Select(u => u.Id).SingleAsync();
+            await TestAttendeeProfiles.EnsureForAccountAsync(db, userId);
+        }
         var sign = await _client.PostAsJsonAsync(
             "/api/v1/app/auth/sign-in",
             new SignInRequest { Email = email, Password = AuthFlow.Password });

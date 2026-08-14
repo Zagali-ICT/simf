@@ -40,7 +40,7 @@ else
                           Page="_page"
                           Loading="_loading"
                           OnQueryChanged="OnQueryChangedAsync"
-                          RowKey="@(r => r.UserId.ToString())"
+                          RowKey="@(r => r.UserProfileId.ToString())"
                           RowLabel="@(r => RecipientLabel(r))"
                           OnAdd="@(_canRegister ? EventCallback.Factory.Create(this, OnAddVip) : default)"
                           OnEditOne="@(_canEdit ? EventCallback.Factory.Create<AdminVipSummary>(this, OnEditVip) : default)"

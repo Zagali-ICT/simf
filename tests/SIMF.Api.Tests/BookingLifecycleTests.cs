@@ -189,6 +189,10 @@ public sealed class BookingLifecycleTests : IClassFixture<SimfApiFactory>
         {
             var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
             userId = (await users.FindByEmailAsync(email))!.Id;
+            // A seat is held by the ATTENDEE, not by the account, so the booker
+            // needs the attendee record that approval creates in production.
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            await TestAttendeeProfiles.EnsureForAccountAsync(db, userId);
         }
         return (body.Data!.Tokens!.AccessToken, userId);
     }

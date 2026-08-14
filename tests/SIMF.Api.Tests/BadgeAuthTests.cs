@@ -238,7 +238,7 @@ public sealed class BadgeAuthTests : IClassFixture<SimfApiFactory>
                 && c.Purpose == AccountCodePurpose.BadgeActivationOtp
                 && c.ConsumedAt == null)
             .OrderByDescending(c => c.CreatedAt)
-            .Select(c => c.CodeHash)
+            .Select(c => c.Code)
             .FirstOrDefaultAsync();
         return hash is null ? null : AuthFlow.RecoverPlaintextCode(hash);
     }
@@ -285,6 +285,10 @@ public sealed class BadgeAuthTests : IClassFixture<SimfApiFactory>
             Name = "Badge Holder",
             NameArabic = "حامل الشارة",
             QrId = qrId,
+            // Admission is profile-owned: the QR resolver reads this, not the
+            // account's AccountState, so the default PendingApproval would make
+            // an otherwise-approved badge resolve as not-found.
+            AdmissionState = AccountState.Approved,
             CreatedAt = SimfClock.Now,
         });
         await appDb.SaveChangesAsync();

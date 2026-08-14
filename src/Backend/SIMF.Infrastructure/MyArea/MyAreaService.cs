@@ -99,8 +99,18 @@ internal sealed class MyAreaService(
         // session). Project the
         // card fields + the primary speaker (DisplayOrder 0) to an anonymous type;
         // distinct by session, since a user may hold more than one active row.
+        // The caller is a signed-in account; their bookings and arrivals are keyed
+        // by their attendee profile, so translate once for both queries below.
+        //
+        // The non-null test guards the same trap throughout: a null profile id
+        // compares IS NULL, which is how an ADMIN BLOCK stores its (absent) holder.
+        // The Kind filter below happens to exclude those too, but the two must not
+        // depend on each other to stay correct.
+        var profileId = await appDbContext.ProfileIdForAccountAsync(userId, cancellationToken);
+
         var rows = await appDbContext.SeatReservations.AsNoTracking()
-            .Where(r => r.ReservedForUserId == userId
+            .Where(r => profileId != null
+                && r.ReservedForProfileId == profileId
                 && (r.Kind == SeatReservationKind.UserBooking
                     || r.Kind == SeatReservationKind.RandomAssignment
                     || r.Kind == SeatReservationKind.OpenSeating)
@@ -133,7 +143,7 @@ internal sealed class MyAreaService(
         // The sessions the user actually arrived at (any HallAttendance row) and
         // the ones they hearted — two cheap id sets resolved on read.
         var attended = (await appDbContext.HallAttendances.AsNoTracking()
-            .Where(a => a.UserId == userId)
+            .Where(a => a.UserProfileId == profileId)
             .Select(a => a.SessionId)
             .Distinct()
             .ToListAsync(cancellationToken)).ToHashSet();
@@ -209,12 +219,17 @@ internal sealed class MyAreaService(
     /// </summary>
     private async Task<List<MyAreaScheduleItem>> LoadScheduleAsync(Guid userId, CancellationToken cancellationToken)
     {
+        // Bookings are keyed by the attendee profile, not by the signed-in account.
+        // The non-null test keeps a profile-less account from matching the admin
+        // blocks, which are the rows stored with no holder at all.
+        var profileId = await appDbContext.ProfileIdForAccountAsync(userId, cancellationToken);
         var sessions = await appDbContext.SeatReservations.AsNoTracking()
-            .Where(r => r.ReservedForUserId == userId
+            .Where(r => profileId != null
+                && r.ReservedForProfileId == profileId
                 // Include OpenSeating joins (general admission) alongside
                 // the seat-specific kinds so a joined session shows in the user's
                 // schedule + booked-sessions count. AdminReservedRow has a null
-                // ReservedForUserId, so it is already excluded.
+                // ReservedForProfileId, so it is already excluded.
                 && (r.Kind == SeatReservationKind.UserBooking
                     || r.Kind == SeatReservationKind.RandomAssignment
                     || r.Kind == SeatReservationKind.OpenSeating)

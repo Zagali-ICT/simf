@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -80,7 +80,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     LastUsedTotpTimestep = table.Column<long>(type: "bigint", nullable: true),
-                    AvatarRelativePath = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    AvatarFileId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     StateChangedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     StateChangedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     PasswordChangedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -157,7 +157,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Purpose = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: false),
-                    CodeHash = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false),
+                    Code = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false),
                     ExpiresAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     ConsumedAt = table.Column<DateTime>(type: "datetime2", nullable: true),

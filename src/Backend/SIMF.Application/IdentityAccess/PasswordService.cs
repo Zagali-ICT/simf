@@ -1,3 +1,7 @@
+// Tests: SIMF.Api.Tests/PasswordTests.cs (forgot / reset / change),
+//        SIMF.Api.Tests/PasswordResetExpiryTests.cs (expired code),
+//        SIMF.Api.Tests/AccountCodeConcurrencyTests.cs (atomic attempt cap and
+//        single-use consumption under a concurrent burst).
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Logging;
@@ -6,6 +10,7 @@ using SIMF.Application.Abstractions;
 using SIMF.Application.Auditing;
 using SIMF.Application.Email;
 using SIMF.Application.IdentityAccess.Abstractions;
+using SIMF.Application.Security;
 using SIMF.Application.Notifications;
 using SIMF.Common;
 using SIMF.Common.Enums;
@@ -153,7 +158,7 @@ public sealed class PasswordService(
                 "انتهت صلاحية رمز إعادة التعيين. اطلب رمزًا جديدًا.");
         }
 
-        if (!CodesMatch(code.CodeHash, AccountCodeHasher.Hash(request.Code)))
+        if (!CodesMatch(code.Code, AccountCodeHasher.Hash(request.Code)))
         {
             // Increment atomically and decide on the returned count. The cap check
             // above read AttemptCount before this guess was compared, so a
@@ -537,7 +542,7 @@ public sealed class PasswordService(
             Id = Guid.NewGuid(),
             UserId = user.Id,
             Purpose = AccountCodePurpose.PasswordReset,
-            CodeHash = AccountCodeHasher.Hash(plaintext),
+            Code = AccountCodeHasher.Hash(plaintext),
             CreatedAt = now,
             ExpiresAt = now.Add(ResetCodeLifetime),
         };
@@ -592,7 +597,5 @@ public sealed class PasswordService(
 
     /// <summary>Compares the codes in constant time, so no timing side channel leaks.</summary>
     private static bool CodesMatch(string stored, string supplied) =>
-        CryptographicOperations.FixedTimeEquals(
-            Encoding.UTF8.GetBytes(stored),
-            Encoding.UTF8.GetBytes(supplied));
+        ConstantTime.Matches(stored, supplied);
 }

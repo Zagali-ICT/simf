@@ -222,6 +222,10 @@ public sealed class BadgeSelfClaimProfileTests : IClassFixture<SimfApiFactory>
             NameArabic = placeholderName,
             NationalityId = 0,
             QrId = qrId,
+            // A bulk-minted badge is approved when it is printed — "unactivated"
+            // here means the holder has not yet filled their own details in, not
+            // that they are awaiting admission.
+            AdmissionState = AccountState.Approved,
             CreatedAt = SimfClock.Now,
         });
         await appDb.SaveChangesAsync();
@@ -302,7 +306,7 @@ public sealed class BadgeSelfClaimProfileTests : IClassFixture<SimfApiFactory>
                 && c.Purpose == AccountCodePurpose.BadgeActivationOtp
                 && c.ConsumedAt == null)
             .OrderByDescending(c => c.CreatedAt)
-            .Select(c => c.CodeHash)
+            .Select(c => c.Code)
             .FirstOrDefaultAsync();
         Assert.NotNull(hash);
         return AuthFlow.RecoverPlaintextCode(hash!);

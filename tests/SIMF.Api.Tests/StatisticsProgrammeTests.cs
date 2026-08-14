@@ -115,7 +115,7 @@ public sealed class StatisticsProgrammeTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task A_registration_just_after_midnight_saudi_counts_on_that_saudi_day()
     {
-        // And to the Registered metric, which reads the Identity database.
+        // And to the Registered metric, which counts attendee records.
         var token = await CreateAdministratorAndSignInAsync();
         var p = await NewProgrammeAsync();
 
@@ -635,12 +635,13 @@ public sealed class StatisticsProgrammeTests : IClassFixture<SimfApiFactory>
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
 
+        var attendeeProfileId = await TestAttendeeProfiles.EnsureForAccountAsync(db, userId);
         db.HallAttendances.Add(new HallAttendance
         {
             Id = Guid.NewGuid(),
             SessionId = sessionId,
             HallId = hallId,
-            UserId = userId,
+            UserProfileId = attendeeProfileId,
             Method = AttendanceMethod.QrScan,
             Enter = enterUtc,
             CreatedAt = SimfClock.Now,
@@ -666,12 +667,22 @@ public sealed class StatisticsProgrammeTests : IClassFixture<SimfApiFactory>
         };
         await users.CreateAsync(user, AuthFlow.Password);
 
+        // The metric counts ATTENDEE RECORDS, not accounts, so that a walk-in
+        // with no account is still a registration — which also stops the
+        // headline and the breakdown disagreeing, as they used to.
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var profileId = await TestAttendeeProfiles.EnsureForAccountAsync(db, user.Id);
+
         // The audit interceptor stamps CreatedAt at insert; the registration
         // metric needs a controlled instant, so set it explicitly afterwards.
         var identity = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
         var stored = await identity.Users.SingleAsync(u => u.Id == user.Id);
         stored.CreatedAt = createdAtUtc;
         await identity.SaveChangesAsync();
+
+        var profile = await db.UserProfiles.SingleAsync(p => p.Id == profileId);
+        profile.CreatedAt = createdAtUtc;
+        await db.SaveChangesAsync();
     }
 
     private async Task<string> CreateAdministratorAndSignInAsync()

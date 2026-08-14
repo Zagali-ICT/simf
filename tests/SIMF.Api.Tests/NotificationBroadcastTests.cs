@@ -336,6 +336,7 @@ public sealed class NotificationBroadcastTests : IClassFixture<SimfApiFactory>
         var seat = 1;
         foreach (var visitorId in visitorIds)
         {
+            var attendeeProfileId = await TestAttendeeProfiles.EnsureForAccountAsync(db, visitorId);
             db.SeatReservations.Add(new SeatReservation
             {
                 Id = Guid.NewGuid(),
@@ -343,7 +344,7 @@ public sealed class NotificationBroadcastTests : IClassFixture<SimfApiFactory>
                 RowLabel = "A",
                 SeatNumber = seat++,
                 Kind = SeatReservationKind.UserBooking,
-                ReservedForUserId = visitorId,
+                ReservedForProfileId = attendeeProfileId,
                 CreatedByUserId = visitorId,
                 CreatedAt = SimfClock.Now,
             });

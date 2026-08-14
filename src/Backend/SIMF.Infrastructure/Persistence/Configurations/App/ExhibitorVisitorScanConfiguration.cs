@@ -6,11 +6,12 @@ namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
 /// <summary>ExhibitorVisitorScan EF config. Indexed by (booth, visitor)
 /// for the "My Visitors" list query and the idempotent capture, and by
-/// (officer, visitor) for the legacy un-backfilled rows. The two USER refs are
-/// bare-Guid logical FKs to <c>SimfUser.Id</c> on the Identity DB — no DB FK;
-/// <c>ExhibitorId</c> is a real FK because both tables live on the App
-/// DB. Auto-discovered by <c>ApplyConfigurationsFromAssembly</c> (App
-/// namespace).</summary>
+/// (officer, visitor) for the legacy un-backfilled rows. <c>ExhibitorUserId</c>
+/// is a bare-Guid logical FK to <c>SimfUser.Id</c> on the Identity DB — the
+/// capturer is a signed-in account. <c>VisitorProfileId</c> and
+/// <c>ExhibitorId</c> are real FKs, because the captured attendee's profile and
+/// the booth both live on the App DB. Auto-discovered by
+/// <c>ApplyConfigurationsFromAssembly</c> (App namespace).</summary>
 internal sealed class ExhibitorVisitorScanConfiguration
     : IEntityTypeConfiguration<ExhibitorVisitorScan>
 {
@@ -25,7 +26,15 @@ internal sealed class ExhibitorVisitorScanConfiguration
         // the booth index below). It stays as a plain index because it still
         // serves the legacy fallback lookup — an un-backfilled row is found by
         // (ExhibitorId IS NULL, ExhibitorUserId).
-        builder.HasIndex(scan => new { scan.ExhibitorUserId, scan.VisitorUserId });
+        builder.HasIndex(scan => new { scan.ExhibitorUserId, scan.VisitorProfileId });
+
+        // The captured attendee. A real FK for the same reason ExhibitorId is
+        // one — UserProfile lives on the App DB beside this table — and Restrict
+        // so removing an attendee cannot silently delete a booth's lead history.
+        builder.HasOne(scan => scan.VisitorProfile)
+            .WithMany()
+            .HasForeignKey(scan => scan.VisitorProfileId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         // FR-EXH-003 — the booth the capture belongs to. Exhibitor and
         // ExhibitorVisitorScan are both on the App DB, so this is a real FK;
@@ -41,7 +50,7 @@ internal sealed class ExhibitorVisitorScanConfiguration
         // idempotent capture. Null ExhibitorId is excluded from the filter: those
         // are the legacy un-backfilled rows, which are never created any more and
         // whose uniqueness the plain index above no longer claims to enforce.
-        builder.HasIndex(scan => new { scan.ExhibitorId, scan.VisitorUserId })
+        builder.HasIndex(scan => new { scan.ExhibitorId, scan.VisitorProfileId })
             .IsUnique()
             .HasFilter("[IsActive] = 1 AND [ExhibitorId] IS NOT NULL");
     }

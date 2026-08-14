@@ -10,6 +10,7 @@ using SIMF.Application.AccessControl.Abstractions;
 using SIMF.Application.Auditing;
 using SIMF.Application.Email;
 using SIMF.Application.IdentityAccess.Abstractions;
+using SIMF.Application.Security;
 using SIMF.Common;
 using SIMF.Common.Badges;
 using SIMF.Common.Enums;
@@ -246,7 +247,7 @@ internal sealed class BadgeAuthService(
                 "The verification code has expired. Request a new one.",
                 "انتهت صلاحية رمز التحقق. اطلب رمزًا جديدًا.");
         }
-        if (!CodesMatch(code.CodeHash, AccountCodeHasher.Hash(request.Code)))
+        if (!CodesMatch(code.Code, AccountCodeHasher.Hash(request.Code)))
         {
             // Atomic increment, decided on the returned count. A read-modify-write
             // here lets concurrent wrong tries each read 0 and write 1, so the cap
@@ -562,7 +563,7 @@ internal sealed class BadgeAuthService(
             UserId = userId,
             Purpose = AccountCodePurpose.BadgeActivationOtp,
             // M3 (security) — store the keyed hash; `value` (plaintext) is emailed.
-            CodeHash = AccountCodeHasher.Hash(value),
+            Code = AccountCodeHasher.Hash(value),
             CreatedAt = now,
             ExpiresAt = now.Add(CodeLifetime),
         }, cancellationToken);
@@ -612,9 +613,7 @@ internal sealed class BadgeAuthService(
             "رمز التحقق غير صالح.");
 
     private static bool CodesMatch(string stored, string supplied) =>
-        CryptographicOperations.FixedTimeEquals(
-            Encoding.UTF8.GetBytes(stored),
-            Encoding.UTF8.GetBytes(supplied ?? string.Empty));
+        ConstantTime.Matches(stored, supplied);
 
     private Task<EmailMessage> BuildActivationEmailAsync(
         string email, string code, CancellationToken cancellationToken) =>

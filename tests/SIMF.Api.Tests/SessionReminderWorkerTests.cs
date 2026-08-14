@@ -198,6 +198,7 @@ public sealed class SessionReminderWorkerTests : IClassFixture<SimfApiFactory>
             CreatedAt = SimfClock.Now,
         };
         db.Sessions.Add(session);
+        var attendeeProfileId = await TestAttendeeProfiles.EnsureForAccountAsync(db, visitorId);
         db.SeatReservations.Add(new SeatReservation
         {
             Id = Guid.NewGuid(),
@@ -205,7 +206,7 @@ public sealed class SessionReminderWorkerTests : IClassFixture<SimfApiFactory>
             RowLabel = "A",
             SeatNumber = 1,
             Kind = SeatReservationKind.UserBooking,
-            ReservedForUserId = visitorId,
+            ReservedForProfileId = attendeeProfileId,
             CreatedByUserId = visitorId,
             CreatedAt = SimfClock.Now,
         });

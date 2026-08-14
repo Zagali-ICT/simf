@@ -135,11 +135,19 @@ internal sealed class SessionReminderWorker(
 
         foreach (var session in due)
         {
+            // A seat is held by an attendee PROFILE; the reminder is delivered to
+            // the ACCOUNT behind it, so join through UserProfile (same database).
+            // A holder with no account is skipped — there is no device to remind.
             var attendeeIds = await db.SeatReservations
                 .Where(r => r.SessionId == session.Id
                     && r.ReleasedAt == null
-                    && r.ReservedForUserId != null)
-                .Select(r => r.ReservedForUserId!.Value)
+                    && r.ReservedForProfileId != null)
+                .Join(db.UserProfiles,
+                    r => r.ReservedForProfileId!.Value,
+                    p => p.Id,
+                    (r, p) => p.UserId)
+                .Where(userId => userId != null)
+                .Select(userId => userId!.Value)
                 .Distinct()
                 .ToListAsync(cancellationToken);
 

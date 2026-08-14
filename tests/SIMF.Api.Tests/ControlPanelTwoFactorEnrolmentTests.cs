@@ -406,7 +406,7 @@ public sealed class ControlPanelTwoFactorEnrolmentTests
                     && code.Purpose == AccountCodePurpose.PasswordReset
                     && code.ConsumedAt == null)
                 .OrderByDescending(code => code.CreatedAt)
-                .Select(code => code.CodeHash)
+                .Select(code => code.Code)
                 .FirstAsync();
             inviteCode = AuthFlow.RecoverPlaintextCode(hash);
         }

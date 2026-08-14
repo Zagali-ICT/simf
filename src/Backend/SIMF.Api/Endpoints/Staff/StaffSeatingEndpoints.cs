@@ -94,7 +94,12 @@ public sealed class StaffSeatOccupantEndpoint(ISeatReservationService service)
 /// <para>Authorisation is the SAME <c>Seating.Assist</c> permission as the seat
 /// lookups, and the photo is only served for a user who actually HOLDS an active
 /// reservation in this session — so the endpoint can never be used to enumerate
-/// arbitrary attendees' photos.</para></summary>
+/// arbitrary attendees' photos.</para>
+/// <para>The route segment is an ACCOUNT id and stays one: it is the shipped
+/// shape the staff tablet builds from <c>StaffSeatOccupant.UserId</c>, and an
+/// avatar belongs to an account in any case. The seat it is checked against is
+/// held by the attendee's PROFILE, so the account is translated first — an
+/// attendee with no account has no avatar to serve and never reaches here.</para></summary>
 public sealed class StaffSeatOccupantPhotoEndpoint(
     SimfAppDbContext appDb,
     IFileStorageProvider storage)
@@ -117,10 +122,15 @@ public sealed class StaffSeatOccupantPhotoEndpoint(
 
         var sessionId = Route<Guid>("sessionId");
         var userId = Route<Guid>("userId");
-        var holdsSeat = await appDb.SeatReservations.AsNoTracking()
-            .AnyAsync(r => r.SessionId == sessionId
-                && r.ReservedForUserId == userId
-                && r.ReleasedAt == null, ct);
+        var profileId = await appDb.UserProfiles.AsNoTracking()
+            .Where(p => p.UserId == userId)
+            .Select(p => (Guid?)p.Id)
+            .SingleOrDefaultAsync(ct);
+        var holdsSeat = profileId is not null
+            && await appDb.SeatReservations.AsNoTracking()
+                .AnyAsync(r => r.SessionId == sessionId
+                    && r.ReservedForProfileId == profileId
+                    && r.ReleasedAt == null, ct);
         if (!holdsSeat)
         {
             // Not seated in this session → nothing to show. 404 (not 403) so the

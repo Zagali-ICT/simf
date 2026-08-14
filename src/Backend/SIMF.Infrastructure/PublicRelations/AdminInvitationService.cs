@@ -365,13 +365,7 @@ internal sealed class AdminInvitationService(
         var vips = appDbContext.UserProfiles
             .AsNoTracking()
             .Where(profile => profile.ProfileType != null
-                && VipProfileTypes.All.Contains(profile.ProfileType.Name))
-            // Only VIPs who hold an Identity account: AdminVipSummary.UserId is
-            // non-nullable, the grid keys its rows on it, and its Edit action
-            // opens the account form — none of which an accountless VIP can
-            // satisfy. Filtered in the query, not after paging, so the total and
-            // the page agree.
-            .Where(profile => profile.UserId != null);
+                && VipProfileTypes.All.Contains(profile.ProfileType.Name));
 
         if (!string.IsNullOrWhiteSpace(query.Search))
         {
@@ -397,7 +391,7 @@ internal sealed class AdminInvitationService(
             .Select(profile => new
             {
                 profile.Id,
-                UserId = profile.UserId!.Value,
+                profile.UserId,
                 profile.Name,
                 profile.NameArabic,
                 profile.JobTitle,
@@ -414,9 +408,15 @@ internal sealed class AdminInvitationService(
                 skip, top);
         }
 
-        var userIds = pageRows.Select(row => row.UserId).ToList();
-        var emailsByUser = await userDirectory.GetEmailsAsync(
-            userIds, cancellationToken);
+        // Only the guests holding an account have an email to resolve; the rest
+        // are listed without one rather than left off the list.
+        var userIds = pageRows
+            .Where(row => row.UserId != null)
+            .Select(row => row.UserId!.Value)
+            .ToList();
+        var emailsByUser = userIds.Count == 0
+            ? new Dictionary<Guid, string?>()
+            : await userDirectory.GetEmailsAsync(userIds, cancellationToken);
 
         var items = pageRows.Select(row => new AdminVipSummary(
             row.Id,
@@ -427,7 +427,8 @@ internal sealed class AdminInvitationService(
             row.JobTitleArabic,
             row.ProfileTypeName,
             row.ProfileTypeNameArabic,
-            emailsByUser.TryGetValue(row.UserId, out var email) ? email : null))
+            row.UserId is { } accountId
+                && emailsByUser.TryGetValue(accountId, out var email) ? email : null))
             .ToList();
 
         return GridPage<AdminVipSummary>.Of(items, total,

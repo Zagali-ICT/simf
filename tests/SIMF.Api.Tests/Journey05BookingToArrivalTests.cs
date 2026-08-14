@@ -10,11 +10,12 @@
 // been executed: nothing proved that the badge the door accepts belongs to the
 // account that holds the seat.
 //
-// The join under test is a chain of ids that crosses the two databases (D-157):
+// The join under test is a chain of ids, all of them on the App DB now that the
+// attendee record — not the account — is what every one of them names:
 //
-//   SeatReservation.ReservedForUserId (App DB)
-//     == the Identity SimfUser.Id that UserProfile.QrId resolves to (QrResolver)
-//     == HallAttendance.UserId (App DB)
+//   SeatReservation.ReservedForProfileId
+//     == the UserProfile.Id that UserProfile.QrId resolves to (QrResolver)
+//     == HallAttendance.UserProfileId
 //
 // and it is that chain — not any status code — which makes SessionSeatCell
 // .CheckedIn flip for THAT reservation and no other. Every assertion below is on
@@ -87,14 +88,14 @@ public sealed class Journey05BookingToArrivalTests : IClassFixture<SimfApiFactor
         var controlBooking = (await controlPick.Content
             .ReadFromJsonAsync<ApiResult<MySeatReservation>>())!.Data!;
 
-        // The stored hold is keyed to the IDENTITY user id — the same id the badge
+        // The stored hold is keyed to the attendee PROFILE — the same id the badge
         // QR will have to resolve to three steps from now, or the chain is broken.
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
             var stored = await db.SeatReservations.AsNoTracking()
                 .SingleAsync(r => r.Id == booking.ReservationId);
-            Assert.Equal(holder.UserId, stored.ReservedForUserId);
+            Assert.Equal(holder.ProfileId, stored.ReservedForProfileId);
             Assert.Null(stored.ReleasedAt);
         }
 
@@ -129,7 +130,7 @@ public sealed class Journey05BookingToArrivalTests : IClassFixture<SimfApiFactor
             var attendance = Assert.Single(await db.HallAttendances.AsNoTracking()
                 .Where(a => a.SessionId == session.Id)
                 .ToListAsync());
-            Assert.Equal(holder.UserId, attendance.UserId);   // == ReservedForUserId
+            Assert.Equal(holder.ProfileId, attendance.UserProfileId); // == ReservedForProfileId
             Assert.Equal(hall.Id, attendance.HallId);
             Assert.Equal(AttendanceMethod.QrScan, attendance.Method);
             Assert.Null(attendance.Leave);
@@ -163,7 +164,7 @@ public sealed class Journey05BookingToArrivalTests : IClassFixture<SimfApiFactor
         var page = (await plan.Content
             .ReadFromJsonAsync<ApiResult<GridPage<SeatPlanCell>>>())!.Data!;
         var holderCell = page.Items.Single(c => c.ReservationId == booking.ReservationId);
-        Assert.Equal(holder.UserId, holderCell.HolderUserId);
+        Assert.Equal(holder.ProfileId, holderCell.HolderProfileId);
         Assert.Equal("Faisal Al-Otaibi", holderCell.HolderName);
         Assert.True(holderCell.CheckedIn);
         Assert.False(page.Items
@@ -210,7 +211,7 @@ public sealed class Journey05BookingToArrivalTests : IClassFixture<SimfApiFactor
         var row = Assert.Single(await db.HallAttendances.AsNoTracking()
             .Where(a => a.SessionId == session.Id)
             .ToListAsync());
-        Assert.Equal(holder.UserId, row.UserId);
+        Assert.Equal(holder.ProfileId, row.UserProfileId);
         // D-227 / D-244 — arrival never writes to the booking: the reservation is
         // still the same live Approved hold, only its view of attendance changed.
         var stored = await db.SeatReservations.AsNoTracking()
@@ -258,7 +259,7 @@ public sealed class Journey05BookingToArrivalTests : IClassFixture<SimfApiFactor
         var attendance = Assert.Single(await db.HallAttendances.AsNoTracking()
             .Where(a => a.SessionId == session.Id)
             .ToListAsync());
-        Assert.Equal(holder.UserId, attendance.UserId);
+        Assert.Equal(holder.ProfileId, attendance.UserProfileId);
         Assert.NotNull(attendance.Leave);
         var stored = await db.SeatReservations.AsNoTracking()
             .SingleAsync(r => r.Id == booking.ReservationId);
@@ -310,6 +311,10 @@ public sealed class Journey05BookingToArrivalTests : IClassFixture<SimfApiFactor
                 NameArabic = nameArabic,
                 NationalityId = 682,   // ISO 3166-1 numeric — SA
                 PlaceOfBirth = "Riyadh",
+                // The hall door reads admission off the PROFILE; left at its
+                // PendingApproval default the holder is refused before the seat
+                // confirmation this journey exists to prove.
+                AdmissionState = AccountState.Approved,
                 CreatedAt = SimfClock.Now,
             });
             await appDb.SaveChangesAsync();

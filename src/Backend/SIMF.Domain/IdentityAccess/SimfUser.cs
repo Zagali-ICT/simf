@@ -48,14 +48,20 @@ public class SimfUser : IdentityUser<Guid>
     /// 5.2).</summary>
     public long? LastUsedTotpTimestep { get; set; }
 
-    /// <summary><b>Not a path.</b> It holds the id of the avatar's
-    /// <c>StoredFile</c> row in the App database, as a bare Guid string,
-    /// because a foreign key cannot cross the two databases. The bytes moved to
-    /// the unified file store but the name and the column stayed, so the
-    /// Identity-side readers that only test it for emptiness (the avatar URL
-    /// builder, the profile-completeness and face-photo gates) kept working
-    /// without a migration. Null means no avatar.</summary>
-    public string? AvatarRelativePath { get; set; }
+    /// <summary>The avatar's <c>StoredFile</c> row in the App database, as a
+    /// bare Guid and deliberately not a foreign key: SQL Server has no
+    /// cross-database FK syntax, and the permanent Identity/App database split
+    /// forbids the reference anyway, so the
+    /// service layer owns the link exactly as it does for
+    /// <c>UserProfile.UserId</c>. Null means no avatar.
+    ///
+    /// <para>This was <c>AvatarRelativePath</c>, a string, until the column was
+    /// found still advertising a path it had not held since the file store was
+    /// unified. Nothing reads it to fetch bytes: the avatar endpoint resolves
+    /// them by owner instead (<c>Service == Avatar &amp;&amp; OwnerEntityId ==
+    /// userId</c>). It is a presence sentinel, the pointer the delete path
+    /// retires, and the cache-buster input.</para></summary>
+    public Guid? AvatarFileId { get; set; }
 
     /// <summary>When <see cref="AccountState"/> last changed. Written on every
     /// transition through approve, reject, disable and unblock, and back-filled
