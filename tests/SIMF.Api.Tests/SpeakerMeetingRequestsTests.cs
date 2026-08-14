@@ -904,7 +904,7 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
         // replacing the D-729 VIP-tier gate), so the flow requester used by these
         // submit + admin-respond tests must carry it. The helper below grants the
         // flag and assigns a VIP tier; the dedicated eligibility-gate coverage
-        // lives in SpeakerMeetingVipSlotTests.
+        // lives in SpeakerMeetingEligibilityAndSlotTests.
         await AssignVipProfileAsync(email);
         var sign = await _client.PostAsJsonAsync(
             "/api/v1/app/auth/sign-in",
@@ -917,7 +917,7 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
     // per-user UserProfile.AllowsSpeakerMeeting flag (admin-assigned in prod) so the
     // speaker-meeting eligibility gate lets the flow tests through. Still assigns a
     // VIP tier too (harmless; some assertions read the tier). The dedicated
-    // eligibility-gate coverage lives in SpeakerMeetingVipSlotTests.
+    // eligibility-gate coverage lives in SpeakerMeetingEligibilityAndSlotTests.
     private async Task AssignVipProfileAsync(string email)
     {
         using var scope = _factory.Services.CreateScope();
