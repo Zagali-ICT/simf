@@ -6,6 +6,7 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_bottom_nav.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/core/utils/refresh.dart';
 import 'package:simf_app/features/account/data/profile_repository.dart' show referenceNumberProvider;
 import 'package:simf_app/features/badge/widgets/badge_actions.dart';
 import 'package:simf_app/features/badge/widgets/badge_qr_card.dart';
@@ -98,6 +99,25 @@ class _BadgeScreenState extends ConsumerState<BadgeScreen> {
     }
   }
 
+  /// Owner rule: every data page pulls to refresh (CLAUDE.md section 13.6).
+  /// The badge was the one data screen with NO refresh hook anywhere, and it
+  /// was missing where it mattered most: a pending account pulls here to find
+  /// out it has been approved, and until now had to restart the app to see it.
+  /// `_load()` re-checks approval by construction — the dashboard 403s while
+  /// unapproved and that 403 is what sets the pending state.
+  ///
+  /// A signed-OUT visitor has no account to fetch, so the gesture completes
+  /// without a call rather than firing a 401.
+  Future<void> _refresh() async {
+    if (_signedOut) {
+      return;
+    }
+    await Future.wait<void>(<Future<void>>[
+      _load(),
+      refreshAsync(ref, referenceNumberProvider.future),
+    ]);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
@@ -118,7 +138,9 @@ class _BadgeScreenState extends ConsumerState<BadgeScreen> {
       return const Center(child: CircularProgressIndicator());
     }
     if (_signedOut) {
-      // No account at all — the guest copy + a way in (BUG-013).
+      // No account at all — the guest copy + a way in (BUG-013). Not wrapped
+      // in a refresh host: there is nothing to re-fetch, and the CTA is the
+      // way forward here, not a pull.
       return SimfGuestPrompt(
         icon: Icons.qr_code_2_outlined,
         message: l10n.badgeGuestBody,
@@ -128,46 +150,61 @@ class _BadgeScreenState extends ConsumerState<BadgeScreen> {
     }
     if (_notApproved) {
       // Signed-in but not approved — show "account not approved", not the QR.
-      return SimfEmptyState(
-        icon: Icons.lock_outline,
-        message: l10n.badgeNotApprovedBody,
+      // Refreshable: this is the state a user sits in while waiting, and the
+      // pull is how they discover approval has landed.
+      return SimfRefreshableMessage(
+        onRefresh: _refresh,
+        child: SimfEmptyState(
+          icon: Icons.lock_outline,
+          message: l10n.badgeNotApprovedBody,
+        ),
       );
     }
     final identity = _identity;
     if (_error || identity == null) {
-      return SimfErrorState(
-        message: l10n.badgeError,
-        retryLabel: l10n.retryLabel,
-        onRetry: () => unawaited(_load()),
+      return SimfRefreshableMessage(
+        onRefresh: _refresh,
+        child: SimfErrorState(
+          message: l10n.badgeError,
+          retryLabel: l10n.retryLabel,
+          onRetry: () => unawaited(_load()),
+        ),
       );
     }
     final qrId = identity.qrId?.trim() ?? '';
     if (qrId.isEmpty) {
       // Pending approval — the badge is issued once approved (Page_014 L-1).
-      return SimfEmptyState(
-        icon: Icons.qr_code_2_outlined,
-        message: l10n.badgePendingBody,
+      return SimfRefreshableMessage(
+        onRefresh: _refresh,
+        child: SimfEmptyState(
+          icon: Icons.qr_code_2_outlined,
+          message: l10n.badgePendingBody,
+        ),
       );
     }
-    return ListView(
-      padding: const EdgeInsets.all(SimfTokens.space4),
-      children: <Widget>[
-        BadgeQrCard(
-          l10n: l10n,
-          identity: identity,
-          qrId: qrId,
-          maskedId: maskedBadgeId(referenceNumber ?? qrId),
-        ),
-        const SizedBox(height: SimfTokens.space4),
-        // DEF-EXH-005 — the actions gate on the signed-in app ROLE, not on the
-        // dashboard's isVisitor flag (which is false for every partner type, so
-        // Staff / Moderator / Media / Sponsor were all shown the exhibitor-only
-        // scan button and then bounced by the router).
-        BadgeActions(
-          l10n: l10n,
-          role: _currentUser?.effectiveAppRole ?? AppRole.guest,
-        ),
-      ],
+    return SimfPullToRefresh(
+      onRefresh: _refresh,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(SimfTokens.space4),
+        children: <Widget>[
+          BadgeQrCard(
+            l10n: l10n,
+            identity: identity,
+            qrId: qrId,
+            maskedId: maskedBadgeId(referenceNumber ?? qrId),
+          ),
+          const SizedBox(height: SimfTokens.space4),
+          // DEF-EXH-005 — the actions gate on the signed-in app ROLE, not on
+          // the dashboard's isVisitor flag (which is false for every partner
+          // type, so Staff / Moderator / Media / Sponsor were all shown the
+          // exhibitor-only scan button and then bounced by the router).
+          BadgeActions(
+            l10n: l10n,
+            role: _currentUser?.effectiveAppRole ?? AppRole.guest,
+          ),
+        ],
+      ),
     );
   }
 }
