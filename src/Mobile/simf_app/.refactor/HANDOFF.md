@@ -130,16 +130,37 @@ nearly half phantom.
 
 ### Next, in order
 
-1. The read-audit rows that survive: ~73 DUPLICATION, 42 DOC-HEADER, 45 NAMING,
-   plus the genuinely data-driven NON-LAZY-LIST subset. **ONE-WIDGET-PER-FILE
-   is closed**: the three heterogeneous files are split (16 widgets, 16 files,
-   originals removed) and the other 17 findings are cohesive groups that
-   CLAUDE.md section 1 now explicitly permits.
-2. Decision 5 (all 71 screen headers to the section 9 template), decision 6
-   (tokens single-use audit).
-3. Decision 7 — the 35 `AsyncValue` conversions. A **behaviour change**, so its
-   own phase with its own verification, not part of the per-file loop.
-4. ~~Decision 8 (`packages/`)~~ and ~~Phase E~~ — **both done**.
+1. **Decision 7 — the 35 `AsyncValue` conversions. THE ONLY PHASE LEFT.** A
+   behaviour change, so its own phase with its own verification, not part of
+   the per-file loop. Two things to know before starting:
+   * `test/repo/pull_to_refresh_coverage_test.dart` keys on widget NAMES. A
+     shared async-body widget that owns the refresh will need that regex
+     extended, deliberately, in the same changeset.
+   * The 21 screens whose `Perf:` line now reads "builds every child up front"
+     are the natural scope boundary — that list came out of Decision 5 and did
+     not exist before.
+2. The surviving read-audit rows: DOC-HEADER (largely absorbed by Decision 5),
+   NAMING, and the genuinely data-driven NON-LAZY-LIST subset.
+   **ONE-WIDGET-PER-FILE is closed**: the three heterogeneous files are split
+   (16 widgets, 16 files, originals removed) and the other 17 findings are
+   cohesive groups that CLAUDE.md section 1 now explicitly permits.
+3. ~~Decision 5~~ (71 headers), ~~Decision 6~~ (token audit),
+   ~~Decision 8~~ (`packages/`), ~~Phase E~~ — **all done**.
+
+### Tools left behind, all in `.refactor/`
+
+Each refuses rather than guesses, and each exists because a simpler approach
+guessed wrong once — the docstrings say which.
+
+| Script | Does |
+|---|---|
+| `wrap_comments.py` | re-flows comment blocks per UNIT (prose / list item / `// ignore:` copied byte for byte); measures in UTF-16 code units. **The merge of three earlier wrappers** — do not fork a fourth, add a unit kind |
+| `split_long_strings.py` | splits a literal into two adjacent literals, which Dart concatenates at compile time |
+| `lift_trailing_comments.py` | moves a trailing `// note` off a declaration into a `///` above — the one shape no wrapper can touch |
+| `collapse_refresh_pairs.py` | hand-nested `SimfPullToRefresh`+`SimfPullableHost` -> `SimfRefreshableMessage` |
+| `screen_header_fields.py` | derives the section 9 `Route:`/`Data:`/`Perf:` fields from the code |
+| `token_audit.py` | counts real `SimfTokens` use — **both** the qualified and the bare-inside-tokens.dart form |
+| `drop_dead_tokens.py` | deletes a verified-unused token and its doc block |
 
 ### BLOCKED
 
