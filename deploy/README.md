@@ -48,10 +48,11 @@ Build, Test & Publish ──▶ Deploy to IIS
 > ### ⚠️ The test gates are OFF by default (D-887)
 >
 > `runTests` defaults to **`false`**, so an ordinary run **does not test**. It
-> skips the fast suites (~920 tests, including the Control Panel permission and
-> navigation gates), `SIMF.Api.Tests` (2272 integration tests, including the
-> anonymous-endpoint allow-list), the LocalDB provisioning that serves them, and
-> the Flutter and BadgeDesk stages.
+> skips the fast suites, `SIMF.Api.Tests`, the LocalDB provisioning that serves
+> them, and the Flutter and BadgeDesk stages. The full list of what that covers,
+> and what each one was catching, is in the `runTests` comment in
+> [`azure-pipelines.yml`](../azure-pipelines.yml) — kept in one place so the two
+> cannot drift apart.
 >
 > **A green run with `runTests` off means the code compiles and the packages
 > publish. It says nothing about behaviour, permissions or the security
@@ -178,10 +179,12 @@ Service, only the `Workers` block in `ops.ps1` changes.
 .\ops.ps1 -Action Install -Target Edge -CertThumbprint <thumbprint>
 ```
 
-On a per-server estate each box installs only its own target. `-Target All`
-remains for a single box that still runs everything; `ops.ps1` refuses to install
-while `-ApiHost` and `-EdgeHost` name the same host, since two sites cannot share
-a hostname.
+Each of the two servers hosts all four sites, so **`-Target All` is the normal
+case** on both `Pre-production` and `Production` (D-886); the individual targets
+remain for installing or restarting one site at a time. `ops.ps1` refuses to
+install while `-ApiHost` and `-EdgeHost` name the same host, since two sites
+cannot share a hostname — so the API and the edge need distinct hostnames on the
+same box.
 
 TLS bindings and the CA certificate are configured separately (see the HLD /
 SIMF-OPS-001); `Install` creates the HTTP binding only.

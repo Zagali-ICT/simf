@@ -47,14 +47,14 @@ trigger:
 #     pre-production without touching production, or to push a hotfix to
 #     production when pre-production is mid-test.
 #
-#     A `parameters` boolean is used rather than a variable because it is the
-#     only kind the Run pipeline dialog offers as a tick box, and because it
-#     expands at template-parse time, which is what lets it omit the job
-#     entirely below rather than run a job that reports "skipped".
-#
 #     Untick BOTH and the whole Deploy stage is omitted - build, test and
 #     publish still run, and the artifact is still produced, so a build-only run
 #     needs no separate pipeline.
+#
+#     Why these are `parameters` and why the Deploy jobs use `${{ if }}` rather
+#     than `condition:` is explained once, at the Deploy stage that depends on
+#     it. Not repeated here: a file that states the same rule twice is a file
+#     that can disagree with itself.
 parameters:
 - name: deployPreProduction
   displayName: 'Deploy to Pre-production'
@@ -73,9 +73,11 @@ parameters:
 #     WHAT THIS TURNS OFF, AND WHAT IT COSTS. Read this before assuming a green
 #     run means anything about correctness:
 #       * the fast suites - Domain, Application, ApiClient, ControlPanel, Web,
-#         E2E. ~920 tests, about a minute. These include the Control Panel
+#         E2E. About a minute between them. These include the Control Panel
 #         permission and navigation gates, which are the checks that stop an
 #         admin page shipping ungated, and the E2E-catalogue integrity ratchet.
+#         (No test count is quoted here on purpose: nothing pins one, so a
+#         number written into a comment is wrong by the next sprint.)
 #       * SIMF.Api.Tests - 2272 integration tests, the whole admin + app API
 #         surface, including the anonymous-endpoint allow-list that fails the
 #         build when an 18th unauthenticated entry point appears.
@@ -336,6 +338,33 @@ stages:
     #     _TOTP_SECRET as secret variables, and add a browser-install step:
     #       pwsh tests/SIMF.E2E.Tests/bin/$(buildConfiguration)/net10.0/playwright.ps1 install chromium
     #     ---
+    # --- Pipeline integrity guards. UNCONDITIONAL, and deliberately NOT behind
+    #     `runTests` (D-888).
+    #
+    #     These are static assertions over azure-pipelines.yml itself: that no
+    #     step is disabled, that every test project is still referenced, that the
+    #     Deploy stage names only the two real Environments, and that every
+    #     referenced YAML template exists. They assert nothing about the product.
+    #
+    #     They were briefly gated with everything else, which put them in a
+    #     strange position: `Every_yaml_template_the_pipeline_references_exists`
+    #     says a missing template means "the pipeline does not compile at all, so
+    #     nothing runs, including the gates that would have reported it" - and a
+    #     gated version of that test IS one of the gates that would not report
+    #     it. A fifth environment or a moved template would land green.
+    #
+    #     D-887 priced the SLOW suites out of a deploy run: 2272 integration
+    #     tests at 38 minutes. It did not price these out, and they are not the
+    #     same purchase. The cost here is building SIMF.ControlPanel.Tests plus a
+    #     filtered run of one class - tens of seconds, against a pipeline that
+    #     otherwise cannot tell you it has stopped testing.
+    - task: DotNetCoreCLI@2
+      displayName: 'Pipeline integrity guards (always run)'
+      inputs:
+        command: 'test'
+        projects: '$(Build.SourcesDirectory)/tests/SIMF.ControlPanel.Tests/SIMF.ControlPanel.Tests.csproj'
+        arguments: '--configuration $(buildConfiguration) --filter FullyQualifiedName~PipelineTestGateTests'
+
     - task: DotNetCoreCLI@2
       displayName: 'Run tests (fast suites)'
       # OFF BY DEFAULT (D-887). These suites cost about a minute, so they are not
@@ -437,6 +466,32 @@ stages:
         projects: '$(Build.SourcesDirectory)/src/Edge/SIMF.MobileEdge/SIMF.MobileEdge.csproj'
         arguments: '--configuration $(buildConfiguration) --no-restore --output $(Build.ArtifactStagingDirectory)/edge'
         zipAfterPublish: true
+
+    # --- The two deploy scripts travel WITH the packages (D-888).
+    #
+    #     The deploy jobs need `pipeline-deploy-one.ps1` and the `iis-deploy.ps1`
+    #     it calls, and a deployment job does not clone the repository. The first
+    #     fix for that was `checkout: self` in the deploy template, which pulled
+    #     the whole repo - hundreds of MB of history and ~5,000 files, re-cleaned
+    #     every run - onto each production server to obtain 12 KB of PowerShell.
+    #     On a changeset whose purpose is a quick deploy, that was the wrong
+    #     trade: the artifact already travels to both servers, so the scripts
+    #     ride along and the clone disappears.
+    #
+    #     NAMED INDIVIDUALLY, NOT `deploy/*.ps1`. The filled
+    #     `set-env-{api,cp,web,edge}.ps1` carry production secrets and live in
+    #     this folder, kept out of the repository by .gitignore. A wildcard would
+    #     put any that ever appeared on an agent's working tree into a build
+    #     artifact, which is a place secrets must never reach. Two names cannot
+    #     do that. A new script the deploy jobs need must be added here by name.
+    - task: CopyFiles@2
+      displayName: 'Stage the deploy scripts into the artifact'
+      inputs:
+        SourceFolder: '$(Build.SourcesDirectory)/deploy'
+        Contents: |
+          pipeline-deploy-one.ps1
+          iis-deploy.ps1
+        TargetFolder: '$(Build.ArtifactStagingDirectory)/deploy'
 
     - task: PublishBuildArtifacts@1
       displayName: 'Publish Artifacts'
