@@ -368,7 +368,11 @@ void main() {
         gates: <OperatorGate>[_gate()],
         offline: true,
         offlineVerdict: const OfflineGateVerdict.allowed(
-          OfflineBadge(profileTypeCode: 1, sequence: 3000042),
+          OfflineBadge(
+            profileId: '11111111-2222-3333-4444-555555555555',
+            editionYear: 2026,
+            profileTypeCode: 1,
+          ),
         ),
       );
       await _pump(tester, repo);

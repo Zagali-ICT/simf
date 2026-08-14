@@ -346,7 +346,8 @@ internal sealed partial class AdminAccountService(
         AdminWalkInRegistrationRequest request,
         CancellationToken cancellationToken = default,
         bool? expectedIsVisitor = null,
-        string? presetQrId = null)
+        string? presetQrId = null,
+        Guid presetProfileId = default)
     {
         // Walk-in registration always creates a Visitor-typed
         // account. The `kind` argument stays on the signature for
@@ -671,6 +672,13 @@ internal sealed partial class AdminAccountService(
         if (!string.IsNullOrEmpty(presetQrId))
         {
             profile.QrId = presetQrId;
+        }
+        // The same reasoning applies to the id itself. The badge the desk
+        // printed carries this Guid, so creating the record under any other one
+        // would leave a badge that decrypts perfectly and resolves to nobody.
+        if (presetProfileId != Guid.Empty)
+        {
+            profile.Id = presetProfileId;
         }
         appDbContext.UserProfiles.Add(profile);
 
