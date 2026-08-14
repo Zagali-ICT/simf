@@ -1,4 +1,4 @@
-﻿// Journey BF-05 (docs/tests/SIMF-Business-Flows.md § BF-05, E2E-BF-05-001) — one
+// Journey BF-05 (docs/tests/SIMF-Business-Flows.md § BF-05, E2E-BF-05-001) — one
 // seat travelling from booking to recorded attendance, in one run.
 //
 // Both halves already had tests, separately: SeatReservationsTests drives the

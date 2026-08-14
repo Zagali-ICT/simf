@@ -1,4 +1,4 @@
-﻿// Tests cover the 13-step constraint engine in GateOperatorService:
+// Tests cover the 13-step constraint engine in GateOperatorService:
 // step 2 (operator not assigned → 403); step 3 (QR_UNKNOWN); step 6
 // (HOLDER_NOT_APPROVED); step 11 (PROFILE_TYPE_NOT_ALLOWED + L-15 empty-
 // filtered-list denies all); step 12 (5-second duplicate absorption + Both-

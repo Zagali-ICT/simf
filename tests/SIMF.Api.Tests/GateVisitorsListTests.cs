@@ -1,4 +1,4 @@
-﻿// D-160 — POST /api/v1/app/gates/{gateId}/visitors/list — cursor-paged
+// D-160 — POST /api/v1/app/gates/{gateId}/visitors/list — cursor-paged
 // view of scans at a single gate, backed by the D-158 snapshot columns.
 using System.Net;
 using System.Net.Http.Headers;

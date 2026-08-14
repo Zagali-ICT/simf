@@ -1,4 +1,4 @@
-﻿// P5.1b — D-241 (FDS-003 §5.4, FR-305/506): attendee-facing hall arrival via the
+// P5.1b — D-241 (FDS-003 §5.4, FR-305/506): attendee-facing hall arrival via the
 // GPS geofence. Covers inside/outside the geofence, the no-geofence hall, the
 // idempotent re-arrival (one open row), departure, invalid coordinates, the
 // pre-arrival status, and the anonymous rejection.

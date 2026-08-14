@@ -1,4 +1,4 @@
-﻿// Tests: SIMF.Api.Tests/DeviceKeySignInTests.cs
+// Tests: SIMF.Api.Tests/DeviceKeySignInTests.cs
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
 using SIMF.Api.RequestContext;
