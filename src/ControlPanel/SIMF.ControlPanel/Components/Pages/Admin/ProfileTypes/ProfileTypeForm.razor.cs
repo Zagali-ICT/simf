@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
@@ -59,6 +59,13 @@ public partial class ProfileTypeForm
     private bool ShowPartnerDirectoryToggle =>
         _isEdit ? Initial?.IsVisitor == false : IsPartnerForm;
 
+    // The VIP-tier toggle is the mirror image: it is only meaningful for
+    // AUDIENCE types (VVIP / VIP), the pool VIP-tier seat self-reservation
+    // draws from. A partner type is never a VIP tier, so the box stays off
+    // their form and the request carries false.
+    private bool ShowVipTierToggle =>
+        _isEdit ? Initial?.IsVisitor != false : !IsPartnerForm;
+
     protected override void OnInitialized()
     {
         _isEdit = Initial is not null;
@@ -72,6 +79,7 @@ public partial class ProfileTypeForm
             _model.IsActive = Initial.IsActive;
             _model.IsAppRegisterable = Initial.IsAppRegisterable;
             _model.ShowInPartnerDirectory = Initial.ShowInPartnerDirectory;
+            _model.IsVipTier = Initial.IsVipTier;
         }
         _editContext = new EditContext(_model);
         _messages = new ValidationMessageStore(_editContext);
@@ -214,6 +222,9 @@ public partial class ProfileTypeForm
         IsAppRegisterable = _model.IsAppRegisterable,
         // Meet-People networking visibility toggle.
         ShowInPartnerDirectory = _model.ShowInPartnerDirectory,
+        // VIP audience tier. Always sent: the request defaults it to false, so
+        // omitting it would clear the tier rather than leave it alone.
+        IsVipTier = _model.IsVipTier,
     };
 
     private AdminUpdateProfileTypeRequest BuildUpdateRequest(AdminProfileTypeSummary initial) => new()
@@ -230,6 +241,8 @@ public partial class ProfileTypeForm
         IsAppRegisterable = _model.IsAppRegisterable,
         // Meet-People networking visibility toggle.
         ShowInPartnerDirectory = _model.ShowInPartnerDirectory,
+        // VIP audience tier — see BuildCreateRequest on why it is always sent.
+        IsVipTier = _model.IsVipTier,
     };
 
     private sealed class Model
@@ -245,5 +258,8 @@ public partial class ProfileTypeForm
         public bool IsAppRegisterable { get; set; } = true;
         // "Meet People" networking visibility; default true (shown).
         public bool ShowInPartnerDirectory { get; set; } = true;
+        // VIP audience tier; default false — a new type is not VIP until an
+        // admin ticks it.
+        public bool IsVipTier { get; set; }
     }
 }

@@ -414,7 +414,12 @@ public sealed record AdminProfileTypeSummary(
     // Whether accounts of this type appear in the "Meet People"
     // networking surfaces (partner directory + recommender). Trailing-optional
     // (append-only, wire-safe); defaults true. Only shown on the Others form.
-    bool ShowInPartnerDirectory = true);
+    bool ShowInPartnerDirectory = true,
+    // Whether this is a VIP audience tier: it decides who may self-reserve a
+    // VIP-tier SEAT and is what the app receives as isVip. Nothing to do with
+    // meetings — that gate is the per-user UserProfile.AllowsSpeakerMeeting.
+    // Trailing-optional (append-only, wire-safe); defaults false.
+    bool IsVipTier = false);
 
 /// <summary>
 /// Body of <c>POST /api/v1/admin/profile-types</c>. Creates a
@@ -463,6 +468,14 @@ public sealed class AdminCreateProfileTypeRequest
     /// the "Meet People (same interests)" networking surfaces. Default true.
     /// Meaningful only for partner (Other) types.</summary>
     public bool ShowInPartnerDirectory { get; set; } = true;
+
+    /// <summary>Whether this is a VIP audience tier. It decides who may
+    /// self-reserve a VIP-tier <b>seat</b> and is what the app receives as
+    /// <c>isVip</c>; it does NOT gate meeting requests (that is the per-user
+    /// <c>UserProfile.AllowsSpeakerMeeting</c> flag). Default false, so a newly
+    /// created type is not VIP until an admin says so. Meaningful only for
+    /// audience (Visitor) types.</summary>
+    public bool IsVipTier { get; set; }
 }
 
 /// <summary>
@@ -496,6 +509,17 @@ public class AdminUpdateProfileTypeRequest
     /// <summary>Whether this type's accounts appear in
     /// the "Meet People (same interests)" networking surfaces. Default true.</summary>
     public bool ShowInPartnerDirectory { get; set; } = true;
+
+    /// <summary>Whether this is a VIP audience tier (VIP-tier seat
+    /// self-reservation + the app's <c>isVip</c>); NOT a meetings gate.
+    ///
+    /// <para>Defaults to <c>false</c>, which on an UPDATE fails CLOSED the way
+    /// <c>ShowInPartnerDirectory</c> once failed open: a caller that omits this
+    /// field clears the VIP tier rather than preserving it. The Control Panel
+    /// form always sends it. The seeder re-asserts it on the VVIP / VIP rows at
+    /// every boot, so a wrongly-cleared seeded row self-heals on restart — a
+    /// hand-made VIP type would not.</para></summary>
+    public bool IsVipTier { get; set; }
 }
 
 /// <summary>

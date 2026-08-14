@@ -58,9 +58,9 @@ public sealed class UserProfileType : BaseAuditEntity
     /// whose name merely embedded those letters.</para>
     ///
     /// <para>It does <b>not</b> gate meeting requests. It was called
-    /// <c>AllowsVipMeetingSlots</c> until D-760 moved speaker-meeting eligibility
-    /// to the per-user <c>UserProfile.AllowsSpeakerMeeting</c> flag, leaving a
-    /// name that described a job this column no longer had.</para></summary>
+    /// <c>AllowsVipMeetingSlots</c> until speaker-meeting eligibility moved to the
+    /// per-user <c>UserProfile.AllowsSpeakerMeeting</c> flag, leaving a name that
+    /// described a job this column no longer had.</para></summary>
     public bool IsVipTier { get; set; }
 
     /// <summary>Whether a self-registering user is offered this type in the
