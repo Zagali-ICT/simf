@@ -12,7 +12,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Persistence.Migrations.App
 {
     [DbContext(typeof(SimfAppDbContext))]
-    [Migration("20260814010953_InitialCreate")]
+    [Migration("20260814073600_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -4062,8 +4062,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("AdmissionState")
                         .IsRequired()
+                        .ValueGeneratedOnAdd()
                         .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
+                        .HasColumnType("nvarchar(32)")
+                        .HasDefaultValue("PendingApproval");
 
                     b.Property<bool>("AllowsDelegationMeeting")
                         .HasColumnType("bit");
@@ -4072,7 +4074,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasColumnType("bit");
 
                     b.Property<Guid>("BadgeBatchId")
-                        .HasColumnType("uniqueidentifier");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValue(new Guid("0f1e2d3c-4b5a-6978-8796-a5b4c3d2e1f0"));
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -4087,7 +4091,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasColumnType("datetime2");
 
                     b.Property<int>("EditionYear")
-                        .HasColumnType("int");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
 
                     b.Property<int>("Gender")
                         .HasColumnType("int");
