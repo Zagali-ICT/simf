@@ -853,6 +853,16 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<bool>("IsDelegate")
                         .HasColumnType("bit");
 
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("NameArabic")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
                     b.Property<string>("RecipientEmail")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
@@ -871,6 +881,20 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.HasIndex("IsActive", "CreatedAt");
 
                     b.ToTable("BadgeBatches", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("0f1e2d3c-4b5a-6978-8796-a5b4c3d2e1f0"),
+                            CountsSummary = "Direct registration",
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedBy = new Guid("00000000-0000-0000-0000-000000000000"),
+                            IsActive = true,
+                            IsDelegate = false,
+                            Name = "Direct registration",
+                            NameArabic = "تسجيل مباشر",
+                            TotalCount = 0
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.BusinessMeetings.BusinessMeeting", b =>
@@ -4009,7 +4033,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<bool>("AllowsSpeakerMeeting")
                         .HasColumnType("bit");
 
-                    b.Property<Guid?>("BadgeBatchId")
+                    b.Property<Guid>("BadgeBatchId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
@@ -6484,7 +6508,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.HasOne("SIMF.Domain.Badges.BadgeBatch", "BadgeBatch")
                         .WithMany()
                         .HasForeignKey("BadgeBatchId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.HasOne("SIMF.Domain.Organisations.Organisation", "Organisation")
                         .WithMany()

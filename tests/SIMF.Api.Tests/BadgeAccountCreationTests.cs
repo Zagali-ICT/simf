@@ -261,7 +261,10 @@ public sealed class BadgeAccountCreationTests : IClassFixture<SimfApiFactory>
         using var scope = _factory.Services.CreateScope();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
 
-        Guid? batchId = null;
+        // Everyone belongs to an order; whoever arrived without a bulk one behind
+        // them belongs to the seeded direct-registration order, which is exactly
+        // what makes them un-claimable from a photographed badge.
+        var batchId = BadgeBatch.DirectRegistrationId;
         if (inBulkOrder)
         {
             var batch = new BadgeBatch

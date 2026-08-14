@@ -3792,6 +3792,10 @@
   <data name="Admin.Delegates.Bulk.Total" xml:space="preserve"><value>Total: {0} badge(s)</value></data>
   <data name="Admin.Delegates.Bulk.Remove" xml:space="preserve"><value>Remove {0}</value></data>
   <data name="Admin.Delegates.Bulk.PickType" xml:space="preserve"><value>Choose a profile type and a count above zero.</value></data>
+  <data name="Admin.Delegates.Bulk.NameRequired" xml:space="preserve"><value>Give the order a name in both English and Arabic.</value></data>
+  <data name="Admin.Delegates.Bulk.Name" xml:space="preserve"><value>Order name</value></data>
+  <data name="Admin.Delegates.Bulk.NameArabic" xml:space="preserve"><value>Order name (Arabic)</value></data>
+  <data name="Admin.Delegates.Bulk.NameHint" xml:space="preserve"><value>Who the badges are for, such as "Ministry of Interior Team".</value></data>
   <data name="Module.AdminVisitorsVipExport" xml:space="preserve"><value>VIP welcome export</value></data>
   <data name="Profile.Avatar.Remove.Confirm.Title" xml:space="preserve"><value>Remove profile photo</value></data>
   <data name="Profile.Avatar.Remove.Confirm.Message" xml:space="preserve"><value>Remove your profile photo? The stored image is deleted and cannot be restored.</value></data>

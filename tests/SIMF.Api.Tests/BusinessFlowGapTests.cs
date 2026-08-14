@@ -68,6 +68,8 @@ public sealed class BusinessFlowGapTests : IClassFixture<SimfApiFactory>
             "/api/v1/admin/visitors/bulk-generate",
             new AdminBulkGenerateBadgesRequest
             {
+                Name = "Test order",
+                NameArabic = "طلب اختباري",
                 IsDelegate = true,
                 Batches = [new BulkBadgeBatch { ProfileTypeId = profileTypeId, Count = 1001 }],
             },
@@ -93,6 +95,8 @@ public sealed class BusinessFlowGapTests : IClassFixture<SimfApiFactory>
             "/api/v1/admin/visitors/bulk-generate",
             new AdminBulkGenerateBadgesRequest
             {
+                Name = "Test order",
+                NameArabic = "طلب اختباري",
                 IsDelegate = true,
                 Batches =
                 [
@@ -128,6 +132,8 @@ public sealed class BusinessFlowGapTests : IClassFixture<SimfApiFactory>
             "/api/v1/admin/visitors/bulk-generate",
             new AdminBulkGenerateBadgesRequest
             {
+                Name = "Test order",
+                NameArabic = "طلب اختباري",
                 IsDelegate = true,
                 Batches = [new BulkBadgeBatch { ProfileTypeId = partnerTypeId, Count = 1 }],
             },

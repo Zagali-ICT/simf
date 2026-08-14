@@ -16,6 +16,7 @@ using SIMF.Common.Enums;
 using SIMF.Common.Options;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.Auditing;
+using SIMF.Domain.Badges;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Profiles;
 
@@ -789,11 +790,14 @@ internal sealed class BadgeAuthService(
     /// never an oracle for which badges exist.</para>
     ///
     /// <para>This distinction used to be read off the synthesized login address
-    /// (<c>walkin-</c> against <c>badge-</c>). It reads off the attendee now,
-    /// which is what will let those placeholder accounts be retired without
-    /// losing it.</para></summary>
+    /// (<c>walkin-</c> against <c>badge-</c>). It reads off the attendee's order
+    /// now, which is what let those placeholder accounts be retired without
+    /// losing it. Everyone belongs to an order, so the test is specifically NOT
+    /// "has an order" — it is "belongs to one somebody placed", because whoever
+    /// arrived on their own is filed under the seeded direct-registration
+    /// order.</para></summary>
     private bool MaySelfActivateWithoutAccount(BadgeHolder holder) =>
-        holder.BadgeBatchId is not null
+        (holder.BadgeBatchId is { } order && order != BadgeBatch.DirectRegistrationId)
         || walkInMode.CurrentValue.BadgeActivationAllowedForWalkIns;
 
     /// <summary>Resolves a QR to its holder, only while the attendee is Approved

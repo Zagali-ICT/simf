@@ -185,14 +185,21 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
             .HasForeignKey(profile => profile.RegionId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // The bulk-badge batch this placeholder profile was
-        // minted by. Intra-App-DB FK (nullable + Restrict, same shape as the
-        // Organisation / Region FKs) so a batch cannot be hard-deleted while any
-        // badge references it — batches are soft-deleted (revoke → IsActive=false).
+        // The order this attendee arrived on. REQUIRED: everyone belongs to one,
+        // and whoever arrived without a bulk order behind them belongs to the
+        // seeded direct-registration order, so "which order did this attendee
+        // come from" always has an answer. It used to be nullable and set only by
+        // the bulk mint, which left it unanswerable for everyone who registered
+        // themselves.
+        //
+        // Intra-App-DB FK with Restrict, the same shape as the Organisation and
+        // Region FKs, so an order cannot be hard-deleted while anyone references
+        // it — orders are soft-deleted (revoke → IsActive=false).
         builder.HasIndex(profile => profile.BadgeBatchId);
         builder.HasOne(profile => profile.BadgeBatch)
             .WithMany()
             .HasForeignKey(profile => profile.BadgeBatchId)
+            .IsRequired()
             .OnDelete(DeleteBehavior.Restrict);
 
         // M-to-M with Interests. Composite-PK join table

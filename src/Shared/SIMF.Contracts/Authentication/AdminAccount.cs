@@ -624,6 +624,14 @@ public sealed record AdminWalkInRegistrationResponse(
 /// personal details) to be filled in / handed out later.</summary>
 public sealed class AdminBulkGenerateBadgesRequest
 {
+    /// <summary>Who the order is for — "Ministry of Interior Team". Required,
+    /// because an order identified only by its counts is unrecognisable in a list
+    /// as soon as two of them are the same size.</summary>
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>The Arabic twin of <see cref="Name"/>.</summary>
+    public string NameArabic { get; set; } = string.Empty;
+
     /// <summary>When true, every generated badge is flagged as a delegate.</summary>
     public bool IsDelegate { get; set; }
 

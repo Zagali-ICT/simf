@@ -13,6 +13,8 @@ namespace SIMF.Contracts.Authentication;
 /// <param name="RecipientEmail">The organiser the QR pack was (last) emailed to, if any.</param>
 /// <param name="CreatedAt">When the batch was generated (Saudi local).</param>
 /// <param name="IsActive">False once the batch has been revoked.</param>
+/// <param name="Name">Who the order is for, in English.</param>
+/// <param name="NameArabic">The Arabic twin of <paramref name="Name"/>.</param>
 public sealed record AdminBadgeBatchSummary(
     Guid Id,
     string CountsSummary,
@@ -20,7 +22,26 @@ public sealed record AdminBadgeBatchSummary(
     bool IsDelegate,
     string? RecipientEmail,
     DateTime CreatedAt,
-    bool IsActive);
+    bool IsActive,
+    // Appended rather than placed first, so the shipped positional shape of the
+    // record is undisturbed for anything constructing it by position.
+    string Name = "",
+    string NameArabic = "");
+
+/// <summary>Body of <c>POST /admin/visitors/badge-batches/top-up</c> — adds more
+/// badges to an order that already exists. The badges are minted immediately,
+/// exactly as they are on the first order, so <c>TotalCount</c> never promises
+/// badges that do not exist.</summary>
+public sealed class AdminTopUpBadgeBatchRequest
+{
+    public Guid BatchId { get; set; }
+
+    /// <summary>The (profile type, count) pairs to add.</summary>
+    public IList<BulkBadgeBatch> Batches { get; set; } = new List<BulkBadgeBatch>();
+}
+
+/// <summary>How many badges the top-up minted, and the order's new total.</summary>
+public sealed record AdminTopUpBadgeBatchResponse(int Added, int TotalCount);
 
 /// <summary>
 /// Body of <c>POST /admin/visitors/badge-batches/re-email</c>.

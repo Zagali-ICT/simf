@@ -13,6 +13,7 @@ using SIMF.Contracts.Authentication;
 using SIMF.Domain.Common;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Organisations;
+using SIMF.Domain.Badges;
 using SIMF.Domain.Profiles;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
@@ -105,6 +106,8 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailAp
             "/api/v1/admin/visitors/bulk-generate",
             new AdminBulkGenerateBadgesRequest
             {
+                Name = "Test order",
+                NameArabic = "طلب اختباري",
                 IsDelegate = true,
                 Batches = new List<BulkBadgeBatch>
                 {
@@ -136,7 +139,7 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailAp
 
         var response = await PostAuthAsync(
             "/api/v1/admin/visitors/bulk-generate",
-            new AdminBulkGenerateBadgesRequest { Batches = new List<BulkBadgeBatch>() },
+            new AdminBulkGenerateBadgesRequest { Name = "Test order", NameArabic = "طلب اختباري", Batches = new List<BulkBadgeBatch>() },
             admin);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -156,6 +159,8 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailAp
             "/api/v1/admin/visitors/bulk-generate",
             new AdminBulkGenerateBadgesRequest
             {
+                Name = "Test order",
+                NameArabic = "طلب اختباري",
                 IsDelegate = false,
                 Batches = new List<BulkBadgeBatch>
                 {
@@ -192,6 +197,8 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailAp
             "/api/v1/admin/visitors/bulk-generate",
             new AdminBulkGenerateBadgesRequest
             {
+                Name = "Test order",
+                NameArabic = "طلب اختباري",
                 IsDelegate = false,
                 RecipientEmail = recipient,
                 Batches = new List<BulkBadgeBatch>
@@ -250,6 +257,8 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailAp
             "/api/v1/admin/visitors/bulk-generate",
             new AdminBulkGenerateBadgesRequest
             {
+                Name = "Test order",
+                NameArabic = "طلب اختباري",
                 IsDelegate = false,
                 RecipientEmail = "not-an-email",
                 Batches = new List<BulkBadgeBatch>
@@ -285,6 +294,8 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailAp
             "/api/v1/admin/visitors/bulk-generate",
             new AdminBulkGenerateBadgesRequest
             {
+                Name = "Test order",
+                NameArabic = "طلب اختباري",
                 IsDelegate = false,
                 Batches = new List<BulkBadgeBatch>
                 {
@@ -315,6 +326,8 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailAp
             "/api/v1/admin/visitors/bulk-generate",
             new AdminBulkGenerateBadgesRequest
             {
+                Name = "Test order",
+                NameArabic = "طلب اختباري",
                 Batches = new List<BulkBadgeBatch> { new() { ProfileTypeId = typeId, Count = 2 } },
             },
             admin);
@@ -326,8 +339,8 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailAp
         Assert.Equal(2, badges.Count);
         // Every badge back-references the same, persisted batch row.
         var batchId = Assert.Single(badges.Select(b => b.BadgeBatchId).Distinct());
-        Assert.NotNull(batchId);
-        var batch = await appDb.BadgeBatches.SingleAsync(b => b.Id == batchId!.Value);
+        Assert.NotEqual(BadgeBatch.DirectRegistrationId, batchId);
+        var batch = await appDb.BadgeBatches.SingleAsync(b => b.Id == batchId);
         Assert.Equal(2, batch.TotalCount);
         Assert.True(batch.IsActive);
         Assert.Contains("× 2", batch.CountsSummary);
@@ -342,6 +355,8 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailAp
             "/api/v1/admin/visitors/bulk-generate",
             new AdminBulkGenerateBadgesRequest
             {
+                Name = "Test order",
+                NameArabic = "طلب اختباري",
                 Batches = new List<BulkBadgeBatch> { new() { ProfileTypeId = typeId, Count = 1 } },
             },
             admin);
@@ -366,6 +381,8 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailAp
             "/api/v1/admin/visitors/bulk-generate",
             new AdminBulkGenerateBadgesRequest
             {
+                Name = "Test order",
+                NameArabic = "طلب اختباري",
                 Batches = new List<BulkBadgeBatch> { new() { ProfileTypeId = typeId, Count = 3 } },
             },
             admin);
@@ -415,6 +432,8 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailAp
             "/api/v1/admin/visitors/bulk-generate",
             new AdminBulkGenerateBadgesRequest
             {
+                Name = "Test order",
+                NameArabic = "طلب اختباري",
                 Batches = new List<BulkBadgeBatch> { new() { ProfileTypeId = typeId, Count = 2 } },
             },
             admin);
@@ -425,7 +444,7 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailAp
         {
             var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
             var members = await appDb.UserProfiles.Where(p => p.ProfileTypeId == typeId).ToListAsync();
-            batchId = members[0].BadgeBatchId!.Value;
+            batchId = members[0].BadgeBatchId;
             // Bulk-badge members still get an account today; filtering keeps the
             // assertion honest if that changes rather than throwing on a null.
             memberIds = members.Where(m => m.UserId != null).Select(m => m.UserId!.Value).ToList();
@@ -478,6 +497,8 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailAp
             "/api/v1/admin/visitors/bulk-generate",
             new AdminBulkGenerateBadgesRequest
             {
+                Name = "Test order",
+                NameArabic = "طلب اختباري",
                 Batches = new List<BulkBadgeBatch> { new() { ProfileTypeId = typeId, Count = 1 } },
             },
             admin);
@@ -497,10 +518,10 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailAp
     {
         using var scope = _factory.Services.CreateScope();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        return (await appDb.UserProfiles
+        return await appDb.UserProfiles
             .Where(p => p.ProfileTypeId == profileTypeId)
             .Select(p => p.BadgeBatchId)
-            .FirstAsync())!.Value;
+            .FirstAsync();
     }
 
     // -- helpers --------------------------------------------------------------

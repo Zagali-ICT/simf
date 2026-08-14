@@ -26,6 +26,7 @@ using Microsoft.Extensions.DependencyInjection;
 using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
+using SIMF.Domain.Badges;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Profiles;
 using SIMF.Infrastructure.Persistence;
@@ -78,6 +79,8 @@ public sealed class Journey01DelegationToSignInTests : IClassFixture<SimfApiFact
             "/api/v1/admin/visitors/bulk-generate",
             new AdminBulkGenerateBadgesRequest
             {
+                Name = "Test order",
+                NameArabic = "طلب اختباري",
                 IsDelegate = true,
                 Batches = new List<BulkBadgeBatch>
                 {
@@ -254,6 +257,8 @@ public sealed class Journey01DelegationToSignInTests : IClassFixture<SimfApiFact
             "/api/v1/admin/visitors/bulk-generate",
             new AdminBulkGenerateBadgesRequest
             {
+                Name = "Test order",
+                NameArabic = "طلب اختباري",
                 IsDelegate = true,
                 Batches = new List<BulkBadgeBatch>
                 {
@@ -330,7 +335,7 @@ public sealed class Journey01DelegationToSignInTests : IClassFixture<SimfApiFact
             .AsNoTracking()
             .Where(profile => profile.ProfileTypeId == profileTypeId
                 && profile.QrId != null
-                && profile.BadgeBatchId != null)
+                && profile.BadgeBatchId != BadgeBatch.DirectRegistrationId)
             .Select(profile => new
             {
                 profile.UserId,
@@ -361,7 +366,7 @@ public sealed class Journey01DelegationToSignInTests : IClassFixture<SimfApiFact
                 (profile, account) => new MintedBadge(
                     account.Id,
                     profile.QrId!,
-                    profile.BadgeBatchId!.Value,
+                    profile.BadgeBatchId,
                     profile.IsDelegate,
                     account.DisplayName,
                     account.Email ?? string.Empty,

@@ -135,6 +135,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    NameArabic = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     CountsSummary = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: false),
                     TotalCount = table.Column<int>(type: "int", nullable: false),
                     IsDelegate = table.Column<bool>(type: "bit", nullable: false),
@@ -1237,7 +1239,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     JobTitleArabic = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     OrganisationId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     RegionId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    BadgeBatchId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    BadgeBatchId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ShowInMeetLikeYou = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
                     SaudiMobile = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     InternationalMobile = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
@@ -2545,6 +2547,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 table: "ArchiveVisibility",
                 columns: new[] { "Id", "IsVisible", "LastChangedAt", "LastChangedByUserId" },
                 values: new object[] { new Guid("00000000-0000-0000-0000-000000000002"), true, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), null });
+
+            migrationBuilder.InsertData(
+                table: "BadgeBatches",
+                columns: new[] { "Id", "CountsSummary", "CreatedAt", "CreatedBy", "DeletedAt", "IsActive", "IsDelegate", "Name", "NameArabic", "RecipientEmail", "TotalCount", "UpdatedAt", "UpdatedBy" },
+                values: new object[] { new Guid("0f1e2d3c-4b5a-6978-8796-a5b4c3d2e1f0"), "Direct registration", new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new Guid("00000000-0000-0000-0000-000000000000"), null, true, false, "Direct registration", "تسجيل مباشر", null, 0, null, null });
 
             migrationBuilder.InsertData(
                 table: "Countries",

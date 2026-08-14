@@ -114,11 +114,16 @@ public class UserProfile : BaseAuditEntity
 
     public SIMF.Domain.Regions.Region? Region { get; set; }
 
-    /// <summary>The bulk-badge run that minted this placeholder profile, so a
-    /// generated set can be re-emailed or revoked together. Null for every
-    /// profile created through the normal sign-up or walk-in paths. A real
-    /// foreign key of the same shape as <see cref="OrganisationId"/>.</summary>
-    public Guid? BadgeBatchId { get; set; }
+    /// <summary>The order this attendee arrived on, so a set handed out together
+    /// can be topped up, re-emailed or revoked together. REQUIRED: everyone
+    /// belongs to an order, and whoever arrived without a bulk one behind them —
+    /// a direct registration, a walk-in, an exhibition-desk capture — belongs to
+    /// the seeded <see cref="Badges.BadgeBatch.DirectRegistrationId"/>.
+    ///
+    /// <para>It was nullable and set only by the bulk mint, which meant "which
+    /// order did this attendee come from" had no answer at all for anyone who
+    /// registered themselves.</para></summary>
+    public Guid BadgeBatchId { get; set; } = SIMF.Domain.Badges.BadgeBatch.DirectRegistrationId;
 
     public SIMF.Domain.Badges.BadgeBatch? BadgeBatch { get; set; }
 
