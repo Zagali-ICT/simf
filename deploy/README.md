@@ -42,9 +42,26 @@ Build, Test & Publish ──▶ Deploy to IIS
 ```
 
 - **Build, Test & Publish** — `dotnet restore` (nuget.org; no private feed) →
-  `dotnet build -c Release` → `dotnet test` (a failing test stops the pipeline,
-  per SIMF-OPS-001 §5) → `dotnet publish` each app (zipped) → publish artifact
-  `drop`.
+  `dotnet build -c Release` → `dotnet test` → `dotnet publish` each app (zipped)
+  → publish artifact `drop`.
+
+> ### ⚠️ The test gates are OFF by default (D-887)
+>
+> `runTests` defaults to **`false`**, so an ordinary run **does not test**. It
+> skips the fast suites (~920 tests, including the Control Panel permission and
+> navigation gates), `SIMF.Api.Tests` (2272 integration tests, including the
+> anonymous-endpoint allow-list), the LocalDB provisioning that serves them, and
+> the Flutter and BadgeDesk stages.
+>
+> **A green run with `runTests` off means the code compiles and the packages
+> publish. It says nothing about behaviour, permissions or the security
+> surface.** Tick **Run the test gates (slow)** on for any run that gates a
+> merge to `main`, and before a production publish — SIMF-OPS-001 §5 and the NCA
+> Secure App-Dev Standard §3-20 both require a failing test to stop the
+> pipeline, and neither is satisfied while it is off.
+>
+> The steps use a `condition:`, never `enabled: false`, so they stay listed as
+> **skipped** in the run summary rather than disappearing from it.
 - **Deploy to IIS** — **TWO** deployment jobs, one per Azure DevOps
   **Environment**, because the estate is two servers: **`Pre-production`** and
   **`Production`** (`SIMF APP 01`). Each server hosts all four sites, so each
@@ -67,6 +84,12 @@ Two tick boxes in the **Run pipeline** dialog, both **on** by default:
 |-----------|-------|----------------------|
 | `deployPreProduction` | Deploy to Pre-production | The pre-production job is omitted |
 | `deployProduction` | Deploy to Production | The production job is omitted |
+
+And one that is **off** by default:
+
+| Parameter | Label | Default |
+|-----------|-------|---------|
+| `runTests` | Run the test gates (slow) | **`false`** |
 
 Untick **both** and the whole `Deploy` stage is omitted — build, test and
 publish still run and the `drop` artifact is still produced, so a build-only run

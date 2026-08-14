@@ -31,6 +31,15 @@ public class PipelineTestGateTests
 
     /// Every test project under tests/ must be run by SOME stage. A new project
     /// that nothing references is a suite that only ever passes locally.
+    ///
+    /// <para>READ THIS BEFORE TRUSTING IT. Since D-887 the test steps carry
+    /// `condition: eq(parameters.runTests, 'true')` and that parameter DEFAULTS
+    /// TO FALSE, so an ordinary run references every suite and executes none of
+    /// them. This test therefore proves a project is WIRED UP, not that CI ever
+    /// runs it - which is a materially weaker claim than the one it was written
+    /// to make. It is kept because the wiring still has to be right for the
+    /// `runTests` runs that gate a merge, and because a project dropped from
+    /// the list would otherwise never come back when the gates go on.</para>
     [Fact]
     public void Every_test_project_is_referenced_by_the_pipeline()
     {

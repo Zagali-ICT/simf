@@ -65,6 +65,41 @@ parameters:
   type: boolean
   default: true
 
+# --- Whether this run executes the test gates. DEFAULT FALSE (owner decision,
+#     D-887): a deploy should be quick, and the gates below cost far more than
+#     everything else in the pipeline put together - SIMF.Api.Tests alone runs
+#     38 minutes when it has the agent to itself.
+#
+#     WHAT THIS TURNS OFF, AND WHAT IT COSTS. Read this before assuming a green
+#     run means anything about correctness:
+#       * the fast suites - Domain, Application, ApiClient, ControlPanel, Web,
+#         E2E. ~920 tests, about a minute. These include the Control Panel
+#         permission and navigation gates, which are the checks that stop an
+#         admin page shipping ungated, and the E2E-catalogue integrity ratchet.
+#       * SIMF.Api.Tests - 2272 integration tests, the whole admin + app API
+#         surface, including the anonymous-endpoint allow-list that fails the
+#         build when an 18th unauthenticated entry point appears.
+#       * the LocalDB provisioning that exists only to serve those.
+#       * the Flutter and BadgeDesk stages.
+#
+#     A run with this OFF proves the code COMPILES and the packages publish.
+#     It proves nothing about behaviour, permissions or the security surface.
+#
+#     THIS IS A `condition:`, NOT `enabled: false`, DELIBERATELY. A disabled step
+#     vanishes from the run summary; a condition leaves it listed as skipped, so
+#     the run says out loud that it did not test. That rule is enforced by
+#     PipelineTestGateTests.No_pipeline_step_is_disabled, which exists because
+#     the last silent switch-off went unnoticed for five weeks.
+#
+#     Tick it back on for any run that gates a merge to main, or before a
+#     production publish. SIMF-OPS-001 section 5 and the NCA Secure App-Dev
+#     Standard section 3-20 both require a failing test to stop the pipeline,
+#     and neither is satisfied while this is off.
+- name: runTests
+  displayName: 'Run the test gates (slow)'
+  type: boolean
+  default: false
+
 pool:
   name: Default   # PLACEHOLDER: self-hosted agent pool with the .NET 10 SDK (build) + IIS (deploy)
 
@@ -265,6 +300,9 @@ stages:
           throw 'MSSQLLocalDB is not Running - the integration tests cannot reach SQL Server.'
         }
       displayName: 'Provision SQL Server LocalDB (integration tests)'
+      # Exists only to serve SIMF.Api.Tests below. Provisioning LocalDB for a run
+      # that will not touch it is pure wall-clock, so it follows the same switch.
+      condition: and(succeeded(), eq('${{ parameters.runTests }}', 'true'))
 
     # --- Test gate, part 1: the FAST suites (NCA Secure App-Dev Standard §3-20;
     #     SIMF-OPS-001 §5). A failing test stops the pipeline.
@@ -300,6 +338,12 @@ stages:
     #     ---
     - task: DotNetCoreCLI@2
       displayName: 'Run tests (fast suites)'
+      # OFF BY DEFAULT (D-887). These suites cost about a minute, so they are not
+      # what makes a run slow - they are here because the owner asked for the
+      # test gates off for quick deploys, and leaving them on would give a green
+      # tick that looks like the full gate ran. They come back on with the
+      # `runTests` tick box.
+      condition: and(succeeded(), eq('${{ parameters.runTests }}', 'true'))
       inputs:
         command: 'test'
         # Listed explicitly rather than as `tests/**/*.csproj` minus an
@@ -338,8 +382,12 @@ stages:
     #     step is invisible, a condition states its own rule.
     - task: DotNetCoreCLI@2
       displayName: 'Run tests (SIMF.Api.Tests, integration)'
+      # The `runTests` clause is ADDITIONAL to the pull-request rule, not a
+      # replacement for it: this suite stays off PR validation even when the
+      # gates are switched on, because nobody should wait ~38 minutes per push.
       condition: >-
         and(succeeded(),
+            eq('${{ parameters.runTests }}', 'true'),
             ne(variables['Build.Reason'], 'PullRequest'))
       inputs:
         command: 'test'
@@ -398,6 +446,11 @@ stages:
 
 - stage: MobileApp
   displayName: 'Flutter app (analyze & test)'
+  # OFF BY DEFAULT with the other gates (D-887). Worth knowing what this does and
+  # does not buy back: this stage is NOT a dependency of Deploy, so on a pool
+  # with a free agent it never delayed a deployment at all. On the single
+  # self-hosted `Default` agent it does, because it competes for the one agent.
+  condition: eq('${{ parameters.runTests }}', 'true')
   # BUG-010 — until now NOTHING in CI touched src/Mobile/simf_app, so the only
   # proof the shippable mobile artefact still compiles lived on one developer
   # machine. This stage restores from the committed pubspec.lock, analyses the
@@ -572,6 +625,11 @@ stages:
 
 - stage: BadgeDesk
   displayName: 'Offline badge desk (build & test)'
+  # OFF BY DEFAULT with the other gates (D-887). Note what goes with it: this is
+  # the ONLY build signal for SIMF.BadgeDesk, which sits outside SIMF.slnx, so
+  # with this off a rename in SIMF.Common breaks the badge desk and nothing
+  # anywhere reports it until a desk fails to open at the venue.
+  condition: eq('${{ parameters.runTests }}', 'true')
   # D-813 - SIMF.BadgeDesk is deliberately outside SIMF.slnx because it is
   # Windows-only (WinForms + DPAPI + native printing) and the solution has to
   # keep building on any host. The cost of that was NO build signal at all: the
