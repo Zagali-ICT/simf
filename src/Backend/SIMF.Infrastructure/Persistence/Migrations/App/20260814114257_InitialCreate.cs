@@ -87,36 +87,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 });
 
             migrationBuilder.CreateTable(
-                name: "ArchiveEditions",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Year = table.Column<int>(type: "int", nullable: false),
-                    TitleEn = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    TitleAr = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    SummaryEn = table.Column<string>(type: "nvarchar(1024)", maxLength: 1024, nullable: true),
-                    SummaryAr = table.Column<string>(type: "nvarchar(1024)", maxLength: 1024, nullable: true),
-                    Attendees = table.Column<int>(type: "int", nullable: false),
-                    Sessions = table.Column<int>(type: "int", nullable: false),
-                    Speakers = table.Column<int>(type: "int", nullable: false),
-                    CoverImageRelativePath = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: true),
-                    LocationEn = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    LocationAr = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    DateLabelEn = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: true),
-                    DateLabelAr = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ArchiveEditions", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "ArchiveVisibility",
                 columns: table => new
                 {
@@ -342,34 +312,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Interests", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "News",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    TitleArabic = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    Excerpt = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    ExcerptArabic = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    Body = table.Column<string>(type: "nvarchar(max)", maxLength: 8000, nullable: false),
-                    BodyArabic = table.Column<string>(type: "nvarchar(max)", maxLength: 8000, nullable: false),
-                    Category = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    CategoryArabic = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    ImageRelativePath = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: true),
-                    PublishedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    DisplayOrder = table.Column<int>(type: "int", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_News", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -841,50 +783,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 });
 
             migrationBuilder.CreateTable(
-                name: "ArchiveMediaItems",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ArchiveEditionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Kind = table.Column<int>(type: "int", nullable: false),
-                    Url = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: false),
-                    CaptionEn = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    CaptionAr = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    DisplayOrder = table.Column<int>(type: "int", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ArchiveMediaItems", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_ArchiveMediaItems_ArchiveEditions_ArchiveEditionId",
-                        column: x => x.ArchiveEditionId,
-                        principalTable: "ArchiveEditions",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "ArchiveSessionTitles",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ArchiveEditionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    TitleEn = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    TitleAr = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    DisplayOrder = table.Column<int>(type: "int", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ArchiveSessionTitles", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_ArchiveSessionTitles_ArchiveEditions_ArchiveEditionId",
-                        column: x => x.ArchiveEditionId,
-                        principalTable: "ArchiveEditions",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "FaqEntries",
                 columns: table => new
                 {
@@ -1162,6 +1060,42 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 });
 
             migrationBuilder.CreateTable(
+                name: "ArchiveEditions",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Year = table.Column<int>(type: "int", nullable: false),
+                    TitleEn = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    TitleAr = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    SummaryEn = table.Column<string>(type: "nvarchar(1024)", maxLength: 1024, nullable: true),
+                    SummaryAr = table.Column<string>(type: "nvarchar(1024)", maxLength: 1024, nullable: true),
+                    Attendees = table.Column<int>(type: "int", nullable: false),
+                    Sessions = table.Column<int>(type: "int", nullable: false),
+                    Speakers = table.Column<int>(type: "int", nullable: false),
+                    CoverImageFileId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    LocationEn = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    LocationAr = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    DateLabelEn = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: true),
+                    DateLabelAr = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ArchiveEditions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ArchiveEditions_StoredFiles_CoverImageFileId",
+                        column: x => x.CoverImageFileId,
+                        principalTable: "StoredFiles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Banners",
                 columns: table => new
                 {
@@ -1227,6 +1161,40 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     table.ForeignKey(
                         name: "FK_MediaItems_StoredFiles_ThumbnailFileId",
                         column: x => x.ThumbnailFileId,
+                        principalTable: "StoredFiles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "News",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    TitleArabic = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Excerpt = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    ExcerptArabic = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    Body = table.Column<string>(type: "nvarchar(max)", maxLength: 8000, nullable: false),
+                    BodyArabic = table.Column<string>(type: "nvarchar(max)", maxLength: 8000, nullable: false),
+                    Category = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    CategoryArabic = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    ImageFileId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    PublishedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    DisplayOrder = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_News", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_News_StoredFiles_ImageFileId",
+                        column: x => x.ImageFileId,
                         principalTable: "StoredFiles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
@@ -1507,6 +1475,50 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         name: "FK_RatingQuestions_RatingTypes_RatingTypeId",
                         column: x => x.RatingTypeId,
                         principalTable: "RatingTypes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ArchiveMediaItems",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ArchiveEditionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Kind = table.Column<int>(type: "int", nullable: false),
+                    Url = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: false),
+                    CaptionEn = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    CaptionAr = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    DisplayOrder = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ArchiveMediaItems", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ArchiveMediaItems_ArchiveEditions_ArchiveEditionId",
+                        column: x => x.ArchiveEditionId,
+                        principalTable: "ArchiveEditions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ArchiveSessionTitles",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ArchiveEditionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    TitleEn = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    TitleAr = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    DisplayOrder = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ArchiveSessionTitles", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ArchiveSessionTitles_ArchiveEditions_ArchiveEditionId",
+                        column: x => x.ArchiveEditionId,
+                        principalTable: "ArchiveEditions",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -2000,7 +2012,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
                     NameArabic = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
-                    LogoRelativePath = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: true),
+                    LogoFileId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     Url = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: true),
                     DisplayOrder = table.Column<int>(type: "int", nullable: false),
                     Email = table.Column<string>(type: "nvarchar(320)", maxLength: 320, nullable: true),
@@ -2029,6 +2041,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         name: "FK_MediaPartners_Countries_CountryId",
                         column: x => x.CountryId,
                         principalTable: "Countries",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_MediaPartners_StoredFiles_LogoFileId",
+                        column: x => x.LogoFileId,
+                        principalTable: "StoredFiles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -2101,7 +2119,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     NameArabic = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
                     Tier = table.Column<int>(type: "int", nullable: false),
                     DisplayOrder = table.Column<int>(type: "int", nullable: false),
-                    LogoRelativePath = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    LogoFileId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     Url = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: true),
                     Tagline = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     TaglineArabic = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
@@ -2133,6 +2151,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         name: "FK_Sponsors_Countries_CountryId",
                         column: x => x.CountryId,
                         principalTable: "Countries",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Sponsors_StoredFiles_LogoFileId",
+                        column: x => x.LogoFileId,
+                        principalTable: "StoredFiles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -2710,6 +2734,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_ArchiveEditions_CoverImageFileId",
+                table: "ArchiveEditions",
+                column: "CoverImageFileId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_ArchiveEditions_IsActive_Year",
                 table: "ArchiveEditions",
                 columns: new[] { "IsActive", "Year" });
@@ -3171,6 +3200,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 columns: new[] { "IsActive", "DisplayOrder" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_MediaPartners_LogoFileId",
+                table: "MediaPartners",
+                column: "LogoFileId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_MeetingActionTokens_SpeakerMeetingRequestId",
                 table: "MeetingActionTokens",
                 column: "SpeakerMeetingRequestId");
@@ -3192,6 +3226,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 name: "IX_MeetingTables_HallId_IsActive",
                 table: "MeetingTables",
                 columns: new[] { "HallId", "IsActive" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_News_ImageFileId",
+                table: "News",
+                column: "ImageFileId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_News_IsActive_PublishedAt",
@@ -3602,6 +3641,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 name: "IX_Sponsors_IsActive_Tier_DisplayOrder",
                 table: "Sponsors",
                 columns: new[] { "IsActive", "Tier", "DisplayOrder" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Sponsors_LogoFileId",
+                table: "Sponsors",
+                column: "LogoFileId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_StoredFiles_CreatedBy",

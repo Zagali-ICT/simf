@@ -12,7 +12,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Persistence.Migrations.App
 {
     [DbContext(typeof(SimfAppDbContext))]
-    [Migration("20260814111147_InitialCreate")]
+    [Migration("20260814114257_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -520,9 +520,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<int>("Attendees")
                         .HasColumnType("int");
 
-                    b.Property<string>("CoverImageRelativePath")
-                        .HasMaxLength(512)
-                        .HasColumnType("nvarchar(512)");
+                    b.Property<Guid?>("CoverImageFileId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -586,6 +585,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CoverImageFileId");
 
                     b.HasIndex("Year")
                         .IsUnique();
@@ -5325,9 +5326,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
-                    b.Property<string>("LogoRelativePath")
-                        .HasMaxLength(512)
-                        .HasColumnType("nvarchar(512)");
+                    b.Property<Guid?>("LogoFileId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<double?>("Longitude")
                         .HasColumnType("float");
@@ -5367,6 +5367,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.HasKey("Id");
 
                     b.HasIndex("CountryId");
+
+                    b.HasIndex("LogoFileId");
 
                     b.HasIndex("IsActive", "DisplayOrder");
 
@@ -5419,9 +5421,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<string>("ImageRelativePath")
-                        .HasMaxLength(512)
-                        .HasColumnType("nvarchar(512)");
+                    b.Property<Guid?>("ImageFileId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -5446,6 +5447,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ImageFileId");
 
                     b.HasIndex("IsActive", "PublishedAt");
 
@@ -5858,9 +5861,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
-                    b.Property<string>("LogoRelativePath")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                    b.Property<Guid?>("LogoFileId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<double?>("Longitude")
                         .HasColumnType("float");
@@ -5911,6 +5913,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.HasKey("Id");
 
                     b.HasIndex("CountryId");
+
+                    b.HasIndex("LogoFileId");
 
                     b.HasIndex("IsActive", "Tier", "DisplayOrder");
 
@@ -6113,6 +6117,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasForeignKey("AiPromptId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("SIMF.Domain.Archive.ArchiveEdition", b =>
+                {
+                    b.HasOne("SIMF.Domain.Files.StoredFile", null)
+                        .WithMany()
+                        .HasForeignKey("CoverImageFileId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("SIMF.Domain.Archive.ArchiveMediaItem", b =>
@@ -6725,7 +6737,20 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasForeignKey("CountryId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("SIMF.Domain.Files.StoredFile", null)
+                        .WithMany()
+                        .HasForeignKey("LogoFileId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Country");
+                });
+
+            modelBuilder.Entity("SIMF.Domain.PublicRelations.News", b =>
+                {
+                    b.HasOne("SIMF.Domain.Files.StoredFile", null)
+                        .WithMany()
+                        .HasForeignKey("ImageFileId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("SIMF.Domain.SeatReservations.HallSeatLayout", b =>
@@ -6784,6 +6809,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.HasOne("SIMF.Domain.Common.Country", "Country")
                         .WithMany()
                         .HasForeignKey("CountryId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("SIMF.Domain.Files.StoredFile", null)
+                        .WithMany()
+                        .HasForeignKey("LogoFileId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Country");

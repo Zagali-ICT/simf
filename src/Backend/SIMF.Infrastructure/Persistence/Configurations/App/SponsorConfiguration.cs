@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using SIMF.Domain.Files;
 using SIMF.Domain.Sponsors;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
@@ -25,7 +26,13 @@ internal sealed class SponsorConfiguration : IEntityTypeConfiguration<Sponsor>
         // HasConversion<int>() makes that explicit and migration-stable.
         builder.Property(sponsor => sponsor.Tier).HasConversion<int>().IsRequired();
 
-        builder.Property(sponsor => sponsor.LogoRelativePath).HasMaxLength(256);
+        // The sponsor logo, in the one file store. Restrict: deleting a file must never
+        // delete the row that shows it.
+        builder.HasIndex(sponsor => sponsor.LogoFileId);
+        builder.HasOne<StoredFile>()
+            .WithMany()
+            .HasForeignKey(sponsor => sponsor.LogoFileId)
+            .OnDelete(DeleteBehavior.Restrict);
         builder.Property(sponsor => sponsor.Url).HasMaxLength(512);
 
         // Optional bilingual tagline (<=256, mirrors the service-layer

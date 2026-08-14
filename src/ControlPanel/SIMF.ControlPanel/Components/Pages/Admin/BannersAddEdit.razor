@@ -2,8 +2,9 @@
    page) from BannersList. Inherits CrudAddEditFormBase so it exposes the
    standard CRUD-form surface (IsEdit / Initial / OnSuccess / OnCancel).
    IsEdit=false runs Create (POST); IsEdit=true runs Edit (PUT against Initial)
-   and shows the IsActive checkbox. Carries the optional ImageUrl/LinkUrl
-   references unchanged. Supersedes the inline SimfModal form that lived in
+   and shows the IsActive checkbox. Carries the optional click-through LinkUrl;
+   the image is no longer a typed field, it is uploaded into the file store from
+   the Edit branch. Supersedes the inline SimfModal form that lived in
    BannersList. *@
 @inherits CrudAddEditFormBase<AdminBannerDetail>
 

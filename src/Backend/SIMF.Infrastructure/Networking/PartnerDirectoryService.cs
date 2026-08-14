@@ -80,7 +80,13 @@ internal sealed class PartnerDirectoryService(
             .SelectMany(g => g.Sponsors)
             .Select(s => new PartnerDirectoryEntry(
                 PartnerDirectoryKind.Sponsor, s.Id, s.NameEn, s.NameAr,
-                s.Tagline, s.TaglineArabic, s.LogoRelativePath, null,
+                s.Tagline, s.TaglineArabic,
+                // The same presence sentinel as the speaker branch above, and
+                // the same trap: this used to carry Sponsor.LogoRelativePath,
+                // which is now permanently null, so reading it would have shown
+                // every sponsor in the directory as an initials tile with no
+                // compiler error and no failing test to say so.
+                s.HasLogo ? SponsorLogoAssetPath(s.Id) : null, null,
                 s.CountryId, s.CountryNameEn, s.CountryNameAr)));
 
         // Sponsor / booth-company de-dup key (owner decision 2026-07-22): a company
@@ -177,4 +183,7 @@ internal sealed class PartnerDirectoryService(
     /// prepends its own base URL.</summary>
     private static string SpeakerPhotoAssetPath(Guid speakerId) =>
         $"/app/assets/{nameof(AssetCategory.SpeakerPhoto)}/{speakerId}/image";
+
+    private static string SponsorLogoAssetPath(Guid sponsorId) =>
+        $"/app/assets/{nameof(AssetCategory.SponsorLogo)}/{sponsorId}/image";
 }

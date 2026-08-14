@@ -47,7 +47,6 @@ public sealed class AdminArchiveTests : IClassFixture<SimfApiFactory>
                 Attendees = 1200,
                 Sessions = 45,
                 Speakers = 80,
-                CoverImageRelativePath = "archive/simf2019.png",
             }, admin);
         Assert.Equal(HttpStatusCode.OK, create.StatusCode);
         var created = (await create.Content

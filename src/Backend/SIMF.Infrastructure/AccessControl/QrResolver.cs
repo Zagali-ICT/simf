@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/GateScanTests.cs, SIMF.Api.Tests/OfflineBadgeUploadTests.cs
+﻿// Tests: SIMF.Api.Tests/GateScanTests.cs, SIMF.Api.Tests/OfflineBadgeUploadTests.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using SIMF.Application.AccessControl.Abstractions;
@@ -94,7 +94,7 @@ internal sealed class QrResolver(
             profileRow.profileTypePageColor,
             // The profile name wins. It is what the badge is printed from and
             // what the operator sees on the paper in front of them, and the
-            // profile is the attendee record (D-877) — the account may not exist
+            // profile is the attendee record — the account may not exist
             // at all for a walk-in. SimfUser.DisplayName serves the greeting and
             // nothing else, and can still hold a sign-up placeholder.
             profileRow.Name,

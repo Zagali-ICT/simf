@@ -1,4 +1,4 @@
-/* =====================================================================
+﻿/* =====================================================================
    SIMF_App — media-partners seed  ->  GET /app/media-partners
 
    Target database : SIMF_App   (NOT SIMF_Identity)
@@ -50,9 +50,9 @@ DECLARE @sys uniqueidentifier = '00000000-0000-0000-0000-000000000000'; -- syste
 
 -- ---------------------------------------------------------------- partner 1
 IF NOT EXISTS (SELECT 1 FROM dbo.MediaPartners WHERE Name = N'Maritime News Network')
-    INSERT INTO dbo.MediaPartners (Id, Name, NameArabic, DisplayOrder, LogoRelativePath, IsActive, CreatedAt, CreatedBy)
+    INSERT INTO dbo.MediaPartners (Id, Name, NameArabic, DisplayOrder, IsActive, CreatedAt, CreatedBy)
     VALUES (NEWID(), N'Maritime News Network', N'شبكة الأخبار البحرية', 10,
-        NULL, 1, @now, @sys);
+        1, @now, @sys);
 
 IF EXISTS (SELECT 1 FROM dbo.MediaPartners WHERE Name = N'Maritime News Network')
    AND NOT EXISTS (SELECT 1 FROM dbo.StoredFiles
@@ -68,9 +68,9 @@ IF EXISTS (SELECT 1 FROM dbo.MediaPartners WHERE Name = N'Maritime News Network'
 
 -- ---------------------------------------------------------------- partner 2
 IF NOT EXISTS (SELECT 1 FROM dbo.MediaPartners WHERE Name = N'Naval Affairs Review')
-    INSERT INTO dbo.MediaPartners (Id, Name, NameArabic, DisplayOrder, LogoRelativePath, IsActive, CreatedAt, CreatedBy)
+    INSERT INTO dbo.MediaPartners (Id, Name, NameArabic, DisplayOrder, IsActive, CreatedAt, CreatedBy)
     VALUES (NEWID(), N'Naval Affairs Review', N'مجلة الشؤون البحرية', 20,
-        NULL, 1, @now, @sys);
+        1, @now, @sys);
 
 IF EXISTS (SELECT 1 FROM dbo.MediaPartners WHERE Name = N'Naval Affairs Review')
    AND NOT EXISTS (SELECT 1 FROM dbo.StoredFiles
@@ -86,9 +86,9 @@ IF EXISTS (SELECT 1 FROM dbo.MediaPartners WHERE Name = N'Naval Affairs Review')
 
 -- ---------------------------------------------------------------- partner 3
 IF NOT EXISTS (SELECT 1 FROM dbo.MediaPartners WHERE Name = N'Sea Trade Daily')
-    INSERT INTO dbo.MediaPartners (Id, Name, NameArabic, DisplayOrder, LogoRelativePath, IsActive, CreatedAt, CreatedBy)
+    INSERT INTO dbo.MediaPartners (Id, Name, NameArabic, DisplayOrder, IsActive, CreatedAt, CreatedBy)
     VALUES (NEWID(), N'Sea Trade Daily', N'تجارة البحار اليومية', 30,
-        NULL, 1, @now, @sys);
+        1, @now, @sys);
 
 IF EXISTS (SELECT 1 FROM dbo.MediaPartners WHERE Name = N'Sea Trade Daily')
    AND NOT EXISTS (SELECT 1 FROM dbo.StoredFiles
@@ -101,5 +101,31 @@ IF EXISTS (SELECT 1 FROM dbo.MediaPartners WHERE Name = N'Sea Trade Daily')
         0, 0, N'https://placehold.co/260x130/ffffff/0a2e6b?text=Sea%20Trade%20Daily', N'image/png',
         1, 8, (SELECT Id FROM dbo.MediaPartners WHERE Name = N'Sea Trade Daily'),
         @now, @sys, 1);
+
+
+/* The partner row points AT its file. The StoredFile's owner columns are the
+   other half of the link and are already set above; this is the half a foreign
+   key constrains, and the half a caller holding the partner row can follow
+   without a second query. Leaving it NULL would make the seed the one place in
+   the system where the two disagree — which is precisely the half-state the
+   pointer programme exists to remove. Guarded on IS NULL so a re-run is a no-op
+   and an admin's later upload is never overwritten. */
+UPDATE dbo.MediaPartners
+   SET LogoFileId = 'b1a7f0d2-1c4e-4a11-9f01-0a1d2e3f4a51'
+ WHERE Name = N'Maritime News Network'
+   AND LogoFileId IS NULL
+   AND EXISTS (SELECT 1 FROM dbo.StoredFiles WHERE Id = 'b1a7f0d2-1c4e-4a11-9f01-0a1d2e3f4a51' AND IsActive = 1);
+
+UPDATE dbo.MediaPartners
+   SET LogoFileId = 'b1a7f0d2-1c4e-4a11-9f01-0a1d2e3f4a52'
+ WHERE Name = N'Naval Affairs Review'
+   AND LogoFileId IS NULL
+   AND EXISTS (SELECT 1 FROM dbo.StoredFiles WHERE Id = 'b1a7f0d2-1c4e-4a11-9f01-0a1d2e3f4a52' AND IsActive = 1);
+
+UPDATE dbo.MediaPartners
+   SET LogoFileId = 'b1a7f0d2-1c4e-4a11-9f01-0a1d2e3f4a53'
+ WHERE Name = N'Sea Trade Daily'
+   AND LogoFileId IS NULL
+   AND EXISTS (SELECT 1 FROM dbo.StoredFiles WHERE Id = 'b1a7f0d2-1c4e-4a11-9f01-0a1d2e3f4a53' AND IsActive = 1);
 
 COMMIT TRANSACTION;

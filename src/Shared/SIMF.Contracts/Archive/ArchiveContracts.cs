@@ -23,7 +23,13 @@ public sealed record PublicArchiveEdition(
     string? LocationEn = null,
     string? LocationAr = null,
     string? DateLabelEn = null,
-    string? DateLabelAr = null);
+    string? DateLabelAr = null,
+    // True when the edition has an active ArchiveCover asset in the file store.
+    // CoverImageRelativePath above is retained for the shipped wire and is always
+    // null; this is what a client should branch on before building
+    // /content/assets/ArchiveCover/{id}/image. Appended with a default, so the
+    // positional wire is unchanged.
+    bool HasCoverAsset = false);
 
 /// <summary>One public gallery item ("الصور والفيديو").
 /// <c>Kind</c> is the <c>ArchiveMediaKind</c> int (0 image, 1 video).
@@ -94,7 +100,13 @@ public sealed record AdminArchiveEditionSummary(
     string? LocationEn = null,
     string? LocationAr = null,
     string? DateLabelEn = null,
-    string? DateLabelAr = null);
+    string? DateLabelAr = null,
+    // True when the edition has an active ArchiveCover asset in the file store.
+    // CoverImageRelativePath above is retained for the shipped wire and is always
+    // null; this is what a client should branch on before building
+    // /content/assets/ArchiveCover/{id}/image. Appended with a default, so the
+    // positional wire is unchanged.
+    bool HasCoverAsset = false);
 
 public sealed record AdminArchiveEditionDetail(
     Guid Id,
@@ -160,7 +172,6 @@ public sealed record CreateArchiveEditionRequest
     public int Attendees { get; set; }
     public int Sessions { get; set; }
     public int Speakers { get; set; }
-    public string? CoverImageRelativePath { get; set; }
     // Place + date label for the edition detail.
     public string? LocationEn { get; set; }
     public string? LocationAr { get; set; }
@@ -185,7 +196,6 @@ public record UpdateArchiveEditionRequest
     public int Attendees { get; set; }
     public int Sessions { get; set; }
     public int Speakers { get; set; }
-    public string? CoverImageRelativePath { get; set; }
     // Place + date label for the edition detail.
     public string? LocationEn { get; set; }
     public string? LocationAr { get; set; }

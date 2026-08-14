@@ -12,7 +12,7 @@ namespace SIMF.Infrastructure.Persistence.Configurations.App;
 ///
 /// <para>That owner pair still carries no key, but this table is now the
 /// <b>principal</b> of several: owning rows point at it by a typed
-/// <c>Guid? XFileId</c> with a real foreign key (D-885, D-888). The two links are
+/// <c>Guid? XFileId</c> with a real foreign key. The two links are
 /// not redundant — the owner pair is queried by <c>Service</c> as well as by
 /// owner, which a bare key cannot express, and the owner-or-admin download check
 /// reads it.</para></summary>

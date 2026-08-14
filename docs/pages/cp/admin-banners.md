@@ -1,4 +1,4 @@
-# Banners — `/admin/banners`
+﻿# Banners — `/admin/banners`
 
 | | |
 |--|--|
@@ -75,7 +75,6 @@ server-side in `AdminCmsService.ValidateBanner`.
 | Title (Arabic) | yes | 1–256 | non-blank; ≤ 256 chars |
 | Body (English) | yes | 1–2000 | non-blank; ≤ 2000 chars |
 | Body (Arabic) | yes | 1–2000 | non-blank; ≤ 2000 chars |
-| Image URL | no | — | optional; `NullIfBlank` |
 | Click-through URL | no | — | optional; `NullIfBlank` |
 | Start (Saudi time) | yes | n/a | `datetime-local`; defaults to now |
 | End (Saudi time) | yes | n/a | `datetime-local`; defaults to now + 1 day; must be **after** Start |
@@ -194,6 +193,7 @@ column sort, 017 presentation toggle persists (D-353), 018 full-page round-trip
 
 | Date | Decision | Change |
 |------|----------|--------|
+| 2026-08-14 | D-889 | **The free-text Image URL is gone; the hero image is a typed key.** `Banner.ImageUrl` becomes `Guid? ImageFileId` with a real foreign key into `StoredFiles`. A pasted URL used to load straight into the Flutter app's home hero carrying no media type, no sensitivity tier and no permission entry; an externally hosted image is now a `StoredFile` of source type `ExternalLink` instead. The workbook loses its ImageUrl column and ignores a stale one. |
 | 2026-06-11 | D-356 / D-353 | Reference doc authored. Documents the shipped Banners page: `SimfDataGrid` list (D-256), `CrudShell`-hosted `BannersAddEdit` / `BannersViewDelete` forms with a `SimfConfirm`-gated soft-delete and a Page↔Popup presentation toggle persisted in `localStorage` (D-353), and the Excel export + import pair (D-356, sheet "Banners", 5000-row cap, 5 MB upload limit). |
 
 _Last reviewed:_ 2026-06-11 by Claude (D-356 ref-doc backfill).

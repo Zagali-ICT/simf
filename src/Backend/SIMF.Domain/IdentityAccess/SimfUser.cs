@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using SIMF.Common.Enums;
 
 namespace SIMF.Domain.IdentityAccess;
@@ -20,7 +20,7 @@ public class SimfUser : IdentityUser<Guid>
     /// signed-in-user label read it; nothing else should.
     ///
     /// <para>Everywhere else reads the full name from <c>UserProfile</c>, which is
-    /// the attendee record (D-877). Any shortening — the visitor greeting takes
+    /// the attendee record. Any shortening — the visitor greeting takes
     /// the first two words — is a presentation rule applied at render time, never
     /// stored here.</para>
     ///
@@ -63,8 +63,8 @@ public class SimfUser : IdentityUser<Guid>
 
     /// <summary>The avatar's <c>StoredFile</c> row in the App database, as a
     /// bare Guid and deliberately not a foreign key: SQL Server has no
-    /// cross-database FK syntax and D-157 forbids the reference anyway, so the
-    /// service layer owns the link exactly as it does for
+    /// cross-database FK syntax, and the two-database separation forbids the
+    /// reference anyway, so the service layer owns the link exactly as it does for
     /// <c>UserProfile.UserId</c>. Null means no avatar.
     ///
     /// <para>This was <c>AvatarRelativePath</c>, a string, until the column was

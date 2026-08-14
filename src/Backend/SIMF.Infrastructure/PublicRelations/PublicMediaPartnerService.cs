@@ -32,7 +32,7 @@ internal sealed class PublicMediaPartnerService(SimfAppDbContext appDbContext)
                 m.Id,
                 m.Name,
                 m.NameArabic,
-                m.LogoRelativePath,
+                null,
                 m.Url,
                 m.DisplayOrder,
                 m.PhonePrimary,

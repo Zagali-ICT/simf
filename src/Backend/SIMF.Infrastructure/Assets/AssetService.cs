@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/AssetEndpointsTests.cs
+﻿// Tests: SIMF.Api.Tests/AssetEndpointsTests.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Assets.Abstractions;
@@ -7,6 +7,7 @@ using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Assets;
 using SIMF.Domain.Files;
+using SIMF.Infrastructure.Files;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Assets;
@@ -261,6 +262,8 @@ internal sealed class AssetService(
         file.UpdatedBy = actorUserId;
         file.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
+        await OwnerPointerSync.ClearIfPointingAtAsync(
+            dbContext, file.Service, file.OwnerEntityId, file.Id, cancellationToken);
     }
 
     public async Task RestoreAsync(
@@ -286,6 +289,8 @@ internal sealed class AssetService(
         file.UpdatedBy = actorUserId;
         file.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
+        await OwnerPointerSync.PointAtAsync(
+            dbContext, file.Service, file.OwnerEntityId, file.Id, cancellationToken);
     }
 
     // Retire every OTHER active file of this (service, owner) so exactly one stays

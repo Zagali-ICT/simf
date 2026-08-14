@@ -80,7 +80,7 @@ internal sealed class AdminArchiveService(
                 edition.Id, edition.Year, edition.TitleEn, edition.TitleAr,
                 edition.SummaryEn, edition.SummaryAr,
                 edition.Attendees, edition.Sessions, edition.Speakers,
-                edition.CoverImageRelativePath, edition.IsActive,
+                edition.IsActive,
                 edition.CreatedAt,
                 edition.LocationEn, edition.LocationAr,
                 edition.DateLabelEn, edition.DateLabelAr,
@@ -98,7 +98,10 @@ internal sealed class AdminArchiveService(
                 edition.Id, edition.Year, edition.TitleEn, edition.TitleAr,
                 edition.SummaryEn, edition.SummaryAr,
                 edition.Attendees, edition.Sessions, edition.Speakers,
-                edition.CoverImageRelativePath, edition.IsActive,
+                // The cover is a StoredFile; HasCoverAsset below is the flag the
+                // grid renders from, and the client builds the URL from the id.
+                null,
+                edition.IsActive,
                 edition.CreatedAt,
                 coverOwners.Contains(edition.Id),
                 edition.LocationEn, edition.LocationAr,
@@ -135,7 +138,6 @@ internal sealed class AdminArchiveService(
         var v = Validate(request.Year, request.TitleEn, request.TitleAr,
             request.SummaryEn, request.SummaryAr,
             request.Attendees, request.Sessions, request.Speakers,
-            request.CoverImageRelativePath,
             request.LocationEn, request.LocationAr,
             request.DateLabelEn, request.DateLabelAr);
 
@@ -161,7 +163,6 @@ internal sealed class AdminArchiveService(
             Attendees = v.Attendees,
             Sessions = v.Sessions,
             Speakers = v.Speakers,
-            CoverImageRelativePath = v.CoverImageRelativePath,
             // Optional place + date label.
             LocationEn = v.LocationEn,
             LocationAr = v.LocationAr,
@@ -208,7 +209,6 @@ internal sealed class AdminArchiveService(
         var v = Validate(request.Year, request.TitleEn, request.TitleAr,
             request.SummaryEn, request.SummaryAr,
             request.Attendees, request.Sessions, request.Speakers,
-            request.CoverImageRelativePath,
             request.LocationEn, request.LocationAr,
             request.DateLabelEn, request.DateLabelAr);
 
@@ -232,7 +232,6 @@ internal sealed class AdminArchiveService(
         edition.Attendees = v.Attendees;
         edition.Sessions = v.Sessions;
         edition.Speakers = v.Speakers;
-        edition.CoverImageRelativePath = v.CoverImageRelativePath;
         // Optional place + date label.
         edition.LocationEn = v.LocationEn;
         edition.LocationAr = v.LocationAr;
@@ -348,13 +347,11 @@ internal sealed class AdminArchiveService(
     private static (int Year, string TitleEn, string TitleAr,
         string? SummaryEn, string? SummaryAr,
         int Attendees, int Sessions, int Speakers,
-        string? CoverImageRelativePath,
         string? LocationEn, string? LocationAr,
         string? DateLabelEn, string? DateLabelAr) Validate(
             int yearRaw, string titleEnRaw, string titleArRaw,
             string? summaryEnRaw, string? summaryArRaw,
             int attendeesRaw, int sessionsRaw, int speakersRaw,
-            string? coverRaw,
             string? locationEnRaw, string? locationArRaw,
             string? dateLabelEnRaw, string? dateLabelArRaw)
     {
@@ -406,14 +403,6 @@ internal sealed class AdminArchiveService(
                 "يجب أن تكون أعداد الحضور والجلسات والمتحدثين صفراً أو موجبة.");
         }
 
-        var cover = string.IsNullOrWhiteSpace(coverRaw) ? null : coverRaw.Trim();
-        if (cover is { Length: > 512 })
-        {
-            throw new ApiException(ErrorCodes.ArchiveEditionInvalid, 400,
-                "Cover image path must be 512 characters or fewer.",
-                "يجب ألا يتجاوز مسار صورة الغلاف 512 حرفاً.");
-        }
-
         // Optional place + date label, length-checked here
         // too so the service mirrors the FluentValidation + EF limits (256 / 128)
         // for every persisted string field.
@@ -436,7 +425,7 @@ internal sealed class AdminArchiveService(
         }
 
         return (yearRaw, titleEn, titleAr, summaryEn, summaryAr,
-            attendeesRaw, sessionsRaw, speakersRaw, cover,
+            attendeesRaw, sessionsRaw, speakersRaw,
             locationEn, locationAr, dateLabelEn, dateLabelAr);
     }
 
@@ -444,7 +433,7 @@ internal sealed class AdminArchiveService(
         new(edition.Id, edition.Year, edition.TitleEn, edition.TitleAr,
             edition.SummaryEn, edition.SummaryAr,
             edition.Attendees, edition.Sessions, edition.Speakers,
-            edition.CoverImageRelativePath, edition.IsActive,
+            null, edition.IsActive,
             edition.CreatedAt, edition.UpdatedAt,
             edition.LocationEn, edition.LocationAr,
             edition.DateLabelEn, edition.DateLabelAr,

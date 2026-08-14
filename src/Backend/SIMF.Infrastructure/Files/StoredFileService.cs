@@ -97,6 +97,9 @@ internal sealed class StoredFileService(
         dbContext.StoredFiles.Add(file);
         await dbContext.SaveChangesAsync(cancellationToken);
 
+        await OwnerPointerSync.PointAtAsync(
+            dbContext, command.Service, command.OwnerEntityId, fileId, cancellationToken);
+
         await auditLog.WriteSuccessAsync(
             AuditEvents.FileUploaded,
             command.ActorUserId,
@@ -164,6 +167,9 @@ internal sealed class StoredFileService(
         };
         dbContext.StoredFiles.Add(file);
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        await OwnerPointerSync.PointAtAsync(
+            dbContext, service, ownerEntityId, fileId, cancellationToken);
 
         await auditLog.WriteSuccessAsync(
             AuditEvents.FileUploaded,
@@ -256,6 +262,9 @@ internal sealed class StoredFileService(
         file.IsDeletable = policy.DeletableDefault;
 
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        await OwnerPointerSync.PointAtAsync(
+            dbContext, command.Service, command.OwnerEntityId, file.Id, cancellationToken);
 
         // Free the swapped-out upload's bytes only after the row is safely persisted.
         if (previousUploadKey is not null)
@@ -378,6 +387,13 @@ internal sealed class StoredFileService(
         file.UpdatedAt = now;
         await dbContext.SaveChangesAsync(cancellationToken);
 
+        // The owning row must not keep pointing at a file that is no longer
+        // there. This path is reachable without the asset service — a direct
+        // DELETE /files/{id} — so the pointer is maintained here rather than
+        // only where assets are managed.
+        await OwnerPointerSync.ClearIfPointingAtAsync(
+            dbContext, file.Service, file.OwnerEntityId, file.Id, cancellationToken);
+
         // Deletion honesty: a soft-deleted file's bytes must
         // not linger on disk. Unlink the stored blob (Upload only; an ExternalLink
         // holds no bytes). Best-effort after the row commit — the row is the source
@@ -415,6 +431,11 @@ internal sealed class StoredFileService(
         file.UpdatedBy = actorUserId;
         file.UpdatedAt = now;
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        // Erasure has to reach the pointer too, or the owning row would still
+        // name a file whose bytes are gone.
+        await OwnerPointerSync.ClearIfPointingAtAsync(
+            dbContext, file.Service, file.OwnerEntityId, file.Id, cancellationToken);
 
         await auditLog.WriteSuccessAsync(
             AuditEvents.FileSecurelyDestroyed,

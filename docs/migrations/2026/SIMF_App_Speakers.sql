@@ -17,7 +17,9 @@
    Run this ONLY when the roster is confirmed for publication. English names
    are best-effort transliterations from the profile URLs.
 
-   Photos          : this file seeds TEXT only (PhotoRelativePath left NULL).
+   Photos          : this file seeds TEXT only, and names no photo column —
+                     the speaker row has not carried one since the pointer was
+                     dropped; a photo is a StoredFile owned by the speaker.
                      The 23 real headshots are seeded separately via the
                      centralized StoredFile store — run
                      SIMF_App_SpeakerPhotos.sql AFTER this file and deploy the
@@ -60,7 +62,7 @@ IF NOT EXISTS (SELECT 1 FROM dbo.Countries WHERE Id = 788)
    Columns set: Code, Name (EN transliteration), NameArabic (authoritative),
    Rank (EN role), CountryId (FK), Bio + BioArabic, one profile URL routed to
    WebsiteUrl / LinkedInUrl / XUrl, DisplayOrder (10..320, section order),
-   consent flags, audit. PhotoRelativePath left NULL (admin uploads later).
+   consent flags, audit. No photo column is written (admin uploads later).
    --------------------------------------------------------------------- */
 
 -- Section 1: Senior naval military leadership  |  كبار القادة العسكريين البحريين

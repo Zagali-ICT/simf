@@ -27,7 +27,11 @@
         <dt>@L["Admin.Sponsors.Col.Tier"]</dt>
         <dd>@Initial.TierName</dd>
         <dt>@L["Admin.Sponsors.Col.Logo"]</dt>
-        <dd>@(string.IsNullOrWhiteSpace(Initial.LogoRelativePath) ? "—" : Initial.LogoRelativePath)</dd>
+        <dd>
+            <SimfImageThumb Class="simf-img-thumb--lg"
+                            Src="@CpAssetUrls.AdminImage(nameof(AssetCategory.SponsorLogo), Initial.Id)"
+                            Alt="@Initial.NameEn" />
+        </dd>
         <dt>@L["Admin.Sponsors.Col.Url"]</dt>
         <dd>@(string.IsNullOrWhiteSpace(Initial.Url) ? "—" : Initial.Url)</dd>
         <dt>@L["Admin.Sponsors.Col.DisplayOrder"]</dt>
