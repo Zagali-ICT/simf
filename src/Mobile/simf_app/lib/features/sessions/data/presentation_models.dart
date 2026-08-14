@@ -33,7 +33,8 @@ class PresentationItem {
         speakerName: json['speakerName'] as String? ?? '',
         speakerNameArabic: json['speakerNameArabic'] as String? ?? '',
         fileName: json['fileName'] as String? ?? '',
-        contentType: json['contentType'] as String? ?? 'application/octet-stream',
+        contentType:
+            json['contentType'] as String? ?? 'application/octet-stream',
         sizeBytes: (json['sizeBytes'] as num?)?.toInt() ?? 0,
       );
 
@@ -65,8 +66,8 @@ class PresentationsPage {
   const PresentationsPage(this.items);
 
   factory PresentationsPage.fromData(Object? data) {
-    final list = (data is Map ? data['items'] : null) as List? ??
-        const <dynamic>[];
+    final list =
+        (data is Map ? data['items'] : null) as List? ?? const <dynamic>[];
     final items = list
         .whereType<Map<dynamic, dynamic>>()
         .map((e) => PresentationItem.fromJson(e.cast<String, dynamic>()))
@@ -86,6 +87,7 @@ String _pickRequired(String arabic, String english, bool isArabic) {
 String? _pickOptional(String? arabic, String? english, bool isArabic) {
   final ar = arabic?.trim() ?? '';
   final en = english?.trim() ?? '';
-  final value = isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
+  final value =
+      isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
   return value.isEmpty ? null : value;
 }

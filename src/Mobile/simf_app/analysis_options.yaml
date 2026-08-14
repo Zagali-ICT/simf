@@ -120,7 +120,10 @@ linter:
     unnecessary_null_checks: true
     unnecessary_null_aware_assignments: true
     avoid_redundant_argument_values: true
-    require_trailing_commas: true           # hand-write commas; NEVER run `dart format .` (it strips them)
+    # `dart format` strips these (measured 0 -> 109 on 2026-08-14). It is
+    # usable, but only followed by `dart fix --apply --code=require_trailing_commas`.
+    # See CLAUDE.md section 11 - the end state is deliberately not format-stable.
+    require_trailing_commas: true
     sort_child_properties_last: true
 
     # --- naming / API design ---

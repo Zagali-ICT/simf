@@ -14,7 +14,8 @@ import 'package:simf_app/features/home/widgets/pending_approval_card.dart';
 /// Guest / unapproved layout (frame 758:2910 — "الرئيسية • ضيف", 2×2 tiles):
 /// shown to a not-signed-in guest AND a signed-in but unapproved account.
 class GuestHome extends StatelessWidget {
-  const GuestHome({required this.l10n, this.pendingApproval = false, super.key});
+  const GuestHome(
+      {required this.l10n, this.pendingApproval = false, super.key,});
 
   final AppL10n l10n;
 

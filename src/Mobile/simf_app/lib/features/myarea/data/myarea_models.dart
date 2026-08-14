@@ -12,7 +12,8 @@ class MyAreaDashboard {
     required this.todaySchedule,
   });
 
-  factory MyAreaDashboard.fromJson(Map<String, dynamic> json) => MyAreaDashboard(
+  factory MyAreaDashboard.fromJson(Map<String, dynamic> json) =>
+      MyAreaDashboard(
         identity: MyAreaIdentity.fromJson(_map(json['identity'])),
         counters: MyAreaCounters.fromJson(_map(json['counters'])),
         todaySchedule: (json['todaySchedule'] as List? ?? const <dynamic>[])
@@ -91,7 +92,8 @@ class MyAreaCounters {
   });
 
   factory MyAreaCounters.fromJson(Map<String, dynamic> json) => MyAreaCounters(
-        bookedSessionsCount: (json['bookedSessionsCount'] as num?)?.toInt() ?? 0,
+        bookedSessionsCount:
+            (json['bookedSessionsCount'] as num?)?.toInt() ?? 0,
         meetingsCount: (json['meetingsCount'] as num?)?.toInt() ?? 0,
       );
 
@@ -106,7 +108,10 @@ class MyAreaScheduleItem {
   const MyAreaScheduleItem({
     required this.kind,
     required this.start,
-    required this.titleEn, required this.titleAr, required this.status, this.end,
+    required this.titleEn,
+    required this.titleAr,
+    required this.status,
+    this.end,
     this.hallNameEn,
     this.hallNameAr,
     this.subject,
@@ -149,7 +154,8 @@ class MyAreaScheduleItem {
   String localizedTitle({required bool isArabic}) {
     final ar = titleAr.trim();
     final en = titleEn.trim();
-    final title = isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
+    final title =
+        isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
     if (title.isNotEmpty) {
       return title;
     }

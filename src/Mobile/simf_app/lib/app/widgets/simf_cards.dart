@@ -122,7 +122,8 @@ class SimfPageNote extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         // Sized like the shell's other inline glyphs (cf. SimfEmptyState).
-        const Icon(Icons.info_outline, size: SimfTokens.simfCardsSizeSm, color: SimfTokens.beigeBorder),
+        const Icon(Icons.info_outline,
+            size: SimfTokens.simfCardsSizeSm, color: SimfTokens.beigeBorder,),
         const SizedBox(width: SimfTokens.space2),
         Expanded(child: Text(text, style: SimfTokens.bodyBeigeSm)),
       ],

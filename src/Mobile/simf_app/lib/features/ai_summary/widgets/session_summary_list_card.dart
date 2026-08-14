@@ -56,7 +56,8 @@ class SessionSummaryCard extends StatelessWidget {
         queryParameters: <String, String>{RouteParams.sessionId: item.id},
       ),
       child: Padding(
-        padding: const EdgeInsets.all(SimfTokens.space2), // p-8 (Figma 1388:8430)
+        padding:
+            const EdgeInsets.all(SimfTokens.space2), // p-8 (Figma 1388:8430)
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
@@ -122,7 +123,8 @@ class SessionSummaryCard extends StatelessWidget {
                     Expanded(child: CategoryPill(label: category)),
                     if (hasChips) const SizedBox(width: SimfTokens.space4),
                   ],
-                  if (hasChips) SessionStateChipRow(kinds: stateChips, l10n: l10n),
+                  if (hasChips)
+                    SessionStateChipRow(kinds: stateChips, l10n: l10n),
                 ],
               ),
             ],

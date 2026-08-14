@@ -26,8 +26,7 @@ class SiteSettings {
         ),
         partnerDirectoryEnabled:
             json['partnerDirectoryEnabled'] as bool? ?? true,
-        sessionRatingEnabled:
-            json['sessionRatingEnabled'] as bool? ?? true,
+        sessionRatingEnabled: json['sessionRatingEnabled'] as bool? ?? true,
       );
 
   final String registrationMessageAr;
@@ -63,7 +62,8 @@ class SiteSocialLinks {
   // The API serialises with camelCase (System.Text.Json), so the multi-word
   // keys arrive as `linkedIn` / `youTube` / `tikTok` — read those exact keys,
   // not all-lowercase, or the CP-set LinkedIn/YouTube/TikTok URLs silently drop.
-  factory SiteSocialLinks.fromJson(Map<String, dynamic> json) => SiteSocialLinks(
+  factory SiteSocialLinks.fromJson(Map<String, dynamic> json) =>
+      SiteSocialLinks(
         facebook: json['facebook'] as String?,
         x: json['x'] as String?,
         instagram: json['instagram'] as String?,

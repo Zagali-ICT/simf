@@ -66,8 +66,7 @@ class NotificationItem {
       severity: NotificationSeverity.fromName(json['severity'] as String?),
       isRead: json['isRead'] as bool? ?? false,
       readAt: readAtRaw == null ? null : parseWireOrNull(readAtRaw),
-      createdAt:
-          createdAtRaw == null ? null : parseWireOrNull(createdAtRaw),
+      createdAt: createdAtRaw == null ? null : parseWireOrNull(createdAtRaw),
       relatedEntityType: json['relatedEntityType'] as String?,
       relatedEntityId: json['relatedEntityId'] as String?,
       clickUrl: json['clickUrl'] as String?,

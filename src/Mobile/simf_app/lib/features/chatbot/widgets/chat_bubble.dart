@@ -13,7 +13,8 @@ class ChatBubble extends StatelessWidget {
 
   final ChatMessage message;
 
-  static const Radius _r = Radius.circular(SimfTokens.radius); // 8 — large corners
+  static const Radius _r =
+      Radius.circular(SimfTokens.radius); // 8 — large corners
   static const Radius _tail = Radius.circular(SimfTokens.radiusTail);
 
   @override

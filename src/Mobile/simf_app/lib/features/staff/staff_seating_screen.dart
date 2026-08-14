@@ -168,7 +168,8 @@ class _StaffSeatingScreenState extends ConsumerState<StaffSeatingScreen> {
         child: ListView(
           children: <Widget>[
             Text(
-              map.localizedSessionTitle(isArabic: l10n.isArabic) ?? l10n.staffSeatingTitle,
+              map.localizedSessionTitle(isArabic: l10n.isArabic) ??
+                  l10n.staffSeatingTitle,
               textAlign: TextAlign.center,
               style: SimfTokens.labelWhiteBoldTitle,
             ),

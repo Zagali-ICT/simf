@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
-import 'package:simf_app/features/account/data/profile_models.dart' show AppGender;
+import 'package:simf_app/features/account/data/profile_models.dart'
+    show AppGender;
 
 /// D-509 — the staff walk-in registration request. Mirrors the backend
 /// `AdminWalkInRegistrationRequest` (the same DTO the CP desk posts), trimmed to
@@ -61,7 +62,8 @@ class StaffWalkInRequest {
         if (iqamaNumber != null) 'iqamaNumber': iqamaNumber,
         if (passportNumber != null) 'passportNumber': passportNumber,
         if (saudiMobile != null) 'saudiMobile': saudiMobile,
-        if (internationalMobile != null) 'internationalMobile': internationalMobile,
+        if (internationalMobile != null)
+          'internationalMobile': internationalMobile,
       };
 }
 

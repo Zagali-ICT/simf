@@ -3,8 +3,7 @@ import 'dart:io' show Platform;
 import 'dart:typed_data';
 
 import 'package:camera/camera.dart';
-import 'package:flutter/foundation.dart'
-    show defaultTargetPlatform, kIsWeb;
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show DeviceOrientation;
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
@@ -278,11 +277,17 @@ class _IdentityVerificationScreenState
   Widget _stepLeading() {
     switch (livenessPromptDirection(_step)) {
       case LivenessPromptDirection.none:
-        return const Text('😊', style: TextStyle(fontSize: SimfTokens.identityVerificationScreenFontSize));
+        return const Text('😊',
+            style: TextStyle(
+                fontSize: SimfTokens.identityVerificationScreenFontSize,),);
       case LivenessPromptDirection.right:
-        return const Icon(Icons.east, color: SimfTokens.accent, size: SimfTokens.identityVerificationScreenSize);
+        return const Icon(Icons.east,
+            color: SimfTokens.accent,
+            size: SimfTokens.identityVerificationScreenSize,);
       case LivenessPromptDirection.left:
-        return const Icon(Icons.west, color: SimfTokens.accent, size: SimfTokens.identityVerificationScreenSize);
+        return const Icon(Icons.west,
+            color: SimfTokens.accent,
+            size: SimfTokens.identityVerificationScreenSize,);
     }
   }
 

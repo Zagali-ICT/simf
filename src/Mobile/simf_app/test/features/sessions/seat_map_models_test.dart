@@ -4,8 +4,10 @@ import 'package:simf_app/features/sessions/data/seat_map_models.dart';
 void main() {
   group('SeatReservationKind.fromJson', () {
     test('decodes int / name; unknown → userBooking', () {
-      expect(SeatReservationKind.fromJson(1), SeatReservationKind.adminReservedRow);
-      expect(SeatReservationKind.fromJson(2), SeatReservationKind.randomAssignment);
+      expect(SeatReservationKind.fromJson(1),
+          SeatReservationKind.adminReservedRow,);
+      expect(SeatReservationKind.fromJson(2),
+          SeatReservationKind.randomAssignment,);
       expect(
         SeatReservationKind.fromJson('AdminReservedRow'),
         SeatReservationKind.adminReservedRow,
@@ -111,7 +113,8 @@ void main() {
       expect(map.isMine('B', 2), isTrue);
       expect(map.isMine('A', 1), isFalse);
       expect(map.myCell!.kind, SeatReservationKind.userBooking);
-      expect(map.reservedCells.single.kind, SeatReservationKind.adminReservedRow);
+      expect(
+          map.reservedCells.single.kind, SeatReservationKind.adminReservedRow,);
       // D-485 — no 'mode' key on the wire → the safe assigned-seat default.
       expect(map.mode, SeatSelectionMode.assignedSeat);
     });
@@ -277,7 +280,8 @@ void main() {
       expect(map.maxSeatsPerRow, 5);
     });
 
-    test('a length-mismatched seatCounts with a zero seatsPerRow reports no '
+    test(
+        'a length-mismatched seatCounts with a zero seatsPerRow reports no '
         'layout (degraded response falls to the safe empty state, never a '
         'zero-column grid)', () {
       final map = SessionSeatMap.fromJson(const <String, dynamic>{

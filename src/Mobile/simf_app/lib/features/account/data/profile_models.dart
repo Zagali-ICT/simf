@@ -60,6 +60,7 @@ class UpsertUserProfileRequest {
   final String? passportNumber;
   final String? saudiMobile;
   final String? internationalMobile;
+
   /// C6 (D-371) — رقم اللوحة, optional; Saudi standard when filled.
   final String? plateNumber;
   final String? organisationId;
@@ -225,7 +226,8 @@ class UserProfileResponse {
       qrId: json['qrId'] as String?,
       isVip: json['isVip'] as bool? ?? false,
       allowsSpeakerMeeting: json['allowsSpeakerMeeting'] as bool? ?? false,
-      allowsDelegationMeeting: json['allowsDelegationMeeting'] as bool? ?? false,
+      allowsDelegationMeeting:
+          json['allowsDelegationMeeting'] as bool? ?? false,
       showInMeetLikeYou: json['showInMeetLikeYou'] as bool? ?? true,
       isForVisitor: json['isForVisitor'] as bool? ?? true,
       regionId: json['regionId'] as String?,
@@ -247,6 +249,7 @@ class UserProfileResponse {
   final String? passportNumber;
   final String? saudiMobile;
   final String? internationalMobile;
+
   /// C6 (D-371/D-459) — رقم اللوحة, optional Saudi vehicle plate, stored as the
   /// canonical Latin code.
   final String? plateNumber;
@@ -396,7 +399,8 @@ class ProfileTypeItem {
     this.pageColor,
   });
 
-  factory ProfileTypeItem.fromJson(Map<String, dynamic> json) => ProfileTypeItem(
+  factory ProfileTypeItem.fromJson(Map<String, dynamic> json) =>
+      ProfileTypeItem(
         id: json['id'] as String? ?? '',
         name: json['name'] as String? ?? '',
         nameArabic: json['nameArabic'] as String? ?? '',

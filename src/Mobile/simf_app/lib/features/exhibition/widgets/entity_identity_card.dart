@@ -41,7 +41,11 @@ class EntityIdentityCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            Center(child: SizedBox(width: SimfTokens.entityIdentityCardWidth, height: SimfTokens.entityIdentityCardHeight, child: logo)),
+            Center(
+                child: SizedBox(
+                    width: SimfTokens.entityIdentityCardWidth,
+                    height: SimfTokens.entityIdentityCardHeight,
+                    child: logo,),),
             const SizedBox(height: SimfTokens.space4),
             Text(
               name,

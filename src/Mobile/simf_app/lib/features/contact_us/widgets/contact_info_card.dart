@@ -25,7 +25,12 @@ class ContactInfoCard extends StatelessWidget {
       if (profile.contactPhone != null && profile.contactPhone!.isNotEmpty)
         (Icons.call, profile.contactPhone!, l10n.contactHotlineLabel, true),
       if (profile.contactEmail != null && profile.contactEmail!.isNotEmpty)
-        (Icons.mail_outline, profile.contactEmail!, l10n.contactEmailLabel, true),
+        (
+          Icons.mail_outline,
+          profile.contactEmail!,
+          l10n.contactEmailLabel,
+          true
+        ),
       if ((profile.locationFor(isArabic: isArabic) ?? '').isNotEmpty)
         (
           Icons.location_on_outlined,

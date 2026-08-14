@@ -38,7 +38,8 @@ class NewsListItem {
   final String? excerptArabic;
   final String? imageRelativePath;
 
-  String localizedTitle({required bool isArabic}) => _pick(titleArabic, title, isArabic);
+  String localizedTitle({required bool isArabic}) =>
+      _pick(titleArabic, title, isArabic);
   String localizedCategory({required bool isArabic}) =>
       _pick(categoryArabic, category, isArabic);
   String? localizedExcerpt({required bool isArabic}) =>
@@ -89,10 +90,12 @@ class NewsArticle {
   final DateTime publishedAt;
   final String? imageRelativePath;
 
-  String localizedTitle({required bool isArabic}) => _pick(titleArabic, title, isArabic);
+  String localizedTitle({required bool isArabic}) =>
+      _pick(titleArabic, title, isArabic);
   String localizedCategory({required bool isArabic}) =>
       _pick(categoryArabic, category, isArabic);
-  String localizedBody({required bool isArabic}) => _pick(bodyArabic, body, isArabic);
+  String localizedBody({required bool isArabic}) =>
+      _pick(bodyArabic, body, isArabic);
 }
 
 DateTime _utc(Object? value) {
@@ -114,6 +117,7 @@ String _pick(String arabic, String english, bool isArabic) {
 String? _pickOpt(String? arabic, String? english, bool isArabic) {
   final ar = arabic?.trim() ?? '';
   final en = english?.trim() ?? '';
-  final value = isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
+  final value =
+      isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
   return value.isEmpty ? null : value;
 }

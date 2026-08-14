@@ -56,8 +56,10 @@ void main() {
       // No toUtc()/toLocal() anywhere in the path, so the parsed fields are the
       // string's fields on a machine in Riyadh, London or Los Angeles alike.
       final a = parseWireDateTime('2026-11-23T09:00:00', 'start');
-      expect(<int>[a.year, a.month, a.day, a.hour, a.minute],
-          <int>[2026, 11, 23, 9, 0],);
+      expect(
+        <int>[a.year, a.month, a.day, a.hour, a.minute],
+        <int>[2026, 11, 23, 9, 0],
+      );
     });
 
     test('a missing or unparseable value throws instead of yielding 1970', () {
@@ -65,7 +67,8 @@ void main() {
       // 03:00 AM on every row with no error at all. It must fail loudly.
       expect(() => parseWireDateTime(null, 'start'), throwsFormatException);
       expect(() => parseWireDateTime('', 'start'), throwsFormatException);
-      expect(() => parseWireDateTime('not-a-timestamp', 'start'), throwsFormatException);
+      expect(() => parseWireDateTime('not-a-timestamp', 'start'),
+          throwsFormatException,);
       expect(() => parseWireDateTime(0, 'start'), throwsFormatException);
     });
   });

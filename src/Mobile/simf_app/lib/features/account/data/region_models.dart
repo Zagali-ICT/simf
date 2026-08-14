@@ -6,6 +6,7 @@
 library;
 
 import 'package:flutter/foundation.dart';
+
 /// Region picker row — `GET /app/regions` (D-547). [name] (English) is nullable;
 /// [nameArabic] is always present. Wire keys: `code`, `name`, `nameArabic`.
 @immutable

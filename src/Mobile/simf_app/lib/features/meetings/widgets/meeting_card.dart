@@ -152,7 +152,8 @@ class MeetingCard extends StatelessWidget {
       ),
       child: Row(
         children: <Widget>[
-          SpeakerPhotoTile(imageUrl: photoUrl, size: SimfTokens.meetingCardSizeLg),
+          SpeakerPhotoTile(
+              imageUrl: photoUrl, size: SimfTokens.meetingCardSizeLg,),
           const SizedBox(width: SimfTokens.space2),
           Flexible(
             child: Text(

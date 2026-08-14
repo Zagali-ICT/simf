@@ -68,17 +68,18 @@ class FaqScreen extends ConsumerWidget {
                 SimfTokens.space6,
               ),
               children: <Widget>[
-              for (final group in groups)
-                if (group.entries.isNotEmpty) ...<Widget>[
-                  if (showGroupHeaders) ...<Widget>[
-                    SimfSectionHeader(title: group.localizedName(isArabic: isArabic)),
-                    const SizedBox(height: SimfTokens.space3),
+                for (final group in groups)
+                  if (group.entries.isNotEmpty) ...<Widget>[
+                    if (showGroupHeaders) ...<Widget>[
+                      SimfSectionHeader(
+                          title: group.localizedName(isArabic: isArabic),),
+                      const SizedBox(height: SimfTokens.space3),
+                    ],
+                    for (final entry in group.entries) ...<Widget>[
+                      FaqTile(entry: entry, isArabic: isArabic),
+                      const SizedBox(height: SimfTokens.space3),
+                    ],
                   ],
-                  for (final entry in group.entries) ...<Widget>[
-                    FaqTile(entry: entry, isArabic: isArabic),
-                    const SizedBox(height: SimfTokens.space3),
-                  ],
-                ],
               ],
             ),
           );

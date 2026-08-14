@@ -78,9 +78,10 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
         ? block.localizedBody(isArabic: isAr)
         : l10n.aboutHeroBody;
 
-    final forumName = (profile != null && profile.nameFor(isArabic: isAr).isNotEmpty)
-        ? profile.nameFor(isArabic: isAr)
-        : l10n.aboutForumName;
+    final forumName =
+        (profile != null && profile.nameFor(isArabic: isAr).isNotEmpty)
+            ? profile.nameFor(isArabic: isAr)
+            : l10n.aboutForumName;
     final forumTitle = profile != null ? profile.titleFor(isArabic: isAr) : '';
     final statusBadge = profile != null
         ? '${l10n.aboutStatus(profile.status)} · ${profile.currentYear}'
@@ -95,12 +96,15 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
           aboutCards.add(const SizedBox(height: SimfTokens.space4));
         }
         aboutCards.add(
-          AboutTextCard(title: item.titleFor(isArabic: isAr), body: item.textFor(isArabic: isAr)),
+          AboutTextCard(
+              title: item.titleFor(isArabic: isAr),
+              body: item.textFor(isArabic: isAr),),
         );
       }
     } else {
       aboutCards.add(
-        AboutTextCard(title: l10n.aboutMissionTitle, body: l10n.aboutHeroHeading),
+        AboutTextCard(
+            title: l10n.aboutMissionTitle, body: l10n.aboutHeroHeading,),
       );
       aboutCards.add(const SizedBox(height: SimfTokens.space4));
       aboutCards
@@ -161,11 +165,14 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
                 rows: contactRows,
               ),
             ],
-            if (profile?.version != null && profile!.version!.isNotEmpty) ...<Widget>[
+            if (profile?.version != null &&
+                profile!.version!.isNotEmpty) ...<Widget>[
               const SizedBox(height: SimfTokens.space4),
               AboutDetailsCard(
                 title: l10n.aboutVersionTitle,
-                rows: <(String, String)>[(l10n.aboutVersionLabel, profile.version!)],
+                rows: <(String, String)>[
+                  (l10n.aboutVersionLabel, profile.version!),
+                ],
               ),
             ],
             const SizedBox(height: SimfTokens.space4),

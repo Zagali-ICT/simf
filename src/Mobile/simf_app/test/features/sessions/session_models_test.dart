@@ -240,7 +240,8 @@ void main() {
   });
 
   group('distinctLocalDays', () {
-    test('groups typed items by local day, ascending, deduped, at midnight', () {
+    test('groups typed items by local day, ascending, deduped, at midnight',
+        () {
       final days = distinctLocalDays<DateTime>(
         <DateTime>[
           DateTime(2026, 11, 25, 12),

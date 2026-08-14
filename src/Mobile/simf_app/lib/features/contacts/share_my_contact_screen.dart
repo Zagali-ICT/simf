@@ -49,13 +49,15 @@ class _ShareMyContactScreenState extends ConsumerState<ShareMyContactScreen> {
       _error = false;
     });
     try {
-      final token = await ref.read(contactsRepositoryProvider).getMyShareToken();
+      final token =
+          await ref.read(contactsRepositoryProvider).getMyShareToken();
       // D-470 + D-737 — the QR encodes the user's vCard (Arabic name + phones)
       // with the share token embedded as an X-SIMF-TOKEN property: any phone
       // camera can add the contact, AND the in-app scanner can extract the token
       // to resolve + save the live card. Only the QR's content changed; the rest
       // of the screen (share .vcf, rotate) is unchanged.
-      final vcard = await ref.read(myAreaRepositoryProvider).getContactCardVcf();
+      final vcard =
+          await ref.read(myAreaRepositoryProvider).getContactCardVcf();
       if (!mounted) {
         return;
       }
@@ -90,7 +92,8 @@ class _ShareMyContactScreenState extends ConsumerState<ShareMyContactScreen> {
     }
     setState(() => _rotating = true);
     try {
-      final token = await ref.read(contactsRepositoryProvider).rotateShareToken();
+      final token =
+          await ref.read(contactsRepositoryProvider).rotateShareToken();
       if (!mounted) {
         return;
       }
@@ -226,7 +229,9 @@ class _ShareMyContactScreenState extends ConsumerState<ShareMyContactScreen> {
                   ? const SizedBox(
                       width: SimfTokens.space4,
                       height: SimfTokens.space4,
-                      child: CircularProgressIndicator(strokeWidth: SimfTokens.shareMyContactScreenStrokeWidth),
+                      child: CircularProgressIndicator(
+                          strokeWidth:
+                              SimfTokens.shareMyContactScreenStrokeWidth,),
                     )
                   : const Icon(Icons.autorenew, color: SimfTokens.accent),
               label: Text(

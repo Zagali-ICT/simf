@@ -18,8 +18,7 @@ class ContentBlock {
         key: json['key'] as String? ?? '',
         content: json['content'] as String? ?? '',
         contentArabic: json['contentArabic'] as String? ?? '',
-        lastUpdatedAt:
-            parseWireOrNull(json['lastUpdatedAt'] as String? ?? ''),
+        lastUpdatedAt: parseWireOrNull(json['lastUpdatedAt'] as String? ?? ''),
       );
 
   final String key;

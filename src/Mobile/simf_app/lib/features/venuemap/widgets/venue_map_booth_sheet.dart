@@ -41,7 +41,8 @@ class VenueMapBoothSheet extends StatelessWidget {
             children: <Widget>[
               Expanded(
                 child: Text(
-                  booth?.localizedName(isArabic: isArabic) ?? node.localizedLabel(isArabic: isArabic),
+                  booth?.localizedName(isArabic: isArabic) ??
+                      node.localizedLabel(isArabic: isArabic),
                   style: SimfTokens.titleBold,
                 ),
               ),

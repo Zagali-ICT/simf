@@ -28,7 +28,8 @@ void main() {
       expect(item.contentType, 'application/pdf');
       expect(item.sizeBytes, 2048);
       expect(item.localizedSessionTitle(isArabic: true), 'مستقبل الاستثمار');
-      expect(item.localizedSessionTitle(isArabic: false), 'Future of Investment');
+      expect(
+          item.localizedSessionTitle(isArabic: false), 'Future of Investment',);
       expect(item.localizedSpeaker(isArabic: false), 'Dr. Omari');
     });
 

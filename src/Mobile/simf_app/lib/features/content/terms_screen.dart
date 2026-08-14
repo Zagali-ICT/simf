@@ -133,7 +133,8 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
                       Align(
                         alignment: Alignment.centerLeft,
                         child: Padding(
-                          padding: const EdgeInsets.only(left: SimfTokens.space2),
+                          padding:
+                              const EdgeInsets.only(left: SimfTokens.space2),
                           child: IconButton(
                             onPressed: _back,
                             tooltip: MaterialLocalizations.of(context)
@@ -263,5 +264,4 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
       ],
     );
   }
-
 }

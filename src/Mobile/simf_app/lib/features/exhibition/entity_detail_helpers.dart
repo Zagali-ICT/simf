@@ -3,7 +3,8 @@
 /// copies that lived in each screen.
 library;
 
-import 'package:simf_app/features/exhibition/widgets/entity_detail_scaffold.dart' show EntityDetailScaffold;
+import 'package:simf_app/features/exhibition/widgets/entity_detail_scaffold.dart'
+    show EntityDetailScaffold;
 
 /// Joins "City، Country" (Arabic comma in RTL); either side may be null.
 String? entityLocationLine(
@@ -37,9 +38,8 @@ Uri? entityHttpUri(String? raw) {
   if (value.isEmpty) {
     return null;
   }
-  final withScheme =
-      value.startsWith('http://') || value.startsWith('https://')
-          ? value
-          : 'https://$value';
+  final withScheme = value.startsWith('http://') || value.startsWith('https://')
+      ? value
+      : 'https://$value';
   return Uri.tryParse(withScheme);
 }

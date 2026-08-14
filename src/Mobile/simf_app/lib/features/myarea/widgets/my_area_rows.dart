@@ -166,7 +166,8 @@ class MyAreaShareTile extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              SimfSvgIcon(iconAsset, size: SimfTokens.myAreaRowsSize, color: SimfTokens.accent),
+              SimfSvgIcon(iconAsset,
+                  size: SimfTokens.myAreaRowsSize, color: SimfTokens.accent,),
               const SizedBox(width: SimfTokens.space2),
               Flexible(
                 child: Text(

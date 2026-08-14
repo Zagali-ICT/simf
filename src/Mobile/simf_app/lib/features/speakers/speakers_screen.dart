@@ -221,7 +221,9 @@ class _SpeakersScreenState extends ConsumerState<SpeakersScreen> {
     }).toList();
     if (_alphaSorted) {
       list.sort(
-        (a, b) => a.localizedName(isArabic: isArabic).compareTo(b.localizedName(isArabic: isArabic)),
+        (a, b) => a
+            .localizedName(isArabic: isArabic)
+            .compareTo(b.localizedName(isArabic: isArabic)),
       );
     }
     return list;

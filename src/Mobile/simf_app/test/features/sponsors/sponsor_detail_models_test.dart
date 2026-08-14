@@ -26,10 +26,12 @@ void main() {
       expect(detail.tierName, 'Platinum');
       expect(detail.url, 'https://aramco.com');
       expect(detail.localizedName(isArabic: true), 'أرامكو السعودية');
-      expect(detail.localizedAbout(isArabic: false), 'A global energy company.');
+      expect(
+          detail.localizedAbout(isArabic: false), 'A global energy company.',);
       expect(detail.localizedAbout(isArabic: true), 'شركة طاقة عالمية.');
       expect(detail.localizedCity(isArabic: true), 'الظهران');
-      expect(detail.localizedCountry(isArabic: true), 'المملكة العربية السعودية');
+      expect(
+          detail.localizedCountry(isArabic: true), 'المملكة العربية السعودية',);
     });
 
     test('optional fields fall back / decode to null', () {

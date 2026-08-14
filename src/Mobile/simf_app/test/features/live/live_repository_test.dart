@@ -15,8 +15,7 @@ void main() {
       expect(session.end, DateTime(2026, 11, 23, 10));
     });
 
-    test('end is null when the wire omits it (global main-live synthetic)',
-        () {
+    test('end is null when the wire omits it (global main-live synthetic)', () {
       final session = LiveSession.fromJson(<String, dynamic>{
         'title': 'Opening',
         'titleArabic': 'الافتتاح',

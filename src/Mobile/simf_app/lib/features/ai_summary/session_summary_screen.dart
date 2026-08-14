@@ -277,10 +277,12 @@ class _AiSummaryScreenState extends ConsumerState<AiSummaryScreen> {
     final block = summary == null
         ? ''
         : switch (_tab) {
-            _SummaryTab.keyPoints => summary.localizedKeyPoints(isArabic: isArabic),
+            _SummaryTab.keyPoints =>
+              summary.localizedKeyPoints(isArabic: isArabic),
             _SummaryTab.recommendations =>
               summary.localizedRecommendations(isArabic: isArabic),
-            _SummaryTab.speakers => summary.localizedSpeakers(isArabic: isArabic),
+            _SummaryTab.speakers =>
+              summary.localizedSpeakers(isArabic: isArabic),
           };
     final lines = block
         .split('\n')

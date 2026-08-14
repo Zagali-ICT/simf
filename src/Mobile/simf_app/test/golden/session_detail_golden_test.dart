@@ -202,7 +202,8 @@ class _FakeSeatRepo implements SeatMapRepository {
 
 class _FakeCalendar implements SessionCalendar {
   @override
-  Future<bool> addSession(SessionDetail detail, {required bool isArabic}) async =>
+  Future<bool> addSession(SessionDetail detail,
+          {required bool isArabic,}) async =>
       true;
 }
 
@@ -278,8 +279,7 @@ void main() {
           // the
           // fixture (or the clock) moved.
           hallAttendanceRepositoryProvider.overrideWithValue(_FakeAttendance()),
-          sessionDetailRepositoryProvider
-              .overrideWithValue(_FakeDetailRepo()),
+          sessionDetailRepositoryProvider.overrideWithValue(_FakeDetailRepo()),
           seatMapRepositoryProvider.overrideWithValue(_FakeSeatRepo()),
           sessionCalendarProvider.overrideWithValue(_FakeCalendar()),
           authControllerProvider.overrideWith(_SignedInController.new),

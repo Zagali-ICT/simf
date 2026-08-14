@@ -59,7 +59,8 @@ void main() {
       expect(item.headTitleArabic, 'نائب وزير الدفاع');
       // Owner 2026-07-19 — the head-of-delegation title localizes AR/EN.
       expect(item.localizedHeadTitle(isArabic: true), 'نائب وزير الدفاع');
-      expect(item.localizedHeadTitle(isArabic: false), 'Deputy Minister of Defense');
+      expect(item.localizedHeadTitle(isArabic: false),
+          'Deputy Minister of Defense',);
       expect(item.arrivalDate, DateTime(2026, 1, 12));
       expect(item.departureDate, DateTime(2026, 1, 15));
       expect(item.hasHead, isTrue);
@@ -86,7 +87,8 @@ void main() {
   group('DelegationItem', () {
     test('flagEmoji maps an alpha-2 code to its regional-indicator pair', () {
       // SA → 🇸🇦 = U+1F1F8 U+1F1E6.
-      expect(_item(code: 'SA').flagEmoji.runes.toList(), <int>[0x1F1F8, 0x1F1E6]);
+      expect(
+          _item(code: 'SA').flagEmoji.runes.toList(), <int>[0x1F1F8, 0x1F1E6],);
     });
 
     test('flagEmoji is empty for a malformed code', () {
@@ -125,7 +127,8 @@ void main() {
       final item = _item();
       expect(item.localizedCountry(isArabic: false), 'United States');
       expect(item.localizedCountry(isArabic: true), 'الولايات المتحدة');
-      expect(item.localizedCountrySubtitle(isArabic: false), 'الولايات المتحدة');
+      expect(
+          item.localizedCountrySubtitle(isArabic: false), 'الولايات المتحدة',);
       expect(item.localizedCountrySubtitle(isArabic: true), 'United States');
     });
   });

@@ -110,7 +110,8 @@ class LiveSession {
   String? localizedHall({required bool isArabic}) {
     final ar = (hallNameArabic ?? '').trim();
     final en = (hallName ?? '').trim();
-    final value = isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
+    final value =
+        isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
     return value.isEmpty ? null : value;
   }
 
@@ -120,7 +121,8 @@ class LiveSession {
   String? localizedCaption({required bool isArabic}) {
     final ar = (liveCaptionsArabic ?? '').trim();
     final en = (liveCaptions ?? '').trim();
-    final value = isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
+    final value =
+        isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
     return value.isEmpty ? null : value;
   }
 
@@ -130,7 +132,8 @@ class LiveSession {
   String? localizedNotice({required bool isArabic}) {
     final ar = (liveNoticeArabic ?? '').trim();
     final en = (liveNotice ?? '').trim();
-    final value = isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
+    final value =
+        isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
     return value.isEmpty ? null : value;
   }
 
@@ -175,12 +178,12 @@ class UpcomingSession {
     required this.start,
   });
 
-  factory UpcomingSession.fromJson(Map<String, dynamic> json) => UpcomingSession(
+  factory UpcomingSession.fromJson(Map<String, dynamic> json) =>
+      UpcomingSession(
         id: (json['id'] as String?) ?? '',
         title: (json['title'] as String?) ?? '',
         titleArabic: (json['titleArabic'] as String?) ?? '',
-        start:
-            parseWireOrNull((json['start'] as String?) ?? ''),
+        start: parseWireOrNull((json['start'] as String?) ?? ''),
       );
 
   final String id;

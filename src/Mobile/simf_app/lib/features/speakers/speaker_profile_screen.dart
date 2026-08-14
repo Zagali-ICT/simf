@@ -65,8 +65,9 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
       _notFound = false;
     });
     try {
-      final speaker =
-          await ref.read(speakersRepositoryProvider).getSpeaker(widget.speakerId);
+      final speaker = await ref
+          .read(speakersRepositoryProvider)
+          .getSpeaker(widget.speakerId);
       if (!mounted) {
         return;
       }
@@ -101,7 +102,8 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
       backgroundColor: SimfTokens.cardBeige,
       showDragHandle: false,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(SimfTokens.radius)),
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(SimfTokens.radius)),
       ),
       builder: (_) => MeetingRequestSheet(
         speakerId: speaker.id,
@@ -189,8 +191,10 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
         l10n.cvQualifications,
         speaker.localizedQualifications(isArabic: isArabic),
       ),
-      SpeakerCvSection(l10n.cvTraining, speaker.localizedTraining(isArabic: isArabic)),
-      SpeakerCvSection(l10n.cvAwards, speaker.localizedAwards(isArabic: isArabic)),
+      SpeakerCvSection(
+          l10n.cvTraining, speaker.localizedTraining(isArabic: isArabic),),
+      SpeakerCvSection(
+          l10n.cvAwards, speaker.localizedAwards(isArabic: isArabic),),
     ].where((s) => s.body != null).toList();
     final activeCv =
         sections.isEmpty ? 0 : _activeCv.clamp(0, sections.length - 1);
@@ -212,7 +216,8 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(
         SimfTokens.space4,
-        SimfTokens.space8 + SimfTokens.space6, // 56px — matches Figma large gap above avatar
+        SimfTokens.space8 +
+            SimfTokens.space6, // 56px — matches Figma large gap above avatar
         SimfTokens.space4,
         SimfTokens.space6,
       ),
@@ -236,7 +241,8 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
         ],
         // Bi-Meeting rework — the "request meeting" CTA shows only when the speaker
         // accepts requests AND this user holds AllowsSpeakerMeeting (endpoint enforces).
-        if (speaker.allowsMeetingRequests && canRequestSpeakerMeeting) ...<Widget>[
+        if (speaker.allowsMeetingRequests &&
+            canRequestSpeakerMeeting) ...<Widget>[
           const SizedBox(height: SimfTokens.space5),
           // Figma 1049:2302 — a text-only gold CTA (no leading icon).
           FilledButton(
@@ -251,7 +257,8 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
             children: <Widget>[
               for (final s in socials)
                 ActionChip(
-                  avatar: Icon(s.icon, size: SimfTokens.speakerProfileScreenSize),
+                  avatar:
+                      Icon(s.icon, size: SimfTokens.speakerProfileScreenSize),
                   label: Text(l10n.copyLinkLabel),
                   onPressed: () => unawaited(_copyLink(s.url, l10n)),
                 ),

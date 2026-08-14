@@ -195,9 +195,8 @@ class SessionDetailBody extends StatelessWidget {
             onJoin: onJoin,
             // D-750 — case-1 (open-seating) reads "register to attend"; case-2
             // (assigned-seat) keeps the default join label.
-            label: seatMap!.mode.isOpenSeating
-                ? l10n.joinOpenRegisterCta
-                : null,
+            label:
+                seatMap!.mode.isOpenSeating ? l10n.joinOpenRegisterCta : null,
           ),
         ] else if (seatMapError && phase != SessionPhase.ended) ...<Widget>[
           // #18 — an approved attendee whose seat map failed to load gets a

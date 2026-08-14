@@ -75,7 +75,8 @@ class SimfNavTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final foreground =
         enabled ? SimfTokens.accent : SimfTokens.navyDisabledText;
-    final labelColor = enabled ? SimfTokens.surface : SimfTokens.navyDisabledText;
+    final labelColor =
+        enabled ? SimfTokens.surface : SimfTokens.navyDisabledText;
     final asset = iconAsset;
     final Widget top = asset != null
         ? SimfSvgIcon(asset, size: 24, color: foreground)
@@ -83,9 +84,8 @@ class SimfNavTile extends StatelessWidget {
     final Widget tile = SimfCard(
       onTap: enabled ? onTap : null,
       color: enabled ? SimfTokens.navyDeep : SimfTokens.navyDisabled,
-      borderColor: enabled
-          ? SimfTokens.beigeBorder
-          : SimfTokens.navyDisabledBorder,
+      borderColor:
+          enabled ? SimfTokens.beigeBorder : SimfTokens.navyDisabledBorder,
       borderWidth: enabled ? SimfTokens.hairline : 1,
       child: TileBody(
         top: top,

@@ -147,7 +147,8 @@ class MoreDrawer extends ConsumerWidget {
                     DrawerTile(
                       icon: Icons.calendar_today_outlined,
                       title: l10n.shareCalendar,
-                      onTap: () => unawaited(_shareCalendar(context, ref, l10n)),
+                      onTap: () =>
+                          unawaited(_shareCalendar(context, ref, l10n)),
                     ),
                   const Divider(color: SimfTokens.beigeBorder, height: 1),
                   // The end of the menu (owner 2026-07-06): contact us + about

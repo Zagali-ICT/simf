@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/features/delegations/data/delegation_models.dart';
-import 'package:simf_app/features/speakers/widgets/speaker_option_tile.dart' show SpeakerOptionTile;
+import 'package:simf_app/features/speakers/widgets/speaker_option_tile.dart'
+    show SpeakerOptionTile;
 
 /// One selectable delegation row in the picker — flag + localized country name +
 /// member count, with a selected (gold) outline. Mirrors [SpeakerOptionTile]'s
 /// role for the speaker picker.
 class DelegationOptionTile extends StatelessWidget {
-  const DelegationOptionTile({required this.delegation, required this.isArabic, required this.selected, required this.onTap, super.key,
+  const DelegationOptionTile({
+    required this.delegation,
+    required this.isArabic,
+    required this.selected,
+    required this.onTap,
+    super.key,
   });
 
   final DelegationItem delegation;
@@ -39,7 +45,8 @@ class DelegationOptionTile extends StatelessWidget {
             children: <Widget>[
               Text(
                 delegation.flagEmoji,
-                style: const TextStyle(fontSize: SimfTokens.delegationOptionTileFontSize),
+                style: const TextStyle(
+                    fontSize: SimfTokens.delegationOptionTileFontSize,),
               ),
               const SizedBox(width: SimfTokens.space3),
               Expanded(

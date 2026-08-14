@@ -21,7 +21,8 @@ class PendingGateScan {
     this.direction,
   });
 
-  factory PendingGateScan.fromJson(Map<String, dynamic> json) => PendingGateScan(
+  factory PendingGateScan.fromJson(Map<String, dynamic> json) =>
+      PendingGateScan(
         gateId: json['gateId'] as String? ?? '',
         qr: json['qr'] as String? ?? '',
         idempotencyKey: json['idempotencyKey'] as String? ?? '',

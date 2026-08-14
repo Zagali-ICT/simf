@@ -147,7 +147,8 @@ class LiveContentView extends StatelessWidget {
                 fontSize: SimfTokens.textLg,
               ),
               // D-433 — the speakers / participants line (frame 934:3617).
-              if (session.localizedSpeakers(isArabic: isArabic) != null) ...<Widget>[
+              if (session.localizedSpeakers(isArabic: isArabic) !=
+                  null) ...<Widget>[
                 const SizedBox(height: SimfTokens.space2),
                 GoldBullet(
                   text: session.localizedSpeakers(isArabic: isArabic)!,

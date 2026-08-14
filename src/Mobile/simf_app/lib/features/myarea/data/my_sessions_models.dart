@@ -1,7 +1,8 @@
 import 'package:flutter/foundation.dart';
 
 import 'package:simf_app/core/utils/saudi_time.dart';
-import 'package:simf_app/features/sessions/data/session_models.dart' show SessionStatus;
+import 'package:simf_app/features/sessions/data/session_models.dart'
+    show SessionStatus;
 
 /// One card on the "my sessions" list — App "تفاصيل الجلسات" (Figma 1388:9067),
 /// mirroring `SIMF.Contracts.Account.MyAreaSessionItem`. The card shows the
@@ -105,8 +106,8 @@ class MyAreaSessions {
   const MyAreaSessions(this.items);
 
   factory MyAreaSessions.fromData(Object? data) {
-    final list = (data is Map ? data['items'] : null) as List? ??
-        const <dynamic>[];
+    final list =
+        (data is Map ? data['items'] : null) as List? ?? const <dynamic>[];
     final items = list
         .whereType<Map<dynamic, dynamic>>()
         .map((e) => MyAreaSessionItem.fromJson(e.cast<String, dynamic>()))
@@ -126,6 +127,7 @@ String _pickRequired(String arabic, String english, bool isArabic) {
 String? _pickOptional(String? arabic, String? english, bool isArabic) {
   final ar = arabic?.trim() ?? '';
   final en = english?.trim() ?? '';
-  final value = isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
+  final value =
+      isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
   return value.isEmpty ? null : value;
 }

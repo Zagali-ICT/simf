@@ -65,7 +65,8 @@ class ExhibitorDetailScreen extends ConsumerWidget {
   ) {
     final isArabic = l10n.isArabic;
     final baseUrl = ref.watch(simfDataConfigProvider).baseUrl;
-    final name = booth.localizedExhibitor(isArabic: isArabic) ?? booth.localizedName(isArabic: isArabic);
+    final name = booth.localizedExhibitor(isArabic: isArabic) ??
+        booth.localizedName(isArabic: isArabic);
 
     return EntityDetailScaffold(
       onRefresh: () =>

@@ -16,7 +16,14 @@ import 'package:simf_app/features/sessions/widgets/session_filter_tabs.dart';
 import 'package:simf_app/features/sessions/widgets/session_summry_button.dart';
 
 class PresentationsBody extends StatelessWidget {
-  const PresentationsBody({required this.items, required this.sessionsById, required this.dayTab, required this.onDayTab, required this.onRefresh, required this.l10n, super.key,
+  const PresentationsBody({
+    required this.items,
+    required this.sessionsById,
+    required this.dayTab,
+    required this.onDayTab,
+    required this.onRefresh,
+    required this.l10n,
+    super.key,
   });
 
   final List<PresentationItem> items;
@@ -53,7 +60,8 @@ class PresentationsBody extends StatelessWidget {
     final visible = activeTab == 0
         ? items
         : items
-            .where((p) => sameLocalDay(p.sessionStartLocal, days[activeTab - 1]))
+            .where(
+                (p) => sameLocalDay(p.sessionStartLocal, days[activeTab - 1]),)
             .toList(growable: false);
 
     return Column(
@@ -82,8 +90,8 @@ class PresentationsBody extends StatelessWidget {
                   const SizedBox(height: SimfTokens.space3),
               itemBuilder: (context, index) {
                 final item = visible[index];
-                final dayIndex =
-                    days.indexWhere((d) => sameLocalDay(item.sessionStartLocal, d));
+                final dayIndex = days
+                    .indexWhere((d) => sameLocalDay(item.sessionStartLocal, d));
                 return PresentationCard(
                   item: item,
                   isArabic: isArabic,
@@ -107,7 +115,12 @@ class PresentationsBody extends StatelessWidget {
 /// One session card — tapping it opens the session detail (17); the gold تحميل
 /// button opens that session's summary (34). Owner 2026-07-03.
 class PresentationCard extends StatelessWidget {
-  const PresentationCard({required this.item, required this.isArabic, required this.dayLabel, required this.summaryEnabled, super.key,
+  const PresentationCard({
+    required this.item,
+    required this.isArabic,
+    required this.dayLabel,
+    required this.summaryEnabled,
+    super.key,
   });
 
   final PresentationItem item;
@@ -128,7 +141,9 @@ class PresentationCard extends StatelessWidget {
   /// Committee publishes the summary.
   void _openSummary(BuildContext context) => context.pushNamed(
         RouteNames.aiSummary,
-        queryParameters: <String, String>{RouteParams.sessionId: item.sessionId},
+        queryParameters: <String, String>{
+          RouteParams.sessionId: item.sessionId,
+        },
       );
 
   @override
@@ -139,7 +154,8 @@ class PresentationCard extends StatelessWidget {
     return SimfCard(
       onTap: () => _openDetail(context),
       child: Padding(
-        padding: const EdgeInsets.all(SimfTokens.space2), // p-8 (Figma 1388:7640)
+        padding:
+            const EdgeInsets.all(SimfTokens.space2), // p-8 (Figma 1388:7640)
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[

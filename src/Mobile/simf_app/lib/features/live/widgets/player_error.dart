@@ -4,7 +4,11 @@ import 'package:simf_app/app/theme/tokens.dart';
 /// Shown when a live feed fails to load — a terminal error surface with a Retry
 /// that re-binds the player (Page_025 L-7), instead of an endless spinner.
 class PlayerError extends StatelessWidget {
-  const PlayerError({required this.message, required this.retryLabel, required this.onRetry, super.key,
+  const PlayerError({
+    required this.message,
+    required this.retryLabel,
+    required this.onRetry,
+    super.key,
   });
 
   final String message;

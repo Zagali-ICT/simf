@@ -36,7 +36,8 @@ class MeetPeopleScreen extends ConsumerWidget {
     final directory = ref.watch(partnerDirectoryProvider);
     final baseUrl = ref.watch(simfDataConfigProvider).baseUrl;
 
-    Future<void> onRefresh() => refreshAsync(ref, partnerDirectoryProvider.future);
+    Future<void> onRefresh() =>
+        refreshAsync(ref, partnerDirectoryProvider.future);
 
     return SimfPageShell(
       title: l10n.meetPeopleTitle,
@@ -60,9 +61,9 @@ class MeetPeopleScreen extends ConsumerWidget {
               onRefresh: onRefresh,
               child: SimfPullableHost(
                 child: SimfEmptyState(
-                icon: Icons.people_outline,
-                message: l10n.meetPeopleEmpty,
-              ),
+                  icon: Icons.people_outline,
+                  message: l10n.meetPeopleEmpty,
+                ),
               ),
             );
           }

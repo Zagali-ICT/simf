@@ -171,7 +171,8 @@ void main() {
     // Arabic-locale position test. Frame 957:2197 places the thumbnail at the
     // inline-end (LEFT in RTL) and the text block at the inline-start (RIGHT),
     // so the thumbnail image sits left of the gold date.
-    testWidgets('lays the thumbnail left of the text in Arabic', (tester) async {
+    testWidgets('lays the thumbnail left of the text in Arabic',
+        (tester) async {
       await _pump(
         tester,
         <Override>[newsListProvider.overrideWith((ref) async => _items)],

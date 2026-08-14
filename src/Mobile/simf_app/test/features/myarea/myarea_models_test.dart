@@ -53,7 +53,8 @@ void main() {
       expect(dashboard.identity.fullNameEn, 'Raed Al-Salem');
       expect(dashboard.identity.qrId, 'ABC123');
       expect(dashboard.identity.localizedTier(isArabic: true), 'كبار الشخصيات');
-      expect(dashboard.identity.localizedName(isArabic: false), 'Raed Al-Salem');
+      expect(
+          dashboard.identity.localizedName(isArabic: false), 'Raed Al-Salem',);
       expect(dashboard.counters.bookedSessionsCount, 6);
       expect(dashboard.counters.meetingsCount, 3);
       expect(dashboard.todaySchedule, hasLength(2));

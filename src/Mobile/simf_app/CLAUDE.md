@@ -303,10 +303,32 @@ Under `test/` mirroring the `lib/` path:
   day one and make the gate unsatisfiable).
 - The per-module gate is **"zero NEW analyzer issues + zero issues in the touched
   module's files"** — not repo-wide zero, until Phase 6.
-- **NEVER run `dart format .`** — this repo's Flutter 3.44 "tall" formatter strips
-  the trailing commas `require_trailing_commas` demands and explodes single-line
-  collections (e.g. `router.dart`) into huge diffs. Hand-write trailing commas;
-  run only `dart fix --apply` (does not reflow) on the files you touched.
+- **Never run `dart format` on its own.** The ban's premise was re-measured on
+  2026-08-14 against 250 touched files and it holds exactly: Flutter 3.44's
+  "tall" formatter strips the trailing commas `require_trailing_commas` demands,
+  taking that rule from **0 to 109 findings** in one run.
+
+  What it does NOT do is explode the diff — 152 files changed by +1120/-687,
+  and every golden held. So formatting is usable, in **two steps, never one**:
+
+  ```
+  dart format <only the files you touched>
+  dart fix --apply --code=require_trailing_commas .    # puts all 109 back
+  ```
+
+  Owner-authorised and executed once this way (2026-08-14):
+  `lines_longer_than_80_chars` 1690 -> 1428, total infos 1856 -> 1594,
+  `require_trailing_commas` back to 0, 1406 tests green, every golden holding
+  **without** `--update-goldens`.
+
+  **The end state is deliberately not `dart format`-stable.** Re-running the
+  formatter would change 55 of those files straight back, because the formatter
+  and `require_trailing_commas` genuinely disagree: the repo can satisfy one or
+  the other, not both. This repo picks trailing commas. If you run the
+  formatter, you own running step two afterwards — and do not expect a second
+  format run to be a no-op.
+- Don't disable a lint to silence a warning; fix the code. A genuinely-wrong rule
+  gets a deliberate `// ignore: name — reason`, flagged for review.
 - Don't disable a lint to silence a warning; fix the code. A genuinely-wrong rule
   gets a deliberate `// ignore: name — reason`, flagged for review.
 

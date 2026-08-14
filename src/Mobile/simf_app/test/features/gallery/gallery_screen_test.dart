@@ -84,7 +84,8 @@ Future<void> _pump(
 
 void main() {
   group('GalleryScreen (Page 030 — KSA frame 947:3764)', () {
-    testWidgets('renders the coverage header, the three tabs and the two '
+    testWidgets(
+        'renders the coverage header, the three tabs and the two '
         'media sections', (tester) async {
       await _pump(tester, items: () => _items);
 
@@ -176,7 +177,8 @@ void main() {
       expect(withBoth.hasImage, isTrue);
       expect(withBoth.hasThumbnail, isTrue);
 
-      final none = MediaItem.fromJson(const <String, dynamic>{'id': 'm2', 'kind': 1});
+      final none =
+          MediaItem.fromJson(const <String, dynamic>{'id': 'm2', 'kind': 1});
       expect(none.hasImage, isFalse);
       expect(none.hasThumbnail, isFalse);
     });

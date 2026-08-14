@@ -52,8 +52,9 @@ class PublicBannerItem {
         (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
     final items = (map['items'] as List?) ?? const <dynamic>[];
     return items
-        .map((m) =>
-            PublicBannerItem.fromJson((m as Map).cast<String, dynamic>()),)
+        .map(
+          (m) => PublicBannerItem.fromJson((m as Map).cast<String, dynamic>()),
+        )
         .toList();
   }
 }

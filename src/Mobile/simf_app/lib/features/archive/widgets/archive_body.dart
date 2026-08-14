@@ -37,8 +37,8 @@ class ArchiveBody extends ConsumerWidget {
     final detail = ref.watch(archiveEditionDetailProvider(selected.id));
     final d = detail.asData?.value;
 
-    final summary =
-        d?.localizedSummary(isArabic: isArabic) ?? selected.localizedSummary(isArabic: isArabic);
+    final summary = d?.localizedSummary(isArabic: isArabic) ??
+        selected.localizedSummary(isArabic: isArabic);
     final location = d?.localizedLocation(isArabic: isArabic);
     final dateLabel = d?.localizedDateLabel(isArabic: isArabic);
 
@@ -112,7 +112,8 @@ class ArchiveBody extends ConsumerWidget {
           const SizedBox(height: SimfTokens.space4),
           for (var i = 0; i < d.sessionTitles.length; i++) ...<Widget>[
             if (i > 0) const SizedBox(height: SimfTokens.space2),
-            ArchiveSessionTitleCard(text: d.sessionTitles[i].localized(isArabic: isArabic)),
+            ArchiveSessionTitleCard(
+                text: d.sessionTitles[i].localized(isArabic: isArabic),),
           ],
         ],
         if (d != null && d.pastSpeakers.isNotEmpty) ...<Widget>[

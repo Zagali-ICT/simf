@@ -40,7 +40,8 @@ class SavedContactTile extends StatelessWidget {
           color: SimfTokens.accent,
         ),
         title: Text(name),
-        subtitle: subtitleParts.isEmpty ? null : Text(subtitleParts.join(' · ')),
+        subtitle:
+            subtitleParts.isEmpty ? null : Text(subtitleParts.join(' · ')),
         trailing: const Icon(Icons.chevron_right, color: SimfTokens.inkMuted),
         onTap: onTap,
       ),

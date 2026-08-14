@@ -88,10 +88,9 @@ Version? tryParseVersion(String? raw) {
   if (trimmed.isEmpty) {
     return null;
   }
-  final normalized =
-      trimmed.startsWith('v') || trimmed.startsWith('V')
-          ? trimmed.substring(1)
-          : trimmed;
+  final normalized = trimmed.startsWith('v') || trimmed.startsWith('V')
+      ? trimmed.substring(1)
+      : trimmed;
   try {
     final parsed = Version.parse(normalized);
     if (parsed.build.isEmpty) {

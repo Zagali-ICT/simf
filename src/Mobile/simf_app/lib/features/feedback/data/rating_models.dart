@@ -128,9 +128,11 @@ class RatingFormView {
   });
 
   factory RatingFormView.fromData(Object? data) {
-    final json = (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
+    final json =
+        (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
     final rawGroups = (json['groups'] as List?) ?? const <dynamic>[];
-    final rawUngrouped = (json['ungroupedQuestions'] as List?) ?? const <dynamic>[];
+    final rawUngrouped =
+        (json['ungroupedQuestions'] as List?) ?? const <dynamic>[];
     return RatingFormView(
       ratingTypeId: json['ratingTypeId'] as String? ?? '',
       code: json['code'] as String? ?? '',
@@ -187,14 +189,16 @@ class RatingFormView {
   String? localizedTargetName({required bool isArabic}) {
     final ar = (targetNameArabic ?? '').trim();
     final en = (targetName ?? '').trim();
-    final value = isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
+    final value =
+        isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
     return value.isEmpty ? null : value;
   }
 
   String? localizedCommentLabel({required bool isArabic}) {
     final ar = (commentLabelArabic ?? '').trim();
     final en = (commentLabel ?? '').trim();
-    final value = isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
+    final value =
+        isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
     return value.isEmpty ? null : value;
   }
 }

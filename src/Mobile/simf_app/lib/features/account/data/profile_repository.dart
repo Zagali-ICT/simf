@@ -18,8 +18,7 @@ class ProfileRepository {
   Future<UserProfileResponse> getMyProfile() {
     return _client.get<UserProfileResponse>(
       AccountEndpoints.userProfile,
-      decodeData: (data) =>
-          UserProfileResponse.fromJson(_asMap(data)),
+      decodeData: (data) => UserProfileResponse.fromJson(_asMap(data)),
     );
   }
 
@@ -30,8 +29,7 @@ class ProfileRepository {
     return _client.post<UserProfileResponse>(
       AccountEndpoints.userProfile,
       body: request.toJson(),
-      decodeData: (data) =>
-          UserProfileResponse.fromJson(_asMap(data)),
+      decodeData: (data) => UserProfileResponse.fromJson(_asMap(data)),
     );
   }
 
@@ -48,9 +46,8 @@ class ProfileRepository {
   Future<List<ProfileTypeItem>> getProfileTypes({bool? isVisitor}) {
     return _client.get<List<ProfileTypeItem>>(
       AccountEndpoints.profileTypes,
-      queryParameters: isVisitor == null
-          ? null
-          : <String, dynamic>{'isVisitor': isVisitor},
+      queryParameters:
+          isVisitor == null ? null : <String, dynamic>{'isVisitor': isVisitor},
       decodeData: (data) => _keyed(data, 'items', ProfileTypeItem.fromJson),
     );
   }
@@ -156,7 +153,8 @@ final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
 /// Best-effort reference number (`SIMF-2026-…`) for the badge + profile ID line.
 /// It lives on the user-profile (the My-Area dashboard doesn't carry it), so the
 /// badge/profile read it here. Null while loading / on error.
-final referenceNumberProvider = FutureProvider.autoDispose<String?>((ref) async {
+final referenceNumberProvider =
+    FutureProvider.autoDispose<String?>((ref) async {
   try {
     final profile = await ref.watch(profileRepositoryProvider).getMyProfile();
     final ref0 = profile.referenceNumber?.trim();

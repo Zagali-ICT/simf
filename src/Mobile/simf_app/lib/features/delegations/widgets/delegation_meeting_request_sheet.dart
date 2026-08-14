@@ -13,7 +13,8 @@ import 'package:simf_app/core/validation/field_limits.dart';
 import 'package:simf_app/features/delegations/data/delegation_models.dart';
 import 'package:simf_app/features/delegations/data/delegations_repository.dart';
 import 'package:simf_app/features/delegations/widgets/delegation_option_tile.dart';
-import 'package:simf_app/features/speakers/widgets/meeting_request_sheet.dart' show MeetingRequestSheet;
+import 'package:simf_app/features/speakers/widgets/meeting_request_sheet.dart'
+    show MeetingRequestSheet;
 import 'package:simf_app/features/speakers/widgets/meeting_slot_pickers.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
@@ -323,7 +324,8 @@ class _DelegationMeetingRequestSheetState
               width: SimfTokens.space5,
               height: SimfTokens.space5,
               child: CircularProgressIndicator(
-                strokeWidth: SimfTokens.delegationMeetingRequestSheetStrokeWidth,
+                strokeWidth:
+                    SimfTokens.delegationMeetingRequestSheetStrokeWidth,
                 color: SimfTokens.accent,
               ),
             ),
@@ -415,9 +417,7 @@ class _DelegationMeetingRequestSheetState
           focusedBorder: const OutlineInputBorder(
             borderSide: BorderSide(color: SimfTokens.accent),
           ),
-          border: const OutlineInputBorder(
-            
-          ),
+          border: const OutlineInputBorder(),
         ),
       );
 
@@ -442,9 +442,7 @@ class _DelegationMeetingRequestSheetState
           focusedBorder: const OutlineInputBorder(
             borderSide: BorderSide(color: SimfTokens.accent),
           ),
-          border: const OutlineInputBorder(
-            
-          ),
+          border: const OutlineInputBorder(),
         ),
       );
 
@@ -481,7 +479,8 @@ class _DelegationMeetingRequestSheetState
           _hint(l10n.speakersNoMatches)
         else
           ConstrainedBox(
-            constraints: const BoxConstraints(maxHeight: SimfTokens.delegationMeetingRequestSheetMaxHeight),
+            constraints: const BoxConstraints(
+                maxHeight: SimfTokens.delegationMeetingRequestSheetMaxHeight,),
             child: ListView.separated(
               shrinkWrap: true,
               padding: EdgeInsets.zero,

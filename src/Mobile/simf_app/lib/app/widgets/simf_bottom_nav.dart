@@ -6,7 +6,8 @@ import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/app_assets.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/centre_action.dart';
-import 'package:simf_app/app/widgets/simf_app_shell.dart' show SimfAppShell, SimfShellScope, tabIndex;
+import 'package:simf_app/app/widgets/simf_app_shell.dart'
+    show SimfAppShell, SimfShellScope, tabIndex;
 import 'package:simf_app/app/widgets/simf_bottom_nav_item.dart';
 
 /// When inside [SimfAppShell] (i.e., when [SimfShellScope] is the nearest
@@ -87,7 +88,8 @@ class SimfBottomNav extends StatelessWidget {
                   // "الجلسات" label. sessionsTitle still titles the Sessions
                   // screen and other surfaces, so only this nav tab changes.
                   label: l10n.agendaTitle,
-                  onTap: _shellOrGo(context, SimfTab.sessions, RouteNames.sessions),
+                  onTap: _shellOrGo(
+                      context, SimfTab.sessions, RouteNames.sessions,),
                 ),
                 CentreAction(
                   active: current == SimfTab.badge,
@@ -106,7 +108,8 @@ class SimfBottomNav extends StatelessWidget {
                   current: current,
                   iconAsset: AppAssets.navUser,
                   label: l10n.navProfile,
-                  onTap: _shellOrGo(context, SimfTab.profile, RouteNames.myArea),
+                  onTap:
+                      _shellOrGo(context, SimfTab.profile, RouteNames.myArea),
                 ),
               ],
             ),

@@ -59,7 +59,8 @@ void main() {
         NotificationSeverity.info,
       );
       expect(NotificationSeverity.fromName(null), NotificationSeverity.info);
-      final item = NotificationItem.fromJson(const <String, dynamic>{'id': 'n3'});
+      final item =
+          NotificationItem.fromJson(const <String, dynamic>{'id': 'n3'});
       expect(item.severity, NotificationSeverity.info);
       expect(item.isRead, isFalse);
       expect(item.localizedTitle(isArabic: false), '');

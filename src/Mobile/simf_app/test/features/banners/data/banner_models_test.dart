@@ -22,7 +22,8 @@ void main() {
       expect(item.displayOrder, 3);
     });
 
-    test('assetImageUrl builds the by-id serve path (no /api/v1 re-append)', () {
+    test('assetImageUrl builds the by-id serve path (no /api/v1 re-append)',
+        () {
       const item = PublicBannerItem(
         id: 'b1',
         title: '',
@@ -37,7 +38,8 @@ void main() {
       );
     });
 
-    test('listFromData reads the {items:[…]} envelope; empty on absent/null', () {
+    test('listFromData reads the {items:[…]} envelope; empty on absent/null',
+        () {
       final list = PublicBannerItem.listFromData(<String, dynamic>{
         'items': <dynamic>[
           <String, dynamic>{'id': 'a', 'displayOrder': 0},

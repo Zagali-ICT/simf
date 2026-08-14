@@ -143,15 +143,15 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
     final repo = ref.read(gatesRepositoryProvider);
     try {
       final result = await repo.recordScanOrQueue(
-            gateId: gate.gateId,
-            qr: trimmed,
-            direction: direction,
-            // A FRESH UUIDv4 per scan (SIMF-API-GATES-001 §9 — ScanIdempotency.
-            // Key is a client UUIDv4): a genuine re-entry of the same badge in
-            // the same direction is a NEW scan, never a 24h-window replay of the
-            // first one (G-1).
-            idempotencyKey: randomUuidV4(),
-          );
+        gateId: gate.gateId,
+        qr: trimmed,
+        direction: direction,
+        // A FRESH UUIDv4 per scan (SIMF-API-GATES-001 §9 — ScanIdempotency.
+        // Key is a client UUIDv4): a genuine re-entry of the same badge in
+        // the same direction is a NEW scan, never a 24h-window replay of the
+        // first one (G-1).
+        idempotencyKey: randomUuidV4(),
+      );
       if (!mounted) {
         return;
       }
@@ -273,7 +273,8 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
     // The setup stage shows the screen title; once scanning, the bar shows the
     // selected "gate • direction" (Figma 4819/4886).
     final showContext = _scanning || _result != null;
-    final gateName = _gate?.localizedName(isArabic: isArabic) ?? l10n.gateScannerEntry;
+    final gateName =
+        _gate?.localizedName(isArabic: isArabic) ?? l10n.gateScannerEntry;
     final directionForTitle = _result?.direction ?? _direction;
     final title = showContext
         ? '$gateName${directionForTitle == null ? '' : ' • ${_directionLabel(l10n, directionForTitle)}'}'
@@ -447,7 +448,9 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
           ),
           child: Row(
             children: <Widget>[
-              const Icon(Icons.sync, color: SimfTokens.accent, size: SimfTokens.gateScanScreenSizeSm),
+              const Icon(Icons.sync,
+                  color: SimfTokens.accent,
+                  size: SimfTokens.gateScanScreenSizeSm,),
               const SizedBox(width: SimfTokens.space2),
               Expanded(
                 child: Text(
@@ -464,5 +467,7 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
   }
 
   static String _directionLabel(AppL10n l10n, ScanDirection d) =>
-      d == ScanDirection.checkOut ? l10n.gateDirectionOut : l10n.gateDirectionIn;
+      d == ScanDirection.checkOut
+          ? l10n.gateDirectionOut
+          : l10n.gateDirectionIn;
 }

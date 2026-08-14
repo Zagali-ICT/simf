@@ -32,8 +32,7 @@ class GalleryMediaTile extends StatelessWidget {
             ? '$baseUrl/app/media/${item.id}/image'
             : null;
     return ClipRRect(
-      borderRadius:
-          const BorderRadius.all(Radius.circular(SimfTokens.radius)),
+      borderRadius: const BorderRadius.all(Radius.circular(SimfTokens.radius)),
       child: Stack(
         fit: StackFit.expand,
         children: <Widget>[

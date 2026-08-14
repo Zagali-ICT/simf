@@ -15,7 +15,10 @@ SessionSeatMap _map() => const SessionSeatMap(
       rowLabels: <String>['A', 'B'],
       seatsPerRow: 3,
       reservedCells: <SeatCell>[
-        SeatCell(rowLabel: 'A', seatNumber: 1, kind: SeatReservationKind.userBooking),
+        SeatCell(
+            rowLabel: 'A',
+            seatNumber: 1,
+            kind: SeatReservationKind.userBooking,),
       ],
       myCell: SeatCell(
         rowLabel: 'B',
@@ -257,7 +260,8 @@ void main() {
       expect(find.text('MAP'), findsOneWidget);
     });
 
-    testWidgets('B1 — the change-seat action opens the picker and re-reads the '
+    testWidgets(
+        'B1 — the change-seat action opens the picker and re-reads the '
         'grid when the move lands', (tester) async {
       final repo = _FakeSeatRepo(map: _map());
       await _pump(tester, repo: repo, surface: const Size(1000, 2600));
@@ -298,7 +302,8 @@ void main() {
 
       // The surface is tall enough to build the whole page, so this absence is
       // real and not an artefact of lazy list building.
-      expect(find.widgetWithText(OutlinedButton, 'Share location'), findsOneWidget);
+      expect(find.widgetWithText(OutlinedButton, 'Share location'),
+          findsOneWidget,);
       expect(find.widgetWithText(OutlinedButton, 'Change seat'), findsNothing);
     });
 
@@ -319,7 +324,8 @@ void main() {
       // Row B draws all 10 seats; seat number 10 is unique to it (row A has 4),
       // so its numeral renders exactly once — proof of the per-row count.
       expect(find.text('10'), findsOneWidget);
-      expect(find.text('Your seat'), findsOneWidget); // the legend still renders
+      expect(
+          find.text('Your seat'), findsOneWidget,); // the legend still renders
     });
 
     testWidgets('an unconfigured hall shows the unavailable state',

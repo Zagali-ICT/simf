@@ -155,7 +155,8 @@ String _pickRequired(String arabic, String english, bool isArabic) {
 String? _pickOptional(String? arabic, String? english, bool isArabic) {
   final ar = arabic?.trim() ?? '';
   final en = english?.trim() ?? '';
-  final value = isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
+  final value =
+      isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
   return value.isEmpty ? null : value;
 }
 

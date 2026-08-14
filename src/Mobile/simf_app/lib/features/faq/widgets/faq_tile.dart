@@ -26,7 +26,8 @@ class _FaqTileState extends State<FaqTile> {
     return SimfCard(
       onTap: () => setState(() => _expanded = !_expanded),
       child: Padding(
-        padding: const EdgeInsets.all(SimfTokens.space2), // p-8 (Figma 1388:7577)
+        padding:
+            const EdgeInsets.all(SimfTokens.space2), // p-8 (Figma 1388:7577)
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[

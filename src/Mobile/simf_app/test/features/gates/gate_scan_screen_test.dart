@@ -101,7 +101,8 @@ class _FakeGates implements GatesRepository {
       );
     }
     return result ??
-        GateScanResult.fromJson(const <String, dynamic>{'outcome': 0, 'direction': 0});
+        GateScanResult.fromJson(
+            const <String, dynamic>{'outcome': 0, 'direction': 0},);
   }
 
   @override
@@ -127,7 +128,8 @@ class _FakeGates implements GatesRepository {
       );
     }
     return result ??
-        GateScanResult.fromJson(const <String, dynamic>{'outcome': 0, 'direction': 0});
+        GateScanResult.fromJson(
+            const <String, dynamic>{'outcome': 0, 'direction': 0},);
   }
 
   @override
@@ -180,7 +182,8 @@ Future<void> _pump(WidgetTester tester, _FakeGates repo) async {
 
 /// Walks the new setup → scanner flow (D-509): pick the movement direction, then
 /// open the scanner. Defaults to Entry (دخول).
-Future<void> _openScanner(WidgetTester tester, {String direction = 'Entry'}) async {
+Future<void> _openScanner(WidgetTester tester,
+    {String direction = 'Entry',}) async {
   await tester.tap(find.text(direction));
   await tester.pumpAndSettle();
   await tester.tap(find.widgetWithText(FilledButton, 'Scan code'));
@@ -196,8 +199,8 @@ void main() {
       expect(find.text('Scan code'), findsOneWidget);
       expect(find.byType(TextField), findsNothing);
       // Scan stays disabled until a direction is picked.
-      final button =
-          tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Scan code'));
+      final button = tester
+          .widget<FilledButton>(find.widgetWithText(FilledButton, 'Scan code'));
       expect(button.onPressed, isNull);
 
       await _openScanner(tester);
@@ -260,8 +263,8 @@ void main() {
       final repo = _FakeGates(gates: <OperatorGate>[_gate(directionMode: 0)]);
       await _pump(tester, repo);
       // No movement choice needed — scan is enabled straight away.
-      final button =
-          tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Scan code'));
+      final button = tester
+          .widget<FilledButton>(find.widgetWithText(FilledButton, 'Scan code'));
       expect(button.onPressed, isNotNull);
       await tester.tap(find.widgetWithText(FilledButton, 'Scan code'));
       await tester.pumpAndSettle();
@@ -340,7 +343,8 @@ void main() {
       expect(uuidV4.hasMatch(repo.idempotencyKeys[1]), isTrue);
     });
 
-    testWidgets('G-4: an unreachable server queues the scan and shows '
+    testWidgets(
+        'G-4: an unreachable server queues the scan and shows '
         'saved-offline + the waiting-to-sync banner', (tester) async {
       final repo = _FakeGates(gates: <OperatorGate>[_gate()], offline: true);
       await _pump(tester, repo);
@@ -362,7 +366,8 @@ void main() {
       expect(repo.pendingCount(), 1);
     });
 
-    testWidgets('D-821: an offline ALLOWED verdict is shown as provisional, '
+    testWidgets(
+        'D-821: an offline ALLOWED verdict is shown as provisional, '
         'never as a final answer', (tester) async {
       final repo = _FakeGates(
         gates: <OperatorGate>[_gate()],
@@ -378,15 +383,18 @@ void main() {
       await tester.pump();
       await tester.pump();
 
-      expect(find.text('Allowed (offline) — saved for confirmation.'),
-          findsOneWidget,);
+      expect(
+        find.text('Allowed (offline) — saved for confirmation.'),
+        findsOneWidget,
+      );
       // NOT the server's allowed card: the decision is still the server's when
       // the queue drains, and the operator must not read this as final.
       expect(find.text('Allowed'), findsNothing);
       expect(repo.pendingCount(), 1);
     });
 
-    testWidgets('D-821: an offline DENIED verdict names the reason and still '
+    testWidgets(
+        'D-821: an offline DENIED verdict names the reason and still '
         'says the scan was saved', (tester) async {
       final repo = _FakeGates(
         gates: <OperatorGate>[_gate()],
@@ -422,7 +430,8 @@ void main() {
   });
 
   group('GateScanScreen — deferred gate-console defects', () {
-    testWidgets('DEF-STF-005 — a 403 on load shows the SERVER\'s reason, not '
+    testWidgets(
+        'DEF-STF-005 — a 403 on load shows the SERVER\'s reason, not '
         'the generic permission copy', (tester) async {
       await _pump(
         tester,
@@ -457,13 +466,15 @@ void main() {
       expect(find.text('You are not assigned to this gate.'), findsOneWidget);
     });
 
-    testWidgets('DEF-STF-005 — a 403 with no server body keeps the generic copy',
+    testWidgets(
+        'DEF-STF-005 — a 403 with no server body keeps the generic copy',
         (tester) async {
       await _pump(tester, _FakeGates(listStatus: 403));
       expect(find.textContaining('not authorised to operate'), findsOneWidget);
     });
 
-    testWidgets('DEF-STF-006 — an inactive gate is tagged in the picker and '
+    testWidgets(
+        'DEF-STF-006 — an inactive gate is tagged in the picker and '
         'warns before the first scan', (tester) async {
       await _pump(
         tester,

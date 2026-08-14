@@ -25,8 +25,7 @@ class ArchivePastSpeakersRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasOverflow = speakers.length > 4;
-    final shown =
-        (hasOverflow ? speakers.take(3) : speakers.take(4)).toList();
+    final shown = (hasOverflow ? speakers.take(3) : speakers.take(4)).toList();
     final overflow = speakers.length - shown.length;
     // Wrap (not Row) so the four fixed-72 tiles spread like the frame on a
     // normal width but wrap to a second line instead of overflowing on a very

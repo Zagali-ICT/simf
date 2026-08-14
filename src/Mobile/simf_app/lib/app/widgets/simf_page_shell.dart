@@ -109,8 +109,7 @@ class SimfPageShell extends StatelessWidget {
       // that uses this scaffold (opened by the header ☰; RTL slides from the
       // right). Detail/secondary pages inherit it as they migrate onto SimfPageShell.
       drawer: const MoreDrawer(),
-      bottomNavigationBar:
-          showBottomNav ? SimfBottomNav(current: tab) : null,
+      bottomNavigationBar: showBottomNav ? SimfBottomNav(current: tab) : null,
       body: Stack(
         children: <Widget>[
           if (showSweep) const SimfSweepBackground(),
@@ -161,9 +160,8 @@ class SimfPageShell extends StatelessWidget {
           SizedBox(
             width: SimfTokens.simfPageShellWidthSm,
             height: SimfTokens.simfPageShellHeightSm,
-            child: onBack == null
-                ? null
-                : SimfCircledBackButton(onBack: onBack!),
+            child:
+                onBack == null ? null : SimfCircledBackButton(onBack: onBack!),
           ),
           Expanded(
             child: Text(
@@ -194,7 +192,9 @@ class SimfPageShell extends StatelessWidget {
           else
             // المزيد (1129:17224) drops the header pill; the spacer balances the
             // 42-wide back box so the title stays centred.
-            const SizedBox(width: SimfTokens.simfPageShellWidthSm, height: SimfTokens.simfPageShellHeightSm),
+            const SizedBox(
+                width: SimfTokens.simfPageShellWidthSm,
+                height: SimfTokens.simfPageShellHeightSm,),
         ],
       ),
     );

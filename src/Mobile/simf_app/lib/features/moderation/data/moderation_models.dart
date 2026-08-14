@@ -109,7 +109,8 @@ class ModeratorQuestion {
 
   /// The same row with a different persisted status — used for the desk's
   /// optimistic update before the server confirms (rolled back on failure).
-  ModeratorQuestion withStatus(ModeratorQuestionStatus next) => ModeratorQuestion(
+  ModeratorQuestion withStatus(ModeratorQuestionStatus next) =>
+      ModeratorQuestion(
         id: id,
         sessionId: sessionId,
         submitterName: submitterName,
@@ -153,7 +154,8 @@ class ModeratedSession {
     required this.end,
   });
 
-  factory ModeratedSession.fromJson(Map<String, dynamic> json) => ModeratedSession(
+  factory ModeratedSession.fromJson(Map<String, dynamic> json) =>
+      ModeratedSession(
         sessionId: json['sessionId'] as String? ?? '',
         title: json['title'] as String? ?? '',
         titleArabic: json['titleArabic'] as String? ?? '',

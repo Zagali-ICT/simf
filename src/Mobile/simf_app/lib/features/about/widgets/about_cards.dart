@@ -100,8 +100,8 @@ class AboutThemesCard extends StatelessWidget {
         children: <Widget>[
           CardHeading(title),
           const SizedBox(height: SimfTokens.space3),
-          for (final (index, (number, themeTitle, body)) in themes.indexed)
-            ...<Widget>[
+          for (final (index, (number, themeTitle, body))
+              in themes.indexed) ...<Widget>[
             if (index > 0) const SizedBox(height: SimfTokens.space4),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,

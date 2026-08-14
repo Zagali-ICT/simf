@@ -53,8 +53,7 @@ class SendQuestionScreen extends ConsumerStatefulWidget {
   final String? sessionId;
 
   @override
-  ConsumerState<SendQuestionScreen> createState() =>
-      _SendQuestionScreenState();
+  ConsumerState<SendQuestionScreen> createState() => _SendQuestionScreenState();
 }
 
 class _SendQuestionScreenState extends ConsumerState<SendQuestionScreen> {
@@ -251,7 +250,8 @@ class _SendQuestionScreenState extends ConsumerState<SendQuestionScreen> {
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               SendQuestionSubmitButton(
-                label: _submitting ? l10n.loadingLabel : l10n.sendQuestionSubmit,
+                label:
+                    _submitting ? l10n.loadingLabel : l10n.sendQuestionSubmit,
                 onPressed: _submitting ? null : () => unawaited(_submit(l10n)),
               ),
               const SizedBox(height: SimfTokens.space4),

@@ -15,7 +15,8 @@ void main() {
 
     test('falls back to pointOfInterest on an unknown value', () {
       expect(VenueMapNodeKind.fromJson(99), VenueMapNodeKind.pointOfInterest);
-      expect(VenueMapNodeKind.fromJson('Mystery'), VenueMapNodeKind.pointOfInterest);
+      expect(VenueMapNodeKind.fromJson('Mystery'),
+          VenueMapNodeKind.pointOfInterest,);
       expect(VenueMapNodeKind.fromJson(null), VenueMapNodeKind.pointOfInterest);
     });
   });
@@ -43,7 +44,8 @@ void main() {
   });
 
   group('BoothSummary / BoothDetail.fromJson', () {
-    test('binds the real wire field names (name/nameArabic/exhibitorName/…)', () {
+    test('binds the real wire field names (name/nameArabic/exhibitorName/…)',
+        () {
       final booth = BoothSummary.fromJson(const <String, dynamic>{
         'id': 'b1',
         'code': 'A-12',
@@ -73,8 +75,10 @@ void main() {
         'descriptionArabic': 'أنظمة بحرية عالمية.',
       });
 
-      expect(detail.localizedDescription(isArabic: false), 'World-class maritime systems.');
-      expect(detail.localizedDescription(isArabic: true), 'أنظمة بحرية عالمية.');
+      expect(detail.localizedDescription(isArabic: false),
+          'World-class maritime systems.',);
+      expect(
+          detail.localizedDescription(isArabic: true), 'أنظمة بحرية عالمية.',);
     });
 
     test('missing nullable fields resolve to null, not empty strings', () {

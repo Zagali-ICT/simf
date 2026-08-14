@@ -24,7 +24,8 @@ class SimfSweepBackground extends StatelessWidget {
           height: SimfTokens.simfPageShellHeightMd,
           decoration: const BoxDecoration(
             color: SimfTokens.surfaceTint,
-            borderRadius: BorderRadius.all(Radius.circular(SimfTokens.radiusSheet)),
+            borderRadius:
+                BorderRadius.all(Radius.circular(SimfTokens.radiusSheet)),
           ),
         ),
       ),

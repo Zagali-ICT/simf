@@ -3,7 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/app_assets.dart';
 import 'package:simf_app/app/theme/tokens.dart';
-import 'package:simf_app/app/widgets/simf_app_shell.dart' show SimfShellScope, tabIndex;
+import 'package:simf_app/app/widgets/simf_app_shell.dart'
+    show SimfShellScope, tabIndex;
 import 'package:simf_app/app/widgets/simf_bottom_nav.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart' show SimfPageShell;
 import 'package:simf_app/app/widgets/simf_svg_icon.dart';
@@ -114,7 +115,8 @@ class SimfMenuButton extends StatelessWidget {
         backgroundColor: SimfTokens.navyDeep,
         shape: const CircleBorder(),
       ),
-      icon: const Icon(Icons.menu, color: SimfTokens.surface, size: SimfTokens.simfPageShellSizeSm),
+      icon: const Icon(Icons.menu,
+          color: SimfTokens.surface, size: SimfTokens.simfPageShellSizeSm,),
     );
   }
 }

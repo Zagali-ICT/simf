@@ -82,18 +82,17 @@ class AppRequestItem {
       title: json['title'] as String? ?? '',
       titleArabic: json['titleArabic'] as String? ?? '',
       status: AppRequestStatus.fromIndex(json['status'] as int?),
-      eventDate:
-          eventRaw == null ? null : parseWireOrNull(eventRaw),
-      createdAt:
-          (createdRaw == null ? null : parseWireOrNull(createdRaw)) ??
-              DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+      eventDate: eventRaw == null ? null : parseWireOrNull(eventRaw),
+      createdAt: (createdRaw == null ? null : parseWireOrNull(createdRaw)) ??
+          DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
       canCancel: json['canCancel'] as bool? ?? false,
       subtitle: (json['subtitle'] as String?)?.trim().isEmpty ?? true
           ? null
           : (json['subtitle'] as String).trim(),
-      subtitleArabic: (json['subtitleArabic'] as String?)?.trim().isEmpty ?? true
-          ? null
-          : (json['subtitleArabic'] as String).trim(),
+      subtitleArabic:
+          (json['subtitleArabic'] as String?)?.trim().isEmpty ?? true
+              ? null
+              : (json['subtitleArabic'] as String).trim(),
       speakerId: (json['speakerId'] as String?)?.trim().isEmpty ?? true
           ? null
           : (json['speakerId'] as String).trim(),

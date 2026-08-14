@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/tokens.dart';
-import 'package:simf_app/features/account/widgets/account_form_field.dart' show AccountPasswordField;
+import 'package:simf_app/features/account/widgets/account_form_field.dart'
+    show AccountPasswordField;
 
 /// The show/hide eye toggle used inside the navy-family password fields
 /// (reset-password / badge-activation) — the beige Material eye wired to the

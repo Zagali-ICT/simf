@@ -49,12 +49,11 @@ class SpeakerOptionTile extends StatelessWidget {
           child: Row(
             children: <Widget>[
               SpeakerPhotoTile(
-                imageUrl:
-                    AssetUrls.image(
-                      baseUrl,
-                      AssetKind.speakerPhoto,
-                      speaker.id,
-                    ),
+                imageUrl: AssetUrls.image(
+                  baseUrl,
+                  AssetKind.speakerPhoto,
+                  speaker.id,
+                ),
                 size: SimfTokens.speakerOptionTileSizeMd,
               ),
               const SizedBox(width: SimfTokens.space3),

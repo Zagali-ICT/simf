@@ -130,7 +130,8 @@ class OrgProfile {
 
   String nameFor({required bool isArabic}) => isArabic ? nameArabic : name;
   String titleFor({required bool isArabic}) => isArabic ? titleArabic : title;
-  String? sloganFor({required bool isArabic}) => isArabic ? sloganArabic : slogan;
+  String? sloganFor({required bool isArabic}) =>
+      isArabic ? sloganArabic : slogan;
   String? bioFor({required bool isArabic}) => isArabic ? bioArabic : bio;
   String? locationFor({required bool isArabic}) =>
       isArabic ? locationTextArabic : locationText;
@@ -323,5 +324,5 @@ class OrgProfileController extends Notifier<OrgProfile?> {
   }
 }
 
-final orgProfileProvider =
-    NotifierProvider<OrgProfileController, OrgProfile?>(OrgProfileController.new);
+final orgProfileProvider = NotifierProvider<OrgProfileController, OrgProfile?>(
+    OrgProfileController.new,);

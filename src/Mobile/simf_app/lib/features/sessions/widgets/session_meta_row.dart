@@ -21,7 +21,8 @@ String _time(DateTime local) {
 /// "09:00 — 10:30" start→end; the time segment sits left, the date segment right
 /// (matching the frame). The Arabic date still renders RTL within its own box.
 class SessionMetaRow extends StatelessWidget {
-  const SessionMetaRow({required this.detail, required this.isArabic, super.key});
+  const SessionMetaRow(
+      {required this.detail, required this.isArabic, super.key,});
 
   final SessionDetail detail;
   final bool isArabic;

@@ -13,7 +13,8 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// The resolved-card preview + save sheet. Holds the optional note and the save
 /// call; pops `true` on a successful save, surfacing the self-save 400 inline.
 class ContactPreviewSheet extends ConsumerStatefulWidget {
-  const ContactPreviewSheet({required this.token, required this.card, super.key});
+  const ContactPreviewSheet(
+      {required this.token, required this.card, super.key,});
 
   final String token;
   final VisitorCard card;
@@ -52,9 +53,7 @@ class ContactPreviewSheetState extends ConsumerState<ContactPreviewSheet> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            e.httpStatus == 400
-                ? l10n.saveContactSelf
-                : l10n.saveContactError,
+            e.httpStatus == 400 ? l10n.saveContactSelf : l10n.saveContactError,
           ),
         ),
       );
@@ -110,7 +109,9 @@ class ContactPreviewSheetState extends ConsumerState<ContactPreviewSheet> {
                     ? const SizedBox(
                         width: SimfTokens.space4,
                         height: SimfTokens.space4,
-                        child: CircularProgressIndicator(strokeWidth: SimfTokens.scanContactScreenStrokeWidth),
+                        child: CircularProgressIndicator(
+                            strokeWidth:
+                                SimfTokens.scanContactScreenStrokeWidth,),
                       )
                     : const Icon(Icons.person_add_alt_1),
                 label: Text(l10n.saveContactLabel),

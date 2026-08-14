@@ -135,7 +135,8 @@ Future<void> _pump(
 
 void main() {
   group('ArchiveScreen (Page 024 — KSA frame 925:3079)', () {
-    testWidgets('renders the notice, an edition pill per edition, the selected '
+    testWidgets(
+        'renders the notice, an edition pill per edition, the selected '
         'edition detail and its stats', (tester) async {
       await _pump(
         tester,
@@ -200,7 +201,8 @@ void main() {
       expect(find.text('120'), findsOneWidget); // 2022 speakers
     });
 
-    testWidgets('P6 — gallery image + past-speaker photo render real URLs; a '
+    testWidgets(
+        'P6 — gallery image + past-speaker photo render real URLs; a '
         'video / relative path do not', (tester) async {
       await _pump(
         tester,
@@ -219,7 +221,8 @@ void main() {
       expect(urls, isNot(contains('archive/2024/legacy.jpg')));
     });
 
-    testWidgets('PAR-A1 — RTL: the two stat tiles run activities → speakers '
+    testWidgets(
+        'PAR-A1 — RTL: the two stat tiles run activities → speakers '
         '(right → left), matching the frame', (tester) async {
       await _pump(
         tester,

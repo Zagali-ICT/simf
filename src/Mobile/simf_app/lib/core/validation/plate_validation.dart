@@ -134,7 +134,8 @@ String? toArabicPlate(String value) {
     if (_enToAr.containsKey(ch)) {
       buffer.write(_enToAr[ch]);
     } else if (rune >= 0x30 && rune <= 0x39) {
-      buffer.writeCharCode(0x0660 + (rune - 0x30)); // Western digit → Arabic-Indic
+      buffer.writeCharCode(
+          0x0660 + (rune - 0x30),); // Western digit → Arabic-Indic
     } else {
       buffer.write(ch);
     }
@@ -173,7 +174,9 @@ class PlateParts {
 /// preserving [digitsFirst] order. Empty when nothing is set (the plate is
 /// optional). The pure form of the sign-up screen's `_syncPlate`.
 String assemblePlate({
-  required String digits, required bool digitsFirst, String? letter1,
+  required String digits,
+  required bool digitsFirst,
+  String? letter1,
   String? letter2,
   String? letter3,
 }) {
@@ -205,8 +208,7 @@ PlateParts parsePlate(String? code) {
       letters.add(String.fromCharCode(rune).toUpperCase());
     }
   }
-  final codes =
-      saudiPlateLetters.map((l) => l.code).toSet();
+  final codes = saudiPlateLetters.map((l) => l.code).toSet();
   if (letters.length == 3 && letters.every(codes.contains)) {
     final firstRune = canonical.runes.first;
     return PlateParts(

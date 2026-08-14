@@ -67,7 +67,8 @@ class DelegationCard extends StatelessWidget {
                 style: SimfTokens.labelWhiteBold15,
               ),
               if (showSubtitle) ...<Widget>[
-                const SizedBox(height: SimfTokens.space2), // 8 (Figma 1426:10840)
+                const SizedBox(
+                    height: SimfTokens.space2,), // 8 (Figma 1426:10840)
                 Text(
                   subtitle,
                   maxLines: 1,

@@ -435,9 +435,7 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
           focusedBorder: const OutlineInputBorder(
             borderSide: BorderSide(color: SimfTokens.accent),
           ),
-          border: const OutlineInputBorder(
-            
-          ),
+          border: const OutlineInputBorder(),
         ),
       );
 
@@ -477,7 +475,8 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
           _hint(l10n.speakersNoMatches) // لا نتائج مطابقة
         else
           ConstrainedBox(
-            constraints: const BoxConstraints(maxHeight: SimfTokens.meetingRequestSheetMaxHeight),
+            constraints: const BoxConstraints(
+                maxHeight: SimfTokens.meetingRequestSheetMaxHeight,),
             child: ListView.separated(
               shrinkWrap: true,
               padding: EdgeInsets.zero,

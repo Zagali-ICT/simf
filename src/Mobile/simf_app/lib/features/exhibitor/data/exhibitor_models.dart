@@ -17,7 +17,8 @@ class ExhibitorVisitor {
   });
 
   factory ExhibitorVisitor.fromData(Object? data) {
-    final map = data is Map ? data.cast<String, dynamic>() : const <String, dynamic>{};
+    final map =
+        data is Map ? data.cast<String, dynamic>() : const <String, dynamic>{};
     return ExhibitorVisitor(
       id: map['id'] as String? ?? '',
       scannedAt: parseWireOrNull(map['scannedAt'] as String? ?? '') ??

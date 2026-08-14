@@ -19,15 +19,20 @@ void main() {
     });
 
     test('localizedBody picks the active locale and falls back', () {
-      const both = ContentBlock(key: 'terms', content: 'EN', contentArabic: 'AR');
+      const both =
+          ContentBlock(key: 'terms', content: 'EN', contentArabic: 'AR');
       expect(both.localizedBody(isArabic: true), 'AR');
       expect(both.localizedBody(isArabic: false), 'EN');
 
-      const arOnly = ContentBlock(key: 'terms', content: '', contentArabic: 'AR');
-      expect(arOnly.localizedBody(isArabic: false), 'AR'); // EN empty → fall back to AR
+      const arOnly =
+          ContentBlock(key: 'terms', content: '', contentArabic: 'AR');
+      expect(arOnly.localizedBody(isArabic: false),
+          'AR',); // EN empty → fall back to AR
 
-      const enOnly = ContentBlock(key: 'terms', content: 'EN', contentArabic: '');
-      expect(enOnly.localizedBody(isArabic: true), 'EN'); // AR empty → fall back to EN
+      const enOnly =
+          ContentBlock(key: 'terms', content: 'EN', contentArabic: '');
+      expect(enOnly.localizedBody(isArabic: true),
+          'EN',); // AR empty → fall back to EN
     });
 
     test('hasBody is false when both bodies are blank', () {

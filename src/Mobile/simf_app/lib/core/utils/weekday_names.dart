@@ -3,10 +3,22 @@
 /// call is required. Shared by the date pickers that show an Arabic weekday —
 /// e.g. the meeting-request day cards ("الخميس 10 يوليو", Figma 1776:4958).
 const List<String> _weekdaysAr = <String>[
-  'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت', 'الأحد',
+  'الاثنين',
+  'الثلاثاء',
+  'الأربعاء',
+  'الخميس',
+  'الجمعة',
+  'السبت',
+  'الأحد',
 ];
 const List<String> _weekdaysEn = <String>[
-  'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday',
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+  'Sunday',
 ];
 
 /// The weekday name for [date] in the active locale.

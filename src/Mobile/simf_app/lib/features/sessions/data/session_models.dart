@@ -296,8 +296,8 @@ class SessionsPage {
   const SessionsPage(this.items);
 
   factory SessionsPage.fromJson(Object? data) {
-    final list = (data is Map ? data['items'] : null) as List? ??
-        const <dynamic>[];
+    final list =
+        (data is Map ? data['items'] : null) as List? ?? const <dynamic>[];
     final items = list
         .whereType<Map<dynamic, dynamic>>()
         .map((e) => SessionListItem.fromJson(e.cast<String, dynamic>()))
@@ -360,8 +360,8 @@ class ProgrammeDaysPage {
   const ProgrammeDaysPage(this.days);
 
   factory ProgrammeDaysPage.fromJson(Object? data) {
-    final list = (data is Map ? data['days'] : null) as List? ??
-        const <dynamic>[];
+    final list =
+        (data is Map ? data['days'] : null) as List? ?? const <dynamic>[];
     final days = list
         .whereType<Map<dynamic, dynamic>>()
         .map((e) => ProgrammeDay.fromJson(e.cast<String, dynamic>()))
@@ -405,7 +405,6 @@ class SessionDetail {
     this.displayOrder = 0,
     this.arrivalGraceMinutes = defaultArrivalGraceMinutes,
   });
-
 
   factory SessionDetail.fromJson(Map<String, dynamic> json) => SessionDetail(
         id: json['id'] as String? ?? '',
@@ -622,7 +621,8 @@ String _pickRequired(String arabic, String english, bool isArabic) {
 String? _pickOptional(String? arabic, String? english, bool isArabic) {
   final ar = arabic?.trim() ?? '';
   final en = english?.trim() ?? '';
-  final value = isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
+  final value =
+      isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
   return value.isEmpty ? null : value;
 }
 
@@ -641,8 +641,12 @@ class HallAttendanceStatus {
   factory HallAttendanceStatus.fromJson(Map<String, dynamic> json) {
     return HallAttendanceStatus(
       arrived: json['arrived'] as bool? ?? false,
-      enter: json['enter'] == null ? null : parseWireDateTime(json['enter'], 'enter'),
-      leave: json['leave'] == null ? null : parseWireDateTime(json['leave'], 'leave'),
+      enter: json['enter'] == null
+          ? null
+          : parseWireDateTime(json['enter'], 'enter'),
+      leave: json['leave'] == null
+          ? null
+          : parseWireDateTime(json['leave'], 'leave'),
       method: HallAttendanceMethod.fromJson(json['method']),
     );
   }

@@ -64,7 +64,8 @@ class PartnerDirectoryEntry {
   String? localizedSubtitle({required bool isArabic}) {
     final ar = subtitleArabic?.trim() ?? '';
     final en = subtitle?.trim() ?? '';
-    final picked = isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
+    final picked =
+        isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
     return picked.isEmpty ? null : picked;
   }
 

@@ -42,7 +42,8 @@ void main() {
       expect(item.canCancel, isTrue);
       expect(item.eventDate, isNull);
       expect(item.localizedSubtitle(isArabic: true), 'شهادة حضور رسمية');
-      expect(item.localizedSubtitle(isArabic: false), 'Official attendance certificate');
+      expect(item.localizedSubtitle(isArabic: false),
+          'Official attendance certificate',);
     });
 
     // Owner 2026-07-19 — the speaker rank (subtitle line) localizes AR/EN.
@@ -56,8 +57,10 @@ void main() {
         'subtitle': 'Professor of Cybersecurity, Oxford',
         'subtitleArabic': 'أستاذة الأمن السيبراني، أكسفورد',
       });
-      expect(both.localizedRank(isArabic: true), 'أستاذة الأمن السيبراني، أكسفورد');
-      expect(both.localizedRank(isArabic: false), 'Professor of Cybersecurity, Oxford');
+      expect(both.localizedRank(isArabic: true),
+          'أستاذة الأمن السيبراني، أكسفورد',);
+      expect(both.localizedRank(isArabic: false),
+          'Professor of Cybersecurity, Oxford',);
 
       // Arabic requested but only English present → falls back to English.
       final enOnly = AppRequestItem.fromJson(const <String, dynamic>{
@@ -122,7 +125,8 @@ void main() {
         'status': 1,
       });
       expect(item.canCancel, isFalse);
-      expect(item.createdAt, DateTime.fromMillisecondsSinceEpoch(0, isUtc: true));
+      expect(
+          item.createdAt, DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),);
       // displayDate falls back to createdAt when there is no event date.
       expect(item.displayDate, item.createdAt);
     });
@@ -144,8 +148,20 @@ void main() {
   group('listFromData', () {
     test('reads the bare list the endpoint returns', () {
       final items = AppRequestItem.listFromData(<dynamic>[
-        <String, dynamic>{'kind': 4, 'id': '1', 'title': 'A', 'titleArabic': 'أ', 'status': 0},
-        <String, dynamic>{'kind': 3, 'id': '2', 'title': 'B', 'titleArabic': 'ب', 'status': 2},
+        <String, dynamic>{
+          'kind': 4,
+          'id': '1',
+          'title': 'A',
+          'titleArabic': 'أ',
+          'status': 0,
+        },
+        <String, dynamic>{
+          'kind': 3,
+          'id': '2',
+          'title': 'B',
+          'titleArabic': 'ب',
+          'status': 2,
+        },
       ]);
       expect(items, hasLength(2));
       expect(items.first.kind, AppRequestKind.badgeUpdate);

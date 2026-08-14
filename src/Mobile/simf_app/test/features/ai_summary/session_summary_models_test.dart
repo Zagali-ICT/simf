@@ -20,7 +20,8 @@ void main() {
       expect(summary.recommendations, 'Invest in coral reefs');
       expect(summary.localizedSpeakers(isArabic: false), 'Dr Reef');
       expect(summary.localizedSpeakers(isArabic: true), 'د. ريف');
-      expect(summary.localizedFullText(isArabic: false), 'A long transcript summary.');
+      expect(summary.localizedFullText(isArabic: false),
+          'A long transcript summary.',);
       expect(summary.generatedByAi, isTrue);
       expect(summary.publishedAt, DateTime(2026, 11, 23, 10, 30));
     });

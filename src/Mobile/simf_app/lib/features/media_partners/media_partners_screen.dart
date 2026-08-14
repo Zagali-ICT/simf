@@ -97,9 +97,9 @@ class MediaPartnersScreen extends ConsumerWidget {
                       SimfTokens.space4,
                       SimfTokens.space6,
                     ),
-                    gridDelegate:
-                        SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: responsiveGridColumns(context, compact: 2),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount:
+                          responsiveGridColumns(context, compact: 2),
                       mainAxisSpacing: SimfTokens.space4,
                       crossAxisSpacing: SimfTokens.space4,
                       childAspectRatio: SimfTokens.partnerCardAspectRatio,

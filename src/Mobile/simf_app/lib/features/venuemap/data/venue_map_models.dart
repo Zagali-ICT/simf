@@ -296,7 +296,8 @@ class BoothDetail {
   String? localizedCountry({required bool isArabic}) =>
       _pick(countryNameArabic, countryName, isArabic);
 
-  String? localizedCity({required bool isArabic}) => _pick(cityArabic, city, isArabic);
+  String? localizedCity({required bool isArabic}) =>
+      _pick(cityArabic, city, isArabic);
 }
 
 /// Picks the locale-appropriate value of a bilingual pair, falling back to the
@@ -304,6 +305,7 @@ class BoothDetail {
 String? _pick(String? arabic, String? english, bool isArabic) {
   final ar = arabic?.trim() ?? '';
   final en = english?.trim() ?? '';
-  final value = isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
+  final value =
+      isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
   return value.isEmpty ? null : value;
 }

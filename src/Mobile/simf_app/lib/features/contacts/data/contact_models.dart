@@ -44,7 +44,8 @@ class VisitorCard {
   });
 
   factory VisitorCard.fromData(Object? data) {
-    final json = (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
+    final json =
+        (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
     return VisitorCard(
       userId: json['userId'] as String? ?? '',
       name: json['name'] as String? ?? '',
@@ -79,7 +80,8 @@ class VisitorCard {
   final String? countryNameArabic;
 
   /// Name for the active locale (Arabic primary, English fallback).
-  String localizedName({required bool isArabic}) => _pick(nameArabic, name, isArabic);
+  String localizedName({required bool isArabic}) =>
+      _pick(nameArabic, name, isArabic);
 
   /// Job title for the active locale, or null when none is set.
   String? localizedJobTitle({required bool isArabic}) =>
@@ -113,7 +115,8 @@ class SavedContactRow {
   });
 
   factory SavedContactRow.fromData(Object? data) {
-    final json = (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
+    final json =
+        (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
     return SavedContactRow(
       id: json['id'] as String? ?? '',
       subjectUserId: json['subjectUserId'] as String? ?? '',
@@ -139,7 +142,8 @@ class SavedContactRow {
   final String? note;
   final DateTime? savedAt;
 
-  String localizedName({required bool isArabic}) => _pick(nameArabic, name, isArabic);
+  String localizedName({required bool isArabic}) =>
+      _pick(nameArabic, name, isArabic);
 
   /// Job title for the active locale, or null when none is set.
   String? localizedJobTitle({required bool isArabic}) =>

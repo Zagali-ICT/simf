@@ -35,8 +35,7 @@ class NationalitySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final selected =
-        countries.where((c) => c.code == selectedCode).toList();
+    final selected = countries.where((c) => c.code == selectedCode).toList();
     final hasValue = selected.isNotEmpty;
     final label = hasValue
         ? (l10n.isArabic ? selected.first.nameArabic : selected.first.name)

@@ -23,8 +23,10 @@ void main() {
       expect(group.localizedName(isArabic: true), 'التسجيل');
       expect(group.localizedName(isArabic: false), 'Registration');
       expect(group.entries, hasLength(1));
-      expect(group.entries.first.localizedQuestion(isArabic: true), 'كيف أسجّل؟');
-      expect(group.entries.first.localizedAnswer(isArabic: false), 'Use the website.');
+      expect(
+          group.entries.first.localizedQuestion(isArabic: true), 'كيف أسجّل؟',);
+      expect(group.entries.first.localizedAnswer(isArabic: false),
+          'Use the website.',);
     });
 
     test('missing entries decodes to an empty list', () {

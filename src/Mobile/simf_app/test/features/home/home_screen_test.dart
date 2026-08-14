@@ -124,7 +124,8 @@ const _allSocial = OrgSocial(
   tiktok: 'https://tiktok.com/@simf',
 );
 
-OrgProfile _orgProfile(OrgSocial social, {String? contactWebsite}) => OrgProfile(
+OrgProfile _orgProfile(OrgSocial social, {String? contactWebsite}) =>
+    OrgProfile(
       name: '',
       nameArabic: '',
       title: '',
@@ -352,7 +353,8 @@ Future<void> _pump(
 
 void main() {
   group('HomeScreen — guest layout (frame 512:1492)', () {
-    testWidgets('shows the guest banner, public tiles, locked badge card and '
+    testWidgets(
+        'shows the guest banner, public tiles, locked badge card and '
         'the sign-in button', (tester) async {
       await _pump(tester, controller: _GuestController());
 
@@ -450,7 +452,8 @@ void main() {
       );
     });
 
-    testWidgets('an unapproved (pending) account sees the guest layout with the '
+    testWidgets(
+        'an unapproved (pending) account sees the guest layout with the '
         'under-review card (registration status + sign out), not the guest '
         'banner or the sign-in button (D-666 / D-668)', (tester) async {
       await _pump(tester, controller: _UnapprovedController());
@@ -480,7 +483,8 @@ void main() {
   });
 
   group('HomeScreen — signed-in layout (frame 758:1134)', () {
-    testWidgets('shows the greeting header, live banner, the section bars and '
+    testWidgets(
+        'shows the greeting header, live banner, the section bars and '
         'every tile section', (tester) async {
       // VIP so the "اللقاءات الثنائية" tile is in the section list (D-745).
       await _pump(tester, controller: _SignedInController(), isVip: true);
@@ -555,7 +559,8 @@ void main() {
       expect(find.textContaining('Ahmed Mohammed'), findsNothing);
     });
 
-    testWidgets('greeting never renders the email when there is no profile name',
+    testWidgets(
+        'greeting never renders the email when there is no profile name',
         (tester) async {
       // displayName is the email and no profile loaded → name-less salute.
       await _pump(tester, controller: _SignedInEmailController());
@@ -578,7 +583,8 @@ void main() {
       expect(find.text('ABOUT'), findsOneWidget);
     });
 
-    testWidgets('the full-width "اسأل المحاور" tile opens send-question '
+    testWidgets(
+        'the full-width "اسأل المحاور" tile opens send-question '
         '(1052:12856)', (tester) async {
       // A tall surface renders the full-width tile fully on-screen (a scrolled
       // tile can land under the bottom nav bar and miss the hit test).
@@ -696,7 +702,8 @@ void main() {
       expect(prefs.getString(StorageKeys.preferredLanguage), 'en');
     });
 
-    testWidgets('tapping the greeting avatar switches to the Profile tab '
+    testWidgets(
+        'tapping the greeting avatar switches to the Profile tab '
         '(owner 2026-06-27)', (tester) async {
       int? switchedTo;
       await _pump(
@@ -741,7 +748,8 @@ void main() {
       expect(socials, hasLength(5));
     });
 
-    testWidgets('no social set → the تابعنا section is hidden (owner 2026-06-27)',
+    testWidgets(
+        'no social set → the تابعنا section is hidden (owner 2026-06-27)',
         (tester) async {
       await _pump(
         tester,
@@ -764,7 +772,8 @@ void main() {
       expect(none, isEmpty);
     });
 
-    testWidgets('the org website renders on Home when the CP sets one '
+    testWidgets(
+        'the org website renders on Home when the CP sets one '
         '(owner 2026-07-08)', (tester) async {
       await _pump(
         tester,
@@ -797,7 +806,8 @@ void main() {
       expect(find.text('Website'), findsNothing);
     });
 
-    testWidgets('the bilateral-meetings tile opens the VIP meetings page '
+    testWidgets(
+        'the bilateral-meetings tile opens the VIP meetings page '
         '(1408-9726, D-745)', (tester) async {
       // The tile is VIP-only now — a VIP sees it, and it opens /meetings.
       await _pump(tester, controller: _SignedInController(), isVip: true);
@@ -840,7 +850,8 @@ void main() {
       expect(two, hasLength(2));
     });
 
-    testWidgets('the ابرز الاحداث carousel renders the post title '
+    testWidgets(
+        'the ابرز الاحداث carousel renders the post title '
         '(frame 758:1239)', (tester) async {
       await _pump(
         tester,
@@ -916,8 +927,7 @@ void main() {
 
     testWidgets(
         'about tiles (4-up): المتحدثون · المعرض · الوفود · '
-        'الجلسات (right→left)',
-        (tester) async {
+        'الجلسات (right→left)', (tester) async {
       await pumpTall(tester);
       final speakers = tester.getCenter(find.text('المتحدثون')).dx;
       final booths = tester.getCenter(find.text('المعرض')).dx;

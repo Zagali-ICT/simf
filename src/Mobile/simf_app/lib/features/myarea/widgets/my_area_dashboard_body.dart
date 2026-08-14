@@ -49,8 +49,7 @@ class MyAreaDashboardBody extends ConsumerWidget {
         : (identity.qrId == null ? null : '#${identity.qrId}');
     // Frame 758:1283 — جدولي اليوم splits into a "جلسات" group and a "مقابلات"
     // group, each under its own gold sub-header.
-    final sessions =
-        dashboard.todaySchedule.where((i) => i.isSession).toList();
+    final sessions = dashboard.todaySchedule.where((i) => i.isSession).toList();
     final meetings =
         dashboard.todaySchedule.where((i) => !i.isSession).toList();
 

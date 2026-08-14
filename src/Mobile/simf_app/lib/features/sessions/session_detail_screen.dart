@@ -171,7 +171,9 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
     if (!map.mode.isOpenSeating) {
       final picked = await context.pushNamed<bool>(
         RouteNames.seatPicker,
-        pathParameters: <String, String>{RouteParams.sessionId: widget.sessionId},
+        pathParameters: <String, String>{
+          RouteParams.sessionId: widget.sessionId,
+        },
       );
       if (picked == true && mounted) {
         await _load();
@@ -296,14 +298,18 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
   /// only offered when the detail carries a live feed (`hasLiveStream`).
   void _openLive() => context.pushNamed(
         RouteNames.liveBroadcast,
-        queryParameters: <String, String>{RouteParams.sessionId: widget.sessionId},
+        queryParameters: <String, String>{
+          RouteParams.sessionId: widget.sessionId,
+        },
       );
 
   /// ملخص الجلسة (Figma 889:2715) — opens the AI session summary (34). The
   /// summary screen 404s gracefully until the Committee publishes it.
   void _openSummary() => context.pushNamed(
         RouteNames.aiSummary,
-        queryParameters: <String, String>{RouteParams.sessionId: widget.sessionId},
+        queryParameters: <String, String>{
+          RouteParams.sessionId: widget.sessionId,
+        },
       );
 
   /// اسأل المحاور (Figma 1056:12876) — opens send-question (26). #3 — only
@@ -311,7 +317,9 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
   /// (this never fires) until then, so there is no guest/not-joined path here.
   void _askHost() => context.pushNamed(
         RouteNames.sendQuestion,
-        queryParameters: <String, String>{RouteParams.sessionId: widget.sessionId},
+        queryParameters: <String, String>{
+          RouteParams.sessionId: widget.sessionId,
+        },
       );
 
   @override
@@ -324,10 +332,11 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
     final role = roleOf(ref.watch(authControllerProvider));
     // Moderator (محاور) entry to the Q&A desk (D-405); the grant is per-session,
     // so an empty set while the discovery call is in flight offers no action.
-    final moderatedSessionIds = ref.watch(myModeratedSessionsProvider).maybeWhen(
-          data: (sessions) => sessions.map((s) => s.sessionId).toSet(),
-          orElse: () => const <String>{},
-        );
+    final moderatedSessionIds =
+        ref.watch(myModeratedSessionsProvider).maybeWhen(
+              data: (sessions) => sessions.map((s) => s.sessionId).toSet(),
+              orElse: () => const <String>{},
+            );
     final canModerate =
         canModerateSession(role, moderatedSessionIds, widget.sessionId);
     final canSeat = canAssistSeating(role);
@@ -339,8 +348,7 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
       header: SessionDetailHeader(
         title: l10n.sessionDetailTitle,
         onBack: () => backOrHome(context),
-        actionIcon:
-            canSeat ? Icons.event_seat_outlined : Icons.forum_outlined,
+        actionIcon: canSeat ? Icons.event_seat_outlined : Icons.forum_outlined,
         moderateTooltip: canModerate
             ? l10n.moderatorManageQuestions
             : (canSeat ? l10n.staffSeatingTitle : null),
@@ -409,7 +417,9 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
       onCancelReservation: () => unawaited(_cancelReservation(l10n)),
       onViewSeat: () => context.pushNamed(
         RouteNames.mySeat,
-        pathParameters: <String, String>{RouteParams.sessionId: widget.sessionId},
+        pathParameters: <String, String>{
+          RouteParams.sessionId: widget.sessionId,
+        },
       ),
       onSpeaker: (speaker) => context.pushNamed(
         RouteNames.speakerProfile,

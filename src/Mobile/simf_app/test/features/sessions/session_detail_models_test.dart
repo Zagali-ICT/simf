@@ -73,7 +73,6 @@ void main() {
       expect(detail.type, isNull);
     });
 
-
     // #29 — the detail carries the same tolerant `type` the list does (D-452):
     // the app reduces a WORKSHOP to its title + time.
     test('the session type decodes from the int OR the name wire form', () {
@@ -113,7 +112,8 @@ void main() {
 
     test('a null / absent myCell yields null (no card)', () {
       expect(
-        MySeat.fromSeatMap(<String, dynamic>{'sessionId': 's1', 'myCell': null}),
+        MySeat.fromSeatMap(
+            <String, dynamic>{'sessionId': 's1', 'myCell': null},),
         isNull,
       );
       expect(MySeat.fromSeatMap(<String, dynamic>{'sessionId': 's1'}), isNull);

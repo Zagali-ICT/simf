@@ -31,7 +31,8 @@ import 'package:simf_app/features/account/widgets/plate_number_field.dart';
 import 'package:simf_app/features/account/widgets/profile_type_field.dart';
 import 'package:simf_app/features/account/widgets/sign_up_visitor_header_avatar.dart';
 import 'package:simf_app/features/account/widgets/terms_and_next_buttons.dart';
-import 'package:simf_app/features/myarea/data/liveness.dart' show CapturedSelfie;
+import 'package:simf_app/features/myarea/data/liveness.dart'
+    show CapturedSelfie;
 import 'package:simf_app/features/visitor_profile/data/visitor_profile_completeness.dart';
 import 'package:simf_app/features/visitor_profile/data/visitor_profile_form_state.dart';
 import 'package:simf_app/features/visitor_profile/data/visitor_profile_validators.dart';
@@ -259,7 +260,8 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         : (_form.countries.any((c) => c.code == 'SA') ? 'SA' : null);
 
     final typeId = profile.profileTypeId;
-    _form.profileTypeId = _form.profileTypes.any((t) => t.id == typeId) ? typeId : null;
+    _form.profileTypeId =
+        _form.profileTypes.any((t) => t.id == typeId) ? typeId : null;
 
     _form.organisationId = profile.organisationId;
     _organisationLabel = null;
@@ -284,8 +286,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     if (!_isVisitorType) {
       return;
     }
-    final normal =
-        _form.profileTypes.where((t) => t.name == 'Normal').toList();
+    final normal = _form.profileTypes.where((t) => t.name == 'Normal').toList();
     if (normal.isNotEmpty) {
       _form.profileTypeId = normal.first.id;
     } else if (_form.profileTypes.length == 1) {
@@ -706,8 +707,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                       l10n.signUpTypeOther,
                     ],
                     selectedIndex: _isVisitorType ? 0 : 1,
-                    onChanged: (index) =>
-                        unawaited(_onTypeChanged(index == 0)),
+                    onChanged: (index) => unawaited(_onTypeChanged(index == 0)),
                   ),
                   const SizedBox(height: SimfTokens.space6),
                   _buildProfileTypeField(l10n),
@@ -855,7 +855,8 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       isScrollControlled: true,
       backgroundColor: SimfTokens.cardBeige,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(SimfTokens.radiusLarge)),
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(SimfTokens.radiusLarge)),
       ),
       builder: (_) => LookupSearchSheet(
         options: options,
@@ -913,8 +914,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   List<_BirthRegionOption> _activeBirthRegions() {
     // ref.read (not watch): this runs from both build helpers and the picker's
     // async handler. build() owns the watch so the field still rebuilds on data.
-    final api =
-        ref.read(regionsProvider).asData?.value;
+    final api = ref.read(regionsProvider).asData?.value;
     if (api != null && api.isNotEmpty) {
       return <_BirthRegionOption>[
         for (final RegionItem r in api)
@@ -979,7 +979,9 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         : _birthRegionByCode(_birthRegionCode)?.name(isArabic: isArabic);
     // Keep the stored name in the active locale while a region is selected, so a
     // language toggle re-syncs the submitted value (the picker is code-keyed).
-    if (_isSaudi && _birthRegionCode != null && _placeOfBirth.text != (regionName ?? '')) {
+    if (_isSaudi &&
+        _birthRegionCode != null &&
+        _placeOfBirth.text != (regionName ?? '')) {
       _placeOfBirth.text = regionName ?? '';
     }
     return PlaceOfBirthField(

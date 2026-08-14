@@ -205,8 +205,7 @@ class AccessibilitySync {
 
   Future<void> hydrate() async {
     try {
-      final repository =
-          _ref.read(accessibilityPreferencesRepositoryProvider);
+      final repository = _ref.read(accessibilityPreferencesRepositoryProvider);
       final remote = await repository.fetch();
       if (remote == null) {
         // The account has never saved a choice. Do NOT apply the server's

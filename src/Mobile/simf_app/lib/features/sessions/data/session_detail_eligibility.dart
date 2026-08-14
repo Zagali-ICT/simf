@@ -33,8 +33,7 @@ bool canJoinSession(AppRole role) => routeAllowsRole(RouteNames.mySeat, role);
 /// disabled - that is the existing sign-in nudge. An operational role the
 /// router would bounce is not offered it at all.
 bool canAskQuestion(AppRole role) =>
-    role == AppRole.guest ||
-    routeAllowsRole(RouteNames.sendQuestion, role);
+    role == AppRole.guest || routeAllowsRole(RouteNames.sendQuestion, role);
 
 /// Whether the moderator's Q&A-desk action is offered in the detail header.
 ///

@@ -47,7 +47,8 @@ class SpeakerSummary {
   final String? countryNameAr;
   final String? photoRelativePath;
 
-  String localizedName({required bool isArabic}) => _pick(nameArabic, name, isArabic);
+  String localizedName({required bool isArabic}) =>
+      _pick(nameArabic, name, isArabic);
   String? localizedRank({required bool isArabic}) =>
       _pickOpt(rankArabic, rank, isArabic);
   String? localizedCountry({required bool isArabic}) =>
@@ -92,7 +93,8 @@ class SpeakerSession {
 
   DateTime get startLocal => saudiOf(start);
 
-  String localizedTitle({required bool isArabic}) => _pick(titleArabic, title, isArabic);
+  String localizedTitle({required bool isArabic}) =>
+      _pick(titleArabic, title, isArabic);
   String? localizedHall({required bool isArabic}) =>
       _pickOpt(hallNameArabic, hallName, isArabic);
 }
@@ -191,7 +193,8 @@ class SpeakerDetail {
   final int displayOrder;
   final List<SpeakerSession> sessions;
 
-  String localizedName({required bool isArabic}) => _pick(nameArabic, name, isArabic);
+  String localizedName({required bool isArabic}) =>
+      _pick(nameArabic, name, isArabic);
   String? localizedRank({required bool isArabic}) =>
       _pickOpt(rankArabic, rank, isArabic);
   String? localizedCountry({required bool isArabic}) =>
@@ -204,7 +207,8 @@ class SpeakerDetail {
   /// helper the speaker list card uses.
   String? get flagEmoji => countryFlagEmoji(countryId);
 
-  String? localizedBio({required bool isArabic}) => _pickOpt(bioArabic, bio, isArabic);
+  String? localizedBio({required bool isArabic}) =>
+      _pickOpt(bioArabic, bio, isArabic);
   String? localizedQualifications({required bool isArabic}) =>
       _pickOpt(qualificationsArabic, qualifications, isArabic);
   String? localizedTraining({required bool isArabic}) =>
@@ -232,7 +236,8 @@ String _pick(String arabic, String english, bool isArabic) {
 String? _pickOpt(String? arabic, String? english, bool isArabic) {
   final ar = arabic?.trim() ?? '';
   final en = english?.trim() ?? '';
-  final value = isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
+  final value =
+      isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
   return value.isEmpty ? null : value;
 }
 

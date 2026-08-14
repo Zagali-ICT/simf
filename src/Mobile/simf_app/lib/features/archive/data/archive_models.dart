@@ -41,7 +41,8 @@ class ArchiveEdition {
   final String? summaryAr;
   final String? coverImageRelativePath;
 
-  String localizedTitle({required bool isArabic}) => _pick(titleAr, titleEn, isArabic);
+  String localizedTitle({required bool isArabic}) =>
+      _pick(titleAr, titleEn, isArabic);
   String? localizedSummary({required bool isArabic}) =>
       _pickOpt(summaryAr, summaryEn, isArabic);
 
@@ -114,7 +115,8 @@ class ArchiveEditionDetail {
   final List<ArchiveSessionTitle> sessionTitles;
   final List<ArchivePastSpeaker> pastSpeakers;
 
-  String localizedTitle({required bool isArabic}) => _pick(titleAr, titleEn, isArabic);
+  String localizedTitle({required bool isArabic}) =>
+      _pick(titleAr, titleEn, isArabic);
   String? localizedSummary({required bool isArabic}) =>
       _pickOpt(summaryAr, summaryEn, isArabic);
   String? localizedLocation({required bool isArabic}) =>
@@ -175,7 +177,8 @@ class ArchiveSessionTitle {
   final String titleEn;
   final String titleAr;
 
-  String localized({required bool isArabic}) => _pick(titleAr, titleEn, isArabic);
+  String localized({required bool isArabic}) =>
+      _pick(titleAr, titleEn, isArabic);
 }
 
 /// One past speaker — mirrors `PublicArchivePastSpeaker`.
@@ -214,6 +217,7 @@ String _pick(String arabic, String english, bool isArabic) {
 String? _pickOpt(String? arabic, String? english, bool isArabic) {
   final ar = arabic?.trim() ?? '';
   final en = english?.trim() ?? '';
-  final value = isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
+  final value =
+      isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
   return value.isEmpty ? null : value;
 }

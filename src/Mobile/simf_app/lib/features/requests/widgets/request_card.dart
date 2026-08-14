@@ -174,7 +174,9 @@ class _RequestCardState extends State<RequestCard> {
               alignment: AlignmentDirectional.centerEnd,
               child: OutlinedButton.icon(
                 onPressed: widget.onCancel,
-                icon: const Icon(Icons.close, size: SimfTokens.requestCardSizeSm, color: SimfTokens.danger),
+                icon: const Icon(Icons.close,
+                    size: SimfTokens.requestCardSizeSm,
+                    color: SimfTokens.danger,),
                 label: Text(
                   l10n.requestCancel,
                   style: SimfTokens.bodyDanger,
