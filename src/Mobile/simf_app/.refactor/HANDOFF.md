@@ -82,8 +82,11 @@ compositions replaced with the shared widget, one widget moved to its own file.
    CLAUDE.md section 11 — **format, then
    `dart fix --code=require_trailing_commas`, and never expect a second format
    run to be a no-op.**
-2. The 258 read-audit rows: 74 DUPLICATION, 41 DOC-HEADER, 40 NAMING,
-   28 ONE-WIDGET-PER-FILE, 24 BUILD-LOGIC, then the tail.
+2. The read-audit rows: 74 DUPLICATION, 41 DOC-HEADER, 40 NAMING,
+   24 BUILD-LOGIC, then the tail. **ONE-WIDGET-PER-FILE is closed**: the three
+   heterogeneous files are split (16 widgets, 16 files, originals removed) and
+   the other 17 findings are cohesive groups that CLAUDE.md section 1 now
+   explicitly permits.
 3. Decision 5 (all 71 screen headers to the section 9 template), decision 6
    (tokens single-use audit), decision 7 (the 35 AsyncValue conversions — a
    behaviour change, its own phase), decision 8 (`packages/`, last).
