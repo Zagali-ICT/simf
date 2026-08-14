@@ -48,10 +48,11 @@ Build, Test & Publish ──▶ Deploy to IIS
 > ### ⚠️ The test gates are OFF by default (D-887)
 >
 > `runTests` defaults to **`false`**, so an ordinary run **does not test**. It
-> skips the fast suites (~920 tests, including the Control Panel permission and
-> navigation gates), `SIMF.Api.Tests` (2272 integration tests, including the
-> anonymous-endpoint allow-list), the LocalDB provisioning that serves them, and
-> the Flutter and BadgeDesk stages.
+> skips the fast suites, `SIMF.Api.Tests`, the LocalDB provisioning that serves
+> them, and the Flutter and BadgeDesk stages. The full list of what that covers,
+> and what each one was catching, is in the `runTests` comment in
+> [`azure-pipelines.yml`](../azure-pipelines.yml) — kept in one place so the two
+> cannot drift apart.
 >
 > **A green run with `runTests` off means the code compiles and the packages
 > publish. It says nothing about behaviour, permissions or the security
@@ -85,11 +86,34 @@ Two tick boxes in the **Run pipeline** dialog, both **on** by default:
 | `deployPreProduction` | Deploy to Pre-production | The pre-production job is omitted |
 | `deployProduction` | Deploy to Production | The production job is omitted |
 
-And one that is **off** by default:
+And three that are **off** by default:
 
-| Parameter | Label | Default |
-|-----------|-------|---------|
-| `runTests` | Run the test gates (slow) | **`false`** |
+| Parameter | Label | Default | Notes |
+|-----------|-------|---------|-------|
+| `runTests` | Run the test gates (slow) | **`false`** | The .NET suites + LocalDB |
+| `runMobileApp` | Run the Flutter app stage | **`false`** | Independent of `runTests` |
+| `runBadgeDesk` | Run the offline badge desk stage | **`false`** | Independent of `runTests` |
+
+The last two are **disabled, not deferred** (D-889): ticking `runTests` on for a
+merge-gating run does **not** bring them back — each needs its own box. Neither
+was ever a `Deploy` dependency, so neither blocked a deployment; on the single
+self-hosted `Default` agent they competed for it, which is the wall-clock this
+buys back.
+
+Each is the **only** signal of its kind, so know what stops being checked:
+
+- **MobileApp** — the only CI proof the Flutter app analyses, passes its suites,
+  and still **compiles for Android from a clean checkout**. That last gate exists
+  because of a real escape: a `.gitignore` rule for build output also matched a
+  Pigeon source shipping with the vendored video plugin, so `flutter build apk`
+  failed on a clean clone while every developer machine stayed green. `analyze`
+  and `test` are blind to it — the Android half of a federated plugin is never
+  compiled on the host VM.
+- **BadgeDesk** — the only build signal for `SIMF.BadgeDesk`, which sits outside
+  `SIMF.slnx` deliberately (Windows-only: WinForms + DPAPI + native printing) and
+  references `SIMF.Common` and `SIMF.Contracts`. Renaming `EventBadgeCodec`,
+  `OfflineBadgeId` or `OfflineBadgeRegistration` now breaks the only tool that
+  mints badges, with nothing reporting it until a desk fails to open at the venue.
 
 Untick **both** and the whole `Deploy` stage is omitted — build, test and
 publish still run and the `drop` artifact is still produced, so a build-only run
@@ -178,10 +202,12 @@ Service, only the `Workers` block in `ops.ps1` changes.
 .\ops.ps1 -Action Install -Target Edge -CertThumbprint <thumbprint>
 ```
 
-On a per-server estate each box installs only its own target. `-Target All`
-remains for a single box that still runs everything; `ops.ps1` refuses to install
-while `-ApiHost` and `-EdgeHost` name the same host, since two sites cannot share
-a hostname.
+Each of the two servers hosts all four sites, so **`-Target All` is the normal
+case** on both `Pre-production` and `Production` (D-886); the individual targets
+remain for installing or restarting one site at a time. `ops.ps1` refuses to
+install while `-ApiHost` and `-EdgeHost` name the same host, since two sites
+cannot share a hostname — so the API and the edge need distinct hostnames on the
+same box.
 
 TLS bindings and the CA certificate are configured separately (see the HLD /
 SIMF-OPS-001); `Install` creates the HTTP binding only.

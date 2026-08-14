@@ -26,8 +26,51 @@ public class PipelineTestGateTests
 {
     private static readonly string RepoRoot = FindRepoRoot();
 
-    private static string Pipeline() =>
+    /// The root pipeline file, read once. Every test here asserts over the same
+    /// checked-in text, so re-reading a 39 KB file per test buys nothing.
+    private static readonly string PipelineYaml =
         File.ReadAllText(Path.Combine(RepoRoot, "azure-pipelines.yml"));
+
+    /// The root pipeline PLUS every YAML template it references.
+    ///
+    /// <para>Steps that move into a template must not fall out from under the
+    /// guards below. When the four deploy steps were extracted to
+    /// `deploy/deploy-all-packages.yml`, `No_pipeline_step_is_disabled` was
+    /// still reading the root file alone - so `enabled: false` on a deploy step
+    /// would have passed the very check written to catch a silently disabled
+    /// step, which is the failure this whole class exists for. Anything
+    /// asserting "no step in this pipeline does X" reads THIS, not
+    /// <see cref="PipelineYaml"/>.</para>
+    private static readonly IReadOnlyList<(string Path, string Text)> PipelineFiles = ReadPipelineFiles();
+
+    private static string Pipeline() => PipelineYaml;
+
+    private static IReadOnlyList<(string Path, string Text)> ReadPipelineFiles()
+    {
+        var files = new List<(string Path, string Text)> { ("azure-pipelines.yml", PipelineYaml) };
+
+        // Distinct: both deployment jobs reference the same template, and a file
+        // read twice would report every finding in it twice.
+        foreach (var relative in ReferencedTemplates(PipelineYaml).Distinct(StringComparer.Ordinal))
+        {
+            var full = Path.Combine(RepoRoot, relative.Replace('/', Path.DirectorySeparatorChar));
+            if (File.Exists(full))
+            {
+                files.Add((relative, File.ReadAllText(full)));
+            }
+        }
+
+        return files;
+    }
+
+    /// Every YAML path the given pipeline text references with `- template:`.
+    private static IEnumerable<string> ReferencedTemplates(string yaml) =>
+        yaml.Split('\n')
+            .Select(l => l.Trim())
+            .Where(l => !l.StartsWith('#'))
+            .Select(l => Regex.Match(l, @"^-\s*template:\s*(?<path>[^\s@#]+\.ya?ml)"))
+            .Where(m => m.Success)
+            .Select(m => m.Groups["path"].Value);
 
     /// Every test project under tests/ must be run by SOME stage. A new project
     /// that nothing references is a suite that only ever passes locally.
@@ -73,35 +116,44 @@ public class PipelineTestGateTests
     /// clean-clone Android compile gate — free to be disabled without a murmur.
     /// The pipeline carries no `enabled: false` today, so the blanket rule costs
     /// nothing and removes the judgement call about which steps "count".</para>
+    ///
+    /// <para>Reads the root pipeline AND every template it references
+    /// (<see cref="PipelineFiles"/>). Extracting steps into a template must not
+    /// be a way out from under this check.</para>
     [Fact]
     public void No_pipeline_step_is_disabled()
     {
-        var lines = Pipeline().Split('\n');
         var disabled = new List<string>();
 
-        for (var i = 0; i < lines.Length; i++)
+        foreach (var (path, text) in PipelineFiles)
         {
-            // The flag as a YAML KEY, not the words inside a comment that warns
-            // against using it.
-            if (lines[i].TrimStart().StartsWith('#')
-                || !lines[i].TrimStart().StartsWith("enabled: false", StringComparison.Ordinal))
-            {
-                continue;
-            }
+            var lines = text.Split('\n');
 
-            // Look back for the step this flag belongs to.
-            disabled.Add(
-                Enumerable.Range(0, i)
+            for (var i = 0; i < lines.Length; i++)
+            {
+                // The flag as a YAML KEY, not the words inside a comment that
+                // warns against using it.
+                if (lines[i].TrimStart().StartsWith('#')
+                    || !lines[i].TrimStart().StartsWith("enabled: false", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                // Look back for the step this flag belongs to.
+                var step = Enumerable.Range(0, i)
                     .Reverse()
                     .Select(j => lines[j])
                     .FirstOrDefault(l => l.Contains("displayName:", StringComparison.Ordinal))
                     ?.Trim()
-                ?? $"(step at line {i + 1})");
+                    ?? $"(step at line {i + 1})";
+
+                disabled.Add($"{path}: {step}");
+            }
         }
 
         Assert.True(
             disabled.Count == 0,
-            "A step is disabled in azure-pipelines.yml. Use a `condition:` that states "
+            "A step is disabled in the pipeline. Use a `condition:` that states "
             + "when it should run instead, so the reason is visible in the run summary "
             + "rather than hidden in the YAML:\n"
             + string.Join('\n', disabled));
@@ -300,13 +352,8 @@ public class PipelineTestGateTests
     [Fact]
     public void Every_yaml_template_the_pipeline_references_exists_in_the_repository()
     {
-        var missing = Pipeline()
-            .Split('\n')
-            .Select(l => l.Trim())
-            .Where(l => !l.StartsWith('#'))
-            .Select(l => Regex.Match(l, @"^-\s*template:\s*(?<path>[^\s@#]+\.ya?ml)"))
-            .Where(m => m.Success)
-            .Select(m => m.Groups["path"].Value.Replace('/', Path.DirectorySeparatorChar))
+        var missing = ReferencedTemplates(PipelineYaml)
+            .Select(p => p.Replace('/', Path.DirectorySeparatorChar))
             .Where(relative => !File.Exists(Path.Combine(RepoRoot, relative)))
             .ToArray();
 
