@@ -57,12 +57,7 @@ class LiveContentView extends StatelessWidget {
     // after end (the backend closes questions at End). When the window is
     // unknown — the global main-live synthetic (no id) has no start/end — fall
     // back to "a feed is present" so the always-on forum stream still reads live.
-    final start = session.start;
-    final end = session.end;
-    final nowUtc = saudiNow();
-    final isLive = (start != null && end != null)
-        ? !nowUtc.isBefore(start) && nowUtc.isBefore(end)
-        : mainUrl != null;
+    final isLive = session.isLiveAt(saudiNow(), hasFeed: mainUrl != null);
     // S-3 honesty — the "يُبث الآن" header and the Ask affordance must never
     // render over a not-live / recording surface, so they also require the feed
     // to actually be up. The LIVE badge already only shows when a URL exists.
