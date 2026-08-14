@@ -336,15 +336,25 @@ Administrator**, then **restart the IIS app pool** so `w3wp` picks them up:
 
 | Script | Server | Key groups |
 |--------|--------|-----------|
-| [set-env-api.template.ps1](set-env-api.template.ps1) | SimfAPI | The bulk, ~62 keys: `SIMF_ConnectionStrings__*`, `SIMF_Jwt__*`, `SIMF_FileStorage__*`, `SIMF_Email__*`, `SIMF_SuperAdmin__*`, `SIMF_Seed__DemoPassword`, `SIMF_Ai__*`, `SIMF_MeetingLinks__*`, `SIMF_Cors__WebAppOrigins__n`, `SIMF_RateLimit__*`, `SIMF_WalkInMode__*`, `SIMF_Swagger__*` |
-| [set-env-cp.template.ps1](set-env-cp.template.ps1) | SimfCP | `SIMF_Api__BaseUrl`, `SIMF_Session__LifetimeHours`, `SIMF_DataProtection__KeyRingPath` |
-| [set-env-web.template.ps1](set-env-web.template.ps1) | SimfWeb | `SIMF_Api__BaseUrl`, `SIMF_DataProtection__KeyRingPath` |
-| [set-env-edge.template.ps1](set-env-edge.template.ps1) | SimfEdge | `SIMF_ReverseProxy__Clusters__api__Destinations__primary__Address`, `SIMF_ReverseProxy__KnownProxies__0` |
+| [set-env-api.template.ps1](set-env-api.template.ps1) | SimfAPI | The bulk, ~62 keys: `SIMF_API_ConnectionStrings__*`, `SIMF_API_Jwt__*`, `SIMF_API_FileStorage__*`, `SIMF_API_Email__*`, `SIMF_API_SuperAdmin__*`, `SIMF_API_Seed__DemoPassword`, `SIMF_API_Ai__*`, `SIMF_API_MeetingLinks__*`, `SIMF_API_Cors__WebAppOrigins__n`, `SIMF_API_RateLimit__*`, `SIMF_API_WalkInMode__*`, `SIMF_API_Swagger__*` |
+| [set-env-cp.template.ps1](set-env-cp.template.ps1) | SimfCP | `SIMF_CP_Api__BaseUrl`, `SIMF_CP_Session__LifetimeHours`, `SIMF_CP_DataProtection__KeyRingPath` |
+| [set-env-web.template.ps1](set-env-web.template.ps1) | SimfWeb | `SIMF_WEB_Api__BaseUrl`, `SIMF_WEB_DataProtection__KeyRingPath` |
+| [set-env-edge.template.ps1](set-env-edge.template.ps1) | SimfEdge | `SIMF_EDGE_ReverseProxy__Clusters__api__Destinations__primary__Address`, `SIMF_EDGE_ReverseProxy__KnownProxies__0` |
 | [configure-prod-env.ps1](configure-prod-env.ps1) | any (`-Target`) | Generates the missing crypto keys, prompts for the rest, verifies, restarts the pool, health-checks |
 | [clear-env.ps1](clear-env.ps1) | any (`-Target`) | Removes the Machine-scope `SIMF_*` secrets (keeps the shared non-secret config unless `-Full`) |
 
-All four carry `ASPNETCORE_ENVIRONMENT` and `SIMF_Storage__LogDirectory`, because
-every host reads both.
+All four carry `ASPNETCORE_ENVIRONMENT` and a log directory, because every host
+reads both — but the log key is per-host like the rest: `SIMF_API_`,
+`SIMF_CP_`, `SIMF_WEB_` and `SIMF_EDGE_` each prefix their own
+`Storage__LogDirectory`.
+
+**The prefix is per host, and a bare `SIMF_` one binds to nothing.** The names
+above were written before the split and are the actual keys, verbatim from the
+templates. Setting the pre-split form leaves the host reading its built-in
+default instead — for the API that means no connection string and a boot
+failure, which reads as a broken deployment rather than as a mistyped variable.
+`clear-env.ps1` is the one place a bare `SIMF_*` is still right: it sweeps the
+whole namespace on purpose, and knows all four prefixes.
 
 ### One script per server - read this before deploying
 
