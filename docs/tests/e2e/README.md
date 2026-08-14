@@ -403,11 +403,18 @@ scenarios: those assert per-page CRUD outcomes and are still governed by the
 browser-drivable at all and are covered instead by the Flutter suites and
 `tests/SIMF.Api.Tests`.
 
-**Defect found:** `/meeting/confirm` renders with **no `<title>` element**. It is
-the only Website page carrying `@rendermode InteractiveServerNoPrerender`, and
-`App.razor`'s `<HeadOutlet />` is static, so its `<PageTitle>` has no outlet to
-reach on the first response. Content and behaviour are correct; the tab shows a
-bare URL. Logged as out-of-scope for that programme rather than fixed inside it.
+**Defect found, and since FIXED:** `/meeting/confirm` rendered with **no
+`<title>` element**, so the tab showed a bare URL. It was the only Website page
+carrying `@rendermode InteractiveServerNoPrerender`, and `App.razor`'s
+`<HeadOutlet />` is static, so a `<PageTitle>` living only in the circuit had no
+outlet to reach. Prerendering is now on for that page — it needs no per-circuit
+state, and its one initialisation call is a GET that changes nothing, so running
+it twice is harmless. The server response now carries
+`<title>Confirm meeting</title>`, and the tab reads "تأكيد الاجتماع" in Arabic.
+
+Worth keeping in mind for the next page that opts out of prerendering: it will
+lose its title the same way, silently, and no test asserts a title today. The
+sweep only caught this one because every other page in the same pass had one.
 
 ### Scenario ids are a primary key — keep them unique
 
