@@ -210,6 +210,42 @@ DateTime _utc(Object? value) {
 /// Applies a chip filter to the desk (pure — unit-testable). [desk] is the
 /// working queue from the server (Approved + Answered); [rejected] is the
 /// separately fetched Hidden bucket.
+/// The row count for every filter, in ONE pass over the queue.
+///
+/// The desk derived these as five separate `filterModeratorQueue(...).length`
+/// calls — five walks, each allocating a list only to read its length and throw
+/// it away — on every rebuild, on top of the pass that builds the visible rows.
+///
+/// The three desk predicates are counted independently rather than as an
+/// if/else chain, because they overlap: a question can be both on stage and
+/// answered, and each filter counts it.
+Map<ModeratorQueueFilter, int> moderatorQueueCounts(
+  List<ModeratorQuestion> desk, {
+  List<ModeratorQuestion> rejected = const <ModeratorQuestion>[],
+}) {
+  var fresh = 0;
+  var accepted = 0;
+  var answered = 0;
+  for (final question in desk) {
+    if (!question.isAnswered && !question.isOnStage) {
+      fresh++;
+    }
+    if (question.isOnStage) {
+      accepted++;
+    }
+    if (question.isAnswered) {
+      answered++;
+    }
+  }
+  return <ModeratorQueueFilter, int>{
+    ModeratorQueueFilter.all: desk.length + rejected.length,
+    ModeratorQueueFilter.fresh: fresh,
+    ModeratorQueueFilter.accepted: accepted,
+    ModeratorQueueFilter.answered: answered,
+    ModeratorQueueFilter.rejected: rejected.length,
+  };
+}
+
 List<ModeratorQuestion> filterModeratorQueue(
   List<ModeratorQuestion> desk,
   ModeratorQueueFilter filter, {

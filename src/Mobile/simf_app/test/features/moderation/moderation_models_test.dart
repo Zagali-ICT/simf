@@ -157,4 +157,47 @@ void main() {
       );
     });
   });
+
+  group('moderatorQueueCounts', () {
+    ModeratorQuestion q(String id, {bool pushed = false, int status = 1}) =>
+        ModeratorQuestion.fromJson(<String, dynamic>{
+          'id': id,
+          'isPushed': pushed,
+          'status': status,
+        });
+
+    // The counts must agree with filterModeratorQueue exactly — they used to
+    // BE it, called five times. These assert the equivalence rather than
+    // re-deriving the expected numbers by hand.
+    test('every count equals the length filterModeratorQueue returns', () {
+      final desk = <ModeratorQuestion>[
+        q('a'),
+        q('b', pushed: true),
+        q('c', status: 2),
+      ];
+      final rejected = <ModeratorQuestion>[q('r', status: 3)];
+
+      final counts = moderatorQueueCounts(desk, rejected: rejected);
+
+      for (final filter in ModeratorQueueFilter.values) {
+        expect(
+          counts[filter],
+          filterModeratorQueue(desk, filter, rejected: rejected).length,
+          reason: 'count mismatch for $filter',
+        );
+      }
+    });
+
+    test('an empty desk counts zero everywhere', () {
+      final counts = moderatorQueueCounts(const <ModeratorQuestion>[]);
+      for (final filter in ModeratorQueueFilter.values) {
+        expect(counts[filter], 0, reason: '$filter');
+      }
+    });
+
+    test('answers for every filter, so the chip row never reads null', () {
+      final counts = moderatorQueueCounts(<ModeratorQuestion>[q('a')]);
+      expect(counts.keys, containsAll(ModeratorQueueFilter.values));
+    });
+  });
 }
