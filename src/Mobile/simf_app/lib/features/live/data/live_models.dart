@@ -100,6 +100,21 @@ class LiveSession {
   final String? liveNotice;
   final String? liveNoticeArabic;
 
+  /// Whether the session is live at [nowUtc].
+  ///
+  /// A session carrying a start and an end is live between them. One WITHOUT a
+  /// time window falls back to [hasFeed] — the CP can publish a stream before
+  /// the programme carries its times, and the screen must still show it.
+  /// Lifted out of `LiveContentView.build`.
+  bool isLiveAt(DateTime nowUtc, {required bool hasFeed}) {
+    final from = start;
+    final to = end;
+    if (from == null || to == null) {
+      return hasFeed;
+    }
+    return !nowUtc.isBefore(from) && nowUtc.isBefore(to);
+  }
+
   String localizedTitle({required bool isArabic}) {
     if (isArabic) {
       return titleArabic.isNotEmpty ? titleArabic : title;
