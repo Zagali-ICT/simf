@@ -3787,6 +3787,13 @@
   <data name="Admin.BadgeBatches.Revoke.Body" xml:space="preserve"><value>This disables all {0} account(s) in this batch ({1}). This cannot be undone.</value></data>
   <data name="Admin.BadgeBatches.Revoke.Confirm" xml:space="preserve"><value>Revoke</value></data>
   <data name="Admin.BadgeBatches.Revoke.Done" xml:space="preserve"><value>Revoked {0} account(s).</value></data>
+  <data name="Admin.BadgeBatches.TopUp" xml:space="preserve"><value>Add more badges</value></data>
+  <data name="Admin.BadgeBatches.TopUp.Title" xml:space="preserve"><value>Add more badges to this order</value></data>
+  <data name="Admin.BadgeBatches.TopUp.Count" xml:space="preserve"><value>How many to add</value></data>
+  <data name="Admin.BadgeBatches.TopUp.Confirm" xml:space="preserve"><value>Add and mint</value></data>
+  <data name="Admin.BadgeBatches.TopUp.Done" xml:space="preserve"><value>Minted {0} more badge(s); the order now holds {1}.</value></data>
+  <data name="Admin.BadgeBatches.TopUp.TypeRequired" xml:space="preserve"><value>Choose the profile type to add.</value></data>
+  <data name="Admin.BadgeBatches.TopUp.CountInvalid" xml:space="preserve"><value>Enter how many badges to add (1 or more).</value></data>
   <data name="Admin.Delegates.Title" xml:space="preserve"><value>Delegates</value></data>
   <data name="Admin.Delegates.Single.Title" xml:space="preserve"><value>Register a delegate</value></data>
   <data name="Admin.Delegates.Single.Hint" xml:space="preserve"><value>A delegate is a normal visitor flagged as a delegation member; their nationality must be a country invited to send a delegation.</value></data>

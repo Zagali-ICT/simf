@@ -106,6 +106,16 @@
                 @* Re-email + revoke only make sense for an active batch. *@
                 @if (context.IsActive)
                 {
+                    @* Top-up MINTS badges, so it carries Visitors.BulkGenerate —
+                       the permission its endpoint checks — and not the
+                       ManageBatches the two neighbouring buttons use. Creating
+                       more of an order is a different authority from re-emailing
+                       or revoking one. *@
+                    <AuthorizedAction Permission="@PermissionCatalog.Visitors.BulkGenerate">
+                        <SimfToolbarButton Icon="plus" Title="@L["Admin.BadgeBatches.TopUp"]"
+                                           Disabled="_busy"
+                                           OnClick="@(() => OpenTopUp(context))" />
+                    </AuthorizedAction>
                     <AuthorizedAction Permission="@PermissionCatalog.Visitors.ManageBatches">
                         <SimfToolbarButton Icon="mail" Title="@L["Admin.BadgeBatches.ReEmail"]"
                                            Disabled="_busy"
@@ -153,6 +163,57 @@
             </SimfButton>
             <SimfButton Type="button" OnClick="ReEmailAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
                 @L["Admin.BadgeBatches.ReEmail.Send"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@* Top-up. One tier per run, deliberately: the API takes a list, but an order is
+   topped up to add "3 more VIP", and repeating the action is clearer than a
+   second row-builder in a modal. The counts the order already holds are shown
+   above the field, because "add 3" is only meaningful next to what is there. *@
+@if (_topUpTarget is not null)
+{
+    <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.BadgeBatches.TopUp.Title"]"
+               OnClose="CloseTopUp"
+               CloseLabel="@L["Grid.Close"]">
+        <ChildContent>
+            <div class="simf-form__fields">
+                <dl class="simf-dl">
+                    <dt>@L["Admin.BadgeBatches.Col.Name"]</dt>
+                    <dd>@OrderName(_topUpTarget)</dd>
+                    <dt>@L["Admin.BadgeBatches.Col.Summary"]</dt>
+                    <dd>@_topUpTarget.CountsSummary</dd>
+                    <dt>@L["Admin.BadgeBatches.Col.Total"]</dt>
+                    <dd>@_topUpTarget.TotalCount</dd>
+                </dl>
+                @if (_topUpError is not null)
+                {
+                    <SimfAlert Variant="error">@_topUpError</SimfAlert>
+                }
+                <SimfSelect TValue="AdminProfileTypeSummary"
+                            Label="@L["Admin.Delegates.Bulk.ProfileType"]"
+                            Placeholder="@L["Admin.Delegates.Bulk.ProfileType.Placeholder"]"
+                            Items="_profileTypes"
+                            ValueFor="@(pt => pt.Id.ToString())"
+                            LabelFor="@(pt => TypeLabel(pt))"
+                            Value="_topUpType"
+                            ValueChanged="@(pt => _topUpType = pt)"
+                            Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.BadgeBatches.TopUp.Count"]"
+                               Numeric="true" MaxLength="4"
+                               Value="@_topUpCount"
+                               ValueChanged="@(v => _topUpCount = v)"
+                               ValueExpression="@(() => _topUpCount)"
+                               Disabled="_busy" />
+            </div>
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" Variant="secondary" Disabled="_busy" OnClick="CloseTopUp">
+                @L["Admin.BadgeBatches.Cancel"]
+            </SimfButton>
+            <SimfButton Type="button" OnClick="TopUpAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
+                @L["Admin.BadgeBatches.TopUp.Confirm"]
             </SimfButton>
         </Footer>
     </SimfModal>

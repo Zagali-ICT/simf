@@ -28,7 +28,42 @@ public partial class BadgeBatchesPage
     // Revoke confirm modal — the batch about to be disabled.
     private AdminBadgeBatchSummary? _revokeTarget;
 
-    protected override async Task OnInitializedAsync() => await LoadAsync();
+    // Top-up modal — the order being added to, plus the tier and how many.
+    // The type list is loaded once on init rather than per open: it is a small
+    // lookup, and fetching it inside the click would leave the picker empty for
+    // the first render of the modal.
+    private AdminBadgeBatchSummary? _topUpTarget;
+    private List<AdminProfileTypeSummary> _profileTypes = new();
+    private AdminProfileTypeSummary? _topUpType;
+    private string _topUpCount = string.Empty;
+    private string? _topUpError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+        await LoadProfileTypesAsync();
+    }
+
+    /// <summary>Visitor tiers a badge can be minted for. Mirrors the bulk
+    /// generator's filter — a non-visitor type must never reach a bulk order,
+    /// because a bulk-approved badge of an elevated role would hand out
+    /// QR-accessible authority.</summary>
+    private async Task LoadProfileTypesAsync()
+    {
+        var envelope = await JS.InvokeAsync<ApiResult<IReadOnlyList<AdminProfileTypeSummary>>>(
+            "simfAccount.getJson", "/account/api/admin/profile-types?userType=Visitor");
+        if (envelope is { Success: true, Data: not null })
+        {
+            _profileTypes = envelope.Data.Where(p => p.IsActive && p.IsVisitor).ToList();
+        }
+    }
+
+    private static string TypeLabel(AdminProfileTypeSummary profileType) =>
+        CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar"
+            ? (string.IsNullOrWhiteSpace(profileType.NameArabic)
+                ? profileType.Name : profileType.NameArabic)
+            : (string.IsNullOrWhiteSpace(profileType.Name)
+                ? profileType.NameArabic : profileType.Name);
 
     private async Task OnQueryChangedAsync(GridQuery next)
     {
@@ -102,6 +137,74 @@ public partial class BadgeBatchesPage
             {
                 _toast = new Toast("error",
                     env?.Error?.MessageForCurrentCulture() ?? L["Admin.BadgeBatches.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private void OpenTopUp(AdminBadgeBatchSummary row)
+    {
+        _topUpTarget = row;
+        _topUpType = null;
+        _topUpCount = string.Empty;
+        _topUpError = null;
+        _toast = null;
+    }
+
+    private void CloseTopUp()
+    {
+        _topUpTarget = null;
+        _topUpError = null;
+    }
+
+    private async Task TopUpAsync()
+    {
+        if (_topUpTarget is null || _busy) return;
+
+        // Checked before posting, and reported INSIDE the dialog, so the
+        // correction is made while the fields are still in front of the operator.
+        if (_topUpType is null)
+        {
+            _topUpError = L["Admin.BadgeBatches.TopUp.TypeRequired"];
+            return;
+        }
+        if (!int.TryParse(_topUpCount?.Trim(), NumberStyles.None,
+                CultureInfo.InvariantCulture, out var count)
+            || count < 1)
+        {
+            _topUpError = L["Admin.BadgeBatches.TopUp.CountInvalid"];
+            return;
+        }
+
+        _busy = true;
+        _topUpError = null;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<AdminTopUpBadgeBatchResponse>>(
+                "simfAccount.postJson", "/account/api/admin/visitors/badge-batches/top-up",
+                new AdminTopUpBadgeBatchRequest
+                {
+                    BatchId = _topUpTarget.Id,
+                    Batches = new List<BulkBadgeBatch>
+                    {
+                        new() { ProfileTypeId = _topUpType.Id, Count = count },
+                    },
+                });
+            if (env is { Success: true, Data: not null })
+            {
+                _toast = new Toast("success",
+                    string.Format(L["Admin.BadgeBatches.TopUp.Done"],
+                        env.Data.Added, env.Data.TotalCount));
+                CloseTopUp();
+                await LoadAsync();
+            }
+            else
+            {
+                // The server refuses a revoked order and the direct-registration
+                // order. The dialog stays OPEN so the refusal is read where the
+                // request was made.
+                _topUpError = env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.BadgeBatches.LoadFailed"];
             }
         }
         finally { _busy = false; }

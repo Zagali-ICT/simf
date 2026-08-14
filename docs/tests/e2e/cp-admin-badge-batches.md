@@ -24,6 +24,14 @@ Auth-setup uses the `Get-Totp` helper — never a literal secret.
 | E2E-BBT-008 | Auth gate — `Visitors.ViewBatches` gates the page, nav item and list API | auth | P0 | _to author_ |
 | E2E-BBT-009 | RTL (Arabic) — grid, pills and both dialogs mirror; no horizontal overflow | i18n | P1 | _to author_ |
 | E2E-BBT-010 | View-only cannot re-email or revoke (`Visitors.ManageBatches` gate) | auth | P0 | _to author_ |
+| E2E-BBT-011 | An order is created with a bilingual name, and the row shows it | happy | P0 | _to author_ |
+| E2E-BBT-012 | Top-up mints immediately and moves both denormalised fields | happy | P0 | automated |
+| E2E-BBT-013 | A revoked order cannot be topped up | negative | P1 | automated |
+| E2E-BBT-014 | The direct-registration order cannot be topped up | negative | P0 | automated |
+| E2E-BBT-015 | Top-up is gated on `Visitors.BulkGenerate`, not `ManageBatches` | auth | P0 | automated |
+| E2E-BBT-016 | The top-up dialog shows what the order already holds | function | P1 | automated |
+| E2E-BBT-017 | Top-up refuses no tier / a bad count before posting anything | validation | P1 | automated |
+| E2E-BBT-018 | A refused top-up keeps the dialog open with the reason in it | negative | P1 | automated |
 | E2E-BBT-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-BBT-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
@@ -129,4 +137,29 @@ Scenario: E2E-BBT-015 Top-up is gated on BulkGenerate, not ManageBatches
   When it calls the top-up API
   Then the response is 403 - re-emailing or revoking an order is a different
     authority from creating more of it
+   And on "/admin/visitors/badge-batches" that account sees the re-email and
+       revoke actions but NOT "Add more badges"
+   And both halves matter: a hidden button over an open API would be theatre
+
+Scenario: E2E-BBT-016 The top-up dialog shows what the order already holds
+  Given an admin holding "Visitors.BulkGenerate" on "/admin/visitors/badge-batches"
+   When they press "Add more badges" on "Ministry of Interior Team"
+   Then the dialog names the order and shows its current counts and total
+    And nothing is minted until they confirm - "add 3" is only meaningful next
+        to what is already there
+
+Scenario: E2E-BBT-017 Top-up refuses no tier / a bad count before posting anything
+  Given the top-up dialog is open
+   When the admin confirms with no profile type chosen
+   Then an error asks them to choose one, and NOTHING is posted
+   When they choose VIP and enter "", or "0", or "abc"
+   Then an error asks for a count of 1 or more, and NOTHING is posted
+    And the errors appear INSIDE the dialog, where the fields still are
+
+Scenario: E2E-BBT-018 A refused top-up keeps the dialog open with the reason in it
+  Given the top-up dialog is open on an order the server will refuse
+        (a revoked order, or the direct-registration order)
+   When the admin confirms
+   Then the refusal is shown inside the dialog and the dialog STAYS open
+    And no badge is minted
 ```
