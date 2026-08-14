@@ -125,4 +125,3 @@ class SessionSpeakerCard extends StatelessWidget {
     );
   }
 }
-

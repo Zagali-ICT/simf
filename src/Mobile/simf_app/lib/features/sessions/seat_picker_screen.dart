@@ -330,4 +330,3 @@ class _SeatPickerScreenState extends ConsumerState<SeatPickerScreen> {
     );
   }
 }
-

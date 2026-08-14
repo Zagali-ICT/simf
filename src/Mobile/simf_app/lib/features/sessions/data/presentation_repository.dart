@@ -38,7 +38,7 @@ final presentationRepositoryProvider = Provider<PresentationRepository>((ref) {
 });
 
 /// The public presentations list (auto-disposed so it re-reads each visit).
-final presentationsProvider =
+final AutoDisposeFutureProvider<PresentationsPage> presentationsProvider =
     FutureProvider.autoDispose<PresentationsPage>((ref) async {
   return ref.watch(presentationRepositoryProvider).list();
 });

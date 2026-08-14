@@ -135,6 +135,20 @@ class SessionSpeaker {
     this.photoRelativePath,
   });
 
+  factory SessionSpeaker.fromJson(Map<String, dynamic> json) => SessionSpeaker(
+        id: json['id'] as String? ?? '',
+        name: json['name'] as String? ?? '',
+        nameArabic: json['nameArabic'] as String? ?? '',
+        title: json['title'] as String?,
+        titleArabic: json['titleArabic'] as String?,
+        displayOrder: (json['displayOrder'] as num?)?.toInt() ?? 0,
+        role: SessionSpeakerRole.fromJson(json['role']),
+        countryId: (json['countryId'] as num?)?.toInt(),
+        countryNameEn: json['countryNameEn'] as String?,
+        countryNameAr: json['countryNameAr'] as String?,
+        photoRelativePath: json['photoRelativePath'] as String?,
+      );
+
   final String id;
   final String name;
   final String nameArabic;
@@ -157,20 +171,6 @@ class SessionSpeaker {
 
   String? localizedCountry(bool isArabic) =>
       _pickOptional(countryNameAr, countryNameEn, isArabic);
-
-  static SessionSpeaker fromJson(Map<String, dynamic> json) => SessionSpeaker(
-        id: json['id'] as String? ?? '',
-        name: json['name'] as String? ?? '',
-        nameArabic: json['nameArabic'] as String? ?? '',
-        title: json['title'] as String?,
-        titleArabic: json['titleArabic'] as String?,
-        displayOrder: (json['displayOrder'] as num?)?.toInt() ?? 0,
-        role: SessionSpeakerRole.fromJson(json['role']),
-        countryId: (json['countryId'] as num?)?.toInt(),
-        countryNameEn: json['countryNameEn'] as String?,
-        countryNameAr: json['countryNameAr'] as String?,
-        photoRelativePath: json['photoRelativePath'] as String?,
-      );
 }
 
 /// One row in the cached programme — mirrors
@@ -204,6 +204,29 @@ class SessionListItem {
     this.type,
     this.hasPublishedSummary = false,
   });
+
+  factory SessionListItem.fromJson(Map<String, dynamic> json) =>
+      SessionListItem(
+        id: json['id'] as String? ?? '',
+        code: json['code'] as String? ?? '',
+        title: json['title'] as String? ?? '',
+        titleArabic: json['titleArabic'] as String? ?? '',
+        hallId: json['hallId'] as String? ?? '',
+        hallName: json['hallName'] as String? ?? '',
+        hallNameArabic: json['hallNameArabic'] as String? ?? '',
+        start: parseWireDateTime(json['start'], 'start'),
+        end: parseWireDateTime(json['end'], 'end'),
+        status: SessionStatus.fromJson(json['status']),
+        speakers: _decodeSpeakers(json['speakers']),
+        description: json['description'] as String?,
+        descriptionArabic: json['descriptionArabic'] as String?,
+        categoryId: json['categoryId'] as String?,
+        categoryName: json['categoryName'] as String?,
+        categoryNameArabic: json['categoryNameArabic'] as String?,
+        primaryThemeColor: json['primaryThemeColor'] as String?,
+        type: SessionType.fromJson(json['type']),
+        hasPublishedSummary: json['hasPublishedSummary'] as bool? ?? false,
+      );
 
   final String id;
   final String code;
@@ -264,28 +287,6 @@ class SessionListItem {
 
   String? localizedCategory(bool isArabic) =>
       _pickOptional(categoryNameArabic, categoryName, isArabic);
-
-  static SessionListItem fromJson(Map<String, dynamic> json) => SessionListItem(
-        id: json['id'] as String? ?? '',
-        code: json['code'] as String? ?? '',
-        title: json['title'] as String? ?? '',
-        titleArabic: json['titleArabic'] as String? ?? '',
-        hallId: json['hallId'] as String? ?? '',
-        hallName: json['hallName'] as String? ?? '',
-        hallNameArabic: json['hallNameArabic'] as String? ?? '',
-        start: parseWireDateTime(json['start'], 'start'),
-        end: parseWireDateTime(json['end'], 'end'),
-        status: SessionStatus.fromJson(json['status']),
-        speakers: _decodeSpeakers(json['speakers']),
-        description: json['description'] as String?,
-        descriptionArabic: json['descriptionArabic'] as String?,
-        categoryId: json['categoryId'] as String?,
-        categoryName: json['categoryName'] as String?,
-        categoryNameArabic: json['categoryNameArabic'] as String?,
-        primaryThemeColor: json['primaryThemeColor'] as String?,
-        type: SessionType.fromJson(json['type']),
-        hasPublishedSummary: json['hasPublishedSummary'] as bool? ?? false,
-      );
 }
 
 /// The envelope for the cached programme (`PublicSessions = { items: [...] }`).
@@ -294,9 +295,7 @@ class SessionListItem {
 class SessionsPage {
   const SessionsPage(this.items);
 
-  final List<SessionListItem> items;
-
-  static SessionsPage fromJson(Object? data) {
+  factory SessionsPage.fromJson(Object? data) {
     final list = (data is Map ? data['items'] : null) as List? ??
         const <dynamic>[];
     final items = list
@@ -305,6 +304,8 @@ class SessionsPage {
         .toList(growable: false);
     return SessionsPage(items);
   }
+
+  final List<SessionListItem> items;
 }
 
 /// D-452 (Figma 883:2308 "تفاصيل اليوم") — one programme day: a calendar date
@@ -323,6 +324,19 @@ class ProgrammeDay {
     required this.sessions,
   });
 
+  factory ProgrammeDay.fromJson(Map<String, dynamic> json) => ProgrammeDay(
+        id: json['id'] as String? ?? '',
+        date: _parseDate(json['date']),
+        title: json['title'] as String? ?? '',
+        titleArabic: json['titleArabic'] as String? ?? '',
+        displayOrder: (json['displayOrder'] as num?)?.toInt() ?? 0,
+        hasImage: json['hasImage'] as bool? ?? false,
+        sessions: (json['sessions'] as List? ?? const <dynamic>[])
+            .whereType<Map<dynamic, dynamic>>()
+            .map((e) => SessionListItem.fromJson(e.cast<String, dynamic>()))
+            .toList(growable: false),
+      );
+
   final String id;
 
   /// The day's calendar date (local midnight — the wire sends a date-only).
@@ -338,19 +352,6 @@ class ProgrammeDay {
 
   String localizedTitle(bool isArabic) =>
       _pickRequired(titleArabic, title, isArabic);
-
-  static ProgrammeDay fromJson(Map<String, dynamic> json) => ProgrammeDay(
-        id: json['id'] as String? ?? '',
-        date: _parseDate(json['date']),
-        title: json['title'] as String? ?? '',
-        titleArabic: json['titleArabic'] as String? ?? '',
-        displayOrder: (json['displayOrder'] as num?)?.toInt() ?? 0,
-        hasImage: json['hasImage'] as bool? ?? false,
-        sessions: (json['sessions'] as List? ?? const <dynamic>[])
-            .whereType<Map<dynamic, dynamic>>()
-            .map((e) => SessionListItem.fromJson(e.cast<String, dynamic>()))
-            .toList(growable: false),
-      );
 }
 
 /// The envelope for the day-grouped programme (`PublicProgrammeDays`).
@@ -358,9 +359,7 @@ class ProgrammeDay {
 class ProgrammeDaysPage {
   const ProgrammeDaysPage(this.days);
 
-  final List<ProgrammeDay> days;
-
-  static ProgrammeDaysPage fromJson(Object? data) {
+  factory ProgrammeDaysPage.fromJson(Object? data) {
     final list = (data is Map ? data['days'] : null) as List? ??
         const <dynamic>[];
     final days = list
@@ -369,6 +368,8 @@ class ProgrammeDaysPage {
         .toList(growable: false);
     return ProgrammeDaysPage(days);
   }
+
+  final List<ProgrammeDay> days;
 }
 
 /// The full detail for one session — mirrors
@@ -404,6 +405,30 @@ class SessionDetail {
     this.displayOrder = 0,
     this.arrivalGraceMinutes = defaultArrivalGraceMinutes,
   });
+
+
+  factory SessionDetail.fromJson(Map<String, dynamic> json) => SessionDetail(
+        id: json['id'] as String? ?? '',
+        code: json['code'] as String? ?? '',
+        title: json['title'] as String? ?? '',
+        titleArabic: json['titleArabic'] as String? ?? '',
+        hallId: json['hallId'] as String? ?? '',
+        hallName: json['hallName'] as String? ?? '',
+        hallNameArabic: json['hallNameArabic'] as String? ?? '',
+        start: parseWireDateTime(json['start'], 'start'),
+        end: parseWireDateTime(json['end'], 'end'),
+        speakers: _decodeSpeakers(json['speakers']),
+        description: json['description'] as String?,
+        descriptionArabic: json['descriptionArabic'] as String?,
+        categoryId: json['categoryId'] as String?,
+        categoryName: json['categoryName'] as String?,
+        categoryNameArabic: json['categoryNameArabic'] as String?,
+        type: SessionType.fromJson(json['type']),
+        liveStreamUrl: json['liveStreamUrl'] as String?,
+        displayOrder: (json['displayOrder'] as num?)?.toInt() ?? 0,
+        arrivalGraceMinutes: (json['arrivalGraceMinutes'] as num?)?.toInt() ??
+            defaultArrivalGraceMinutes,
+      );
 
   final String id;
   final String code;
@@ -481,30 +506,6 @@ class SessionDetail {
 
   String? localizedCategory(bool isArabic) =>
       _pickOptional(categoryNameArabic, categoryName, isArabic);
-
-
-  static SessionDetail fromJson(Map<String, dynamic> json) => SessionDetail(
-        id: json['id'] as String? ?? '',
-        code: json['code'] as String? ?? '',
-        title: json['title'] as String? ?? '',
-        titleArabic: json['titleArabic'] as String? ?? '',
-        hallId: json['hallId'] as String? ?? '',
-        hallName: json['hallName'] as String? ?? '',
-        hallNameArabic: json['hallNameArabic'] as String? ?? '',
-        start: parseWireDateTime(json['start'], 'start'),
-        end: parseWireDateTime(json['end'], 'end'),
-        speakers: _decodeSpeakers(json['speakers']),
-        description: json['description'] as String?,
-        descriptionArabic: json['descriptionArabic'] as String?,
-        categoryId: json['categoryId'] as String?,
-        categoryName: json['categoryName'] as String?,
-        categoryNameArabic: json['categoryNameArabic'] as String?,
-        type: SessionType.fromJson(json['type']),
-        liveStreamUrl: json['liveStreamUrl'] as String?,
-        displayOrder: (json['displayOrder'] as num?)?.toInt() ?? 0,
-        arrivalGraceMinutes: (json['arrivalGraceMinutes'] as num?)?.toInt() ??
-            defaultArrivalGraceMinutes,
-      );
 }
 
 /// The caller's own active seat for a session — the `myCell` cell of
@@ -637,12 +638,7 @@ class HallAttendanceStatus {
     this.method,
   });
 
-  final bool arrived;
-  final DateTime? enter;
-  final DateTime? leave;
-  final HallAttendanceMethod? method;
-
-  static HallAttendanceStatus fromJson(Map<String, dynamic> json) {
+  factory HallAttendanceStatus.fromJson(Map<String, dynamic> json) {
     return HallAttendanceStatus(
       arrived: json['arrived'] as bool? ?? false,
       enter: json['enter'] == null ? null : parseWireDateTime(json['enter'], 'enter'),
@@ -650,6 +646,11 @@ class HallAttendanceStatus {
       method: HallAttendanceMethod.fromJson(json['method']),
     );
   }
+
+  final bool arrived;
+  final DateTime? enter;
+  final DateTime? leave;
+  final HallAttendanceMethod? method;
 }
 
 /// How the attendee's presence in the hall was recorded — an operator scanning

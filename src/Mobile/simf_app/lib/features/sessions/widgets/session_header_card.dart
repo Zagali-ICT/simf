@@ -6,6 +6,7 @@ import 'package:simf_app/features/sessions/data/session_models.dart';
 import 'package:simf_app/features/sessions/widgets/category_pill.dart';
 import 'package:simf_app/features/sessions/widgets/header_action_button.dart';
 import 'package:simf_app/features/sessions/widgets/index_badge.dart';
+import 'package:simf_app/features/sessions/widgets/session_detail_body.dart' show SessionDetailBody;
 import 'package:simf_app/features/sessions/widgets/session_meta_row.dart';
 
 /// The session header card (frame 889:2716): a navy box holding the title +
@@ -138,4 +139,3 @@ class SessionHeaderCard extends StatelessWidget {
     );
   }
 }
-

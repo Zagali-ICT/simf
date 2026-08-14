@@ -4,7 +4,7 @@ import 'package:simf_app/features/sessions/data/presentation_models.dart';
 void main() {
   group('PresentationsPage.fromData', () {
     test('decodes items and the bilingual session/speaker fields', () {
-      final page = PresentationsPage.fromData(<String, dynamic>{
+      final page = PresentationsPage.fromData(const <String, dynamic>{
         'items': <dynamic>[
           <String, dynamic>{
             'id': 'p1',
@@ -33,7 +33,7 @@ void main() {
     });
 
     test('defaults a missing content type and a missing items array', () {
-      final item = PresentationItem.fromJson(<String, dynamic>{
+      final item = PresentationItem.fromJson(const <String, dynamic>{
         'id': 'p2',
         'sessionId': 's2',
         'sessionTitle': 'Talk',

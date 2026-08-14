@@ -324,7 +324,7 @@ void main() {
 
     testWidgets('an unconfigured hall shows the unavailable state',
         (tester) async {
-      final empty = SessionSeatMap.fromJson(<String, dynamic>{
+      final empty = SessionSeatMap.fromJson(const <String, dynamic>{
         'rowLabels': <dynamic>[],
         'seatsPerRow': 0,
         'reservedCells': <dynamic>[],

@@ -23,6 +23,20 @@ class PresentationItem {
     required this.sizeBytes,
   });
 
+  factory PresentationItem.fromJson(Map<String, dynamic> json) =>
+      PresentationItem(
+        id: json['id'] as String? ?? '',
+        sessionId: json['sessionId'] as String? ?? '',
+        sessionTitle: json['sessionTitle'] as String? ?? '',
+        sessionTitleArabic: json['sessionTitleArabic'] as String? ?? '',
+        sessionStart: parseWireDateTime(json['sessionStart'], 'sessionStart'),
+        speakerName: json['speakerName'] as String? ?? '',
+        speakerNameArabic: json['speakerNameArabic'] as String? ?? '',
+        fileName: json['fileName'] as String? ?? '',
+        contentType: json['contentType'] as String? ?? 'application/octet-stream',
+        sizeBytes: (json['sizeBytes'] as num?)?.toInt() ?? 0,
+      );
+
   final String id;
   final String sessionId;
   final String sessionTitle;
@@ -43,20 +57,6 @@ class PresentationItem {
 
   String? localizedSpeaker(bool isArabic) =>
       _pickOptional(speakerNameArabic, speakerName, isArabic);
-
-  static PresentationItem fromJson(Map<String, dynamic> json) =>
-      PresentationItem(
-        id: json['id'] as String? ?? '',
-        sessionId: json['sessionId'] as String? ?? '',
-        sessionTitle: json['sessionTitle'] as String? ?? '',
-        sessionTitleArabic: json['sessionTitleArabic'] as String? ?? '',
-        sessionStart: parseWireDateTime(json['sessionStart'], 'sessionStart'),
-        speakerName: json['speakerName'] as String? ?? '',
-        speakerNameArabic: json['speakerNameArabic'] as String? ?? '',
-        fileName: json['fileName'] as String? ?? '',
-        contentType: json['contentType'] as String? ?? 'application/octet-stream',
-        sizeBytes: (json['sizeBytes'] as num?)?.toInt() ?? 0,
-      );
 }
 
 /// The envelope for the public presentations list (`PublicPresentations`).
@@ -64,9 +64,7 @@ class PresentationItem {
 class PresentationsPage {
   const PresentationsPage(this.items);
 
-  final List<PresentationItem> items;
-
-  static PresentationsPage fromData(Object? data) {
+  factory PresentationsPage.fromData(Object? data) {
     final list = (data is Map ? data['items'] : null) as List? ??
         const <dynamic>[];
     final items = list
@@ -75,6 +73,8 @@ class PresentationsPage {
         .toList(growable: false);
     return PresentationsPage(items);
   }
+
+  final List<PresentationItem> items;
 }
 
 String _pickRequired(String arabic, String english, bool isArabic) {

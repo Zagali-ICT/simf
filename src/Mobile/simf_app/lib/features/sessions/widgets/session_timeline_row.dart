@@ -130,4 +130,3 @@ class SessionTimelineRow extends StatelessWidget {
     );
   }
 }
-

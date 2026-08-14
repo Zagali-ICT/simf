@@ -49,7 +49,7 @@ void main() {
 
   group('SessionListItem.fromJson', () {
     test('binds the real wire field names incl. the D-271 speaker fields', () {
-      final item = SessionListItem.fromJson(<String, dynamic>{
+      final item = SessionListItem.fromJson(const <String, dynamic>{
         'id': 's1',
         'code': 'OP-1',
         'title': 'Opening',
@@ -107,7 +107,7 @@ void main() {
     });
 
     test('a missing speakers array decodes to an empty list (never null)', () {
-      final item = SessionListItem.fromJson(<String, dynamic>{
+      final item = SessionListItem.fromJson(const <String, dynamic>{
         'id': 's2',
         'code': 'X',
         'title': 'No speakers',
@@ -126,7 +126,7 @@ void main() {
       // Unix epoch, so a broken contract rendered 03:00 AM on every agenda row
       // with no error and no empty state. It must fail loudly instead.
       expect(
-        () => SessionListItem.fromJson(<String, dynamic>{
+        () => SessionListItem.fromJson(const <String, dynamic>{
           'id': 's3',
           'code': 'X',
           'title': 'No start',
@@ -138,7 +138,7 @@ void main() {
 
     test('an unparseable start surfaces a decode error', () {
       expect(
-        () => SessionListItem.fromJson(<String, dynamic>{
+        () => SessionListItem.fromJson(const <String, dynamic>{
           'id': 's4',
           'code': 'X',
           'title': 'Bad start',
@@ -152,7 +152,7 @@ void main() {
 
   group('SessionsPage.fromJson', () {
     test('reads the items array from the envelope data', () {
-      final page = SessionsPage.fromJson(<String, dynamic>{
+      final page = SessionsPage.fromJson(const <String, dynamic>{
         'items': <dynamic>[
           <String, dynamic>{
             'id': 'a',
@@ -167,7 +167,7 @@ void main() {
 
     test('a malformed payload yields an empty page', () {
       expect(SessionsPage.fromJson(null).items, isEmpty);
-      expect(SessionsPage.fromJson(<String, dynamic>{}).items, isEmpty);
+      expect(SessionsPage.fromJson(const <String, dynamic>{}).items, isEmpty);
     });
   });
 

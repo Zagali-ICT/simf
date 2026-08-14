@@ -46,7 +46,7 @@ SessionListItem _session({
       'hallNameArabic': 'قاعة الملك فهد',
       'start': start.toIso8601String(),
       'end': start.add(Duration(minutes: durationMin)).toIso8601String(),
-      'speakers': <dynamic>[],
+      'speakers': const <dynamic>[],
     });
 
 // 2026-06-21 is a Sunday (الأحد). a zoned value times are chosen so a +03:00

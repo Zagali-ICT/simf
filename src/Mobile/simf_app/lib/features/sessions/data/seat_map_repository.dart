@@ -107,7 +107,7 @@ final seatMapRepositoryProvider = Provider<SeatMapRepository>((ref) {
 /// My-Seat view (#18) and the Seat-picker (#109) both watch (`GET …/seats`).
 /// `autoDispose.family` so a fresh mount or a retry (`ref.invalidate`) re-fetches,
 /// matching the per-mount `initState` load the two screens used before.
-final seatMapProvider =
+final AutoDisposeFutureProviderFamily<SessionSeatMap, String> seatMapProvider =
     FutureProvider.autoDispose.family<SessionSeatMap, String>(
   (ref, sessionId) =>
       ref.watch(seatMapRepositoryProvider).getSeatMap(sessionId),

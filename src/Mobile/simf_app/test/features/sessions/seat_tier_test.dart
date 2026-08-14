@@ -84,7 +84,7 @@ void main() {
     });
 
     test('fromJson reads the appended seatTiers + callerIsVip keys', () {
-      final map = SessionSeatMap.fromJson(<String, dynamic>{
+      final map = SessionSeatMap.fromJson(const <String, dynamic>{
         'rowLabels': <String>['A', 'B'],
         'seatsPerRow': 2,
         'seatTiers': <int>[2, 0],
@@ -100,7 +100,7 @@ void main() {
 
     test('an older payload without the tier keys stays all-Normal + bookable',
         () {
-      final map = SessionSeatMap.fromJson(<String, dynamic>{
+      final map = SessionSeatMap.fromJson(const <String, dynamic>{
         'rowLabels': <String>['A'],
         'seatsPerRow': 2,
         'reservedCells': <dynamic>[],
@@ -115,7 +115,7 @@ void main() {
 
   group('SeatCell guest hint (D-771)', () {
     test('decodes the appended hint keys and localises with a fallback', () {
-      final cell = SeatCell.fromJson(<String, dynamic>{
+      final cell = SeatCell.fromJson(const <String, dynamic>{
         'rowLabel': 'A',
         'seatNumber': 1,
         'kind': 1,
@@ -129,7 +129,7 @@ void main() {
     });
 
     test('an ordinary reservation carries no hint', () {
-      final cell = SeatCell.fromJson(<String, dynamic>{
+      final cell = SeatCell.fromJson(const <String, dynamic>{
         'rowLabel': 'C',
         'seatNumber': 2,
         'kind': 0,

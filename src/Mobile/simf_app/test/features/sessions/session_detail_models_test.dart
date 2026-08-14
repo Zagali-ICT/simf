@@ -4,7 +4,7 @@ import 'package:simf_app/features/sessions/data/session_models.dart';
 void main() {
   group('SessionDetail.fromJson', () {
     test('binds the detail fields + the D-271 speaker cluster', () {
-      final detail = SessionDetail.fromJson(<String, dynamic>{
+      final detail = SessionDetail.fromJson(const <String, dynamic>{
         'id': 's1',
         'code': 'OP-1',
         'title': 'Opening',
@@ -57,7 +57,7 @@ void main() {
     });
 
     test('optional fields decode to null; speakers default to empty', () {
-      final detail = SessionDetail.fromJson(<String, dynamic>{
+      final detail = SessionDetail.fromJson(const <String, dynamic>{
         'id': 's2',
         'code': 'X',
         'title': 'Bare',

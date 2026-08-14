@@ -81,4 +81,3 @@ class SessionFilterTabs extends StatelessWidget {
     );
   }
 }
-

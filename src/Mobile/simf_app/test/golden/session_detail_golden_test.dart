@@ -78,8 +78,8 @@ SessionDetail _detail() => SessionDetail(
       hallNameArabic: 'القاعة الرئيسية',
       start: DateTime.utc(2026, 11, 23, 6),
       end: DateTime.utc(2026, 11, 23, 7, 30),
-      speakers: <SessionSpeaker>[
-        const SessionSpeaker(
+      speakers: const <SessionSpeaker>[
+        SessionSpeaker(
           id: 'sp1',
           name: 'Dr. Ali Al-Harbi',
           nameArabic: 'د. علي الحربي',

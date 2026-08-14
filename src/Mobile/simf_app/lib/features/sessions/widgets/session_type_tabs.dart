@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/features/sessions/data/session_models.dart';
+import 'package:simf_app/features/sessions/widgets/session_filter_tabs.dart' show SessionFilterTabs;
 import 'package:simf_app/features/sessions/widgets/type_tab.dart';
 
 /// The three type tabs (frame node 883:2320): الكل (all) / جلسات (sessions) /
@@ -59,4 +60,3 @@ class SessionTypeTabs extends StatelessWidget {
     );
   }
 }
-

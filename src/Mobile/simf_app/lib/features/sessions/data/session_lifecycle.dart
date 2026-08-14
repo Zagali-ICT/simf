@@ -15,6 +15,8 @@
 /// `hasLiveStream && phase == live`).
 library;
 
+import 'package:simf_app/features/sessions/data/session_models.dart' show SessionStatus;
+
 /// The broadcast time-phase of a session relative to "now", from its
 /// `start`/`end` window.
 enum SessionPhase {

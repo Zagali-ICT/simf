@@ -56,12 +56,12 @@ const _detailWithMedia = ArchiveEditionDetail(
   attendees: 375,
   sessions: 30,
   speakers: 250,
-  gallery: const <ArchiveMediaItem>[
+  gallery: <ArchiveMediaItem>[
     ArchiveMediaItem(kind: 0, url: 'https://cdn.example.sa/2024/opening.jpg'),
     ArchiveMediaItem(kind: 1, url: 'https://youtu.be/abc123'),
     ArchiveMediaItem(kind: 0, url: 'archive/2024/legacy.jpg'),
   ],
-  pastSpeakers: const <ArchivePastSpeaker>[
+  pastSpeakers: <ArchivePastSpeaker>[
     ArchivePastSpeaker(
       nameEn: 'Rashed',
       nameAr: 'راشد',
