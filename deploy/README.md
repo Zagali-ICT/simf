@@ -302,29 +302,26 @@ These are **placeholders** — set them to the real SIMF server values:
    half of the error message: **Security → Pipeline permissions** on that
    environment, and authorize this pipeline.
 
-   Both jobs use the explicit form, so the steps run **on that machine** rather
-   than on the build agent:
+   **Both environments are empty shells, and that is how this estate works.**
+   Neither has a VM resource registered, so each is what Azure calls an
+   "abstract shell to record deployment history" and the steps fall back to the
+   **`Default` pool agent** — the agent named `server` on `WIN-MAP9VAMAU4Q` that
+   has been running these deploys all along.
 
-   ```yaml
-   environment:
-     name: SIM-RNSF
-     resourceType: virtualMachine
-   ```
+   **Do not add `resourceType: virtualMachine`.** It has been tried twice and
+   broke deploys both times (D-891, D-893). It demands a registered VM resource
+   and the run dies with *"No resource were found in the environment with ID 3"*.
+   It is the right construct for an estate whose servers are registered as VM
+   resources; this one is not.
 
-   **This is not decoration.** With the bare `environment: 'SIM-RNSF'` form, a
-   VM resource that is ever removed or unregistered does not fail — the
-   environment silently degrades to a history-recording shell and the steps fall
-   back to the `Default` pool agent, which has an agent on **both** servers. The
-   deploy would land on an arbitrary machine and report success. `resourceType`
-   turns that silent mis-deploy into an immediate failure.
+   **The cost, so it is a known risk rather than a surprise:** nothing binds a
+   job to a machine. The `Default` pool has an agent on both servers, so
+   `DeployProduction` can run on the pre-production box and vice versa.
+   Sequencing the jobs narrows the window; it does not close it. Registering
+   both servers as VM resources — the environment → **Add resource** → **Virtual
+   machines**, script run as Administrator with a **unique** agent name — is the
+   fix, and only then is `resourceType` worth revisiting.
 
-   **Order matters.** This line was added once *before* the VM resources
-   existed and broke every deploy with "Environment could not be found" until it
-   was reverted (D-891). If a run reports **no matching resources**, the server
-   is not registered — register it, do **not** drop back to the bare form, which
-   trades a loud failure for a wrong-machine deploy. Azure's documentation warns
-   the value is case-sensitive while its own examples disagree on the casing, so
-   if the VM *is* registered and still does not match, try `VirtualMachine`.
 4. **IIS site names + physical paths** — the `-ApiSiteName/-ApiPath`,
    `-CpSiteName/-CpPath`, `-WebSiteName/-WebPath` and `-EdgeSiteName/-EdgePath`
    arguments in the `Deploy to IIS` step. The IIS sites + app pools must already
