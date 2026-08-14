@@ -95,6 +95,7 @@ In order, before any token is minted:
 
 - If `!user.TwoFactorEnabled`, the password step *is* the sign-in → straight to `IssueTokensAsync`.
 - Otherwise the factor kind is the user's own choice: an enrolled authenticator key **or** any role ⇒ `SecondFactorKind.Totp`; else `SecondFactorKind.EmailOtp`. A 5-minute opaque ticket (`SecondFactorToken`, hashed via `OpaqueToken.Hash`) is stored and returned. Verification happens in `VerifyTotpAsync` (with RFC-6238 replay rejection via `LastUsedTotpTimestep`), `VerifyRecoveryCodeAsync`, or `VerifyOtpAsync` — all of which re-run `EnsureNotLockedOutAsync` + `RequirePasswordChangeNotRequired`, then call `IssueTokensAsync`.
+- The `EmailOtp` branch also writes an `AccountCode` row. The six-digit code is emailed and never persisted: the table stores only `CodeHash`, a keyed HMAC from `AccountCodeHasher` whose key is derived from the JWT signing key by HKDF under the label `simf/account-code/v1`. **Nothing queries that column** — the row is found by `(UserId, Purpose, ConsumedAt == null)` and the submitted value is re-hashed and compared in constant time — which is why the same store serves email verification, password reset, badge activation and the biometric step-up alike. Assigning a plaintext code to `CodeHash` would defeat the hashing without failing anything, so the name is the guard (D-885, D-886).
 
 ### Step 3 — Token minting (`SignInService.IssueTokensAsync`)
 

@@ -157,7 +157,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Purpose = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: false),
-                    Code = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false),
+                    CodeHash = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false),
                     ExpiresAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     ConsumedAt = table.Column<DateTime>(type: "datetime2", nullable: true),

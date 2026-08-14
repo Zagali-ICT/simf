@@ -374,7 +374,7 @@ public sealed class AdminCreateUserTests : IClassFixture<SimfApiFactory>
                 && c.Purpose == AccountCodePurpose.PasswordReset
                 && c.ConsumedAt == null)
             .OrderByDescending(c => c.CreatedAt)
-            .Select(c => c.Code)
+            .Select(c => c.CodeHash)
             .FirstAsync();
         var inviteCode = AuthFlow.RecoverPlaintextCode(inviteHash);
 

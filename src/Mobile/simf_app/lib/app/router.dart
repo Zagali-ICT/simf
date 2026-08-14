@@ -11,6 +11,7 @@ import 'package:simf_app/features/account/badge_activation_screen.dart';
 import 'package:simf_app/features/account/badge_password_screen.dart';
 import 'package:simf_app/features/account/badge_sign_in_screen.dart';
 import 'package:simf_app/features/account/biometric_step_up_screen.dart';
+import 'package:simf_app/features/account/my_devices_screen.dart';
 import 'package:simf_app/features/account/data/profile_models.dart';
 import 'package:simf_app/features/account/email_otp_verify_screen.dart';
 import 'package:simf_app/features/account/forgot_password_screen.dart';
@@ -238,6 +239,7 @@ const List<_Route> _auxRoutes = <_Route>[
   // #7a — emailed-OTP step-up to ENABLE biometric sign-in (signed-in; backend-
   // enforced, reached from the Face-ID toggle / post-sign-in nudge).
   _Route(number: 0, name: RouteNames.biometricStepUp, path: '/auth/biometric-step-up', labelAr: 'تأكيد بصمة الوجه', labelEn: 'Confirm Face ID'),
+  _Route(number: 0, name: RouteNames.myDevices, path: '/account/my-devices', labelAr: 'أجهزتي', labelEn: 'My devices'),
 ];
 
 /// Screen numbers that need a signed-in user of **any** role (including a
@@ -626,6 +628,9 @@ Widget _auxScreenFor(BuildContext context, GoRouterState state, _Route r) {
   }
   if (r.name == RouteNames.biometricStepUp) {
     return const BiometricStepUpScreen();
+  }
+  if (r.name == RouteNames.myDevices) {
+    return const MyDevicesScreen();
   }
   // Part B (D-430) — badge-QR sign-in / activation.
   if (r.name == RouteNames.badgeSignIn) {

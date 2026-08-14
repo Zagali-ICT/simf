@@ -1041,11 +1041,14 @@ internal sealed class SeatReservationService(
             .Select(r => r.ReservedForUserId!.Value)
             .Distinct()
             .ToList();
+        // Matched by account id, so an attendee with no account is never a holder
+        // here; the cells below are built from the reservation rows and keep their
+        // holder id whether or not a name resolves.
         var holders = holderIds.Count == 0
             ? new Dictionary<Guid, (string Name, string NameArabic)>()
             : (await appDbContext.UserProfiles.AsNoTracking()
-                .Where(p => holderIds.Contains(p.UserId))
-                .Select(p => new { p.UserId, p.Name, p.NameArabic })
+                .Where(p => p.UserId != null && holderIds.Contains(p.UserId.Value))
+                .Select(p => new { UserId = p.UserId!.Value, p.Name, p.NameArabic })
                 .ToListAsync(cancellationToken))
                 .ToDictionary(p => p.UserId, p => (p.Name, p.NameArabic));
 
@@ -1362,9 +1365,24 @@ internal sealed class SeatReservationService(
                 "That badge was not recognised.",
                 "لم يتم التعرف على هذه البطاقة.");
 
+        // An attendee with no account holds no seat, and must not be MATCHED to one:
+        // every reservation is keyed by account id, so a null holder id would compare
+        // IS NULL and select an admin row-block (those are stored with no holder) —
+        // the desk would report someone else's blocked seat as this guest's. Answer
+        // with the same "no seat" shape as below, carrying the guest's own identity
+        // off the profile so staff can still help them.
+        if (holder.UserId is not { } holderUserId)
+        {
+            return new StaffSeatOccupant(
+                false, sessionId, null, null, SeatTier.Normal,
+                null, SeatReservationKind.UserBooking, BookingStatus.Cancelled,
+                null, holder.Name, holder.NameArabic,
+                null, null, false, code, false);
+        }
+
         var held = await appDbContext.SeatReservations.AsNoTracking()
             .Where(r => r.SessionId == sessionId
-                && r.ReservedForUserId == holder.UserId
+                && r.ReservedForUserId == holderUserId
                 && r.ReleasedAt == null)
             .Select(r => new
             {
@@ -1374,7 +1392,7 @@ internal sealed class SeatReservationService(
             .FirstOrDefaultAsync(cancellationToken);
 
         var occupant = await LoadOccupantAsync(
-            sessionId, holder.UserId, cancellationToken);
+            sessionId, holderUserId, cancellationToken);
         if (held is null)
         {
             // The badge is valid but the guest holds no seat in this session — the
@@ -1383,7 +1401,7 @@ internal sealed class SeatReservationService(
             return new StaffSeatOccupant(
                 false, sessionId, null, null, SeatTier.Normal,
                 null, SeatReservationKind.UserBooking, BookingStatus.Cancelled,
-                holder.UserId, occupant.Name, occupant.NameArabic,
+                holderUserId, occupant.Name, occupant.NameArabic,
                 null, null, occupant.HasPhoto, code, occupant.CheckedIn);
         }
 
@@ -1395,7 +1413,7 @@ internal sealed class SeatReservationService(
             : SeatTier.Normal;
         return new StaffSeatOccupant(
             true, sessionId, held.RowLabel, held.SeatNumber, tier,
-            held.Id, held.Kind, held.Status, holder.UserId,
+            held.Id, held.Kind, held.Status, holderUserId,
             occupant.Name, occupant.NameArabic,
             held.GuestHint, held.GuestHintArabic,
             occupant.HasPhoto, code, occupant.CheckedIn);

@@ -318,7 +318,8 @@ API endpoints land (D-249). The per-screen design docs live under
 | `Delegation meeting request` sheet — bi-meeting rework: the delegation twin of the speaker request sheet; opened from `/meetings` (طلب اجتماع وفد) + a tapped delegation card; `POST /app/delegation-meeting-requests` | [`mobile-delegation-request.md`](mobile-delegation-request.md) | E2E-DELREQ-001..012 |
 | #117 `meetingConfirm` (`/meeting-confirm?requestId=…` → `POST /app/delegation-meeting-requests/{id}/confirm` + `…/decline`) — bi-meeting rework: delegation other-party confirm-on-tap, reached from a `MeetingRequested` notification | [`mobile-meeting-confirm.md`](mobile-meeting-confirm.md) | E2E-MOBMC-001..010 |
 | `myMeetings` (`GET /app/my-requests`, filtered to meetings) — المقابلات (D-587), Figma `1701:9406`; speaker + delegation meetings over status chips; reached from the My-Area "مقابلات" counter | [`mobile-my-meetings.md`](mobile-my-meetings.md) | E2E-MOBMTG-001..007 |
-| `Confirm Face ID` step-up (`POST /app/auth/device-keys/step-up` + gated register) — #7a biometric-enable; **D-738** OS device-credential confirm + sign-in device-PIN fallback | [`mobile-biometric-step-up.md`](mobile-biometric-step-up.md) | E2E-MBSU-001..015 |
+| `/account/my-devices` — the account's enrolled biometric device keys, with a per-row revoke (S10 / **D-884**) | [`mobile-my-devices.md`](mobile-my-devices.md) | E2E-MYD-001..009 |
+| `Confirm Face ID` step-up (`POST /app/auth/device-keys/step-up` + gated register) — #7a biometric-enable; **D-738** OS device-credential confirm + sign-in device-PIN fallback | [`mobile-biometric-step-up.md`](mobile-biometric-step-up.md) | E2E-MBSU-001..022 |
 | ~~`Change email` self-service (`POST /app/auth/change-email/send-otp` + `/confirm`) - Build #24~~ — **REMOVED 2026-07-30 (G1, owner decision).** Screen + both endpoints deleted; email changes are administrator-only on the CP account-edit form, covered by `cp-admin-visitors.md` (E2E-VIS-001) and `cp-admin-others.md` (E2E-OTH-005) | _(withdrawn)_ | ~~E2E-MCE-001..011~~ (**retired**, do not reuse the MCE namespace) |
 | `Badge activation` + **badge sign-in** (`resolve-badge` · `badge-sign-in` · `badge-activation/{start,complete}`) — Part B passwordless activation **+ D-738 password step + D-737 unified scanner** | [`mobile-badge-activation.md`](mobile-badge-activation.md) | E2E-MOBBADGE-001..013 |
 | `Badge password` step (`POST /app/auth/badge-sign-in`) — D-738 returning has-password holder; doc [`mobile/badge-password/`](../../pages/mobile/badge-password/README.md) | [`mobile-badge-activation.md`](mobile-badge-activation.md) | E2E-MOBBADGE-008..013 |
@@ -353,13 +354,13 @@ again without failing the build. They had been left at the 2026-06-02 figures �
 "74 pages / ~1044 scenarios" — while the catalogue more than doubled, and were
 being quoted in planning as if current.
 
-- **Pages catalogued:** 193 (96 Control Panel + 69 mobile + 19 Website + 8
+- **Pages catalogued:** 194 (96 Control Panel + 69 mobile + 19 Website + 8
   API-only surfaces + 1 system-wide). One of the 193 — `cp-admin-companies.md` —
   is **retired**: its route was renamed away and it now carries no live scenarios.
-- **Total scenarios:** 3068 Coverage-matrix rows, every id distinct. That
+- **Total scenarios:** 3084 Coverage-matrix rows, every id distinct. That
   includes the **360** generated element-sweep rows (`E2E-{NS}-ELS-001/002`, two
   per live page — see `tools/qa/generate_els_rows.py`); the hand-authored
-  functional total is 2687.
+  functional total is 2703.
 - **Authored:** all pages. The D-133 "pending" stubs are fully authored, and
   every event-module and P2–P5 page added since has its own file.
 - **Execution:** the canonical run today is a Chrome DevTools MCP browser pass

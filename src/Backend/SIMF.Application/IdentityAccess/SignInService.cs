@@ -503,7 +503,7 @@ public sealed class SignInService(
                 "انتهت صلاحية الرمز. سجّل الدخول مرة أخرى للحصول على رمز جديد.");
         }
 
-        if (!CodesMatch(code.Code, AccountCodeHasher.Hash(request.Code)))
+        if (!CodesMatch(code.CodeHash, AccountCodeHasher.Hash(request.Code)))
         {
             await secondFactorTokenRepository.IncrementAttemptCountAsync(
                 ticket.Id, cancellationToken);
@@ -878,7 +878,7 @@ public sealed class SignInService(
             Id = Guid.NewGuid(),
             UserId = user.Id,
             Purpose = AccountCodePurpose.SignInOtp,
-            Code = AccountCodeHasher.Hash(plaintext),
+            CodeHash = AccountCodeHasher.Hash(plaintext),
             CreatedAt = now,
             ExpiresAt = now.Add(OtpLifetime),
         };

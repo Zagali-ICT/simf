@@ -296,9 +296,17 @@ The complete set (`src/Shared/SIMF.Common/Enums/AccountCodePurpose.cs`):
 | `BiometricEnrolStepUp` | Code confirming intent before a biometric device key is bound | 10 minutes, max 5 requests per hour, max 5 attempts then burned |
 | `EmailChangeVerification` | Code sent to the new address when the login e-mail changes | Single use, hashed at rest |
 
-Every code is stored as a keyed hash (`AccountCodeHasher.Hash`), compared in
-constant time (`CryptographicOperations.FixedTimeEquals`), single-use, and only
-the newest outstanding code for a purpose stays valid.
+Every code is stored as a keyed hash (`AccountCodeHasher.Hash`) in the column
+`AccountCode.CodeHash`, compared in constant time
+(`CryptographicOperations.FixedTimeEquals`), single-use, and only the newest
+outstanding code for a purpose stays valid. The HMAC key is not the JWT signing
+key itself but a subkey derived from it with HKDF-SHA256 under the label
+`simf/account-code/v1`, so the account-code hasher and the speaker action-link
+hasher are configured from one secret without sharing key material, and neither
+can be attacked with the other's stored hashes. One limit is worth stating
+plainly: the JWT signature still uses the master value directly, so derivation
+contains a weakness in one hash from reaching the other — it does not protect
+anything if the master secret itself leaks.
 
 ### 5.3 Administrator-created accounts: no password at all, and a 7-day invitation
 

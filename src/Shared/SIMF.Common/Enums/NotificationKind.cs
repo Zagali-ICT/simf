@@ -245,4 +245,11 @@ public enum NotificationKind
     /// so no schema/data change.</summary>
     [Display(Description = "MatchRecommended", ResourceType = typeof(ResNotificationKind))]
     MatchRecommended = 60,
+
+    /// <summary>A biometric device key was enrolled on the account. The cheapest
+    /// detection control there is: enrolment binds a credential that survives a
+    /// session revoke, so the owner has to be able to see one appear that they
+    /// did not ask for. Additive value, permitted under D-110.</summary>
+    [Display(Description = "DeviceKeyEnrolled", ResourceType = typeof(ResNotificationKind))]
+    DeviceKeyEnrolled = 61,
 }

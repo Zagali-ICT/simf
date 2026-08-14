@@ -15,7 +15,7 @@ namespace SIMF.ControlPanel;
 /// Cookie-validation hook that swaps the stored refresh_token for a fresh token
 /// pair just before the access_token expires. Wired up in <c>Program.cs</c>.
 /// The auth cookie lives 8 hours but the access token only 5 minutes
-/// (Jwt:AccessTokenMinutes, NCA cap D-443), so without this every
+/// (Jwt:AccessTokenMinutes, capped for NCA compliance), so without this every
 /// <c>/account/api/*</c> BFF call 401s on a still-valid cookie.
 /// </summary>
 public static class SimfCookieRefreshHandler

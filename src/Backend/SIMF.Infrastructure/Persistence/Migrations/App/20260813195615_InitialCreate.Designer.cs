@@ -12,7 +12,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Persistence.Migrations.App
 {
     [DbContext(typeof(SimfAppDbContext))]
-    [Migration("20260731111632_InitialCreate")]
+    [Migration("20260813195615_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -184,8 +184,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("QrIdAtScan")
                         .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
+                        .HasMaxLength(96)
+                        .HasColumnType("nvarchar(96)");
 
                     b.Property<DateTime>("ScannedAt")
                         .HasColumnType("datetime2");
@@ -1036,7 +1036,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid>("DelegationMeetingRequestId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime>("ExpiresUtc")
+                    b.Property<DateTime>("ExpiresAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("TokenHash")
@@ -3969,6 +3969,41 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<bool>("AccessibilityCaptions")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<DateTime?>("AccessibilityConfiguredAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("AccessibilityHighContrast")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("AccessibilityReduceMotion")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("AccessibilityScreenReaderAssist")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("AccessibilityTextSize")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)")
+                        .HasDefaultValue("normal");
+
+                    b.Property<string>("AdmissionState")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
                     b.Property<bool>("AllowsDelegationMeeting")
                         .HasColumnType("bit");
 
@@ -4114,13 +4149,19 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasColumnType("bit")
                         .HasDefaultValue(true);
 
+                    b.Property<DateTime?>("StateChangedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("StateChangedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("UserId")
+                    b.Property<Guid?>("UserId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("VipPhotoRelativePath")
@@ -4128,6 +4169,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasColumnType("nvarchar(260)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AdmissionState");
 
                     b.HasIndex("BadgeBatchId");
 
@@ -4160,7 +4203,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.HasIndex("RegionId");
 
                     b.HasIndex("UserId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[UserId] IS NOT NULL");
 
                     b.ToTable("UserProfiles", (string)null);
                 });
@@ -4175,6 +4219,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
                         .HasDefaultValue(false);
+
+                    b.Property<short>("Code")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("smallint")
+                        .HasDefaultValue((short)0);
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -4233,6 +4282,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasFilter("[IsActive] = 1 AND [Code] <> 0");
+
                     b.HasIndex("Name")
                         .IsUnique()
                         .HasFilter("[IsActive] = 1");
@@ -4286,6 +4339,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<int?>("ArrivalGraceMinutes")
+                        .HasColumnType("int");
 
                     b.Property<int>("Capacity")
                         .HasColumnType("int");
@@ -4355,6 +4411,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.ToTable("Halls", null, t =>
                         {
+                            t.HasCheckConstraint("CK_Halls_ArrivalGrace", "[ArrivalGraceMinutes] IS NULL OR ([ArrivalGraceMinutes] >= 0 AND [ArrivalGraceMinutes] <= 240)");
+
                             t.HasCheckConstraint("CK_Halls_Geofence", "([GeofenceCenterLat] IS NULL AND [GeofenceCenterLon] IS NULL AND [GeofenceRadiusMeters] IS NULL) OR ([GeofenceCenterLat] IS NOT NULL AND [GeofenceCenterLon] IS NOT NULL AND [GeofenceRadiusMeters] IS NOT NULL AND [GeofenceRadiusMeters] > 0)");
                         });
                 });
@@ -4462,6 +4520,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<int?>("ArrivalGraceMinutesOverride")
+                        .HasColumnType("int");
+
                     b.Property<int?>("CapacityOverride")
                         .HasColumnType("int");
 
@@ -4514,6 +4575,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("LiveCaptionsArabic")
                         .HasMaxLength(2048)
                         .HasColumnType("nvarchar(2048)");
+
+                    b.Property<string>("LiveNotice")
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)");
+
+                    b.Property<string>("LiveNoticeArabic")
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)");
 
                     b.Property<string>("LiveSignLanguageUrl")
                         .HasMaxLength(1024)
@@ -4596,6 +4665,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.ToTable("Sessions", null, t =>
                         {
+                            t.HasCheckConstraint("CK_Sessions_ArrivalGrace", "[ArrivalGraceMinutesOverride] IS NULL OR ([ArrivalGraceMinutesOverride] >= 0 AND [ArrivalGraceMinutesOverride] <= 240)");
+
                             t.HasCheckConstraint("CK_Sessions_TimeWindow", "[End] > [Start]");
                         });
                 });

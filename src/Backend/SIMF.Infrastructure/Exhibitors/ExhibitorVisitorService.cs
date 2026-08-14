@@ -255,8 +255,8 @@ internal sealed class ExhibitorVisitorService(
         var eligibleSubjectIds = (await appDbContext.UserProfiles
             .AsNoTracking()
             .Where(IsCapturableSubject)
-            .Where(p => subjectIds.Contains(p.UserId))
-            .Select(p => p.UserId)
+            .Where(p => p.UserId != null && subjectIds.Contains(p.UserId!.Value))
+            .Select(p => p.UserId!.Value)
             .ToListAsync(cancellationToken))
             .ToHashSet();
 
@@ -542,9 +542,12 @@ internal sealed class ExhibitorVisitorService(
             return result;
         }
 
+        // Every id here came from a capture row, so it is always an account id; a
+        // profile carrying no account can never be one of them, and matching it
+        // would need a user id it does not have.
         var profiles = await appDbContext.UserProfiles
             .AsNoTracking()
-            .Where(p => userIds.Contains(p.UserId))
+            .Where(p => p.UserId != null && userIds.Contains(p.UserId!.Value))
             .Select(p => new
             {
                 p.UserId,

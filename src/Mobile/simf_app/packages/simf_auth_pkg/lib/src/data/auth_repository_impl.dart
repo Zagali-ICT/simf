@@ -273,6 +273,11 @@ class AuthRepositoryImpl implements AuthRepository {
     return _guard(() => _api.revokeDeviceKey(deviceKeyId));
   }
 
+  @override
+  Future<List<DeviceKeyEntryDto>> listDeviceKeys() {
+    return _guard(() => _api.listDeviceKeys());
+  }
+
   /// Runs [call]. If it throws an [ApiFailure], rethrows the corresponding
   /// [AuthFailure]. Other exceptions are not caught — they indicate a bug,
   /// not a backend failure.

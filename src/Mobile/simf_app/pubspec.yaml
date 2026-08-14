@@ -79,6 +79,20 @@ dependencies:
   # D-736 — the real installed version (About/More display + the launch
   # update-policy comparison). Federated plugin, no manual native config.
   package_info_plus: ^8.3.0
+  # Names the device on a biometric enrolment, so the DeviceKeys rows stop all
+  # reading "SIMF mobile" and an operator can tell one enrolled phone from
+  # another. Federated plugin, no manual native config.
+  #
+  # PINNED BELOW LATEST ON PURPOSE. 13.x requires win32 ^6, while
+  # package_info_plus ^8.3.0 (D-736, the launch version-policy gate) requires
+  # win32 ^5.5.3, so the two cannot co-exist. 12.x carries every field used here.
+  # Do not bump this without also moving package_info_plus and re-testing the
+  # update-policy check.
+  device_info_plus: ^12.4.0
+  # SHA-256 over the device fingerprint before it reaches the label, so nothing
+  # reversible is stored. Pure Dart; already present transitively, now direct
+  # because we use it.
+  crypto: ^3.0.6
   # D-736 — semver parse/compare for the server version-policy check (never
   # string-compare versions: "1.10.0" < "1.9.0" lexically). Pure Dart.
   pub_semver: ^2.1.4

@@ -830,6 +830,11 @@ public sealed class IdentitySeeder(
                 NationalityId = SaudiArabiaCountryId,
                 IsSaudi = true,
                 NationalId = demo.NationalId,
+                // A demo account is seeded ready to use, so its profile is
+                // admitted outright — the QR minted just below only works for an
+                // approved attendee, and a demo that cannot pass a gate would be
+                // useless for exactly the walkthroughs it exists to support.
+                AdmissionState = AccountState.Approved,
                 CreatedAt = now,
             };
             // Approved accounts carry a QR badge.

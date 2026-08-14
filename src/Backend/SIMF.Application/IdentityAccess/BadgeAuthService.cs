@@ -246,7 +246,7 @@ internal sealed class BadgeAuthService(
                 "The verification code has expired. Request a new one.",
                 "انتهت صلاحية رمز التحقق. اطلب رمزًا جديدًا.");
         }
-        if (!CodesMatch(code.Code, AccountCodeHasher.Hash(request.Code)))
+        if (!CodesMatch(code.CodeHash, AccountCodeHasher.Hash(request.Code)))
         {
             code.AttemptCount++;
             await accountCodeRepository.UpdateAsync(code, cancellationToken);
@@ -493,7 +493,18 @@ internal sealed class BadgeAuthService(
         {
             return null;
         }
-        var user = await accounts.FindByIdAsync(resolution.UserId, cancellationToken);
+        // No account, nothing to sign in as. An approved attendee without one is
+        // perfectly normal — they hold a badge that opens gates — but signing in
+        // is the one thing a badge alone does not grant, so this is an ordinary
+        // refusal and deliberately the SAME null every other failure returns:
+        // telling the caller "that badge is real but has no account" would answer
+        // a question an anonymous endpoint must not answer.
+        if (resolution.UserId is not { } holderUserId)
+        {
+            return null;
+        }
+
+        var user = await accounts.FindByIdAsync(holderUserId, cancellationToken);
         return user is { AccountState: AccountState.Approved } ? user : null;
     }
 
@@ -526,7 +537,7 @@ internal sealed class BadgeAuthService(
             UserId = userId,
             Purpose = AccountCodePurpose.BadgeActivationOtp,
             // M3 (security) — store the keyed hash; `value` (plaintext) is emailed.
-            Code = AccountCodeHasher.Hash(value),
+            CodeHash = AccountCodeHasher.Hash(value),
             CreatedAt = now,
             ExpiresAt = now.Add(CodeLifetime),
         }, cancellationToken);

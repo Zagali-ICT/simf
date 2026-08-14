@@ -10,6 +10,8 @@ export 'src/application/auth_providers.dart';
 export 'src/data/auth_api.dart';
 export 'src/data/auth_repository_impl.dart';
 export 'src/data/dto/current_user_dto.dart';
+// The My Devices screen renders DeviceKeyEntryDto rows directly.
+export 'src/data/dto/device_key_dtos.dart';
 export 'src/data/dto/sign_in_request.dart';
 export 'src/data/dto/sign_in_response.dart';
 export 'src/data/dto/sign_up_request.dart';

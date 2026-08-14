@@ -46,40 +46,56 @@ internal sealed class QrResolver(
             {
                 profile.Id,
                 profile.UserId,
+                profile.AdmissionState,
                 profile.ProfileTypeId,
                 profileTypeActive = profile.ProfileType != null && profile.ProfileType.IsActive,
                 profileTypeName = profile.ProfileType != null ? profile.ProfileType.Name : null,
                 profileTypeNameAr = profile.ProfileType != null ? profile.ProfileType.NameArabic : null,
                 profileTypePageColor = profile.ProfileType != null ? profile.ProfileType.PageColor : null,
+                profile.Name,
                 profile.NameArabic,
             })
             .SingleOrDefaultAsync(cancellationToken);
         if (profileRow is null) { return null; }
 
-        var userRow = await identityDbContext.Users
-            .AsNoTracking()
-            .Where(user => user.Id == profileRow.UserId)
-            .Select(user => new
-            {
-                user.Id,
-                user.AccountState,
-                user.LockoutEnd,
-                user.DisplayName,
-            })
-            .SingleOrDefaultAsync(cancellationToken);
-        if (userRow is null) { return null; }
+        // The Identity row is OPTIONAL and is read only for the two things it
+        // alone knows: the lockout flag and the account's display name. Most
+        // holders at a gate have no account — a walk-in registration and a
+        // pre-generated badge both produce a profile without one — so a missing
+        // user is the ordinary case, NOT a failed resolution.
+        //
+        // This used to query unconditionally and return null when it found
+        // nothing, which turned a valid approved badge into a QR_UNKNOWN denial
+        // before the approval checks ever ran: the holder was told their badge
+        // was not recognised, and no amount of approving them would have fixed
+        // it. Admission is read from the profile above, which is the row that
+        // exists for every attendee.
+        var userRow = profileRow.UserId is null
+            ? null
+            : await identityDbContext.Users
+                .AsNoTracking()
+                .Where(user => user.Id == profileRow.UserId)
+                .Select(user => new
+                {
+                    user.LockoutEnd,
+                    user.DisplayName,
+                })
+                .SingleOrDefaultAsync(cancellationToken);
 
         return new QrResolution(
             profileRow.Id,
-            userRow.Id,
-            userRow.AccountState,
-            userRow.LockoutEnd != null && userRow.LockoutEnd > now,
+            profileRow.UserId,
+            profileRow.AdmissionState,
+            userRow?.LockoutEnd != null && userRow.LockoutEnd > now,
             profileRow.ProfileTypeId,
             profileRow.profileTypeActive,
             profileRow.profileTypeName,
             profileRow.profileTypeNameAr,
             profileRow.profileTypePageColor,
-            userRow.DisplayName ?? string.Empty,
+            // Falls back to the profile's own name, which is what a badge is
+            // printed from and what an operator sees on the paper in front of
+            // them; the account display name is only richer when there is one.
+            userRow?.DisplayName ?? profileRow.Name,
             profileRow.NameArabic);
     }
 

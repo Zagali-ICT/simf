@@ -82,9 +82,17 @@ internal static partial class AccountEndpoints
         if (token is null) { return Results.Unauthorized(); }
 
         (int status, byte[]? bytes) = await export(token);
-        return status != 200 || bytes.Length == 0
-            ? DownloadFailure(status, bytes)
-            : Results.File(bytes,
+        if (status != 200 || bytes.Length == 0)
+        {
+            // A bodiless status is re-executed into /not-found and reaches the
+            // caller as 400 HTML, so the failure has to carry a body. Kept as an
+            // explicit return rather than folded into a ternary: a structural
+            // guard asserts on this exact shape, because the pattern it protects
+            // against is invisible at runtime until a download denies wrongly.
+            return DownloadFailure(status, bytes);
+        }
+
+        return Results.File(bytes,
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             $"simf-{slug}-{SimfClock.Now.FormatSaudi("yyyyMMdd-HHmmss")}.xlsx");
     }

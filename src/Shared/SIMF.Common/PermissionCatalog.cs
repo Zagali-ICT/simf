@@ -221,6 +221,14 @@ public static class PermissionCatalog
         public const string Import = "SessionCategories.Import";
     }
 
+    /// <summary>Biometric device keys. Revoke is the only administrative action:
+    /// enrolment and self-revoke are the account owner's own, and there is no
+    /// admin list surface yet.</summary>
+    public static class DeviceKeys
+    {
+        public const string Revoke = "DeviceKeys.Revoke";
+    }
+
     public static class Themes
     {
         public const string View = "Themes.View";
@@ -736,6 +744,17 @@ public static class PermissionCatalog
         public const string Edit = "Operations.Edit";
     }
 
+    /// <summary>The event edition: which year is open, and closing one into
+    /// history. <see cref="Close"/> is separate from <see cref="Open"/> because
+    /// closing is the destructive half — it ends registration against the current
+    /// year and invalidates every badge issued for it.</summary>
+    public static class Editions
+    {
+        public const string View = "Editions.View";
+        public const string Open = "Editions.Open";
+        public const string Close = "Editions.Close";
+    }
+
     /// <summary>System Configuration page.</summary>
     public static class Configuration
     {
@@ -914,6 +933,9 @@ public static class PermissionCatalog
         new(Regions.Create, "Regions", "Create", "Create regions", AdminOnly),
         new(Regions.Edit, "Regions", "Edit", "Edit regions", AdminOnly),
         new(Regions.Delete, "Regions", "Delete", "Delete regions", AdminOnly),
+
+        // Account security.
+        new(DeviceKeys.Revoke, "DeviceKeys", "Revoke", "Revoke a user's biometric device key", AdminOnly),
 
         // Programme
         new(Themes.View, "Themes", "View", "View themes", AdminOnly),
@@ -1198,6 +1220,11 @@ public static class PermissionCatalog
 
         new(Operations.View, "Operations", "View", "View operations toggles", AdminOnly),
         new(Operations.Edit, "Operations", "Edit", "Change operations toggles", AdminOnly),
+
+        // The event edition (which year is open, and closing one into history).
+        new(Editions.View, "Editions", "View", "View the event edition", AdminOnly),
+        new(Editions.Open, "Editions", "Open", "Open a new event edition", AdminOnly),
+        new(Editions.Close, "Editions", "Close", "Close the current edition into history", AdminOnly),
 
         // System Configuration settings.
         new(Configuration.View, "Configuration", "View", "View system configuration", AdminOnly),

@@ -261,9 +261,11 @@ public sealed class DeviceKeySignInTests : IClassFixture<SimfApiFactory>
         var challengeResponse = await _client.PostAsJsonAsync(
             $"/api/v1/app/auth/device-keys/{entry.Id}/challenge", new { });
         Assert.Equal(HttpStatusCode.Unauthorized, challengeResponse.StatusCode);
+        // Was DEVICE_KEY_REVOKED. The endpoint is anonymous, so revoked and
+        // unknown now answer identically rather than confirming the key existed.
         var body = (await challengeResponse.Content
             .ReadFromJsonAsync<ApiResult<object>>())!;
-        Assert.Equal(ErrorCodes.DeviceKeyRevoked, body.Error!.Code);
+        Assert.Equal(ErrorCodes.DeviceKeyNotFound, body.Error!.Code);
     }
 
     [Fact]
@@ -324,7 +326,263 @@ public sealed class DeviceKeySignInTests : IClassFixture<SimfApiFactory>
         Assert.Equal(ErrorCodes.DeviceKeyAlgorithmUnsupported, body.Error!.Code);
     }
 
+    // -- Account-lifecycle gates (S1, S2, S4) ---------------------------------
+    // A device key used to be a way into the same account that honoured fewer
+    // rules than the password. These four pin the gates shut.
+
+    [Fact]
+    public async Task Sign_in_is_refused_when_a_password_change_is_required()
+    {
+        var (visitor, userId) = await CreateApprovedVisitorAsync();
+        using var ecdsa = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+        var entry = await EnrolDeviceKeyAsync(visitor, ecdsa);
+
+        await UpdateUserAsync(userId, user => user.PasswordChangeRequired = true);
+
+        var signIn = await SignInWithDeviceKeyAsync(ecdsa, entry.Id);
+
+        Assert.Equal(HttpStatusCode.Forbidden, signIn.StatusCode);
+        var body = (await signIn.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.AuthPasswordChangeRequired, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Sign_in_still_succeeds_when_no_password_change_is_pending()
+    {
+        // The negative of the test above: the new gate must not refuse a normal
+        // account. Without this, a gate that rejected everything would pass.
+        var (visitor, _) = await CreateApprovedVisitorAsync();
+        using var ecdsa = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+        var entry = await EnrolDeviceKeyAsync(visitor, ecdsa);
+
+        var signIn = await SignInWithDeviceKeyAsync(ecdsa, entry.Id);
+
+        Assert.Equal(HttpStatusCode.OK, signIn.StatusCode);
+    }
+
+    [Fact]
+    public async Task Sign_in_is_refused_while_the_account_is_locked_out()
+    {
+        var (visitor, userId) = await CreateApprovedVisitorAsync();
+        using var ecdsa = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+        var entry = await EnrolDeviceKeyAsync(visitor, ecdsa);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+            var user = (await users.FindByIdAsync(userId.ToString()))!;
+            await users.SetLockoutEnabledAsync(user, true);
+            await users.SetLockoutEndDateAsync(
+                user, DateTimeOffset.UtcNow.AddMinutes(30));
+        }
+
+        var signIn = await SignInWithDeviceKeyAsync(ecdsa, entry.Id);
+
+        Assert.Equal(HttpStatusCode.Locked, signIn.StatusCode);
+        var body = (await signIn.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.AuthAccountLocked, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Changing_the_password_revokes_the_device_keys()
+    {
+        // The remedy has to remove every credential, not just the sessions.
+        // Before this, revoking the refresh tokens left the device key alive and
+        // sign-in-with-device-key is anonymous, so an attacker who had enrolled
+        // one simply minted a fresh session after the victim reset.
+        var (visitor, _) = await CreateApprovedVisitorAsync();
+        using var ecdsa = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+        var entry = await EnrolDeviceKeyAsync(visitor, ecdsa);
+
+        var change = await PostAuthAsync(
+            "/api/v1/app/auth/change-password",
+            new ChangePasswordRequest
+            {
+                CurrentPassword = AuthFlow.Password,
+                NewPassword = "Ch4nged!Passw0rd#2026",
+                ConfirmPassword = "Ch4nged!Passw0rd#2026",
+            },
+            visitor);
+        Assert.Equal(HttpStatusCode.OK, change.StatusCode);
+
+        // A revoked key cannot even take a challenge, so the ceremony is dead at
+        // its first step rather than at the signature.
+        var challenge = await _client.PostAsJsonAsync(
+            $"/api/v1/app/auth/device-keys/{entry.Id}/challenge", new { });
+        Assert.Equal(HttpStatusCode.Unauthorized, challenge.StatusCode);
+        var body = (await challenge.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.DeviceKeyNotFound, body.Error!.Code);
+    }
+
+    // -- Enrolment gates and bounds (S3, S5, S6, S8) ---------------------------
+
+    [Fact]
+    public async Task An_administrator_cannot_enrol_a_device_key()
+    {
+        // The mint issues the caller's full permission set with no second
+        // factor, so an enrolled admin would hold an admin bearer obtainable
+        // with one factor.
+        // Promoted after sign-in rather than signed in as an admin: the register
+        // endpoint reads the user fresh, so this exercises the guard without
+        // dragging the Control-Panel audience and its 2FA enrolment into a
+        // device-key test.
+        var (token, userId) = await CreateApprovedVisitorAsync();
+        await UpdateUserAsync(userId, user => user.UserType = UserType.Admin);
+        var admin = token;
+        using var ecdsa = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+
+        var register = await PostAuthAsync(
+            "/api/v1/app/auth/device-keys",
+            new RegisterDeviceKeyRequest
+            {
+                PublicKey = Convert.ToBase64String(ecdsa.ExportSubjectPublicKeyInfo()),
+                Algorithm = "ES256",
+                Label = "Admin phone",
+            },
+            admin);
+
+        Assert.Equal(HttpStatusCode.Forbidden, register.StatusCode);
+        var body = (await register.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.Forbidden, body.Error!.Code);
+    }
+
+    [Theory]
+    [InlineData("Phone; actor=admin")]
+    [InlineData("Phone=admin")]
+    [InlineData("Phone\nactor=admin")]
+    public async Task A_label_that_could_forge_an_audit_field_is_rejected(string label)
+    {
+        var (visitor, _) = await CreateApprovedVisitorAsync();
+        using var ecdsa = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+
+        var register = await PostAuthAsync(
+            "/api/v1/app/auth/device-keys",
+            new RegisterDeviceKeyRequest
+            {
+                PublicKey = Convert.ToBase64String(ecdsa.ExportSubjectPublicKeyInfo()),
+                Algorithm = "ES256",
+                Label = label,
+            },
+            visitor);
+
+        Assert.Equal(HttpStatusCode.BadRequest, register.StatusCode);
+        var body = (await register.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.DeviceKeyInvalid, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Enrolling_past_the_cap_revokes_the_oldest_key()
+    {
+        // Five is the configured cap, so the sixth enrolment must retire the
+        // first rather than refuse: a user replacing a phone is never stuck.
+        var (visitor, _) = await CreateApprovedVisitorAsync();
+        var keys = new List<DeviceKeyEntry>();
+        for (var i = 0; i < 6; i++)
+        {
+            using var ecdsa = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+            keys.Add(await EnrolDeviceKeyAsync(visitor, ecdsa));
+        }
+
+        // Assert the contract, not the identity of the casualty. The test clock
+        // can stamp several enrolments on the same instant, which leaves "oldest"
+        // genuinely ambiguous, so pinning a specific key would be testing the tie
+        // break rather than the cap.
+        var usable = 0;
+        foreach (var key in keys)
+        {
+            var probe = await _client.PostAsJsonAsync(
+                $"/api/v1/app/auth/device-keys/{key.Id}/challenge", new { });
+            if (probe.StatusCode == HttpStatusCode.OK)
+            {
+                usable++;
+            }
+        }
+        Assert.Equal(5, usable);
+
+        // Whatever was retired, the key the user is holding right now survives.
+        var newest = await _client.PostAsJsonAsync(
+            $"/api/v1/app/auth/device-keys/{keys[5].Id}/challenge", new { });
+        Assert.Equal(HttpStatusCode.OK, newest.StatusCode);
+    }
+
+    [Fact]
+    public async Task A_revoked_key_and_an_unknown_key_are_indistinguishable()
+    {
+        // The challenge endpoint is anonymous, so telling "never existed" apart
+        // from "existed and was revoked" handed out free information.
+        var (visitor, _) = await CreateApprovedVisitorAsync();
+        using var ecdsa = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+        var entry = await EnrolDeviceKeyAsync(visitor, ecdsa);
+        await DeleteAuthAsync($"/api/v1/app/auth/device-keys/{entry.Id}", visitor);
+
+        var revoked = await _client.PostAsJsonAsync(
+            $"/api/v1/app/auth/device-keys/{entry.Id}/challenge", new { });
+        var unknown = await _client.PostAsJsonAsync(
+            $"/api/v1/app/auth/device-keys/{Guid.NewGuid()}/challenge", new { });
+
+        Assert.Equal(HttpStatusCode.Unauthorized, revoked.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, unknown.StatusCode);
+        var revokedBody = (await revoked.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        var unknownBody = (await unknown.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(unknownBody.Error!.Code, revokedBody.Error!.Code);
+        Assert.Equal(unknownBody.Error!.Message, revokedBody.Error!.Message);
+    }
+
     // -- Helpers --------------------------------------------------------------
+
+    /// <summary>Registers <paramref name="ecdsa"/>'s public half for the signed-in
+    /// caller and returns the created entry.</summary>
+    private async Task<DeviceKeyEntry> EnrolDeviceKeyAsync(
+        string accessToken, ECDsa ecdsa)
+    {
+        var register = await PostAuthAsync(
+            "/api/v1/app/auth/device-keys",
+            new RegisterDeviceKeyRequest
+            {
+                PublicKey = Convert.ToBase64String(ecdsa.ExportSubjectPublicKeyInfo()),
+                Algorithm = "ES256",
+                Label = "Lifecycle gate test",
+            },
+            accessToken);
+        Assert.Equal(HttpStatusCode.OK, register.StatusCode);
+        return (await register.Content
+            .ReadFromJsonAsync<ApiResult<DeviceKeyEntry>>())!.Data!;
+    }
+
+    /// <summary>Runs the anonymous half of the ceremony: take a challenge, sign it,
+    /// submit it. Returns the raw response so the caller can assert the status.</summary>
+    private async Task<HttpResponseMessage> SignInWithDeviceKeyAsync(
+        ECDsa ecdsa, Guid deviceKeyId)
+    {
+        var challengeResponse = await _client.PostAsJsonAsync(
+            $"/api/v1/app/auth/device-keys/{deviceKeyId}/challenge", new { });
+        Assert.Equal(HttpStatusCode.OK, challengeResponse.StatusCode);
+        var challenge = (await challengeResponse.Content
+            .ReadFromJsonAsync<ApiResult<DeviceKeyChallenge>>())!.Data!;
+
+        var signature = ecdsa.SignData(
+            Convert.FromBase64String(challenge.Challenge),
+            HashAlgorithmName.SHA256,
+            DSASignatureFormat.IeeeP1363FixedFieldConcatenation);
+
+        return await _client.PostAsJsonAsync(
+            "/api/v1/app/auth/sign-in-with-device-key",
+            new SignInWithDeviceKeyRequest
+            {
+                DeviceKeyId = deviceKeyId,
+                Challenge = challenge.Challenge,
+                Signature = Convert.ToBase64String(signature),
+            });
+    }
+
+    private async Task UpdateUserAsync(Guid userId, Action<SimfUser> mutate)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+        var user = (await users.FindByIdAsync(userId.ToString()))!;
+        mutate(user);
+        await users.UpdateAsync(user);
+    }
 
     private async Task<(string accessToken, Guid userId)> CreateApprovedVisitorAsync()
     {

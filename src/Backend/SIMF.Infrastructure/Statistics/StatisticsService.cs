@@ -16,35 +16,43 @@ namespace SIMF.Infrastructure.Statistics;
 /// the others, and every query is <c>AsNoTracking</c> (these are pure reads —
 /// nothing is materialised into the change tracker).
 ///
-/// <para>Attendee counts come from the Identity DB: an attendee is any
-/// non-admin account (<see cref="UserType.Visitor"/>); "approved" filters on
-/// <see cref="AccountState.Approved"/> and "pending" on
-/// <see cref="AccountState.PendingApproval"/>. The event-module counts come
-/// from the App DB and filter on the soft-delete flag where the entity carries
-/// one, matching the public/admin list behaviour (CLAUDE.md §7).</para>
+/// <para>Attendee counts come from <c>UserProfile</c> in the App DB, not from
+/// Identity accounts: an attendee may have no account at all, and the profile is
+/// the row that exists for every one of them. "Approved" and "pending" filter on
+/// the profile's own <c>AdmissionState</c>, which is what decides entry. The
+/// event-module counts also come from the App DB and filter on the soft-delete
+/// flag where the entity carries one, matching the public/admin list behaviour
+/// (CLAUDE.md §7).</para>
 /// </summary>
+// Every figure now comes from the App DB, so the Identity context is no longer
+// injected: nothing here reads an account.
 internal sealed class StatisticsService(
-    SimfAppDbContext appDbContext,
-    SimfIdentityDbContext identityDbContext) : IStatisticsService
+    SimfAppDbContext appDbContext) : IStatisticsService
 {
     public async Task<StatisticsDashboard> GetDashboardAsync(
         CancellationToken cancellationToken = default)
     {
-        // Identity DB — attendees are non-admin (Visitor) accounts.
-        var totalAttendees = await identityDbContext.Users.AsNoTracking()
-            .CountAsync(u => u.UserType == UserType.Visitor, cancellationToken);
+        // Attendees are counted from PROFILES, and their approval from the
+        // profile's own admission state. Counting Identity users would miss
+        // every attendee who has no account — a walk-in registration or a
+        // pre-generated badge — which is a large share of a real event, and
+        // would read approval from a row that no longer decides it.
+        //
+        // An absent profile type reads as audience, matching how the programme
+        // breakdown below and ExhibitorVisitorService already treat it:
+        // IsForVisitor itself defaults to true, so requiring a non-null type
+        // would quietly undercount everyone not yet categorised.
+        var attendees = appDbContext.UserProfiles.AsNoTracking()
+            .Where(p => p.IsActive
+                && (p.ProfileType == null || p.ProfileType.IsForVisitor));
 
-        var approvedAttendees = await identityDbContext.Users.AsNoTracking()
-            .CountAsync(
-                u => u.UserType == UserType.Visitor
-                    && u.AccountState == AccountState.Approved,
-                cancellationToken);
+        var totalAttendees = await attendees.CountAsync(cancellationToken);
 
-        var pendingApprovals = await identityDbContext.Users.AsNoTracking()
-            .CountAsync(
-                u => u.UserType == UserType.Visitor
-                    && u.AccountState == AccountState.PendingApproval,
-                cancellationToken);
+        var approvedAttendees = await attendees.CountAsync(
+            p => p.AdmissionState == AccountState.Approved, cancellationToken);
+
+        var pendingApprovals = await attendees.CountAsync(
+            p => p.AdmissionState == AccountState.PendingApproval, cancellationToken);
 
         // App DB — event-module counts (active rows only where soft-deleted).
         var sessions = await appDbContext.Sessions.AsNoTracking()
@@ -93,16 +101,20 @@ internal sealed class StatisticsService(
     public async Task<StatisticsProgramme> GetProgrammeAsync(
         CancellationToken cancellationToken = default)
     {
-        // ---- Headline participant counts -----------------------------------
-        var currentUsers = await identityDbContext.Users.AsNoTracking()
-            .CountAsync(cancellationToken);
-
         // Role counts resolve through UserProfile -> UserProfileType. Both
         // tables live in the App DB, so this is a single-database join and
         // never a cross-context query. Which profile type counts as
         // staff / exhibitor is admin-curated data (ProfileType.MobileAppRole,
         // ProfileType.IsForVisitor) — never a hardcoded role name.
         var profiles = appDbContext.UserProfiles.AsNoTracking().Where(p => p.IsActive);
+
+        // ---- Headline participant count ------------------------------------
+        // Counted from PROFILES, like every breakdown below it. It used to count
+        // Identity users, which made the headline and its own breakdown answer
+        // two different questions in one response: an attendee registered at a
+        // desk has a profile and no account, so the parts could exceed the whole
+        // and the page could report more people present than registered.
+        var currentUsers = await profiles.CountAsync(cancellationToken);
 
         // A profile with no type assigned counts as a visitor: IsForVisitor
         // itself defaults to true ("audience-side until an admin says
@@ -171,10 +183,15 @@ internal sealed class StatisticsService(
                 day.Date.ToDateTime(TimeOnly.MinValue));
             var endUtc = startUtc.AddDays(1);
 
-            var registered = await identityDbContext.Users.AsNoTracking()
+            // Counted from profiles, so it is comparable with `present` just
+            // below, which comes from gate scans and therefore includes people
+            // who never held an account. Counting Identity users here made a
+            // walk-in day report more attendees present than registered.
+            var registered = await appDbContext.UserProfiles.AsNoTracking()
                 .CountAsync(
-                    u => u.UserType == UserType.Visitor
-                        && u.CreatedAt >= startUtc && u.CreatedAt < endUtc,
+                    p => p.IsActive
+                        && (p.ProfileType == null || p.ProfileType.IsForVisitor)
+                        && p.CreatedAt >= startUtc && p.CreatedAt < endUtc,
                     cancellationToken);
 
             // Distinct people who were let in through a gate that day. A visitor

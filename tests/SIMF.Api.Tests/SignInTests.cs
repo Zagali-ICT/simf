@@ -869,7 +869,7 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
                 && code.ConsumedAt == null)
             .OrderByDescending(code => code.CreatedAt)
             .First()
-            .Code);
+            .CodeHash);
     }
 
     private void SetAccountState(string email, AccountState state)

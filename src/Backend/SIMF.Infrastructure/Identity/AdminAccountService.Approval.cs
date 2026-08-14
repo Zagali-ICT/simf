@@ -50,6 +50,16 @@ internal sealed partial class AdminAccountService
         var profile = await EnsureUserProfileAsync(subject.Id, now, cancellationToken);
         profile.RejectionReason = null;
         profile.RejectionReasonArabic = null;
+
+        // Admission lives on the PROFILE, because an attendee need not have an
+        // account and the gate must still be able to decide. The user row is
+        // updated too, but for a different question: its state governs sign-in.
+        // The two are not mirrors of one fact — they are two facts that happen to
+        // change together on this path — and only this one is read at a gate.
+        profile.AdmissionState = AccountState.Approved;
+        profile.StateChangedAt = now;
+        profile.StateChangedByUserId = actorUserId;
+
         await qrIdMinter.MintIfMissingAsync(profile, cancellationToken);
 
         // Optional tier assignment on approve. Only the
@@ -153,6 +163,12 @@ internal sealed partial class AdminAccountService
         var profile = await EnsureUserProfileAsync(subject.Id, now, cancellationToken);
         profile.RejectionReason = request.Reason;
         profile.RejectionReasonArabic = request.Reason;
+
+        // Refusing admission is a decision about the attendee, so it is recorded
+        // on the profile — the row a gate reads. See the note on the approve path.
+        profile.AdmissionState = AccountState.Rejected;
+        profile.StateChangedAt = now;
+        profile.StateChangedByUserId = actorUserId;
 
         await accounts.UpdateAsync(subject).EnsureSuccessAsync();
         // UserProfile lives on App DB.

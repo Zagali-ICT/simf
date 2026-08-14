@@ -152,8 +152,9 @@ internal sealed class MeetingReminderWorker(
 
             // Both parties: the requester + every eligible member of the target delegation.
             var recipientIds = await db.UserProfiles.AsNoTracking()
-                .Where(p => p.NationalityId == req.TargetCountryId && p.AllowsDelegationMeeting)
-                .Select(p => p.UserId)
+                .Where(p => p.NationalityId == req.TargetCountryId && p.AllowsDelegationMeeting
+                    && p.UserId != null)
+                .Select(p => p.UserId!.Value)
                 .ToListAsync(cancellationToken);
             recipientIds.Add(req.RequestedByUserId);
             foreach (var userId in recipientIds.Distinct())

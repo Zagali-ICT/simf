@@ -51,7 +51,10 @@ public static class NotificationKindCatalog
         // DEF-EXH-002 — "an exhibitor now holds your contact card" is a personal
         // privacy notice about the holder's own data, so it sits with the account
         // section (there is no separate privacy chip).
-        NotificationKind.ExhibitorLeadCaptured => Groups.Account,
+        NotificationKind.ExhibitorLeadCaptured or
+        // A credential was bound to the account, which is the same kind of
+        // security notice as a password change, so it groups with them.
+        NotificationKind.DeviceKeyEnrolled => Groups.Account,
 
         NotificationKind.InvitationReceived or
         NotificationKind.VipBroadcast => Groups.Vip,

@@ -181,19 +181,33 @@ internal sealed class HallAttendanceService(
             session.ArrivalGraceMinutesOverride, session.HallArrivalGraceMinutes,
             GlobalArrivalGraceMinutes));
 
+        // KNOWN GAP — HallAttendance is keyed by ACCOUNT id, so an attendee
+        // with no account cannot yet be recorded at a hall door. That is
+        // exactly the walk-in this system is meant to admit, so this refusal is
+        // temporary and deliberately loud: the table must be re-keyed to the
+        // profile id, which is the row every attendee has. Refusing here is the
+        // safe half of the gap — the alternative silently records the arrival
+        // against the wrong person or crashes at the door.
+        if (resolved.UserId is not { } attendeeUserId)
+        {
+            throw new ApiException(ErrorCodes.AttendeeNotApproved, 409,
+                "This attendee has no app account, which hall-door attendance still requires.",
+                "هذا الحاضر ليس لديه حساب في التطبيق، وهو مطلوب حالياً لتسجيل حضور القاعة.");
+        }
+
         // No geofence check — the operator is physically at the door. Merges
         // with any existing open row (e.g. a prior geofence arrival).
         var (row, created) = await OpenOrCreateArrivalAsync(
-            resolved.UserId, sessionId, session.HallId, AttendanceMethod.QrScan, cancellationToken);
+            attendeeUserId, sessionId, session.HallId, AttendanceMethod.QrScan, cancellationToken);
         if (created)
         {
-            await AuditArrivalAsync(resolved.UserId, sessionId, session.HallId, AttendanceMethod.QrScan, cancellationToken, operatorUserId);
+            await AuditArrivalAsync(attendeeUserId, sessionId, session.HallId, AttendanceMethod.QrScan, cancellationToken, operatorUserId);
             logger.LogInformation(
                 "Hall arrival (QR door scan) recorded for {UserId} at session {SessionId} by operator {OperatorId}.",
-                resolved.UserId, sessionId, operatorUserId);
+                attendeeUserId, sessionId, operatorUserId);
         }
         return new QrArrivalResult(
-            resolved.UserId, resolved.DisplayName, resolved.DisplayNameArabic, ToStatus(row));
+            attendeeUserId, resolved.DisplayName, resolved.DisplayNameArabic, ToStatus(row));
     }
 
     public async Task<QrArrivalResult> RecordQrDepartureAsync(
@@ -229,12 +243,22 @@ internal sealed class HallAttendanceService(
         // they were not checked in / already left). The seat map's confirmed state
         // clears automatically once the row closes (SeatReservationService reads
         // open rows only).
-        var status = await RecordDepartureAsync(resolved.UserId, sessionId, cancellationToken);
+        // Same account-keyed gap as the arrival path above. A departure for
+        // someone who could never have been recorded arriving is a no-op, so
+        // this reports the "not checked in" shape rather than failing: an
+        // attendee must always be able to leave.
+        if (resolved.UserId is not { } attendeeUserId)
+        {
+            return new QrArrivalResult(
+                Guid.Empty, resolved.DisplayName, resolved.DisplayNameArabic, ToStatus(null));
+        }
+
+        var status = await RecordDepartureAsync(attendeeUserId, sessionId, cancellationToken);
         logger.LogInformation(
             "Hall departure (QR door scan) recorded for {UserId} at session {SessionId} by operator {OperatorId}.",
-            resolved.UserId, sessionId, operatorUserId);
+            attendeeUserId, sessionId, operatorUserId);
         return new QrArrivalResult(
-            resolved.UserId, resolved.DisplayName, resolved.DisplayNameArabic, status);
+            attendeeUserId, resolved.DisplayName, resolved.DisplayNameArabic, status);
     }
 
     public async Task<HallEntryEligibility> CheckHallEntryEligibilityAsync(

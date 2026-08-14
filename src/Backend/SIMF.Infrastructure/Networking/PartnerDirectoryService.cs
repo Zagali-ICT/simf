@@ -110,7 +110,9 @@ internal sealed class PartnerDirectoryService(
         //    (Identity DB, shared with the recommender via WhereApprovedNonAdmin).
         //    Include only non-visitor profile types that opted in; this is what
         //    keeps Normal / VIP out. De-dup: a person already curated as a Speaker
-        //    (linked UserProfileId) is dropped — the curated entity wins.
+        //    (linked UserProfileId) is dropped — the curated entity wins. An
+        //    attendee holding no account is not in that pool by construction, so
+        //    the account-less profiles are skipped rather than matched.
         var approvedIds = await identityDbContext.Users.AsNoTracking()
             .WhereApprovedNonAdmin()
             .Select(u => u.Id)
@@ -128,7 +130,7 @@ internal sealed class PartnerDirectoryService(
                 .ToHashSet();
 
             var people = await appDbContext.UserProfiles.AsNoTracking()
-                .Where(p => approvedIds.Contains(p.UserId)
+                .Where(p => p.UserId != null && approvedIds.Contains(p.UserId!.Value)
                     && p.ShowInMeetLikeYou
                     && p.ProfileType != null && !p.ProfileType.IsForVisitor
                     // Admin master switch — hiding a partner type drops

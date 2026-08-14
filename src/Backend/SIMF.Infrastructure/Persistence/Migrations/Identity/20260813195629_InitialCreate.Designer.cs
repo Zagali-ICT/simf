@@ -12,7 +12,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Persistence.Migrations.Identity
 {
     [DbContext(typeof(SimfIdentityDbContext))]
-    [Migration("20260812162003_InitialCreate")]
+    [Migration("20260813195629_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -200,7 +200,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                     b.Property<int>("AttemptCount")
                         .HasColumnType("int");
 
-                    b.Property<string>("Code")
+                    b.Property<string>("CodeHash")
                         .IsRequired()
                         .HasMaxLength(16)
                         .HasColumnType("nvarchar(16)");

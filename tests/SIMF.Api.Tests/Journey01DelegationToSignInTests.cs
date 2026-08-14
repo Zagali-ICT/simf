@@ -359,7 +359,7 @@ public sealed class Journey01DelegationToSignInTests : IClassFixture<SimfApiFact
                 profile => profile.UserId,
                 account => account.Id,
                 (profile, account) => new MintedBadge(
-                    profile.UserId,
+                    account.Id,
                     profile.QrId!,
                     profile.BadgeBatchId!.Value,
                     profile.IsDelegate,
@@ -406,7 +406,7 @@ public sealed class Journey01DelegationToSignInTests : IClassFixture<SimfApiFact
                 && code.Purpose == AccountCodePurpose.BadgeActivationOtp
                 && code.ConsumedAt == null)
             .OrderByDescending(code => code.CreatedAt)
-            .Select(code => code.Code)
+            .Select(code => code.CodeHash)
             .FirstOrDefaultAsync();
         return hash is null ? null : AuthFlow.RecoverPlaintextCode(hash);
     }

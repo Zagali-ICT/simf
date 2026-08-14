@@ -191,7 +191,7 @@ public sealed class RegistrationService(
                 "محاولات غير صحيحة كثيرة. اطلب رمزًا جديدًا.");
         }
 
-        if (!CodesMatch(code.Code, AccountCodeHasher.Hash(request.Code)))
+        if (!CodesMatch(code.CodeHash, AccountCodeHasher.Hash(request.Code)))
         {
             code.AttemptCount++;
             await accountCodeRepository.UpdateAsync(code, cancellationToken);
@@ -481,7 +481,7 @@ public sealed class RegistrationService(
             Id = Guid.NewGuid(),
             UserId = user.Id,
             Purpose = AccountCodePurpose.EmailVerification,
-            Code = AccountCodeHasher.Hash(plaintext),
+            CodeHash = AccountCodeHasher.Hash(plaintext),
             CreatedAt = now,
             ExpiresAt = now.Add(CodeLifetime),
         };

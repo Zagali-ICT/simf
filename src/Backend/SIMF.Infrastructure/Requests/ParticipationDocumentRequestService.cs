@@ -271,8 +271,8 @@ internal sealed class ParticipationDocumentRequestService(
             return new Dictionary<Guid, string>();
         }
         return await appDbContext.UserProfiles.AsNoTracking()
-            .Where(p => ids.Contains(p.UserId))
-            .Select(p => new { p.UserId, p.Name })
+            .Where(p => p.UserId != null && ids.Contains(p.UserId.Value))
+            .Select(p => new { UserId = p.UserId!.Value, p.Name })
             .ToDictionaryAsync(p => p.UserId, p => p.Name, cancellationToken);
     }
 }

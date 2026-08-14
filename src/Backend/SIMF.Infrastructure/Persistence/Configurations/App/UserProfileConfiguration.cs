@@ -25,7 +25,30 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
         // enforced at the service layer, not by SQL. Unique so the
         // second upsert by the same user updates instead of inserting
         // a sibling row.
-        builder.HasIndex(profile => profile.UserId).IsUnique();
+        //
+        // FILTERED, and that is load-bearing rather than tidiness. An attendee
+        // need not have an account at all, so this column is nullable and most
+        // rows at a walk-in desk will be null. SQL Server treats NULLs as EQUAL
+        // in a unique index, so an unfiltered one would admit exactly ONE such
+        // row system-wide and reject the second with a duplicate-key error —
+        // green in every test that creates one profile, failing at the venue on
+        // the second registration. Same filtered-unique shape as QrId and
+        // ReferenceNumber below, for the same reason.
+        builder.HasIndex(profile => profile.UserId)
+            .IsUnique()
+            .HasFilter("[UserId] IS NOT NULL");
+
+        // Admission state, stored as the enum NAME rather than its ordinal, so
+        // reordering the enum can never re-interpret stored rows. Matches how the
+        // Identity side persists the same enum.
+        builder.Property(profile => profile.AdmissionState)
+            .HasConversion<string>()
+            .HasMaxLength(32)
+            .IsRequired();
+
+        // The admission queue reads "everyone awaiting a decision" on every load
+        // of the pending pages, and the gate reads state per scan.
+        builder.HasIndex(profile => profile.AdmissionState);
 
         // Reasonable name caps (they were 256), tightened to 50 and
         // aligned across client + server + EF.
