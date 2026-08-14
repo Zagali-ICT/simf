@@ -29,12 +29,30 @@ using SIMF.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Production secrets/config arrive as SIMF_-prefixed Machine-scope environment
-// variables (deploy/set-env-*.ps1). This source strips
-// the prefix, so SIMF_ConnectionStrings__SimfAppDb binds to
+// Production secrets/config arrive as SIMF_API_-prefixed Machine-scope
+// environment variables (deploy/set-env-api.template.ps1). This source strips
+// the prefix, so SIMF_API_ConnectionStrings__SimfAppDb binds to
 // ConnectionStrings:SimfAppDb. ASPNETCORE_ENVIRONMENT stays un-prefixed (the
 // host reads it before configuration sources load).
-builder.Configuration.AddEnvironmentVariables("SIMF_");
+//
+// The prefix is PER APPLICATION. Machine scope is shared by every process on the
+// box, so while all four hosts read one common "SIMF_" the estate could not give
+// two of them different values for the same key: there was a single
+// SIMF_Storage__LogDirectory and a single SIMF_Api__BaseUrl between them, shared
+// whether that was wanted or not. On a server running more than one SIMF app
+// that is a collision with no way out. A prefix per app removes it.
+//
+// Note what it is not: a security boundary. Any process on the box can still
+// read any variable whatever it is called, which is why the real isolation is
+// that each server receives only its own package's values.
+builder.Configuration.AddEnvironmentVariables("SIMF_API_");
+
+// Fail loudly on a half-finished upgrade. A server provisioned before the
+// per-application prefixes still carries SIMF_-prefixed variables, which this
+// build no longer reads: without this the host would boot, find its boot gates
+// missing, and report that an encryption key is unset while the value sits right
+// there in the machine environment under the old name.
+SimfLegacyEnvironmentGuard.Verify("SIMF_API_", builder.Environment.IsProduction());
 
 // Structured logging through Serilog. Per-project log files live under
 // {Storage:LogDirectory}/SIMF.Api/log-{Date}.log; the CP /admin/logs page reads
@@ -113,6 +131,10 @@ builder.Services.AddLeasedHostedService<SIMF.Api.HostedServices.RetentionSweepWo
 // The audit log reads the request context; the API supplies it from HttpContext.
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IRequestContext, HttpRequestContext>();
+// The hero video's absolute URL is composed at read time now, and only the API
+// can see the request its origin falls back to.
+builder.Services.AddScoped<SIMF.Application.Abstractions.IPublicApiOriginProvider,
+    SIMF.Api.Infrastructure.HttpPublicApiOriginProvider>();
 
 // In-memory cache backs the per-IP bearer-rejection
 // throttle in JwtBearerSetup.AuditRejectionAsync so an attacker
@@ -508,14 +530,14 @@ if (app.Environment.IsProduction()
 }
 
 // Refuse to start in Production with the committed default super-admin
-// password — it must be overridden via SIMF_SuperAdmin__TempPassword
+// password — it must be overridden via SIMF_API_SuperAdmin__TempPassword
 // (docs/security/SIMF-Security-Assessment-2026-06-20.md).
 if (app.Environment.IsProduction()
     && superAdminOptions.TempPassword == "Aa@123456789")
 {
     throw new InvalidOperationException(
         "SuperAdmin:TempPassword is the committed default — configure a real "
-        + "SIMF_SuperAdmin__TempPassword before starting in Production.");
+        + "SIMF_API_SuperAdmin__TempPassword before starting in Production.");
 }
 
 // Held-item #2b — refuse to start in Production without a super-admin TOTP seed.
@@ -536,7 +558,7 @@ if (app.Environment.IsProduction()
 {
     throw new InvalidOperationException(
         "SuperAdmin:TotpSecret is not configured — the bootstrap super-admin "
-        + "would be single-factor. Set SIMF_SuperAdmin__TotpSecret to a base32 "
+        + "would be single-factor. Set SIMF_API_SuperAdmin__TotpSecret to a base32 "
         + "seed before starting in Production.");
 }
 
@@ -574,6 +596,13 @@ if (!app.Environment.IsEnvironment("Testing"))
     // 'Other' UserType until Identity catches up.
     await services.GetRequiredService<SimfAppDbContext>().Database.MigrateAsync();
     await services.GetRequiredService<SimfIdentityDbContext>().Database.MigrateAsync();
+    // Warm the open-edition year before anything can write an attendee. The
+    // stamp that puts the year on a new attendee record reads this cache, and a
+    // cold cache stamps nothing — which the gate then admits, so the omission
+    // would be silent. Reading it once here is what makes the stamp reliable
+    // from the first request rather than from the first gate scan.
+    await services.GetRequiredService<
+        SIMF.Application.Editions.Abstractions.IEventEditionService>().GetOpenYearAsync();
     await services.GetRequiredService<IdentitySeeder>().SeedAsync();
     // The built-in rating types (App + Session) must exist in every environment
     // so the app + the end-of-session worker resolve them by code. Idempotent.

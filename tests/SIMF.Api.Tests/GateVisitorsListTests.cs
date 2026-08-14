@@ -245,6 +245,10 @@ public sealed class GateVisitorsListTests : IClassFixture<SimfApiFactory>
             Name = displayName,
             NationalityId = 682,
             PlaceOfBirth = "Riyadh",
+            // The gate reads admission off the PROFILE; left at its PendingApproval
+            // default the scan is denied HolderNotApproved and never reaches the
+            // list this test is about.
+            AdmissionState = AccountState.Approved,
             CreatedAt = SimfClock.Now,
         });
         await appDb.SaveChangesAsync();

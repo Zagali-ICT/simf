@@ -553,12 +553,13 @@ public sealed class MyRequestsTests : IClassFixture<SimfApiFactory>
             CreatedAt = SimfClock.Now,
         };
         db.Sessions.Add(session);
+        var attendeeProfileId = await TestAttendeeProfiles.EnsureForAccountAsync(db, userId);
         db.SeatReservations.Add(new SeatReservation
         {
             Id = Guid.NewGuid(),
             SessionId = session.Id,
             Kind = SeatReservationKind.OpenSeating,
-            ReservedForUserId = userId,
+            ReservedForProfileId = attendeeProfileId,
             CreatedByUserId = userId,
             Status = status,
             CreatedAt = SimfClock.Now,

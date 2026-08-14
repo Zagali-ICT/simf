@@ -1,4 +1,4 @@
-# News — `/admin/news`
+﻿# News — `/admin/news`
 
 | | |
 |--|--|
@@ -129,7 +129,6 @@ default is `Top = 20` (the grid `GridQuery`); the service clamps an out-of-range
 | Excerpt (Arabic) | textarea (2 rows) | no | 500 | ≤500 chars | `Admin.News.Field.ExcerptAr` |
 | Body (English) | textarea (6 rows) | yes | 8000 | 1–8000 chars | `Admin.News.Field.BodyEn` |
 | Body (Arabic) | textarea (6 rows) | yes | 8000 | 1–8000 chars | `Admin.News.Field.BodyAr` |
-| Image path | text | no | 512 | ≤512 chars (free-text relative path) | `Admin.News.Field.ImageRelativePath` |
 | Publish date | `<input type="date">` | yes | — | parsed `AssumeUniversal`/`AdjustToUniversal`; defaults to today (`UtcNow`) | `Admin.News.Field.PublishedAt` |
 | Display order | `<input type="number">` | yes | min 0, max 99999 | integer ≥ 0 | `Admin.News.Field.DisplayOrder` |
 | Active | checkbox | Edit only | — | bool (Create always sets `IsActive = true`) | `Admin.News.Field.IsActive` |
@@ -142,11 +141,11 @@ required fields (title / body / category, EN+AR) are guarded client-side before 
 request (`Admin.News.RequiredFields`). Blank optional fields are sent as `null`
 (`NullIfBlank`).
 
-> **Two image paths coexist.** The legacy free-text **Image path**
-> (`ImageRelativePath`, ≤512 chars, on the `News` entity) is independent of the
-> D-357 **News image** media asset. Either, both, or neither may be set. The
-> Details/Delete view renders the media-asset thumbnail *and*, when
-> `ImageRelativePath` is non-blank, an `<img>` of that relative path.
+> **There is now one image, not two.** The free-text **Image path**
+> (`ImageRelativePath`) that used to sit beside the media asset is gone (D-889),
+> and with it the question of which one a reader should believe. The article's
+> typed `ImageFileId` points at the `StoredFile` the upload control creates, and
+> the Details/Delete view renders that one thumbnail.
 
 ### 4.6 News image (media-asset pipeline, D-357)
 - **Add/Edit:** in Edit mode (`IsEdit && Initial is not null`) the form renders
@@ -161,8 +160,7 @@ request (`Admin.News.RequiredFields`). Blank optional fields are sent as `null`
 
 ### 4.7 View / Delete form (`NewsViewDelete`)
 Media-asset thumbnail (§4.6) then a read-only `<dl>` of Title (En/Ar), Category
-(En/Ar), Excerpt (En/Ar — "—" when blank), Body (En/Ar), Image path (the
-relative-path string + an inline `<img>` preview when set, else "—"), Publish
+(En/Ar), Excerpt (En/Ar — "—" when blank), Body (En/Ar), Publish
 date, Display order and Active. In delete mode a red Delete button opens a
 `SimfConfirm` (Danger) whose message is `Admin.News.Delete.Message` formatted with
 the article's English title; only the confirm fires `DELETE`. The old inline list
@@ -207,8 +205,8 @@ columns — omitted from the export — are required on import because the creat
 contract demands them). Each row binds to `CreateNewsRequest`; a blank required
 cell raises a per-row `DataValidationException` (bilingual), not a batch abort. A
 **duplicate English title** is rejected per-row by the service (409
-`NEWS_TITLE_DUPLICATE`). Optional cells (`Excerpt`, `ExcerptArabic`,
-`ImageRelativePath`) are sent as `null` when blank; `PublishedAt` defaults to
+`NEWS_TITLE_DUPLICATE`). Optional cells (`Excerpt`, `ExcerptArabic`) are sent as
+`null` when blank; `PublishedAt` defaults to
 `UtcNow` when unparseable; `DisplayOrder` defaults to `0`. The result
 `AdminGridImportResult { Created, Updated, Skipped, Errors[] }` drives the modal,
 and the success toast is the shared `Grid.Import.Done` key.
@@ -224,7 +222,7 @@ and the success toast is the shared `Grid.Import.Done` key.
   (FluentValidation, lengths mirror `NewsConfiguration.HasMaxLength`) and again in
   `AdminNewsService.Validate` (`RequireText` / `OptionalText`) so the bounds hold even
   for non-HTTP callers. Trims fields; Title 1–200; Category 1–100; Body 1–8000;
-  Excerpt ≤500; ImageRelativePath ≤512; DisplayOrder ≥ 0. Length / required / order
+  Excerpt ≤500; DisplayOrder ≥ 0. Length / required / order
   failures throw `ApiException(ErrorCodes.NewsInvalid, 400, …)` (`"NEWS_INVALID"`).
 - **Duplicate guard:** a news article with the same **English title** (case-insensitive
   on update) → `ApiException(ErrorCodes.NewsTitleDuplicate, 409, …)`
@@ -257,9 +255,9 @@ and the success toast is the shared `Grid.Import.Done` key.
   Active checkbox in Edit and saving (`IsActive = true`).
 - **Detail re-fetch before every form** so the body / excerpt / image are never lost
   when editing from the summary-only grid.
-- **Two independent image paths.** The legacy `ImageRelativePath` free-text field
-  and the D-357 `NewsImage` media asset are separate (§4.5) — Excel import/export
-  only touches `ImageRelativePath`; the media asset is managed via the upload control.
+- **One image, managed in one place.** The `ImageRelativePath` free-text field is
+  gone (D-889); the `NewsImage` media asset is the article's only image, and the
+  workbook carries no image column at all.
 - **Import never sets the media asset** (it binds only the `CreateNewsRequest`
   columns); attach the managed image afterwards via Edit.
 - **Import is insert-only** — there is no upsert, so re-importing a workbook whose
@@ -337,6 +335,7 @@ toasts are bilingual (`Message` / `MessageArabic`), surfaced via
 
 | Date | Decision | Change |
 |------|----------|--------|
+| 2026-08-14 | D-889 | **The free-text Image path is gone; the article's image is a typed key.** `News.ImageRelativePath` becomes `Guid? ImageFileId` with a real foreign key into `StoredFiles`. The Add/Edit form loses the text field and gains the save-first hint on create; the workbook loses its image column; `AssetService` now points `ImageFileId` at the article's active file on upload, link, deactivate and restore. Ends the "two image paths coexist" split this doc used to describe. |
 | 2026-06-11 | D-357 | News **image** wired to the unified media-asset pipeline: `<SimfImageUpload Category="NewsImage" OwnerId="@Initial.Id" Alt="@_model.Title" />` on the Add/Edit form (Edit only) + a `<SimfImageThumb Src="/account/api/admin/assets/NewsImage/{Initial.Id}/image" …>` on Details/Delete. Coexists with the existing free-text `ImageRelativePath` field. E2E catalogue covers it as E2E-NWS-022. |
 | 2026-06-10 | D-356 / D-353 | Reference doc created. Documents the D-353 `CrudShell` Add/Edit + View/Delete forms with the Page ↔ Popup `CrudPresentationToggle` (PageKey `news`) and the `SimfConfirm`-gated delete (replacing the old inline `SimfModal` + native `confirm()`), plus the D-356 Excel export (`POST /export`) and insert-only import (`POST /import`) via `CrudGridExcel`. |
 | 2026-06-02 (orig) | D-199 | News admin CRUD shipped (Mockup screen 29 / 29b). |

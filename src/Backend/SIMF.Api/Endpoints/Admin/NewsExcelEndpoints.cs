@@ -134,7 +134,6 @@ public sealed class ImportNewsEndpoint(IAdminNewsService service, IGridExcelImpo
             BodyArabic = bodyArabic,
             Category = category,
             CategoryArabic = categoryArabic,
-            ImageRelativePath = NullIfBlank(row.Cells.GetValueOrDefault("ImageRelativePath", string.Empty)),
             PublishedAt = publishedAt,
             DisplayOrder = int.TryParse(
                 row.Cells.GetValueOrDefault("DisplayOrder", string.Empty), out var order) ? order : 0,

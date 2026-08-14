@@ -14,6 +14,7 @@ import 'package:simf_app/features/account/biometric_step_up_screen.dart';
 import 'package:simf_app/features/account/data/profile_models.dart';
 import 'package:simf_app/features/account/email_otp_verify_screen.dart';
 import 'package:simf_app/features/account/forgot_password_screen.dart';
+import 'package:simf_app/features/account/my_devices_screen.dart';
 import 'package:simf_app/features/account/reset_password_screen.dart';
 import 'package:simf_app/features/account/sign_in_screen.dart';
 import 'package:simf_app/features/account/sign_up_email_verify_screen.dart';
@@ -604,6 +605,16 @@ const List<_Route> _auxRoutes = <_Route>[
       path: '/auth/biometric-step-up',
       labelAr: 'تأكيد بصمة الوجه',
       labelEn: 'Confirm Face ID',),
+  // #7b — the owner's enrolled-device list, added on main. Wrapped to match
+  // this branch's 80-column rule rather than carried over as the single long
+  // line it arrived as; the whole point of the branch is that the analyzer
+  // reaches zero.
+  _Route(
+      number: 0,
+      name: RouteNames.myDevices,
+      path: '/account/my-devices',
+      labelAr: 'أجهزتي',
+      labelEn: 'My devices',),
 ];
 
 /// Screen numbers that need a signed-in user of **any** role (including a
@@ -997,6 +1008,9 @@ Widget _auxScreenFor(BuildContext context, GoRouterState state, _Route r) {
   }
   if (r.name == RouteNames.biometricStepUp) {
     return const BiometricStepUpScreen();
+  }
+  if (r.name == RouteNames.myDevices) {
+    return const MyDevicesScreen();
   }
   // Part B (D-430) — badge-QR sign-in / activation.
   if (r.name == RouteNames.badgeSignIn) {

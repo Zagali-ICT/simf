@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using SIMF.Application.IdentityAccess;
 using SIMF.Common;
 using SIMF.Common.Enums;
@@ -29,6 +29,12 @@ internal sealed class UserProfileRepository(
     public Task<UserProfile?> FindAsync(
         Guid userId, CancellationToken cancellationToken = default) =>
         appDbContext.UserProfiles.SingleOrDefaultAsync(p => p.UserId == userId, cancellationToken);
+
+    public Task<UserProfile?> GetByProfileIdWithInterestsAsync(
+        Guid userProfileId, CancellationToken cancellationToken = default) =>
+        appDbContext.UserProfiles
+            .Include(p => p.Interests)
+            .SingleOrDefaultAsync(p => p.Id == userProfileId, cancellationToken);
 
     public void Add(UserProfile profile) => appDbContext.UserProfiles.Add(profile);
 
@@ -91,28 +97,6 @@ internal sealed class UserProfileRepository(
         return new RejectionText(row.RejectionReason, row.RejectionReasonArabic);
     }
 
-    public async Task<string?> GetIdImagePathAsync(
-        Guid userId, CancellationToken cancellationToken = default)
-    {
-        var path = await appDbContext.UserProfiles
-            .AsNoTracking()
-            .Where(p => p.UserId == userId)
-            .Select(p => p.IdImageRelativePath)
-            .SingleOrDefaultAsync(cancellationToken);
-        return string.IsNullOrEmpty(path) ? null : path;
-    }
-
-    public async Task<string?> GetVipPhotoPathAsync(
-        Guid userId, CancellationToken cancellationToken = default)
-    {
-        var path = await appDbContext.UserProfiles
-            .AsNoTracking()
-            .Where(p => p.UserId == userId)
-            .Select(p => p.VipPhotoRelativePath)
-            .SingleOrDefaultAsync(cancellationToken);
-        return string.IsNullOrEmpty(path) ? null : path;
-    }
-
     public async Task<(string StorageKey, string? ContentType, bool IsEncrypted)?> GetOwnerScopedFileAsync(
         FileService service, Guid ownerUserId, CancellationToken cancellationToken = default)
     {
@@ -134,7 +118,7 @@ internal sealed class UserProfileRepository(
             .Where(p => p.UserId == userId)
             .Select(p => new ProfileCompletenessFacts(
                 p.Name, p.NameArabic, p.Gender,
-                p.IdImageRelativePath, p.Interests.Any(),
+                p.IdImageFileId, p.Interests.Any(),
                 // BUG-018 (18-3) — audience side = no profile type yet, or one
                 // flagged IsForVisitor. Partner/operational types are exempt from
                 // the visitor evidence rules.

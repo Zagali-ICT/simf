@@ -157,9 +157,19 @@ internal sealed class SessionRatingPromptWorker(
             // attended. It also covers attendees who never scanned out — the
             // HallAttendanceCloseoutWorker auto-closes their row without dispatching
             // the departure prompt, but their check-in row already exists here.
+            //
+            // Attendance is keyed by the attendee PROFILE; the prompt is delivered
+            // to the ACCOUNT behind it, so join through UserProfile (same database).
+            // A walk-in with no account attended and is simply not prompted — the
+            // rating form is in the app they do not have.
             var attendeeIds = await db.HallAttendances
                 .Where(a => a.SessionId == session.Id)
-                .Select(a => a.UserId)
+                .Join(db.UserProfiles,
+                    a => a.UserProfileId,
+                    p => p.Id,
+                    (a, p) => p.UserId)
+                .Where(userId => userId != null)
+                .Select(userId => userId!.Value)
                 .Distinct()
                 .ToListAsync(cancellationToken);
 

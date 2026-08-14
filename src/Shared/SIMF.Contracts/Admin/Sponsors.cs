@@ -69,7 +69,6 @@ public sealed class AdminCreateSponsorRequest
     public string NameEn { get; set; } = string.Empty;
     public string NameAr { get; set; } = string.Empty;
     public int Tier { get; set; }
-    public string? LogoRelativePath { get; set; }
     public string? Url { get; set; }
     public int DisplayOrder { get; set; }
 
@@ -107,7 +106,6 @@ public class AdminUpdateSponsorRequest
     public string NameEn { get; set; } = string.Empty;
     public string NameAr { get; set; } = string.Empty;
     public int Tier { get; set; }
-    public string? LogoRelativePath { get; set; }
     public string? Url { get; set; }
     public int DisplayOrder { get; set; }
 

@@ -932,4 +932,87 @@ review surface shows what the user picked.
 
 ---
 
+## Amendment D — The attendee-owned admission programme (D-877..D-887, 2026-08-14)
+
+The attendee record became the primary one and the app account became optional,
+which changed four API surfaces and added three endpoints. The envelope, the
+error model and the paging shape are unchanged.
+
+### D.1 Badge-to-account creation — `POST /app/auth/badge-activation/*`
+
+`resolve-badge`, `badge-activation/start` and `badge-activation/complete` now
+handle a badge whose holder has **no account at all**, which after D-877 is the
+ordinary state: a badge is printed and handed out long before anyone decides
+they also want the app.
+
+- `resolve-badge` answers with the SAME shape it already used for a placeholder
+  walk-in — `found: true, hasPassword: false, needsEmail: true` — so nothing new
+  is revealed to an anonymous caller.
+- `start` requires an email, pins it server-side, and emails a code.
+- `complete` verifies the code, then CREATES the account and links it to the
+  attendee. The request carries the code and **no email**: the address comes off
+  the pinned code row, or whoever held a code could bind an address the code was
+  never sent to.
+
+A badge with no bulk order behind it is refused with the same `BADGE_NOT_FOUND`
+an unknown QR returns, unless `WalkInMode.BadgeActivationAllowedForWalkIns` is
+armed. A walk-in badge is in open circulation; a bulk-order badge was handed to
+a named person.
+
+**Anonymous surface unchanged** — these three were already anonymous, and no
+fourth was added. `BusinessFlow13PermissionMatrixTests` pins the set.
+
+### D.2 Bulk orders — `POST /admin/visitors/badge-batches/top-up`
+
+New. Adds more badges to an existing order, minting them immediately so the
+stored total never promises badges that do not exist. Gated on
+`Visitors.BulkGenerate` rather than `Visitors.ManageBatches`: it MINTS badges,
+which is what that permission controls, and re-emailing or revoking an order is
+a different authority from creating more of it.
+
+`409` for a revoked order and for the seeded direct-registration order, which is
+where people who registered themselves are filed rather than something anyone
+orders badges against.
+
+`AdminBulkGenerateBadgesRequest` gains a required bilingual `name` /
+`nameArabic`. `AdminBadgeBatchSummary` gains them appended, so the shipped
+positional shape is undisturbed.
+
+### D.3 Event editions — `GET /admin/editions/current`, `POST /admin/editions/open`
+
+New. `current` reports the open year (`Editions.View`). `open` closes the
+current year into history and opens the next (`Editions.Open`), returning the
+year and **how many badges it cleared for re-issue**.
+
+Opening a year clears every attendee's QR. That is not a side effect to be
+surprised by: refusing last year's badge at a gate is only correct if the holder
+has a route to this year's, so the expiry and the re-issue are one operation.
+
+`409` for re-opening the open year or any earlier one; `400` for a year outside
+2000–2999, which is the range the two-byte badge field can carry.
+
+### D.4 Offline gate roster — `GET /app/gates/offline-roster`
+
+New. The confirmed, still-held seat reservations against sessions in the halls
+the calling operator's own gates serve, so a device with no network can decide
+entry instead of abstaining. `Gates.Operate` + an approved account.
+
+`?since=` makes it a delta; the response's `issuedAt` is the next cursor and
+`validUntil` is when the device must stop trusting it.
+
+Scoped to the operator's OWN gates and carrying the minimum — no identity
+document, mobile, email or organisation. Every verdict a device reaches with it
+stays **advisory**: the scan is queued and re-decided server-side.
+
+### D.5 The badge payload
+
+The encrypted event badge now carries a 16-byte attendee id, a 2-byte edition
+year and a 2-byte profile-type code as **raw bytes**, encoding to exactly 78
+characters. It is not an API shape, but it is a wire contract between the
+server, the scanner and the desk tool, and all three move together — a codec
+change only one of them follows leaves a shipped scanner calling genuine badges
+forged, offline, where no server can overrule it.
+
+---
+
 End of document.

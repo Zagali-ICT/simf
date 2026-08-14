@@ -360,12 +360,23 @@ assembly, unless the low-level design argues otherwise.
 
 ## 7. Data architecture
 
-### 7.1 Database
+### 7.1 Databases
 
-One SQL Server 2022 database. EF Core, code-first migrations. Each bounded
-context owns its own tables and does not write to another context's tables; a
-context that needs another's data reads it through that context's application
-service, not with a cross-context join.
+**Two** physically separated SQL Server 2022 databases: `SIMF_Identity` (users,
+roles, permissions, second factors, tokens) and `SIMF_App` (everything else).
+EF Core, code-first migrations, one context per database. The two connection
+strings may address the same instance or separate servers.
+
+The separation is a hard rule, not a deployment preference. There is no foreign
+key, no join and no transaction spanning the two; a reference across them is a
+bare `Guid` resolved on read with a second query, and neither side keeps a copy
+of the other's data. The only exceptions are the immutable audit snapshots,
+which capture an actor's name and email at write time so the trail stays
+self-contained.
+
+Within each database, each bounded context owns its own tables and does not
+write to another context's tables; a context that needs another's data reads it
+through that context's application service, not with a cross-context join.
 
 ### 7.2 Conventions
 
@@ -379,6 +390,37 @@ service, not with a cross-context join.
 - Dynamic configuration — categories, labels, colours, content blocks — is
   ordinary data in ordinary tables, seeded once and then edited from the Control
   Panel.
+
+### 7.3 The attendee and the account are separate things
+
+The **attendee record** is the profile, in `SIMF_App`. The **account** is the
+Identity user, in `SIMF_Identity`. A person who attends the forum has a profile;
+an account is optional and grants exactly one thing — mobile-app sign-in.
+
+This matters because most attendees never install the app. Someone registered at
+a walk-in desk, or handed a badge from a pre-generated bulk order, needs to pass
+a gate, hold a seat and appear in a report, and none of that requires a
+credential. Requiring one meant minting placeholder accounts with synthesised
+addresses and no password, which put rows in the identity store that could never
+sign in and did not describe anybody.
+
+Two consequences follow, and both are load-bearing:
+
+- **Admission is a property of the profile, not of the account.** Whether a
+  person may enter is decided by the profile's own state. The account's state
+  governs sign-in and nothing else. The two are not mirrored: with no
+  transaction spanning the databases, a second writable copy would drift, and
+  one of the two would then be deciding admission while the other looked
+  authoritative.
+- **An account is linked to an existing profile, never the reverse.** When an
+  attendee wants the app, an account is created and attached to the profile they
+  already have. A profile is not created for them a second time, and an account
+  may be attached to at most one profile.
+
+Every attendee also belongs to a **bulk order** — the named group a batch of
+badges was requested under, such as a ministry's delegation. Someone who
+registers themselves belongs to a standing default order rather than to none, so
+"which order did this attendee arrive under" always has an answer.
 
 The full logical model, the entity definitions and the ERD are in SIMF-DAT-001.
 That document can only be completed for the gated contexts once D1–D6 close;

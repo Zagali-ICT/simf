@@ -233,9 +233,12 @@ internal sealed class VisitorShareService(
             return result;
         }
 
+        // Every id here came from a share token or a saved-contact row, so it is
+        // always an account id; a profile carrying no account can never be one of
+        // them, and matching it would need a user id it does not have.
         var profiles = await appDbContext.UserProfiles
             .AsNoTracking()
-            .Where(p => userIds.Contains(p.UserId))
+            .Where(p => p.UserId != null && userIds.Contains(p.UserId!.Value))
             .Select(p => new
             {
                 p.UserId,

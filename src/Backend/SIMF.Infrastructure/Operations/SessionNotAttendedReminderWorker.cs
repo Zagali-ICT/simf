@@ -155,14 +155,24 @@ internal sealed class SessionNotAttendedReminderWorker(
             // the session — an open or a closed one; someone who arrived and left
             // did attend). Both tables are on SIMF_App, so this is one anti-join,
             // not a cross-database read.
+            //
+            // The final join to UserProfile turns the attendee into the ACCOUNT the
+            // reminder is delivered to. An attendee with no account is not nudged:
+            // they have no device to nudge, and they walked in rather than booking.
             var absenteeIds = await db.SeatReservations
                 .AsNoTracking()
                 .Where(r => r.SessionId == session.Id
                     && r.ReleasedAt == null
-                    && r.ReservedForUserId != null
+                    && r.ReservedForProfileId != null
                     && !db.HallAttendances.Any(a =>
-                        a.SessionId == session.Id && a.UserId == r.ReservedForUserId))
-                .Select(r => r.ReservedForUserId!.Value)
+                        a.SessionId == session.Id
+                        && a.UserProfileId == r.ReservedForProfileId))
+                .Join(db.UserProfiles.AsNoTracking(),
+                    r => r.ReservedForProfileId!.Value,
+                    p => p.Id,
+                    (r, p) => p.UserId)
+                .Where(userId => userId != null)
+                .Select(userId => userId!.Value)
                 .Distinct()
                 .ToListAsync(cancellationToken);
 

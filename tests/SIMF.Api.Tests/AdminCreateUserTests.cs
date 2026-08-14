@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
@@ -166,7 +166,7 @@ public sealed class AdminCreateUserTests : IClassFixture<SimfApiFactory>
     {
         // D-357 — the Admins list renders each admin's photo thumbnail
         // (SimfIdentityCell), so the list row (AdminUserSummary) must carry
-        // HasAvatar from the central SimfUser.AvatarRelativePath sentinel (D-568),
+        // HasAvatar from the central SimfUser.AvatarFileId sentinel (D-568),
         // exactly as the visitors / others lists do — avatars for every user type
         // live in the one central file store.
         var adminToken = await CreateAdministratorAndSignInAsync();
@@ -188,7 +188,7 @@ public sealed class AdminCreateUserTests : IClassFixture<SimfApiFactory>
         {
             var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
             var user = await db.Users.SingleAsync(u => u.Email == email);
-            user.AvatarRelativePath = "storedfile:" + Guid.NewGuid().ToString("N");
+            user.AvatarFileId = Guid.NewGuid();
             await db.SaveChangesAsync();
         }
 

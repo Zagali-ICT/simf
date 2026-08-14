@@ -6,7 +6,7 @@
 | **Route** | `/admin/admins` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (canonical SIMF browser smoke). Convertible to Playwright later — keep scenario steps tool-agnostic. |
-| **Auth setup** | `superadmin@simrsnf.com` / `[REDACTED - supply via SIMF_SuperAdmin__TempPassword]` + TOTP via the `Get-Totp` helper |
+| **Auth setup** | `superadmin@simrsnf.com` / `[REDACTED - supply via SIMF_API_SuperAdmin__TempPassword]` + TOTP via the `Get-Totp` helper |
 | **Page permission** | `PermissionCatalog.Admins.View` (`@attribute [RequirePermission(PermissionCatalog.Admins.View)]`) |
 | **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
 
@@ -487,7 +487,7 @@ Scenario: a missing StoredFile falls back to the placeholder, not a broken glyph
 - Network: one `/account/api/admin/admins/{A}/avatar` (200) for A; none for B
 - Backend: `tests/SIMF.Api.Tests/AdminCreateUserTests.cs` →
   `Admins_list_row_reports_HasAvatar_once_a_photo_is_set` asserts the list row's
-  `HasAvatar` flips with the `AvatarRelativePath` sentinel (the same projection
+  `HasAvatar` flips with the `AvatarFileId` sentinel (the same projection
   backs the visitors/others lists)
 
 ---

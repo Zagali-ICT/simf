@@ -23,16 +23,14 @@
         <dd>@Initial.Body</dd>
         <dt>@L["Admin.Banners.Field.BodyAr"]</dt>
         <dd>@Initial.BodyArabic</dd>
-        <dt>@L["Admin.Banners.Field.ImageUrl"]</dt>
+        @* The image is served by row id from the one file store, so the detail
+           view resolves it the same way every other asset preview does rather
+           than rendering a pasted string. *@
+        <dt>@L["Admin.Asset.Heading"]</dt>
         <dd>
-            @if (string.IsNullOrWhiteSpace(Initial.ImageUrl))
-            {
-                <span>—</span>
-            }
-            else
-            {
-                <img class="simf-dl__image" src="@Initial.ImageUrl" alt="@Initial.Title" />
-            }
+            <SimfImageThumb Class="simf-img-thumb--lg"
+                            Src="@CpAssetUrls.AdminImage(nameof(AssetCategory.Banner), Initial.Id)"
+                            Alt="@Initial.Title" />
         </dd>
         <dt>@L["Admin.Banners.Field.LinkUrl"]</dt>
         <dd>@(string.IsNullOrWhiteSpace(Initial.LinkUrl) ? "—" : Initial.LinkUrl)</dd>

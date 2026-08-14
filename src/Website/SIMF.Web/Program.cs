@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.DataProtection;
 using Serilog;
 using SIMF.ApiClient;
+using SIMF.Common;
 using SIMF.Common.Options;
 using SIMF.Web.Components;
 using SIMF.Web.Content;
@@ -8,11 +9,22 @@ using SIMF.Web.Endpoints;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Production secrets/config arrive as SIMF_-prefixed Machine-scope environment
-// variables (deploy/set-env.template.ps1). This source strips the prefix, so
-// SIMF_Api__BaseUrl binds to Api:BaseUrl. ASPNETCORE_ENVIRONMENT stays
-// un-prefixed — the host reads it before configuration sources load.
-builder.Configuration.AddEnvironmentVariables("SIMF_");
+// Production secrets/config arrive as SIMF_WEB_-prefixed Machine-scope
+// environment variables (deploy/set-env-web.template.ps1). This source strips
+// the prefix, so SIMF_WEB_Api__BaseUrl binds to Api:BaseUrl.
+// ASPNETCORE_ENVIRONMENT stays un-prefixed — the host reads it before
+// configuration sources load.
+//
+// The prefix is PER APPLICATION so that a server running more than one SIMF app
+// can give each its own value for the same key. Sharing one namespace meant this
+// host and the Control Panel could not, for instance, log to different
+// directories on the same box.
+builder.Configuration.AddEnvironmentVariables("SIMF_WEB_");
+
+// A server provisioned before the per-application prefixes still carries the old
+// SIMF_ variables, which this build does not read. Say so, rather than starting
+// and failing the key-ring gate with the value sitting there under its old name.
+SimfLegacyEnvironmentGuard.Verify("SIMF_WEB_", builder.Environment.IsProduction());
 
 // Per-project log files under {Storage:LogDirectory}/SIMF.Web/log-{Date}.log.
 builder.Host.UseSerilog((context, configuration) =>

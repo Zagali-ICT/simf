@@ -18,6 +18,11 @@ class StorageKeys {
   static const String deviceKeyId = 'simf.auth.device_key_id';
   static const String deviceKeyPrivate = 'simf.auth.device_key_private';
 
+  /// A stable per-install identifier, minted once and reused, so two enrolments
+  /// from the same install carry the same suffix. Only ever used to build the
+  /// device label; never sent anywhere on its own.
+  static const String deviceFingerprint = 'simf.auth.device_fingerprint';
+
   // Preferences — non-sensitive app configuration.
   static const String preferredLanguage = 'simf.prefs.preferred_language';
   static const String preferredThemeMode = 'simf.prefs.preferred_theme_mode';

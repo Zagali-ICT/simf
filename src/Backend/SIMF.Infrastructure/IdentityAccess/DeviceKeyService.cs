@@ -11,11 +11,14 @@ using SIMF.Application.Auditing;
 using SIMF.Application.Email;
 using SIMF.Application.IdentityAccess;
 using SIMF.Application.IdentityAccess.Abstractions;
+using SIMF.Application.Security;
+using SIMF.Application.Notifications;
 using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Common.Options;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Notifications;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.IdentityAccess;
@@ -38,6 +41,7 @@ internal sealed class DeviceKeyService(
     IEmailQueue emailQueue,
     IEmailTemplateResolver emailTemplates,
     IOptions<DeviceKeyOptions> deviceKeyOptions,
+    INotificationDispatcher notifications,
     IAuditLog auditLog,
     TimeProvider timeProvider,
     ILogger<DeviceKeyService> logger) : IDeviceKeyService
@@ -81,6 +85,21 @@ internal sealed class DeviceKeyService(
                 "يجب أن يتراوح طول اسم الجهاز بين 1 و 64 حرفاً.");
         }
 
+        // The label is interpolated into an audit detail shaped
+        // "key=value; key=value", so a label carrying the separators or a newline
+        // could forge fields in the record that is the only evidence of who
+        // enrolled which credential. Rejected at the boundary rather than only
+        // stripped on the client, because any token holder can post any string
+        // straight here. AuditableLabel below re-encodes at the sink as well, so
+        // a future caller cannot reopen this by another route.
+        if (label.Any(IsAuditUnsafe))
+        {
+            throw new ApiException(
+                ErrorCodes.DeviceKeyInvalid, 400,
+                "Device label may not contain ';', '=', or control characters.",
+                "لا يمكن أن يحتوي اسم الجهاز على ';' أو '=' أو أحرف تحكم.");
+        }
+
         // Eagerly validate the public key is a parseable SubjectPublicKeyInfo
         // for the chosen curve — failure here is a 400, not a 500 later.
         try
@@ -97,6 +116,35 @@ internal sealed class DeviceKeyService(
                 "تعذّر قراءة المفتاح العام كـ ECDSA P-256.");
         }
 
+        // An administrator must not hold a biometric credential. The device-key
+        // mint issues the caller's full role and permission set with
+        // secondFactorCompleted null, so an enrolled admin would own an
+        // admin-permissioned bearer obtainable with no second factor at all,
+        // which works against the enrolment-first rule that the Control Panel
+        // must never mint a session on one factor. UserType is the enum whose
+        // documented job is deciding the sign-in surface, so it is the check.
+        var caller = await accounts.FindByIdAsync(callerUserId, cancellationToken);
+        if (caller is null)
+        {
+            throw new ApiException(
+                ErrorCodes.DeviceKeyOwnerUnavailable, 401,
+                "Account unavailable.",
+                "الحساب غير متاح.");
+        }
+        if (caller.UserType == UserType.Admin)
+        {
+            await auditLog.WriteFailureAsync(
+                AuditEvents.DeviceKeyRegistered,
+                callerUserId,
+                errorCode: ErrorCodes.Forbidden,
+                detail: "reason=admin_account",
+                cancellationToken: cancellationToken);
+            throw new ApiException(
+                ErrorCodes.Forbidden, 403,
+                "Administrator accounts cannot enable biometric sign-in.",
+                "لا يمكن لحسابات المسؤولين تفعيل تسجيل الدخول ببصمة الوجه.");
+        }
+
         var now = timeProvider.SimfNow();
 
         // Emailed-OTP step-up: confirm the user actually intends to enable
@@ -109,6 +157,8 @@ internal sealed class DeviceKeyService(
         // when the gate is configured off (registration crypto tests).
         var stepUpCode = await ValidateEnrolStepUpAsync(
             callerUserId, request.StepUpCode, now, cancellationToken);
+
+        await EnforceActiveKeyCapAsync(callerUserId, now, cancellationToken);
 
         var deviceKey = new DeviceKey
         {
@@ -134,12 +184,30 @@ internal sealed class DeviceKeyService(
             Outcome = AuditOutcome.Success,
             ActorUserId = callerUserId,
             SubjectUserId = callerUserId,
-            Detail = $"deviceKeyId={deviceKey.Id}; label={label}",
+            Detail = $"deviceKeyId={deviceKey.Id}; label={AuditableLabel(label)}",
         }, cancellationToken);
 
         logger.LogInformation(
             "Device key {DeviceKeyId} registered for user {UserId}",
             deviceKey.Id, callerUserId);
+
+        // Tell the owner. An enrolled key is a credential that outlives a session
+        // revoke, so somebody who never asked for one has to be able to see it
+        // appear. TryDispatchAsync swallows its own failures, so a notification
+        // outage can never undo an enrolment that is already committed.
+        await notifications.TryDispatchAsync(new NotificationRequest
+        {
+            UserId = callerUserId,
+            Kind = NotificationKind.DeviceKeyEnrolled,
+            Title = "Biometric sign-in was enabled",
+            TitleArabic = "تم تفعيل تسجيل الدخول ببصمة الوجه",
+            Body = $"Biometric sign-in was enabled on \"{AuditableLabel(label)}\". "
+                + "If you did not do this, turn it off in the app and contact the SIMF security team.",
+            BodyArabic = $"تم تفعيل تسجيل الدخول ببصمة الوجه على \"{AuditableLabel(label)}\". "
+                + "إذا لم تكن أنت من قام بذلك، فقم بإيقافه من التطبيق وتواصل مع فريق الأمن في SIMF.",
+            Severity = NotificationSeverity.Warning,
+            SendEmail = true,
+        }, logger, cancellationToken);
 
         return ToEntry(deviceKey);
     }
@@ -233,19 +301,20 @@ internal sealed class DeviceKeyService(
         Guid deviceKeyId,
         CancellationToken cancellationToken = default)
     {
+        // Unknown and revoked answer identically, and at 401 rather than 404.
+        // This endpoint is anonymous, so distinguishing them made it an oracle:
+        // a caller could tell an id that never existed from one that did and was
+        // revoked. The sign-in endpoint already collapses all of its failures for
+        // the same reason. Nothing is lost on the client, which reads neither
+        // code and maps both through one generic failure path.
         var deviceKey = await identityDbContext.DeviceKeys
-            .SingleOrDefaultAsync(k => k.Id == deviceKeyId, cancellationToken)
-            ?? throw new ApiException(
-                ErrorCodes.DeviceKeyNotFound, 404,
-                "Device key not found.",
-                "لم يتم العثور على مفتاح الجهاز.");
-
-        if (deviceKey.RevokedAt is not null)
+            .SingleOrDefaultAsync(k => k.Id == deviceKeyId, cancellationToken);
+        if (deviceKey is null || deviceKey.RevokedAt is not null)
         {
             throw new ApiException(
-                ErrorCodes.DeviceKeyRevoked, 401,
-                "Device key is revoked.",
-                "تم إلغاء مفتاح الجهاز.");
+                ErrorCodes.DeviceKeyNotFound, 401,
+                "No challenge is available for this device key.",
+                "لا يوجد تحدٍّ متاح لمفتاح الجهاز هذا.");
         }
 
         // 32-byte cryptographic random — ample for a single-use nonce.
@@ -332,6 +401,8 @@ internal sealed class DeviceKeyService(
             return null;
         }
 
+        await EnsureAccountMayMintAsync(user, request.DeviceKeyId, cancellationToken);
+
         return await MintTokensAsync(user, cancellationToken);
     }
 
@@ -376,7 +447,168 @@ internal sealed class DeviceKeyService(
         }, cancellationToken);
     }
 
+    public async Task<int> RevokeAllForUserAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        // One set-based UPDATE rather than load-then-save: this runs inside the
+        // password-change transaction, where the fewer round trips the better,
+        // and nothing here needs the rows afterwards beyond the count. Clearing
+        // the challenge columns matters as much as stamping RevokedAt, because a
+        // challenge already in flight would otherwise stay signable.
+        var revokedAt = timeProvider.SimfNow();
+        var revoked = await identityDbContext.DeviceKeys
+            .Where(k => k.UserId == userId && k.RevokedAt == null)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(k => k.RevokedAt, (DateTime?)revokedAt)
+                    .SetProperty(k => k.CurrentChallenge, (string?)null)
+                    .SetProperty(k => k.ChallengeExpiresAt, (DateTime?)null),
+                cancellationToken);
+
+        if (revoked == 0)
+        {
+            return 0;
+        }
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.DeviceKeyRevoked,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = userId,
+            SubjectUserId = userId,
+            Detail = $"bulk=password-change; revoked={revoked}",
+        }, cancellationToken);
+
+        logger.LogInformation(
+            "Revoked {Count} device key(s) for user {UserId} after a password change",
+            revoked, userId);
+
+        return revoked;
+    }
+
     // -- helpers --------------------------------------------------------------
+
+    /// <summary>Characters that would forge a field in the "key=value; key=value"
+    /// audit detail, or break the line it is written on.</summary>
+    private static bool IsAuditUnsafe(char c) =>
+        c is ';' or '=' || char.IsControl(c);
+
+    /// <summary>Belt to the boundary check's braces. <c>RegisterAsync</c> already
+    /// rejects these characters, so this only ever matters if a future caller
+    /// reaches the audit sink by another route.</summary>
+    private static string AuditableLabel(string label) =>
+        new(label.Select(c => IsAuditUnsafe(c) ? '_' : c).ToArray());
+
+    /// <summary>
+    /// Keeps the number of live device keys per account bounded. Each key is a
+    /// permanent alternative credential, so an unbounded set is an unbounded
+    /// persistence surface, and until the "my devices" screen exists nobody can
+    /// see one accumulating. On overflow the OLDEST keys are revoked, because the
+    /// one the user is enrolling right now is the one they are holding.
+    /// </summary>
+    private async Task EnforceActiveKeyCapAsync(
+        Guid userId, DateTime now, CancellationToken cancellationToken)
+    {
+        var cap = deviceKeyOptions.Value.MaxActiveKeysPerUser;
+        if (cap <= 0)
+        {
+            return;
+        }
+
+        // The new key is about to be added, so the room needed is cap - 1.
+        var active = await identityDbContext.DeviceKeys
+            .Where(k => k.UserId == userId && k.RevokedAt == null)
+            .OrderBy(k => k.CreatedAt)
+            .ToListAsync(cancellationToken);
+        var surplus = active.Count - (cap - 1);
+        if (surplus <= 0)
+        {
+            return;
+        }
+
+        foreach (var stale in active.Take(surplus))
+        {
+            stale.RevokedAt = now;
+            stale.CurrentChallenge = null;
+            stale.ChallengeExpiresAt = null;
+        }
+        await identityDbContext.SaveChangesAsync(cancellationToken);
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.DeviceKeyRevoked,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = userId,
+            SubjectUserId = userId,
+            Detail = $"bulk=cap-exceeded; cap={cap}; revoked={surplus}",
+        }, cancellationToken);
+
+        logger.LogInformation(
+            "Revoked {Count} oldest device key(s) for user {UserId}: the active cap is {Cap}",
+            surplus, userId, cap);
+    }
+
+    /// <summary>
+    /// The account-lifecycle gates the password path enforces, applied to this
+    /// entry point too. Before this, a device key was a way into the same account
+    /// that honoured fewer rules than the password: a user whose password aged
+    /// past <c>IdentityLifecycle:PasswordMaxAgeDays</c>, or whom an administrator
+    /// had forced to change, kept signing in with Face ID indefinitely, which made
+    /// the NCA maximum-password-age control unenforceable for anyone who had
+    /// enabled biometrics. <c>SignInService</c> carries the same three gates at
+    /// every other token-mint path; this one had been missed.
+    ///
+    /// <para><b>Why these throw instead of returning null.</b> The opaque 401 the
+    /// caller maps a null onto exists so a failed SIGNATURE leaks nothing about
+    /// whether the key or the account exists. By the time execution reaches here
+    /// the signature has already verified, so there is no account-existence
+    /// oracle left to protect, and a legitimate user needs to be told that it is
+    /// their password, not their face, that is the problem.</para>
+    ///
+    /// <para><b>Why PendingApproval and Rejected are deliberately absent.</b>
+    /// <c>SimfUser.AccountState</c> records that those two do sign in and are
+    /// contained by the <c>account_state</c> claim plus the
+    /// <c>RequireApprovedAccount</c> policy. Refusing them here would diverge
+    /// from the password path rather than align with it.</para>
+    ///
+    /// <para>The challenge has already been consumed by the time this runs, so a
+    /// refusal costs the caller their challenge. That is deliberate and matches
+    /// the disabled-account check above it: a refused attempt should not leave a
+    /// live challenge to retry against.</para>
+    /// </summary>
+    private async Task EnsureAccountMayMintAsync(
+        SimfUser user, Guid deviceKeyId, CancellationToken cancellationToken)
+    {
+        if (user.AccountState == AccountState.Registered)
+        {
+            await AuditFailureAsync(deviceKeyId,
+                ErrorCodes.AuthEmailNotVerified, "email_not_verified",
+                cancellationToken);
+            throw new ApiException(ErrorCodes.AuthEmailNotVerified, 403,
+                "Verify your email address before signing in.",
+                "يرجى التحقق من بريدك الإلكتروني قبل تسجيل الدخول.");
+        }
+
+        if (user.PasswordChangeRequired)
+        {
+            await AuditFailureAsync(deviceKeyId,
+                ErrorCodes.AuthPasswordChangeRequired, "password_change_required",
+                cancellationToken);
+            throw new ApiException(ErrorCodes.AuthPasswordChangeRequired, 403,
+                "You must change your password before signing in. Use the password-reset flow to set a new one.",
+                "يجب تغيير كلمة المرور قبل تسجيل الدخول. استخدم تدفّق إعادة تعيين كلمة المرور لتعيين كلمة جديدة.");
+        }
+
+        if (await accounts.IsLockedOutAsync(user))
+        {
+            await AuditFailureAsync(deviceKeyId,
+                ErrorCodes.AuthAccountLocked, "locked_out", cancellationToken);
+            throw new ApiException(ErrorCodes.AuthAccountLocked, 423,
+                "The account is locked after too many attempts. Try again later.",
+                "تم قفل الحساب بعد محاولات كثيرة. حاول مرة أخرى لاحقًا.");
+        }
+    }
 
     /// <summary>Verify an ES256 signature over the challenge bytes.
     /// The signature is the IEEE-P1363 raw (r || s, 64 bytes) format
@@ -532,9 +764,7 @@ internal sealed class DeviceKeyService(
     /// <summary>Compares the stored + supplied code hashes in constant time,
     /// so no timing side channel leaks.</summary>
     private static bool CodesMatch(string stored, string supplied) =>
-        CryptographicOperations.FixedTimeEquals(
-            Encoding.UTF8.GetBytes(stored),
-            Encoding.UTF8.GetBytes(supplied));
+        ConstantTime.Matches(stored, supplied);
 
     private static DeviceKeyEntry ToEntry(DeviceKey deviceKey) =>
         new(deviceKey.Id, deviceKey.UserId, deviceKey.Algorithm,

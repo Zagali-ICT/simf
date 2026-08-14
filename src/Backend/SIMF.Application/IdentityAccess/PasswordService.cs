@@ -1,3 +1,7 @@
+// Tests: SIMF.Api.Tests/PasswordTests.cs (forgot / reset / change),
+//        SIMF.Api.Tests/PasswordResetExpiryTests.cs (expired code),
+//        SIMF.Api.Tests/AccountCodeConcurrencyTests.cs (atomic attempt cap and
+//        single-use consumption under a concurrent burst).
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Logging;
@@ -6,6 +10,7 @@ using SIMF.Application.Abstractions;
 using SIMF.Application.Auditing;
 using SIMF.Application.Email;
 using SIMF.Application.IdentityAccess.Abstractions;
+using SIMF.Application.Security;
 using SIMF.Application.Notifications;
 using SIMF.Common;
 using SIMF.Common.Enums;
@@ -20,7 +25,8 @@ namespace SIMF.Application.IdentityAccess;
 /// <summary>
 /// Implements password recovery — forgot-password, reset-password (with the
 /// emailed code) and change-password (SIMF-API-001 section 12.7, SIMF-FDS-001).
-/// A completed reset or change ends every session for the account, atomically.
+/// A completed reset or change ends every session for the account, atomically,
+/// and revokes the account's biometric device keys with them.
 /// </summary>
 public sealed class PasswordService(
     IUserAccountRepository accounts,
@@ -28,6 +34,7 @@ public sealed class PasswordService(
     IRefreshTokenRepository refreshTokenRepository,
     ISecondFactorTokenRepository secondFactorTokenRepository,
     IPasswordHistoryRepository passwordHistory,
+    IDeviceKeyService deviceKeys,
     ITransactionRunner transactionRunner,
     IEmailQueue emailQueue,
     IEmailTemplateResolver emailTemplates,
@@ -153,27 +160,56 @@ public sealed class PasswordService(
 
         if (!CodesMatch(code.Code, AccountCodeHasher.Hash(request.Code)))
         {
-            code.AttemptCount++;
-            await accountCodeRepository.UpdateAsync(code, cancellationToken);
+            // Increment atomically and decide on the returned count. The cap check
+            // above read AttemptCount before this guess was compared, so a
+            // read-modify-write here lets concurrent wrong tries each read 0 and
+            // write 1, stretching the budget past MaxResetAttempts and putting the
+            // whole 10^6 space in reach. Burning the code once the budget is spent
+            // stops it being ground down across separate calls.
+            var attempts = await accountCodeRepository.IncrementAttemptCountAsync(
+                code.Id, cancellationToken);
+            if (attempts >= MaxResetAttempts)
+            {
+                await accountCodeRepository.TryConsumeAsync(code.Id, now, cancellationToken);
+            }
             await AuditAsync(AuditEvents.PasswordResetCodeIncorrect, AuditOutcome.Failure,
                 user.Email!, user.Id, ErrorCodes.AuthResetCodeInvalid,
-                $"attempt {code.AttemptCount}", cancellationToken);
+                $"attempt {attempts}", cancellationToken);
             throw new ApiException(ErrorCodes.AuthResetCodeInvalid, 400,
                 "The reset code is not correct.",
                 "رمز إعادة التعيين غير صحيح.");
         }
 
-        // The code authorised this — set the password, consume the code, clear
-        // the forced-change flag and end every session, all in one transaction.
+        // The code authorised this — consume it, set the password, clear the
+        // forced-change flag and end every session, all in one transaction.
+        // Consuming FIRST is what makes the code single-use: the conditional
+        // UPDATE is the gate, because two concurrent submits of the same valid
+        // code both passed the unconsumed read above and only one may set a
+        // password. It is inside the transaction, so a policy-rejected password
+        // rolls the consumption back and leaves the code usable for a retry.
+        var consumed = false;
         await transactionRunner.ExecuteAsync(
             async token =>
             {
+                consumed = await accountCodeRepository.TryConsumeAsync(code.Id, now, token);
+                if (!consumed)
+                {
+                    return;
+                }
                 await SetPasswordAsync(user, request.NewPassword);
-                code.ConsumedAt = now;
-                await accountCodeRepository.UpdateAsync(code, token);
                 await ClearChangeFlagAndEndSessionsAsync(user, now, token);
             },
             cancellationToken);
+
+        if (!consumed)
+        {
+            await AuditAsync(AuditEvents.PasswordResetCodeIncorrect, AuditOutcome.Failure,
+                user.Email!, user.Id, ErrorCodes.AuthResetCodeInvalid,
+                "already_consumed", cancellationToken);
+            throw new ApiException(ErrorCodes.AuthResetCodeInvalid, 400,
+                "The reset code is not valid.",
+                "رمز إعادة التعيين غير صالح.");
+        }
 
         await AuditAsync(AuditEvents.PasswordResetCompleted, AuditOutcome.Success,
             user.Email!, user.Id, cancellationToken: cancellationToken);
@@ -324,15 +360,30 @@ public sealed class PasswordService(
         // transaction. A policy-rejected new password throws inside the
         // transaction and rolls back, leaving the ticket valid for a retry
         // within its lifetime.
+        var ticketConsumed = false;
         await transactionRunner.ExecuteAsync(
             async token =>
             {
+                ticketConsumed = await secondFactorTokenRepository.TryConsumeAsync(
+                    ticket.Id, now, token);
+                if (!ticketConsumed)
+                {
+                    return;
+                }
                 await SetPasswordAsync(user, request.NewPassword);
-                ticket.ConsumedAt = now;
-                await secondFactorTokenRepository.UpdateAsync(ticket, token);
                 await ClearChangeFlagAndEndSessionsAsync(user, now, token);
             },
             cancellationToken);
+
+        if (!ticketConsumed)
+        {
+            await AuditAsync(AuditEvents.PasswordChangeFailed, AuditOutcome.Failure,
+                user.Email!, user.Id, ErrorCodes.AuthMfaTokenInvalid,
+                "already_consumed", cancellationToken);
+            throw new ApiException(ErrorCodes.AuthMfaTokenInvalid, 400,
+                "The sign-in session is no longer valid. Sign in again.",
+                "جلسة تسجيل الدخول لم تعد صالحة. سجّل الدخول مرة أخرى.");
+        }
 
         await AuditAsync(AuditEvents.PasswordChanged, AuditOutcome.Success,
             user.Email!, user.Id, cancellationToken: cancellationToken);
@@ -414,9 +465,9 @@ public sealed class PasswordService(
             "تم استخدام كلمة المرور هذه مؤخراً. اختر كلمة مرور لم تستخدمها من قبل.");
 
     /// <summary>
-    /// Clears the forced-change flag and ends every session — a new password
+    /// Clears the forced-change flag and ends every way back in — a new password
     /// must invalidate the old ones (the security stamp moved when the password
-    /// was set; the refresh tokens are revoked here).
+    /// was set; the refresh tokens and the device keys are revoked here).
     /// </summary>
     private async Task ClearChangeFlagAndEndSessionsAsync(
         SimfUser user,
@@ -431,6 +482,15 @@ public sealed class PasswordService(
         user.PasswordChangedAt = now;
         await accounts.UpdateAsync(user).EnsureSuccessAsync();
         await refreshTokenRepository.RevokeAllForUserAsync(user.Id, now, cancellationToken);
+
+        // Revoking the refresh tokens alone used to leave the biometric device
+        // keys alive, and sign-in-with-device-key is anonymous, so an attacker who
+        // had enrolled one simply minted a fresh session after the victim did the
+        // one thing every security notice tells them to do. The remedy has to
+        // remove every credential, not just the sessions. Deliberately applied to
+        // a VOLUNTARY change too: that is frequently the user's own response to
+        // suspecting someone else has their account.
+        await deviceKeys.RevokeAllForUserAsync(user.Id, cancellationToken);
     }
 
     /// <summary>
@@ -472,8 +532,7 @@ public sealed class PasswordService(
             user.Id, AccountCodePurpose.PasswordReset, cancellationToken);
         if (previous is not null)
         {
-            previous.ConsumedAt = now;
-            await accountCodeRepository.UpdateAsync(previous, cancellationToken);
+            await accountCodeRepository.TryConsumeAsync(previous.Id, now, cancellationToken);
         }
 
         // M3 (security) — store only the keyed hash; the plaintext is emailed.
@@ -538,7 +597,5 @@ public sealed class PasswordService(
 
     /// <summary>Compares the codes in constant time, so no timing side channel leaks.</summary>
     private static bool CodesMatch(string stored, string supplied) =>
-        CryptographicOperations.FixedTimeEquals(
-            Encoding.UTF8.GetBytes(stored),
-            Encoding.UTF8.GetBytes(supplied));
+        ConstantTime.Matches(stored, supplied);
 }

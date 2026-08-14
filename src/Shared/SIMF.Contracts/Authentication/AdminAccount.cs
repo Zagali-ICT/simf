@@ -1,4 +1,4 @@
-using SIMF.Common;
+﻿using SIMF.Common;
 
 using SIMF.Common.Enums;
 
@@ -245,7 +245,7 @@ public sealed record AdminUserSummary(
     bool IsAdministrator,
     DateTime CreatedAt,
     // Whether the account has a profile photo (avatar) — the StoredFile presence
-    // sentinel SimfUser.AvatarRelativePath. Trailing-optional (append-only,
+    // sentinel SimfUser.AvatarFileId. Trailing-optional (append-only,
     // wire-safe); defaults false for contexts that don't resolve it (bulk export,
     // the optimistic post-save row — both reload from the server anyway).
     bool HasAvatar = false);
@@ -378,7 +378,7 @@ public sealed class AdminRejectRequest
 /// <summary>
 /// One row in the pending-approval list. A trimmed shape — the
 /// approver only needs to see the identity to decide. <c>HasAvatar</c> drives the
-/// grid profile-photo thumbnail (the <c>AvatarRelativePath</c> presence
+/// grid profile-photo thumbnail (the <c>AvatarFileId</c> presence
 /// sentinel).
 /// </summary>
 public sealed record AdminPendingUserSummary(
@@ -609,6 +609,13 @@ public sealed class AdminWalkInRegistrationRequest
 /// account is PendingApproval and the QR is minted only on approval; the modal
 /// treats an empty QrId as the "pending" state and shows no badge.
 /// </summary>
+/// <param name="UserId">The registrant's app account, or <see cref="Guid.Empty"/>
+/// when they hold none. A SHIPPED non-nullable field, so it keeps its type; read
+/// <paramref name="UserProfileId"/> to identify the person. Empty here means "no
+/// account", and it is a matches-nobody sentinel elsewhere - never look anyone up
+/// by it.</param>
+/// <param name="UserProfileId">The attendee, which every registrant has. Appended
+/// after the app shipped, so an older client ignores it.</param>
 public sealed record AdminWalkInRegistrationResponse(
     Guid UserId,
     string Email,
@@ -616,7 +623,8 @@ public sealed record AdminWalkInRegistrationResponse(
     string QrId,
     string ProfileTypeName,
     string ProfileTypeNameArabic,
-    string ProfileTypeColor);
+    string ProfileTypeColor,
+    Guid UserProfileId = default);
 
 /// <summary>Bulk-generate placeholder badges by profile type +
 /// count (e.g. 10 VIP + 500 Normal), each Approved with a minted QR, optionally
@@ -624,6 +632,14 @@ public sealed record AdminWalkInRegistrationResponse(
 /// personal details) to be filled in / handed out later.</summary>
 public sealed class AdminBulkGenerateBadgesRequest
 {
+    /// <summary>Who the order is for — "Ministry of Interior Team". Required,
+    /// because an order identified only by its counts is unrecognisable in a list
+    /// as soon as two of them are the same size.</summary>
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>The Arabic twin of <see cref="Name"/>.</summary>
+    public string NameArabic { get; set; } = string.Empty;
+
     /// <summary>When true, every generated badge is flagged as a delegate.</summary>
     public bool IsDelegate { get; set; }
 

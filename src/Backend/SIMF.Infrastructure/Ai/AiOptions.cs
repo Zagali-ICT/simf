@@ -31,7 +31,7 @@ public sealed class AiOptions
 
 /// <summary>Anthropic (Claude) provider settings. Bound to
 /// <c>Ai:Anthropic</c>; the API key is supplied via env var
-/// <c>SIMF_Ai__Anthropic__ApiKey</c> in production — never committed.</summary>
+/// <c>SIMF_API_Ai__Anthropic__ApiKey</c> in production — never committed.</summary>
 public sealed class AnthropicOptions
 {
     /// <summary>API key (<c>sk-ant-…</c>). Empty ⇒ the provider throws
@@ -54,7 +54,7 @@ public sealed class AnthropicOptions
 
 /// <summary>Google Gemini (Generative Language API) provider settings. Bound to
 /// <c>Ai:Gemini</c>; the API key is supplied via env var
-/// <c>SIMF_Ai__Gemini__ApiKey</c> in production — never committed. Used for
+/// <c>SIMF_API_Ai__Gemini__ApiKey</c> in production — never committed. Used for
 /// non-sensitive features under the hybrid policy.</summary>
 public sealed class GeminiOptions
 {
@@ -77,7 +77,7 @@ public sealed class GeminiOptions
 public sealed class OpenAiOptions
 {
     /// <summary>API key. Must be supplied via env var
-    /// <c>SIMF_Ai__OpenAi__ApiKey</c> in production — never committed.</summary>
+    /// <c>SIMF_API_Ai__OpenAi__ApiKey</c> in production — never committed.</summary>
     public string? ApiKey { get; set; }
 
     /// <summary>Base URL. Defaults to the public OpenAI endpoint.</summary>
@@ -94,7 +94,7 @@ public sealed class OpenAiOptions
 /// rainbow tables ("Summarise: {visitorName}" is highly guessable).
 /// HMAC-SHA256 keyed on this server-only secret keeps the drift-detection
 /// property and adds preimage resistance even against insiders.
-/// Provide via env var <c>SIMF_Ai__PromptHashSecret</c>. Rotation
+/// Provide via env var <c>SIMF_API_Ai__PromptHashSecret</c>. Rotation
 /// changes all hashes — that's acceptable because the audit log is
 /// time-bounded and SOC compares hashes within a window, not against
 /// historical baselines.</summary>

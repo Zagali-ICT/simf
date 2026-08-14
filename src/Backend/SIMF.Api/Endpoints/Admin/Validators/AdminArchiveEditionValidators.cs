@@ -30,7 +30,6 @@ public sealed class CreateArchiveEditionRequestValidator
         RuleFor(x => x.Attendees).GreaterThanOrEqualTo(0);
         RuleFor(x => x.Sessions).GreaterThanOrEqualTo(0);
         RuleFor(x => x.Speakers).GreaterThanOrEqualTo(0);
-        RuleFor(x => x.CoverImageRelativePath).MaximumLength(512);
         // §9 (screen 24-01) — optional place + date label.
         RuleFor(x => x.LocationEn).MaximumLength(256);
         RuleFor(x => x.LocationAr).MaximumLength(256);
@@ -52,7 +51,6 @@ public sealed class UpdateArchiveEditionRequestValidator
         RuleFor(x => x.Attendees).GreaterThanOrEqualTo(0);
         RuleFor(x => x.Sessions).GreaterThanOrEqualTo(0);
         RuleFor(x => x.Speakers).GreaterThanOrEqualTo(0);
-        RuleFor(x => x.CoverImageRelativePath).MaximumLength(512);
         // §9 (screen 24-01) — optional place + date label.
         RuleFor(x => x.LocationEn).MaximumLength(256);
         RuleFor(x => x.LocationAr).MaximumLength(256);

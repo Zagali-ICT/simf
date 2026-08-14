@@ -134,15 +134,20 @@ internal sealed class MatchRecommendationPushWorker(
     /// ordering, starting <paramref name="skip"/> rows in. Only profiles that opted
     /// into "Meet People Like You" AND picked at least one interest can be matched at
     /// all, so nothing else ever enters a batch — the opt-out is enforced here, before
-    /// the ranker sees the caller, as well as inside the ranker's own query.</summary>
+    /// the ranker sees the caller, as well as inside the ranker's own query.
+    ///
+    /// <para>An attendee with no Identity account has no inbox to push into, so they
+    /// are filtered out here rather than paged over: the batch is a list of push
+    /// recipients, and the roster the cursor walks is the one that can be pushed
+    /// to.</para></summary>
     internal static Task<List<Guid>> NextBatchAsync(
         SimfAppDbContext db, int skip, int batchSize,
         CancellationToken cancellationToken) =>
         db.UserProfiles
             .AsNoTracking()
-            .Where(p => p.ShowInMeetLikeYou && p.Interests.Any())
+            .Where(p => p.ShowInMeetLikeYou && p.Interests.Any() && p.UserId != null)
             .OrderBy(p => p.UserId)
-            .Select(p => p.UserId)
+            .Select(p => p.UserId!.Value)
             .Skip(skip)
             .Take(batchSize)
             .ToListAsync(cancellationToken);

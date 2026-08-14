@@ -13,6 +13,7 @@ using SIMF.Common.Enums;
 using SIMF.Common.Options;
 using SIMF.Contracts.Gates;
 using SIMF.Domain.AccessControl;
+using SIMF.Domain.Editions;
 using SIMF.Infrastructure.Persistence;
 using SIMF.Common;
 
@@ -126,6 +127,100 @@ internal sealed class GateOperatorService(
             Gates: rules);
     }
 
+    /// <summary>How long a downloaded roster may be trusted. Long enough to
+    /// survive a session's worth of network loss, short enough that a revocation
+    /// issued after the last sync cannot be honoured indefinitely — which is the
+    /// one thing a device still cannot decide for itself.</summary>
+    private static readonly TimeSpan RosterValidity = TimeSpan.FromHours(12);
+
+    public async Task<GateOfflineRoster> GetOfflineRosterAsync(
+        Guid operatorUserId, DateTime? since,
+        CancellationToken cancellationToken = default)
+    {
+        var now = timeProvider.SimfNow();
+
+        // The operator's OWN halls, reached through their own gate assignments.
+        // Same scoping the badge key already gets, and for a stronger reason: a
+        // roster is attendee names and movements, and Gates.Operate is held by
+        // every Staff and Moderator account rather than only the provisioned
+        // tablets.
+        var hallIds = await appDbContext.GateAssignments.AsNoTracking()
+            .Where(assignment => assignment.UserId == operatorUserId && assignment.IsActive)
+            .Join(appDbContext.Gates.AsNoTracking(),
+                assignment => assignment.GateId, gate => gate.Id, (_, gate) => gate)
+            .Where(gate => gate.IsActive && gate.HallId != null)
+            .Select(gate => gate.HallId!.Value)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        if (hallIds.Count == 0)
+        {
+            // No hall door to serve, so nothing to expect. An empty roster, not
+            // an error: a perimeter-only operator is an ordinary case.
+            return new GateOfflineRoster(now, now.Add(RosterValidity), []);
+        }
+
+        var reservations = appDbContext.SeatReservations.AsNoTracking()
+            // Only a CONFIRMED, still-held reservation counts. A pending or
+            // rejected request must never read as an admitted seat at the door,
+            // and a released one is somebody else's seat now.
+            .Where(reservation => reservation.Status == BookingStatus.Approved
+                && reservation.ReleasedAt == null
+                && reservation.ReservedForProfileId != null
+                && reservation.Session != null
+                && hallIds.Contains(reservation.Session.HallId));
+
+        if (since is { } cursor)
+        {
+            // The delta. CreatedAt is the only monotonic stamp a reservation
+            // carries, so a device asks for what has appeared since its last
+            // successful sync rather than pulling the hall again.
+            reservations = reservations.Where(reservation => reservation.CreatedAt > cursor);
+        }
+
+        // Projected flat and mapped in memory: the record constructor with a
+        // conditional inside it is not translatable, and forcing it to be would
+        // mean contorting the shape the device consumes to suit the query.
+        var rows = await reservations
+            .Select(reservation => new
+            {
+                ProfileId = reservation.ReservedForProfileId!.Value,
+                reservation.ReservedForProfile!.Name,
+                reservation.ReservedForProfile.NameArabic,
+                TypeCode = reservation.ReservedForProfile.ProfileType!.Code,
+                reservation.ReservedForProfile.AdmissionState,
+                reservation.SessionId,
+                reservation.Session!.Start,
+                reservation.Session.End,
+                reservation.Session.HallId,
+                reservation.RowLabel,
+                reservation.SeatNumber,
+            })
+            .OrderBy(row => row.Start)
+            .ToListAsync(cancellationToken);
+
+        var attendees = rows.Select(row => new GateOfflineRosterEntry(
+            row.ProfileId,
+            row.Name,
+            row.NameArabic,
+            row.TypeCode,
+            // A decided boolean, not the raw state. The device should not be
+            // reimplementing admission rules the server already owns, and a
+            // second copy of that logic is a second thing to get wrong.
+            row.AdmissionState == AccountState.Approved,
+            row.SessionId,
+            row.Start,
+            row.End,
+            row.HallId,
+            // Null for general admission, and for a hall admitted by booking
+            // rather than by seat — the row still says "this person is expected
+            // in this session", which is the question the door asks.
+            row.RowLabel,
+            row.SeatNumber)).ToList();
+
+        return new GateOfflineRoster(now, now.Add(RosterValidity), attendees);
+    }
+
     public async Task<GateScanResult> RecordScanAsync(
         GateScanContext context, CancellationToken cancellationToken = default)
     {
@@ -200,8 +295,18 @@ internal sealed class GateOperatorService(
         var denialCtx = DenialContext.From(resolution);
         var coldStart = ResolveDirection(snapshot, context.Request.RequestedDirection, null);
 
-        // Steps 5–9: per-row predicate → denial reason, ordered. Step 9.5
-        // (time-window) is still a reserved hook — no row here today. Step 11.5
+        // The year currently open. A badge carries the edition it was issued for,
+        // and last year's must not open this year's gate — which is the only
+        // expiry a minted QR has ever had, this resolver having matched on value
+        // alone until now.
+        var openEditionYear = await appDbContext.EventEdition
+            .AsNoTracking()
+            .Where(edition => edition.Id == EventEdition.SingletonId)
+            .Select(edition => (int?)edition.Year)
+            .SingleOrDefaultAsync(cancellationToken);
+
+        // Steps 5–9: per-row predicate → denial reason, ordered. Step 9.5 is the
+        // edition check, a reserved hook until now. Step 11.5
         // (booking-required) is implemented and runs after the
         // allow-list below, because it needs the resolved direction.
         var simpleChecks = new (bool failed, DenialReasonCode reason)[]
@@ -214,6 +319,15 @@ internal sealed class GateOperatorService(
             (resolution.IsLockedOut,                          DenialReasonCode.HolderLocked),
             (resolution.ProfileTypeId is not null && !resolution.ProfileTypeActive,
                                                               DenialReasonCode.ProfileTypeInactive),
+            // Step 9.5 — the badge is from a closed edition. Deliberately NOT
+            // given a distinct operator message: a scan must never tell the
+            // holder which half of the check failed. A zero on the record means
+            // the attendee predates the column, and is left alone rather than
+            // locked out by a schema change.
+            (openEditionYear is { } openYear
+                && resolution.EditionYear != 0
+                && resolution.EditionYear != openYear,
+                                                              DenialReasonCode.OutsideTimeWindow),
         };
         foreach (var (failed, reason) in simpleChecks)
         {
@@ -286,8 +400,11 @@ internal sealed class GateOperatorService(
         // profile-type-allowed above always hold.
         if (snapshot.HallId is { } sessionHallId && direction == ScanDirection.CheckIn)
         {
+            // Asked by PROFILE, which every attendee has. Bookings and attendance
+            // are both keyed by it, so an attendee with no account is now answered
+            // on their real registration instead of being assumed unregistered.
             var eligibility = await hallAttendance.CheckHallEntryEligibilityAsync(
-                resolution.UserId, sessionHallId, cancellationToken);
+                resolution.UserProfileId, sessionHallId, cancellationToken);
 
             if (eligibility == HallEntryEligibility.NotRegistered
                 && !walkInMode.CurrentValue.SessionWalkInActive(timeProvider.SimfNow()))
@@ -661,8 +778,8 @@ internal sealed class GateOperatorService(
         // committed, so a chain failure is logged and swallowed rather than failing
         // the operator's scan (mirrors HallAttendanceService's departure-hook
         // resilience). Perimeter gates (HallId null) are unchanged. The attendee is
-        // carried as resolution.UserId (Identity SimfUser.Id), NEVER
-        // resolution.UserProfileId — HallAttendance.UserId is the Identity id.
+        // carried as resolution.UserProfileId, which HallAttendance is keyed by, so a
+        // holder with no Identity account is recorded like any other.
         // FIX C — a Both-mode gate's direction is only an alternation guess, so the
         // chain derives the real action from attendance state (directionInferred);
         // a fixed In/Out gate stays authoritative.
@@ -678,7 +795,7 @@ internal sealed class GateOperatorService(
             try
             {
                 var attendanceRecorded = await hallAttendance.RecordGateDoorScanAsync(
-                    resolution.UserId, hallId, direction,
+                    resolution.UserProfileId, hallId, direction,
                     hallDoorDirectionInferred, context.OperatorUserId, cancellationToken);
                 if (!attendanceRecorded)
                 {
@@ -929,14 +1046,22 @@ internal sealed class GateOperatorService(
             .Where(profile => profileIds.Contains(profile.Id))
             .Select(profile => new { profile.Id, profile.UserId })
             .ToListAsync(cancellationToken);
-        var userIds = profileUsers.Select(pu => pu.UserId).Distinct().ToList();
+        // Only the accounts are looked up, but EVERY scanned profile stays in the map:
+        // an attendee with no account has no display name to fetch, and dropping them
+        // would erase their scans from the operator's daily report.
+        var userIds = profileUsers
+            .Where(pu => pu.UserId != null)
+            .Select(pu => pu.UserId!.Value)
+            .Distinct()
+            .ToList();
         var userDisplayNames = await identityDbContext.Users.AsNoTracking()
             .Where(user => userIds.Contains(user.Id))
             .Select(user => new { user.Id, user.DisplayName })
             .ToDictionaryAsync(user => user.Id, user => user.DisplayName ?? string.Empty, cancellationToken);
         return profileUsers.ToDictionary(
             pu => pu.Id,
-            pu => userDisplayNames.TryGetValue(pu.UserId, out var name) ? name : string.Empty);
+            pu => pu.UserId is { } userId && userDisplayNames.TryGetValue(userId, out var name)
+                ? name : string.Empty);
     }
 
     private static (string en, string ar) DenialMessages(DenialReasonCode reason) =>

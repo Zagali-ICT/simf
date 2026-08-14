@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/PendingProfileReadTests.cs, AdminProfileReadTests.cs
+﻿// Tests: SIMF.Api.Tests/PendingProfileReadTests.cs, AdminProfileReadTests.cs
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common.Enums;
@@ -64,8 +64,10 @@ internal sealed class AdminApprovalReadService(
             .Where(p => p.QrId == normalised)
             .Select(p => new
             {
+                p.Id,
                 p.UserId,
                 p.QrId,
+                p.Name,
                 ProfileTypeName = p.ProfileType != null ? p.ProfileType.Name : null,
                 ProfileTypeNameArabic = p.ProfileType != null ? p.ProfileType.NameArabic : null,
                 ProfileTypeColor = p.ProfileType != null ? p.ProfileType.PageColor : null,
@@ -73,23 +75,29 @@ internal sealed class AdminApprovalReadService(
             .SingleOrDefaultAsync(cancellationToken);
         if (row is null) { return null; }
 
-        // Pair the profile row with the owner so we can return the
-        // badge-name + email the printable view renders.
-        var user = await dbContext.Users
-            .AsNoTracking()
-            .Where(u => u.Id == row.UserId)
-            .Select(u => new { u.Email, u.DisplayName })
-            .SingleOrDefaultAsync(cancellationToken);
-        if (user is null) { return null; }
+        // The owner's email and self-chosen display name, when there IS an owner.
+        // Most badges have none: a bulk order prints them long before anyone
+        // claims one, so requiring an account here would have made the print-bag
+        // station answer "no badge found" for every badge in the box.
+        var user = row.UserId is { } registeredUserId
+            ? await dbContext.Users
+                .AsNoTracking()
+                .Where(u => u.Id == registeredUserId)
+                .Select(u => new { u.Email, u.DisplayName })
+                .SingleOrDefaultAsync(cancellationToken)
+            : null;
 
         return new AdminWalkInRegistrationResponse(
-            row.UserId,
-            user.Email ?? string.Empty,
-            user.DisplayName,
+            row.UserId ?? Guid.Empty,
+            user?.Email ?? string.Empty,
+            // The account's display name when there is one; otherwise the name
+            // the badge was actually printed from.
+            user?.DisplayName ?? row.Name,
             row.QrId ?? string.Empty,
             row.ProfileTypeName ?? string.Empty,
             row.ProfileTypeNameArabic ?? string.Empty,
-            row.ProfileTypeColor ?? "#244A77");
+            row.ProfileTypeColor ?? "#244A77",
+            row.Id);
     }
 
     /// <summary>Any-state full profile read scoped to the
@@ -120,7 +128,7 @@ internal sealed class AdminApprovalReadService(
                 u.AccountState,
                 u.CreatedAt,
                 u.UpdatedAt,
-                u.AvatarRelativePath,
+                u.AvatarFileId,
             })
             .SingleOrDefaultAsync(cancellationToken);
         if (user is null) { return null; }
@@ -145,7 +153,7 @@ internal sealed class AdminApprovalReadService(
                 p.PassportNumber,
                 p.SaudiMobile,
                 p.InternationalMobile,
-                HasIdImage = p.IdImageRelativePath != null,
+                HasIdImage = p.IdImageFileId != null,
                 InterestIds = p.Interests.Select(interest => interest.Id).ToList(),
                 p.RejectionReason,
                 p.RejectionReasonArabic,
@@ -186,8 +194,8 @@ internal sealed class AdminApprovalReadService(
             profile?.InternationalMobile,
             profile?.HasIdImage ?? false,
             // The avatar (profile photo) lives on SimfUser (Identity);
-            // AvatarRelativePath is its StoredFile presence sentinel.
-            !string.IsNullOrEmpty(user.AvatarRelativePath),
+            // AvatarFileId is its StoredFile presence sentinel.
+            user.AvatarFileId is not null,
             profile?.InterestIds ?? new List<Guid>(),
             profile?.RejectionReason,
             profile?.RejectionReasonArabic,
@@ -225,7 +233,7 @@ internal sealed class AdminApprovalReadService(
                 u.DisplayName,
                 u.UserType,
                 u.CreatedAt,
-                u.AvatarRelativePath,
+                u.AvatarFileId,
             })
             .SingleOrDefaultAsync(cancellationToken);
         if (user is null) { return null; }
@@ -259,7 +267,7 @@ internal sealed class AdminApprovalReadService(
                 Organisation = p.Organisation,
                 p.PlateNumber,
                 p.ReferenceNumber,
-                HasIdImage = p.IdImageRelativePath != null,
+                HasIdImage = p.IdImageFileId != null,
                 Interests = p.Interests.Select(interest => new { interest.Id, interest.Name, interest.NameArabic }).ToList(),
             })
             .SingleOrDefaultAsync(cancellationToken);
@@ -300,9 +308,9 @@ internal sealed class AdminApprovalReadService(
             profile?.ReferenceNumber,
             profile?.Interests.Select(i => new PendingProfileInterest(i.Name, i.NameArabic)).ToList(),
             // The avatar (profile photo) lives on SimfUser (Identity); its
-            // AvatarRelativePath is the StoredFile pointer/presence sentinel.
+            // AvatarFileId is the StoredFile pointer/presence sentinel.
             // Use IsNullOrEmpty to match every other presence reader.
-            HasAvatar: !string.IsNullOrEmpty(user.AvatarRelativePath));
+            HasAvatar: user.AvatarFileId is not null);
     }
 
     // Country lookup helper. Cross-context (Country lives in

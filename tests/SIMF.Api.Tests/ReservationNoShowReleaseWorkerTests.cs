@@ -199,7 +199,8 @@ public sealed class ReservationNoShowReleaseWorkerTests : IClassFixture<SimfApiF
             RowLabel = row,
             SeatNumber = seat,
             Kind = kind,
-            ReservedForUserId = holder,
+            ReservedForProfileId =
+                await TestAttendeeProfiles.EnsureForOptionalAccountAsync(db, holder),
             CreatedByUserId = holder ?? Guid.NewGuid(),
             CreatedAt = createdAt,
             Status = status,
@@ -216,12 +217,13 @@ public sealed class ReservationNoShowReleaseWorkerTests : IClassFixture<SimfApiF
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var attendeeProfileId = await TestAttendeeProfiles.EnsureForAccountAsync(db, userId);
         db.HallAttendances.Add(new HallAttendance
         {
             Id = Guid.NewGuid(),
             SessionId = sessionId,
             HallId = hallId,
-            UserId = userId,
+            UserProfileId = attendeeProfileId,
             Method = AttendanceMethod.QrScan,
             Enter = enter,
             CreatedAt = SimfClock.Now,

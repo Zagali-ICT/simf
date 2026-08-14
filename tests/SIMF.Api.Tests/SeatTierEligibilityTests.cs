@@ -278,7 +278,7 @@ public sealed class SeatTierEligibilityTests : IClassFixture<SimfApiFactory>
             RowLabel = rowLabel,
             SeatNumber = seatNumber,
             Kind = SeatReservationKind.AdminReservedRow,
-            ReservedForUserId = null,
+            ReservedForProfileId = null,
             CreatedByUserId = Guid.NewGuid(),
             CreatedAt = SimfClock.Now,
             Status = BookingStatus.Approved,

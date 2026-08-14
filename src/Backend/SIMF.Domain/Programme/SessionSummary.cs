@@ -1,4 +1,4 @@
-namespace SIMF.Domain.Programme;
+﻿namespace SIMF.Domain.Programme;
 
 /// <summary>
 /// The Scientific Committee's minutes (محضر) for one <see cref="Session"/>, one
@@ -53,11 +53,11 @@ public sealed class SessionSummary
     public string? AiModel { get; set; }
 
     /// <summary>An optional short summary video the team produces, not the full
-    /// recording on <see cref="Session.LiveStreamUrl"/>. The app shows it as a
-    /// second player beside that one, and null hides that player. A YouTube watch
-    /// or live URL, or a direct HLS/MP4 stream, accepted only if it passes the
-    /// same <c>LiveStreamUrlPolicy</c> rule as the session's own stream.</summary>
-    public string? SummaryVideoUrl { get; set; }
+    /// recording on <see cref="Session.LiveStreamFileId"/>. The app shows it as a
+    /// second player beside that one, and null hides that player. A row in
+    /// <c>StoredFiles</c> like the session's own feed - an external link, held to
+    /// the same classifier rule, and reaching the client verbatim.</summary>
+    public Guid? SummaryVideoFileId { get; set; }
 
     // -- AI transparency ------------------------------------------------------
 

@@ -5,7 +5,7 @@
 // The remediation pattern (already used for Jwt:SigningKey, Ai:*:ApiKey,
 // Storage:UserIdDocumentEncryptionKey and FileStorage:EncryptionKey) is: keep
 // the key so the shape and the options binding are unchanged, ship an EMPTY
-// value, and supply the real value out of the repo via SIMF_Section__Key
+// value, and supply the real value out of the repo via SIMF_API_Section__Key
 // environment variables (Developer-Guide section 20.3).
 //
 // Round 2 widened the guard after the review found the remediation was partial:
@@ -273,7 +273,7 @@ public sealed class CommittedSecretsTests
                         lowered.Contains(marker),
                         $"DEF-SEC-001 — {relative} commits an inline SQL credential in "
                         + $"'ConnectionStrings:{entry.Name}'. Use Trusted_Connection locally, "
-                        + $"or supply the string via SIMF_ConnectionStrings__{entry.Name}.");
+                        + $"or supply the string via SIMF_API_ConnectionStrings__{entry.Name}.");
                 }
             }
         }
@@ -338,7 +338,7 @@ public sealed class CommittedSecretsTests
         // The API layers appsettings.json -> appsettings.Development.json ->
         // AddEnvironmentVariables("SIMF_") (Program.cs). Prove the blanked
         // values still bind to a well-formed options object, and that the
-        // documented SIMF_Email__Password / SIMF_Seed__DemoPassword overrides
+        // documented SIMF_API_Email__Password / SIMF_API_Seed__DemoPassword overrides
         // reach the same keys — that is what a developer uses locally now.
         var apiDirectory = Path.Combine(RepoRoot(), "src", "Backend", "SIMF.Api");
         var configuration = new ConfigurationBuilder()
@@ -434,7 +434,7 @@ public sealed class CommittedSecretsTests
         // in config (round 1) and removed from the fixture + the two docs
         // (round 2), so nothing may carry it any more.
         new(
-            "Seed:DemoPassword (supply SIMF_Seed__DemoPassword)",
+            "Seed:DemoPassword (supply SIMF_API_Seed__DemoPassword)",
             14,
             1089,
             "7954abf373c465906bd6a4883954f6fdefecd35fefe593693520d2ff452915a8",
@@ -443,7 +443,7 @@ public sealed class CommittedSecretsTests
         // SuperAdmin:TempPassword — the bootstrap super-admin seed password.
         // Round 3 finished the docs/ sweep: the two security documents, the
         // Sprint-1 completion record and the seven E2E catalogue sign-in lines
-        // now carry the redaction marker + the SIMF_SuperAdmin__TempPassword
+        // now carry the redaction marker + the SIMF_API_SuperAdmin__TempPassword
         // key path instead of the value, so they left this list. The two
         // ONE residual occurrence remains, and it needs the literal: the
         // boot-time deny-list that refuses to start Production on the committed
@@ -452,7 +452,7 @@ public sealed class CommittedSecretsTests
         // fails fast if they are unset.
         // Owner ops: rotate the credential, then this last one can go too.
         new(
-            "SuperAdmin:TempPassword (supply SIMF_SuperAdmin__TempPassword)",
+            "SuperAdmin:TempPassword (supply SIMF_API_SuperAdmin__TempPassword)",
             12,
             703,
             "59e64b4df89c9e379261d867524a8d17a911dce7e763373f2efb991d292db8eb",
@@ -465,7 +465,7 @@ public sealed class CommittedSecretsTests
         // SuperAdmin:TotpSecret — the development TOTP seed, in its two written
         // forms (grouped with spaces, and tight). Round 3 finished the docs/
         // sweep: the follow-up backlog, the decisions log, the Test-Guide and
-        // the two E2E catalogue files now name SIMF_SuperAdmin__TotpSecret
+        // the two E2E catalogue files now name SIMF_API_SuperAdmin__TotpSecret
         // instead of the seed, so they left this list. The residual
         // occurrences are both OUTSIDE docs/ — the myComment #35 regression
         // fixture (which asserts the normalisation of exactly these two written
@@ -474,7 +474,7 @@ public sealed class CommittedSecretsTests
         // (The FDS and the security assessment quote a TRUNCATED prefix only,
         // so they were never listed — the scan does not match them.)
         new(
-            "SuperAdmin:TotpSecret, spaced form (supply SIMF_SuperAdmin__TotpSecret)",
+            "SuperAdmin:TotpSecret, spaced form (supply SIMF_API_SuperAdmin__TotpSecret)",
             39,
             3435,
             "69597ef04e809968ab93708d3d0bc52cf9efb5f1c45f7d2e2943d40c7e5485ee",
@@ -483,7 +483,7 @@ public sealed class CommittedSecretsTests
                 "tests/SIMF.Api.Tests/TotpVerifierTests.cs",
             }),
         new(
-            "SuperAdmin:TotpSecret, unspaced form (supply SIMF_SuperAdmin__TotpSecret)",
+            "SuperAdmin:TotpSecret, unspaced form (supply SIMF_API_SuperAdmin__TotpSecret)",
             32,
             3211,
             "9b5f1475136da99fd65342d283f458320b45f49643bdcbc26cecbdff1c389b81",
@@ -667,7 +667,7 @@ public sealed class CommittedSecretsTests
         var guide = File.ReadAllText(Path.Combine(
             RepoRoot(), "docs", "manuals", "Developer-Guide.md"));
 
-        Assert.Contains("SIMF_SuperAdmin__TempPassword", guide, StringComparison.Ordinal);
-        Assert.Contains("SIMF_SuperAdmin__TotpSecret", guide, StringComparison.Ordinal);
+        Assert.Contains("SIMF_API_SuperAdmin__TempPassword", guide, StringComparison.Ordinal);
+        Assert.Contains("SIMF_API_SuperAdmin__TotpSecret", guide, StringComparison.Ordinal);
     }
 }

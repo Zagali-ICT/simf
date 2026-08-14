@@ -1,4 +1,4 @@
-using SIMF.Common.Enums;
+﻿using SIMF.Common.Enums;
 using SIMF.Common.Files;
 
 namespace SIMF.Application.Files.Abstractions;
@@ -55,8 +55,8 @@ public interface IFileService
     /// NOT applied: this answers "does the content exist", never "may this caller
     /// have it", so it must not be used to serve bytes. Cheap: no read, no decrypt.
     ///
-    /// <para>It exists because a pointer column (<c>UserProfile.IdImageRelativePath</c>,
-    /// <c>SimfUser.AvatarRelativePath</c>, …) holding a non-empty id proves only that
+    /// <para>It exists because a pointer column (<c>UserProfile.IdImageFileId</c>,
+    /// <c>SimfUser.AvatarFileId</c>, …) holding an id proves only that
     /// something was uploaded once, which is why repair passes that test the pointer
     /// for emptiness cannot heal a dangling one.</para></summary>
     Task<bool> ContentExistsAsync(Guid id, CancellationToken cancellationToken = default);

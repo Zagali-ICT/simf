@@ -1,4 +1,4 @@
-using SIMF.Common.Enums;
+﻿using SIMF.Common.Enums;
 using SIMF.Contracts.UserProfile;
 using SIMF.Domain.Profiles;
 
@@ -28,6 +28,18 @@ public interface IUserProfileRepository
     Task<UserProfile?> FindAsync(
         Guid userId, CancellationToken cancellationToken = default);
 
+    /// <summary>The tracked profile with its Interests, found by its OWN id
+    /// rather than by an account's.
+    ///
+    /// <para>For the one flow that knows the attendee and not an account,
+    /// because there is not one yet: badge activation creating the account it is
+    /// about to link. Distinguished from <see cref="GetWithInterestsAsync"/> by
+    /// name rather than by parameter type, since both ids are
+    /// <see cref="Guid"/> and confusing them matches no row rather than
+    /// failing.</para></summary>
+    Task<UserProfile?> GetByProfileIdWithInterestsAsync(
+        Guid userProfileId, CancellationToken cancellationToken = default);
+
     /// <summary>Stages a new profile row (saved by a later
     /// <see cref="SaveAppChangesAsync"/>).</summary>
     void Add(UserProfile profile);
@@ -43,17 +55,6 @@ public interface IUserProfileRepository
 
     /// <summary>The bilingual rejection text, or null when none is set.</summary>
     Task<RejectionText?> GetRejectionTextAsync(
-        Guid userId, CancellationToken cancellationToken = default);
-
-    /// <summary>The relative path of the stored ID image, or null when the
-    /// profile has none.</summary>
-    Task<string?> GetIdImagePathAsync(
-        Guid userId, CancellationToken cancellationToken = default);
-
-    /// <summary>The relative path of the stored VVIP/VIP welcome
-    /// photo, or null when the profile has none. A one-column projection (no
-    /// tracking) for the per-image read path.</summary>
-    Task<string?> GetVipPhotoPathAsync(
         Guid userId, CancellationToken cancellationToken = default);
 
     /// <summary>The active <c>StoredFile</c>'s storage locator
@@ -172,7 +173,7 @@ public sealed record ProfileTypeRole(bool IsVisitor, MobileAppRole MobileAppRole
 /// with a default so the record stays append-only.</para></summary>
 public sealed record ProfileCompletenessFacts(
     string? Name, string? NameArabic, Gender Gender,
-    string? IdImageRelativePath, bool HasInterests,
+    Guid? IdImageFileId, bool HasInterests,
     bool IsVisitorProfileType = true);
 
 /// <summary>An approved Admin account — a notification recipient.</summary>

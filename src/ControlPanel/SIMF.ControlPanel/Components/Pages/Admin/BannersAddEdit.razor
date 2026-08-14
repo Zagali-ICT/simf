@@ -2,8 +2,9 @@
    page) from BannersList. Inherits CrudAddEditFormBase so it exposes the
    standard CRUD-form surface (IsEdit / Initial / OnSuccess / OnCancel).
    IsEdit=false runs Create (POST); IsEdit=true runs Edit (PUT against Initial)
-   and shows the IsActive checkbox. Carries the optional ImageUrl/LinkUrl
-   references unchanged. Supersedes the inline SimfModal form that lived in
+   and shows the IsActive checkbox. Carries the optional click-through LinkUrl;
+   the image is no longer a typed field, it is uploaded into the file store from
+   the Edit branch. Supersedes the inline SimfModal form that lived in
    BannersList. *@
 @inherits CrudAddEditFormBase<AdminBannerDetail>
 
@@ -22,8 +23,6 @@
                        @bind-Value="_model.BodyEn" Disabled="_busy" />
         <SimfTextField Label="@L["Admin.Banners.Field.BodyAr"]"
                        @bind-Value="_model.BodyAr" Disabled="_busy" />
-        <SimfTextField Label="@L["Admin.Banners.Field.ImageUrl"]"
-                       @bind-Value="_model.ImageUrl" Disabled="_busy" />
         <SimfTextField Label="@L["Admin.Banners.Field.LinkUrl"]"
                        @bind-Value="_model.LinkUrl" Disabled="_busy" />
         <SimfTextField Label="@L["Admin.Banners.Field.Start"]"
@@ -44,15 +43,28 @@
                 @L["Admin.Banners.Field.IsActive"]
             </SimfCheckbox>
         }
-        @* Uploaded hero image via the unified media-asset pipeline (edit
-           only; the banner row must exist before bytes can be attached). Served
-           publicly at /app/assets/Banner/{id}/image and rotated on the app home
-           hero. The ImageUrl field above stays as an optional link fallback. *@
+        @* The hero image, via the unified media-asset pipeline. Served publicly
+           at /app/assets/Banner/{id}/image and rotated on the app home hero.
+           Upload attaches bytes, Link records an external URL as a StoredFile -
+           either way it is one row in the one store, which is why the free-text
+           ImageUrl field that used to sit above is gone.
+
+           Edit only: the banner row must exist before anything can be attached
+           to it. The create form shows the slot and says so, matching
+           SpeakersAddEdit. *@
         @if (IsEdit && Initial is not null)
         {
             <div class="simf-field">
                 <span class="simf-field__label">@L["Admin.Asset.Heading"]</span>
                 <SimfImageUpload Category="Banner" OwnerId="@Initial.Id" Alt="@_model.TitleEn" />
+            </div>
+        }
+        else
+        {
+            <div class="simf-photo-empty">
+                <span class="simf-field__label">@L["Admin.Asset.Heading"]</span>
+                <SimfImageThumb Class="simf-img-thumb--lg" Alt="@_model.TitleEn" />
+                <span class="simf-field__helper">@L["Admin.Asset.SaveFirst"]</span>
             </div>
         }
     </div>

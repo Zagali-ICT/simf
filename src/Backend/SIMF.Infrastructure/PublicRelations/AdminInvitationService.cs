@@ -94,7 +94,12 @@ internal sealed class AdminInvitationService(
             })
             .ToListAsync(cancellationToken);
 
-        var recipientUserIds = profiles.Select(p => p.UserId).ToList();
+        // A recipient with no Identity account has no user row to read an email
+        // from; the invitation row itself is still listed below.
+        var recipientUserIds = profiles
+            .Where(p => p.UserId != null)
+            .Select(p => p.UserId!.Value)
+            .ToList();
         var senderUserIds = pageRows.Select(row => row.SentByUserId).Distinct().ToList();
         var allUserIds = recipientUserIds.Union(senderUserIds).ToList();
 
@@ -118,7 +123,8 @@ internal sealed class AdminInvitationService(
                 englishName = profile.Name;
                 arabicName = profile.NameArabic;
                 profileTypeName = profile.ProfileTypeName;
-                if (userById.TryGetValue(profile.UserId, out var recipientUser))
+                if (profile.UserId is Guid recipientUserId
+                    && userById.TryGetValue(recipientUserId, out var recipientUser))
                 {
                     email = recipientUser.Email;
                 }
@@ -169,9 +175,9 @@ internal sealed class AdminInvitationService(
             .SingleOrDefaultAsync(cancellationToken);
 
         var userIds = new List<Guid> { row.SentByUserId };
-        if (profile is not null)
+        if (profile?.UserId is Guid recipientUserId)
         {
-            userIds.Add(profile.UserId);
+            userIds.Add(recipientUserId);
         }
         var users = await identityDbContext.Users.AsNoTracking()
             .Where(user => userIds.Contains(user.Id))
@@ -246,21 +252,26 @@ internal sealed class AdminInvitationService(
 
         // Dispatch the in-app notification — best-effort, swallowed on
         // failure so the PR rep gets a 200 from the API even if the
-        // notification subsystem is down.
-        await notificationDispatcher.TryDispatchAsync(
-            new NotificationRequest
-            {
-                UserId = recipient.UserId,
-                Kind = NotificationKind.InvitationReceived,
-                Title = "You received an invitation",
-                TitleArabic = "تلقّيت دعوة",
-                Body = invitation.Notes ?? "The Public Relations team has sent you an invitation.",
-                BodyArabic = invitation.Notes ?? "أرسل لك فريق العلاقات العامة دعوة.",
-                Severity = NotificationSeverity.Info,
-                RelatedEntityType = nameof(Invitation),
-                RelatedEntityId = invitation.Id,
-                SendEmail = false,
-            }, logger, cancellationToken);
+        // notification subsystem is down. A recipient with no Identity account
+        // has no inbox to deliver to, and the invitation still stands: it is
+        // addressed to the profile, not to the account.
+        if (recipient.UserId is Guid recipientUserId)
+        {
+            await notificationDispatcher.TryDispatchAsync(
+                new NotificationRequest
+                {
+                    UserId = recipientUserId,
+                    Kind = NotificationKind.InvitationReceived,
+                    Title = "You received an invitation",
+                    TitleArabic = "تلقّيت دعوة",
+                    Body = invitation.Notes ?? "The Public Relations team has sent you an invitation.",
+                    BodyArabic = invitation.Notes ?? "أرسل لك فريق العلاقات العامة دعوة.",
+                    Severity = NotificationSeverity.Info,
+                    RelatedEntityType = nameof(Invitation),
+                    RelatedEntityId = invitation.Id,
+                    SendEmail = false,
+                }, logger, cancellationToken);
+        }
 
         logger.LogInformation(
             "PR rep {Actor} created Invitation {InvitationId} for profile {ProfileId}",
@@ -397,9 +408,15 @@ internal sealed class AdminInvitationService(
                 skip, top);
         }
 
-        var userIds = pageRows.Select(row => row.UserId).ToList();
-        var emailsByUser = await userDirectory.GetEmailsAsync(
-            userIds, cancellationToken);
+        // Only the guests holding an account have an email to resolve; the rest
+        // are listed without one rather than left off the list.
+        var userIds = pageRows
+            .Where(row => row.UserId != null)
+            .Select(row => row.UserId!.Value)
+            .ToList();
+        var emailsByUser = userIds.Count == 0
+            ? new Dictionary<Guid, string?>()
+            : await userDirectory.GetEmailsAsync(userIds, cancellationToken);
 
         var items = pageRows.Select(row => new AdminVipSummary(
             row.Id,
@@ -410,7 +427,8 @@ internal sealed class AdminInvitationService(
             row.JobTitleArabic,
             row.ProfileTypeName,
             row.ProfileTypeNameArabic,
-            emailsByUser.TryGetValue(row.UserId, out var email) ? email : null))
+            row.UserId is { } accountId
+                && emailsByUser.TryGetValue(accountId, out var email) ? email : null))
             .ToList();
 
         return GridPage<AdminVipSummary>.Of(items, total,
@@ -469,7 +487,10 @@ internal sealed class AdminInvitationService(
             .Select(profile => new { profile.Id, profile.UserId })
             .ToListAsync(cancellationToken);
 
-        var validUserIds = vipProfiles.Select(p => p.UserId).ToList();
+        var validUserIds = vipProfiles
+            .Where(p => p.UserId != null)
+            .Select(p => p.UserId!.Value)
+            .ToList();
         var skipped = requestedIds.Except(vipProfiles.Select(p => p.Id)).ToList();
 
         var emailsByUser = await userDirectory.GetEmailsAsync(
@@ -479,14 +500,22 @@ internal sealed class AdminInvitationService(
         var emailsEnqueued = 0;
         foreach (var profile in vipProfiles)
         {
-            var hasEmail = emailsByUser.TryGetValue(profile.UserId, out var email)
+            // No Identity account means no inbox and no address on file, so the
+            // VIP is reported as skipped rather than counted as dispatched.
+            if (profile.UserId is not Guid recipientUserId)
+            {
+                skipped.Add(profile.Id);
+                continue;
+            }
+
+            var hasEmail = emailsByUser.TryGetValue(recipientUserId, out var email)
                 && !string.IsNullOrWhiteSpace(email);
             // No RelatedEntity — a VIP broadcast is a free-standing
             // message from the PR desk, not tied to an Invitation row.
             await notificationDispatcher.TryDispatchAsync(
                 new NotificationRequest
                 {
-                    UserId = profile.UserId,
+                    UserId = recipientUserId,
                     Kind = NotificationKind.VipBroadcast,
                     Title = title,
                     TitleArabic = titleArabic,

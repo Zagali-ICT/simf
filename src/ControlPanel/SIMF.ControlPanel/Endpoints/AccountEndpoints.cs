@@ -1,31 +1,8 @@
 // Tests: SIMF.ControlPanel.Tests/AccountEndpointsTests.cs (todo).
-using System.Globalization;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Http.Features;
-using Microsoft.Extensions.Localization;
 using SIMF.ApiClient;
-using SIMF.ControlPanel.Components.Assistant;
 using SIMF.Common;
 using SIMF.Contracts.Admin;
-using SIMF.Contracts.Ai;
-using SIMF.Contracts.Archive;
-using SIMF.Contracts.Authentication;
-using SIMF.Contracts.BusinessMeetings;
-using SIMF.Contracts.Exhibitors;
-using SIMF.Contracts.Exhibition;
-using SIMF.Contracts.Email;
-using SIMF.Contracts.Faq;
-using SIMF.Contracts.Feedback;
-using SIMF.Contracts.Organisations;
-using SIMF.Contracts.Media;
-using SIMF.Contracts.Programme;
-using SIMF.Contracts.Requests;
-using SIMF.Contracts.PublicRelations;
-using SIMF.Contracts.Regions;
-using SIMF.Contracts.Reporting;
-using SIMF.Contracts.Sessions;
-
-using SIMF.Common.Enums;
 
 namespace SIMF.ControlPanel.Endpoints;
 
@@ -53,7 +30,7 @@ internal static partial class AccountEndpoints
 
     public static void MapAccountEndpoints(this IEndpointRouteBuilder routes)
     {
-        var group = routes.MapGroup("/account/api").RequireAuthorization();
+        RouteGroupBuilder group = routes.MapGroup("/account/api").RequireAuthorization();
 
 
         MapAccount(group);
@@ -81,8 +58,10 @@ internal static partial class AccountEndpoints
     /// browser sees the same status the API returned (200 / 400 / 401 / 423
     /// / 429 / 503), and the same envelope body either way.
     /// </summary>
-    private static IResult Forward<T>(ApiCallResult<T> result) =>
-        Results.Json(result.Body, statusCode: result.StatusCode);
+    private static IResult Forward<T>(ApiCallResult<T> result)
+    {
+        return Results.Json(result.Body, statusCode: result.StatusCode);
+    }
 
     /// <summary>
     /// Registers the generic grid Excel EXPORT proxy for one resource:
@@ -97,17 +76,19 @@ internal static partial class AccountEndpoints
     /// so the content type and the file-name convention live in one place.
     /// The stamp is Saudi local, not a zoned stamp.
     /// </summary>
-    private static async Task<IResult> ForwardReportExportAsync(
-        HttpContext http,
-        string slug,
-        Func<string, Task<(int StatusCode, byte[] Bytes)>> export)
+    private static async Task<IResult> ForwardReportExportAsync(HttpContext http, string slug, Func<string, Task<(int StatusCode, byte[] Bytes)>> export)
     {
         var token = await http.GetTokenAsync("access_token");
         if (token is null) { return Results.Unauthorized(); }
 
-        var (status, bytes) = await export(token);
+        (int status, byte[]? bytes) = await export(token);
         if (status != 200 || bytes.Length == 0)
         {
+            // A bodiless status is re-executed into /not-found and reaches the
+            // caller as 400 HTML, so the failure has to carry a body. Kept as an
+            // explicit return rather than folded into a ternary: a structural
+            // guard asserts on this exact shape, because the pattern it protects
+            // against is invisible at runtime until a download denies wrongly.
             return DownloadFailure(status, bytes);
         }
 
@@ -148,12 +129,9 @@ internal static partial class AccountEndpoints
     /// </summary>
     private static IResult DownloadFailure(int status, byte[] bytes)
     {
-        if (status == StatusCodes.Status200OK)
-        {
-            return Results.StatusCode(StatusCodes.Status200OK);
-        }
-
-        return bytes.Length > 0
+        return status == StatusCodes.Status200OK
+            ? Results.StatusCode(StatusCodes.Status200OK)
+            : bytes.Length > 0
             ? Results.Content(
                 System.Text.Encoding.UTF8.GetString(bytes),
                 "application/json",
@@ -164,12 +142,16 @@ internal static partial class AccountEndpoints
 
     private static void MapGridExport(IEndpointRouteBuilder group, string slug)
     {
-        group.MapPost($"/admin/{slug}/export",
+        _ = group.MapPost($"/admin/{slug}/export",
             async (AdminGridExportRequest body, HttpContext http, SimfAdminClient api) =>
         {
             var token = await http.GetTokenAsync("access_token");
-            if (token is null) return Results.Unauthorized();
-            var (status, bytes) = await api.ExportGridAsync(slug, body, token);
+            if (token is null)
+            {
+                return Results.Unauthorized();
+            }
+
+            (int status, byte[]? bytes) = await api.ExportGridAsync(slug, body, token);
             if (status != 200 || bytes.Length == 0)
             {
                 // Same reason as ForwardReportExportAsync: a bodiless status is
@@ -191,13 +173,17 @@ internal static partial class AccountEndpoints
     {
         MapGridExport(group, slug);
 
-        group.MapPost($"/admin/{slug}/import",
+        _ = group.MapPost($"/admin/{slug}/import",
             async (HttpContext http, SimfAdminClient api) =>
         {
             var token = await http.GetTokenAsync("access_token");
-            if (token is null) return Results.Unauthorized();
-            var form = await http.Request.ReadFormAsync();
-            var file = form.Files.GetFile("file");
+            if (token is null)
+            {
+                return Results.Unauthorized();
+            }
+
+            IFormCollection form = await http.Request.ReadFormAsync();
+            IFormFile? file = form.Files.GetFile("file");
             if (file is null || file.Length == 0)
             {
                 return Results.BadRequest(ApiResult<object>.Fail(new ApiError

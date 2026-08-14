@@ -1,7 +1,9 @@
 // Tests: SIMF.Api.Tests/ArchiveTests.cs
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.Archive.Abstractions;
+using SIMF.Application.Assets.Abstractions;
 using SIMF.Application.Operations.Abstractions;
+using SIMF.Common.Enums;
 using SIMF.Contracts.Archive;
 using SIMF.Infrastructure.Persistence;
 
@@ -14,6 +16,7 @@ namespace SIMF.Infrastructure.Archive;
 /// a separate visibility round-trip.</summary>
 internal sealed class PublicArchiveService(
     SimfAppDbContext appDbContext,
+    IAssetService assetService,
     IOperationsToggleService operationsToggleService) : IPublicArchiveService
 {
     public async Task<PublicArchive> ListAsync(
@@ -39,12 +42,24 @@ internal sealed class PublicArchiveService(
                 edition.Attendees,
                 edition.Sessions,
                 edition.Speakers,
-                edition.CoverImageRelativePath,
+                null,
                 edition.LocationEn,
                 edition.LocationAr,
                 edition.DateLabelEn,
                 edition.DateLabelAr))
             .ToListAsync(cancellationToken);
+
+        // Which editions actually have a cover in the store — one batched query
+        // for the page, no N+1. The wire's CoverImageRelativePath is retained but
+        // always null, so HasCoverAsset is what a client branches on.
+        var withCover = await assetService.WhichOwnersHaveActiveAssetAsync(
+            AssetCategory.ArchiveCover,
+            items.Select(edition => edition.Id).ToList(),
+            cancellationToken);
+        items = [.. items.Select(edition => edition with
+        {
+            HasCoverAsset = withCover.Contains(edition.Id),
+        })];
 
         return new PublicArchive(items);
     }
@@ -77,7 +92,7 @@ internal sealed class PublicArchiveService(
                 edition.Attendees,
                 edition.Sessions,
                 edition.Speakers,
-                edition.CoverImageRelativePath,
+                null,
                 // The rich child lists, each ordered by DisplayOrder.
                 // AsSplitQuery (below) emits one query per collection; without it
                 // the three sibling collection sub-selects JOIN into a single

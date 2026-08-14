@@ -598,7 +598,7 @@ Scenario: the name column renders a photo thumbnail when the visitor has an avat
 
 **Covered (lower layer):** `tests/SIMF.Api.Tests/PendingProfileReadTests.cs` →
 `Others_pending_list_row_reports_HasAvatar_once_a_photo_is_set` asserts the list
-row's `HasAvatar` flips with the `AvatarRelativePath` sentinel (the same
+row's `HasAvatar` flips with the `AvatarFileId` sentinel (the same
 projection backs the visitors list). The thumbnail render itself is the shared
 `SimfIdentityCell` proven on the Speakers/Sponsors lists; confirm visually in the
 Chrome DevTools MCP smoke.

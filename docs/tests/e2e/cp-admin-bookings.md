@@ -6,7 +6,7 @@
 | **Route** | `/admin/bookings` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (canonical SIMF browser smoke). Convertible to Playwright later — keep scenario steps tool-agnostic. |
-| **Auth setup** | `superadmin@simrsnf.com` / `[REDACTED - supply via SIMF_SuperAdmin__TempPassword]` + TOTP via the `Get-Totp` helper |
+| **Auth setup** | `superadmin@simrsnf.com` / `[REDACTED - supply via SIMF_API_SuperAdmin__TempPassword]` + TOTP via the `Get-Totp` helper |
 | **Required permission** | `Bookings.View` (page + list); `Bookings.Export` (Excel export) — `PermissionCatalog.Bookings.*`. There is **no** `Bookings.Approve` / `Bookings.Reject` (retired with the approval step, #6/#17). |
 | **Last reviewed** | 2026-07-21 (#6/#17 — approval retired; read-only monitor + no-show release) |
 

@@ -10,6 +10,7 @@ import 'package:simf_app/core/responsive/max_width_body.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
 import 'package:simf_app/core/widgets/simf_auth_sweep.dart';
 import 'package:simf_app/features/account/biometric_auth.dart';
+import 'package:simf_app/features/account/device_label.dart';
 import 'package:simf_app/features/account/widgets/account_sub_header.dart';
 import 'package:simf_app/features/account/widgets/auth_chrome.dart';
 import 'package:simf_app/features/account/widgets/otp_code_boxes.dart';
@@ -153,9 +154,16 @@ class _BiometricStepUpScreenState extends ConsumerState<BiometricStepUpScreen> {
       return;
     }
     try {
+      // Name the device instead of taking enrolDeviceKey's 'SIMF mobile'
+      // default, so two enrolled devices are distinguishable in the audit trail
+      // and on the My Devices screen.
+      final label = await ref.read(deviceLabelProvider).resolve();
+      if (!mounted) {
+        return;
+      }
       await ref
           .read(authControllerProvider.notifier)
-          .enrolDeviceKey(stepUpCode: code);
+          .enrolDeviceKey(label: label, stepUpCode: code);
       if (!mounted) {
         return;
       }

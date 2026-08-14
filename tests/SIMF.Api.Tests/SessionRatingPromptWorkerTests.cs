@@ -264,12 +264,13 @@ public sealed class SessionRatingPromptWorkerTests : IClassFixture<SimfApiFactor
         var (hall, session) = BuildEndedSession(end);
         db.Halls.Add(hall);
         db.Sessions.Add(session);
+        var attendeeProfileId = await TestAttendeeProfiles.EnsureForAccountAsync(db, visitorId);
         db.HallAttendances.Add(new HallAttendance
         {
             Id = Guid.NewGuid(),
             SessionId = session.Id,
             HallId = hall.Id,
-            UserId = visitorId,
+            UserProfileId = attendeeProfileId,
             Method = AttendanceMethod.QrScan,
             Enter = session.Start,
             CreatedAt = SimfClock.Now,
@@ -287,6 +288,7 @@ public sealed class SessionRatingPromptWorkerTests : IClassFixture<SimfApiFactor
         var (hall, session) = BuildEndedSession(end);
         db.Halls.Add(hall);
         db.Sessions.Add(session);
+        var attendeeProfileId = await TestAttendeeProfiles.EnsureForAccountAsync(db, visitorId);
         db.SeatReservations.Add(new SeatReservation
         {
             Id = Guid.NewGuid(),
@@ -294,7 +296,7 @@ public sealed class SessionRatingPromptWorkerTests : IClassFixture<SimfApiFactor
             RowLabel = "A",
             SeatNumber = 1,
             Kind = SeatReservationKind.UserBooking,
-            ReservedForUserId = visitorId,
+            ReservedForProfileId = attendeeProfileId,
             CreatedByUserId = visitorId,
             CreatedAt = SimfClock.Now,
         });

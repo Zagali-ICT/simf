@@ -339,14 +339,17 @@ internal sealed class AdminGateService(
                 Array.Empty<AdminGateOperatorCandidate>(), 0, skip, top);
         }
 
-        // Step 2 (App DB) — the profile rows carrying one of those types.
+        // Step 2 (App DB) — the profile rows carrying one of those types. An
+        // attendee with no account is skipped: a gate operator works the gate by
+        // signing in to the mobile app, so there is nothing for step 3 to approve.
         var profileTypeIds = operatorProfileTypes.Select(row => row.Id).ToList();
         var profileRows = await appDbContext.UserProfiles.AsNoTracking()
-            .Where(profile => profile.ProfileTypeId != null
+            .Where(profile => profile.UserId != null
+                && profile.ProfileTypeId != null
                 && profileTypeIds.Contains(profile.ProfileTypeId.Value))
             .Select(profile => new
             {
-                profile.UserId,
+                UserId = profile.UserId!.Value,
                 ProfileTypeId = profile.ProfileTypeId!.Value,
             })
             .ToListAsync(cancellationToken);
@@ -463,12 +466,21 @@ internal sealed class AdminGateService(
                 .Where(profile => profileIds.Contains(profile.Id))
                 .Select(profile => new { profile.Id, profile.UserId })
                 .ToListAsync(cancellationToken);
-            var userIds = profileUsers.Select(pu => pu.UserId).Distinct().ToList();
+            // Only the accounts are looked up, but EVERY scanned profile stays in the
+            // map: an attendee with no account has no name to fetch, and dropping
+            // them here would erase their scans from this report and its export.
+            var userIds = profileUsers
+                .Where(pu => pu.UserId != null)
+                .Select(pu => pu.UserId!.Value)
+                .Distinct()
+                .ToList();
             var userNamesByUserId = await userDirectory.GetDisplayNamesAsync(
                 userIds, cancellationToken);
             displayNames = profileUsers.ToDictionary(
                 pu => pu.Id,
-                pu => userNamesByUserId.TryGetValue(pu.UserId, out var name) ? name : string.Empty);
+                pu => pu.UserId is { } userId
+                    && userNamesByUserId.TryGetValue(userId, out var name)
+                        ? name : string.Empty);
         }
 
         return raw.Select(r => new AdminGateScanRow(
@@ -547,7 +559,15 @@ internal sealed class AdminGateService(
                 ProfileType = profile.ProfileType,
             })
             .ToListAsync(cancellationToken);
-        var inProfileUserIds = profileRows.Select(pr => pr.UserId).Distinct().ToList();
+        // Only the accounts are looked up, but EVERY profile stays in the map: an
+        // attendee with no account has no display name to fetch, and dropping them
+        // would take them off the occupancy roster while they are still inside. Their
+        // Arabic name and profile type come from the profile row either way.
+        var inProfileUserIds = profileRows
+            .Where(pr => pr.UserId != null)
+            .Select(pr => pr.UserId!.Value)
+            .Distinct()
+            .ToList();
         var profileUserDisplayNames = await userDirectory.GetDisplayNamesAsync(
             inProfileUserIds, cancellationToken);
         var profiles = profileRows.ToDictionary(
@@ -555,8 +575,9 @@ internal sealed class AdminGateService(
             row => new
             {
                 row.Id,
-                DisplayName = profileUserDisplayNames.TryGetValue(row.UserId, out var name)
-                    ? name : string.Empty,
+                DisplayName = row.UserId is { } userId
+                    && profileUserDisplayNames.TryGetValue(userId, out var name)
+                        ? name : string.Empty,
                 row.NameArabic,
                 row.ProfileTypeId,
                 ProfileType = row.ProfileType,
@@ -698,12 +719,13 @@ internal sealed class AdminGateService(
         if (appAccountIds.Count > 0)
         {
             var operational = await appDbContext.UserProfiles.AsNoTracking()
-                .Where(profile => appAccountIds.Contains(profile.UserId)
+                .Where(profile => profile.UserId != null
+                    && appAccountIds.Contains(profile.UserId.Value)
                     && profile.ProfileType != null
                     && profile.ProfileType.IsActive
                     && !profile.ProfileType.IsForVisitor
                     && GateOperatorAppRoles.Contains(profile.ProfileType.MobileAppRole))
-                .Select(profile => profile.UserId)
+                .Select(profile => profile.UserId!.Value)
                 .ToListAsync(cancellationToken);
             eligible.UnionWith(operational);
         }

@@ -148,6 +148,12 @@ public sealed class QuestionArrivalGatingTests : IClassFixture<SimfApiFactory>
                 UserType = UserType.Visitor,
             };
             await users.CreateAsync(user, AuthFlow.Password);
+            // A visitor IS their attendee record; the account is only how they
+            // sign in. Approval creates the profile in production, and this
+            // helper creates the account directly, so it has to create one too —
+            // arriving at a hall is keyed by the profile, not by the account.
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            await TestAttendeeProfiles.EnsureForAccountAsync(db, user.Id);
         }
         var sign = await _client.PostAsJsonAsync(
             "/api/v1/app/auth/sign-in",

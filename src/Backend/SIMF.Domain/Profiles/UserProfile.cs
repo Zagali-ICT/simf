@@ -5,9 +5,9 @@ using SIMF.Domain.Organisations;
 namespace SIMF.Domain.Profiles;
 
 /// <summary>
-/// The per-account information captured at registration. One row per non-Admin
-/// <see cref="IdentityAccess.SimfUser"/>, absent until the user fills the form in or an admin
-/// creates a stub on their behalf; Admin-typed users carry no profile.
+/// The attendee record, and the primary one: a person who attends the forum has a
+/// profile, whether or not they ever hold an account. Admin-typed users carry no
+/// profile.
 ///
 /// <para><see cref="ProfileTypeId"/> hangs off the profile rather than off the
 /// user because the subtype is a property of the profile, not of the identity:
@@ -16,12 +16,28 @@ namespace SIMF.Domain.Profiles;
 /// </summary>
 public class UserProfile : BaseAuditEntity
 {
-    /// <summary>The owning account. A bare Guid rather than a navigation: the
-    /// user row lives in the Identity database, so there is no foreign key
-    /// across the two and the service layer enforces the link on write. Unique,
-    /// so a second upsert by the same user updates this row instead of adding a
-    /// sibling.</summary>
-    public Guid UserId { get; set; }
+    /// <summary>
+    /// The Identity account that can sign in as this attendee, or null when there
+    /// is none. A bare Guid rather than a navigation: the user row lives in the
+    /// Identity database, so there is no foreign key across the two and the
+    /// service layer enforces the link on write.
+    ///
+    /// <para>NULL is the ordinary case for someone who attends and never installs
+    /// the app — a walk-in, or a badge minted into a bulk order. An account is
+    /// created and linked here only when its owner wants mobile access, which is
+    /// the sole thing it grants: admission is decided by
+    /// <see cref="AdmissionState"/> on this row, never by the user's state.</para>
+    ///
+    /// <para>The unique index on this column is FILTERED to non-null rows. SQL
+    /// Server treats NULLs as equal in a unique index, so an unfiltered one would
+    /// permit exactly ONE profile without an account across the whole system —
+    /// which passes every test and then fails on the second walk-in of the
+    /// event. Never write <see cref="Guid.Empty"/> here as a stand-in for "none":
+    /// it is already in use elsewhere as a "matches nobody" sentinel, and a row
+    /// carrying it would collide with every other such row on the identity,
+    /// seating and exhibitor-lead lookups.</para>
+    /// </summary>
+    public Guid? UserId { get; set; }
 
     /// <summary>Full name in English, exactly as printed in the passport.</summary>
     public string Name { get; set; } = string.Empty;
@@ -98,13 +114,28 @@ public class UserProfile : BaseAuditEntity
 
     public SIMF.Domain.Regions.Region? Region { get; set; }
 
-    /// <summary>The bulk-badge run that minted this placeholder profile, so a
-    /// generated set can be re-emailed or revoked together. Null for every
-    /// profile created through the normal sign-up or walk-in paths. A real
-    /// foreign key of the same shape as <see cref="OrganisationId"/>.</summary>
-    public Guid? BadgeBatchId { get; set; }
+    /// <summary>The order this attendee arrived on, so a set handed out together
+    /// can be topped up, re-emailed or revoked together. REQUIRED: everyone
+    /// belongs to an order, and whoever arrived without a bulk one behind them —
+    /// a direct registration, a walk-in, an exhibition-desk capture — belongs to
+    /// the seeded <see cref="Badges.BadgeBatch.DirectRegistrationId"/>.
+    ///
+    /// <para>It was nullable and set only by the bulk mint, which meant "which
+    /// order did this attendee come from" had no answer at all for anyone who
+    /// registered themselves.</para></summary>
+    public Guid BadgeBatchId { get; set; } = SIMF.Domain.Badges.BadgeBatch.DirectRegistrationId;
 
     public SIMF.Domain.Badges.BadgeBatch? BadgeBatch { get; set; }
+
+    /// <summary>The edition year this attendee was registered for, and the year
+    /// their badge is valid in. Stamped from the open edition at creation.
+    ///
+    /// <para>Closing a year does not delete its attendees — their records stay,
+    /// labelled with the year they belong to, which is what makes an edition a
+    /// queryable dimension rather than a date range. Opening the next year
+    /// clears their QR, so a returning attendee is re-issued rather than left
+    /// holding a badge that every door refuses.</para></summary>
+    public int EditionYear { get; set; }
 
     /// <summary>Whether this profile appears in the "Meet People Like You"
     /// recommendations and the partner directory. The column defaults to true, so
@@ -145,9 +176,12 @@ public class UserProfile : BaseAuditEntity
     /// message goes out in.</summary>
     public string? PreferredLanguage { get; set; }
 
-    /// <summary>Relative path of a separate high-resolution VIP photo, distinct
-    /// from the account avatar and held in the VIP-photo store.</summary>
-    public string? VipPhotoRelativePath { get; set; }
+    /// <summary>A separate high-resolution VIP photo, distinct from the account
+    /// avatar, as its row in the unified file store. A real foreign key, unlike
+    /// the avatar: both this row and <c>StoredFile</c> live in the App database,
+    /// so the constraint is legal here and the database keeps it honest.
+    /// Null for everyone who is not VVIP or VIP.</summary>
+    public Guid? VipPhotoFileId { get; set; }
 
     /// <summary>Marks the profile as a delegation member (وفد); a delegate is
     /// otherwise an ordinary visitor. The create path refuses the flag unless the
@@ -189,18 +223,50 @@ public class UserProfile : BaseAuditEntity
     public ICollection<UserInterest> Interests { get; set; } = new List<UserInterest>();
 
     /// <summary>
+    /// Whether this attendee may be admitted, and the authority on that question
+    /// for every gate, hall door and badge in the system.
+    ///
+    /// <para>This is the SAME fact that used to live on
+    /// <see cref="IdentityAccess.SimfUser.AccountState"/>, MOVED here rather than
+    /// copied. It had to move because an attendee need not have an account
+    /// (<see cref="UserId"/>), and a fact that only exists for some attendees
+    /// cannot be the one the gate reads. It must never be mirrored back onto the
+    /// user row: the two databases have no distributed transaction between them,
+    /// so a second writable copy would drift, and one of the two would then be
+    /// deciding admission while the other looked authoritative.</para>
+    ///
+    /// <para><see cref="AccountState.Registered"/> and
+    /// <see cref="AccountState.EmailVerified"/> describe a credential flow and so
+    /// belong to an account, not to an attendee; a profile therefore starts at
+    /// <see cref="AccountState.PendingApproval"/> and moves to
+    /// <see cref="AccountState.Approved"/> or <see cref="AccountState.Rejected"/>.
+    /// The enum is shared with the user row because it is the same vocabulary,
+    /// not because the two columns track each other.</para>
+    /// </summary>
+    public AccountState AdmissionState { get; set; } = AccountState.PendingApproval;
+
+    /// <summary>When <see cref="AdmissionState"/> last changed. Saudi wall clock.</summary>
+    public DateTime? StateChangedAt { get; set; }
+
+    /// <summary>The admin who last changed <see cref="AdmissionState"/>, or null
+    /// when nobody has — a self-service registrant reaching PendingApproval has no
+    /// actor, and neither does a seeded row. A bare Guid into the Identity
+    /// database, like <see cref="UserId"/>.</summary>
+    public Guid? StateChangedByUserId { get; set; }
+
+    /// <summary>
     /// The short, opaque event-entry identifier carried in the participant's QR
     /// code, which staff scan to check them in. Minted by <c>IQrIdMinter</c> the
-    /// moment the owning account's <see cref="IdentityAccess.SimfUser.AccountState"/> reaches
-    /// <see cref="AccountState.Approved"/>, so it stays null until the account is
+    /// moment <see cref="AdmissionState"/> reaches
+    /// <see cref="AccountState.Approved"/>, so it stays null until the attendee is
     /// approved. Twelve characters of the Crockford base32 alphabet (no 0, O, 1,
     /// I, L or U), unique across the system.
     /// </summary>
     public string? QrId { get; set; }
 
     /// <summary>
-    /// The admin's reason for rejecting the account, written when the owning
-    /// account's <see cref="IdentityAccess.SimfUser.AccountState"/> reaches
+    /// The admin's reason for rejecting the attendee, written when
+    /// <see cref="AdmissionState"/> reaches
     /// <see cref="AccountState.Rejected"/> and cleared on a later approval. Up to
     /// 500 characters, matching the <c>AdminRejectRequest.Reason</c> validator.
     /// </summary>
@@ -213,11 +279,16 @@ public class UserProfile : BaseAuditEntity
     /// </summary>
     public string? RejectionReasonArabic { get; set; }
 
-    /// <summary>Relative path of the ID-image file inside the unified store
-    /// rooted at <c>FileStorage:RootPath</c>, under its <c>IdDocument</c> folder.
-    /// The bytes are envelope-encrypted on disk and never sit in the row. Null
-    /// when no image has been uploaded.</summary>
-    public string? IdImageRelativePath { get; set; }
+    /// <summary>The registrant's ID document, as its row in the unified file
+    /// store. A real foreign key: both sides live in the App database. The bytes
+    /// are envelope-encrypted and never sit in this row. Null when nothing has
+    /// been uploaded.
+    ///
+    /// <para>This was <c>IdImageRelativePath</c>, and its comment described a
+    /// path "inside the unified store rooted at <c>FileStorage:RootPath</c>,
+    /// under its <c>IdDocument</c> folder" long after the column had stopped
+    /// holding anything of the sort.</para></summary>
+    public Guid? IdImageFileId { get; set; }
 
     // The five accessibility choices the app used to keep in device preferences
     // ONLY, so they never followed the user to a second device and did not

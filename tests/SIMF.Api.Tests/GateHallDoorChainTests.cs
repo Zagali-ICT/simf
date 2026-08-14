@@ -2,8 +2,9 @@
 // allowed CheckIn opens the attendee's attendance row for the session live in
 // that hall (Method=QrScan), a CheckOut closes it, a perimeter gate (HallId null)
 // records only a GateScan, and a scan when no session is live records nothing.
-// The DoD-critical assertion: HallAttendance.UserId is bound to the attendee's
-// Identity SimfUser.Id (QrResolution.UserId), NEVER the App UserProfile id.
+// The DoD-critical assertion: HallAttendance.UserProfileId is bound to the
+// attendee's App UserProfile.Id (QrResolution.UserProfileId), NEVER the Identity
+// SimfUser.Id — an attendee need not hold an account, and a walk-in does not.
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -54,9 +55,9 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
         var (token, operatorUserId) = await CreateAdminAsync();
         var (hallId, sessionId) = await SeedHallWithLiveSessionAsync();
         var gateId = await CreateGateAsync(token, operatorUserId, hallId);
-        var (qrId, attendeeUserId) = await CreateApprovedVisitorWithQrAsync();
+        var (qrId, _, attendeeProfileId) = await CreateApprovedVisitorWithQrAsync();
         // D-819 (step 11.5) — a session hall admits only a registered attendee.
-        await SeedSeatReservationAsync(sessionId, attendeeUserId);
+        await SeedSeatReservationAsync(sessionId, attendeeProfileId);
 
         var scan = await PostScanAsync(gateId, qrId, token, ScanDirection.CheckIn);
         Assert.Equal(HttpStatusCode.OK, scan.StatusCode);
@@ -67,9 +68,9 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
             .Where(a => a.SessionId == sessionId)
             .ToListAsync();
         var row = Assert.Single(rows);
-        // DoD-critical: the attendance row is keyed by the Identity user id, not
-        // the App UserProfile id.
-        Assert.Equal(attendeeUserId, row.UserId);
+        // DoD-critical: the attendance row is keyed by the App UserProfile id, not
+        // the Identity user id — an attendee need not have an account at all.
+        Assert.Equal(attendeeProfileId, row.UserProfileId);
         Assert.Equal(AttendanceMethod.QrScan, row.Method);
         Assert.Null(row.Leave);
     }
@@ -81,7 +82,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
         var (_, sessionId) = await SeedHallWithLiveSessionAsync();
         // HallId null → a perimeter gate.
         var gateId = await CreateGateAsync(token, operatorUserId, hallId: null);
-        var (qrId, _) = await CreateApprovedVisitorWithQrAsync();
+        var (qrId, _, _) = await CreateApprovedVisitorWithQrAsync();
 
         var scan = await PostScanAsync(gateId, qrId, token, ScanDirection.CheckIn);
         Assert.Equal(HttpStatusCode.OK, scan.StatusCode);
@@ -97,9 +98,9 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
         var (token, operatorUserId) = await CreateAdminAsync();
         var (hallId, sessionId) = await SeedHallWithLiveSessionAsync();
         var gateId = await CreateGateAsync(token, operatorUserId, hallId);
-        var (qrId, attendeeUserId) = await CreateApprovedVisitorWithQrAsync();
+        var (qrId, _, attendeeProfileId) = await CreateApprovedVisitorWithQrAsync();
         // D-819 (step 11.5) — a session hall admits only a registered attendee.
-        await SeedSeatReservationAsync(sessionId, attendeeUserId);
+        await SeedSeatReservationAsync(sessionId, attendeeProfileId);
 
         var checkIn = await PostScanAsync(gateId, qrId, token, ScanDirection.CheckIn);
         Assert.Equal(HttpStatusCode.OK, checkIn.StatusCode);
@@ -111,7 +112,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var row = await db.HallAttendances
-            .SingleAsync(a => a.SessionId == sessionId && a.UserId == attendeeUserId);
+            .SingleAsync(a => a.SessionId == sessionId && a.UserProfileId == attendeeProfileId);
         Assert.NotNull(row.Leave);
     }
 
@@ -121,7 +122,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
         var (token, operatorUserId) = await CreateAdminAsync();
         var hallId = await SeedHallWithoutSessionAsync();
         var gateId = await CreateGateAsync(token, operatorUserId, hallId);
-        var (qrId, _) = await CreateApprovedVisitorWithQrAsync();
+        var (qrId, _, _) = await CreateApprovedVisitorWithQrAsync();
 
         var scan = await PostScanAsync(gateId, qrId, token, ScanDirection.CheckIn);
         // The gate scan itself still succeeds (Allowed); the chain records nothing.
@@ -142,7 +143,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
         var (token, operatorUserId) = await CreateAdminAsync();
         var hallId = await SeedHallWithoutSessionAsync();
         var gateId = await CreateGateAsync(token, operatorUserId, hallId);
-        var (qrId, _) = await CreateApprovedVisitorWithQrAsync();
+        var (qrId, _, _) = await CreateApprovedVisitorWithQrAsync();
 
         var scan = await PostScanAsync(gateId, qrId, token, ScanDirection.CheckIn);
         Assert.Equal(HttpStatusCode.OK, scan.StatusCode);
@@ -163,9 +164,9 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
         var (token, operatorUserId) = await CreateAdminAsync();
         var (hallId, sessionId) = await SeedHallWithLiveSessionAsync();
         var gateId = await CreateGateAsync(token, operatorUserId, hallId);
-        var (qrId, attendeeUserId) = await CreateApprovedVisitorWithQrAsync();
+        var (qrId, _, attendeeProfileId) = await CreateApprovedVisitorWithQrAsync();
         // D-819 (step 11.5) — a session hall admits only a registered attendee.
-        await SeedSeatReservationAsync(sessionId, attendeeUserId);
+        await SeedSeatReservationAsync(sessionId, attendeeProfileId);
 
         var scan = await PostScanAsync(gateId, qrId, token, ScanDirection.CheckIn);
         Assert.Equal(HttpStatusCode.OK, scan.StatusCode);
@@ -189,7 +190,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
         var (token, operatorUserId) = await CreateAdminAsync();
         var (hallId, sessionId) = await SeedHallWithLiveSessionAsync();
         var gateId = await CreateGateAsync(token, operatorUserId, hallId);
-        var (qrId, _) = await CreateApprovedVisitorWithQrAsync();
+        var (qrId, _, _) = await CreateApprovedVisitorWithQrAsync();
         // Deliberately NO seat reservation.
 
         var scan = await PostScanAsync(gateId, qrId, token, ScanDirection.CheckIn);
@@ -217,8 +218,8 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
         var (token, operatorUserId) = await CreateAdminAsync();
         var (hallId, sessionId) = await SeedHallWithLiveSessionAsync();
         var gateId = await CreateGateAsync(token, operatorUserId, hallId);
-        var (qrId, attendeeUserId) = await CreateApprovedVisitorWithQrAsync();
-        await SeedSeatReservationAsync(sessionId, attendeeUserId);
+        var (qrId, _, attendeeProfileId) = await CreateApprovedVisitorWithQrAsync();
+        await SeedSeatReservationAsync(sessionId, attendeeProfileId);
 
         var scan = await PostScanAsync(gateId, qrId, token, ScanDirection.CheckIn);
         Assert.Equal(HttpStatusCode.OK, scan.StatusCode);
@@ -227,7 +228,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var holds = await db.SeatReservations
             .Where(r => r.SessionId == sessionId
-                && r.ReservedForUserId == attendeeUserId
+                && r.ReservedForProfileId == attendeeProfileId
                 && r.ReleasedAt == null)
             .ToListAsync();
 
@@ -244,7 +245,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
         // HallId, so venue entry must stay unaffected by session bookings.
         var (token, operatorUserId) = await CreateAdminAsync();
         var gateId = await CreateGateAsync(token, operatorUserId, hallId: null);
-        var (qrId, _) = await CreateApprovedVisitorWithQrAsync();
+        var (qrId, _, _) = await CreateApprovedVisitorWithQrAsync();
 
         var scan = await PostScanAsync(gateId, qrId, token, ScanDirection.CheckIn);
         Assert.Equal(HttpStatusCode.OK, scan.StatusCode);
@@ -261,8 +262,8 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
         var (token, operatorUserId) = await CreateAdminAsync();
         var (hallId, sessionId) = await SeedHallWithLiveSessionAsync();
         var gateId = await CreateGateAsync(token, operatorUserId, hallId);
-        var (qrId, attendeeUserId) = await CreateApprovedVisitorWithQrAsync();
-        await SeedSeatReservationAsync(sessionId, attendeeUserId);
+        var (qrId, _, attendeeProfileId) = await CreateApprovedVisitorWithQrAsync();
+        await SeedSeatReservationAsync(sessionId, attendeeProfileId);
 
         var checkIn = await PostScanAsync(gateId, qrId, token, ScanDirection.CheckIn);
         Assert.Equal(HttpStatusCode.OK, checkIn.StatusCode);
@@ -274,7 +275,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
                 .GetRequiredService<SimfAppDbContext>();
             var reservation = await releaseDb.SeatReservations
                 .SingleAsync(r => r.SessionId == sessionId
-                    && r.ReservedForUserId == attendeeUserId);
+                    && r.ReservedForProfileId == attendeeProfileId);
             reservation.ReleasedAt = SimfClock.Now;
             await releaseDb.SaveChangesAsync();
         }
@@ -292,7 +293,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
         // so the "no attendance recorded" advisory must not fire there.
         var (token, operatorUserId) = await CreateAdminAsync();
         var gateId = await CreateGateAsync(token, operatorUserId, hallId: null);
-        var (qrId, _) = await CreateApprovedVisitorWithQrAsync();
+        var (qrId, _, _) = await CreateApprovedVisitorWithQrAsync();
 
         var scan = await PostScanAsync(gateId, qrId, token, ScanDirection.CheckIn);
         Assert.Equal(HttpStatusCode.OK, scan.StatusCode);
@@ -314,7 +315,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
         var (hallId, sessionId) = await SeedHallWithLiveSessionAsync();
         var gateId = await CreateGateAsync(
             token, operatorUserId, hallId, DirectionMode.Out);
-        var (qrId, _) = await CreateApprovedVisitorWithQrAsync();
+        var (qrId, _, _) = await CreateApprovedVisitorWithQrAsync();
 
         var scan = await PostScanAsync(gateId, qrId, token, ScanDirection.CheckOut);
         Assert.Equal(HttpStatusCode.OK, scan.StatusCode);
@@ -342,9 +343,9 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
             token, operatorUserId, hallId, DirectionMode.In);
         var outGateId = await CreateGateAsync(
             token, operatorUserId, hallId, DirectionMode.Out);
-        var (qrId, attendeeUserId) = await CreateApprovedVisitorWithQrAsync();
+        var (qrId, _, attendeeProfileId) = await CreateApprovedVisitorWithQrAsync();
         // D-819 (step 11.5) — a session hall admits only a registered attendee.
-        await SeedSeatReservationAsync(sessionId, attendeeUserId);
+        await SeedSeatReservationAsync(sessionId, attendeeProfileId);
 
         var checkIn = await PostScanAsync(inGateId, qrId, token, ScanDirection.CheckIn);
         Assert.Equal(HttpStatusCode.OK, checkIn.StatusCode);
@@ -360,7 +361,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var row = await db.HallAttendances
-            .SingleAsync(a => a.SessionId == sessionId && a.UserId == attendeeUserId);
+            .SingleAsync(a => a.SessionId == sessionId && a.UserProfileId == attendeeProfileId);
         Assert.NotNull(row.Leave);
     }
 
@@ -377,7 +378,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
         var (token, operatorUserId) = await CreateAdminAsync();
         var hallId = await SeedHallWithoutSessionAsync();
         var gateId = await CreateGateAsync(token, operatorUserId, hallId);
-        var (qrId, _) = await CreateApprovedVisitorWithQrAsync();
+        var (qrId, _, _) = await CreateApprovedVisitorWithQrAsync();
 
         var scan = await PostScanAsync(
             gateId, qrId, token, ScanDirection.CheckIn, acceptLanguage: "ar-SA,ar;q=0.9,en;q=0.8");
@@ -398,9 +399,9 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
         var (hallId, sessionId) = await SeedHallWithLiveSessionAsync(
             startOffsetMin: 10, endOffsetMin: 70);
         var gateId = await CreateGateAsync(token, operatorUserId, hallId);
-        var (qrId, attendeeUserId) = await CreateApprovedVisitorWithQrAsync();
+        var (qrId, _, attendeeProfileId) = await CreateApprovedVisitorWithQrAsync();
         // D-819 (step 11.5) — a session hall admits only a registered attendee.
-        await SeedSeatReservationAsync(sessionId, attendeeUserId);
+        await SeedSeatReservationAsync(sessionId, attendeeProfileId);
 
         var scan = await PostScanAsync(gateId, qrId, token, ScanDirection.CheckIn);
         Assert.Equal(HttpStatusCode.OK, scan.StatusCode);
@@ -408,7 +409,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var row = await db.HallAttendances.SingleAsync(a => a.SessionId == sessionId);
-        Assert.Equal(attendeeUserId, row.UserId);
+        Assert.Equal(attendeeProfileId, row.UserProfileId);
         Assert.Null(row.Leave);
     }
 
@@ -421,7 +422,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
         var (hallId, sessionId) = await SeedHallWithLiveSessionAsync(
             startOffsetMin: 60, endOffsetMin: 120);
         var gateId = await CreateGateAsync(token, operatorUserId, hallId);
-        var (qrId, _) = await CreateApprovedVisitorWithQrAsync();
+        var (qrId, _, _) = await CreateApprovedVisitorWithQrAsync();
 
         var scan = await PostScanAsync(gateId, qrId, token, ScanDirection.CheckIn);
         Assert.Equal(HttpStatusCode.OK, scan.StatusCode);
@@ -438,7 +439,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
         // guess; the chain derives the real action from the open-row state. Three
         // scans with the SAME CheckIn direction must go open → close → open.
         var (hallId, sessionId) = await SeedHallWithLiveSessionAsync();
-        var (_, attendeeUserId) = await CreateApprovedVisitorWithQrAsync();
+        var (_, _, attendeeProfileId) = await CreateApprovedVisitorWithQrAsync();
         var operatorId = Guid.NewGuid();
 
         using var scope = _factory.Services.CreateScope();
@@ -447,19 +448,19 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
 
         // 1st scan (inferred) — no open row → opens one.
         await attendance.RecordGateDoorScanAsync(
-            attendeeUserId, hallId, ScanDirection.CheckIn, directionInferred: true, operatorId);
+            attendeeProfileId, hallId, ScanDirection.CheckIn, directionInferred: true, operatorId);
         Assert.Equal(1, await db.HallAttendances.CountAsync(
             a => a.SessionId == sessionId && a.Leave == null));
 
         // 2nd scan (inferred, SAME direction) — open row exists → closes it.
         await attendance.RecordGateDoorScanAsync(
-            attendeeUserId, hallId, ScanDirection.CheckIn, directionInferred: true, operatorId);
+            attendeeProfileId, hallId, ScanDirection.CheckIn, directionInferred: true, operatorId);
         Assert.Equal(0, await db.HallAttendances.CountAsync(
             a => a.SessionId == sessionId && a.Leave == null));
 
         // 3rd scan (inferred) — no open row again → opens a fresh one.
         await attendance.RecordGateDoorScanAsync(
-            attendeeUserId, hallId, ScanDirection.CheckIn, directionInferred: true, operatorId);
+            attendeeProfileId, hallId, ScanDirection.CheckIn, directionInferred: true, operatorId);
         Assert.Equal(1, await db.HallAttendances.CountAsync(
             a => a.SessionId == sessionId && a.Leave == null));
         Assert.Equal(2, await db.HallAttendances.CountAsync(a => a.SessionId == sessionId));
@@ -474,7 +475,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
         // rule closed the geofence row, marking a still-present attendee as departed
         // and under-counting live occupancy.
         var (hallId, sessionId) = await SeedHallWithLiveSessionAsync(withGeofence: true);
-        var (_, attendeeUserId) = await CreateApprovedVisitorWithQrAsync();
+        var (_, attendeeUserId, attendeeProfileId) = await CreateApprovedVisitorWithQrAsync();
         var operatorId = Guid.NewGuid();
 
         using var scope = _factory.Services.CreateScope();
@@ -489,7 +490,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
 
         // First Both-mode turnstile pass for the same attendee — must merge, not depart.
         await attendance.RecordGateDoorScanAsync(
-            attendeeUserId, hallId, ScanDirection.CheckIn, directionInferred: true, operatorId);
+            attendeeProfileId, hallId, ScanDirection.CheckIn, directionInferred: true, operatorId);
 
         // Still present: the single open row remains open (merged), not closed.
         var row = await db.HallAttendances.SingleAsync(a => a.SessionId == sessionId);
@@ -504,7 +505,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
         // CheckIn scans both take the arrival branch and merge into the one open
         // row; the row is never closed by the alternation.
         var (hallId, sessionId) = await SeedHallWithLiveSessionAsync();
-        var (_, attendeeUserId) = await CreateApprovedVisitorWithQrAsync();
+        var (_, _, attendeeProfileId) = await CreateApprovedVisitorWithQrAsync();
         var operatorId = Guid.NewGuid();
 
         using var scope = _factory.Services.CreateScope();
@@ -512,9 +513,9 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
 
         await attendance.RecordGateDoorScanAsync(
-            attendeeUserId, hallId, ScanDirection.CheckIn, directionInferred: false, operatorId);
+            attendeeProfileId, hallId, ScanDirection.CheckIn, directionInferred: false, operatorId);
         await attendance.RecordGateDoorScanAsync(
-            attendeeUserId, hallId, ScanDirection.CheckIn, directionInferred: false, operatorId);
+            attendeeProfileId, hallId, ScanDirection.CheckIn, directionInferred: false, operatorId);
 
         Assert.Equal(1, await db.HallAttendances.CountAsync(a => a.SessionId == sessionId));
         var row = await db.HallAttendances.SingleAsync(a => a.SessionId == sessionId);
@@ -529,8 +530,10 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
         // HALL_AT_CAPACITY 409.
         var (hallId, sessionId) = await SeedHallWithLiveSessionAsync(
             capacity: 1, withGeofence: true);
-        var (_, first) = await CreateApprovedVisitorWithQrAsync();
-        var (_, second) = await CreateApprovedVisitorWithQrAsync();
+        // The gate-door path takes the attendee PROFILE; the geofence path below
+        // takes the signed-in ACCOUNT, so the second attendee is held as both.
+        var (_, _, first) = await CreateApprovedVisitorWithQrAsync();
+        var (_, secondUserId, second) = await CreateApprovedVisitorWithQrAsync();
         var operatorId = Guid.NewGuid();
 
         using var scope = _factory.Services.CreateScope();
@@ -545,7 +548,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
 
         // Enforced path (geofence) — hard 409 at capacity (unchanged).
         var ex = await Assert.ThrowsAsync<ApiException>(() =>
-            attendance.RecordGeofenceArrivalAsync(second, sessionId, CenterLat, CenterLon));
+            attendance.RecordGeofenceArrivalAsync(secondUserId, sessionId, CenterLat, CenterLon));
         Assert.Equal(ErrorCodes.HallAtCapacity, ex.Code);
 
         // Advisory path (gate door) — records past the cap, does not throw.
@@ -570,7 +573,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
         // none of those store faults can be provoked deterministically against
         // LocalDB; every other query the service runs still hits the real database.
         var (hallId, sessionId) = await SeedHallWithLiveSessionAsync();
-        var (_, attendeeUserId) = await CreateApprovedVisitorWithQrAsync();
+        var (_, _, attendeeProfileId) = await CreateApprovedVisitorWithQrAsync();
 
         using var scope = _factory.Services.CreateScope();
         var services = scope.ServiceProvider;
@@ -592,7 +595,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
 
         // A fixed In gate (directionInferred: false) keeps this on the arrival branch.
         var recorded = await attendance.RecordGateDoorScanAsync(
-            attendeeUserId, hallId, ScanDirection.CheckIn,
+            attendeeProfileId, hallId, ScanDirection.CheckIn,
             directionInferred: false, operatorUserId: Guid.NewGuid());
 
         Assert.False(recorded);
@@ -686,9 +689,9 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
         var nextSessionId = await SeedSessionInHallAsync(
             hallId, startOffsetMin: 10, endOffsetMin: 70);
         var gateId = await CreateGateAsync(token, operatorUserId, hallId);
-        var (qrId, attendeeUserId) = await CreateApprovedVisitorWithQrAsync();
+        var (qrId, _, attendeeProfileId) = await CreateApprovedVisitorWithQrAsync();
         // Booked for the NEXT session, not the one currently running.
-        await SeedSeatReservationAsync(nextSessionId, attendeeUserId);
+        await SeedSeatReservationAsync(nextSessionId, attendeeProfileId);
 
         var scan = await PostScanAsync(gateId, qrId, token, ScanDirection.CheckIn);
         Assert.Equal(HttpStatusCode.OK, scan.StatusCode);
@@ -710,8 +713,8 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
         var farSessionId = await SeedSessionInHallAsync(
             hallId, startOffsetMin: 180, endOffsetMin: 240);
         var gateId = await CreateGateAsync(token, operatorUserId, hallId);
-        var (qrId, attendeeUserId) = await CreateApprovedVisitorWithQrAsync();
-        await SeedSeatReservationAsync(farSessionId, attendeeUserId);
+        var (qrId, _, attendeeProfileId) = await CreateApprovedVisitorWithQrAsync();
+        await SeedSeatReservationAsync(farSessionId, attendeeProfileId);
 
         var scan = await PostScanAsync(gateId, qrId, token, ScanDirection.CheckIn);
         Assert.Equal(HttpStatusCode.OK, scan.StatusCode);
@@ -735,7 +738,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
         var (hallId, _) = await SeedHallWithLiveSessionAsync(
             startOffsetMin: -60, endOffsetMin: -5);
         var gateId = await CreateGateAsync(token, operatorUserId, hallId);
-        var (qrId, _) = await CreateApprovedVisitorWithQrAsync();
+        var (qrId, _, _) = await CreateApprovedVisitorWithQrAsync();
         // Deliberately NO seat reservation.
 
         var scan = await PostScanAsync(gateId, qrId, token, ScanDirection.CheckIn);
@@ -800,7 +803,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
     /// a session hall; before D-819 it was a reserved hook with no writer, so
     /// any valid badge opened any hall and these chain tests needed no booking.
     /// </summary>
-    private async Task SeedSeatReservationAsync(Guid sessionId, Guid attendeeUserId)
+    private async Task SeedSeatReservationAsync(Guid sessionId, Guid attendeeProfileId)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -808,10 +811,12 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
         {
             Id = Guid.NewGuid(),
             SessionId = sessionId,
-            ReservedForUserId = attendeeUserId,
+            ReservedForProfileId = attendeeProfileId,
             Kind = SeatReservationKind.OpenSeating,
             Status = BookingStatus.Approved,
-            CreatedByUserId = attendeeUserId,
+            // The booking's AUTHOR stays an account; this fixture stands in for a
+            // self-booking, so any account id serves and none is ever read back.
+            CreatedByUserId = Guid.NewGuid(),
             CreatedAt = SimfClock.Now,
         });
         await db.SaveChangesAsync();
@@ -839,7 +844,11 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
             GeofenceRadiusMeters = withGeofence ? RadiusMeters : null,
         };
 
-    private async Task<(string QrId, Guid UserId)> CreateApprovedVisitorWithQrAsync()
+    /// <summary>An approved attendee holding a badge. Returns the profile id
+    /// alongside the account id because attendance and seating are keyed by the
+    /// PROFILE — the account is only what they sign in with.</summary>
+    private async Task<(string QrId, Guid UserId, Guid ProfileId)>
+        CreateApprovedVisitorWithQrAsync()
     {
         var email = $"chain-visitor-{Guid.NewGuid():N}@simf.test";
         var qrId = Guid.NewGuid().ToString("N")[..12].ToUpperInvariant();
@@ -855,7 +864,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
         await users.CreateAsync(user, AuthFlow.Password);
 
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        appDb.UserProfiles.Add(new SIMF.Domain.Profiles.UserProfile
+        var profile = new SIMF.Domain.Profiles.UserProfile
         {
             Id = Guid.NewGuid(),
             UserId = user.Id,
@@ -864,10 +873,14 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
             Name = "Chain Visitor",
             NationalityId = 682,
             PlaceOfBirth = "Riyadh",
+            // Admission is decided on the PROFILE, not on the account, so a fixture
+            // that approves only the SimfUser leaves an attendee every gate refuses.
+            AdmissionState = AccountState.Approved,
             CreatedAt = SimfClock.Now,
-        });
+        };
+        appDb.UserProfiles.Add(profile);
         await appDb.SaveChangesAsync();
-        return (qrId, user.Id);
+        return (qrId, user.Id, profile.Id);
     }
 
     private async Task<(string Token, Guid UserId)> CreateAdminAsync()

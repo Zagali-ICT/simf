@@ -221,6 +221,14 @@ public static class PermissionCatalog
         public const string Import = "SessionCategories.Import";
     }
 
+    /// <summary>Biometric device keys. Revoke is the only administrative action:
+    /// enrolment and self-revoke are the account owner's own, and there is no
+    /// admin list surface yet.</summary>
+    public static class DeviceKeys
+    {
+        public const string Revoke = "DeviceKeys.Revoke";
+    }
+
     public static class Themes
     {
         public const string View = "Themes.View";
@@ -736,6 +744,19 @@ public static class PermissionCatalog
         public const string Edit = "Operations.Edit";
     }
 
+    /// <summary>The event edition: which year the forum is running.
+    /// <see cref="Open"/> is separate from <see cref="View"/> because opening a
+    /// year is the destructive half — it closes the current year into history and
+    /// clears EVERY attendee's badge, so the whole population has to be re-issued.
+    /// There is no separate close code: a year is only ever closed by opening the
+    /// next one, and a code that gated nothing would read, to anyone auditing who
+    /// can end an edition, as though nobody could.</summary>
+    public static class Editions
+    {
+        public const string View = "Editions.View";
+        public const string Open = "Editions.Open";
+    }
+
     /// <summary>System Configuration page.</summary>
     public static class Configuration
     {
@@ -914,6 +935,9 @@ public static class PermissionCatalog
         new(Regions.Create, "Regions", "Create", "Create regions", AdminOnly),
         new(Regions.Edit, "Regions", "Edit", "Edit regions", AdminOnly),
         new(Regions.Delete, "Regions", "Delete", "Delete regions", AdminOnly),
+
+        // Account security.
+        new(DeviceKeys.Revoke, "DeviceKeys", "Revoke", "Revoke a user's biometric device key", AdminOnly),
 
         // Programme
         new(Themes.View, "Themes", "View", "View themes", AdminOnly),
@@ -1198,6 +1222,13 @@ public static class PermissionCatalog
 
         new(Operations.View, "Operations", "View", "View operations toggles", AdminOnly),
         new(Operations.Edit, "Operations", "Edit", "Change operations toggles", AdminOnly),
+
+        // The event edition (which year is open). Opening one closes the previous
+        // year and clears every badge, so the wording an admin reads in the role
+        // editor has to say so rather than sounding like a bookkeeping change.
+        new(Editions.View, "Editions", "View", "View the event edition", AdminOnly),
+        new(Editions.Open, "Editions", "Open",
+            "Open a new event edition (closes the current year and clears every badge)", AdminOnly),
 
         // System Configuration settings.
         new(Configuration.View, "Configuration", "View", "View system configuration", AdminOnly),

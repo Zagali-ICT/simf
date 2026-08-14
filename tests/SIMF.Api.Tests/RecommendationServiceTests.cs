@@ -347,6 +347,9 @@ public sealed class RecommendationServiceTests : IClassFixture<SimfApiFactory>
         using var scope = _factory.Services.CreateScope();
         var app = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var now = SimfClock.Now;
+        // A seat is held by the attendee PROFILE; both users were created with one.
+        var profileIdA = await TestAttendeeProfiles.EnsureForAccountAsync(app, userIdA);
+        var profileIdB = await TestAttendeeProfiles.EnsureForAccountAsync(app, userIdB);
         var hall = new Hall
         {
             Id = Guid.NewGuid(),
@@ -370,7 +373,7 @@ public sealed class RecommendationServiceTests : IClassFixture<SimfApiFactory>
             Id = Guid.NewGuid(), SessionId = session.Id,
             RowLabel = "A", SeatNumber = 1,
             Kind = SeatReservationKind.UserBooking,
-            ReservedForUserId = userIdA, CreatedByUserId = userIdA,
+            ReservedForProfileId = profileIdA, CreatedByUserId = userIdA,
             Status = BookingStatus.Approved, ReleasedAt = null, CreatedAt = now,
         });
         app.SeatReservations.Add(new SeatReservation
@@ -378,7 +381,7 @@ public sealed class RecommendationServiceTests : IClassFixture<SimfApiFactory>
             Id = Guid.NewGuid(), SessionId = session.Id,
             RowLabel = "A", SeatNumber = 2,
             Kind = SeatReservationKind.UserBooking,
-            ReservedForUserId = userIdB, CreatedByUserId = userIdB,
+            ReservedForProfileId = profileIdB, CreatedByUserId = userIdB,
             Status = BookingStatus.Approved, ReleasedAt = null, CreatedAt = now,
         });
         await app.SaveChangesAsync();

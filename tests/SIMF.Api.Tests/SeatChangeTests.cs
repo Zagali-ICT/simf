@@ -75,8 +75,10 @@ public sealed class SeatChangeTests : IClassFixture<SimfApiFactory>
         // properly (released + cancelled), not left as a stale "approved but gone".
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        // The hold is keyed by the mover's attendee profile, not their account.
+        var profileId = await TestAttendeeProfiles.EnsureForAccountAsync(db, userId);
         var rows = await db.SeatReservations.AsNoTracking()
-            .Where(r => r.SessionId == session.Id && r.ReservedForUserId == userId)
+            .Where(r => r.SessionId == session.Id && r.ReservedForProfileId == profileId)
             .ToListAsync();
         var active = Assert.Single(rows, r => r.ReleasedAt == null);
         Assert.Equal("B", active.RowLabel);
@@ -111,9 +113,10 @@ public sealed class SeatChangeTests : IClassFixture<SimfApiFactory>
 
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var moverProfileId = await TestAttendeeProfiles.EnsureForAccountAsync(db, moverId);
         var active = await db.SeatReservations.AsNoTracking()
             .SingleAsync(r => r.SessionId == session.Id
-                && r.ReservedForUserId == moverId
+                && r.ReservedForProfileId == moverProfileId
                 && r.ReleasedAt == null);
         Assert.Equal("A", active.RowLabel);
         Assert.Equal(1, active.SeatNumber);

@@ -1,4 +1,4 @@
-// D-199 (gap doc G3, Mockup pages 16-17) — public Programme/Sessions reads.
+﻿// D-199 (gap doc G3, Mockup pages 16-17) — public Programme/Sessions reads.
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -170,7 +170,6 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
             }
             var speaker = await db.Speakers.SingleAsync(s => s.Id == speakerId);
             speaker.CountryId = 682;
-            speaker.PhotoRelativePath = "speakers/amal.webp";
             await db.SaveChangesAsync();
         }
 
@@ -182,13 +181,16 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
         Assert.Equal(682, listSpeaker.CountryId);
         Assert.False(string.IsNullOrEmpty(listSpeaker.CountryNameEn));
         Assert.False(string.IsNullOrEmpty(listSpeaker.CountryNameAr));
-        Assert.Equal("speakers/amal.webp", listSpeaker.PhotoRelativePath);
+        // The column is gone: the photo is a StoredFile and every client builds
+        // the URL from the speaker id. The wire key survives (append-only) and is
+        // now always null, which is what this pins.
+        Assert.Null(listSpeaker.PhotoRelativePath);
 
         var detail = await _client.GetAsync($"/api/v1/app/programme/sessions/{created.Id}");
         var detailSpeaker = Assert.Single(
             (await detail.Content.ReadFromJsonAsync<ApiResult<PublicSessionDetail>>())!.Data!.Speakers);
         Assert.Equal(682, detailSpeaker.CountryId);
-        Assert.Equal("speakers/amal.webp", detailSpeaker.PhotoRelativePath);
+        Assert.Null(detailSpeaker.PhotoRelativePath);
     }
 
     [Fact]
@@ -207,8 +209,14 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
         {
             var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
             var session = await db.Sessions.SingleAsync(s => s.Id == created.Id);
-            session.LiveStreamUrl = "https://live.example/stream.m3u8";
-            session.LiveSignLanguageUrl = "https://live.example/sign.m3u8";
+            // The feeds are file-store rows; a fabricated pointer would be
+            // refused by the foreign key.
+            session.LiveStreamFileId = FeedLinkSeed.Add(
+                db, FileService.SessionLiveStream, session.Id,
+                "https://live.example/stream.m3u8", FileOwnerEntityType.Session);
+            session.LiveSignLanguageFileId = FeedLinkSeed.Add(
+                db, FileService.SessionSignLanguage, session.Id,
+                "https://live.example/sign.m3u8", FileOwnerEntityType.Session);
             // P5 — D-439: the AI live-caption text is surfaced on the same wire.
             session.LiveCaptions = "Caption text appears here.";
             session.LiveCaptionsArabic = "يظهر نص الترجمة هنا.";

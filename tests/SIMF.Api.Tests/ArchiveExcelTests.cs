@@ -92,9 +92,10 @@ public sealed class ArchiveExcelTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Export_includes_the_dropped_edition_columns()
     {
-        // D-506 — the archive Excel export must surface the dropped edition fields
-        // (summary, location, date label, cover path), not drop them at the IO
-        // boundary.
+        // The archive Excel export must surface the dropped edition fields
+        // (summary, location, date label), not lose them at the IO boundary —
+        // and must NOT carry a cover column, the cover having become a file in
+        // the store rather than a typed string.
         var adminToken = await CreateAdministratorAndSignInAsync();
         var year = NewYear();
         var titleEn = $"Export Drops {Guid.NewGuid():N}";
@@ -109,7 +110,6 @@ public sealed class ArchiveExcelTests : IClassFixture<SimfApiFactory>
                 SummaryAr = "ملخص التصدير.",
                 LocationEn = "Riyadh",
                 LocationAr = "الرياض",
-                CoverImageRelativePath = "archive/x/cover.jpg",
                 DateLabelEn = "March 2019",
                 DateLabelAr = "مارس 2019",
             },
@@ -131,9 +131,9 @@ public sealed class ArchiveExcelTests : IClassFixture<SimfApiFactory>
         Assert.Contains("SummaryAr", headers);
         Assert.Contains("LocationEn", headers);
         Assert.Contains("LocationAr", headers);
-        Assert.Contains("CoverImageRelativePath", headers);
         Assert.Contains("DateLabelEn", headers);
         Assert.Contains("DateLabelAr", headers);
+        Assert.DoesNotContain("CoverImageRelativePath", headers);
 
         var titleCol = headers.IndexOf("TitleEn") + 1;
         var locCol = headers.IndexOf("LocationEn") + 1;
@@ -160,7 +160,6 @@ public sealed class ArchiveExcelTests : IClassFixture<SimfApiFactory>
         sheet.Cell(1, 5).Value = "SummaryAr";
         sheet.Cell(1, 6).Value = "LocationEn";
         sheet.Cell(1, 7).Value = "LocationAr";
-        sheet.Cell(1, 8).Value = "CoverImageRelativePath";
         sheet.Cell(1, 9).Value = "DateLabelEn";
         sheet.Cell(1, 10).Value = "DateLabelAr";
         sheet.Cell(2, 1).Value = year;
@@ -199,7 +198,6 @@ public sealed class ArchiveExcelTests : IClassFixture<SimfApiFactory>
         Assert.Equal("ملخص مستورد.", created.SummaryAr);
         Assert.Equal("Jeddah", created.LocationEn);
         Assert.Equal("جدة", created.LocationAr);
-        Assert.Equal("archive/imported/cover.jpg", created.CoverImageRelativePath);
         Assert.Equal("April 2020", created.DateLabelEn);
         Assert.Equal("أبريل 2020", created.DateLabelAr);
     }

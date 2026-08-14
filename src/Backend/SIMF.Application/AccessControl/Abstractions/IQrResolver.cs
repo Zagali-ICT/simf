@@ -36,9 +36,24 @@ public interface IQrResolver
 
 /// <summary>Domain view of the visitor a QR resolved to. Carries
 /// every field the constraint engine needs to walk steps 6–11.</summary>
+/// <param name="UserId">The holder's Identity account, or null when they have
+/// none. Most attendees at a gate have none — a walk-in registration and a
+/// pre-generated badge both produce a profile with no account — so this being
+/// null is the ordinary case and never a reason to refuse entry.</param>
+/// <param name="AccountState">Admission state, read from the PROFILE. It is the
+/// profile that decides whether a person may enter, so this is populated for a
+/// holder with no account exactly as it is for one with an account.</param>
+/// <param name="IsLockedOut">Identity lockout, which can only be true when
+/// <paramref name="UserId"/> is set: lockout is a sign-in control, so a holder
+/// with no account cannot be locked out of a gate they never sign in to.</param>
+/// <param name="BadgeBatchId">The bulk order this badge was minted into, or null
+/// when nobody ordered it in bulk - a walk-in registered at a desk. The gate
+/// does not read it; badge self-activation does, because it separates a badge
+/// handed out under a controlled order from one in open circulation, and only
+/// the first may be claimed as an app account by whoever is holding it.</param>
 public sealed record QrResolution(
     Guid UserProfileId,
-    Guid UserId,
+    Guid? UserId,
     AccountState AccountState,
     bool IsLockedOut,
     Guid? ProfileTypeId,
@@ -47,4 +62,9 @@ public sealed record QrResolution(
     string? ProfileTypeNameArabic,
     string? ProfileTypePageColor,
     string DisplayName,
-    string DisplayNameArabic);
+    string DisplayNameArabic,
+    Guid? BadgeBatchId = null,
+    // The edition year this attendee was registered for. The gate refuses a
+    // badge whose year is not the open one — which is the only expiry a minted
+    // QR has ever had, the resolver having matched on value alone before.
+    int EditionYear = 0);

@@ -45,7 +45,13 @@ public sealed record VisitorCard(
     int? CountryId,
     string? CountryName,
     string? CountryNameArabic,
-    bool Available);
+    bool Available,
+    // Appended (append-only wire): the subject's attendee record. The exhibitor
+    // lead paths fill it, because a captured lead is keyed by profile and its
+    // subject may hold no account at all — in which case UserId above, a SHIPPED
+    // non-nullable field, carries Guid.Empty and must never be used to look the
+    // subject up. Null on the contact-share paths, which are account-to-account.
+    Guid? UserProfileId = null);
 
 /// <summary>One row in the caller's <em>My Contacts</em> list — resolved on
 /// read from the subject's profile (no stored PII snapshot).</summary>

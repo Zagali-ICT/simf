@@ -2186,6 +2186,7 @@
   <data name="Admin.Vips.Action.AddVip" xml:space="preserve"><value>إضافة شخصية بارزة</value></data>
   <data name="Admin.Vips.Edit.Title" xml:space="preserve"><value>تعديل بيانات الشخصية البارزة</value></data>
   <data name="Admin.Vips.Edit.Saved" xml:space="preserve"><value>تم تحديث بيانات الشخصية البارزة.</value></data>
+  <data name="Admin.Vips.Edit.NoAccount" xml:space="preserve"><value>لا يملك هذا الضيف حساباً في التطبيق بعد، لذلك لا يوجد حساب لتعديله. بيانات تسجيله متاحة في صفحتي التسجيل الميداني والطلبات المجمّعة.</value></data>
   <data name="Admin.Vips.Notify.Title" xml:space="preserve"><value>إشعار كبار الضيوف</value></data>
   <data name="Admin.Vips.Notify.TitleField" xml:space="preserve"><value>العنوان (الإنجليزية)</value></data>
   <data name="Admin.Vips.Notify.TitleArabicField" xml:space="preserve"><value>العنوان (العربية)</value></data>
@@ -2356,6 +2357,28 @@
   <data name="Admin.RatingConfig.Groups.Delete.Confirm.Message" xml:space="preserve"><value>سيتم تعطيل "{0}" وجميع الأسئلة التي تحتوي عليها.</value></data>
   <data name="Admin.RatingConfig.Questions.Delete.Confirm.Title" xml:space="preserve"><value>حذف السؤال؟</value></data>
   <data name="Admin.RatingConfig.Questions.Delete.Confirm.Message" xml:space="preserve"><value>سيتم تعطيل "{0}".</value></data>
+  <data name="Module.EventEdition" xml:space="preserve"><value>نسخة الملتقى</value></data>
+  <data name="Admin.Editions.Title" xml:space="preserve"><value>نسخة الملتقى</value></data>
+  <data name="Admin.Editions.Desc" xml:space="preserve"><value>السنة التي يُقام فيها الملتقى حالياً. لا تفتح الشارة أي بوابة إلا في السنة التي صدرت لها.</value></data>
+  <data name="Admin.Editions.Loading" xml:space="preserve"><value>جارٍ تحميل النسخة الحالية…</value></data>
+  <data name="Admin.Editions.LoadFailed" xml:space="preserve"><value>تعذّر تحميل النسخة الحالية.</value></data>
+  <data name="Admin.Editions.CurrentYear" xml:space="preserve"><value>السنة المفتوحة</value></data>
+  <data name="Admin.Editions.OpenedAt" xml:space="preserve"><value>تاريخ الفتح</value></data>
+  <data name="Admin.Editions.LastClosedAt" xml:space="preserve"><value>إغلاق السنة السابقة</value></data>
+  <data name="Admin.Editions.NeverClosed" xml:space="preserve"><value>لم تُغلق أي سنة بعد</value></data>
+  <data name="Admin.Editions.LastReissueCount" xml:space="preserve"><value>الشارات التي أُلغيت عند آخر فتح</value></data>
+  <data name="Admin.Editions.Open.Heading" xml:space="preserve"><value>فتح سنة جديدة</value></data>
+  <data name="Admin.Editions.Open.Desc" xml:space="preserve"><value>يُغلق السنة الحالية ضمن السجل ويفتح السنة التي تُدخلها. لا يُحذف الحاضرون — تبقى سجلاتهم موسومة بالسنة التي ينتمون إليها.</value></data>
+  <data name="Admin.Editions.Open.Warning" xml:space="preserve"><value>يؤدي هذا إلى إلغاء شارة كل حاضر. يجب إصدار شارة جديدة لكل من سيحضر السنة الجديدة — خطّط لإعادة الإصدار قبل تنفيذ ذلك، لا عند الباب.</value></data>
+  <data name="Admin.Editions.Open.Year" xml:space="preserve"><value>السنة المراد فتحها</value></data>
+  <data name="Admin.Editions.Open.YearHint" xml:space="preserve"><value>أربعة أرقام، ولاحقة للسنة المفتوحة.</value></data>
+  <data name="Admin.Editions.Open.YearInvalid" xml:space="preserve"><value>أدخل سنة من أربعة أرقام بين 2000 و2999.</value></data>
+  <data name="Admin.Editions.Open.Action" xml:space="preserve"><value>افتح السنة</value></data>
+  <data name="Admin.Editions.Open.Confirm.Title" xml:space="preserve"><value>فتح سنة جديدة؟</value></data>
+  <data name="Admin.Editions.Open.Confirm.Message" xml:space="preserve"><value>سيؤدي هذا إلى إغلاق {1} ضمن السجل، وفتح {0}، وإلغاء شارة كل حاضر في النظام. سيحتاج كل منهم إلى شارة جديدة قبل أن يتمكن من عبور أي بوابة. لا يمكن التراجع عن هذا الإجراء.</value></data>
+  <data name="Admin.Editions.Open.Confirm.Action" xml:space="preserve"><value>افتح السنة وألغِ كل الشارات</value></data>
+  <data name="Admin.Editions.Open.Done" xml:space="preserve"><value>السنة {0} مفتوحة الآن. أُلغيت {1} شارة وتحتاج إلى إعادة إصدار.</value></data>
+  <data name="Admin.Editions.Open.Failed" xml:space="preserve"><value>تعذّر فتح السنة.</value></data>
   <data name="Common.Cancel" xml:space="preserve"><value>إلغاء</value></data>
   <data name="Common.Retry" xml:space="preserve"><value>إعادة المحاولة</value></data>
   <data name="Admin.BusinessMeetings.Party.KindLabel" xml:space="preserve"><value>نوع المشارك</value></data>
@@ -2425,7 +2448,6 @@
   <data name="Admin.Banners.Field.TitleAr" xml:space="preserve"><value>العنوان (العربية)</value></data>
   <data name="Admin.Banners.Field.BodyEn" xml:space="preserve"><value>النص (الإنجليزية)</value></data>
   <data name="Admin.Banners.Field.BodyAr" xml:space="preserve"><value>النص (العربية)</value></data>
-  <data name="Admin.Banners.Field.ImageUrl" xml:space="preserve"><value>رابط الصورة</value></data>
   <data name="Admin.Banners.Field.LinkUrl" xml:space="preserve"><value>رابط النقر</value></data>
   <data name="Admin.Banners.Field.Start" xml:space="preserve"><value>البداية (بتوقيت السعودية)</value></data>
   <data name="Admin.Banners.Field.End" xml:space="preserve"><value>النهاية (بتوقيت السعودية)</value></data>
@@ -2808,7 +2830,6 @@
   <data name="Admin.News.Field.ExcerptAr" xml:space="preserve"><value>المقتطف (العربية)</value></data>
   <data name="Admin.News.Field.BodyEn" xml:space="preserve"><value>المحتوى (الإنجليزية)</value></data>
   <data name="Admin.News.Field.BodyAr" xml:space="preserve"><value>المحتوى (العربية)</value></data>
-  <data name="Admin.News.Field.ImageRelativePath" xml:space="preserve"><value>مسار الصورة</value></data>
   <data name="Admin.News.Field.PublishedAt" xml:space="preserve"><value>تاريخ النشر</value></data>
   <data name="Admin.News.Field.DisplayOrder" xml:space="preserve"><value>ترتيب العرض</value></data>
   <data name="Admin.News.Field.IsActive" xml:space="preserve"><value>نشط</value></data>
@@ -2882,7 +2903,6 @@
   <data name="Admin.MediaPartners.Edit.Title" xml:space="preserve"><value>تعديل الشريك الإعلامي</value></data>
   <data name="Admin.MediaPartners.Field.NameEn" xml:space="preserve"><value>الاسم (إنجليزي)</value></data>
   <data name="Admin.MediaPartners.Field.NameAr" xml:space="preserve"><value>الاسم (عربي)</value></data>
-  <data name="Admin.MediaPartners.Field.Logo" xml:space="preserve"><value>مسار الشعار</value></data>
   <data name="Admin.MediaPartners.Field.Url" xml:space="preserve"><value>الرابط</value></data>
   <data name="Admin.MediaPartners.Field.DisplayOrder" xml:space="preserve"><value>ترتيب العرض</value></data>
   <data name="Admin.MediaPartners.Field.IsActive" xml:space="preserve"><value>نشط</value></data>
@@ -2919,7 +2939,6 @@
   <data name="Admin.Sponsors.Field.TaglineAr" xml:space="preserve"><value>النص التعريفي (عربي)</value></data>
   <data name="Admin.Sponsors.Field.About" xml:space="preserve"><value>نبذة (إنجليزي)</value></data>
   <data name="Admin.Sponsors.Field.AboutAr" xml:space="preserve"><value>نبذة (عربي)</value></data>
-  <data name="Admin.Sponsors.Field.Logo" xml:space="preserve"><value>مسار الشعار</value></data>
   <data name="Admin.Sponsors.Field.DisplayOrder" xml:space="preserve"><value>ترتيب العرض</value></data>
   <data name="Admin.Sponsors.Field.IsActive" xml:space="preserve"><value>نشط</value></data>
   <data name="Admin.Sponsors.Cancel" xml:space="preserve"><value>إلغاء</value></data>
@@ -3020,7 +3039,6 @@
   <data name="Admin.Archive.Field.Attendees" xml:space="preserve"><value>الحضور</value></data>
   <data name="Admin.Archive.Field.Sessions" xml:space="preserve"><value>الجلسات</value></data>
   <data name="Admin.Archive.Field.Speakers" xml:space="preserve"><value>المتحدثون</value></data>
-  <data name="Admin.Archive.Field.CoverImageRelativePath" xml:space="preserve"><value>مسار صورة الغلاف</value></data>
   <data name="Admin.Archive.Field.LocationEn" xml:space="preserve"><value>المكان (الإنجليزية)</value></data>
   <data name="Admin.Archive.Field.LocationAr" xml:space="preserve"><value>المكان (العربية)</value></data>
   <data name="Admin.Archive.Field.DateLabelEn" xml:space="preserve"><value>وصف التاريخ (الإنجليزية)</value></data>
@@ -3732,6 +3750,7 @@
   <data name="Admin.BadgeBatches.Loading" xml:space="preserve"><value>جارٍ تحميل الدفعات…</value></data>
   <data name="Admin.BadgeBatches.LoadFailed" xml:space="preserve"><value>تعذّر تحميل دفعات الشارات.</value></data>
   <data name="Admin.BadgeBatches.None" xml:space="preserve"><value>لا توجد دفعات شارات بعد — أنشئ مجموعة من مكتب الوفود أو الزوار.</value></data>
+  <data name="Admin.BadgeBatches.Col.Name" xml:space="preserve"><value>الطلب</value></data>
   <data name="Admin.BadgeBatches.Col.Summary" xml:space="preserve"><value>المحتوى</value></data>
   <data name="Admin.BadgeBatches.Col.Total" xml:space="preserve"><value>الإجمالي</value></data>
   <data name="Admin.BadgeBatches.Col.Delegate" xml:space="preserve"><value>وفد</value></data>
@@ -3753,6 +3772,14 @@
   <data name="Admin.BadgeBatches.Revoke.Body" xml:space="preserve"><value>سيؤدي هذا إلى تعطيل جميع الحسابات البالغ عددها {0} في هذه الدفعة ({1}). لا يمكن التراجع عن ذلك.</value></data>
   <data name="Admin.BadgeBatches.Revoke.Confirm" xml:space="preserve"><value>إلغاء</value></data>
   <data name="Admin.BadgeBatches.Revoke.Done" xml:space="preserve"><value>تم إلغاء {0} حساب.</value></data>
+  <data name="Admin.BadgeBatches.TopUp" xml:space="preserve"><value>إضافة شارات</value></data>
+  <data name="Admin.BadgeBatches.DirectRegistration" xml:space="preserve"><value>تسجيلات ذاتية</value></data>
+  <data name="Admin.BadgeBatches.TopUp.Title" xml:space="preserve"><value>إضافة شارات إلى هذا الطلب</value></data>
+  <data name="Admin.BadgeBatches.TopUp.Count" xml:space="preserve"><value>عدد الشارات المضافة</value></data>
+  <data name="Admin.BadgeBatches.TopUp.Confirm" xml:space="preserve"><value>إضافة وإصدار</value></data>
+  <data name="Admin.BadgeBatches.TopUp.Done" xml:space="preserve"><value>تم إصدار {0} شارة إضافية، وأصبح الطلب يضم {1}.</value></data>
+  <data name="Admin.BadgeBatches.TopUp.TypeRequired" xml:space="preserve"><value>اختر نوع الملف الشخصي المراد إضافته.</value></data>
+  <data name="Admin.BadgeBatches.TopUp.CountInvalid" xml:space="preserve"><value>أدخل عدد الشارات المراد إضافتها (١ أو أكثر).</value></data>
   <data name="Admin.Delegates.Title" xml:space="preserve"><value>الوفود</value></data>
   <data name="Admin.Delegates.Single.Title" xml:space="preserve"><value>تسجيل عضو وفد</value></data>
   <data name="Admin.Delegates.Single.Hint" xml:space="preserve"><value>عضو الوفد زائر عادي مميَّز كعضو في وفد؛ ويجب أن تكون جنسيته من دولة مدعوّة لإرسال وفد.</value></data>
@@ -3781,6 +3808,10 @@
   <data name="Admin.Delegates.Bulk.Total" xml:space="preserve"><value>الإجمالي: {0} شارة</value></data>
   <data name="Admin.Delegates.Bulk.Remove" xml:space="preserve"><value>إزالة {0}</value></data>
   <data name="Admin.Delegates.Bulk.PickType" xml:space="preserve"><value>اختر نوع الملف وعدداً أكبر من صفر.</value></data>
+  <data name="Admin.Delegates.Bulk.NameRequired" xml:space="preserve"><value>أدخل اسماً للطلب بالعربية والإنجليزية.</value></data>
+  <data name="Admin.Delegates.Bulk.Name" xml:space="preserve"><value>اسم الطلب</value></data>
+  <data name="Admin.Delegates.Bulk.NameArabic" xml:space="preserve"><value>اسم الطلب (بالعربية)</value></data>
+  <data name="Admin.Delegates.Bulk.NameHint" xml:space="preserve"><value>الجهة التي ستُسلَّم لها الشارات، مثل «فريق وزارة الداخلية».</value></data>
   <data name="Module.AdminVisitorsVipExport" xml:space="preserve"><value>تصدير ترحيب كبار الشخصيات</value></data>
   <data name="Profile.Avatar.Remove.Confirm.Title" xml:space="preserve"><value>إزالة صورة الملف الشخصي</value></data>
   <data name="Profile.Avatar.Remove.Confirm.Message" xml:space="preserve"><value>هل تريد إزالة صورة ملفك الشخصي؟ سيتم حذف الصورة المحفوظة ولا يمكن استرجاعها.</value></data>

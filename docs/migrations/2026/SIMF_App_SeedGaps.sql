@@ -254,12 +254,12 @@ VALUES
 -- value NULL into column 'AllowsDelegationMeeting'" and took the API down at boot
 -- on any fresh database. 0 reproduces exactly what the old default produced.
 INSERT INTO dbo.UserProfiles (Id, Name, NameArabic, JobTitle, NationalityId,
-    PlaceOfBirth, Gender, IsDelegate, IsSaudi, IsActive, UserId,
-    AllowsDelegationMeeting, AllowsSpeakerMeeting,
+    PlaceOfBirth, Gender, IsDelegate, IsSaudi, IsActive, UserId, BadgeBatchId,
+    EditionYear, AdmissionState, AllowsDelegationMeeting, AllowsSpeakerMeeting,
     CreatedAt, CreatedBy)
 SELECT NEWID(), h.Nm, h.NmAr, h.Title, h.CountryId, h.Pob,
-    0, 1, 0, 1, NEWID(),
-    0, 0,
+    0, 1, 0, 1, NULL, '0F1E2D3C-4B5A-6978-8796-A5B4C3D2E1F0',
+    (SELECT TOP 1 Year FROM dbo.EventEdition), N'Approved', 0, 0,
     @now, @sys
   FROM @heads h
  WHERE NOT EXISTS (
@@ -270,12 +270,12 @@ SELECT NEWID(), h.Nm, h.NmAr, h.Title, h.CountryId, h.Pob,
 
 -- Two members per delegation (JobTitle NULL). Guarded per country by Name.
 INSERT INTO dbo.UserProfiles (Id, Name, NameArabic, JobTitle, NationalityId,
-    PlaceOfBirth, Gender, IsDelegate, IsSaudi, IsActive, UserId,
-    AllowsDelegationMeeting, AllowsSpeakerMeeting,
+    PlaceOfBirth, Gender, IsDelegate, IsSaudi, IsActive, UserId, BadgeBatchId,
+    EditionYear, AdmissionState, AllowsDelegationMeeting, AllowsSpeakerMeeting,
     CreatedAt, CreatedBy)
 SELECT NEWID(), m.Nm, m.NmAr, NULL, h.CountryId, N'-',
-    0, 1, 0, 1, NEWID(),
-    0, 0,
+    0, 1, 0, 1, NULL, '0F1E2D3C-4B5A-6978-8796-A5B4C3D2E1F0',
+    (SELECT TOP 1 Year FROM dbo.EventEdition), N'Approved', 0, 0,
     @now, @sys
   FROM @heads h
  CROSS JOIN @members m

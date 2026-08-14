@@ -89,7 +89,7 @@ public sealed class BannersExcelTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task Export_includes_the_body_image_and_link_columns()
+    public async Task Export_includes_the_body_and_link_columns_but_not_the_image()
     {
         // D-506 — the export must now carry Body/BodyArabic/ImageUrl/LinkUrl so a
         // round-trip through import does not drop them.
@@ -110,16 +110,23 @@ public sealed class BannersExcelTests : IClassFixture<SimfApiFactory>
         var headers = sheet.Row(1).CellsUsed().Select(c => c.GetString()).ToList();
         Assert.Contains("Body", headers);
         Assert.Contains("BodyArabic", headers);
-        Assert.Contains("ImageUrl", headers);
         Assert.Contains("LinkUrl", headers);
+        // The image is a StoredFile, uploaded rather than typed, so there is no
+        // column for a spreadsheet to carry and none is exported.
+        Assert.DoesNotContain("ImageUrl", headers);
     }
 
     [Fact]
-    public async Task Import_round_trips_the_body_image_and_link()
+    public async Task Import_round_trips_the_body_and_link_and_ignores_a_stale_image_column()
     {
-        // D-506 — a workbook carrying Body/BodyArabic/ImageUrl/LinkUrl must persist
-        // all four onto the created banner (the GET detail proves they are not
+        // D-506 — a workbook carrying Body/BodyArabic/LinkUrl must persist all
+        // three onto the created banner (the GET detail proves they are not
         // dropped on import).
+        //
+        // The workbook still carries an ImageUrl column, deliberately: the image
+        // is a StoredFile now and the importer ignores that column, so this also
+        // proves a workbook exported before the change still imports cleanly
+        // instead of failing on an unknown header.
         var adminToken = await CreateAdministratorAndSignInAsync();
         var start = SimfClock.Now;
         var end = start.AddDays(7);
@@ -154,7 +161,6 @@ public sealed class BannersExcelTests : IClassFixture<SimfApiFactory>
             .ReadFromJsonAsync<ApiResult<AdminBannerDetail>>())!.Data!;
         Assert.Equal(body, detail.Body);
         Assert.Equal(bodyArabic, detail.BodyArabic);
-        Assert.Equal(imageUrl, detail.ImageUrl);
         Assert.Equal(linkUrl, detail.LinkUrl);
     }
 

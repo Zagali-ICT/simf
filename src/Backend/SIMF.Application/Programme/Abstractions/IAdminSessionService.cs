@@ -1,4 +1,4 @@
-using SIMF.Common;
+﻿using SIMF.Common;
 using SIMF.Contracts.Admin;
 
 namespace SIMF.Application.Programme.Abstractions;
@@ -37,9 +37,9 @@ public interface IAdminSessionService
         CancellationToken cancellationToken = default);
 
     /// <summary>Attach (or replace) the session's
-    /// recording. The bytes are streamed to disk via
-    /// <c>ISessionRecordingStorage</c>; only the metadata is persisted on the
-    /// row. Orthogonal to <c>Status</c> — this does not change the lifecycle.</summary>
+    /// recording. The bytes are streamed into the unified file store via
+    /// <c>IFileService.CreateStreamedAsync</c>; the row keeps the metadata and
+    /// the key. Orthogonal to <c>Status</c> — this does not change the lifecycle.</summary>
     Task<AdminSessionDetail> UploadRecordingAsync(
         Guid actorUserId, Guid id, Stream content, string fileName,
         string contentType, long sizeBytes,

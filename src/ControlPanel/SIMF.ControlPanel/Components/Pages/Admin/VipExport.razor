@@ -22,7 +22,7 @@
                       Loading="_loading"
                       OnQueryChanged="OnQueryChangedAsync"
                       Multiselect="false"
-                      RowKey="@(r => r.UserId.ToString())"
+                      RowKey="@(r => r.ProfileId.ToString())"
                       RowLabel="@(r => r.DisplayName)"
                       Caption="@L["Admin.VipExport.Title"]"
                       FilterColumnLabel="@L["Grid.FilterColumn"]"
@@ -60,11 +60,16 @@
                 <SimfDataGridColumn TItem="VipRosterRow" Key="photo"
                                     Header="@L["Admin.VipExport.Photo"]">
                     <CellTemplate>
-                        @if (context.HasVipPhoto)
+                        @* The welcome photo is fetched by ACCOUNT id, so both
+                           conditions are the same question asked twice: a guest
+                           who never signed up has no photo and no id to fetch
+                           one with. Matching on the id keeps the URL honest
+                           rather than forcing a value that may not be there. *@
+                        @if (context.HasVipPhoto && context.UserId is { } photoAccountId)
                         {
-                            <a href="@PhotoUrl(context.UserId)" target="_blank"
-                               download="@($"vip-{context.UserId}")">
-                                <SimfImageThumb Src="@PhotoUrl(context.UserId)"
+                            <a href="@PhotoUrl(photoAccountId)" target="_blank"
+                               download="@($"vip-{photoAccountId}")">
+                                <SimfImageThumb Src="@PhotoUrl(photoAccountId)"
                                                 Alt="@context.DisplayName" />
                             </a>
                         }

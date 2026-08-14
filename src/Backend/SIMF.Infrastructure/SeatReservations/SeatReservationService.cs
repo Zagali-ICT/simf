@@ -24,7 +24,6 @@ namespace SIMF.Infrastructure.SeatReservations;
 /// <c>Session.CapacityOverride</c> and <c>Hall.Capacity</c>.</summary>
 internal sealed class SeatReservationService(
     SimfAppDbContext appDbContext,
-    SimfIdentityDbContext identityDbContext,
     IAuditLog auditLog,
     INotificationDispatcher notifications,
     TimeProvider timeProvider,
@@ -39,6 +38,38 @@ internal sealed class SeatReservationService(
     /// stamp written at creation and the scan that reads it share one source.</summary>
     internal static readonly TimeSpan NoShowReleaseGrace = TimeSpan.FromMinutes(3);
 
+    /// <summary>The attendee profile a seat is held against, for a caller known
+    /// only as a signed-in account. A seat belongs to an ATTENDEE, so an account
+    /// carrying no profile — an admin-typed user — cannot hold one and is refused
+    /// here rather than booking a seat that resolves to nobody.
+    ///
+    /// <para>The ACTOR columns (<c>CreatedByUserId</c>, <c>ReviewedByUserId</c>)
+    /// and the audit trail keep the account id: who did it and who it is for are
+    /// different questions, and on an admin block they are different people.</para>
+    ///
+    /// <para>Approval CREATES the attendee record when none exists
+    /// (<c>AdminAccountService.EnsureUserProfileAsync</c>), so an approved account
+    /// always has one and this refusal should be unreachable from the app. It
+    /// firing means an account reached an approved state without going through
+    /// approval.</para></summary>
+    private async Task<Guid> ActorProfileIdAsync(
+        Guid actorUserId, CancellationToken cancellationToken) =>
+        await appDbContext.ProfileIdForAccountAsync(actorUserId, cancellationToken)
+            ?? throw new ApiException(ErrorCodes.AttendeeProfileMissing, 403,
+                "This account has no attendee record, so it cannot hold a seat.",
+                "لا يوجد سجل حاضر مرتبط بهذا الحساب، لذلك لا يمكنه حجز مقعد.");
+
+    /// <summary>The Identity account behind an attendee profile, or null when they
+    /// hold none — the ordinary case for a walk-in or a bulk-minted badge. It is
+    /// how the notification paths skip an attendee they have no way to reach.</summary>
+    private Task<Guid?> AttendeeAccountIdAsync(
+        Guid attendeeProfileId, CancellationToken cancellationToken) =>
+        appDbContext.UserProfiles
+            .AsNoTracking()
+            .Where(profile => profile.Id == attendeeProfileId)
+            .Select(profile => profile.UserId)
+            .SingleOrDefaultAsync(cancellationToken);
+
     public async Task<SessionSeatMap> GetSessionSeatMapAsync(
         Guid sessionId, Guid? actorUserId,
         CancellationToken cancellationToken = default)
@@ -51,7 +82,7 @@ internal sealed class SeatReservationService(
             .Where(r => r.SessionId == sessionId && r.ReleasedAt == null)
             .Select(r => new
             {
-                r.Id, r.RowLabel, r.SeatNumber, r.Kind, r.ReservedForUserId,
+                r.Id, r.RowLabel, r.SeatNumber, r.Kind, r.ReservedForProfileId,
                 // Carry the booking status so MyCell can drive the app's
                 // seat-card hint (Pending → await approval / Approved → show badge).
                 r.Status,
@@ -65,28 +96,33 @@ internal sealed class SeatReservationService(
         // The "confirmed" (تم التأكيد) seat state: a reservation whose
         // holder has an OPEN HallAttendance row for this session (scanned in at the
         // hall gate). One query for the whole session, matched by holder id.
-        var checkedInUserIds = (await appDbContext.HallAttendances.AsNoTracking()
+        var checkedInProfileIds = (await appDbContext.HallAttendances.AsNoTracking()
             .Where(a => a.SessionId == sessionId && a.Leave == null)
-            .Select(a => a.UserId)
+            .Select(a => a.UserProfileId)
             .ToListAsync(cancellationToken))
             .ToHashSet();
 
         var cells = reservations.Select(r => new SessionSeatCell(
             r.Id, r.RowLabel, r.SeatNumber, r.Kind, r.Status,
-            r.ReservedForUserId is { } holder && checkedInUserIds.Contains(holder),
+            r.ReservedForProfileId is { } holder && checkedInProfileIds.Contains(holder),
             r.GuestHint, r.GuestHintArabic))
             .ToList();
 
+        // The caller signs in as an ACCOUNT, but their seat is held against their
+        // attendee profile, so resolve that before looking for "my" cell.
         SessionSeatCell? mine = null;
-        if (actorUserId is { } actor)
+        var actorProfileId = actorUserId is { } mapActor
+            ? await appDbContext.ProfileIdForAccountAsync(mapActor, cancellationToken)
+            : null;
+        if (actorProfileId is { } actor)
         {
-            var ownRow = reservations.FirstOrDefault(r => r.ReservedForUserId == actor);
+            var ownRow = reservations.FirstOrDefault(r => r.ReservedForProfileId == actor);
             if (ownRow is not null)
             {
                 mine = new SessionSeatCell(
                     ownRow.Id, ownRow.RowLabel, ownRow.SeatNumber, ownRow.Kind,
                     ownRow.Status,
-                    ownRow.ReservedForUserId is { } m && checkedInUserIds.Contains(m),
+                    ownRow.ReservedForProfileId is { } m && checkedInProfileIds.Contains(m),
                     ownRow.GuestHint, ownRow.GuestHintArabic);
             }
         }
@@ -165,7 +201,8 @@ internal sealed class SeatReservationService(
             await IsVipVisitorAsync(actorUserId, cancellationToken));
         await EnsureSessionHasCapacityAsync(ctx, cancellationToken);
 
-        var existing = await GetMyActiveAsync(sessionId, actorUserId, cancellationToken);
+        var actorProfileId = await ActorProfileIdAsync(actorUserId, cancellationToken);
+        var existing = await GetMyActiveAsync(sessionId, actorProfileId, cancellationToken);
         if (existing is not null)
         {
             throw new ApiException(
@@ -175,7 +212,7 @@ internal sealed class SeatReservationService(
         }
 
         await EnsureNoOverlapAsync(
-            sessionId, actorUserId, ctx.Start, ctx.End, cancellationToken);
+            sessionId, actorProfileId, ctx.Start, ctx.End, cancellationToken);
 
         var clash = await appDbContext.SeatReservations.AsNoTracking()
             .Where(r => r.SessionId == sessionId
@@ -199,7 +236,7 @@ internal sealed class SeatReservationService(
             RowLabel = row,
             SeatNumber = seat,
             Kind = SeatReservationKind.UserBooking,
-            ReservedForUserId = actorUserId,
+            ReservedForProfileId = actorProfileId,
             CreatedByUserId = actorUserId,
             CreatedAt = timeProvider.SimfNow(),
             // 2026-07-18 (reservation-only) — there is no Control Panel approval
@@ -241,7 +278,8 @@ internal sealed class SeatReservationService(
         EnsureSeatPickAllowed(ctx);
         EnsureSessionNotEnded(ctx.End);
 
-        var existing = await GetMyActiveAsync(sessionId, actorUserId, cancellationToken);
+        var actorProfileId = await ActorProfileIdAsync(actorUserId, cancellationToken);
+        var existing = await GetMyActiveAsync(sessionId, actorProfileId, cancellationToken);
         if (existing is not null)
         {
             throw new ApiException(
@@ -251,7 +289,7 @@ internal sealed class SeatReservationService(
         }
 
         await EnsureNoOverlapAsync(
-            sessionId, actorUserId, ctx.Start, ctx.End, cancellationToken);
+            sessionId, actorProfileId, ctx.Start, ctx.End, cancellationToken);
 
         // The capacity COUNT, the free-seat pick and the INSERT run in
         // ONE Serializable transaction so concurrent reserve-random can neither
@@ -268,7 +306,8 @@ internal sealed class SeatReservationService(
             async ct =>
             {
                 var taken = await LoadHeldSeatsAsync(sessionId, ct);
-                return PickRandomSeat(ctx, taken, actorUserId, now, callerIsVip);
+                return PickRandomSeat(
+                    ctx, taken, actorProfileId, actorUserId, now, callerIsVip);
             },
             cancellationToken);
 
@@ -311,7 +350,8 @@ internal sealed class SeatReservationService(
 
         EnsureSessionNotEnded(session.End);
 
-        var existing = await GetMyActiveAsync(sessionId, actorUserId, cancellationToken);
+        var actorProfileId = await ActorProfileIdAsync(actorUserId, cancellationToken);
+        var existing = await GetMyActiveAsync(sessionId, actorProfileId, cancellationToken);
         if (existing is not null)
         {
             throw new ApiException(
@@ -321,7 +361,7 @@ internal sealed class SeatReservationService(
         }
 
         await EnsureNoOverlapAsync(
-            sessionId, actorUserId, session.Start, session.End, cancellationToken);
+            sessionId, actorProfileId, session.Start, session.End, cancellationToken);
 
         // Open-seating capacity = the session override, else the hall
         // capacity (no seat layout bounds it), and there is NO per-seat DB backstop.
@@ -340,7 +380,7 @@ internal sealed class SeatReservationService(
                 RowLabel = null,
                 SeatNumber = null,
                 Kind = SeatReservationKind.OpenSeating,
-                ReservedForUserId = actorUserId,
+                ReservedForProfileId = actorProfileId,
                 CreatedByUserId = actorUserId,
                 CreatedAt = now,
                 // 2026-07-18 (reservation-only) — confirmed on create, no approval
@@ -390,8 +430,9 @@ internal sealed class SeatReservationService(
             ctx.SeatTiers[RowIndex(ctx.RowLabels, row)],
             await IsVipVisitorAsync(actorUserId, cancellationToken));
 
+        var actorProfileId = await ActorProfileIdAsync(actorUserId, cancellationToken);
         var moved = await MoveHoldAtomicallyAsync(
-            ctx, actorUserId, row, seat, cancellationToken);
+            ctx, actorProfileId, actorUserId, row, seat, cancellationToken);
 
         await auditLog.WriteSuccessAsync(
             AuditEvents.SeatReservationMoved,
@@ -421,12 +462,13 @@ internal sealed class SeatReservationService(
     /// the backstop, and firing it rolls the release back with it.
     /// <para>The release is saved BEFORE the insert (two saves, one transaction)
     /// because the OTHER filtered unique index — one active row per
-    /// (SessionId, ReservedForUserId) — would otherwise reject the new row while the
-    /// old one is still held; statement order inside a single SaveChanges batch is
-    /// an EF implementation detail, so it is made explicit here.</para></summary>
+    /// (SessionId, ReservedForProfileId) — would otherwise reject the new row while
+    /// the old one is still held; statement order inside a single SaveChanges batch
+    /// is an EF implementation detail, so it is made explicit here.</para></summary>
     private async Task<(SeatReservation Reservation, string? FromRowLabel, int? FromSeatNumber)>
         MoveHoldAtomicallyAsync(
-            SessionContext ctx, Guid actorUserId, string row, int seat,
+            SessionContext ctx, Guid actorProfileId, Guid actorUserId,
+            string row, int seat,
             CancellationToken cancellationToken)
     {
         SeatReservation? origin = null;
@@ -455,7 +497,7 @@ internal sealed class SeatReservationService(
 
             origin = await appDbContext.SeatReservations
                 .SingleOrDefaultAsync(r => r.SessionId == ctx.SessionId
-                    && r.ReservedForUserId == actorUserId
+                    && r.ReservedForProfileId == actorProfileId
                     && r.ReleasedAt == null, cancellationToken)
                 ?? throw new ApiException(
                     ErrorCodes.SeatReservationNotFound, 404,
@@ -500,7 +542,7 @@ internal sealed class SeatReservationService(
                 // A move is a deliberate self-pick, whatever the seat it replaces was
                 // acquired as (self-pick or auto-pick).
                 Kind = SeatReservationKind.UserBooking,
-                ReservedForUserId = actorUserId,
+                ReservedForProfileId = actorProfileId,
                 CreatedByUserId = actorUserId,
                 CreatedAt = now,
                 Status = BookingStatus.Approved,
@@ -523,9 +565,10 @@ internal sealed class SeatReservationService(
         Guid sessionId, Guid actorUserId,
         CancellationToken cancellationToken = default)
     {
+        var actorProfileId = await ActorProfileIdAsync(actorUserId, cancellationToken);
         var mine = await appDbContext.SeatReservations
             .Where(r => r.SessionId == sessionId
-                && r.ReservedForUserId == actorUserId
+                && r.ReservedForProfileId == actorProfileId
                 && r.ReleasedAt == null)
             .SingleOrDefaultAsync(cancellationToken)
             ?? throw new ApiException(
@@ -856,7 +899,7 @@ internal sealed class SeatReservationService(
                 RowLabel = row,
                 SeatNumber = seat,
                 Kind = SeatReservationKind.AdminReservedRow,
-                ReservedForUserId = null,
+                ReservedForProfileId = null,
                 CreatedByUserId = actorUserId,
                 CreatedAt = now,
                 // An admin block is not a visitor booking; it is
@@ -916,7 +959,7 @@ internal sealed class SeatReservationService(
             RowLabel = row,
             SeatNumber = seat,
             Kind = SeatReservationKind.AdminReservedRow,
-            ReservedForUserId = null,
+            ReservedForProfileId = null,
             CreatedByUserId = actorUserId,
             CreatedAt = timeProvider.SimfNow(),
             // An admin block is confirmed immediately (never enters the queue).
@@ -998,7 +1041,7 @@ internal sealed class SeatReservationService(
             cancellationToken);
 
         // Tell the attendee an admin released their held/confirmed seat
-        // (no-op for an AdminReservedRow block: ReservedForUserId is null).
+        // (no-op for an AdminReservedRow block: ReservedForProfileId is null).
         var session = await LoadSessionTitleAsync(reservation.SessionId, cancellationToken);
         await TryNotifyBookingReleasedAsync(reservation, session, cancellationToken);
     }
@@ -1020,46 +1063,47 @@ internal sealed class SeatReservationService(
             .Select(r => new
             {
                 r.Id, r.RowLabel, r.SeatNumber, r.Kind, r.Status,
-                r.ReservedForUserId, r.GuestHint, r.GuestHintArabic,
+                r.ReservedForProfileId, r.GuestHint, r.GuestHintArabic,
             })
             .ToListAsync(cancellationToken);
 
         // A11 — the "confirmed" seat state: the holder has an OPEN HallAttendance
         // row for this session. Same definition as the app/CP seat map, one query
         // for the whole page rather than per row.
-        var checkedInUserIds = (await appDbContext.HallAttendances.AsNoTracking()
+        var checkedInProfileIds = (await appDbContext.HallAttendances.AsNoTracking()
             .Where(a => a.SessionId == sessionId && a.Leave == null)
-            .Select(a => a.UserId)
+            .Select(a => a.UserProfileId)
             .ToListAsync(cancellationToken))
             .ToHashSet();
 
         // DEF-SEA-001 — an admin must see WHOSE seat they are about to release, so
-        // resolve the holders' bilingual names in one batch. The names live on the
-        // App-side UserProfile, so there is no cross-database read.
+        // resolve the holders' bilingual names in one batch. Matched by PROFILE id,
+        // which every holder has, so a walk-in's seat now names its occupant instead
+        // of showing the admin a blank name above a Release button.
         var holderIds = rows
-            .Where(r => r.ReservedForUserId is not null)
-            .Select(r => r.ReservedForUserId!.Value)
+            .Where(r => r.ReservedForProfileId is not null)
+            .Select(r => r.ReservedForProfileId!.Value)
             .Distinct()
             .ToList();
         var holders = holderIds.Count == 0
             ? new Dictionary<Guid, (string Name, string NameArabic)>()
             : (await appDbContext.UserProfiles.AsNoTracking()
-                .Where(p => holderIds.Contains(p.UserId))
-                .Select(p => new { p.UserId, p.Name, p.NameArabic })
+                .Where(p => holderIds.Contains(p.Id))
+                .Select(p => new { p.Id, p.Name, p.NameArabic })
                 .ToListAsync(cancellationToken))
-                .ToDictionary(p => p.UserId, p => (p.Name, p.NameArabic));
+                .ToDictionary(p => p.Id, p => (p.Name, p.NameArabic));
 
         var cells = rows.Select(r =>
         {
-            var holder = r.ReservedForUserId is { } id
+            var holder = r.ReservedForProfileId is { } id
                 && holders.TryGetValue(id, out var found)
                 ? found
                 : (Name: string.Empty, NameArabic: string.Empty);
             return new SeatPlanCell(
                 r.Id, r.RowLabel, r.SeatNumber, r.Kind, r.Status,
-                r.ReservedForUserId is { } holderId
-                    && checkedInUserIds.Contains(holderId),
-                r.ReservedForUserId, holder.Name, holder.NameArabic,
+                r.ReservedForProfileId is { } holderId
+                    && checkedInProfileIds.Contains(holderId),
+                r.ReservedForProfileId, holder.Name, holder.NameArabic,
                 r.GuestHint, r.GuestHintArabic);
         }).ToList();
 
@@ -1076,21 +1120,21 @@ internal sealed class SeatReservationService(
         // The read-only Control Panel monitor of ACTIVE (confirmed, still-held)
         // visitor reservations across all sessions. There is no approval step —
         // bookings auto-confirm — so this is a monitor, not a queue. Admin
-        // row-blocks are created Approved with a null ReservedForUserId, so they
+        // row-blocks are created Approved with a null ReservedForProfileId, so they
         // never appear here. The session is joined up-front (before paging) so the
         // session and seat columns are server-filterable/sortable. The
-        // attendee name is resolved cross-DB from Identity afterwards, so that
+        // attendee name is resolved in a second App-DB query afterwards, so that
         // column stays non-filterable/non-sortable.
         var joined = appDbContext.SeatReservations.AsNoTracking()
             .Where(r => r.Status == BookingStatus.Approved
                 && r.ReleasedAt == null
-                && r.ReservedForUserId != null)
+                && r.ReservedForProfileId != null)
             .Join(appDbContext.Sessions.AsNoTracking(),
                 r => r.SessionId, s => s.Id,
                 (r, s) => new
                 {
                     r.Id, r.SessionId, s.Title, s.TitleArabic, s.Start,
-                    r.RowLabel, r.SeatNumber, r.Kind, r.ReservedForUserId, r.CreatedAt,
+                    r.RowLabel, r.SeatNumber, r.Kind, r.ReservedForProfileId, r.CreatedAt,
                 });
 
         // CP grid per-column filters. Unknown columns are ignored.
@@ -1128,30 +1172,32 @@ internal sealed class SeatReservationService(
             .Skip(skip).Take(top)
             .ToListAsync(cancellationToken);
 
-        // Resolve attendee display names in one Identity round-trip (never a
-        // cross-DB JOIN).
+        // Resolve attendee display names from the PROFILE — the row the booking is
+        // keyed by, and the one every attendee has. It used to read the Identity
+        // display name, which left a walk-in's booking listed with a blank attendee
+        // column; this is also one database instead of two.
         var attendeeIds = rows
-            .Where(r => r.ReservedForUserId is not null)
-            .Select(r => r.ReservedForUserId!.Value)
+            .Where(r => r.ReservedForProfileId is not null)
+            .Select(r => r.ReservedForProfileId!.Value)
             .Distinct()
             .ToList();
         var names = attendeeIds.Count == 0
             ? new Dictionary<Guid, string?>()
-            : await identityDbContext.Users.AsNoTracking()
-                .Where(u => attendeeIds.Contains(u.Id))
-                .Select(u => new { u.Id, u.DisplayName })
-                .ToDictionaryAsync(u => u.Id, u => (string?)u.DisplayName, cancellationToken);
+            : await appDbContext.UserProfiles.AsNoTracking()
+                .Where(p => attendeeIds.Contains(p.Id))
+                .Select(p => new { p.Id, p.Name })
+                .ToDictionaryAsync(p => p.Id, p => (string?)p.Name, cancellationToken);
 
         var items = rows.Select(r =>
         {
             string attendeeName = string.Empty;
-            if (r.ReservedForUserId is { } uid && names.TryGetValue(uid, out var dn))
+            if (r.ReservedForProfileId is { } pid && names.TryGetValue(pid, out var dn))
             {
                 attendeeName = dn ?? string.Empty;
             }
             return new ActiveBookingRow(
                 r.Id, r.SessionId, r.Title, r.TitleArabic, r.Start,
-                r.RowLabel, r.SeatNumber, r.Kind, r.ReservedForUserId,
+                r.RowLabel, r.SeatNumber, r.Kind, r.ReservedForProfileId,
                 attendeeName, r.CreatedAt);
         }).ToList();
 
@@ -1175,7 +1221,7 @@ internal sealed class SeatReservationService(
         var due = await appDbContext.SeatReservations
             .Where(r => r.Status == BookingStatus.Approved
                 && r.ReleasedAt == null
-                && r.ReservedForUserId != null
+                && r.ReservedForProfileId != null
                 && r.Expires != null
                 && r.Expires <= now
                 && r.CreatedAt < r.Expires)
@@ -1191,13 +1237,13 @@ internal sealed class SeatReservationService(
         var sessionIds = due.Select(r => r.SessionId).Distinct().ToList();
         var checkedIn = (await appDbContext.HallAttendances.AsNoTracking()
             .Where(a => sessionIds.Contains(a.SessionId))
-            .Select(a => new { a.SessionId, a.UserId })
+            .Select(a => new { a.SessionId, a.UserProfileId })
             .ToListAsync(cancellationToken))
-            .Select(a => (a.SessionId, a.UserId))
+            .Select(a => (a.SessionId, a.UserProfileId))
             .ToHashSet();
 
         var released = due
-            .Where(r => !checkedIn.Contains((r.SessionId, r.ReservedForUserId!.Value)))
+            .Where(r => !checkedIn.Contains((r.SessionId, r.ReservedForProfileId!.Value)))
             .ToList();
         if (released.Count == 0)
         {
@@ -1255,7 +1301,7 @@ internal sealed class SeatReservationService(
                 && r.ReleasedAt == null)
             .Select(r => new
             {
-                r.Id, r.Kind, r.Status, r.ReservedForUserId,
+                r.Id, r.Kind, r.Status, r.ReservedForProfileId,
                 r.GuestHint, r.GuestHintArabic,
             })
             .FirstOrDefaultAsync(cancellationToken);
@@ -1267,17 +1313,19 @@ internal sealed class SeatReservationService(
         }
 
         var occupant = await LoadOccupantAsync(
-            sessionId, held.ReservedForUserId, cancellationToken);
+            sessionId, held.ReservedForProfileId, cancellationToken);
         return new StaffSeatOccupant(
             true, sessionId, row, seatNumber, tier,
-            held.Id, held.Kind, held.Status, held.ReservedForUserId,
+            held.Id, held.Kind, held.Status, occupant.AccountId,
             occupant.Name, occupant.NameArabic,
             held.GuestHint, held.GuestHintArabic,
-            occupant.HasPhoto, occupant.QrId, occupant.CheckedIn);
+            occupant.HasPhoto, occupant.QrId, occupant.CheckedIn,
+            held.ReservedForProfileId);
     }
 
     public async Task<bool> EnsureWalkInHoldAsync(
-        Guid sessionId, Guid attendeeUserId, CancellationToken cancellationToken = default)
+        Guid sessionId, Guid attendeeProfileId, Guid recordedByUserId,
+        CancellationToken cancellationToken = default)
     {
         // Already holds a place here — nothing to add. Checked first so the
         // common re-scan case costs one cheap read and never touches the index.
@@ -1285,7 +1333,7 @@ internal sealed class SeatReservationService(
             .AsNoTracking()
             .AnyAsync(
                 r => r.SessionId == sessionId
-                    && r.ReservedForUserId == attendeeUserId
+                    && r.ReservedForProfileId == attendeeProfileId
                     && r.ReleasedAt == null,
                 cancellationToken);
         if (alreadyHeld) { return false; }
@@ -1301,8 +1349,12 @@ internal sealed class SeatReservationService(
             SeatNumber = null,
             Kind = SeatReservationKind.OpenSeating,
             Status = BookingStatus.Approved,
-            ReservedForUserId = attendeeUserId,
-            CreatedByUserId = attendeeUserId,
+            ReservedForProfileId = attendeeProfileId,
+            // The OPERATOR who scanned them in, not the attendee. This column is an
+            // Identity account, and a walk-in may hold none — the person who
+            // admitted them is both the truthful author and an account that always
+            // exists on this path.
+            CreatedByUserId = recordedByUserId,
             CreatedAt = timeProvider.SimfNow(),
             // Never expires: the holder is physically in the hall, so the
             // no-show sweep must not release them.
@@ -1324,8 +1376,8 @@ internal sealed class SeatReservationService(
             appDbContext.Entry(hold).State = EntityState.Detached;
             logger.LogWarning(
                 ex,
-                "Walk-in seat hold not recorded for {UserId} at session {SessionId}.",
-                attendeeUserId, sessionId);
+                "Walk-in seat hold not recorded for attendee {AttendeeProfileId} at session {SessionId}.",
+                attendeeProfileId, sessionId);
             return false;
         }
     }
@@ -1353,9 +1405,14 @@ internal sealed class SeatReservationService(
             ? Array.Empty<SeatTier>()
             : ExpandSeatTiers(layout, rowLabels);
 
+        // The badge resolves to the attendee PROFILE, which every holder has and
+        // which the reservation is keyed by. This used to resolve the Identity
+        // account instead, and a walk-in — who has none — could not be looked up at
+        // all: the desk answered "no seat" for the very badge the walk-in hold had
+        // just been created for.
         var holder = await appDbContext.UserProfiles.AsNoTracking()
             .Where(p => p.QrId == code)
-            .Select(p => new { p.UserId, p.Name, p.NameArabic })
+            .Select(p => new { p.Id, p.Name, p.NameArabic })
             .FirstOrDefaultAsync(cancellationToken)
             ?? throw new ApiException(
                 ErrorCodes.AttendeeQrUnknown, 404,
@@ -1364,7 +1421,7 @@ internal sealed class SeatReservationService(
 
         var held = await appDbContext.SeatReservations.AsNoTracking()
             .Where(r => r.SessionId == sessionId
-                && r.ReservedForUserId == holder.UserId
+                && r.ReservedForProfileId == holder.Id
                 && r.ReleasedAt == null)
             .Select(r => new
             {
@@ -1374,7 +1431,7 @@ internal sealed class SeatReservationService(
             .FirstOrDefaultAsync(cancellationToken);
 
         var occupant = await LoadOccupantAsync(
-            sessionId, holder.UserId, cancellationToken);
+            sessionId, holder.Id, cancellationToken);
         if (held is null)
         {
             // The badge is valid but the guest holds no seat in this session — the
@@ -1383,8 +1440,9 @@ internal sealed class SeatReservationService(
             return new StaffSeatOccupant(
                 false, sessionId, null, null, SeatTier.Normal,
                 null, SeatReservationKind.UserBooking, BookingStatus.Cancelled,
-                holder.UserId, occupant.Name, occupant.NameArabic,
-                null, null, occupant.HasPhoto, code, occupant.CheckedIn);
+                occupant.AccountId, occupant.Name, occupant.NameArabic,
+                null, null, occupant.HasPhoto, code, occupant.CheckedIn,
+                holder.Id);
         }
 
         var tierIndex = held.RowLabel is null
@@ -1395,45 +1453,54 @@ internal sealed class SeatReservationService(
             : SeatTier.Normal;
         return new StaffSeatOccupant(
             true, sessionId, held.RowLabel, held.SeatNumber, tier,
-            held.Id, held.Kind, held.Status, holder.UserId,
+            held.Id, held.Kind, held.Status, occupant.AccountId,
             occupant.Name, occupant.NameArabic,
             held.GuestHint, held.GuestHintArabic,
-            occupant.HasPhoto, code, occupant.CheckedIn);
+            occupant.HasPhoto, code, occupant.CheckedIn,
+            holder.Id);
     }
 
     private static StaffSeatOccupant EmptySeat(
         Guid sessionId, string rowLabel, int seatNumber, SeatTier tier) =>
         new(false, sessionId, rowLabel, seatNumber, tier,
             null, SeatReservationKind.UserBooking, BookingStatus.Cancelled,
-            null, string.Empty, string.Empty, null, null, false, null, false);
+            null, string.Empty, string.Empty, null, null, false, null, false, null);
 
     /// <summary>The occupant facts the seating desk shows: bilingual name +
     /// badge id (from the App-side <c>UserProfile</c>), whether an avatar exists in
     /// the unified file store, and whether they have already checked into this
     /// session. Everything is on the App DB, so there is no cross-database read and
-    /// nothing is duplicated. A null <paramref name="userId"/> (a VVIP
-    /// protocol seat or an admin block) yields the empty occupant.</summary>
+    /// nothing is duplicated. A null <paramref name="attendeeProfileId"/> (a VVIP
+    /// protocol seat or an admin block) yields the empty occupant.
+    ///
+    /// <para>Also returns the occupant's ACCOUNT id, which the shipped
+    /// <c>StaffSeatOccupant.UserId</c> field carries and the avatar route keys on.
+    /// It is null for a walk-in or a bulk-minted badge, whose name and seat still
+    /// resolve from the profile — only the photo has nowhere to come from.</para></summary>
     private async Task<(string Name, string NameArabic, bool HasPhoto,
-        string? QrId, bool CheckedIn)> LoadOccupantAsync(
-        Guid sessionId, Guid? userId, CancellationToken cancellationToken)
+        string? QrId, bool CheckedIn, Guid? AccountId)> LoadOccupantAsync(
+        Guid sessionId, Guid? attendeeProfileId, CancellationToken cancellationToken)
     {
-        if (userId is not { } id)
+        if (attendeeProfileId is not { } id)
         {
-            return (string.Empty, string.Empty, false, null, false);
+            return (string.Empty, string.Empty, false, null, false, null);
         }
         var profile = await appDbContext.UserProfiles.AsNoTracking()
-            .Where(p => p.UserId == id)
-            .Select(p => new { p.Name, p.NameArabic, p.QrId })
+            .Where(p => p.Id == id)
+            .Select(p => new { p.Name, p.NameArabic, p.QrId, p.UserId })
             .FirstOrDefaultAsync(cancellationToken);
-        var hasPhoto = await appDbContext.StoredFiles.AsNoTracking()
-            .AnyAsync(f => f.Service == FileService.Avatar
-                && f.OwnerEntityId == id
-                && f.IsActive, cancellationToken);
+        // An avatar is owned by an ACCOUNT, so an attendee without one can have no
+        // photo; skipping the query is also one round-trip saved on every walk-in.
+        var hasPhoto = profile?.UserId is { } avatarOwnerId
+            && await appDbContext.StoredFiles.AsNoTracking()
+                .AnyAsync(f => f.Service == FileService.Avatar
+                    && f.OwnerEntityId == avatarOwnerId
+                    && f.IsActive, cancellationToken);
         var checkedIn = await appDbContext.HallAttendances.AsNoTracking()
-            .AnyAsync(a => a.SessionId == sessionId && a.UserId == id,
+            .AnyAsync(a => a.SessionId == sessionId && a.UserProfileId == id,
                 cancellationToken);
         return (profile?.Name ?? string.Empty, profile?.NameArabic ?? string.Empty,
-            hasPhoto, profile?.QrId, checkedIn);
+            hasPhoto, profile?.QrId, checkedIn, profile?.UserId);
     }
 
     // -- internals --
@@ -1446,7 +1513,7 @@ internal sealed class SeatReservationService(
             .SingleAsync(cancellationToken);
 
     private async Task EnsureNoOverlapAsync(
-        Guid sessionId, Guid actorUserId,
+        Guid sessionId, Guid actorProfileId,
         DateTime start, DateTime end,
         CancellationToken cancellationToken)
     {
@@ -1455,7 +1522,7 @@ internal sealed class SeatReservationService(
         // Held = ReleasedAt IS NULL, so released/rejected/cancelled rows don't
         // block.
         var overlaps = await appDbContext.SeatReservations.AsNoTracking()
-            .Where(r => r.ReservedForUserId == actorUserId
+            .Where(r => r.ReservedForProfileId == actorProfileId
                 && r.ReleasedAt == null
                 && r.SessionId != sessionId)
             .Join(appDbContext.Sessions.AsNoTracking(),
@@ -1946,7 +2013,7 @@ internal sealed class SeatReservationService(
     /// created-at / expiry window.</summary>
     private static SeatReservation? PickRandomSeat(
         SessionContext ctx, IReadOnlySet<(string Row, int Seat)> taken,
-        Guid actorUserId, DateTime now, bool callerIsVip)
+        Guid actorProfileId, Guid actorUserId, DateTime now, bool callerIsVip)
     {
         // Index loop so each row's free-seat scan stops at ITS own count
         // (ctx.SeatCounts[i]); a ragged layout never yields a phantom seat on a short row.
@@ -1973,7 +2040,7 @@ internal sealed class SeatReservationService(
                     RowLabel = rowLabel,
                     SeatNumber = seat,
                     Kind = SeatReservationKind.RandomAssignment,
-                    ReservedForUserId = actorUserId,
+                    ReservedForProfileId = actorProfileId,
                     CreatedByUserId = actorUserId,
                     CreatedAt = now,
                     // 2026-07-18 (reservation-only) — confirmed on create, no approval.
@@ -1987,10 +2054,10 @@ internal sealed class SeatReservationService(
     }
 
     private Task<SeatReservation?> GetMyActiveAsync(
-        Guid sessionId, Guid actorUserId, CancellationToken cancellationToken) =>
+        Guid sessionId, Guid actorProfileId, CancellationToken cancellationToken) =>
         appDbContext.SeatReservations.AsNoTracking()
             .SingleOrDefaultAsync(r => r.SessionId == sessionId
-                && r.ReservedForUserId == actorUserId
+                && r.ReservedForProfileId == actorProfileId
                 && r.ReleasedAt == null, cancellationToken);
 
     private async Task PersistWithUniquenessGuardAsync(
@@ -2005,7 +2072,7 @@ internal sealed class SeatReservationService(
         {
             appDbContext.Entry(reservation).State = EntityState.Detached;
             var message = ex.InnerException?.Message ?? ex.Message;
-            if (message.Contains("ReservedForUserId", StringComparison.OrdinalIgnoreCase))
+            if (message.Contains("ReservedForProfileId", StringComparison.OrdinalIgnoreCase))
             {
                 throw new ApiException(
                     ErrorCodes.SeatAlreadyOwnedBySession, 409,
@@ -2029,7 +2096,17 @@ internal sealed class SeatReservationService(
         SeatReservation booking, (string Title, string TitleArabic) session,
         CancellationToken cancellationToken, bool noShow = false)
     {
-        if (booking.ReservedForUserId is not { } userId)
+        if (booking.ReservedForProfileId is not { } holderProfileId)
+        {
+            return;
+        }
+
+        // A notification is delivered to an ACCOUNT — it owns the devices and the
+        // mailbox — while the booking is held by an attendee PROFILE. A walk-in
+        // holds a seat and no account, so there is nobody to tell; their release
+        // still stands, exactly as an admin block's silent release does.
+        var userId = await AttendeeAccountIdAsync(holderProfileId, cancellationToken);
+        if (userId is not { } recipientId)
         {
             return;
         }
@@ -2051,7 +2128,7 @@ internal sealed class SeatReservationService(
         {
             await notifications.DispatchAsync(new NotificationRequest
             {
-                UserId = userId,
+                UserId = recipientId,
                 Kind = NotificationKind.BookingReleased,
                 Title = "Seat reservation released",
                 TitleArabic = "تم إلغاء حجز المقعد",

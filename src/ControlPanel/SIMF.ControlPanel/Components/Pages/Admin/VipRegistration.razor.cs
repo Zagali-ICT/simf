@@ -97,9 +97,20 @@ public partial class VipRegistration
     }
 
     // Row Edit — open the shared account edit form for this VIP.
+    //
+    // The form edits an ACCOUNT, and a guest invited through a bulk order or
+    // registered at a desk may not have one. The grid offers Edit per row with no
+    // way to disable a single row's button, so say why instead of opening a form
+    // bound to nothing: an empty form that silently saves nowhere is the worse
+    // failure, and the guest is on the list either way.
     private void OnEditVip(AdminVipSummary row)
     {
-        _editUserId = row.UserId;
+        if (row.UserId is not { } accountId)
+        {
+            _toast = new Toast("info", L["Admin.Vips.Edit.NoAccount"]);
+            return;
+        }
+        _editUserId = accountId;
         _editOpen = true;
     }
 

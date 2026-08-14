@@ -346,7 +346,8 @@ internal sealed partial class AdminAccountService(
         AdminWalkInRegistrationRequest request,
         CancellationToken cancellationToken = default,
         bool? expectedIsVisitor = null,
-        string? presetQrId = null)
+        string? presetQrId = null,
+        Guid presetProfileId = default)
     {
         // Walk-in registration always creates a Visitor-typed
         // account. The `kind` argument stays on the signature for
@@ -671,6 +672,13 @@ internal sealed partial class AdminAccountService(
         if (!string.IsNullOrEmpty(presetQrId))
         {
             profile.QrId = presetQrId;
+        }
+        // The same reasoning applies to the id itself. The badge the desk
+        // printed carries this Guid, so creating the record under any other one
+        // would leave a badge that decrypts perfectly and resolves to nobody.
+        if (presetProfileId != Guid.Empty)
+        {
+            profile.Id = presetProfileId;
         }
         appDbContext.UserProfiles.Add(profile);
 
@@ -1263,7 +1271,7 @@ internal sealed partial class AdminAccountService(
                 // Presence sentinel — non-empty when the account has a
                 // profile photo (avatar) in the StoredFile store; drives the
                 // grid photo thumbnail.
-                user.AvatarRelativePath,
+                user.AvatarFileId,
                 IsAdmin = adminRoleId != null
                     && dbContext.UserRoles.Any(ur =>
                         ur.UserId == user.Id && ur.RoleId == adminRoleId),
@@ -1279,7 +1287,7 @@ internal sealed partial class AdminAccountService(
                 row.TwoFactorEnabled,
                 row.IsAdmin,
                 row.CreatedAt,
-                HasAvatar: !string.IsNullOrEmpty(row.AvatarRelativePath)))
+                HasAvatar: row.AvatarFileId is not null))
             .ToList();
 
         return GridPage<AdminUserSummary>.Of(summaries, total,
@@ -1388,11 +1396,15 @@ internal sealed partial class AdminAccountService(
             .Select(p => p.Id)
             .ToListAsync(cancellationToken);
 
+        // This builds a set of ACCOUNT ids to scope an admin's reach, so a
+        // profile with no account contributes nothing to it — there is no
+        // account for the scope to include or exclude.
         var partnerUserIds = await appDbContext.UserProfiles
             .AsNoTracking()
-            .Where(p => p.ProfileTypeId != null
+            .Where(p => p.UserId != null
+                && p.ProfileTypeId != null
                 && partnerProfileTypeIds.Contains(p.ProfileTypeId.Value))
-            .Select(p => p.UserId)
+            .Select(p => p.UserId!.Value)
             .ToListAsync(cancellationToken);
 
         if (!requireIsVisitor)
@@ -1494,7 +1506,9 @@ internal sealed partial class AdminAccountService(
             .Skip(skip).Take(top)
             .Select(u => new AdminPendingUserSummary(
                 u.Id, u.Email!, u.DisplayName, u.CreatedAt,
-                !string.IsNullOrEmpty(u.AvatarRelativePath)))
+                // != null, not "is not null": this is translated to SQL, and an
+                // expression tree cannot carry a pattern match.
+                u.AvatarFileId != null))
             .ToListAsync(cancellationToken);
 
         return GridPage<AdminPendingUserSummary>.Of(page, total,

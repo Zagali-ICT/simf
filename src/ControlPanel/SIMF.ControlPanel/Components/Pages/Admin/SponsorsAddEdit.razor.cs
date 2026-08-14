@@ -45,7 +45,6 @@ public partial class SponsorsAddEdit
             _model.NameEn = Initial.NameEn;
             _model.NameAr = Initial.NameAr;
             _model.Tier = Initial.Tier;
-            _model.LogoRelativePath = Initial.LogoRelativePath ?? string.Empty;
             _model.Url = Initial.Url ?? string.Empty;
             _model.DisplayOrder = Initial.DisplayOrder;
             _model.Tagline = Initial.Tagline ?? string.Empty;
@@ -174,7 +173,6 @@ public partial class SponsorsAddEdit
         NameEn = _model.NameEn.Trim(),
         NameAr = _model.NameAr.Trim(),
         Tier = _model.Tier,
-        LogoRelativePath = NullIfBlank(_model.LogoRelativePath),
         Url = NullIfBlank(_model.Url),
         DisplayOrder = _model.DisplayOrder,
         Tagline = NullIfBlank(_model.Tagline),
@@ -200,7 +198,6 @@ public partial class SponsorsAddEdit
         NameEn = _model.NameEn.Trim(),
         NameAr = _model.NameAr.Trim(),
         Tier = _model.Tier,
-        LogoRelativePath = NullIfBlank(_model.LogoRelativePath),
         Url = NullIfBlank(_model.Url),
         DisplayOrder = _model.DisplayOrder,
         Tagline = NullIfBlank(_model.Tagline),
@@ -244,7 +241,6 @@ public partial class SponsorsAddEdit
         public string NameEn { get; set; } = string.Empty;
         public string NameAr { get; set; } = string.Empty;
         public int Tier { get; set; } = 10;
-        public string LogoRelativePath { get; set; } = string.Empty;
         public string Url { get; set; } = string.Empty;
         public string Tagline { get; set; } = string.Empty;
         public string TaglineAr { get; set; } = string.Empty;

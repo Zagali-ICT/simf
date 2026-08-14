@@ -6,24 +6,73 @@
 // front of a published API does not add a tier either; the client still
 // addresses the API.
 //
-// This host is that tier. It takes over the public api.simrsnf.com name, so the
-// installed app needs no rebuild and no store release, and forwards only the
-// mobile surface to an API that is no longer published at all.
+// This host is that tier. It is published at edge.simrsnf.com and forwards only
+// the mobile surface inward, which is what lets the API stop being published to
+// the internet: api.simrsnf.com stays the API's own name and resolves inside the
+// estate only.
+//
+// The cost of using a separate name, stated where it cannot be missed: the app's
+// base URL is compile-time, so an installed build still talks to the API
+// directly and knows nothing about this host. Routing mobile traffic here needs
+// a rebuild with --dart-define and a store release on both platforms, and
+// withdrawing the API's public DNS record has to wait for that release to land.
 //
 // It deliberately does almost nothing: no reshaping, no aggregation, no
-// business logic. The shipped mobile wire contract is append-only (D-219), and
+// business logic. The shipped mobile wire contract is append-only, and
 // every field the app decodes has to survive this hop byte for byte.
 using Microsoft.AspNetCore.HttpOverrides;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Production config arrives as SIMF_-prefixed Machine-scope environment
-// variables (deploy/set-env.template.ps1). This source strips the prefix, so
-// SIMF_ReverseProxy__Clusters__api__Destinations__primary__Address binds
+// Production config arrives as SIMF_EDGE_-prefixed Machine-scope environment
+// variables (deploy/set-env-edge.template.ps1). This source strips the prefix,
+// so SIMF_EDGE_ReverseProxy__Clusters__api__Destinations__primary__Address binds
 // through to the YARP cluster below. ASPNETCORE_ENVIRONMENT stays un-prefixed:
 // the host reads it before configuration sources load.
-builder.Configuration.AddEnvironmentVariables("SIMF_");
+//
+// The prefix is PER APPLICATION. It matters most here: the API reads
+// ReverseProxy:KnownProxies too, and under one shared namespace this host and
+// the API could not name different upstreams on the same box - the edge's
+// upstream is the load balancer, the API's includes the edge.
+builder.Configuration.AddEnvironmentVariables("SIMF_EDGE_");
+
+// A server provisioned before the per-application prefixes still carries the old
+// SIMF_ variables, which this build does not read. Without this the edge would
+// report its destination address missing while the value sits in the machine
+// environment under its former name.
+//
+// Written out here rather than shared from SIMF.Common: this host deliberately
+// carries no project reference, so that an internet-facing proxy does not pull
+// in the permission catalogue, the enums and the rest of the domain surface.
+// Production only, matching the boot gates below and every other one in the
+// estate: the guard is about a half-upgraded SERVER, while a developer box
+// legitimately carries whatever its owner has exported.
+var legacyNames = builder.Environment.IsProduction()
+    ? Environment.GetEnvironmentVariables().Keys.Cast<object>()
+        .Select(key => key?.ToString() ?? string.Empty)
+        .Where(name => name.StartsWith("SIMF_", StringComparison.Ordinal))
+        .Where(name => !name.StartsWith("SIMF_EDGE_", StringComparison.Ordinal))
+        .Where(name => !name.StartsWith("SIMF_API_", StringComparison.Ordinal))
+        .Where(name => !name.StartsWith("SIMF_CP_", StringComparison.Ordinal))
+        .Where(name => !name.StartsWith("SIMF_WEB_", StringComparison.Ordinal))
+        .Where(name => !name.StartsWith("SIMF_TEST_", StringComparison.Ordinal))
+        .Where(name => !name.StartsWith("SIMF_SMOKE_", StringComparison.Ordinal))
+        .OrderBy(name => name, StringComparer.Ordinal)
+        .ToList()
+    : [];
+
+if (legacyNames.Count > 0)
+{
+    throw new InvalidOperationException(
+        $"This server still carries {legacyNames.Count} environment variable(s) using the "
+        + "retired 'SIMF_' prefix, which this build does not read: "
+        + string.Join(", ", legacyNames.Take(8))
+        + (legacyNames.Count > 8 ? ", ..." : string.Empty)
+        + ". Each SIMF application now reads its own prefix ('SIMF_EDGE_' here). "
+        + "Re-provision with deploy/set-env-edge.ps1, clear the old variables with "
+        + "deploy/clear-env.ps1, then restart the pool.");
+}
 
 // Per-project log files under {Storage:LogDirectory}/SIMF.MobileEdge/log-{Date}.log,
 // the same shape and retention as the API, Control Panel and Website. This host
@@ -83,8 +132,8 @@ if (!app.Environment.IsDevelopment())
     {
         throw new InvalidOperationException(
             "The api cluster has no destination address. Set "
-            + "SIMF_ReverseProxy__Clusters__api__Destinations__primary__Address to the "
-            + "PRIVATE address of the API, which is the only host permitted to answer it.");
+            + "SIMF_EDGE_ReverseProxy__Clusters__api__Destinations__primary__Address to the "
+            + "API's address inside the estate, which is the only host permitted to answer it.");
     }
 }
 

@@ -1,4 +1,4 @@
-# Media Partners — `/admin/media-partners`
+﻿# Media Partners — `/admin/media-partners`
 
 | | |
 |--|--|
@@ -110,7 +110,6 @@ grid; it fires `OnImported` → `OnImportedAsync` (success toast + reload) and
 |--------|--------------|-----|----------|------------|-------|
 | Name (English) | `r.Name` | `name` | yes | yes | |
 | Name (Arabic) | `r.NameArabic` | `namearabic` | yes | yes | |
-| Logo path | `r.LogoRelativePath` | `logo` | no | no | "—" when blank |
 | Link | `r.Url` | `url` | no | no | "—" when blank |
 | Display order | `r.DisplayOrder` | `displayorder` | yes | no | |
 | Active | `r.IsActive` | `isActive` | no | no | `SimfPill` on/off (Active / Inactive) |
@@ -134,7 +133,6 @@ Default page size `Top = 20`.
 |-------|------|----------|----------------|---------------------|--------|
 | Name (English) | text | yes | 256 | 1–256 chars (`VALIDATION_FAILED`) | `Admin.MediaPartners.Field.NameEn` |
 | Name (Arabic) | text | yes | 256 | 1–256 chars (`VALIDATION_FAILED`) | `Admin.MediaPartners.Field.NameAr` |
-| Logo path | text | no | 512 | ≤512 chars | `Admin.MediaPartners.Field.Logo` |
 | Link | text | no | 512 | ≤512 chars | `Admin.MediaPartners.Field.Url` |
 | Contact | `ContactPicker` | no | — | must be an existing active Contact (SIMF-FDS-014 / D-281) | — |
 | Display order | number | — | — | parsed; non-integer / negative coerced to 0 client-side; server requires ≥ 0 | `Admin.MediaPartners.Field.DisplayOrder` |
@@ -167,9 +165,12 @@ old inline list `confirm()` was removed in D-353.
   inside a `simf-image-upload__preview` wrapper.
 - The asset category is **`MediaPartnerLogo`**, and the upload / link / proxy /
   Media-Library behaviour is the shared media-asset pipeline (see the media-asset
-  dev guide). This image control is **additive** to — and independent of — the
-  free-text `LogoRelativePath` field, which remains the value shown in the grid's
-  "Logo path" column.
+  dev guide). It is the **only** way to set a logo: the free-text
+  `LogoRelativePath` field it used to sit beside is gone (D-889), and the row's
+  typed `LogoFileId` points at the `StoredFile` this control creates. An
+  externally hosted logo is not an exception — the "External link" tab records it
+  as a `StoredFile` of source type `ExternalLink`, so it still carries a media
+  type, a service policy and an owner.
 
 ## 5. Data flow
 
@@ -198,7 +199,9 @@ sets `IsActive=true` on create); only `Update` carries `IsActive`.
 
 ### 5.1 Excel export columns
 `ExportMediaPartnersEndpoint` writes a sheet named **"MediaPartners"** with header
-row `Name | NameArabic | LogoRelativePath | Url | DisplayOrder | IsActive`. File
+row `Name | NameArabic | Url | DisplayOrder | IsActive`. The logo column left
+the workbook with D-889 — an image is a file, not a cell, and a stale workbook
+naming it now fails loudly instead of silently dropping the picture. File
 name prefix: `simf-media-partners`. With selected rows the export honours
 `AdminGridExportRequest.Ids`; with none, it exports the whole filtered set
 (`Query`). Export is capped at 5000 rows.
@@ -209,7 +212,7 @@ name prefix: `simf-media-partners`. With selected rows the export honours
 English name raises a per-row `DataValidationException` ("The English name is
 required." / "الاسم بالإنجليزية مطلوب."); a row missing the Arabic name raises a
 per-row error ("The Arabic name is required." / "الاسم بالعربية مطلوب."). Optional
-`LogoRelativePath` and `Url` are taken verbatim (blank ⇒ null); `DisplayOrder` is
+`Url` is taken verbatim (blank ⇒ null); `DisplayOrder` is
 parsed (unparseable ⇒ 0). A duplicate English name surfaces as a per-row error
 (the service throws `MEDIA_PARTNER_NAME_DUPLICATE`), not a batch abort. `ContactId`
 cannot be expressed in plain text, so import always leaves it unset — an admin
@@ -225,7 +228,7 @@ success toast is the shared `Grid.Import.Done` key.
   required." / "الاسم بالإنجليزية والعربية مطلوبان."). The display-order field
   coerces a bad value to `0` rather than erroring.
 - **Server-side validation** (`AdminMediaPartnerService.Validate`): trims fields;
-  NameEn 1–256; NameAr 1–256; LogoRelativePath ≤512; Url ≤512; DisplayOrder ≥ 0.
+  NameEn 1–256; NameAr 1–256; Url ≤512; DisplayOrder ≥ 0.
   Each failure throws `ApiException(ErrorCodes.ValidationFailed, 400, …)`
   (`VALIDATION_FAILED`) with a field-specific bilingual message — e.g. "Media
   partner English name must be between 1 and 256 characters." / "يجب أن يتراوح
@@ -278,8 +281,8 @@ success toast is the shared `Grid.Import.Done` key.
   duplicate English name yields a per-row 409 error.
 - **The logo Image control is Edit-only** (D-357) — a brand-new media partner has
   no `Id` until the first save, so the `SimfImageUpload` only appears after the
-  row exists; on the Add (create) form there is no image control, only the
-  free-text `Logo path` field.
+  row exists; the Add (create) form shows the hint "Save the record first, then
+  add an image." in its place.
 - **Action buttons are not `<AuthorizedAction>`-gated** — an admin with View but
   not Create/Edit/Delete/Export/Import sees the buttons, but the API rejects the
   call (403). Treat that as the per-action enforcement point.
@@ -345,6 +348,7 @@ asset heading (`Admin.Asset.Heading`) are present in both EN and AR resx.
 
 | Date | Decision | Change |
 |------|----------|--------|
+| 2026-08-14 | D-889 | **The free-text Logo path is gone; the partner's logo is a typed key.** `MediaPartner.LogoRelativePath` becomes `Guid? LogoFileId` with a real foreign key into `StoredFiles`. The Add/Edit form loses the text field and gains the save-first hint on create; the workbook loses its logo column; the seed's three placeholder logos became `StoredFile` ExternalLink rows, since a `uniqueidentifier` column cannot hold a URL. |
 | 2026-06-11 | D-357 | Media-partner **logo** wired to the unified media-asset pipeline: `SimfImageUpload Category="MediaPartnerLogo"` (Edit-only) on `MediaPartnerAddEdit` + a `SimfImageThumb` of `/account/api/admin/assets/MediaPartnerLogo/{id}/image` on `MediaPartnerViewDelete` (complements the existing free-text `LogoRelativePath` field). E2E catalogue extended with E2E-MPR-020. |
 | 2026-06-10 | D-356 / D-353 | Reference doc created. Documents the D-353 `CrudShell` Add/Edit + View/Delete forms with the Page ↔ Popup `CrudPresentationToggle` (PageKey `media-partners`) and the `SimfConfirm`-gated delete (replacing the old inline `SimfModal` + native `confirm()`), plus the D-356 Excel export (`POST /export`) and insert-only import (`POST /import`) via `CrudGridExcel`. |
 | 2026-06-02 (orig) | D-199 | Media Partners admin CRUD shipped (Mockup page 31 — "شركاء النجاح"). |

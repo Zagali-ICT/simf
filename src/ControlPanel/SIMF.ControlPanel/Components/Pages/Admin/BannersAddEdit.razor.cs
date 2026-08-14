@@ -26,7 +26,6 @@ public partial class BannersAddEdit
             _model.TitleAr = Initial.TitleArabic;
             _model.BodyEn = Initial.Body;
             _model.BodyAr = Initial.BodyArabic;
-            _model.ImageUrl = Initial.ImageUrl ?? string.Empty;
             _model.LinkUrl = Initial.LinkUrl ?? string.Empty;
             _model.Start = Initial.Start.ToString("yyyy-MM-ddTHH:mm");
             _model.End = Initial.End.ToString("yyyy-MM-ddTHH:mm");
@@ -78,7 +77,6 @@ public partial class BannersAddEdit
                     TitleArabic = _model.TitleAr.Trim(),
                     Body = _model.BodyEn.Trim(),
                     BodyArabic = _model.BodyAr.Trim(),
-                    ImageUrl = NullIfBlank(_model.ImageUrl),
                     LinkUrl = NullIfBlank(_model.LinkUrl),
                     Start = start,
                     End = end,
@@ -90,7 +88,6 @@ public partial class BannersAddEdit
                     TitleArabic = _model.TitleAr.Trim(),
                     Body = _model.BodyEn.Trim(),
                     BodyArabic = _model.BodyAr.Trim(),
-                    ImageUrl = NullIfBlank(_model.ImageUrl),
                     LinkUrl = NullIfBlank(_model.LinkUrl),
                     Start = start,
                     End = end,
@@ -115,7 +112,6 @@ public partial class BannersAddEdit
         public string TitleAr { get; set; } = string.Empty;
         public string BodyEn { get; set; } = string.Empty;
         public string BodyAr { get; set; } = string.Empty;
-        public string ImageUrl { get; set; } = string.Empty;
         public string LinkUrl { get; set; } = string.Empty;
         public string Start { get; set; } = string.Empty;
         public string End { get; set; } = string.Empty;

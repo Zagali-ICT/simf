@@ -3,26 +3,38 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
 using Serilog;
 using SIMF.ApiClient;
+using SIMF.Common;
 using SIMF.Common.Options;
 using SIMF.ControlPanel;
 using SIMF.ControlPanel.Components;
 using SIMF.ControlPanel.Endpoints;
 
-var builder = WebApplication.CreateBuilder(args);
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-// Production secrets/config arrive as SIMF_-prefixed Machine-scope environment
-// variables (see deploy/set-env-*.ps1). This source strips
-// the prefix, so SIMF_Api__BaseUrl binds to Api:BaseUrl. ASPNETCORE_ENVIRONMENT
+// Production secrets/config arrive as SIMF_CP_-prefixed Machine-scope
+// environment variables (deploy/set-env-cp.template.ps1). This source strips the
+// prefix, so SIMF_CP_Api__BaseUrl binds to Api:BaseUrl. ASPNETCORE_ENVIRONMENT
 // stays un-prefixed (the host reads it before configuration sources load).
-builder.Configuration.AddEnvironmentVariables("SIMF_");
+//
+// The prefix is PER APPLICATION so that a server running more than one SIMF app
+// can give each its own value for the same key. It matters here in particular:
+// Session:LifetimeHours is this host's cookie idle lifetime and the API has its
+// own Session:TimeoutHours, two different settings under one section name that
+// shared a namespace until 2026-08-12.
+builder.Configuration.AddEnvironmentVariables("SIMF_CP_");
+
+// A server provisioned before the per-application prefixes still carries the old
+// SIMF_ variables, which this build does not read. Say so, rather than starting
+// and failing the key-ring gate with the value sitting there under its old name.
+SimfLegacyEnvironmentGuard.Verify("SIMF_CP_", builder.Environment.IsProduction());
 
 // Per-project log files under {Storage:LogDirectory}/SIMF.ControlPanel/log-{Date}.log.
 builder.Host.UseSerilog((context, configuration) =>
 {
-    var logDir = context.Configuration["Storage:LogDirectory"] ?? "logs";
-    var appName = context.HostingEnvironment.ApplicationName ?? "SIMF.ControlPanel";
-    var path = Path.Combine(logDir, appName, "log-.log");
-    configuration
+    string logDir = context.Configuration["Storage:LogDirectory"] ?? "logs";
+    string appName = context.HostingEnvironment.ApplicationName ?? "SIMF.ControlPanel";
+    string path = Path.Combine(logDir, appName, "log-.log");
+    _ = configuration
         .ReadFrom.Configuration(context.Configuration)
         .Enrich.FromLogContext()
         .WriteTo.Console()
@@ -64,12 +76,12 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.LoginPath = "/login";
         options.AccessDeniedPath = "/not-permitted";
         // Auth-cookie idle lifetime, in hours. Ops-configurable via
-        // SIMF_Session__LifetimeHours; default 8h (the NCA-safe baseline the
+        // SIMF_CP_Session__LifetimeHours; default 8h (the NCA-safe baseline the
         // committed deploy template ships). A larger value cannot extend the
         // real session beyond the API's absolute cap Jwt:SessionLifetimeHours
         // (the NCA-driven 24h ceiling): the refresh token still expires there and forces
         // re-login, so this knob is for shorter idle windows / test overrides.
-        var sessionLifetimeHours =
+        int sessionLifetimeHours =
             builder.Configuration.GetValue<int>("Session:LifetimeHours", 8);
         options.ExpireTimeSpan = TimeSpan.FromHours(sessionLifetimeHours);
         options.SlidingExpiration = true;
@@ -145,7 +157,7 @@ builder.Services.AddHttpContextAccessor();
 // password, the TOTP code and the perm:* bearer token - anything that answers
 // for the configured host would receive them. If the API's certificate does not
 // validate, that is an outage to fix on the server, not a check to disable.
-var apiBaseUri = SimfApiBaseAddress.Resolve(
+Uri apiBaseUri = SimfApiBaseAddress.Resolve(
     builder.Configuration["Api:BaseUrl"], builder.Environment.IsDevelopment());
 
 builder.Services.AddHttpClient<SimfAuthClient>(client => client.BaseAddress = apiBaseUri);
@@ -157,18 +169,18 @@ builder.Services.AddHttpClient<SimfAdminClient>(client => client.BaseAddress = a
 // reject each other's cookies and bounce the admin back to /login at random.
 // Persisted to shared storage (the file server in a separated estate) and named,
 // so the Website's ring on the same share stays a distinct key set.
-var dataProtectionOptions =
+KeyRingOptions dataProtectionOptions =
     builder.Configuration.GetSection(KeyRingOptions.SectionName).Get<KeyRingOptions>()
     ?? new KeyRingOptions();
 
 if (!string.IsNullOrWhiteSpace(dataProtectionOptions.KeyRingPath))
 {
-    builder.Services.AddDataProtection()
+    _ = builder.Services.AddDataProtection()
         .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionOptions.KeyRingPath))
         .SetApplicationName("SIMF.ControlPanel");
 }
 
-var app = builder.Build();
+WebApplication app = builder.Build();
 
 // A per-node key ring is invisible until a second instance appears, and then it
 // presents as random sign-outs rather than as a configuration error. Refuse to
@@ -187,8 +199,8 @@ if (!app.Environment.IsDevelopment()
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    app.UseHsts();
+    _ = app.UseExceptionHandler("/Error", createScopeForErrors: true);
+    _ = app.UseHsts();
 }
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
@@ -202,12 +214,12 @@ app.UseHttpsRedirection();
 // pass quiet until a nonce is wired for the bootstrap script.
 app.Use(async (context, next) =>
 {
-    var headers = context.Response.Headers;
-    headers["X-Content-Type-Options"] = "nosniff";
-    headers["X-Frame-Options"] = "DENY";
+    IHeaderDictionary headers = context.Response.Headers;
+    headers.XContentTypeOptions = "nosniff";
+    headers.XFrameOptions = "DENY";
     headers["Referrer-Policy"] = "no-referrer";
-    headers["Content-Security-Policy"] = "frame-ancestors 'none'";
-    headers["Content-Security-Policy-Report-Only"] =
+    headers.ContentSecurityPolicy = "frame-ancestors 'none'";
+    headers.ContentSecurityPolicyReportOnly =
         "default-src 'self'; "
         + "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
         + "style-src 'self' 'unsafe-inline'; "
@@ -220,7 +232,7 @@ app.Use(async (context, next) =>
 });
 
 // Interface language — English or Arabic, chosen by the culture cookie.
-var supportedCultures = new[] { "en", "ar" };
+string[] supportedCultures = new[] { "en", "ar" };
 app.UseRequestLocalization(new RequestLocalizationOptions()
     .SetDefaultCulture("en")
     .AddSupportedCultures(supportedCultures)

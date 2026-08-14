@@ -1,4 +1,4 @@
-# Previous Editions (Archive) — `/admin/archive`
+﻿# Previous Editions (Archive) — `/admin/archive`
 
 | | |
 |--|--|
@@ -139,7 +139,6 @@ caption via `FormatSummary` (`Admin.Archive.Summary`). Default page size
 | Attendees | number (min 0 / max 1000000) | no | — | ≥0 | `Admin.Archive.Field.Attendees` |
 | Sessions | number (min 0 / max 1000000) | no | — | ≥0 | `Admin.Archive.Field.Sessions` |
 | Speakers | number (min 0 / max 1000000) | no | — | ≥0 | `Admin.Archive.Field.Speakers` |
-| Cover image path | `SimfTextField` | no | — | ≤512 chars | `Admin.Archive.Field.CoverImageRelativePath` |
 | Location (English) | `SimfTextField` | no | 256 | ≤256 chars | `Admin.Archive.Field.LocationEn` |
 | Location (Arabic) | `SimfTextField` | no | 256 | ≤256 chars | `Admin.Archive.Field.LocationAr` |
 | Date label (English) | `SimfTextField` | no | 128 | ≤128 chars | `Admin.Archive.Field.DateLabelEn` |
@@ -196,8 +195,10 @@ reloads. On error the bilingual `MessageForCurrentCulture()` (or the
 
 ### 4.7 Cover image (D-357, unified media-asset pipeline)
 
-Independent of the free-text `Cover image path` field, the cover image is also
-wired to the unified media-asset pipeline (asset category **`ArchiveCover`**):
+The cover image is the unified media-asset pipeline (asset category
+**`ArchiveCover`**), and since D-889 it is the only representation — the free-text
+`Cover image path` field it used to sit beside is gone, and the edition's typed
+`CoverImageFileId` points at the `StoredFile`:
 
 - **Add/Edit** (`ArchiveAddEdit`, Edit only): a `<SimfImageUpload Category="ArchiveCover" OwnerId="@Initial.Id" Alt="@_model.TitleEn" />`
   control under the `Admin.Asset.Heading` label lets the admin upload a file or
@@ -211,9 +212,8 @@ full pipeline (upload / link / proxy / Media Library listing).
 
 ### 4.8 View / Delete form (`ArchiveViewDelete`)
 A read-only `<dl>` of Year, Title (En/Ar), Summary (En/Ar), Attendees, Sessions,
-Speakers, Location (En/Ar), Date label (En/Ar), Cover image path (with an inline
-`<img>` preview when set) and Active. The D-357 cover thumbnail renders above the
-list. In delete mode a red **Deactivate** button (`Admin.Archive.Action.Deactivate`)
+Speakers, Location (En/Ar), Date label (En/Ar) and Active. The cover thumbnail
+renders above the list. In delete mode a red **Deactivate** button (`Admin.Archive.Action.Deactivate`)
 opens a `SimfConfirm` (Danger) whose message is `Admin.Archive.Delete.Message`
 formatted with the edition's English title ("Deactivate "{title}"? It will be
 removed from the public archive immediately." / "تعطيل «{title}»؟ ستتم إزالتها من
@@ -291,7 +291,7 @@ modal; the success toast is the shared `Grid.Import.Done` key.
   `Admin.Archive.Validation.TitleRequired`.
 - **Server-side validation** (`AdminArchiveService.Validate`): Year must be
   2000–2100; TitleEn/TitleAr trimmed, 1–200 chars; SummaryEn/SummaryAr ≤1024;
-  Attendees/Sessions/Speakers ≥0; CoverImageRelativePath ≤512; LocationEn/Ar ≤256;
+  Attendees/Sessions/Speakers ≥0; LocationEn/Ar ≤256;
   DateLabelEn/Ar ≤128. Every failure throws
   `ApiException(ErrorCodes.ArchiveEditionInvalid, 400, …)`
   (`"archive_edition_invalid"`), e.g. "Year must be between 2000 and 2100." /
@@ -330,9 +330,10 @@ modal; the success toast is the shared `Grid.Import.Done` key.
   edition.
 - **One edition per year.** Both the create path and the snapshot path enforce it;
   a re-run of the snapshot in the same calendar year returns a 409.
-- **Two cover representations coexist.** The free-text `CoverImageRelativePath`
-  field (rendered as an inline `<img>` on Details) and the D-357 `ArchiveCover`
-  media-asset are independent; the public surface chooses which to render.
+- **One cover representation.** The free-text `CoverImageRelativePath` field is
+  gone (D-889); the `ArchiveCover` media asset is the edition's only cover, and
+  the public surface renders it via `HasCoverAsset` — which is also what finally
+  lets an uploaded cover reach the Website, where the path field never did.
 - **CRUD action buttons are not `<AuthorizedAction>`-gated** (only the snapshot
   button is) — an admin with View but not Create/Edit/Delete/Export/Import sees
   those buttons, but the API rejects the call (403). Treat the API policy as the
@@ -407,6 +408,7 @@ Scenario id range: **E2E-ARC-001 … E2E-ARC-024**.
 
 | Date | Decision | Change |
 |------|----------|--------|
+| 2026-08-14 | D-889 | **The free-text Cover image path is gone; the cover is a typed key.** `ArchiveEdition.CoverImageRelativePath` becomes `Guid? CoverImageFileId` with a real foreign key into `StoredFiles`. The Add/Edit form loses the text field and gains the save-first hint on create; the workbook loses its cover column. `PublicArchiveEdition` gains an append-only `HasCoverAsset`, which is what finally lets an uploaded cover render on the Website instead of the stock fallback. |
 | 2026-06-11 | D-357 | Cover image wired to the unified media-asset pipeline: `SimfImageUpload Category="ArchiveCover"` on the Add/Edit form (Edit only) + a `SimfImageThumb` of `/account/api/admin/assets/ArchiveCover/{id}/image` on Details/Deactivate (complements the existing free-text `CoverImageRelativePath` field). E2E catalogue extended with E2E-ARC-024. |
 | 2026-06-11 | D-199 / D-275 | Reference doc created. Documents the D-199 Archive CRUD on the D-353 `CrudShell` Add/Edit + View/Delete forms (Page ↔ Popup `CrudPresentationToggle`, PageKey `archive`; `SimfConfirm`-gated deactivate), the D-356 Excel export (`POST /export`) + insert-only import (`POST /import`), and the **D-275 "make this year history" snapshot** action (`POST /snapshot-current`, gated by `Archive.Snapshot`, server-computed counters + optional visibility flip). |
 

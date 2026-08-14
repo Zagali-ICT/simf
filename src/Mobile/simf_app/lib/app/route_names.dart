@@ -186,6 +186,13 @@ class RouteNames {
   // post-sign-in enrol nudge); a signed-in approved caller. Backend
   // POST /app/auth/device-keys/step-up + the gated register.
   static const String biometricStepUp = 'biometricStepUp';
+
+  /// S10 — the enrolled biometric device keys on the account, with a per-row
+  /// revoke. Pushed from the Face-ID toggle's row in the profile / side menu.
+  /// Backend GET /app/auth/device-keys + DELETE /app/auth/device-keys/{id}.
+  /// Built to the house style, not to a Figma node: none exists, and the owner
+  /// asked for the existing style rather than a new design (2026-08-14).
+  static const String myDevices = 'myDevices';
 }
 
 /// The go_router path / query parameter KEYS (the names inside a route's `:param`

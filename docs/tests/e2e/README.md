@@ -54,7 +54,8 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/visitors/vip` | [`cp-vip-registration.md`](cp-vip-registration.md) | E2E-VIPR-001..011 |
 | `/admin/visitors/vip/export` | [`cp-vip-export.md`](cp-vip-export.md) | E2E-VIPX-001..008 |
 | `/admin/delegates` | [`cp-admin-delegates.md`](cp-admin-delegates.md) | E2E-DLG-001..012 |
-| `/admin/visitors/badge-batches` | [`cp-admin-badge-batches.md`](cp-admin-badge-batches.md) | E2E-BBT-001..009 |
+| `/admin/visitors/badge-batches` | [`cp-admin-badge-batches.md`](cp-admin-badge-batches.md) | E2E-BBT-001..015 |
+| `/admin/editions` | [`cp-admin-editions.md`](cp-admin-editions.md) | E2E-CPED-001..010 |
 | `/admin/attendees` | [`cp-admin-attendees.md`](cp-admin-attendees.md) | E2E-ATT-001..016 |
 | `/admin/print-bag` | [`cp-admin-print-bag.md`](cp-admin-print-bag.md) | E2E-PRT-001..011 |
 | `/admin/interests` | [`cp-admin-interests.md`](cp-admin-interests.md) | E2E-INT-001..013 |
@@ -189,6 +190,8 @@ endpoint or the hosted worker that owns the behaviour.
 
 | Surface | File | Scenarios |
 |---------|------|-----------|
+| `GET /app/gates/offline-roster` — the reserved attendees a hall door is expecting, so a device can decide entry with no network | [`api-gate-offline-roster.md`](api-gate-offline-roster.md) | E2E-GOR-001..010 |
+| `POST /app/auth/badge-activation/*` — an attendee with no account creates one from their badge (D-885) | [`api-badge-account-creation.md`](api-badge-account-creation.md) | E2E-BAC-001..008 |
 | `POST /app/auth/badge-activation/complete` — badge self-claim captures the claimer's profile | [`api-badge-self-claim-profile.md`](api-badge-self-claim-profile.md) | E2E-BSC-001..009 |
 | `GET /app/programme/sessions?categoryId=` — server-side theme/category filter | [`api-programme-category-filter.md`](api-programme-category-filter.md) | E2E-PCF-001..007 |
 | Meeting check-in export (speaker + delegation grids) | [`api-meeting-checkin-export.md`](api-meeting-checkin-export.md) | E2E-MCX-001..008 |
@@ -318,7 +321,8 @@ API endpoints land (D-249). The per-screen design docs live under
 | `Delegation meeting request` sheet — bi-meeting rework: the delegation twin of the speaker request sheet; opened from `/meetings` (طلب اجتماع وفد) + a tapped delegation card; `POST /app/delegation-meeting-requests` | [`mobile-delegation-request.md`](mobile-delegation-request.md) | E2E-DELREQ-001..012 |
 | #117 `meetingConfirm` (`/meeting-confirm?requestId=…` → `POST /app/delegation-meeting-requests/{id}/confirm` + `…/decline`) — bi-meeting rework: delegation other-party confirm-on-tap, reached from a `MeetingRequested` notification | [`mobile-meeting-confirm.md`](mobile-meeting-confirm.md) | E2E-MOBMC-001..010 |
 | `myMeetings` (`GET /app/my-requests`, filtered to meetings) — المقابلات (D-587), Figma `1701:9406`; speaker + delegation meetings over status chips; reached from the My-Area "مقابلات" counter | [`mobile-my-meetings.md`](mobile-my-meetings.md) | E2E-MOBMTG-001..007 |
-| `Confirm Face ID` step-up (`POST /app/auth/device-keys/step-up` + gated register) — #7a biometric-enable; **D-738** OS device-credential confirm + sign-in device-PIN fallback | [`mobile-biometric-step-up.md`](mobile-biometric-step-up.md) | E2E-MBSU-001..015 |
+| `/account/my-devices` — the account's enrolled biometric device keys, with a per-row revoke (S10 / **D-884**) | [`mobile-my-devices.md`](mobile-my-devices.md) | E2E-MYD-001..009 |
+| `Confirm Face ID` step-up (`POST /app/auth/device-keys/step-up` + gated register) — #7a biometric-enable; **D-738** OS device-credential confirm + sign-in device-PIN fallback | [`mobile-biometric-step-up.md`](mobile-biometric-step-up.md) | E2E-MBSU-001..025 |
 | ~~`Change email` self-service (`POST /app/auth/change-email/send-otp` + `/confirm`) - Build #24~~ — **REMOVED 2026-07-30 (G1, owner decision).** Screen + both endpoints deleted; email changes are administrator-only on the CP account-edit form, covered by `cp-admin-visitors.md` (E2E-VIS-001) and `cp-admin-others.md` (E2E-OTH-005) | _(withdrawn)_ | ~~E2E-MCE-001..011~~ (**retired**, do not reuse the MCE namespace) |
 | `Badge activation` + **badge sign-in** (`resolve-badge` · `badge-sign-in` · `badge-activation/{start,complete}`) — Part B passwordless activation **+ D-738 password step + D-737 unified scanner** | [`mobile-badge-activation.md`](mobile-badge-activation.md) | E2E-MOBBADGE-001..013 |
 | `Badge password` step (`POST /app/auth/badge-sign-in`) — D-738 returning has-password holder; doc [`mobile/badge-password/`](../../pages/mobile/badge-password/README.md) | [`mobile-badge-activation.md`](mobile-badge-activation.md) | E2E-MOBBADGE-008..013 |
@@ -353,13 +357,13 @@ again without failing the build. They had been left at the 2026-06-02 figures �
 "74 pages / ~1044 scenarios" — while the catalogue more than doubled, and were
 being quoted in planning as if current.
 
-- **Pages catalogued:** 193 (96 Control Panel + 69 mobile + 19 Website + 8
-  API-only surfaces + 1 system-wide). One of the 193 — `cp-admin-companies.md` —
+- **Pages catalogued:** 197 (97 Control Panel + 69 mobile + 19 Website + 10
+  API-only surfaces + 1 system-wide). One of them — `cp-admin-companies.md` —
   is **retired**: its route was renamed away and it now carries no live scenarios.
-- **Total scenarios:** 3068 Coverage-matrix rows, every id distinct. That
+- **Total scenarios:** 3123 Coverage-matrix rows, every id distinct. That
   includes the **360** generated element-sweep rows (`E2E-{NS}-ELS-001/002`, two
   per live page — see `tools/qa/generate_els_rows.py`); the hand-authored
-  functional total is 2687.
+  functional total is 2714.
 - **Authored:** all pages. The D-133 "pending" stubs are fully authored, and
   every event-module and P2–P5 page added since has its own file.
 - **Execution:** the canonical run today is a Chrome DevTools MCP browser pass
@@ -369,6 +373,48 @@ being quoted in planning as if current.
   by the Flutter widget + golden suites. **Scenario `Status` columns remain the
   weak point** — most still read `_to author_`, meaning written but never driven,
   so treat the counts above as *authored* coverage, not *executed* coverage.
+
+### Route-level regression sweep — 2026-08-14 (profile / edition / badge programme)
+
+The closing gate of the profile-owned-admission programme re-drove **every live
+route** in both languages, because that work touches the profile row nearly every
+Control Panel page reads. Driven through the Chrome DevTools MCP against locally
+running hosts, on a database built from scratch by the programme's migrations.
+
+- **Control Panel** — 91 routes in English and 90 in Arabic, 181 page drives. 90
+  routes render; the 91st, `/admin/companies`, correctly serves the CP's own
+  "Page not found" inside the signed-in shell, which is what this index already
+  records as **retired**. That retired route is the one excluded from the Arabic
+  pass — its 404 shell is not worth a second language run.
+- **Website** — 18 routes × EN + AR = 36 page drives, including `/sessions/{id}`
+  with a real session id and `/meeting/confirm` with no token (its invalid-link
+  state, which is the expected render).
+- **Per page, machine-checked, not eyeballed:** `scrollWidth == clientWidth` (no
+  horizontal overflow), zero broken images, zero sub-requests returning >= 400,
+  zero console errors, a live Blazor circuit, and — on the Arabic pass —
+  `dir="rtl"` plus zero untranslated resource keys leaking through as literals.
+- **Result: 217 page drives, zero failures**, and one defect found (below).
+
+**What this pass proves, and what it does not.** It proves every route renders,
+in both directions, without errors or broken assets — a genuine regression gate
+for a change this wide. It is **not** an execution of the 3115 Coverage-matrix
+scenarios: those assert per-page CRUD outcomes and are still governed by the
+`Status` columns above. The mobile files (69) and API-only files (10) are not
+browser-drivable at all and are covered instead by the Flutter suites and
+`tests/SIMF.Api.Tests`.
+
+**Defect found, and since FIXED:** `/meeting/confirm` rendered with **no
+`<title>` element**, so the tab showed a bare URL. It was the only Website page
+carrying `@rendermode InteractiveServerNoPrerender`, and `App.razor`'s
+`<HeadOutlet />` is static, so a `<PageTitle>` living only in the circuit had no
+outlet to reach. Prerendering is now on for that page — it needs no per-circuit
+state, and its one initialisation call is a GET that changes nothing, so running
+it twice is harmless. The server response now carries
+`<title>Confirm meeting</title>`, and the tab reads "تأكيد الاجتماع" in Arabic.
+
+Worth keeping in mind for the next page that opts out of prerendering: it will
+lose its title the same way, silently, and no test asserts a title today. The
+sweep only caught this one because every other page in the same pass had one.
 
 ### Scenario ids are a primary key — keep them unique
 

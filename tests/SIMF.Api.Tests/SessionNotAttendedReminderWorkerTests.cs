@@ -193,6 +193,7 @@ public sealed class SessionNotAttendedReminderWorkerTests : IClassFixture<SimfAp
             CreatedAt = SimfClock.Now,
         };
         db.Sessions.Add(session);
+        var attendeeProfileId = await TestAttendeeProfiles.EnsureForAccountAsync(db, visitorId);
         db.SeatReservations.Add(new SeatReservation
         {
             Id = Guid.NewGuid(),
@@ -200,7 +201,7 @@ public sealed class SessionNotAttendedReminderWorkerTests : IClassFixture<SimfAp
             RowLabel = "A",
             SeatNumber = 1,
             Kind = SeatReservationKind.UserBooking,
-            ReservedForUserId = visitorId,
+            ReservedForProfileId = attendeeProfileId,
             CreatedByUserId = visitorId,
             ReleasedAt = releasedAt,
             CreatedAt = SimfClock.Now,
@@ -218,12 +219,13 @@ public sealed class SessionNotAttendedReminderWorkerTests : IClassFixture<SimfAp
             .Where(s => s.Id == sessionId)
             .Select(s => s.HallId)
             .SingleAsync();
+        var attendeeProfileId = await TestAttendeeProfiles.EnsureForAccountAsync(db, userId);
         db.HallAttendances.Add(new HallAttendance
         {
             Id = Guid.NewGuid(),
             SessionId = sessionId,
             HallId = hallId,
-            UserId = userId,
+            UserProfileId = attendeeProfileId,
             Method = AttendanceMethod.QrScan,
             Enter = enter,
             Leave = leave,

@@ -32,6 +32,7 @@ public sealed class CommentProvenanceRatchetTests
         "src/ControlPanel",
         "src/Website",
         "src/Tools",
+        "src/Edge",
     ];
 
     public static TheoryData<string> SweptLayers => new(Layers);

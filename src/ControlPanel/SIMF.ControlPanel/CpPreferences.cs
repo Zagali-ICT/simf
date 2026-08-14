@@ -10,15 +10,13 @@ namespace SIMF.ControlPanel;
 /// breaking older saved values. Scoped per circuit (it depends on the circuit's
 /// <see cref="IJSRuntime"/>). Pure browser storage — no API, no server state,
 /// no schema (it respects the persistence freeze).</summary>
-public sealed class CpPreferences
+public sealed class CpPreferences(IJSRuntime js)
 {
     // Every CP preference key starts with this so ClearAll can wipe exactly the
     // CP layout/display preferences (and nothing else, e.g. the theme key).
     private const string KeyPrefix = "simf.cp.prefs.";
 
-    private readonly IJSRuntime _js;
-
-    public CpPreferences(IJSRuntime js) => _js = js;
+    private readonly IJSRuntime _js = js;
 
     /// <summary>Reads the saved presentation for a page; defaults to
     /// <see cref="CrudPresentation.Dialog"/> when nothing is stored (so the
