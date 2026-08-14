@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/app_assets.dart';
 import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart' show SimfEmptyState;
+import 'package:simf_app/app/widgets/simf_states.dart' show SimfEmptyState;
 import 'package:simf_app/app/widgets/simf_svg_icon.dart';
 
 /// The card / section-header / link-row / list-row surfaces every page

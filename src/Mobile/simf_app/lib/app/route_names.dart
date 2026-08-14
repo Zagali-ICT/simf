@@ -1,7 +1,7 @@
 /// The mockup screens as named go_router routes.
 ///
 /// Names are stable — the router declares them once here; widgets and the
-/// Phase 3 `mkp_*` screens reference [RouteNames.xxx] rather than literal
+/// Phase 3 `mkp_*` screens reference `RouteNames.xxx` rather than literal
 /// strings. The mapping screen-number → route-name follows `Mockup.html`.
 ///
 /// §9 (D-276): mockup screens 08 (exhibitor self-sign-up) and 39 (cybersecurity

@@ -12,6 +12,7 @@ import 'package:simf_app/app/widgets/simf_confirm_dialog.dart';
 import 'package:simf_app/core/sharing/content_sharer.dart';
 import 'package:simf_app/features/account/biometric_auth.dart';
 import 'package:simf_app/features/more/more_menu_items.dart';
+import 'package:simf_app/features/more/more_screen.dart' show MoreScreen;
 import 'package:simf_app/features/myarea/data/myarea_repository.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
@@ -236,4 +237,3 @@ class MoreDrawer extends ConsumerWidget {
     router.goNamed(RouteNames.signIn);
   }
 }
-

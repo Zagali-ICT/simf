@@ -206,7 +206,7 @@ PlateParts parsePlate(String? code) {
     }
   }
   final codes =
-      saudiPlateLetters.map((SaudiPlateLetter l) => l.code).toSet();
+      saudiPlateLetters.map((l) => l.code).toSet();
   if (letters.length == 3 && letters.every(codes.contains)) {
     final firstRune = canonical.runes.first;
     return PlateParts(

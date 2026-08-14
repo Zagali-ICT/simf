@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart' show SimfEmptyState, SimfErrorState;
+import 'package:simf_app/app/widgets/simf_states.dart' show SimfEmptyState, SimfErrorState;
 
 /// Pull-to-refresh chrome. Owner rule: every data page pulls to refresh.
 /// Split out of `simf_page_shell.dart` (one widget group per file); that file

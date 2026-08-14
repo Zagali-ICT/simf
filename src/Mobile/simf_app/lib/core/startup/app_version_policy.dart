@@ -17,21 +17,27 @@ class PlatformVersionPolicy {
     this.storeUrl,
   });
 
-  final String? minVersion;
-  final String? latestVersion;
-  final String? storeUrl;
-
-  static PlatformVersionPolicy fromJson(Map<String, dynamic> json) =>
+  factory PlatformVersionPolicy.fromJson(Map<String, dynamic> json) =>
       PlatformVersionPolicy(
         minVersion: json['minVersion'] as String?,
         latestVersion: json['latestVersion'] as String?,
         storeUrl: json['storeUrl'] as String?,
       );
+
+  final String? minVersion;
+  final String? latestVersion;
+  final String? storeUrl;
 }
 
 /// Both platforms' policies in one payload — the app picks its own side.
 class AppVersionPolicy {
   const AppVersionPolicy({required this.android, required this.ios});
+
+  factory AppVersionPolicy.fromJson(Map<String, dynamic> json) =>
+      AppVersionPolicy(
+        android: PlatformVersionPolicy.fromJson(_asStringMap(json['android'])),
+        ios: PlatformVersionPolicy.fromJson(_asStringMap(json['ios'])),
+      );
 
   final PlatformVersionPolicy android;
   final PlatformVersionPolicy ios;
@@ -40,12 +46,6 @@ class AppVersionPolicy {
   /// never reaches here — the checker no-ops on `kIsWeb`.
   PlatformVersionPolicy get currentPlatform =>
       defaultTargetPlatform == TargetPlatform.iOS ? ios : android;
-
-  static AppVersionPolicy fromJson(Map<String, dynamic> json) =>
-      AppVersionPolicy(
-        android: PlatformVersionPolicy.fromJson(_asStringMap(json['android'])),
-        ios: PlatformVersionPolicy.fromJson(_asStringMap(json['ios'])),
-      );
 
   static Map<String, dynamic> _asStringMap(dynamic value) =>
       (value as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};

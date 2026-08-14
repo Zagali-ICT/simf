@@ -5,6 +5,7 @@ import 'package:simf_app/app/theme/app_assets.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_app_shell.dart' show SimfShellScope, tabIndex;
 import 'package:simf_app/app/widgets/simf_bottom_nav.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart' show SimfPageShell;
 import 'package:simf_app/app/widgets/simf_svg_icon.dart';
 
 // Back and menu controls, and the standard back action.

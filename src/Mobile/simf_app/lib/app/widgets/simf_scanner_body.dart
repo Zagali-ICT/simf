@@ -6,6 +6,7 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/camera_error_card.dart';
 import 'package:simf_app/app/widgets/or_divider.dart';
+import 'package:simf_app/app/widgets/qr_scan_view.dart' show QrScanView;
 import 'package:simf_app/app/widgets/simf_scanner_frame.dart';
 import 'package:simf_app/core/motion/motion_durations.dart';
 import 'package:simf_app/core/utils/scan_gate.dart';
@@ -331,4 +332,3 @@ class _SimfScannerBodyState extends State<SimfScannerBody> {
     );
   }
 }
-

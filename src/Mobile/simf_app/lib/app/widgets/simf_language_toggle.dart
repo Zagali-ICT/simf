@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart' show SimfHeaderActions;
 
 /// The language toggle — a 48×24 navy-deep **pill** with a gold dot and the
 /// target-language code: **"EN"** when Arabic is active, **"ع"** when English

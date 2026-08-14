@@ -6,7 +6,7 @@ import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/app_assets.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/centre_action.dart';
-import 'package:simf_app/app/widgets/simf_app_shell.dart' show SimfShellScope, tabIndex;
+import 'package:simf_app/app/widgets/simf_app_shell.dart' show SimfAppShell, SimfShellScope, tabIndex;
 import 'package:simf_app/app/widgets/simf_bottom_nav_item.dart';
 
 /// When inside [SimfAppShell] (i.e., when [SimfShellScope] is the nearest
@@ -58,7 +58,7 @@ class SimfBottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    return Container(
+    return DecoratedBox(
       decoration: _barDecoration,
       child: SafeArea(
         top: false,
@@ -116,4 +116,3 @@ class SimfBottomNav extends StatelessWidget {
     );
   }
 }
-

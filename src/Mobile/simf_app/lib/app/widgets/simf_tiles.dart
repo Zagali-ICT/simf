@@ -136,4 +136,3 @@ class SimfStatTile extends StatelessWidget {
     );
   }
 }
-

@@ -1,3 +1,5 @@
+import 'package:simf_app/app/widgets/qr_scan_view.dart' show QrScanView;
+
 /// Dedupe + single-flight policy shared by every in-app QR scanner (D-737).
 ///
 /// The live ZXing reader fires `onScan` on every decoded frame (~1×/s by
