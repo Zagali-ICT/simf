@@ -296,12 +296,8 @@ These are **placeholders** — set them to the real SIMF server values:
    half of the error message: **Security → Pipeline permissions** on that
    environment, and authorize this pipeline.
 
-   **A pending improvement, deliberately not applied yet.** The pipeline uses
-   the bare `environment: 'SIM-RNSF'` form. With the VM resources registered
-   that already targets the machine, but if a resource is ever removed the bare
-   form **silently falls back to the `Default` pool agent** — which has an agent
-   on both servers, so the deploy would land on an arbitrary machine and report
-   success. The explicit form removes that:
+   Both jobs use the explicit form, so the steps run **on that machine** rather
+   than on the build agent:
 
    ```yaml
    environment:
@@ -309,12 +305,20 @@ These are **placeholders** — set them to the real SIMF server values:
      resourceType: virtualMachine
    ```
 
-   It is not in the pipeline today because it was added **before** the VM
-   resources existed and broke every deploy with "Environment could not be
-   found" (D-891). It is safe to add now, but as its own verified change.
-   Azure's documentation warns `resourceType` is case-sensitive while its own
-   examples disagree on the casing, so if a run reports **no matching
-   resources** with the VM registered, try `VirtualMachine`.
+   **This is not decoration.** With the bare `environment: 'SIM-RNSF'` form, a
+   VM resource that is ever removed or unregistered does not fail — the
+   environment silently degrades to a history-recording shell and the steps fall
+   back to the `Default` pool agent, which has an agent on **both** servers. The
+   deploy would land on an arbitrary machine and report success. `resourceType`
+   turns that silent mis-deploy into an immediate failure.
+
+   **Order matters.** This line was added once *before* the VM resources
+   existed and broke every deploy with "Environment could not be found" until it
+   was reverted (D-891). If a run reports **no matching resources**, the server
+   is not registered — register it, do **not** drop back to the bare form, which
+   trades a loud failure for a wrong-machine deploy. Azure's documentation warns
+   the value is case-sensitive while its own examples disagree on the casing, so
+   if the VM *is* registered and still does not match, try `VirtualMachine`.
 4. **IIS site names + physical paths** — the `-ApiSiteName/-ApiPath`,
    `-CpSiteName/-CpPath`, `-WebSiteName/-WebPath` and `-EdgeSiteName/-EdgePath`
    arguments in the `Deploy to IIS` step. The IIS sites + app pools must already
