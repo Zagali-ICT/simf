@@ -208,13 +208,8 @@ class _MeetingConfirmScreenState extends ConsumerState<MeetingConfirmScreen> {
     final date = '${local.year.toString().padLeft(4, '0')}-'
         '${local.month.toString().padLeft(2, '0')}-'
         '${local.day.toString().padLeft(2, '0')}';
-    final hour12 = local.hour % 12 == 0 ? 12 : local.hour % 12;
-    final hh = hour12.toString().padLeft(2, '0');
-    final mm = local.minute.toString().padLeft(2, '0');
-    final meridiem = isArabic
-        ? (local.hour >= 12 ? 'م' : 'ص')
-        : (local.hour >= 12 ? 'PM' : 'AM');
-    return '$date · $hh:$mm $meridiem';
+    final time = formatDateTime12h(local, isArabic: isArabic);
+    return '$date · $time';
   }
 
   Widget _confirmButton(AppL10n l10n) => Material(

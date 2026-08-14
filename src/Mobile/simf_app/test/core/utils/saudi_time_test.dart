@@ -117,4 +117,37 @@ void main() {
     expect(formatSaudiTime12(DateTime(2026, 11, 22, 16, 45)), '04:45 PM');
     expect(formatSaudiTime12(DateTime(2026, 11, 20, 22, 30)), '10:30 PM');
   });
+
+  group('formatTime12h / formatDateTime12h', () {
+    // One formatter replacing three private copies (the speaker sheet, the
+    // delegation sheet and the meeting-confirm screen). The Arabic meridiem is
+    // the reason these could not just call formatSaudiTime12, which is
+    // Latin-only because it mirrors the backend's SaudiTime.TimeFormat.
+    test('renders the Arabic meridiem', () {
+      expect(formatTime12h(hour: 10, minute: 0, isArabic: true), '10:00 ص');
+      expect(formatTime12h(hour: 14, minute: 30, isArabic: true), '02:30 م');
+    });
+
+    test('renders the English meridiem', () {
+      expect(formatTime12h(hour: 10, minute: 0, isArabic: false), '10:00 AM');
+      expect(formatTime12h(hour: 14, minute: 30, isArabic: false), '02:30 PM');
+    });
+
+    test('midnight and noon read as 12, not 00', () {
+      expect(formatTime12h(hour: 0, minute: 5, isArabic: false), '12:05 AM');
+      expect(formatTime12h(hour: 12, minute: 5, isArabic: false), '12:05 PM');
+      expect(formatTime12h(hour: 0, minute: 5, isArabic: true), '12:05 ص');
+      expect(formatTime12h(hour: 12, minute: 5, isArabic: true), '12:05 م');
+    });
+
+    test('pads both fields to two digits', () {
+      expect(formatTime12h(hour: 9, minute: 7, isArabic: false), '09:07 AM');
+    });
+
+    test('formatDateTime12h reads the local wall clock off a DateTime', () {
+      final local = DateTime(2026, 11, 24, 16, 45);
+      expect(formatDateTime12h(local, isArabic: false), '04:45 PM');
+      expect(formatDateTime12h(local, isArabic: true), '04:45 م');
+    });
+  });
 }

@@ -237,17 +237,6 @@ class _DelegationMeetingRequestSheetState
     }
   }
 
-  // A time-of-day as "10:00 ص" / "02:30 PM" — matches the speaker sheet.
-  String _formatTime(TimeOfDay time, bool isArabic) {
-    final hour12 = time.hour % 12 == 0 ? 12 : time.hour % 12;
-    final hh = hour12.toString().padLeft(2, '0');
-    final mm = time.minute.toString().padLeft(2, '0');
-    final meridiem = isArabic
-        ? (time.hour >= 12 ? 'م' : 'ص')
-        : (time.hour >= 12 ? 'PM' : 'AM');
-    return '$hh:$mm $meridiem';
-  }
-
   // A35 — the server's own bilingual message wins. The old map hard-coded one
   // client string per status, so a 409 surfaced the SPEAKER copy ("this
   // speaker is not accepting meeting requests") on a DELEGATION sheet, and
@@ -586,9 +575,9 @@ class _DelegationMeetingRequestSheetState
           for (var i = 0; i < slots.length; i++)
             MeetingTimeChip(
               key: ValueKey<String>('delegation-time-$i'),
-              label: _formatTime(
-                TimeOfDay.fromDateTime(saudiOf(slots[i].start)),
-                isArabic,
+              label: formatDateTime12h(
+                saudiOf(slots[i].start),
+                isArabic: isArabic,
               ),
               selected: _selectedSlot == slots[i],
               onTap: () => setState(() => _selectedSlot = slots[i]),

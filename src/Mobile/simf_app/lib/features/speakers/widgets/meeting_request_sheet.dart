@@ -251,18 +251,6 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
     }
   }
 
-  // A time-of-day as "10:00 ص" / "02:30 PM" (12-hour, Arabic ص/م — Figma
-  // 1776:5078). No intl locale needed.
-  String _formatTime(TimeOfDay time, bool isArabic) {
-    final hour12 = time.hour % 12 == 0 ? 12 : time.hour % 12;
-    final hh = hour12.toString().padLeft(2, '0');
-    final mm = time.minute.toString().padLeft(2, '0');
-    final meridiem = isArabic
-        ? (time.hour >= 12 ? 'م' : 'ص')
-        : (time.hour >= 12 ? 'PM' : 'AM');
-    return '$hh:$mm $meridiem';
-  }
-
   /// The inline error for a failed submit.
   ///
   /// QA A26 — this used to map EVERY 409 onto "this speaker does not accept
@@ -617,9 +605,9 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
           for (var i = 0; i < slots.length; i++)
             MeetingTimeChip(
               key: ValueKey<String>('meeting-time-$i'),
-              label: _formatTime(
-                TimeOfDay.fromDateTime(saudiOf(slots[i].start)),
-                isArabic,
+              label: formatDateTime12h(
+                saudiOf(slots[i].start),
+                isArabic: isArabic,
               ),
               selected: _selectedSlot == slots[i],
               onTap: () => setState(() => _selectedSlot = slots[i]),
