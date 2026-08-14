@@ -21,6 +21,19 @@ class PartnerDirectoryEntry {
     this.countryId,
   });
 
+  factory PartnerDirectoryEntry.fromJson(Map<String, dynamic> json) =>
+      PartnerDirectoryEntry(
+        kind: json['kind'] as String? ?? '',
+        id: json['id'] as String? ?? '',
+        name: json['name'] as String? ?? '',
+        nameArabic: json['nameArabic'] as String? ?? '',
+        subtitle: json['subtitle'] as String?,
+        subtitleArabic: json['subtitleArabic'] as String?,
+        logoRelativePath: json['logoRelativePath'] as String?,
+        logoContactId: json['logoContactId'] as String?,
+        countryId: (json['countryId'] as num?)?.toInt(),
+      );
+
   final String kind;
   final String id;
   final String name;
@@ -42,16 +55,17 @@ class PartnerDirectoryEntry {
   bool get isSponsor => kind == PartnerDirectoryKind.sponsor;
   bool get isBooth => kind == PartnerDirectoryKind.booth;
 
-  String localizedName(bool isArabic) {
+  String localizedName({required bool isArabic}) {
     final ar = nameArabic.trim();
     final en = name.trim();
     return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
   }
 
-  String? localizedSubtitle(bool isArabic) {
+  String? localizedSubtitle({required bool isArabic}) {
     final ar = subtitleArabic?.trim() ?? '';
     final en = subtitle?.trim() ?? '';
-    final picked = isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
+    final picked =
+        isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
     return picked.isEmpty ? null : picked;
   }
 
@@ -77,19 +91,6 @@ class PartnerDirectoryEntry {
         return null;
     }
   }
-
-  static PartnerDirectoryEntry fromJson(Map<String, dynamic> json) =>
-      PartnerDirectoryEntry(
-        kind: json['kind'] as String? ?? '',
-        id: json['id'] as String? ?? '',
-        name: json['name'] as String? ?? '',
-        nameArabic: json['nameArabic'] as String? ?? '',
-        subtitle: json['subtitle'] as String?,
-        subtitleArabic: json['subtitleArabic'] as String?,
-        logoRelativePath: json['logoRelativePath'] as String?,
-        logoContactId: json['logoContactId'] as String?,
-        countryId: (json['countryId'] as num?)?.toInt(),
-      );
 
   /// Reads `PartnerDirectoryResponse = { entries: [...] }` into the rows.
   static List<PartnerDirectoryEntry> listFromData(Object? data) =>

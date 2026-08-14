@@ -42,9 +42,14 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
         // Admission state, stored as the enum NAME rather than its ordinal, so
         // reordering the enum can never re-interpret stored rows. Matches how the
         // Identity side persists the same enum.
+        // The DB default is FAIL-CLOSED and exists only so a raw-SQL content
+        // seed cannot fail on a column it does not know about. Every
+        // tracked write sets this explicitly; a row that reaches the table
+        // without one is not admitted anywhere until somebody approves it.
         builder.Property(profile => profile.AdmissionState)
             .HasConversion<string>()
             .HasMaxLength(32)
+            .HasDefaultValue(SIMF.Common.Enums.AccountState.PendingApproval)
             .IsRequired();
 
         // The admission queue reads "everyone awaiting a decision" on every load
@@ -209,14 +214,33 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
             .HasForeignKey(profile => profile.RegionId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // The bulk-badge batch this placeholder profile was
-        // minted by. Intra-App-DB FK (nullable + Restrict, same shape as the
-        // Organisation / Region FKs) so a batch cannot be hard-deleted while any
-        // badge references it — batches are soft-deleted (revoke → IsActive=false).
+        // Zero, not the open year, and deliberately: the stamping interceptor
+        // fills this for every tracked write, and the default exists only so a
+        // RAW SQL content seed cannot fail on a column it does not know about.
+        // Zero is the "predates the edition column" value the gate already
+        // admits, so such a row behaves exactly as a pre-existing one.
+        builder.Property(profile => profile.EditionYear).HasDefaultValue(0);
+
+        // The order this attendee arrived on. REQUIRED: everyone belongs to one,
+        // and whoever arrived without a bulk order behind them belongs to the
+        // seeded direct-registration order, so "which order did this attendee
+        // come from" always has an answer. It used to be nullable and set only by
+        // the bulk mint, which left it unanswerable for everyone who registered
+        // themselves.
+        //
+        // Intra-App-DB FK with Restrict, the same shape as the Organisation and
+        // Region FKs, so an order cannot be hard-deleted while anyone references
+        // it — orders are soft-deleted (revoke → IsActive=false).
+        // Same reasoning as the two above: a raw-SQL seed that predates the
+        // column lands in the direct-registration order rather than failing.
+        builder.Property(profile => profile.BadgeBatchId)
+            .HasDefaultValue(SIMF.Domain.Badges.BadgeBatch.DirectRegistrationId);
+
         builder.HasIndex(profile => profile.BadgeBatchId);
         builder.HasOne(profile => profile.BadgeBatch)
             .WithMany()
             .HasForeignKey(profile => profile.BadgeBatchId)
+            .IsRequired()
             .OnDelete(DeleteBehavior.Restrict);
 
         // M-to-M with Interests. Composite-PK join table

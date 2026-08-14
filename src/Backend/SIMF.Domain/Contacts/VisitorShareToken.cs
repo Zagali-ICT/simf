@@ -19,7 +19,18 @@ public sealed class VisitorShareToken : BaseAuditEntity
     public Guid UserId { get; set; }
 
     /// <summary>The shareable code encoded into the visitor's QR, an opaque
-    /// Crockford base32 string, unique across the table.</summary>
+    /// Crockford base32 string, unique across the table.
+    ///
+    /// <para>Stored in plaintext, and deliberately so — this is the one token in
+    /// the system that does not follow the <c>OpaqueToken.Hash</c> convention
+    /// <c>RefreshToken</c>, <c>SecondFactorToken</c>, <c>MeetingActionToken</c> and
+    /// <c>TotpRecoveryCode</c> all use. Two reasons. The owner re-reads this value
+    /// every time they reopen the share screen, so a one-way hash would mean nobody
+    /// could ever see their own QR again after minting it. And it guards nothing an
+    /// attacker would not already hold: the card it resolves to is projected live
+    /// from <c>UserProfile</c> in this same database, so a reader who has this table
+    /// has the contact details directly and does not need the code. Encrypting it
+    /// would buy a schema change and a blind index for no reduction in exposure.</para></summary>
     public string Token { get; set; } = string.Empty;
 
     /// <summary>When rotation revoked the token; null while it is active.</summary>

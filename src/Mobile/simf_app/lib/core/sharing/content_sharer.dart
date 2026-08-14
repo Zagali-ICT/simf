@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart' show BuildContext, RenderBox, Rect;
+import 'package:flutter/material.dart' show BuildContext, Rect, RenderBox;
 
 import 'package:simf_app/core/sharing/content_sharer_web.dart'
     if (dart.library.io) 'content_sharer_io.dart' as platform;

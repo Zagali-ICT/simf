@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart' show DateFormat;
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/app_assets.dart';
@@ -35,10 +34,10 @@ class SessionSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Frame 1388:8439 — 12h "hh:mm a" (e.g. 09:00 AM) on the Saudi wall clock.
-    final time = DateFormat('hh:mm a', 'en').format(item.startLocal);
+    final time = formatSaudiTime12(item.startLocal);
     final speaker = _speakerText();
-    final hall = item.localizedHall(isArabic);
-    final category = item.localizedCategory(isArabic);
+    final hall = item.localizedHall(isArabic: isArabic);
+    final category = item.localizedCategory(isArabic: isArabic);
     // Owner 2026-07-14 — the shared state chips. The summaries list is already
     // all-summarised, so the summary chip is suppressed here (redundant) and the
     // card shows live-now / مسجّل only.
@@ -56,7 +55,8 @@ class SessionSummaryCard extends StatelessWidget {
         queryParameters: <String, String>{RouteParams.sessionId: item.id},
       ),
       child: Padding(
-        padding: const EdgeInsets.all(SimfTokens.space2), // p-8 (Figma 1388:8430)
+        padding:
+            const EdgeInsets.all(SimfTokens.space2), // p-8 (Figma 1388:8430)
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
@@ -69,7 +69,7 @@ class SessionSummaryCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: <Widget>[
                       Text(
-                        item.localizedTitle(isArabic),
+                        item.localizedTitle(isArabic: isArabic),
                         textAlign: TextAlign.start,
                         style: SimfTokens.labelWhiteMedium,
                       ),
@@ -122,7 +122,8 @@ class SessionSummaryCard extends StatelessWidget {
                     Expanded(child: CategoryPill(label: category)),
                     if (hasChips) const SizedBox(width: SimfTokens.space4),
                   ],
-                  if (hasChips) SessionStateChipRow(kinds: stateChips, l10n: l10n),
+                  if (hasChips)
+                    SessionStateChipRow(kinds: stateChips, l10n: l10n),
                 ],
               ),
             ],
@@ -137,9 +138,8 @@ class SessionSummaryCard extends StatelessWidget {
       return null;
     }
     final primary = item.speakers.first;
-    final name = primary.localizedName(isArabic);
+    final name = primary.localizedName(isArabic: isArabic);
     final title = primary.title?.trim();
     return title == null || title.isEmpty ? name : '$name · $title';
   }
 }
-

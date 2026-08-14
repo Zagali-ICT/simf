@@ -47,3 +47,20 @@ final programmeSessionsProvider =
     FutureProvider.autoDispose<List<SessionListItem>>(
   (ref) => ref.watch(sessionsRepositoryProvider).getSessions(),
 );
+
+/// The active programme keyed by session id, derived once per programme change
+/// rather than per rebuild.
+///
+/// The presentations screen built this literal inside `build()`, so every
+/// keystroke on its day tabs re-walked the whole programme to produce a map it
+/// then threw away. A derived provider recomputes only when
+/// [programmeSessionsProvider] itself changes.
+final programmeSessionsByIdProvider =
+    Provider.autoDispose<Map<String, SessionListItem>>((ref) {
+  final sessions =
+      ref.watch(programmeSessionsProvider).valueOrNull ??
+      const <SessionListItem>[];
+  return <String, SessionListItem>{
+    for (final session in sessions) session.id: session,
+  };
+});

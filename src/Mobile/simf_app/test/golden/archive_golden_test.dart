@@ -11,6 +11,7 @@ import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/app_theme.dart';
 import 'package:simf_app/features/archive/archive_screen.dart';
 import 'package:simf_app/features/archive/data/archive_models.dart';
+import 'package:simf_app/features/archive/data/archive_repository.dart';
 
 import 'golden_fonts.dart';
 

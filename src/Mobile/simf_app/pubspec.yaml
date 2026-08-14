@@ -115,6 +115,7 @@ dependencies:
 # (falls back to the Android software AVC decoder) + forceDisableMediaCodecAsynchronousQueueing().
 # See third_party/video_player_android/android/.../TextureVideoPlayer.java +
 # PlatformViewVideoPlayer.java. Remove once the upstream plugin exposes these knobs.
+  characters: any
 dependency_overrides:
   video_player_android:
     path: third_party/video_player_android

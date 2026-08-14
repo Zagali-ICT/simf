@@ -39,12 +39,13 @@ class VenueMapInfoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isArabic = l10n.isArabic;
-    final title = booth?.localizedName(isArabic) ?? node.localizedLabel(isArabic);
+    final title = booth?.localizedName(isArabic: isArabic) ??
+        node.localizedLabel(isArabic: isArabic);
     final subtitleParts = <String>[
-      if (booth?.localizedExhibitor(isArabic) != null)
-        booth!.localizedExhibitor(isArabic)!,
-      if (booth?.localizedSector(isArabic) != null)
-        booth!.localizedSector(isArabic)!,
+      if (booth?.localizedExhibitor(isArabic: isArabic) != null)
+        booth!.localizedExhibitor(isArabic: isArabic)!,
+      if (booth?.localizedSector(isArabic: isArabic) != null)
+        booth!.localizedSector(isArabic: isArabic)!,
     ];
     final code = booth?.code;
 
@@ -81,7 +82,7 @@ class VenueMapInfoCard extends StatelessWidget {
                 VenueMapLogoBadge(
                   boothId: booth!.id,
                   baseUrl: baseUrl,
-                  name: booth!.localizedName(isArabic),
+                  name: booth!.localizedName(isArabic: isArabic),
                 ),
                 const SizedBox(width: SimfTokens.space3),
               ],
@@ -152,7 +153,8 @@ class VenueMapInfoCard extends StatelessWidget {
                   style: FilledButton.styleFrom(
                     minimumSize: const Size.fromHeight(SimfTokens.tapTarget),
                   ),
-                  icon: const Icon(Icons.navigation_outlined, size: SimfTokens.venueMapInfoCardSizeSm),
+                  icon: const Icon(Icons.navigation_outlined,
+                      size: SimfTokens.venueMapInfoCardSizeSm,),
                   label: Text(l10n.venueMapDirectMe),
                 ),
               ),

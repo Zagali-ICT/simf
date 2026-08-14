@@ -15,9 +15,9 @@ class SessionCalendar {
   Future<bool> addSession(SessionDetail detail, {required bool isArabic}) {
     return Add2Calendar.addEvent2Cal(
       Event(
-        title: detail.localizedTitle(isArabic),
-        description: detail.localizedDescription(isArabic) ?? '',
-        location: detail.localizedHall(isArabic),
+        title: detail.localizedTitle(isArabic: isArabic),
+        description: detail.localizedDescription(isArabic: isArabic) ?? '',
+        location: detail.localizedHall(isArabic: isArabic),
         startDate: detail.startLocal,
         endDate: detail.endLocal,
       ),

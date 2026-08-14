@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
-import 'package:simf_app/features/exhibition/entity_link_row.dart';
+import 'package:simf_app/features/exhibition/widgets/entity_link_row.dart';
 import 'package:simf_app/features/exhibition/widgets/location_line.dart';
 import 'package:simf_app/features/exhibition/widgets/tier_pill.dart';
 
@@ -41,7 +41,11 @@ class EntityIdentityCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            Center(child: SizedBox(width: SimfTokens.entityIdentityCardWidth, height: SimfTokens.entityIdentityCardHeight, child: logo)),
+            Center(
+                child: SizedBox(
+                    width: SimfTokens.entityIdentityCardWidth,
+                    height: SimfTokens.entityIdentityCardHeight,
+                    child: logo,),),
             const SizedBox(height: SimfTokens.space4),
             Text(
               name,
@@ -82,4 +86,3 @@ class EntityIdentityCard extends StatelessWidget {
     );
   }
 }
-

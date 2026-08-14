@@ -30,6 +30,12 @@ internal sealed class UserProfileRepository(
         Guid userId, CancellationToken cancellationToken = default) =>
         appDbContext.UserProfiles.SingleOrDefaultAsync(p => p.UserId == userId, cancellationToken);
 
+    public Task<UserProfile?> GetByProfileIdWithInterestsAsync(
+        Guid userProfileId, CancellationToken cancellationToken = default) =>
+        appDbContext.UserProfiles
+            .Include(p => p.Interests)
+            .SingleOrDefaultAsync(p => p.Id == userProfileId, cancellationToken);
+
     public void Add(UserProfile profile) => appDbContext.UserProfiles.Add(profile);
 
     public Task<bool> AnyOtherProfileWithIdentityHashAsync(

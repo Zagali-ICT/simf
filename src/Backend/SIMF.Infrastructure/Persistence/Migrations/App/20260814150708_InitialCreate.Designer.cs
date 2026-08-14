@@ -12,7 +12,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Persistence.Migrations.App
 {
     [DbContext(typeof(SimfAppDbContext))]
-    [Migration("20260814134021_InitialCreate")]
+    [Migration("20260814150708_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -857,6 +857,16 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<bool>("IsDelegate")
                         .HasColumnType("bit");
 
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("NameArabic")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
                     b.Property<string>("RecipientEmail")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
@@ -875,6 +885,20 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.HasIndex("IsActive", "CreatedAt");
 
                     b.ToTable("BadgeBatches", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("0f1e2d3c-4b5a-6978-8796-a5b4c3d2e1f0"),
+                            CountsSummary = "Direct registration",
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedBy = new Guid("00000000-0000-0000-0000-000000000000"),
+                            IsActive = true,
+                            IsDelegate = false,
+                            Name = "Direct registration",
+                            NameArabic = "تسجيل مباشر",
+                            TotalCount = 0
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.BusinessMeetings.BusinessMeeting", b =>
@@ -2455,6 +2479,41 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.ToTable("VisitorShareTokens", (string)null);
                 });
 
+            modelBuilder.Entity("SIMF.Domain.Editions.EventEdition", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("LastClosedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("LastReissueCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("OpenedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("OpenedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("EventEdition", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000003"),
+                            LastReissueCount = 0,
+                            OpenedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Year = 2026
+                        });
+                });
+
             modelBuilder.Entity("SIMF.Domain.Email.EmailTemplate", b =>
                 {
                     b.Property<Guid>("Id")
@@ -4012,8 +4071,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("AdmissionState")
                         .IsRequired()
+                        .ValueGeneratedOnAdd()
                         .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
+                        .HasColumnType("nvarchar(32)")
+                        .HasDefaultValue("PendingApproval");
 
                     b.Property<bool>("AllowsDelegationMeeting")
                         .HasColumnType("bit");
@@ -4021,8 +4082,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<bool>("AllowsSpeakerMeeting")
                         .HasColumnType("bit");
 
-                    b.Property<Guid?>("BadgeBatchId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<Guid>("BadgeBatchId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValue(new Guid("0f1e2d3c-4b5a-6978-8796-a5b4c3d2e1f0"));
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -4035,6 +4098,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<int>("EditionYear")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
 
                     b.Property<int>("Gender")
                         .HasColumnType("int");
@@ -6548,7 +6616,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.HasOne("SIMF.Domain.Badges.BadgeBatch", "BadgeBatch")
                         .WithMany()
                         .HasForeignKey("BadgeBatchId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.HasOne("SIMF.Domain.Files.StoredFile", null)
                         .WithMany()

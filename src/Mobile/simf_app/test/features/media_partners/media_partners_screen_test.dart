@@ -81,7 +81,8 @@ Future<void> _pump(
 
 void main() {
   group('MediaPartnersScreen (Page 031 — KSA frame 947:3764)', () {
-    testWidgets('renders the media-center header, the two tabs and the partners',
+    testWidgets(
+        'renders the media-center header, the two tabs and the partners',
         (tester) async {
       await _pump(tester, partners: () => _partners);
 
@@ -121,7 +122,8 @@ void main() {
       expect(find.text('S'), findsOneWidget);
     });
 
-    testWidgets('FR-LGO-003 — the whole card is a tap target that opens the '
+    testWidgets(
+        'FR-LGO-003 — the whole card is a tap target that opens the '
         'logo full size', (tester) async {
       await _pump(tester, partners: () => _partners);
 
@@ -148,7 +150,8 @@ void main() {
       expect(find.byType(SimfImageViewer), findsNothing);
     });
 
-    testWidgets('FR-LGO-003 — the logo box does not claim a second, nested '
+    testWidgets(
+        'FR-LGO-003 — the logo box does not claim a second, nested '
         'tap target', (tester) async {
       await _pump(tester, partners: () => _partners);
 
@@ -193,7 +196,8 @@ void main() {
     // right-most and the second (latest-updates) left — matching frame 947:3764.
     testWidgets('lays the tabs partners→latest right-to-left in Arabic',
         (tester) async {
-      await _pump(tester, partners: () => _partners, locale: const Locale('ar'));
+      await _pump(tester,
+          partners: () => _partners, locale: const Locale('ar'),);
 
       final l10n = AppL10n.of(tester.element(find.byType(MediaPartnersScreen)));
 
@@ -205,7 +209,8 @@ void main() {
         TextDirection.rtl,
       );
 
-      final partnersDx = tester.getCenter(find.text(l10n.mediaPartnersTitle)).dx;
+      final partnersDx =
+          tester.getCenter(find.text(l10n.mediaPartnersTitle)).dx;
       final latestDx = tester.getCenter(find.text(l10n.latestUpdatesTitle)).dx;
 
       // partners right-most → latest-updates left.
@@ -213,15 +218,15 @@ void main() {
     });
 
     test('MediaPartner.fromJson reads the wire fields', () {
-      final partner = MediaPartner.fromJson(<String, dynamic>{
+      final partner = MediaPartner.fromJson(const <String, dynamic>{
         'id': 'p9',
         'name': 'Reuters',
         'nameArabic': 'رويترز',
         'logoRelativePath': 'media-partners/reuters.png',
       });
       expect(partner.id, 'p9');
-      expect(partner.localizedName(false), 'Reuters');
-      expect(partner.localizedName(true), 'رويترز');
+      expect(partner.localizedName(isArabic: false), 'Reuters');
+      expect(partner.localizedName(isArabic: true), 'رويترز');
       expect(partner.logoRelativePath, 'media-partners/reuters.png');
     });
 

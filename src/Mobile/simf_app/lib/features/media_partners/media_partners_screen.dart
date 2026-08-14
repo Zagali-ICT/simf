@@ -97,9 +97,9 @@ class MediaPartnersScreen extends ConsumerWidget {
                       SimfTokens.space4,
                       SimfTokens.space6,
                     ),
-                    gridDelegate:
-                        SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: responsiveGridColumns(context, compact: 2),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount:
+                          responsiveGridColumns(context, compact: 2),
                       mainAxisSpacing: SimfTokens.space4,
                       crossAxisSpacing: SimfTokens.space4,
                       childAspectRatio: SimfTokens.partnerCardAspectRatio,
@@ -108,7 +108,7 @@ class MediaPartnersScreen extends ConsumerWidget {
                     itemBuilder: (context, index) {
                       final partner = items[index];
                       return PartnerCard(
-                        name: partner.localizedName(isArabic),
+                        name: partner.localizedName(isArabic: isArabic),
                         logoUrl: partner.logoAssetUrl(baseUrl),
                       );
                     },

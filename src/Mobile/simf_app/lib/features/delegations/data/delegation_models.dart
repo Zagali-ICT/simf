@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:simf_app/core/utils/bilingual.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
 
 /// One delegation card — an invited country with its head of delegation, date
@@ -22,6 +23,20 @@ class DelegationItem {
     this.departureDate,
   });
 
+  factory DelegationItem.fromJson(Map<String, dynamic> json) => DelegationItem(
+        countryId: (json['countryId'] as num?)?.toInt() ?? 0,
+        countryCode: json['countryCode'] as String? ?? '',
+        countryName: json['countryName'] as String? ?? '',
+        countryNameArabic: json['countryNameArabic'] as String? ?? '',
+        memberCount: (json['memberCount'] as num?)?.toInt() ?? 0,
+        headName: json['headName'] as String?,
+        headNameArabic: json['headNameArabic'] as String?,
+        headTitle: json['headTitle'] as String?,
+        headTitleArabic: json['headTitleArabic'] as String?,
+        arrivalDate: _parseDate(json['arrivalDate']),
+        departureDate: _parseDate(json['departureDate']),
+      );
+
   final int countryId;
   final String countryCode;
   final String countryName;
@@ -34,19 +49,19 @@ class DelegationItem {
   final DateTime? arrivalDate;
   final DateTime? departureDate;
 
-  String localizedCountry(bool isArabic) =>
-      _pickRequired(countryNameArabic, countryName, isArabic);
+  String localizedCountry({required bool isArabic}) =>
+      pickLocalized(countryNameArabic, countryName, isArabic: isArabic);
 
   /// The country name in the *other* language (shown as the card's subtitle).
-  String localizedCountrySubtitle(bool isArabic) =>
+  String localizedCountrySubtitle({required bool isArabic}) =>
       isArabic ? countryName.trim() : countryNameArabic.trim();
 
-  String? localizedHead(bool isArabic) =>
-      _pickOptional(headNameArabic, headName, isArabic);
+  String? localizedHead({required bool isArabic}) =>
+      pickLocalizedOrNull(headNameArabic, headName, isArabic: isArabic);
 
   /// The head-of-delegation's title/rank in the active locale (owner 2026-07-19).
-  String? localizedHeadTitle(bool isArabic) =>
-      _pickOptional(headTitleArabic, headTitle, isArabic);
+  String? localizedHeadTitle({required bool isArabic}) =>
+      pickLocalizedOrNull(headTitleArabic, headTitle, isArabic: isArabic);
 
   bool get hasHead =>
       (headName != null && headName!.trim().isNotEmpty) ||
@@ -61,8 +76,8 @@ class DelegationItem {
 
   /// The single leading character of the head's localized name, for the avatar
   /// square. Empty when there is no head.
-  String headInitial(bool isArabic) {
-    final name = localizedHead(isArabic)?.trim() ?? '';
+  String headInitial({required bool isArabic}) {
+    final name = localizedHead(isArabic: isArabic)?.trim() ?? '';
     if (name.isEmpty) {
       return '';
     }
@@ -82,20 +97,6 @@ class DelegationItem {
         (headName?.toLowerCase().contains(q) ?? false) ||
         (headNameArabic?.toLowerCase().contains(q) ?? false);
   }
-
-  static DelegationItem fromJson(Map<String, dynamic> json) => DelegationItem(
-        countryId: (json['countryId'] as num?)?.toInt() ?? 0,
-        countryCode: json['countryCode'] as String? ?? '',
-        countryName: json['countryName'] as String? ?? '',
-        countryNameArabic: json['countryNameArabic'] as String? ?? '',
-        memberCount: (json['memberCount'] as num?)?.toInt() ?? 0,
-        headName: json['headName'] as String?,
-        headNameArabic: json['headNameArabic'] as String?,
-        headTitle: json['headTitle'] as String?,
-        headTitleArabic: json['headTitleArabic'] as String?,
-        arrivalDate: _parseDate(json['arrivalDate']),
-        departureDate: _parseDate(json['departureDate']),
-      );
 }
 
 /// The delegations payload (`AppDelegations = { countryCount, totalParticipants,
@@ -108,11 +109,7 @@ class Delegations {
     required this.items,
   });
 
-  final int countryCount;
-  final int totalParticipants;
-  final List<DelegationItem> items;
-
-  static Delegations fromData(Object? data) {
+  factory Delegations.fromData(Object? data) {
     final map = data is Map ? data : const <dynamic, dynamic>{};
     final list = (map['items'] as List?) ?? const <dynamic>[];
     final items = list
@@ -124,6 +121,42 @@ class Delegations {
       totalParticipants: (map['totalParticipants'] as num?)?.toInt() ?? 0,
       items: items,
     );
+  }
+
+  final int countryCount;
+  final int totalParticipants;
+  final List<DelegationItem> items;
+
+  /// The countries whose flag the stats strip can show. Lifted out of
+  /// `DelegationsBody.build`, which re-walked the list on every rebuild.
+  List<DelegationItem> get flagItems =>
+      items.where((item) => item.flagEmoji.isNotEmpty).toList(growable: false);
+
+  /// The cards to show: the free-text [query], narrowed to one country when a
+  /// stats-strip flag is selected.
+  List<DelegationItem> visible({
+    String query = '',
+    String? countryCode,
+  }) =>
+      items.where(
+        (item) =>
+            (countryCode == null || item.countryCode == countryCode) &&
+            item.matches(query),
+      )
+      .toList(growable: false);
+
+  /// The selected country's name in the active language, for the active-filter
+  /// chip. Null when nothing is selected, or when the code matches no row.
+  String? selectedCountryName(String? countryCode, {required bool isArabic}) {
+    if (countryCode == null) {
+      return null;
+    }
+    for (final item in items) {
+      if (item.countryCode == countryCode) {
+        return item.localizedCountry(isArabic: isArabic);
+      }
+    }
+    return null;
   }
 }
 
@@ -144,19 +177,6 @@ String _flagEmoji(String code) {
     return '';
   }
   return String.fromCharCode(base + first) + String.fromCharCode(base + second);
-}
-
-String _pickRequired(String arabic, String english, bool isArabic) {
-  final ar = arabic.trim();
-  final en = english.trim();
-  return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
-}
-
-String? _pickOptional(String? arabic, String? english, bool isArabic) {
-  final ar = arabic?.trim() ?? '';
-  final en = english?.trim() ?? '';
-  final value = isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
-  return value.isEmpty ? null : value;
 }
 
 /// Bi-Meeting rework — one bookable meeting slot offered by a delegation

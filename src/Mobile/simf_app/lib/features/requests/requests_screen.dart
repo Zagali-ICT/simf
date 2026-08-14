@@ -134,16 +134,8 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
     // it shows only to users holding AllowsSpeakerMeeting (endpoint also gates).
     final canRequestSpeakerMeeting =
         ref.watch(currentUserMeetingAccessProvider).value?.speaker ?? false;
-    // A selected status whose chip has dropped to zero items (e.g. the user just
-    // cancelled their only pending request) falls back to "All" so the screen
-    // never strands the user on a chip-less "no results" view.
-    final effectiveFilter =
-        (_filter != null && items.any((i) => i.status == _filter))
-            ? _filter
-            : null;
-    final filtered = effectiveFilter == null
-        ? items
-        : items.where((i) => i.status == effectiveFilter).toList();
+    final effectiveFilter = effectiveRequestFilter(items, _filter);
+    final filtered = filterRequests(items, _filter);
 
     return SimfPullToRefresh(
       onRefresh: _refresh,

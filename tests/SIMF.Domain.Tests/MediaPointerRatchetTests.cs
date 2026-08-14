@@ -54,13 +54,16 @@ public sealed class MediaPointerRatchetTests
         // textarea that is rewritten whole on every save.
         "ArchivePastSpeaker.PhotoRelativePath",
         "ArchiveMediaItem.Url",
-        // The stream / video columns.
-        "MediaItem.Url",
-        "Session.LiveStreamUrl",
-        "Session.LiveSignLanguageUrl",
-        "SessionSummary.SummaryVideoUrl",
-        "OrganizationProfile.LiveStreamUrl",
-        "OrganizationProfile.BackgroundVideoUrl",
+        // The stream / video columns have gone from this list because they are
+        // converted: this branch's own last commit ("the feed URLs become file
+        // keys") took MediaItem.Url, Session.LiveStreamUrl /
+        // LiveSignLanguageUrl, SessionSummary.SummaryVideoUrl and
+        // OrganizationProfile.LiveStreamUrl / BackgroundVideoUrl, and the list
+        // was not shortened with them — so this countdown had already gone red
+        // before main was merged in, exactly as it is designed to.
+        //
+        // The two archive entries above stay. Those really are still strings,
+        // and are the work in flight.
     };
 
     [Fact]

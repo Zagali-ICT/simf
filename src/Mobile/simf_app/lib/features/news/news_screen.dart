@@ -11,11 +11,6 @@ import 'package:simf_app/features/news/data/news_repository.dart';
 import 'package:simf_app/features/news/widgets/news_card.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-// `newsListProvider` lives in `data/news_repository.dart`; re-exported so the
-// existing `show newsListProvider` imports (the Home highlights carousel + the
-// news tests) keep resolving off this screen.
-export 'data/news_repository.dart' show newsListProvider;
-
 /// Page 029 — الأخبار · News (#29, `/news`, Guest+), rebuilt to the KSA-Project
 /// frame **1049:12629 "Media coverage"** on the shared navy shell.
 ///

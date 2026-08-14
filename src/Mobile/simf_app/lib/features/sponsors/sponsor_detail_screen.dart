@@ -9,21 +9,11 @@ import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/core/net/asset_urls.dart';
 import 'package:simf_app/core/utils/refresh.dart';
 import 'package:simf_app/features/exhibition/entity_detail_helpers.dart';
-import 'package:simf_app/features/exhibition/entity_detail_scaffold.dart';
-import 'package:simf_app/features/exhibition/entity_logo_image.dart';
+import 'package:simf_app/features/exhibition/widgets/entity_detail_scaffold.dart';
+import 'package:simf_app/features/exhibition/widgets/entity_logo_image.dart';
 import 'package:simf_app/features/sponsors/data/sponsor_models.dart';
-import 'package:simf_app/features/sponsors/data/sponsors_endpoints.dart';
+import 'package:simf_app/features/sponsors/data/sponsors_repository.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-/// `GET /app/sponsors/{id}` → the full sponsor detail (Figma 1439:11826).
-final sponsorDetailProvider =
-    FutureProvider.autoDispose.family<SponsorDetail, String>((ref, id) async {
-  final client = ref.watch(simfApiClientProvider);
-  return client.get<SponsorDetail>(
-    SponsorsEndpoints.byId(id),
-    decodeData: SponsorDetail.fromData,
-  );
-});
 
 /// **Sponsor detail** — App "الراعي" (Figma 1439:11826, Guest+), opened by
 /// tapping a sponsor on the sponsors screen. The same shared
@@ -74,7 +64,7 @@ class SponsorDetailScreen extends ConsumerWidget {
   ) {
     final isArabic = l10n.isArabic;
     final baseUrl = ref.watch(simfDataConfigProvider).baseUrl;
-    final name = sponsor.localizedName(isArabic);
+    final name = sponsor.localizedName(isArabic: isArabic);
 
     return EntityDetailScaffold(
       onRefresh: () =>
@@ -89,15 +79,15 @@ class SponsorDetailScreen extends ConsumerWidget {
       ),
       name: name,
       locationLine: entityLocationLine(
-        sponsor.localizedCity(isArabic),
-        sponsor.localizedCountry(isArabic),
-        isArabic,
+        sponsor.localizedCity(isArabic: isArabic),
+        sponsor.localizedCountry(isArabic: isArabic),
+        isArabic: isArabic,
       ),
       countryId: sponsor.countryId,
       tierPill: sponsor.tierName.isEmpty
           ? null
           : l10n.sponsorTierPill(sponsor.tierName),
-      about: sponsor.localizedAbout(isArabic),
+      about: sponsor.localizedAbout(isArabic: isArabic),
       website: sponsor.url,
       onWebsite: () => _openWebsite(context, sponsor.url),
     );

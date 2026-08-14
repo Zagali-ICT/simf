@@ -45,7 +45,7 @@ void main() {
   });
 
   testWidgets('the count never drops below the frame count', (tester) async {
-    for (final double width in <double>[375, 600, 905, 1024, 1440]) {
+    for (final width in <double>[375, 600, 905, 1024, 1440]) {
       expect(
         await columnsAt(tester, width, 2),
         greaterThanOrEqualTo(2),

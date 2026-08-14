@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -73,8 +72,8 @@ class FollowUsSection extends ConsumerWidget {
             textDirection: TextDirection.ltr,
             child: Row(
               children: <Widget>[
-                for (final (index, (asset, url, label)) in links.indexed)
-                  ...<Widget>[
+                for (final (index, (asset, url, label))
+                    in links.indexed) ...<Widget>[
                   if (index > 0) const SizedBox(width: SimfTokens.space4),
                   Expanded(
                     child: SocialButton(asset: asset, url: url, label: label),
@@ -101,4 +100,3 @@ class FollowUsSection extends ConsumerWidget {
     );
   }
 }
-

@@ -6,7 +6,11 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/features/questions/data/questions_repository.dart';
-import 'package:simf_app/features/questions/widgets/send_question_content.dart';
+import 'package:simf_app/features/questions/widgets/review_note.dart';
+import 'package:simf_app/features/questions/widgets/send_question_composer.dart';
+import 'package:simf_app/features/questions/widgets/send_question_recipient_picker.dart';
+import 'package:simf_app/features/questions/widgets/send_question_submit_button.dart';
+import 'package:simf_app/features/questions/widgets/session_data_block.dart';
 import 'package:simf_app/features/sessions/data/session_detail_repository.dart';
 import 'package:simf_app/features/sessions/data/session_models.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
@@ -53,8 +57,7 @@ class SendQuestionScreen extends ConsumerStatefulWidget {
   final String? sessionId;
 
   @override
-  ConsumerState<SendQuestionScreen> createState() =>
-      _SendQuestionScreenState();
+  ConsumerState<SendQuestionScreen> createState() => _SendQuestionScreenState();
 }
 
 class _SendQuestionScreenState extends ConsumerState<SendQuestionScreen> {
@@ -184,7 +187,7 @@ class _SendQuestionScreenState extends ConsumerState<SendQuestionScreen> {
     final detail = _detail;
     final dataLines = detail == null
         ? const <String>[]
-        : _dataLines(detail.localizedDescription(l10n.isArabic));
+        : _dataLines(detail.localizedDescription(isArabic: l10n.isArabic));
     // Frame 934:3636 — the data block + composer occupy the top (scrollable so a
     // long description + the keyboard never overflow), and the submit + note are
     // pinned to the bottom of the screen (943:3751), not flowed under the box.
@@ -251,7 +254,8 @@ class _SendQuestionScreenState extends ConsumerState<SendQuestionScreen> {
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               SendQuestionSubmitButton(
-                label: _submitting ? l10n.loadingLabel : l10n.sendQuestionSubmit,
+                label:
+                    _submitting ? l10n.loadingLabel : l10n.sendQuestionSubmit,
                 onPressed: _submitting ? null : () => unawaited(_submit(l10n)),
               ),
               const SizedBox(height: SimfTokens.space4),

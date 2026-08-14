@@ -10,6 +10,8 @@ import 'package:simf_app/core/errors/api_error_l10n.dart';
 import 'package:simf_app/core/responsive/max_width_body.dart';
 import 'package:simf_app/core/validation/field_limits.dart';
 import 'package:simf_app/core/validation/required_validation.dart';
+import 'package:simf_app/features/account/badge_activation_screen.dart'
+    show BadgeActivationScreen;
 import 'package:simf_app/features/account/biometric_auth.dart';
 import 'package:simf_app/features/account/post_auth_route.dart';
 import 'package:simf_app/features/account/widgets/account_sub_header.dart';
@@ -192,7 +194,8 @@ class _BadgePasswordScreenState extends ConsumerState<BadgePasswordScreen> {
                   obscure: _obscure,
                   onToggle: () => setState(() => _obscure = !_obscure),
                 ),
-                validator: (value) => isBlank(value) ? l10n.requiredField : null,
+                validator: (value) =>
+                    isBlank(value) ? l10n.requiredField : null,
               ),
               const SizedBox(height: SimfTokens.space3),
               Align(

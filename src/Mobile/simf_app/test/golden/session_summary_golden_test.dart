@@ -46,7 +46,7 @@ SessionListItem _session({
       'hallNameArabic': 'قاعة الملك فهد',
       'start': start.toIso8601String(),
       'end': start.add(Duration(minutes: durationMin)).toIso8601String(),
-      'speakers': <dynamic>[],
+      'speakers': const <dynamic>[],
     });
 
 // 2026-06-21 is a Sunday (الأحد). a zoned value times are chosen so a +03:00
@@ -84,13 +84,13 @@ final _sessions = <SessionListItem>[
 SessionSummary _summary() => SessionSummary.fromJson(const <String, dynamic>{
       'keyPointsArabic':
           'حماية منظومات الطاقة الممتدة عبر البحار من خطوط وأنابيب النفط والغاز.\n'
-          'أهمية الممرات البحرية الحيوية في ظل تصاعد التهديدات الجيوسياسية.\n'
-          'دور التقنيات الحديثة والذكاء الاصطناعي في رصد المخاطر مبكرًا.',
+              'أهمية الممرات البحرية الحيوية في ظل تصاعد التهديدات الجيوسياسية.\n'
+              'دور التقنيات الحديثة والذكاء الاصطناعي في رصد المخاطر مبكرًا.',
       'recommendationsArabic': 'توسيع برامج الرصد البحري المشترك.',
       'speakersArabic': 'د. محمد العمري · العميد سالم',
       'fullTextArabic':
           'منصة الملتقى البحري السعودي الدولي حدث دولي رفيع المستوى، يجمع القادة '
-          'والمسؤولين والخبراء لتبادل التجارب وتعزيز فهم مشترك لمستقبل الأمن البحري.',
+              'والمسؤولين والخبراء لتبادل التجارب وتعزيز فهم مشترك لمستقبل الأمن البحري.',
       'generatedByAi': true,
       'publishedAt': '2026-06-21T07:00:00Z',
     });

@@ -169,6 +169,15 @@ class MyReservation {
     this.seatNumber,
   });
 
+  factory MyReservation.fromJson(Map<String, dynamic> json) => MyReservation(
+        reservationId: json['reservationId'] as String? ?? '',
+        sessionId: json['sessionId'] as String? ?? '',
+        rowLabel: json['rowLabel'] as String?,
+        seatNumber: (json['seatNumber'] as num?)?.toInt(),
+        kind: SeatReservationKind.fromJson(json['kind']),
+        status: BookingStatus.fromJson(json['status']),
+      );
+
   final String reservationId;
   final String sessionId;
   final String? rowLabel;
@@ -178,15 +187,6 @@ class MyReservation {
 
   /// True for a general-admission join (no specific seat).
   bool get isOpenSeating => kind == SeatReservationKind.openSeating;
-
-  static MyReservation fromJson(Map<String, dynamic> json) => MyReservation(
-        reservationId: json['reservationId'] as String? ?? '',
-        sessionId: json['sessionId'] as String? ?? '',
-        rowLabel: json['rowLabel'] as String?,
-        seatNumber: (json['seatNumber'] as num?)?.toInt(),
-        kind: SeatReservationKind.fromJson(json['kind']),
-        status: BookingStatus.fromJson(json['status']),
-      );
 }
 
 /// One occupied (or own) seat — mirrors `SIMF.Contracts.Sessions.SessionSeatCell`.
@@ -205,6 +205,17 @@ class SeatCell {
     this.guestHintArabic,
   });
 
+  factory SeatCell.fromJson(Map<String, dynamic> json) => SeatCell(
+        reservationId: json['reservationId'] as String?,
+        rowLabel: json['rowLabel'] as String? ?? '',
+        seatNumber: (json['seatNumber'] as num?)?.toInt() ?? 0,
+        kind: SeatReservationKind.fromJson(json['kind']),
+        status: BookingStatus.fromJson(json['status']),
+        checkedIn: json['checkedIn'] as bool? ?? false,
+        guestHint: json['guestHint'] as String?,
+        guestHintArabic: json['guestHintArabic'] as String?,
+      );
+
   final String? reservationId;
   final String rowLabel;
   final int seatNumber;
@@ -219,7 +230,7 @@ class SeatCell {
 
   /// The locale-appropriate guest note, falling back to the other language, then
   /// null when the admin typed neither.
-  String? localizedGuestHint(bool isArabic) {
+  String? localizedGuestHint({required bool isArabic}) {
     final ar = (guestHintArabic ?? '').trim();
     final en = (guestHint ?? '').trim();
     final primary = isArabic ? ar : en;
@@ -244,17 +255,6 @@ class SeatCell {
 
   /// A stable `row:seat` key for set membership (status derivation, L-2).
   String get key => '$rowLabel:$seatNumber';
-
-  static SeatCell fromJson(Map<String, dynamic> json) => SeatCell(
-        reservationId: json['reservationId'] as String?,
-        rowLabel: json['rowLabel'] as String? ?? '',
-        seatNumber: (json['seatNumber'] as num?)?.toInt() ?? 0,
-        kind: SeatReservationKind.fromJson(json['kind']),
-        status: BookingStatus.fromJson(json['status']),
-        checkedIn: json['checkedIn'] as bool? ?? false,
-        guestHint: json['guestHint'] as String?,
-        guestHintArabic: json['guestHintArabic'] as String?,
-      );
 }
 
 /// The full hall seat grid for one session — mirrors
@@ -288,6 +288,37 @@ class SessionSeatMap {
     this.callerIsVip = false,
   });
 
+  factory SessionSeatMap.fromJson(Map<String, dynamic> json) {
+    final myCellJson = json['myCell'];
+    return SessionSeatMap(
+      rowLabels: (json['rowLabels'] as List? ?? const <dynamic>[])
+          .whereType<String>()
+          .toList(growable: false),
+      seatsPerRow: (json['seatsPerRow'] as num?)?.toInt() ?? 0,
+      seatCounts: (json['seatCounts'] as List? ?? const <dynamic>[])
+          .whereType<num>()
+          .map((n) => n.toInt())
+          .toList(growable: false),
+      reservedCells: (json['reservedCells'] as List? ?? const <dynamic>[])
+          .whereType<Map<dynamic, dynamic>>()
+          .map((e) => SeatCell.fromJson(e.cast<String, dynamic>()))
+          .toList(growable: false),
+      myCell: myCellJson is Map
+          ? SeatCell.fromJson(myCellJson.cast<String, dynamic>())
+          : null,
+      activeReservedCount: (json['activeReservedCount'] as num?)?.toInt() ?? 0,
+      hallCapacity: (json['hallCapacity'] as num?)?.toInt() ?? 0,
+      sessionCapacity: (json['sessionCapacity'] as num?)?.toInt(),
+      sessionTitle: json['sessionTitle'] as String?,
+      sessionTitleArabic: json['sessionTitleArabic'] as String?,
+      mode: SeatSelectionMode.fromJson(json['mode']),
+      seatTiers: (json['seatTiers'] as List? ?? const <dynamic>[])
+          .map(SeatTier.fromJson)
+          .toList(growable: false),
+      callerIsVip: json['callerIsVip'] as bool? ?? false,
+    );
+  }
+
   final List<String> rowLabels;
   final int seatsPerRow;
   // Per-row seat counts PARALLEL to [rowLabels] (append-only wire key
@@ -320,7 +351,7 @@ class SessionSeatMap {
   final SeatSelectionMode mode;
 
   /// The locale-appropriate session title (null when neither is present).
-  String? localizedSessionTitle(bool isArabic) {
+  String? localizedSessionTitle({required bool isArabic}) {
     final ar = (sessionTitleArabic ?? '').trim();
     final en = (sessionTitle ?? '').trim();
     final primary = isArabic ? ar : en;
@@ -422,35 +453,4 @@ class SessionSeatMap {
       myCell != null &&
       myCell!.rowLabel == rowLabel &&
       myCell!.seatNumber == seatNumber;
-
-  static SessionSeatMap fromJson(Map<String, dynamic> json) {
-    final myCellJson = json['myCell'];
-    return SessionSeatMap(
-      rowLabels: (json['rowLabels'] as List? ?? const <dynamic>[])
-          .whereType<String>()
-          .toList(growable: false),
-      seatsPerRow: (json['seatsPerRow'] as num?)?.toInt() ?? 0,
-      seatCounts: (json['seatCounts'] as List? ?? const <dynamic>[])
-          .whereType<num>()
-          .map((n) => n.toInt())
-          .toList(growable: false),
-      reservedCells: (json['reservedCells'] as List? ?? const <dynamic>[])
-          .whereType<Map<dynamic, dynamic>>()
-          .map((e) => SeatCell.fromJson(e.cast<String, dynamic>()))
-          .toList(growable: false),
-      myCell: myCellJson is Map
-          ? SeatCell.fromJson(myCellJson.cast<String, dynamic>())
-          : null,
-      activeReservedCount: (json['activeReservedCount'] as num?)?.toInt() ?? 0,
-      hallCapacity: (json['hallCapacity'] as num?)?.toInt() ?? 0,
-      sessionCapacity: (json['sessionCapacity'] as num?)?.toInt(),
-      sessionTitle: json['sessionTitle'] as String?,
-      sessionTitleArabic: json['sessionTitleArabic'] as String?,
-      mode: SeatSelectionMode.fromJson(json['mode']),
-      seatTiers: (json['seatTiers'] as List? ?? const <dynamic>[])
-          .map(SeatTier.fromJson)
-          .toList(growable: false),
-      callerIsVip: json['callerIsVip'] as bool? ?? false,
-    );
-  }
 }

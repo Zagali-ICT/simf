@@ -28,10 +28,10 @@ class ModeratedSessionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isArabic = l10n.isArabic;
-    final hall = session.localizedHall(isArabic);
+    final hall = session.localizedHall(isArabic: isArabic);
     final time = formatSaudiTime12(session.start);
     return SimfListRow(
-      title: session.localizedTitle(isArabic),
+      title: session.localizedTitle(isArabic: isArabic),
       subtitle: hall.trim().isEmpty ? time : '$hall · $time',
       badgeOutlined: true,
       badge: const Icon(

@@ -2364,6 +2364,28 @@
   <data name="Admin.RatingConfig.Groups.Delete.Confirm.Message" xml:space="preserve"><value>"{0}" and every question inside it will be deactivated.</value></data>
   <data name="Admin.RatingConfig.Questions.Delete.Confirm.Title" xml:space="preserve"><value>Delete this question?</value></data>
   <data name="Admin.RatingConfig.Questions.Delete.Confirm.Message" xml:space="preserve"><value>"{0}" will be deactivated.</value></data>
+  <data name="Module.EventEdition" xml:space="preserve"><value>Event edition</value></data>
+  <data name="Admin.Editions.Title" xml:space="preserve"><value>Event edition</value></data>
+  <data name="Admin.Editions.Desc" xml:space="preserve"><value>The year the forum is currently running. A badge only opens a gate in the year it was issued for.</value></data>
+  <data name="Admin.Editions.Loading" xml:space="preserve"><value>Loading the current edition…</value></data>
+  <data name="Admin.Editions.LoadFailed" xml:space="preserve"><value>The current edition could not be loaded.</value></data>
+  <data name="Admin.Editions.CurrentYear" xml:space="preserve"><value>Open year</value></data>
+  <data name="Admin.Editions.OpenedAt" xml:space="preserve"><value>Opened</value></data>
+  <data name="Admin.Editions.LastClosedAt" xml:space="preserve"><value>Previous year closed</value></data>
+  <data name="Admin.Editions.NeverClosed" xml:space="preserve"><value>No year has been closed yet</value></data>
+  <data name="Admin.Editions.LastReissueCount" xml:space="preserve"><value>Badges cleared by the last opening</value></data>
+  <data name="Admin.Editions.Open.Heading" xml:space="preserve"><value>Open a new year</value></data>
+  <data name="Admin.Editions.Open.Desc" xml:space="preserve"><value>Closes the current year into history and opens the one you enter. Attendees are not deleted — their records stay, labelled with the year they belong to.</value></data>
+  <data name="Admin.Editions.Open.Warning" xml:space="preserve"><value>This clears every attendee's badge. Everyone attending the new year must be issued a new one — plan the re-issue before you do this, not at the door.</value></data>
+  <data name="Admin.Editions.Open.Year" xml:space="preserve"><value>Year to open</value></data>
+  <data name="Admin.Editions.Open.YearHint" xml:space="preserve"><value>Four digits, later than the open year.</value></data>
+  <data name="Admin.Editions.Open.YearInvalid" xml:space="preserve"><value>Enter a four-digit year between 2000 and 2999.</value></data>
+  <data name="Admin.Editions.Open.Action" xml:space="preserve"><value>Open the year</value></data>
+  <data name="Admin.Editions.Open.Confirm.Title" xml:space="preserve"><value>Open a new year?</value></data>
+  <data name="Admin.Editions.Open.Confirm.Message" xml:space="preserve"><value>This closes {1} into history, opens {0}, and clears the badge of every attendee in the system. Each of them will need a new badge before they can pass a gate. This cannot be undone.</value></data>
+  <data name="Admin.Editions.Open.Confirm.Action" xml:space="preserve"><value>Open the year and clear every badge</value></data>
+  <data name="Admin.Editions.Open.Done" xml:space="preserve"><value>Year {0} is open. {1} badge(s) were cleared and need re-issuing.</value></data>
+  <data name="Admin.Editions.Open.Failed" xml:space="preserve"><value>The year could not be opened.</value></data>
   <data name="Common.Cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="Common.Retry" xml:space="preserve"><value>Try again</value></data>
   <data name="Admin.BusinessMeetings.Party.KindLabel" xml:space="preserve"><value>Participant type</value></data>
@@ -3738,6 +3760,7 @@
   <data name="Admin.BadgeBatches.Loading" xml:space="preserve"><value>Loading batches…</value></data>
   <data name="Admin.BadgeBatches.LoadFailed" xml:space="preserve"><value>Could not load the badge batches.</value></data>
   <data name="Admin.BadgeBatches.None" xml:space="preserve"><value>No badge batches yet — generate a set from the Delegates or Visitors desk.</value></data>
+  <data name="Admin.BadgeBatches.Col.Name" xml:space="preserve"><value>Order</value></data>
   <data name="Admin.BadgeBatches.Col.Summary" xml:space="preserve"><value>Contents</value></data>
   <data name="Admin.BadgeBatches.Col.Total" xml:space="preserve"><value>Total</value></data>
   <data name="Admin.BadgeBatches.Col.Delegate" xml:space="preserve"><value>Delegation</value></data>
@@ -3759,6 +3782,14 @@
   <data name="Admin.BadgeBatches.Revoke.Body" xml:space="preserve"><value>This disables all {0} account(s) in this batch ({1}). This cannot be undone.</value></data>
   <data name="Admin.BadgeBatches.Revoke.Confirm" xml:space="preserve"><value>Revoke</value></data>
   <data name="Admin.BadgeBatches.Revoke.Done" xml:space="preserve"><value>Revoked {0} account(s).</value></data>
+  <data name="Admin.BadgeBatches.TopUp" xml:space="preserve"><value>Add more badges</value></data>
+  <data name="Admin.BadgeBatches.DirectRegistration" xml:space="preserve"><value>Self-registrations</value></data>
+  <data name="Admin.BadgeBatches.TopUp.Title" xml:space="preserve"><value>Add more badges to this order</value></data>
+  <data name="Admin.BadgeBatches.TopUp.Count" xml:space="preserve"><value>How many to add</value></data>
+  <data name="Admin.BadgeBatches.TopUp.Confirm" xml:space="preserve"><value>Add and mint</value></data>
+  <data name="Admin.BadgeBatches.TopUp.Done" xml:space="preserve"><value>Minted {0} more badge(s); the order now holds {1}.</value></data>
+  <data name="Admin.BadgeBatches.TopUp.TypeRequired" xml:space="preserve"><value>Choose the profile type to add.</value></data>
+  <data name="Admin.BadgeBatches.TopUp.CountInvalid" xml:space="preserve"><value>Enter how many badges to add (1 or more).</value></data>
   <data name="Admin.Delegates.Title" xml:space="preserve"><value>Delegates</value></data>
   <data name="Admin.Delegates.Single.Title" xml:space="preserve"><value>Register a delegate</value></data>
   <data name="Admin.Delegates.Single.Hint" xml:space="preserve"><value>A delegate is a normal visitor flagged as a delegation member; their nationality must be a country invited to send a delegation.</value></data>
@@ -3787,6 +3818,10 @@
   <data name="Admin.Delegates.Bulk.Total" xml:space="preserve"><value>Total: {0} badge(s)</value></data>
   <data name="Admin.Delegates.Bulk.Remove" xml:space="preserve"><value>Remove {0}</value></data>
   <data name="Admin.Delegates.Bulk.PickType" xml:space="preserve"><value>Choose a profile type and a count above zero.</value></data>
+  <data name="Admin.Delegates.Bulk.NameRequired" xml:space="preserve"><value>Give the order a name in both English and Arabic.</value></data>
+  <data name="Admin.Delegates.Bulk.Name" xml:space="preserve"><value>Order name</value></data>
+  <data name="Admin.Delegates.Bulk.NameArabic" xml:space="preserve"><value>Order name (Arabic)</value></data>
+  <data name="Admin.Delegates.Bulk.NameHint" xml:space="preserve"><value>Who the badges are for, such as "Ministry of Interior Team".</value></data>
   <data name="Module.AdminVisitorsVipExport" xml:space="preserve"><value>VIP welcome export</value></data>
   <data name="Profile.Avatar.Remove.Confirm.Title" xml:space="preserve"><value>Remove profile photo</value></data>
   <data name="Profile.Avatar.Remove.Confirm.Message" xml:space="preserve"><value>Remove your profile photo? The stored image is deleted and cannot be restored.</value></data>

@@ -13,6 +13,7 @@ using SIMF.Contracts.Authentication;
 using SIMF.Domain.Common;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Organisations;
+using SIMF.Domain.Badges;
 using SIMF.Domain.Profiles;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
@@ -105,6 +106,8 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailAp
             "/api/v1/admin/visitors/bulk-generate",
             new AdminBulkGenerateBadgesRequest
             {
+                Name = "Test order",
+                NameArabic = "طلب اختباري",
                 IsDelegate = true,
                 Batches = new List<BulkBadgeBatch>
                 {
@@ -129,6 +132,240 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailAp
         Assert.All(badges, b => Assert.False(string.IsNullOrEmpty(b.QrId)));
     }
 
+    // -- Top-up ---------------------------------------------------------------
+    // TopUpBadgeBatchAsync and MergeCountsSummary had NO coverage: the Control
+    // Panel test stubs the HTTP layer, so it passed whether or not the two 409
+    // guards below existed. MergeCountsSummary in particular parses its own
+    // " × "-delimited prose back into counts, which is not code to leave unpinned.
+
+    [Fact]
+    public async Task Top_up_mints_more_badges_and_folds_a_repeated_tier_into_the_summary()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var normal = await NamedVisitorProfileTypeAsync("TopUpNormal");
+        var vip = await NamedVisitorProfileTypeAsync("TopUpVip");
+
+        await PostAuthAsync(
+            "/api/v1/admin/visitors/bulk-generate",
+            new AdminBulkGenerateBadgesRequest
+            {
+                Name = "Ministry of Interior Team",
+                NameArabic = "فريق وزارة الداخلية",
+                Batches = new List<BulkBadgeBatch>
+                {
+                    new() { ProfileTypeId = normal.Id, Count = 4 },
+                },
+            },
+            admin);
+        var batchId = await BatchIdForTypeAsync(normal.Id);
+
+        // A tier the order does not hold yet is APPENDED.
+        var appended = await PostAuthAsync(
+            "/api/v1/admin/visitors/badge-batches/top-up",
+            new AdminTopUpBadgeBatchRequest
+            {
+                BatchId = batchId,
+                Batches = new List<BulkBadgeBatch>
+                {
+                    new() { ProfileTypeId = vip.Id, Count = 3 },
+                },
+            },
+            admin);
+
+        Assert.Equal(HttpStatusCode.OK, appended.StatusCode);
+        var appendedBody = (await appended.Content
+            .ReadFromJsonAsync<ApiResult<AdminTopUpBadgeBatchResponse>>())!;
+        Assert.Equal(3, appendedBody.Data!.Added);
+        Assert.Equal(7, appendedBody.Data.TotalCount);
+
+        // A tier it ALREADY holds is folded into that entry rather than appended
+        // as a second one, or the breakdown grows a new term per top-up.
+        var folded = await PostAuthAsync(
+            "/api/v1/admin/visitors/badge-batches/top-up",
+            new AdminTopUpBadgeBatchRequest
+            {
+                BatchId = batchId,
+                Batches = new List<BulkBadgeBatch>
+                {
+                    new() { ProfileTypeId = normal.Id, Count = 2 },
+                },
+            },
+            admin);
+
+        Assert.Equal(HttpStatusCode.OK, folded.StatusCode);
+        var foldedBody = (await folded.Content
+            .ReadFromJsonAsync<ApiResult<AdminTopUpBadgeBatchResponse>>())!;
+        Assert.Equal(2, foldedBody.Data!.Added);
+        Assert.Equal(9, foldedBody.Data.TotalCount);
+
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var batch = await appDb.BadgeBatches.SingleAsync(b => b.Id == batchId);
+
+        // TotalCount and CountsSummary are denormalised from the member rows, so
+        // both must move together; updating one alone leaves the orders list
+        // quietly disagreeing with itself.
+        Assert.Equal(9, batch.TotalCount);
+        Assert.Equal($"{normal.Name} × 6 + {vip.Name} × 3", batch.CountsSummary);
+
+        var members = await appDb.UserProfiles
+            .Where(p => p.BadgeBatchId == batchId)
+            .ToListAsync();
+        Assert.Equal(9, members.Count);
+        // Minted immediately, so the order's total always equals badges that exist.
+        Assert.All(members, m => Assert.False(string.IsNullOrEmpty(m.QrId)));
+    }
+
+    [Fact]
+    public async Task Top_up_of_a_revoked_order_is_refused()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var profileType = await NamedVisitorProfileTypeAsync("TopUpRevoked");
+
+        await PostAuthAsync(
+            "/api/v1/admin/visitors/bulk-generate",
+            new AdminBulkGenerateBadgesRequest
+            {
+                Name = "Revoked order",
+                NameArabic = "طلب ملغى",
+                Batches = new List<BulkBadgeBatch>
+                {
+                    new() { ProfileTypeId = profileType.Id, Count = 2 },
+                },
+            },
+            admin);
+        var batchId = await BatchIdForTypeAsync(profileType.Id);
+
+        await PostAuthAsync(
+            "/api/v1/admin/visitors/badge-batches/revoke",
+            new AdminRevokeBadgeBatchRequest { BatchId = batchId },
+            admin);
+
+        var response = await PostAuthAsync(
+            "/api/v1/admin/visitors/badge-batches/top-up",
+            new AdminTopUpBadgeBatchRequest
+            {
+                BatchId = batchId,
+                Batches = new List<BulkBadgeBatch>
+                {
+                    new() { ProfileTypeId = profileType.Id, Count = 1 },
+                },
+            },
+            admin);
+
+        // Revoking disabled every attendee in the order, so minting more into it
+        // would hand out badges the door is already refusing.
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        Assert.Equal(
+            2,
+            await appDb.UserProfiles.CountAsync(p => p.BadgeBatchId == batchId));
+    }
+
+    [Fact]
+    public async Task Top_up_of_the_direct_registration_order_is_refused()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var profileType = await NamedVisitorProfileTypeAsync("TopUpDirect");
+        var before = await DirectRegistrationMemberCountAsync();
+
+        var response = await PostAuthAsync(
+            "/api/v1/admin/visitors/badge-batches/top-up",
+            new AdminTopUpBadgeBatchRequest
+            {
+                BatchId = BadgeBatch.DirectRegistrationId,
+                Batches = new List<BulkBadgeBatch>
+                {
+                    new() { ProfileTypeId = profileType.Id, Count = 1 },
+                },
+            },
+            admin);
+
+        // Everyone who registered themselves is filed against this order. It is
+        // not something badges are ordered against, and minting into it would
+        // invent attendees nobody asked for.
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        Assert.Equal(before, await DirectRegistrationMemberCountAsync());
+    }
+
+    [Fact]
+    public async Task The_list_carries_a_bilingual_breakdown_but_not_for_direct_registration()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var normal = await NamedVisitorProfileTypeAsync("ListNormal");
+
+        await PostAuthAsync(
+            "/api/v1/admin/visitors/bulk-generate",
+            new AdminBulkGenerateBadgesRequest
+            {
+                Name = "Breakdown order",
+                NameArabic = "طلب التفصيل",
+                Batches = new List<BulkBadgeBatch>
+                {
+                    new() { ProfileTypeId = normal.Id, Count = 2 },
+                },
+            },
+            admin);
+
+        var response = await PostAuthAsync(
+            "/api/v1/admin/visitors/badge-batches/list", new GridQuery { Top = 100 }, admin);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var page = (await response.Content
+            .ReadFromJsonAsync<ApiResult<GridPage<AdminBadgeBatchSummary>>>())!.Data!;
+
+        // A real order carries the tiers, with BOTH names, so the reader renders in
+        // the language it is reading rather than being handed English prose.
+        var order = page.Items.Single(row => row.Name == "Breakdown order");
+        var tier = Assert.Single(order.Tiers!);
+        Assert.Equal(normal.Name, tier.Name);
+        Assert.Equal("نوع اختباري", tier.NameArabic);
+        Assert.Equal(2, tier.Count);
+
+        // The direct-registration order does NOT. It is not a badge order - it is
+        // where self-registrations are filed - so its summary stays prose instead of
+        // growing one entry per profile type as the event runs.
+        var direct = page.Items.SingleOrDefault(
+            row => row.Id == BadgeBatch.DirectRegistrationId);
+        if (direct is not null)
+        {
+            Assert.True(
+                direct.Tiers is null || direct.Tiers.Count == 0,
+                "the direct-registration order must keep its prose summary");
+        }
+    }
+
+    private async Task<int> DirectRegistrationMemberCountAsync()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        return await appDb.UserProfiles
+            .CountAsync(p => p.BadgeBatchId == BadgeBatch.DirectRegistrationId);
+    }
+
+    /// <summary>A fresh visitor profile type with a KNOWN name, because the name
+    /// is what CountsSummary renders and the fold assertion reads back.</summary>
+    private async Task<(Guid Id, string Name)> NamedVisitorProfileTypeAsync(string prefix)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var name = $"{prefix}{Guid.NewGuid():N}"[..20];
+        var fresh = new UserProfileType
+        {
+            Id = Guid.NewGuid(),
+            Name = name,
+            NameArabic = "نوع اختباري",
+            PageColor = "#3B82F6",
+            IsForVisitor = true,
+            IsActive = true,
+            CreatedAt = SimfClock.Now,
+        };
+        appDb.ProfileTypes.Add(fresh);
+        await appDb.SaveChangesAsync();
+        return (fresh.Id, name);
+    }
+
     [Fact]
     public async Task Bulk_generate_rejects_an_empty_request_400()
     {
@@ -136,7 +373,7 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailAp
 
         var response = await PostAuthAsync(
             "/api/v1/admin/visitors/bulk-generate",
-            new AdminBulkGenerateBadgesRequest { Batches = new List<BulkBadgeBatch>() },
+            new AdminBulkGenerateBadgesRequest { Name = "Test order", NameArabic = "طلب اختباري", Batches = new List<BulkBadgeBatch>() },
             admin);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -156,6 +393,8 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailAp
             "/api/v1/admin/visitors/bulk-generate",
             new AdminBulkGenerateBadgesRequest
             {
+                Name = "Test order",
+                NameArabic = "طلب اختباري",
                 IsDelegate = false,
                 Batches = new List<BulkBadgeBatch>
                 {
@@ -192,6 +431,8 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailAp
             "/api/v1/admin/visitors/bulk-generate",
             new AdminBulkGenerateBadgesRequest
             {
+                Name = "Test order",
+                NameArabic = "طلب اختباري",
                 IsDelegate = false,
                 RecipientEmail = recipient,
                 Batches = new List<BulkBadgeBatch>
@@ -250,6 +491,8 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailAp
             "/api/v1/admin/visitors/bulk-generate",
             new AdminBulkGenerateBadgesRequest
             {
+                Name = "Test order",
+                NameArabic = "طلب اختباري",
                 IsDelegate = false,
                 RecipientEmail = "not-an-email",
                 Batches = new List<BulkBadgeBatch>
@@ -285,6 +528,8 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailAp
             "/api/v1/admin/visitors/bulk-generate",
             new AdminBulkGenerateBadgesRequest
             {
+                Name = "Test order",
+                NameArabic = "طلب اختباري",
                 IsDelegate = false,
                 Batches = new List<BulkBadgeBatch>
                 {
@@ -315,6 +560,8 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailAp
             "/api/v1/admin/visitors/bulk-generate",
             new AdminBulkGenerateBadgesRequest
             {
+                Name = "Test order",
+                NameArabic = "طلب اختباري",
                 Batches = new List<BulkBadgeBatch> { new() { ProfileTypeId = typeId, Count = 2 } },
             },
             admin);
@@ -326,8 +573,8 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailAp
         Assert.Equal(2, badges.Count);
         // Every badge back-references the same, persisted batch row.
         var batchId = Assert.Single(badges.Select(b => b.BadgeBatchId).Distinct());
-        Assert.NotNull(batchId);
-        var batch = await appDb.BadgeBatches.SingleAsync(b => b.Id == batchId!.Value);
+        Assert.NotEqual(BadgeBatch.DirectRegistrationId, batchId);
+        var batch = await appDb.BadgeBatches.SingleAsync(b => b.Id == batchId);
         Assert.Equal(2, batch.TotalCount);
         Assert.True(batch.IsActive);
         Assert.Contains("× 2", batch.CountsSummary);
@@ -342,6 +589,8 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailAp
             "/api/v1/admin/visitors/bulk-generate",
             new AdminBulkGenerateBadgesRequest
             {
+                Name = "Test order",
+                NameArabic = "طلب اختباري",
                 Batches = new List<BulkBadgeBatch> { new() { ProfileTypeId = typeId, Count = 1 } },
             },
             admin);
@@ -366,6 +615,8 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailAp
             "/api/v1/admin/visitors/bulk-generate",
             new AdminBulkGenerateBadgesRequest
             {
+                Name = "Test order",
+                NameArabic = "طلب اختباري",
                 Batches = new List<BulkBadgeBatch> { new() { ProfileTypeId = typeId, Count = 3 } },
             },
             admin);
@@ -415,6 +666,8 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailAp
             "/api/v1/admin/visitors/bulk-generate",
             new AdminBulkGenerateBadgesRequest
             {
+                Name = "Test order",
+                NameArabic = "طلب اختباري",
                 Batches = new List<BulkBadgeBatch> { new() { ProfileTypeId = typeId, Count = 2 } },
             },
             admin);
@@ -425,7 +678,7 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailAp
         {
             var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
             var members = await appDb.UserProfiles.Where(p => p.ProfileTypeId == typeId).ToListAsync();
-            batchId = members[0].BadgeBatchId!.Value;
+            batchId = members[0].BadgeBatchId;
             // Bulk-badge members still get an account today; filtering keeps the
             // assertion honest if that changes rather than throwing on a null.
             memberIds = members.Where(m => m.UserId != null).Select(m => m.UserId!.Value).ToList();
@@ -466,41 +719,51 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailAp
     [Fact]
     public async Task Bulk_generated_badge_profile_is_incomplete_so_self_claim_prompts_the_profile_stage()
     {
-        // #10 Phase 4 (Option A) — the self-claim capture is delivered by the existing
-        // D-374 flow with NO new code: a bulk-badge placeholder has no interests and no
-        // ID image, so IsProfileCompleteAsync is false. When the badge holder activates
-        // (sets a password) and signs in, /app/users/me returns profileComplete=false
-        // and the app's routeAfterAuth forces the add-profile stage. This pins that
-        // the placeholder is genuinely flagged incomplete.
+        // The self-claim capture is delivered by the existing profile-completeness
+        // flow with no new code: a bulk-minted badge carries no interests, no ID
+        // image and a zero nationality, so it reads as incomplete. When the holder
+        // activates the badge — which is what creates their account — and signs
+        // in, /app/users/me returns profileComplete=false and the app forces the
+        // add-profile stage.
+        //
+        // Asserted on the ATTENDEE rather than through an account, because the
+        // mint no longer creates one: a badge sits in a box for months before
+        // anybody claims it. These are the same fields completeness reads once an
+        // account is linked.
         var admin = await CreateAdministratorAndSignInAsync();
         var typeId = await FreshVisitorProfileTypeAsync();
         await PostAuthAsync(
             "/api/v1/admin/visitors/bulk-generate",
             new AdminBulkGenerateBadgesRequest
             {
+                Name = "Test order",
+                NameArabic = "طلب اختباري",
                 Batches = new List<BulkBadgeBatch> { new() { ProfileTypeId = typeId, Count = 1 } },
             },
             admin);
 
         using var scope = _factory.Services.CreateScope();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        var userId = await appDb.UserProfiles
-            .Where(p => p.ProfileTypeId == typeId && p.UserId != null)
-            .Select(p => p.UserId!.Value)
+        var minted = await appDb.UserProfiles
+            .AsNoTracking()
+            .Include(p => p.Interests)
+            .Where(p => p.ProfileTypeId == typeId)
             .FirstAsync();
-        var profiles = scope.ServiceProvider
-            .GetRequiredService<SIMF.Application.IdentityAccess.IUserProfileService>();
-        Assert.False(await profiles.IsProfileCompleteAsync(userId));
+
+        Assert.Null(minted.UserId);
+        Assert.Empty(minted.Interests);
+        Assert.Equal(0, minted.NationalityId);
+        Assert.Null(minted.IdImageFileId);
     }
 
     private async Task<Guid> BatchIdForTypeAsync(Guid profileTypeId)
     {
         using var scope = _factory.Services.CreateScope();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        return (await appDb.UserProfiles
+        return await appDb.UserProfiles
             .Where(p => p.ProfileTypeId == profileTypeId)
             .Select(p => p.BadgeBatchId)
-            .FirstAsync())!.Value;
+            .FirstAsync();
     }
 
     // -- helpers --------------------------------------------------------------

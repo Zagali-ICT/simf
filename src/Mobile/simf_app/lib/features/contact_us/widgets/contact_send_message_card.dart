@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/core/validation/email_validation.dart';
 import 'package:simf_app/features/contact_us/widgets/contact_card_chrome.dart';
 import 'package:simf_app/features/contact_us/widgets/contact_field.dart';
 
@@ -52,15 +52,12 @@ class ContactSendMessageCard extends StatelessWidget {
               controller: email,
               keyboardType: TextInputType.emailAddress,
               textInputAction: TextInputAction.next,
-              validator: (v) {
-                final value = (v ?? '').trim();
-                if (value.isEmpty ||
-                    !value.contains('@') ||
-                    !value.contains('.')) {
-                  return l10n.contactEmailInvalid;
-                }
-                return null;
-              },
+              // The shared shape, as used by sign-up and sign-in. Stricter
+              // than the contains('@') && contains('.') rule this replaced:
+              // it needs the dot AFTER the @ and rejects whitespace.
+              validator: (v) => isValidEmail((v ?? '').trim())
+                  ? null
+                  : l10n.contactEmailInvalid,
             ),
             const SizedBox(height: SimfTokens.space4),
             ContactField(

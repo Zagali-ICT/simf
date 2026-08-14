@@ -81,11 +81,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   /// the fallback only (first-ever run, or an edition with no dates set), so a
   /// new edition never ships a stale hardcoded date.
   String _eventLine(AppL10n l10n, OrgProfile? profile) {
-    final dates = profile?.eventDateRange(l10n.isArabic);
+    final dates = profile?.eventDateRange(isArabic: l10n.isArabic);
     if (dates == null || dates.isEmpty) {
       return l10n.splashEventLine;
     }
-    final location = profile?.locationFor(l10n.isArabic);
+    final location = profile?.locationFor(isArabic: l10n.isArabic);
     if (location == null || location.isEmpty) {
       return '${l10n.splashEditionLine}\n$dates';
     }

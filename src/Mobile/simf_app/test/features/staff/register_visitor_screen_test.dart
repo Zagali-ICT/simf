@@ -530,7 +530,7 @@ void main() {
   });
 
   group('StaffRegisterVisitorScreen — deferred walk-in defects', () {
-    testWidgets('DEF-STF-003 — the name inputs cap at the server\'s 50, not '
+    testWidgets("DEF-STF-003 — the name inputs cap at the server's 50, not "
         '100', (tester) async {
       await _pump(tester, profile: _FakeProfileRepo(), staff: _FakeStaffRepo());
 

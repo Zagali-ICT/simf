@@ -222,13 +222,9 @@ class _SignUpFormScreenState extends ConsumerState<SignUpFormScreen> {
 
   /// The globe button toggles AR ↔ EN and persists the choice (D-363).
   void _toggleLanguage() {
-    final isArabic =
-        ref.read(localeControllerProvider).languageCode == 'ar';
-    unawaited(
-      ref
-          .read(localeControllerProvider.notifier)
-          .setLanguage(isArabic ? 'en' : 'ar'),
-    );
+    // LocaleController.toggle() is, by its own doc, the single code path
+    // for this. Four screens re-derived it.
+    unawaited(ref.read(localeControllerProvider.notifier).toggle());
   }
 
   @override

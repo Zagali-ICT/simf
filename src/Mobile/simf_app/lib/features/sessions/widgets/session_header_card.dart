@@ -6,6 +6,8 @@ import 'package:simf_app/features/sessions/data/session_models.dart';
 import 'package:simf_app/features/sessions/widgets/category_pill.dart';
 import 'package:simf_app/features/sessions/widgets/header_action_button.dart';
 import 'package:simf_app/features/sessions/widgets/index_badge.dart';
+import 'package:simf_app/features/sessions/widgets/session_detail_body.dart'
+    show SessionDetailBody;
 import 'package:simf_app/features/sessions/widgets/session_meta_row.dart';
 
 /// The session header card (frame 889:2716): a navy box holding the title +
@@ -61,7 +63,7 @@ class SessionHeaderCard extends StatelessWidget {
     // client's list, OI-2 / D-226), and never on the #29 workshop reduction.
     final category = titleAndTimeOnly
         ? null
-        : detail.localizedCategory(isArabic)?.trim();
+        : detail.localizedCategory(isArabic: isArabic)?.trim();
     return Container(
       padding: const EdgeInsets.all(SimfTokens.space4),
       decoration: BoxDecoration(
@@ -82,7 +84,7 @@ class SessionHeaderCard extends StatelessWidget {
               ],
               Expanded(
                 child: Text(
-                  detail.localizedTitle(isArabic),
+                  detail.localizedTitle(isArabic: isArabic),
                   textAlign: TextAlign.start,
                   // Frame 889:2705 — 16px SemiBold white title line.
                   style: SimfTokens.labelWhiteSemiboldLgTall,
@@ -138,4 +140,3 @@ class SessionHeaderCard extends StatelessWidget {
     );
   }
 }
-

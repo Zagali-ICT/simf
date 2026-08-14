@@ -31,7 +31,8 @@ import 'package:simf_app/features/account/widgets/plate_number_field.dart';
 import 'package:simf_app/features/account/widgets/profile_type_field.dart';
 import 'package:simf_app/features/account/widgets/sign_up_visitor_header_avatar.dart';
 import 'package:simf_app/features/account/widgets/terms_and_next_buttons.dart';
-import 'package:simf_app/features/myarea/identity_verification_screen.dart' show CapturedSelfie;
+import 'package:simf_app/features/myarea/data/liveness.dart'
+    show CapturedSelfie;
 import 'package:simf_app/features/visitor_profile/data/visitor_profile_completeness.dart';
 import 'package:simf_app/features/visitor_profile/data/visitor_profile_form_state.dart';
 import 'package:simf_app/features/visitor_profile/data/visitor_profile_validators.dart';
@@ -166,6 +167,35 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // D-469/D-470 — the birth-region picker is code-keyed, so the stored name
+    // has to be re-read in the active language when the user toggles it.
+    //
+    // This belongs here and not in build(): assigning to a
+    // TextEditingController notifies its listeners, and doing that during the
+    // build phase is what Flutter forbids. didChangeDependencies is the hook
+    // that fires on exactly the change this needs to react to — the
+    // Localizations inherited widget above us.
+    _syncBirthRegionName(isArabic: AppL10n.of(context).isArabic);
+  }
+
+  /// Re-reads [_placeOfBirth] from the selected region code in the active
+  /// language. A no-op unless a Saudi registrant has picked a region: for a
+  /// non-Saudi registrant the field is free text, and both the picker and the
+  /// nationality switch already maintain the value inside their own setState.
+  void _syncBirthRegionName({required bool isArabic}) {
+    if (!_isSaudi || _birthRegionCode == null) {
+      return;
+    }
+    final name =
+        _birthRegionByCode(_birthRegionCode)?.name(isArabic: isArabic) ?? '';
+    if (_placeOfBirth.text != name) {
+      _placeOfBirth.text = name;
+    }
+  }
+
+  @override
   void dispose() {
     _organisationDebounce?.cancel();
     _arabicName.dispose();
@@ -259,7 +289,8 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         : (_form.countries.any((c) => c.code == 'SA') ? 'SA' : null);
 
     final typeId = profile.profileTypeId;
-    _form.profileTypeId = _form.profileTypes.any((t) => t.id == typeId) ? typeId : null;
+    _form.profileTypeId =
+        _form.profileTypes.any((t) => t.id == typeId) ? typeId : null;
 
     _form.organisationId = profile.organisationId;
     _organisationLabel = null;
@@ -284,8 +315,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     if (!_isVisitorType) {
       return;
     }
-    final normal =
-        _form.profileTypes.where((t) => t.name == 'Normal').toList();
+    final normal = _form.profileTypes.where((t) => t.name == 'Normal').toList();
     if (normal.isNotEmpty) {
       _form.profileTypeId = normal.first.id;
     } else if (_form.profileTypes.length == 1) {
@@ -706,8 +736,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                       l10n.signUpTypeOther,
                     ],
                     selectedIndex: _isVisitorType ? 0 : 1,
-                    onChanged: (index) =>
-                        unawaited(_onTypeChanged(index == 0)),
+                    onChanged: (index) => unawaited(_onTypeChanged(index == 0)),
                   ),
                   const SizedBox(height: SimfTokens.space6),
                   _buildProfileTypeField(l10n),
@@ -840,7 +869,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       selectedId: _form.profileTypeId,
       showError: _form.triedSubmit && _form.profileTypeId == null,
       onRetry: () => unawaited(_fetchProfileTypes()),
-      onChanged: (String? id) => setState(() => _form.profileTypeId = id),
+      onChanged: (id) => setState(() => _form.profileTypeId = id),
     );
   }
 
@@ -855,7 +884,8 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       isScrollControlled: true,
       backgroundColor: SimfTokens.cardBeige,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(SimfTokens.radiusLarge)),
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(SimfTokens.radiusLarge)),
       ),
       builder: (_) => LookupSearchSheet(
         options: options,
@@ -913,8 +943,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   List<_BirthRegionOption> _activeBirthRegions() {
     // ref.read (not watch): this runs from both build helpers and the picker's
     // async handler. build() owns the watch so the field still rebuilds on data.
-    final api =
-        ref.read(regionsProvider).asData?.value;
+    final api = ref.read(regionsProvider).asData?.value;
     if (api != null && api.isNotEmpty) {
       return <_BirthRegionOption>[
         for (final RegionItem r in api)
@@ -977,11 +1006,6 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     final regionName = _birthRegionCode == null
         ? null
         : _birthRegionByCode(_birthRegionCode)?.name(isArabic: isArabic);
-    // Keep the stored name in the active locale while a region is selected, so a
-    // language toggle re-syncs the submitted value (the picker is code-keyed).
-    if (_isSaudi && _birthRegionCode != null && _placeOfBirth.text != (regionName ?? '')) {
-      _placeOfBirth.text = regionName ?? '';
-    }
     return PlaceOfBirthField(
       l10n: l10n,
       isSaudi: _isSaudi,
@@ -1000,7 +1024,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       letter2: _plateLetter2,
       letter3: _plateLetter3,
       digits: _plateDigits,
-      onPickLetter: (int position) => unawaited(
+      onPickLetter: (position) => unawaited(
         _pickPlateLetter(l10n, position, _plateLetterSetter(position)),
       ),
       onDigitsChanged: () => setState(_syncPlate),

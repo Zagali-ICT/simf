@@ -219,6 +219,11 @@ public sealed class MainForm : Form
         var record = new StoredRegistration
         {
             Sequence = sequence,
+            // Minted here because the desk is disconnected: a Guid needs no
+            // coordination, which is the same reason the printed sequence has
+            // per-desk ranges. It is what the QR carries, so the badge in the
+            // visitor's hand resolves the moment the shift uploads.
+            ProfileId = Guid.NewGuid(),
             ProfileTypeCode = type.Code,
             Name = name,
             NameArabic = _nameArabic.Text.Trim() is { Length: > 0 } arabic ? arabic : null,
@@ -242,7 +247,7 @@ public sealed class MainForm : Form
         }
 
         var payload = EventBadgeCodec.Encode(
-            new EventBadgePayload(type.Code, sequence),
+            new EventBadgePayload(record.ProfileId, _config.EditionYear, type.Code),
             _config.BadgeKeyBytes!,
             _config.BadgeKeyVersion);
 
@@ -324,6 +329,7 @@ public sealed class MainForm : Form
         {
             // Carried over, never re-derived: these identify the printed badge.
             Sequence = original.Sequence,
+            ProfileId = original.ProfileId,
             ProfileTypeCode = original.ProfileTypeCode,
             RegisteredAt = original.RegisteredAt,
             Email = original.Email,
@@ -456,7 +462,8 @@ public sealed class MainForm : Form
             .FirstOrDefault(candidate => candidate.Code == record.ProfileTypeCode);
 
         var payload = EventBadgeCodec.Encode(
-            new EventBadgePayload(record.ProfileTypeCode, record.Sequence),
+            new EventBadgePayload(
+                record.ProfileId, _config.EditionYear, record.ProfileTypeCode),
             _config.BadgeKeyBytes!,
             _config.BadgeKeyVersion);
 

@@ -2,7 +2,19 @@
    decision (no state change); Confirm POSTs and applies it. Anonymous; the
    opaque token in ?token= is the only credential. *@
 @page "/meeting/confirm"
-@rendermode AppRenderMode.InteractiveServerNoPrerender
+@* Prerendered, unlike the auth screens this render mode was written for. It was
+   using InteractiveServerNoPrerender, and that costs the page its TITLE: App.razor
+   renders <HeadOutlet /> statically, so a PageTitle that only ever exists inside the
+   circuit has no outlet to reach and the tab shows a bare URL. This was the only
+   Website page affected, because it is the only one that opted out.
+
+   The two reasons NOT to prerender do not apply here. It injects no per-circuit
+   SimfAuthSession — only the localizer and the public API client — and running
+   OnInitializedAsync twice is harmless, because it is a GET that previews the
+   pending decision and changes no state. The cost is one duplicate read on a
+   low-traffic token page; the alternative, an interactive HeadOutlet, would have
+   changed head rendering for the 17 static SSR pages to fix this one. *@
+@rendermode InteractiveServer
 @using SIMF.Common.Enums
 @using SIMF.Contracts.Programme
 

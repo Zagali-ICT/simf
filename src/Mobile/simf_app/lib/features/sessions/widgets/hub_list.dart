@@ -39,7 +39,7 @@ class HubList extends StatelessWidget {
         }
         final item = items[index - 1];
         return HubRow(
-          title: item.localizedTitle(isArabic),
+          title: item.localizedTitle(isArabic: isArabic),
           subtitle: _subtitle(context, item, isArabic),
           onTap: () => context.pushNamed(
             RouteNames.sessionDetail,
@@ -52,7 +52,7 @@ class HubList extends StatelessWidget {
 
   String _subtitle(BuildContext context, SessionListItem item, bool isArabic) {
     final time = TimeOfDay.fromDateTime(item.startLocal).format(context);
-    final hall = item.localizedHall(isArabic);
+    final hall = item.localizedHall(isArabic: isArabic);
     return hall == null || hall.isEmpty ? time : '$time · $hall';
   }
 }

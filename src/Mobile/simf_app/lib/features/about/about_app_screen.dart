@@ -7,6 +7,7 @@ import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/core/organization_profile/organization_profile.dart';
 import 'package:simf_app/core/startup/app_version_policy.dart';
+import 'package:simf_app/features/about/about_screen.dart' show AboutScreen;
 import 'package:simf_app/features/about/widgets/about_cards.dart';
 import 'package:simf_app/features/about/widgets/check_for_updates_row.dart';
 import 'package:simf_app/features/more/widgets/more_list.dart';
