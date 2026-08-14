@@ -35,7 +35,9 @@ class BoothContactBox extends StatelessWidget {
             ),
           ),
           const SizedBox(width: SimfTokens.space2),
-          Icon(icon, size: SimfTokens.boothContactBoxSize, color: SimfTokens.beigeBorder),
+          Icon(icon,
+              size: SimfTokens.boothContactBoxSize,
+              color: SimfTokens.beigeBorder,),
         ],
       ),
     );

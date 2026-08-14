@@ -17,15 +17,15 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 /// Staff gate-operator console — Figma 758:4651 (setup: pick gate + movement),
 /// 758:4819 (ممنوع / denied), 758:4886 (مسموح / allowed), D-406 / D-509.
-/// Role-gated to `AppRole.staff`+ (router); the server additionally requires the
-/// `Gates.Operate` permission and a gate assignment.
+/// Role-gated to `AppRole.staff`+ (router); the server additionally requires
+/// the `Gates.Operate` permission and a gate assignment.
 ///
-/// Flow (D-509): load the operator's gate assignments → **setup** screen (choose
-/// the gate + the دخول/خروج movement type) → tap **سكان الرمز** to open the
-/// camera (or type the code) → the green **مسموح** or red **ممنوع** result with
-/// the holder / gate / direction → "سكان مرة أخرى". The دخول/خروج choice is sent
-/// to the server and honoured for a **Both**-mode gate; a fixed In/Out gate
-/// locks the toggle to its one direction (no CP round-trip to switch).
+/// Flow (D-509): load the operator's gate assignments → **setup** screen
+/// (choose the gate + the دخول/خروج movement type) → tap **سكان الرمز** to open
+/// the camera (or type the code) → the green **مسموح** or red **ممنوع** result
+/// with the holder / gate / direction → "سكان مرة أخرى". The دخول/خروج choice
+/// is sent to the server and honoured for a **Both**-mode gate; a fixed In/Out
+/// gate locks the toggle to its one direction (no CP round-trip to switch).
 class GateScanScreen extends ConsumerStatefulWidget {
   const GateScanScreen({super.key, this.enableCamera = true});
 
@@ -53,12 +53,13 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
   List<OperatorGate> _gates = const <OperatorGate>[];
   OperatorGate? _gate;
   // The operator's chosen movement type. Null on a Both-mode gate until the
-  // operator picks one (Figma 4651 — "choose the movement type first"); auto-set
-  // for a fixed In/Out gate.
+  // operator picks one (Figma 4651 — "choose the movement type first");
+  // auto-set for a fixed In/Out gate.
   ScanDirection? _direction;
   GateScanResult? _result;
 
-  /// Count of scans held on-device awaiting retry (G-4); drives the sync banner.
+  /// Count of scans held on-device awaiting retry (G-4); drives the sync
+  /// banner.
   int _pending = 0;
 
   @override
@@ -143,15 +144,15 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
     final repo = ref.read(gatesRepositoryProvider);
     try {
       final result = await repo.recordScanOrQueue(
-            gateId: gate.gateId,
-            qr: trimmed,
-            direction: direction,
-            // A FRESH UUIDv4 per scan (SIMF-API-GATES-001 §9 — ScanIdempotency.
-            // Key is a client UUIDv4): a genuine re-entry of the same badge in
-            // the same direction is a NEW scan, never a 24h-window replay of the
-            // first one (G-1).
-            idempotencyKey: randomUuidV4(),
-          );
+        gateId: gate.gateId,
+        qr: trimmed,
+        direction: direction,
+        // A FRESH UUIDv4 per scan (SIMF-API-GATES-001 §9 — ScanIdempotency.
+        // Key is a client UUIDv4): a genuine re-entry of the same badge in
+        // the same direction is a NEW scan, never a 24h-window replay of the
+        // first one (G-1).
+        idempotencyKey: randomUuidV4(),
+      );
       if (!mounted) {
         return;
       }
@@ -239,8 +240,8 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
     setState(() => _pending = remaining);
   }
 
-  /// "سكان مرة أخرى" — clears the result and returns to the live scanner with the
-  /// same gate + direction so the operator can scan the next holder.
+  /// "سكان مرة أخرى" — clears the result and returns to the live scanner with
+  /// the same gate + direction so the operator can scan the next holder.
   void _scanAgain() {
     setState(() {
       _result = null;
@@ -273,11 +274,14 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
     // The setup stage shows the screen title; once scanning, the bar shows the
     // selected "gate • direction" (Figma 4819/4886).
     final showContext = _scanning || _result != null;
-    final gateName = _gate?.localizedName(isArabic) ?? l10n.gateScannerEntry;
+    final gateName =
+        _gate?.localizedName(isArabic: isArabic) ?? l10n.gateScannerEntry;
     final directionForTitle = _result?.direction ?? _direction;
-    final title = showContext
-        ? '$gateName${directionForTitle == null ? '' : ' • ${_directionLabel(l10n, directionForTitle)}'}'
-        : l10n.gateScanTitle;
+    final directionSuffix = directionForTitle == null
+        ? ''
+        : ' • ${_directionLabel(l10n, directionForTitle)}';
+    final title =
+        showContext ? '$gateName$directionSuffix' : l10n.gateScanTitle;
     return PopScope(
       // Route the system back through _back (go_router); raw pop can't exit
       // this shell-pushed route (D-426).
@@ -393,7 +397,7 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
         l10n: l10n,
         isArabic: isArabic,
         result: result,
-        gateName: _gate!.localizedName(isArabic),
+        gateName: _gate!.localizedName(isArabic: isArabic),
         reference: _lastQr,
         onScanAgain: _scanAgain,
       );
@@ -447,7 +451,11 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
           ),
           child: Row(
             children: <Widget>[
-              const Icon(Icons.sync, color: SimfTokens.accent, size: SimfTokens.gateScanScreenSizeSm),
+              const Icon(
+                Icons.sync,
+                color: SimfTokens.accent,
+                size: SimfTokens.gateScanScreenSizeSm,
+              ),
               const SizedBox(width: SimfTokens.space2),
               Expanded(
                 child: Text(
@@ -464,5 +472,7 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
   }
 
   static String _directionLabel(AppL10n l10n, ScanDirection d) =>
-      d == ScanDirection.checkOut ? l10n.gateDirectionOut : l10n.gateDirectionIn;
+      d == ScanDirection.checkOut
+          ? l10n.gateDirectionOut
+          : l10n.gateDirectionIn;
 }

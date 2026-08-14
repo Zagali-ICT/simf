@@ -21,6 +21,7 @@ import 'package:simf_app/features/sessions/data/session_models.dart';
 import 'package:simf_app/features/sessions/widgets/session_arrival_action.dart';
 import 'package:simf_app/features/sessions/widgets/session_detail_body.dart';
 import 'package:simf_app/features/sessions/widgets/session_detail_header.dart';
+import 'package:simf_app/features/sessions/widgets/session_detail_states.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
@@ -32,15 +33,15 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// full detail (`GET /app/programme/sessions/{id}`); for a signed-in account it
 /// also reads the seat map and shows the **my-seat card** when the caller holds
 /// an active reservation (`myCell`, approved-only — guest/pending see no card,
-/// L-3). The two CTAs are client-local OS actions: **Add-to-calendar** opens the
-/// device calendar pre-filled from the session (E4); the **Reminder** is
+/// L-3). The two CTAs are client-local OS actions: **Add-to-calendar** opens
+/// the device calendar pre-filled from the session (E4); the **Reminder** is
 /// deferred to the notifications platform pass (D-300).
 ///
 /// Frame mapping (RTL-primary): a navy session **header card** (gold index
 /// badge + ordinal · title · the category tag pill when the session carries a
 /// category (PAR-D3) · clock/calendar meta · the ملخص الجلسة / رابط الجلسة
-/// actions), the وصف الجلسة description card, the المتحدثون speaker cards
-/// (name + rank, the host marked with the gold star + المضيف — PAR-P4a), the gold
+/// actions), the وصف الجلسة description card, the المتحدثون speaker cards (name
+/// + rank, the host marked with the gold star + المضيف — PAR-P4a), the gold
 /// مقعدي my-seat card (row · seat + badge hint + a forward chevron), and the
 /// تذكير (outlined) + أضف إلى تقويمي (gold) CTA row. The section widgets live
 /// in `widgets/` (session_detail_body/header, session_header_card,
@@ -58,12 +59,13 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// block ONLY (no description, speakers, ask card, seat/join section or
 /// live/summary actions). The CP half reuses the existing session admin.
 ///
-/// **Rating (owner 2026-07-22):** this screen no longer opens the rate form when
-/// you leave an ended session — merely viewing a session is not attending it. The
-/// rate prompt now comes only from actually watching the live stream
-/// (`live_broadcast_screen`) or from the attendance-gated rate notification after
-/// hall check-in/out (plus the day / programme-end prompts). This removes the
-/// prompt that used to appear off the sessions list/detail for non-attendees.
+/// **Rating (owner 2026-07-22):** this screen no longer opens the rate form
+/// when you leave an ended session — merely viewing a session is not attending
+/// it. The rate prompt now comes only from actually watching the live stream
+/// (`live_broadcast_screen`) or from the attendance-gated rate notification
+/// after hall check-in/out (plus the day / programme-end prompts). This removes
+/// the prompt that used to appear off the sessions list/detail for
+/// non-attendees.
 class SessionDetailScreen extends ConsumerStatefulWidget {
   const SessionDetailScreen({required this.sessionId, super.key});
 
@@ -101,13 +103,13 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
       _seatMapError = false;
     });
     // NOTE: do NOT invalidate hallAttendanceStatusProvider here. `_load()` runs
-    // from initState(), and ref.invalidate reaches for the ProviderScope through
-    // dependOnInheritedWidgetOfExactType, which Flutter forbids before initState
-    // completes — it threw on every mount of this screen. It is also unnecessary:
-    // the setState above puts the page into its loading state, which unmounts the
-    // check-in strip, and the provider is an autoDispose.family, so it disposes
-    // and re-fetches when the strip remounts. Pull-to-refresh therefore refreshes
-    // the strip already.
+    // from initState(), and ref.invalidate reaches for the ProviderScope
+    // through dependOnInheritedWidgetOfExactType, which Flutter forbids before
+    // initState completes — it threw on every mount of this screen. It is also
+    // unnecessary: the setState above puts the page into its loading state,
+    // which unmounts the check-in strip, and the provider is an
+    // autoDispose.family, so it disposes and re-fetches when the strip
+    // remounts. Pull-to-refresh therefore refreshes the strip already.
     try {
       final repo = ref.read(sessionDetailRepositoryProvider);
       final detail = await repo.getDetail(widget.sessionId);
@@ -142,10 +144,11 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
     }
   }
 
-  /// DEF-MOD-008 — the role the ROUTER gates on. `appRole` and `effectiveAppRole`
-  /// disagree for a signed-in but not-yet-approved account (D-666 presents it as
-  /// a guest), and the router reads the effective one — so a screen that reads
-  /// the raw role offers affordances the router then bounces.
+  /// DEF-MOD-008 — the role the ROUTER gates on. `appRole` and
+  /// `effectiveAppRole` disagree for a signed-in but not-yet-approved account
+  /// (D-666 presents it as a guest), and the router reads the effective one —
+  /// so a screen that reads the raw role offers affordances the router then
+  /// bounces.
   AppRole get _role => roleOf(ref.read(authControllerProvider));
 
   Future<SessionSeatMap?> _safeSeatMap() async {
@@ -170,7 +173,9 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
     if (!map.mode.isOpenSeating) {
       final picked = await context.pushNamed<bool>(
         RouteNames.seatPicker,
-        pathParameters: <String, String>{RouteParams.sessionId: widget.sessionId},
+        pathParameters: <String, String>{
+          RouteParams.sessionId: widget.sessionId,
+        },
       );
       if (picked == true && mounted) {
         await _load();
@@ -214,8 +219,8 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
     if (registered && mounted) {
       await SimfInfoDialog.show(context, title: l10n.joinOpenSuccessBody);
     }
-    // _load() opens with an unguarded setState, so leaving while the dialog is up
-    // would throw "setState after dispose".
+    // _load() opens with an unguarded setState, so leaving while the dialog is
+    // up would throw "setState after dispose".
     if (!mounted) {
       return;
     }
@@ -245,7 +250,8 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
     } on ApiFailure catch (failure) {
       // Surface the backend's localized reason (e.g. "cannot cancel after the
       // session has started", "you have no seat to release") instead of a
-      // generic failure — the generic toast is the reason cancel "looks broken".
+      // generic failure — the generic toast is the reason cancel "looks
+      // broken".
       final reason = failure.message.trim();
       messenger.showSnackBar(
         SnackBar(
@@ -291,18 +297,23 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
     );
   }
 
-  /// رابط الجلسة (Figma 889:2715) — opens the live screen (25) for this session;
-  /// only offered when the detail carries a live feed (`hasLiveStream`).
+  /// رابط الجلسة (Figma 889:2715) — opens the live screen (25) for this
+  /// session; only offered when the detail carries a live feed
+  /// (`hasLiveStream`).
   void _openLive() => context.pushNamed(
         RouteNames.liveBroadcast,
-        queryParameters: <String, String>{RouteParams.sessionId: widget.sessionId},
+        queryParameters: <String, String>{
+          RouteParams.sessionId: widget.sessionId,
+        },
       );
 
   /// ملخص الجلسة (Figma 889:2715) — opens the AI session summary (34). The
   /// summary screen 404s gracefully until the Committee publishes it.
   void _openSummary() => context.pushNamed(
         RouteNames.aiSummary,
-        queryParameters: <String, String>{RouteParams.sessionId: widget.sessionId},
+        queryParameters: <String, String>{
+          RouteParams.sessionId: widget.sessionId,
+        },
       );
 
   /// اسأل المحاور (Figma 1056:12876) — opens send-question (26). #3 — only
@@ -310,7 +321,9 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
   /// (this never fires) until then, so there is no guest/not-joined path here.
   void _askHost() => context.pushNamed(
         RouteNames.sendQuestion,
-        queryParameters: <String, String>{RouteParams.sessionId: widget.sessionId},
+        queryParameters: <String, String>{
+          RouteParams.sessionId: widget.sessionId,
+        },
       );
 
   @override
@@ -321,29 +334,17 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
     // account presents as guest). Reading the raw `appRole` here showed the
     // moderate action to an unapproved moderator, who was then bounced Home.
     final role = roleOf(ref.watch(authControllerProvider));
-    // Moderator (محاور) entry to the Q&A desk (D-405). Moderator-EXCLUSIVE
-    // (D-519): Staff no longer inherits it (the focused role model dropped the
-    // isAtLeast ladder). The server still enforces the per-session
-    // SessionModerator grant (403).
-    //
-    // FR-MOD-001 — the role alone is NOT the gate any more. The grant is
-    // per-session, so the icon used to appear on every session in the programme
-    // and the missing grant was only discoverable as a 403 after the tap. The
-    // action now needs a CONFIRMED grant for this session; while the discovery
-    // call is in flight, or if it failed, no action is offered (an icon that
-    // 403s is worse than none — the moderator's own home lists their sessions
-    // and surfaces the failure there with a retry).
-    final moderatedSessionIds = ref.watch(myModeratedSessionsProvider).maybeWhen(
-          data: (sessions) =>
-              sessions.map((s) => s.sessionId).toSet(),
-          orElse: () => const <String>{},
-        );
-    final canModerate = role == AppRole.moderator &&
-        moderatedSessionIds.contains(widget.sessionId);
-    // D-771 — Staff entry to the seating desk. Staff and Moderator are disjoint
-    // focused roles (D-519), so the two never compete for the header's single
-    // trailing slot. UX gate only — the server enforces Seating.Assist (403).
-    final canAssistSeating = role == AppRole.staff;
+    // Moderator (محاور) entry to the Q&A desk (D-405); the grant is
+    // per-session, so an empty set while the discovery call is in flight offers
+    // no action.
+    final moderatedSessionIds =
+        ref.watch(myModeratedSessionsProvider).maybeWhen(
+              data: (sessions) => sessions.map((s) => s.sessionId).toSet(),
+              orElse: () => const <String>{},
+            );
+    final canModerate =
+        canModerateSession(role, moderatedSessionIds, widget.sessionId);
+    final canSeat = canAssistSeating(role);
     return SimfPageShell(
       tab: SimfTab.sessions,
       // The frame's chrome is the standard circled back + centred title; the
@@ -352,83 +353,49 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
       header: SessionDetailHeader(
         title: l10n.sessionDetailTitle,
         onBack: () => backOrHome(context),
-        actionIcon: canAssistSeating
-            ? Icons.event_seat_outlined
-            : Icons.forum_outlined,
+        actionIcon: canSeat ? Icons.event_seat_outlined : Icons.forum_outlined,
         moderateTooltip: canModerate
             ? l10n.moderatorManageQuestions
-            : (canAssistSeating ? l10n.staffSeatingTitle : null),
+            : (canSeat ? l10n.staffSeatingTitle : null),
         onModerate: canModerate
-            ? () => context.pushNamed(
-                  RouteNames.sessionModerate,
-                  pathParameters: <String, String>{
-                    RouteParams.sessionId: widget.sessionId,
-                  },
-                )
-            : (canAssistSeating
-                ? () => context.pushNamed(
-                      RouteNames.staffSeating,
-                      pathParameters: <String, String>{
-                        RouteParams.sessionId: widget.sessionId,
-                      },
-                    )
+            ? () => _pushWithSessionId(RouteNames.sessionModerate)
+            : (canSeat
+                ? () => _pushWithSessionId(RouteNames.staffSeating)
                 : null),
       ),
-      body: _buildBody(l10n),
+      body: SessionDetailStates(
+        loading: _loading,
+        notFound: _notFound,
+        failed: _error || _detail == null,
+        onRefresh: _load,
+        l10n: l10n,
+        onRetry: () => unawaited(_load()),
+        // Built eagerly, so only reference state that survives every branch:
+        // the loaded body reads `_detail!`, which is why it is guarded by the
+        // same `failed` flag the states widget switches on.
+        child: _detail == null
+            ? const SizedBox.shrink()
+            // The speaker avatars resolve
+            // `{base}/app/assets/SpeakerPhoto/{id}/image` (the D-357
+            // SpeakerPhoto asset); the base already includes `/api/v1`.
+            : _detailBody(l10n, ref.read(simfDataConfigProvider).baseUrl),
+      ),
     );
   }
 
-  Widget _buildBody(AppL10n l10n) {
-    if (_loading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    // The not-found / error states are hosted in an always-scrollable list so a
-    // pull-down still fires SimfPullToRefresh (pull to retry) even though they render a
-    // short, centred surface.
-    if (_notFound) {
-      return SimfPullToRefresh(
-        onRefresh: _load,
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          children: <Widget>[
-            SimfEmptyState(
-              icon: Icons.event_busy_outlined,
-              message: l10n.sessionNotFound,
-            ),
-          ],
-        ),
+  void _pushWithSessionId(String route) => context.pushNamed(
+        route,
+        pathParameters: <String, String>{
+          RouteParams.sessionId: widget.sessionId,
+        },
       );
-    }
-    if (_error || _detail == null) {
-      return SimfPullToRefresh(
-        onRefresh: _load,
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          children: <Widget>[
-            SimfErrorState(
-              message: l10n.sessionDetailError,
-              retryLabel: l10n.retryLabel,
-              onRetry: () => unawaited(_load()),
-            ),
-          ],
-        ),
-      );
-    }
-    // The speaker avatars resolve `{base}/app/assets/SpeakerPhoto/{id}/image`
-    // (the D-357 SpeakerPhoto asset); the base already includes `/api/v1`.
-    final baseUrl = ref.read(simfDataConfigProvider).baseUrl;
-    return SimfPullToRefresh(
-      onRefresh: _load,
-      child: _detailBody(l10n, baseUrl),
-    );
-  }
 
   /// The scrolling detail itself. The check-in strip goes in as the body's
   /// `header` — the list's FIRST CHILD — rather than being stacked above it:
   /// attendance is about this moment, so it must be readable without scrolling
   /// past the description and speakers, but a widget outside the scrollable
-  /// swallows the pull gesture and would break pull-to-refresh at the top of the
-  /// page (the standing owner rule that every data page pulls to refresh).
+  /// swallows the pull gesture and would break pull-to-refresh at the top of
+  /// the page (the standing owner rule that every data page pulls to refresh).
   Widget _detailBody(AppL10n l10n, String baseUrl) {
     return SessionDetailBody(
       detail: _detail!,
@@ -455,7 +422,9 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
       onCancelReservation: () => unawaited(_cancelReservation(l10n)),
       onViewSeat: () => context.pushNamed(
         RouteNames.mySeat,
-        pathParameters: <String, String>{RouteParams.sessionId: widget.sessionId},
+        pathParameters: <String, String>{
+          RouteParams.sessionId: widget.sessionId,
+        },
       ),
       onSpeaker: (speaker) => context.pushNamed(
         RouteNames.speakerProfile,

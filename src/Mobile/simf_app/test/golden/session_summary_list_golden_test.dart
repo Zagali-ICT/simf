@@ -20,9 +20,9 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import 'golden_fonts.dart';
 
-/// Golden render of the Session-summaries list against Figma frame **1388:8392**
-/// (ملخص الجلسات, Guest+). Compare to the frame:
-///   flutter test --update-goldens test/golden/session_summary_list_golden_test.dart
+/// Golden render of the Session-summaries list against Figma frame
+/// **1388:8392** (ملخص الجلسات, Guest+). Compare to the frame: flutter test
+/// --update-goldens test/golden/session_summary_list_golden_test.dart
 ///
 /// Frame parity: the search+filter field, the 3 equal-width chips
 /// (المفضلة/جلساتي/الجميع — الجميع selected on the right), day group headers
@@ -170,8 +170,8 @@ void main() {
         overrides: <Override>[
           simfDataConfigProvider.overrideWithValue(_config),
           programmeSessionsProvider.overrideWith((ref) async => _sessions),
-          mySessionsProvider
-              .overrideWith((ref) async => const MyAreaSessions(<MyAreaSessionItem>[])),
+          mySessionsProvider.overrideWith(
+              (ref) async => const MyAreaSessions(<MyAreaSessionItem>[]),),
           sessionFavouritesProvider
               .overrideWith(() => _FakeFavourites(<String>{'s1'})),
         ],

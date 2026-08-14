@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
-import 'package:simf_app/features/exhibition/entity_detail_scaffold.dart';
+import 'package:simf_app/features/exhibition/widgets/entity_detail_scaffold.dart';
 
 /// Pumps [EntityDetailScaffold] in an RTL host (Figma 1439:11881 "العارض" /
 /// 1439:11826 "الراعي"). A tall surface so the lazy ListView lays out the whole

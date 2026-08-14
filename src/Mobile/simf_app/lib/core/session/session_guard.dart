@@ -103,7 +103,8 @@ class _SessionGuardState extends ConsumerState<SessionGuard>
   }
 
   void _onTick() {
-    // Don't stack actions: skip while the warning is up or a refresh is running.
+    // Don't stack actions: skip while the warning is up or a refresh is
+    // running.
     if (!mounted || _warning || _refreshing) {
       return;
     }
@@ -114,17 +115,17 @@ class _SessionGuardState extends ConsumerState<SessionGuard>
     final now = _now();
     final idleFor =
         now.difference(ref.read(sessionActivityProvider).lastActivity);
-    // Inactive past the limit → warn, then sign out only if the 30s countdown is
-    // ignored. Inactivity-driven and independent of the token, so a user who is
-    // actively using the app is never interrupted.
+    // Inactive past the limit → warn, then sign out only if the 30s countdown
+    // is ignored. Inactivity-driven and independent of the token, so a user who
+    // is actively using the app is never interrupted.
     if (idleFor >= widget.idleLimit) {
       _startCountdown();
       return;
     }
-    // Still active, but the access token is about to lapse → keep it alive in the
-    // background so their next request never 401s. Uses tryRefresh (which does
-    // NOT sign out on failure): if it cannot extend, we warn — never a silent
-    // sign-out (D-737).
+    // Still active, but the access token is about to lapse → keep it alive in
+    // the background so their next request never 401s. Uses tryRefresh (which
+    // does NOT sign out on failure): if it cannot extend, we warn — never a
+    // silent sign-out (D-737).
     final timeLeft = authState.session.accessTokenExpiresAt.difference(now);
     if (timeLeft <= widget.warnLead) {
       unawaited(_proactiveRefresh());
@@ -137,7 +138,8 @@ class _SessionGuardState extends ConsumerState<SessionGuard>
       final extended =
           await ref.read(authControllerProvider.notifier).tryRefresh();
       // If the token could not be extended, fall back to the visible countdown
-      // instead of an abrupt sign-out — the guard never closes the app silently.
+      // instead of an abrupt sign-out — the guard never closes the app
+      // silently.
       if (!extended && mounted && !_warning) {
         _startCountdown();
       }

@@ -247,6 +247,15 @@ public sealed class DeskStore
 public sealed class StoredRegistration
 {
     public long Sequence { get; set; }
+
+    /// <summary>The attendee id this desk minted for the badge, and what the
+    /// printed QR actually carries.
+    ///
+    /// <para>The desk is disconnected by design, so it cannot be handed a
+    /// server-side id — it generates one. A Guid is safe to mint offline
+    /// precisely because it needs no coordination, which is the same reason the
+    /// sequence ranges exist for the printed number.</para></summary>
+    public Guid ProfileId { get; set; }
     public short ProfileTypeCode { get; set; }
     public string Name { get; set; } = string.Empty;
     public string? NameArabic { get; set; }

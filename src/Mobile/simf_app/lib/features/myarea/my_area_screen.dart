@@ -10,12 +10,13 @@ import 'package:simf_app/app/widgets/simf_bottom_nav.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/features/account/data/profile_repository.dart'
     show avatarBustProvider, myProfileProvider, referenceNumberProvider;
+import 'package:simf_app/features/myarea/data/liveness.dart'
+    show CapturedSelfie;
 import 'package:simf_app/features/myarea/data/myarea_models.dart';
 import 'package:simf_app/features/myarea/data/myarea_repository.dart';
-import 'package:simf_app/features/myarea/identity_verification_screen.dart';
 import 'package:simf_app/features/myarea/widgets/my_area_dashboard_body.dart';
 import 'package:simf_app/features/myarea/widgets/my_area_identity_card.dart';
-import 'package:simf_app/features/myarea/widgets/my_area_rows.dart';
+import 'package:simf_app/features/myarea/widgets/my_area_more_row.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
@@ -109,10 +110,10 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
   }
 
   /// Runs the guided face-capture / liveness flow (D-404) and uploads the
-  /// returned selfie. On success the avatar bust token is bumped so every avatar
-  /// on screen (home greeting / badge / this card) refetches the new photo
-  /// immediately — the avatar URL is stable, so the token is what forces the
-  /// refresh — and the dashboard reloads for the rest of the identity card.
+  /// returned selfie. On success the avatar bust token is bumped so every
+  /// avatar on screen (home greeting / badge / this card) refetches the new
+  /// photo immediately — the avatar URL is stable, so the token is what forces
+  /// the refresh — and the dashboard reloads for the rest of the identity card.
   Future<void> _changeAvatar() async {
     final l10n = AppL10n.of(context);
     final messenger = ScaffoldMessenger.of(context);
@@ -150,7 +151,8 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
       // Any non-ApiFailure error (a raw transport error, etc.) still surfaces
       // a toast rather than failing silently.
       if (mounted) {
-        messenger.showSnackBar(SnackBar(content: Text(l10n.avatarUploadFailed)));
+        messenger
+            .showSnackBar(SnackBar(content: Text(l10n.avatarUploadFailed)));
       }
     }
   }
@@ -218,17 +220,17 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
     return SimfPullToRefresh(
       onRefresh: _refresh,
       child: ListView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(SimfTokens.space4),
-      children: <Widget>[
-        MyAreaIdentityCard(name: name, line: l10n.myAreaPendingNote),
-        const SizedBox(height: SimfTokens.space4),
-        MyAreaMoreRow(
-          label: l10n.moreTitle,
-          onTap: () => context.pushNamed(RouteNames.more),
-        ),
-        // Sign-out lives in the shell's side drawer now (D-396).
-      ],
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(SimfTokens.space4),
+        children: <Widget>[
+          MyAreaIdentityCard(name: name, line: l10n.myAreaPendingNote),
+          const SizedBox(height: SimfTokens.space4),
+          MyAreaMoreRow(
+            label: l10n.moreTitle,
+            onTap: () => context.pushNamed(RouteNames.more),
+          ),
+          // Sign-out lives in the shell's side drawer now (D-396).
+        ],
       ),
     );
   }

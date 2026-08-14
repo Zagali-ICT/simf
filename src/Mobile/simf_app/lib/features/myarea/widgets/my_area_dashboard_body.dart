@@ -9,7 +9,10 @@ import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/features/account/biometric_auth.dart';
 import 'package:simf_app/features/myarea/data/myarea_models.dart';
 import 'package:simf_app/features/myarea/widgets/my_area_identity_card.dart';
-import 'package:simf_app/features/myarea/widgets/my_area_rows.dart';
+import 'package:simf_app/features/myarea/widgets/my_area_more_row.dart';
+import 'package:simf_app/features/myarea/widgets/my_area_schedule_group_header.dart';
+import 'package:simf_app/features/myarea/widgets/my_area_schedule_row.dart';
+import 'package:simf_app/features/myarea/widgets/my_area_share_tile.dart';
 import 'package:simf_app/features/sessions/data/session_favourites.dart';
 
 /// The Approved-user My-Area dashboard body (frame 213:963 / 758:1283): the
@@ -38,7 +41,7 @@ class MyAreaDashboardBody extends ConsumerWidget {
     final l10n = AppL10n.of(context);
     final isArabic = l10n.isArabic;
     final identity = dashboard.identity;
-    final tier = identity.localizedTier(isArabic);
+    final tier = identity.localizedTier(isArabic: isArabic);
     final enrolled =
         l10n.enrolledInSessions(dashboard.counters.bookedSessionsCount);
     final subtitle = tier == null ? enrolled : '$tier · $enrolled';
@@ -49,8 +52,7 @@ class MyAreaDashboardBody extends ConsumerWidget {
         : (identity.qrId == null ? null : '#${identity.qrId}');
     // Frame 758:1283 — جدولي اليوم splits into a "جلسات" group and a "مقابلات"
     // group, each under its own gold sub-header.
-    final sessions =
-        dashboard.todaySchedule.where((i) => i.isSession).toList();
+    final sessions = dashboard.todaySchedule.where((i) => i.isSession).toList();
     final meetings =
         dashboard.todaySchedule.where((i) => !i.isSession).toList();
 
@@ -59,7 +61,7 @@ class MyAreaDashboardBody extends ConsumerWidget {
       padding: const EdgeInsets.all(SimfTokens.space4),
       children: <Widget>[
         MyAreaIdentityCard(
-          name: identity.localizedName(isArabic),
+          name: identity.localizedName(isArabic: isArabic),
           line: subtitle,
           reference: reference,
           shareLabel: l10n.shareLabel,

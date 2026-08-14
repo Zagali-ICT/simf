@@ -319,8 +319,8 @@ void main() {
     });
 
     // D-684 — image upload + the mandatory-upload-blocks behaviour moved to the
-    // profile step (Page 007); it is covered by sign_up_visitor_screen_test now.
-    // This screen only adds the interests to the already-saved profile.
+    // profile step (Page 007); it is covered by sign_up_visitor_screen_test
+    // now. This screen only adds the interests to the already-saved profile.
 
     testWidgets('a direct open with no draft shows the recover state',
         (tester) async {

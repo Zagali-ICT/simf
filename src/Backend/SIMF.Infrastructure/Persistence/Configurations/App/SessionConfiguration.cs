@@ -1,7 +1,8 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SIMF.Common.Options;
 using SIMF.Contracts.Sessions;
+using SIMF.Domain.Files;
 using SIMF.Domain.Programme;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
@@ -36,13 +37,31 @@ internal sealed class SessionConfiguration : IEntityTypeConfiguration<Session>
         builder.Property(s => s.LanguageArabic).HasMaxLength(64);
 
         // Recording metadata (the bytes live out-of-row on disk).
-        builder.Property(s => s.RecordingStoredFileName).HasMaxLength(64);
+        // The recording's file, in the one store. Restrict, matching Hall and
+        // Category above: deleting a file must never delete the session.
+        builder.HasIndex(s => s.RecordingFileId);
+        builder.HasOne<StoredFile>()
+            .WithMany()
+            .HasForeignKey(s => s.RecordingFileId)
+            .OnDelete(DeleteBehavior.Restrict);
         builder.Property(s => s.RecordingFileName).HasMaxLength(260);
         builder.Property(s => s.RecordingContentType).HasMaxLength(128);
 
         // §8 — live broadcast stream URLs (manual stub provider).
-        builder.Property(s => s.LiveStreamUrl).HasMaxLength(1024);
-        builder.Property(s => s.LiveSignLanguageUrl).HasMaxLength(1024);
+        // The feeds are StoredFile rows now, so the key replaces the length cap:
+        // the URL's own bound lives on StoredFile.ExternalUrl. Restrict, not
+        // Cascade, for the reason the other file keys carry it - deleting a file
+        // must never silently delete the session.
+        builder.HasIndex(s => s.LiveStreamFileId);
+        builder.HasOne<StoredFile>()
+            .WithMany()
+            .HasForeignKey(s => s.LiveStreamFileId)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(s => s.LiveSignLanguageFileId);
+        builder.HasOne<StoredFile>()
+            .WithMany()
+            .HasForeignKey(s => s.LiveSignLanguageFileId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         // AI live-caption text (manual stub provider, bilingual). 2048
         // matches the Description column — the SSOT the CP form + service-layer
@@ -117,7 +136,11 @@ internal sealed class SessionSummaryConfiguration
         // Item #35 (2026-07-20) — the optional team summary-video URL. 1024
         // matches the Session.LiveStreamUrl SSOT (both hold the same kind of
         // feed URL, validated by the same LiveStreamUrlPolicy).
-        builder.Property(s => s.SummaryVideoUrl).HasMaxLength(1024);
+        builder.HasIndex(s => s.SummaryVideoFileId);
+        builder.HasOne<StoredFile>()
+            .WithMany()
+            .HasForeignKey(s => s.SummaryVideoFileId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         // Slice D (2026-07-19) — the pristine AI-draft snapshot mirrors the
         // Arabic full-text it is captured from (same 8000 SSOT). Nullable: only

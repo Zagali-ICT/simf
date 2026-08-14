@@ -6,8 +6,8 @@ import 'dart:convert';
 /// "add contact" (D-470). But the in-app contact scanner resolves a *share
 /// token*, so scanning the app's own QR used to always 404. The fix keeps the
 /// vCard and injects the share token as a private `X-SIMF-TOKEN` property — a
-/// standard vCard extension (RFC 6350 §6.10) native parsers ignore — so both the
-/// native camera and the in-app scanner work from one QR.
+/// standard vCard extension (RFC 6350 §6.10) native parsers ignore — so both
+/// the native camera and the in-app scanner work from one QR.
 
 const String _tokenProperty = 'X-SIMF-TOKEN:';
 
@@ -15,9 +15,9 @@ const String _tokenProperty = 'X-SIMF-TOKEN:';
 bool isVCardPayload(String payload) =>
     payload.trimLeft().toUpperCase().startsWith('BEGIN:VCARD');
 
-/// Returns [vcard] with the share [token] injected as an `X-SIMF-TOKEN` property
-/// just before `END:VCARD`. Returns [vcard] unchanged if the token is empty or
-/// the input is not a vCard.
+/// Returns [vcard] with the share [token] injected as an `X-SIMF-TOKEN`
+/// property just before `END:VCARD`. Returns [vcard] unchanged if the token is
+/// empty or the input is not a vCard.
 String buildShareQrPayload(String vcard, String token) {
   final trimmedToken = token.trim();
   if (trimmedToken.isEmpty) {

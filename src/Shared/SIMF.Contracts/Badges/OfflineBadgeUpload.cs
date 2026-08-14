@@ -31,6 +31,15 @@ public sealed class OfflineBadgeRegistration
     /// what makes a retried upload safe.</summary>
     public long Sequence { get; set; }
 
+    /// <summary>The attendee id the desk minted, which is what the printed QR
+    /// carries. The server creates the attendee record under this id so the
+    /// badge already in someone's hand resolves the moment the shift uploads.
+    ///
+    /// <para>Empty from a desk that predates this, in which case the server
+    /// mints one and the printed badge resolves through its serial instead.</para>
+    /// </summary>
+    public Guid ProfileId { get; set; }
+
     /// <summary>The profile-type code printed on the badge
     /// (<c>ProfileType.Code</c>), not its Guid — the desk works from the small
     /// number the QR carries, and sending the same value lets the server verify

@@ -8,7 +8,14 @@ namespace SIMF.Infrastructure.Persistence.Configurations.App;
 /// The enums persist as <c>int</c> (the EF default for enum-backed properties);
 /// <see cref="StoredFile.OwnerEntityId"/> / <c>CreatedBy</c> are polymorphic bare
 /// Guids and carry NO FK. Bytes live out-of-row; only the metadata
-/// is stored here.</summary>
+/// is stored here.
+///
+/// <para>That owner pair still carries no key, but this table is now the
+/// <b>principal</b> of several: owning rows point at it by a typed
+/// <c>Guid? XFileId</c> with a real foreign key. The two links are
+/// not redundant — the owner pair is queried by <c>Service</c> as well as by
+/// owner, which a bare key cannot express, and the owner-or-admin download check
+/// reads it.</para></summary>
 internal sealed class StoredFileConfiguration : IEntityTypeConfiguration<StoredFile>
 {
     public void Configure(EntityTypeBuilder<StoredFile> builder)

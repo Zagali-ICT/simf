@@ -11,7 +11,8 @@ import 'package:simf_app/core/env/build_config.dart';
 /// The روح السعودية discover row, shared by the guest + signed-in layouts —
 /// opens the configured Visit-Saudi link externally.
 class DiscoverSaudiRow extends StatelessWidget {
-  const DiscoverSaudiRow({required this.l10n, this.outlined = false, super.key});
+  const DiscoverSaudiRow(
+      {required this.l10n, this.outlined = false, super.key,});
 
   final AppL10n l10n;
 

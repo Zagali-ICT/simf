@@ -6,6 +6,7 @@
 library;
 
 import 'package:flutter/foundation.dart';
+
 /// Region picker row — `GET /app/regions` (D-547). [name] (English) is nullable;
 /// [nameArabic] is always present. Wire keys: `code`, `name`, `nameArabic`.
 @immutable
@@ -16,13 +17,13 @@ class RegionItem {
     required this.nameArabic,
   });
 
-  final String code;
-  final String? name;
-  final String nameArabic;
-
-  static RegionItem fromJson(Map<String, dynamic> json) => RegionItem(
+  factory RegionItem.fromJson(Map<String, dynamic> json) => RegionItem(
         code: json['code'] as String? ?? '',
         name: json['name'] as String?,
         nameArabic: json['nameArabic'] as String? ?? '',
       );
+
+  final String code;
+  final String? name;
+  final String nameArabic;
 }

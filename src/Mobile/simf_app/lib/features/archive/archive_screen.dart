@@ -3,37 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/core/utils/refresh.dart';
-import 'package:simf_app/features/archive/data/archive_endpoints.dart';
-import 'package:simf_app/features/archive/data/archive_models.dart';
+import 'package:simf_app/features/archive/data/archive_repository.dart';
 import 'package:simf_app/features/archive/widgets/archive_body.dart';
-import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-/// `GET /app/archive` → the past editions (public, D-273).
-final archiveEditionsProvider =
-    FutureProvider.autoDispose<List<ArchiveEdition>>((ref) async {
-  final client = ref.watch(simfApiClientProvider);
-  return client.get<List<ArchiveEdition>>(
-    ArchiveEndpoints.list,
-    decodeData: ArchiveEdition.listFromData,
-  );
-});
-
-/// `GET /app/archive/{id}` → the fuller detail (location + date label) for one
-/// edition, lazily loaded when an edition pill is selected (D-273).
-final archiveEditionDetailProvider = FutureProvider.autoDispose
-    .family<ArchiveEditionDetail?, String>((ref, id) async {
-  final client = ref.watch(simfApiClientProvider);
-  try {
-    return await client.get<ArchiveEditionDetail>(
-      ArchiveEndpoints.byId(id),
-      decodeData: (data) => ArchiveEditionDetail.fromJson(
-        (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{},
-      ),
-    );
-  } on ApiFailure {
-    return null;
-  }
-});
 
 /// Page 024 — الأرشيف · Archive (#24, `/archive`, Guest+), rebuilt to the
 /// KSA-Project frame **925:3079** on the shared navy shell.
@@ -78,33 +49,21 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
       onBack: () => backOrHome(context),
       body: editions.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        // Pull-to-retry: a scrollable error state under SimfPullToRefresh.
-        error: (_, __) => SimfPullToRefresh(
+        error: (_, __) => SimfRefreshableMessage(
           onRefresh: _refresh,
-          child: ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            children: <Widget>[
-              SimfErrorState(
-                message: l10n.archiveError,
-                retryLabel: l10n.retryLabel,
-                onRetry: () => ref.invalidate(archiveEditionsProvider),
-              ),
-            ],
+          child: SimfErrorState(
+            message: l10n.archiveError,
+            retryLabel: l10n.retryLabel,
+            onRetry: () => ref.invalidate(archiveEditionsProvider),
           ),
         ),
         data: (items) {
           if (items.isEmpty) {
-            // Pull-to-retry: a scrollable empty state under SimfPullToRefresh.
-            return SimfPullToRefresh(
+            return SimfRefreshableMessage(
               onRefresh: _refresh,
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                children: <Widget>[
-                  SimfEmptyState(
-                    icon: Icons.bookmark_outline,
-                    message: l10n.archiveEmpty,
-                  ),
-                ],
+              child: SimfEmptyState(
+                icon: Icons.bookmark_outline,
+                message: l10n.archiveEmpty,
               ),
             );
           }

@@ -16,11 +16,12 @@ import 'package:simf_app/core/site_settings/site_settings.dart';
 import 'package:simf_app/features/account/data/profile_repository.dart';
 import 'package:simf_app/features/banners/data/banner_models.dart';
 import 'package:simf_app/features/banners/data/banners_repository.dart';
+import 'package:simf_app/features/home/data/home_repository.dart';
 import 'package:simf_app/features/home/home_screen.dart';
 import 'package:simf_app/features/live/data/current_live_session.dart';
 import 'package:simf_app/features/myarea/data/myarea_models.dart';
 import 'package:simf_app/features/news/data/news_models.dart';
-import 'package:simf_app/features/news/news_screen.dart' show newsListProvider;
+import 'package:simf_app/features/news/data/news_repository.dart';
 import 'package:simf_app/features/notifications/data/notification_models.dart';
 import 'package:simf_app/features/notifications/data/notifications_repository.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
@@ -123,7 +124,8 @@ const _allSocial = OrgSocial(
   tiktok: 'https://tiktok.com/@simf',
 );
 
-OrgProfile _orgProfile(OrgSocial social, {String? contactWebsite}) => OrgProfile(
+OrgProfile _orgProfile(OrgSocial social, {String? contactWebsite}) =>
+    OrgProfile(
       name: '',
       nameArabic: '',
       title: '',
@@ -304,13 +306,15 @@ Future<void> _pump(
           localeControllerProvider.overrideWith(
             () => LocaleController(prefs: localePrefs),
           ),
-        // Bi-Meeting rework — the meeting-access flags drive the "اللقاءات الثنائية"
-        // tile; overridden so no real getMyProfile() network call happens.
+        // Bi-Meeting rework — the meeting-access flags drive the "اللقاءات
+        // الثنائية" tile; overridden so no real getMyProfile() network call
+        // happens.
         currentUserMeetingAccessProvider.overrideWith(
           (ref) => MeetingAccess(speaker: isVip, delegation: isVip),
         ),
         // The home LIVE banner resolves the currently-live session id on tap
-        // (D-757); override it (no live session) so a tap never hits the network.
+        // (D-757); override it (no live session) so a tap never hits the
+        // network.
         currentLiveSessionIdProvider.overrideWith((ref) async => null),
         simfDataConfigProvider.overrideWithValue(_testConfig),
         notificationsRepositoryProvider
@@ -328,8 +332,9 @@ Future<void> _pump(
         // #43 — no banners by default, so the hero shows the static fallback
         // (no auto-advance timer) and no real GET /app/banners fetch fires.
         bannersProvider.overrideWith((ref) async => const <PublicBannerItem>[]),
-        // Build #13 — the Home meet-tile visibility reads site-settings; override
-        // it so no real GET /app/site-settings fetch fires (partner directory on).
+        // Build #13 — the Home meet-tile visibility reads site-settings;
+        // override it so no real GET /app/site-settings fetch fires (partner
+        // directory on).
         siteSettingsProvider.overrideWith(
           (ref) async => const SiteSettings(
             registrationMessageAr: '',
@@ -351,7 +356,8 @@ Future<void> _pump(
 
 void main() {
   group('HomeScreen — guest layout (frame 512:1492)', () {
-    testWidgets('shows the guest banner, public tiles, locked badge card and '
+    testWidgets(
+        'shows the guest banner, public tiles, locked badge card and '
         'the sign-in button', (tester) async {
       await _pump(tester, controller: _GuestController());
 
@@ -388,7 +394,8 @@ void main() {
       expect(find.widgetWithText(FilledButton, 'Sign in'), findsOneWidget);
       // The guest home shows NO notifications bell (owner 2026-06-18): the
       // Figma content/guest frames carry no bell — it lives only on the
-      // signed-in home greeting header. The shared ☰ stays on the guest top bar.
+      // signed-in home greeting header. The shared ☰ stays on the guest top
+      // bar.
       expect(find.byTooltip('Notifications'), findsNothing);
       expect(find.byIcon(Icons.menu), findsOneWidget);
       // The GUEST top bar carries no language pill. The owner's 2026-07-27
@@ -449,7 +456,8 @@ void main() {
       );
     });
 
-    testWidgets('an unapproved (pending) account sees the guest layout with the '
+    testWidgets(
+        'an unapproved (pending) account sees the guest layout with the '
         'under-review card (registration status + sign out), not the guest '
         'banner or the sign-in button (D-666 / D-668)', (tester) async {
       await _pump(tester, controller: _UnapprovedController());
@@ -479,7 +487,8 @@ void main() {
   });
 
   group('HomeScreen — signed-in layout (frame 758:1134)', () {
-    testWidgets('shows the greeting header, live banner, the section bars and '
+    testWidgets(
+        'shows the greeting header, live banner, the section bars and '
         'every tile section', (tester) async {
       // VIP so the "اللقاءات الثنائية" tile is in the section list (D-745).
       await _pump(tester, controller: _SignedInController(), isVip: true);
@@ -488,12 +497,13 @@ void main() {
       expect(find.textContaining('Ahmed'), findsOneWidget);
       expect(find.byTooltip('Notifications'), findsOneWidget);
       expect(find.text('LIVE'), findsOneWidget);
-      // "عن الملتقى" is now a bordered nav row (SimfLinkRow), not a text header.
-      // (The full three-bar count is asserted on a tall surface in the RTL
-      // group, where every off-screen bar is built.)
+      // "عن الملتقى" is now a bordered nav row (SimfLinkRow), not a text
+      // header. (The full three-bar count is asserted on a tall surface in the
+      // RTL group, where every off-screen bar is built.)
       expect(find.text('About the forum'), findsOneWidget);
-      // The lower sections mount lazily; drag through the list and collect every
-      // label seen (robust to overshoot, unlike per-item scrollUntilVisible).
+      // The lower sections mount lazily; drag through the list and collect
+      // every label seen (robust to overshoot, unlike per-item
+      // scrollUntilVisible).
       final scrollable = find.byType(Scrollable).first;
       final seen = <String>{};
       for (var i = 0; i < 30; i++) {
@@ -554,7 +564,8 @@ void main() {
       expect(find.textContaining('Ahmed Mohammed'), findsNothing);
     });
 
-    testWidgets('greeting never renders the email when there is no profile name',
+    testWidgets(
+        'greeting never renders the email when there is no profile name',
         (tester) async {
       // displayName is the email and no profile loaded → name-less salute.
       await _pump(tester, controller: _SignedInEmailController());
@@ -577,7 +588,8 @@ void main() {
       expect(find.text('ABOUT'), findsOneWidget);
     });
 
-    testWidgets('the full-width "اسأل المحاور" tile opens send-question '
+    testWidgets(
+        'the full-width "اسأل المحاور" tile opens send-question '
         '(1052:12856)', (tester) async {
       // A tall surface renders the full-width tile fully on-screen (a scrolled
       // tile can land under the bottom nav bar and miss the hit test).
@@ -695,7 +707,8 @@ void main() {
       expect(prefs.getString(StorageKeys.preferredLanguage), 'en');
     });
 
-    testWidgets('tapping the greeting avatar switches to the Profile tab '
+    testWidgets(
+        'tapping the greeting avatar switches to the Profile tab '
         '(owner 2026-06-27)', (tester) async {
       int? switchedTo;
       await _pump(
@@ -740,7 +753,8 @@ void main() {
       expect(socials, hasLength(5));
     });
 
-    testWidgets('no social set → the تابعنا section is hidden (owner 2026-06-27)',
+    testWidgets(
+        'no social set → the تابعنا section is hidden (owner 2026-06-27)',
         (tester) async {
       await _pump(
         tester,
@@ -763,7 +777,8 @@ void main() {
       expect(none, isEmpty);
     });
 
-    testWidgets('the org website renders on Home when the CP sets one '
+    testWidgets(
+        'the org website renders on Home when the CP sets one '
         '(owner 2026-07-08)', (tester) async {
       await _pump(
         tester,
@@ -776,7 +791,8 @@ void main() {
         scrollable: find.byType(Scrollable).first,
       );
       await tester.pumpAndSettle();
-      // The website link shows its label + the gold globe glyph below the socials.
+      // The website link shows its label + the gold globe glyph below the
+      // socials.
       expect(find.text('Website'), findsOneWidget);
       final globe = tester
           .widgetList<SimfSvgIcon>(find.byType(SimfSvgIcon))
@@ -796,7 +812,8 @@ void main() {
       expect(find.text('Website'), findsNothing);
     });
 
-    testWidgets('the bilateral-meetings tile opens the VIP meetings page '
+    testWidgets(
+        'the bilateral-meetings tile opens the VIP meetings page '
         '(1408-9726, D-745)', (tester) async {
       // The tile is VIP-only now — a VIP sees it, and it opens /meetings.
       await _pump(tester, controller: _SignedInController(), isVip: true);
@@ -839,7 +856,8 @@ void main() {
       expect(two, hasLength(2));
     });
 
-    testWidgets('the ابرز الاحداث carousel renders the post title '
+    testWidgets(
+        'the ابرز الاحداث carousel renders the post title '
         '(frame 758:1239)', (tester) async {
       await _pump(
         tester,
@@ -915,8 +933,7 @@ void main() {
 
     testWidgets(
         'about tiles (4-up): المتحدثون · المعرض · الوفود · '
-        'الجلسات (right→left)',
-        (tester) async {
+        'الجلسات (right→left)', (tester) async {
       await pumpTall(tester);
       final speakers = tester.getCenter(find.text('المتحدثون')).dx;
       final booths = tester.getCenter(find.text('المعرض')).dx;

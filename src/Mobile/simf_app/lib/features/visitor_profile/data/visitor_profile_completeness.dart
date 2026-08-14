@@ -48,7 +48,7 @@ class VisitorProfileCompleteness {
     required bool hasItems,
     required String? profileTypeId,
   }) {
-    final bool pickerShown = !isVisitorType && !loading && !failed && hasItems;
+    final pickerShown = !isVisitorType && !loading && !failed && hasItems;
     return !pickerShown || profileTypeId != null;
   }
 

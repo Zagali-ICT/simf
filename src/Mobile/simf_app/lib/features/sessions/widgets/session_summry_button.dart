@@ -6,7 +6,11 @@ import 'package:simf_app/app/theme/tokens.dart';
 /// the shell's disabled tokens and stops tapping — inactive, not hidden (owner
 /// 2026-07-14, same treatment as the detail header's ملخص الجلسة button).
 class SessionSummryButton extends StatelessWidget {
-  const SessionSummryButton({required this.label, required this.enabled, required this.onTap, super.key,
+  const SessionSummryButton({
+    required this.label,
+    required this.enabled,
+    required this.onTap,
+    super.key,
   });
 
   final String label;

@@ -56,7 +56,8 @@ class _DelegationsScreenState extends ConsumerState<DelegationsScreen> {
         borderRadius:
             BorderRadius.vertical(top: Radius.circular(SimfTokens.radius)),
       ),
-      builder: (_) => DelegationMeetingRequestSheet(country: country, l10n: l10n),
+      builder: (_) =>
+          DelegationMeetingRequestSheet(country: country, l10n: l10n),
     );
   }
 
@@ -65,8 +66,8 @@ class _DelegationsScreenState extends ConsumerState<DelegationsScreen> {
     final l10n = AppL10n.of(context);
     final isArabic = Directionality.of(context) == TextDirection.rtl;
     final delegations = ref.watch(delegationsProvider);
-    // Bi-Meeting rework — a signed-in user holding AllowsDelegationMeeting can tap a
-    // country card to request a meeting; others see plain info cards.
+    // Bi-Meeting rework — a signed-in user holding AllowsDelegationMeeting can
+    // tap a country card to request a meeting; others see plain info cards.
     final canRequestDelegation =
         ref.watch(currentUserMeetingAccessProvider).value?.delegation ?? false;
 

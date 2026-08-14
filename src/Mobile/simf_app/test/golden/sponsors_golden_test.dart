@@ -10,6 +10,7 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/app_theme.dart';
 import 'package:simf_app/features/sponsors/data/sponsor_models.dart';
+import 'package:simf_app/features/sponsors/data/sponsors_repository.dart';
 import 'package:simf_app/features/sponsors/sponsors_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
@@ -53,7 +54,8 @@ final _groups = <SponsorTierGroup>[
         tierName: 'الرعاية الاستراتيجية',
         order: 0,
         taglineArabic:
-            'الراعي الاستراتيجي · شريك التحول الدفاعي للملتقى البحري السعودي الدولي.',
+            'الراعي الاستراتيجي · شريك التحول الدفاعي للملتقى البحري السعودي '
+                'الدولي.',
       ),
     ],
   ),

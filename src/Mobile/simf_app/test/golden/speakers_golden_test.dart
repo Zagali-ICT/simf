@@ -17,9 +17,9 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import 'golden_fonts.dart';
 
 /// Golden-render harness (owner 2026-06-28, verification option 2): renders a
-/// screen at its exact Figma frame size with the real brand fonts loaded, so the
-/// generated PNG can be compared pixel-for-pixel against the Figma frame. Run:
-///   flutter test --update-goldens test/golden/speakers_golden_test.dart
+/// screen at its exact Figma frame size with the real brand fonts loaded, so
+/// the generated PNG can be compared pixel-for-pixel against the Figma frame.
+/// Run: flutter test --update-goldens test/golden/speakers_golden_test.dart
 /// then open test/golden/goldens/*.png and compare to the Figma screenshot.
 
 // Realistic Arabic speakers matching Figma 908:1744.

@@ -77,15 +77,15 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   /// The edition + date/location lock-up line (#40-residual). The dates come
   /// from the CP-configured organization profile — hydrated synchronously from
   /// the on-device cache, so it is already present on the first splash frame of
-  /// every run after the first. The bundled [AppL10n.splashEventLine] literal is
-  /// the fallback only (first-ever run, or an edition with no dates set), so a
-  /// new edition never ships a stale hardcoded date.
+  /// every run after the first. The bundled [AppL10n.splashEventLine] literal
+  /// is the fallback only (first-ever run, or an edition with no dates set), so
+  /// a new edition never ships a stale hardcoded date.
   String _eventLine(AppL10n l10n, OrgProfile? profile) {
-    final dates = profile?.eventDateRange(l10n.isArabic);
+    final dates = profile?.eventDateRange(isArabic: l10n.isArabic);
     if (dates == null || dates.isEmpty) {
       return l10n.splashEventLine;
     }
-    final location = profile?.locationFor(l10n.isArabic);
+    final location = profile?.locationFor(isArabic: l10n.isArabic);
     if (location == null || location.isEmpty) {
       return '${l10n.splashEditionLine}\n$dates';
     }
@@ -127,7 +127,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       return;
     }
     // D-736 — however the prompt was dismissed, snooze this version so it
-    // doesn't re-nag on every launch (the About manual check still surfaces it).
+    // doesn't re-nag on every launch (the About manual check still surfaces
+    // it).
     unawaited(ref.read(appUpdateCheckerProvider).snoozeOptionalUpdate());
     _routeOut(routeName: routeName, location: location);
   }
@@ -176,8 +177,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                   );
                   // A soft update must still route out after the store opens
                   // (the user is coming back to the app) — pop so the awaiting
-                  // _softUpdateThenRouteOut resumes. A forced update never pops;
-                  // it stays blocked until the user actually updates.
+                  // _softUpdateThenRouteOut resumes. A forced update never
+                  // pops; it stays blocked until the user actually updates.
                   if (!hard) {
                     Navigator.of(dialogContext).pop();
                   }

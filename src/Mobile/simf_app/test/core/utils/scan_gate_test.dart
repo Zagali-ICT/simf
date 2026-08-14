@@ -32,9 +32,10 @@ void main() {
 
     test('same code fires again after it leaves the frame (onNoCode)', () {
       expect(gate.shouldHandle('ABC'), isTrue);
-      gate.markIdle();
-      gate.onNoCode(); // the QR left the viewfinder
-      expect(gate.shouldHandle('ABC'), isTrue);
+      gate
+        ..markIdle()
+        ..onNoCode(); // the QR left the viewfinder
+        expect(gate.shouldHandle('ABC'), isTrue);
     });
 
     test('same code fires again after the cooldown elapses', () {

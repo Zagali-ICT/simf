@@ -47,18 +47,13 @@
         <dd>@(string.IsNullOrWhiteSpace(Initial.DateLabelEn) ? "—" : Initial.DateLabelEn)</dd>
         <dt>@L["Admin.Archive.Field.DateLabelAr"]</dt>
         <dd>@(string.IsNullOrWhiteSpace(Initial.DateLabelAr) ? "—" : Initial.DateLabelAr)</dd>
-        <dt>@L["Admin.Archive.Field.CoverImageRelativePath"]</dt>
+        @* Resolved by row id from the one file store, like every other asset
+           preview, rather than rendering a string an admin typed. *@
+        <dt>@L["Admin.Asset.Heading"]</dt>
         <dd>
-            @if (!string.IsNullOrWhiteSpace(Initial.CoverImageRelativePath))
-            {
-                <span>@Initial.CoverImageRelativePath</span>
-                <img class="simf-detail__image" src="@Initial.CoverImageRelativePath"
-                     alt="@Initial.TitleEn" />
-            }
-            else
-            {
-                <span>—</span>
-            }
+            <SimfImageThumb Class="simf-img-thumb--lg"
+                            Src="@CpAssetUrls.AdminImage(nameof(AssetCategory.ArchiveCover), Initial.Id)"
+                            Alt="@Initial.TitleEn" />
         </dd>
         <dt>@L["Admin.Archive.Col.Active"]</dt>
         <dd>@(Initial.IsActive ? L["Grid.Active"] : L["Grid.Inactive"])</dd>

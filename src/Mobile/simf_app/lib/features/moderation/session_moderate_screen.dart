@@ -14,19 +14,20 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 /// Moderator (محاور) per-session Q&A desk — Figma 1461:12227 (D-405 / D-509).
 ///
-/// Lists the question queue for [sessionId] with the five filter chips
-/// (الكل / جديد / الأسئلة المقبولة / تمت الإجابة / مرفوض) and the three
-/// per-question actions: **مرفوض** (reject → `hide`, the moderator's tool for an
-/// invalid / not-in-hall question — owner directive), **يتم الإجابة** (push on
-/// stage), and **تمت الإجابة** (mark answered).
+/// Lists the question queue for [sessionId] with the five filter chips (الكل /
+/// جديد / الأسئلة المقبولة / تمت الإجابة / مرفوض) and the three per-question
+/// actions: **مرفوض** (reject → `hide`, the moderator's tool for an invalid /
+/// not-in-hall question — owner directive), **يتم الإجابة** (push on stage),
+/// and **تمت الإجابة** (mark answered).
 ///
 /// DEF-MOD-001 / DEF-MOD-002 — every chip is backed by the PERSISTED
-/// `QuestionStatus`: the desk reads the working queue (Approved + Answered) and,
-/// separately, its own rejected (Hidden) rows. Marking answered and rejecting
-/// both hit real endpoints, so nothing is lost when the moderator leaves the
-/// screen, the app restarts, or a co-moderator opens the same desk on another
-/// device — and a mis-clicked reject can be restored from the مرفوض tab. Each
-/// action updates the row optimistically and rolls back if the call fails.
+/// `QuestionStatus`: the desk reads the working queue (Approved + Answered)
+/// and, separately, its own rejected (Hidden) rows. Marking answered and
+/// rejecting both hit real endpoints, so nothing is lost when the moderator
+/// leaves the screen, the app restarts, or a co-moderator opens the same desk
+/// on another device — and a mis-clicked reject can be restored from the مرفوض
+/// tab. Each action updates the row optimistically and rolls back if the call
+/// fails.
 ///
 /// Authority is the per-session `SessionModerator` grant (or Administrator),
 /// **not** the mobile `AppRole.moderator` — a moderator without the grant gets
@@ -274,8 +275,8 @@ class _SessionModerateScreenState extends ConsumerState<SessionModerateScreen> {
   ) =>
       rows.where((r) => r.id != id).toList(growable: false);
 
-  /// Swaps [next] in place when its row is present, otherwise appends it — so an
-  /// optimistic update keeps the row's position in the queue.
+  /// Swaps [next] in place when its row is present, otherwise appends it — so
+  /// an optimistic update keeps the row's position in the queue.
   static List<ModeratorQuestion> _replace(
     List<ModeratorQuestion> rows,
     ModeratorQuestion next,
@@ -306,9 +307,6 @@ class _SessionModerateScreenState extends ConsumerState<SessionModerateScreen> {
       return false;
     }
   }
-
-  int _count(ModeratorQueueFilter filter) =>
-      filterModeratorQueue(_desk, filter, rejected: _rejected).length;
 
   @override
   Widget build(BuildContext context) {
@@ -365,9 +363,7 @@ class _SessionModerateScreenState extends ConsumerState<SessionModerateScreen> {
         ModeratorFilterBar(
           l10n: l10n,
           filter: _filter,
-          counts: <ModeratorQueueFilter, int>{
-            for (final f in ModeratorQueueFilter.values) f: _count(f),
-          },
+          counts: moderatorQueueCounts(_desk, rejected: _rejected),
           onChanged: (f) => setState(() => _filter = f),
         ),
         Expanded(

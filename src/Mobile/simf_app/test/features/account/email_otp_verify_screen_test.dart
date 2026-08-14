@@ -26,6 +26,10 @@ class _FakeAuthController extends AuthController {
     verifiedCode = code;
     // Throw after capturing so the test stays on the screen (a success would
     // route home via routeAfterAuth + the biometric-enrolment offer).
+    // AuthFailure is a sealed RESULT type: production returns it, never throws.
+    // A fake repository throws it to drive the failure path a screen handles,
+    // so it is deliberately neither an Exception nor an Error.
+    // ignore: only_throw_errors
     throw const InvalidCredentials(
       ApiFailure(
         code: ApiErrorCodes.authInvalidCredentials,

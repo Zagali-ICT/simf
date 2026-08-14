@@ -62,10 +62,10 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
   /// interests-only change nulls no other field.
   UserProfileResponse? _editProfile;
 
-  /// "Show me in Meet People Like You" visibility. The in-app opt-in was removed
-  /// (owner 2026-07-24) — this now lives only in the CP; the value is seeded from
-  /// the loaded profile and re-sent verbatim on save so a full profile re-POST
-  /// never clobbers the CP-set flag.
+  /// "Show me in Meet People Like You" visibility. The in-app opt-in was
+  /// removed (owner 2026-07-24) — this now lives only in the CP; the value is
+  /// seeded from the loaded profile and re-sent verbatim on save so a full
+  /// profile re-POST never clobbers the CP-set flag.
   bool _showInMeetLikeYou = true;
 
   bool _loading = true;

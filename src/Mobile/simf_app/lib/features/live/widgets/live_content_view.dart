@@ -4,9 +4,14 @@ import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
 import 'package:simf_app/features/live/data/live_models.dart';
 import 'package:simf_app/features/live/data/live_presentation.dart';
-import 'package:simf_app/features/live/widgets/live_content.dart';
+import 'package:simf_app/features/live/widgets/ask_question_button.dart';
+import 'package:simf_app/features/live/widgets/feed_toggle.dart';
+import 'package:simf_app/features/live/widgets/gold_bullet.dart';
 import 'package:simf_app/features/live/widgets/live_message_surfaces.dart';
+import 'package:simf_app/features/live/widgets/live_notice_banner.dart';
 import 'package:simf_app/features/live/widgets/live_player_surface.dart';
+import 'package:simf_app/features/live/widgets/sign_language_note.dart';
+import 'package:simf_app/features/live/widgets/upcoming_card.dart';
 
 /// The live screen's body once a session is resolved: the player band, the
 /// broadcast header, the Q&A entry and the upcoming-sessions list.
@@ -47,42 +52,39 @@ class LiveContentView extends StatelessWidget {
     final signUrl = session.liveSignLanguageUrl;
     final hasBothFeeds = mainUrl != null && signUrl != null;
     // S-3 — "live" is the session being INSIDE its scheduled window, not merely
-    // "a feed URL is present" (an admin may set the URL before start or leave it
-    // after end). This drives the LIVE badge so it never lies before start /
+    // "a feed URL is present" (an admin may set the URL before start or leave
+    // it after end). This drives the LIVE badge so it never lies before start /
     // after end (the backend closes questions at End). When the window is
     // unknown — the global main-live synthetic (no id) has no start/end — fall
-    // back to "a feed is present" so the always-on forum stream still reads live.
-    final start = session.start;
-    final end = session.end;
-    final nowUtc = saudiNow();
-    final isLive = (start != null && end != null)
-        ? !nowUtc.isBefore(start) && nowUtc.isBefore(end)
-        : mainUrl != null;
+    // back to "a feed is present" so the always-on forum stream still reads
+    // live.
+    final isLive = session.isLiveAt(saudiNow(), hasFeed: mainUrl != null);
     // S-3 honesty — the "يُبث الآن" header and the Ask affordance must never
     // render over a not-live / recording surface, so they also require the feed
     // to actually be up. The LIVE badge already only shows when a URL exists.
     final isBroadcasting = isLive && mainUrl != null;
     // When the main feed is present, the active feed is the sign-language one
-    // only while the toggle is on AND a sign feed exists; otherwise the main feed.
+    // only while the toggle is on AND a sign feed exists; otherwise the main
+    // feed.
     final activeUrl = (showSignLanguage && signUrl != null) ? signUrl : mainUrl;
     // FR-702 (owner 2026-07-31) — the organiser's informational notice for this
-    // broadcast. Null when the CP left both languages blank, and then nothing is
-    // rendered (no empty banner, no reserved space).
-    final notice = session.localizedNotice(isArabic);
+    // broadcast. Null when the CP left both languages blank, and then nothing
+    // is rendered (no empty banner, no reserved space).
+    final notice = session.localizedNotice(isArabic: isArabic);
 
     return ListView(
       padding: EdgeInsets.zero,
       physics: const AlwaysScrollableScrollPhysics(),
       children: <Widget>[
-        // FR-702 — the notice sits ABOVE the player and is purely informational:
-        // it never gates, delays or replaces the feed (owner: "no restriction,
-        // this is only notification").
+        // FR-702 — the notice sits ABOVE the player and is purely
+        // informational: it never gates, delays or replaces the feed (owner:
+        // "no restriction, this is only notification").
         //
         // Shown only when there IS a feed. The branches below are the recording
         // and not-live surfaces, and a notice about the broadcast printed above
-        // "this session is not being streamed" contradicts it — which is exactly
-        // what a notice left behind on a session whose feed was later cleared
-        // would do.
+        // "this session is not being streamed" contradicts it — which is
+        // exactly what a notice left behind on a session whose feed was later
+        // cleared would do.
         if (notice != null && mainUrl != null) LiveNoticeBanner(text: notice),
 
         // The black player surface (frame 934:3614) — full-bleed, edge to edge.
@@ -92,12 +94,13 @@ class LiveContentView extends StatelessWidget {
             // controller and builds a fresh player for the new one.
             key: ValueKey<String>(activeUrl!),
             url: activeUrl,
-            // S-3 — the LIVE badge only when the session is genuinely in-window;
-            // null (badge hidden) for a pre-start premiere / post-end archive URL.
+            // S-3 — the LIVE badge only when the session is genuinely
+            // in-window; null (badge hidden) for a pre-start premiere /
+            // post-end archive URL.
             liveLabel: isLive ? l10n.liveNowLabel : null,
             // P5 — D-439: the admin-set AI caption when present, else the
             // placeholder hint (YouTube CC supplies captions meanwhile).
-            caption: session.localizedCaption(isArabic),
+            caption: session.localizedCaption(isArabic: isArabic),
             captionHint: l10n.liveCaptionHint,
           )
         else if (session.hasRecording)
@@ -120,8 +123,7 @@ class LiveContentView extends StatelessWidget {
                   showSignLanguage: showSignLanguage,
                   mainLabel: l10n.liveFeedMain,
                   signLabel: l10n.liveFeedSignLanguage,
-                  onChanged: (value) =>
-                      onSignLanguageChanged(value),
+                  onChanged: onSignLanguageChanged,
                 ),
                 const SizedBox(height: SimfTokens.space5),
               ],
@@ -134,24 +136,25 @@ class LiveContentView extends StatelessWidget {
                 broadcastLabel(
                   l10n,
                   isLive: isBroadcasting,
-                  hall: session.localizedHall(isArabic),
+                  hall: session.localizedHall(isArabic: isArabic),
                 ),
                 textAlign: TextAlign.start,
                 style: SimfTokens.labelWhiteMediumLg,
               ),
               const SizedBox(height: SimfTokens.space4),
               GoldBullet(
-                text: session.localizedTitle(isArabic),
+                text: session.localizedTitle(isArabic: isArabic),
                 color: SimfTokens.accent,
                 fontWeight: FontWeight.w600,
                 // Frame 934:3616 — the session title bullet is 16px.
                 fontSize: SimfTokens.textLg,
               ),
               // D-433 — the speakers / participants line (frame 934:3617).
-              if (session.localizedSpeakers(isArabic) != null) ...<Widget>[
+              if (session.localizedSpeakers(isArabic: isArabic) !=
+                  null) ...<Widget>[
                 const SizedBox(height: SimfTokens.space2),
                 GoldBullet(
-                  text: session.localizedSpeakers(isArabic)!,
+                  text: session.localizedSpeakers(isArabic: isArabic)!,
                   color: SimfTokens.beigeBorder,
                 ),
               ],
@@ -165,19 +168,20 @@ class LiveContentView extends StatelessWidget {
 
               // A20 (2026-07-26) — the gold "available only inside the Riyadh
               // region per regulations" card (frame 934:3619) is gone. Nothing
-              // anywhere checked the viewer's location, so every viewer was told
-              // about a restriction that does not exist. FR-702 was settled by
-              // the owner (2026-07-31) as "no restriction, this is only
-              // notification": the CP-authored notice now renders as the
+              // anywhere checked the viewer's location, so every viewer was
+              // told about a restriction that does not exist. FR-702 was
+              // settled by the owner (2026-07-31) as "no restriction, this is
+              // only notification": the CP-authored notice now renders as the
               // informational banner above the player, and no viewer is ever
               // geo-checked or blocked.
 
-              // Ask-a-question entry → Page 026 (the frame's L-3 Q&A affordance).
-              // Session-specific — only for a real session, not the global main-live.
-              // S-3 (owner) — only while the session is actually broadcasting (now
-              // within its [start, end] window AND a feed is up): before start the
-              // ask lives on the detail screen, and after end the backend closes
-              // questions (the view is a YouTube archive, not a live broadcast).
+              // Ask-a-question entry → Page 026 (the frame's L-3 Q&A
+              // affordance). Session-specific — only for a real session, not
+              // the global main-live. S-3 (owner) — only while the session is
+              // actually broadcasting (now within its [start, end] window AND a
+              // feed is up): before start the ask lives on the detail screen,
+              // and after end the backend closes questions (the view is a
+              // YouTube archive, not a live broadcast).
               if (hasId && isBroadcasting) ...<Widget>[
                 const SizedBox(height: SimfTokens.space6),
                 AskQuestionButton(

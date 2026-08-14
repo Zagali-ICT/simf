@@ -31,7 +31,7 @@ class GateResultView extends StatelessWidget {
   Widget build(BuildContext context) {
     final allowed = result.isAllowed;
     final accent = allowed ? SimfTokens.success : SimfTokens.danger;
-    final name = result.userProfile?.localizedName(isArabic);
+    final name = result.userProfile?.localizedName(isArabic: isArabic);
     final type = result.userProfile?.profileTypeName;
     final direction = result.direction == ScanDirection.checkOut
         ? l10n.gateDirectionOut

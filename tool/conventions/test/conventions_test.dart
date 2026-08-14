@@ -1,4 +1,8 @@
+import 'dart:io';
+
+import 'package:path/path.dart' as p;
 import 'package:simf_conventions/src/dart_rules.dart';
+import 'package:simf_conventions/src/repo_root.dart';
 import 'package:simf_conventions/src/text_rules.dart';
 import 'package:simf_conventions/src/violation.dart';
 import 'package:test/test.dart';
@@ -363,6 +367,44 @@ class LiveRepository {}
         ),
         isEmpty,
       );
+    });
+  });
+
+  group('repository-root inference', () {
+    // The checker printed "No violations found" from inside a git WORKTREE,
+    // where `.git` is a pointer FILE rather than a directory: the walk-up found
+    // no root, fell back to the working directory, scanned a tree with no
+    // sources under it, and the CI gate passed on an empty scan. These pin both
+    // shapes so the gate cannot go quiet that way again.
+    test('finds a root whose .git is a directory (an ordinary clone)', () {
+      final Directory tmp = Directory.systemTemp.createTempSync('simfroot');
+      addTearDown(() => tmp.deleteSync(recursive: true));
+      final String root = tmp.resolveSymbolicLinksSync();
+      Directory(p.join(root, '.git')).createSync();
+      final Directory deep = Directory(p.join(root, 'tool', 'conventions'))
+        ..createSync(recursive: true);
+
+      expect(inferRepoRoot(deep, fallback: 'FALLBACK'), root);
+    });
+
+    test('finds a root whose .git is a FILE (a git worktree)', () {
+      final Directory tmp = Directory.systemTemp.createTempSync('simfwt');
+      addTearDown(() => tmp.deleteSync(recursive: true));
+      final String root = tmp.resolveSymbolicLinksSync();
+      File(p.join(root, '.git')).writeAsStringSync('gitdir: /somewhere/.git\n');
+      final Directory deep = Directory(p.join(root, 'tool', 'conventions'))
+        ..createSync(recursive: true);
+
+      expect(inferRepoRoot(deep, fallback: 'FALLBACK'), root);
+    });
+
+    test('falls back only when there is no marker at all', () {
+      final Directory tmp = Directory.systemTemp.createTempSync('simfnone');
+      addTearDown(() => tmp.deleteSync(recursive: true));
+      final Directory deep = Directory(p.join(tmp.path, 'a', 'b'))
+        ..createSync(recursive: true);
+
+      expect(inferRepoRoot(deep, fallback: 'FALLBACK'), 'FALLBACK');
     });
   });
 }

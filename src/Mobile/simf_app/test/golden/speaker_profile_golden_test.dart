@@ -17,24 +17,24 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the Speaker-profile screen against Figma frame **908:2110**
-/// (ملف المتحدث / "About Speaker"). Compare to the frame:
-///   flutter test --update-goldens test/golden/speaker_profile_golden_test.dart
+/// (ملف المتحدث / "About Speaker"). Compare to the frame: flutter test
+/// --update-goldens test/golden/speaker_profile_golden_test.dart
 ///
 /// Proves the two-line header (the nationality flag leading the white name over
 /// the beige rank, circled back chevron — Figma 1327:3461), the 125px white
 /// avatar ringed gold (anchor placeholder), the four CV pills in one row — the
 /// active نبذة عنه pill gold on the **right**, the other three border-only (no
-/// fill) running to the left — the navy #192B41 CV card with right-aligned white
-/// body text, and the **text-only** gold طلب مقابلة CTA (Figma 1049:2302 has no
-/// leading icon). RTL throughout.
+/// fill) running to the left — the navy #192B41 CV card with right-aligned
+/// white body text, and the **text-only** gold طلب مقابلة CTA (Figma 1049:2302
+/// has no leading icon). RTL throughout.
 ///
-/// Fixed data only, so the PNG is stable. Known golden-env artifacts (NOT layout
-/// defects): the avatar photo is Image.network → the anchor SVG placeholder (no
-/// HTTP in tests); the nationality flag (🇸🇦) is a colour-emoji glyph → renders
-/// as tofu (no colour-emoji font loaded), but its position (leading the name) is
-/// verifiable; the FilledButton label may render with reduced Arabic glyph
-/// coverage in the headless env — the string is asserted correct by the widget
-/// test, and it renders on device.
+/// Fixed data only, so the PNG is stable. Known golden-env artifacts (NOT
+/// layout defects): the avatar photo is Image.network → the anchor SVG
+/// placeholder (no HTTP in tests); the nationality flag (🇸🇦) is a
+/// colour-emoji glyph → renders as tofu (no colour-emoji font loaded), but its
+/// position (leading the name) is verifiable; the FilledButton label may render
+/// with reduced Arabic glyph coverage in the headless env — the string is
+/// asserted correct by the widget test, and it renders on device.
 
 const _config = SimfDataConfig(
   baseUrl: 'http://test.local/api/v1',
@@ -53,7 +53,8 @@ SpeakerDetail _speaker() => const SpeakerDetail(
       bio: 'A naval commander with over 15 years of experience.',
       bioArabic:
           'قائد بحري بخبرة تتجاوز 15 عامًا في مجال الملاحة والأمن البحري، شارك '
-          'في عدة مهام إقليمية ودولية وله إسهامات في تطوير أنظمة السلامة البحرية '
+          'في عدة مهام إقليمية ودولية وله إسهامات في تطوير أنظمة السلامة '
+              'البحرية '
           'والتدريب الميداني.',
       qualifications: 'Naval Academy graduate.',
       qualificationsArabic: 'خريج الكلية البحرية الملكية مع مرتبة الشرف.',

@@ -1,7 +1,8 @@
-// Tests: SIMF.Api.Tests/OrganizationProfileTests.cs
+﻿// Tests: SIMF.Api.Tests/OrganizationProfileTests.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using SIMF.Application.Configuration.Abstractions;
+using SIMF.Application.Files.Abstractions;
 using SIMF.Common.Enums;
 using SIMF.Domain.Organization;
 using SIMF.Infrastructure.Persistence;
@@ -15,7 +16,9 @@ namespace SIMF.Infrastructure.Configuration;
 /// last-write instant — the endpoint's <c>Last-Modified</c> / 304 token.</summary>
 internal sealed class OrganizationProfileReadService(
     IMemoryCache cache,
-    SimfAppDbContext db) : IOrganizationProfileReadService
+    SimfAppDbContext db,
+    IFeedLinkService feedLinks,
+    HeroVideoUrlResolver heroVideo) : IOrganizationProfileReadService
 {
     private static readonly TimeSpan Ttl = TimeSpan.FromMinutes(5);
     private const string CacheKey = "org-profile:v1";
@@ -49,7 +52,7 @@ internal sealed class OrganizationProfileReadService(
             // The singleton is seeded, so this only happens on an un-migrated DB —
             // answer 200 with an empty profile rather than fail the public read.
             var empty = OrganizationProfileMapper.ToResponse(
-                new OrganizationProfile(), [], [], null);
+                new OrganizationProfile(), [], [], null, null, null);
             return new OrganizationProfileSnapshot(empty, DateTime.UnixEpoch);
         }
 
@@ -72,7 +75,12 @@ internal sealed class OrganizationProfileReadService(
             ? $"app/assets/{AssetCategory.OrganizationLogo}/{OrganizationProfile.SingletonId}/image"
             : null;
 
-        var response = OrganizationProfileMapper.ToResponse(profile, about, details, logoUrl);
+        // The two feeds resolve back to their stored URLs: the clients classify
+        // a feed by reading the string, so they get the string, not a redirect.
+        var response = OrganizationProfileMapper.ToResponse(
+            profile, about, details, logoUrl,
+            await feedLinks.ResolveAsync(profile.LiveStreamFileId, ct),
+            await heroVideo.ResolveAsync(profile.BackgroundVideoFileId, ct));
         var lastModified = profile.UpdatedAt ?? profile.CreatedAt;
         return new OrganizationProfileSnapshot(response, lastModified);
     }

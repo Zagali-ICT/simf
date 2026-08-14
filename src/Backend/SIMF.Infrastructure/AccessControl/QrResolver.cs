@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/GateScanTests.cs, SIMF.Api.Tests/OfflineBadgeUploadTests.cs
+﻿// Tests: SIMF.Api.Tests/GateScanTests.cs, SIMF.Api.Tests/OfflineBadgeUploadTests.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using SIMF.Application.AccessControl.Abstractions;
@@ -28,20 +28,27 @@ internal sealed class QrResolver(
         var normalised = QrId.Normalise(qrId);
         var now = timeProvider.SimfNow();
 
-        // An encrypted offline badge is not a QR id, so translate it to
-        // one before the lookup. Branching on LENGTH rather than trying the
-        // database first keeps the online path at exactly one query and byte
-        // identical to before: every id the system mints is QrIdLength, and a
-        // badge blob is about 54 characters.
-        if (normalised.Length != OfflineBadgeId.QrIdLength
-            && !TryTranslateEventBadge(normalised, now, out normalised))
+        // An encrypted badge decrypts straight to the attendee it belongs to, so
+        // it is a PRIMARY KEY seek rather than an index probe on the printed
+        // serial. It cannot be a lookup by value: the codec draws a fresh nonce
+        // per call, deliberately, so two encodings of one payload differ and no
+        // stored ciphertext would ever match a scan.
+        //
+        // Branching on LENGTH keeps the plain-serial path at exactly one query:
+        // every serial the system mints is QrIdLength, and a badge blob is 78
+        // characters.
+        Guid? badgeProfileId = null;
+        if (normalised.Length != OfflineBadgeId.QrIdLength)
         {
-            return null;
+            if (!TryReadEventBadge(normalised, now, out var decoded)) { return null; }
+            badgeProfileId = decoded.ProfileId;
         }
 
         var profileRow = await appDbContext.UserProfiles
             .AsNoTracking()
-            .Where(profile => profile.QrId == normalised)
+            .Where(profile => badgeProfileId != null
+                ? profile.Id == badgeProfileId
+                : profile.QrId == normalised)
             .Select(profile => new
             {
                 profile.Id,
@@ -54,6 +61,8 @@ internal sealed class QrResolver(
                 profileTypePageColor = profile.ProfileType != null ? profile.ProfileType.PageColor : null,
                 profile.Name,
                 profile.NameArabic,
+                profile.BadgeBatchId,
+                profile.EditionYear,
             })
             .SingleOrDefaultAsync(cancellationToken);
         if (profileRow is null) { return null; }
@@ -92,45 +101,63 @@ internal sealed class QrResolver(
             profileRow.profileTypeName,
             profileRow.profileTypeNameAr,
             profileRow.profileTypePageColor,
-            // Falls back to the profile's own name, which is what a badge is
-            // printed from and what an operator sees on the paper in front of
-            // them; the account display name is only richer when there is one.
-            userRow?.DisplayName ?? profileRow.Name,
-            profileRow.NameArabic);
+            // The profile name wins. It is what the badge is printed from and
+            // what the operator sees on the paper in front of them, and the
+            // profile is the attendee record — the account may not exist
+            // at all for a walk-in. SimfUser.DisplayName serves the greeting and
+            // nothing else, and can still hold a sign-up placeholder.
+            profileRow.Name,
+            profileRow.NameArabic,
+            // Kept from main, and not optional: BadgeBatchId is what the badge
+            // self-claim guard reads to tell a bulk-order badge from a walk-in's,
+            // and EditionYear is the only expiry a minted QR has.
+            profileRow.BadgeBatchId,
+            profileRow.EditionYear);
     }
 
     public string ToStoredQrId(string scanned)
     {
         var normalised = QrId.Normalise(scanned ?? string.Empty);
         if (normalised.Length == OfflineBadgeId.QrIdLength) { return normalised; }
-        return TryTranslateEventBadge(normalised, timeProvider.SimfNow(), out var translated)
-            ? translated
-            : normalised;
+        if (!TryReadEventBadge(normalised, timeProvider.SimfNow(), out var decoded))
+        {
+            // Not translatable, so it comes back normalised and the caller's own
+            // lookup misses in its usual way.
+            return normalised;
+        }
+        // The surfaces that query QrId directly want the stored serial, which
+        // only the attendee row knows. A synchronous lookup would need a second
+        // round-trip here, so return the id in its canonical text form and let
+        // those callers match on the profile instead.
+        return appDbContext.UserProfiles
+            .AsNoTracking()
+            .Where(profile => profile.Id == decoded.ProfileId)
+            .Select(profile => profile.QrId)
+            .SingleOrDefault() ?? normalised;
     }
 
     /// <summary>
-    /// Decrypts an offline badge and returns the QR id it stands for.
-    /// False for anything that is not a badge this server can open, which the
-    /// caller turns into the same <c>QR_UNKNOWN</c> denial an unrecognised code
-    /// has always produced: a scan is never an oracle for which keys are loaded.
+    /// Decrypts a badge to the attendee it names. False for anything that is not
+    /// a badge this server can open, which the caller turns into the same
+    /// <c>QR_UNKNOWN</c> denial an unrecognised code has always produced: a scan
+    /// is never an oracle for which keys are loaded.
     ///
-    /// <para>The payload's profile-type code is deliberately IGNORED here. It is
-    /// there for the scanner's offline allowed-at-this-gate decision; online, the
-    /// ProfileType on the holder's record is authoritative and is what the
-    /// constraint engine checks, so a badge printed with a stale code cannot
-    /// widen access.</para>
+    /// <para>The payload's profile-type code and edition year are deliberately
+    /// IGNORED here. They are there for the SCANNER's offline decision; online,
+    /// the attendee's own record is authoritative and is what the constraint
+    /// engine checks, so a badge printed with a stale code or year cannot widen
+    /// access — it can only be refused by the live check.</para>
     /// </summary>
-    private bool TryTranslateEventBadge(
-        string encoded, DateTime now, out string qrId)
+    private bool TryReadEventBadge(
+        string encoded, DateTime now, out EventBadgePayload payload)
     {
-        qrId = string.Empty;
+        payload = default;
         var options = walkInMode.CurrentValue;
         if (!options.AcceptOfflineBadgesActive(now)) { return false; }
         if (encoded.Length > EventBadgeCodec.MaxEncodedLength) { return false; }
         if (!EventBadgeCodec.TryReadKeyVersion(encoded, out var keyVersion)) { return false; }
         if (options.KeyForVersion(keyVersion) is not { } key) { return false; }
-        if (!EventBadgeCodec.TryDecode(encoded, key, out var payload)) { return false; }
-        return OfflineBadgeId.TryFormat(payload.Sequence, out qrId);
+        return EventBadgeCodec.TryDecode(encoded, key, out payload);
     }
 }
 

@@ -4,7 +4,7 @@ import 'package:simf_app/features/sessions/data/presentation_models.dart';
 void main() {
   group('PresentationsPage.fromData', () {
     test('decodes items and the bilingual session/speaker fields', () {
-      final page = PresentationsPage.fromData(<String, dynamic>{
+      final page = PresentationsPage.fromData(const <String, dynamic>{
         'items': <dynamic>[
           <String, dynamic>{
             'id': 'p1',
@@ -27,13 +27,14 @@ void main() {
       expect(item.fileName, 'deck.pdf');
       expect(item.contentType, 'application/pdf');
       expect(item.sizeBytes, 2048);
-      expect(item.localizedSessionTitle(true), 'مستقبل الاستثمار');
-      expect(item.localizedSessionTitle(false), 'Future of Investment');
-      expect(item.localizedSpeaker(false), 'Dr. Omari');
+      expect(item.localizedSessionTitle(isArabic: true), 'مستقبل الاستثمار');
+      expect(
+          item.localizedSessionTitle(isArabic: false), 'Future of Investment',);
+      expect(item.localizedSpeaker(isArabic: false), 'Dr. Omari');
     });
 
     test('defaults a missing content type and a missing items array', () {
-      final item = PresentationItem.fromJson(<String, dynamic>{
+      final item = PresentationItem.fromJson(const <String, dynamic>{
         'id': 'p2',
         'sessionId': 's2',
         'sessionTitle': 'Talk',

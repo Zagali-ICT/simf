@@ -6,7 +6,8 @@ import 'package:simf_app/features/requests/data/request_models.dart';
 import 'package:simf_app/features/requests/widgets/request_status_style.dart';
 
 /// The horizontally-scrolling status filter chips — each populated status with
-/// its count (no "All" chip; السجل in the top row serves "all"). Figma chip row.
+/// its count (no "All" chip; السجل in the top row serves "all"). Figma chip
+/// row.
 class RequestStatusChips extends StatelessWidget {
   const RequestStatusChips({
     required this.items,

@@ -16,21 +16,21 @@ import 'package:simf_app/features/account/widgets/auth_chrome.dart';
 import 'package:simf_app/features/account/widgets/mobile_field.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// My mobile number — رقم الجوال · route: `RouteNames.myMobile`
-/// Purpose: owner 2026-07-26 — let a signed-in user ADD or EDIT their phone
-///   number from their profile. **Validation only — there is deliberately no OTP
-///   and no verification step**; the number is saved as typed (normalised).
-/// Data: [ProfileRepository] — `GET /app/account/user-profile` to load, then the
-///   existing full-profile upsert `POST /app/account/user-profile` carrying every
-///   loaded field back (via [UserProfileResponse.toUpsertRequest]) with only the
-///   mobile replaced, so an edit nulls nothing. No new endpoint, no schema change:
-///   `UserProfile.SaudiMobile` / `.InternationalMobile` already exist and the
-///   server's `UpsertUserProfileRequestValidator` already checks both shapes.
+/// My mobile number — رقم الجوال · route: `RouteNames.myMobile` Purpose: owner
+/// 2026-07-26 — let a signed-in user ADD or EDIT their phone number from their
+/// profile. **Validation only — there is deliberately no OTP and no
+/// verification step**; the number is saved as typed (normalised). Data:
+/// [ProfileRepository] — `GET /app/account/user-profile` to load, then the
+/// existing full-profile upsert `POST /app/account/user-profile` carrying every
+/// loaded field back (via [UserProfileResponse.toUpsertRequest]) with only the
+/// mobile replaced, so an edit nulls nothing. No new endpoint, no schema
+/// change: `UserProfile.SaudiMobile` / `.InternationalMobile` already exist and
+/// the server's `UpsertUserProfileRequestValidator` already checks both shapes.
 /// Figma: no bound node — reuses the shared navy account chrome, like the
-///   My-interests edit surface it sits next to in My-Area.
-/// Contract: the profile's nationality picks the field — a Saudi national edits
-///   `saudiMobile` (05XXXXXXXX / +9665XXXXXXXX), everyone else
-///   `internationalMobile` (E.164). The number itself always renders LTR.
+/// My-interests edit surface it sits next to in My-Area. Contract: the
+/// profile's nationality picks the field — a Saudi national edits `saudiMobile`
+/// (05XXXXXXXX / +9665XXXXXXXX), everyone else `internationalMobile` (E.164).
+/// The number itself always renders LTR.
 class MyMobileScreen extends ConsumerStatefulWidget {
   const MyMobileScreen({super.key});
 
@@ -200,8 +200,8 @@ class _MyMobileScreenState extends ConsumerState<MyMobileScreen> {
                     const SizedBox(height: SimfTokens.space2),
                     Text(
                       stored.isEmpty ? l10n.myMobileNoneYet : stored,
-                      // A phone number is always read left-to-right, even in the
-                      // Arabic RTL layout.
+                      // A phone number is always read left-to-right, even in
+                      // the Arabic RTL layout.
                       textDirection: TextDirection.ltr,
                       textAlign: TextAlign.start,
                       style: const TextStyle(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/route_names.dart' show RouteNames;
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/core/utils/refresh.dart';
@@ -15,21 +16,22 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 export 'data/media_models.dart';
 export 'data/media_repository.dart';
 
-/// Page 030 — التغطية الإعلامية · معرض الصور والفيديوهات · Media gallery
-/// (#30, `/media`, Guest+), rebuilt to the KSA-Project frame **947:3764** on the
+/// Page 030 — التغطية الإعلامية · معرض الصور والفيديوهات · Media gallery (#30,
+/// `/media`, Guest+), rebuilt to the KSA-Project frame **947:3764** on the
 /// shared shell.
 ///
 /// **Public.** The frame is the *media-coverage* hub: a three-tab selector
-/// (الأخبار · الشركاء الإعلاميون · معرض الصور والفيديوهات) over the active tab's
-/// content. This screen owns the **gallery** tab; the other two tabs navigate
-/// to their own routes ([RouteNames.news] / [RouteNames.mediaPartners]). The
-/// gallery splits the media cache into two labelled sections — **الصور**
-/// (image tiles) and **الفيديوهات** (video tiles with a centred play glyph) —
-/// each a two-up grid of rounded tiles with a navy bottom-gradient. Tiles with
-/// an uploaded bitmap render it from the public `…/app/media/{id}/…` route
-/// (thumbnail preferred, image fallback) with a loading spinner and a graceful
-/// fall-back to the kind icon when there is no bitmap or the fetch fails. Video
-/// *playback* (opening the external `VideoUrl`) is still deferred.
+/// (الأخبار · الشركاء الإعلاميون · معرض الصور والفيديوهات) over the active
+/// tab's content. This screen owns the **gallery** tab; the other two tabs
+/// navigate to their own routes ([RouteNames.news] /
+/// [RouteNames.mediaPartners]). The gallery splits the media cache into two
+/// labelled sections — **الصور** (image tiles) and **الفيديوهات** (video tiles
+/// with a centred play glyph) — each a two-up grid of rounded tiles with a navy
+/// bottom-gradient. Tiles with an uploaded bitmap render it from the public
+/// `…/app/media/{id}/…` route (thumbnail preferred, image fallback) with a
+/// loading spinner and a graceful fall-back to the kind icon when there is no
+/// bitmap or the fetch fails. Video *playback* (opening the external
+/// `VideoUrl`) is still deferred.
 class GalleryScreen extends ConsumerWidget {
   const GalleryScreen({super.key});
 

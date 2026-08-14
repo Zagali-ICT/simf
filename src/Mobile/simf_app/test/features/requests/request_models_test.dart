@@ -26,7 +26,7 @@ void main() {
 
   group('AppRequestItem.fromJson', () {
     test('parses every field', () {
-      final item = AppRequestItem.fromJson(<String, dynamic>{
+      final item = AppRequestItem.fromJson(const <String, dynamic>{
         'kind': 3,
         'id': 'abc',
         'title': 'Official attendance certificate',
@@ -41,13 +41,14 @@ void main() {
       expect(item.status, AppRequestStatus.pending);
       expect(item.canCancel, isTrue);
       expect(item.eventDate, isNull);
-      expect(item.localizedSubtitle(true), 'شهادة حضور رسمية');
-      expect(item.localizedSubtitle(false), 'Official attendance certificate');
+      expect(item.localizedSubtitle(isArabic: true), 'شهادة حضور رسمية');
+      expect(item.localizedSubtitle(isArabic: false),
+          'Official attendance certificate',);
     });
 
     // Owner 2026-07-19 — the speaker rank (subtitle line) localizes AR/EN.
     test('localizedRank picks the speaker rank per locale, with fallback', () {
-      final both = AppRequestItem.fromJson(<String, dynamic>{
+      final both = AppRequestItem.fromJson(const <String, dynamic>{
         'kind': 0,
         'id': 's1',
         'title': 'Dr. Sadie Creese',
@@ -56,11 +57,13 @@ void main() {
         'subtitle': 'Professor of Cybersecurity, Oxford',
         'subtitleArabic': 'أستاذة الأمن السيبراني، أكسفورد',
       });
-      expect(both.localizedRank(true), 'أستاذة الأمن السيبراني، أكسفورد');
-      expect(both.localizedRank(false), 'Professor of Cybersecurity, Oxford');
+      expect(both.localizedRank(isArabic: true),
+          'أستاذة الأمن السيبراني، أكسفورد',);
+      expect(both.localizedRank(isArabic: false),
+          'Professor of Cybersecurity, Oxford',);
 
       // Arabic requested but only English present → falls back to English.
-      final enOnly = AppRequestItem.fromJson(<String, dynamic>{
+      final enOnly = AppRequestItem.fromJson(const <String, dynamic>{
         'kind': 0,
         'id': 's2',
         'title': 'X',
@@ -68,22 +71,22 @@ void main() {
         'status': 0,
         'subtitle': 'Analyst',
       });
-      expect(enOnly.localizedRank(true), 'Analyst');
+      expect(enOnly.localizedRank(isArabic: true), 'Analyst');
 
       // No rank at all → null (the card falls back to the type headline).
-      final none = AppRequestItem.fromJson(<String, dynamic>{
+      final none = AppRequestItem.fromJson(const <String, dynamic>{
         'kind': 1,
         'id': 's3',
         'title': 'Poland',
         'titleArabic': 'بولندا',
         'status': 0,
       });
-      expect(none.localizedRank(true), isNull);
-      expect(none.localizedRank(false), isNull);
+      expect(none.localizedRank(isArabic: true), isNull);
+      expect(none.localizedRank(isArabic: false), isNull);
     });
 
     test('parses responseNote and treats blank as null', () {
-      final withNote = AppRequestItem.fromJson(<String, dynamic>{
+      final withNote = AppRequestItem.fromJson(const <String, dynamic>{
         'kind': 3,
         'id': 'r1',
         'title': 'Doc',
@@ -93,7 +96,7 @@ void main() {
       });
       expect(withNote.responseNote, 'Missing passport copy.');
 
-      final blankNote = AppRequestItem.fromJson(<String, dynamic>{
+      final blankNote = AppRequestItem.fromJson(const <String, dynamic>{
         'kind': 3,
         'id': 'r2',
         'title': 'Doc',
@@ -103,7 +106,7 @@ void main() {
       });
       expect(blankNote.responseNote, isNull);
 
-      final noKey = AppRequestItem.fromJson(<String, dynamic>{
+      final noKey = AppRequestItem.fromJson(const <String, dynamic>{
         'kind': 3,
         'id': 'r3',
         'title': 'Doc',
@@ -114,7 +117,7 @@ void main() {
     });
 
     test('canCancel defaults to false and missing dates fall back', () {
-      final item = AppRequestItem.fromJson(<String, dynamic>{
+      final item = AppRequestItem.fromJson(const <String, dynamic>{
         'kind': 0,
         'id': 'x',
         'title': 'Speaker',
@@ -122,13 +125,14 @@ void main() {
         'status': 1,
       });
       expect(item.canCancel, isFalse);
-      expect(item.createdAt, DateTime.fromMillisecondsSinceEpoch(0, isUtc: true));
+      expect(
+          item.createdAt, DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),);
       // displayDate falls back to createdAt when there is no event date.
       expect(item.displayDate, item.createdAt);
     });
 
     test('displayDate prefers the event date when present', () {
-      final item = AppRequestItem.fromJson(<String, dynamic>{
+      final item = AppRequestItem.fromJson(const <String, dynamic>{
         'kind': 2,
         'id': 'b',
         'title': 'Vision 2030 · Main Hall',
@@ -144,8 +148,20 @@ void main() {
   group('listFromData', () {
     test('reads the bare list the endpoint returns', () {
       final items = AppRequestItem.listFromData(<dynamic>[
-        <String, dynamic>{'kind': 4, 'id': '1', 'title': 'A', 'titleArabic': 'أ', 'status': 0},
-        <String, dynamic>{'kind': 3, 'id': '2', 'title': 'B', 'titleArabic': 'ب', 'status': 2},
+        <String, dynamic>{
+          'kind': 4,
+          'id': '1',
+          'title': 'A',
+          'titleArabic': 'أ',
+          'status': 0,
+        },
+        <String, dynamic>{
+          'kind': 3,
+          'id': '2',
+          'title': 'B',
+          'titleArabic': 'ب',
+          'status': 2,
+        },
       ]);
       expect(items, hasLength(2));
       expect(items.first.kind, AppRequestKind.badgeUpdate);

@@ -96,7 +96,7 @@ internal sealed class AdminSponsorService(
                 sponsor.NameArabic,
                 (int)sponsor.Tier,
                 sponsor.Tier.ToString(),
-                sponsor.LogoRelativePath,
+                null,
                 sponsor.Url,
                 sponsor.DisplayOrder,
                 sponsor.IsActive,
@@ -131,9 +131,9 @@ internal sealed class AdminSponsorService(
         Guid actorUserId, AdminCreateSponsorRequest request,
         CancellationToken cancellationToken = default)
     {
-        var (nameEn, nameAr, tier, logoRelativePath, url, displayOrder) =
+        var (nameEn, nameAr, tier, url, displayOrder) =
             Validate(request.NameEn, request.NameAr, request.Tier,
-                request.LogoRelativePath, request.Url, request.DisplayOrder);
+                request.Url, request.DisplayOrder);
         ValidateContactFields(
             request.Email, request.PhonePrimary, request.PhoneSecondary,
             request.FacebookUrl, request.XUrl, request.LinkedInUrl, request.InstagramUrl,
@@ -163,7 +163,6 @@ internal sealed class AdminSponsorService(
             Name = nameEn,
             NameArabic = nameAr,
             Tier = tier,
-            LogoRelativePath = logoRelativePath,
             Url = url,
             DisplayOrder = displayOrder,
             Tagline = NormaliseTagline(request.Tagline),
@@ -203,9 +202,9 @@ internal sealed class AdminSponsorService(
         Guid actorUserId, Guid id, AdminUpdateSponsorRequest request,
         CancellationToken cancellationToken = default)
     {
-        var (nameEn, nameAr, tier, logoRelativePath, url, displayOrder) =
+        var (nameEn, nameAr, tier, url, displayOrder) =
             Validate(request.NameEn, request.NameAr, request.Tier,
-                request.LogoRelativePath, request.Url, request.DisplayOrder);
+                request.Url, request.DisplayOrder);
         ValidateContactFields(
             request.Email, request.PhonePrimary, request.PhoneSecondary,
             request.FacebookUrl, request.XUrl, request.LinkedInUrl, request.InstagramUrl,
@@ -241,7 +240,6 @@ internal sealed class AdminSponsorService(
         sponsor.Name = nameEn;
         sponsor.NameArabic = nameAr;
         sponsor.Tier = tier;
-        sponsor.LogoRelativePath = logoRelativePath;
         sponsor.Url = url;
         sponsor.DisplayOrder = displayOrder;
         sponsor.Tagline = NormaliseTagline(request.Tagline);
@@ -299,9 +297,9 @@ internal sealed class AdminSponsorService(
     }
 
     private static (string nameEn, string nameAr, SponsorTier tier,
-        string? logoRelativePath, string? url, int displayOrder) Validate(
+        string? url, int displayOrder) Validate(
             string nameEnRaw, string nameArRaw, int tierRaw,
-            string? logoRelativePathRaw, string? urlRaw, int displayOrderRaw)
+            string? urlRaw, int displayOrderRaw)
     {
         var nameEn = (nameEnRaw ?? string.Empty).Trim();
         if (nameEn.Length is < 1 or > 256)
@@ -327,15 +325,6 @@ internal sealed class AdminSponsorService(
         }
         var tier = (SponsorTier)tierRaw;
 
-        var logoRelativePath = string.IsNullOrWhiteSpace(logoRelativePathRaw)
-            ? null : logoRelativePathRaw.Trim();
-        if (logoRelativePath is { Length: > 256 })
-        {
-            throw new ApiException(ErrorCodes.SponsorInvalid, 400,
-                "Logo path must be 256 characters or fewer.",
-                "يجب أن يكون مسار الشعار 256 حرفاً أو أقل.");
-        }
-
         var url = string.IsNullOrWhiteSpace(urlRaw) ? null : urlRaw.Trim();
         if (url is { Length: > 512 })
         {
@@ -351,7 +340,7 @@ internal sealed class AdminSponsorService(
                 "يجب أن يكون ترتيب العرض صفراً أو عدداً صحيحاً موجباً.");
         }
 
-        return (nameEn, nameAr, tier, logoRelativePath, url, displayOrderRaw);
+        return (nameEn, nameAr, tier, url, displayOrderRaw);
     }
 
     // Validates the identity-card fields inlined from the removed
@@ -449,7 +438,7 @@ internal sealed class AdminSponsorService(
             sponsor.NameArabic,
             (int)sponsor.Tier,
             sponsor.Tier.ToString(),
-            sponsor.LogoRelativePath,
+            null,
             sponsor.Url,
             sponsor.DisplayOrder,
             sponsor.IsActive,

@@ -5,13 +5,13 @@ import 'package:simf_app/app/theme/tokens.dart';
 
 /// Mandatory "I accept the terms and conditions" checkbox on sign-up step 1
 /// (D-719, owner batch 2026-07-09). Registration must be gated on an explicit
-/// accept — a checkbox, not a link (profile keeps the read-only link). The
-/// box styling mirrors the sign-in remember-me box; the "الشروط والأحكام" span
-/// is tappable and opens Page 009 in consent mode via [onOpenTerms], and the
+/// accept — a checkbox, not a link (profile keeps the read-only link). The box
+/// styling mirrors the sign-in remember-me box; the "الشروط والأحكام" span is
+/// tappable and opens Page 009 in consent mode via [onOpenTerms], and the
 /// screen auto-checks the box when the visitor taps موافق there.
 ///
-/// Acceptance state lives on the screen (this widget is a pure control): tapping
-/// the box (or the lead text) calls [onChanged]; the terms link calls
+/// Acceptance state lives on the screen (this widget is a pure control):
+/// tapping the box (or the lead text) calls [onChanged]; the terms link calls
 /// [onOpenTerms]. When [showError] is set the box border turns red and the
 /// bilingual "you must accept" message shows beneath.
 class AccountTermsCheckbox extends StatelessWidget {

@@ -51,7 +51,6 @@ internal sealed class SpeakerConfiguration : IEntityTypeConfiguration<Speaker>
         builder.Property(speaker => speaker.City).HasMaxLength(128);
         builder.Property(speaker => speaker.CityArabic).HasMaxLength(128);
 
-        builder.Property(speaker => speaker.PhotoRelativePath).HasMaxLength(256);
 
         builder.HasIndex(speaker => speaker.Code).IsUnique();
         // Real DB FK on the same-DB reference. OnDelete=Restrict

@@ -70,7 +70,7 @@ void main() {
         ),
       ).thenAnswer((_) async => SignInSession(_session()));
       var current = _user(RegistrationStatus.pending);
-      when(() => repo.getCurrentUser()).thenAnswer((_) async => current);
+      when(repo.getCurrentUser).thenAnswer((_) async => current);
 
       final container = _container(repo, secure);
       addTearDown(container.dispose);
@@ -111,8 +111,11 @@ void main() {
         ),
       ).thenAnswer((_) async => SignInSession(_session()));
       var fail = false;
-      when(() => repo.getCurrentUser()).thenAnswer((_) async {
+      when(repo.getCurrentUser).thenAnswer((_) async {
         if (fail) {
+          // Reproduces exactly what the real repository does on a wire error:
+          // it throws an `AuthFailure`, the package's sealed error channel.
+          // ignore: only_throw_errors
           throw const NetworkUnavailable(
             ApiFailure(code: ApiErrorCodes.clientNetwork, message: 'offline'),
           );

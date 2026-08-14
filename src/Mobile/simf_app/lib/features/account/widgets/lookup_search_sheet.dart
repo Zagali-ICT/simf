@@ -65,7 +65,8 @@ class _LookupSearchSheetState extends State<LookupSearchSheet> {
           child: Column(
             children: <Widget>[
               Padding(
-                padding: const EdgeInsets.fromLTRB(SimfTokens.space4, SimfTokens.space4, SimfTokens.space4, SimfTokens.space2),
+                padding: const EdgeInsets.fromLTRB(SimfTokens.space4,
+                    SimfTokens.space4, SimfTokens.space4, SimfTokens.space2,),
                 child: TextField(
                   key: widget.searchFieldKey,
                   autofocus: true,

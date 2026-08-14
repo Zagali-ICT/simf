@@ -115,8 +115,12 @@ public sealed class PublicEditions(SimfPublicClient api, IMemoryCache cache)
                 return new PublicEdition(
                     AnchorId: $"ed-{e.Year}",
                     NavLabel: Label(title, e.Year),
-                    Image: !string.IsNullOrWhiteSpace(e.CoverImageRelativePath)
-                        ? e.CoverImageRelativePath!
+                    // The cover comes from the one file store, served by row id.
+                    // CoverImageRelativePath is retained on the wire but always
+                    // null now, so HasCoverAsset is the flag to branch on; an
+                    // edition without an upload keeps the stock cover.
+                    Image: e.HasCoverAsset
+                        ? $"/content/assets/ArchiveCover/{e.Id}/image"
                         : FallbackCovers[i % FallbackCovers.Length],
                     Date: new Bilingual(e.DateLabelAr ?? e.Year.ToString(), e.DateLabelEn ?? e.Year.ToString()),
                     Name: title,

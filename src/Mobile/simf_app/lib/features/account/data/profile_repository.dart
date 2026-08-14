@@ -18,8 +18,7 @@ class ProfileRepository {
   Future<UserProfileResponse> getMyProfile() {
     return _client.get<UserProfileResponse>(
       AccountEndpoints.userProfile,
-      decodeData: (data) =>
-          UserProfileResponse.fromJson(_asMap(data)),
+      decodeData: (data) => UserProfileResponse.fromJson(_asMap(data)),
     );
   }
 
@@ -30,8 +29,7 @@ class ProfileRepository {
     return _client.post<UserProfileResponse>(
       AccountEndpoints.userProfile,
       body: request.toJson(),
-      decodeData: (data) =>
-          UserProfileResponse.fromJson(_asMap(data)),
+      decodeData: (data) => UserProfileResponse.fromJson(_asMap(data)),
     );
   }
 
@@ -48,9 +46,8 @@ class ProfileRepository {
   Future<List<ProfileTypeItem>> getProfileTypes({bool? isVisitor}) {
     return _client.get<List<ProfileTypeItem>>(
       AccountEndpoints.profileTypes,
-      queryParameters: isVisitor == null
-          ? null
-          : <String, dynamic>{'isVisitor': isVisitor},
+      queryParameters:
+          isVisitor == null ? null : <String, dynamic>{'isVisitor': isVisitor},
       decodeData: (data) => _keyed(data, 'items', ProfileTypeItem.fromJson),
     );
   }
@@ -82,10 +79,10 @@ class ProfileRepository {
     );
   }
 
-  /// Self-service ID-image upload (multipart) — `POST /app/account/user-profile/id-image`.
-  /// 5 MB / jpeg|png|webp guards are server-side (content-type + magic-byte
-  /// verified), so the MIME is derived from [filename] and sent on the file part.
-  /// Returns true on success.
+  /// Self-service ID-image upload (multipart) — `POST
+  /// /app/account/user-profile/id-image`. 5 MB / jpeg|png|webp guards are
+  /// server-side (content-type + magic-byte verified), so the MIME is derived
+  /// from [filename] and sent on the file part. Returns true on success.
   Future<bool> uploadIdImage({
     required List<int> bytes,
     required String filename,
@@ -95,7 +92,7 @@ class ProfileRepository {
       bytes: bytes,
       filename: filename,
       contentType: mimeForFilename(filename),
-      decodeData: (data) => data is bool ? data : true,
+      decodeData: (data) => data is! bool || data,
     );
   }
 
@@ -189,9 +186,10 @@ final myProfileProvider = FutureProvider<UserProfileResponse?>((ref) async {
   }
 });
 
-/// Best-effort reference number (`SIMF-2026-…`) for the badge + profile ID line.
-/// It lives on the user-profile (the My-Area dashboard doesn't carry it), so the
-/// badge/profile read it here. Null while loading / for a guest / on error.
+/// Best-effort reference number (`SIMF-2026-…`) for the badge + profile ID
+/// line. It lives on the user-profile (the My-Area dashboard doesn't carry
+/// it), so the badge/profile read it here. Null while loading / for a guest /
+/// on error.
 final referenceNumberProvider = FutureProvider<String?>((ref) async {
   final profile = await ref.watch(myProfileProvider.future);
   final reference = profile?.referenceNumber?.trim();
@@ -216,7 +214,8 @@ final currentUserMeetingAccessProvider =
   );
 });
 
-/// The signed-in user's Bi-Meeting entitlements (admin-assigned per-user flags).
+/// The signed-in user's Bi-Meeting entitlements (admin-assigned per-user
+/// flags).
 class MeetingAccess {
   const MeetingAccess({required this.speaker, required this.delegation});
 

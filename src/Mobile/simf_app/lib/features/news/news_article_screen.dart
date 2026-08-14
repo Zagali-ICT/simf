@@ -114,16 +114,16 @@ class _NewsArticleScreenState extends ConsumerState<NewsArticleScreen> {
       padding: const EdgeInsets.all(SimfTokens.space4),
       children: <Widget>[
         Text(
-          article.localizedCategory(isArabic),
+          article.localizedCategory(isArabic: isArabic),
           style: SimfTokens.labelGoldBoldXs,
         ),
         const SizedBox(height: SimfTokens.space2),
         Text(
-          article.localizedTitle(isArabic),
+          article.localizedTitle(isArabic: isArabic),
           style: SimfTokens.titleBoldXl,
         ),
         const SizedBox(height: SimfTokens.space4),
-        Text(article.localizedBody(isArabic)),
+        Text(article.localizedBody(isArabic: isArabic)),
       ],
     );
   }

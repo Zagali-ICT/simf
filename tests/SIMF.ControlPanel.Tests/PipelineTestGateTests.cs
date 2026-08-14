@@ -272,7 +272,7 @@ public class PipelineTestGateTests
         // The names as REGISTERED in the portal, not as they read. `SIMF-Prod`
         // is the PRE-PRODUCTION server; `SIM-RNSF` is production (SIMF APP 01).
         // Confirmed with the owner after a deploy failed against invented names
-        // (D-891). Do not "correct" either one.
+        // (D-896). Do not "correct" either one.
         string[] expected = ["SIMF-Prod", "SIM-RNSF"];
 
         var lines = Pipeline().Split('\n');

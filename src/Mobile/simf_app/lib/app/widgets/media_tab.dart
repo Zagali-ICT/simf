@@ -5,7 +5,8 @@ import 'package:simf_app/app/theme/tokens.dart';
 /// 8px-radius pill — active is solid gold with **white** text; inactive is a
 /// transparent pill with a beige 0.2 hairline and beige text.
 class MediaTab extends StatelessWidget {
-  const MediaTab({required this.label, required this.active, super.key, this.onTap});
+  const MediaTab(
+      {required this.label, required this.active, super.key, this.onTap,});
 
   final String label;
   final bool active;
@@ -31,7 +32,8 @@ class MediaTab extends StatelessWidget {
           height: SimfTokens.mediaTabHeight,
           child: Center(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space2),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: SimfTokens.space2),
               child: Text(
                 label,
                 textAlign: TextAlign.center,

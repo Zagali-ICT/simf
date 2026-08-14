@@ -38,7 +38,8 @@ class RegistrationSuccessBody extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: SimfTokens.registrationSuccessBodyMaxWidth),
+          constraints: const BoxConstraints(
+              maxWidth: SimfTokens.registrationSuccessBodyMaxWidth,),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
@@ -69,8 +70,7 @@ class RegistrationSuccessBody extends StatelessWidget {
               RegistrationSuccessActions(
                 statusLabel: l10n.registrationStatusButton,
                 homeLabel: l10n.goHomeButton,
-                onStatus: () =>
-                    context.goNamed(RouteNames.registrationStatus),
+                onStatus: () => context.goNamed(RouteNames.registrationStatus),
                 onHome: () => context.go('/'),
               ),
               const SizedBox(height: SimfTokens.space8),

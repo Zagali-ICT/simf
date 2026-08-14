@@ -16,28 +16,30 @@ import 'package:simf_app/features/sessions/widgets/seat_map_async_view.dart';
 import 'package:simf_app/features/sessions/widgets/selected_seat_chip.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// D-485 — **Seat picker** (`/sessions/:sessionId/pick-seat`, approved Visitor).
-/// An assigned-seat session's selectable hall grid: tap an **available** seat to
-/// SELECT it (a confirmation chip appears), then commit with "Confirm my seat";
-/// or auto-pick one (owner 2026-07-25 — a two-step select→confirm replaces the
-/// former one-tap reserve). Reuses the shipped seat endpoints (`GET …/seats`
-/// to draw, `POST …/seats/reserve` / `…/reserve-random` to hold). It pops
-/// with `true` so the session page reloads and shows the reservation.
+/// D-485 — **Seat picker** (`/sessions/:sessionId/pick-seat`, approved
+/// Visitor). An assigned-seat session's selectable hall grid: tap an
+/// **available** seat to SELECT it (a confirmation chip appears), then commit
+/// with "Confirm my seat"; or auto-pick one (owner 2026-07-25 — a two-step
+/// select→confirm replaces the former one-tap reserve). Reuses the shipped seat
+/// endpoints (`GET …/seats` to draw, `POST …/seats/reserve` /
+/// `…/reserve-random` to hold). It pops with `true` so the session page reloads
+/// and shows the reservation.
 ///
 /// A8 (2026-07-27) — there is **no approval step**: the owner made bookings
 /// reservation-only on 2026-07-18, so the reservation is created **Approved**
-/// and the seat is held the moment it is confirmed. It stays a provisional
-/// hold — the server's pre-start sweep releases it if the visitor has not
-/// checked in by three minutes before the session starts, which is what the
-/// success dialog says.
+/// and the seat is held the moment it is confirmed. It stays a provisional hold
+/// — the server's pre-start sweep releases it if the visitor has not checked in
+/// by three minutes before the session starts, which is what the success dialog
+/// says.
 ///
 /// **B1 — change seat (owner request).** The same screen is the destination
 /// chooser for a seat CHANGE: when the seat map says the caller already holds a
 /// seat (`myCell`, seat-specific) it opens in **change mode** — its own title,
-/// hint and CTA, no auto-pick (a move is deliberate) — and committing goes through
-/// a confirm step that names the OLD and the NEW seat before calling
-/// `POST …/seats/move`. The move is atomic server-side, so a lost race leaves the
-/// visitor on the seat they already had; the picker says so and stays usable.
+/// hint and CTA, no auto-pick (a move is deliberate) — and committing goes
+/// through a confirm step that names the OLD and the NEW seat before calling
+/// `POST …/seats/move`. The move is atomic server-side, so a lost race leaves
+/// the visitor on the seat they already had; the picker says so and stays
+/// usable.
 class SeatPickerScreen extends ConsumerStatefulWidget {
   const SeatPickerScreen({required this.sessionId, super.key});
 
@@ -61,8 +63,8 @@ class _SeatPickerScreenState extends ConsumerState<SeatPickerScreen> {
   }
 
   /// B1 — the picker is in CHANGE mode when the caller already holds a
-  /// seat-specific reservation for this session. An open-seating join has no seat
-  /// to move, so it keeps the ordinary reserve behaviour.
+  /// seat-specific reservation for this session. An open-seating join has no
+  /// seat to move, so it keeps the ordinary reserve behaviour.
   static SeatCell? _heldSeat(SessionSeatMap? map) {
     final cell = map?.myCell;
     if (cell == null || cell.kind == SeatReservationKind.openSeating) {
@@ -97,8 +99,9 @@ class _SeatPickerScreenState extends ConsumerState<SeatPickerScreen> {
         row,
         seat,
       ),
-      // Deliberately NOT the screen CTA's own wording: the dialog's action reads
-      // "تغيير المقعد" so the two buttons on screen are never the same words.
+      // Deliberately NOT the screen CTA's own wording: the dialog's action
+      // reads "تغيير المقعد" so the two buttons on screen are never the same
+      // words.
       confirmLabel: l10n.seatChangeCta,
     );
     if (!confirmed || !mounted) {
@@ -169,22 +172,22 @@ class _SeatPickerScreenState extends ConsumerState<SeatPickerScreen> {
       }
       navigator.pop(true);
     } else {
-      // A full session (the capacity cap the CP enforces) gets its own message so
-      // a random/auto pick that hits the maximum reads "no places remain" instead
-      // of a generic failure. Other errors keep the generic seat-reserve message.
-      // D-771 — the two tier refusals get their own copy so a visitor who somehow
-      // reaches an ineligible seat is told WHY, not "could not reserve".
-      // B1 — a losing move says the visitor KEPT their seat (the server rolled the
-      // whole move back), and the remaining move refusals (session started, same
-      // seat, no seat) surface the backend's own bilingual reason.
+      // A full session (the capacity cap the CP enforces) gets its own message
+      // so a random/auto pick that hits the maximum reads "no places remain"
+      // instead of a generic failure. Other errors keep the generic
+      // seat-reserve message. D-771 — the two tier refusals get their own copy
+      // so a visitor who somehow reaches an ineligible seat is told WHY, not
+      // "could not reserve". B1 — a losing move says the visitor KEPT their
+      // seat (the server rolled the whole move back), and the remaining move
+      // refusals (session started, same seat, no seat) surface the backend's
+      // own bilingual reason.
       final message = switch (failureCode) {
         'SEAT_SESSION_FULL' => l10n.joinSessionFull,
         'SEAT_TIER_RESERVED' => l10n.seatTierVvipLocked,
         'SEAT_TIER_NOT_ELIGIBLE' => l10n.seatTierVipLocked,
         'SEAT_ALREADY_RESERVED' when moving => l10n.seatChangeTaken,
-        _ when moving => failureMessage.isNotEmpty
-            ? failureMessage
-            : l10n.seatChangeFailed,
+        _ when moving =>
+          failureMessage.isNotEmpty ? failureMessage : l10n.seatChangeFailed,
         _ => l10n.seatReserveFailed,
       };
       messenger.showSnackBar(SnackBar(content: Text(message)));
@@ -225,7 +228,7 @@ class _SeatPickerScreenState extends ConsumerState<SeatPickerScreen> {
         ),
         children: <Widget>[
           Text(
-            map.localizedSessionTitle(l10n.isArabic) ??
+            map.localizedSessionTitle(isArabic: l10n.isArabic) ??
                 (held == null ? l10n.seatPickerTitle : l10n.seatChangeTitle),
             textAlign: TextAlign.center,
             style: SimfTokens.labelWhiteBoldTitle,
@@ -246,8 +249,8 @@ class _SeatPickerScreenState extends ConsumerState<SeatPickerScreen> {
               style: SimfTokens.labelWhiteSemibold,
             ),
           ],
-          // D-771 — explain the padlocked seats, but only for a tiered hall so a
-          // plain hall keeps the shipped copy unchanged.
+          // D-771 — explain the padlocked seats, but only for a tiered hall so
+          // a plain hall keeps the shipped copy unchanged.
           if (map.hasTiers) ...<Widget>[
             const SizedBox(height: SimfTokens.space2),
             Text(
@@ -275,8 +278,7 @@ class _SeatPickerScreenState extends ConsumerState<SeatPickerScreen> {
           const SizedBox(height: SimfTokens.space5),
           if (_selectedRow != null && _selectedSeat != null) ...<Widget>[
             SelectedSeatChip(
-              label:
-                  l10n.seatPickerSelectedChip(_selectedRow!, _selectedSeat!),
+              label: l10n.seatPickerSelectedChip(_selectedRow!, _selectedSeat!),
             ),
             const SizedBox(height: SimfTokens.space4),
           ],
@@ -296,7 +298,8 @@ class _SeatPickerScreenState extends ConsumerState<SeatPickerScreen> {
                 borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
               ),
             ),
-            icon: const Icon(Icons.event_seat, size: SimfTokens.seatPickerScreenSize),
+            icon: const Icon(Icons.event_seat,
+                size: SimfTokens.seatPickerScreenSize,),
             label: Text(
               held == null
                   ? l10n.seatPickerConfirmCta
@@ -304,8 +307,9 @@ class _SeatPickerScreenState extends ConsumerState<SeatPickerScreen> {
               style: SimfTokens.titleBold,
             ),
           ),
-          // B1 — no auto-pick when changing seats: a move is a deliberate choice of
-          // WHERE to go, and a random destination would be a worse seat lottery.
+          // B1 — no auto-pick when changing seats: a move is a deliberate
+          // choice of WHERE to go, and a random destination would be a worse
+          // seat lottery.
           if (held == null) ...<Widget>[
             const SizedBox(height: SimfTokens.space4),
             FilledButton.icon(
@@ -318,7 +322,8 @@ class _SeatPickerScreenState extends ConsumerState<SeatPickerScreen> {
                   borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
                 ),
               ),
-              icon: const Icon(Icons.shuffle, size: SimfTokens.seatPickerScreenSize),
+              icon: const Icon(Icons.shuffle,
+                  size: SimfTokens.seatPickerScreenSize,),
               label: Text(
                 l10n.seatPickerRandomCta,
                 style: SimfTokens.titleBold,
@@ -330,4 +335,3 @@ class _SeatPickerScreenState extends ConsumerState<SeatPickerScreen> {
     );
   }
 }
-

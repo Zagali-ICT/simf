@@ -35,6 +35,7 @@ class SessionDetailRepository {
   }
 }
 
-final sessionDetailRepositoryProvider = Provider<SessionDetailRepository>((ref) {
+final sessionDetailRepositoryProvider =
+    Provider<SessionDetailRepository>((ref) {
   return SessionDetailRepository(ref.watch(simfApiClientProvider));
 });

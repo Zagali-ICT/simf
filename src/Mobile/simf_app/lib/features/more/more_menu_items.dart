@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/features/more/more_screen.dart' show MoreScreen;
 
 /// One entry in the المزيد menu: an icon, the localized title, and the route it
 /// opens. Single source of truth shared by the full-page [MoreScreen] and the
@@ -24,12 +25,13 @@ class MoreMenuEntry {
   /// target page stays reachable elsewhere (e.g. media partners from the public
   /// News/Gallery coverage tabs), but a guest / not-yet-approved account does
   /// not see it in the menu (D-666). Route-role-gated entries (rate, contacts)
-  /// don't need this flag — [routeAllowsRole] already hides them from a guest.
+  /// don't need this flag — `routeAllowsRole` already hides them from a guest.
   final bool approvedOnly;
 
   /// When true the entry is shown only to a **signed-in** account — an
   /// auth-required page (e.g. notifications) that a not-logged-in guest cannot
-  /// use, so it should not appear in the menu and dead-bounce to sign-in (D-669).
+  /// use, so it should not appear in the menu and dead-bounce to sign-in
+  /// (D-669).
   final bool signedInOnly;
 }
 

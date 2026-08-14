@@ -36,18 +36,18 @@ class SimfApp extends ConsumerWidget {
     return MaterialApp.router(
       // onGenerateTitle, not `title`: the OS task-switcher label is user-facing
       // copy and the app has an Arabic name. `title` is evaluated outside any
-      // Localizations scope, so it cannot read AppL10n; this callback receives a
-      // context that can.
+      // Localizations scope, so it cannot read AppL10n; this callback receives
+      // a context that can.
       onGenerateTitle: (context) => AppL10n.of(context).appName,
       debugShowCheckedModeBanner: false,
       routerConfig: router,
       // The app is navy-always (the Mockup.html brand surface): every screen is
-      // built on the dark/navy tokens, so themeMode is pinned to dark and the OS
-      // light/dark setting is ignored — on a light-mode device the on-navy text
-      // would otherwise sit on a light scaffold and be unreadable. High-contrast
-      // swaps the dark slot to the high-contrast-dark theme (white-on-black). The
-      // light slots stay wired for a possible future light mode but are not
-      // selected while themeMode is pinned to dark.
+      // built on the dark/navy tokens, so themeMode is pinned to dark and the
+      // OS light/dark setting is ignored — on a light-mode device the on-navy
+      // text would otherwise sit on a light scaffold and be unreadable.
+      // High-contrast swaps the dark slot to the high-contrast-dark theme
+      // (white-on-black). The light slots stay wired for a possible future
+      // light mode but are not selected while themeMode is pinned to dark.
       theme:
           a11y.highContrast ? SimfTheme.highContrastLight() : SimfTheme.light(),
       darkTheme:
@@ -70,9 +70,10 @@ class SimfApp extends ConsumerWidget {
             textScaler: TextScaler.linear(a11y.textSize.scaleFactor),
             disableAnimations: a11y.reduceMotion || mq.disableAnimations,
           ),
-          // D-726 (item 11) — the app-wide session auto-extend guard wraps every
-          // screen: it marks activity on each touch, silently refreshes the
-          // access token while active, and paints the idle timeout countdown.
+          // D-726 (item 11) — the app-wide session auto-extend guard wraps
+          // every screen: it marks activity on each touch, silently refreshes
+          // the access token while active, and paints the idle timeout
+          // countdown.
           child: SessionGuard(child: child ?? const SizedBox.shrink()),
         );
       },

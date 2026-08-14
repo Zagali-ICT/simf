@@ -3,11 +3,12 @@ import 'package:simf_app/features/contacts/data/contact_models.dart';
 import 'package:simf_app/features/contacts/data/contacts_endpoints.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// Data layer for visitor-to-visitor contact sharing (SIMF-FDS-014 §5.7, D-286).
-/// Every call requires an **Approved** account (`RequireApprovedAccount` + the
-/// app token); there is no permission code (self-service, like Connection). All
-/// methods throw [ApiFailure] on a wire error — the screens map 404 (unknown /
-/// revoked token) and 400 (save yourself) to dedicated messages.
+/// Data layer for visitor-to-visitor contact sharing (SIMF-FDS-014 §5.7,
+/// D-286). Every call requires an **Approved** account
+/// (`RequireApprovedAccount` + the app token); there is no permission code
+/// (self-service, like Connection). All methods throw [ApiFailure] on a wire
+/// error — the screens map 404 (unknown / revoked token) and 400 (save
+/// yourself) to dedicated messages.
 class ContactsRepository {
   ContactsRepository(this._client);
 
@@ -74,7 +75,8 @@ class ContactsRepository {
   }
 
   /// `GET /app/contacts/{id}/vcard` → raw vCard 3.0 text for a saved contact.
-  Future<String> getVcard(String id) => _client.getText(ContactsEndpoints.vcard(id));
+  Future<String> getVcard(String id) =>
+      _client.getText(ContactsEndpoints.vcard(id));
 }
 
 final contactsRepositoryProvider = Provider<ContactsRepository>((ref) {

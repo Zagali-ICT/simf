@@ -73,7 +73,8 @@ class _FakeSessionsRepository implements SessionsRepository {
   int calls = 0;
 
   @override
-  Future<List<SessionListItem>> getSessions() async => const <SessionListItem>[];
+  Future<List<SessionListItem>> getSessions() async =>
+      const <SessionListItem>[];
 
   @override
   Future<List<ProgrammeDay>> getDays() async {
@@ -151,16 +152,21 @@ ProgrammeDay _dayOne(List<SessionListItem> sessions) =>
 
 void main() {
   group('SessionsScreen (Page 016 — KSA frame 883:2308)', () {
-    testWidgets('renders the header, day title banner, type tabs and session '
+    testWidgets(
+        'renders the header, day title banner, type tabs and session '
         'rows', (tester) async {
       await _pump(
         tester,
-        repo: _FakeSessionsRepository(days: <ProgrammeDay>[
-          _dayOne(<SessionListItem>[
-            _session('s1', 9, 'Opening'),
-            _session('s2', 11, 'Panel'),
-          ],),
-        ],),
+        repo: _FakeSessionsRepository(
+          days: <ProgrammeDay>[
+            _dayOne(
+              <SessionListItem>[
+                _session('s1', 9, 'Opening'),
+                _session('s2', 11, 'Panel'),
+              ],
+            ),
+          ],
+        ),
       );
 
       expect(find.text('Forum programme'), findsOneWidget); // screen header
@@ -181,12 +187,16 @@ void main() {
     testWidgets('the search box filters the list', (tester) async {
       await _pump(
         tester,
-        repo: _FakeSessionsRepository(days: <ProgrammeDay>[
-          _dayOne(<SessionListItem>[
-            _session('s1', 9, 'Opening keynote'),
-            _session('s2', 11, 'Security panel'),
-          ],),
-        ],),
+        repo: _FakeSessionsRepository(
+          days: <ProgrammeDay>[
+            _dayOne(
+              <SessionListItem>[
+                _session('s1', 9, 'Opening keynote'),
+                _session('s2', 11, 'Security panel'),
+              ],
+            ),
+          ],
+        ),
       );
 
       await tester.enterText(find.byType(TextField), 'keynote');
@@ -200,12 +210,17 @@ void main() {
         (tester) async {
       await _pump(
         tester,
-        repo: _FakeSessionsRepository(days: <ProgrammeDay>[
-          _dayOne(<SessionListItem>[
-            _session('w1', 9, 'Diving workshop', type: SessionType.workshop),
-            _session('e1', 11, 'Gala dinner', type: SessionType.event),
-          ],),
-        ],),
+        repo: _FakeSessionsRepository(
+          days: <ProgrammeDay>[
+            _dayOne(
+              <SessionListItem>[
+                _session('w1', 9, 'Diving workshop',
+                    type: SessionType.workshop,),
+                _session('e1', 11, 'Gala dinner', type: SessionType.event),
+              ],
+            ),
+          ],
+        ),
       );
 
       // الكل (All) shows both.
@@ -229,12 +244,24 @@ void main() {
     testWidgets('the day strip switches the selected day', (tester) async {
       await _pump(
         tester,
-        repo: _FakeSessionsRepository(days: <ProgrammeDay>[
-          _day('d1', DateTime(2026, 9, 13), 'Day One', 'اليوم الأول',
-              <SessionListItem>[_session('s1', 9, 'Opening')],),
-          _day('d2', DateTime(2026, 9, 14), 'Day Two', 'اليوم الثاني',
-              <SessionListItem>[_session('s2', 9, 'Closing')],),
-        ],),
+        repo: _FakeSessionsRepository(
+          days: <ProgrammeDay>[
+            _day(
+              'd1',
+              DateTime(2026, 9, 13),
+              'Day One',
+              'اليوم الأول',
+              <SessionListItem>[_session('s1', 9, 'Opening')],
+            ),
+            _day(
+              'd2',
+              DateTime(2026, 9, 14),
+              'Day Two',
+              'اليوم الثاني',
+              <SessionListItem>[_session('s2', 9, 'Closing')],
+            ),
+          ],
+        ),
       );
 
       // Day 1 selected by default → its title + session.
@@ -250,13 +277,18 @@ void main() {
       expect(find.textContaining('Opening'), findsNothing);
     });
 
-    testWidgets('the day strip pads the event with muted days before and after '
+    testWidgets(
+        'the day strip pads the event with muted days before and after '
         '(Figma 883:2327)', (tester) async {
       await _pump(
         tester,
-        repo: _FakeSessionsRepository(days: <ProgrammeDay>[
-          _dayOne(<SessionListItem>[_session('s1', 9, 'Opening')],),
-        ],),
+        repo: _FakeSessionsRepository(
+          days: <ProgrammeDay>[
+            _dayOne(
+              <SessionListItem>[_session('s1', 9, 'Opening')],
+            ),
+          ],
+        ),
       );
 
       // Day One is the 13th → the band pads 2 days before (11, 12) and 2 after
@@ -274,9 +306,13 @@ void main() {
     testWidgets('the selected day cell inverts to navy', (tester) async {
       await _pump(
         tester,
-        repo: _FakeSessionsRepository(days: <ProgrammeDay>[
-          _dayOne(<SessionListItem>[_session('s1', 9, 'Opening')],),
-        ],),
+        repo: _FakeSessionsRepository(
+          days: <ProgrammeDay>[
+            _dayOne(
+              <SessionListItem>[_session('s1', 9, 'Opening')],
+            ),
+          ],
+        ),
       );
 
       final cell = tester.widget<Container>(
@@ -291,9 +327,13 @@ void main() {
         (tester) async {
       await _pump(
         tester,
-        repo: _FakeSessionsRepository(days: <ProgrammeDay>[
-          _dayOne(<SessionListItem>[_session('fut', 9, 'Closing keynote')],),
-        ],),
+        repo: _FakeSessionsRepository(
+          days: <ProgrammeDay>[
+            _dayOne(
+              <SessionListItem>[_session('fut', 9, 'Closing keynote')],
+            ),
+          ],
+        ),
       );
 
       await tester.tap(find.textContaining('Closing keynote'));
@@ -306,7 +346,8 @@ void main() {
       expect(find.text('No sessions'), findsOneWidget);
     });
 
-    testWidgets('the empty message names the active type filter', (tester) async {
+    testWidgets('the empty message names the active type filter',
+        (tester) async {
       await _pump(
         tester,
         repo: _FakeSessionsRepository(
@@ -352,14 +393,19 @@ void main() {
     testWidgets('renders right-to-left in Arabic', (tester) async {
       await _pump(
         tester,
-        repo: _FakeSessionsRepository(days: <ProgrammeDay>[
-          _dayOne(<SessionListItem>[_session('s1', 9, 'Opening')],),
-        ],),
+        repo: _FakeSessionsRepository(
+          days: <ProgrammeDay>[
+            _dayOne(
+              <SessionListItem>[_session('s1', 9, 'Opening')],
+            ),
+          ],
+        ),
         locale: const Locale('ar'),
       );
 
       expect(find.text('برنامج الملتقى'), findsOneWidget); // screen header
-      expect(find.text('الأجندة'), findsWidgets); // active bottom-nav label (D-750)
+      expect(find.text('الأجندة'),
+          findsWidgets,); // active bottom-nav label (D-750)
       expect(find.text('اليوم الأول'), findsOneWidget); // day title
       expect(find.text('المواعيد'), findsOneWidget);
       expect(find.text('الكل'), findsOneWidget); // All tab
@@ -369,16 +415,29 @@ void main() {
       );
     });
 
-    testWidgets('the day strip orders days right-to-left in Arabic — earliest '
+    testWidgets(
+        'the day strip orders days right-to-left in Arabic — earliest '
         'day on the right (owner 2026-07-22)', (tester) async {
       await _pump(
         tester,
-        repo: _FakeSessionsRepository(days: <ProgrammeDay>[
-          _day('d1', DateTime(2026, 9, 13), 'Day One', 'اليوم الأول',
-              <SessionListItem>[_session('s1', 9, 'Opening')],),
-          _day('d2', DateTime(2026, 9, 14), 'Day Two', 'اليوم الثاني',
-              <SessionListItem>[_session('s2', 9, 'Closing')],),
-        ],),
+        repo: _FakeSessionsRepository(
+          days: <ProgrammeDay>[
+            _day(
+              'd1',
+              DateTime(2026, 9, 13),
+              'Day One',
+              'اليوم الأول',
+              <SessionListItem>[_session('s1', 9, 'Opening')],
+            ),
+            _day(
+              'd2',
+              DateTime(2026, 9, 14),
+              'Day Two',
+              'اليوم الثاني',
+              <SessionListItem>[_session('s2', 9, 'Closing')],
+            ),
+          ],
+        ),
         locale: const Locale('ar'),
       );
 
@@ -393,16 +452,29 @@ void main() {
       );
     });
 
-    testWidgets('the day strip keeps left-to-right order in English — earliest '
+    testWidgets(
+        'the day strip keeps left-to-right order in English — earliest '
         'day on the left', (tester) async {
       await _pump(
         tester,
-        repo: _FakeSessionsRepository(days: <ProgrammeDay>[
-          _day('d1', DateTime(2026, 9, 13), 'Day One', 'اليوم الأول',
-              <SessionListItem>[_session('s1', 9, 'Opening')],),
-          _day('d2', DateTime(2026, 9, 14), 'Day Two', 'اليوم الثاني',
-              <SessionListItem>[_session('s2', 9, 'Closing')],),
-        ],),
+        repo: _FakeSessionsRepository(
+          days: <ProgrammeDay>[
+            _day(
+              'd1',
+              DateTime(2026, 9, 13),
+              'Day One',
+              'اليوم الأول',
+              <SessionListItem>[_session('s1', 9, 'Opening')],
+            ),
+            _day(
+              'd2',
+              DateTime(2026, 9, 14),
+              'Day Two',
+              'اليوم الثاني',
+              <SessionListItem>[_session('s2', 9, 'Closing')],
+            ),
+          ],
+        ),
       );
 
       // Under LTR the earliest day (the 13th) stays to the LEFT of the latest

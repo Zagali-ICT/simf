@@ -254,7 +254,7 @@ const _thirdPartyUnnamedGlyphs = <int>{0xe292};
 /// exemptions** — each is a real problem this sweep found on its first full run
 /// and each needs a decision that is bigger than a test change.
 ///
-///   * (none — the list is empty; see below.)
+/// * (none — the list is empty; see below.)
 ///
 /// `/sessions/join` and `/session-summaries` were on this list with
 /// "BoxConstraints forces an infinite height". FIXED 2026-07-29, and the
@@ -262,8 +262,8 @@ const _thirdPartyUnnamedGlyphs = <int>{0xe292};
 /// `SimfPageShell` for wrapping its body in a scroll host, and concluded the
 /// real fix was a design decision across ~40 screens. The shell does no such
 /// thing — it lays the body out under `Expanded`, and its own doc says the body
-/// is "not scrollable by itself". The actual cause was a two-line double-wrap at
-/// two call sites: `SimfRefreshableMessage` ALREADY wraps its child in a
+/// is "not scrollable by itself". The actual cause was a two-line double-wrap
+/// at two call sites: `SimfRefreshableMessage` ALREADY wraps its child in a
 /// `SimfPullableHost`, and both screens' error branches wrapped it in a second
 /// one. Two nested `SingleChildScrollView`s hand the inner `LayoutBuilder`
 /// maxHeight: infinity, which becomes `BoxConstraints(minHeight: infinity)`.
@@ -281,13 +281,13 @@ const _thirdPartyUnnamedGlyphs = <int>{0xe292};
 /// left behind.
 ///
 /// These two are **excluded from [_sweepPaths] entirely**, not merely
-/// tolerated.
-/// The layout assertion breaks semantics flushing, so it is raised by `pump()`
-/// itself rather than deferred, and flutter_test then fails the whole run at
-/// teardown no matter what the test consumes. Keeping them in would abort the
-/// sweep and hide every route after them — a permanently red test that gets
-/// ignored is worse than an honest, green sweep of 56 routes with two written
-/// down. They must be re-added the moment the shell issue is fixed.
+/// tolerated. The layout assertion breaks semantics flushing, so it is raised
+/// by `pump()` itself rather than deferred, and flutter_test then fails the
+/// whole run at teardown no matter what the test consumes. Keeping them in
+/// would abort the sweep and hide every route after them — a permanently red
+/// test that gets ignored is worse than an honest, green sweep of 56 routes
+/// with two written down. They must be re-added the moment the shell issue is
+/// fixed.
 const _knownRenderIssues = <String>{
   // Empty, and it must stay that way: a route here is a screen nobody is
   // watching. Both former entries were fixed on 2026-07-29 and are back in

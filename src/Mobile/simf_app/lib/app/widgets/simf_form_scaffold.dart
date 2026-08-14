@@ -13,7 +13,8 @@ import 'package:simf_app/app/widgets/simf_page_shell.dart';
 /// The shared navy-sweep scaffold for every account/entry form (login, sign-up,
 /// profile, forgot/reset/badge): the decorative sweep, the forced-LTR
 /// back-chevron + the language toggle pill, the logo + forum-name header, then
-/// [child]. One owner for the chrome the account screens used to each hand-roll.
+/// [child]. One owner for the chrome the account screens used to each
+/// hand-roll.
 ///
 /// [pinnedHeader] `false` (default) scrolls the header + [child] together,
 /// vertically centred — right for the short auth cards. `true` keeps the header
@@ -30,7 +31,7 @@ class SimfFormScaffold extends ConsumerWidget {
     super.key,
   });
 
-  /// The content below the header (wrap form bodies in a [SimfFormCard]).
+  /// The content below the header (wrap form bodies in a `SimfFormCard`).
   final Widget child;
 
   /// Back-chevron action (pop or a fallback route).
@@ -46,12 +47,9 @@ class SimfFormScaffold extends ConsumerWidget {
   final Widget sweep;
 
   void _toggleLanguage(WidgetRef ref) {
-    final isArabic = ref.read(localeControllerProvider).languageCode == 'ar';
-    unawaited(
-      ref
-          .read(localeControllerProvider.notifier)
-          .setLanguage(isArabic ? 'en' : 'ar'),
-    );
+    // LocaleController.toggle() is, by its own doc, the single code path
+    // for this. Four screens re-derived it.
+    unawaited(ref.read(localeControllerProvider.notifier).toggle());
   }
 
   @override
@@ -100,7 +98,7 @@ class SimfFormScaffold extends ConsumerWidget {
           child: Text(
             l10n.signInForumTitle,
             style: const TextStyle(
-              fontSize: 24,
+              fontSize: SimfTokens.text24,
               fontWeight: FontWeight.w500,
               color: SimfTokens.surface,
             ),
@@ -125,13 +123,13 @@ class SimfFormScaffold extends ConsumerWidget {
           topBar,
           Center(
             child: SingleChildScrollView(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 56),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 56),
               // Form content cap (CLAUDE.md §13.7): 560 fills the tablet width
-              // the owner runs on; at phone width the body is narrower than this
-              // anyway, so the phone goldens are unaffected.
+              // the owner runs on; at phone width the body is narrower than
+              // this anyway, so the phone goldens are unaffected.
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: SimfTokens.simfFormScaffoldMaxWidth),
+                constraints: const BoxConstraints(
+                    maxWidth: SimfTokens.simfFormScaffoldMaxWidth,),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,

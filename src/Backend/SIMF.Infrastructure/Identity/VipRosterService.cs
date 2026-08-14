@@ -103,11 +103,11 @@ internal sealed class VipRosterService(
                 return new VipRosterRow(
                     p.ProfileId,
                     p.UserId,
-                    // The account's display name is the one the guest chose for
-                    // themselves; the profile name is what the desk registered
-                    // them as, and it is all there is for a guest who never
-                    // signed up. Same fallback order the gate resolver uses.
-                    user?.DisplayName ?? p.Name,
+                    // The profile name, which is what the desk registered the
+                    // guest as and all there is for one who never signed up.
+                    // Same order the gate resolver uses: the attendee record
+                    // wins, because DisplayName is the greeting field only.
+                    p.Name,
                     p.Name,
                     p.NameArabic,
                     p.Honorific,

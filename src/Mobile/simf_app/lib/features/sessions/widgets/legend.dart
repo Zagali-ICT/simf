@@ -11,7 +11,12 @@ import 'package:simf_app/features/sessions/widgets/legend_item.dart';
 /// the hall holds a confirmed seat, so the shipped three-item frame is
 /// unchanged for a hall nobody has entered yet.
 class Legend extends StatelessWidget {
-  const Legend({required this.l10n, required this.availableBorderColor, required this.swatchSize, required this.showConfirmed, super.key,
+  const Legend({
+    required this.l10n,
+    required this.availableBorderColor,
+    required this.swatchSize,
+    required this.showConfirmed,
+    super.key,
   });
 
   final AppL10n l10n;

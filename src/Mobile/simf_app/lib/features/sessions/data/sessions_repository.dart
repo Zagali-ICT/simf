@@ -3,11 +3,11 @@ import 'package:simf_app/features/sessions/data/session_models.dart';
 import 'package:simf_app/features/sessions/data/sessions_endpoints.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// App-local data layer for the sessions list (Page_016). The read is **public**
-/// (`AllowAnonymous`) — a Guest sees the full programme. The app fetches the
-/// whole programme **once, with no `day` filter**, and the UI filters it inline
-/// (Page_016 L-1); the server's optional `?day=` is intentionally unused.
-/// Throws [ApiFailure] on a wire error.
+/// App-local data layer for the sessions list (Page_016). The read is
+/// **public** (`AllowAnonymous`) — a Guest sees the full programme. The app
+/// fetches the whole programme **once, with no `day` filter**, and the UI
+/// filters it inline (Page_016 L-1); the server's optional `?day=` is
+/// intentionally unused. Throws [ApiFailure] on a wire error.
 class SessionsRepository {
   SessionsRepository(this._client);
 
@@ -47,3 +47,20 @@ final programmeSessionsProvider =
     FutureProvider.autoDispose<List<SessionListItem>>(
   (ref) => ref.watch(sessionsRepositoryProvider).getSessions(),
 );
+
+/// The active programme keyed by session id, derived once per programme change
+/// rather than per rebuild.
+///
+/// The presentations screen built this literal inside `build()`, so every
+/// keystroke on its day tabs re-walked the whole programme to produce a map it
+/// then threw away. A derived provider recomputes only when
+/// [programmeSessionsProvider] itself changes.
+final programmeSessionsByIdProvider =
+    Provider.autoDispose<Map<String, SessionListItem>>((ref) {
+  final sessions =
+      ref.watch(programmeSessionsProvider).valueOrNull ??
+      const <SessionListItem>[];
+  return <String, SessionListItem>{
+    for (final session in sessions) session.id: session,
+  };
+});

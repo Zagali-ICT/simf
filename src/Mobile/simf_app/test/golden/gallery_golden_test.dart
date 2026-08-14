@@ -15,20 +15,21 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the Media-gallery screen against Figma frame **947:3764**
-/// (المركز الاعلامي — معرض الصور والفيديوهات). Regenerate:
-///   flutter test --update-goldens test/golden/gallery_golden_test.dart
+/// (المركز الاعلامي — معرض الصور والفيديوهات). Regenerate: flutter test
+/// --update-goldens test/golden/gallery_golden_test.dart
 ///
 /// Frame parity expected: the shared media-coverage header, the three-tab
 /// selector (the gold-active معرض الصور والفيديوهات right-most, then الشركاء
 /// الإعلاميون, then الأخبار), and the two labelled sections — الصور then
-/// الفيديوهات — each a two-up grid of rounded tiles with a navy bottom-gradient;
-/// the video tile overlays the play glyph. RTL throughout.
+/// الفيديوهات — each a two-up grid of rounded tiles with a navy
+/// bottom-gradient; the video tile overlays the play glyph. RTL throughout.
 ///
 /// Fixed items with no bitmap (so tiles render the deterministic kind-icon
 /// placeholder — no network) → the PNG is stable run-to-run.
 
 const _items = <MediaItem>[
-  MediaItem(id: 'm1', kind: MediaKind.image, title: 'الافتتاح', album: 'اليوم ١'),
+  MediaItem(
+      id: 'm1', kind: MediaKind.image, title: 'الافتتاح', album: 'اليوم ١',),
   MediaItem(id: 'm2', kind: MediaKind.video, title: 'الكلمة الرئيسية'),
 ];
 

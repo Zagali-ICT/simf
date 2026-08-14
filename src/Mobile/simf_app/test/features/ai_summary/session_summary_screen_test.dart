@@ -37,7 +37,7 @@ SessionListItem _session(String id, String titleEn) =>
       'hallNameArabic': 'القاعة الرئيسية',
       'start': '2026-11-23T07:30:00Z',
       'end': '2026-11-23T08:30:00Z',
-      'speakers': <dynamic>[],
+      'speakers': const <dynamic>[],
     });
 
 final _sessions = <SessionListItem>[

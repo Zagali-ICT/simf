@@ -49,18 +49,22 @@ public sealed class UserProfileType : BaseAuditEntity
     /// <summary>Marks this type as a VIP audience tier. It decides who may
     /// self-reserve a VIP-tier seat
     /// (<c>SeatReservationService.IsVipVisitorAsync</c>) and it is what the app
-    /// receives as <c>isVip</c>. The seeder sets it on the VVIP and VIP rows, and
-    /// nothing else writes it — there is no admin API or Control Panel path, so a
-    /// type created from the Control Panel is never VIP.
+    /// receives as <c>isVip</c>. The seeder sets it on the VVIP and VIP rows;
+    /// an admin sets it on any other audience tier from the Control Panel's
+    /// Visitors profile-types form. A partner type is never a VIP tier, so that
+    /// form does not offer the toggle.
     ///
     /// <para>It is a column at all because the test used to be "the profile
     /// type's Name contains 'VIP'", which would wrongly match any future type
     /// whose name merely embedded those letters.</para>
     ///
-    /// <para>It does <b>not</b> gate meeting requests. It was called
-    /// <c>AllowsVipMeetingSlots</c> until speaker-meeting eligibility moved to the
-    /// per-user <c>UserProfile.AllowsSpeakerMeeting</c> flag, leaving a name that
-    /// described a job this column no longer had.</para></summary>
+    /// <para>It does <b>not</b> gate meeting requests. Meeting eligibility is
+    /// assigned per user on <c>UserProfile.AllowsSpeakerMeeting</c> /
+    /// <c>AllowsDelegationMeeting</c>, so two people on the same tier can differ.
+    /// This column was once named for that job and was renamed when those flags
+    /// took it over: a meeting-shaped name reads at the call site as an answer to
+    /// "may this person request a meeting?", which is exactly what it stopped
+    /// answering. The only question it answers is "is this a VIP tier?".</para></summary>
     public bool IsVipTier { get; set; }
 
     /// <summary>Whether a self-registering user is offered this type in the

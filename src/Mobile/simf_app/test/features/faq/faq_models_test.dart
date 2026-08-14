@@ -4,7 +4,7 @@ import 'package:simf_app/features/faq/data/faq_models.dart';
 void main() {
   group('FaqGroup.fromJson', () {
     test('parses a group with its nested entries', () {
-      final group = FaqGroup.fromJson(<String, dynamic>{
+      final group = FaqGroup.fromJson(const <String, dynamic>{
         'id': 'g1',
         'name': 'Registration',
         'nameArabic': 'التسجيل',
@@ -20,15 +20,17 @@ void main() {
       });
 
       expect(group.id, 'g1');
-      expect(group.localizedName(true), 'التسجيل');
-      expect(group.localizedName(false), 'Registration');
+      expect(group.localizedName(isArabic: true), 'التسجيل');
+      expect(group.localizedName(isArabic: false), 'Registration');
       expect(group.entries, hasLength(1));
-      expect(group.entries.first.localizedQuestion(true), 'كيف أسجّل؟');
-      expect(group.entries.first.localizedAnswer(false), 'Use the website.');
+      expect(
+          group.entries.first.localizedQuestion(isArabic: true), 'كيف أسجّل؟',);
+      expect(group.entries.first.localizedAnswer(isArabic: false),
+          'Use the website.',);
     });
 
     test('missing entries decodes to an empty list', () {
-      final group = FaqGroup.fromJson(<String, dynamic>{
+      final group = FaqGroup.fromJson(const <String, dynamic>{
         'id': 'g2',
         'name': 'Venue',
         'nameArabic': 'المكان',
@@ -45,9 +47,9 @@ void main() {
         answerArabic: 'عربي فقط',
       );
       // Arabic question is blank → falls back to English.
-      expect(entry.localizedQuestion(true), 'English only');
+      expect(entry.localizedQuestion(isArabic: true), 'English only');
       // English answer is blank → falls back to Arabic.
-      expect(entry.localizedAnswer(false), 'عربي فقط');
+      expect(entry.localizedAnswer(isArabic: false), 'عربي فقط');
     });
   });
 }

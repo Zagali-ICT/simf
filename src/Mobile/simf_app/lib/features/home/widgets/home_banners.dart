@@ -65,10 +65,10 @@ class LiveBanner extends StatelessWidget {
               ),
               const SizedBox(width: SimfTokens.space2),
               // The LIVE (YouTube/broadcast) banner's caret matches the home
-              // section rows: Figma 758:1151 fills it WHITE (like the عن الملتقى
-              // / الرعاه / الأخبار carets — only روح السعودية 758:1275 is gold).
-              // The bundled SVG points left and does not mirror under RTL.
-              // Flip horizontally in English so the caret points right →
+              // section rows: Figma 758:1151 fills it WHITE (like the عن
+              // الملتقى / الرعاه / الأخبار carets — only روح السعودية 758:1275
+              // is gold). The bundled SVG points left and does not mirror under
+              // RTL. Flip horizontally in English so the caret points right →
               // (forward in LTR reading direction).
               Transform.flip(
                 flipX: flip,

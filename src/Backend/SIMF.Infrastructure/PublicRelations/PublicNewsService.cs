@@ -46,7 +46,7 @@ internal sealed class PublicNewsService(
                 news.ExcerptArabic,
                 news.Category,
                 news.CategoryArabic,
-                news.ImageRelativePath,
+                null,
                 news.PublishedAt))
             .ToListAsync(cancellationToken);
 
@@ -69,7 +69,7 @@ internal sealed class PublicNewsService(
                 news.BodyArabic,
                 news.Category,
                 news.CategoryArabic,
-                news.ImageRelativePath,
+                null,
                 news.PublishedAt))
             .SingleOrDefaultAsync(cancellationToken);
     }

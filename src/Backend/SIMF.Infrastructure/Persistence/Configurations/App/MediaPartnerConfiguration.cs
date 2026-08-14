@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using SIMF.Domain.Files;
 using SIMF.Domain.PublicRelations;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
@@ -17,7 +18,13 @@ internal sealed class MediaPartnerConfiguration : IEntityTypeConfiguration<Media
 
         builder.Property(m => m.Name).HasMaxLength(256).IsRequired();
         builder.Property(m => m.NameArabic).HasMaxLength(256).IsRequired();
-        builder.Property(m => m.LogoRelativePath).HasMaxLength(512);
+        // The partner logo, in the one file store. Restrict: deleting a file must never
+        // delete the row that shows it.
+        builder.HasIndex(m => m.LogoFileId);
+        builder.HasOne<StoredFile>()
+            .WithMany()
+            .HasForeignKey(m => m.LogoFileId)
+            .OnDelete(DeleteBehavior.Restrict);
         builder.Property(m => m.Url).HasMaxLength(512);
 
         // Contact identity-card fields inlined from the removed shared Contact

@@ -9,6 +9,7 @@ import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/core/errors/api_error_l10n.dart';
 import 'package:simf_app/core/responsive/max_width_body.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 import 'package:simf_app/core/widgets/simf_auth_sweep.dart';
 import 'package:simf_app/features/account/biometric_auth.dart';
 import 'package:simf_app/features/account/post_auth_route.dart';
@@ -50,8 +51,8 @@ class _EmailOtpVerifyScreenState extends ConsumerState<EmailOtpVerifyScreen> {
   String? _error;
 
   // Frame 758:2616 — the resend countdown ("إعادة الإرسال خلال 01:59"). Two
-  // minutes (D-695); the server's ResendOtpResponse.cooldownSeconds overrides it
-  // after a resend — the on-entry value has no server response yet.
+  // minutes (D-695); the server's ResendOtpResponse.cooldownSeconds overrides
+  // it after a resend — the on-entry value has no server response yet.
   static const int _resendSeconds = 120;
   int _secondsLeft = _resendSeconds;
   Timer? _ticker;
@@ -83,11 +84,7 @@ class _EmailOtpVerifyScreenState extends ConsumerState<EmailOtpVerifyScreen> {
     });
   }
 
-  String get _countdownLabel {
-    final m = (_secondsLeft ~/ 60).toString().padLeft(2, '0');
-    final s = (_secondsLeft % 60).toString().padLeft(2, '0');
-    return '$m:$s';
-  }
+  String get _countdownLabel => formatCountdown(_secondsLeft);
 
   @override
   void dispose() {
@@ -139,8 +136,9 @@ class _EmailOtpVerifyScreenState extends ConsumerState<EmailOtpVerifyScreen> {
     }
   }
 
-  /// #12 — re-issue the emailed code in place (the controller keeps the ticket),
-  /// restart the cooldown, and toast. A rate-limit / failure surfaces inline.
+  /// #12 — re-issue the emailed code in place (the controller keeps the
+  /// ticket), restart the cooldown, and toast. A rate-limit / failure surfaces
+  /// inline.
   Future<void> _resend() async {
     final l10n = AppL10n.of(context);
     final messenger = ScaffoldMessenger.of(context);
@@ -288,8 +286,9 @@ class _EmailOtpVerifyScreenState extends ConsumerState<EmailOtpVerifyScreen> {
   /// "إعادة الإرسال" re-issues the code in place (resend-otp, #12) — it does
   /// not return to sign-in.
   Widget _buildResendRow(AppL10n l10n) {
-    // Gate on !_busy as well as the countdown, so the resend can't fire a second
-    // request on top of an in-flight verify (matches the sibling OTP screens).
+    // Gate on !_busy as well as the countdown, so the resend can't fire a
+    // second request on top of an in-flight verify (matches the sibling OTP
+    // screens).
     final canResend = _secondsLeft == 0 && !_busy;
     return Text.rich(
       TextSpan(

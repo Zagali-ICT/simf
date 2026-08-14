@@ -182,7 +182,7 @@ public sealed class MediaPartnersExcelTests : IClassFixture<SimfApiFactory>
         var response = await PostAuthAsync(
             "/api/v1/admin/media-partners",
             new AdminCreateMediaPartnerRequest(
-                name, "شريك إعلامي", null, null, 0),
+                name, "شريك إعلامي", null, 0),
             token);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }

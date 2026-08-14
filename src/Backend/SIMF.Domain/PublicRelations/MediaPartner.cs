@@ -13,10 +13,14 @@ public sealed class MediaPartner : BaseAuditEntity
     /// <summary>The primary surface on the mobile app.</summary>
     public string NameArabic { get; set; } = string.Empty;
 
-    /// <summary>Path to the logo asset, resolved against the static asset root.
-    /// Relative rather than absolute so the asset host can change without
-    /// rewriting rows. A card with no logo falls back to the name.</summary>
-    public string? LogoRelativePath { get; set; }
+    /// <summary>The partner's logo; a card without one falls back to the name, as its row in the one file store. A real foreign key:
+    /// both sides live in the App database.
+    ///
+    /// <para>This was <c>LogoRelativePath</c>, admin-typed free text. An uploaded image and
+    /// a linked one are now the same thing, a <c>StoredFile</c>, so the value is
+    /// validated and stored once instead of living untyped on this row.</para>
+    /// </summary>
+    public Guid? LogoFileId { get; set; }
 
     /// <summary>An outbound link to the partner's site, null when they have
     /// none. Doubles as the website slot of the contact card below.</summary>

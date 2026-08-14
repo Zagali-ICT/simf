@@ -6,6 +6,8 @@ import 'package:simf_app/features/sessions/data/session_models.dart';
 import 'package:simf_app/features/sessions/widgets/category_pill.dart';
 import 'package:simf_app/features/sessions/widgets/header_action_button.dart';
 import 'package:simf_app/features/sessions/widgets/index_badge.dart';
+import 'package:simf_app/features/sessions/widgets/session_detail_body.dart'
+    show SessionDetailBody;
 import 'package:simf_app/features/sessions/widgets/session_meta_row.dart';
 
 /// The session header card (frame 889:2716): a navy box holding the title +
@@ -32,11 +34,11 @@ class SessionHeaderCard extends StatelessWidget {
   final VoidCallback onSessionSummary;
 
   /// Owner 2026-07-14 — the ملخص الجلسة button is active only once the session
-  /// has ENDED (a future/live session has no محضر → greyed/inactive). The detail
-  /// contract carries no summary flag, so this gates on the phase, not on whether
-  /// a محضر was actually published; an ended-but-unsummarised session opens the
-  /// summary screen's graceful empty note. (The list surfaces gate on the real
-  /// hasPublishedSummary flag instead.)
+  /// has ENDED (a future/live session has no محضر → greyed/inactive). The
+  /// detail contract carries no summary flag, so this gates on the phase, not
+  /// on whether a محضر was actually published; an ended-but-unsummarised
+  /// session opens the summary screen's graceful empty note. (The list surfaces
+  /// gate on the real hasPublishedSummary flag instead.)
   final bool summaryEnabled;
 
   /// Owner 2026-07-14 — the رابط الجلسة button is active only when the session
@@ -52,7 +54,8 @@ class SessionHeaderCard extends StatelessWidget {
   Widget build(BuildContext context) {
     // D-567 (Figma 889:2604) — the gold badge shows the session's 1-based
     // position within its day, zero-padded ("02"); it falls back to the session
-    // code until the API supplies the ordinal (displayOrder 0, e.g. an older API).
+    // code until the API supplies the ordinal (displayOrder 0, e.g. an older
+    // API).
     final badgeText = detail.displayOrder > 0
         ? detail.displayOrder.toString().padLeft(2, '0')
         : detail.code;
@@ -61,7 +64,7 @@ class SessionHeaderCard extends StatelessWidget {
     // client's list, OI-2 / D-226), and never on the #29 workshop reduction.
     final category = titleAndTimeOnly
         ? null
-        : detail.localizedCategory(isArabic)?.trim();
+        : detail.localizedCategory(isArabic: isArabic)?.trim();
     return Container(
       padding: const EdgeInsets.all(SimfTokens.space4),
       decoration: BoxDecoration(
@@ -72,8 +75,9 @@ class SessionHeaderCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           // Frame 889:2706 — RTL: the gold index badge (the BOLD day-ordinal
-          // "02", D-567) leads at the inline-start (physical right); the session
-          // title follows to its inline-end (left), packed against the badge.
+          // "02", D-567) leads at the inline-start (physical right); the
+          // session title follows to its inline-end (left), packed against the
+          // badge.
           Row(
             children: <Widget>[
               if (badgeText.isNotEmpty) ...<Widget>[
@@ -82,7 +86,7 @@ class SessionHeaderCard extends StatelessWidget {
               ],
               Expanded(
                 child: Text(
-                  detail.localizedTitle(isArabic),
+                  detail.localizedTitle(isArabic: isArabic),
                   textAlign: TextAlign.start,
                   // Frame 889:2705 — 16px SemiBold white title line.
                   style: SimfTokens.labelWhiteSemiboldLgTall,
@@ -138,4 +142,3 @@ class SessionHeaderCard extends StatelessWidget {
     );
   }
 }
-

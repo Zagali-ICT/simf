@@ -50,7 +50,8 @@ class _ApprovedAuthController extends AuthController {
 void main() {
   setUpAll(loadGoldenFonts);
 
-  testWidgets('Registration-status @375x812 — Figma 1701:3789 (approved, Arabic)',
+  testWidgets(
+      'Registration-status @375x812 — Figma 1701:3789 (approved, Arabic)',
       (tester) async {
     tester.view.physicalSize = const Size(375, 812);
     tester.view.devicePixelRatio = 1.0;

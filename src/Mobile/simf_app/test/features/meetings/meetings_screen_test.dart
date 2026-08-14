@@ -47,9 +47,9 @@ Future<void> _pump(
   bool fail = false,
   bool isVip = true,
 }) async {
-  // A tall viewport so every meeting card is built — ListView(children:) lays out
-  // children lazily, so in the default 600px height off-screen cards would not be
-  // found by find.text (R9 now lists all requests, not just one).
+  // A tall viewport so every meeting card is built — ListView(children:) lays
+  // out children lazily, so in the default 600px height off-screen cards would
+  // not be found by find.text (R9 now lists all requests, not just one).
   tester.view.physicalSize = const Size(800, 3000);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.reset);
@@ -201,10 +201,11 @@ void main() {
       expect(find.text('Undated Speaker'), findsOneWidget);
     });
 
-    testWidgets("a meeting dated today survives once its start time passes "
-        "(date filter, not instant)", (tester) async {
-      // Today at 00:00 local: its DATE is today but its instant is already past,
-      // so an instant filter would wrongly drop it — a date filter keeps it.
+    testWidgets('a meeting dated today survives once its start time passes '
+        '(date filter, not instant)', (tester) async {
+      // Today at 00:00 local: its DATE is today but its instant is already
+      // past, so an instant filter would wrongly drop it — a date filter keeps
+      // it.
       final now = DateTime.now();
       final earlierToday = DateTime(now.year, now.month, now.day).toUtc();
       await _pump(

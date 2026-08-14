@@ -34,7 +34,14 @@ public sealed record PublicSponsor(
     // when no Contact is linked or it has no country. Appended (append-only).
     int? CountryId = null,
     string? CountryNameEn = null,
-    string? CountryNameAr = null);
+    string? CountryNameAr = null,
+    // Whether a logo actually exists in the store for this sponsor. Appended
+    // (append-only). LogoRelativePath above is retained for the shipped wire
+    // and is now always null, so this is what a client must branch on: the
+    // partner directory decides between a logo and an initials avatar on
+    // exactly this question, and reading it off the retired path field would
+    // mean no sponsor ever showed a logo again.
+    bool HasLogo = false);
 
 /// <summary>The full sponsor-detail view ("الراعي")
 /// served by <c>GET /api/v1/app/sponsors/{id}</c> (anonymous). Adds the

@@ -183,6 +183,11 @@ public static class AuditEvents
     // Bulk-generate placeholder badges (by profile type + count).
     public const string AdminBulkBadgesGenerated = "Admin.BulkBadgesGenerated";
 
+    // A year closed into history and the next opened. Carries how many badges
+    // the open cleared for re-issue, which is the only evidence an operator has
+    // that the re-issue actually ran.
+    public const string EventEditionOpened = "Admin.EventEditionOpened";
+
     // Logs — per-project log files + the CP viewer
     public const string AdminLogViewed = "Admin.LogViewed";
     public const string AdminLogDownloaded = "Admin.LogDownloaded";

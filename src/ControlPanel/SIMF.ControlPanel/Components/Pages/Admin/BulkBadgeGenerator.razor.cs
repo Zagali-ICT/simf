@@ -47,6 +47,11 @@ public partial class BulkBadgeGenerator
     private bool _busy;
     private Toast? _bulkToast;
 
+    // Who the order is for. An order identified only by its counts is
+    // unrecognisable in the list as soon as two of them are the same size.
+    private string _bulkName = string.Empty;
+    private string _bulkNameArabic = string.Empty;
+
     // Confirm modal + optional organiser recipient for the emailed
     // QR-badge ZIP.
     private bool _confirmOpen;
@@ -130,6 +135,15 @@ public partial class BulkBadgeGenerator
             return;
         }
 
+        // The order needs a name in both languages. Checked here as well as on the
+        // server so the operator is told before the confirm modal commits.
+        if (string.IsNullOrWhiteSpace(_bulkName) || string.IsNullOrWhiteSpace(_bulkNameArabic))
+        {
+            _bulkToast = new Toast("error", L["Admin.Delegates.Bulk.NameRequired"]);
+            _confirmOpen = false;
+            return;
+        }
+
         var recipient = string.IsNullOrWhiteSpace(_recipientEmail) ? null : _recipientEmail.Trim();
 
         _busy = true;
@@ -140,6 +154,8 @@ public partial class BulkBadgeGenerator
                 "simfAccount.postJson", "/account/api/admin/visitors/bulk-generate",
                 new AdminBulkGenerateBadgesRequest
                 {
+                    Name = _bulkName.Trim(),
+                    NameArabic = _bulkNameArabic.Trim(),
                     IsDelegate = _bulkIsDelegate,
                     Batches = batches,
                     RecipientEmail = recipient,

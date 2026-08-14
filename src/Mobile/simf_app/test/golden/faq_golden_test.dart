@@ -16,14 +16,14 @@ import 'package:simf_app/features/faq/faq_screen.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the FAQ accordion against Figma frame **1388:7567**
-/// (الأسئلة الشائعة). Regenerate:
-///   flutter test --update-goldens test/golden/faq_golden_test.dart
+/// (الأسئلة الشائعة). Regenerate: flutter test --update-goldens
+/// test/golden/faq_golden_test.dart
 ///
-/// Frame parity: the navy `SimfPageShell` (back + centred title + hairline) over
-/// navyDeep `SimfCard` accordion rows — a beige Medium-14 question
-/// (`SimfTokens.labelBeigeMedium`) with a gold expand chevron; the first card is
-/// expanded to show the hairline divider + the answer (beige 14, line-height 1.5
-/// — `SimfTokens.bodyBeige`). A single group renders the flat accordion (no
+/// Frame parity: the navy `SimfPageShell` (back + centred title + hairline)
+/// over navyDeep `SimfCard` accordion rows — a beige Medium-14 question
+/// (`SimfTokens.labelBeigeMedium`) with a gold expand chevron; the first card
+/// is expanded to show the hairline divider + the answer (beige 14, line-height
+/// 1.5 — `SimfTokens.bodyBeige`). A single group renders the flat accordion (no
 /// section header). Locks the D-517 parity after the Phase-0g token extraction.
 final _groups = <FaqGroup>[
   const FaqGroup(
