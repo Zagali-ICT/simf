@@ -8,6 +8,7 @@ import 'package:simf_app/app/widgets/simf_bottom_nav.dart';
 import 'package:simf_app/app/widgets/simf_confirm_dialog.dart';
 import 'package:simf_app/app/widgets/simf_info_dialog.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/core/errors/api_error_l10n.dart';
 import 'package:simf_app/core/utils/refresh.dart';
 import 'package:simf_app/features/sessions/data/seat_map_models.dart';
 import 'package:simf_app/features/sessions/data/seat_map_repository.dart';
@@ -151,7 +152,7 @@ class _SeatPickerScreenState extends ConsumerState<SeatPickerScreen> {
     } on ApiFailure catch (failure) {
       // Reported below once we know the screen is still mounted.
       failureCode = failure.code;
-      failureMessage = failure.message.trim();
+      failureMessage = failure.localizedMessage(l10n).trim();
     } finally {
       if (mounted) {
         setState(() => _busy = false);

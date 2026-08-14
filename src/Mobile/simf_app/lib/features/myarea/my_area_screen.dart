@@ -8,6 +8,7 @@ import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_bottom_nav.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/core/errors/api_error_l10n.dart';
 import 'package:simf_app/features/account/data/profile_repository.dart'
     show avatarBustProvider, referenceNumberProvider;
 import 'package:simf_app/features/myarea/data/liveness.dart'
@@ -137,7 +138,7 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
       // Surface the server's actual (user-safe, bilingual) reason instead of a
       // blanket string, so a failure is legible rather than silent.
       if (mounted) {
-        final serverMsg = e.message.trim();
+        final serverMsg = e.localizedMessage(l10n).trim();
         final text = serverMsg.isEmpty ? l10n.avatarUploadFailed : serverMsg;
         messenger.showSnackBar(SnackBar(content: Text(text)));
       }
