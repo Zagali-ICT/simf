@@ -86,11 +86,34 @@ Two tick boxes in the **Run pipeline** dialog, both **on** by default:
 | `deployPreProduction` | Deploy to Pre-production | The pre-production job is omitted |
 | `deployProduction` | Deploy to Production | The production job is omitted |
 
-And one that is **off** by default:
+And three that are **off** by default:
 
-| Parameter | Label | Default |
-|-----------|-------|---------|
-| `runTests` | Run the test gates (slow) | **`false`** |
+| Parameter | Label | Default | Notes |
+|-----------|-------|---------|-------|
+| `runTests` | Run the test gates (slow) | **`false`** | The .NET suites + LocalDB |
+| `runMobileApp` | Run the Flutter app stage | **`false`** | Independent of `runTests` |
+| `runBadgeDesk` | Run the offline badge desk stage | **`false`** | Independent of `runTests` |
+
+The last two are **disabled, not deferred** (D-889): ticking `runTests` on for a
+merge-gating run does **not** bring them back — each needs its own box. Neither
+was ever a `Deploy` dependency, so neither blocked a deployment; on the single
+self-hosted `Default` agent they competed for it, which is the wall-clock this
+buys back.
+
+Each is the **only** signal of its kind, so know what stops being checked:
+
+- **MobileApp** — the only CI proof the Flutter app analyses, passes its suites,
+  and still **compiles for Android from a clean checkout**. That last gate exists
+  because of a real escape: a `.gitignore` rule for build output also matched a
+  Pigeon source shipping with the vendored video plugin, so `flutter build apk`
+  failed on a clean clone while every developer machine stayed green. `analyze`
+  and `test` are blind to it — the Android half of a federated plugin is never
+  compiled on the host VM.
+- **BadgeDesk** — the only build signal for `SIMF.BadgeDesk`, which sits outside
+  `SIMF.slnx` deliberately (Windows-only: WinForms + DPAPI + native printing) and
+  references `SIMF.Common` and `SIMF.Contracts`. Renaming `EventBadgeCodec`,
+  `OfflineBadgeId` or `OfflineBadgeRegistration` now breaks the only tool that
+  mints badges, with nothing reporting it until a desk fails to open at the venue.
 
 Untick **both** and the whole `Deploy` stage is omitted — build, test and
 publish still run and the `drop` artifact is still produced, so a build-only run

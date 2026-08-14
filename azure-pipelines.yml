@@ -102,6 +102,49 @@ parameters:
   type: boolean
   default: false
 
+# --- The two non-.NET stages. BOTH DEFAULT FALSE (owner decision, D-889), and
+#     both are INDEPENDENT of `runTests` above: ticking the test gates on for a
+#     merge-gating run does NOT bring these back. They are disabled, not
+#     deferred, and each needs its own tick box to run.
+#
+#     They are separate parameters rather than one, because they fail for
+#     different reasons and will come back at different times: the Flutter stage
+#     needs the Flutter SDK and the Android SDK on the agent, the badge desk
+#     needs only the .NET SDK it already has.
+#
+#     WHAT STOPS BEING CHECKED, stated plainly because both of these are the
+#     ONLY signal of their kind:
+#
+#       * MobileApp - the only CI proof that the shippable Flutter app analyses,
+#         passes its suites, and still COMPILES for Android from a clean
+#         checkout. That last one exists because of a real escape: a `.gitignore`
+#         rule for build output also matched a Pigeon source that ships with the
+#         vendored video plugin, so `flutter build apk` failed on a clean clone
+#         while every developer machine stayed green. analyze and test could not
+#         see it - the Android implementation of a federated plugin is never
+#         compiled on the host VM. With this stage off, that class of defect is
+#         invisible again until someone builds a release by hand.
+#
+#       * BadgeDesk - the only build signal for SIMF.BadgeDesk, which sits
+#         outside SIMF.slnx deliberately (Windows-only: WinForms + DPAPI +
+#         native printing) and references SIMF.Common and SIMF.Contracts, both
+#         of which change constantly. With this stage off, renaming
+#         EventBadgeCodec, OfflineBadgeId or OfflineBadgeRegistration breaks the
+#         ONLY tool that mints badges and nothing reports it until a desk fails
+#         to open at the venue.
+#
+#     Neither stage is a dependency of Deploy, so neither ever blocked a
+#     deployment; on the single self-hosted `Default` agent they did compete for
+#     it, which is the wall-clock this buys back.
+- name: runMobileApp
+  displayName: 'Run the Flutter app stage'
+  type: boolean
+  default: false
+- name: runBadgeDesk
+  displayName: 'Run the offline badge desk stage'
+  type: boolean
+  default: false
+
 pool:
   name: Default   # PLACEHOLDER: self-hosted agent pool with the .NET 10 SDK (build) + IIS (deploy)
 
@@ -501,11 +544,12 @@ stages:
 
 - stage: MobileApp
   displayName: 'Flutter app (analyze & test)'
-  # OFF BY DEFAULT with the other gates (D-887). Worth knowing what this does and
-  # does not buy back: this stage is NOT a dependency of Deploy, so on a pool
-  # with a free agent it never delayed a deployment at all. On the single
-  # self-hosted `Default` agent it does, because it competes for the one agent.
-  condition: eq('${{ parameters.runTests }}', 'true')
+  # DISABLED (D-889). Its own tick box, deliberately NOT `runTests`: a
+  # merge-gating run with the test gates on still does not run this. What that
+  # gives up - including the clean-clone Android compile gate, which is the only
+  # thing that can see a missing platform source - is spelled out at
+  # `runMobileApp` at the top of this file.
+  condition: eq('${{ parameters.runMobileApp }}', 'true')
   # BUG-010 — until now NOTHING in CI touched src/Mobile/simf_app, so the only
   # proof the shippable mobile artefact still compiles lived on one developer
   # machine. This stage restores from the committed pubspec.lock, analyses the
@@ -680,11 +724,11 @@ stages:
 
 - stage: BadgeDesk
   displayName: 'Offline badge desk (build & test)'
-  # OFF BY DEFAULT with the other gates (D-887). Note what goes with it: this is
-  # the ONLY build signal for SIMF.BadgeDesk, which sits outside SIMF.slnx, so
-  # with this off a rename in SIMF.Common breaks the badge desk and nothing
-  # anywhere reports it until a desk fails to open at the venue.
-  condition: eq('${{ parameters.runTests }}', 'true')
+  # DISABLED (D-889). Its own tick box, deliberately NOT `runTests`: a
+  # merge-gating run with the test gates on still does not run this. This is the
+  # ONLY build signal for SIMF.BadgeDesk; the consequence is spelled out at
+  # `runBadgeDesk` at the top of this file.
+  condition: eq('${{ parameters.runBadgeDesk }}', 'true')
   # D-813 - SIMF.BadgeDesk is deliberately outside SIMF.slnx because it is
   # Windows-only (WinForms + DPAPI + native printing) and the solution has to
   # keep building on any host. The cost of that was NO build signal at all: the
