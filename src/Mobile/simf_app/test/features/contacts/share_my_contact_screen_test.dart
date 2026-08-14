@@ -11,8 +11,7 @@ import 'package:simf_app/features/myarea/data/myarea_repository.dart';
 import '_fake_contacts_repo.dart';
 
 /// D-470 — the share QR now encodes the user's vCard (Arabic name + phones).
-const String _kVcard =
-    'BEGIN:VCARD\r\nVERSION:3.0\r\nFN:محمد العتيبي\r\n'
+const String _kVcard = 'BEGIN:VCARD\r\nVERSION:3.0\r\nFN:محمد العتيبي\r\n'
     'TEL;TYPE=CELL:+966500112233\r\nEND:VCARD\r\n';
 
 /// Minimal stand-in for the My-Area repo — only the vCard fetch is exercised.
@@ -81,7 +80,8 @@ void main() {
       expect(repo.getTokenCalls, greaterThanOrEqualTo(2));
     });
 
-    testWidgets('rotate confirms then swaps the token + toasts', (tester) async {
+    testWidgets('rotate confirms then swaps the token + toasts',
+        (tester) async {
       final repo = FakeContactsRepo(token: 'OLD', rotatedToken: 'NEW');
       await _pump(tester, repo);
 

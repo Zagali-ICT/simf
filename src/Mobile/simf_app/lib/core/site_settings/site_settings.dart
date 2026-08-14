@@ -2,10 +2,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_app/core/net/core_endpoints.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// D-461 — the public site/app branding settings (`GET /app/site-settings`): the
-/// registration welcome message (bilingual) + the social links. Editable in the
-/// Control Panel; social fields are null when not configured. Consumers fall back
-/// to their own defaults while loading / on error (offline-safe).
+/// D-461 — the public site/app branding settings (`GET /app/site-settings`):
+/// the registration welcome message (bilingual) + the social links. Editable in
+/// the Control Panel; social fields are null when not configured. Consumers
+/// fall back to their own defaults while loading / on error (offline-safe).
 class SiteSettings {
   const SiteSettings({
     required this.registrationMessageAr,
@@ -33,13 +33,14 @@ class SiteSettings {
   final String registrationMessageEn;
   final SiteSocialLinks social;
 
-  /// Build #13 — the CP switch for the "Meet People Like You" partner directory.
-  /// Defaults to true (fail-open) while loading / on error / on an older payload.
+  /// Build #13 — the CP switch for the "Meet People Like You" partner
+  /// directory. Defaults to true (fail-open) while loading / on error / on an
+  /// older payload.
   final bool partnerDirectoryEnabled;
 
-  /// 2026-07-22 — the CP RatingConfig "Session" rating-type toggle. When false the
-  /// app suppresses the after-watch rate prompt. Defaults to true (fail-open) while
-  /// loading / on error / on an older payload.
+  /// 2026-07-22 — the CP RatingConfig "Session" rating-type toggle. When false
+  /// the app suppresses the after-watch rate prompt. Defaults to true
+  /// (fail-open) while loading / on error / on an older payload.
   final bool sessionRatingEnabled;
 
   /// The welcome message for [languageCode] ('ar' → Arabic, else English).
@@ -47,7 +48,8 @@ class SiteSettings {
       languageCode == 'ar' ? registrationMessageAr : registrationMessageEn;
 }
 
-/// The configurable social-media URLs (null = not set → the control stays inert).
+/// The configurable social-media URLs (null = not set → the control stays
+/// inert).
 class SiteSocialLinks {
   const SiteSocialLinks({
     this.facebook,

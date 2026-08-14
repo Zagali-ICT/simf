@@ -56,9 +56,9 @@ class SimfBackButton extends StatelessWidget {
 /// The circled back chevron (dark circle, white chevron). By default the glyph
 /// always points left — the D-363 forced-LTR header pattern still used by the
 /// speakers / session-detail / speaker-profile headers. In the shared
-/// natural-direction [SimfPageShell] header [mirrorInRtl] is set, so the chevron
-/// mirrors to point right under RTL, where the leading control sits at the
-/// inline start (physical right).
+/// natural-direction [SimfPageShell] header [mirrorInRtl] is set, so the
+/// chevron mirrors to point right under RTL, where the leading control sits at
+/// the inline start (physical right).
 class SimfCircledBackButton extends StatelessWidget {
   const SimfCircledBackButton({
     required this.onBack,
@@ -99,8 +99,9 @@ class SimfCircledBackButton extends StatelessWidget {
   }
 }
 
-/// The circled drawer ☰ control (same dark circle as [SimfCircledBackButton]) — opens
-/// the shell's side menu. Lives in the shared header's trailing controller.
+/// The circled drawer ☰ control (same dark circle as [SimfCircledBackButton]) —
+/// opens the shell's side menu. Lives in the shared header's trailing
+/// controller.
 class SimfMenuButton extends StatelessWidget {
   const SimfMenuButton({required this.onTap, super.key});
 

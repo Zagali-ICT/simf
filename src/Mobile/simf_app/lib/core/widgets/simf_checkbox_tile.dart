@@ -37,7 +37,9 @@ class SimfCheckboxTile extends StatelessWidget {
             value: value,
             onChanged: enabled ? (v) => onChanged(v ?? false) : null,
             activeColor: SimfTokens.accent,
-            side: const BorderSide(color: SimfTokens.greyText, width: SimfTokens.simfCheckboxTileWidthSm),
+            side: const BorderSide(
+                color: SimfTokens.greyText,
+                width: SimfTokens.simfCheckboxTileWidthSm,),
             shape: const RoundedRectangleBorder(
               borderRadius: SimfTokens.borderRadiusSmall,
             ),

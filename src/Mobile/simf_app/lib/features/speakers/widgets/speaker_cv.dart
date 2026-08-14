@@ -33,7 +33,8 @@ class SpeakerCvTabs extends StatelessWidget {
     return Row(
       children: <Widget>[
         for (var i = 0; i < titles.length; i++) ...<Widget>[
-          // Frame 912:2312 — four equal pills with an ~16px gap (SimfTokens.space4)
+          // Frame 912:2312 — four equal pills with an ~16px gap
+          // (SimfTokens.space4)
           if (i > 0) const SizedBox(width: SimfTokens.space4),
           Expanded(
             child: CvTab(

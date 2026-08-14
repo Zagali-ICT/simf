@@ -43,8 +43,8 @@ class GuestHome extends StatelessWidget {
         children: <Widget>[
           // The "browsing as guest, sign in" banner is for a NOT-signed-in
           // guest only. A signed-in but unapproved account is already logged in
-          // (D-666) — it gets the under-review card at the bottom instead, never
-          // a "please sign in" prompt.
+          // (D-666) — it gets the under-review card at the bottom instead,
+          // never a "please sign in" prompt.
           if (!pendingApproval) ...<Widget>[
             GuestBanner(l10n: l10n),
             const SizedBox(height: SimfTokens.space4),
@@ -53,7 +53,8 @@ class GuestHome extends StatelessWidget {
             children: <Widget>[
               SimfNavTile(
                 label: l10n.tileSessions,
-                // Same icon as the signed-in "Sessions" tile (owner 2026-07-22).
+                // Same icon as the signed-in "Sessions" tile (owner
+                // 2026-07-22).
                 iconAsset: HomeIcons.aboutSessions,
                 // Owner 2026-07-22: the "Sessions" tile opens the Sessions list
                 // (session_presentations, header "الجلسات") — the SAME page the

@@ -8,12 +8,12 @@ import 'package:simf_app/app/widgets/simf_scanner_body.dart';
 /// The shared, EMUI-safe full-page QR scanner used by the visitor-facing
 /// scanners (contact scan, exhibitor lead capture) and badge sign-in — D-430,
 /// D-737. It is a thin navy host (header + back + [PopScope]) around the shared
-/// [SimfScannerBody], which owns the whole scanning experience: the gold-bracket
-/// viewfinder, the always-usable manual entry, the single dedupe/single-flight
-/// policy, and the camera-error/permission-denied state.
+/// [SimfScannerBody], which owns the whole scanning experience: the
+/// gold-bracket viewfinder, the always-usable manual entry, the single
+/// dedupe/single-flight policy, and the camera-error/permission-denied state.
 ///
-/// The EMUI-safety contract is preserved (D-423/D-426): the camera is bounded to
-/// the viewfinder card, the "stop camera" control sits OUTSIDE the camera
+/// The EMUI-safety contract is preserved (D-423/D-426): the camera is bounded
+/// to the viewfinder card, the "stop camera" control sits OUTSIDE the camera
 /// surface, the manual path always works, and there are two reliable exits (the
 /// header back and the body "Back" button).
 ///

@@ -14,14 +14,15 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 /// D-426 — زوار جناحي / My Booth Visitors. The exhibitor's ("Other" profile
 /// type) captured visitors: everyone they scanned at their booth, newest first,
-/// each with the visitor's full card resolved live. Reached from the side drawer
-/// (Other-only), the exhibitor home's tools row, and after a successful scan.
-/// Approved + non-visitor only (a visitor-tier caller gets 403 → the
+/// each with the visitor's full card resolved live. Reached from the side
+/// drawer (Other-only), the exhibitor home's tools row, and after a successful
+/// scan. Approved + non-visitor only (a visitor-tier caller gets 403 → the
 /// limited/forbidden surface).
 ///
 /// BUG-025 — this is NOT "My Contacts" (`/contacts`, visitor-to-visitor card
 /// sharing). The two lists stay separate pending an owner ruling, so the title
-/// names the booth and a [SimfPageNote] states the difference in both languages.
+/// names the booth and a [SimfPageNote] states the difference in both
+/// languages.
 class MyVisitorsScreen extends ConsumerStatefulWidget {
   const MyVisitorsScreen({super.key});
 

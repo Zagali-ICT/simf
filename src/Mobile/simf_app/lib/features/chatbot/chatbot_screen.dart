@@ -21,17 +21,18 @@ export 'data/chatbot_responder.dart';
 
 /// Page 036 — المساعد الذكي · AI assistant (#36, `/chatbot`, signed-in).
 ///
-/// Pixel-parity to KSA Figma frame `1064:13066`: the navy [SimfPageShell] shell, a
-/// scrolling transcript (assistant bubbles left + gold "AI" badge, user bubbles
-/// right + gold fill), the horizontal quick-reply chips (frame `1070:13389`) and
-/// the bottom input bar (frame `1070:13398`). The screen opens with the assistant
-/// greeting; each prompt (typed or a chip) is answered by the centralised AI via
-/// the overridable [chatbotResponderProvider] — its default [ApiChatbotResponder]
-/// calls `POST /app/ai/assistance` (the `assistance` prompt, grounded server-side
-/// on the live event context). A wire error surfaces as a localized error bubble.
-/// Past turns are loaded from `GET /app/ai/assistance/history` and each new turn
-/// is persisted server-side by the assistance endpoint, so the conversation
-/// survives navigation / app-restart and the assistant remembers earlier turns.
+/// Pixel-parity to KSA Figma frame `1064:13066`: the navy [SimfPageShell]
+/// shell, a scrolling transcript (assistant bubbles left + gold "AI" badge,
+/// user bubbles right + gold fill), the horizontal quick-reply chips (frame
+/// `1070:13389`) and the bottom input bar (frame `1070:13398`). The screen
+/// opens with the assistant greeting; each prompt (typed or a chip) is answered
+/// by the centralised AI via the overridable [chatbotResponderProvider] — its
+/// default [ApiChatbotResponder] calls `POST /app/ai/assistance` (the
+/// `assistance` prompt, grounded server-side on the live event context). A wire
+/// error surfaces as a localized error bubble. Past turns are loaded from `GET
+/// /app/ai/assistance/history` and each new turn is persisted server-side by
+/// the assistance endpoint, so the conversation survives navigation /
+/// app-restart and the assistant remembers earlier turns.
 class ChatbotScreen extends ConsumerStatefulWidget {
   const ChatbotScreen({super.key});
 
@@ -50,8 +51,8 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
   bool _sending = false;
 
   /// The saved transcript frozen at the first send. Before any send the live
-  /// [aiChatHistoryProvider] snapshot is shown; freezing on the first send stops
-  /// a late-resolving history load — which by then already includes the
+  /// [aiChatHistoryProvider] snapshot is shown; freezing on the first send
+  /// stops a late-resolving history load — which by then already includes the
   /// just-sent turn — from double-rendering it alongside [_added].
   List<ChatMessage>? _openedHistory;
 
@@ -62,8 +63,8 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
     super.dispose();
   }
 
-  /// The assistant's opening greeting (frame `1064:13066`). Built from l10n each
-  /// render so it re-translates on an AR↔EN toggle.
+  /// The assistant's opening greeting (frame `1064:13066`). Built from l10n
+  /// each render so it re-translates on an AR↔EN toggle.
   List<ChatMessage> _seed(AppL10n l10n) => <ChatMessage>[
         ChatMessage(ChatAuthor.assistant, l10n.chatbotGreeting),
       ];
@@ -73,7 +74,8 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
     if (text.isEmpty || _sending) {
       return;
     }
-    // Resolved before the await so the error fallback needs no post-await context.
+    // Resolved before the await so the error fallback needs no post-await
+    // context.
     final errorReply = AppL10n.of(context).chatbotError;
     final responder = ref.read(chatbotResponderProvider);
     // Freeze the open-time history snapshot on the first send (see the field).
@@ -124,10 +126,10 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
     // The saved transcript loaded at open (survives navigation/restart; the
-    // assistant also remembers it server-side). Best-effort: empty while loading
-    // or on a wire error, so a history failure never blanks the chat — the
-    // greeting still shows and the composer still works. Frozen to the open-time
-    // snapshot once the user has sent (see [_openedHistory]).
+    // assistant also remembers it server-side). Best-effort: empty while
+    // loading or on a wire error, so a history failure never blanks the chat —
+    // the greeting still shows and the composer still works. Frozen to the
+    // open-time snapshot once the user has sent (see [_openedHistory]).
     final loaded = ref.watch(aiChatHistoryProvider).maybeWhen(
           data: (history) => history,
           orElse: () => const <ChatMessage>[],

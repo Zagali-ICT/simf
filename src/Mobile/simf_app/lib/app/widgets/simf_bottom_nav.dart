@@ -32,7 +32,7 @@ VoidCallback _shellOrGo(BuildContext context, SimfTab tab, String routeName) {
 /// icons in `#5E584B`, and the active tab in gold with its label below it.
 /// Destinations (reading order): Home · Agenda · [QR badge] · Map · Profile —
 /// the Profile tab replaced the old News tab per the delivered frames. Tapping
-/// a destination navigates via go_router; the active tab is a no-op. [current]
+/// a destination navigates via go_router; the active tab is a no-op. `current`
 /// is null on pages that keep the bar but are not a destination themselves.
 enum SimfTab { home, sessions, badge, map, profile }
 

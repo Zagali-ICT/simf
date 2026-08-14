@@ -23,31 +23,32 @@ import 'package:simf_app/features/account/widgets/auth_chrome.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 
 /// Page 005 — إنشاء حساب · Sign up. The KSA-Project Figma design (node
-/// 168:3454), replacing the mockup screen at the official `/sign-up`
-/// (D-370, app redesign programme Wave 2); the previous screen is parked
-/// in `_legacy_mockup/`.
+/// 168:3454), replacing the mockup screen at the official `/sign-up` (D-370,
+/// app redesign programme Wave 2); the previous screen is parked in
+/// `_legacy_mockup/`.
 ///
-/// Sign-up **step 1**: the visitor supplies email + password + confirm-password.
-/// On the generic **201** the app forwards to the email-OTP screen (Page 006)
-/// carrying the address. The success is **enumeration-resistant** — identical
-/// for a new and an already-registered email (D-198), so there is no "you
-/// already have an account" branch. This screen does **not** sign the user in;
-/// it only creates the under-review Visitor account and triggers the email code.
-/// `confirmPassword` is checked locally for instant feedback **and** sent in the
-/// body — the server re-validates `confirmPassword == password` (D-270).
+/// Sign-up **step 1**: the visitor supplies email + password +
+/// confirm-password. On the generic **201** the app forwards to the email-OTP
+/// screen (Page 006) carrying the address. The success is
+/// **enumeration-resistant** — identical for a new and an already-registered
+/// email (D-198), so there is no "you already have an account" branch. This
+/// screen does **not** sign the user in; it only creates the under-review
+/// Visitor account and triggers the email code. `confirmPassword` is checked
+/// locally for instant feedback **and** sent in the body — the server
+/// re-validates `confirmPassword == password` (D-270).
 ///
 /// Clean-code (D-655): the screen composes the shared account widgets
 /// ([AccountHeader], [AccountTopControls], [AccountCard], [AccountEmailField],
 /// [AccountPasswordField], [AccountAuthPrompt]) — the same set as the sign-in
-/// sister card — instead of local `_build*` copies and hardcoded eye glyphs; the
-/// decorative sweep is the shared [SimfAuthSweep]; the API error is localized
-/// through [ApiFailureL10n]. Locked by the 168:3454 golden.
+/// sister card — instead of local `_build*` copies and hardcoded eye glyphs;
+/// the decorative sweep is the shared [SimfAuthSweep]; the API error is
+/// localized through [ApiFailureL10n]. Locked by the 168:3454 golden.
 ///
 /// D-719 (owner batch 2026-07-09): a **mandatory** "accept the terms" checkbox
-/// ([AccountTermsCheckbox]) gates the submit — registration requires an explicit
-/// accept, not a link. This is an owner-mandated addition with no Figma frame of
-/// its own (168:3454 predates it); the golden is re-locked with the box present.
-/// Consent stays client-side (D8) — no wire-contract change.
+/// ([AccountTermsCheckbox]) gates the submit — registration requires an
+/// explicit accept, not a link. This is an owner-mandated addition with no
+/// Figma frame of its own (168:3454 predates it); the golden is re-locked with
+/// the box present. Consent stays client-side (D8) — no wire-contract change.
 class SignUpFormScreen extends ConsumerStatefulWidget {
   const SignUpFormScreen({super.key});
 

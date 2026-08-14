@@ -85,8 +85,8 @@ class MySessionCard extends StatelessWidget {
     final timeText =
         (category != null && category.isNotEmpty) ? '$time · $category' : time;
     final hasMeta = speaker != null || (hall != null && hall.isNotEmpty);
-    // Owner 2026-07-14 — the same state chips as the agenda (my-sessions carries
-    // no summary flag, so only live-now / recorded show here).
+    // Owner 2026-07-14 — the same state chips as the agenda (my-sessions
+    // carries no summary flag, so only live-now / recorded show here).
     final phase = sessionPhase(item.start, item.end, saudiNow());
     final stateChips = sessionStateChips(
       phase: phase,
@@ -105,7 +105,8 @@ class MySessionCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            // Title + time·category on the right, the favourite heart on the left.
+            // Title + time·category on the right, the favourite heart on the
+            // left.
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[

@@ -79,7 +79,8 @@ class _VenueMapScreenState extends ConsumerState<VenueMapScreen> {
     });
     try {
       final repo = ref.read(venueMapRepositoryProvider);
-      // Both reads in flight together (L-1); the screen is ready when both land.
+      // Both reads in flight together (L-1); the screen is ready when both
+      // land.
       final results = await Future.wait(<Future<Object>>[
         repo.getNodes(),
         repo.getBooths(),
@@ -161,8 +162,8 @@ class _VenueMapScreenState extends ConsumerState<VenueMapScreen> {
   }
 
   /// #9 — select + centre the map on the target booth's node once the nodes
-  /// have loaded and (via the post-frame callback) the plane has laid out so the
-  /// viewport size is available. A no-op when no target / no matching node.
+  /// have loaded and (via the post-frame callback) the plane has laid out so
+  /// the viewport size is available. A no-op when no target / no matching node.
   void _focusTargetBooth() {
     final target = widget.targetBoothId?.trim();
     if (target == null || target.isEmpty) {
@@ -207,16 +208,16 @@ class _VenueMapScreenState extends ConsumerState<VenueMapScreen> {
   void _openDetails(VenueMapNode node, BoothSummary? summary) {
     final l10n = AppL10n.of(context);
     final detail = _safeDetail(summary?.id);
-    showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (_) => VenueMapBoothSheet(
-        l10n: l10n,
-        node: node,
-        summary: summary,
-        detail: detail,
-      ),
-    );
+    unawaited(showModalBottomSheet<void>(
+        context: context,
+        showDragHandle: true,
+        builder: (_) => VenueMapBoothSheet(
+          l10n: l10n,
+          node: node,
+          summary: summary,
+          detail: detail,
+        ),
+      ),);
   }
 
   @override

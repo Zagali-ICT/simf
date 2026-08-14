@@ -29,13 +29,13 @@ void main() {
         () async {
       final api = _MockAuthApi();
       when(() => api.signIn(any())).thenAnswer((_) async {
-        return TokenResponseData(
+        return const TokenResponseData(
           payload: TokenPayloadDto(
             accessToken: 'A',
             refreshToken: 'R',
             tokenType: 'Bearer',
             accessTokenExpiresInSeconds: 1800,
-            user: const CurrentUserDto(
+            user: CurrentUserDto(
               id: 'u-1',
               email: 'r.alsalem@example.sa',
               displayName: 'Raed',

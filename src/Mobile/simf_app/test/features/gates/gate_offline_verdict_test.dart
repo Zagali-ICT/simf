@@ -5,6 +5,7 @@
 // checkable from the badge itself plus cached rules. It must ABSTAIN on
 // anything that needs live data — a hall booking, an account that was disabled
 // this morning — so the server decides when the queued scan uploads.
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -19,10 +20,14 @@ import '../accessibility/_fake_prefs.dart';
 /// A badge for profile-type code 1, edition 2026, under the fixture key,
 /// produced by the C# encoder. See offline_badge_test.dart.
 const String visitorBadge =
+    // A C# encoder token; wrapping breaks the character-for-character compare.
+    // ignore: lines_longer_than_80_chars
     '15F9NADHE9H94MTGBNK7WMMWB6Q3GTDED9NMBF161ZHXRFWS8KFRCYG8SWRCQ0NP1EJQ0SQXAS0NRA';
 
 /// Profile-type code 7 — a type the perimeter gate below does not admit.
 const String partnerBadge =
+    // A C# encoder token; wrapping breaks the character-for-character compare.
+    // ignore: lines_longer_than_80_chars
     '1CVTC4V9WG32MWFARN461D6MK7EZ7A0B7SW1S7QZW4EJCXYSYSFBCZ3M69YD16B3TP591QT4GPXPRG';
 
 void main() {
@@ -66,7 +71,7 @@ void main() {
     final prefs = FakePrefs();
     final cache = GateOfflineConfigCache(prefs);
     if (cached != null) {
-      cache.write(cached);
+      unawaited(cache.write(cached));
     }
     return GatesRepository(_UnusedClient(), GateScanQueue(prefs), cache);
   }
@@ -191,9 +196,13 @@ void main() {
   });
 
   group('GateOfflineConfigCache', () {
-    test('round-trips through prefs', () {
+    test('round-trips through prefs', () async {
       final prefs = FakePrefs();
-      final cache = GateOfflineConfigCache(prefs)..write(config());
+      final cache = GateOfflineConfigCache(prefs);
+      // Awaited on purpose. FakePrefs.setString is `async` with no `await`, so
+      // its body runs synchronously and a dropped future happened to work; the
+      // real prefs storage crosses a platform channel and would not.
+      await cache.write(config());
 
       final read = cache.read();
       expect(read, isNotNull);

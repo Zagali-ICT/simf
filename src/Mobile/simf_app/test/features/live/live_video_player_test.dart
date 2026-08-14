@@ -7,10 +7,10 @@ import 'package:simf_app/core/session/session_activity.dart';
 import 'package:simf_app/features/live/widgets/live_video_player.dart';
 
 /// D-721 — the live player is the one surface allowed to break the app-wide
-/// portrait lock: landscape while the YouTube feed is fullscreen, portrait again
-/// on exit (and on dispose, in case we're torn down mid-fullscreen). The pure
-/// [liveFullScreenOrientations] helper is what the fullscreen listener + dispose
-/// both drive, so locking it here locks the exception.
+/// portrait lock: landscape while the YouTube feed is fullscreen, portrait
+/// again on exit (and on dispose, in case we're torn down mid-fullscreen). The
+/// pure [liveFullScreenOrientations] helper is what the fullscreen listener +
+/// dispose both drive, so locking it here locks the exception.
 ///
 /// D-726 (#27) — the watch keep-alive now lives on this shared player (moved
 /// off `LivePlayerSurface`) so the summary recording / summary-video surfaces

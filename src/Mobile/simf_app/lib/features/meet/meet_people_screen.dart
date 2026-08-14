@@ -18,15 +18,16 @@ export 'data/meet_repository.dart';
 /// Page 035 — قابل أشخاص مثلك · Meet people (#35, `/meet`, approved account).
 ///
 /// **Build #13 rework** — this was the AI "% match" recommender; it is now the
-/// curated + opt-in **partner directory**: Sponsors, Speakers and Booth companies
-/// plus opted-in "Other"-type members (Normal / VIP visitors excluded). Tapping a
-/// speaker opens the speaker profile, a sponsor the sponsor detail, a booth its
-/// exhibitor detail; an opted-in person shows their data on the card (no per-person
-/// screen). The whole feature is gated by the CP switch — when off the backend
-/// returns an empty list (and the Home entry point is hidden). Data:
-/// `partnerDirectoryProvider` → `GET /app/networking/partner-directory`. Reuses the
-/// speakers/sponsors list visual language via the shared [SimfIdentityCell] (no
-/// bespoke Figma node; owner-approved reuse of the existing list chrome).
+/// curated + opt-in **partner directory**: Sponsors, Speakers and Booth
+/// companies plus opted-in "Other"-type members (Normal / VIP visitors
+/// excluded). Tapping a speaker opens the speaker profile, a sponsor the
+/// sponsor detail, a booth its exhibitor detail; an opted-in person shows their
+/// data on the card (no per-person screen). The whole feature is gated by the
+/// CP switch — when off the backend returns an empty list (and the Home entry
+/// point is hidden). Data: `partnerDirectoryProvider` → `GET
+/// /app/networking/partner-directory`. Reuses the speakers/sponsors list visual
+/// language via the shared [SimfIdentityCell] (no bespoke Figma node;
+/// owner-approved reuse of the existing list chrome).
 class MeetPeopleScreen extends ConsumerWidget {
   const MeetPeopleScreen({super.key});
 

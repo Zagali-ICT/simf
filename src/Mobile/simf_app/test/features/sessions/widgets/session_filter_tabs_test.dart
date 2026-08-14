@@ -35,7 +35,8 @@ Future<void> _pump(
       ),
     ),
   );
-  // Surface the closure so the analyzer keeps it (and a future tap test can use).
+  // Surface the closure so the analyzer keeps it (and a future tap test can
+  // use).
   expect(tapped, -1);
 }
 

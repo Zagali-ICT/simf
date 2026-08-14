@@ -18,7 +18,8 @@ import 'package:simf_app/features/sessions/widgets/session_filter_tabs.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 /// The three summary tabs (Figma 1072:14647), in RTL display order
-/// (right→left): أبرز النقاط · التوصيات · المتحدثون. أبرز النقاط is the default.
+/// (right→left): أبرز النقاط · التوصيات · المتحدثون. أبرز النقاط is the
+/// default.
 enum _SummaryTab { keyPoints, recommendations, speakers }
 
 /// Page 034 — ملخص الجلسة · Session summary (#34, `/ai-summary?sessionId=`),
@@ -27,18 +28,18 @@ enum _SummaryTab { keyPoints, recommendations, speakers }
 /// **Public** (Guest+, `AllowAnonymous`). Reached with a `sessionId` from the
 /// summaries list (#111) or the session-detail "ملخص الجلسة" button; with no id
 /// it falls back to the first programme session. Top-to-bottom: the **"الجلسة"
-/// info card** (the selected session's gold title + day·time·duration·hall over a
-/// **day-agenda timeline** — that day's sessions, reused from the cached
-/// programme, no new API), a **3-tab segmented control** (المتحدثون / أبرز النقاط
-/// / التوصيات), a **tab-content card** rendering the active section as gold-dot
-/// bullets, and a **"توليد ملخص للجلسة"** card whose gold button expands /
-/// collapses the published AI summary paragraph.
+/// info card** (the selected session's gold title + day·time·duration·hall over
+/// a **day-agenda timeline** — that day's sessions, reused from the cached
+/// programme, no new API), a **3-tab segmented control** (المتحدثون / أبرز
+/// النقاط / التوصيات), a **tab-content card** rendering the active section as
+/// gold-dot bullets, and a **"توليد ملخص للجلسة"** card whose gold button
+/// expands / collapses the published AI summary paragraph.
 ///
 /// Reads the published summary (`GET /app/programme/sessions/{id}/summary`); a
-/// 404 = no published summary yet (the tabs + paragraph show the empty note). The
-/// summary is **Committee-generated** in the Control Panel (D-237/D-472) — this
-/// screen is a read-only consumer, so the gold button reveals the already-published
-/// text rather than triggering generation.
+/// 404 = no published summary yet (the tabs + paragraph show the empty note).
+/// The summary is **Committee-generated** in the Control Panel (D-237/D-472) —
+/// this screen is a read-only consumer, so the gold button reveals the
+/// already-published text rather than triggering generation.
 class AiSummaryScreen extends ConsumerStatefulWidget {
   const AiSummaryScreen({this.sessionId, super.key});
 
@@ -124,8 +125,8 @@ class _AiSummaryScreenState extends ConsumerState<AiSummaryScreen> {
     });
   }
 
-  /// That day's sessions (the agenda timeline) — the cached programme filtered to
-  /// the selected session's local calendar day, time-ordered.
+  /// That day's sessions (the agenda timeline) — the cached programme filtered
+  /// to the selected session's local calendar day, time-ordered.
   List<SessionListItem> _dayAgenda(List<SessionListItem> all) {
     final selected = _selectedSession;
     if (selected == null) {
@@ -192,9 +193,10 @@ class _AiSummaryScreenState extends ConsumerState<AiSummaryScreen> {
           ),
         const SizedBox(height: SimfTokens.space4),
         // Item #35 — the two labeled video players: the session's FULL live
-        // recording and the team's short summary video. Each is present only when
-        // its URL is set (both come from the published summary); when neither is
-        // set this contributes nothing, leaving the layout unchanged.
+        // recording and the team's short summary video. Each is present only
+        // when its URL is set (both come from the published summary); when
+        // neither is set this contributes nothing, leaving the layout
+        // unchanged.
         ..._videoPlayers(l10n),
         SessionFilterTabs(
           labels: <String>[

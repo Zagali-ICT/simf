@@ -43,7 +43,8 @@ enum SeatReservationKind {
 /// (int-backed: AssignedSeat=0, OpenSeating=1). Drives the session page's Join
 /// CTA: an assigned-seat session opens the seat picker; an open-seating session
 /// is a one-tap join. [fromJson] decodes tolerantly (int OR name; unknown →
-/// [assignedSeat], so an older server that omits the field stays seat-assigned).
+/// [assignedSeat], so an older server that omits the field stays
+/// seat-assigned).
 enum SeatSelectionMode {
   assignedSeat(0, 'AssignedSeat'),
   openSeating(1, 'OpenSeating');
@@ -75,10 +76,10 @@ enum SeatSelectionMode {
 }
 
 /// D-771 — the seat TIER of a hall-layout row, mirroring
-/// `SIMF.Common.Enums.SeatTier` (int-backed: Normal=0, Vip=1, Vvip=2). The tier is
-/// real data on the layout, not a label: it decides who may reserve the seat.
-/// [fromJson] decodes tolerantly (int OR name; unknown → [normal], which is also
-/// what a server that predates D-771 implies by omitting the key).
+/// `SIMF.Common.Enums.SeatTier` (int-backed: Normal=0, Vip=1, Vvip=2). The tier
+/// is real data on the layout, not a label: it decides who may reserve the
+/// seat. [fromJson] decodes tolerantly (int OR name; unknown → [normal], which
+/// is also what a server that predates D-771 implies by omitting the key).
 enum SeatTier {
   normal(0, 'Normal'),
   vip(1, 'Vip'),
@@ -93,9 +94,10 @@ enum SeatTier {
   /// with a manual guest note.
   bool get isVvip => this == SeatTier.vvip;
 
-  /// Whether a visitor may self-reserve a seat of this tier. Mirrors the server's
-  /// single rule (`SeatReservationService.IsSelfReservable`) so the grid greys out
-  /// exactly the seats the API would refuse — the server still re-checks.
+  /// Whether a visitor may self-reserve a seat of this tier. Mirrors the
+  /// server's single rule (`SeatReservationService.IsSelfReservable`) so the
+  /// grid greys out exactly the seats the API would refuse — the server still
+  /// re-checks.
   bool selfReservableBy({required bool callerIsVip}) => switch (this) {
         SeatTier.vvip => false,
         SeatTier.vip => callerIsVip,
@@ -189,9 +191,10 @@ class MyReservation {
   bool get isOpenSeating => kind == SeatReservationKind.openSeating;
 }
 
-/// One occupied (or own) seat — mirrors `SIMF.Contracts.Sessions.SessionSeatCell`.
-/// The location is [rowLabel] + [seatNumber] (1-based within the row); there is
-/// **no column axis** (Page_018 L-3).
+/// One occupied (or own) seat — mirrors
+/// `SIMF.Contracts.Sessions.SessionSeatCell`. The location is [rowLabel] +
+/// [seatNumber] (1-based within the row); there is **no column axis** (Page_018
+/// L-3).
 @immutable
 class SeatCell {
   const SeatCell({
@@ -222,14 +225,14 @@ class SeatCell {
   final SeatReservationKind kind;
 
   /// D-771 — the administrator's manual guest note on a VVIP seat (append-only
-  /// wire keys `guestHint` / `guestHintArabic`). A VVIP seat has no registration,
-  /// so this text is the occupant record the seat tooltip shows. Null everywhere
-  /// else.
+  /// wire keys `guestHint` / `guestHintArabic`). A VVIP seat has no
+  /// registration, so this text is the occupant record the seat tooltip shows.
+  /// Null everywhere else.
   final String? guestHint;
   final String? guestHintArabic;
 
-  /// The locale-appropriate guest note, falling back to the other language, then
-  /// null when the admin typed neither.
+  /// The locale-appropriate guest note, falling back to the other language,
+  /// then null when the admin typed neither.
   String? localizedGuestHint({required bool isArabic}) {
     final ar = (guestHintArabic ?? '').trim();
     final en = (guestHint ?? '').trim();
@@ -242,7 +245,7 @@ class SeatCell {
   }
 
   /// D-572 — the booking's approval state (append-only wire key `status`),
-  /// used by the "my seat" card to switch its hint. Defaults to [pending] so an
+  /// used by the "my seat" card to switch its hint. Defaults to `pending` so an
   /// older server that omits the field reads as awaiting approval.
   final BookingStatus status;
 
@@ -328,13 +331,13 @@ class SessionSeatMap {
 
   /// D-771 — per-row seat TIERS PARALLEL to [rowLabels] (append-only wire key
   /// `seatTiers`). Empty (or length-mismatched) → every row reads as
-  /// [SeatTier.normal], which is exactly what a pre-D-771 server implies. Read a
-  /// row's tier through [tierOfRow].
+  /// [SeatTier.normal], which is exactly what a pre-D-771 server implies. Read
+  /// a row's tier through [tierOfRow].
   final List<SeatTier> seatTiers;
 
-  /// D-771 — whether the SIGNED-IN caller is a VIP-tier visitor (append-only wire
-  /// key `callerIsVip`). Drives which rows the picker offers; the server re-checks
-  /// on every reserve, so this is a UX hint, never the gate.
+  /// D-771 — whether the SIGNED-IN caller is a VIP-tier visitor (append-only
+  /// wire key `callerIsVip`). Drives which rows the picker offers; the server
+  /// re-checks on every reserve, so this is a UX hint, never the gate.
   final bool callerIsVip;
 
   final List<SeatCell> reservedCells;
@@ -375,8 +378,8 @@ class SessionSeatMap {
   }
 
   /// D-771 — the tier of row [i] (0-based). Prefers [seatTiers] only when its
-  /// length matches [rowLabels]; otherwise (absent or length-mismatched) every row
-  /// reads [SeatTier.normal], the pre-D-771 behaviour.
+  /// length matches [rowLabels]; otherwise (absent or length-mismatched) every
+  /// row reads [SeatTier.normal], the pre-D-771 behaviour.
   SeatTier tierOfRow(int i) {
     if (seatTiers.length == rowLabels.length &&
         i >= 0 &&
@@ -386,8 +389,9 @@ class SessionSeatMap {
     return SeatTier.normal;
   }
 
-  /// D-771 — whether THIS caller may self-reserve a seat in row [i]. Mirrors the
-  /// server rule so the grid pre-disables exactly what the API would refuse.
+  /// D-771 — whether THIS caller may self-reserve a seat in row [i]. Mirrors
+  /// the server rule so the grid pre-disables exactly what the API would
+  /// refuse.
   bool canReserveRow(int i) =>
       tierOfRow(i).selfReservableBy(callerIsVip: callerIsVip);
 

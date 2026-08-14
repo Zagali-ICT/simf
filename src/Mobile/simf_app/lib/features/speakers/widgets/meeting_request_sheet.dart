@@ -18,26 +18,28 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 /// The meeting-request form (bottom sheet) — approved-account only (E2). The
 /// beige "طلب مقابلة" sheet, Figma **1776:5036**: a gold drag handle, the
-/// الموضوع subject field, the speaker's available days (اختيار التاريخ) with that
-/// day's time slots (اختيار الوقت), then the gold "ارسال الطلب" button.
+/// الموضوع subject field, the speaker's available days (اختيار التاريخ) with
+/// that day's time slots (اختيار الوقت), then the gold "ارسال الطلب" button.
 ///
 /// Two entry points share this one sheet:
-/// - from a **speaker profile** — [speakerId] is set, so the speaker is fixed and
-///   no picker is shown;
-/// - from the **"طلب جديد"** on the requests list (اللقاءات الثنائية, 1408:9726) —
-///   [speakerId] is **null**, so the sheet first shows a searchable speaker
-///   picker (type-to-filter by name/rank, owner 2026-07-11).
+/// - from a **speaker profile** — [speakerId] is set, so the speaker is fixed
+///   and no picker is shown;
+/// - from the **"طلب جديد"** on the requests list (اللقاءات الثنائية,
+///   1408:9726) — [speakerId] is **null**, so the sheet first shows a
+///   searchable speaker picker (type-to-filter by name/rank, owner 2026-07-11).
 ///
-/// D-709 (item 6, FDS-013 §15.4 GAP-4) — the date + time come from the speaker's
-/// **real availability slots** (`GET /app/speakers/{id}/available-slots`), NOT a
-/// free client-side grid; this **reverts D-703**. Booking a slot is VIP-gated by
-/// the server (a 403 surfaces "VIP only").
+/// D-709 (item 6, FDS-013 §15.4 GAP-4) — the date + time come from the
+/// speaker's **real availability slots** (`GET
+/// /app/speakers/{id}/available-slots`), NOT a free client-side grid; this
+/// **reverts D-703**. Booking a slot is VIP-gated by the server (a 403 surfaces
+/// "VIP only").
 ///
-/// G3 (owner 2026-07-30, supersedes D-767 R1) — with **no free slot** the request
-/// can no longer be sent subject-only: the sheet shows the "no slots" notice and
-/// the send button is disabled (the API 409s `SPEAKER_MEETING_NO_AVAILABILITY`).
-/// A **failed** slot fetch is a separate state — it shows a load error + Retry, so
-/// a transient network failure never masquerades as "this speaker has no time".
+/// G3 (owner 2026-07-30, supersedes D-767 R1) — with **no free slot** the
+/// request can no longer be sent subject-only: the sheet shows the "no slots"
+/// notice and the send button is disabled (the API 409s
+/// `SPEAKER_MEETING_NO_AVAILABILITY`). A **failed** slot fetch is a separate
+/// state — it shows a load error + Retry, so a transient network failure never
+/// masquerades as "this speaker has no time".
 class MeetingRequestSheet extends ConsumerStatefulWidget {
   const MeetingRequestSheet({
     required this.speakerId,
@@ -47,13 +49,15 @@ class MeetingRequestSheet extends ConsumerStatefulWidget {
     super.key,
   });
 
-  /// The speaker to meet, or **null** for the bilateral entry (show the picker).
+  /// The speaker to meet, or **null** for the bilateral entry (show the
+  /// picker).
   final String? speakerId;
   final String defaultName;
 
   /// The API base URL — used to build the speaker photo asset URL for the
   /// bilateral picker's identity rows (D-745). Unused on the profile flow (a
-  /// fixed speaker, no picker), but always supplied so the constructor is uniform.
+  /// fixed speaker, no picker), but always supplied so the constructor is
+  /// uniform.
   final String baseUrl;
   final AppL10n l10n;
 
@@ -66,10 +70,11 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
   final TextEditingController _subject = TextEditingController();
   bool _submitting = false;
   // R0 (D-767) — inline validation / API-failure feedback. A ScaffoldMessenger
-  // snackbar shown while this modal sheet is open renders behind it (invisible).
+  // snackbar shown while this modal sheet is open renders behind it
+  // (invisible).
   String? _error;
-  // The speaker the request targets: the fixed [widget.speakerId] from a speaker
-  // profile, or the one picked from the dropdown in the bilateral flow.
+  // The speaker the request targets: the fixed [widget.speakerId] from a
+  // speaker profile, or the one picked from the dropdown in the bilateral flow.
   String? _selectedSpeakerId;
   // The picker's speaker list (bilateral flow only; empty on the profile flow).
   List<SpeakerSummary> _speakers = const <SpeakerSummary>[];
@@ -94,7 +99,8 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
     super.initState();
     _selectedSpeakerId = widget.speakerId;
     if (widget.speakerId == null) {
-      // Bilateral entry (no fixed speaker) — load the speaker list for the picker.
+      // Bilateral entry (no fixed speaker) — load the speaker list for the
+      // picker.
       unawaited(_loadSpeakers());
     } else {
       unawaited(_loadSlots(widget.speakerId!));
@@ -120,10 +126,11 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
     }
   }
 
-  /// Load the chosen speaker's real availability slots (D-709). G3 — a failure is
-  /// NO LONGER folded into "no slots": now that an empty list disables sending, a
-  /// swallowed network error would tell the user the speaker has no availability
-  /// and leave them stuck, so the failure gets its own state + a Retry.
+  /// Load the chosen speaker's real availability slots (D-709). G3 — a failure
+  /// is NO LONGER folded into "no slots": now that an empty list disables
+  /// sending, a swallowed network error would tell the user the speaker has no
+  /// availability and leave them stuck, so the failure gets its own state + a
+  /// Retry.
   Future<void> _loadSlots(String speakerId) async {
     setState(() {
       _slotsLoading = true;
@@ -136,8 +143,8 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
       final slots = await ref
           .read(speakersRepositoryProvider)
           .getAvailableSlots(speakerId);
-      // Drop a stale response — in the bilateral flow the user may have switched
-      // to another speaker while this load was in flight.
+      // Drop a stale response — in the bilateral flow the user may have
+      // switched to another speaker while this load was in flight.
       if (!mounted || speakerId != _selectedSpeakerId) {
         return;
       }
@@ -185,7 +192,8 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
   Future<void> _submit() async {
     final l10n = widget.l10n;
     // Owner: "no need for name" — the requester is the signed-in account, so we
-    // submit its display name as the requesterName the backend contract requires.
+    // submit its display name as the requesterName the backend contract
+    // requires.
     final name = widget.defaultName.trim();
     final speakerId = _selectedSpeakerId;
     if (speakerId == null) {
@@ -323,9 +331,9 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
     );
   }
 
-  /// The date + time section: a spinner while loading, a load-error + Retry when
-  /// the fetch failed (G3), a "no slots" hint when the speaker really has no free
-  /// slot, else the day cards + the selected day's time chips.
+  /// The date + time section: a spinner while loading, a load-error + Retry
+  /// when the fetch failed (G3), a "no slots" hint when the speaker really has
+  /// no free slot, else the day cards + the selected day's time chips.
   List<Widget> _slotSection(AppL10n l10n, bool isArabic) {
     if (_slotsLoading) {
       return const <Widget>[
@@ -386,9 +394,10 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
         ),
       );
 
-  /// G3 — the slot fetch failed: say so and offer a Retry. Deliberately different
-  /// copy from [AppL10n.meetingSlotNone] so a network blip is never read as "this
-  /// speaker has no availability", which would be a lie the user cannot act on.
+  /// G3 — the slot fetch failed: say so and offer a Retry. Deliberately
+  /// different copy from [AppL10n.meetingSlotNone] so a network blip is never
+  /// read as "this speaker has no availability", which would be a lie the user
+  /// cannot act on.
   Widget _slotsRetry(AppL10n l10n) => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -439,12 +448,13 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
         ),
       );
 
-  /// The bilateral speaker picker (owner 2026-07-11) — a selectable list of every
-  /// speaker showing the same **photo + name + country flag + rank** identity the
-  /// speakers list uses, instead of a bare name dropdown. Tapping a row selects
-  /// that speaker (and loads their real availability slots). Shown only when
-  /// [MeetingRequestSheet.speakerId] is null. The list is height-capped and scrolls
-  /// internally so a long roster never pushes the subject/slots off-screen.
+  /// The bilateral speaker picker (owner 2026-07-11) — a selectable list of
+  /// every speaker showing the same **photo + name + country flag + rank**
+  /// identity the speakers list uses, instead of a bare name dropdown. Tapping
+  /// a row selects that speaker (and loads their real availability slots).
+  /// Shown only when [MeetingRequestSheet.speakerId] is null. The list is
+  /// height-capped and scrolls internally so a long roster never pushes the
+  /// subject/slots off-screen.
   Widget _speakerPicker(AppL10n l10n, bool isArabic) {
     if (!_speakersLoaded) {
       return const Align(
@@ -502,11 +512,12 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
 
   /// The picker's speakers after the type-to-filter query — matched against the
   /// name + rank, case-insensitive, mirroring the speakers list (908:1744) so
-  /// search behaves identically wherever a speaker is chosen. The already-chosen
-  /// speaker is always kept in the list even when it doesn't match the query, so
-  /// the picker can never hide (or contradict) the target the form submits to.
-  /// The picker's rows: the shared match, plus this sheet's own rule that the
-  /// already-selected speaker never filters itself out from under the user.
+  /// search behaves identically wherever a speaker is chosen. The
+  /// already-chosen speaker is always kept in the list even when it doesn't
+  /// match the query, so the picker can never hide (or contradict) the target
+  /// the form submits to. The picker's rows: the shared match, plus this
+  /// sheet's own rule that the already-selected speaker never filters itself
+  /// out from under the user.
   List<SpeakerSummary> _filteredSpeakers(bool isArabic) => _speakers
       .where(
         (s) =>
@@ -602,9 +613,9 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
 
   /// The full-width gold "ارسال الطلب" button (Figma 1776:5083). G3 — disabled
   /// while the slots load, and disabled once they are loaded and EMPTY (no free
-  /// slot ⇒ the server would 409), so the user is never invited to send a request
-  /// that cannot succeed. A failed fetch ([_slotsError]) also leaves it disabled —
-  /// the Retry in the slot section is the way forward there.
+  /// slot ⇒ the server would 409), so the user is never invited to send a
+  /// request that cannot succeed. A failed fetch ([_slotsError]) also leaves it
+  /// disabled — the Retry in the slot section is the way forward there.
   Widget _sendButton(AppL10n l10n) {
     final enabled = !_submitting && !_slotsLoading && _slots.isNotEmpty;
     return Opacity(

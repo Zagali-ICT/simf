@@ -20,8 +20,8 @@ class SimfSweepBackground extends StatelessWidget {
       child: Transform.rotate(
         angle: 0.4936,
         child: Container(
-          width: SimfTokens.simfPageShellWidthMd,
-          height: SimfTokens.simfPageShellHeightMd,
+          width: SimfTokens.sweepBlockWidth,
+          height: SimfTokens.sweepBlockHeight,
           decoration: const BoxDecoration(
             color: SimfTokens.surfaceTint,
             borderRadius:

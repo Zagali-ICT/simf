@@ -1,8 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:simf_app/core/utils/bilingual.dart';
 
-/// One FAQ question/answer pair (`GET /app/faq` → groups[].entries[]). Bilingual;
-/// the localized getters fall back to the other language when one side is blank.
+/// One FAQ question/answer pair (`GET /app/faq` → groups[].entries[]).
+/// Bilingual; the localized getters fall back to the other language when one
+/// side is blank.
 @immutable
 class FaqEntry {
   const FaqEntry({

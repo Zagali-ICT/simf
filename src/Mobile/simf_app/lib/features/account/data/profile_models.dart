@@ -132,9 +132,10 @@ class UpsertUserProfileRequest {
 }
 
 /// The in-memory sign-up draft carried from the profile-data screen (Page 007)
-/// to the interests screen (Page 007‑01), which adds the interests and fires the
-/// single `POST /app/account/user-profile` save (D-332). [request] is built with
-/// an empty `interestIds`; the interests screen replaces it via [copyWith].
+/// to the interests screen (Page 007‑01), which adds the interests and fires
+/// the single `POST /app/account/user-profile` save (D-332). [request] is built
+/// with an empty `interestIds`; the interests screen replaces it via
+/// `copyWith`.
 @immutable
 class SignUpProfileDraft {
   const SignUpProfileDraft({
@@ -280,23 +281,25 @@ class UserProfileResponse {
   /// (defaults false when an older server omits it).
   final bool isVip;
 
-  /// Bi-Meeting rework — the admin-assigned per-user flag that lets this account
-  /// request a **speaker** meeting. Replaces [isVip] as the speaker-meeting gate
-  /// (independent of the VIP tier). Append-only wire field (defaults false).
+  /// Bi-Meeting rework — the admin-assigned per-user flag that lets this
+  /// account request a **speaker** meeting. Replaces [isVip] as the
+  /// speaker-meeting gate (independent of the VIP tier). Append-only wire field
+  /// (defaults false).
   final bool allowsSpeakerMeeting;
 
-  /// Bi-Meeting rework — the admin-assigned per-user flag that lets this account
-  /// request a **delegation** (وفد) meeting. Append-only wire field (defaults false).
+  /// Bi-Meeting rework — the admin-assigned per-user flag that lets this
+  /// account request a **delegation** (وفد) meeting. Append-only wire field
+  /// (defaults false).
   final bool allowsDelegationMeeting;
 
   /// D-736 — whether this profile appears in "Meet People Like You"
   /// recommendations. Defaults to true.
   final bool showInMeetLikeYou;
 
-  /// Build #13 — true when the assigned profile type is an audience tier
-  /// (VVIP / VIP / Gold / Normal); false for the "Other" (partner / staff) tiers.
-  /// Drives whether the "show me in Meet People Like You" opt-in is offered (only
-  /// to "Other"-type users). Append-only wire field; defaults true.
+  /// Build #13 — true when the assigned profile type is an audience tier (VVIP
+  /// / VIP / Gold / Normal); false for the "Other" (partner / staff) tiers.
+  /// Drives whether the "show me in Meet People Like You" opt-in is offered
+  /// (only to "Other"-type users). Append-only wire field; defaults true.
   final bool isForVisitor;
 
   /// D-547 — the attendee's Region id. Read back so an interests-only edit can
@@ -320,9 +323,9 @@ class UserProfileResponse {
 
   /// Builds an edit re-save request mirroring every field of the loaded profile
   /// so an interests-only edit (via `copyWith`) re-POSTs the whole profile
-  /// without nulling a server-set field. The full upsert is the only write
-  /// path and the service sets RegionId + JobTitleArabic unconditionally, so
-  /// both must be carried back here (#14).
+  /// without nulling a server-set field. The full upsert is the only write path
+  /// and the service sets RegionId + JobTitleArabic unconditionally, so both
+  /// must be carried back here (#14).
   ///
   /// EXCEPTION — `profileTypeId` is sent **null** on purpose: on a re-save the
   /// server re-runs the sign-up self-pick validation for any non-null
@@ -332,12 +335,12 @@ class UserProfileResponse {
   /// only writes a user pick when the stored ProfileTypeId is null). So an
   /// interests edit never changes — nor is blocked by — the account's tier.
   /// [showInMeetLikeYou] overrides the loaded opt-in value — Build #13 lets an
-  /// "Other"-type user toggle it on the My-interests edit screen; null keeps the
-  /// current value.
+  /// "Other"-type user toggle it on the My-interests edit screen; null keeps
+  /// the current value.
   ///
   /// [mobile] overrides the stored mobile number (owner 2026-07-26 — add / edit
-  /// the phone number from the profile, validate only, no OTP). It is written to
-  /// the field the profile's nationality selects — [saudiMobile] for a Saudi
+  /// the phone number from the profile, validate only, no OTP). It is written
+  /// to the field the profile's nationality selects — [saudiMobile] for a Saudi
   /// national, [internationalMobile] otherwise — so the pair never carries two
   /// numbers at once. Null keeps both stored values.
   UpsertUserProfileRequest toUpsertRequest({

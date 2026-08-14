@@ -28,11 +28,11 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// **Public** read (`GET /app/speakers/{id}`) — behaviour unchanged. Frame
 /// mapping: the two-line header (`SpeakerProfileHeader`), the 125px gold-ringed
 /// avatar (`SpeakerAvatar`, D-357 photo + placeholder), the four CV tab pills
-/// (`SpeakerCvTabs`) over the navy bio card (`SpeakerCvCard`). Below the frame's
-/// minimal content the screen keeps its full behaviour: the **Request meeting**
-/// action (only when `allowsMeetingRequests` **and the viewer is a VIP tier**,
-/// D-729) — login-only (`POST …/meeting-requests`, D-269), opening the
-/// `MeetingRequestSheet` (the endpoint enforces the same VIP rule); the
+/// (`SpeakerCvTabs`) over the navy bio card (`SpeakerCvCard`). Below the
+/// frame's minimal content the screen keeps its full behaviour: the **Request
+/// meeting** action (only when `allowsMeetingRequests` **and the viewer is a
+/// VIP tier**, D-729) — login-only (`POST …/meeting-requests`, D-269), opening
+/// the `MeetingRequestSheet` (the endpoint enforces the same VIP rule); the
 /// opted-in social links (only when `allowsDataSharing`); and the speaker's
 /// sessions (`SpeakerSessionRow`, tap → session detail 17).
 class SpeakerProfileScreen extends ConsumerStatefulWidget {
@@ -91,27 +91,27 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
     final auth = ref.read(authControllerProvider);
     if (auth is! AuthStateSignedIn) {
       // Login-only (E2) — send a guest to sign in (Page_020 L-5).
-      context.pushNamed(RouteNames.signIn);
+      unawaited(context.pushNamed(RouteNames.signIn));
       return;
     }
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      // Figma 1776:4958 — a light "طلب مقابلة" sheet with its own gold drag
-      // handle (so the default grey handle is off) and rounded top corners.
-      backgroundColor: SimfTokens.cardBeige,
-      showDragHandle: false,
-      shape: const RoundedRectangleBorder(
-        borderRadius:
-            BorderRadius.vertical(top: Radius.circular(SimfTokens.radius)),
-      ),
-      builder: (_) => MeetingRequestSheet(
-        speakerId: speaker.id,
-        defaultName: auth.session.user.displayName,
-        baseUrl: ref.read(simfDataConfigProvider).baseUrl,
-        l10n: l10n,
-      ),
-    );
+    unawaited(showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        // Figma 1776:4958 — a light "طلب مقابلة" sheet with its own gold drag
+        // handle (so the default grey handle is off) and rounded top corners.
+        backgroundColor: SimfTokens.cardBeige,
+        showDragHandle: false,
+        shape: const RoundedRectangleBorder(
+          borderRadius:
+              BorderRadius.vertical(top: Radius.circular(SimfTokens.radius)),
+        ),
+        builder: (_) => MeetingRequestSheet(
+          speakerId: speaker.id,
+          defaultName: auth.session.user.displayName,
+          baseUrl: ref.read(simfDataConfigProvider).baseUrl,
+          l10n: l10n,
+        ),
+      ),);
   }
 
   Future<void> _copyLink(String url, AppL10n l10n) async {
@@ -181,8 +181,9 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
     // uploaded photo; the base already includes `/api/v1`.
     final baseUrl = ref.watch(simfDataConfigProvider).baseUrl;
     // Bi-Meeting rework — requesting a speaker meeting is gated by the per-user
-    // AllowsSpeakerMeeting flag (replaces the VIP tier). False while the profile
-    // loads / for guests / unentitled (the endpoint also gates server-side).
+    // AllowsSpeakerMeeting flag (replaces the VIP tier). False while the
+    // profile loads / for guests / unentitled (the endpoint also gates
+    // server-side).
     final canRequestSpeakerMeeting =
         ref.watch(currentUserMeetingAccessProvider).value?.speaker ?? false;
     final sections = <SpeakerCvSection>[
@@ -239,8 +240,9 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
           const SizedBox(height: SimfTokens.space6), // 24
           SpeakerCvCard(body: sections[activeCv].body!),
         ],
-        // Bi-Meeting rework — the "request meeting" CTA shows only when the speaker
-        // accepts requests AND this user holds AllowsSpeakerMeeting (endpoint enforces).
+        // Bi-Meeting rework — the "request meeting" CTA shows only when the
+        // speaker accepts requests AND this user holds AllowsSpeakerMeeting
+        // (endpoint enforces).
         if (speaker.allowsMeetingRequests &&
             canRequestSpeakerMeeting) ...<Widget>[
           const SizedBox(height: SimfTokens.space5),

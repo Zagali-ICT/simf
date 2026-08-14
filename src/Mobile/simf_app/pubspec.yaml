@@ -13,72 +13,22 @@ environment:
   flutter: ">=3.27.0"
 
 dependencies:
-  flutter:
-    sdk: flutter
-  flutter_localizations:
-    sdk: flutter
-  flutter_riverpod: ^2.6.1
-  go_router: ^14.6.0
-  intl: ^0.19.0
-  # Biometric (Face/Touch) prompt for device-key sign-in (Page_003 L-2).
-  # Native config (manifest / Info.plist / MainActivity) lands in the generated
-  # android/ios folders (simf-run); absent in this source tree.
-  local_auth: ^2.3.0
-  # ID-document image picker for the visitor profile (Page_007). C7 (D-371):
-  # camera-only capture → bytes → multipart upload via simf_data_pkg. Native
-  # permission strings (Info.plist / manifest) land in the generated folders
-  # (simf-run).
-  image_picker: ^1.1.2
-  # C7 (D-371) — on-device human-face check over the profile camera capture
-  # (instant feedback; the server's offline FaceAiSharp gate is the
-  # authority). Android/iOS only — web/test runtimes defer to the server.
-  google_mlkit_face_detection: ^0.13.1
-  # D-404 — live camera preview + frame stream for the guided face-capture /
-  # liveness flow (التحقق من الهوية): ML Kit reads smilingProbability +
-  # headEulerAngleY off the stream to verify Smile → turn-right → turn-left.
-  # Android/iOS only; web/test runtimes degrade gracefully (no live preview).
-  camera: ^0.11.0+2
-  # Native OS share sheet for My-Area (Page_014): share the user's contact-card
-  # (.vcf) and calendar (.ics) fetched from the App API. Native share config lands
-  # in the generated folders (simf-run).
-  share_plus: ^10.0.0
   # "Add to calendar" for the session detail (Page_017 E4) — opens the device
   # calendar's add-event editor pre-filled from the cached session (intent-based,
   # needs no Android permission). The local-notification "reminder" CTA is deferred
   # to the notifications platform pass (D-300); the server worker (D-217) is the
   # production reminder path.
   add_2_calendar: ^3.0.1
-  # Entry-badge QR (Page_032) — pure-Dart QR painter (no native config) rendering
-  # the account qrId from GET /app/account/dashboard.
-  qr_flutter: ^4.1.0
-  # Live-broadcast player (Page_025) — plays the session liveStreamUrl. Native
-  # config (manifest / Info.plist) lands in the generated folders (simf-run);
-  # the real stream provider is still a stub (D-211 D7).
-  video_player: ^2.9.1
-  # Live-broadcast YouTube player (Page 025, D-349) — plays a YouTube
-  # liveStreamUrl / sign-language feed via the official IFrame Player API (rides
-  # on webview_flutter; native config lands in the generated folders at
-  # simf-run). YouTube is the POC live-video provider; HLS/MP4 (video_player
-  # above) stays the fallback when the feed is not a YouTube link.
-  youtube_player_iframe: ^6.0.2
-  # Opens the OS dialer / mail app from the registration-success contact tiles
-  # (Page_010, D-369). Tiles stay inert until BuildConfig.supportPhone/Email
-  # are supplied via --dart-define; native queries config (Android 11+
-  # <queries> for tel/mailto) lands in the generated folders (simf-run).
-  url_launcher: ^6.3.0
-  # QR scanner for the badge / contact / gate flows (Scan QR — FDS-014, D-286;
-  # D-426). Uses the native ZXing C++ engine via FFI (flutter_zxing) over the
-  # `camera` plugin — NO Google Play Services / ML Kit dependency, so the camera
-  # works on Huawei / HMS devices where mobile_scanner showed a black preview
-  # (D-426 research). A manual code-entry fallback stays available regardless.
-  flutter_zxing: ^2.3.0
-  # Renders the home tiles' exact iconify glyphs (KSA frame 758:1134) as bundled
-  # SVGs tinted to the tile colour — the design uses iconify sets (solar/ph/
-  # streamline/…) that have no 1:1 Material equivalent. Pure-Dart, no native config.
-  flutter_svg: ^2.0.10
-  # D-736 — the real installed version (About/More display + the launch
-  # update-policy comparison). Federated plugin, no manual native config.
-  package_info_plus: ^8.3.0
+  # D-404 — live camera preview + frame stream for the guided face-capture /
+  # liveness flow (التحقق من الهوية): ML Kit reads smilingProbability +
+  # headEulerAngleY off the stream to verify Smile → turn-right → turn-left.
+  # Android/iOS only; web/test runtimes degrade gracefully (no live preview).
+  camera: ^0.11.0+2
+  characters: any
+  # SHA-256 over the device fingerprint before it reaches the label, so nothing
+  # reversible is stored. Pure Dart; already present transitively, now direct
+  # because we use it.
+  crypto: ^3.0.6
   # Names the device on a biometric enrolment, so the DeviceKeys rows stop all
   # reading "SIMF mobile" and an operator can tell one enrolled phone from
   # another. Federated plugin, no manual native config.
@@ -89,24 +39,74 @@ dependencies:
   # Do not bump this without also moving package_info_plus and re-testing the
   # update-policy check.
   device_info_plus: ^12.4.0
-  # SHA-256 over the device fingerprint before it reaches the label, so nothing
-  # reversible is stored. Pure Dart; already present transitively, now direct
-  # because we use it.
-  crypto: ^3.0.6
-  # D-736 — semver parse/compare for the server version-policy check (never
-  # string-compare versions: "1.10.0" < "1.9.0" lexically). Pure Dart.
-  pub_semver: ^2.1.4
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  flutter_riverpod: ^2.6.1
+  # Renders the home tiles' exact iconify glyphs (KSA frame 758:1134) as bundled
+  # SVGs tinted to the tile colour — the design uses iconify sets (solar/ph/
+  # streamline/…) that have no 1:1 Material equivalent. Pure-Dart, no native config.
+  flutter_svg: ^2.0.10
+  # QR scanner for the badge / contact / gate flows (Scan QR — FDS-014, D-286;
+  # D-426). Uses the native ZXing C++ engine via FFI (flutter_zxing) over the
+  # `camera` plugin — NO Google Play Services / ML Kit dependency, so the camera
+  # works on Huawei / HMS devices where mobile_scanner showed a black preview
+  # (D-426 research). A manual code-entry fallback stays available regardless.
+  flutter_zxing: ^2.3.0
+  go_router: ^14.6.0
+  # C7 (D-371) — on-device human-face check over the profile camera capture
+  # (instant feedback; the server's offline FaceAiSharp gate is the
+  # authority). Android/iOS only — web/test runtimes defer to the server.
+  google_mlkit_face_detection: ^0.13.1
+  # ID-document image picker for the visitor profile (Page_007). C7 (D-371):
+  # camera-only capture → bytes → multipart upload via simf_data_pkg. Native
+  # permission strings (Info.plist / manifest) land in the generated folders
+  # (simf-run).
+  image_picker: ^1.1.2
+  intl: ^0.19.0
+  # Biometric (Face/Touch) prompt for device-key sign-in (Page_003 L-2).
+  # Native config (manifest / Info.plist / MainActivity) lands in the generated
+  # android/ios folders (simf-run); absent in this source tree.
+  local_auth: ^2.3.0
+  # D-736 — the real installed version (About/More display + the launch
+  # update-policy comparison). Federated plugin, no manual native config.
+  package_info_plus: ^8.3.0
   # D-820 - AES-256-GCM + Crockford base32 for the offline badge decoder, so a
   # scanner can verify a badge printed by an offline desk with no network. Pure
   # Dart (no native config, which matters here because android/ios are
   # generated); already present transitively, now direct because we use it.
   pointycastle: ^3.9.1
-
-  simf_data_pkg:
-    path: packages/simf_data_pkg
+  pretty_dio_logger: ^1.4.0
+  # D-736 — semver parse/compare for the server version-policy check (never
+  # string-compare versions: "1.10.0" < "1.9.0" lexically). Pure Dart.
+  pub_semver: ^2.1.4
+  # Entry-badge QR (Page_032) — pure-Dart QR painter (no native config) rendering
+  # the account qrId from GET /app/account/dashboard.
+  qr_flutter: ^4.1.0
+  # Native OS share sheet for My-Area (Page_014): share the user's contact-card
+  # (.vcf) and calendar (.ics) fetched from the App API. Native share config lands
+  # in the generated folders (simf-run).
+  share_plus: ^10.0.0
   simf_auth_pkg:
     path: packages/simf_auth_pkg
-  pretty_dio_logger: ^1.4.0
+  simf_data_pkg:
+    path: packages/simf_data_pkg
+  # Opens the OS dialer / mail app from the registration-success contact tiles
+  # (Page_010, D-369). Tiles stay inert until BuildConfig.supportPhone/Email
+  # are supplied via --dart-define; native queries config (Android 11+
+  # <queries> for tel/mailto) lands in the generated folders (simf-run).
+  url_launcher: ^6.3.0
+  # Live-broadcast player (Page_025) — plays the session liveStreamUrl. Native
+  # config (manifest / Info.plist) lands in the generated folders (simf-run);
+  # the real stream provider is still a stub (D-211 D7).
+  video_player: ^2.9.1
+  # Live-broadcast YouTube player (Page 025, D-349) — plays a YouTube
+  # liveStreamUrl / sign-language feed via the official IFrame Player API (rides
+  # on webview_flutter; native config lands in the generated folders at
+  # simf-run). YouTube is the POC live-video provider; HLS/MP4 (video_player
+  # above) stays the fallback when the feed is not a YouTube link.
+  youtube_player_iframe: ^6.0.2
 
 # D-768 — vendored copy of video_player_android 2.12.0, patched so the hero
 # background video plays on Huawei/HiSilicon devices. Their hardware AVC decoder
@@ -115,14 +115,11 @@ dependencies:
 # (falls back to the Android software AVC decoder) + forceDisableMediaCodecAsynchronousQueueing().
 # See third_party/video_player_android/android/.../TextureVideoPlayer.java +
 # PlatformViewVideoPlayer.java. Remove once the upstream plugin exposes these knobs.
-  characters: any
 dependency_overrides:
   video_player_android:
     path: third_party/video_player_android
 
 dev_dependencies:
-  flutter_test:
-    sdk: flutter
   # D-372 regression test only — drives the real SimfApiClient over a
   # header-recording adapter (same major as simf_data_pkg's pin).
   dio: ^5.7.0
@@ -135,6 +132,8 @@ dev_dependencies:
   # (app_name = SIMF) and res/values-ar/strings.xml (app_name = الملتقى البحري).
   # Without this the launcher shows the scaffold default "simf_app".
   flutter_launcher_icons: ^0.14.1
+  flutter_test:
+    sdk: flutter
   # End-to-end harness: boots the assembled app (real router + screens) with
   # deterministic provider overrides and drives cross-screen flows. Runs headless
   # via `flutter test integration_test/`, or on a device with `-d <id>`.

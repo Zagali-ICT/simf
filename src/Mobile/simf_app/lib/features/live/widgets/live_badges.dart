@@ -52,9 +52,10 @@ class LiveBadge extends StatelessWidget {
   }
 }
 
-/// The frame's caption-language chip (934:3450) on the player band, opposite the
-/// LIVE badge. Shows the current UI language's native name + a globe glyph and
-/// toggles the app language on tap (owner decision: wire to the app locale).
+/// The frame's caption-language chip (934:3450) on the player band, opposite
+/// the LIVE badge. Shows the current UI language's native name + a globe glyph
+/// and toggles the app language on tap (owner decision: wire to the app
+/// locale).
 class LanguageChip extends ConsumerWidget {
   const LanguageChip({super.key});
 
@@ -62,8 +63,8 @@ class LanguageChip extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppL10n.of(context);
     return Material(
-      // Frame 934:3604 — a translucent dark glassy pill with a gold hairline and
-      // white text/icon (was a solid white chip with navy glyphs).
+      // Frame 934:3604 — a translucent dark glassy pill with a gold hairline
+      // and white text/icon (was a solid white chip with navy glyphs).
       color: SimfTokens.scrimBlack55,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
@@ -89,7 +90,8 @@ class LanguageChip extends ConsumerWidget {
                 style: SimfTokens.bodyWhiteRegularSm,
               ),
               const SizedBox(width: SimfTokens.gap5),
-              const Icon(Icons.language, size: SimfTokens.liveBadgesSize, color: SimfTokens.surface),
+              const Icon(Icons.language,
+                  size: SimfTokens.liveBadgesSize, color: SimfTokens.surface,),
             ],
           ),
         ),

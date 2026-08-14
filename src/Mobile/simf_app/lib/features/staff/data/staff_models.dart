@@ -4,10 +4,10 @@ import 'package:simf_app/features/account/data/profile_models.dart'
     show AppGender;
 
 /// D-509 — the staff walk-in registration request. Mirrors the backend
-/// `AdminWalkInRegistrationRequest` (the same DTO the CP desk posts), trimmed to
-/// the fields the staff-app form (Figma 1467:12357) collects. Email is optional
-/// (the API synthesizes a placeholder); the server validator enforces the full
-/// rule set, so the form does only light required-field checks.
+/// `AdminWalkInRegistrationRequest` (the same DTO the CP desk posts), trimmed
+/// to the fields the staff-app form (Figma 1467:12357) collects. Email is
+/// optional (the API synthesizes a placeholder); the server validator enforces
+/// the full rule set, so the form does only light required-field checks.
 @immutable
 class StaffWalkInRequest {
   const StaffWalkInRequest({

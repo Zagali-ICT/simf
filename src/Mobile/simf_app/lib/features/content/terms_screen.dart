@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -37,12 +38,12 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
   bool _loading = true;
   bool _empty = false;
   String? _error;
-  ContentBlock? _block;
+  late ContentBlock _block;
 
   @override
   void initState() {
     super.initState();
-    _load();
+    unawaited(_load());
   }
 
   Future<void> _load() async {
@@ -112,8 +113,8 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
             child: Transform.rotate(
               angle: 0.4936, // 28.28°
               child: Container(
-                width: SimfTokens.termsScreenWidth,
-                height: SimfTokens.termsScreenHeightMd,
+                width: SimfTokens.sweepBlockWidth,
+                height: SimfTokens.sweepBlockHeight,
                 decoration: BoxDecoration(
                   color: SimfTokens.surfaceTint,
                   borderRadius: BorderRadius.circular(SimfTokens.radiusSheet),
@@ -205,7 +206,7 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
 
   Widget _buildContent(AppL10n l10n) {
     // Each non-empty body line renders as one bullet card (Figma list items).
-    final items = _block!.bullets(isArabic: l10n.isArabic);
+    final items = _block.bullets(isArabic: l10n.isArabic);
     return Column(
       children: <Widget>[
         Expanded(

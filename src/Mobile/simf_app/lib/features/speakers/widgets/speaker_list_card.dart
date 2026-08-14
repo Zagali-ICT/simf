@@ -32,9 +32,9 @@ class SpeakerListCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Figma 908:1744 (node 1318:3391): the country flag is an inline glyph at the
-    // trailing (left, in RTL) edge of the name — NOT a badge on the avatar — and
-    // the sub-line carries only the rank.
+    // Figma 908:1744 (node 1318:3391): the country flag is an inline glyph at
+    // the trailing (left, in RTL) edge of the name — NOT a badge on the avatar
+    // — and the sub-line carries only the rank.
     final flag = countryFlagEmoji(speaker.countryId);
     final label = speaker.localizedRank(isArabic: isArabic)?.trim() ?? '';
     final flip = !isArabic;

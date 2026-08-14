@@ -2,6 +2,14 @@
 // (SIMF.Common.Badges.EventBadgeCodec). The fixtures below were produced by
 // that encoder; if this file goes red after a codec change, the shipped app
 // stopped being able to read badges the desks are printing.
+//
+// ignore_for_file: lines_longer_than_80_chars
+//
+// Each fixture is one base32 token produced by the other language. Wrapping one
+// across lines would make it unreadable exactly where it has to be compared
+// character for character against the C# side, so the rule is suppressed here
+// with a reason rather than obeyed — the same call this branch already made for
+// its other suppressions.
 import 'dart:convert';
 import 'dart:typed_data';
 

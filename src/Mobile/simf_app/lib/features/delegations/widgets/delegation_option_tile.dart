@@ -4,9 +4,9 @@ import 'package:simf_app/features/delegations/data/delegation_models.dart';
 import 'package:simf_app/features/speakers/widgets/speaker_option_tile.dart'
     show SpeakerOptionTile;
 
-/// One selectable delegation row in the picker — flag + localized country name +
-/// member count, with a selected (gold) outline. Mirrors [SpeakerOptionTile]'s
-/// role for the speaker picker.
+/// One selectable delegation row in the picker — flag + localized country name
+/// + member count, with a selected (gold) outline. Mirrors
+/// [SpeakerOptionTile]'s role for the speaker picker.
 class DelegationOptionTile extends StatelessWidget {
   const DelegationOptionTile({
     required this.delegation,

@@ -89,9 +89,9 @@ class _BiometricStepUpScreenState extends ConsumerState<BiometricStepUpScreen> {
   bool get _canSubmit => _code.text.trim().length == 6 && !_verifying;
 
   /// Asks the backend to email a step-up code; shows the masked recipient and
-  /// (re)starts the resend countdown. A failure surfaces inline. Kicked off from
-  /// initState, so it must not read inherited widgets (l10n) before the first
-  /// await — the error text is resolved only after, in the catch.
+  /// (re)starts the resend countdown. A failure surfaces inline. Kicked off
+  /// from initState, so it must not read inherited widgets (l10n) before the
+  /// first await — the error text is resolved only after, in the catch.
   Future<void> _send() async {
     setState(() {
       _sending = true;

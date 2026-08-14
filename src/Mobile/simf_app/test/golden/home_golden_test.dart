@@ -16,9 +16,9 @@ import 'package:simf_app/features/notifications/data/notifications_repository.da
 
 import 'golden_fonts.dart';
 
-/// Golden render of the signed-in Home (`VisitorHome`, Figma frame **758:1134**)
-/// and the guest Home (`GuestHome`, **758:2910**). Compare to the frames:
-///   flutter test --update-goldens test/golden/home_golden_test.dart
+/// Golden render of the signed-in Home (`VisitorHome`, Figma frame
+/// **758:1134**) and the guest Home (`GuestHome`, **758:2910**). Compare to the
+/// frames: flutter test --update-goldens test/golden/home_golden_test.dart
 ///
 /// The greeting is a static "مرحبًا" + first name (owner 2026-07-21), so no
 /// clock is injected. The highlights carousel's auto-advance timer means the
@@ -109,8 +109,8 @@ void main() {
             baseUrl: _baseUrl,
             onRefresh: () async {},
             highlights: _highlights,
-            // Meeting-eligible so the "اللقاءات الثنائية" tile renders (matches the
-            // Figma home 758:1134, which shows it) — D-745.
+            // Meeting-eligible so the "اللقاءات الثنائية" tile renders (matches
+            // the Figma home 758:1134, which shows it) — D-745.
             canRequestMeetings: true,
           ),
         ),

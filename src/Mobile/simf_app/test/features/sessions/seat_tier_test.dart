@@ -123,7 +123,8 @@ void main() {
       });
       expect(cell.guestHintArabic, 'هذا المقعد محجوز لمعالي الوزير');
       expect(cell.guestHint, isNull);
-      // English requested but only Arabic present → falls back rather than blank.
+      // English requested but only Arabic present → falls back rather than
+      // blank.
       expect(cell.localizedGuestHint(isArabic: false),
           'هذا المقعد محجوز لمعالي الوزير',);
       expect(cell.localizedGuestHint(isArabic: true),

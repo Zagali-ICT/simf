@@ -65,7 +65,8 @@ final _items = <PresentationItem>[
 ];
 
 /// The programme behind each row, all with a published summary so the golden
-/// locks the Figma frame's **active** gold تحميل buttons (owner 2026-07-14 gate).
+/// locks the Figma frame's **active** gold تحميل buttons (owner 2026-07-14
+/// gate).
 SessionListItem _session(String sessionId) => SessionListItem(
       id: sessionId,
       code: 'C-$sessionId',

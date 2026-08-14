@@ -39,8 +39,8 @@ class SessionSummaryCard extends StatelessWidget {
     final hall = item.localizedHall(isArabic: isArabic);
     final category = item.localizedCategory(isArabic: isArabic);
     // Owner 2026-07-14 — the shared state chips. The summaries list is already
-    // all-summarised, so the summary chip is suppressed here (redundant) and the
-    // card shows live-now / مسجّل only.
+    // all-summarised, so the summary chip is suppressed here (redundant) and
+    // the card shows live-now / مسجّل only.
     final stateChips = sessionStateChips(
       phase: item.phase(saudiNow()),
       hasPublishedSummary: false,
@@ -75,7 +75,8 @@ class SessionSummaryCard extends StatelessWidget {
                       ),
                       const SizedBox(height: SimfTokens.space2),
                       SessionIconLine(
-                        // Figma 1388:8441 — the exact iconify clock, not Material.
+                        // Figma 1388:8441 — the exact iconify clock, not
+                        // Material.
                         asset: AppAssets.sessionClock,
                         text: '$time · $durationLabel',
                       ),
@@ -114,8 +115,8 @@ class SessionSummaryCard extends StatelessWidget {
             if (hasChips ||
                 (category != null && category.isNotEmpty)) ...<Widget>[
               const SizedBox(height: SimfTokens.space4),
-              // The state chip sits on the inline end (left in RTL), the category
-              // pill filling the rest (Figma 1388:8462).
+              // The state chip sits on the inline end (left in RTL), the
+              // category pill filling the rest (Figma 1388:8462).
               Row(
                 children: <Widget>[
                   if (category != null && category.isNotEmpty) ...<Widget>[

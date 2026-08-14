@@ -80,7 +80,8 @@ class _IdentityVerificationScreenState
 
   Future<void> _initCamera() async {
     if (kIsWeb) {
-      // No live preview on web — show the "camera required" message (no gallery).
+      // No live preview on web — show the "camera required" message (no
+      // gallery).
       setState(() => _cameraFailed = true);
       return;
     }
@@ -111,7 +112,7 @@ class _IdentityVerificationScreenState
       _camera = controller;
       setState(() => _cameraReady = true);
       await controller.startImageStream(_onFrame);
-    } catch (_) {
+    } on Object catch (_) {
       // Camera / ML Kit unavailable or permission denied — show the "camera
       // required" message (no gallery: identity capture is live-image-only).
       if (mounted) {
@@ -159,15 +160,15 @@ class _IdentityVerificationScreenState
         return;
       }
       await _advance();
-    } catch (_) {
+    } on Object catch (_) {
       // Transient frame error — ignore and keep streaming.
     } finally {
       _processing = false;
     }
   }
 
-  /// Step passed — on the first (smile) step grab the forward selfie; advance to
-  /// the next step, or finish on the last.
+  /// Step passed — on the first (smile) step grab the forward selfie; advance
+  /// to the next step, or finish on the last.
   Future<void> _advance() async {
     final controller = _camera;
     if (controller == null) {
@@ -180,7 +181,7 @@ class _IdentityVerificationScreenState
         _forwardFrame = await shot.readAsBytes();
         _forwardName = shot.name;
         await controller.startImageStream(_onFrame);
-      } catch (_) {
+      } on Object catch (_) {
         // The capture failed — the flow keeps verifying liveness; a null
         // forward frame is retaken from the live camera on finish.
       }
@@ -194,10 +195,11 @@ class _IdentityVerificationScreenState
     }
   }
 
-  /// Liveness passed. Return the live smile-frame; if it was not grabbed, take a
-  /// final live shot now (the human is verified). There is NO gallery fallback —
-  /// the identity photo must be a live camera image (owner 2026-07-06, D-662);
-  /// if no live frame can be captured, show the "camera required" retry.
+  /// Liveness passed. Return the live smile-frame; if it was not grabbed, take
+  /// a final live shot now (the human is verified). There is NO gallery
+  /// fallback — the identity photo must be a live camera image (owner
+  /// 2026-07-06, D-662); if no live frame can be captured, show the "camera
+  /// required" retry.
   Future<void> _finish() async {
     var bytes = _forwardFrame;
     final controller = _camera;
@@ -209,7 +211,7 @@ class _IdentityVerificationScreenState
         final shot = await controller.takePicture();
         bytes = await shot.readAsBytes();
         _forwardName = shot.name;
-      } catch (_) {
+      } on Object catch (_) {
         // Fall through to the camera-required state below.
       }
     }
@@ -340,7 +342,7 @@ class _IdentityVerificationScreenState
         }
         await controller.dispose();
       }
-    } catch (_) {
+    } on Object catch (_) {
       // Already disposed — ignore.
     }
     await _detector?.close();

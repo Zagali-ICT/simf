@@ -68,14 +68,14 @@ void main() {
       await tester.tap(find.widgetWithText(FilledButton, 'Look up'));
       await tester.pump(); // let setState(_processing = true) apply
 
-      final button =
-          tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Look up'));
+      final button = tester
+          .widget<FilledButton>(find.widgetWithText(FilledButton, 'Look up'));
       expect(button.onPressed, isNull); // disabled
 
       gate.complete();
       await tester.pumpAndSettle();
-      final after =
-          tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Look up'));
+      final after = tester
+          .widget<FilledButton>(find.widgetWithText(FilledButton, 'Look up'));
       expect(after.onPressed, isNotNull); // re-enabled
     });
   });

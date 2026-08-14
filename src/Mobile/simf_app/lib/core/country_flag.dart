@@ -2,8 +2,8 @@
 ///
 /// The backend carries a speaker's nationality as the ISO 3166-1 numeric code
 /// (`PublicSessionSpeaker.CountryId`); the KSA-Project Figma frames (e.g.
-/// session detail 889:2450 "المتحدثون") show the matching flag (🇸🇦) beside the
-/// name. A flag emoji is the two **regional indicator symbols** for the
+/// session detail 889:2450 "المتحدثون") show the matching flag (🇸🇦) beside
+/// the name. A flag emoji is the two **regional indicator symbols** for the
 /// country's ISO 3166-1 alpha-2 code, so the render is a two-step lookup:
 /// numeric → alpha-2 → the regional-indicator pair. [countryFlagEmoji] returns
 /// `null` for a null / unknown code so callers simply omit the flag (never a

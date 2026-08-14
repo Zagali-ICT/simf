@@ -24,9 +24,10 @@ class BuildConfig {
     defaultValue: 'https://api.simrsnf.com/api/v1',
   );
 
-  /// Base URL used only for a dev-diagnostics web run (`flutter run -d chrome`).
-  /// The Android-emulator alias `10.0.2.2` does not resolve in a browser, so web
-  /// defaults to `localhost`; override with `--dart-define=SIMF_API_BASE_WEB=`.
+  /// Base URL used only for a dev-diagnostics web run (`flutter run -d
+  /// chrome`). The Android-emulator alias `10.0.2.2` does not resolve in a
+  /// browser, so web defaults to `localhost`; override with
+  /// `--dart-define=SIMF_API_BASE_WEB=`.
   static const String apiBaseUrlWeb = String.fromEnvironment(
     'SIMF_API_BASE_WEB',
     defaultValue: 'http://localhost:5175/api/v1',

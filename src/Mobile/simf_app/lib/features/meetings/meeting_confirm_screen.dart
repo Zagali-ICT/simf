@@ -12,23 +12,22 @@ import 'package:simf_app/features/delegations/data/delegations_repository.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 /// Confirm meeting — تأكيد الاجتماع · route: [RouteNames.meetingConfirm]
-/// Purpose: the OTHER party's one-tap confirm of a bilateral meeting.
-/// Data: [delegationsRepositoryProvider].confirmMeeting —
-///   `POST /app/delegation-meeting-requests/{id}/confirm`.
-/// Figma: no bound node — built on the shared [SimfPageShell] chrome.
-/// Perf: two short non-scrolling ListViews; no pagination, one write.
-/// Contract: eligibility + state are enforced SERVER-side and the screen only
-///   maps the outcome — 403 = not the other party, 409 = not awaiting
-///   confirmation, anything else = generic retry. The success summary carries no
-///   requester PII (stripped server-side).
+/// Purpose: the OTHER party's one-tap confirm of a bilateral meeting. Data:
+/// [delegationsRepositoryProvider].confirmMeeting — `POST
+/// /app/delegation-meeting-requests/{id}/confirm`. Figma: no bound node — built
+/// on the shared [SimfPageShell] chrome. Perf: two short non-scrolling
+/// ListViews; no pagination, one write. Contract: eligibility + state are
+/// enforced SERVER-side and the screen only maps the outcome — 403 = not the
+/// other party, 409 = not awaiting confirmation, anything else = generic retry.
+/// The success summary carries no requester PII (stripped server-side).
 ///
-/// Bi-Meeting rework — the other-party DELEGATION-meeting confirm screen
-/// (route `/meeting-confirm`), reached by tapping a "MeetingRequested"
-/// notification (deep-link `?requestId=…`). An eligible member of the TARGET
-/// delegation confirms — or, since B8, DECLINES — the meeting with one tap; on
-/// success the meeting summary (both delegations + subject + time) is shown.
-/// Eligibility + state are enforced server-side (403 = not the other party,
-/// 409 = not awaiting confirmation).
+/// Bi-Meeting rework — the other-party DELEGATION-meeting confirm screen (route
+/// `/meeting-confirm`), reached by tapping a "MeetingRequested" notification
+/// (deep-link `?requestId=…`). An eligible member of the TARGET delegation
+/// confirms — or, since B8, DECLINES — the meeting with one tap; on success the
+/// meeting summary (both delegations + subject + time) is shown. Eligibility +
+/// state are enforced server-side (403 = not the other party, 409 = not
+/// awaiting confirmation).
 ///
 /// A30 — this screen is delegation-only and keyed on a `requestId`. The SPEAKER
 /// double-opt-in link lands on the Website's anonymous

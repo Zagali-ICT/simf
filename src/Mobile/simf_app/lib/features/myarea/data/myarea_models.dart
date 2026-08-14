@@ -1,9 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
 
-/// The My-Area (منطقتي) dashboard — mirrors `SIMF.Contracts.Account.MyAreaDashboard`
-/// (`GET /app/account/dashboard`): the identity card, two counters, and today's
-/// merged schedule. Read-only; the app never writes here (Page_014).
+/// The My-Area (منطقتي) dashboard — mirrors
+/// `SIMF.Contracts.Account.MyAreaDashboard` (`GET /app/account/dashboard`): the
+/// identity card, two counters, and today's merged schedule. Read-only; the app
+/// never writes here (Page_014).
 @immutable
 class MyAreaDashboard {
   const MyAreaDashboard({
@@ -30,7 +31,8 @@ class MyAreaDashboard {
       (v as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
 }
 
-/// The identity card. `qrId` is null until the account is Approved (Page_014 L-1).
+/// The identity card. `qrId` is null until the account is Approved (Page_014
+/// L-1).
 @immutable
 class MyAreaIdentity {
   const MyAreaIdentity({

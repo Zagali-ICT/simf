@@ -20,13 +20,13 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 /// [AuthController.refreshCurrentUser] and renders the state for the returned
 /// `registrationStatus`: **Pending** (under-review + Re-check), **Approved**
 /// (Continue → app), **Rejected** (declined copy). A wire failure shows the
-/// **Error** state with retry; a session-expired failure flips auth to signed-out
-/// and the router's auth gate (route 11) redirects to sign-in.
+/// **Error** state with retry; a session-expired failure flips auth to
+/// signed-out and the router's auth gate (route 11) redirects to sign-in.
 ///
 /// Layout matches the frame: a `navySurface` gate (no bottom nav), a back +
-/// centred title header, a vertically-centred hero (a state-coloured ring around
-/// the state icon, a white headline, a beige message), the gold primary button,
-/// and a "تسجيل الخروج" link beneath it.
+/// centred title header, a vertically-centred hero (a state-coloured ring
+/// around the state icon, a white headline, a beige message), the gold primary
+/// button, and a "تسجيل الخروج" link beneath it.
 class RegistrationStatusScreen extends ConsumerStatefulWidget {
   const RegistrationStatusScreen({super.key});
 
@@ -141,7 +141,8 @@ class _RegistrationStatusScreenState
         primaryLabel = l10n.reCheckButton;
         onPrimary = () => unawaited(_load());
       case RegistrationStatus.approved:
-        color = SimfTokens.statusAccepted; // #22C55E — the frame's approval green
+        color =
+            SimfTokens.statusAccepted; // #22C55E — the frame's approval green
         icon = Icons.check_rounded;
         headline = l10n.regApprovedHeadline;
         message = l10n.regApprovedMessage;
@@ -169,7 +170,8 @@ class _RegistrationStatusScreenState
           ),
           child: Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: SimfTokens.registrationStatusScreenMaxWidth),
+              constraints: const BoxConstraints(
+                  maxWidth: SimfTokens.registrationStatusScreenMaxWidth,),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,

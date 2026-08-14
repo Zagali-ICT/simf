@@ -102,7 +102,8 @@ class _FakeGates implements GatesRepository {
     }
     return result ??
         GateScanResult.fromJson(
-            const <String, dynamic>{'outcome': 0, 'direction': 0},);
+          const <String, dynamic>{'outcome': 0, 'direction': 0},
+        );
   }
 
   @override
@@ -129,7 +130,8 @@ class _FakeGates implements GatesRepository {
     }
     return result ??
         GateScanResult.fromJson(
-            const <String, dynamic>{'outcome': 0, 'direction': 0},);
+          const <String, dynamic>{'outcome': 0, 'direction': 0},
+        );
   }
 
   @override
@@ -180,15 +182,23 @@ Future<void> _pump(WidgetTester tester, _FakeGates repo) async {
   await tester.pumpAndSettle();
 }
 
-/// Walks the new setup → scanner flow (D-509): pick the movement direction, then
-/// open the scanner. Defaults to Entry (دخول).
-Future<void> _openScanner(WidgetTester tester,
-    {String direction = 'Entry',}) async {
+/// Walks the new setup → scanner flow (D-509): pick the movement direction,
+/// then open the scanner. Defaults to Entry (دخول).
+Future<void> _openScanner(
+  WidgetTester tester, {
+  String direction = 'Entry',
+}) async {
   await tester.tap(find.text(direction));
   await tester.pumpAndSettle();
   await tester.tap(find.widgetWithText(FilledButton, 'Scan code'));
   await tester.pumpAndSettle();
 }
+
+/// RFC 4122 v4: 8-4-4-4-12 lowercase hex, with the version nibble pinned to
+/// `4` and the variant nibble to one of `8`/`9`/`a`/`b`.
+final RegExp _uuidV4 = RegExp(
+  r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
+);
 
 void main() {
   group('GateScanScreen (D-406/D-509, staff gate operator)', () {
@@ -319,9 +329,6 @@ void main() {
 
     testWidgets('G-1: each scan sends a fresh distinct UUIDv4 idempotency key',
         (tester) async {
-      final uuidV4 = RegExp(
-        r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
-      );
       final repo = _FakeGates(gates: <OperatorGate>[_gate()]);
       await _pump(tester, repo);
       await _openScanner(tester);
@@ -339,8 +346,8 @@ void main() {
 
       expect(repo.idempotencyKeys.length, 2);
       expect(repo.idempotencyKeys[0], isNot(repo.idempotencyKeys[1]));
-      expect(uuidV4.hasMatch(repo.idempotencyKeys[0]), isTrue);
-      expect(uuidV4.hasMatch(repo.idempotencyKeys[1]), isTrue);
+      expect(_uuidV4.hasMatch(repo.idempotencyKeys[0]), isTrue);
+      expect(_uuidV4.hasMatch(repo.idempotencyKeys[1]), isTrue);
     });
 
     testWidgets(

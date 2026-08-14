@@ -7,9 +7,9 @@ import 'package:simf_app/app/widgets/simf_svg_icon.dart';
 import 'package:simf_app/features/exhibition/widgets/icon_box.dart';
 
 /// A label/value row with a beige-fill icon box on one end and a chevron on the
-/// other — the shared shape of the stand-code→map row (Figma 1439:11904) and the
-/// website row (1439:11917). The two differ only in fill, line order and weights,
-/// passed in by the caller.
+/// other — the shared shape of the stand-code→map row (Figma 1439:11904) and
+/// the website row (1439:11917). The two differ only in fill, line order and
+/// weights, passed in by the caller.
 class EntityLinkRow extends StatelessWidget {
   const EntityLinkRow({
     required this.label,
@@ -37,7 +37,8 @@ class EntityLinkRow extends StatelessWidget {
   /// The card fill (navy for the map row, navyDeep for the website row).
   final Color background;
 
-  /// true → value above label (map row); false → label above value (website row).
+  /// true → value above label (map row); false → label above value (website
+  /// row).
   final bool valueOnTop;
   final double valueSize;
   final FontWeight valueWeight;
@@ -105,8 +106,8 @@ class EntityLinkRow extends StatelessWidget {
             // Figma 1439:11906/11919 — the GOLD thin chevron. Reuses the same
             // bundled ic_back.svg as the sponsor / speaker cards. The asset is
             // authored pointing LEFT for the RTL frame and SimfSvgIcon does not
-            // auto-mirror, so mirror it in LTR — a trailing caret then points to
-            // the row's end in both directions. (Owner 2026-07-08.)
+            // auto-mirror, so mirror it in LTR — a trailing caret then points
+            // to the row's end in both directions. (Owner 2026-07-08.)
             Transform.flip(
               flipX: Directionality.of(context) == TextDirection.ltr,
               child: const SimfSvgIcon(

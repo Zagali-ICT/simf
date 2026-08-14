@@ -22,8 +22,8 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// three bands, position-based so it is faithful for any tier naming): the
 /// **first** tier renders the gold hero card; the **lowest** tier (the last
 /// group, when more than one) renders the compact 3-column logo grid; any tier
-/// **in between** renders the navy premium card. P6 — D-440: each sponsor logo is
-/// the real `SponsorLogo` asset (D-357) served anonymously at
+/// **in between** renders the navy premium card. P6 — D-440: each sponsor logo
+/// is the real `SponsorLogo` asset (D-357) served anonymously at
 /// `{base}/app/assets/SponsorLogo/{id}/image`, with the acronym initials as the
 /// fallback. The loading / error / empty / RTL states are preserved.
 class SponsorsScreen extends ConsumerWidget {
@@ -82,9 +82,10 @@ class SponsorsScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: SimfTokens.space4),
                   // Frame 922:2824 — three bands: the top tier is the gold hero
-                  // card, the lowest tier is a compact logo-tile grid, and any tier
-                  // in between is a navy premium card (position-based so it is
-                  // faithful for any tier naming, not just Platinum/Gold/Silver).
+                  // card, the lowest tier is a compact logo-tile grid, and any
+                  // tier in between is a navy premium card (position-based so
+                  // it is faithful for any tier naming, not just
+                  // Platinum/Gold/Silver).
                   if (i == lastIndex && visibleGroups.length > 1)
                     SponsorGrid(
                       sponsors: visibleGroups[i].sponsors,
@@ -100,7 +101,8 @@ class SponsorsScreen extends ConsumerWidget {
                         name: sponsor.localizedName(isArabic: isArabic),
                         badge: sponsorBadgeText(sponsor, isArabic: isArabic),
                         // D-432 — prefer the authored tagline (Figma's "الراعي
-                        // الاستراتيجي · …" line); fall back to the website link.
+                        // الاستراتيجي · …" line); fall back to the website
+                        // link.
                         secondary:
                             sponsor.localizedTagline(isArabic: isArabic) ??
                                 sponsor.url,

@@ -177,15 +177,18 @@ void main() {
       expect(find.text('reply'), findsNothing);
     });
 
-    testWidgets('a wire error shows the localized error bubble', (tester) async {
+    testWidgets('a wire error shows the localized error bubble',
+        (tester) async {
       await _pump(tester, responder: _ThrowingResponder());
 
       await tester.enterText(find.byType(TextField), 'anything');
       await tester.tap(find.byIcon(Icons.send));
       await tester.pumpAndSettle();
 
-      expect(find.text('anything'), findsOneWidget); // the user's message stayed
-      expect(find.text(_errorEn), findsOneWidget); // replaced by the error bubble
+      expect(
+          find.text('anything'), findsOneWidget,); // the user's message stayed
+      expect(
+          find.text(_errorEn), findsOneWidget,); // replaced by the error bubble
     });
 
     testWidgets('a non-ApiFailure error recovers (composer is not stuck)',
@@ -219,8 +222,7 @@ void main() {
       // The user bubble sits to the RIGHT of the assistant greeting under RTL —
       // the Figma pins user-right / assistant-left (D-436).
       final assistantX = tester.getCenter(find.text(_greetingAr)).dx;
-      final userX =
-          tester.getCenter(find.text('متى تبدأ جلسة الافتتاح؟')).dx;
+      final userX = tester.getCenter(find.text('متى تبدأ جلسة الافتتاح؟')).dx;
       expect(userX, greaterThan(assistantX));
     });
   });

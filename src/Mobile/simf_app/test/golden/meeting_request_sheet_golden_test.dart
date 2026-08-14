@@ -99,7 +99,8 @@ void main() {
             child: SafeArea(
               child: Builder(
                 builder: (ctx) => MeetingRequestSheet(
-                  speakerId: 's1', // fixed speaker → no picker, form immediately
+                  speakerId:
+                      's1', // fixed speaker → no picker, form immediately
                   defaultName: 'Raed',
                   baseUrl: 'http://test.local/api/v1',
                   l10n: AppL10n.of(ctx),

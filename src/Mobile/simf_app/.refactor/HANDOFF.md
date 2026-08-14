@@ -25,15 +25,26 @@ a 13-agent read-only audit.
 
 | Metric | Session start | Now |
 |---|---|---|
-| `flutter analyze` infos | 2137 | **1584** |
-| errors / warnings | 0 / 0 | 0 / 0 |
-| `lines_longer_than_80_chars` | 1690 | **1428** |
-| `tool/conventions` SIMF-C3 | 12 | **11** |
-| tests | 1401 | **1413** |
-| `avoid_positional_boolean_parameters` | 135 | **0** |
-| `eol_at_end_of_file` | 62 | **0** |
-| `prefer_constructors_over_static_methods` | 75 | **1** (deliberate) |
+| `flutter analyze` infos (lib+test+integration_test) | 2137 | **0** |
+| errors / warnings | 0 / 0 | **0 / 0** |
+| `lines_longer_than_80_chars` | 1690 | **0** |
+| `packages/` findings under the app's ruleset | 249 | **0** |
+| `tool/conventions` SIMF-C3 | 12 | **11** (blocked, see below) |
+| tests | 1401 | **1479** app + 46 auth_pkg + 15 data_pkg |
 | files over 400 lines | 15 | 12 |
+
+**The analyzer ratchet is CLOSED.** `flutter analyze lib test integration_test
+packages` reads "No issues found!" and exits 0, so `--no-fatal-infos` was
+dropped from the MobileApp CI stage - an info now fails the build. Both local
+packages were moved off `flutter_lints` onto the app's own
+`very_good_analysis` in the same wave, so the code the whole app depends on is
+no longer the code held to the loosest standard.
+
+The zero is **argued, not swept**: two rules are off with their measurement
+recorded at the rule (`specify_nonobvious_property_types`,
+`public_member_api_docs`), and ~two dozen sites carry a targeted `// ignore:`
+with the reason above it. If you add one, write why the analyzer is WRONG
+about that line, or fix it.
 
 Every increment gated on: analyze 0 errors / 0 warnings, full suite green, and
 **every golden holding without `--update-goldens`**.
@@ -72,33 +83,53 @@ compositions replaced with the shared widget, one widget moved to its own file.
   dimensions; `DecoratedBox` does not. Caught by the share_my_contact golden
   (2.42%, 7366px). The second conversion had no golden at all.
 
+### The four tools the line-length work left behind
+
+All in `.refactor/`, all refuse rather than guess, all reusable:
+
+* `wrap_comments2.py` — re-flows comment blocks **per paragraph**, wrapping a
+  list item with a hanging indent. Supersedes `wrap_comments.py`, which
+  measured with Python `len` (the analyzer counts **UTF-16 code units**, so an
+  emoji flag undercounts by 2) and refused a whole block if any line was a list
+  item.
+* `wrap_ignore_reasons.py` — re-flows the prose around an `// ignore:` while
+  copying the directive through byte for byte. Needed because wrapping a
+  directive silently stops it suppressing anything.
+* `split_long_strings.py` — splits a literal into two adjacent literals, which
+  Dart concatenates at compile time. Never inside a word, an escape or an
+  interpolation.
+* `lift_trailing_comments.py` — moves a trailing `// note` off a declaration
+  into a `///` doc comment above it, the one comment shape that cannot be
+  re-flowed in place because its indent belongs to the code.
+
 ### Next, in order
 
-1. **`lines_longer_than_80_chars`, 1428 sites** — still the bulk, but the
-   formatter's reach is exhausted: these are lines `dart format` has already
-   decided it cannot break. What remains is hand-wrapping, or a page-width
-   decision. The formatter WAS run (owner-authorised) over the 250 touched
-   files and took this from 1690 to 1428; the recipe and its hazard are in
-   CLAUDE.md section 11 — **format, then
-   `dart fix --code=require_trailing_commas`, and never expect a second format
-   run to be a no-op.**
-2. The read-audit rows: 74 DUPLICATION, 41 DOC-HEADER, 40 NAMING,
-   24 BUILD-LOGIC, then the tail. **ONE-WIDGET-PER-FILE is closed**: the three
-   heterogeneous files are split (16 widgets, 16 files, originals removed) and
-   the other 17 findings are cohesive groups that CLAUDE.md section 1 now
-   explicitly permits.
-3. Decision 5 (all 71 screen headers to the section 9 template), decision 6
-   (tokens single-use audit), decision 7 (the 35 AsyncValue conversions — a
-   behaviour change, its own phase), decision 8 (`packages/`, last).
-4. Phase E: promote each cleared rule to `error`, drop `--no-fatal-infos`.
+1. The read-audit rows: ~73 DUPLICATION, 42 DOC-HEADER, 45 NAMING, then the
+   tail (DEAD-COMMENT-CODE, NON-LAZY-LIST, NARRATION-COMMENT, RTL-DIRECTIONAL,
+   REFLEXIVE-CATCH, RAW-STRING, FIXED-WIDTH). **Re-measure before acting** —
+   the rows are from 2026-08-02 and every line number in them is now wrong
+   after the reformat; several categories are already closed by the analyzer
+   work. **ONE-WIDGET-PER-FILE is closed**: the three heterogeneous files are
+   split (16 widgets, 16 files, originals removed) and the other 17 findings
+   are cohesive groups that CLAUDE.md section 1 now explicitly permits.
+2. Decision 5 (all 71 screen headers to the section 9 template), decision 6
+   (tokens single-use audit).
+3. Decision 7 — the 35 `AsyncValue` conversions. A **behaviour change**, so its
+   own phase with its own verification, not part of the per-file loop.
+4. ~~Decision 8 (`packages/`)~~ and ~~Phase E~~ — **both done**.
 
 ### BLOCKED
 
-`sign_up_visitor_screen` (1197) and `register_visitor_screen` (1255). Decision 1
+`sign_up_visitor_screen` (1228) and `register_visitor_screen` (1265). Decision 1
 reopened them, but D-666 is the banked case where a green golden did NOT catch a
 face-capture regression, so they need on-device verification and `adb devices`
-is empty. Everything else in Phase A is done. Until they are split, SIMF-C3
-stays at 11 and the pipeline cannot move to `--check --strict`.
+is empty (re-checked 2026-08-14). Everything else in Phase A is done. Until they
+are split, SIMF-C3 stays at 11 — all 11 rows are `_build*()` helpers inside
+those two files — and the pipeline cannot move to `--check --strict` or delete
+`tool/conventions/baseline.json`.
+
+Also still owner-gated, unchanged: the `getMySeat` deletion and the
+`more_screen` adjudication (deletion needs owner confirmation, global rule 7).
 
 ---
 

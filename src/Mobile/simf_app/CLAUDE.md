@@ -440,16 +440,47 @@ cluster lives on the Home greeting header only. This supersedes the 2026-06-18
 "cluster on every page" rule.
 
 ### 13.6 Pull-to-refresh on every data-loaded page/list/menu
-This is **already implemented repo-wide** (D-520 + D-532; a grep audit of all 49
-screens confirmed it, 2026-06-28). So the rule during refactor is **PRESERVE it —
-never drop it when restructuring a screen, and VERIFY (don't assume) it still fires
-after a split** — and apply it to any genuinely new data screen. Reuse the shared
-`SimfPullToRefresh` (ex-`KsaRefresh`) + `SimfPullableHost` (ex-`KsaPullable`, hosts
-short empty/error states in a viewport-tall always-scrollable box). Hooks:
-StatefulWidget `_load()` → `onRefresh: _load`; Riverpod → `ref.invalidate(provider);
-await ref.read(provider.future)`. The refreshable child must use
-`AlwaysScrollableScrollPhysics`. **Exception:** `registration_status_screen` is
-intentionally NOT wrapped (a gate screen whose explicit "Re-check" button already polls).
+Owner rule: every data-loaded page pulls to refresh. **PRESERVE it — never drop it
+when restructuring a screen, and VERIFY (don't assume) it still fires after a
+split.** Reuse the shared `SimfPullToRefresh` (ex-`KsaRefresh`) + `SimfPullableHost`
+(ex-`KsaPullable`, hosts short empty/error states in a viewport-tall
+always-scrollable box), or `SimfRefreshableMessage`, which is exactly that pairing
+and saves hand-nesting it at every list branch. The refreshable child must use
+`AlwaysScrollableScrollPhysics` or the gesture will not fire on short content.
+
+**Hooks.** StatefulWidget `_load()` → `onRefresh: _load`. Riverpod →
+**`refreshAsync(ref, provider.future)`** (`lib/core/utils/refresh.dart`).
+
+> This section used to prescribe `ref.invalidate(provider); await
+> ref.read(provider.future)`. **Do not use it.** That idiom RETHROWS on a failing
+> endpoint, which rejects the RefreshIndicator's future and surfaces as an
+> unhandled error on top of the error state the user can already see. 15 files had
+> it; `refreshAsync` swallows the failure because the screen's own error branch is
+> what should show it.
+
+**Do not trust a grep audit here.** This section previously claimed the rule was
+"already implemented repo-wide (a grep audit of all 49 screens confirmed it,
+2026-06-28)". That was wrong twice: the 2026-07-28 re-audit found coverage had
+regressed to 25 of 69 screens (Home had none at all), and on 2026-08-14 the
+**badge** feature was found with no refresh hook on any branch — the state that
+mattered most, because a pending account had no way to re-check approval short of
+restarting the app. `SimfPageShell` only DEFINES the refresh widgets; applying them
+is opt-in per screen, which is why a grep for the widget names reads as coverage
+when it is not.
+
+**Exempt screens, with the reason — this list is the audit's baseline, so a new
+screen not on it and not refreshable is a defect, not a judgement call:**
+
+| Screen(s) | Why exempt |
+|---|---|
+| `sign_in`, `sign_up_form`, `sign_up_email_verify`, `email_otp_verify`, `forgot_password`, `reset_password`, `badge_activation`, `badge_password`, `badge_sign_in`, `biometric_step_up` | Submit-driven auth forms. Nothing is loaded to re-load. |
+| `sign_up_interests`, `my_mobile` | They DO load from the API, but the user then edits/selects on top of it. A pull would discard in-progress input — actively worse than no pull. Both carry an explicit retry on the error branch instead. |
+| `registration_status` | A gate screen whose explicit "Re-check" button already polls (Figma 1701:3789). |
+| `scan_contact`, `scan_visitor` | Live camera preview; there is no scrollable and no fetch to repeat. |
+| `splash`, `onboarding` | Transient boot screens that navigate away. |
+| `accessibility` | Local `SharedPreferences` settings via a `Notifier` — no network read. |
+| `meeting_confirm` | Takes its meeting from the route and performs one write; it has no load or error branch. |
+| `guest`, `forum_guide` | Static content, no repository. |
 
 ### 13.7 Flexible/responsive width (within portrait)
 The owner runs on a **tablet** — content sized to the 375px phone frame leaves dead

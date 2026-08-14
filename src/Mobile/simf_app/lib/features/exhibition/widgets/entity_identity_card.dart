@@ -7,8 +7,8 @@ import 'package:simf_app/features/exhibition/widgets/location_line.dart';
 import 'package:simf_app/features/exhibition/widgets/tier_pill.dart';
 
 /// The borderless navyDeep identity card (Figma 1439:11891): the square logo,
-/// the entity name, the gold "City، Country" line, the centred tier pill and the
-/// optional stand-code→map row.
+/// the entity name, the gold "City، Country" line, the centred tier pill and
+/// the optional stand-code→map row.
 class EntityIdentityCard extends StatelessWidget {
   const EntityIdentityCard({
     required this.logo,

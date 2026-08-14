@@ -234,8 +234,8 @@ void main() {
         locale: const Locale('ar'),
       );
       // Frame 926:3285 (verified against the rendered frame) — الفعاليات=30
-      // (activities) leads at the inline start (right); المتحدثون=250 (speakers)
-      // is at the inline end (left).
+      // (activities) leads at the inline start (right); المتحدثون=250
+      // (speakers) is at the inline end (left).
       final eventsDx = tester.getCenter(find.text('30')).dx;
       final speakersDx = tester.getCenter(find.text('250')).dx;
       expect(speakersDx, lessThan(eventsDx));

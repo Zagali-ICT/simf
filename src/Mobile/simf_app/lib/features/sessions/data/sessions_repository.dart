@@ -3,11 +3,11 @@ import 'package:simf_app/features/sessions/data/session_models.dart';
 import 'package:simf_app/features/sessions/data/sessions_endpoints.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// App-local data layer for the sessions list (Page_016). The read is **public**
-/// (`AllowAnonymous`) — a Guest sees the full programme. The app fetches the
-/// whole programme **once, with no `day` filter**, and the UI filters it inline
-/// (Page_016 L-1); the server's optional `?day=` is intentionally unused.
-/// Throws [ApiFailure] on a wire error.
+/// App-local data layer for the sessions list (Page_016). The read is
+/// **public** (`AllowAnonymous`) — a Guest sees the full programme. The app
+/// fetches the whole programme **once, with no `day` filter**, and the UI
+/// filters it inline (Page_016 L-1); the server's optional `?day=` is
+/// intentionally unused. Throws [ApiFailure] on a wire error.
 class SessionsRepository {
   SessionsRepository(this._client);
 

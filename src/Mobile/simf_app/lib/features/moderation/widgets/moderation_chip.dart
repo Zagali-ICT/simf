@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 
 class ModerationChip extends StatelessWidget {
-  const ModerationChip({required this.label, required this.count, required this.active, required this.onTap, super.key,
+  const ModerationChip({
+    required this.label,
+    required this.count,
+    required this.active,
+    required this.onTap,
+    super.key,
   });
 
   final String label;

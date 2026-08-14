@@ -10,8 +10,8 @@ import 'package:pointycastle/block/modes/gcm.dart';
 /// agree byte for byte**: the plaintext is 20 RAW BYTES — a 16-byte profile id,
 /// a 2-byte edition year and a 2-byte profile-type code, all big-endian —
 /// AES-256-GCM encrypted with a 12-byte nonce and a full 16-byte tag, and the
-/// wire form is one Crockford base32 key-version character followed by base32 of
-/// `nonce || ciphertext || tag`.
+/// wire form is one Crockford base32 key-version character followed by
+/// base32 of `nonce || ciphertext || tag`.
 ///
 /// Those three fields are the three questions a door has to answer with no
 /// network: who is this, is the badge from the open year, and is this tier
@@ -102,6 +102,9 @@ class OfflineBadge {
     } on InvalidCipherTextException {
       // The authentication tag did not verify: wrong key or altered bytes.
       return null;
+    // Catching an Error on purpose: this boundary must degrade rather than
+    // crash, and the platform raises an Error rather than an Exception here.
+    // ignore: avoid_catching_errors
     } on ArgumentError {
       return null;
     }
@@ -188,9 +191,9 @@ class _CrockfordBase32 {
       // agree by construction rather than by luck about integer width.
       buffer &= (1 << bits) - 1;
     }
-    // The encoder left-aligns its final group, so any leftover bits are its zero
-    // padding and there are always fewer than five. Anything else means the
-    // string was truncated or mangled — rejected rather than decoded into
+    // The encoder left-aligns its final group, so any leftover bits are its
+    // zero padding and there are always fewer than five. Anything else means
+    // the string was truncated or mangled — rejected rather than decoded into
     // plausible-looking bytes.
     if (bits >= 5 || buffer != 0) {
       return null;

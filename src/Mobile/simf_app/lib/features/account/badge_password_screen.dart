@@ -21,19 +21,18 @@ import 'package:simf_app/features/account/widgets/navy_password_toggle.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 
 /// Badge password — إكمال تسجيل الدخول · route: [RouteNames.badgePassword]
-/// Purpose: the password step that completes a badge-QR sign-in.
-/// Data: [authControllerProvider].signInWithBadge — `POST /app/auth/badge-sign-in`.
+/// Purpose: the password step that completes a badge-QR sign-in. Data:
+/// [authControllerProvider].signInWithBadge — `POST /app/auth/badge-sign-in`.
 /// Figma: no bound node — built on the navy auth family (D-659), like its
-///   sibling [BadgeActivationScreen].
-/// Perf: one short form, no lists.
-/// Contract: the badge NEVER bypasses the password (D-430) — the server runs the
-///   full password + 2FA pipeline, so a 2FA account continues to the shared
-///   email-OTP screen rather than landing signed in here.
+/// sibling [BadgeActivationScreen]. Perf: one short form, no lists. Contract:
+/// the badge NEVER bypasses the password (D-430) — the server runs the full
+/// password + 2FA pipeline, so a 2FA account continues to the shared email-OTP
+/// screen rather than landing signed in here.
 ///
-/// D-738 — the password step of badge-QR sign-in. A returning holder who scanned
-/// their badge (an account that already has a password) finishes here with ONLY
-/// their password: the resolved name + masked email are shown so no email is
-/// typed, and the badge never bypasses the password (D-430). Submits
+/// D-738 — the password step of badge-QR sign-in. A returning holder who
+/// scanned their badge (an account that already has a password) finishes here
+/// with ONLY their password: the resolved name + masked email are shown so no
+/// email is typed, and the badge never bypasses the password (D-430). Submits
 /// `{qrId, password}` to `POST /app/auth/badge-sign-in`, which runs the full
 /// existing password + 2FA pipeline server-side; a 2FA account continues to the
 /// shared email-OTP screen, otherwise it lands signed in (with the same Face-ID

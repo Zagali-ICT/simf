@@ -3,8 +3,9 @@ import 'package:simf_app/app/theme/tokens.dart';
 
 /// PAR-D3 — the session's category tag pill, sitting under the title inside the
 /// header card: a small gold-hairline pill on the 4px radius carrying the
-/// localized category name in gold 12px SemiBold. Rendered only when the session
-/// carries a category, so an uncategorised session keeps the pre-PAR-D3 layout.
+/// localized category name in gold 12px SemiBold. Rendered only when the
+/// session carries a category, so an uncategorised session keeps the pre-PAR-D3
+/// layout.
 class CategoryPill extends StatelessWidget {
   const CategoryPill({required this.label, super.key});
 

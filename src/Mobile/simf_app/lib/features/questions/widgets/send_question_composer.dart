@@ -26,7 +26,8 @@ class SendQuestionComposer extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        // Frame 945:3756 — white, Medium, aligned to the inline end (right in RTL).
+        // Frame 945:3756 — white, Medium, aligned to the inline end (right in
+        // RTL).
         Text(
           sectionLabel,
           // TextAlign.start = right under RTL (TextAlign.end would be left).

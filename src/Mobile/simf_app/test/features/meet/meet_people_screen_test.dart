@@ -67,7 +67,8 @@ Future<void> _pump(
         name: RouteNames.meetPeople,
         builder: (_, __) => const MeetPeopleScreen(),
       ),
-      // Per-kind detail stubs so a tap can be asserted by the destination label.
+      // Per-kind detail stubs so a tap can be asserted by the destination
+      // label.
       GoRoute(
         path: '/speakers/:speakerId',
         name: RouteNames.speakerProfile,

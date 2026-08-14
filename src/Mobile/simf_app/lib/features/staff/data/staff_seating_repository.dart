@@ -7,16 +7,17 @@ import 'package:simf_app/features/staff/data/staff_seating_models.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 /// D-771 — data layer for the staff seating desk. Three reads, all gated
-/// server-side on `Seating.Assist` (an operational permission the Staff app role
-/// carries — no admin RBAC role required).
+/// server-side on `Seating.Assist` (an operational permission the Staff app
+/// role carries — no admin RBAC role required).
 class StaffSeatingRepository {
   StaffSeatingRepository(this._client);
 
   final SimfApiClient _client;
 
   /// `POST /app/staff/sessions/{id}/seating/by-badge` — where does the guest
-  /// behind this badge QR sit? Throws [ApiFailure] `ATTENDEE_QR_UNKNOWN` when the
-  /// badge is not recognised; a valid badge with no seat returns `found: false`.
+  /// behind this badge QR sit? Throws [ApiFailure] `ATTENDEE_QR_UNKNOWN` when
+  /// the badge is not recognised; a valid badge with no seat returns `found:
+  /// false`.
   Future<StaffSeatOccupant> lookupByBadge(String sessionId, String qrId) {
     return _client.post<StaffSeatOccupant>(
       StaffEndpoints.seatingByBadge(sessionId),
@@ -42,11 +43,11 @@ class StaffSeatingRepository {
     );
   }
 
-  /// `GET /app/staff/sessions/{id}/seating/occupant/{userId}/photo` — the guest's
-  /// photo bytes. D-422: fetched through the authenticated Dio bytes path, NEVER
-  /// an `Image.network` (which cannot carry the bearer token). Returns null when
-  /// there is no photo (404) rather than throwing, so the card falls back to the
-  /// placeholder avatar.
+  /// `GET /app/staff/sessions/{id}/seating/occupant/{userId}/photo` — the
+  /// guest's photo bytes. D-422: fetched through the authenticated Dio bytes
+  /// path, NEVER an `Image.network` (which cannot carry the bearer token).
+  /// Returns null when there is no photo (404) rather than throwing, so the
+  /// card falls back to the placeholder avatar.
   Future<Uint8List?> occupantPhoto(String sessionId, String userId) async {
     try {
       return await _client.getBytes(

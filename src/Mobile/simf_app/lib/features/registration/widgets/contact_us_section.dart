@@ -7,10 +7,10 @@ import 'package:simf_app/core/env/build_config.dart';
 import 'package:simf_app/core/external_link.dart';
 import 'package:simf_app/features/registration/widgets/contact_tile.dart';
 
-/// The success-frame "تواصل معنا" block (Figma 522:2223): the section title, the
-/// call + mail tiles, and the social footer. Each tile opens the OS dialer /
-/// mail app when its [BuildConfig] value is supplied; an empty value keeps the
-/// tile inert (D-369).
+/// The success-frame "تواصل معنا" block (Figma 522:2223): the section title,
+/// the call + mail tiles, and the social footer. Each tile opens the OS dialer
+/// / mail app when its [BuildConfig] value is supplied; an empty value keeps
+/// the tile inert (D-369).
 class ContactUsSection extends StatelessWidget {
   const ContactUsSection({
     required this.title,

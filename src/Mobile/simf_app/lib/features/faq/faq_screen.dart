@@ -10,12 +10,13 @@ import 'package:simf_app/features/faq/widgets/faq_tile.dart';
 
 /// Page 201 — الأسئلة الشائعة · FAQ (`/faq`, public). Pixel-parity to KSA Figma
 /// frame **1388:7567**: the navy [SimfPageShell] shell over an accordion of
-/// question/answer cards (tap a question to expand its answer). Data-driven from
-/// the public `GET /app/faq` (the D-211 FAQ tables); previously a ComingSoon
-/// placeholder (D-464).
+/// question/answer cards (tap a question to expand its answer). Data-driven
+/// from the public `GET /app/faq` (the D-211 FAQ tables); previously a
+/// ComingSoon placeholder (D-464).
 ///
 /// Group names are surfaced as section headers only when there is more than one
-/// group — a single-group catalogue renders the flat accordion the design shows.
+/// group — a single-group catalogue renders the flat accordion the design
+/// shows.
 class FaqScreen extends ConsumerWidget {
   const FaqScreen({super.key});
 

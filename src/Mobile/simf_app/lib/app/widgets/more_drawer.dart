@@ -22,8 +22,9 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// hub items (single source: [moreMenuEntries], shared with the full-page
 /// [MoreScreen]) plus the account actions moved off the منطقتي page (D-396):
 /// the Face-ID sign-in toggle, the calendar export and sign-out (the language
-/// toggle + inert dark-mode tile were removed 2026-07-08 — language lives on the
-/// More screen's settings row). The session-bound actions show only when signed in.
+/// toggle + inert dark-mode tile were removed 2026-07-08 — language lives on
+/// the More screen's settings row). The session-bound actions show only when
+/// signed in.
 class MoreDrawer extends ConsumerWidget {
   const MoreDrawer({super.key});
 
@@ -64,10 +65,10 @@ class MoreDrawer extends ConsumerWidget {
                 children: <Widget>[
                   // Navigation-hub entries, filtered to the role's own pages
                   // (D-519): unrestricted entries show for everyone; the
-                  // attendee-only ones (rate, contacts) hide for Staff/Moderator
-                  // and for an unapproved account (effective guest); the
-                  // approved-only ones (media partners) hide for any non-approved
-                  // account (D-666).
+                  // attendee-only ones (rate, contacts) hide for
+                  // Staff/Moderator and for an unapproved account (effective
+                  // guest); the approved-only ones (media partners) hide for
+                  // any non-approved account (D-666).
                   for (final entry in moreMenuEntries(l10n))
                     if (routeAllowsRole(entry.routeName, role) &&
                         (!entry.approvedOnly || approved) &&
@@ -77,18 +78,20 @@ class MoreDrawer extends ConsumerWidget {
                         title: entry.title,
                         onTap: () {
                           Navigator.of(context).pop();
-                          context.pushNamed(entry.routeName);
+                          unawaited(context.pushNamed(entry.routeName));
                         },
                       ),
-                  // The one action a signed-in-but-unapproved account gets that a
-                  // true guest does not: check its registration status (D-666).
+                  // The one action a signed-in-but-unapproved account gets that
+                  // a true guest does not: check its registration status
+                  // (D-666).
                   if (pending)
                     DrawerTile(
                       icon: Icons.hourglass_top_outlined,
                       title: l10n.registrationStatusButton,
                       onTap: () {
                         Navigator.of(context).pop();
-                        context.pushNamed(RouteNames.registrationStatus);
+                        unawaited(
+                            context.pushNamed(RouteNames.registrationStatus),);
                       },
                     ),
                   // Staff gate operations (D-406 / D-509) — Staff role only.
@@ -98,7 +101,7 @@ class MoreDrawer extends ConsumerWidget {
                       title: l10n.gateScannerEntry,
                       onTap: () {
                         Navigator.of(context).pop();
-                        context.pushNamed(RouteNames.gateScanner);
+                        unawaited(context.pushNamed(RouteNames.gateScanner));
                       },
                     ),
                   if (routeAllowsRole(RouteNames.staffRegisterVisitor, role))
@@ -107,18 +110,21 @@ class MoreDrawer extends ConsumerWidget {
                       title: l10n.staffRegisterVisitorEntry,
                       onTap: () {
                         Navigator.of(context).pop();
-                        context.pushNamed(RouteNames.staffRegisterVisitor);
+                        unawaited(
+                          context.pushNamed(RouteNames.staffRegisterVisitor),
+                        );
                       },
                     ),
-                  // Exhibitor lead capture (D-426 / D-519) — Exhibitor role only
-                  // (the JWT role drives it now, replacing the dashboard probe).
+                  // Exhibitor lead capture (D-426 / D-519) — Exhibitor role
+                  // only (the JWT role drives it now, replacing the dashboard
+                  // probe).
                   if (routeAllowsRole(RouteNames.scanVisitor, role))
                     DrawerTile(
                       icon: Icons.qr_code_scanner,
                       title: l10n.scanVisitorTitle,
                       onTap: () {
                         Navigator.of(context).pop();
-                        context.pushNamed(RouteNames.scanVisitor);
+                        unawaited(context.pushNamed(RouteNames.scanVisitor));
                       },
                     ),
                   if (routeAllowsRole(RouteNames.myVisitors, role))
@@ -127,19 +133,19 @@ class MoreDrawer extends ConsumerWidget {
                       title: l10n.myVisitorsTitle,
                       onTap: () {
                         Navigator.of(context).pop();
-                        context.pushNamed(RouteNames.myVisitors);
+                        unawaited(context.pushNamed(RouteNames.myVisitors));
                       },
                     ),
                   const Divider(color: SimfTokens.beigeBorder, height: 1),
-                  // Account actions moved here from منطقتي (D-396). The language
-                  // toggle + the inert dark-mode tile were removed (owner
-                  // 2026-07-08): language is changed from the More screen's
-                  // الإعدادات row (and the home header pill), and the app is
-                  // navy-always (no light theme), so a dead dark-mode row added
-                  // nothing to the menu.
-                  // Face-ID sign-in toggle (D-441) — self-hides when the device
-                  // has no usable biometric; enabling enrols a device key,
-                  // disabling revokes it. Account action, so signed-in only.
+                  // Account actions moved here from منطقتي (D-396). The
+                  // language toggle + the inert dark-mode tile were removed
+                  // (owner 2026-07-08): language is changed from the More
+                  // screen's الإعدادات row (and the home header pill), and the
+                  // app is navy-always (no light theme), so a dead dark-mode
+                  // row added nothing to the menu. Face-ID sign-in toggle
+                  // (D-441) — self-hides when the device has no usable
+                  // biometric; enabling enrols a device key, disabling revokes
+                  // it. Account action, so signed-in only.
                   if (signedIn) const FaceIdToggleTile(),
                   // Calendar export needs an approved account's schedule — hide
                   // it for a guest / not-yet-approved account (D-666).
@@ -153,15 +159,15 @@ class MoreDrawer extends ConsumerWidget {
                   const Divider(color: SimfTokens.beigeBorder, height: 1),
                   // The end of the menu (owner 2026-07-06): contact us + about
                   // (app version / release date / organizer) + logout. Contact
-                  // us and About are public — every account, incl. a guest — and
-                  // About now carries the version (the old footer line is gone);
-                  // logout is signed-in only.
+                  // us and About are public — every account, incl. a guest —
+                  // and About now carries the version (the old footer line is
+                  // gone); logout is signed-in only.
                   DrawerTile(
                     icon: Icons.mail_outline,
                     title: l10n.contactUsTitle,
                     onTap: () {
                       Navigator.of(context).pop();
-                      context.pushNamed(RouteNames.contactUs);
+                      unawaited(context.pushNamed(RouteNames.contactUs));
                     },
                   ),
                   DrawerTile(
@@ -169,7 +175,7 @@ class MoreDrawer extends ConsumerWidget {
                     title: l10n.aboutAppTitle,
                     onTap: () {
                       Navigator.of(context).pop();
-                      context.pushNamed(RouteNames.aboutApp);
+                      unawaited(context.pushNamed(RouteNames.aboutApp));
                     },
                   ),
                   if (signedIn)
@@ -197,9 +203,9 @@ class MoreDrawer extends ConsumerWidget {
   ) async {
     final messenger = ScaffoldMessenger.of(context);
     final repo = ref.read(myAreaRepositoryProvider);
-    // Read the anchor rect BEFORE popping and awaiting — this element is gone by
-    // the time the fetch returns, and the iPad share sheet must point at the row
-    // the user actually tapped.
+    // Read the anchor rect BEFORE popping and awaiting — this element is gone
+    // by the time the fetch returns, and the iPad share sheet must point at the
+    // row the user actually tapped.
     final origin = shareOriginFromContext(context);
     Navigator.of(context).pop();
     try {

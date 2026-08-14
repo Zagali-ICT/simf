@@ -271,7 +271,8 @@ class _SignUpEmailVerifyScreenState
       children: <Widget>[
         Text(
           l10n.resendInLabel,
-          style: const TextStyle(color: otpMutedBlue, fontSize: SimfTokens.textMd),
+          style:
+              const TextStyle(color: otpMutedBlue, fontSize: SimfTokens.textMd),
         ),
         const SizedBox(width: SimfTokens.signUpEmailVerifyScreenWidth),
         Text(

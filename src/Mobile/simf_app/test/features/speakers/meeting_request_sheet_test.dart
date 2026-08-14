@@ -181,7 +181,8 @@ void main() {
       expect(find.text('Subject'), findsOneWidget);
     });
 
-    testWidgets('the picker search filters the speaker rows by name and shows '
+    testWidgets(
+        'the picker search filters the speaker rows by name and shows '
         'the no-matches hint when nothing matches (owner 2026-07-11)',
         (tester) async {
       await _pump(tester, speakerId: null);
@@ -213,7 +214,8 @@ void main() {
       expect(find.text('No matching speakers'), findsOneWidget);
     });
 
-    testWidgets('the picker keeps the SELECTED speaker visible even when the '
+    testWidgets(
+        'the picker keeps the SELECTED speaker visible even when the '
         'search would filter it out, so the submit target is never hidden',
         (tester) async {
       await _pump(tester, speakerId: null);
@@ -235,7 +237,8 @@ void main() {
       expect(find.text('Dr. Sarah Al-Otaibi'), findsOneWidget);
     });
 
-    testWidgets('from a speaker profile (speakerId set) shows no picker and the '
+    testWidgets(
+        'from a speaker profile (speakerId set) shows no picker and the '
         'form immediately', (tester) async {
       await _pump(tester, speakerId: 's1');
 
@@ -245,9 +248,11 @@ void main() {
       expect(find.text('Subject'), findsOneWidget);
     });
 
-    testWidgets("presents the speaker's REAL available days + that day's slots "
+    testWidgets(
+        "presents the speaker's REAL available days + that day's slots "
         '(D-709 — not a free grid)', (tester) async {
-      await _pump(tester, speakerId: 's1', repo: _FakeRepo(slots: _twoDaySlots));
+      await _pump(tester,
+          speakerId: 's1', repo: _FakeRepo(slots: _twoDaySlots),);
 
       // Two distinct days carry slots → two day cards (10th + 11th).
       expect(find.byType(MeetingDayCard), findsNWidgets(2));
@@ -260,7 +265,8 @@ void main() {
     });
 
     testWidgets(
-        'G3 — no availability shows the no-slots notice AND disables send, so no '
+        'G3 — no availability shows the no-slots notice AND disables send, so '
+            'no '
         'subject-only request is sent (supersedes D-767 R1)', (tester) async {
       final repo = _FakeRepo();
       await _pump(tester, speakerId: 's1', repo: repo);
@@ -324,7 +330,8 @@ void main() {
 
       // The network comes back, then the user taps Retry.
       repo.failSlots = false;
-      await tester.tap(find.byKey(const ValueKey<String>('meeting-slots-retry')));
+      await tester
+          .tap(find.byKey(const ValueKey<String>('meeting-slots-retry')));
       await tester.pumpAndSettle();
 
       // It genuinely re-fetched, and the error state cleared.
@@ -362,7 +369,8 @@ void main() {
       expect(repo.lastSlotEnd, DateTime(2026, 7, 10, 10, 30).toUtc());
     });
 
-    testWidgets('bilateral flow — picking a speaker loads ITS slots and the '
+    testWidgets(
+        'bilateral flow — picking a speaker loads ITS slots and the '
         'picked slot is sent for that speaker', (tester) async {
       final repo = _FakeRepo(slots: _twoDaySlots);
       await _pump(tester, speakerId: null, repo: repo);
@@ -429,7 +437,8 @@ void main() {
     });
 
     testWidgets(
-        'QA A26 — a failure that never reached the server still shows localized '
+        'QA A26 — a failure that never reached the server still shows '
+            'localized '
         'copy, not the raw dio string', (tester) async {
       final repo = _FakeRepo(
         slots: _twoDaySlots,

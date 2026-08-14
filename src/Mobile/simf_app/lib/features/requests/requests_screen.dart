@@ -39,7 +39,8 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
     if (!mounted) {
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   /// "طلب جديد" (owner 2026-07-08) opens the meeting-request sheet (Figma
@@ -49,7 +50,7 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
     final auth = ref.read(authControllerProvider);
     if (auth is! AuthStateSignedIn) {
       if (mounted) {
-        context.pushNamed(RouteNames.signIn);
+        unawaited(context.pushNamed(RouteNames.signIn));
       }
       return;
     }
@@ -130,8 +131,9 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
 
   Widget _buildBody(AppL10n l10n, List<AppRequestItem> items) {
     final isArabic = l10n.isArabic;
-    // Bi-Meeting rework — the "طلب جديد" here opens the SPEAKER meeting sheet, so
-    // it shows only to users holding AllowsSpeakerMeeting (endpoint also gates).
+    // Bi-Meeting rework — the "طلب جديد" here opens the SPEAKER meeting sheet,
+    // so it shows only to users holding AllowsSpeakerMeeting (endpoint also
+    // gates).
     final canRequestSpeakerMeeting =
         ref.watch(currentUserMeetingAccessProvider).value?.speaker ?? false;
     final effectiveFilter = effectiveRequestFilter(items, _filter);
@@ -178,8 +180,9 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
             for (final item in filtered)
               Padding(
                 padding: const EdgeInsets.only(bottom: SimfTokens.space3),
-                // Key on kind+id so the card's expanded state follows the request
-                // identity, not its list position, across a cancel/refetch.
+                // Key on kind+id so the card's expanded state follows the
+                // request identity, not its list position, across a
+                // cancel/refetch.
                 child: RequestCard(
                   key: ValueKey<String>('${item.kind.wireValue}:${item.id}'),
                   item: item,

@@ -86,8 +86,8 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   final TextEditingController _jobTitle = TextEditingController();
   final TextEditingController _jobTitleArabic = TextEditingController();
   final TextEditingController _placeOfBirth = TextEditingController();
-  // D-469 — the selected Saudi region code (birth-location dropdown); null for a
-  // non-Saudi (free-text place of birth) or an unmatched stored value.
+  // D-469 — the selected Saudi region code (birth-location dropdown); null for
+  // a non-Saudi (free-text place of birth) or an unmatched stored value.
   String? _birthRegionCode;
   final TextEditingController _nationalId = TextEditingController();
   final TextEditingController _documentNumber = TextEditingController();
@@ -101,8 +101,8 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   String? _plateLetter2;
   String? _plateLetter3;
   // D-471 fix — a plate is valid in either order (letters-then-digits or
-  // digits-then-letters) and the canonical code PRESERVES that order. Remember a
-  // digits-first stored plate so prefill→re-sync doesn't silently reorder it
+  // digits-then-letters) and the canonical code PRESERVES that order. Remember
+  // a digits-first stored plate so prefill→re-sync doesn't silently reorder it
   // (e.g. "1234ABJ" must not be rewritten to "ABJ1234").
   bool _plateDigitsFirst = false;
   final TextEditingController _plateDigits = TextEditingController();
@@ -149,8 +149,9 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
 
   bool _loading = true;
   String? _loadError;
-  // D-684 — the profile is saved on THIS step now (profile-first), so any server
-  // error (e.g. the name) surfaces here, not two screens later on interests.
+  // D-684 — the profile is saved on THIS step now (profile-first), so any
+  // server error (e.g. the name) surfaces here, not two screens later on
+  // interests.
   bool _saving = false;
   String? _saveError;
 
@@ -342,7 +343,8 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
 
   /// D-375 — the picker fetch with a visible state machine: loading spinner
   /// while in flight, inline retry on failure. Pre-D-375 a failure here
-  /// silently hid the الفئة (category) field (the owner-reported "removed list").
+  /// silently hid the الفئة (category) field (the owner-reported "removed
+  /// list").
   Future<void> _fetchProfileTypes() async {
     setState(() {
       _profileTypesLoading = true;
@@ -462,7 +464,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         _idImageBytes = bytes;
         _idImageName = file.name;
       });
-    } catch (_) {
+    } on Object catch (_) {
       // The gallery is unavailable — the required-ID gate on Next reports it.
     }
   }
@@ -497,10 +499,10 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
 
   // ---- Next (carry the draft to the interests screen) ----------------------
 
-  /// Validates the data fields, uploads the images and **saves the profile here**
-  /// (D-684, profile-first) so any server error — the name in particular —
-  /// surfaces on THIS screen, not two steps later on interests. Only on a clean
-  /// save does it carry the [SignUpProfileDraft] to the interests screen
+  /// Validates the data fields, uploads the images and **saves the profile
+  /// here** (D-684, profile-first) so any server error — the name in particular
+  /// — surfaces on THIS screen, not two steps later on interests. Only on a
+  /// clean save does it carry the [SignUpProfileDraft] to the interests screen
   /// (Page 007‑01), where the interests are added in a second save.
   Future<void> _next() async {
     if (_saving) {
@@ -603,7 +605,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         faceImageBytes: _faceImageBytes,
         faceImageName: _faceImageName,
       );
-      context.pushNamed(RouteNames.signUpInterests, extra: draft);
+      unawaited(context.pushNamed(RouteNames.signUpInterests, extra: draft));
     } on ApiFailure catch (failure) {
       if (!mounted) return;
       setState(() => _saveError = failure.localizedMessage(l10n));
@@ -612,9 +614,9 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     }
   }
 
-  /// Builds the request from the data fields. `interestIds` carries any existing
-  /// picks (for pre-selection); the interests screen replaces it via `copyWith`
-  /// before the save.
+  /// Builds the request from the data fields. `interestIds` carries any
+  /// existing picks (for pre-selection); the interests screen replaces it via
+  /// `copyWith` before the save.
   UpsertUserProfileRequest _buildRequest() {
     final isSaudi = _isSaudi;
     return UpsertUserProfileRequest(
@@ -664,9 +666,10 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    // D-547 — watch the region lookup here so the place-of-birth picker rebuilds
-    // when the API list lands (the picker reads it via ref.read in its handler,
-    // so build must own the dependency for the closed-field name to refresh).
+    // D-547 — watch the region lookup here so the place-of-birth picker
+    // rebuilds when the API list lands (the picker reads it via ref.read in its
+    // handler, so build must own the dependency for the closed-field name to
+    // refresh).
     ref.watch(regionsProvider);
     return SimfFormScaffold(
       pinnedHeader: true,
@@ -942,7 +945,8 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   /// stay identical regardless of source.
   List<_BirthRegionOption> _activeBirthRegions() {
     // ref.read (not watch): this runs from both build helpers and the picker's
-    // async handler. build() owns the watch so the field still rebuilds on data.
+    // async handler. build() owns the watch so the field still rebuilds on
+    // data.
     final api = ref.read(regionsProvider).asData?.value;
     if (api != null && api.isNotEmpty) {
       return <_BirthRegionOption>[
@@ -1032,8 +1036,9 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     );
   }
 
-  /// Routes a picked letter to the right slot — the three pickers differ only by
-  /// position, so the field takes the position and the screen owns the storage.
+  /// Routes a picked letter to the right slot — the three pickers differ only
+  /// by position, so the field takes the position and the screen owns the
+  /// storage.
   ValueChanged<String?> _plateLetterSetter(int position) {
     switch (position) {
       case 1:
@@ -1045,9 +1050,9 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     }
   }
 
-  /// Opens the shared searchable sheet over the 17 official plate letters (shown
-  /// "Arabic · Latin") and stores the picked Latin code, then re-assembles the
-  /// plate.
+  /// Opens the shared searchable sheet over the 17 official plate letters
+  /// (shown "Arabic · Latin") and stores the picked Latin code, then
+  /// re-assembles the plate.
   Future<void> _pickPlateLetter(
     AppL10n l10n,
     int position,
@@ -1089,10 +1094,11 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   }
 
   /// Splits a stored plate code into the three letter dropdowns + the digits
-  /// field, then refreshes [_plate]. The stored value is first normalised to the
-  /// canonical Latin code (so an Arabic-script or pre-D-459 plate still parses);
-  /// a value the 17-letter dropdowns can't represent is kept verbatim in [_plate]
-  /// so an unrelated profile edit never silently erases it (D-468 review).
+  /// field, then refreshes [_plate]. The stored value is first normalised to
+  /// the canonical Latin code (so an Arabic-script or pre-D-459 plate still
+  /// parses); a value the 17-letter dropdowns can't represent is kept verbatim
+  /// in [_plate] so an unrelated profile edit never silently erases it (D-468
+  /// review).
   void _setPlateFromCode(String? code) {
     final parts = parsePlate(code);
     _plateLetter1 = parts.letter1;

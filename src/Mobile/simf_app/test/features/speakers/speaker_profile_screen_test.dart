@@ -213,7 +213,8 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
-      await _pump(tester, repo: _FakeRepo(detail: _detail()), controller: _Guest());
+      await _pump(tester,
+          repo: _FakeRepo(detail: _detail()), controller: _Guest(),);
       // The frame's two-line header: white name over the beige rank.
       expect(find.text('Capt. Reef'), findsOneWidget);
       expect(find.text('Sea captain'), findsOneWidget);
@@ -228,7 +229,8 @@ void main() {
 
     testWidgets('the CV avatar builds from the SpeakerPhoto asset route',
         (tester) async {
-      await _pump(tester, repo: _FakeRepo(detail: _detail()), controller: _Guest());
+      await _pump(tester,
+          repo: _FakeRepo(detail: _detail()), controller: _Guest(),);
       final urls = tester
           .widgetList<Image>(find.byType(Image))
           .map((image) => image.image)
@@ -241,10 +243,13 @@ void main() {
       );
     });
 
-    testWidgets('a guest does not see the Request meeting CTA (VIP-only, D-729)',
+    testWidgets(
+        'a guest does not see the Request meeting CTA (VIP-only, D-729)',
         (tester) async {
-      await _pump(tester, repo: _FakeRepo(detail: _detail()), controller: _Guest());
-      expect(find.widgetWithText(FilledButton, 'Request meeting'), findsNothing);
+      await _pump(tester,
+          repo: _FakeRepo(detail: _detail()), controller: _Guest(),);
+      expect(
+          find.widgetWithText(FilledButton, 'Request meeting'), findsNothing,);
     });
 
     testWidgets(
@@ -255,7 +260,8 @@ void main() {
         repo: _FakeRepo(detail: _detail()),
         controller: _SignedIn(),
       );
-      expect(find.widgetWithText(FilledButton, 'Request meeting'), findsNothing);
+      expect(
+          find.widgetWithText(FilledButton, 'Request meeting'), findsNothing,);
     });
 
     testWidgets('a signed-in VIP visitor can submit a meeting request',
@@ -326,13 +332,15 @@ void main() {
       expect(find.byKey(const ValueKey<String>('meeting-day-0')), findsNothing);
     });
 
-    testWidgets('shows a website chip when the speaker shared a website (D-544)',
+    testWidgets(
+        'shows a website chip when the speaker shared a website (D-544)',
         (tester) async {
       tester.view.physicalSize = const Size(1200, 2600);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
-      await _pump(tester, repo: _FakeRepo(detail: _detail()), controller: _Guest());
+      await _pump(tester,
+          repo: _FakeRepo(detail: _detail()), controller: _Guest(),);
       expect(find.widgetWithIcon(ActionChip, Icons.language), findsOneWidget);
     });
 
@@ -355,7 +363,8 @@ void main() {
         controller: _SignedIn(),
         isVip: true,
       );
-      expect(find.widgetWithText(FilledButton, 'Request meeting'), findsNothing);
+      expect(
+          find.widgetWithText(FilledButton, 'Request meeting'), findsNothing,);
     });
 
     testWidgets('a 404 shows the not-found state', (tester) async {
@@ -380,7 +389,8 @@ void main() {
         controller: _Guest(),
         locale: const Locale('ar'),
       );
-      final l10n = AppL10n.of(tester.element(find.byType(SpeakerProfileScreen)));
+      final l10n =
+          AppL10n.of(tester.element(find.byType(SpeakerProfileScreen)));
       final dx = <double>[
         tester.getCenter(find.text(l10n.cvBio)).dx,
         tester.getCenter(find.text(l10n.cvQualifications)).dx,

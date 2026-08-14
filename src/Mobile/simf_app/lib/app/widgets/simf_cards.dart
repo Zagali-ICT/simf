@@ -70,7 +70,8 @@ class SimfSectionHeader extends StatelessWidget {
 
   final String title;
 
-  /// The trailing action text (e.g. l10n.moreTitle); rendered only with [onMore].
+  /// The trailing action text (e.g. l10n.moreTitle); rendered only with
+  /// [onMore].
   final String? moreLabel;
   final VoidCallback? onMore;
 
@@ -107,10 +108,11 @@ class SimfSectionHeader extends StatelessWidget {
 }
 
 /// A short muted explanatory note under a page title — the shared "what is this
-/// screen for" line (BUG-025: My Visitors vs My Contacts). An info glyph plus one
-/// wrapping paragraph, RTL-safe via the surrounding directionality. Distinct from
-/// [SimfSectionHeader] (a bold section title) and [SimfEmptyState] (a centred
-/// empty surface): this sits above real content and is always shown.
+/// screen for" line (BUG-025: My Visitors vs My Contacts). An info glyph plus
+/// one wrapping paragraph, RTL-safe via the surrounding directionality.
+/// Distinct from [SimfSectionHeader] (a bold section title) and
+/// [SimfEmptyState] (a centred empty surface): this sits above real content and
+/// is always shown.
 class SimfPageNote extends StatelessWidget {
   const SimfPageNote({required this.text, super.key});
 
@@ -131,12 +133,12 @@ class SimfPageNote extends StatelessWidget {
   }
 }
 
-/// A bordered single-line link row — the signed-in home's section bars
-/// (frames 758:1207 / 1049:12844 / 758:1211 "عن الملتقى" / "الرعاة" /
-/// "الأخبار والتغطية"): a transparent 48-high box with the beige hairline, the
-/// title at the inline end (physical right under RTL) and a gold caret at the
-/// inline start. Tappable. Distinct from [SimfSectionHeader] (a plain text label)
-/// and [SimfListRow] (which carries a gold badge box + subtitle).
+/// A bordered single-line link row — the signed-in home's section bars (frames
+/// 758:1207 / 1049:12844 / 758:1211 "عن الملتقى" / "الرعاة" / "الأخبار
+/// والتغطية"): a transparent 48-high box with the beige hairline, the title at
+/// the inline end (physical right under RTL) and a gold caret at the inline
+/// start. Tappable. Distinct from [SimfSectionHeader] (a plain text label) and
+/// [SimfListRow] (which carries a gold badge box + subtitle).
 class SimfLinkRow extends StatelessWidget {
   const SimfLinkRow({required this.title, required this.onTap, super.key});
 
@@ -166,11 +168,11 @@ class SimfLinkRow extends StatelessWidget {
               ),
               const SizedBox(width: SimfTokens.space2),
               // Home section-bar caret. Figma 758:1208 / 1049:12845 / 758:1212
-              // (عن الملتقى / الرعاه / الأخبار) fill this caret WHITE — only the
-              // روح السعودية row (758:1275, [SimfListRow]) keeps it gold. The
-              // bundled SVG does not auto-mirror under RTL, so it stays pointing
-              // left as the design shows. Flip horizontally in English so the
-              // caret points right → (forward in LTR reading direction).
+              // (عن الملتقى / الرعاه / الأخبار) fill this caret WHITE — only
+              // the روح السعودية row (758:1275, [SimfListRow]) keeps it gold.
+              // The bundled SVG does not auto-mirror under RTL, so it stays
+              // pointing left as the design shows. Flip horizontally in English
+              // so the caret points right → (forward in LTR reading direction).
               Transform.flip(
                 flipX: flip,
                 child: const SimfSvgIcon(

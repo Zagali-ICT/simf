@@ -9,8 +9,8 @@ import 'package:simf_app/core/utils/gregorian_month_names.dart';
 ///
 /// Same-month ranges collapse to a single month + year ("23-25 November 2026" /
 /// "23-25 نوفمبر 2026"); cross-month and cross-year ranges spell out both
-/// endpoints ("30 November - 2 December 2026"). A reversed pair is ordered so the
-/// earlier date always reads first; a single-day range renders one date.
+/// endpoints ("30 November - 2 December 2026"). A reversed pair is ordered so
+/// the earlier date always reads first; a single-day range renders one date.
 String formatEventDateRange(
   DateTime start,
   DateTime end, {
@@ -37,7 +37,8 @@ String formatEventDateRange(
   }
   // Same year, different month → the year is shown once, at the end.
   if (s.year == e.year) {
-    return '${s.day} ${gregorianMonthName(s.month, isArabic: isArabic)} - ${full(e)}';
+    return '${s.day} ${gregorianMonthName(s.month, isArabic: isArabic)} '
+        '- ${full(e)}';
   }
   // Different year → both endpoints carry their own year.
   return '${full(s)} - ${full(e)}';

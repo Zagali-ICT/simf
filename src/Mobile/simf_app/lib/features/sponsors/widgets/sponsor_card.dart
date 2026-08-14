@@ -55,8 +55,8 @@ class SponsorCard extends StatelessWidget {
           child: Row(
             children: <Widget>[
               // Frame 922:2824 — RTL order: the square logo badge sits at the
-              // inline-start (physical right), the name + secondary line next to
-              // it, and the forward chevron on the far inline-end (physical
+              // inline-start (physical right), the name + secondary line next
+              // to it, and the forward chevron on the far inline-end (physical
               // left). The bundled caret does not auto-mirror, so it keeps
               // pointing left as the design shows.
               BadgeBox(
@@ -77,7 +77,8 @@ class SponsorCard extends StatelessWidget {
                   // name + tagline hug the badge. The tagline is capped to the
                   // frame's ~215px (ConstrainedBox) so its box has a definite
                   // width and textAlign.right keeps EVERY wrapped line flush to
-                  // the badge (a free-width Text left short last lines centred).
+                  // the badge (a free-width Text left short last lines
+                  // centred).
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
@@ -92,10 +93,10 @@ class SponsorCard extends StatelessWidget {
                     if (secondary != null &&
                         secondary!.trim().isNotEmpty) ...<Widget>[
                       const SizedBox(height: SimfTokens.space1),
-                      // Responsive (owner 2026-06-28): fill the available column
-                      // width instead of the frame's fixed 215px so the tagline
-                      // stretches on a tablet; textAlign.right keeps the wrapped
-                      // lines flush to the badge.
+                      // Responsive (owner 2026-06-28): fill the available
+                      // column width instead of the frame's fixed 215px so the
+                      // tagline stretches on a tablet; textAlign.right keeps
+                      // the wrapped lines flush to the badge.
                       SizedBox(
                         width: double.infinity,
                         child: Text(
@@ -114,8 +115,9 @@ class SponsorCard extends StatelessWidget {
               Transform.flip(
                 flipX: flip,
                 child: SimfSvgIcon(
-                  // Frame 925:2990 — the iconamoon thin chevron (navy on the gold
-                  // hero card, gold on a premium card), NOT a filled triangle.
+                  // Frame 925:2990 — the iconamoon thin chevron (navy on the
+                  // gold hero card, gold on a premium card), NOT a filled
+                  // triangle.
                   AppAssets.icBack,
                   size: SimfTokens.sponsorCardSize,
                   color: hero ? SimfTokens.navy : SimfTokens.accent,

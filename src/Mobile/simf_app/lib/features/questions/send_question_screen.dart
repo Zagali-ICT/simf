@@ -25,30 +25,29 @@ enum QuestionRecipient {
 }
 
 /// Page 026 — معلومات عن الجلسة · Session information + ask a question (#26,
-/// `/live/question`), rebuilt to the KSA-Project Figma frame **934:3636** on the
-/// shared shell.
+/// `/live/question`), rebuilt to the KSA-Project Figma frame **934:3636** on
+/// the shared shell.
 ///
 /// **Auth-gated** (route 26 is in `_authenticatedRoutes`). Reached from a live
 /// session with the session id in the query string. With no id it shows an
 /// "open from a live session" empty state; with an id it shows the frame: the
-/// **"بيانات الجلسة"** session-data block (the session description rendered as a
-/// numbered list, frame `1049:12590`) over the **"الاسئلة"** composer — a tinted
-/// borderless multiline question box (frame `934:3668`, max 500), the gold
-/// full-width submit, and the centred gold-bulleted "reviewed before air" note
-/// (frame `943:3750`).
+/// **"بيانات الجلسة"** session-data block (the session description rendered as
+/// a numbered list, frame `1049:12590`) over the **"الاسئلة"** composer — a
+/// tinted borderless multiline question box (frame `934:3668`, max 500), the
+/// gold full-width submit, and the centred gold-bulleted "reviewed before air"
+/// note (frame `943:3750`).
 ///
-/// The session-data block reads the **anonymous** detail
-/// (`GET /app/programme/sessions/{id}` — the same shipped endpoint the session
-/// detail / live screens use, no new API). It is **non-blocking context**: a
-/// fetch failure just hides the block and the composer still works.
+/// The session-data block reads the **anonymous** detail (`GET
+/// /app/programme/sessions/{id}` — the same shipped endpoint the session detail
+/// / live screens use, no new API). It is **non-blocking context**: a fetch
+/// failure just hides the block and the composer still works.
 ///
-/// B7 — the composer carries the D-174 **"إلى من؟"** recipient choice
-/// (المتحدث / المضيف). It was hardcoded to Speaker, so `recipient` was always
-/// 0 and the Host half of `SessionQuestionRecipient` — which the moderator and
-/// committee queues both project — could never be produced; Speaker stays the
-/// default so a user who never taps behaves exactly as before
-/// (`POST /app/sessions/{id}/questions`,
-/// `RequireApprovedAccount`, D-169/D-174). A 400
+/// B7 — the composer carries the D-174 **"إلى من؟"** recipient choice (المتحدث
+/// / المضيف). It was hardcoded to Speaker, so `recipient` was always 0 and the
+/// Host half of `SessionQuestionRecipient` — which the moderator and committee
+/// queues both project — could never be produced; Speaker stays the default so
+/// a user who never taps behaves exactly as before (`POST
+/// /app/sessions/{id}/questions`, `RequireApprovedAccount`, D-169/D-174). A 400
 /// (`SESSION_NOT_LIVE_FOR_QUESTIONS`) / 404 maps to the "questions are closed"
 /// toast; any other failure to a generic error toast.
 class SendQuestionScreen extends ConsumerStatefulWidget {
@@ -100,9 +99,10 @@ class _SendQuestionScreenState extends ConsumerState<SendQuestionScreen> {
     }
   }
 
-  /// Splits the session description into the frame's numbered data lines
-  /// (frame 1049:12591-12594): one entry per non-blank line, in order. A single
-  /// paragraph renders as one numbered item; a blank description hides the block.
+  /// Splits the session description into the frame's numbered data lines (frame
+  /// 1049:12591-12594): one entry per non-blank line, in order. A single
+  /// paragraph renders as one numbered item; a blank description hides the
+  /// block.
   static List<String> _dataLines(String? description) {
     final text = description?.trim() ?? '';
     if (text.isEmpty) {
@@ -188,9 +188,10 @@ class _SendQuestionScreenState extends ConsumerState<SendQuestionScreen> {
     final dataLines = detail == null
         ? const <String>[]
         : _dataLines(detail.localizedDescription(isArabic: l10n.isArabic));
-    // Frame 934:3636 — the data block + composer occupy the top (scrollable so a
-    // long description + the keyboard never overflow), and the submit + note are
-    // pinned to the bottom of the screen (943:3751), not flowed under the box.
+    // Frame 934:3636 — the data block + composer occupy the top (scrollable so
+    // a long description + the keyboard never overflow), and the submit + note
+    // are pinned to the bottom of the screen (943:3751), not flowed under the
+    // box.
     return Column(
       children: <Widget>[
         Expanded(
@@ -205,8 +206,9 @@ class _SendQuestionScreenState extends ConsumerState<SendQuestionScreen> {
                 SimfTokens.space4,
               ),
               children: <Widget>[
-                // Frame 1049:12590 — the "بيانات الجلسة" session-data block over
-                // the composer. Hidden until the optional detail read lands.
+                // Frame 1049:12590 — the "بيانات الجلسة" session-data block
+                // over the composer. Hidden until the optional detail read
+                // lands.
                 if (dataLines.isNotEmpty) ...<Widget>[
                   SessionDataBlock(
                     label: l10n.sessionDataLabel,

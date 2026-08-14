@@ -55,8 +55,8 @@ class HomeScreen extends ConsumerWidget {
     if (role == AppRole.guest || pendingApproval) {
       return GuestHome(l10n: l10n, pendingApproval: pendingApproval);
     }
-    // Focused operational roles (D-519): each lands on a home that surfaces only
-    // its own pages, not the visitor experience.
+    // Focused operational roles (D-519): each lands on a home that surfaces
+    // only its own pages, not the visitor experience.
     if (role == AppRole.staff) {
       return StaffHome(l10n: l10n);
     }
@@ -81,9 +81,9 @@ class HomeScreen extends ConsumerWidget {
     // The post card builds `{base}/app/assets/NewsImage/{id}/image`; the base
     // already includes `/api/v1` (same anonymous D-357 route as the news list).
     final baseUrl = ref.watch(simfDataConfigProvider).baseUrl;
-    // Bi-Meeting rework — the "اللقاءات الثنائية" tile shows to anyone entitled to
-    // request a meeting (speaker OR delegation flag); hidden otherwise (they can't
-    // reach the meetings page anyway).
+    // Bi-Meeting rework — the "اللقاءات الثنائية" tile shows to anyone entitled
+    // to request a meeting (speaker OR delegation flag); hidden otherwise (they
+    // can't reach the meetings page anyway).
     final canRequestMeetings =
         ref.watch(currentUserMeetingAccessProvider).value?.any ?? false;
     // The rotating hero (#43): the active home banners + the edition config.
@@ -94,8 +94,8 @@ class HomeScreen extends ConsumerWidget {
           orElse: () => const <PublicBannerItem>[],
         );
     final orgProfile = ref.watch(orgProfileProvider);
-    // Build #13 — the "Meet People Like You" tile is hidden when the CP switch is
-    // off. Best-effort (default true / fail-open) while site-settings loads.
+    // Build #13 — the "Meet People Like You" tile is hidden when the CP switch
+    // is off. Best-effort (default true / fail-open) while site-settings loads.
     final partnerDirectoryEnabled = ref.watch(siteSettingsProvider).maybeWhen(
           data: (s) => s.partnerDirectoryEnabled,
           orElse: () => true,

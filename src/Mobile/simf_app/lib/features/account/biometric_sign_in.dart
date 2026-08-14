@@ -62,7 +62,7 @@ Future<void> runBiometricSignIn({
     await notifier.signInWithDeviceKey();
   } on AuthFailure catch (failure) {
     onError(failure.source.localizedMessage(l10n));
-  } catch (e) {
+  } on Object catch (e) {
     // Non-AuthFailure (for example a FormatException from reloadCurrentUser
     // before the defence in signInWithDeviceKey was added): captured so the
     // session routing below still happens. Shown in a SnackBar AFTER routing,
@@ -76,7 +76,8 @@ Future<void> runBiometricSignIn({
   // establishes the session before its trailing profile reload, so a
   // non-AuthFailure thrown there must not skip the navigation home - the
   // biometric path mirrors the password path (D-441).
-  if (context.mounted && ref.read(authControllerProvider) is AuthStateSignedIn) {
+  if (context.mounted &&
+      ref.read(authControllerProvider) is AuthStateSignedIn) {
     if (unexpectedError != null) {
       // The localized generic message, NOT '$unexpectedError' - a raw Dart
       // toString is untranslated and leaks internal type detail to the user.

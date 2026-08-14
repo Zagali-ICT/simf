@@ -12,12 +12,12 @@ import 'package:simf_app/features/contacts/scan_contact_screen.dart';
 import 'golden_fonts.dart';
 
 /// Render-lock golden of the "Scan a contact" screen against the owner-supplied
-/// frame **1701:7080** (مسح جهة اتصال, FDS-014). Regenerate:
-///   flutter test --update-goldens test/golden/scan_contact_golden_test.dart
+/// frame **1701:7080** (مسح جهة اتصال, FDS-014). Regenerate: flutter test
+/// --update-goldens test/golden/scan_contact_golden_test.dart
 ///
-/// The screen delegates its surface to the shared `QrScanView`; the resolved-card
-/// preview sheet only appears after a scan, so this locks the resting scan
-/// surface — the manual-entry field + the "start camera" button
+/// The screen delegates its surface to the shared `QrScanView`; the
+/// resolved-card preview sheet only appears after a scan, so this locks the
+/// resting scan surface — the manual-entry field + the "start camera" button
 /// (`enableCamera: false`, so no live camera in the harness). RTL.
 
 void main() {

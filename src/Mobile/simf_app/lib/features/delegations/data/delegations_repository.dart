@@ -34,10 +34,11 @@ class DelegationsRepository {
     );
   }
 
-  /// Bi-Meeting rework — `POST /app/delegation-meeting-requests` (approved-only,
-  /// delegate-gated). Body `{ targetCountryCode, attendeeCount, subject }` plus an
-  /// optional picked slot. The response is discarded (success is enough). The
-  /// screens map 403 (not a delegate) / 400 (target not invited) / 409 (duplicate).
+  /// Bi-Meeting rework — `POST /app/delegation-meeting-requests`
+  /// (approved-only, delegate-gated). Body `{ targetCountryCode, attendeeCount,
+  /// subject }` plus an optional picked slot. The response is discarded
+  /// (success is enough). The screens map 403 (not a delegate) / 400 (target
+  /// not invited) / 409 (duplicate).
   Future<void> submitMeetingRequest({
     required String targetCountryCode,
     required int attendeeCount,
@@ -63,8 +64,9 @@ class DelegationsRepository {
   /// Bi-Meeting rework — `POST /app/delegation-meeting-requests/{id}/confirm`
   /// (approved-only; the caller must be an eligible member of the TARGET
   /// delegation). Confirms an Approved (awaiting) meeting; returns the meeting
-  /// summary shown on the confirm screen (no requester PII — stripped server-side).
-  /// Maps 403 (not the other party) / 409 (not awaiting confirmation).
+  /// summary shown on the confirm screen (no requester PII — stripped
+  /// server-side). Maps 403 (not the other party) / 409 (not awaiting
+  /// confirmation).
   Future<DelegationMeetingSummary> confirmMeeting(String requestId) {
     return _client.post<DelegationMeetingSummary>(
       DelegationsEndpoints.confirmMeeting(requestId),

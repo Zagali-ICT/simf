@@ -49,7 +49,8 @@ class VenueMapInfoCard extends StatelessWidget {
     ];
     final code = booth?.code;
 
-    // Frame 758:1358 — white card, 8-px radius, gold 0.5 hairline + soft shadow.
+    // Frame 758:1358 — white card, 8-px radius, gold 0.5 hairline + soft
+    // shadow.
     return Container(
       padding: const EdgeInsets.fromLTRB(
         SimfTokens.space4,

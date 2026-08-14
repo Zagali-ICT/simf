@@ -26,35 +26,36 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// point (supersedes the D-199 "public, anonymous" design). This route is NOT
 /// router-redirect-gated (unlike sessions/detail under D-576) — the gate is
 /// in-screen, so the guest still lands here. A signed-in user takes an optional
-/// [sessionId] from the query string.
-/// With no id it shows a "pick a session" empty state and never fetches. With
-/// an id it reads the broadcast slice (`GET /app/programme/sessions/{id}`,
-/// `AllowAnonymous`) and branches three ways (Page_025 L-3):
+/// [sessionId] from the query string. With no id it shows a "pick a session"
+/// empty state and never fetches. With an id it reads the broadcast slice (`GET
+/// /app/programme/sessions/{id}`, `AllowAnonymous`) and branches three ways
+/// (Page_025 L-3):
 /// * `liveStreamUrl` non-empty → play the feed and show a LIVE badge; when a
 ///   `liveSignLanguageUrl` also exists a toggle swaps the player between the
 ///   main feed and the sign-language feed (Page_025 L-3);
 /// * `liveStreamUrl` null but `hasRecording` → a "recording available" note;
-/// * neither → a "not live / scheduled" state.
-/// 404 → not-found; any other failure → retry.
+/// * neither → a "not live / scheduled" state. 404 → not-found; any other
+///   failure → retry.
 ///
-/// **Frame mapping (934:3450):** the navy header (circled back chevron + centred
-/// title), a **black player surface** carrying the LIVE badge + the gold-bordered
-/// organiser caption strip, then the **"يُبث الآن" now-broadcasting** block (the
-/// session title as a gold bullet)
-/// and the **ask-a-question** entry to Page 026 (`/live/question`). The player
-/// surface + its media engine live in `widgets/live_player_surface.dart` +
-/// `live_video_player.dart` + `live_badges.dart`; the non-live black bands in
-/// `live_message_surfaces.dart`; the info column widgets in `live_content.dart`.
+/// **Frame mapping (934:3450):** the navy header (circled back chevron +
+/// centred title), a **black player surface** carrying the LIVE badge + the
+/// gold-bordered organiser caption strip, then the **"يُبث الآن"
+/// now-broadcasting** block (the session title as a gold bullet) and the
+/// **ask-a-question** entry to Page 026 (`/live/question`). The player surface
+/// + its media engine live in `widgets/live_player_surface.dart` +
+///   `live_video_player.dart` + `live_badges.dart`; the non-live black bands in
+///   `live_message_surfaces.dart`; the info column widgets in
+///   `live_content.dart`.
 ///
 /// **FR-702 (owner 2026-07-31):** when the session carries a live notice it is
 /// rendered as a calm informational banner ABOVE the player. It is a
 /// notification only — nothing here checks where the viewer is and nothing
 /// withholds the stream.
 ///
-/// **Provider (D-349):** the live-video provider is **YouTube** (POC). Each feed
-/// URL is sniffed by `YoutubeUrl`: a YouTube link plays via the IFrame player,
-/// anything else (HLS/MP4) via `video_player`. The player widget owns its own
-/// controller lifecycle, so swapping the active URL just rebuilds it.
+/// **Provider (D-349):** the live-video provider is **YouTube** (POC). Each
+/// feed URL is sniffed by `YoutubeUrl`: a YouTube link plays via the IFrame
+/// player, anything else (HLS/MP4) via `video_player`. The player widget owns
+/// its own controller lifecycle, so swapping the active URL just rebuilds it.
 class LiveBroadcastScreen extends ConsumerStatefulWidget {
   const LiveBroadcastScreen({this.sessionId, this.liveUrl, super.key});
 
@@ -84,10 +85,10 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
   GoRouter? _router;
 
   /// Non-null only when this view is eligible to prompt on leave — a signed-in
-  /// approved attendee who actually had a live feed to watch. Captured in [_load]
-  /// so [dispose] never reads a provider from a dead element. Shares the D-690
-  /// tracker + the `Session` rating code, so watching online then leaving the
-  /// (ended) session detail can't double-prompt.
+  /// approved attendee who actually had a live feed to watch. Captured in
+  /// [_load] so [dispose] never reads a provider from a dead element. Shares
+  /// the D-690 tracker + the `Session` rating code, so watching online then
+  /// leaving the (ended) session detail can't double-prompt.
   SessionRatePromptTracker? _rateTracker;
 
   bool get _hasId =>
@@ -107,8 +108,8 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // maybeOf (not of): a bare-MaterialApp test host with no GoRouter leaves this
-    // null, and the leave-prompt simply does not fire.
+    // maybeOf (not of): a bare-MaterialApp test host with no GoRouter leaves
+    // this null, and the leave-prompt simply does not fire.
     _router = GoRouter.maybeOf(context);
   }
 
@@ -119,13 +120,13 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
   }
 
   /// D-712 (FDS-007 §C.4 GAP-B, owner item 8) — "online session, live-stream
-  /// close → rate the online session". When an approved attendee leaves the live
-  /// screen for a session that carried a live feed, open the dynamic rate screen
-  /// for it once. Runs from [dispose] (the reliable "left the screen" signal for
-  /// every exit path) and pushes through the captured [GoRouter] on the next
-  /// frame. Forward navigations (ask-a-question, sign-in) keep this screen alive,
-  /// so they do not fire it; the shared tracker dedups it with the D-690
-  /// after-view prompt so a session is rated at most once.
+  /// close → rate the online session". When an approved attendee leaves the
+  /// live screen for a session that carried a live feed, open the dynamic rate
+  /// screen for it once. Runs from [dispose] (the reliable "left the screen"
+  /// signal for every exit path) and pushes through the captured [GoRouter] on
+  /// the next frame. Forward navigations (ask-a-question, sign-in) keep this
+  /// screen alive, so they do not fire it; the shared tracker dedups it with
+  /// the D-690 after-view prompt so a session is rated at most once.
   void _maybePromptRateAfterWatch() {
     final router = _router;
     final tracker = _rateTracker;
@@ -165,18 +166,21 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
         return;
       }
       // D-712 — capture the after-watch rate eligibility: an approved attendee
-      // (a pending account presents as guest via effectiveAppRole and is excluded)
-      // who actually had a live feed to watch. Captured here so [dispose] reuses
-      // the reference instead of reading a provider from a dead element.
+      // (a pending account presents as guest via effectiveAppRole and is
+      // excluded) who actually had a live feed to watch. Captured here so
+      // [dispose] reuses the reference instead of reading a provider from a
+      // dead element.
       final auth = ref.read(authControllerProvider);
       final isApprovedAttendee = auth is AuthStateSignedIn &&
           isAttendeeRole(auth.session.user.effectiveAppRole);
       // 2026-07-22 — respect the CP: no after-watch prompt when the "Session"
-      // rating type is deactivated in RatingConfig (siteSettings.sessionRatingEnabled).
-      // Fail-open (true) while the cached settings load / on error, matching the
-      // server, which also suppresses the notification when the type is off.
+      // rating type is deactivated in RatingConfig
+      // (siteSettings.sessionRatingEnabled). Fail-open (true) while the cached
+      // settings load / on error, matching the server, which also suppresses
+      // the notification when the type is off.
       final sessionRatingEnabled =
-          ref.read(siteSettingsProvider).valueOrNull?.sessionRatingEnabled ?? true;
+          ref.read(siteSettingsProvider).valueOrNull?.sessionRatingEnabled ??
+              true;
       _rateTracker = isApprovedAttendee &&
               session.liveStreamUrl != null &&
               sessionRatingEnabled
@@ -228,15 +232,20 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
   }
 
   void _askQuestion() {
-    context.pushNamed(
-      RouteNames.sendQuestion,
-      queryParameters: <String, String>{RouteParams.sessionId: widget.sessionId!.trim()},
+    unawaited(
+      context.pushNamed(
+        RouteNames.sendQuestion,
+        queryParameters: <String, String>{
+          RouteParams.sessionId: widget.sessionId!.trim(),
+        },
+      ),
     );
   }
 
-  /// D-495 — a synthetic live session for the forum's main (global) live stream,
-  /// used when the screen opens without a specific session id. The title is the
-  /// forum name; the feed is the Organization profile's liveStreamUrl.
+  /// D-495 — a synthetic live session for the forum's main (global) live
+  /// stream, used when the screen opens without a specific session id. The
+  /// title is the forum name; the feed is the Organization profile's
+  /// liveStreamUrl.
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
@@ -265,10 +274,10 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
     }
     if (!_hasId) {
       // D-495 — no session id → play the forum's main (global) live-stream link
-      // from the Organization profile when the admin has configured one; else the
-      // "pick a session" empty state.
-      // When a liveUrl param is provided (e.g. from the home LiveBanner tap), use
-      // it directly without hitting the API or the org profile.
+      // from the Organization profile when the admin has configured one; else
+      // the "pick a session" empty state. When a liveUrl param is provided
+      // (e.g. from the home LiveBanner tap), use it directly without hitting
+      // the API or the org profile.
       final explicitUrl = widget.liveUrl?.trim();
       if (explicitUrl != null && explicitUrl.isNotEmpty) {
         return _content(
@@ -327,5 +336,4 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
             setState(() => _showSignLanguage = value),
         onAskQuestion: _askQuestion,
       );
-
 }

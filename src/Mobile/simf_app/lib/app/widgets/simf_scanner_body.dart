@@ -57,7 +57,8 @@ class SimfScannerBody extends StatefulWidget {
   /// Optional lead-in hint above the viewfinder.
   final String? hint;
 
-  /// Optional caption under the viewfinder (e.g. the gate's "point at the badge").
+  /// Optional caption under the viewfinder (e.g. the gate's "point at the
+  /// badge").
   final String? bottomHint;
 
   /// Off in widget tests (no camera) so the manual-entry path drives the flow.
@@ -236,8 +237,8 @@ class _SimfScannerBodyState extends State<SimfScannerBody> {
         ),
       );
     }
-    // The "Stop camera" control stays OUTSIDE the camera surface (D-426) so EMUI
-    // can't swallow it behind the platform view.
+    // The "Stop camera" control stays OUTSIDE the camera surface (D-426) so
+    // EMUI can't swallow it behind the platform view.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
@@ -267,18 +268,18 @@ class _SimfScannerBodyState extends State<SimfScannerBody> {
                   showGallery: false,
                   showToggleCamera: false,
                   // Keep the built-in torch (auto-hides where unsupported) and
-                  // drop zxing's own crop-border overlay — our gold brackets are
-                  // the viewfinder.
+                  // drop zxing's own crop-border overlay — our gold brackets
+                  // are the viewfinder.
                   showScannerOverlay: false,
                   tryInverted: true,
                   // Spend more effort per frame locking onto the code — more
                   // reliable reads under real lighting/angle/distance on device.
                   tryHarder: true,
-                  // Decode the WHOLE frame, not zxing's default centre-50% crop.
-                  // A QR held to fill the gold viewfinder pushes its corner
-                  // finder patterns outside a 0.5 crop, so ZXing can't lock on —
-                  // the reason a phone camera (full-frame) reads a code the app
-                  // could not.
+                  // Decode the WHOLE frame, not zxing's default centre-50%
+                  // crop. A QR held to fill the gold viewfinder pushes its
+                  // corner finder patterns outside a 0.5 crop, so ZXing can't
+                  // lock on — the reason a phone camera (full-frame) reads a
+                  // code the app could not.
                   cropPercent: 1,
                   loading: const ColoredBox(color: SimfTokens.black),
                 ),

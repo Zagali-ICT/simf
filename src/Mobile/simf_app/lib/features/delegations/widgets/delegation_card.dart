@@ -6,8 +6,9 @@ import 'package:simf_app/features/delegations/data/delegation_models.dart';
 import 'package:simf_app/features/delegations/widgets/flag_box.dart';
 
 /// One delegation card (Figma 1426:10838): the country identity row (flag +
-/// bilingual name). The head-of-delegation box and the member-count / date-range
-/// bottom row are intentionally hidden in the current layout (owner 2026-07-24).
+/// bilingual name). The head-of-delegation box and the member-count /
+/// date-range bottom row are intentionally hidden in the current layout (owner
+/// 2026-07-24).
 class DelegationCard extends StatelessWidget {
   const DelegationCard({
     required this.item,
@@ -19,9 +20,10 @@ class DelegationCard extends StatelessWidget {
   final DelegationItem item;
   final bool isArabic;
 
-  /// Bi-Meeting rework — when set (the signed-in user holds AllowsDelegationMeeting)
-  /// tapping the card opens the delegation meeting-request sheet for this country.
-  /// Null → the card is a plain, non-interactive info card (guests / unentitled).
+  /// Bi-Meeting rework — when set (the signed-in user holds
+  /// AllowsDelegationMeeting) tapping the card opens the delegation
+  /// meeting-request sheet for this country. Null → the card is a plain,
+  /// non-interactive info card (guests / unentitled).
   final VoidCallback? onTap;
 
   @override
@@ -47,9 +49,9 @@ class DelegationCard extends StatelessWidget {
   Widget _identityRow() {
     final title = item.localizedCountry(isArabic: isArabic);
     final subtitle = item.localizedCountrySubtitle(isArabic: isArabic);
-    // Only show the other-language name when it actually adds information — when
-    // a country has just one name the title falls back to it, so the subtitle
-    // would otherwise duplicate the title.
+    // Only show the other-language name when it actually adds information —
+    // when a country has just one name the title falls back to it, so the
+    // subtitle would otherwise duplicate the title.
     final showSubtitle = subtitle.isNotEmpty && subtitle != title;
     return Row(
       children: <Widget>[

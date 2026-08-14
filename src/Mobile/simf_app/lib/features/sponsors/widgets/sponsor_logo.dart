@@ -6,9 +6,10 @@ import 'package:simf_app/core/utils/initials.dart';
 import 'package:simf_app/features/sponsors/data/sponsor_models.dart';
 
 /// The sponsor's real logo (D-357 `SponsorLogo` asset, served anonymously at
-/// `{base}/app/assets/SponsorLogo/{id}/image`) shown **whole** inside its parent
-/// box, falling back to the acronym initials while it loads or when no logo is
-/// set (the route 404s). [hero] picks the initials colour for the box it sits in.
+/// `{base}/app/assets/SponsorLogo/{id}/image`) shown **whole** inside its
+/// parent box, falling back to the acronym initials while it loads or when no
+/// logo is set (the route 404s). [hero] picks the initials colour for the box
+/// it sits in.
 ///
 /// Owner 2026-07-26 — a sponsor mark must FIT its box (the old `BoxFit.cover`
 /// cropped wide logos), so it renders through the shared [SimfLogoImage]. Set

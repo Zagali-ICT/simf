@@ -56,7 +56,8 @@ class _FakeNotificationsRepository implements NotificationsRepository {
   Future<int> getUnreadCount() async => items.where((n) => !n.isRead).length;
 
   @override
-  Future<List<NotificationItem>> getNotifications({int skip = 0, int top = 50}) async {
+  Future<List<NotificationItem>> getNotifications(
+      {int skip = 0, int top = 50,}) async {
     listCalls++;
     if (fail) {
       throw const ApiFailure(code: ApiErrorCodes.clientNetwork, message: 'x');
@@ -183,7 +184,8 @@ void main() {
       expect(find.text('Mark all read'), findsNothing);
     });
 
-    testWidgets('opening an all-read inbox does not call mark-all', (tester) async {
+    testWidgets('opening an all-read inbox does not call mark-all',
+        (tester) async {
       final repo = _FakeNotificationsRepository(
         items: <NotificationItem>[_item(isRead: true)],
       );
@@ -389,7 +391,11 @@ void main() {
               kind: 'DayRatingRequest',
               group: 'Ratings',
             ),
-            _item(id: 'v1', title: 'VIP invite', kind: 'VipBroadcast', group: 'Vip'),
+            _item(
+                id: 'v1',
+                title: 'VIP invite',
+                kind: 'VipBroadcast',
+                group: 'Vip',),
           ],
         ),
       );
@@ -515,7 +521,8 @@ void main() {
           ],
         ),
       );
-      // Severity fallback: error → danger + close glyph (not a per-kind colour).
+      // Severity fallback: error → danger + close glyph (not a per-kind
+      // colour).
       expect(find.byIcon(Icons.close_rounded), findsOneWidget);
       expect(iconColor(tester, Icons.close_rounded), SimfTokens.danger);
     });

@@ -93,10 +93,10 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
   }
 
   void _openSession(SessionListItem session) {
-    context.pushNamed(
-      RouteNames.sessionDetail,
-      pathParameters: <String, String>{RouteParams.sessionId: session.id},
-    );
+    unawaited(context.pushNamed(
+        RouteNames.sessionDetail,
+        pathParameters: <String, String>{RouteParams.sessionId: session.id},
+      ),);
   }
 
   /// The empty-list message for the active type tab — "no workshops" under
@@ -160,7 +160,8 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
         ? AssetUrls.image(baseUrl, AssetKind.programmeDayImage, selected.id)
         : null;
 
-    // The selected day's sessions, filtered by the active type tab + the search.
+    // The selected day's sessions, filtered by the active type tab + the
+    // search.
     final sessions = sessionsForDay(
       selected,
       type: _typeFilter,
