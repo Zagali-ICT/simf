@@ -46,12 +46,9 @@ class SimfFormScaffold extends ConsumerWidget {
   final Widget sweep;
 
   void _toggleLanguage(WidgetRef ref) {
-    final isArabic = ref.read(localeControllerProvider).languageCode == 'ar';
-    unawaited(
-      ref
-          .read(localeControllerProvider.notifier)
-          .setLanguage(isArabic ? 'en' : 'ar'),
-    );
+    // LocaleController.toggle() is, by its own doc, the single code path
+    // for this. Four screens re-derived it.
+    unawaited(ref.read(localeControllerProvider.notifier).toggle());
   }
 
   @override
