@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/ProgrammeSessionsTests.cs
+﻿// Tests: SIMF.Api.Tests/ProgrammeSessionsTests.cs
 // Tests: SIMF.Api.Tests/SessionLifecycleTests.cs
 // Tests: SIMF.Api.Tests/SessionRecordingTests.cs
 // Tests: SIMF.Api.Tests/RecordedQuestionsTests.cs
@@ -319,7 +319,7 @@ internal sealed class ProgrammeSessionService(
                 session.CapacityOverride,
                 session.Status,
                 session.PublishedAt,
-                HasRecordingFile = session.RecordingStoredFileName != null,
+                HasRecordingFile = session.RecordingFileId != null,
                 session.LiveStreamUrl,
                 session.LiveSignLanguageUrl,
                 session.LiveCaptions,
@@ -559,10 +559,10 @@ internal sealed class ProgrammeSessionService(
             .Where(session => session.Id == id
                 && session.IsActive
                 && session.Status == SessionStatus.Published
-                && session.RecordingStoredFileName != null)
+                && session.RecordingFileId != null)
             .Select(session => new
             {
-                session.RecordingStoredFileName,
+                session.RecordingFileId,
                 session.RecordingContentType,
                 session.RecordingFileName,
             })
@@ -571,7 +571,7 @@ internal sealed class ProgrammeSessionService(
         return row is null
             ? null
             : new SessionRecordingRef(
-                row.RecordingStoredFileName!,
+                row.RecordingFileId!.Value,
                 row.RecordingContentType ?? "application/octet-stream",
                 row.RecordingFileName ?? "recording");
     }

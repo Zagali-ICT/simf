@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/AdminSessionsTests.cs,
+﻿// Tests: SIMF.Api.Tests/AdminSessionsTests.cs,
 //        SIMF.Api.Tests/GridDateSortKeyTests.cs
 // Tests: SIMF.Api.Tests/SessionLifecycleTests.cs
 // Tests: SIMF.Api.Tests/SessionRecordingTests.cs
@@ -828,15 +828,15 @@ internal sealed class AdminSessionService(
         // Stream the bytes into the unified StoredFile store (Internal
         // tier, plaintext + seekable for Range streaming, owner = the session). The
         // store never buffers the whole video and computes the SHA-256 on the fly;
-        // RecordingStoredFileName is repurposed as the bare-Guid pointer + "has
-        // recording" sentinel. The malware scan is skipped (size-capped policy).
-        var priorPointer = session.RecordingStoredFileName;
+        // RecordingFileId is the key + the "has recording" sentinel. The malware
+        // scan is skipped (size-capped policy).
+        var priorFileId = session.RecordingFileId;
         var result = await fileService.CreateStreamedAsync(
             FileService.SessionRecording, session.Id, content, fileName, contentType,
             System.IO.Path.GetExtension(fileName), actorUserId, cancellationToken);
 
         var now = timeProvider.SimfNow();
-        session.RecordingStoredFileName = result.Id.ToString();
+        session.RecordingFileId = result.Id;
         session.RecordingFileName = fileName;
         session.RecordingContentType = contentType;
         session.RecordingSizeBytes = result.SizeBytes;
@@ -847,7 +847,7 @@ internal sealed class AdminSessionService(
 
         // Retire the prior recording (best-effort — the new one is the committed
         // source of truth; SessionRecording is DeletableDefault:true).
-        await RetireRecordingAsync(priorPointer, result.Id, actorUserId, cancellationToken);
+        await RetireRecordingAsync(priorFileId, result.Id, actorUserId, cancellationToken);
 
         await auditLog.WriteSuccessAsync(
             AuditEvents.SessionRecordingUploaded,
@@ -869,13 +869,13 @@ internal sealed class AdminSessionService(
     {
         var session = await LoadFullAsync(id, cancellationToken);
 
-        if (session.RecordingStoredFileName is null)
+        if (session.RecordingFileId is null)
         {
             return ToDetail(session); // idempotent — nothing to delete
         }
 
-        var storedFileName = session.RecordingStoredFileName;
-        session.RecordingStoredFileName = null;
+        var priorFileId = session.RecordingFileId;
+        session.RecordingFileId = null;
         session.RecordingFileName = null;
         session.RecordingContentType = null;
         session.RecordingSizeBytes = null;
@@ -886,7 +886,7 @@ internal sealed class AdminSessionService(
         // fails the app already sees "no recording" and only an orphan file
         // is left behind (harmless), never a row pointing at a missing file.
         await dbContext.SaveChangesAsync(cancellationToken);
-        await RetireRecordingAsync(storedFileName, null, actorUserId, cancellationToken);
+        await RetireRecordingAsync(priorFileId, null, actorUserId, cancellationToken);
 
         await auditLog.WriteSuccessAsync(
             AuditEvents.SessionRecordingDeleted,
@@ -900,11 +900,11 @@ internal sealed class AdminSessionService(
     /// <summary>Best-effort retirement of a recording's <c>StoredFile</c>
     /// (soft-delete + byte-unlink). The row is already updated (source of truth), so a
     /// delete failure must not fail the operation — worst case leaves one orphan blob.
-    /// No-op when the pointer is absent/unparseable or is the just-uploaded file.</summary>
+    /// No-op when there was no prior file, or it is the just-uploaded one.</summary>
     private async Task RetireRecordingAsync(
-        string? priorPointer, Guid? newFileId, Guid actorUserId, CancellationToken cancellationToken)
+        Guid? priorFileId, Guid? newFileId, Guid actorUserId, CancellationToken cancellationToken)
     {
-        if (!Guid.TryParse(priorPointer, out var old) || old == newFileId) { return; }
+        if (priorFileId is not { } old || old == newFileId) { return; }
         try
         {
             await fileService.DeleteAsync(old, actorUserId, cancellationToken);
@@ -977,7 +977,7 @@ internal sealed class AdminSessionService(
                 "لا يمكن تعيين الجلسة كمنعقدة قبل أن تبدأ.");
         }
         if (target is SessionStatus.Recorded or SessionStatus.Published
-            && session.RecordingStoredFileName is null)
+            && session.RecordingFileId is null)
         {
             throw new ApiException(
                 ErrorCodes.SessionStatusGuardFailed, 400,
@@ -1400,7 +1400,7 @@ internal sealed class AdminSessionService(
             session.CategoryId,
             session.Status,
             session.PublishedAt,
-            session.RecordingStoredFileName is not null,
+            session.RecordingFileId is not null,
             session.RecordingFileName,
             session.RecordingSizeBytes,
             session.RecordingUploadedAt,

@@ -1,7 +1,8 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SIMF.Common.Options;
 using SIMF.Contracts.Sessions;
+using SIMF.Domain.Files;
 using SIMF.Domain.Programme;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
@@ -36,7 +37,13 @@ internal sealed class SessionConfiguration : IEntityTypeConfiguration<Session>
         builder.Property(s => s.LanguageArabic).HasMaxLength(64);
 
         // Recording metadata (the bytes live out-of-row on disk).
-        builder.Property(s => s.RecordingStoredFileName).HasMaxLength(64);
+        // The recording's file, in the one store. Restrict, matching Hall and
+        // Category above: deleting a file must never delete the session.
+        builder.HasIndex(s => s.RecordingFileId);
+        builder.HasOne<StoredFile>()
+            .WithMany()
+            .HasForeignKey(s => s.RecordingFileId)
+            .OnDelete(DeleteBehavior.Restrict);
         builder.Property(s => s.RecordingFileName).HasMaxLength(260);
         builder.Property(s => s.RecordingContentType).HasMaxLength(128);
 

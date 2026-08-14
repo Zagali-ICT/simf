@@ -1189,6 +1189,44 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 });
 
             migrationBuilder.CreateTable(
+                name: "MediaItems",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Kind = table.Column<int>(type: "int", nullable: false),
+                    Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    TitleArabic = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    ImageFileId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    Url = table.Column<string>(type: "nvarchar(2048)", maxLength: 2048, nullable: true),
+                    ThumbnailFileId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    Album = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    AlbumArabic = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    DisplayOrder = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_MediaItems", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_MediaItems_StoredFiles_ImageFileId",
+                        column: x => x.ImageFileId,
+                        principalTable: "StoredFiles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_MediaItems_StoredFiles_ThumbnailFileId",
+                        column: x => x.ThumbnailFileId,
+                        principalTable: "StoredFiles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Sessions",
                 columns: table => new
                 {
@@ -1212,7 +1250,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     RatingPromptSent = table.Column<DateTime>(type: "datetime2", nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
                     PublishedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    RecordingStoredFileName = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
+                    RecordingFileId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     RecordingFileName = table.Column<string>(type: "nvarchar(260)", maxLength: 260, nullable: true),
                     RecordingContentType = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: true),
                     RecordingSizeBytes = table.Column<long>(type: "bigint", nullable: true),
@@ -1248,41 +1286,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         principalTable: "SessionCategories",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "MediaItems",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Kind = table.Column<int>(type: "int", nullable: false),
-                    Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    TitleArabic = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    ImageFileId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    Url = table.Column<string>(type: "nvarchar(2048)", maxLength: 2048, nullable: true),
-                    ThumbnailFileId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    Album = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    AlbumArabic = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    DisplayOrder = table.Column<int>(type: "int", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_MediaItems", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_MediaItems_StoredFiles_ImageFileId",
-                        column: x => x.ImageFileId,
-                        principalTable: "StoredFiles",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_MediaItems_StoredFiles_ThumbnailFileId",
-                        column: x => x.ThumbnailFileId,
+                        name: "FK_Sessions_StoredFiles_RecordingFileId",
+                        column: x => x.RecordingFileId,
                         principalTable: "StoredFiles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
@@ -3463,6 +3469,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 name: "IX_Sessions_IsActive_Start",
                 table: "Sessions",
                 columns: new[] { "IsActive", "Start" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Sessions_RecordingFileId",
+                table: "Sessions",
+                column: "RecordingFileId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Sessions_Status_Start",

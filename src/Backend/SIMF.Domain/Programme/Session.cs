@@ -1,4 +1,4 @@
-using SIMF.Common.Enums;
+﻿using SIMF.Common.Enums;
 using SIMF.Domain.Common;
 
 namespace SIMF.Domain.Programme;
@@ -75,11 +75,15 @@ public class Session : BaseAuditEntity
     /// <summary>Stamped on publish and cleared on un-publish; null otherwise.</summary>
     public DateTime? PublishedAt { get; set; }
 
-    // The recording is stored out-of-row behind ISessionRecordingStorage, so
-    // these columns hold only its metadata. All null until something is
-    // uploaded, and all cleared on delete. Orthogonal to Status: the public
-    // stream needs a recording AND a Published session.
-    public string? RecordingStoredFileName { get; set; }
+    // The recording lives in the unified file store, so these columns hold only
+    // its metadata plus the key. All null until something is uploaded, and all
+    // cleared on delete. Orthogonal to Status: the public stream needs a
+    // recording AND a Published session.
+    //
+    // RecordingFileId is a real foreign key into StoredFiles, and doubles as the
+    // "has recording" sentinel that gates both the lifecycle transition to
+    // Recorded/Published and the public stream.
+    public Guid? RecordingFileId { get; set; }
     public string? RecordingFileName { get; set; }
     public string? RecordingContentType { get; set; }
     public long? RecordingSizeBytes { get; set; }

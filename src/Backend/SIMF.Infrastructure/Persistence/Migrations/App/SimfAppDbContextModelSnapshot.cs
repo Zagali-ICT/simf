@@ -4607,16 +4607,15 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");
 
+                    b.Property<Guid?>("RecordingFileId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("RecordingFileName")
                         .HasMaxLength(260)
                         .HasColumnType("nvarchar(260)");
 
                     b.Property<long?>("RecordingSizeBytes")
                         .HasColumnType("bigint");
-
-                    b.Property<string>("RecordingStoredFileName")
-                        .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
 
                     b.Property<DateTime?>("RecordingUploadedAt")
                         .HasColumnType("datetime2");
@@ -4661,6 +4660,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("Code")
                         .IsUnique();
+
+                    b.HasIndex("RecordingFileId");
 
                     b.HasIndex("HallId", "Start");
 
@@ -6578,6 +6579,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasForeignKey("HallId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("SIMF.Domain.Files.StoredFile", null)
+                        .WithMany()
+                        .HasForeignKey("RecordingFileId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Category");
 
