@@ -7,6 +7,7 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/features/archive/archive_screen.dart';
 import 'package:simf_app/features/archive/data/archive_models.dart';
+import 'package:simf_app/features/archive/data/archive_repository.dart';
 
 const _editions = <ArchiveEdition>[
   ArchiveEdition(
@@ -55,12 +56,12 @@ const _detailWithMedia = ArchiveEditionDetail(
   attendees: 375,
   sessions: 30,
   speakers: 250,
-  gallery: const <ArchiveMediaItem>[
+  gallery: <ArchiveMediaItem>[
     ArchiveMediaItem(kind: 0, url: 'https://cdn.example.sa/2024/opening.jpg'),
     ArchiveMediaItem(kind: 1, url: 'https://youtu.be/abc123'),
     ArchiveMediaItem(kind: 0, url: 'archive/2024/legacy.jpg'),
   ],
-  pastSpeakers: const <ArchivePastSpeaker>[
+  pastSpeakers: <ArchivePastSpeaker>[
     ArchivePastSpeaker(
       nameEn: 'Rashed',
       nameAr: 'راشد',
@@ -134,7 +135,8 @@ Future<void> _pump(
 
 void main() {
   group('ArchiveScreen (Page 024 — KSA frame 925:3079)', () {
-    testWidgets('renders the notice, an edition pill per edition, the selected '
+    testWidgets(
+        'renders the notice, an edition pill per edition, the selected '
         'edition detail and its stats', (tester) async {
       await _pump(
         tester,
@@ -199,7 +201,8 @@ void main() {
       expect(find.text('120'), findsOneWidget); // 2022 speakers
     });
 
-    testWidgets('P6 — gallery image + past-speaker photo render real URLs; a '
+    testWidgets(
+        'P6 — gallery image + past-speaker photo render real URLs; a '
         'video / relative path do not', (tester) async {
       await _pump(
         tester,
@@ -218,7 +221,8 @@ void main() {
       expect(urls, isNot(contains('archive/2024/legacy.jpg')));
     });
 
-    testWidgets('PAR-A1 — RTL: the two stat tiles run activities → speakers '
+    testWidgets(
+        'PAR-A1 — RTL: the two stat tiles run activities → speakers '
         '(right → left), matching the frame', (tester) async {
       await _pump(
         tester,
@@ -262,7 +266,7 @@ void main() {
 
   group('ArchiveEdition.fromJson', () {
     test('binds the En/Ar wire names + stats', () {
-      final e = ArchiveEdition.fromJson(<String, dynamic>{
+      final e = ArchiveEdition.fromJson(const <String, dynamic>{
         'id': 'a1',
         'year': 2025,
         'titleEn': '3rd Edition',
@@ -271,8 +275,8 @@ void main() {
         'sessions': 40,
         'speakers': 60,
       });
-      expect(e.localizedTitle(true), 'النسخة الثالثة');
-      expect(e.localizedTitle(false), '3rd Edition');
+      expect(e.localizedTitle(isArabic: true), 'النسخة الثالثة');
+      expect(e.localizedTitle(isArabic: false), '3rd Edition');
       expect(e.attendees, 1200);
     });
   });

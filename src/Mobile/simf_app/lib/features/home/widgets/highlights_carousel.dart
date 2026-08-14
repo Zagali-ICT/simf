@@ -87,7 +87,7 @@ class _HighlightsCarouselState extends State<HighlightsCarousel> {
             itemBuilder: (context, i) {
               final post = widget.items[i];
               return HighlightSlide(
-                title: post.localizedTitle(widget.l10n.isArabic),
+                title: post.localizedTitle(isArabic: widget.l10n.isArabic),
                 imageUrl: AssetUrls.image(
                   widget.baseUrl,
                   AssetKind.newsImage,
@@ -106,4 +106,3 @@ class _HighlightsCarouselState extends State<HighlightsCarousel> {
     );
   }
 }
-

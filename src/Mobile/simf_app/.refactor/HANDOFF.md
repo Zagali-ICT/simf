@@ -9,6 +9,99 @@ integration tests can run). Worktree **D:/SIMF/wt-app**. Toolchain: run flutter 
 Full plan: `C:\Users\LOQ\.claude\plans\based-on-app-clean-prancy-pudding.md` (owner-approved
 2026-07-03). Program docs: `~/.claude/skills/clean-code-skills/resources/`.
 
+## 2026-08-14 — remainder-closure run (supersedes everything below)
+
+**Branch `refactor/app-clean-code-3`**, worktree **D:/swtcc**, base `c88e771b`
+(`origin/main`). Verified before starting: `git diff origin/main HEAD -- .../lib`
+is empty, so the worklist measured on the other checkout is valid against this
+base. Nothing pushed yet.
+
+Plan: `~/.claude/plans/groovy-stargazing-hearth.md` (owner-approved, eight
+recorded decisions). Per-file worklist: `.refactor/WORKLIST-2026-08-13.md` —
+2,407 rows over 591 files, merged from `flutter analyze`, `tool/conventions` and
+a 13-agent read-only audit.
+
+### The headline
+
+| Metric | Session start | Now |
+|---|---|---|
+| `flutter analyze` infos | 2137 | **1584** |
+| errors / warnings | 0 / 0 | 0 / 0 |
+| `lines_longer_than_80_chars` | 1690 | **1428** |
+| `tool/conventions` SIMF-C3 | 12 | **11** |
+| tests | 1401 | **1413** |
+| `avoid_positional_boolean_parameters` | 135 | **0** |
+| `eol_at_end_of_file` | 62 | **0** |
+| `prefer_constructors_over_static_methods` | 75 | **1** (deliberate) |
+| files over 400 lines | 15 | 12 |
+
+Every increment gated on: analyze 0 errors / 0 warnings, full suite green, and
+**every golden holding without `--update-goldens`**.
+
+### Done (15 commits)
+
+Phase 0 — worklist made durable; baseline pinned in this worktree; the audit's
+6-file coverage gap closed (`features/content/*` + `main.dart`).
+
+Phase A — providers out of screens into `data/`; `exhibition/` widgets into
+`widgets/`; `simf_page_shell` 527 -> 333 split into three re-exported groups;
+`session_detail_screen` 466 -> 420 (closed one SIMF-C3);
+`identity_verification_screen` 452 -> 397; the 3-copy 12-hour formatter and the
+3-copy day grouping unified into `core/utils`; governing docs re-dated.
+
+Phase B — the mechanical analyzer pass across every feature; the language flag
+converted from a positional bool to `isArabic:` at ~350 call sites; the
+formatter run on the touched files followed by restoring the trailing commas
+(owner-authorised, see below); and `sessions` taken through its audit rows.
+
+The sessions pass is the template for the remaining features: one search rule
+instead of a tested-but-uncalled copy and an untested shipped one, the schedule
+list made lazy, a per-rebuild map lifted into a derived provider, two hand-nested
+compositions replaced with the shared widget, one widget moved to its own file.
+
+### Three defects found and fixed while executing
+
+### Defects found and fixed while executing
+
+* **`tool/conventions` passed vacuously in any git worktree.** Its root walk-up
+  tested `Directory('.git').existsSync()`, and in a worktree `.git` is a FILE.
+  It scanned nothing and reported "No violations found". Fixed, with three
+  regression tests (checker suite 31 -> 34).
+* **`dart fix --code=use_decorated_box` is not behaviour-preserving here.**
+  `Container` insets its child by `BoxDecoration.padding`, which is the border's
+  dimensions; `DecoratedBox` does not. Caught by the share_my_contact golden
+  (2.42%, 7366px). The second conversion had no golden at all.
+
+### Next, in order
+
+1. **`lines_longer_than_80_chars`, 1428 sites** — still the bulk, but the
+   formatter's reach is exhausted: these are lines `dart format` has already
+   decided it cannot break. What remains is hand-wrapping, or a page-width
+   decision. The formatter WAS run (owner-authorised) over the 250 touched
+   files and took this from 1690 to 1428; the recipe and its hazard are in
+   CLAUDE.md section 11 — **format, then
+   `dart fix --code=require_trailing_commas`, and never expect a second format
+   run to be a no-op.**
+2. The read-audit rows: 74 DUPLICATION, 41 DOC-HEADER, 40 NAMING,
+   24 BUILD-LOGIC, then the tail. **ONE-WIDGET-PER-FILE is closed**: the three
+   heterogeneous files are split (16 widgets, 16 files, originals removed) and
+   the other 17 findings are cohesive groups that CLAUDE.md section 1 now
+   explicitly permits.
+3. Decision 5 (all 71 screen headers to the section 9 template), decision 6
+   (tokens single-use audit), decision 7 (the 35 AsyncValue conversions — a
+   behaviour change, its own phase), decision 8 (`packages/`, last).
+4. Phase E: promote each cleared rule to `error`, drop `--no-fatal-infos`.
+
+### BLOCKED
+
+`sign_up_visitor_screen` (1197) and `register_visitor_screen` (1255). Decision 1
+reopened them, but D-666 is the banked case where a green golden did NOT catch a
+face-capture regression, so they need on-device verification and `adb devices`
+is empty. Everything else in Phase A is done. Until they are split, SIMF-C3
+stays at 11 and the pipeline cannot move to `--check --strict`.
+
+---
+
 ## Program state (supersedes older handoffs)
 
 ### 2026-07-28 re-audit — the "code-complete" claim below is STALE

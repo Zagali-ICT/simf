@@ -97,9 +97,9 @@ class _SavedContactSheetState extends ConsumerState<SavedContactSheet> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
             ContactCard(
-              name: row.localizedName(isArabic),
+              name: row.localizedName(isArabic: isArabic),
               available: row.subjectAvailable,
-              jobTitle: row.localizedJobTitle(isArabic),
+              jobTitle: row.localizedJobTitle(isArabic: isArabic),
               organisation: row.organisation,
               note: row.note,
             ),

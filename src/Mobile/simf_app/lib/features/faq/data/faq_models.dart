@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:simf_app/core/utils/bilingual.dart';
 
 /// One FAQ question/answer pair (`GET /app/faq` → groups[].entries[]). Bilingual;
 /// the localized getters fall back to the other language when one side is blank.
@@ -12,24 +13,24 @@ class FaqEntry {
     required this.answerArabic,
   });
 
-  final String id;
-  final String question;
-  final String questionArabic;
-  final String answer;
-  final String answerArabic;
-
-  String localizedQuestion(bool isArabic) =>
-      _pick(isArabic, questionArabic, question);
-  String localizedAnswer(bool isArabic) =>
-      _pick(isArabic, answerArabic, answer);
-
-  static FaqEntry fromJson(Map<String, dynamic> json) => FaqEntry(
+  factory FaqEntry.fromJson(Map<String, dynamic> json) => FaqEntry(
         id: (json['id'] ?? '').toString(),
         question: (json['question'] ?? '').toString(),
         questionArabic: (json['questionArabic'] ?? '').toString(),
         answer: (json['answer'] ?? '').toString(),
         answerArabic: (json['answerArabic'] ?? '').toString(),
       );
+
+  final String id;
+  final String question;
+  final String questionArabic;
+  final String answer;
+  final String answerArabic;
+
+  String localizedQuestion({required bool isArabic}) =>
+      pickLocalized(questionArabic, question, isArabic: isArabic);
+  String localizedAnswer({required bool isArabic}) =>
+      pickLocalized(answerArabic, answer, isArabic: isArabic);
 }
 
 /// One FAQ group with its ordered active entries.
@@ -42,14 +43,7 @@ class FaqGroup {
     required this.entries,
   });
 
-  final String id;
-  final String name;
-  final String nameArabic;
-  final List<FaqEntry> entries;
-
-  String localizedName(bool isArabic) => _pick(isArabic, nameArabic, name);
-
-  static FaqGroup fromJson(Map<String, dynamic> json) => FaqGroup(
+  factory FaqGroup.fromJson(Map<String, dynamic> json) => FaqGroup(
         id: (json['id'] ?? '').toString(),
         name: (json['name'] ?? '').toString(),
         nameArabic: (json['nameArabic'] ?? '').toString(),
@@ -59,12 +53,12 @@ class FaqGroup {
             )
             .toList(),
       );
-}
 
-/// Arabic-first/English-first pick with a fall back to the populated side.
-String _pick(bool isArabic, String arabic, String english) {
-  if (isArabic) {
-    return arabic.trim().isNotEmpty ? arabic : english;
-  }
-  return english.trim().isNotEmpty ? english : arabic;
+  final String id;
+  final String name;
+  final String nameArabic;
+  final List<FaqEntry> entries;
+
+  String localizedName({required bool isArabic}) =>
+      pickLocalized(nameArabic, name, isArabic: isArabic);
 }

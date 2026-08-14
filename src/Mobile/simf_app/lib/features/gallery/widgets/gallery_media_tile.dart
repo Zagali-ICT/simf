@@ -22,7 +22,7 @@ class GalleryMediaTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final title = item.localizedTitle(isArabic);
+    final title = item.localizedTitle(isArabic: isArabic);
     final isVideo = item.kind == MediaKind.video;
     // Prefer the lighter thumbnail for the grid; fall back to the full image;
     // null when the item carries no bitmap (then the kind icon is shown).
@@ -32,8 +32,7 @@ class GalleryMediaTile extends StatelessWidget {
             ? '$baseUrl/app/media/${item.id}/image'
             : null;
     return ClipRRect(
-      borderRadius:
-          const BorderRadius.all(Radius.circular(SimfTokens.radius)),
+      borderRadius: const BorderRadius.all(Radius.circular(SimfTokens.radius)),
       child: Stack(
         fit: StackFit.expand,
         children: <Widget>[
@@ -70,4 +69,3 @@ class GalleryMediaTile extends StatelessWidget {
     );
   }
 }
-

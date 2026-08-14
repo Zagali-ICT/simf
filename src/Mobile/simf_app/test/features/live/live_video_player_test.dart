@@ -20,7 +20,7 @@ void main() {
   group('liveFullScreenOrientations (D-721 portrait-lock exception)', () {
     test('fullscreen → both landscape orientations, no portrait', () {
       expect(
-        liveFullScreenOrientations(true),
+        liveFullScreenOrientations(isFullScreen: true),
         equals(const <DeviceOrientation>[
           DeviceOrientation.landscapeLeft,
           DeviceOrientation.landscapeRight,
@@ -30,18 +30,18 @@ void main() {
 
     test('not fullscreen → restores the portrait lock only', () {
       expect(
-        liveFullScreenOrientations(false),
+        liveFullScreenOrientations(isFullScreen: false),
         equals(const <DeviceOrientation>[DeviceOrientation.portraitUp]),
       );
     });
 
     test('exiting fullscreen never leaves the device in landscape', () {
       expect(
-        liveFullScreenOrientations(false),
+        liveFullScreenOrientations(isFullScreen: false),
         isNot(contains(DeviceOrientation.landscapeLeft)),
       );
       expect(
-        liveFullScreenOrientations(false),
+        liveFullScreenOrientations(isFullScreen: false),
         isNot(contains(DeviceOrientation.landscapeRight)),
       );
     });

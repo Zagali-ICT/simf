@@ -92,7 +92,7 @@ class SessionDetailBody extends StatelessWidget {
     }
 
     final isArabic = l10n.isArabic;
-    final description = detail.localizedDescription(isArabic);
+    final description = detail.localizedDescription(isArabic: isArabic);
 
     // Owner 2026-07-14 — gate the two header actions on the session's phase:
     // the ملخص الجلسة summary exists only once the session has ENDED (a future /
@@ -195,9 +195,8 @@ class SessionDetailBody extends StatelessWidget {
             onJoin: onJoin,
             // D-750 — case-1 (open-seating) reads "register to attend"; case-2
             // (assigned-seat) keeps the default join label.
-            label: seatMap!.mode.isOpenSeating
-                ? l10n.joinOpenRegisterCta
-                : null,
+            label:
+                seatMap!.mode.isOpenSeating ? l10n.joinOpenRegisterCta : null,
           ),
         ] else if (seatMapError && phase != SessionPhase.ended) ...<Widget>[
           // #18 — an approved attendee whose seat map failed to load gets a

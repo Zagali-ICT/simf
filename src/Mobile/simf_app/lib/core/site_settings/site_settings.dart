@@ -15,6 +15,20 @@ class SiteSettings {
     this.sessionRatingEnabled = true,
   });
 
+  factory SiteSettings.fromJson(Map<String, dynamic> json) => SiteSettings(
+        registrationMessageAr:
+            json['registrationSuccessMessageAr'] as String? ?? '',
+        registrationMessageEn:
+            json['registrationSuccessMessageEn'] as String? ?? '',
+        social: SiteSocialLinks.fromJson(
+          (json['social'] as Map?)?.cast<String, dynamic>() ??
+              const <String, dynamic>{},
+        ),
+        partnerDirectoryEnabled:
+            json['partnerDirectoryEnabled'] as bool? ?? true,
+        sessionRatingEnabled: json['sessionRatingEnabled'] as bool? ?? true,
+      );
+
   final String registrationMessageAr;
   final String registrationMessageEn;
   final SiteSocialLinks social;
@@ -31,21 +45,6 @@ class SiteSettings {
   /// The welcome message for [languageCode] ('ar' → Arabic, else English).
   String messageFor(String languageCode) =>
       languageCode == 'ar' ? registrationMessageAr : registrationMessageEn;
-
-  static SiteSettings fromJson(Map<String, dynamic> json) => SiteSettings(
-        registrationMessageAr:
-            json['registrationSuccessMessageAr'] as String? ?? '',
-        registrationMessageEn:
-            json['registrationSuccessMessageEn'] as String? ?? '',
-        social: SiteSocialLinks.fromJson(
-          (json['social'] as Map?)?.cast<String, dynamic>() ??
-              const <String, dynamic>{},
-        ),
-        partnerDirectoryEnabled:
-            json['partnerDirectoryEnabled'] as bool? ?? true,
-        sessionRatingEnabled:
-            json['sessionRatingEnabled'] as bool? ?? true,
-      );
 }
 
 /// The configurable social-media URLs (null = not set → the control stays inert).
@@ -60,18 +59,11 @@ class SiteSocialLinks {
     this.snapchat,
   });
 
-  final String? facebook;
-  final String? x;
-  final String? instagram;
-  final String? linkedin;
-  final String? youtube;
-  final String? tiktok;
-  final String? snapchat;
-
   // The API serialises with camelCase (System.Text.Json), so the multi-word
   // keys arrive as `linkedIn` / `youTube` / `tikTok` — read those exact keys,
   // not all-lowercase, or the CP-set LinkedIn/YouTube/TikTok URLs silently drop.
-  static SiteSocialLinks fromJson(Map<String, dynamic> json) => SiteSocialLinks(
+  factory SiteSocialLinks.fromJson(Map<String, dynamic> json) =>
+      SiteSocialLinks(
         facebook: json['facebook'] as String?,
         x: json['x'] as String?,
         instagram: json['instagram'] as String?,
@@ -80,6 +72,14 @@ class SiteSocialLinks {
         tiktok: json['tikTok'] as String?,
         snapchat: json['snapchat'] as String?,
       );
+
+  final String? facebook;
+  final String? x;
+  final String? instagram;
+  final String? linkedin;
+  final String? youtube;
+  final String? tiktok;
+  final String? snapchat;
 }
 
 /// App-local data layer for the public site-settings (`GET /app/site-settings`).

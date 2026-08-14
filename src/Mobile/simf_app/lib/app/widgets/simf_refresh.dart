@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 
 import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart'
+    show SimfEmptyState, SimfErrorState;
+import 'package:simf_app/app/widgets/simf_states.dart'
+    show SimfEmptyState, SimfErrorState;
 
 /// Pull-to-refresh chrome. Owner rule: every data page pulls to refresh.
 /// Split out of `simf_page_shell.dart` (one widget group per file); that file
@@ -12,7 +16,8 @@ import 'package:simf_app/app/theme/tokens.dart';
 /// [AlwaysScrollableScrollPhysics] so the gesture fires even when content is
 /// short. Styled with the gold spinner on a navy puck to match the shell.
 class SimfPullToRefresh extends StatelessWidget {
-  const SimfPullToRefresh({required this.onRefresh, required this.child, super.key});
+  const SimfPullToRefresh(
+      {required this.onRefresh, required this.child, super.key,});
 
   /// Called when the user pulls to refresh; should re-fetch the page's data.
   final Future<void> Function() onRefresh;

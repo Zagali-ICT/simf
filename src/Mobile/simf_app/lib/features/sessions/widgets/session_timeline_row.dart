@@ -39,7 +39,7 @@ class SessionTimelineRow extends StatelessWidget {
       hasPublishedSummary: session.hasPublishedSummary,
       status: session.status,
     );
-    final description = session.localizedDescription(isArabic);
+    final description = session.localizedDescription(isArabic: isArabic);
     final descriptionText = description == null
         ? null
         : Text(
@@ -90,7 +90,7 @@ class SessionTimelineRow extends StatelessWidget {
                       children: <Widget>[
                         Expanded(
                           child: Text(
-                            session.localizedTitle(isArabic),
+                            session.localizedTitle(isArabic: isArabic),
                             textAlign: TextAlign.start,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
@@ -130,4 +130,3 @@ class SessionTimelineRow extends StatelessWidget {
     );
   }
 }
-

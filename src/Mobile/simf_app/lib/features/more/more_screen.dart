@@ -76,9 +76,10 @@ class MoreScreen extends ConsumerWidget {
           children: <Widget>[
             if (signedIn) ...<Widget>[
               MoreProfileCard(
-                name: profile?.identity.localizedName(l10n.isArabic) ??
-                    auth.session.user.displayName,
-                tier: profile?.identity.localizedTier(l10n.isArabic),
+                name:
+                    profile?.identity.localizedName(isArabic: l10n.isArabic) ??
+                        auth.session.user.displayName,
+                tier: profile?.identity.localizedTier(isArabic: l10n.isArabic),
                 // My Area IS the Profile tab (RouteNames.myArea). Use go, not push,
                 // so this switches to the existing tab instead of stacking a second
                 // My Area instance on top — that duplicate re-ran its own dashboard
@@ -189,7 +190,8 @@ class MoreScreen extends ConsumerWidget {
               const SizedBox(height: SimfTokens.space6),
               Center(
                 child: TextButton(
-                  onPressed: () => unawaited(confirmAndSignOut(context, ref, l10n)),
+                  onPressed: () =>
+                      unawaited(confirmAndSignOut(context, ref, l10n)),
                   child: Text(
                     l10n.signOutLink,
                     style: SimfTokens.bodyBeigeMd,

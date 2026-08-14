@@ -35,9 +35,8 @@ class NotificationCard extends StatelessWidget {
         ? null
         : _timeFormat.format(saudiOf(item.createdAt!));
     // Frame 758:2491 — "{time} · {day}" order.
-    final stamp = time == null
-        ? null
-        : (dayLabel.isEmpty ? time : '$time · $dayLabel');
+    final stamp =
+        time == null ? null : (dayLabel.isEmpty ? time : '$time · $dayLabel');
     return Padding(
       padding: const EdgeInsets.only(bottom: SimfTokens.space2),
       // Frame 758:2491 — every card is the navyDeep fill, borderless; the
@@ -68,12 +67,12 @@ class NotificationCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         Text(
-                          item.localizedTitle(isArabic),
+                          item.localizedTitle(isArabic: isArabic),
                           style: SimfTokens.labelWhiteSemiboldLg,
                         ),
                         const SizedBox(height: SimfTokens.gap6),
                         Text(
-                          item.localizedBody(isArabic),
+                          item.localizedBody(isArabic: isArabic),
                           style: SimfTokens.bodyBeigeSm15,
                         ),
                         if (stamp != null) ...<Widget>[
@@ -101,4 +100,3 @@ class NotificationCard extends StatelessWidget {
     );
   }
 }
-

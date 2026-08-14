@@ -88,7 +88,7 @@ class MeetingCard extends StatelessWidget {
   // Row 1 — the kind headline over the rank line, with the flag badge at the end.
   Widget _headlineRow() {
     final flag = countryFlagEmoji(item.countryId);
-    final rank = item.localizedRank(isArabic)?.trim() ?? '';
+    final rank = item.localizedRank(isArabic: isArabic)?.trim() ?? '';
     return Container(
       padding: const EdgeInsets.only(bottom: SimfTokens.space2),
       decoration: const BoxDecoration(
@@ -152,11 +152,12 @@ class MeetingCard extends StatelessWidget {
       ),
       child: Row(
         children: <Widget>[
-          SpeakerPhotoTile(imageUrl: photoUrl, size: SimfTokens.meetingCardSizeLg),
+          SpeakerPhotoTile(
+              imageUrl: photoUrl, size: SimfTokens.meetingCardSizeLg,),
           const SizedBox(width: SimfTokens.space2),
           Flexible(
             child: Text(
-              item.localizedSubtitle(isArabic),
+              item.localizedSubtitle(isArabic: isArabic),
               textAlign: TextAlign.start,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -243,4 +244,3 @@ class MeetingCard extends StatelessWidget {
     return isToday ? l10n.requestTimeToday(date) : l10n.requestDate(date);
   }
 }
-

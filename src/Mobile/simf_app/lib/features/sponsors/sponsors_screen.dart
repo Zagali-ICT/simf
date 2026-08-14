@@ -7,21 +7,11 @@ import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/core/utils/refresh.dart';
 import 'package:simf_app/features/sponsors/data/sponsor_models.dart';
-import 'package:simf_app/features/sponsors/data/sponsors_endpoints.dart';
+import 'package:simf_app/features/sponsors/data/sponsors_repository.dart';
 import 'package:simf_app/features/sponsors/widgets/sponsor_card.dart';
 import 'package:simf_app/features/sponsors/widgets/sponsor_grid.dart';
 import 'package:simf_app/features/sponsors/widgets/sponsor_logo.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-/// `GET /app/sponsors` → the tier-grouped sponsors (public, D-199).
-final sponsorGroupsProvider =
-    FutureProvider.autoDispose<List<SponsorTierGroup>>((ref) async {
-  final client = ref.watch(simfApiClientProvider);
-  return client.get<List<SponsorTierGroup>>(
-    SponsorsEndpoints.list,
-    decodeData: SponsorTierGroup.listFromData,
-  );
-});
 
 /// Page 023 — الرعاة · Sponsors (#23, `/sponsors`, Guest+), rebuilt to the
 /// KSA-Project Figma frame **922:2824 "Shepherds"** on the shared navy shell.
@@ -95,48 +85,50 @@ class SponsorsScreen extends ConsumerWidget {
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.all(SimfTokens.space4),
               children: <Widget>[
-              for (var i = 0; i < visibleGroups.length; i++) ...<Widget>[
-                if (i > 0) const SizedBox(height: SimfTokens.space6),
-                SimfSectionHeader(
-                  title: l10n.sponsorTierLabel(
-                    visibleGroups[i].tier,
-                    visibleGroups[i].tierName,
-                  ),
-                ),
-                const SizedBox(height: SimfTokens.space4),
-                // Frame 922:2824 — three bands: the top tier is the gold hero
-                // card, the lowest tier is a compact logo-tile grid, and any tier
-                // in between is a navy premium card (position-based so it is
-                // faithful for any tier naming, not just Platinum/Gold/Silver).
-                if (i == lastIndex && visibleGroups.length > 1)
-                  SponsorGrid(
-                    sponsors: visibleGroups[i].sponsors,
-                    baseUrl: baseUrl,
-                    isArabic: isArabic,
-                  )
-                else
-                  for (final sponsor in visibleGroups[i].sponsors) ...<Widget>[
-                    SponsorCard(
-                      id: sponsor.id,
-                      baseUrl: baseUrl,
-                      name: sponsor.localizedName(isArabic),
-                      badge: sponsorBadgeText(sponsor, isArabic),
-                      // D-432 — prefer the authored tagline (Figma's "الراعي
-                      // الاستراتيجي · …" line); fall back to the website link.
-                      secondary:
-                          sponsor.localizedTagline(isArabic) ?? sponsor.url,
-                      hero: i == 0,
-                      // Wave 3 — tap → the sponsor detail (Figma 1439:11826).
-                      onTap: () => context.pushNamed(
-                        RouteNames.sponsorDetail,
-                        pathParameters: <String, String>{
-                          RouteParams.sponsorId: sponsor.id,
-                        },
-                      ),
+                for (var i = 0; i < visibleGroups.length; i++) ...<Widget>[
+                  if (i > 0) const SizedBox(height: SimfTokens.space6),
+                  SimfSectionHeader(
+                    title: l10n.sponsorTierLabel(
+                      visibleGroups[i].tier,
+                      visibleGroups[i].tierName,
                     ),
-                    const SizedBox(height: SimfTokens.space4),
-                  ],
-              ],
+                  ),
+                  const SizedBox(height: SimfTokens.space4),
+                  // Frame 922:2824 — three bands: the top tier is the gold hero
+                  // card, the lowest tier is a compact logo-tile grid, and any tier
+                  // in between is a navy premium card (position-based so it is
+                  // faithful for any tier naming, not just Platinum/Gold/Silver).
+                  if (i == lastIndex && visibleGroups.length > 1)
+                    SponsorGrid(
+                      sponsors: visibleGroups[i].sponsors,
+                      baseUrl: baseUrl,
+                      isArabic: isArabic,
+                    )
+                  else
+                    for (final sponsor
+                        in visibleGroups[i].sponsors) ...<Widget>[
+                      SponsorCard(
+                        id: sponsor.id,
+                        baseUrl: baseUrl,
+                        name: sponsor.localizedName(isArabic: isArabic),
+                        badge: sponsorBadgeText(sponsor, isArabic: isArabic),
+                        // D-432 — prefer the authored tagline (Figma's "الراعي
+                        // الاستراتيجي · …" line); fall back to the website link.
+                        secondary:
+                            sponsor.localizedTagline(isArabic: isArabic) ??
+                                sponsor.url,
+                        hero: i == 0,
+                        // Wave 3 — tap → the sponsor detail (Figma 1439:11826).
+                        onTap: () => context.pushNamed(
+                          RouteNames.sponsorDetail,
+                          pathParameters: <String, String>{
+                            RouteParams.sponsorId: sponsor.id,
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: SimfTokens.space4),
+                    ],
+                ],
               ],
             ),
           );

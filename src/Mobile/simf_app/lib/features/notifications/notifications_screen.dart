@@ -257,8 +257,8 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     if (q.isNotEmpty) {
       it = it.where(
         (n) =>
-            n.localizedTitle(isArabic).toLowerCase().contains(q) ||
-            n.localizedBody(isArabic).toLowerCase().contains(q),
+            n.localizedTitle(isArabic: isArabic).toLowerCase().contains(q) ||
+            n.localizedBody(isArabic: isArabic).toLowerCase().contains(q),
       );
     }
     return it.toList(growable: false);

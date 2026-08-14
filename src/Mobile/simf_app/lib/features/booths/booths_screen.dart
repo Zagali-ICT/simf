@@ -102,9 +102,9 @@ class _BoothsScreenState extends ConsumerState<BoothsScreen> {
     }
     return _booths.where((booth) {
       final haystack = <String?>[
-        booth.localizedName(isArabic),
-        booth.localizedExhibitor(isArabic),
-        booth.localizedSector(isArabic),
+        booth.localizedName(isArabic: isArabic),
+        booth.localizedExhibitor(isArabic: isArabic),
+        booth.localizedSector(isArabic: isArabic),
         booth.code,
       ].whereType<String>().join(' ').toLowerCase();
       return haystack.contains(q);

@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:simf_app/core/utils/bilingual.dart';
 
 /// Media kind — mirrors `MediaKind` (int wire: Image=0, Video=1).
 enum MediaKind {
@@ -37,19 +38,7 @@ class MediaItem {
     this.hasThumbnail = false,
   });
 
-  final String id;
-  final MediaKind kind;
-  final String? title;
-  final String? titleArabic;
-  final String? album;
-  final String? albumArabic;
-  final bool hasImage;
-  final bool hasThumbnail;
-
-  String? localizedTitle(bool isArabic) => _pick(titleArabic, title, isArabic);
-  String? localizedAlbum(bool isArabic) => _pick(albumArabic, album, isArabic);
-
-  static MediaItem fromJson(Map<String, dynamic> json) => MediaItem(
+  factory MediaItem.fromJson(Map<String, dynamic> json) => MediaItem(
         id: json['id'] as String? ?? '',
         kind: MediaKind.fromJson(json['kind']),
         title: json['title'] as String?,
@@ -59,11 +48,18 @@ class MediaItem {
         hasImage: (json['imageUrl'] as String?)?.isNotEmpty ?? false,
         hasThumbnail: (json['thumbnailUrl'] as String?)?.isNotEmpty ?? false,
       );
-}
 
-String? _pick(String? arabic, String? english, bool isArabic) {
-  final ar = arabic?.trim() ?? '';
-  final en = english?.trim() ?? '';
-  final value = isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
-  return value.isEmpty ? null : value;
+  final String id;
+  final MediaKind kind;
+  final String? title;
+  final String? titleArabic;
+  final String? album;
+  final String? albumArabic;
+  final bool hasImage;
+  final bool hasThumbnail;
+
+  String? localizedTitle({required bool isArabic}) =>
+      pickLocalizedOrNull(titleArabic, title, isArabic: isArabic);
+  String? localizedAlbum({required bool isArabic}) =>
+      pickLocalizedOrNull(albumArabic, album, isArabic: isArabic);
 }

@@ -147,4 +147,3 @@ class _MyContactsScreenState extends ConsumerState<MyContactsScreen> {
     );
   }
 }
-

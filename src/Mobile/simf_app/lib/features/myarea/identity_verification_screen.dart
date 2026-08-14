@@ -3,8 +3,7 @@ import 'dart:io' show Platform;
 import 'dart:typed_data';
 
 import 'package:camera/camera.dart';
-import 'package:flutter/foundation.dart'
-    show defaultTargetPlatform, kIsWeb;
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show DeviceOrientation;
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
@@ -15,6 +14,7 @@ import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/features/myarea/data/liveness.dart';
 import 'package:simf_app/features/myarea/widgets/identity_capture_view.dart';
 import 'package:simf_app/features/myarea/widgets/identity_fallback_view.dart';
+import 'package:simf_app/features/myarea/widgets/identity_preview_view.dart';
 
 // The liveness step model + pure gate + prompt helper live in `data/liveness.dart`
 // (unit-testable without a camera); re-exported so existing imports of this
@@ -277,11 +277,17 @@ class _IdentityVerificationScreenState
   Widget _stepLeading() {
     switch (livenessPromptDirection(_step)) {
       case LivenessPromptDirection.none:
-        return const Text('😊', style: TextStyle(fontSize: SimfTokens.identityVerificationScreenFontSize));
+        return const Text('😊',
+            style: TextStyle(
+                fontSize: SimfTokens.identityVerificationScreenFontSize,),);
       case LivenessPromptDirection.right:
-        return const Icon(Icons.east, color: SimfTokens.accent, size: SimfTokens.identityVerificationScreenSize);
+        return const Icon(Icons.east,
+            color: SimfTokens.accent,
+            size: SimfTokens.identityVerificationScreenSize,);
       case LivenessPromptDirection.left:
-        return const Icon(Icons.west, color: SimfTokens.accent, size: SimfTokens.identityVerificationScreenSize);
+        return const Icon(Icons.west,
+            color: SimfTokens.accent,
+            size: SimfTokens.identityVerificationScreenSize,);
     }
   }
 
@@ -352,7 +358,14 @@ class _IdentityVerificationScreenState
     final l10n = AppL10n.of(context);
     final preview = _preview;
     if (preview != null) {
-      return _previewView(preview, l10n);
+      return IdentityPreviewView(
+        bytes: preview,
+        l10n: l10n,
+        onSave: () => Navigator.of(context).pop<CapturedSelfie>(
+          (bytes: preview, filename: _forwardName),
+        ),
+        onRetake: _retake,
+      );
     }
     return Scaffold(
       backgroundColor: SimfTokens.navy,
@@ -386,67 +399,4 @@ class _IdentityVerificationScreenState
       ),
     );
   }
-
-  Widget _previewView(Uint8List bytes, AppL10n l10n) {
-    return Scaffold(
-      backgroundColor: SimfTokens.black,
-      body: Stack(
-        fit: StackFit.expand,
-        children: <Widget>[
-          Image.memory(bytes, fit: BoxFit.contain),
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: Container(
-              padding: EdgeInsets.only(
-                left: SimfTokens.space4,
-                right: SimfTokens.space4,
-                top: SimfTokens.space8,
-                bottom: MediaQuery.of(context).padding.bottom + SimfTokens.space4,
-              ),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    SimfTokens.transparent,
-                    SimfTokens.navy.withValues(alpha: 0.9),
-                  ],
-                ),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: () {
-                        Navigator.of(context).pop<CapturedSelfie>(
-                          (bytes: bytes, filename: _forwardName),
-                        );
-                      },
-                      child: Text(l10n.saveLabel),
-                    ),
-                  ),
-                  const SizedBox(height: SimfTokens.space2),
-                  SizedBox(
-                    width: double.infinity,
-                    child: TextButton(
-                      onPressed: _retake,
-                      style: TextButton.styleFrom(
-                        foregroundColor: SimfTokens.beigeBorder,
-                      ),
-                      child: Text(l10n.retryLabel),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
 }

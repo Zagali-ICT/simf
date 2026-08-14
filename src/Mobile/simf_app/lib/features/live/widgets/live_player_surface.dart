@@ -69,4 +69,3 @@ class _LivePlayerSurfaceState extends ConsumerState<LivePlayerSurface> {
     );
   }
 }
-

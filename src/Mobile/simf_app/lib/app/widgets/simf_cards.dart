@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/app_assets.dart';
 import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart' show SimfEmptyState;
+import 'package:simf_app/app/widgets/simf_states.dart' show SimfEmptyState;
 import 'package:simf_app/app/widgets/simf_svg_icon.dart';
 
 /// The card / section-header / link-row / list-row surfaces every page
@@ -120,7 +122,8 @@ class SimfPageNote extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         // Sized like the shell's other inline glyphs (cf. SimfEmptyState).
-        const Icon(Icons.info_outline, size: SimfTokens.simfCardsSizeSm, color: SimfTokens.beigeBorder),
+        const Icon(Icons.info_outline,
+            size: SimfTokens.simfCardsSizeSm, color: SimfTokens.beigeBorder,),
         const SizedBox(width: SimfTokens.space2),
         Expanded(child: Text(text, style: SimfTokens.bodyBeigeSm)),
       ],

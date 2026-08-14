@@ -53,6 +53,27 @@ class NotificationItem {
     this.group,
   });
 
+  factory NotificationItem.fromJson(Map<String, dynamic> json) {
+    final readAtRaw = json['readAt'] as String?;
+    final createdAtRaw = json['createdAt'] as String?;
+    return NotificationItem(
+      id: json['id'] as String? ?? '',
+      kind: json['kind'] as String? ?? '',
+      title: json['title'] as String? ?? '',
+      titleArabic: json['titleArabic'] as String? ?? '',
+      body: json['body'] as String? ?? '',
+      bodyArabic: json['bodyArabic'] as String? ?? '',
+      severity: NotificationSeverity.fromName(json['severity'] as String?),
+      isRead: json['isRead'] as bool? ?? false,
+      readAt: readAtRaw == null ? null : parseWireOrNull(readAtRaw),
+      createdAt: createdAtRaw == null ? null : parseWireOrNull(createdAtRaw),
+      relatedEntityType: json['relatedEntityType'] as String?,
+      relatedEntityId: json['relatedEntityId'] as String?,
+      clickUrl: json['clickUrl'] as String?,
+      group: json['group'] as String?,
+    );
+  }
+
   final String id;
   final String kind;
   final String title;
@@ -77,13 +98,13 @@ class NotificationItem {
   /// Meetings / Ratings / Account / Vip); null on pre-migration rows.
   final String? group;
 
-  String localizedTitle(bool isArabic) {
+  String localizedTitle({required bool isArabic}) {
     final ar = titleArabic.trim();
     final en = title.trim();
     return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
   }
 
-  String localizedBody(bool isArabic) {
+  String localizedBody({required bool isArabic}) {
     final ar = bodyArabic.trim();
     final en = body.trim();
     return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
@@ -107,28 +128,6 @@ class NotificationItem {
         clickUrl: clickUrl,
         group: group,
       );
-
-  static NotificationItem fromJson(Map<String, dynamic> json) {
-    final readAtRaw = json['readAt'] as String?;
-    final createdAtRaw = json['createdAt'] as String?;
-    return NotificationItem(
-      id: json['id'] as String? ?? '',
-      kind: json['kind'] as String? ?? '',
-      title: json['title'] as String? ?? '',
-      titleArabic: json['titleArabic'] as String? ?? '',
-      body: json['body'] as String? ?? '',
-      bodyArabic: json['bodyArabic'] as String? ?? '',
-      severity: NotificationSeverity.fromName(json['severity'] as String?),
-      isRead: json['isRead'] as bool? ?? false,
-      readAt: readAtRaw == null ? null : parseWireOrNull(readAtRaw),
-      createdAt:
-          createdAtRaw == null ? null : parseWireOrNull(createdAtRaw),
-      relatedEntityType: json['relatedEntityType'] as String?,
-      relatedEntityId: json['relatedEntityId'] as String?,
-      clickUrl: json['clickUrl'] as String?,
-      group: json['group'] as String?,
-    );
-  }
 
   /// Reads the `GridPage<NotificationDto> = { items: [...] }` envelope into the
   /// notification list.

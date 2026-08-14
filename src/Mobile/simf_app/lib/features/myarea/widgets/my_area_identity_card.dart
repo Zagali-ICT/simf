@@ -32,7 +32,9 @@ class MyAreaIdentityCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: SimfTokens.navyDeep,
         borderRadius: BorderRadius.circular(SimfTokens.radius),
-        border: Border.all(color: SimfTokens.accent, width: SimfTokens.myAreaIdentityCardWidthSm),
+        border: Border.all(
+            color: SimfTokens.accent,
+            width: SimfTokens.myAreaIdentityCardWidthSm,),
       ),
       child: Row(
         children: <Widget>[
@@ -79,7 +81,9 @@ class MyAreaIdentityCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: SimfTokens.navy,
                   borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-                  border: Border.all(color: SimfTokens.accent, width: SimfTokens.myAreaIdentityCardWidthMd),
+                  border: Border.all(
+                      color: SimfTokens.accent,
+                      width: SimfTokens.myAreaIdentityCardWidthMd,),
                 ),
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
@@ -114,4 +118,3 @@ class MyAreaIdentityCard extends StatelessWidget {
     );
   }
 }
-

@@ -109,4 +109,3 @@ class AttachmentField extends StatelessWidget {
     );
   }
 }
-

@@ -8,10 +8,12 @@ SessionListItem _session({
   String title = 'Session',
   String code = 'S-1',
   String? description,
+  SessionType? type,
 }) {
   return SessionListItem(
     id: id,
     code: code,
+    type: type,
     title: title,
     titleArabic: '',
     hallId: 'h1',
@@ -49,7 +51,7 @@ void main() {
 
   group('SessionListItem.fromJson', () {
     test('binds the real wire field names incl. the D-271 speaker fields', () {
-      final item = SessionListItem.fromJson(<String, dynamic>{
+      final item = SessionListItem.fromJson(const <String, dynamic>{
         'id': 's1',
         'code': 'OP-1',
         'title': 'Opening',
@@ -83,10 +85,10 @@ void main() {
       });
 
       expect(item.id, 's1');
-      expect(item.localizedTitle(true), 'الافتتاح');
-      expect(item.localizedTitle(false), 'Opening');
-      expect(item.localizedHall(false), 'Main Hall');
-      expect(item.localizedCategory(true), 'جلسة رئيسية');
+      expect(item.localizedTitle(isArabic: true), 'الافتتاح');
+      expect(item.localizedTitle(isArabic: false), 'Opening');
+      expect(item.localizedHall(isArabic: false), 'Main Hall');
+      expect(item.localizedCategory(isArabic: true), 'جلسة رئيسية');
       expect(item.status, SessionStatus.published);
       expect(item.hasPublishedSummary, isTrue);
       // Saudi wall-clock carries no zone, so a decoded value must NOT be
@@ -96,18 +98,18 @@ void main() {
 
       expect(item.speakers, hasLength(1));
       final speaker = item.speakers.single;
-      expect(speaker.localizedName(false), 'Dr Reef');
+      expect(speaker.localizedName(isArabic: false), 'Dr Reef');
       expect(speaker.role, SessionSpeakerRole.host);
       expect(speaker.countryId, 682);
-      expect(speaker.localizedCountry(true), 'السعودية');
+      expect(speaker.localizedCountry(isArabic: true), 'السعودية');
       expect(speaker.photoRelativePath, '/media/sp1.jpg');
       // Owner 2026-07-19 — the speaker rank/title localizes AR/EN.
-      expect(speaker.localizedTitle(true), 'كبير العلماء');
-      expect(speaker.localizedTitle(false), 'Chief Scientist');
+      expect(speaker.localizedTitle(isArabic: true), 'كبير العلماء');
+      expect(speaker.localizedTitle(isArabic: false), 'Chief Scientist');
     });
 
     test('a missing speakers array decodes to an empty list (never null)', () {
-      final item = SessionListItem.fromJson(<String, dynamic>{
+      final item = SessionListItem.fromJson(const <String, dynamic>{
         'id': 's2',
         'code': 'X',
         'title': 'No speakers',
@@ -115,8 +117,8 @@ void main() {
         'end': '2026-11-23T07:00:00Z',
       });
       expect(item.speakers, isEmpty);
-      expect(item.localizedDescription(false), isNull);
-      expect(item.localizedCategory(false), isNull);
+      expect(item.localizedDescription(isArabic: false), isNull);
+      expect(item.localizedCategory(isArabic: false), isNull);
       // Append-only wire default: absent hasPublishedSummary decodes to false.
       expect(item.hasPublishedSummary, isFalse);
     });
@@ -126,7 +128,7 @@ void main() {
       // Unix epoch, so a broken contract rendered 03:00 AM on every agenda row
       // with no error and no empty state. It must fail loudly instead.
       expect(
-        () => SessionListItem.fromJson(<String, dynamic>{
+        () => SessionListItem.fromJson(const <String, dynamic>{
           'id': 's3',
           'code': 'X',
           'title': 'No start',
@@ -138,7 +140,7 @@ void main() {
 
     test('an unparseable start surfaces a decode error', () {
       expect(
-        () => SessionListItem.fromJson(<String, dynamic>{
+        () => SessionListItem.fromJson(const <String, dynamic>{
           'id': 's4',
           'code': 'X',
           'title': 'Bad start',
@@ -152,7 +154,7 @@ void main() {
 
   group('SessionsPage.fromJson', () {
     test('reads the items array from the envelope data', () {
-      final page = SessionsPage.fromJson(<String, dynamic>{
+      final page = SessionsPage.fromJson(const <String, dynamic>{
         'items': <dynamic>[
           <String, dynamic>{
             'id': 'a',
@@ -167,7 +169,7 @@ void main() {
 
     test('a malformed payload yields an empty page', () {
       expect(SessionsPage.fromJson(null).items, isEmpty);
-      expect(SessionsPage.fromJson(<String, dynamic>{}).items, isEmpty);
+      expect(SessionsPage.fromJson(const <String, dynamic>{}).items, isEmpty);
     });
   });
 
@@ -240,7 +242,8 @@ void main() {
   });
 
   group('distinctLocalDays', () {
-    test('groups typed items by local day, ascending, deduped, at midnight', () {
+    test('groups typed items by local day, ascending, deduped, at midnight',
+        () {
       final days = distinctLocalDays<DateTime>(
         <DateTime>[
           DateTime(2026, 11, 25, 12),
@@ -287,6 +290,83 @@ void main() {
         item.phase(DateTime.utc(2026, 11, 24, 11)),
         SessionPhase.ended,
       );
+    });
+  });
+
+  group('sessionMatchesQuery + sessionsForDay', () {
+    // These two are the rule the PROGRAMME SCREEN runs. filterSessions was
+    // tested and had no production caller, while the screen carried its own
+    // copy of the predicate untested; extracting one definition is what makes
+    // these tests cover what ships.
+    final talk = _session(
+      id: 'talk',
+      start: DateTime.utc(2026, 11, 24, 9),
+      title: 'Naval logistics',
+      code: 'S-11',
+      description: 'Supply chains at sea',
+    );
+    final workshop = _session(
+      id: 'workshop',
+      start: DateTime.utc(2026, 11, 24, 11),
+      title: 'Sonar workshop',
+      code: 'W-2',
+      type: SessionType.workshop,
+    );
+
+    ProgrammeDay dayOf(List<SessionListItem> sessions) => ProgrammeDay(
+      id: 'd1',
+      date: DateTime.utc(2026, 11, 24),
+      title: 'Day one',
+      titleArabic: 'اليوم الأول',
+      displayOrder: 1,
+      hasImage: false,
+      sessions: sessions,
+    );
+
+    test('an empty or blank query matches everything', () {
+      expect(sessionMatchesQuery(talk, ''), isTrue);
+      expect(sessionMatchesQuery(talk, '   '), isTrue);
+    });
+
+    test('matches the title, the description and the code', () {
+      expect(sessionMatchesQuery(talk, 'logistics'), isTrue);
+      expect(sessionMatchesQuery(talk, 'supply'), isTrue);
+      expect(sessionMatchesQuery(talk, 'S-11'), isTrue);
+      expect(sessionMatchesQuery(talk, 'sonar'), isFalse);
+    });
+
+    test('matching ignores case and surrounding space', () {
+      expect(sessionMatchesQuery(talk, '  NAVAL  '), isTrue);
+    });
+
+    test('sessionsForDay with no filters returns the day in its own order', () {
+      final result = sessionsForDay(dayOf(<SessionListItem>[talk, workshop]));
+      expect(result.map((s) => s.id), <String>['talk', 'workshop']);
+    });
+
+    test('sessionsForDay applies the type tab', () {
+      final result = sessionsForDay(
+        dayOf(<SessionListItem>[talk, workshop]),
+        type: SessionType.workshop,
+      );
+      expect(result.map((s) => s.id), <String>['workshop']);
+    });
+
+    test('sessionsForDay applies the search box', () {
+      final result = sessionsForDay(
+        dayOf(<SessionListItem>[talk, workshop]),
+        query: 'sonar',
+      );
+      expect(result.map((s) => s.id), <String>['workshop']);
+    });
+
+    test('the type tab and the search box compose', () {
+      final result = sessionsForDay(
+        dayOf(<SessionListItem>[talk, workshop]),
+        type: SessionType.workshop,
+        query: 'logistics',
+      );
+      expect(result, isEmpty);
     });
   });
 }

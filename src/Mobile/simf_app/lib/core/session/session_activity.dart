@@ -1,4 +1,8 @@
+import 'package:flutter/cupertino.dart' show Listener;
+import 'package:flutter/material.dart' show Listener;
+import 'package:flutter/widgets.dart' show Listener;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/core/session/session_guard.dart' show SessionGuard;
 
 /// D-726 (owner item 11) — tracks the last moment the user did something the
 /// [SessionGuard] should treat as activity: a screen touch (wired app-wide in

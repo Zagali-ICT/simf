@@ -24,8 +24,9 @@ class GatePicker extends StatelessWidget {
   final OperatorGate gate;
   final ValueChanged<OperatorGate> onGate;
 
-  static String label(OperatorGate gate, AppL10n l10n, {required bool isArabic}) {
-    final name = gate.localizedName(isArabic);
+  static String label(OperatorGate gate, AppL10n l10n,
+      {required bool isArabic,}) {
+    final name = gate.localizedName(isArabic: isArabic);
     return gate.isActive ? name : '$name — ${l10n.gateInactiveTag}';
   }
 

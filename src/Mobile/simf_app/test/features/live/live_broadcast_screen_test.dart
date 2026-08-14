@@ -13,7 +13,7 @@ import 'package:simf_app/features/live/data/live_models.dart';
 import 'package:simf_app/features/live/data/live_repository.dart';
 import 'package:simf_app/features/live/live_broadcast_screen.dart';
 import 'package:simf_app/features/live/widgets/live_badges.dart';
-import 'package:simf_app/features/live/widgets/live_content.dart';
+import 'package:simf_app/features/live/widgets/live_notice_banner.dart';
 import 'package:simf_app/features/live/widgets/live_player_surface.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';

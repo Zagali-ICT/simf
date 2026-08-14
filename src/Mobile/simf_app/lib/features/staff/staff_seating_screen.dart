@@ -168,7 +168,8 @@ class _StaffSeatingScreenState extends ConsumerState<StaffSeatingScreen> {
         child: ListView(
           children: <Widget>[
             Text(
-              map.localizedSessionTitle(l10n.isArabic) ?? l10n.staffSeatingTitle,
+              map.localizedSessionTitle(isArabic: l10n.isArabic) ??
+                  l10n.staffSeatingTitle,
               textAlign: TextAlign.center,
               style: SimfTokens.labelWhiteBoldTitle,
             ),
@@ -259,8 +260,8 @@ class _StaffSeatingScreenState extends ConsumerState<StaffSeatingScreen> {
               label: l10n.staffSeatingGuest,
               // A VVIP protocol seat has no registration: the administrator's
               // manual note IS the occupant record.
-              value: result.localizedGuestHint(l10n.isArabic) ??
-                  result.localizedName(l10n.isArabic),
+              value: result.localizedGuestHint(isArabic: l10n.isArabic) ??
+                  result.localizedName(isArabic: l10n.isArabic),
             ),
             DeskRow(
               label: _tierLabel(l10n, result.tier),
@@ -305,4 +306,3 @@ class _StaffSeatingScreenState extends ConsumerState<StaffSeatingScreen> {
         SeatTier.normal => l10n.seatTierNormal,
       };
 }
-

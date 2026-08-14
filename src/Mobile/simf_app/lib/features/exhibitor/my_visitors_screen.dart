@@ -131,8 +131,7 @@ class _MyVisitorsScreenState extends ConsumerState<MyVisitorsScreen> {
         // +1 leading row: the BUG-025 "these are booth scans, not My Contacts"
         // note, scrolled with the list so it never steals viewport height.
         itemCount: _visitors.length + 1,
-        separatorBuilder: (_, __) =>
-            const SizedBox(height: SimfTokens.space3),
+        separatorBuilder: (_, __) => const SizedBox(height: SimfTokens.space3),
         itemBuilder: (context, index) {
           if (index == 0) {
             return SimfPageNote(text: l10n.myVisitorsNote);
@@ -144,11 +143,11 @@ class _MyVisitorsScreenState extends ConsumerState<MyVisitorsScreen> {
           return InkWell(
             onTap: () => unawaited(_openDetail(v)),
             child: ContactCard(
-              name: card.localizedName(isArabic),
+              name: card.localizedName(isArabic: isArabic),
               available: card.available,
-              jobTitle: card.localizedJobTitle(isArabic),
-              organisation: card.localizedOrganisation(isArabic),
-              country: card.localizedCountry(isArabic),
+              jobTitle: card.localizedJobTitle(isArabic: isArabic),
+              organisation: card.localizedOrganisation(isArabic: isArabic),
+              country: card.localizedCountry(isArabic: isArabic),
               email: card.email,
               saudiMobile: card.saudiMobile,
               internationalMobile: card.internationalMobile,

@@ -40,7 +40,7 @@ class _RequestCardState extends State<RequestCard> {
     final item = widget.item;
     final l10n = widget.l10n;
     final statusColor = requestStatusColor(item.status);
-    final subtitle = item.localizedSubtitle(widget.isArabic);
+    final subtitle = item.localizedSubtitle(isArabic: widget.isArabic);
 
     return Container(
       decoration: BoxDecoration(
@@ -174,7 +174,9 @@ class _RequestCardState extends State<RequestCard> {
               alignment: AlignmentDirectional.centerEnd,
               child: OutlinedButton.icon(
                 onPressed: widget.onCancel,
-                icon: const Icon(Icons.close, size: SimfTokens.requestCardSizeSm, color: SimfTokens.danger),
+                icon: const Icon(Icons.close,
+                    size: SimfTokens.requestCardSizeSm,
+                    color: SimfTokens.danger,),
                 label: Text(
                   l10n.requestCancel,
                   style: SimfTokens.bodyDanger,
@@ -223,4 +225,3 @@ IconData _kindIcon(AppRequestKind kind) {
       return Icons.person_outline;
   }
 }
-

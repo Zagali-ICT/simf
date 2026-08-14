@@ -25,6 +25,15 @@ class OperatorGate {
     required this.isActive,
   });
 
+  factory OperatorGate.fromJson(Map<String, dynamic> json) => OperatorGate(
+        gateId: json['gateId'] as String? ?? '',
+        code: json['code'] as String? ?? '',
+        name: json['name'] as String? ?? '',
+        nameArabic: json['nameArabic'] as String? ?? '',
+        directionMode: _directionModeFromWire(json['directionMode']),
+        isActive: json['isActive'] as bool? ?? false,
+      );
+
   final String gateId;
   final String code;
   final String name;
@@ -35,20 +44,11 @@ class OperatorGate {
   final GateDirectionMode directionMode;
   final bool isActive;
 
-  String localizedName(bool isArabic) {
+  String localizedName({required bool isArabic}) {
     final ar = nameArabic.trim();
     final en = name.trim();
     return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
   }
-
-  static OperatorGate fromJson(Map<String, dynamic> json) => OperatorGate(
-        gateId: json['gateId'] as String? ?? '',
-        code: json['code'] as String? ?? '',
-        name: json['name'] as String? ?? '',
-        nameArabic: json['nameArabic'] as String? ?? '',
-        directionMode: _directionModeFromWire(json['directionMode']),
-        isActive: json['isActive'] as bool? ?? false,
-      );
 
   /// Decodes `DirectionMode` (In=0, Out=1, Both=2); anything else → `both`
   /// (the safe operator-switchable default).
@@ -83,7 +83,7 @@ class GateScanUserProfile {
   final String displayNameArabic;
   final String? profileTypeName;
 
-  String localizedName(bool isArabic) {
+  String localizedName({required bool isArabic}) {
     final ar = displayNameArabic.trim();
     final en = displayName.trim();
     return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
@@ -115,6 +115,19 @@ class GateScanResult {
     this.noticeMessage,
   });
 
+  factory GateScanResult.fromJson(Map<String, dynamic> json) => GateScanResult(
+        scanId: (json['scanId'] as num?)?.toInt() ?? 0,
+        outcome: (json['outcome'] as num?)?.toInt() == 1
+            ? ScanOutcome.denied
+            : ScanOutcome.allowed,
+        direction: (json['direction'] as num?)?.toInt() == 1
+            ? ScanDirection.checkOut
+            : ScanDirection.checkIn,
+        userProfile: GateScanUserProfile.fromJson(json['userProfile']),
+        denialMessage: json['denialMessage'] as String?,
+        noticeMessage: json['noticeMessage'] as String?,
+      );
+
   final int scanId;
   final ScanOutcome outcome;
   final ScanDirection direction;
@@ -130,17 +143,4 @@ class GateScanResult {
   final String? noticeMessage;
 
   bool get isAllowed => outcome == ScanOutcome.allowed;
-
-  static GateScanResult fromJson(Map<String, dynamic> json) => GateScanResult(
-        scanId: (json['scanId'] as num?)?.toInt() ?? 0,
-        outcome: (json['outcome'] as num?)?.toInt() == 1
-            ? ScanOutcome.denied
-            : ScanOutcome.allowed,
-        direction: (json['direction'] as num?)?.toInt() == 1
-            ? ScanDirection.checkOut
-            : ScanDirection.checkIn,
-        userProfile: GateScanUserProfile.fromJson(json['userProfile']),
-        denialMessage: json['denialMessage'] as String?,
-        noticeMessage: json['noticeMessage'] as String?,
-      );
 }

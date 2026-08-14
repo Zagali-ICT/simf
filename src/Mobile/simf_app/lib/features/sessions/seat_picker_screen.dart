@@ -182,9 +182,8 @@ class _SeatPickerScreenState extends ConsumerState<SeatPickerScreen> {
         'SEAT_TIER_RESERVED' => l10n.seatTierVvipLocked,
         'SEAT_TIER_NOT_ELIGIBLE' => l10n.seatTierVipLocked,
         'SEAT_ALREADY_RESERVED' when moving => l10n.seatChangeTaken,
-        _ when moving => failureMessage.isNotEmpty
-            ? failureMessage
-            : l10n.seatChangeFailed,
+        _ when moving =>
+          failureMessage.isNotEmpty ? failureMessage : l10n.seatChangeFailed,
         _ => l10n.seatReserveFailed,
       };
       messenger.showSnackBar(SnackBar(content: Text(message)));
@@ -225,7 +224,7 @@ class _SeatPickerScreenState extends ConsumerState<SeatPickerScreen> {
         ),
         children: <Widget>[
           Text(
-            map.localizedSessionTitle(l10n.isArabic) ??
+            map.localizedSessionTitle(isArabic: l10n.isArabic) ??
                 (held == null ? l10n.seatPickerTitle : l10n.seatChangeTitle),
             textAlign: TextAlign.center,
             style: SimfTokens.labelWhiteBoldTitle,
@@ -275,8 +274,7 @@ class _SeatPickerScreenState extends ConsumerState<SeatPickerScreen> {
           const SizedBox(height: SimfTokens.space5),
           if (_selectedRow != null && _selectedSeat != null) ...<Widget>[
             SelectedSeatChip(
-              label:
-                  l10n.seatPickerSelectedChip(_selectedRow!, _selectedSeat!),
+              label: l10n.seatPickerSelectedChip(_selectedRow!, _selectedSeat!),
             ),
             const SizedBox(height: SimfTokens.space4),
           ],
@@ -296,7 +294,8 @@ class _SeatPickerScreenState extends ConsumerState<SeatPickerScreen> {
                 borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
               ),
             ),
-            icon: const Icon(Icons.event_seat, size: SimfTokens.seatPickerScreenSize),
+            icon: const Icon(Icons.event_seat,
+                size: SimfTokens.seatPickerScreenSize,),
             label: Text(
               held == null
                   ? l10n.seatPickerConfirmCta
@@ -318,7 +317,8 @@ class _SeatPickerScreenState extends ConsumerState<SeatPickerScreen> {
                   borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
                 ),
               ),
-              icon: const Icon(Icons.shuffle, size: SimfTokens.seatPickerScreenSize),
+              icon: const Icon(Icons.shuffle,
+                  size: SimfTokens.seatPickerScreenSize,),
               label: Text(
                 l10n.seatPickerRandomCta,
                 style: SimfTokens.titleBold,
@@ -330,4 +330,3 @@ class _SeatPickerScreenState extends ConsumerState<SeatPickerScreen> {
     );
   }
 }
-

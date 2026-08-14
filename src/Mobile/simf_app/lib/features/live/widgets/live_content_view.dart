@@ -4,9 +4,14 @@ import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
 import 'package:simf_app/features/live/data/live_models.dart';
 import 'package:simf_app/features/live/data/live_presentation.dart';
-import 'package:simf_app/features/live/widgets/live_content.dart';
+import 'package:simf_app/features/live/widgets/ask_question_button.dart';
+import 'package:simf_app/features/live/widgets/feed_toggle.dart';
+import 'package:simf_app/features/live/widgets/gold_bullet.dart';
 import 'package:simf_app/features/live/widgets/live_message_surfaces.dart';
+import 'package:simf_app/features/live/widgets/live_notice_banner.dart';
 import 'package:simf_app/features/live/widgets/live_player_surface.dart';
+import 'package:simf_app/features/live/widgets/sign_language_note.dart';
+import 'package:simf_app/features/live/widgets/upcoming_card.dart';
 
 /// The live screen's body once a session is resolved: the player band, the
 /// broadcast header, the Q&A entry and the upcoming-sessions list.
@@ -68,7 +73,7 @@ class LiveContentView extends StatelessWidget {
     // FR-702 (owner 2026-07-31) — the organiser's informational notice for this
     // broadcast. Null when the CP left both languages blank, and then nothing is
     // rendered (no empty banner, no reserved space).
-    final notice = session.localizedNotice(isArabic);
+    final notice = session.localizedNotice(isArabic: isArabic);
 
     return ListView(
       padding: EdgeInsets.zero,
@@ -97,7 +102,7 @@ class LiveContentView extends StatelessWidget {
             liveLabel: isLive ? l10n.liveNowLabel : null,
             // P5 — D-439: the admin-set AI caption when present, else the
             // placeholder hint (YouTube CC supplies captions meanwhile).
-            caption: session.localizedCaption(isArabic),
+            caption: session.localizedCaption(isArabic: isArabic),
             captionHint: l10n.liveCaptionHint,
           )
         else if (session.hasRecording)
@@ -120,8 +125,7 @@ class LiveContentView extends StatelessWidget {
                   showSignLanguage: showSignLanguage,
                   mainLabel: l10n.liveFeedMain,
                   signLabel: l10n.liveFeedSignLanguage,
-                  onChanged: (value) =>
-                      onSignLanguageChanged(value),
+                  onChanged: onSignLanguageChanged,
                 ),
                 const SizedBox(height: SimfTokens.space5),
               ],
@@ -134,24 +138,25 @@ class LiveContentView extends StatelessWidget {
                 broadcastLabel(
                   l10n,
                   isLive: isBroadcasting,
-                  hall: session.localizedHall(isArabic),
+                  hall: session.localizedHall(isArabic: isArabic),
                 ),
                 textAlign: TextAlign.start,
                 style: SimfTokens.labelWhiteMediumLg,
               ),
               const SizedBox(height: SimfTokens.space4),
               GoldBullet(
-                text: session.localizedTitle(isArabic),
+                text: session.localizedTitle(isArabic: isArabic),
                 color: SimfTokens.accent,
                 fontWeight: FontWeight.w600,
                 // Frame 934:3616 — the session title bullet is 16px.
                 fontSize: SimfTokens.textLg,
               ),
               // D-433 — the speakers / participants line (frame 934:3617).
-              if (session.localizedSpeakers(isArabic) != null) ...<Widget>[
+              if (session.localizedSpeakers(isArabic: isArabic) !=
+                  null) ...<Widget>[
                 const SizedBox(height: SimfTokens.space2),
                 GoldBullet(
-                  text: session.localizedSpeakers(isArabic)!,
+                  text: session.localizedSpeakers(isArabic: isArabic)!,
                   color: SimfTokens.beigeBorder,
                 ),
               ],

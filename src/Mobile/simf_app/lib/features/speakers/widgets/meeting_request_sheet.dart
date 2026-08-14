@@ -6,6 +6,7 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/core/errors/api_error_l10n.dart';
 import 'package:simf_app/core/utils/gregorian_month_names.dart';
+import 'package:simf_app/core/utils/local_days.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
 import 'package:simf_app/core/utils/weekday_names.dart';
 import 'package:simf_app/core/validation/field_limits.dart';
@@ -163,28 +164,17 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
     unawaited(_loadSlots(speakerId));
   }
 
-  /// The distinct local days that carry at least one slot, in the order the
-  /// endpoint returned them (it derives slots chronologically).
-  List<DateTime> get _daysWithSlots {
-    final days = <DateTime>[];
-    for (final slot in _slots) {
-      final local = saudiOf(slot.start);
-      final day = DateTime(local.year, local.month, local.day);
-      if (!days.contains(day)) {
-        days.add(day);
-      }
-    }
-    return days;
-  }
+  /// The distinct local days that carry at least one slot. The endpoint
+  /// derives slots chronologically, so the shared helper's ascending order is
+  /// the endpoint's order; it is also correct if that ever stops holding.
+  List<DateTime> get _daysWithSlots =>
+      distinctLocalDays(_slots, (slot) => saudiOf(slot.start));
 
   /// The slots on a given local day, in the endpoint's (chronological) order.
   List<SpeakerSlot> _slotsForDay(DateTime day) => <SpeakerSlot>[
         for (final slot in _slots)
-          if (_isSameDay(saudiOf(slot.start), day)) slot,
+          if (sameLocalDay(saudiOf(slot.start), day)) slot,
       ];
-
-  static bool _isSameDay(DateTime a, DateTime b) =>
-      a.year == b.year && a.month == b.month && a.day == b.day;
 
   @override
   void dispose() {
@@ -249,18 +239,6 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
         _error = _failureText(failure, l10n);
       });
     }
-  }
-
-  // A time-of-day as "10:00 ص" / "02:30 PM" (12-hour, Arabic ص/م — Figma
-  // 1776:5078). No intl locale needed.
-  String _formatTime(TimeOfDay time, bool isArabic) {
-    final hour12 = time.hour % 12 == 0 ? 12 : time.hour % 12;
-    final hh = hour12.toString().padLeft(2, '0');
-    final mm = time.minute.toString().padLeft(2, '0');
-    final meridiem = isArabic
-        ? (time.hour >= 12 ? 'م' : 'ص')
-        : (time.hour >= 12 ? 'PM' : 'AM');
-    return '$hh:$mm $meridiem';
   }
 
   /// The inline error for a failed submit.
@@ -457,9 +435,7 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
           focusedBorder: const OutlineInputBorder(
             borderSide: BorderSide(color: SimfTokens.accent),
           ),
-          border: const OutlineInputBorder(
-            
-          ),
+          border: const OutlineInputBorder(),
         ),
       );
 
@@ -499,7 +475,8 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
           _hint(l10n.speakersNoMatches) // لا نتائج مطابقة
         else
           ConstrainedBox(
-            constraints: const BoxConstraints(maxHeight: SimfTokens.meetingRequestSheetMaxHeight),
+            constraints: const BoxConstraints(
+                maxHeight: SimfTokens.meetingRequestSheetMaxHeight,),
             child: ListView.separated(
               shrinkWrap: true,
               padding: EdgeInsets.zero,
@@ -537,7 +514,7 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
       if (s.id == _selectedSpeakerId) {
         return true;
       }
-      final name = s.localizedName(isArabic).toLowerCase();
+      final name = s.localizedName(isArabic: isArabic).toLowerCase();
       final rank = (s.rank ?? '').toLowerCase();
       final rankArabic = (s.rankArabic ?? '').toLowerCase();
       return name.contains(q) || rank.contains(q) || rankArabic.contains(q);
@@ -591,10 +568,10 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
           final day = days[i];
           return MeetingDayCard(
             key: ValueKey<String>('meeting-day-$i'),
-            weekday: gregorianWeekdayName(day, isArabic),
+            weekday: gregorianWeekdayName(day, isArabic: isArabic),
             dayNumber: day.day,
-            month: gregorianMonthName(day.month, isArabic),
-            selected: _selectedDay != null && _isSameDay(_selectedDay!, day),
+            month: gregorianMonthName(day.month, isArabic: isArabic),
+            selected: _selectedDay != null && sameLocalDay(_selectedDay!, day),
             onTap: () => setState(() {
               _selectedDay = day;
               _selectedSlot = null; // a new day → pick from its own slots
@@ -617,9 +594,9 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
           for (var i = 0; i < slots.length; i++)
             MeetingTimeChip(
               key: ValueKey<String>('meeting-time-$i'),
-              label: _formatTime(
-                TimeOfDay.fromDateTime(saudiOf(slots[i].start)),
-                isArabic,
+              label: formatDateTime12h(
+                saudiOf(slots[i].start),
+                isArabic: isArabic,
               ),
               selected: _selectedSlot == slots[i],
               onTap: () => setState(() => _selectedSlot = slots[i]),

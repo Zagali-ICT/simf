@@ -73,6 +73,37 @@ class AppRequestItem {
     this.checkedIn = false,
   });
 
+  factory AppRequestItem.fromJson(Map<String, dynamic> json) {
+    final eventRaw = json['eventDate'] as String?;
+    final createdRaw = json['createdAt'] as String?;
+    return AppRequestItem(
+      kind: AppRequestKind.fromIndex(json['kind'] as int?),
+      id: json['id'] as String? ?? '',
+      title: json['title'] as String? ?? '',
+      titleArabic: json['titleArabic'] as String? ?? '',
+      status: AppRequestStatus.fromIndex(json['status'] as int?),
+      eventDate: eventRaw == null ? null : parseWireOrNull(eventRaw),
+      createdAt: (createdRaw == null ? null : parseWireOrNull(createdRaw)) ??
+          DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+      canCancel: json['canCancel'] as bool? ?? false,
+      subtitle: (json['subtitle'] as String?)?.trim().isEmpty ?? true
+          ? null
+          : (json['subtitle'] as String).trim(),
+      subtitleArabic:
+          (json['subtitleArabic'] as String?)?.trim().isEmpty ?? true
+              ? null
+              : (json['subtitleArabic'] as String).trim(),
+      speakerId: (json['speakerId'] as String?)?.trim().isEmpty ?? true
+          ? null
+          : (json['speakerId'] as String).trim(),
+      countryId: (json['countryId'] as num?)?.toInt(),
+      responseNote: (json['responseNote'] as String?)?.trim().isEmpty ?? true
+          ? null
+          : (json['responseNote'] as String).trim(),
+      checkedIn: json['checkedIn'] as bool? ?? false,
+    );
+  }
+
   final AppRequestKind kind;
   final String id;
   final String title;
@@ -113,7 +144,7 @@ class AppRequestItem {
 
   /// The context line under the type headline, in the active locale (AR/EN with
   /// a fallback).
-  String localizedSubtitle(bool isArabic) {
+  String localizedSubtitle({required bool isArabic}) {
     final ar = titleArabic.trim();
     final en = title.trim();
     return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
@@ -121,7 +152,7 @@ class AppRequestItem {
 
   /// D-590 — the speaker's rank (the المقابلات subtitle line) in the active
   /// locale (owner 2026-07-19). Null for the non-speaker kinds / when unset.
-  String? localizedRank(bool isArabic) {
+  String? localizedRank({required bool isArabic}) {
     final ar = subtitleArabic?.trim() ?? '';
     final en = subtitle?.trim() ?? '';
     final picked =
@@ -137,38 +168,6 @@ class AppRequestItem {
   bool get isMeetingKind =>
       kind == AppRequestKind.speakerMeeting ||
       kind == AppRequestKind.delegationMeeting;
-
-  static AppRequestItem fromJson(Map<String, dynamic> json) {
-    final eventRaw = json['eventDate'] as String?;
-    final createdRaw = json['createdAt'] as String?;
-    return AppRequestItem(
-      kind: AppRequestKind.fromIndex(json['kind'] as int?),
-      id: json['id'] as String? ?? '',
-      title: json['title'] as String? ?? '',
-      titleArabic: json['titleArabic'] as String? ?? '',
-      status: AppRequestStatus.fromIndex(json['status'] as int?),
-      eventDate:
-          eventRaw == null ? null : parseWireOrNull(eventRaw),
-      createdAt:
-          (createdRaw == null ? null : parseWireOrNull(createdRaw)) ??
-              DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
-      canCancel: json['canCancel'] as bool? ?? false,
-      subtitle: (json['subtitle'] as String?)?.trim().isEmpty ?? true
-          ? null
-          : (json['subtitle'] as String).trim(),
-      subtitleArabic: (json['subtitleArabic'] as String?)?.trim().isEmpty ?? true
-          ? null
-          : (json['subtitleArabic'] as String).trim(),
-      speakerId: (json['speakerId'] as String?)?.trim().isEmpty ?? true
-          ? null
-          : (json['speakerId'] as String).trim(),
-      countryId: (json['countryId'] as num?)?.toInt(),
-      responseNote: (json['responseNote'] as String?)?.trim().isEmpty ?? true
-          ? null
-          : (json['responseNote'] as String).trim(),
-      checkedIn: json['checkedIn'] as bool? ?? false,
-    );
-  }
 
   /// Reads the bare `[ ... ]` list the endpoint returns.
   static List<AppRequestItem> listFromData(Object? data) =>

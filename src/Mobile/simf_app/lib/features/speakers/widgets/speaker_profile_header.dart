@@ -55,10 +55,11 @@ class SpeakerProfileHeader extends StatelessWidget {
             ),
           ),
           // Balances the leading back button so the two-line title stays centred.
-          const SizedBox(width: SimfTokens.speakerProfileHeaderWidth, height: SimfTokens.speakerProfileHeaderHeight),
+          const SizedBox(
+              width: SimfTokens.speakerProfileHeaderWidth,
+              height: SimfTokens.speakerProfileHeaderHeight,),
         ],
       ),
     );
   }
 }
-

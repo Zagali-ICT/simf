@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_app/features/account/data/account_endpoints.dart';
+import 'package:simf_app/features/account/data/profile_repository.dart'
+    show ProfileRepository;
 import 'package:simf_app/features/account/data/region_models.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 

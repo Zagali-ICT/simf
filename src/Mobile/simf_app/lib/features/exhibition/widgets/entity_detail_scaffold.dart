@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:simf_app/app/theme/app_assets.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
-import 'package:simf_app/features/exhibition/entity_about_card.dart';
-import 'package:simf_app/features/exhibition/entity_identity_card.dart';
-import 'package:simf_app/features/exhibition/entity_link_row.dart';
+import 'package:simf_app/features/exhibition/widgets/entity_about_card.dart';
+import 'package:simf_app/features/exhibition/widgets/entity_identity_card.dart';
+import 'package:simf_app/features/exhibition/widgets/entity_link_row.dart';
 
 /// The shared exhibitor / sponsor detail layout — Figma **1439:11881 "العارض"**
 /// and **1439:11826 "الراعي"** (the owner: reuse one template for both). A

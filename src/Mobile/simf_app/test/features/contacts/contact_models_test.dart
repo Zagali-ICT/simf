@@ -17,22 +17,22 @@ void main() {
 
     test('picks per locale (Arabic primary in ar, English in en)', () {
       final c = card(en: 'Captain', ar: 'قائد');
-      expect(c.localizedJobTitle(true), 'قائد');
-      expect(c.localizedJobTitle(false), 'Captain');
+      expect(c.localizedJobTitle(isArabic: true), 'قائد');
+      expect(c.localizedJobTitle(isArabic: false), 'Captain');
     });
 
     test('falls back to the other language when one side is blank', () {
-      expect(card(en: 'Captain').localizedJobTitle(true), 'Captain');
-      expect(card(ar: 'قائد').localizedJobTitle(false), 'قائد');
+      expect(card(en: 'Captain').localizedJobTitle(isArabic: true), 'Captain');
+      expect(card(ar: 'قائد').localizedJobTitle(isArabic: false), 'قائد');
     });
 
     test('is null when neither language is set', () {
-      expect(card().localizedJobTitle(true), isNull);
-      expect(card(en: '  ', ar: '').localizedJobTitle(false), isNull);
+      expect(card().localizedJobTitle(isArabic: true), isNull);
+      expect(card(en: '  ', ar: '').localizedJobTitle(isArabic: false), isNull);
     });
 
     test('decodes jobTitleArabic from the wire (append-only)', () {
-      final c = VisitorCard.fromData(<String, dynamic>{
+      final c = VisitorCard.fromData(const <String, dynamic>{
         'userId': 'u1',
         'name': 'N',
         'nameArabic': 'ن',
@@ -41,7 +41,7 @@ void main() {
         'jobTitleArabic': 'قائد',
       });
       expect(c.jobTitleArabic, 'قائد');
-      expect(c.localizedJobTitle(true), 'قائد');
+      expect(c.localizedJobTitle(isArabic: true), 'قائد');
     });
   });
 
@@ -58,14 +58,14 @@ void main() {
 
     test('picks per locale with fallback and null-when-empty', () {
       final r = row(en: 'Director', ar: 'مدير');
-      expect(r.localizedJobTitle(true), 'مدير');
-      expect(r.localizedJobTitle(false), 'Director');
-      expect(row(en: 'Director').localizedJobTitle(true), 'Director');
-      expect(row().localizedJobTitle(true), isNull);
+      expect(r.localizedJobTitle(isArabic: true), 'مدير');
+      expect(r.localizedJobTitle(isArabic: false), 'Director');
+      expect(row(en: 'Director').localizedJobTitle(isArabic: true), 'Director');
+      expect(row().localizedJobTitle(isArabic: true), isNull);
     });
 
     test('decodes jobTitleArabic from the wire', () {
-      final r = SavedContactRow.fromData(<String, dynamic>{
+      final r = SavedContactRow.fromData(const <String, dynamic>{
         'id': 's1',
         'subjectUserId': 'u1',
         'name': 'N',

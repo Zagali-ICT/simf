@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/features/sponsors/data/sponsor_models.dart';
+import 'package:simf_app/features/sponsors/data/sponsors_repository.dart';
 import 'package:simf_app/features/sponsors/sponsors_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
@@ -97,7 +98,8 @@ void main() {
       expect(find.text('https://sami.sa'), findsOneWidget);
     });
 
-    testWidgets('P6 — the lowest tier renders as a logo grid, the top as a hero '
+    testWidgets(
+        'P6 — the lowest tier renders as a logo grid, the top as a hero '
         'card', (tester) async {
       // Three tiers: top → hero card, middle → premium cards, lowest → the grid.
       const threeTiers = <SponsorTierGroup>[
@@ -106,8 +108,11 @@ void main() {
           tierName: 'Strategic',
           sponsors: <Sponsor>[
             Sponsor(
-              id: 's1', nameEn: 'SAMI', nameAr: 'سامي',
-              tierName: 'Strategic', displayOrder: 0,
+              id: 's1',
+              nameEn: 'SAMI',
+              nameAr: 'سامي',
+              tierName: 'Strategic',
+              displayOrder: 0,
             ),
           ],
         ),
@@ -116,8 +121,11 @@ void main() {
           tierName: 'Premium',
           sponsors: <Sponsor>[
             Sponsor(
-              id: 's2', nameEn: 'GAMI', nameAr: 'غامي',
-              tierName: 'Premium', displayOrder: 0,
+              id: 's2',
+              nameEn: 'GAMI',
+              nameAr: 'غامي',
+              tierName: 'Premium',
+              displayOrder: 0,
             ),
           ],
         ),
@@ -126,8 +134,11 @@ void main() {
           tierName: 'Gold',
           sponsors: <Sponsor>[
             Sponsor(
-              id: 's3', nameEn: 'Bronze Co', nameAr: 'شركة',
-              tierName: 'Gold', displayOrder: 0,
+              id: 's3',
+              nameEn: 'Bronze Co',
+              nameAr: 'شركة',
+              tierName: 'Gold',
+              displayOrder: 0,
             ),
           ],
         ),
@@ -148,7 +159,8 @@ void main() {
       );
     });
 
-    testWidgets('P6 — each sponsor logo is wired to the D-357 SponsorLogo route',
+    testWidgets(
+        'P6 — each sponsor logo is wired to the D-357 SponsorLogo route',
         (tester) async {
       await _pump(tester, <Override>[
         sponsorGroupsProvider.overrideWith((ref) async => _groups),
@@ -164,7 +176,8 @@ void main() {
       );
     });
 
-    testWidgets('PAR-S2 — RTL: the logo badge leads at the inline start (right) '
+    testWidgets(
+        'PAR-S2 — RTL: the logo badge leads at the inline start (right) '
         'of the sponsor name', (tester) async {
       await _pump(
         tester,
@@ -176,8 +189,11 @@ void main() {
                 tierName: 'Strategic',
                 sponsors: <Sponsor>[
                   Sponsor(
-                    id: 's1', nameEn: 'SAMI', nameAr: 'سامي',
-                    tierName: 'Strategic', displayOrder: 0,
+                    id: 's1',
+                    nameEn: 'SAMI',
+                    nameAr: 'سامي',
+                    tierName: 'Strategic',
+                    displayOrder: 0,
                   ),
                 ],
               ),
@@ -195,7 +211,8 @@ void main() {
 
     testWidgets('empty groups show the empty state', (tester) async {
       await _pump(tester, <Override>[
-        sponsorGroupsProvider.overrideWith((ref) async => const <SponsorTierGroup>[]),
+        sponsorGroupsProvider
+            .overrideWith((ref) async => const <SponsorTierGroup>[]),
       ]);
       expect(find.text('No sponsors'), findsOneWidget);
     });

@@ -4,7 +4,7 @@ import 'package:simf_app/features/content/data/content_models.dart';
 void main() {
   group('ContentBlock', () {
     test('fromJson maps the wire fields', () {
-      final block = ContentBlock.fromJson(<String, dynamic>{
+      final block = ContentBlock.fromJson(const <String, dynamic>{
         'key': 'terms',
         'content': 'EN body',
         'contentArabic': 'النص العربي',
@@ -19,15 +19,20 @@ void main() {
     });
 
     test('localizedBody picks the active locale and falls back', () {
-      const both = ContentBlock(key: 'terms', content: 'EN', contentArabic: 'AR');
-      expect(both.localizedBody(true), 'AR');
-      expect(both.localizedBody(false), 'EN');
+      const both =
+          ContentBlock(key: 'terms', content: 'EN', contentArabic: 'AR');
+      expect(both.localizedBody(isArabic: true), 'AR');
+      expect(both.localizedBody(isArabic: false), 'EN');
 
-      const arOnly = ContentBlock(key: 'terms', content: '', contentArabic: 'AR');
-      expect(arOnly.localizedBody(false), 'AR'); // EN empty → fall back to AR
+      const arOnly =
+          ContentBlock(key: 'terms', content: '', contentArabic: 'AR');
+      expect(arOnly.localizedBody(isArabic: false),
+          'AR',); // EN empty → fall back to AR
 
-      const enOnly = ContentBlock(key: 'terms', content: 'EN', contentArabic: '');
-      expect(enOnly.localizedBody(true), 'EN'); // AR empty → fall back to EN
+      const enOnly =
+          ContentBlock(key: 'terms', content: 'EN', contentArabic: '');
+      expect(enOnly.localizedBody(isArabic: true),
+          'EN',); // AR empty → fall back to EN
     });
 
     test('hasBody is false when both bodies are blank', () {

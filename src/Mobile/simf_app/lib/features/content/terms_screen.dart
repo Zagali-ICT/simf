@@ -133,7 +133,8 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
                       Align(
                         alignment: Alignment.centerLeft,
                         child: Padding(
-                          padding: const EdgeInsets.only(left: SimfTokens.space2),
+                          padding:
+                              const EdgeInsets.only(left: SimfTokens.space2),
                           child: IconButton(
                             onPressed: _back,
                             tooltip: MaterialLocalizations.of(context)
@@ -204,7 +205,7 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
 
   Widget _buildContent(AppL10n l10n) {
     final block = _block!;
-    final body = block.localizedBody(l10n.isArabic);
+    final body = block.localizedBody(isArabic: l10n.isArabic);
     // Each non-empty body line renders as one bullet card (Figma list items).
     final items = body
         .split('\n')
@@ -263,5 +264,4 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
       ],
     );
   }
-
 }

@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
-
 import 'package:simf_app/core/country_flag.dart';
+import 'package:simf_app/core/utils/bilingual.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
 
 /// One row in the public speakers list — mirrors
@@ -23,24 +23,7 @@ class SpeakerSummary {
     this.photoRelativePath,
   });
 
-  final String id;
-  final String name;
-  final String nameArabic;
-  final int displayOrder;
-  final String? rank;
-  final String? rankArabic;
-  final int? countryId;
-  final String? countryNameEn;
-  final String? countryNameAr;
-  final String? photoRelativePath;
-
-  String localizedName(bool isArabic) => _pick(nameArabic, name, isArabic);
-  String? localizedRank(bool isArabic) =>
-      _pickOpt(rankArabic, rank, isArabic);
-  String? localizedCountry(bool isArabic) =>
-      _pickOpt(countryNameAr, countryNameEn, isArabic);
-
-  static SpeakerSummary fromJson(Map<String, dynamic> json) => SpeakerSummary(
+  factory SpeakerSummary.fromJson(Map<String, dynamic> json) => SpeakerSummary(
         id: json['id'] as String? ?? '',
         name: json['name'] as String? ?? '',
         nameArabic: json['nameArabic'] as String? ?? '',
@@ -52,6 +35,24 @@ class SpeakerSummary {
         countryNameAr: json['countryNameAr'] as String?,
         photoRelativePath: json['photoRelativePath'] as String?,
       );
+
+  final String id;
+  final String name;
+  final String nameArabic;
+  final int displayOrder;
+  final String? rank;
+  final String? rankArabic;
+  final int? countryId;
+  final String? countryNameEn;
+  final String? countryNameAr;
+  final String? photoRelativePath;
+
+  String localizedName({required bool isArabic}) =>
+      pickLocalized(nameArabic, name, isArabic: isArabic);
+  String? localizedRank({required bool isArabic}) =>
+      pickLocalizedOrNull(rankArabic, rank, isArabic: isArabic);
+  String? localizedCountry({required bool isArabic}) =>
+      pickLocalizedOrNull(countryNameAr, countryNameEn, isArabic: isArabic);
 }
 
 /// One of a speaker's scheduled sessions — mirrors
@@ -70,6 +71,17 @@ class SpeakerSession {
     required this.end,
   });
 
+  factory SpeakerSession.fromJson(Map<String, dynamic> json) => SpeakerSession(
+        id: json['id'] as String? ?? '',
+        code: json['code'] as String? ?? '',
+        title: json['title'] as String? ?? '',
+        titleArabic: json['titleArabic'] as String? ?? '',
+        hallName: json['hallName'] as String? ?? '',
+        hallNameArabic: json['hallNameArabic'] as String? ?? '',
+        start: _utc(json['start']),
+        end: _utc(json['end']),
+      );
+
   final String id;
   final String code;
   final String title;
@@ -81,20 +93,10 @@ class SpeakerSession {
 
   DateTime get startLocal => saudiOf(start);
 
-  String localizedTitle(bool isArabic) => _pick(titleArabic, title, isArabic);
-  String? localizedHall(bool isArabic) =>
-      _pickOpt(hallNameArabic, hallName, isArabic);
-
-  static SpeakerSession fromJson(Map<String, dynamic> json) => SpeakerSession(
-        id: json['id'] as String? ?? '',
-        code: json['code'] as String? ?? '',
-        title: json['title'] as String? ?? '',
-        titleArabic: json['titleArabic'] as String? ?? '',
-        hallName: json['hallName'] as String? ?? '',
-        hallNameArabic: json['hallNameArabic'] as String? ?? '',
-        start: _utc(json['start']),
-        end: _utc(json['end']),
-      );
+  String localizedTitle({required bool isArabic}) =>
+      pickLocalized(titleArabic, title, isArabic: isArabic);
+  String? localizedHall({required bool isArabic}) =>
+      pickLocalizedOrNull(hallNameArabic, hallName, isArabic: isArabic);
 }
 
 /// The full public speaker profile — mirrors
@@ -131,57 +133,7 @@ class SpeakerDetail {
     this.photoRelativePath,
   });
 
-  final String id;
-  final String name;
-  final String nameArabic;
-  final String? rank;
-  final String? rankArabic;
-  final int? countryId;
-  final String? countryNameEn;
-  final String? countryNameAr;
-  final String? bio;
-  final String? bioArabic;
-  final String? qualifications;
-  final String? qualificationsArabic;
-  final String? trainingExperience;
-  final String? trainingExperienceArabic;
-  final String? awards;
-  final String? awardsArabic;
-  final bool allowsMeetingRequests;
-  final bool allowsDataSharing;
-  final String? facebookUrl;
-  final String? linkedInUrl;
-  final String? xUrl;
-
-  /// Personal/professional website (D-544) — a 4th opted-in link, gated by
-  /// [allowsDataSharing] like the social URLs. Wire key `websiteUrl`.
-  final String? websiteUrl;
-  final String? photoRelativePath;
-  final int displayOrder;
-  final List<SpeakerSession> sessions;
-
-  String localizedName(bool isArabic) => _pick(nameArabic, name, isArabic);
-  String? localizedRank(bool isArabic) =>
-      _pickOpt(rankArabic, rank, isArabic);
-  String? localizedCountry(bool isArabic) =>
-      _pickOpt(countryNameAr, countryNameEn, isArabic);
-
-  /// The nationality flag emoji for the profile header (Figma 908-2110),
-  /// resolved from the ISO 3166-1 numeric [countryId] via the shared
-  /// [countryFlagEmoji] helper. Null when no country is set / unknown — the
-  /// same
-  /// helper the speaker list card uses.
-  String? get flagEmoji => countryFlagEmoji(countryId);
-
-  String? localizedBio(bool isArabic) => _pickOpt(bioArabic, bio, isArabic);
-  String? localizedQualifications(bool isArabic) =>
-      _pickOpt(qualificationsArabic, qualifications, isArabic);
-  String? localizedTraining(bool isArabic) =>
-      _pickOpt(trainingExperienceArabic, trainingExperience, isArabic);
-  String? localizedAwards(bool isArabic) =>
-      _pickOpt(awardsArabic, awards, isArabic);
-
-  static SpeakerDetail fromJson(Map<String, dynamic> json) => SpeakerDetail(
+  factory SpeakerDetail.fromJson(Map<String, dynamic> json) => SpeakerDetail(
         id: json['id'] as String? ?? '',
         name: json['name'] as String? ?? '',
         nameArabic: json['nameArabic'] as String? ?? '',
@@ -211,6 +163,66 @@ class SpeakerDetail {
             .map((e) => SpeakerSession.fromJson(e.cast<String, dynamic>()))
             .toList(growable: false),
       );
+
+  final String id;
+  final String name;
+  final String nameArabic;
+  final String? rank;
+  final String? rankArabic;
+  final int? countryId;
+  final String? countryNameEn;
+  final String? countryNameAr;
+  final String? bio;
+  final String? bioArabic;
+  final String? qualifications;
+  final String? qualificationsArabic;
+  final String? trainingExperience;
+  final String? trainingExperienceArabic;
+  final String? awards;
+  final String? awardsArabic;
+  final bool allowsMeetingRequests;
+  final bool allowsDataSharing;
+  final String? facebookUrl;
+  final String? linkedInUrl;
+  final String? xUrl;
+
+  /// Personal/professional website (D-544) — a 4th opted-in link, gated by
+  /// [allowsDataSharing] like the social URLs. Wire key `websiteUrl`.
+  final String? websiteUrl;
+  final String? photoRelativePath;
+  final int displayOrder;
+  final List<SpeakerSession> sessions;
+
+  String localizedName({required bool isArabic}) =>
+      pickLocalized(nameArabic, name, isArabic: isArabic);
+  String? localizedRank({required bool isArabic}) =>
+      pickLocalizedOrNull(rankArabic, rank, isArabic: isArabic);
+  String? localizedCountry({required bool isArabic}) =>
+      pickLocalizedOrNull(countryNameAr, countryNameEn, isArabic: isArabic);
+
+  /// The nationality flag emoji for the profile header (Figma 908-2110),
+  /// resolved from the ISO 3166-1 numeric [countryId] via the shared
+  /// [countryFlagEmoji] helper. Null when no country is set / unknown — the
+  /// same
+  /// helper the speaker list card uses.
+  String? get flagEmoji => countryFlagEmoji(countryId);
+
+  String? localizedBio({required bool isArabic}) =>
+      pickLocalizedOrNull(bioArabic, bio, isArabic: isArabic);
+  String? localizedQualifications({required bool isArabic}) =>
+      pickLocalizedOrNull(
+        qualificationsArabic,
+        qualifications,
+        isArabic: isArabic,
+      );
+  String? localizedTraining({required bool isArabic}) =>
+      pickLocalizedOrNull(
+        trainingExperienceArabic,
+        trainingExperience,
+        isArabic: isArabic,
+      );
+  String? localizedAwards({required bool isArabic}) =>
+      pickLocalizedOrNull(awardsArabic, awards, isArabic: isArabic);
 }
 
 DateTime _utc(Object? value) {
@@ -221,19 +233,6 @@ DateTime _utc(Object? value) {
     }
   }
   return DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
-}
-
-String _pick(String arabic, String english, bool isArabic) {
-  final ar = arabic.trim();
-  final en = english.trim();
-  return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
-}
-
-String? _pickOpt(String? arabic, String? english, bool isArabic) {
-  final ar = arabic?.trim() ?? '';
-  final en = english?.trim() ?? '';
-  final value = isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
-  return value.isEmpty ? null : value;
 }
 
 /// D-474 (#11) — one bookable meeting slot offered by a speaker.

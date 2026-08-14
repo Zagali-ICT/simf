@@ -21,6 +21,15 @@ class PendingGateScan {
     this.direction,
   });
 
+  factory PendingGateScan.fromJson(Map<String, dynamic> json) =>
+      PendingGateScan(
+        gateId: json['gateId'] as String? ?? '',
+        qr: json['qr'] as String? ?? '',
+        idempotencyKey: json['idempotencyKey'] as String? ?? '',
+        queuedAtIso: json['queuedAtIso'] as String? ?? '',
+        direction: _directionFromWire(json['direction']),
+      );
+
   final String gateId;
   final String qr;
   final String idempotencyKey;
@@ -35,14 +44,6 @@ class PendingGateScan {
         if (direction != null)
           'direction': direction == ScanDirection.checkOut ? 1 : 0,
       };
-
-  static PendingGateScan fromJson(Map<String, dynamic> json) => PendingGateScan(
-        gateId: json['gateId'] as String? ?? '',
-        qr: json['qr'] as String? ?? '',
-        idempotencyKey: json['idempotencyKey'] as String? ?? '',
-        queuedAtIso: json['queuedAtIso'] as String? ?? '',
-        direction: _directionFromWire(json['direction']),
-      );
 
   /// CheckIn=0, CheckOut=1; absent/anything else -> null (a Both-gate scan the
   /// operator left unset auto-resolves server-side).

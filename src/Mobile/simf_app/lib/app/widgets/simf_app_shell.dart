@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:simf_app/app/widgets/simf_bottom_nav.dart' show SimfTab;
+import 'package:simf_app/app/widgets/simf_bottom_nav.dart'
+    show SimfBottomNav, SimfTab;
 import 'package:simf_app/features/badge/badge_screen.dart';
 import 'package:simf_app/features/home/home_screen.dart';
 import 'package:simf_app/features/myarea/my_area_screen.dart';
