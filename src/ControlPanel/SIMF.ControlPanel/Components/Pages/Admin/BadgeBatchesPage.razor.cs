@@ -59,11 +59,7 @@ public partial class BadgeBatchesPage
     }
 
     private static string TypeLabel(AdminProfileTypeSummary profileType) =>
-        CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar"
-            ? (string.IsNullOrWhiteSpace(profileType.NameArabic)
-                ? profileType.Name : profileType.NameArabic)
-            : (string.IsNullOrWhiteSpace(profileType.Name)
-                ? profileType.NameArabic : profileType.Name);
+        InReadingLanguage(profileType.Name, profileType.NameArabic);
 
     private async Task OnQueryChangedAsync(GridQuery next)
     {
@@ -71,12 +67,17 @@ public partial class BadgeBatchesPage
         await LoadAsync();
     }
 
-    /// <summary>The order's name in the reading language, falling back to the
-    /// other so a row is never blank while one side is still untranslated.</summary>
-    private static string OrderName(AdminBadgeBatchSummary row) =>
+    /// <summary>A bilingual pair shown in the reading language, falling back to
+    /// the other side so nothing renders blank while one is still
+    /// untranslated. Used for both the order name and the profile-type label,
+    /// which had the same four lines twice.</summary>
+    private static string InReadingLanguage(string name, string nameArabic) =>
         CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar"
-            ? (string.IsNullOrWhiteSpace(row.NameArabic) ? row.Name : row.NameArabic)
-            : (string.IsNullOrWhiteSpace(row.Name) ? row.NameArabic : row.Name);
+            ? (string.IsNullOrWhiteSpace(nameArabic) ? name : nameArabic)
+            : (string.IsNullOrWhiteSpace(name) ? nameArabic : name);
+
+    private static string OrderName(AdminBadgeBatchSummary row) =>
+        InReadingLanguage(row.Name, row.NameArabic);
 
     private string FormatSummary(int skip, int taken, int total) =>
         string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);
