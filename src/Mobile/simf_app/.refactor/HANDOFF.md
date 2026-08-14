@@ -136,10 +136,9 @@ nearly half phantom.
    `^\s*bool _loading` across `lib` — 11 of the plan's set were converted or
    deleted in earlier waves. Do not work from the number.
 
-   **9 of 24 converted**, all with their existing tests passing **unchanged** —
+   **15 of 24 converted**, all with their existing tests passing **unchanged** —
    which is the signal that says the state machine is faithful, not merely
-   green. Four provider shapes emerged, and picking the right one is the whole
-   job:
+   green. Five shapes emerged, and picking the right one is the whole job:
 
    | Shape | When | Examples |
    |---|---|---|
@@ -147,32 +146,43 @@ nearly half phantom.
    | **No fold** | "empty" is already an empty list | `my_contacts`, `booths`, `sessions` |
    | **Stay an error, branch in `error`** | the outcome is a failure with its own copy | `my_visitors` (403 = "not linked to a booth yet") |
    | **Gate inside the provider** | the screen must not call the endpoint at all | `my_area` (Approved-only, L-5) |
+   | **`AsyncNotifier`** | build and refresh must behave DIFFERENTLY, or the data is EDITED | `badge`, `session_moderate` |
+
+   **The `AsyncNotifier` case is the one to recognise early.** `badge`'s first
+   attempt used the gate-in-provider shape and its own test caught the
+   regression: gating the refresh on the cached auth state left a pending user
+   able to pull forever without ever leaving the state, because the dashboard's
+   403 is HOW approval is discovered. `build()` must skip the call and
+   `recheck()` must make it — a `FutureProvider` has only one path.
+   `session_moderate` needs one for the other reason: five optimistic edits with
+   rollback, which cannot be expressed by mutating a `FutureProvider`.
+
+   **Side effects on load** (`notifications`' mark-all, `venue_map`'s camera
+   focus, `gate_scan`'s backlog flush) all use the same shape: await the
+   provider's FIRST future in `initState`. `ref.listen` would re-fire them on
+   every pull-to-refresh.
 
    Orthogonally, the screen either becomes a `ConsumerWidget` (`terms`,
    `news_article`, `my_contacts`, `my_visitors`) or stays stateful because it
    owns real UI state — a search box, a sort toggle, a tab index (`speakers`,
    `booths`, `sessions`, `speaker_profile`, `my_area`).
 
-   **The remaining 15 are the intricate half, and here is what makes each hard**
-   — measured by reading them, so the next pass does not discover it mid-edit:
+   **The 9 left, and what makes each one hard** — read, not guessed:
 
-   * `notifications` — `_onTapItem` flips ONE item read locally, deliberately
-     avoiding a reload. A provider cannot be mutated, so preserving that needs
-     a local `Set<String>` overlay merged at render; invalidating instead would
-     add a network round-trip per tap. Also has a mark-all-read side effect on
-     inbox open (`ref.listen` on the provider).
-   * `venue_map` — two parallel reads combined into derived maps
-     (`_positions`, `_boothById`), plus `_focusTargetBooth()` moving a
-     `TransformationController` when data arrives. Same `ref.listen` shape.
-   * `session_summary` — the selected session id can CHANGE (a picker), so the
-     family key is state; `_selectedId == null` must not call at all.
-   * `session_detail` — the plan's flagged screen: the
-     `SimfRefreshableMessage` swap **moves the render**, so its goldens are
-     re-locked in the same changeset with the diff inspected.
-   * `gate_scan`, `live_broadcast`, `session_moderate` — camera / video /
-     moderation-queue side effects around the load.
-   * `badge` — four pull-to-refresh tests assert per-branch behaviour, and
-     `test/repo/pull_to_refresh_coverage_test.dart` keys on widget names.
+   * `live_broadcast` — **attempted and reverted deliberately; give it a
+     dedicated pass.** Four things interlock: a login gate that must not fetch
+     for a guest, an id-LESS global-feed path that bypasses the session read
+     entirely, an optional upcoming-sessions strip that swallows its own
+     failure, and the D-712 rate prompt whose tracker is captured during the
+     load *specifically* so `dispose` never reads a provider from a dead
+     element. The branching lives inside `build`/`_buildBody`, not a flat
+     `_body`, so a range-based edit is the wrong tool — convert it by hand.
+   * `session_detail` — the plan's flagged screen: the `SimfRefreshableMessage`
+     swap **moves the render**, so its goldens are re-locked in the same
+     changeset with the diff inspected.
+   * Wave 2 (submit spinners, the weaker case): `sign_up_interests`,
+     `share_my_contact`, `rate`, `my_mobile`, `registration_status`.
+   * **Device-blocked**: `sign_up_visitor`, `register_visitor`.
 
    **`terms_screen` is the template** (commit `0a6bf182`). What made it work,
    in order:
