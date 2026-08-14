@@ -1,4 +1,4 @@
-// Wave 2 — public session-presentations (Figma 1388:7621): GET /app/presentations
+﻿// Wave 2 — public session-presentations (Figma 1388:7621): GET /app/presentations
 // (list) + GET /app/presentations/{id}/file (download), approved-account.
 using System.Net;
 using System.Net.Http.Headers;
@@ -158,7 +158,7 @@ public sealed class PublicPresentationsTests : IClassFixture<SimfApiFactory>
         const string fileName = "deck.pdf";
         var actorId = Guid.NewGuid();
         // D-568 (S6) — seed the bytes in the unified StoredFile store (owner = the
-        // presentation); StoredFileName holds the bare-Guid pointer.
+        // presentation); StoredFileId is the foreign key into StoredFiles.
         var stored = await fileService.UploadAsync(
             new UploadFileCommand(
                 FileService.SpeakerPresentation, presentationId, PdfBytes, fileName, "application/pdf",
@@ -170,7 +170,7 @@ public sealed class PublicPresentationsTests : IClassFixture<SimfApiFactory>
             SpeakerId = speaker.Id,
             SessionId = session.Id,
             FileName = fileName,
-            StoredFileName = stored.Id.ToString(),
+            StoredFileId = stored.Id,
             ContentType = "application/pdf",
             SizeBytes = PdfBytes.Length,
             UploadedByUserId = actorId,

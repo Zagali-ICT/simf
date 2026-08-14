@@ -2401,7 +2401,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     SpeakerId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     SessionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     FileName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
-                    StoredFileName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
+                    StoredFileId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ContentType = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
                     SizeBytes = table.Column<long>(type: "bigint", nullable: false),
                     UploadedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
@@ -2427,6 +2427,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         principalTable: "Speakers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_SpeakerPresentations_StoredFiles_StoredFileId",
+                        column: x => x.StoredFileId,
+                        principalTable: "StoredFiles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -3539,6 +3545,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 name: "IX_SpeakerPresentations_SpeakerId_IsActive",
                 table: "SpeakerPresentations",
                 columns: new[] { "SpeakerId", "IsActive" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SpeakerPresentations_StoredFileId",
+                table: "SpeakerPresentations",
+                column: "StoredFileId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Speakers_Code",
