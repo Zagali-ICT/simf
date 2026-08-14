@@ -79,13 +79,13 @@ public sealed class RetentionPurgeServiceTests : IClassFixture<SimfApiFactory>
             identity.AccountCodes.Add(new AccountCode
             {
                 Id = Guid.NewGuid(), UserId = userId, Purpose = AccountCodePurpose.SignInOtp,
-                CodeHash = acDead, CreatedAt = now.AddDays(-2),
+                Code = acDead, CreatedAt = now.AddDays(-2),
                 ExpiresAt = now.AddDays(-2).AddMinutes(10),
             });
             identity.AccountCodes.Add(new AccountCode
             {
                 Id = Guid.NewGuid(), UserId = userId, Purpose = AccountCodePurpose.SignInOtp,
-                CodeHash = acLive, CreatedAt = now, ExpiresAt = now.AddMinutes(10),
+                Code = acLive, CreatedAt = now, ExpiresAt = now.AddMinutes(10),
             });
             await identity.SaveChangesAsync();
 
@@ -125,8 +125,8 @@ public sealed class RetentionPurgeServiceTests : IClassFixture<SimfApiFactory>
             Assert.Contains(identity.RefreshTokens, t => t.TokenHash == rtLive);
             Assert.DoesNotContain(identity.SecondFactorTokens, t => t.TokenHash == sfDead);
             Assert.Contains(identity.SecondFactorTokens, t => t.TokenHash == sfLive);
-            Assert.DoesNotContain(identity.AccountCodes, c => c.CodeHash == acDead);
-            Assert.Contains(identity.AccountCodes, c => c.CodeHash == acLive);
+            Assert.DoesNotContain(identity.AccountCodes, c => c.Code == acDead);
+            Assert.Contains(identity.AccountCodes, c => c.Code == acLive);
             Assert.DoesNotContain(app.ScanIdempotencies, r => r.Key == scanDead);
             Assert.Contains(app.ScanIdempotencies, r => r.Key == scanLive);
         }

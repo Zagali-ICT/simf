@@ -192,7 +192,7 @@ public sealed class RegistrationService(
                 "محاولات غير صحيحة كثيرة. اطلب رمزًا جديدًا.");
         }
 
-        if (!CodesMatch(code.CodeHash, AccountCodeHasher.Hash(request.Code)))
+        if (!CodesMatch(code.Code, AccountCodeHasher.Hash(request.Code)))
         {
             // Atomic increment, and the decision is taken on the returned count —
             // the cap check above read AttemptCount before this guess was compared,
@@ -508,7 +508,7 @@ public sealed class RegistrationService(
             Id = Guid.NewGuid(),
             UserId = user.Id,
             Purpose = AccountCodePurpose.EmailVerification,
-            CodeHash = AccountCodeHasher.Hash(plaintext),
+            Code = AccountCodeHasher.Hash(plaintext),
             CreatedAt = now,
             ExpiresAt = now.Add(CodeLifetime),
         };

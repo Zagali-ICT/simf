@@ -306,7 +306,7 @@ public sealed class BadgeSelfClaimProfileTests : IClassFixture<SimfApiFactory>
                 && c.Purpose == AccountCodePurpose.BadgeActivationOtp
                 && c.ConsumedAt == null)
             .OrderByDescending(c => c.CreatedAt)
-            .Select(c => c.CodeHash)
+            .Select(c => c.Code)
             .FirstOrDefaultAsync();
         Assert.NotNull(hash);
         return AuthFlow.RecoverPlaintextCode(hash!);

@@ -238,7 +238,7 @@ public sealed class BadgeAuthTests : IClassFixture<SimfApiFactory>
                 && c.Purpose == AccountCodePurpose.BadgeActivationOtp
                 && c.ConsumedAt == null)
             .OrderByDescending(c => c.CreatedAt)
-            .Select(c => c.CodeHash)
+            .Select(c => c.Code)
             .FirstOrDefaultAsync();
         return hash is null ? null : AuthFlow.RecoverPlaintextCode(hash);
     }

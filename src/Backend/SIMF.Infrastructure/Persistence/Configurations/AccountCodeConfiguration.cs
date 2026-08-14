@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/AuthFlow.cs (the CodeHash column holds a hash, recovered
+// Tests: SIMF.Api.Tests/AuthFlow.cs (the Code column holds a hash, recovered
 //        by brute force) and SIMF.Api.Tests/RetentionPurgeServiceTests.cs.
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -12,7 +12,7 @@ internal sealed class AccountCodeConfiguration : IEntityTypeConfiguration<Accoun
     {
         builder.HasKey(code => code.Id);
 
-        builder.Property(code => code.CodeHash).HasMaxLength(16).IsRequired();
+        builder.Property(code => code.Code).HasMaxLength(16).IsRequired();
 
         builder.Property(code => code.Purpose)
             .HasConversion<string>()

@@ -297,7 +297,7 @@ The complete set (`src/Shared/SIMF.Common/Enums/AccountCodePurpose.cs`):
 | `EmailChangeVerification` | Code sent to the new address when the login e-mail changes | Single use, hashed at rest |
 
 Every code is stored as a keyed hash (`AccountCodeHasher.Hash`) in the column
-`AccountCode.CodeHash`, compared in constant time
+`AccountCode.Code`, compared in constant time
 (`CryptographicOperations.FixedTimeEquals`), single-use, and only the newest
 outstanding code for a purpose stays valid. The HMAC key is not the JWT signing
 key itself but a subkey derived from it with HKDF-SHA256 under the label

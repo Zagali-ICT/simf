@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
@@ -374,7 +374,7 @@ public sealed class AdminCreateUserTests : IClassFixture<SimfApiFactory>
                 && c.Purpose == AccountCodePurpose.PasswordReset
                 && c.ConsumedAt == null)
             .OrderByDescending(c => c.CreatedAt)
-            .Select(c => c.CodeHash)
+            .Select(c => c.Code)
             .FirstAsync();
         var inviteCode = AuthFlow.RecoverPlaintextCode(inviteHash);
 

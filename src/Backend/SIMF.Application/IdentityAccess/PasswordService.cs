@@ -158,7 +158,7 @@ public sealed class PasswordService(
                 "انتهت صلاحية رمز إعادة التعيين. اطلب رمزًا جديدًا.");
         }
 
-        if (!CodesMatch(code.CodeHash, AccountCodeHasher.Hash(request.Code)))
+        if (!CodesMatch(code.Code, AccountCodeHasher.Hash(request.Code)))
         {
             // Increment atomically and decide on the returned count. The cap check
             // above read AttemptCount before this guess was compared, so a
@@ -542,7 +542,7 @@ public sealed class PasswordService(
             Id = Guid.NewGuid(),
             UserId = user.Id,
             Purpose = AccountCodePurpose.PasswordReset,
-            CodeHash = AccountCodeHasher.Hash(plaintext),
+            Code = AccountCodeHasher.Hash(plaintext),
             CreatedAt = now,
             ExpiresAt = now.Add(ResetCodeLifetime),
         };

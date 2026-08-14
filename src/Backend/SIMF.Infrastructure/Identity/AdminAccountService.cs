@@ -1,4 +1,4 @@
-﻿// Tests: SIMF.Api.Tests/AdminResetTwoFactorTests.cs,
+// Tests: SIMF.Api.Tests/AdminResetTwoFactorTests.cs,
 //        SIMF.Api.Tests/AdminCreateUserTests.cs,
 //        SIMF.Api.Tests/ControlPanelTwoFactorEnrolmentTests.cs (a created
 //        admin is TwoFactorEnabled AND can still complete a first sign-in)
@@ -1019,7 +1019,7 @@ internal sealed partial class AdminAccountService(
             Id = Guid.NewGuid(),
             UserId = user.Id,
             Purpose = AccountCodePurpose.PasswordReset,
-            CodeHash = AccountCodeHasher.Hash(plaintext),
+            Code = AccountCodeHasher.Hash(plaintext),
             CreatedAt = now,
             ExpiresAt = now.Add(inviteLifetime),
         };
