@@ -176,8 +176,12 @@ worse defect than the one being fixed.
 
 ### 4.3 Resolution order for the fingerprint
 
-1. The OS serial where the platform grants it (Android deployments meeting the
-   official requirements). Used as-is when it is a real value.
+1. ~~The OS serial where the platform grants it.~~ **Never built, and cannot be.**
+   `AndroidDeviceInfo` in the resolved `device_info_plus` exposes no
+   `serialNumber` at all, so there is no Android branch and no value to read; the
+   as-built comment at `device_label.dart:85-91` says exactly that. Section 2.4's
+   own heading already said a serial is not obtainable, and this step contradicted
+   it. Recorded in D-884.
 2. iOS `identifierForVendor`.
 3. A UUID generated once on first enrolment and persisted in secure storage
    under a new `StorageKeys` entry, reused on every later enrolment from that
@@ -241,7 +245,9 @@ Unit, `device_label_test.dart`:
 4. A very long manufacturer plus model is truncated to 64 characters or fewer.
 5. The generated fingerprint is persisted on first call and **reused** on the
    second, rather than regenerated.
-6. A serial reading `unknown` is rejected and falls through to the next source.
+6. ~~A serial reading `unknown` is rejected and falls through.~~ **Impossible by
+   design** once step 1 was dropped: no serial is ever read, so nothing can return
+   `unknown`. The shipped suite has 12 tests and none corresponds to this one.
 
 Widget, `biometric_step_up_screen_test.dart`:
 
@@ -1022,6 +1028,14 @@ Searching for `*RelativePath` finds the columns that were *named* after paths. I
 misses every pointer that was named after something else. The adversarial pass
 found four more, so **family A is seven pointers across five entities, not three**:
 
+> **DELIVERED 2026-08-14.** All seven now carry a typed `Guid` pointer, six of them
+> with a real foreign key into `StoredFiles`; the avatar stays a bare Guid because
+> it crosses into `SIMF_Identity` and SQL Server has no cross-database FK syntax.
+> Commits `8c0f6a81`, `8ffbcec7`, `f1b454de`, `aacb318c` (D-885) and `34d9cbc7`,
+> `88c329b6`, `981bf5bc`, `2d1d6242` (D-888). The table below describes the state
+> before that work, and is kept because the evidence in it is what justified the
+> change.
+
 | Pointer | Current type | Written at | Under this change |
 |---------|--------------|------------|-------------------|
 | `SimfUser.AvatarRelativePath` | `string` | `AccountService.cs:150` | Retype to `Guid?`. **No FK**, D-157 |
@@ -1550,7 +1564,10 @@ the same family as item 2.
 
 `SimfUser.DisplayName` lives in `SIMF_Identity`. The person's real name lives on
 `UserProfile.Name` / `NameArabic` in `SIMF_App`. The first is written from
-**three places, and kept in step with the second by hand from two of them**:
+**ten places directly, plus roughly twelve request-DTO paths that funnel into
+them**, and kept in step with the second by hand from two. An earlier draft of
+this section said "three places"; a full sweep found otherwise. The three below
+are the ones that matter for the greeting, not the whole set:
 
 | Site | What it does |
 |------|--------------|

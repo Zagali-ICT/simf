@@ -53,6 +53,45 @@ public sealed class PermissionEnforcementTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Topping_up_an_order_needs_BulkGenerate_not_ManageBatches()
+    {
+        // The badge-orders page carries three row actions over TWO different
+        // authorities: re-email and revoke are Visitors.ManageBatches, but
+        // top-up MINTS badges and so is Visitors.BulkGenerate. Someone trusted
+        // to re-send or cancel an order is not thereby trusted to create more of
+        // it. The Control Panel hides the button on exactly this split, and the
+        // endpoint has to hold the same line or the hidden button is theatre
+        // over an open API.
+        var token = await CreateAdminWithCustomRoleAsync(
+            grantedCodes:
+            [
+                PermissionCatalog.Visitors.ViewBatches,
+                PermissionCatalog.Visitors.ManageBatches,
+            ]);
+
+        // Granted: the orders list is reachable, so the role really does work.
+        var granted = await PostAuthAsync(
+            "/api/v1/admin/visitors/badge-batches/list", new GridQuery(), token);
+        Assert.Equal(HttpStatusCode.OK, granted.StatusCode);
+
+        var denied = await PostAuthAsync(
+            "/api/v1/admin/visitors/badge-batches/top-up",
+            new AdminTopUpBadgeBatchRequest
+            {
+                BatchId = Guid.NewGuid(),
+                Batches = new List<BulkBadgeBatch>
+                {
+                    new() { ProfileTypeId = Guid.NewGuid(), Count = 1 },
+                },
+            },
+            token);
+
+        // 403 and not 404: the gate is checked before the order is looked up, so
+        // a caller without the permission learns nothing about which ids exist.
+        Assert.Equal(HttpStatusCode.Forbidden, denied.StatusCode);
+    }
+
+    [Fact]
     public async Task Administrator_wildcard_reaches_every_admin_endpoint()
     {
         var token = await CreateAdministratorAndSignInAsync();

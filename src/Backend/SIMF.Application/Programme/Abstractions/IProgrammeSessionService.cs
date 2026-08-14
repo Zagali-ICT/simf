@@ -1,4 +1,4 @@
-using SIMF.Contracts.Programme;
+﻿using SIMF.Contracts.Programme;
 
 namespace SIMF.Application.Programme.Abstractions;
 
@@ -63,7 +63,8 @@ public interface IProgrammeSessionService
         Guid callerUserId, Guid sessionId, CancellationToken cancellationToken = default);
 }
 
-/// <summary>A pointer to a published session's recording on
-/// disk (not a wire DTO — internal to the streaming endpoints).</summary>
+/// <summary>A published session's recording, as its file-store key plus the
+/// metadata the stream needs (not a wire DTO — internal to the streaming
+/// endpoints).</summary>
 public sealed record SessionRecordingRef(
-    string StoredFileName, string ContentType, string FileName);
+    Guid StoredFileId, string ContentType, string FileName);

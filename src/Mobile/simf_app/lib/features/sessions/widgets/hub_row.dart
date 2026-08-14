@@ -7,7 +7,11 @@ import 'package:simf_app/app/widgets/simf_svg_icon.dart';
 /// One tappable session row — a navy card with the title over the time · hall
 /// line and a direction-aware forward chevron.
 class HubRow extends StatelessWidget {
-  const HubRow({required this.title, required this.subtitle, required this.onTap, super.key,
+  const HubRow({
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+    super.key,
   });
 
   final String title;

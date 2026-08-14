@@ -4,11 +4,12 @@ import 'package:simf_app/app/theme/app_assets.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_svg_icon.dart';
 
-/// A speaker photo tile (Figma 908:2004): a rounded-square ([size]px, 4px radius)
-/// navy tile on a 0.2px beige hairline showing the speaker's uploaded photo (the
-/// D-357 `SpeakerPhoto` asset, built as `{baseUrl}/app/assets/SpeakerPhoto/{id}/image`)
-/// clipped to the same rounding, falling back to the design's gold anchor glyph
-/// while it loads or when no photo is set (the asset route 404s).
+/// A speaker photo tile (Figma 908:2004): a rounded-square ([size]px, 4px
+/// radius) navy tile on a 0.2px beige hairline showing the speaker's uploaded
+/// photo (the D-357 `SpeakerPhoto` asset, built as
+/// `{baseUrl}/app/assets/SpeakerPhoto/{id}/image`) clipped to the same
+/// rounding, falling back to the design's gold anchor glyph while it loads or
+/// when no photo is set (the asset route 404s).
 ///
 /// Shared by the speakers list, the meeting-request speaker picker and the
 /// bilateral-meetings card (D-745) so the empty-photo state stays consistent
@@ -27,7 +28,8 @@ class SpeakerPhotoTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Keep the speakers-list 24px anchor at the default 44px tile; scale with size.
+    // Keep the speakers-list 24px anchor at the default 44px tile; scale with
+    // size.
     final anchorSize = size / 44 * 24;
     final fallback = SimfSvgIcon(
       AppAssets.speakerPlaceholder,

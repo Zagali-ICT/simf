@@ -1,4 +1,4 @@
-using SIMF.Common.Enums;
+﻿using SIMF.Common.Enums;
 using SIMF.Common.Files;
 using Xunit;
 
@@ -10,6 +10,25 @@ namespace SIMF.Api.Tests.Files;
 /// an explicit access + encryption decision. Mirrors <c>AssetPermissionRegistryTests</c>.</summary>
 public sealed class FileServicePolicyTests
 {
+    /// <summary>The public services that serve video rather than images. Every
+    /// other public service must be image-only, and enumerating the exceptions
+    /// here is what forces a future public video to be a deliberate decision
+    /// rather than an accident.
+    ///
+    /// <para>The hero background is stored bytes, range-served through its own
+    /// dedicated .mp4 route. The rest store no bytes at all: they are external
+    /// link rows, and their URL is handed to the clients verbatim because both
+    /// classify a feed by reading the string.</para></summary>
+    private static readonly HashSet<FileService> PublicVideoServices =
+    [
+        FileService.OrganizationHeroVideo,
+        FileService.SessionLiveStream,
+        FileService.SessionSignLanguage,
+        FileService.SessionSummaryVideo,
+        FileService.MediaGalleryVideo,
+        FileService.OrganizationLiveStream,
+    ];
+
     [Fact]
     public void Every_file_service_resolves_to_a_policy_for_itself()
     {
@@ -87,12 +106,7 @@ public sealed class FileServicePolicyTests
                 Assert.False(policy.EncryptAtRest, $"{policy.Service} is public but encrypted.");
                 Assert.Equal(FileSensitivityTier.Public, policy.Tier);
 
-                // Public services serve plaintext images, with ONE reviewed
-                // exception: the home/landing hero background video (D-768), a
-                // public MP4 range-served through its own dedicated .mp4 route.
-                // Pinning it here forces any future public video to be a deliberate
-                // decision, not an accident.
-                var expected = policy.Service == FileService.OrganizationHeroVideo
+                var expected = PublicVideoServices.Contains(policy.Service)
                     ? new HashSet<FileType> { FileType.Video }
                     : new HashSet<FileType> { FileType.Image };
                 Assert.Equal(expected, policy.AllowedTypes);

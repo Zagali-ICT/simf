@@ -115,6 +115,16 @@ public static class DependencyInjection
         // the per-request IRequestContext. Registered BEFORE the row-audit
         // interceptor below so the stamped values land in the audit trail.
         services.AddScoped<AuditStampingSaveChangesInterceptor>();
+        // Stamps the open edition year onto every new attendee record. Singleton
+        // cache behind it, because the year changes about once a year and is read
+        // on nearly every attendee write and every gate scan.
+        services.AddSingleton<
+            SIMF.Infrastructure.Editions.IEventEditionCache,
+            SIMF.Infrastructure.Editions.EventEditionCache>();
+        services.AddScoped<SIMF.Infrastructure.Editions.EditionStampingSaveChangesInterceptor>();
+        services.AddScoped<
+            SIMF.Application.Editions.Abstractions.IEventEditionService,
+            SIMF.Infrastructure.Editions.EventEditionService>();
 
         // EnableRetryOnFailure covers the transient SQL errors of an Always On
         // failover.
@@ -132,6 +142,8 @@ public static class DependencyInjection
                 sql.EnableRetryOnFailure();
             }).AddInterceptors(
                 sp.GetRequiredService<AuditStampingSaveChangesInterceptor>(),
+                sp.GetRequiredService<
+                    SIMF.Infrastructure.Editions.EditionStampingSaveChangesInterceptor>(),
                 sp.GetRequiredService<RowAuditingSaveChangesInterceptor>()));
 
         // ASP.NET Core Identity — UserManager / RoleManager over the EF stores.
@@ -521,6 +533,11 @@ public static class DependencyInjection
         // are gone (AssetService is retained, rewritten onto IFileService).
         services.AddScoped<SIMF.Application.Assets.Abstractions.IAssetService,
             SIMF.Infrastructure.Assets.AssetService>();
+        // The externally hosted feeds — live streams, sign language, the summary
+        // and gallery videos, the hero background — held in that same store.
+        services.AddScoped<SIMF.Application.Files.Abstractions.IFeedLinkService,
+            SIMF.Infrastructure.Files.FeedLinkService>();
+        services.AddScoped<SIMF.Infrastructure.Configuration.HeroVideoUrlResolver>();
         services.AddScoped<SIMF.Application.Exhibition.Abstractions.IPublicBoothService,
             SIMF.Infrastructure.Exhibition.PublicBoothService>();
         services.AddScoped<SIMF.Application.Exhibition.Abstractions.IAdminBoothService,
@@ -648,12 +665,12 @@ public static class DependencyInjection
         SIMF.Infrastructure.Ai.AiAuditDetail.ConfigureHmacKey(
             configuration.GetValue<string?>(
                 $"{SIMF.Infrastructure.Ai.AiOptions.SectionName}:PromptHash:Secret"));
-        // Install the keyed-HMAC key for AccountCode (OTP)
-        // hashing; reuses the JWT signing key (a required, boot-validated secret).
+        // Install the keyed-HMAC keys for AccountCode (OTP) hashing and for the
+        // speaker action-link tokens. Both take the JWT signing key — a required,
+        // boot-validated secret — as their master, and each derives its own subkey
+        // from it, so passing one value here does not give them one key.
         SIMF.Application.IdentityAccess.AccountCodeHasher.ConfigureKey(
             configuration[$"{SIMF.Common.Options.JwtOptions.SectionName}:SigningKey"]);
-        // Install the keyed-HMAC key for the speaker
-        // action-link tokens; reuses the same boot-validated JWT signing key.
         SIMF.Application.MeetingRequests.MeetingActionTokenHasher.ConfigureKey(
             configuration[$"{SIMF.Common.Options.JwtOptions.SectionName}:SigningKey"]);
         services.AddSingleton<SIMF.Application.Ai.Abstractions.IAiProvider,

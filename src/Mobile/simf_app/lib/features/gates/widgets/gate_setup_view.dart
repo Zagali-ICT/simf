@@ -103,7 +103,8 @@ class GateSetupView extends StatelessWidget {
                   label: l10n.gateDirectionIn,
                   icon: Icons.login,
                   selected: direction == ScanDirection.checkIn,
-                  enabled: !locked || gate.directionMode == GateDirectionMode.inOnly,
+                  enabled:
+                      !locked || gate.directionMode == GateDirectionMode.inOnly,
                   onTap: () => onDirection(ScanDirection.checkIn),
                 ),
               ),
@@ -113,8 +114,8 @@ class GateSetupView extends StatelessWidget {
                   label: l10n.gateDirectionOut,
                   icon: Icons.logout,
                   selected: direction == ScanDirection.checkOut,
-                  enabled:
-                      !locked || gate.directionMode == GateDirectionMode.outOnly,
+                  enabled: !locked ||
+                      gate.directionMode == GateDirectionMode.outOnly,
                   onTap: () => onDirection(ScanDirection.checkOut),
                 ),
               ),
@@ -146,7 +147,8 @@ class GateSetupView extends StatelessWidget {
                   borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
                 ),
               ),
-              icon: const Icon(Icons.photo_camera_outlined, size: SimfTokens.gateSetupViewSizeMd),
+              icon: const Icon(Icons.photo_camera_outlined,
+                  size: SimfTokens.gateSetupViewSizeMd,),
               label: Text(
                 l10n.gateScanCode,
                 style: SimfTokens.titleBold,

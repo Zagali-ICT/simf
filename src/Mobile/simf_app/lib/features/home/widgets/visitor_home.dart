@@ -61,13 +61,13 @@ class VisitorHome extends StatelessWidget {
   /// (scan a visitor's QR + my visitors). D-519.
   final bool isExhibitor;
 
-  /// Bi-Meeting rework — the "اللقاءات الثنائية" tile is shown to anyone entitled
-  /// to request a meeting (speaker OR delegation flag); others don't see it (they
-  /// can't reach the page).
+  /// Bi-Meeting rework — the "اللقاءات الثنائية" tile is shown to anyone
+  /// entitled to request a meeting (speaker OR delegation flag); others don't
+  /// see it (they can't reach the page).
   final bool canRequestMeetings;
 
-  /// Build #13 — the "قابل أشخاص مثلك" tile is hidden when the CP switch for the
-  /// partner directory is off (the feature is unavailable). Default true.
+  /// Build #13 — the "قابل أشخاص مثلك" tile is hidden when the CP switch for
+  /// the partner directory is off (the feature is unavailable). Default true.
   final bool partnerDirectoryEnabled;
 
   @override
@@ -162,8 +162,9 @@ class VisitorHome extends StatelessWidget {
                   iconAsset: HomeIcons.booths,
                   onTap: () => context.pushNamed(RouteNames.booths),
                 ),
-                // الوفود — delegations sits in the about row (frame 758:1220) with
-                // the design's exact formkit:people glyph (node 1408:10399).
+                // الوفود — delegations sits in the about row (frame 758:1220)
+                // with the design's exact formkit:people glyph (node
+                // 1408:10399).
                 SimfNavTile(
                   label: l10n.delegationsTitle,
                   iconAsset: HomeIcons.delegations,
@@ -253,10 +254,10 @@ class VisitorHome extends StatelessWidget {
                   label: l10n.tileSessionSummary,
                   iconAsset: HomeIcons.sessionSummary,
                   minHeight: SimfTokens.navTileHeight,
-                  // Owner 2026-07-01: the smart-features "ملخص الجلسات" tile opens
-                  // the AI session-summaries list (Figma 1388:8392, header
-                  // "ملخص الجلسات") — matching its summary icon + label. The
-                  // session-downloads screen ("الجلسات", 1388:7621) is the
+                  // Owner 2026-07-01: the smart-features "ملخص الجلسات" tile
+                  // opens the AI session-summaries list (Figma 1388:8392,
+                  // header "ملخص الجلسات") — matching its summary icon + label.
+                  // The session-downloads screen ("الجلسات", 1388:7621) is the
                   // about tile above; My-Sessions (1388:9067) stays on My-Area.
                   onTap: () => context.pushNamed(RouteNames.sessionSummaryList),
                 ),

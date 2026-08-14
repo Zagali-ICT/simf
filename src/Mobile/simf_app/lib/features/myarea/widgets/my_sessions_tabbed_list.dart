@@ -13,7 +13,11 @@ import 'package:simf_app/features/sessions/widgets/session_card_meta.dart';
 import 'package:simf_app/features/sessions/widgets/session_state_chip.dart';
 
 class MySessionsTabbedList extends StatelessWidget {
-  const MySessionsTabbedList({required this.items, required this.tabLabel, required this.l10n, super.key,
+  const MySessionsTabbedList({
+    required this.items,
+    required this.tabLabel,
+    required this.l10n,
+    super.key,
   });
 
   final List<MyAreaSessionItem> items;
@@ -75,15 +79,14 @@ class MySessionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final time = TimeOfDay.fromDateTime(item.startLocal).format(context);
-    final category = item.localizedCategory(isArabic);
-    final speaker = item.localizedSpeaker(isArabic);
-    final hall = item.localizedHall(isArabic);
-    final timeText = (category != null && category.isNotEmpty)
-        ? '$time · $category'
-        : time;
+    final category = item.localizedCategory(isArabic: isArabic);
+    final speaker = item.localizedSpeaker(isArabic: isArabic);
+    final hall = item.localizedHall(isArabic: isArabic);
+    final timeText =
+        (category != null && category.isNotEmpty) ? '$time · $category' : time;
     final hasMeta = speaker != null || (hall != null && hall.isNotEmpty);
-    // Owner 2026-07-14 — the same state chips as the agenda (my-sessions carries
-    // no summary flag, so only live-now / recorded show here).
+    // Owner 2026-07-14 — the same state chips as the agenda (my-sessions
+    // carries no summary flag, so only live-now / recorded show here).
     final phase = sessionPhase(item.start, item.end, saudiNow());
     final stateChips = sessionStateChips(
       phase: phase,
@@ -97,11 +100,13 @@ class MySessionCard extends StatelessWidget {
         pathParameters: <String, String>{RouteParams.sessionId: item.id},
       ),
       child: Padding(
-        padding: const EdgeInsets.all(SimfTokens.space2), // p-8 (Figma 1388:9115)
+        padding:
+            const EdgeInsets.all(SimfTokens.space2), // p-8 (Figma 1388:9115)
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            // Title + time·category on the right, the favourite heart on the left.
+            // Title + time·category on the right, the favourite heart on the
+            // left.
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
@@ -110,7 +115,7 @@ class MySessionCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: <Widget>[
                       Text(
-                        item.localizedTitle(isArabic),
+                        item.localizedTitle(isArabic: isArabic),
                         textAlign: TextAlign.start,
                         style: const TextStyle(
                           color: SimfTokens.surface,

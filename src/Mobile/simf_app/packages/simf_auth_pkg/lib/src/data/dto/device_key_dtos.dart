@@ -63,8 +63,8 @@ class DeviceKeyEntryDto {
   });
 
   /// The three timestamps are read additively: the register response has always
-  /// carried them and only `id` was consumed. They are what makes the My Devices
-  /// list worth showing, so nothing on the wire changed to add them.
+  /// carried them and only `id` was consumed. They are what makes the My
+  /// Devices list worth showing, so nothing on the wire changed to add them.
   factory DeviceKeyEntryDto.fromJson(Map<String, dynamic> json) {
     return DeviceKeyEntryDto(
       id: json['id'] as String? ?? '',

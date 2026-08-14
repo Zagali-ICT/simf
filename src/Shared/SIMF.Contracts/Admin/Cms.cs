@@ -31,11 +31,11 @@ public sealed record AdminBannerSummary(
     bool IsActive,
     DateTime CreatedAt,
     // Carried so the grid Excel export can round-trip them (not rendered
-    // as grid columns). Body/BodyArabic are required for create; ImageUrl/LinkUrl
-    // are optional. Default to empty/null when unset.
+    // as grid columns). Body/BodyArabic are required for create; LinkUrl is
+    // optional. Default to empty/null when unset. The image is not here: it is
+    // uploaded through SimfImageUpload, so a spreadsheet has nothing to carry.
     string Body = "",
     string BodyArabic = "",
-    string? ImageUrl = null,
     string? LinkUrl = null);
 
 public sealed record AdminBannerDetail(
@@ -44,7 +44,6 @@ public sealed record AdminBannerDetail(
     string TitleArabic,
     string Body,
     string BodyArabic,
-    string? ImageUrl,
     string? LinkUrl,
     DateTime Start,
     DateTime End,
@@ -59,7 +58,6 @@ public sealed class CreateBannerRequest
     public string TitleArabic { get; set; } = string.Empty;
     public string Body { get; set; } = string.Empty;
     public string BodyArabic { get; set; } = string.Empty;
-    public string? ImageUrl { get; set; }
     public string? LinkUrl { get; set; }
     public DateTime Start { get; set; }
     public DateTime End { get; set; }
@@ -74,7 +72,6 @@ public class UpdateBannerRequest
     public string TitleArabic { get; set; } = string.Empty;
     public string Body { get; set; } = string.Empty;
     public string BodyArabic { get; set; } = string.Empty;
-    public string? ImageUrl { get; set; }
     public string? LinkUrl { get; set; }
     public DateTime Start { get; set; }
     public DateTime End { get; set; }

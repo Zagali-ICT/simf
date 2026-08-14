@@ -40,5 +40,5 @@ public partial class Speakers
 
     // Same-origin photo route (StoredFile SpeakerPhoto) → legacy path → none.
     private static string PhotoUrl(PublicSpeakerSummary s) =>
-        SpeakerPhoto.Url(s.Id, s.HasPhotoAsset, s.PhotoRelativePath);
+        SpeakerPhoto.Url(s.Id, s.HasPhotoAsset);
 }

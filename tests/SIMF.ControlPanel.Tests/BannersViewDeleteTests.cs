@@ -19,7 +19,7 @@ public sealed class BannersViewDeleteTests : CpComponentTestBase
 
     private static AdminBannerDetail Detail() => new(
         Guid.NewGuid(), "Welcome", "Ø£Ù‡Ù„Ø§Ù‹", "Body", "Ø§Ù„Ù†Øµ",
-        "https://cdn.simf.test/banner.png", "https://simf.test/news",
+        "https://simf.test/news",
         DateTime.UnixEpoch, DateTime.UnixEpoch.AddDays(1),
         DisplayOrder: 3, IsActive: true, DateTime.UnixEpoch, UpdatedAt: null);
 

@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 
 class SocialButton extends StatelessWidget {
-  const SocialButton({required this.icon, required this.label, required this.onTap, super.key,
+  const SocialButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    super.key,
   });
 
   final IconData icon;
@@ -29,7 +33,8 @@ class SocialButton extends StatelessWidget {
               width: SimfTokens.hairline,
             ),
           ),
-          child: Icon(icon, color: SimfTokens.surface, size: SimfTokens.socialButtonSize),
+          child: Icon(icon,
+              color: SimfTokens.surface, size: SimfTokens.socialButtonSize,),
         ),
       ),
     );

@@ -14,13 +14,13 @@ import '../features/accessibility/_fake_prefs.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the Accessibility screen against Figma frame **1116:16630**
-/// (إمكانية الوصول). Regenerate:
-///   flutter test --update-goldens test/golden/accessibility_golden_test.dart
+/// (إمكانية الوصول). Regenerate: flutter test --update-goldens
+/// test/golden/accessibility_golden_test.dart
 ///
 /// Frame parity expected: the navy shell, the العرض section (the حجم الخط card
-/// with four pill chips — the default متوسط filled gold — then the high-contrast
-/// and reduce-motion toggle rows), and the الصوت والقراءة section (the
-/// screen-reader + captions toggle rows, captions on by default). RTL.
+/// with four pill chips — the default متوسط filled gold — then the
+/// high-contrast and reduce-motion toggle rows), and the الصوت والقراءة section
+/// (the screen-reader + captions toggle rows, captions on by default). RTL.
 
 void main() {
   setUpAll(loadGoldenFonts);

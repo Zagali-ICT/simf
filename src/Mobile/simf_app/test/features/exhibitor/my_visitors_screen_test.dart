@@ -1,7 +1,7 @@
-// D-426 — exhibitor "My Booth Visitors": empty state, list of captured visitors,
-// and the 403 (not-an-exhibitor) surface.
-// BUG-025 — the list also carries the "these are booth scans, not My Contacts"
-// note so the two features are never confused.
+// D-426 — exhibitor "My Booth Visitors": empty state, list of captured
+// visitors, and the 403 (not-an-exhibitor) surface. BUG-025 — the list also
+// carries the "these are booth scans, not My Contacts" note so the two features
+// are never confused.
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,7 +19,9 @@ import 'package:simf_app/features/exhibitor/widgets/captured_visitor_sheet.dart'
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 class _FakeExhibitorRepo implements ExhibitorRepository {
-  _FakeExhibitorRepo({List<ExhibitorVisitor> visitors = const <ExhibitorVisitor>[], this.status})
+  _FakeExhibitorRepo(
+      {List<ExhibitorVisitor> visitors = const <ExhibitorVisitor>[],
+      this.status,})
       : visitors = <ExhibitorVisitor>[...visitors];
 
   final List<ExhibitorVisitor> visitors;
@@ -37,7 +39,9 @@ class _FakeExhibitorRepo implements ExhibitorRepository {
   Future<List<ExhibitorVisitor>> listMyVisitors() async {
     if (status != null) {
       throw ApiFailure(
-        code: ApiErrorCodes.clientNetwork, message: 'x', httpStatus: status,
+        code: ApiErrorCodes.clientNetwork,
+        message: 'x',
+        httpStatus: status,
       );
     }
     return visitors;
@@ -97,7 +101,8 @@ Future<void> _pump(WidgetTester tester, _FakeExhibitorRepo repo) async {
 ExhibitorVisitor _visitor(String name) => ExhibitorVisitor(
       id: 'v-$name',
       scannedAt: DateTime.utc(2026),
-      card: VisitorCard(userId: 'u-$name', name: name, nameArabic: name, available: true),
+      card: VisitorCard(
+          userId: 'u-$name', name: name, nameArabic: name, available: true,),
     );
 
 void main() {

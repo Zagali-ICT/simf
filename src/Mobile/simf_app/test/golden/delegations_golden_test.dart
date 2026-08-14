@@ -15,22 +15,23 @@ import 'package:simf_app/features/delegations/delegations_screen.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the Delegations screen against Figma frame **1426:10771**
-/// (الوفود). Compare to the frame:
-///   flutter test --update-goldens test/golden/delegations_golden_test.dart
+/// (الوفود). Compare to the frame: flutter test --update-goldens
+/// test/golden/delegations_golden_test.dart
 ///
 /// Proves the stats strip (8 دولة مشاركة left / 54 إجمالي المشاركين right + the
 /// scattered flags + faint gold grid), the search field (search glyph at the
 /// inline-start = right, the filter cell walled off at the inline-end = left),
-/// and the per-country card: the flag box + bilingual country name on the right,
-/// the head-of-delegation box (gold avatar + name on the right, رئيس الوفد chip
-/// on the left), and the bottom row — the member chip on the **right** with the
-/// groups glyph leading it, the date range on the **left** with the clock glyph
-/// leading it (Figma 1426:10855/10862/10856). RTL throughout.
+/// and the per-country card: the flag box + bilingual country name on the
+/// right, the head-of-delegation box (gold avatar + name on the right, رئيس
+/// الوفد chip on the left), and the bottom row — the member chip on the
+/// **right** with the groups glyph leading it, the date range on the **left**
+/// with the clock glyph leading it (Figma 1426:10855/10862/10856). RTL
+/// throughout.
 ///
-/// Fixed data only (no DateTime.now() on the display path), so the PNG is stable
-/// run-to-run. Known golden-env artifacts (NOT layout defects): the country
-/// flags are colour-emoji glyphs → render as tofu (no colour-emoji font loaded);
-/// the date range derives from fixed dates so it is deterministic.
+/// Fixed data only (no DateTime.now() on the display path), so the PNG is
+/// stable run-to-run. Known golden-env artifacts (NOT layout defects): the
+/// country flags are colour-emoji glyphs → render as tofu (no colour-emoji font
+/// loaded); the date range derives from fixed dates so it is deterministic.
 
 final _delegations = Delegations(
   countryCount: 8,

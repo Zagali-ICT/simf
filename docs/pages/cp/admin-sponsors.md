@@ -1,4 +1,4 @@
-# Sponsors — `/admin/sponsors`
+﻿# Sponsors — `/admin/sponsors`
 
 | | |
 |--|--|
@@ -94,7 +94,6 @@ owns the hidden file `<input id="sponsors-import-input" accept=".xlsx">`, fires
 | Name (English) | `r.NameEn` | yes | yes | |
 | Name (Arabic) | `r.NameAr` | yes | yes | |
 | Tier | `r.TierName` | yes | no | Platinum / Gold / Silver / Bronze |
-| Logo path | `r.LogoRelativePath` | no | no | "—" when blank |
 | Link | `r.Url` | no | no | "—" when blank |
 | Display order | `r.DisplayOrder` | yes | no | |
 | Active | `r.IsActive` | yes | no | `SimfPill` on/off (Active / Inactive) |
@@ -114,7 +113,6 @@ page size `Top = 20`.
 | Name (Arabic) | text | yes | 256 | 1–256 chars | `Admin.Sponsors.Field.NameAr` |
 | Tier | select | yes | — | one of 10=Platinum / 20=Gold / 30=Silver / 40=Bronze (default Platinum) | `Admin.Sponsors.Field.Tier` |
 | Link | text | no | 512 | ≤512 chars | `Admin.Sponsors.Field.Url` |
-| Logo path | text | no | 256 | ≤256 chars | `Admin.Sponsors.Field.Logo` |
 | Contact | `ContactPicker` | no | — | must be an existing active Contact (SIMF-FDS-014 / D-281) | — |
 | Display order | number | yes | min 0, max 99999 | integer ≥ 0 | `Admin.Sponsors.Field.DisplayOrder` |
 | Active | checkbox | Edit only | — | bool (Create always active) | `Admin.Sponsors.Field.IsActive` |
@@ -124,7 +122,8 @@ The form runs Create (`POST`) when `IsEdit=false` and Edit (`PUT` against
 name(s) are guarded client-side before any request (`Admin.Sponsors.NameRequired`).
 
 ### 4.6 View / Delete form (`SponsorsViewDelete`)
-Read-only `<dl>` of Name (En/Ar), Tier, Logo path, Link, Display order, Active.
+Read-only `<dl>` of Name (En/Ar), Tier, Link, Display order, Active, plus a
+`SimfImageThumb` of the sponsor's logo resolved by id.
 In delete mode a red Delete button opens a `SimfConfirm` (Danger) whose message is
 `Admin.Sponsors.Delete.Message` formatted with the sponsor's English name; only the
 confirm fires `DELETE`. The old inline list `confirm()` was removed in D-353.
@@ -154,7 +153,8 @@ summary-only model would wipe an existing contact link.
 
 ### 5.1 Excel export columns
 `ExportSponsorsEndpoint` writes a sheet named **"Sponsors"** with header row
-`NameEn | NameAr | Tier | LogoRelativePath | Url | DisplayOrder | IsActive`. Tier is
+`NameEn | NameAr | Tier | Url | DisplayOrder | IsActive`. The logo column left the
+workbook with D-889 — an image is a file, not a cell. Tier is
 written by its **display name** (Platinum/Gold/Silver/Bronze) so the workbook
 round-trips back through import. File name: `simf-sponsors-{yyyyMMddHHmmss}.xlsx`.
 With selected rows the export honours `AdminGridExportRequest.Ids`; with none, it
@@ -176,8 +176,8 @@ shared `Grid.Import.Done` key.
   when Name (English) or Name (Arabic) is blank and shows `Admin.Sponsors.NameRequired`
   ("Both the English and Arabic names are required." / "الاسم بالإنجليزية والعربية مطلوبان.").
 - **Server-side validation** (`AdminSponsorService.ValidateAndNormalise`): trims
-  fields; NameEn/NameAr 1–256; Tier must be a defined `SponsorTier`; LogoRelativePath
-  ≤256; Url ≤512; DisplayOrder ≥ 0; an optional `ContactId` must point at an existing
+  fields; NameEn/NameAr 1–256; Tier must be a defined `SponsorTier`;
+  Url ≤512; DisplayOrder ≥ 0; an optional `ContactId` must point at an existing
   active Contact (else 400). All length/tier/order failures throw
   `ApiException(ErrorCodes.SponsorInvalid, 400, …)`.
 - **Duplicate guard:** an **active** sponsor with the same Arabic name in the same
@@ -277,6 +277,7 @@ the nav rail mirrors, the toolbar + pager reverse, and the `CrudShell` form mirr
 
 | Date | Decision | Change |
 |------|----------|--------|
+| 2026-08-14 | D-889 | **The free-text Logo path is gone; the sponsor's logo is a typed key.** `Sponsor.LogoRelativePath` becomes `Guid? LogoFileId` with a real foreign key into `StoredFiles`. The Add/Edit form loses the text field and gains the save-first hint on create; the workbook loses its logo column; `AssetService` points `LogoFileId` at the sponsor's active file on every asset transition. |
 | 2026-06-11 | D-357 | Sponsor **logo** wired to the unified media-asset pipeline: `SimfImageUpload Category="SponsorLogo"` on the Add/Edit form (edit mode only — the sponsor row must exist before bytes can attach) + a `SimfImageThumb` of `/account/api/admin/assets/SponsorLogo/{id}/image` on Details/Deactivate (complements the existing free-text `LogoRelativePath` field). E2E catalogue extended with E2E-SPN-024. |
 | 2026-06-10 | D-356 / D-353 | Reference doc created. Documents the D-353 `CrudShell` Add/Edit + View/Delete forms with the Page ↔ Popup `CrudPresentationToggle` (PageKey `sponsors`) and the `SimfConfirm`-gated delete (replacing the old inline modal + native `confirm()`), plus the D-356 Excel export (`POST /export`) and insert-only import (`POST /import`) via `CrudGridExcel`. |
 | 2026-06-02 (orig) | D-199 | Sponsors admin CRUD shipped (Mockup page 23). |

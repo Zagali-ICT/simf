@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -27,19 +28,20 @@ const double _scanLineRestRatio = 93 / 300;
 const double _sweepTopInset = 28;
 const double _sweepBottomInset = 30;
 
-/// The QR-scanner viewfinder card from Figma node 758:4735 — a navy card holding
-/// a black camera window (gold corner brackets, a glowing gold scan line and a
-/// centred scan glyph) above a "searching" caption + track.
+/// The QR-scanner viewfinder card from Figma node 758:4735 — a navy card
+/// holding a black camera window (gold corner brackets, a glowing gold scan
+/// line and a centred scan glyph) above a "searching" caption + track.
 ///
 /// The live camera is injected as [camera] (e.g. a `flutter_zxing` reader) so
 /// this widget stays plugin-free and rendable in tests; when it is null the
-/// window paints the brackets + glyph on black (the camera-off / preview state).
+/// window paints the brackets + glyph on black (the camera-off / preview
+/// state).
 ///
 /// D-739 (owner): the gold scan line **sweeps up and down** across the window
-/// while [active] (a live camera is scanning) — the real "scanning" motion — and
-/// rests at the design position otherwise. This is the single shared viewfinder
-/// used by every scanner in the app, so the look + motion are identical
-/// everywhere.
+/// while [active] (a live camera is scanning) — the real "scanning" motion —
+/// and rests at the design position otherwise. This is the single shared
+/// viewfinder used by every scanner in the app, so the look + motion are
+/// identical everywhere.
 class SimfScannerFrame extends StatefulWidget {
   const SimfScannerFrame({
     required this.statusLabel,
@@ -78,7 +80,7 @@ class _SimfScannerFrameState extends State<SimfScannerFrame>
       duration: MotionDurations.scannerSweep,
     );
     if (widget.active) {
-      _controller.repeat(reverse: true);
+      unawaited(_controller.repeat(reverse: true));
     }
   }
 
@@ -86,10 +88,11 @@ class _SimfScannerFrameState extends State<SimfScannerFrame>
   void didUpdateWidget(SimfScannerFrame oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.active && !_controller.isAnimating) {
-      _controller.repeat(reverse: true);
+      unawaited(_controller.repeat(reverse: true));
     } else if (!widget.active && _controller.isAnimating) {
-      _controller.stop();
-      _controller.value = 0;
+      _controller
+        ..stop()
+        ..value = 0;
     }
   }
 
@@ -141,7 +144,8 @@ class _SimfScannerFrameState extends State<SimfScannerFrame>
             child: _buildWindow(windowHeight),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(SimfTokens.space4, SimfTokens.space5, SimfTokens.space4, SimfTokens.space1),
+            padding: const EdgeInsets.fromLTRB(SimfTokens.space4,
+                SimfTokens.space5, SimfTokens.space4, SimfTokens.space1,),
             child: _buildStatusRow(),
           ),
         ],
@@ -159,10 +163,22 @@ class _SimfScannerFrameState extends State<SimfScannerFrame>
           children: <Widget>[
             ColoredBox(color: SimfTokens.black, child: widget.camera),
             const ColoredBox(color: SimfTokens.scrimBlack35), // black @ 35%
-            const Positioned(top: 16, left: 16, child: ScannerBracket(top: true, left: true)),
-            const Positioned(top: 16, right: 16, child: ScannerBracket(top: true, left: false)),
-            const Positioned(bottom: 16, left: 16, child: ScannerBracket(top: false, left: true)),
-            const Positioned(bottom: 16, right: 16, child: ScannerBracket(top: false, left: false)),
+            const Positioned(
+                top: 16,
+                left: 16,
+                child: ScannerBracket(top: true, left: true),),
+            const Positioned(
+                top: 16,
+                right: 16,
+                child: ScannerBracket(top: true, left: false),),
+            const Positioned(
+                bottom: 16,
+                left: 16,
+                child: ScannerBracket(top: false, left: true),),
+            const Positioned(
+                bottom: 16,
+                right: 16,
+                child: ScannerBracket(top: false, left: false),),
             const Center(
               child: Icon(
                 Icons.qr_code_scanner,
@@ -178,7 +194,7 @@ class _SimfScannerFrameState extends State<SimfScannerFrame>
   }
 
   /// The glowing gold scan line — swept vertically across the window by the
-  /// controller when [active], otherwise pinned at the design position.
+  /// controller when `active`, otherwise pinned at the design position.
   Widget _buildScanLine(double windowHeight) {
     // Sweep between a top and bottom margin, keeping the line clear of the
     // corner brackets.
@@ -217,7 +233,9 @@ class _SimfScannerFrameState extends State<SimfScannerFrame>
             child: Text(
               widget.statusLabel,
               textDirection: TextDirection.rtl,
-              style: const TextStyle(color: SimfTokens.mutedBlue, fontSize: SimfTokens.simfScannerFrameFontSize),
+              style: const TextStyle(
+                  color: SimfTokens.mutedBlue,
+                  fontSize: SimfTokens.simfScannerFrameFontSize,),
             ),
           ),
           const SizedBox(height: SimfTokens.space2),

@@ -13,10 +13,10 @@ import 'package:simf_app/features/contact_us/widgets/contact_social_card.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 /// Page 203 — تواصل معنا · Contact us (`/contact-us`, public). Pixel-parity to
-/// KSA Figma frame **1388:7711**: the navy [SimfPageShell] shell over a "أرسل رسالة"
-/// form (name / email / message + send), a "معلومات التواصل" panel (phone /
-/// email / location from the shared org profile) and the social-links row.
-/// Previously a ComingSoon placeholder (D-464).
+/// KSA Figma frame **1388:7711**: the navy [SimfPageShell] shell over a "أرسل
+/// رسالة" form (name / email / message + send), a "معلومات التواصل" panel
+/// (phone / email / location from the shared org profile) and the social-links
+/// row. Previously a ComingSoon placeholder (D-464).
 ///
 /// The form posts to the new public `POST /app/contact-inquiry`; the info panel
 /// and social links read the app-lifetime [orgProfileProvider] (same data the

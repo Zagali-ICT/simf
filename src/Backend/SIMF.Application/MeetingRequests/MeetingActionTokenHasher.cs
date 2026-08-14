@@ -1,5 +1,9 @@
+// Tests: SIMF.Api.Tests/DelegationMeetingActionTokenTests.cs (mint, redeem,
+//        expiry) and SIMF.Application.Tests/AccountCodeHasherTests.cs (this
+//        hasher's key is derived, and differs from the account-code one).
 using System.Security.Cryptography;
 using System.Text;
+using SIMF.Application.Security;
 
 namespace SIMF.Application.MeetingRequests;
 
@@ -10,23 +14,26 @@ namespace SIMF.Application.MeetingRequests;
 /// secret is a 256-bit random value carried only in the emailed URL; the HMAC-SHA256
 /// digest is stored full-length (64 hex chars) — unlike the 6-digit OTP hasher there
 /// is no truncation, because the token space is already astronomically large.
-/// Mirrors <see cref="IdentityAccess.AccountCodeHasher"/> and reuses the JWT signing
-/// key as the HMAC key.
+/// Mirrors <see cref="IdentityAccess.AccountCodeHasher"/>, including deriving its
+/// HMAC key from the JWT signing key rather than using that secret directly.
 /// </summary>
 public static class MeetingActionTokenHasher
 {
     // Deterministic dev fallback so a token can be hashed before ConfigureKey runs
     // (tests / DI-only setups). Production overrides it with the configured secret.
     private static byte[] _key =
-        SHA256.HashData(Encoding.UTF8.GetBytes("simf-meeting-action-token-dev"));
+        PurposeKey.Derive("simf-meeting-action-token-dev", PurposeKey.MeetingActionLabel);
 
-    /// <summary>Install the HMAC key once at startup (from DI). A null/empty key
-    /// leaves the dev fallback in place.</summary>
+    /// <summary>Install the HMAC key once at startup (from DI). The master secret is
+    /// the JWT signing key; a per-purpose subkey is derived from it rather than using
+    /// it as the HMAC key, so this hasher and the account-code hasher hold different
+    /// keys despite being configured from one value. A null/empty key leaves the dev
+    /// fallback in place.</summary>
     public static void ConfigureKey(string? key)
     {
         if (!string.IsNullOrEmpty(key))
         {
-            _key = Encoding.UTF8.GetBytes(key);
+            _key = PurposeKey.Derive(key, PurposeKey.MeetingActionLabel);
         }
     }
 

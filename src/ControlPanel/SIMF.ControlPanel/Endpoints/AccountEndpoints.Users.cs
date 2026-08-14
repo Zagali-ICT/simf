@@ -267,13 +267,20 @@ internal static partial class AccountEndpoints
             return Forward(await api.BulkGenerateBadgesAsync(body, token));
         });
 
-        // Persisted bulk-badge batches: list / re-email / revoke.
+        // Persisted bulk-badge batches: list / top-up / re-email / revoke.
         group.MapPost("/admin/visitors/badge-batches/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
         {
             var token = await http.GetTokenAsync("access_token");
             if (token is null) return Results.Unauthorized();
             return Forward(await api.ListBadgeBatchesAsync(body, token));
+        });
+        group.MapPost("/admin/visitors/badge-batches/top-up",
+            async (AdminTopUpBadgeBatchRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.TopUpBadgeBatchAsync(body, token));
         });
         group.MapPost("/admin/visitors/badge-batches/re-email",
             async (AdminReEmailBadgeBatchRequest body, HttpContext http, SimfAdminClient api) =>

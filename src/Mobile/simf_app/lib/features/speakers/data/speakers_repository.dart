@@ -7,7 +7,8 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// Data layer for the speakers list (Page_019) + profile (Page_020). The two
 /// reads are **public** (`AllowAnonymous`, D-199); the meeting request is
 /// **approved-only** (D-269). Throws [ApiFailure] on a wire error — the screens
-/// map 404 (`SPEAKER_NOT_FOUND`) and 409 (`SPEAKER_MEETING_REQUESTS_NOT_ALLOWED`).
+/// map 404 (`SPEAKER_NOT_FOUND`) and 409
+/// (`SPEAKER_MEETING_REQUESTS_NOT_ALLOWED`).
 class SpeakersRepository {
   SpeakersRepository(this._client);
 
@@ -47,10 +48,10 @@ class SpeakersRepository {
     );
   }
 
-  /// `POST /app/speakers/{id}/meeting-requests` (approved-only, E2). The body is
-  /// `{ requesterName, subject }` plus an optional picked slot (D-474/D-475 — the
-  /// VIP slot flow; the server requires VIP + a free slot when one is sent). The
-  /// response is discarded (success is enough).
+  /// `POST /app/speakers/{id}/meeting-requests` (approved-only, E2). The body
+  /// is `{ requesterName, subject }` plus an optional picked slot (D-474/D-475
+  /// — the VIP slot flow; the server requires VIP + a free slot when one is
+  /// sent). The response is discarded (success is enough).
   Future<void> submitMeetingRequest(
     String speakerId, {
     required String requesterName,

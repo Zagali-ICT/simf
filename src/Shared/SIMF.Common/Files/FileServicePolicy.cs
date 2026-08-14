@@ -118,6 +118,22 @@ public static class FileServicePolicies
                 AdminPermission: null, EncryptAtRest: false, Videos, FileOwnerEntityType.OrganizationProfile,
                 OwnerRequired: false, Retention: null, DeletableDefault: true),
 
+            // ── Externally hosted feeds (link rows; SIMF stores no bytes) ────
+            // Public and typed Videos, so the link validator holds them to the
+            // players' own classifier rule. The row exists so a feed carries a
+            // media type, a policy, a tier and an owner — none of which the free
+            // text columns these replaced could carry.
+            [FileService.SessionLiveStream] = PublicVideoLink(
+                FileService.SessionLiveStream, FileOwnerEntityType.Session),
+            [FileService.SessionSignLanguage] = PublicVideoLink(
+                FileService.SessionSignLanguage, FileOwnerEntityType.Session),
+            [FileService.SessionSummaryVideo] = PublicVideoLink(
+                FileService.SessionSummaryVideo, FileOwnerEntityType.Session),
+            [FileService.MediaGalleryVideo] = PublicVideoLink(
+                FileService.MediaGalleryVideo, FileOwnerEntityType.MediaItem),
+            [FileService.OrganizationLiveStream] = PublicVideoLink(
+                FileService.OrganizationLiveStream, FileOwnerEntityType.OrganizationProfile),
+
             // ── Public images (plaintext) ────────────────────────────────────
             [FileService.MediaGalleryImage] = PublicImage(FileService.MediaGalleryImage, FileOwnerEntityType.MediaItem),
             [FileService.SpeakerPhoto] = PublicImage(FileService.SpeakerPhoto, FileOwnerEntityType.Speaker),
@@ -136,6 +152,21 @@ public static class FileServicePolicies
     private static FileServicePolicy PublicImage(FileService service, FileOwnerEntityType owner) =>
         new(service, FileSensitivityTier.Public, FileAccessClass.Public,
             AdminPermission: null, EncryptAtRest: false, ImageOnly, owner,
+            OwnerRequired: false, Retention: null, DeletableDefault: true);
+
+    /// <summary>A feed somebody else hosts. Same public posture as an image, typed
+    /// Videos so the external-link validator applies the players' classifier rule
+    /// (a YouTube id, or a direct .mp4 / .m3u8 stream) rather than accepting any
+    /// https URL. EncryptAtRest is moot — there are no bytes to encrypt.</summary>
+    /// <para><c>OwnerRequired</c> stays false, as it is for every other public
+    /// service. In this registry that flag means "scoped to a private owner" —
+    /// the guard test reads it as implying encryption and a Confidential tier —
+    /// and a public feed is neither. The owner is supplied on every write
+    /// regardless; requiring it here would assert something untrue about who the
+    /// file belongs to.</para>
+    private static FileServicePolicy PublicVideoLink(FileService service, FileOwnerEntityType owner) =>
+        new(service, FileSensitivityTier.Public, FileAccessClass.Public,
+            AdminPermission: null, EncryptAtRest: false, Videos, owner,
             OwnerRequired: false, Retention: null, DeletableDefault: true);
 
     /// <summary>Resolves the policy for a file's service. Throws on an unmapped

@@ -67,7 +67,7 @@ Scenario: Register a VVIP guest
   And I submit
   Then the success modal shows the new account with no QR (pending)
   And the UserProfile row carries MawjId, Honorific, PreferredLanguage
-  And UserProfile.VipPhotoRelativePath is set
+  And UserProfile.VipPhotoFileId is set
   And the account state is PendingApproval
 
 Scenario: The desk enforces the Saudi-ID Luhn checksum and the plate set (D-459)

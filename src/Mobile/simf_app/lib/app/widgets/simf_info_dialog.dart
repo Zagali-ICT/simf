@@ -40,7 +40,8 @@ class SimfInfoDialog extends StatelessWidget {
           children: <Widget>[
             Text(
               title,
-              style: theme.textTheme.titleMedium?.copyWith(color: SimfTokens.surface),
+              style: theme.textTheme.titleMedium
+                  ?.copyWith(color: SimfTokens.surface),
             ),
             if (message != null && message!.trim().isNotEmpty) ...<Widget>[
               const SizedBox(height: SimfTokens.space3),

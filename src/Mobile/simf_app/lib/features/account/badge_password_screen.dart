@@ -10,6 +10,8 @@ import 'package:simf_app/core/errors/api_error_l10n.dart';
 import 'package:simf_app/core/responsive/max_width_body.dart';
 import 'package:simf_app/core/validation/field_limits.dart';
 import 'package:simf_app/core/validation/required_validation.dart';
+import 'package:simf_app/features/account/badge_activation_screen.dart'
+    show BadgeActivationScreen;
 import 'package:simf_app/features/account/biometric_auth.dart';
 import 'package:simf_app/features/account/post_auth_route.dart';
 import 'package:simf_app/features/account/widgets/account_sub_header.dart';
@@ -19,19 +21,18 @@ import 'package:simf_app/features/account/widgets/navy_password_toggle.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 
 /// Badge password — إكمال تسجيل الدخول · route: [RouteNames.badgePassword]
-/// Purpose: the password step that completes a badge-QR sign-in.
-/// Data: [authControllerProvider].signInWithBadge — `POST /app/auth/badge-sign-in`.
+/// Purpose: the password step that completes a badge-QR sign-in. Data:
+/// [authControllerProvider].signInWithBadge — `POST /app/auth/badge-sign-in`.
 /// Figma: no bound node — built on the navy auth family (D-659), like its
-///   sibling [BadgeActivationScreen].
-/// Perf: one short form, no lists.
-/// Contract: the badge NEVER bypasses the password (D-430) — the server runs the
-///   full password + 2FA pipeline, so a 2FA account continues to the shared
-///   email-OTP screen rather than landing signed in here.
+/// sibling [BadgeActivationScreen]. Perf: one short form, no lists. Contract:
+/// the badge NEVER bypasses the password (D-430) — the server runs the full
+/// password + 2FA pipeline, so a 2FA account continues to the shared email-OTP
+/// screen rather than landing signed in here.
 ///
-/// D-738 — the password step of badge-QR sign-in. A returning holder who scanned
-/// their badge (an account that already has a password) finishes here with ONLY
-/// their password: the resolved name + masked email are shown so no email is
-/// typed, and the badge never bypasses the password (D-430). Submits
+/// D-738 — the password step of badge-QR sign-in. A returning holder who
+/// scanned their badge (an account that already has a password) finishes here
+/// with ONLY their password: the resolved name + masked email are shown so no
+/// email is typed, and the badge never bypasses the password (D-430). Submits
 /// `{qrId, password}` to `POST /app/auth/badge-sign-in`, which runs the full
 /// existing password + 2FA pipeline server-side; a 2FA account continues to the
 /// shared email-OTP screen, otherwise it lands signed in (with the same Face-ID
@@ -192,7 +193,8 @@ class _BadgePasswordScreenState extends ConsumerState<BadgePasswordScreen> {
                   obscure: _obscure,
                   onToggle: () => setState(() => _obscure = !_obscure),
                 ),
-                validator: (value) => isBlank(value) ? l10n.requiredField : null,
+                validator: (value) =>
+                    isBlank(value) ? l10n.requiredField : null,
               ),
               const SizedBox(height: SimfTokens.space3),
               Align(

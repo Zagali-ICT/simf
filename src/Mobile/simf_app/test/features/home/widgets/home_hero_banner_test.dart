@@ -130,9 +130,10 @@ void main() {
       await tester.pump();
       expect(find.byType(PageView), findsNothing);
 
-      // The list resolves → HomeScreen rebuilds in place (State reused, no key),
-      // so didUpdateWidget must (re)start the timer that initState skipped when
-      // the list was empty. Regression guard for the "hero never rotates" bug.
+      // The list resolves → HomeScreen rebuilds in place (State reused, no
+      // key), so didUpdateWidget must (re)start the timer that initState
+      // skipped when the list was empty. Regression guard for the "hero never
+      // rotates" bug.
       await tester.pumpWidget(
         _harness(
           profile: _edition(),

@@ -126,3 +126,47 @@ final DateFormat _saudiTime12 = DateFormat('hh:mm a');
 /// Canonical 12-hour AM/PM time-of-day (zero-padded, e.g. `03:30 PM`) on the
 /// Saudi wall clock.
 String formatSaudiTime12(DateTime instant) => _saudiTime12.format(instant);
+
+/// The 12-hour clock reading with a **bilingual** meridiem: `10:00 ص` in
+/// Arabic, `02:30 PM` in English (Figma 1776:5078).
+///
+/// [formatSaudiTime12] is the Latin-only sibling, used where the backend's
+/// `SaudiTime.TimeFormat` is being mirrored. This one is for user-facing rows
+/// that must also read correctly in Arabic, and it needs no intl locale.
+///
+/// Takes the hour and minute rather than a `TimeOfDay` so `core/utils` does not
+/// have to depend on Flutter's material library; the two meeting sheets pass
+/// `time.hour, time.minute` and the confirm screen passes a `DateTime`'s.
+String formatTime12h({
+  required int hour,
+  required int minute,
+  required bool isArabic,
+}) {
+  final hour12 = hour % 12 == 0 ? 12 : hour % 12;
+  final hh = hour12.toString().padLeft(2, '0');
+  final mm = minute.toString().padLeft(2, '0');
+  final meridiem =
+      isArabic ? (hour >= 12 ? 'م' : 'ص') : (hour >= 12 ? 'PM' : 'AM');
+  return '$hh:$mm $meridiem';
+}
+
+/// [formatTime12h] for a local [DateTime] — the shape all three call sites
+/// actually hold. The two meeting sheets used to convert to a `TimeOfDay`
+/// first purely to satisfy their own private copy of the formatter.
+String formatDateTime12h(DateTime local, {required bool isArabic}) =>
+    formatTime12h(
+      hour: local.hour,
+      minute: local.minute,
+      isArabic: isArabic,
+    );
+
+/// A countdown as `mm:ss`, zero-padded — the OTP resend timers.
+///
+/// Written out three times before this (the email-OTP, sign-up-email-verify
+/// and biometric-step-up screens), byte-identical apart from whether the
+/// seconds arrived as a field or a parameter.
+String formatCountdown(int seconds) {
+  final m = (seconds ~/ 60).toString().padLeft(2, '0');
+  final s = (seconds % 60).toString().padLeft(2, '0');
+  return '$m:$s';
+}

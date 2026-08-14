@@ -641,17 +641,23 @@ stages:
     # `// ignore:` that states why. A warning is a defect the analyzer is certain
     # about, and the previous flag let one sit unnoticed indefinitely.
     #
-    # `--no-fatal-infos` STAYS. The very_good_analysis ratchet is still open at
-    # ~2146 infos, most of them style preferences (avoid_positional_boolean_parameters,
-    # prefer_constructors_over_static_methods, comment_references). Making those
-    # fatal today would fail every build and the flag would come straight back
-    # off, which is what happened to the .NET test gate. The ratchet closes in
-    # its own increments; see analysis_options.yaml.
+    # INFOS ARE NOW FATAL TOO (2026-08-14). `--no-fatal-infos` was dropped on
+    # the same rule that dropped `--no-fatal-warnings`: only once the count was
+    # already zero. It stood at ~2146 when the note above it was written, which
+    # is why it stayed - making those fatal then would have failed every build
+    # and the flag would have come straight back off, exactly as happened to
+    # the .NET test gate. The clean-code programme closed the ratchet instead:
+    # 0 infos across lib, test, integration_test AND both local packages, which
+    # moved onto the app's own very_good_analysis ruleset in the same wave
+    # rather than staying on the weaker flutter_lints.
+    #
+    # Every rule the analyzer was wrong about carries a targeted `// ignore:`
+    # with its reason above it, so the zero is argued rather than swept.
     - powershell: |
         $ErrorActionPreference = 'Stop'
         Set-Location '$(flutterApp)'
-        flutter analyze --no-fatal-infos lib test integration_test packages
-        if ($LASTEXITCODE -ne 0) { throw "flutter analyze found errors or warnings in SIMF Dart sources (exit $LASTEXITCODE)." }
+        flutter analyze lib test integration_test packages
+        if ($LASTEXITCODE -ne 0) { throw "flutter analyze found errors, warnings or infos in SIMF Dart sources (exit $LASTEXITCODE)." }
       displayName: 'flutter analyze (lib + test + integration_test + packages)'
 
     # --- Convention gate (SIMF-CQP-001). Detects the code-quality classes that

@@ -3,7 +3,11 @@ import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
 
 class TypeTab extends StatelessWidget {
-  const TypeTab({required this.label, required this.active, required this.onTap, super.key,
+  const TypeTab({
+    required this.label,
+    required this.active,
+    required this.onTap,
+    super.key,
   });
 
   final String label;

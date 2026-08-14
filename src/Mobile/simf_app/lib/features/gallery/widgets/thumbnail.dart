@@ -33,7 +33,8 @@ class Thumbnail extends StatelessWidget {
           child: const SizedBox(
             width: SimfTokens.thumbnailWidth,
             height: SimfTokens.thumbnailHeight,
-            child: CircularProgressIndicator(strokeWidth: SimfTokens.thumbnailStrokeWidth),
+            child: CircularProgressIndicator(
+                strokeWidth: SimfTokens.thumbnailStrokeWidth,),
           ),
         );
       },

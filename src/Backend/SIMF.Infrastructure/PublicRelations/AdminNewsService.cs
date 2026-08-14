@@ -29,7 +29,6 @@ internal sealed class AdminNewsService(
     private const int ExcerptMaxLength = 500;
     private const int BodyMaxLength = 8000;
     private const int CategoryMaxLength = 100;
-    private const int ImagePathMaxLength = 512;
 
     public async Task<GridPage<AdminNewsSummary>> ListAllAsync(
         GridQuery query, CancellationToken cancellationToken = default)
@@ -154,7 +153,7 @@ internal sealed class AdminNewsService(
             request.Excerpt, request.ExcerptArabic,
             request.Body, request.BodyArabic,
             request.Category, request.CategoryArabic,
-            request.ImageRelativePath, request.DisplayOrder);
+            request.DisplayOrder);
 
         var clash = await dbContext.News
             .AsNoTracking()
@@ -179,7 +178,6 @@ internal sealed class AdminNewsService(
             BodyArabic = draft.BodyArabic,
             Category = draft.Category,
             CategoryArabic = draft.CategoryArabic,
-            ImageRelativePath = draft.ImageRelativePath,
             PublishedAt = request.PublishedAt,
             DisplayOrder = draft.DisplayOrder,
             IsActive = true,
@@ -219,7 +217,7 @@ internal sealed class AdminNewsService(
             request.Excerpt, request.ExcerptArabic,
             request.Body, request.BodyArabic,
             request.Category, request.CategoryArabic,
-            request.ImageRelativePath, request.DisplayOrder);
+            request.DisplayOrder);
 
         if (!string.Equals(news.Title, draft.Title, StringComparison.OrdinalIgnoreCase))
         {
@@ -243,7 +241,6 @@ internal sealed class AdminNewsService(
         news.BodyArabic = draft.BodyArabic;
         news.Category = draft.Category;
         news.CategoryArabic = draft.CategoryArabic;
-        news.ImageRelativePath = draft.ImageRelativePath;
         news.PublishedAt = request.PublishedAt;
         news.DisplayOrder = draft.DisplayOrder;
         news.IsActive = request.IsActive;
@@ -289,14 +286,14 @@ internal sealed class AdminNewsService(
         string? Excerpt, string? ExcerptArabic,
         string Body, string BodyArabic,
         string Category, string CategoryArabic,
-        string? ImageRelativePath, int DisplayOrder);
+        int DisplayOrder);
 
     private static NewsDraft Validate(
         string? titleRaw, string? titleArabicRaw,
         string? excerptRaw, string? excerptArabicRaw,
         string? bodyRaw, string? bodyArabicRaw,
         string? categoryRaw, string? categoryArabicRaw,
-        string? imagePathRaw, int displayOrderRaw)
+        int displayOrderRaw)
     {
         var title = RequireText(titleRaw, TitleMaxLength, "English title", "العنوان الإنجليزي");
         var titleArabic = RequireText(titleArabicRaw, TitleMaxLength, "Arabic title", "العنوان العربي");
@@ -307,7 +304,6 @@ internal sealed class AdminNewsService(
 
         var excerpt = OptionalText(excerptRaw, ExcerptMaxLength, "English excerpt", "المقتطف الإنجليزي");
         var excerptArabic = OptionalText(excerptArabicRaw, ExcerptMaxLength, "Arabic excerpt", "المقتطف العربي");
-        var imagePath = OptionalText(imagePathRaw, ImagePathMaxLength, "image path", "مسار الصورة");
 
         if (displayOrderRaw < 0)
         {
@@ -319,7 +315,7 @@ internal sealed class AdminNewsService(
 
         return new NewsDraft(
             title, titleArabic, excerpt, excerptArabic,
-            body, bodyArabic, category, categoryArabic, imagePath, displayOrderRaw);
+            body, bodyArabic, category, categoryArabic, displayOrderRaw);
     }
 
     private static string RequireText(string? raw, int maxLength, string fieldEn, string fieldAr)
@@ -362,7 +358,7 @@ internal sealed class AdminNewsService(
             news.Excerpt, news.ExcerptArabic,
             news.Body, news.BodyArabic,
             news.Category, news.CategoryArabic,
-            news.ImageRelativePath,
+            null,
             news.PublishedAt, news.DisplayOrder, news.IsActive,
             news.CreatedAt, news.UpdatedAt);
 }

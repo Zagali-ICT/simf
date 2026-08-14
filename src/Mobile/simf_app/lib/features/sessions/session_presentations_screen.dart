@@ -6,23 +6,24 @@ import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/core/utils/refresh.dart';
 import 'package:simf_app/features/sessions/data/presentation_repository.dart';
 import 'package:simf_app/features/sessions/data/presentation_summary_gate.dart';
-import 'package:simf_app/features/sessions/data/session_models.dart';
 import 'package:simf_app/features/sessions/data/sessions_repository.dart';
 import 'package:simf_app/features/sessions/widgets/presentations_body.dart';
 
 /// **Sessions** — App "الجلسات" (Figma 1388:7621, Approved account), reached
-/// from the Home "الجلسات" tile. Sessions grouped by event day, each card a file
-/// icon + the session title + the presenting speaker + a gold تحميل button.
-/// Owner 2026-07-03: tapping a card opens the **session detail** (17), and the
-/// gold تحميل button opens that session's **summary** (ملخص الجلسة, 34) — this
-/// screen no longer downloads the deck bytes. Reads `GET /app/presentations`.
+/// from the Home "الجلسات" tile. Sessions grouped by event day, each card a
+/// file icon + the session title + the presenting speaker + a gold تحميل
+/// button. Owner 2026-07-03: tapping a card opens the **session detail** (17),
+/// and the gold تحميل button opens that session's **summary** (ملخص الجلسة, 34)
+/// — this screen no longer downloads the deck bytes. Reads `GET
+/// /app/presentations`.
 ///
-/// Owner 2026-07-14: the تحميل button is **active only when a summary exists** —
-/// a future/live session's محضر isn't published yet, so its button greys out
-/// (inactive, not hidden). The presentations wire carries no summary flag, so the
-/// gate joins each row to the cached programme ([programmeSessionsProvider]) by
-/// `sessionId` and reads its `hasPublishedSummary` — matching the summaries-list
-/// filter exactly ([presentationSummaryReady]).
+/// Owner 2026-07-14: the تحميل button is **active only when a summary exists**
+/// — a future/live session's محضر isn't published yet, so its button greys out
+/// (inactive, not hidden). The presentations wire carries no summary flag, so
+/// the gate joins each row to the cached programme
+/// ([programmeSessionsProvider]) by `sessionId` and reads its
+/// `hasPublishedSummary` — matching the summaries-list filter exactly
+/// ([presentationSummaryReady]).
 class SessionPresentationsScreen extends ConsumerStatefulWidget {
   const SessionPresentationsScreen({super.key});
 
@@ -46,12 +47,7 @@ class _SessionPresentationsScreenState
     // The programme drives the تحميل summary-ready gate; keyed by sessionId. It
     // is usually already cached (Home loaded it) — while it isn't, the map is
     // empty and [presentationSummaryReady] falls back to the row's own start.
-    final sessionsById = <String, SessionListItem>{
-      for (final s
-          in ref.watch(programmeSessionsProvider).valueOrNull ??
-              const <SessionListItem>[])
-        s.id: s,
-    };
+    final sessionsById = ref.watch(programmeSessionsByIdProvider);
 
     return SimfPageShell(
       title: l10n.sessionPresentationsTitle,
@@ -78,4 +74,3 @@ class _SessionPresentationsScreenState
     );
   }
 }
-

@@ -56,8 +56,10 @@ void main() {
       // No toUtc()/toLocal() anywhere in the path, so the parsed fields are the
       // string's fields on a machine in Riyadh, London or Los Angeles alike.
       final a = parseWireDateTime('2026-11-23T09:00:00', 'start');
-      expect(<int>[a.year, a.month, a.day, a.hour, a.minute],
-          <int>[2026, 11, 23, 9, 0],);
+      expect(
+        <int>[a.year, a.month, a.day, a.hour, a.minute],
+        <int>[2026, 11, 23, 9, 0],
+      );
     });
 
     test('a missing or unparseable value throws instead of yielding 1970', () {
@@ -65,7 +67,8 @@ void main() {
       // 03:00 AM on every row with no error at all. It must fail loudly.
       expect(() => parseWireDateTime(null, 'start'), throwsFormatException);
       expect(() => parseWireDateTime('', 'start'), throwsFormatException);
-      expect(() => parseWireDateTime('not-a-timestamp', 'start'), throwsFormatException);
+      expect(() => parseWireDateTime('not-a-timestamp', 'start'),
+          throwsFormatException,);
       expect(() => parseWireDateTime(0, 'start'), throwsFormatException);
     });
   });
@@ -104,11 +107,20 @@ void main() {
         reason: 'saudiNow must be zone-free, like every decoded wire value — '
             'tagging it would let a later comparison shift it.',
       );
+      // Compared with a tolerance, not for equality: `device` and `now` are
+      // two separate reads of the wall clock, so the real time that elapses
+      // between them lands in the difference. Asserting equality made this
+      // test fail whenever the machine was busy enough for that gap to reach
+      // a microsecond (seen at 1.5ms during a full-suite run). A wrong offset
+      // is wrong by hours, so a one-second window still catches every real
+      // defect this is here to catch.
+      final drift =
+          now.difference(device) - (saudiOffset - device.timeZoneOffset);
       expect(
-        now.difference(device),
-        saudiOffset - device.timeZoneOffset,
-        reason: 'the shift applied must be exactly the distance from this '
-            'device to Riyadh: zero here if the device already runs +03:00.',
+        drift.abs(),
+        lessThan(const Duration(seconds: 1)),
+        reason: 'the shift applied must be the distance from this device to '
+            'Riyadh: zero here if the device already runs +03:00.',
       );
     });
   });
@@ -116,5 +128,55 @@ void main() {
   test('formatSaudiTime12 renders 12-hour AM/PM verbatim', () {
     expect(formatSaudiTime12(DateTime(2026, 11, 22, 16, 45)), '04:45 PM');
     expect(formatSaudiTime12(DateTime(2026, 11, 20, 22, 30)), '10:30 PM');
+  });
+
+  group('formatTime12h / formatDateTime12h', () {
+    // One formatter replacing three private copies (the speaker sheet, the
+    // delegation sheet and the meeting-confirm screen). The Arabic meridiem is
+    // the reason these could not just call formatSaudiTime12, which is
+    // Latin-only because it mirrors the backend's SaudiTime.TimeFormat.
+    test('renders the Arabic meridiem', () {
+      expect(formatTime12h(hour: 10, minute: 0, isArabic: true), '10:00 ص');
+      expect(formatTime12h(hour: 14, minute: 30, isArabic: true), '02:30 م');
+    });
+
+    test('renders the English meridiem', () {
+      expect(formatTime12h(hour: 10, minute: 0, isArabic: false), '10:00 AM');
+      expect(formatTime12h(hour: 14, minute: 30, isArabic: false), '02:30 PM');
+    });
+
+    test('midnight and noon read as 12, not 00', () {
+      expect(formatTime12h(hour: 0, minute: 5, isArabic: false), '12:05 AM');
+      expect(formatTime12h(hour: 12, minute: 5, isArabic: false), '12:05 PM');
+      expect(formatTime12h(hour: 0, minute: 5, isArabic: true), '12:05 ص');
+      expect(formatTime12h(hour: 12, minute: 5, isArabic: true), '12:05 م');
+    });
+
+    test('pads both fields to two digits', () {
+      expect(formatTime12h(hour: 9, minute: 7, isArabic: false), '09:07 AM');
+    });
+
+    test('formatDateTime12h reads the local wall clock off a DateTime', () {
+      final local = DateTime(2026, 11, 24, 16, 45);
+      expect(formatDateTime12h(local, isArabic: false), '04:45 PM');
+      expect(formatDateTime12h(local, isArabic: true), '04:45 م');
+    });
+  });
+
+  group('formatCountdown', () {
+    test('pads both fields to two digits', () {
+      expect(formatCountdown(0), '00:00');
+      expect(formatCountdown(9), '00:09');
+      expect(formatCountdown(60), '01:00');
+    });
+
+    test('carries minutes past ten', () {
+      expect(formatCountdown(599), '09:59');
+      expect(formatCountdown(600), '10:00');
+    });
+
+    test('does not wrap at an hour — these timers never run that long', () {
+      expect(formatCountdown(3600), '60:00');
+    });
   });
 }

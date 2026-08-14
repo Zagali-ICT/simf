@@ -90,10 +90,11 @@ void main() {
       when(() => secure.read(StorageKeys.accessTokenExpiresAtIso))
           .thenAnswer((_) async => future.toIso8601String());
       when(() => secure.read(StorageKeys.currentUserJson)).thenAnswer(
-        (_) async => _userJson(_user(AppRole.guest, RegistrationStatus.pending)),
+        (_) async =>
+            _userJson(_user(AppRole.guest, RegistrationStatus.pending)),
       );
       when(() => secure.write(any(), any())).thenAnswer((_) async {});
-      when(() => repo.getCurrentUser()).thenAnswer(
+      when(repo.getCurrentUser).thenAnswer(
         (_) async => _user(AppRole.visitor, RegistrationStatus.approved),
       );
 
@@ -103,8 +104,7 @@ void main() {
       final state = await _waitFor(
         container,
         (s) =>
-            s is AuthStateSignedIn &&
-            s.session.user.appRole == AppRole.visitor,
+            s is AuthStateSignedIn && s.session.user.appRole == AppRole.visitor,
       );
       final user = (state as AuthStateSignedIn).session.user;
       expect(user.appRole, equals(AppRole.visitor));
@@ -133,7 +133,7 @@ void main() {
           user: _user(AppRole.guest, RegistrationStatus.pending),
         ),
       );
-      when(() => repo.getCurrentUser()).thenAnswer(
+      when(repo.getCurrentUser).thenAnswer(
         (_) async => _user(AppRole.staff, RegistrationStatus.approved),
       );
 
@@ -194,7 +194,7 @@ void main() {
           .thenAnswer((_) async => null);
       when(() => secure.read(StorageKeys.currentUserJson))
           .thenAnswer((_) async => null);
-      when(() => secure.clearAuthValues()).thenAnswer((_) async {});
+      when(secure.clearAuthValues).thenAnswer((_) async {});
       when(() => repo.refresh(refreshToken: any(named: 'refreshToken')))
           .thenThrow(
         const RefreshTokenExpired(

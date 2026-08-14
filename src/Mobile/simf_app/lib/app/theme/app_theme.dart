@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 
 import 'package:simf_app/app/theme/tokens.dart';
 
-/// Builds the app's [ThemeData] from [SimfTokens] + the **IBM Plex Sans Arabic**
-/// type family (the `Mockup.html` app font, D-329). Widgets read colour and type
-/// from `Theme.of(context)`, so the design lives in `tokens.dart` + this file.
+/// Builds the app's [ThemeData] from [SimfTokens] + the **IBM Plex Sans
+/// Arabic** type family (the `Mockup.html` app font, D-329). Widgets read
+/// colour and type from `Theme.of(context)`, so the design lives in
+/// `tokens.dart` + this file.
 ///
 /// The dark (navy) theme is the primary brand surface and carries the mockup's
 /// component styling — cards (`rgba(255,255,255,0.04)` fill + a `--line-2`

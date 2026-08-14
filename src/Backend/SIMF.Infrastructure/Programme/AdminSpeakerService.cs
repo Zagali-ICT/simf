@@ -510,7 +510,7 @@ internal sealed class AdminSpeakerService(
             speaker.AllowsMeetingRequests, speaker.AllowsDataSharing,
             speaker.FacebookUrl, speaker.LinkedInUrl, speaker.XUrl,
             speaker.WebsiteUrl,
-            speaker.PhotoRelativePath,
+            null, // PhotoRelativePath: the column is gone; the photo is a StoredFile
             speaker.DisplayOrder, speaker.IsActive,
             speaker.CreatedAt, speaker.UpdatedAt,
             speaker.Email, speaker.PhonePrimary, speaker.PhoneSecondary,

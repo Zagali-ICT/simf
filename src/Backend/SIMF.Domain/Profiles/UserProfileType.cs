@@ -57,10 +57,13 @@ public sealed class UserProfileType : BaseAuditEntity
     /// type's Name contains 'VIP'", which would wrongly match any future type
     /// whose name merely embedded those letters.</para>
     ///
-    /// <para>It does <b>not</b> gate meeting requests. It was called
-    /// <c>AllowsVipMeetingSlots</c> until D-760 moved speaker-meeting eligibility
-    /// to the per-user <c>UserProfile.AllowsSpeakerMeeting</c> flag, leaving a
-    /// name that described a job this column no longer had.</para></summary>
+    /// <para>It does <b>not</b> gate meeting requests. Meeting eligibility is
+    /// assigned per user on <c>UserProfile.AllowsSpeakerMeeting</c> /
+    /// <c>AllowsDelegationMeeting</c>, so two people on the same tier can differ.
+    /// This column was once named for that job and was renamed when those flags
+    /// took it over, because a meeting-shaped name invites the wrong question at
+    /// the call site — "is this a VIP?" rather than "may this person request a
+    /// meeting?"</para></summary>
     public bool IsVipTier { get; set; }
 
     /// <summary>Whether a self-registering user is offered this type in the

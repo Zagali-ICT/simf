@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -37,12 +38,12 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
   bool _loading = true;
   bool _empty = false;
   String? _error;
-  ContentBlock? _block;
+  late ContentBlock _block;
 
   @override
   void initState() {
     super.initState();
-    _load();
+    unawaited(_load());
   }
 
   Future<void> _load() async {
@@ -112,8 +113,8 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
             child: Transform.rotate(
               angle: 0.4936, // 28.28°
               child: Container(
-                width: SimfTokens.termsScreenWidth,
-                height: SimfTokens.termsScreenHeightMd,
+                width: SimfTokens.sweepBlockWidth,
+                height: SimfTokens.sweepBlockHeight,
                 decoration: BoxDecoration(
                   color: SimfTokens.surfaceTint,
                   borderRadius: BorderRadius.circular(SimfTokens.radiusSheet),
@@ -133,7 +134,8 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
                       Align(
                         alignment: Alignment.centerLeft,
                         child: Padding(
-                          padding: const EdgeInsets.only(left: SimfTokens.space2),
+                          padding:
+                              const EdgeInsets.only(left: SimfTokens.space2),
                           child: IconButton(
                             onPressed: _back,
                             tooltip: MaterialLocalizations.of(context)
@@ -203,14 +205,8 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
   }
 
   Widget _buildContent(AppL10n l10n) {
-    final block = _block!;
-    final body = block.localizedBody(l10n.isArabic);
     // Each non-empty body line renders as one bullet card (Figma list items).
-    final items = body
-        .split('\n')
-        .map((line) => line.trim())
-        .where((line) => line.isNotEmpty)
-        .toList();
+    final items = _block.bullets(isArabic: l10n.isArabic);
     return Column(
       children: <Widget>[
         Expanded(
@@ -263,5 +259,4 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
       ],
     );
   }
-
 }

@@ -33,8 +33,8 @@ class BadgeQrCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isArabic = l10n.isArabic;
-    final name = identity.localizedName(isArabic);
-    final tier = identity.localizedTier(isArabic);
+    final name = identity.localizedName(isArabic: isArabic);
+    final tier = identity.localizedTier(isArabic: isArabic);
     // The identity strip is tinted by the profile type's colour (server value
     // `ProfileType.PageColor`, surfaced as `identity.pageColor`) so each tier's
     // badge is visually distinct; it falls back to the token gold when the
@@ -99,7 +99,8 @@ class BadgeQrCard extends StatelessWidget {
                 // Frame 758:1469 — a 64-px rounded box; the SIMF brand-mark
                 // fallback on its navy box stays visible on the gold strip,
                 // replaced by the photo when present. Owner 2026-07-26 — the
-                // badge photo is display-only, so tapping it opens it full size.
+                // badge photo is display-only, so tapping it opens it full
+                // size.
                 SimfAvatar(
                   name: name,
                   currentUser: true,

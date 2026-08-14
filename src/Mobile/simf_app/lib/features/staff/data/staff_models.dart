@@ -1,12 +1,13 @@
 import 'package:flutter/foundation.dart';
 
-import 'package:simf_app/features/account/data/profile_models.dart' show AppGender;
+import 'package:simf_app/features/account/data/profile_models.dart'
+    show AppGender;
 
 /// D-509 — the staff walk-in registration request. Mirrors the backend
-/// `AdminWalkInRegistrationRequest` (the same DTO the CP desk posts), trimmed to
-/// the fields the staff-app form (Figma 1467:12357) collects. Email is optional
-/// (the API synthesizes a placeholder); the server validator enforces the full
-/// rule set, so the form does only light required-field checks.
+/// `AdminWalkInRegistrationRequest` (the same DTO the CP desk posts), trimmed
+/// to the fields the staff-app form (Figma 1467:12357) collects. Email is
+/// optional (the API synthesizes a placeholder); the server validator enforces
+/// the full rule set, so the form does only light required-field checks.
 @immutable
 class StaffWalkInRequest {
   const StaffWalkInRequest({
@@ -61,7 +62,8 @@ class StaffWalkInRequest {
         if (iqamaNumber != null) 'iqamaNumber': iqamaNumber,
         if (passportNumber != null) 'passportNumber': passportNumber,
         if (saudiMobile != null) 'saudiMobile': saudiMobile,
-        if (internationalMobile != null) 'internationalMobile': internationalMobile,
+        if (internationalMobile != null)
+          'internationalMobile': internationalMobile,
       };
 }
 
@@ -77,18 +79,18 @@ class StaffWalkInResult {
     required this.profileTypeName,
   });
 
-  final String userId;
-  final String displayName;
-  final String qrId;
-  final String profileTypeName;
-
-  bool get isPending => qrId.trim().isEmpty;
-
-  static StaffWalkInResult fromJson(Map<String, dynamic> json) =>
+  factory StaffWalkInResult.fromJson(Map<String, dynamic> json) =>
       StaffWalkInResult(
         userId: json['userId'] as String? ?? '',
         displayName: json['displayName'] as String? ?? '',
         qrId: json['qrId'] as String? ?? '',
         profileTypeName: json['profileTypeName'] as String? ?? '',
       );
+
+  final String userId;
+  final String displayName;
+  final String qrId;
+  final String profileTypeName;
+
+  bool get isPending => qrId.trim().isEmpty;
 }

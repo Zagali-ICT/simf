@@ -39,7 +39,7 @@ void main() {
 
   group('UserProfileResponse.fromJson + isComplete', () {
     test('a saved profile parses and reads as complete', () {
-      final response = UserProfileResponse.fromJson(<String, dynamic>{
+      final response = UserProfileResponse.fromJson(const <String, dynamic>{
         'profileTypeId': 'pt-1',
         'interestIds': <dynamic>['i-1'],
         'arabicName': 'راكان',
@@ -72,7 +72,7 @@ void main() {
     });
 
     test('names present but no interests is still incomplete', () {
-      final response = UserProfileResponse.fromJson(<String, dynamic>{
+      final response = UserProfileResponse.fromJson(const <String, dynamic>{
         'arabicName': 'راكان',
         'englishName': 'Rakan',
         'interestIds': <dynamic>[],
@@ -83,7 +83,7 @@ void main() {
 
     test('hasAvatar decodes and gates the male completeness rule', () {
       // Two-photo split — a male needs BOTH the ID document and the face photo.
-      final maleNoAvatar = UserProfileResponse.fromJson(<String, dynamic>{
+      final maleNoAvatar = UserProfileResponse.fromJson(const <String, dynamic>{
         'interestIds': <dynamic>['i-1'],
         'arabicName': 'محمد عبدالله أحمد الزهراني',
         'englishName': 'Mohammed Abdullah Ahmed Alzahrani',
@@ -94,7 +94,7 @@ void main() {
       expect(maleNoAvatar.hasAvatar, isFalse);
       expect(maleNoAvatar.isComplete, isFalse);
 
-      final maleWithBoth = UserProfileResponse.fromJson(<String, dynamic>{
+      final maleWithBoth = UserProfileResponse.fromJson(const <String, dynamic>{
         'interestIds': <dynamic>['i-1'],
         'arabicName': 'محمد عبدالله أحمد الزهراني',
         'englishName': 'Mohammed Abdullah Ahmed Alzahrani',
@@ -105,8 +105,9 @@ void main() {
       expect(maleWithBoth.isComplete, isTrue);
     });
 
-    test('a profile without the ID document is incomplete for every gender', () {
-      final femaleNoId = UserProfileResponse.fromJson(<String, dynamic>{
+    test('a profile without the ID document is incomplete for every gender',
+        () {
+      final femaleNoId = UserProfileResponse.fromJson(const <String, dynamic>{
         'interestIds': <dynamic>['i-1'],
         'arabicName': 'سارة عبدالله أحمد الزهراني',
         'englishName': 'Sara Abdullah Ahmed Alzahrani',
@@ -119,12 +120,13 @@ void main() {
   });
 
   group('UserProfileResponse.toUpsertRequest (#14 round-trip fidelity)', () {
-    test('mirrors every field so an interests-only edit nulls nothing '
+    test(
+        'mirrors every field so an interests-only edit nulls nothing '
         '(non-Saudi cohort; profileTypeId intentionally dropped)', () {
       // A non-Saudi profile with EVERY nullable field set, so a dropped mapping
       // in toUpsertRequest surfaces here (iqama/passport/international mobile are
       // the cohort a naive full-upsert edit would silently wipe).
-      final profile = UserProfileResponse.fromJson(<String, dynamic>{
+      final profile = UserProfileResponse.fromJson(const <String, dynamic>{
         'profileTypeId': 'pt-1',
         'interestIds': <dynamic>['i-1', 'i-2'],
         'arabicName': 'راكان السالم',
@@ -187,17 +189,32 @@ void main() {
       expect(
         json.keys.toSet(),
         <String>{
-          'profileTypeId', 'interestIds', 'arabicName', 'englishName',
-          'jobTitle', 'nationalityCode', 'dateOfBirth', 'placeOfBirth',
-          'isSaudi', 'nationalId', 'iqamaNumber', 'passportNumber',
-          'saudiMobile', 'internationalMobile', 'plateNumber', 'organisationId',
-          'gender', 'showInMeetLikeYou', 'regionId', 'jobTitleArabic',
+          'profileTypeId',
+          'interestIds',
+          'arabicName',
+          'englishName',
+          'jobTitle',
+          'nationalityCode',
+          'dateOfBirth',
+          'placeOfBirth',
+          'isSaudi',
+          'nationalId',
+          'iqamaNumber',
+          'passportNumber',
+          'saudiMobile',
+          'internationalMobile',
+          'plateNumber',
+          'organisationId',
+          'gender',
+          'showInMeetLikeYou',
+          'regionId',
+          'jobTitleArabic',
         },
       );
     });
 
     test('copyWith swaps ONLY interestIds, preserving region + job title', () {
-      final base = UserProfileResponse.fromJson(<String, dynamic>{
+      final base = UserProfileResponse.fromJson(const <String, dynamic>{
         'interestIds': <dynamic>['old-1'],
         'arabicName': 'راكان',
         'englishName': 'Rakan',
@@ -231,24 +248,44 @@ void main() {
   group('lookup item decoders', () {
     test('CountryItem / ProfileTypeItem / InterestItem / OrganisationItem', () {
       final country = CountryItem.fromJson(
-        const <String, dynamic>{'code': 'SA', 'name': 'Saudi Arabia', 'nameArabic': 'السعودية'},
+        const <String, dynamic>{
+          'code': 'SA',
+          'name': 'Saudi Arabia',
+          'nameArabic': 'السعودية',
+        },
       );
       expect(country.code, 'SA');
       expect(country.nameArabic, 'السعودية');
 
       final type = ProfileTypeItem.fromJson(
-        const <String, dynamic>{'id': 't1', 'name': 'Visitor', 'nameArabic': 'زائر', 'pageColor': '#0B5', 'isVisitor': true},
+        const <String, dynamic>{
+          'id': 't1',
+          'name': 'Visitor',
+          'nameArabic': 'زائر',
+          'pageColor': '#0B5',
+          'isVisitor': true,
+        },
       );
       expect(type.isVisitor, isTrue);
       expect(type.pageColor, '#0B5');
 
       final interest = InterestItem.fromJson(
-        const <String, dynamic>{'id': 'n1', 'name': 'Naval Defence', 'nameArabic': 'الدفاع البحري', 'displayOrder': 3},
+        const <String, dynamic>{
+          'id': 'n1',
+          'name': 'Naval Defence',
+          'nameArabic': 'الدفاع البحري',
+          'displayOrder': 3,
+        },
       );
       expect(interest.displayOrder, 3);
 
       final org = OrganisationItem.fromJson(
-        const <String, dynamic>{'id': 'o1', 'nameAr': 'القوات البحرية', 'nameEn': 'RSNF', 'city': 'Riyadh'},
+        const <String, dynamic>{
+          'id': 'o1',
+          'nameAr': 'القوات البحرية',
+          'nameEn': 'RSNF',
+          'city': 'Riyadh',
+        },
       );
       expect(org.nameAr, 'القوات البحرية');
       expect(org.nameEn, 'RSNF');

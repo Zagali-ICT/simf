@@ -7,7 +7,7 @@ import 'dart:async';
 /// This contract lets the auth package wire those two operations in from
 /// outside, without the data package importing anything from
 /// `simf_auth_pkg`. The auth package implements [AuthTokenSource] and
-/// registers it via the [authTokenSourceProvider] override in the main app.
+/// registers it via the `authTokenSourceProvider` override in the main app.
 abstract class AuthTokenSource {
   /// The current access token, or null when the user is signed out.
   /// Read synchronously on every request, so the implementation should

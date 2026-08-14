@@ -9,6 +9,130 @@ integration tests can run). Worktree **D:/SIMF/wt-app**. Toolchain: run flutter 
 Full plan: `C:\Users\LOQ\.claude\plans\based-on-app-clean-prancy-pudding.md` (owner-approved
 2026-07-03). Program docs: `~/.claude/skills/clean-code-skills/resources/`.
 
+## 2026-08-14 — remainder-closure run (supersedes everything below)
+
+**Branch `refactor/app-clean-code-3`**, worktree **D:/swtcc**, base `c88e771b`
+(`origin/main`). Verified before starting: `git diff origin/main HEAD -- .../lib`
+is empty, so the worklist measured on the other checkout is valid against this
+base. Nothing pushed yet.
+
+Plan: `~/.claude/plans/groovy-stargazing-hearth.md` (owner-approved, eight
+recorded decisions). Per-file worklist: `.refactor/WORKLIST-2026-08-13.md` —
+2,407 rows over 591 files, merged from `flutter analyze`, `tool/conventions` and
+a 13-agent read-only audit.
+
+### The headline
+
+| Metric | Session start | Now |
+|---|---|---|
+| `flutter analyze` infos (lib+test+integration_test) | 2137 | **0** |
+| errors / warnings | 0 / 0 | **0 / 0** |
+| `lines_longer_than_80_chars` | 1690 | **0** |
+| `packages/` findings under the app's ruleset | 249 | **0** |
+| `tool/conventions` SIMF-C3 | 12 | **11** (blocked, see below) |
+| tests | 1401 | **1479** app + 46 auth_pkg + 15 data_pkg |
+| files over 400 lines | 15 | 12 |
+
+**The analyzer ratchet is CLOSED.** `flutter analyze lib test integration_test
+packages` reads "No issues found!" and exits 0, so `--no-fatal-infos` was
+dropped from the MobileApp CI stage - an info now fails the build. Both local
+packages were moved off `flutter_lints` onto the app's own
+`very_good_analysis` in the same wave, so the code the whole app depends on is
+no longer the code held to the loosest standard.
+
+The zero is **argued, not swept**: two rules are off with their measurement
+recorded at the rule (`specify_nonobvious_property_types`,
+`public_member_api_docs`), and ~two dozen sites carry a targeted `// ignore:`
+with the reason above it. If you add one, write why the analyzer is WRONG
+about that line, or fix it.
+
+Every increment gated on: analyze 0 errors / 0 warnings, full suite green, and
+**every golden holding without `--update-goldens`**.
+
+### Done (15 commits)
+
+Phase 0 — worklist made durable; baseline pinned in this worktree; the audit's
+6-file coverage gap closed (`features/content/*` + `main.dart`).
+
+Phase A — providers out of screens into `data/`; `exhibition/` widgets into
+`widgets/`; `simf_page_shell` 527 -> 333 split into three re-exported groups;
+`session_detail_screen` 466 -> 420 (closed one SIMF-C3);
+`identity_verification_screen` 452 -> 397; the 3-copy 12-hour formatter and the
+3-copy day grouping unified into `core/utils`; governing docs re-dated.
+
+Phase B — the mechanical analyzer pass across every feature; the language flag
+converted from a positional bool to `isArabic:` at ~350 call sites; the
+formatter run on the touched files followed by restoring the trailing commas
+(owner-authorised, see below); and `sessions` taken through its audit rows.
+
+The sessions pass is the template for the remaining features: one search rule
+instead of a tested-but-uncalled copy and an untested shipped one, the schedule
+list made lazy, a per-rebuild map lifted into a derived provider, two hand-nested
+compositions replaced with the shared widget, one widget moved to its own file.
+
+### Three defects found and fixed while executing
+
+### Defects found and fixed while executing
+
+* **`tool/conventions` passed vacuously in any git worktree.** Its root walk-up
+  tested `Directory('.git').existsSync()`, and in a worktree `.git` is a FILE.
+  It scanned nothing and reported "No violations found". Fixed, with three
+  regression tests (checker suite 31 -> 34).
+* **`dart fix --code=use_decorated_box` is not behaviour-preserving here.**
+  `Container` insets its child by `BoxDecoration.padding`, which is the border's
+  dimensions; `DecoratedBox` does not. Caught by the share_my_contact golden
+  (2.42%, 7366px). The second conversion had no golden at all.
+
+### The four tools the line-length work left behind
+
+All in `.refactor/`, all refuse rather than guess, all reusable:
+
+* `wrap_comments2.py` — re-flows comment blocks **per paragraph**, wrapping a
+  list item with a hanging indent. Supersedes `wrap_comments.py`, which
+  measured with Python `len` (the analyzer counts **UTF-16 code units**, so an
+  emoji flag undercounts by 2) and refused a whole block if any line was a list
+  item.
+* `wrap_ignore_reasons.py` — re-flows the prose around an `// ignore:` while
+  copying the directive through byte for byte. Needed because wrapping a
+  directive silently stops it suppressing anything.
+* `split_long_strings.py` — splits a literal into two adjacent literals, which
+  Dart concatenates at compile time. Never inside a word, an escape or an
+  interpolation.
+* `lift_trailing_comments.py` — moves a trailing `// note` off a declaration
+  into a `///` doc comment above it, the one comment shape that cannot be
+  re-flowed in place because its indent belongs to the code.
+
+### Next, in order
+
+1. The read-audit rows: ~73 DUPLICATION, 42 DOC-HEADER, 45 NAMING, then the
+   tail (DEAD-COMMENT-CODE, NON-LAZY-LIST, NARRATION-COMMENT, RTL-DIRECTIONAL,
+   REFLEXIVE-CATCH, RAW-STRING, FIXED-WIDTH). **Re-measure before acting** —
+   the rows are from 2026-08-02 and every line number in them is now wrong
+   after the reformat; several categories are already closed by the analyzer
+   work. **ONE-WIDGET-PER-FILE is closed**: the three heterogeneous files are
+   split (16 widgets, 16 files, originals removed) and the other 17 findings
+   are cohesive groups that CLAUDE.md section 1 now explicitly permits.
+2. Decision 5 (all 71 screen headers to the section 9 template), decision 6
+   (tokens single-use audit).
+3. Decision 7 — the 35 `AsyncValue` conversions. A **behaviour change**, so its
+   own phase with its own verification, not part of the per-file loop.
+4. ~~Decision 8 (`packages/`)~~ and ~~Phase E~~ — **both done**.
+
+### BLOCKED
+
+`sign_up_visitor_screen` (1228) and `register_visitor_screen` (1265). Decision 1
+reopened them, but D-666 is the banked case where a green golden did NOT catch a
+face-capture regression, so they need on-device verification and `adb devices`
+is empty (re-checked 2026-08-14). Everything else in Phase A is done. Until they
+are split, SIMF-C3 stays at 11 — all 11 rows are `_build*()` helpers inside
+those two files — and the pipeline cannot move to `--check --strict` or delete
+`tool/conventions/baseline.json`.
+
+Also still owner-gated, unchanged: the `getMySeat` deletion and the
+`more_screen` adjudication (deletion needs owner confirmation, global rule 7).
+
+---
+
 ## Program state (supersedes older handoffs)
 
 ### 2026-07-28 re-audit — the "code-complete" claim below is STALE

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:simf_conventions/src/engine.dart';
 import 'package:simf_conventions/src/report.dart';
+import 'package:simf_conventions/src/repo_root.dart';
 import 'package:simf_conventions/src/violation.dart';
 
 const String _usage = '''
@@ -29,7 +30,11 @@ Future<void> main(List<String> args) async {
     return;
   }
 
-  final String repoRoot = _option(args, '--root') ?? _inferRepoRoot();
+  final String repoRoot = _option(args, '--root') ??
+      inferRepoRoot(
+        File.fromUri(Platform.script).parent,
+        fallback: Directory.current.path,
+      );
   final String baselinePath =
       _option(args, '--baseline') ?? p.join(repoRoot, 'tool', 'conventions', 'baseline.json');
 
@@ -107,12 +112,3 @@ String? _option(List<String> args, String name) {
   return args[index + 1];
 }
 
-/// Walks up from this script until it finds the repository root.
-String _inferRepoRoot() {
-  Directory dir = File.fromUri(Platform.script).parent;
-  while (dir.path != dir.parent.path) {
-    if (Directory(p.join(dir.path, '.git')).existsSync()) return dir.path;
-    dir = dir.parent;
-  }
-  return Directory.current.path;
-}

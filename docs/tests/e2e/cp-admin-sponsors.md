@@ -1,4 +1,4 @@
-# E2E test catalogue — Sponsors CRUD (`/admin/sponsors`)
+﻿# E2E test catalogue — Sponsors CRUD (`/admin/sponsors`)
 
 | | |
 |--|--|
@@ -24,7 +24,7 @@
 | ID | Scenario | Type | Priority | Status |
 |----|----------|------|----------|--------|
 | E2E-SPN-001 | Full CRUD round-trip — Add → Edit → Delete (deactivate) | happy | P0 | _to author_ |
-| E2E-SPN-002 | Add a sponsor (create-only, all fields incl. logo/url/order) | happy | P1 | _to author_ |
+| E2E-SPN-002 | Add a sponsor (create-only: url/order; the logo attaches after saving) | happy | P1 | _to author_ |
 | E2E-SPN-003 | Edit a sponsor (change tier + toggle Active off) | happy | P1 | _to author_ |
 | E2E-SPN-004 | Delete (soft-deactivate) confirmed via the SimfConfirm gate (D-353; superseded by E2E-SPN-020) | happy | P1 | _to author_ |
 | E2E-SPN-005 | Cancel delete from the SimfConfirm gate (no-op) (D-353; superseded by E2E-SPN-020) | happy | P2 | _to author_ |
@@ -96,21 +96,27 @@ Scenario: Create, edit, then delete one sponsor
   Given the grid currently shows {N} rows
   When the administrator clicks the grid toolbar "Add" action
   Then the "Add sponsor" modal opens with fields:
-       Name (English), Name (Arabic), Tier (select), Link, Logo path,
+       Name (English), Name (Arabic), Tier (select), Link,
        Display order (number), and an "Active" checkbox (ticked)
+  And no logo field is offered, only the hint
+       "Save the record first, then add an image."
   When they fill Name (English) = "Lockheed Martin"
   And they fill Name (Arabic) = "لوكهيد مارتن"
   And they select Tier = "Platinum"
   And they fill Link = "https://www.lockheedmartin.com"
-  And they fill Logo path = "sponsors/lockheed.png"
   And they fill Display order = "10"
   And they click "Save"
   Then the BFF fires POST /account/api/admin/sponsors and the API returns HTTP 200
   And the modal closes
   And a green toast reads "Sponsor saved." / "تم حفظ الراعي."
   And a row exists with Name (English) = "Lockheed Martin",
-      Tier = "Platinum", Logo path = "sponsors/lockheed.png",
-      Link = "https://www.lockheedmartin.com", Display order = 10, Active = "✓"
+      Tier = "Platinum", Link = "https://www.lockheedmartin.com",
+      Display order = 10, Active = "✓"
+  And that row's Sponsor cell shows the name-initials tile, no logo yet
+  When they re-open the row's Edit action and upload "lockheed.png"
+       in the "Image" section's "Upload file" tab
+  Then POST /api/v1/admin/assets/SponsorLogo/{id}/image returns HTTP 200
+  And the row's Sponsor cell now renders that logo as its thumbnail
   And the grid summary reads "Showing 1–{N+1} of {N+1}"
 
   When the administrator clicks the row's Edit (pencil) action
@@ -159,7 +165,6 @@ Scenario: Create a sponsor with every field populated
   And they fill Name (Arabic) = "ساب"
   And they select Tier = "Gold"
   And they fill Link = "https://www.saab.com"
-  And they fill Logo path = "sponsors/saab.svg"
   And they fill Display order = "5"
   And they leave the "Active" checkbox ticked
   And they click "Save"
@@ -285,7 +290,6 @@ Scenario: Blank name shows a bilingual toast and suppresses the POST
 Scenario: Over-length / bad-tier / negative-order is rejected by the API with 400
   Given the "Add sponsor" modal is open with a valid Name (English) and Name (Arabic)
   When the administrator submits a value the API rejects, e.g.:
-       a Logo path longer than 256 characters, or
        a Link longer than 512 characters, or
        a Display order below 0
   And clicks "Save"
@@ -293,8 +297,8 @@ Scenario: Over-length / bad-tier / negative-order is rejected by the API with 40
   And ApiResult.Error.Code = "SponsorInvalid"
   And the modal stays open
   And the error toast surfaces the bilingual MessageForCurrentCulture(), e.g.
-      "Logo path must be 256 characters or fewer." /
-      "يجب أن يكون مسار الشعار 256 حرفاً أو أقل."
+      "Link must be 512 characters or fewer." /
+      "يجب أن يكون الرابط 512 حرفاً أو أقل."
 ```
 
 ### E2E-SPN-012 — Duplicate (conflict)
@@ -382,7 +386,7 @@ Scenario: Typing into a per-column grid filter narrows the rows
   And GridQuery.Skip is reset to 0
   And the grid shows only rows whose Name (Arabic) contains "ساب"
   And only the "Name (English)" and "Name (Arabic)" columns expose a per-column
-      filter input (Tier, Logo path, Link, Display order and Active are not Filterable)
+      filter input (Tier, Link, Display order and Active are not Filterable)
 ```
 
 ### E2E-SPN-017 — Column sort toggles
@@ -402,7 +406,7 @@ Scenario: Clicking a sortable column header toggles ascending/descending
        GridQuery.Sort = "tier" and GridQuery.SortDescending = true
   And the grid re-renders ordered by Tier descending (Bronze→Silver→Gold→Platinum)
   And the sortable columns are exactly: Name (English), Name (Arabic), Tier,
-      Display order and Active (Logo path and Link are not Sortable)
+      Display order and Active (Link is not Sortable)
 ```
 
 ### E2E-SPN-018 — Presentation toggle persists across reload (D-353)
@@ -437,7 +441,7 @@ Scenario: In full-page mode the Add/Edit/View forms take over the content area
   And a green toast reads "Sponsor saved." / "تم حفظ الراعي."
   When they click the row's Details action
   Then the SponsorsViewDelete form opens full-page in read-only mode (no Delete button)
-      showing Name (English/Arabic), Tier, Logo path, Link, Display order and Active
+      showing Name (English/Arabic), Tier, the logo preview, Link, Display order and Active
   When they click the CrudShell close (X) / "Close"
   Then the form closes and the grid re-appears unchanged
 ```

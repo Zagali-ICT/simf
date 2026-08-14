@@ -24,15 +24,15 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 /// D-771 (owner 2026-07-26) — the **staff seating desk**
 /// (`/staff/seating/:sessionId`, approved Staff). Derived from the visitor seat
-/// picker (`SeatPickerScreen`): the same shared `HallSeatMapCard` hall grid, but
-/// tapping a seat ASKS WHO SITS THERE instead of selecting it, and a badge
+/// picker (`SeatPickerScreen`): the same shared `HallSeatMapCard` hall grid,
+/// but tapping a seat ASKS WHO SITS THERE instead of selecting it, and a badge
 /// scanner above the grid answers the opposite question — where does this guest
 /// sit.
 ///
-/// * Role-gated to `AppRole.staff` in `router.dart` (route 118), exactly like the
-///   gate scanner (105); the server independently enforces the `Seating.Assist`
-///   operational permission that the Staff app role carries (D-563), so the app
-///   gate is only a UX guard.
+/// * Role-gated to `AppRole.staff` in `router.dart` (route 118), exactly like
+///   the gate scanner (105); the server independently enforces the
+///   `Seating.Assist` operational permission that the Staff app role carries
+///   (D-563), so the app gate is only a UX guard.
 /// * Tablet-responsive through the `WindowSize` API + `MaxWidthBody` (no
 ///   hardcoded breakpoints): a compact phone stacks the scanner above the grid,
 ///   a tablet puts the scanner and the result card side by side.
@@ -149,8 +149,8 @@ class _StaffSeatingScreenState extends ConsumerState<StaffSeatingScreen> {
 
   Widget _desk(AppL10n l10n, SessionSeatMap map) {
     // Tablet (medium and wider) puts the scanner + result beside the hall plan;
-    // a compact phone stacks them. Bucket comes from the shared WindowSize API —
-    // never a hardcoded pixel test.
+    // a compact phone stacks them. Bucket comes from the shared WindowSize API
+    // — never a hardcoded pixel test.
     final wide = !WindowSize.of(context).isCompact;
     final scanner = _scannerCard(l10n);
     final result = _resultCard(l10n);
@@ -168,7 +168,8 @@ class _StaffSeatingScreenState extends ConsumerState<StaffSeatingScreen> {
         child: ListView(
           children: <Widget>[
             Text(
-              map.localizedSessionTitle(l10n.isArabic) ?? l10n.staffSeatingTitle,
+              map.localizedSessionTitle(isArabic: l10n.isArabic) ??
+                  l10n.staffSeatingTitle,
               textAlign: TextAlign.center,
               style: SimfTokens.labelWhiteBoldTitle,
             ),
@@ -201,8 +202,9 @@ class _StaffSeatingScreenState extends ConsumerState<StaffSeatingScreen> {
     );
   }
 
-  /// (a) the shared scanner body — the same viewfinder + manual-entry field every
-  /// other SIMF scanner uses (D-737), so the desk needs no bespoke reader.
+  /// (a) the shared scanner body — the same viewfinder + manual-entry field
+  /// every other SIMF scanner uses (D-737), so the desk needs no bespoke
+  /// reader.
   Widget _scannerCard(AppL10n l10n) {
     return DeskCard(
       child: SimfScannerBody(
@@ -259,8 +261,8 @@ class _StaffSeatingScreenState extends ConsumerState<StaffSeatingScreen> {
               label: l10n.staffSeatingGuest,
               // A VVIP protocol seat has no registration: the administrator's
               // manual note IS the occupant record.
-              value: result.localizedGuestHint(l10n.isArabic) ??
-                  result.localizedName(l10n.isArabic),
+              value: result.localizedGuestHint(isArabic: l10n.isArabic) ??
+                  result.localizedName(isArabic: l10n.isArabic),
             ),
             DeskRow(
               label: _tierLabel(l10n, result.tier),
@@ -283,7 +285,8 @@ class _StaffSeatingScreenState extends ConsumerState<StaffSeatingScreen> {
   }
 
   /// (b) the hall plan. The SHARED `HallSeatMapCard` in its tappable
-  /// configuration — a tap resolves the seat's occupant rather than selecting it.
+  /// configuration — a tap resolves the seat's occupant rather than selecting
+  /// it.
   Widget _planCard(AppL10n l10n, SessionSeatMap map) {
     return HallSeatMapCard(
       map: map,
@@ -305,4 +308,3 @@ class _StaffSeatingScreenState extends ConsumerState<StaffSeatingScreen> {
         SeatTier.normal => l10n.seatTierNormal,
       };
 }
-

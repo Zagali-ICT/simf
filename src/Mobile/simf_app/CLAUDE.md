@@ -8,9 +8,19 @@
 > overrides an approval gate, a freeze, or a security rule.
 
 The coding constitution for this repo. Claude Code reads this every session.
-Read it fully before editing. This is a mature codebase (~166 Dart files,
-~46.9k lines). Refine it; do not re-architect it. When in doubt, match the
-existing pattern in the file you're editing, and FLAG instead of guessing.
+Read it fully before editing. This is a mature codebase (587 Dart files,
+~65.2k lines, measured 2026-08-13). Refine it; do not re-architect it. When in
+doubt, match the existing pattern in the file you're editing, and FLAG instead
+of guessing.
+
+> **Date every count in this file, and re-measure before trusting one.** The
+> numbers below have all moved at least once, and a stale one reads as current:
+> this file claimed 166 files and 526 inline styles long after they were 587
+> and 117. Measured 2026-08-13: raw `Color(0x)` outside `tokens.dart` **0** ·
+> relative imports **0** · inline `TextStyle(` outside `app/theme/` **117** ·
+> `ListView(` sites **48** (most are static content pages and correct as
+> written) · `catch` sites **78** · `flutter analyze` **0 errors, 0 warnings,
+> 2132 infos** · `tool/conventions` **12**, all SIMF-C3.
 
 Stack: Flutter · Riverpod · go_router · `simf_data_pkg` (data) · `AppL10n`
 (ar/en, RTL-first) · `SimfTokens` (design tokens). Arabic is the primary
@@ -64,22 +74,43 @@ lib/
 │   ├── net/, env/, sharing/  # infra
 │   └── utils/
 └── features/<feature>/
-    ├── data/                 # models + repositories (already the convention)
+    ├── data/                 # models + repositories + this feature's providers
     ├── widgets/              # feature-local widgets (one widget per file)
+    ├── <helper>.dart         # feature-local pure helpers (see below)
     └── <name>_screen.dart    # screens live at the feature root (existing convention)
 ```
 Tests mirror this under `test/` (e.g. `test/features/auth/sign_in_screen_test.dart`).
 
 Rules:
-- **One public widget per file.** A `_Private` helper widget may share the
-  screen file only if it is <60 lines and used once; otherwise its own file in
-  `widgets/`.
+- **One public widget per file**, with one exception the codebase already
+  relies on: a file may hold a **named cohesive group** whose members are
+  variations on one idea, and be named for that group —
+  `simf_cards.dart`, `simf_states.dart`, `simf_tiles.dart`, `about_cards.dart`,
+  `meeting_slot_pickers.dart`. What is NOT allowed is the heterogeneous file:
+  `live_content.dart` holding a login prompt, a feed toggle, a bullet glyph, a
+  banner, a button and a card shares nothing but a feature, and each of those
+  belongs in its own file. The test is whether the file's name describes all of
+  its contents (2026-08-14).
+  A `_Private` helper widget may share the screen file only if it is <60 lines
+  and used once; otherwise its own file in `widgets/`.
 - File names: `snake_case.dart`. Types: `PascalCase`. Screens end in `_screen`.
 - **Names must describe the real thing** (see §13.1). No placeholder/legacy
   prefixes (`Ksa*`, `Page_NNN`, generic `temp`/`demo`).
 - No file over ~400 lines. No `build()` over ~50 lines. These are guidelines —
   don't shred a cohesive file to hit a number, but the 500–2245 line screens in
   this repo all violate the intent and must be split.
+- **A feature-local pure helper lives at the feature root**, as a small
+  purpose-named file: `home_greeting.dart`, `youtube_url.dart`,
+  `speaker_initials.dart`, `entity_detail_helpers.dart`. It holds functions and
+  constants, never a widget and never a provider. The shape above previously
+  named only `data/`, `widgets/` and `<name>_screen.dart`, which left ten such
+  files looking like violations when they are the established pattern; this
+  records it rather than moving them (2026-08-13). A *widget* at the feature
+  root IS a violation and belongs in `widgets/`.
+- **A provider belongs in `data/`, never in a `*_screen.dart`.** A provider
+  declared in a screen forces any other feature that needs it to import a
+  screen. Put it beside the repository that feeds it. Private (`_`-prefixed)
+  providers used by one screen may stay in that screen.
 - Every feature you touch gets normalized to the shape above (create `widgets/`
   when extracting). Don't do a repo-wide move in one pass — only the feature
   you're working in.
@@ -106,13 +137,14 @@ Rules:
 
 ---
 
-## 3. Responsive & adaptive layout (currently missing — add it)
+## 3. Responsive & adaptive layout
 
 Must look correct on small phones, large phones, and tablets — **in portrait**
 (the app is portrait-locked; landscape/two-pane is out of scope unless the lock
 is lifted by owner decision).
 
-- **Breakpoints** in `core/responsive/breakpoints.dart`:
+- **Breakpoints** in `core/responsive/breakpoints.dart` (built, along with
+  `max_width_body.dart` and `grid_columns.dart`):
   `compact < 600 ≤ medium < 905 ≤ expanded < 1240 ≤ large`.
   Use these names; never hardcode `if (width > 600)` inline.
 - **Flexible width, not fixed (see §13.7).** Content blocks (cards/banners/tiles/
@@ -120,8 +152,8 @@ is lifted by owner decision).
   margin/padding, and drop `maxWidth:` content caps — but **KEEP intrinsic fixed
   sizes for icons/avatars/badges/QR/sweep/spacers**. The owner is on a tablet.
 - **Max-width anchor.** Content must NOT stretch edge-to-edge on wide screens.
-  Wrap page bodies in a `MaxWidthBody` (build it in `core/responsive/`) that
-  centers and caps content (e.g. `maxWidth: 560` for forms, `840` for reading
+  Wrap page bodies in `MaxWidthBody` (`core/responsive/max_width_body.dart`),
+  which centers and caps content (e.g. `maxWidth: 560` for forms, `840` for reading
   content).
 - **Scale with tokens**, not raw numbers. Use `SimfTokens` spacing; no
   `SizedBox(height: 17)`.
@@ -136,11 +168,13 @@ fixed widths / `left`/`right` to directional/adaptive equivalents.
 
 ---
 
-## 4. Lists & per-screen performance (currently missing — add it)
+## 4. Lists & per-screen performance
 
 - **Lazy by default.** Every scrolling list uses `ListView.builder` /
   `SliverList` / `GridView.builder`. Never `ListView(children: [...])` for
-  data-driven or long lists (30 non-builder lists exist — convert them).
+  data-driven or long lists. 48 `ListView(` sites exist (2026-08-13); most are
+  static content pages and are correct as written, so convert the data-driven
+  ones and leave the rest.
 - **Pull-to-refresh on every data screen (see §13.6).** Reuse the existing
   `SimfPullToRefresh` + `SimfPullableHost`.
 - **Pagination / load-more.** Lists backed by a paginated API load the next
@@ -170,13 +204,14 @@ the node list and the ASK-don't-guess rule).
 - All colors, text styles (family/size/weight/line-height/letter-spacing),
   spacing, and radii come from `SimfTokens` — the code mirror of Figma's
   variables/styles.
-- **Zero raw `Color(0x…)` in widgets** (~79 exist today — remove all; the count
-  excludes `tokens.dart`, which legitimately defines them). If a Figma color
+- **Zero raw `Color(0x…)` in widgets** — reached, and holding at 0 since
+  2026-07-28 (the count excludes `tokens.dart`, which legitimately defines them). If a Figma color
   isn't a token yet, add it to `tokens.dart` with the Figma variable name, then
   use the token. Base palette (from node 922-2824): BG `#192B41`, text
   `#FFFFFF`, gold `#C9A84C`, deep `#01132D`, paragraph `#C2B8A2`.
-- **Zero raw `TextStyle(fontSize:…)` in widgets** (~526 exist today — remove
-  all). Use a named token style (`SimfTokens.titleM`, `bodyR`, …). The font
+- **Zero raw `TextStyle(fontSize:…)` in widgets** (526 at the outset, **117**
+  on 2026-08-13 — 5 of them still carry a raw numeric size, the rest assemble
+  token atoms such as `fontSize: SimfTokens.textSm`; both forms must go). Use a named token style (`SimfTokens.titleM`, `bodyR`, …). The font
   family is set ONCE in the theme — never per-widget.
 
 ### 5.2 Per-screen Figma audit (run for each screen)
@@ -224,8 +259,8 @@ the node itself) is unknown, **STOP and ASK the owner** (§13.5).
 
 ## 8. Write it like a human, not an AI
 - Comment WHY, never WHAT. No comment that restates the next line.
-- No `try/catch` unless a failure is genuinely expected and handled (~113 exist
-  — don't add reflexive ones).
+- No `try/catch` unless a failure is genuinely expected and handled (78 `catch`
+  sites on 2026-08-13 — don't add reflexive ones).
 - No defensive null-checks for values that can't be null.
 - No speculative abstraction. Match the pragmatic data+presentation layering;
   do NOT add a `domain/` layer or interfaces "for cleanliness" unless asked.
@@ -276,10 +311,32 @@ Under `test/` mirroring the `lib/` path:
   day one and make the gate unsatisfiable).
 - The per-module gate is **"zero NEW analyzer issues + zero issues in the touched
   module's files"** — not repo-wide zero, until Phase 6.
-- **NEVER run `dart format .`** — this repo's Flutter 3.44 "tall" formatter strips
-  the trailing commas `require_trailing_commas` demands and explodes single-line
-  collections (e.g. `router.dart`) into huge diffs. Hand-write trailing commas;
-  run only `dart fix --apply` (does not reflow) on the files you touched.
+- **Never run `dart format` on its own.** The ban's premise was re-measured on
+  2026-08-14 against 250 touched files and it holds exactly: Flutter 3.44's
+  "tall" formatter strips the trailing commas `require_trailing_commas` demands,
+  taking that rule from **0 to 109 findings** in one run.
+
+  What it does NOT do is explode the diff — 152 files changed by +1120/-687,
+  and every golden held. So formatting is usable, in **two steps, never one**:
+
+  ```
+  dart format <only the files you touched>
+  dart fix --apply --code=require_trailing_commas .    # puts all 109 back
+  ```
+
+  Owner-authorised and executed once this way (2026-08-14):
+  `lines_longer_than_80_chars` 1690 -> 1428, total infos 1856 -> 1594,
+  `require_trailing_commas` back to 0, 1406 tests green, every golden holding
+  **without** `--update-goldens`.
+
+  **The end state is deliberately not `dart format`-stable.** Re-running the
+  formatter would change 55 of those files straight back, because the formatter
+  and `require_trailing_commas` genuinely disagree: the repo can satisfy one or
+  the other, not both. This repo picks trailing commas. If you run the
+  formatter, you own running step two afterwards — and do not expect a second
+  format run to be a no-op.
+- Don't disable a lint to silence a warning; fix the code. A genuinely-wrong rule
+  gets a deliberate `// ignore: name — reason`, flagged for review.
 - Don't disable a lint to silence a warning; fix the code. A genuinely-wrong rule
   gets a deliberate `// ignore: name — reason`, flagged for review.
 
@@ -383,16 +440,47 @@ cluster lives on the Home greeting header only. This supersedes the 2026-06-18
 "cluster on every page" rule.
 
 ### 13.6 Pull-to-refresh on every data-loaded page/list/menu
-This is **already implemented repo-wide** (D-520 + D-532; a grep audit of all 49
-screens confirmed it, 2026-06-28). So the rule during refactor is **PRESERVE it —
-never drop it when restructuring a screen, and VERIFY (don't assume) it still fires
-after a split** — and apply it to any genuinely new data screen. Reuse the shared
-`SimfPullToRefresh` (ex-`KsaRefresh`) + `SimfPullableHost` (ex-`KsaPullable`, hosts
-short empty/error states in a viewport-tall always-scrollable box). Hooks:
-StatefulWidget `_load()` → `onRefresh: _load`; Riverpod → `ref.invalidate(provider);
-await ref.read(provider.future)`. The refreshable child must use
-`AlwaysScrollableScrollPhysics`. **Exception:** `registration_status_screen` is
-intentionally NOT wrapped (a gate screen whose explicit "Re-check" button already polls).
+Owner rule: every data-loaded page pulls to refresh. **PRESERVE it — never drop it
+when restructuring a screen, and VERIFY (don't assume) it still fires after a
+split.** Reuse the shared `SimfPullToRefresh` (ex-`KsaRefresh`) + `SimfPullableHost`
+(ex-`KsaPullable`, hosts short empty/error states in a viewport-tall
+always-scrollable box), or `SimfRefreshableMessage`, which is exactly that pairing
+and saves hand-nesting it at every list branch. The refreshable child must use
+`AlwaysScrollableScrollPhysics` or the gesture will not fire on short content.
+
+**Hooks.** StatefulWidget `_load()` → `onRefresh: _load`. Riverpod →
+**`refreshAsync(ref, provider.future)`** (`lib/core/utils/refresh.dart`).
+
+> This section used to prescribe `ref.invalidate(provider); await
+> ref.read(provider.future)`. **Do not use it.** That idiom RETHROWS on a failing
+> endpoint, which rejects the RefreshIndicator's future and surfaces as an
+> unhandled error on top of the error state the user can already see. 15 files had
+> it; `refreshAsync` swallows the failure because the screen's own error branch is
+> what should show it.
+
+**Do not trust a grep audit here.** This section previously claimed the rule was
+"already implemented repo-wide (a grep audit of all 49 screens confirmed it,
+2026-06-28)". That was wrong twice: the 2026-07-28 re-audit found coverage had
+regressed to 25 of 69 screens (Home had none at all), and on 2026-08-14 the
+**badge** feature was found with no refresh hook on any branch — the state that
+mattered most, because a pending account had no way to re-check approval short of
+restarting the app. `SimfPageShell` only DEFINES the refresh widgets; applying them
+is opt-in per screen, which is why a grep for the widget names reads as coverage
+when it is not.
+
+**Exempt screens, with the reason — this list is the audit's baseline, so a new
+screen not on it and not refreshable is a defect, not a judgement call:**
+
+| Screen(s) | Why exempt |
+|---|---|
+| `sign_in`, `sign_up_form`, `sign_up_email_verify`, `email_otp_verify`, `forgot_password`, `reset_password`, `badge_activation`, `badge_password`, `badge_sign_in`, `biometric_step_up` | Submit-driven auth forms. Nothing is loaded to re-load. |
+| `sign_up_interests`, `my_mobile` | They DO load from the API, but the user then edits/selects on top of it. A pull would discard in-progress input — actively worse than no pull. Both carry an explicit retry on the error branch instead. |
+| `registration_status` | A gate screen whose explicit "Re-check" button already polls (Figma 1701:3789). |
+| `scan_contact`, `scan_visitor` | Live camera preview; there is no scrollable and no fetch to repeat. |
+| `splash`, `onboarding` | Transient boot screens that navigate away. |
+| `accessibility` | Local `SharedPreferences` settings via a `Notifier` — no network read. |
+| `meeting_confirm` | Takes its meeting from the route and performs one write; it has no load or error branch. |
+| `guest`, `forum_guide` | Static content, no repository. |
 
 ### 13.7 Flexible/responsive width (within portrait)
 The owner runs on a **tablet** — content sized to the 375px phone frame leaves dead

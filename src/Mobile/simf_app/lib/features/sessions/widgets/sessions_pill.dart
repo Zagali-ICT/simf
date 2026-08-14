@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 
 class SessionsPill extends StatelessWidget {
-  const SessionsPill({required this.label, required this.selected, required this.onTap, super.key,
+  const SessionsPill({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    super.key,
     this.icon,
   });
 

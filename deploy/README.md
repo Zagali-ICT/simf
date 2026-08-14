@@ -251,7 +251,7 @@ These are **placeholders** — set them to the real SIMF server values:
    > The one that reads like production is not. Anyone who "fixes" this mapping
    > on sight deploys straight to production believing they are rehearsing.
    > Trust the job names and `displayName`s in `azure-pipelines.yml`, not the
-   > environment string. Pinned by `PipelineTestGateTests` (D-891).
+   > environment string. Pinned by `PipelineTestGateTests` (D-896).
 
    **A missing environment cannot be created by the pipeline.** Azure DevOps
    auto-creates an environment named by a pipeline **only when the YAML was
@@ -272,7 +272,7 @@ These are **placeholders** — set them to the real SIMF server values:
 
    **The names must match the portal exactly**, including case. They are
    `SIMF-Prod` and `SIM-RNSF` — not `Pre-production`/`Production`, which were
-   assumed once and broke every deploy until corrected (D-891). If they ever
+   assumed once and broke every deploy until corrected (D-896). If they ever
    change, edit the two `environment:` values in `azure-pipelines.yml` **and**
    the `expected` array in that test together — the test pins the YAML to a
    reviewed list and cannot see the portal.
@@ -314,7 +314,7 @@ These are **placeholders** — set them to the real SIMF server values:
 
    **Order matters.** This line was added once *before* the VM resources
    existed and broke every deploy with "Environment could not be found" until it
-   was reverted (D-891). If a run reports **no matching resources**, the server
+   was reverted (D-896). If a run reports **no matching resources**, the server
    is not registered — register it, do **not** drop back to the bare form, which
    trades a loud failure for a wrong-machine deploy. Azure's documentation warns
    the value is case-sensitive while its own examples disagree on the casing, so

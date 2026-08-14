@@ -33,7 +33,6 @@ public partial class NewsAddEdit
             _model.BodyArabic = Initial.BodyArabic;
             _model.Category = Initial.Category;
             _model.CategoryArabic = Initial.CategoryArabic;
-            _model.ImageRelativePath = Initial.ImageRelativePath ?? string.Empty;
             _model.PublishedAt = Initial.PublishedAt;
             _model.DisplayOrder = Initial.DisplayOrder;
             _model.IsActive = Initial.IsActive;
@@ -76,7 +75,6 @@ public partial class NewsAddEdit
                     BodyArabic = _model.BodyArabic,
                     Category = _model.Category,
                     CategoryArabic = _model.CategoryArabic,
-                    ImageRelativePath = NullIfBlank(_model.ImageRelativePath),
                     PublishedAt = _model.PublishedAt,
                     DisplayOrder = _model.DisplayOrder,
                 },
@@ -90,7 +88,6 @@ public partial class NewsAddEdit
                     BodyArabic = _model.BodyArabic,
                     Category = _model.Category,
                     CategoryArabic = _model.CategoryArabic,
-                    ImageRelativePath = NullIfBlank(_model.ImageRelativePath),
                     PublishedAt = _model.PublishedAt,
                     DisplayOrder = _model.DisplayOrder,
                     IsActive = _model.IsActive,
@@ -141,7 +138,6 @@ public partial class NewsAddEdit
         public string BodyArabic { get; set; } = string.Empty;
         public string Category { get; set; } = string.Empty;
         public string CategoryArabic { get; set; } = string.Empty;
-        public string ImageRelativePath { get; set; } = string.Empty;
         public DateTime PublishedAt { get; set; } = SimfClock.Now;
         public int DisplayOrder { get; set; }
         public bool IsActive { get; set; } = true;

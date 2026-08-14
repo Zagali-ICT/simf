@@ -22,13 +22,13 @@ export 'data/media_partners_repository.dart';
 ///
 /// **Public.** The frame is the two-tab "المركز الاعلامي" (Media center)
 /// container — الشركاء الإعلاميون (this screen, active gold) · احدث المستجدات.
-/// The inactive pill navigates to the news (#29) route. The body is a two-column
-/// grid of partner cards (frame node 958:2388): a gold rounded-square logo holder
-/// over the partner name on the navy KSA card. The logo is the partner's uploaded
-/// asset, fetched from the public anonymous route
-/// `…/app/assets/MediaPartnerLogo/{id}/image` (the D-357 unified media-asset
-/// pipeline) with a loading spinner and a graceful fall-back to the partner's
-/// initials on a gold tile when there is no logo or the fetch fails.
+/// The inactive pill navigates to the news (#29) route. The body is a
+/// two-column grid of partner cards (frame node 958:2388): a gold
+/// rounded-square logo holder over the partner name on the navy KSA card. The
+/// logo is the partner's uploaded asset, fetched from the public anonymous
+/// route `…/app/assets/MediaPartnerLogo/{id}/image` (the D-357 unified
+/// media-asset pipeline) with a loading spinner and a graceful fall-back to the
+/// partner's initials on a gold tile when there is no logo or the fetch fails.
 class MediaPartnersScreen extends ConsumerWidget {
   const MediaPartnersScreen({super.key});
 
@@ -97,9 +97,9 @@ class MediaPartnersScreen extends ConsumerWidget {
                       SimfTokens.space4,
                       SimfTokens.space6,
                     ),
-                    gridDelegate:
-                        SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: responsiveGridColumns(context, compact: 2),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount:
+                          responsiveGridColumns(context, compact: 2),
                       mainAxisSpacing: SimfTokens.space4,
                       crossAxisSpacing: SimfTokens.space4,
                       childAspectRatio: SimfTokens.partnerCardAspectRatio,
@@ -108,7 +108,7 @@ class MediaPartnersScreen extends ConsumerWidget {
                     itemBuilder: (context, index) {
                       final partner = items[index];
                       return PartnerCard(
-                        name: partner.localizedName(isArabic),
+                        name: partner.localizedName(isArabic: isArabic),
                         logoUrl: partner.logoAssetUrl(baseUrl),
                       );
                     },

@@ -202,6 +202,40 @@ tests. A bUnit harness with mocked `IJSRuntime` /
 runtime behaviour (Escape closes the dropdown, focus jumps to `<main>`
 on skip-link, etc.). Scope: a separate test-tooling increment.
 
+### 3.10 `BadgeBatch.CountsSummary` was English-only in an Arabic UI — DONE
+
+Found 2026-08-14 driving `/admin/visitors/badge-batches` in Arabic: the
+**Contents** column rendered `Normal × 4 + VIP × 3` with the **English**
+tier names while the rest of the page was Arabic, because
+`CountsSummary` is a single denormalised English string with no Arabic
+side to fall back to.
+
+Fixed the same day, by the first of the two shapes this item proposed
+and **without a schema change**: the breakdown is derived on read from
+the member rows, carrying BOTH names per tier
+(`AdminBadgeBatchSummary.Tiers`), and the page composes it in the
+language being read. One grouped query per page of the list, not one
+per row. The stored string stays as the audit record and as the
+fallback for an order whose members are gone, so nothing gained a
+second writable copy.
+
+Two things the live check caught that the tests had not:
+
+- Deriving tiers for the **direct-registration** order replaced its
+  short prose with every profile type present — nine entries and
+  growing with each registrant, in a column sized for "Normal × 4".
+  It is not a badge order, so it is excluded and carries
+  `IsDirectRegistration` instead.
+- Its stored prose is the English literal "Direct registration", so
+  falling back to it left one English cell in an otherwise Arabic
+  table. It now renders a localised label
+  (`Admin.BadgeBatches.DirectRegistration`).
+
+`MergeCountsSummary` still parses its own `" × "`-delimited output to
+maintain the stored string. That is now display-irrelevant, and could
+be retired if the stored summary is ever dropped — which would be a
+schema change and is not proposed here.
+
 ### 3.8 `myComment.txt` drain — TRIAGED (H31 — D-089)
 
 The owner's working note at repo root was triaged item-by-item; the

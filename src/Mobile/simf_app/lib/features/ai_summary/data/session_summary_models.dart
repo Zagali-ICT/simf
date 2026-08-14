@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:simf_app/core/utils/bilingual.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
 
 /// One published session summary — mirrors
@@ -27,6 +28,26 @@ class SessionSummary {
     this.summaryVideoUrl,
   });
 
+  /// Decodes the `decodeData` payload (a JSON object) into a [SessionSummary].
+  factory SessionSummary.fromData(Object? data) => SessionSummary.fromJson(
+        (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{},
+      );
+
+  factory SessionSummary.fromJson(Map<String, dynamic> json) => SessionSummary(
+        keyPoints: json['keyPoints'] as String? ?? '',
+        keyPointsArabic: json['keyPointsArabic'] as String? ?? '',
+        recommendations: json['recommendations'] as String? ?? '',
+        recommendationsArabic: json['recommendationsArabic'] as String? ?? '',
+        speakers: json['speakers'] as String? ?? '',
+        speakersArabic: json['speakersArabic'] as String? ?? '',
+        fullText: json['fullText'] as String? ?? '',
+        fullTextArabic: json['fullTextArabic'] as String? ?? '',
+        generatedByAi: json['generatedByAi'] as bool? ?? false,
+        publishedAtRaw: json['publishedAt'] as String?,
+        recordingUrl: json['recordingUrl'] as String?,
+        summaryVideoUrl: json['summaryVideoUrl'] as String?,
+      );
+
   final String keyPoints;
   final String keyPointsArabic;
   final String recommendations;
@@ -48,31 +69,25 @@ class SessionSummary {
   /// player.
   final String? summaryVideoUrl;
 
-  String _picked(String ar, String en, bool isArabic) {
-    final a = ar.trim();
-    final e = en.trim();
-    return isArabic ? (a.isNotEmpty ? a : e) : (e.isNotEmpty ? e : a);
-  }
-
   /// The key-points block in the active language (may be empty).
-  String localizedKeyPoints(bool isArabic) =>
-      _picked(keyPointsArabic, keyPoints, isArabic);
+  String localizedKeyPoints({required bool isArabic}) =>
+      pickLocalized(keyPointsArabic, keyPoints, isArabic: isArabic);
 
   /// The recommendations block in the active language (may be empty).
-  String localizedRecommendations(bool isArabic) =>
-      _picked(recommendationsArabic, recommendations, isArabic);
+  String localizedRecommendations({required bool isArabic}) =>
+      pickLocalized(recommendationsArabic, recommendations, isArabic: isArabic);
 
   /// The speakers block in the active language (may be empty).
-  String localizedSpeakers(bool isArabic) =>
-      _picked(speakersArabic, speakers, isArabic);
+  String localizedSpeakers({required bool isArabic}) =>
+      pickLocalized(speakersArabic, speakers, isArabic: isArabic);
 
   /// The full-text block in the active language (may be empty).
-  String localizedFullText(bool isArabic) =>
-      _picked(fullTextArabic, fullText, isArabic);
+  String localizedFullText({required bool isArabic}) =>
+      pickLocalized(fullTextArabic, fullText, isArabic: isArabic);
 
   /// The localized key points split into one bullet per non-empty line.
-  List<String> keyPointsLines(bool isArabic) {
-    return localizedKeyPoints(isArabic)
+  List<String> keyPointsLines({required bool isArabic}) {
+    return localizedKeyPoints(isArabic: isArabic)
         .split('\n')
         .map((line) => line.trim())
         .where((line) => line.isNotEmpty)
@@ -88,24 +103,4 @@ class SessionSummary {
     }
     return parseWireOrNull(raw);
   }
-
-  static SessionSummary fromJson(Map<String, dynamic> json) => SessionSummary(
-        keyPoints: json['keyPoints'] as String? ?? '',
-        keyPointsArabic: json['keyPointsArabic'] as String? ?? '',
-        recommendations: json['recommendations'] as String? ?? '',
-        recommendationsArabic: json['recommendationsArabic'] as String? ?? '',
-        speakers: json['speakers'] as String? ?? '',
-        speakersArabic: json['speakersArabic'] as String? ?? '',
-        fullText: json['fullText'] as String? ?? '',
-        fullTextArabic: json['fullTextArabic'] as String? ?? '',
-        generatedByAi: json['generatedByAi'] as bool? ?? false,
-        publishedAtRaw: json['publishedAt'] as String?,
-        recordingUrl: json['recordingUrl'] as String?,
-        summaryVideoUrl: json['summaryVideoUrl'] as String?,
-      );
-
-  /// Decodes the `decodeData` payload (a JSON object) into a [SessionSummary].
-  static SessionSummary fromData(Object? data) => SessionSummary.fromJson(
-        (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{},
-      );
 }

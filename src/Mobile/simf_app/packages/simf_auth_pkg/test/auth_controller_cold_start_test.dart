@@ -43,9 +43,9 @@ void main() {
       () async {
         // The platform keystore can hang on a cold start (observed on a real
         // device): _secureStorage.read() never completes. Without the timeout
-        // guard the restore stalls, auth stays AuthStateInitial forever, and the
-        // router holds the user on the splash with no escape (router.dart). The
-        // read is time-boxed, so the catch-all must resolve to signed-out.
+        // guard the restore stalls, auth stays AuthStateInitial forever, and
+        // the router holds the user on the splash with no escape (router.dart).
+        // The read is time-boxed, so the catch-all must resolve to signed-out.
         final secure = _MockSecureStorage();
         final repo = _MockAuthRepository();
         when(() => secure.read(any()))
@@ -61,7 +61,8 @@ void main() {
         expect(
           resolved,
           isA<AuthStateSignedOut>(),
-          reason: 'the cold-start read timeout must never strand auth at Initial',
+          reason:
+              'the cold-start read timeout must never strand auth at Initial',
         );
       },
       timeout: const Timeout(Duration(seconds: 15)),

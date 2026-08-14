@@ -4,7 +4,7 @@ import 'package:simf_app/features/sessions/data/session_models.dart';
 void main() {
   group('SessionDetail.fromJson', () {
     test('binds the detail fields + the D-271 speaker cluster', () {
-      final detail = SessionDetail.fromJson(<String, dynamic>{
+      final detail = SessionDetail.fromJson(const <String, dynamic>{
         'id': 's1',
         'code': 'OP-1',
         'title': 'Opening',
@@ -36,10 +36,10 @@ void main() {
         ],
       });
 
-      expect(detail.localizedTitle(true), 'الافتتاح');
-      expect(detail.localizedHall(false), 'Main Hall');
-      expect(detail.localizedDescription(false), 'Welcome');
-      expect(detail.localizedCategory(true), 'جلسة رئيسية');
+      expect(detail.localizedTitle(isArabic: true), 'الافتتاح');
+      expect(detail.localizedHall(isArabic: false), 'Main Hall');
+      expect(detail.localizedDescription(isArabic: false), 'Welcome');
+      expect(detail.localizedCategory(isArabic: true), 'جلسة رئيسية');
       expect(detail.liveStreamUrl, 'https://youtu.be/abcdefghijk');
       expect(detail.hasLiveStream, isTrue);
       expect(detail.displayOrder, 2); // D-567
@@ -52,27 +52,26 @@ void main() {
       final speaker = detail.speakers.single;
       expect(speaker.role, SessionSpeakerRole.host);
       expect(speaker.countryId, 682);
-      expect(speaker.localizedCountry(true), 'السعودية');
+      expect(speaker.localizedCountry(isArabic: true), 'السعودية');
       expect(speaker.photoRelativePath, '/media/sp1.jpg');
     });
 
     test('optional fields decode to null; speakers default to empty', () {
-      final detail = SessionDetail.fromJson(<String, dynamic>{
+      final detail = SessionDetail.fromJson(const <String, dynamic>{
         'id': 's2',
         'code': 'X',
         'title': 'Bare',
         'start': '2026-11-23T06:00:00Z',
         'end': '2026-11-23T07:00:00Z',
       });
-      expect(detail.localizedDescription(false), isNull);
-      expect(detail.localizedCategory(false), isNull);
+      expect(detail.localizedDescription(isArabic: false), isNull);
+      expect(detail.localizedCategory(isArabic: false), isNull);
       expect(detail.liveStreamUrl, isNull);
       expect(detail.hasLiveStream, isFalse);
       expect(detail.speakers, isEmpty);
       // #29 — an older API sends no `type`; the detail then renders in full.
       expect(detail.type, isNull);
     });
-
 
     // #29 — the detail carries the same tolerant `type` the list does (D-452):
     // the app reduces a WORKSHOP to its title + time.
@@ -113,7 +112,8 @@ void main() {
 
     test('a null / absent myCell yields null (no card)', () {
       expect(
-        MySeat.fromSeatMap(<String, dynamic>{'sessionId': 's1', 'myCell': null}),
+        MySeat.fromSeatMap(
+            <String, dynamic>{'sessionId': 's1', 'myCell': null},),
         isNull,
       );
       expect(MySeat.fromSeatMap(<String, dynamic>{'sessionId': 's1'}), isNull);

@@ -1,10 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'api/auth_token_source.dart';
-import 'api/simf_api_client.dart';
-import 'config/simf_data_config.dart';
-import 'storage/prefs_storage.dart';
-import 'storage/secure_storage.dart';
+import 'package:simf_data_pkg/src/api/auth_token_source.dart';
+import 'package:simf_data_pkg/src/api/simf_api_client.dart';
+import 'package:simf_data_pkg/src/config/simf_data_config.dart';
+import 'package:simf_data_pkg/src/storage/prefs_storage.dart';
+import 'package:simf_data_pkg/src/storage/secure_storage.dart';
 
 /// Riverpod providers exported by the data package.
 ///

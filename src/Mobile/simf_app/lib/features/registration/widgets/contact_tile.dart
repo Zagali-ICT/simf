@@ -18,10 +18,13 @@ class ContactTile extends StatelessWidget {
         height: SimfTokens.contactTileHeight,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          border: Border.all(color: SimfTokens.tileBorderNavy, width: SimfTokens.contactTileWidth),
+          border: Border.all(
+              color: SimfTokens.tileBorderNavy,
+              width: SimfTokens.contactTileWidth,),
           borderRadius: BorderRadius.circular(SimfTokens.radius10),
         ),
-        child: Icon(icon, color: SimfTokens.surface, size: SimfTokens.contactTileSize),
+        child: Icon(icon,
+            color: SimfTokens.surface, size: SimfTokens.contactTileSize,),
       ),
     );
   }

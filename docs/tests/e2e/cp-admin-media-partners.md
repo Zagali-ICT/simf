@@ -17,9 +17,10 @@
 > - Surface is a `SimfDataGrid` (D-256 raw-table→grid conversion): per-page size
 >   `Top = 20`, `Multiselect="true"` (select-all + per-row checkboxes are present
 >   but there is **no bulk-action toolbar button** — selection is cosmetic here).
-> - Grid columns: Name (English) `nameen`, Name (Arabic) `namear`, Logo path
->   `logo`, Link `url`, Display order `displayorder`, Active `isActive` (rendered
->   as a `SimfPill` — "Active" on / "Inactive" off, not `✓`/`—`).
+> - Grid columns: Name `name` (a `SimfIdentityCell` carrying the logo thumbnail,
+>   the English name and the Arabic name in one cell), Link `url`, Display order
+>   `displayorder`, Active `isActive` (rendered as a `SimfPill` — "Active" on /
+>   "Inactive" off, not `✓`/`—`). There is no separate logo column.
 > - **Per-column grid filters** (`Filterable="true"`): **Name (English)** `nameen`
 >   and **Name (Arabic)** `namear` only. Sortable columns: `nameen`, `namear`,
 >   `displayorder`. The backend (`AdminMediaPartnerService.ListAllAsync`) honours
@@ -28,11 +29,17 @@
 > - Row actions are quiet **icon** buttons inside the grid's `RowActions` — Edit
 >   (pencil, `OnEditOne`) and Delete (trash, `OnDeleteOne`) — not filled text
 >   buttons.
-> - Add/Edit modal fields: NameEn (max 256), NameAr (max 256), Logo path
->   (max 512), Link (max 512), Display order (number, min 0 max 99999),
+> - Add/Edit modal fields: NameEn (max 256), NameAr (max 256), Link (max 512),
+>   Display order (number, min 0 max 99999),
 >   **Active** checkbox (`SimfCheckbox`). The Active checkbox is shown for both
 >   Add and Edit, but Create always persists `IsActive = true` server-side
 >   regardless (the create request carries no IsActive); Edit honours it.
+> - The logo is **not** a modal field. On Edit the modal carries an "Image"
+>   section hosting `SimfImageUpload Category="MediaPartnerLogo"`, with an
+>   "Upload file" and an "External link" tab; on Add it shows only the hint
+>   "Save the record first, then add an image.", because bytes cannot be
+>   attached to a row that does not exist yet. Either tab writes a `StoredFile`
+>   owned by the partner and points the row's `LogoFileId` at it.
 > - **Add / Edit / View / Delete** are now hosted by `CrudShell` (D-353) — popup or
 >   full page per the toolbar `CrudPresentationToggle` (`PageKey = "media-partners"`,
 >   persisted in `localStorage` "simf.cp.prefs.media-partners" via `CpPreferences`).
@@ -127,7 +134,7 @@ Scenario: Create, edit, then deactivate one media partner
   Given the grid currently shows {N} rows
   When the administrator clicks "Add media partner"
   Then the Add modal opens titled "Add media partner"
-  And it shows fields: Name (English), Name (Arabic), Logo path, Link, Display order, and an "Active" checkbox (ticked)
+  And it shows fields: Name (English), Name (Arabic), Link, Display order, and an "Active" checkbox (ticked)
   When they fill Name (English)="Naval Times"
   And they fill Name (Arabic)="أوقات البحرية"
   And they fill Display order="100"
@@ -170,18 +177,28 @@ Scenario: Create, edit, then deactivate one media partner
 ### E2E-MPR-002 — Add with optional fields
 
 ```gherkin
-Scenario: Logo path and Link are persisted when supplied
+Scenario: Link is persisted, and the logo is attached once the row exists
   Given the Add modal is open
   When the administrator fills Name (English)="Gulf Maritime Press"
   And fills Name (Arabic)="صحافة الخليج البحرية"
-  And fills Logo path="media-partners/gulf-press.png"
   And fills Link="https://gulfpress.example"
   And fills Display order="200"
-  And clicks "Save"
+  Then no logo field is offered, only the hint "Save the record first, then add an image."
+  When they click "Save"
   Then a POST /account/api/admin/media-partners returns 200
-  And the new grid row shows Logo path="media-partners/gulf-press.png" and Link="https://gulfpress.example"
-  And rows with blank logo/link instead render "—" in those columns
+  And the new grid row shows Link="https://gulfpress.example"
+  When they re-open that row's Edit action
+  Then an "Image" section is present with "Upload file" and "External link" tabs
+  And they upload "gulf-press.png" on the "Upload file" tab
+  Then a POST /api/v1/admin/assets/MediaPartnerLogo/{id}/image returns 200
+  And the row's name cell renders the uploaded logo as its thumbnail
+  And rows with no logo render the name-initials fallback instead
+  And rows with no link render "—" in the Link column
 ```
+
+> The logo is never typed as a path: it is a `StoredFile` owned by the partner,
+> and the row's `LogoFileId` points at it. The upload above sets that pointer;
+> deactivating the file from the Media Library clears it again.
 
 ### E2E-MPR-003 — Toggle Active off then on
 
@@ -334,7 +351,7 @@ Scenario: Typing into a column filter input narrows the grid via GridQuery.Filte
 ```
 
 > Note: only **Name (English)** (`nameen`) and **Name (Arabic)** (`namear`) carry
-> `Filterable="true"`; Logo path, Link, Display order and Active have no per-column
+> `Filterable="true"`; Link, Display order and Active have no per-column
 > filter input. The backend `AdminMediaPartnerService.ListAllAsync` matches these
 > with a case-sensitive `Contains`, so the filter value casing must match the data.
 

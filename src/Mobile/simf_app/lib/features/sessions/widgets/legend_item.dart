@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 
 class LegendItem extends StatelessWidget {
-  const LegendItem({required this.color, required this.label, required this.size, super.key,
+  const LegendItem({
+    required this.color,
+    required this.label,
+    required this.size,
+    super.key,
     this.borderColor,
     this.icon,
     this.iconColor,
@@ -31,7 +35,8 @@ class LegendItem extends StatelessWidget {
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: color,
-            border: borderColor != null ? Border.all(color: borderColor!) : null,
+            border:
+                borderColor != null ? Border.all(color: borderColor!) : null,
             borderRadius: BorderRadius.circular(SimfTokens.radiusSeat),
           ),
           child: icon != null

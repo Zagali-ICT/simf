@@ -11,7 +11,7 @@ library;
 final RegExp _lower = RegExp('[a-z]');
 final RegExp _upper = RegExp('[A-Z]');
 final RegExp _digit = RegExp(r'\d');
-final RegExp _special = RegExp(r'[^A-Za-z0-9]');
+final RegExp _special = RegExp('[^A-Za-z0-9]');
 
 /// True when [value] satisfies the structural policy: 8–128 characters
 /// containing a lower-case letter, an upper-case letter, a digit and a special

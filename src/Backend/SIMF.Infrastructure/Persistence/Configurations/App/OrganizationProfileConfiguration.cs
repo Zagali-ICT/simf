@@ -1,7 +1,8 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Domain.Files;
 using SIMF.Domain.Organization;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
@@ -39,8 +40,16 @@ internal sealed class OrganizationProfileConfiguration
         builder.Property(p => p.ContactPhone).HasMaxLength(64);
         builder.Property(p => p.ContactEmail).HasMaxLength(256);
         builder.Property(p => p.ContactWebsite).HasMaxLength(1024);
-        builder.Property(p => p.LiveStreamUrl).HasMaxLength(1024);
-        builder.Property(p => p.BackgroundVideoUrl).HasMaxLength(1024);
+        builder.HasIndex(p => p.LiveStreamFileId);
+        builder.HasOne<StoredFile>()
+            .WithMany()
+            .HasForeignKey(p => p.LiveStreamFileId)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(p => p.BackgroundVideoFileId);
+        builder.HasOne<StoredFile>()
+            .WithMany()
+            .HasForeignKey(p => p.BackgroundVideoFileId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(p => p.FacebookUrl).HasMaxLength(1024);
         builder.Property(p => p.XUrl).HasMaxLength(1024);

@@ -97,7 +97,7 @@ class IdentitySection extends StatelessWidget {
             FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z\s]')),
           ],
           // D-723 - required (only the plate number stays optional).
-          validator: (String? v) =>
+          validator: (v) =>
               (v == null || v.trim().isEmpty) ? l10n.jobTitleRequired : null,
         ),
         const SizedBox(height: SimfTokens.space4),

@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 
 class DelegationsStat extends StatelessWidget {
-  const DelegationsStat({required this.value, required this.label, required this.alignEnd, super.key,
+  const DelegationsStat({
+    required this.value,
+    required this.label,
+    required this.alignEnd,
+    super.key,
   });
 
   final int value;

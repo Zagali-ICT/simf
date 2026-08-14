@@ -42,6 +42,12 @@ public sealed class DeskConfig
 
     /// <summary>First sequence this desk may mint.</summary>
     [JsonIgnore]
+    /// <summary>The edition year the desk stamps into every badge it prints. It
+    /// must match the year open on the API: a desk stamping any other year
+    /// prints badges every gate refuses, which is why the pre-event checklist
+    /// checks it against the API rather than trusting the default.</summary>
+    public int EditionYear { get; set; } = 2026;
+
     public long SequenceRangeStart => DeskNumber * RangeWidth + 1;
 
     /// <summary>Last sequence this desk may mint.</summary>

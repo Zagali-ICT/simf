@@ -25,9 +25,14 @@ public sealed class Sponsor : BaseAuditEntity
     /// <see cref="NameArabic"/>.</summary>
     public int DisplayOrder { get; set; }
 
-    /// <summary>Path to the logo asset, resolved against the static asset root.
-    /// Never an absolute URL.</summary>
-    public string? LogoRelativePath { get; set; }
+    /// <summary>The sponsor's logo, as its row in the one file store. A real foreign key:
+    /// both sides live in the App database.
+    ///
+    /// <para>This was <c>LogoRelativePath</c>, admin-typed free text. An uploaded image and
+    /// a linked one are now the same thing, a <c>StoredFile</c>, so the value is
+    /// validated and stored once instead of living untyped on this row.</para>
+    /// </summary>
+    public Guid? LogoFileId { get; set; }
 
     /// <summary>Outbound link to the sponsor's own website.</summary>
     public string? Url { get; set; }
@@ -45,8 +50,8 @@ public sealed class Sponsor : BaseAuditEntity
     public string? AboutArabic { get; set; }
 
     // Contact-card fields, inlined when the shared contact directory was removed.
-    // The website slot is the Url above, and the logo is LogoRelativePath; neither
-    // was re-added here.
+    // The website slot is the Url above, and the logo is LogoFileId; neither was
+    // re-added here.
     public string? Email { get; set; }
     public string? PhonePrimary { get; set; }
     public string? PhoneSecondary { get; set; }

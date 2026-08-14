@@ -31,7 +31,7 @@ internal sealed class SimfUserConfiguration : IEntityTypeConfiguration<SimfUser>
 
         // AvatarFileId is a uniqueidentifier and needs no length. It carries no
         // foreign key on purpose: StoredFiles lives in the App database and
-        // SQL Server cannot constrain across one (D-157).
+        // SQL Server cannot constrain across a database boundary.
 
         // State-change metadata. The composite index supports
         // "recently rejected" / "recently approved" admin queries without

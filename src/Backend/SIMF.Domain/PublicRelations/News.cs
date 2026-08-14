@@ -25,9 +25,14 @@ public class News : BaseAuditEntity
     public string Category { get; set; } = string.Empty;
     public string CategoryArabic { get; set; } = string.Empty;
 
-    /// <summary>The hero image, as a path under the configured media root. This
-    /// column stores the path only; uploading is somebody else's job.</summary>
-    public string? ImageRelativePath { get; set; }
+    /// <summary>The article's hero image, as its row in the one file store. A real foreign key:
+    /// both sides live in the App database.
+    ///
+    /// <para>This was <c>ImageRelativePath</c>, admin-typed free text. An uploaded image and
+    /// a linked one are now the same thing, a <c>StoredFile</c>, so the value is
+    /// validated and stored once instead of living untyped on this row.</para>
+    /// </summary>
+    public Guid? ImageFileId { get; set; }
 
     /// <summary>The article date, and the gate for public visibility: a public
     /// read requires it to be in the past, so an article dated ahead is authored

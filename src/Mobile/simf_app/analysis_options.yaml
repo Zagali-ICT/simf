@@ -1,37 +1,41 @@
 # analysis_options.yaml — SIMF Flutter App
 # Strict analyzer config — the END-STATE target for the clean-code program.
 #
-# Base: very_good_analysis (industry-strict). To adopt:
-#   flutter pub add --dev very_good_analysis
-#   flutter pub get                       # then pin the EXACT version it resolved in pubspec
-#   # remove flutter_lints from dev_dependencies — it conflicts/duplicates very_good
+# Base: very_good_analysis (industry-strict), shared with BOTH local packages
+# (packages/simf_data_pkg, packages/simf_auth_pkg), which were moved off
+# flutter_lints on 2026-08-14 so the code the whole app depends on is not the
+# code held to the loosest standard.
 #
 # ───────────────────────────────────────────────────────────────────────────
-# ADOPTION - the ratchet, and where it currently stands (2026-08-09).
+# ADOPTION - the ratchet, and where it stands (2026-08-14). THE RATCHET IS
+# CLOSED.
 #
-# The original note said an error-flip was impossible because the repo carried
-# ~445 relative imports and 526 inline TextStyle. Both are now ZERO, so the
-# rules below moved from "someday" to enforced. The reasoning behind the ratchet
-# stands and is why the rest are still off:
+# The rule it ran on, which still governs any rule added later:
 #
 #   Turn a rule to `error` ONLY when it already reports zero repo-wide. A gate
 #   that fails every build gets switched off, and a switched-off gate protects
 #   nothing - which is exactly what happened to the .NET test stage, disabled
 #   for five weeks with 922 passing tests behind it.
 #
-# ENFORCED as errors below: 8 rules, each verified at zero before promotion.
-# CI additionally treats WARNINGS as fatal (azure-pipelines.yml drops
-# --no-fatal-warnings); `--no-fatal-infos` stays until the infos below clear.
+# History, so the next reader can see the shape rather than trust the result.
+# The first note said an error-flip was impossible: ~445 relative imports and
+# 526 inline TextStyle. Both reached zero and 8 rules were promoted below. The
+# second note (2026-08-09) recorded ~2100 remaining infos - 135
+# avoid_positional_boolean_parameters, 113 use_key_in_widget_constructors, 109
+# avoid_redundant_argument_values, 75 prefer_constructors_over_static_methods,
+# 55 comment_references, ~1580 lines_longer_than_80_chars - and kept
+# `--no-fatal-infos` for exactly the reason above.
 #
-# STILL OPEN, ~2100 infos, largest first:
-#   avoid_positional_boolean_parameters       135
-#   use_key_in_widget_constructors            113
-#   avoid_redundant_argument_values           109
-#   prefer_constructors_over_static_methods    75
-#   comment_references                         55
-#   lines_longer_than_80_chars               ~1580
-# Each closes on its own, then gets promoted here. Do NOT promote one that is
-# not already at zero.
+# Those are now ALL zero, across lib, test, integration_test and packages, so
+# `--no-fatal-infos` was dropped from azure-pipelines.yml. CI now fails on an
+# info, which makes every rule in this file enforced without needing to list it
+# in the `errors:` block one at a time.
+#
+# Two rules are OFF rather than clean, each with its measurement recorded at
+# the rule (`specify_nonobvious_property_types`, `public_member_api_docs`), and
+# roughly two dozen individual sites carry a targeted `// ignore:` with the
+# reason above it. The zero is argued, not swept - if you are about to add an
+# `// ignore:`, write why the analyzer is WRONG about that line, or fix it.
 # ───────────────────────────────────────────────────────────────────────────
 
 include: package:very_good_analysis/analysis_options.yaml
@@ -91,6 +95,20 @@ linter:
     unnecessary_statements: true
     use_build_context_synchronously: true
 
+    # OFF, with the measurement rather than a preference. 33 findings, and 32
+    # of them are Riverpod provider declarations. `dart fix` satisfies those by
+    # writing the internal type name —
+    #     final AutoDisposeFutureProviderFamily<ArchiveEditionDetail?, String>
+    #         archiveEditionDetailProvider = FutureProvider.autoDispose…
+    # — which spells the type twice on one line, pushes most of them past 80
+    # columns, and names a class nobody writes by hand. The type is already on
+    # the right-hand side. The 33rd finding was real and is fixed.
+    #
+    # CQP-001 section 5.7: a gate that flags correct code is a gate that gets
+    # switched off, so five rules were narrowed there for the same reason. This
+    # is the same call, recorded the same way (2026-08-14).
+    specify_nonobvious_property_types: false
+
     # --- Flutter performance / widgets ---
     prefer_const_constructors: true
     prefer_const_constructors_in_immutables: true
@@ -120,7 +138,10 @@ linter:
     unnecessary_null_checks: true
     unnecessary_null_aware_assignments: true
     avoid_redundant_argument_values: true
-    require_trailing_commas: true           # hand-write commas; NEVER run `dart format .` (it strips them)
+    # `dart format` strips these (measured 0 -> 109 on 2026-08-14). It is
+    # usable, but only followed by `dart fix --apply --code=require_trailing_commas`.
+    # See CLAUDE.md section 11 - the end state is deliberately not format-stable.
+    require_trailing_commas: true
     sort_child_properties_last: true
 
     # --- naming / API design ---

@@ -42,7 +42,7 @@ public sealed class AdminMediaPartnersTests : IClassFixture<SimfApiFactory>
             "/api/v1/admin/media-partners",
             new AdminCreateMediaPartnerRequest(
                 "Roundtrip News", "أخبار الجولة",
-                "media-partners/roundtrip.png", "https://roundtrip.example", 4000),
+                "https://roundtrip.example", 4000),
             token);
         Assert.Equal(HttpStatusCode.OK, create.StatusCode);
 
@@ -69,7 +69,7 @@ public sealed class AdminMediaPartnersTests : IClassFixture<SimfApiFactory>
         var suffix = Guid.NewGuid().ToString("N")[..8];
         var create = await PostAuthAsync(
             "/api/v1/admin/media-partners",
-            new AdminCreateMediaPartnerRequest($"Logo Wire {suffix}", $"سلك الشعار {suffix}", null, null, 4700),
+            new AdminCreateMediaPartnerRequest($"Logo Wire {suffix}", $"سلك الشعار {suffix}", null, 4700),
             token);
         var id = (await create.Content
             .ReadFromJsonAsync<ApiResult<AdminMediaPartnerDetail>>())!.Data!.Id;
@@ -109,7 +109,7 @@ public sealed class AdminMediaPartnersTests : IClassFixture<SimfApiFactory>
         var create = await PostAuthAsync(
             "/api/v1/admin/media-partners",
             new AdminCreateMediaPartnerRequest(
-                "Gettable Media", "وسائط قابلة للجلب", null, null, 4400),
+                "Gettable Media", "وسائط قابلة للجلب", null, 4400),
             token);
         var id = (await create.Content
             .ReadFromJsonAsync<ApiResult<AdminMediaPartnerDetail>>())!.Data!.Id;
@@ -130,13 +130,13 @@ public sealed class AdminMediaPartnersTests : IClassFixture<SimfApiFactory>
 
         var first = await PostAuthAsync(
             "/api/v1/admin/media-partners",
-            new AdminCreateMediaPartnerRequest(name, "سلك مكرر", null, null, 4500),
+            new AdminCreateMediaPartnerRequest(name, "سلك مكرر", null, 4500),
             token);
         Assert.Equal(HttpStatusCode.OK, first.StatusCode);
 
         var second = await PostAuthAsync(
             "/api/v1/admin/media-partners",
-            new AdminCreateMediaPartnerRequest(name, "سلك مكرر آخر", null, null, 4600),
+            new AdminCreateMediaPartnerRequest(name, "سلك مكرر آخر", null, 4600),
             token);
         Assert.Equal(HttpStatusCode.Conflict, second.StatusCode);
 
@@ -152,7 +152,7 @@ public sealed class AdminMediaPartnersTests : IClassFixture<SimfApiFactory>
         var create = await PostAuthAsync(
             "/api/v1/admin/media-partners",
             new AdminCreateMediaPartnerRequest(
-                $"Editable Channel {Guid.NewGuid():N}", "قناة قابلة للتعديل", null, null, 4700),
+                $"Editable Channel {Guid.NewGuid():N}", "قناة قابلة للتعديل", null, 4700),
             token);
         var id = (await create.Content
             .ReadFromJsonAsync<ApiResult<AdminMediaPartnerDetail>>())!.Data!.Id;
@@ -164,7 +164,6 @@ public sealed class AdminMediaPartnersTests : IClassFixture<SimfApiFactory>
             {
                 Name = editedName,
                 NameArabic = "قناة معدّلة",
-                LogoRelativePath = "media-partners/edited.png",
                 Url = "https://edited.example",
                 DisplayOrder = 4750,
                 IsActive = true,
@@ -200,7 +199,7 @@ public sealed class AdminMediaPartnersTests : IClassFixture<SimfApiFactory>
 
         var response = await PostAuthAsync(
             "/api/v1/admin/media-partners",
-            new AdminCreateMediaPartnerRequest("   ", "اسم عربي صالح", null, null, 4800),
+            new AdminCreateMediaPartnerRequest("   ", "اسم عربي صالح", null, 4800),
             token);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -215,7 +214,7 @@ public sealed class AdminMediaPartnersTests : IClassFixture<SimfApiFactory>
 
         var response = await PostAuthAsync(
             "/api/v1/admin/media-partners",
-            new AdminCreateMediaPartnerRequest("Forbidden", "ممنوع", null, null, 4900),
+            new AdminCreateMediaPartnerRequest("Forbidden", "ممنوع", null, 4900),
             tokens.AccessToken);
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);

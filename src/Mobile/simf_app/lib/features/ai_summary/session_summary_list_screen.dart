@@ -9,16 +9,17 @@ import 'package:simf_app/features/ai_summary/widgets/session_summary_list_card.d
 import 'package:simf_app/features/myarea/data/my_sessions_repository.dart';
 import 'package:simf_app/features/sessions/data/session_favourites.dart';
 import 'package:simf_app/features/sessions/data/session_models.dart';
-import 'package:simf_app/features/sessions/data/sessions_repository.dart' show programmeSessionsProvider;
+import 'package:simf_app/features/sessions/data/sessions_repository.dart'
+    show programmeSessionsProvider;
 import 'package:simf_app/features/sessions/widgets/session_filter_tabs.dart';
 
 /// **Session summaries** — App "ملخص الجلسات" (Figma 1388:8392, Guest+). Every
-/// programme session in a searchable, day-grouped list with three tabs —
-/// الجميع (all), جلساتي (the caller's booked sessions), المفضلة (favourited) —
-/// and the المفضلة heart on each card. Tapping a card opens that session's
-/// AI-summary details (#34). Reuses the cached programme (`programmeSessionsProvider`);
-/// the booked set + favourites come from the approved-account reads (empty for a
-/// guest).
+/// programme session in a searchable, day-grouped list with three tabs — الجميع
+/// (all), جلساتي (the caller's booked sessions), المفضلة (favourited) — and the
+/// المفضلة heart on each card. Tapping a card opens that session's AI-summary
+/// details (#34). Reuses the cached programme (`programmeSessionsProvider`);
+/// the booked set + favourites come from the approved-account reads (empty for
+/// a guest).
 class SessionSummaryListScreen extends ConsumerStatefulWidget {
   const SessionSummaryListScreen({super.key});
 
@@ -35,7 +36,8 @@ class _SessionSummaryListScreenState
   String _query = '';
 
   /// Pull-to-refresh — re-fetch the programme (invalidate + await next).
-  Future<void> _refresh() => refreshAsync(ref, programmeSessionsProvider.future);
+  Future<void> _refresh() =>
+      refreshAsync(ref, programmeSessionsProvider.future);
 
   @override
   Widget build(BuildContext context) {
@@ -105,8 +107,9 @@ class _SessionSummaryListScreenState
   ) {
     // Re-run the build (and so the filter + hearts) when the per-user sets
     // resolve or change, keeping the جلساتي / المفضلة tabs live.
-    ref.watch(sessionFavouritesProvider);
-    ref.watch(mySessionsProvider);
+    ref
+      ..watch(sessionFavouritesProvider)
+      ..watch(mySessionsProvider);
 
     final isArabic = l10n.isArabic;
     final filtered = _filter(items);
@@ -148,7 +151,8 @@ class _SessionSummaryListScreenState
                 ),
                 child: Text(
                   l10n.eventDayLabel(dayIndex + 1),
-                  // Frame 1388:8428 — day header is Inter Medium (w500), not w600.
+                  // Frame 1388:8428 — day header is Inter Medium (w500), not
+                  // w600.
                   style: SimfTokens.labelWhiteMediumLg,
                 ),
               ),
@@ -174,7 +178,10 @@ class _SessionSummaryListScreenState
   List<SessionListItem> _filter(List<SessionListItem> items) {
     final favouriteIds =
         ref.read(sessionFavouritesProvider).valueOrNull ?? const <String>{};
-    final mineIds = ref.read(mySessionsProvider).valueOrNull?.items
+    final mineIds = ref
+            .read(mySessionsProvider)
+            .valueOrNull
+            ?.items
             .map((s) => s.id)
             .toSet() ??
         const <String>{};

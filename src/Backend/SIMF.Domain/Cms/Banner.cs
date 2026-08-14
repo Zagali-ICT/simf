@@ -19,12 +19,19 @@ public sealed class Banner : BaseAuditEntity
     public string Body { get; set; } = string.Empty;
     public string BodyArabic { get; set; } = string.Empty;
 
-    /// <summary>Free text, so an editor can paste either an absolute URL or a
-    /// path served by the static-asset host.</summary>
-    public string? ImageUrl { get; set; }
+    /// <summary>The banner image, as its row in the one file store. A real
+    /// foreign key: both sides live in the App database.
+    ///
+    /// <para>This was <c>ImageUrl</c>, free text an editor pasted, and the app
+    /// loaded it directly. An uploaded image and a linked one are now the same
+    /// thing — a <c>StoredFile</c>, the linked case carrying
+    /// <c>SourceType.ExternalLink</c> — so the pasted URL is validated and stored
+    /// once rather than living untyped on this row.</para></summary>
+    public Guid? ImageFileId { get; set; }
 
-    /// <summary>The click-through target, in the same shape as
-    /// <see cref="ImageUrl"/>.</summary>
+    /// <summary>The click-through target. Free text, and deliberately still a
+    /// URL: it is navigation, not media, so the file store has nothing to say
+    /// about it.</summary>
     public string? LinkUrl { get; set; }
 
     public DateTime Start { get; set; }

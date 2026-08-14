@@ -12,8 +12,9 @@ import 'package:simf_app/features/account/data/profile_models.dart';
 /// on failure/empty, or the loaded dropdown. It is never silently hidden, which
 /// is why the three states live here rather than in a nullable field.
 ///
-/// Presentation only: the screen owns the lookup state and the selection, and is
-/// the only thing that calls setState. Extracted from `sign_up_visitor_screen`.
+/// Presentation only: the screen owns the lookup state and the selection, and
+/// is the only thing that calls setState. Extracted from
+/// `sign_up_visitor_screen`.
 class ProfileTypeField extends StatelessWidget {
   const ProfileTypeField({
     required this.l10n,
@@ -86,9 +87,9 @@ class ProfileTypeField extends StatelessWidget {
         ),
       );
     }
-    // D-722 — profile types are few, so this is a plain dropdown rather than the
-    // shared full-screen searchable sheet (nationality / birth-region / plate
-    // keep the sheet; those lists are long).
+    // D-722 — profile types are few, so this is a plain dropdown rather than
+    // the shared full-screen searchable sheet (nationality / birth-region /
+    // plate keep the sheet; those lists are long).
     return _labelled(
       DropdownButtonFormField<String>(
         key: const ValueKey<String>('profileTypeDropdown'),
@@ -103,10 +104,10 @@ class ProfileTypeField extends StatelessWidget {
           errorText: showError ? l10n.profileTypeRequired : null,
         ).copyWith(
           // A DropdownButton's dense content floor is a fixed 24px (vs a text
-          // field's ~21px line box), so with the shared 15px vertical inset this
-          // field renders ~4px taller than its siblings. Trim the vertical inset
-          // so it lands at their 50px height (24 + 2*13); 14px horizontal is the
-          // shared field inset.
+          // field's ~21px line box), so with the shared 15px vertical inset
+          // this field renders ~4px taller than its siblings. Trim the vertical
+          // inset so it lands at their 50px height (24 + 2*13); 14px horizontal
+          // is the shared field inset.
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 14,
             vertical: 13,

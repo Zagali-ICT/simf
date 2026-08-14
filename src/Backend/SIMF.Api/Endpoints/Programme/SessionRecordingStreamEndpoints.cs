@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/SessionRecordingTests.cs
+﻿// Tests: SIMF.Api.Tests/SessionRecordingTests.cs
 using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Api.Authentication;
@@ -98,15 +98,10 @@ public sealed class StreamSessionRecordingEndpoint(
             return;
         }
 
-        // RecordingStoredFileName is now the StoredFile pointer; open it
+        // RecordingFileId is a real key into StoredFiles; open it
         // as a seekable plaintext stream (SessionRecording is EncryptAtRest:false) so
         // the player can Range-seek (HTTP 206) without buffering the whole video.
-        if (!Guid.TryParse(recording.StoredFileName, out var fileId))
-        {
-            await Send.NotFoundAsync(ct);
-            return;
-        }
-        var file = await files.OpenReadStreamAsync(fileId, ct);
+        var file = await files.OpenReadStreamAsync(recording.StoredFileId, ct);
         if (file is null)
         {
             await Send.NotFoundAsync(ct);

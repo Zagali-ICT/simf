@@ -21,7 +21,8 @@ class BeigeTabs extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space2, vertical: 6),
+      padding: const EdgeInsets.symmetric(
+          horizontal: SimfTokens.space2, vertical: 6,),
       decoration: const BoxDecoration(
         color: SimfTokens.beigeBorder,
         borderRadius: SimfTokens.borderRadiusSmall,
@@ -50,8 +51,9 @@ class BeigeTabs extends StatelessWidget {
                       fontWeight: i == selectedIndex
                           ? FontWeight.w600
                           : FontWeight.w500,
-                      color:
-                          i == selectedIndex ? SimfTokens.navy : SimfTokens.surface,
+                      color: i == selectedIndex
+                          ? SimfTokens.navy
+                          : SimfTokens.surface,
                     ),
                   ),
                 ),
