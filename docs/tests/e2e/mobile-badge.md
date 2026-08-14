@@ -37,6 +37,7 @@
 | E2E-MOB032-007 | **Badge actions gate on the app ROLE, not `isVisitor` (DEF-EXH-005):** Exhibitor → "Scan visitor badge" only; Visitor (including Media / Sponsor partner types, which resolve to `AppRole.Visitor`) → the two contact actions; Staff / Moderator / not-yet-approved → **no** action button | security | P0 | authored ✓ (screen `an exhibitor sees scan-visitor…`, `a partner-type visitor … never sees scan-visitor (DEF-EXH-005)`, `a Staff badge shows no action button (DEF-EXH-005)`, `a Moderator badge …`) |
 | E2E-MOB032-009 | **True guest gets guest copy + a way in (BUG-013):** a visitor with NO account reaching the Badge tab sees "sign in or create an account to get your entry badge" and working Sign in / Create account actions — never the pending-account copy | auth | P1 | authored ✓ (screen `BUG-013 — a TRUE guest gets the guest copy and a working sign-in CTA, never the pending-account copy`) |
 | E2E-MOB032-008 | **Back chevron has an accessible name (BUG-003):** the shared circled back control announces the localized "Back" tooltip instead of a bare "button" | a11y | P2 | authored ✓ (`simf_page_shell_test` — `BUG-003 — the circled back button carries an accessible name`) |
+| E2E-MOB032-010 | **Pull-to-refresh on every branch (§13.6 regression, 2026-08-14):** the issued badge, the pending, the not-approved and the load-error states all re-fetch on a pull; the signed-out guest prompt does NOT (no account to fetch). The pending case is the one that mattered — `initState` never calls the Approved-only dashboard while unapproved, so before this the only way to discover approval was to restart the app | resilience | P0 | authored ✓ (screen `pulling the issued badge re-fetches the dashboard`, `a pending account pulls to discover approval, without restarting`, `the load-error surface is refreshable`, `the signed-out guest prompt is NOT a refresh surface`; ratchet `test/repo/pull_to_refresh_coverage_test.dart`) |
 | E2E-MOB032-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-MOB032-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
@@ -205,9 +206,64 @@ Scenario: A visitor with no account at all opens the Badge tab
 **Evidence:** screen test `BUG-013 — a TRUE guest gets the guest copy and a
 working sign-in CTA, never the pending-account copy`.
 
+### E2E-MOB032-010 — A pending account pulls to discover approval
+
+```gherkin
+Feature: Entry badge (QR)
+
+Scenario: A pending account discovers approval by pulling, not by restarting
+  Given I am signed in with registration status "Pending"
+  When I open the Badge tab
+  Then I see "your account is not approved yet"
+  And no QR is rendered
+  And the dashboard endpoint has NOT been called
+  When the reviewer approves my account in the Control Panel
+  And I pull down on the not-approved message
+  Then "GET /app/account/dashboard" is called
+  And the QR badge is rendered with my name and the masked ID
+
+Scenario: The issued badge re-fetches on a pull
+  Given I am signed in and approved with an issued badge
+  When I open the Badge tab
+  And I pull down on the QR card
+  Then "GET /app/account/dashboard" is called a second time
+
+Scenario: The load-error surface is refreshable
+  Given the dashboard read fails with a 500
+  When I open the Badge tab
+  Then I see "Could not load your badge." and a Retry button
+  When I pull down on the error message
+  Then "GET /app/account/dashboard" is called a second time
+
+Scenario: The signed-out guest prompt is not a refresh surface
+  Given I have never signed in (no account)
+  When I open the Badge tab
+  Then no pull-to-refresh indicator is attached
+  And the dashboard endpoint is never called
+```
+
+> `initState` deliberately does NOT call the dashboard while the account is
+> unapproved, because that endpoint is `RequireApprovedAccount` and would 403.
+> The consequence was that a pending user had no way to re-check: restarting
+> the app was the only route out of the state. The pull now calls `_load()`,
+> whose 403 handling is exactly what decides approved-vs-pending, so the
+> gesture re-checks approval by construction rather than through a second code
+> path. The guest branch is deliberately excluded — with no account a pull
+> could only fire a 401, and the sign-in CTA is the way forward there.
+
+**Evidence:** screen tests `pulling the issued badge re-fetches the dashboard`,
+`a pending account pulls to discover approval, without restarting`, `the
+load-error surface is refreshable`, `the signed-out guest prompt is NOT a
+refresh surface`; plus the repo ratchet
+`test/repo/pull_to_refresh_coverage_test.dart`, which pins the exempt list so
+the next screen that forgets the pull fails the build.
+
 ---
 
-_Last reviewed:_ `2026-07-26` by `SIMF Team` — **bug fix: the true-guest state on
+_Last reviewed:_ `2026-08-14` by `SIMF Team` — **bug fix: the screen had no
+pull-to-refresh on any branch, a CLAUDE.md §13.6 regression; the pending state
+now discovers approval without an app restart (E2E-MOB032-010).**
+_Prior:_ `2026-07-26` — **bug fix: the true-guest state on
 the Badge tab (E2E-MOB032-007, BUG-013) + an accessible name on the shared back
 control (E2E-MOB032-008, BUG-003).** _Prior:_ `2026-07-24` — **feature: the identity strip is now
 tinted by the profile type's server colour (`ProfileType.PageColor` → `pageColor`),
