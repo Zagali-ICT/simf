@@ -265,7 +265,8 @@ void main() {
     });
 
     testWidgets(
-        'G3 — no availability shows the no-slots notice AND disables send, so no '
+        'G3 — no availability shows the no-slots notice AND disables send, so '
+            'no '
         'subject-only request is sent (supersedes D-767 R1)', (tester) async {
       final repo = _FakeRepo();
       await _pump(tester, speakerId: 's1', repo: repo);
@@ -436,7 +437,8 @@ void main() {
     });
 
     testWidgets(
-        'QA A26 — a failure that never reached the server still shows localized '
+        'QA A26 — a failure that never reached the server still shows '
+            'localized '
         'copy, not the raw dio string', (tester) async {
       final repo = _FakeRepo(
         slots: _twoDaySlots,

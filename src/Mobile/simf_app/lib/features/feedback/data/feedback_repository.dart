@@ -48,7 +48,8 @@ class FeedbackRepository {
         'comment': comment,
         'answers': answers.entries
             .map(
-                (e) => <String, dynamic>{'questionId': e.key, 'stars': e.value},)
+              (e) => <String, dynamic>{'questionId': e.key, 'stars': e.value},
+            )
             .toList(growable: false),
       },
       decodeData: (_) => true,

@@ -498,7 +498,8 @@ void main() {
     });
 
     testWidgets(
-        'the birth-region picker lists the API regions when regionsProvider has '
+        'the birth-region picker lists the API regions when regionsProvider '
+            'has '
         'data (D-547)', (tester) async {
       // The sheet lists the API regions — use a region whose API English name
       // differs from the const list so the source is observable.

@@ -161,7 +161,8 @@ void main() {
       expect(find.text('About the forum'), findsOneWidget);
       expect(
         find.text(
-          'A Saudi global platform advancing dialogue on maritime-security issues',
+          'A Saudi global platform advancing dialogue on maritime-security '
+              'issues',
         ),
         findsOneWidget,
       );

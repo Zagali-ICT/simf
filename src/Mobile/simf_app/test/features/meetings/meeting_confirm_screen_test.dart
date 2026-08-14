@@ -150,7 +150,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-        find.text('This meeting is not awaiting confirmation'), findsOneWidget,);
+      find.text('This meeting is not awaiting confirmation'),
+      findsOneWidget,
+    );
     expect(find.text('Meeting declined'), findsNothing);
   });
 }

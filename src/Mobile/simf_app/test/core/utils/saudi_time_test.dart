@@ -107,11 +107,20 @@ void main() {
         reason: 'saudiNow must be zone-free, like every decoded wire value — '
             'tagging it would let a later comparison shift it.',
       );
+      // Compared with a tolerance, not for equality: `device` and `now` are
+      // two separate reads of the wall clock, so the real time that elapses
+      // between them lands in the difference. Asserting equality made this
+      // test fail whenever the machine was busy enough for that gap to reach
+      // a microsecond (seen at 1.5ms during a full-suite run). A wrong offset
+      // is wrong by hours, so a one-second window still catches every real
+      // defect this is here to catch.
+      final drift =
+          now.difference(device) - (saudiOffset - device.timeZoneOffset);
       expect(
-        now.difference(device),
-        saudiOffset - device.timeZoneOffset,
-        reason: 'the shift applied must be exactly the distance from this '
-            'device to Riyadh: zero here if the device already runs +03:00.',
+        drift.abs(),
+        lessThan(const Duration(seconds: 1)),
+        reason: 'the shift applied must be the distance from this device to '
+            'Riyadh: zero here if the device already runs +03:00.',
       );
     });
   });

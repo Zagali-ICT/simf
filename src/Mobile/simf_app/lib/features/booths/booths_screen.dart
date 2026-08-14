@@ -18,19 +18,20 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 ///
 /// **Public.** Reuses the shipped booth reads (`GET /app/booths` + `/{id}`,
 /// D-199 / D-230) already wired in [VenueMapRepository] — the list of exhibitor
-/// booths; tapping a booth opens the full exhibitor detail screen (Wave 3, Figma
-/// 1439:11881).
+/// booths; tapping a booth opens the full exhibitor detail screen (Wave 3,
+/// Figma 1439:11881).
 ///
 /// Frame mapping: the navy scaffold + centred header (الأجنحة) and the shared
-/// bottom nav from [SimfPageShell]; a bordered search field (ابحث عن جناح أو شركة);
-/// then one exhibitor card per booth — a company header row (short name + full
-/// name beside the square logo tile, gold-hairline divider), the gold-bordered
-/// **code pill** (A-12) beside the deep-navy **hall box**, the booth-officer row
+/// bottom nav from [SimfPageShell]; a bordered search field (ابحث عن جناح أو
+/// شركة); then one exhibitor card per booth — a company header row (short name
+/// + full name beside the square logo tile, gold-hairline divider), the
+///   gold-bordered **code pill** (A-12) beside the deep-navy **hall box**, the
+///   booth-officer row
 /// + email / phone contact boxes (D-432 — now on the wire, server resolves the
-/// officer Contact-first), and a **guide-me** gold CTA. D-764: the logo tile
-/// renders the booth's own `BoothLogo` asset (D-357) via
-/// `{base}/app/assets/BoothLogo/{booth.id}/image`, falling back to the booth
-/// short-name initials when the booth has no uploaded logo.
+///   officer Contact-first), and a **guide-me** gold CTA. D-764: the logo tile
+///   renders the booth's own `BoothLogo` asset (D-357) via
+///   `{base}/app/assets/BoothLogo/{booth.id}/image`, falling back to the booth
+///   short-name initials when the booth has no uploaded logo.
 class BoothsScreen extends ConsumerStatefulWidget {
   const BoothsScreen({super.key});
 

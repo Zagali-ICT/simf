@@ -237,6 +237,7 @@ final accessibilityControllerProvider =
     NotifierProvider<AccessibilityController, AccessibilitySettings>(() {
   throw UnimplementedError(
     'accessibilityControllerProvider must be overridden at app startup with '
-    'an AccessibilityController whose prefs comes from simfPrefsStorageProvider.',
+    'an AccessibilityController whose prefs comes from '
+        'simfPrefsStorageProvider.',
   );
 });

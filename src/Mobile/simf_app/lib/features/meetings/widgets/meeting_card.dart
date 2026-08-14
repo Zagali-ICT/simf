@@ -13,20 +13,20 @@ import 'package:simf_app/features/requests/data/request_models.dart';
 import 'package:simf_app/features/requests/widgets/request_status_style.dart';
 import 'package:simf_app/features/speakers/widgets/speaker_photo_tile.dart';
 
-/// One bilateral-meeting card on the اللقاءات الثنائية page (Figma 1408:9726): a
-/// navy card with a green (accepted) hairline, carrying —
+/// One bilateral-meeting card on the اللقاءات الثنائية page (Figma 1408:9726):
+/// a navy card with a green (accepted) hairline, carrying —
 /// - **row 1**: the meeting-kind headline over the speaker's rank, with the
 ///   nationality **flag badge** at the inline end;
-/// - **row 2**: the speaker **photo** + name (gold), with a chevron when the card
-///   is tappable (a speaker meeting opens the speaker profile);
+/// - **row 2**: the speaker **photo** + name (gold), with a chevron when the
+///   card is tappable (a speaker meeting opens the speaker profile);
 /// - **row 3**: the meeting date/time with a clock glyph.
 ///
-/// R9 (D-767) — the card lists ANY of the user's meeting requests, so the border
-/// colour and a status pill reflect the request's status (pending amber / accepted
-/// green / rejected red / cancelled grey), reusing the requests-feed palette.
-/// Speaker photo + flag come from the D-745 append-only wire fields
-/// ([AppRequestItem.speakerId] / [AppRequestItem.countryId]); a delegation meeting
-/// has no speaker photo and shows the anchor placeholder.
+/// R9 (D-767) — the card lists ANY of the user's meeting requests, so the
+/// border colour and a status pill reflect the request's status (pending amber
+/// / accepted green / rejected red / cancelled grey), reusing the requests-feed
+/// palette. Speaker photo + flag come from the D-745 append-only wire fields
+/// ([AppRequestItem.speakerId] / [AppRequestItem.countryId]); a delegation
+/// meeting has no speaker photo and shows the anchor placeholder.
 class MeetingCard extends StatelessWidget {
   const MeetingCard({
     required this.item,

@@ -50,7 +50,8 @@ QuestionsRepository _repository(_CapturingInterceptor capture) {
 void main() {
   group('QuestionsRepository.submitQuestion', () {
     test(
-        'S-5 — posts isAtVenue == false (the app never self-certifies presence)',
+        'S-5 — posts isAtVenue == false (the app never self-certifies '
+            'presence)',
         () async {
       final capture = _CapturingInterceptor();
       final repo = _repository(capture);

@@ -616,7 +616,8 @@ void main() {
       // The placeholder hint is NOT shown when a real caption is present.
       expect(
         find.text(
-          'Caption text written by the organiser for this session appears here.',
+          'Caption text written by the organiser for this session appears '
+              'here.',
         ),
         findsNothing,
       );

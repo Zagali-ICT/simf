@@ -111,7 +111,8 @@ class MoreDrawer extends ConsumerWidget {
                       onTap: () {
                         Navigator.of(context).pop();
                         unawaited(
-                            context.pushNamed(RouteNames.staffRegisterVisitor),);
+                          context.pushNamed(RouteNames.staffRegisterVisitor),
+                        );
                       },
                     ),
                   // Exhibitor lead capture (D-426 / D-519) — Exhibitor role

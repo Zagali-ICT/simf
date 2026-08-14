@@ -24,15 +24,15 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 /// D-771 (owner 2026-07-26) — the **staff seating desk**
 /// (`/staff/seating/:sessionId`, approved Staff). Derived from the visitor seat
-/// picker (`SeatPickerScreen`): the same shared `HallSeatMapCard` hall grid, but
-/// tapping a seat ASKS WHO SITS THERE instead of selecting it, and a badge
+/// picker (`SeatPickerScreen`): the same shared `HallSeatMapCard` hall grid,
+/// but tapping a seat ASKS WHO SITS THERE instead of selecting it, and a badge
 /// scanner above the grid answers the opposite question — where does this guest
 /// sit.
 ///
-/// * Role-gated to `AppRole.staff` in `router.dart` (route 118), exactly like the
-///   gate scanner (105); the server independently enforces the `Seating.Assist`
-///   operational permission that the Staff app role carries (D-563), so the app
-///   gate is only a UX guard.
+/// * Role-gated to `AppRole.staff` in `router.dart` (route 118), exactly like
+///   the gate scanner (105); the server independently enforces the
+///   `Seating.Assist` operational permission that the Staff app role carries
+///   (D-563), so the app gate is only a UX guard.
 /// * Tablet-responsive through the `WindowSize` API + `MaxWidthBody` (no
 ///   hardcoded breakpoints): a compact phone stacks the scanner above the grid,
 ///   a tablet puts the scanner and the result card side by side.

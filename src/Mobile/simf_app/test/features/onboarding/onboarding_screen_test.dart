@@ -108,8 +108,8 @@ Future<bool> _isBundled(String key) async {
   try {
     await rootBundle.load(key);
     return true;
-    // Catching an Error on purpose: this boundary must degrade rather than crash,
-    // and the platform raises an Error rather than an Exception here.
+    // Catching an Error on purpose: this boundary must degrade rather than
+    // crash, and the platform raises an Error rather than an Exception here.
     // ignore: avoid_catching_errors
   } on FlutterError {
     return false;

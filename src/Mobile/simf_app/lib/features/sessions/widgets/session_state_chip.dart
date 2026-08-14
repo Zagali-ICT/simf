@@ -5,10 +5,10 @@ import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/features/sessions/data/session_lifecycle.dart';
 import 'package:simf_app/features/sessions/data/session_models.dart' show SessionStatus;
 
-/// A visible session-state chip (owner 2026-07-14) — the small pills the agenda,
-/// my-sessions and summary cards show so a session's state reads at a glance.
-/// Priority-ordered + mutually exclusive per [sessionStateChips] so a card shows
-/// at most one:
+/// A visible session-state chip (owner 2026-07-14) — the small pills the
+/// agenda, my-sessions and summary cards show so a session's state reads at a
+/// glance. Priority-ordered + mutually exclusive per [sessionStateChips] so a
+/// card shows at most one:
 /// - [live] while the session is happening (red — the headline state),
 /// - [summaryReady] once its محضر is published (gold outline),
 /// - [recorded] for a past recorded/published session with no published summary

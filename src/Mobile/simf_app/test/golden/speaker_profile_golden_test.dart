@@ -30,11 +30,11 @@ import 'golden_fonts.dart';
 ///
 /// Fixed data only, so the PNG is stable. Known golden-env artifacts (NOT
 /// layout defects): the avatar photo is Image.network → the anchor SVG
-/// placeholder (no HTTP in tests); the nationality flag (🇸🇦) is a colour-emoji
-/// glyph → renders as tofu (no colour-emoji font loaded), but its position
-/// (leading the name) is verifiable; the FilledButton label may render with
-/// reduced Arabic glyph coverage in the headless env — the string is asserted
-/// correct by the widget test, and it renders on device.
+/// placeholder (no HTTP in tests); the nationality flag (🇸🇦) is a
+/// colour-emoji glyph → renders as tofu (no colour-emoji font loaded), but its
+/// position (leading the name) is verifiable; the FilledButton label may render
+/// with reduced Arabic glyph coverage in the headless env — the string is
+/// asserted correct by the widget test, and it renders on device.
 
 const _config = SimfDataConfig(
   baseUrl: 'http://test.local/api/v1',
@@ -53,7 +53,8 @@ SpeakerDetail _speaker() => const SpeakerDetail(
       bio: 'A naval commander with over 15 years of experience.',
       bioArabic:
           'قائد بحري بخبرة تتجاوز 15 عامًا في مجال الملاحة والأمن البحري، شارك '
-          'في عدة مهام إقليمية ودولية وله إسهامات في تطوير أنظمة السلامة البحرية '
+          'في عدة مهام إقليمية ودولية وله إسهامات في تطوير أنظمة السلامة '
+              'البحرية '
           'والتدريب الميداني.',
       qualifications: 'Naval Academy graduate.',
       qualificationsArabic: 'خريج الكلية البحرية الملكية مع مرتبة الشرف.',

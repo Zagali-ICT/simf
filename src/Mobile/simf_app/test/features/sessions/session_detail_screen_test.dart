@@ -630,7 +630,8 @@ void main() {
 
     testWidgets(
         '#7 — an approved user can ask a FUTURE session without a '
-        'booking (no join gate): the ask card is enabled and opens send-question',
+        'booking (no join gate): the ask card is enabled and opens '
+            'send-question',
         (tester) async {
       await _pump(
         tester,

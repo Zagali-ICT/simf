@@ -665,13 +665,13 @@ const Map<int, Set<AppRole>> _routeRoles = <int, Set<AppRole>>{
   108: _attendee, // Requests feed (D-500, approved-only)
   116: _attendee, // Bilateral meetings (D-745) — role gate keeps guest/staff/
   // moderator out; VIP-only is enforced in-screen + server-side, not here.
-  117:
-      _attendee, // Meeting confirm (Bi-Meeting) — the other-party confirm screen;
-  // eligibility (target-delegation member) is enforced server-side.
+  // Meeting confirm (Bi-Meeting) — the other-party confirm screen; eligibility
+  // (target-delegation member) is enforced server-side.
+  117: _attendee,
   109: _attendee, // Seat picker (D-485)
   110: _attendee, // Join-a-session hub (D-485)
-  113:
-      _attendee, // My sessions (D-710, restored — owner reversed the D-609 removal)
+  // My sessions (D-710, restored — owner reversed the D-609 removal).
+  113: _attendee,
   // 202 (Session presentations — the "الجلسات" list) is PUBLIC (owner
   // 2026-07-22): a guest opens it from the home "Sessions" tile, so it is
   // intentionally NOT gated here. Its reads (`GET

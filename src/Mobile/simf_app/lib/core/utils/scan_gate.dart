@@ -7,11 +7,11 @@ import 'package:simf_app/app/widgets/qr_scan_view.dart' show QrScanView;
 /// stacks navigations / spams snackbars — the badge-sign-in "not recognised"
 /// stream and the old [QrScanView] `_lastHandled` (which never reset, so a
 /// same-code retry after a transient network error was silently blocked) both
-/// trace to a missing gate. This one policy replaces the three per-screen ad-hoc
-/// guards:
+/// trace to a missing gate. This one policy replaces the three per-screen
+/// ad-hoc guards:
 ///
-/// * [shouldHandle] runs one code at a time (single-flight) and ignores the same
-///   code while it stays in view;
+/// * [shouldHandle] runs one code at a time (single-flight) and ignores the
+///   same code while it stays in view;
 /// * [onNoCode] resets the last code once the QR leaves the frame, so
 ///   deliberately re-presenting the same badge after a failure works;
 /// * a [_sameCodeCooldown] floor still absorbs decode flicker (a no-code frame

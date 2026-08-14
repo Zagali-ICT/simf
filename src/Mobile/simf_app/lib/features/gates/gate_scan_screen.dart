@@ -277,9 +277,11 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
     final gateName =
         _gate?.localizedName(isArabic: isArabic) ?? l10n.gateScannerEntry;
     final directionForTitle = _result?.direction ?? _direction;
-    final title = showContext
-        ? '$gateName${directionForTitle == null ? '' : ' • ${_directionLabel(l10n, directionForTitle)}'}'
-        : l10n.gateScanTitle;
+    final directionSuffix = directionForTitle == null
+        ? ''
+        : ' • ${_directionLabel(l10n, directionForTitle)}';
+    final title =
+        showContext ? '$gateName$directionSuffix' : l10n.gateScanTitle;
     return PopScope(
       // Route the system back through _back (go_router); raw pop can't exit
       // this shell-pushed route (D-426).

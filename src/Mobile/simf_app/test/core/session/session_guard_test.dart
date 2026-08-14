@@ -262,7 +262,8 @@ void main() {
         find.byType(SessionTimeoutOverlay),
         findsNothing,
         reason:
-            'the extend-session overlay appeared at ${elapsedSeconds}s of watching',
+            'the extend-session overlay appeared at ${elapsedSeconds}s of '
+                'watching',
       );
     }
 

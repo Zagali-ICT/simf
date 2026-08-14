@@ -18,26 +18,28 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 /// The meeting-request form (bottom sheet) — approved-account only (E2). The
 /// beige "طلب مقابلة" sheet, Figma **1776:5036**: a gold drag handle, the
-/// الموضوع subject field, the speaker's available days (اختيار التاريخ) with that
-/// day's time slots (اختيار الوقت), then the gold "ارسال الطلب" button.
+/// الموضوع subject field, the speaker's available days (اختيار التاريخ) with
+/// that day's time slots (اختيار الوقت), then the gold "ارسال الطلب" button.
 ///
 /// Two entry points share this one sheet:
-/// - from a **speaker profile** — [speakerId] is set, so the speaker is fixed and
-///   no picker is shown;
-/// - from the **"طلب جديد"** on the requests list (اللقاءات الثنائية, 1408:9726) —
-///   [speakerId] is **null**, so the sheet first shows a searchable speaker
-///   picker (type-to-filter by name/rank, owner 2026-07-11).
+/// - from a **speaker profile** — [speakerId] is set, so the speaker is fixed
+///   and no picker is shown;
+/// - from the **"طلب جديد"** on the requests list (اللقاءات الثنائية,
+///   1408:9726) — [speakerId] is **null**, so the sheet first shows a
+///   searchable speaker picker (type-to-filter by name/rank, owner 2026-07-11).
 ///
-/// D-709 (item 6, FDS-013 §15.4 GAP-4) — the date + time come from the speaker's
-/// **real availability slots** (`GET /app/speakers/{id}/available-slots`), NOT a
-/// free client-side grid; this **reverts D-703**. Booking a slot is VIP-gated by
-/// the server (a 403 surfaces "VIP only").
+/// D-709 (item 6, FDS-013 §15.4 GAP-4) — the date + time come from the
+/// speaker's **real availability slots** (`GET
+/// /app/speakers/{id}/available-slots`), NOT a free client-side grid; this
+/// **reverts D-703**. Booking a slot is VIP-gated by the server (a 403 surfaces
+/// "VIP only").
 ///
-/// G3 (owner 2026-07-30, supersedes D-767 R1) — with **no free slot** the request
-/// can no longer be sent subject-only: the sheet shows the "no slots" notice and
-/// the send button is disabled (the API 409s `SPEAKER_MEETING_NO_AVAILABILITY`).
-/// A **failed** slot fetch is a separate state — it shows a load error + Retry, so
-/// a transient network failure never masquerades as "this speaker has no time".
+/// G3 (owner 2026-07-30, supersedes D-767 R1) — with **no free slot** the
+/// request can no longer be sent subject-only: the sheet shows the "no slots"
+/// notice and the send button is disabled (the API 409s
+/// `SPEAKER_MEETING_NO_AVAILABILITY`). A **failed** slot fetch is a separate
+/// state — it shows a load error + Retry, so a transient network failure never
+/// masquerades as "this speaker has no time".
 class MeetingRequestSheet extends ConsumerStatefulWidget {
   const MeetingRequestSheet({
     required this.speakerId,

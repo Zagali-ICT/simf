@@ -26,7 +26,8 @@ class _CapturingAdapter implements HttpClientAdapter {
     final body = succeed
         ? '{"success":true,"data":true,"error":null,"meta":null}'
         : '{"success":false,"data":null,'
-            '"error":{"code":"bad_request","messageEn":"Bad","messageAr":"خطأ"},"meta":null}';
+            '"error":{"code":"bad_request","messageEn":"Bad",'
+            '"messageAr":"خطأ"},"meta":null}';
     return ResponseBody.fromString(
       body,
       succeed ? 200 : 400,

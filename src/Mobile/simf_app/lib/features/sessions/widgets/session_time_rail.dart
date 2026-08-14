@@ -20,8 +20,9 @@ class SessionTimeRail extends StatelessWidget {
   /// a ~14px connector) keeps it drawn; taller rows let it stretch to fill.
   static const double _minRailHeight = SimfTokens.timeRailMinHeight;
 
-  static String _hhmm(DateTime t) =>
-      '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+  static String _two(int value) => value.toString().padLeft(2, '0');
+
+  static String _hhmm(DateTime t) => '${_two(t.hour)}:${_two(t.minute)}';
 
   @override
   Widget build(BuildContext context) {

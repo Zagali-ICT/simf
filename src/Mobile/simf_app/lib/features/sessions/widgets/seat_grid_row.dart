@@ -95,7 +95,9 @@ class SeatGridRow extends StatelessWidget {
       case SeatStatus.ineligible:
         // D-771 — say WHY, not just "unavailable": a VVIP row is protocol
         // seating, a VIP row needs the VIP tier.
-        return '$id · ${tier.isVvip ? l10n.seatTierVvipLocked : l10n.seatTierVipLocked}';
+        final locked =
+            tier.isVvip ? l10n.seatTierVvipLocked : l10n.seatTierVipLocked;
+        return '$id · $locked';
       case SeatStatus.selected:
       case SeatStatus.available:
         return id;

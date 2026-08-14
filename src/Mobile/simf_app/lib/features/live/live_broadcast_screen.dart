@@ -26,35 +26,36 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// point (supersedes the D-199 "public, anonymous" design). This route is NOT
 /// router-redirect-gated (unlike sessions/detail under D-576) — the gate is
 /// in-screen, so the guest still lands here. A signed-in user takes an optional
-/// [sessionId] from the query string.
-/// With no id it shows a "pick a session" empty state and never fetches. With
-/// an id it reads the broadcast slice (`GET /app/programme/sessions/{id}`,
-/// `AllowAnonymous`) and branches three ways (Page_025 L-3):
+/// [sessionId] from the query string. With no id it shows a "pick a session"
+/// empty state and never fetches. With an id it reads the broadcast slice (`GET
+/// /app/programme/sessions/{id}`, `AllowAnonymous`) and branches three ways
+/// (Page_025 L-3):
 /// * `liveStreamUrl` non-empty → play the feed and show a LIVE badge; when a
 ///   `liveSignLanguageUrl` also exists a toggle swaps the player between the
 ///   main feed and the sign-language feed (Page_025 L-3);
 /// * `liveStreamUrl` null but `hasRecording` → a "recording available" note;
-/// * neither → a "not live / scheduled" state.
-/// 404 → not-found; any other failure → retry.
+/// * neither → a "not live / scheduled" state. 404 → not-found; any other
+///   failure → retry.
 ///
-/// **Frame mapping (934:3450):** the navy header (circled back chevron + centred
-/// title), a **black player surface** carrying the LIVE badge + the gold-bordered
-/// organiser caption strip, then the **"يُبث الآن" now-broadcasting** block (the
-/// session title as a gold bullet)
-/// and the **ask-a-question** entry to Page 026 (`/live/question`). The player
-/// surface + its media engine live in `widgets/live_player_surface.dart` +
-/// `live_video_player.dart` + `live_badges.dart`; the non-live black bands in
-/// `live_message_surfaces.dart`; the info column widgets in `live_content.dart`.
+/// **Frame mapping (934:3450):** the navy header (circled back chevron +
+/// centred title), a **black player surface** carrying the LIVE badge + the
+/// gold-bordered organiser caption strip, then the **"يُبث الآن"
+/// now-broadcasting** block (the session title as a gold bullet) and the
+/// **ask-a-question** entry to Page 026 (`/live/question`). The player surface
+/// + its media engine live in `widgets/live_player_surface.dart` +
+///   `live_video_player.dart` + `live_badges.dart`; the non-live black bands in
+///   `live_message_surfaces.dart`; the info column widgets in
+///   `live_content.dart`.
 ///
 /// **FR-702 (owner 2026-07-31):** when the session carries a live notice it is
 /// rendered as a calm informational banner ABOVE the player. It is a
 /// notification only — nothing here checks where the viewer is and nothing
 /// withholds the stream.
 ///
-/// **Provider (D-349):** the live-video provider is **YouTube** (POC). Each feed
-/// URL is sniffed by `YoutubeUrl`: a YouTube link plays via the IFrame player,
-/// anything else (HLS/MP4) via `video_player`. The player widget owns its own
-/// controller lifecycle, so swapping the active URL just rebuilds it.
+/// **Provider (D-349):** the live-video provider is **YouTube** (POC). Each
+/// feed URL is sniffed by `YoutubeUrl`: a YouTube link plays via the IFrame
+/// player, anything else (HLS/MP4) via `video_player`. The player widget owns
+/// its own controller lifecycle, so swapping the active URL just rebuilds it.
 class LiveBroadcastScreen extends ConsumerStatefulWidget {
   const LiveBroadcastScreen({this.sessionId, this.liveUrl, super.key});
 

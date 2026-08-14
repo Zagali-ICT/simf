@@ -19,8 +19,9 @@ import 'package:simf_app/features/speakers/widgets/meeting_slot_pickers.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 /// Bi-Meeting rework — the delegation-meeting request sheet (طلب اجتماع وفد),
-/// mirroring the speaker [MeetingRequestSheet]. A delegate of one invited country
-/// asks to meet another invited country's delegation. Two entry points share it:
+/// mirroring the speaker [MeetingRequestSheet]. A delegate of one invited
+/// country asks to meet another invited country's delegation. Two entry points
+/// share it:
 /// - from a **tapped delegation card** — [country] is set (fixed target);
 /// - from the **"طلب اجتماع وفد"** button on the Bi-Meeting page — [country] is
 ///   null, so a searchable delegation picker is shown first.
@@ -29,11 +30,12 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// (`GET /app/countries/{id}/available-slots`). Eligibility
 /// (AllowsDelegationMeeting) is enforced server-side — a 403 surfaces here.
 ///
-/// G3 (owner 2026-07-30, supersedes D-767 R1) — with **no free slot** the request
-/// can no longer be sent subject-only: the sheet shows the "no slots" notice and
-/// the send button is disabled (the API 409s `DELEGATION_MEETING_NO_AVAILABILITY`).
-/// A **failed** slot fetch is a separate state — it shows a load error + Retry, so
-/// a transient network failure never masquerades as "this delegation has no time".
+/// G3 (owner 2026-07-30, supersedes D-767 R1) — with **no free slot** the
+/// request can no longer be sent subject-only: the sheet shows the "no slots"
+/// notice and the send button is disabled (the API 409s
+/// `DELEGATION_MEETING_NO_AVAILABILITY`). A **failed** slot fetch is a separate
+/// state — it shows a load error + Retry, so a transient network failure never
+/// masquerades as "this delegation has no time".
 class DelegationMeetingRequestSheet extends ConsumerStatefulWidget {
   const DelegationMeetingRequestSheet({
     required this.country,
