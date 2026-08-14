@@ -39,7 +39,7 @@ final List<DelegationSlot> _oneDaySlots = <DelegationSlot>[
 /// cannot be `implements`-ed) and never touches the injected client.
 class _FakeDelegationsRepository extends DelegationsRepository {
   _FakeDelegationsRepository(
-    super.client, {
+    super._client, {
     this.failure,
     this.slots = const <DelegationSlot>[],
     this.failSlots = false,

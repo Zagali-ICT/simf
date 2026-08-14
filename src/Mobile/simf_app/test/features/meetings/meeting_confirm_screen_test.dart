@@ -17,7 +17,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// client field is library-private, so it cannot be `implements`-ed) and never
 /// touches the injected client.
 class _FakeDelegationsRepository extends DelegationsRepository {
-  _FakeDelegationsRepository(super.client, {this.failure});
+  _FakeDelegationsRepository(super._client, {this.failure});
 
   final ApiFailure? failure;
 

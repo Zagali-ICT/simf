@@ -8,6 +8,11 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// prompt, grounded server-side on the live event context). Overridable via
 /// [chatbotResponderProvider] so widget tests inject a fake responder (no
 /// network).
+// A seam, not a one-method class dressed up as an interface: it has two
+// implementations - the API responder below and the widget tests' fake -
+// selected through a provider. A top-level function cannot be implemented
+// twice, so the suggested fix would delete the injection point.
+// ignore: one_member_abstracts
 abstract class ChatbotResponder {
   Future<String> reply(String prompt, {required bool isArabic});
 }

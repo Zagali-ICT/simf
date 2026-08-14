@@ -20,6 +20,12 @@ class AppL10n {
 
   final Locale locale;
 
+  /// The nearest [AppL10n], or the Arabic default when none is installed.
+  // Deliberately a static method, not the factory constructor the analyzer
+  // asks for: `X.of(context)` is the Flutter lookup idiom (`Theme.of`,
+  // `MediaQuery.of`, `Localizations.of`), and a lookup is not construction -
+  // it usually returns an instance somebody else already built.
+  // ignore: prefer_constructors_over_static_methods
   static AppL10n of(BuildContext context) {
     return Localizations.of<AppL10n>(context, AppL10n) ??
         const AppL10n(Locale('ar'));

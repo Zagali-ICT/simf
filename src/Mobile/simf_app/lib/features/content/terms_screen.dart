@@ -38,7 +38,7 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
   bool _loading = true;
   bool _empty = false;
   String? _error;
-  ContentBlock? _block;
+  late ContentBlock _block;
 
   @override
   void initState() {
@@ -206,7 +206,7 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
 
   Widget _buildContent(AppL10n l10n) {
     // Each non-empty body line renders as one bullet card (Figma list items).
-    final items = _block!.bullets(isArabic: l10n.isArabic);
+    final items = _block.bullets(isArabic: l10n.isArabic);
     return Column(
       children: <Widget>[
         Expanded(

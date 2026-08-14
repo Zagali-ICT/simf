@@ -19,7 +19,7 @@ import 'golden_fonts.dart';
 /// --update-goldens test/golden/email_otp_verify_golden_test.dart
 ///
 /// Frame parity: the navy scaffold + sweep, the back/title header, the gold
-/// mail mark, the أدخل رمز التحقق title, the "sent a code to <email>" lines,
+/// mail mark, the أدخل رمز التحقق title, the "sent a code to `<email>`" lines,
 /// the six OTP boxes, the resend countdown, the gold تحقق CTA, and the resend
 /// row. Captured in the empty/default state (countdown at its 01:00 start — the
 /// periodic timer means we pump frames rather than settle). Locks the layout,

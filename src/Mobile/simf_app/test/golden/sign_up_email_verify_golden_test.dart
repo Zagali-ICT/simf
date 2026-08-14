@@ -18,7 +18,7 @@ import 'golden_fonts.dart';
 /// --update-goldens test/golden/sign_up_email_verify_golden_test.dart
 ///
 /// Frame parity: the navy scaffold + sweep, the back/title header, the gold
-/// mail mark, the أدخل رمز التحقق title, the "sent a code to <email>" lines,
+/// mail mark, the أدخل رمز التحقق title, the "sent a code to `<email>`" lines,
 /// the six OTP boxes, the gold تحقق CTA and the resend row. Captured in the
 /// initial state — the resend cooldown only starts after a resend, so no
 /// countdown shows (resend is immediately available) and there is no active

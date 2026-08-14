@@ -22,9 +22,9 @@ final _client = SimfApiClient.build(
 /// real `recordScanOrQueue` / `flushPending` over a real `GateScanQueue`.
 class _StubGates extends GatesRepository {
   _StubGates(
-    super.client,
-    super.queue,
-    super.offlineConfig,
+    super._client,
+    super._queue,
+    super._offlineConfig,
   );
 
   /// When set, the next `recordScan` throws it; otherwise it returns
