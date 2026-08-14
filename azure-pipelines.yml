@@ -869,7 +869,7 @@ stages:
 # then land on an arbitrary machine and report success. `resourceType` turns
 # that silent mis-deploy into an immediate failure.
 #
-# ORDER MATTERS, AND GETTING IT WRONG CAUSED AN OUTAGE (D-891). This line was
+# ORDER MATTERS, AND GETTING IT WRONG CAUSED AN OUTAGE (D-896). This line was
 # added once BEFORE the VM resources existed, and every deploy failed with
 # "Environment could not be found" until it was reverted. If a run reports NO
 # MATCHING RESOURCES, the server is not registered - register it, do NOT drop

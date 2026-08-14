@@ -61,9 +61,9 @@ public sealed class UserProfileType : BaseAuditEntity
     /// assigned per user on <c>UserProfile.AllowsSpeakerMeeting</c> /
     /// <c>AllowsDelegationMeeting</c>, so two people on the same tier can differ.
     /// This column was once named for that job and was renamed when those flags
-    /// took it over, because a meeting-shaped name invites the wrong question at
-    /// the call site — "is this a VIP?" rather than "may this person request a
-    /// meeting?"</para></summary>
+    /// took it over: a meeting-shaped name reads at the call site as an answer to
+    /// "may this person request a meeting?", which is exactly what it stopped
+    /// answering. The only question it answers is "is this a VIP tier?".</para></summary>
     public bool IsVipTier { get; set; }
 
     /// <summary>Whether a self-registering user is offered this type in the
