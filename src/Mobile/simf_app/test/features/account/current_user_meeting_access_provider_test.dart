@@ -32,6 +32,7 @@ class _RecordingProfileRepo implements ProfileRepository {
       gender: AppGender.male,
       hasIdImage: false,
       hasAvatar: false,
+      referenceNumber: 'SIMF-2026-00000001',
       allowsSpeakerMeeting: speaker,
       allowsDelegationMeeting: delegation,
     );
@@ -142,6 +143,48 @@ void main() {
         reason: 'not autoDispose → re-opening speaker profiles under a stable '
             'session never re-hits the auth bucket (it re-fetches only on an '
             'auth transition)',
+      );
+    });
+
+    test('the meeting flags and the reference number share ONE profile read',
+        () async {
+      // Both providers select from myProfileProvider. They used to call
+      // getMyProfile independently, so Badge + My Area + a speaker profile cost
+      // three identical round trips onto the shared auth rate-limit bucket.
+      final repo = _RecordingProfileRepo(speaker: true);
+      final container = _container(controller: _SignedIn(), repo: repo);
+
+      final access =
+          await container.read(currentUserMeetingAccessProvider.future);
+      final reference = await container.read(referenceNumberProvider.future);
+
+      expect(access.speaker, isTrue);
+      expect(reference, 'SIMF-2026-00000001');
+      expect(
+        repo.getMyProfileCalls,
+        1,
+        reason: 'two selectors over one cached read = one network call',
+      );
+    });
+
+    test('invalidating the shared read re-fetches for both selectors',
+        () async {
+      // The flip side of caching: a profile WRITE (or a pull-to-refresh) has to
+      // invalidate myProfileProvider, and doing so must actually re-fetch.
+      final repo = _RecordingProfileRepo(speaker: true);
+      final container = _container(controller: _SignedIn(), repo: repo);
+
+      await container.read(currentUserMeetingAccessProvider.future);
+      expect(repo.getMyProfileCalls, 1);
+
+      container.invalidate(myProfileProvider);
+
+      await container.read(currentUserMeetingAccessProvider.future);
+      await container.read(referenceNumberProvider.future);
+      expect(
+        repo.getMyProfileCalls,
+        2,
+        reason: 'one re-fetch after the invalidate, still shared by both',
       );
     });
   });

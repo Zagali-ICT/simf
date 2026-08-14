@@ -9,7 +9,7 @@ import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_bottom_nav.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/features/account/data/profile_repository.dart'
-    show avatarBustProvider, referenceNumberProvider;
+    show avatarBustProvider, myProfileProvider, referenceNumberProvider;
 import 'package:simf_app/features/myarea/data/myarea_models.dart';
 import 'package:simf_app/features/myarea/data/myarea_repository.dart';
 import 'package:simf_app/features/myarea/identity_verification_screen.dart';
@@ -66,6 +66,18 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
   CurrentUser? get _currentUser {
     final auth = ref.read(authControllerProvider);
     return auth is AuthStateSignedIn ? auth.session.user : null;
+  }
+
+  /// The pull-to-refresh entry point. Unlike [_load] it also drops the cached
+  /// profile read, so the identity card's reference number refreshes with the
+  /// rest of the card instead of being the one stale line on it.
+  ///
+  /// Kept separate from [_load] because [_load] also runs from `initState`, and
+  /// touching the provider scope there throws
+  /// ("dependOnInheritedWidgetOfExactType called before initState completed").
+  Future<void> _refresh() async {
+    ref.invalidate(myProfileProvider);
+    await _load();
   }
 
   Future<void> _load() async {
@@ -187,7 +199,7 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
     // Pull-to-refresh also retries: the error surface is hosted in a scrollable
     // so SimfPullToRefresh's gesture fires even though the content is short.
     return SimfPullToRefresh(
-      onRefresh: _load,
+      onRefresh: _refresh,
       child: SimfPullableHost(
         child: SimfErrorState(
           message: l10n.myAreaError,
@@ -204,7 +216,7 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
     final user = _currentUser;
     final name = user?.displayName ?? '';
     return SimfPullToRefresh(
-      onRefresh: _load,
+      onRefresh: _refresh,
       child: ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(SimfTokens.space4),
@@ -227,7 +239,7 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
     String? referenceNumber,
   ) {
     return SimfPullToRefresh(
-      onRefresh: _load,
+      onRefresh: _refresh,
       child: MyAreaDashboardBody(
         dashboard: dashboard,
         referenceNumber: referenceNumber,
