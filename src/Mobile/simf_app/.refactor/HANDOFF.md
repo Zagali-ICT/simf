@@ -25,10 +25,11 @@ a 13-agent read-only audit.
 
 | Metric | Session start | Now |
 |---|---|---|
-| `flutter analyze` infos | 2137 | **1856** |
+| `flutter analyze` infos | 2137 | **1584** |
 | errors / warnings | 0 / 0 | 0 / 0 |
+| `lines_longer_than_80_chars` | 1690 | **1428** |
 | `tool/conventions` SIMF-C3 | 12 | **11** |
-| tests | 1401 | **1406** |
+| tests | 1401 | **1413** |
 | `avoid_positional_boolean_parameters` | 135 | **0** |
 | `eol_at_end_of_file` | 62 | **0** |
 | `prefer_constructors_over_static_methods` | 75 | **1** (deliberate) |
@@ -37,7 +38,7 @@ a 13-agent read-only audit.
 Every increment gated on: analyze 0 errors / 0 warnings, full suite green, and
 **every golden holding without `--update-goldens`**.
 
-### Done (11 commits)
+### Done (15 commits)
 
 Phase 0 — worklist made durable; baseline pinned in this worktree; the audit's
 6-file coverage gap closed (`features/content/*` + `main.dart`).
@@ -48,8 +49,17 @@ Phase A — providers out of screens into `data/`; `exhibition/` widgets into
 `identity_verification_screen` 452 -> 397; the 3-copy 12-hour formatter and the
 3-copy day grouping unified into `core/utils`; governing docs re-dated.
 
-Phase B — the mechanical analyzer pass across every feature, then the language
-flag converted from a positional bool to `isArabic:` at ~350 call sites.
+Phase B — the mechanical analyzer pass across every feature; the language flag
+converted from a positional bool to `isArabic:` at ~350 call sites; the
+formatter run on the touched files followed by restoring the trailing commas
+(owner-authorised, see below); and `sessions` taken through its audit rows.
+
+The sessions pass is the template for the remaining features: one search rule
+instead of a tested-but-uncalled copy and an untested shipped one, the schedule
+list made lazy, a per-rebuild map lifted into a derived provider, two hand-nested
+compositions replaced with the shared widget, one widget moved to its own file.
+
+### Three defects found and fixed while executing
 
 ### Two defects found and fixed while executing
 
