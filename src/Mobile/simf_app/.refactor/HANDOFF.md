@@ -102,16 +102,34 @@ All in `.refactor/`, all refuse rather than guess, all reusable:
   into a `///` doc comment above it, the one comment shape that cannot be
   re-flowed in place because its indent belongs to the code.
 
+### Audit rows RE-MEASURED against the current tree (2026-08-14)
+
+The 2026-08-02 rows are stale in both directions — line numbers are all wrong
+after the reformat, and several categories closed on their own. Measured, not
+assumed:
+
+| Category | Audit said | Actually now |
+|---|---|---|
+| RAW-STRING | 2 | **0** (`unnecessary_raw_strings` reads 0) |
+| MISSING-CONST | 5 | **0** (`prefer_const_*` read 0) |
+| DEAD-COMMENT-CODE | 14 | **0** — all 5 greppable hits are prose continuations (`// import of the shell keeps resolving.`), not commented-out code |
+| NARRATION-COMMENT | 9 | **0** — the 3 hits are prose and a release number (`// Build #13 —`) |
+| INLINE-TEXTSTYLE (raw size) | 5 | **0** (done, see the tokens commit) |
+| RTL-DIRECTIONAL | 7 | **4**, all declined with cause — each pairs with an explicitly physical `Alignment.centerLeft`, so it is a Figma question (D-886) |
+| `Image.network` unsized | 20 | **11 real** call sites; the other 9 were doc comments the audit counted as hits. Deferred to a device (D-886) |
+| NON-LAZY-LIST | 11-12 | ~43 `ListView(` sites, most correctly static content pages; the data-driven ones still need per-site judgement |
+
+**Do not act on a 2026-08-02 row without re-measuring it first.** Two of the
+three categories I checked were already closed, and one (`Image.network`) was
+nearly half phantom.
+
 ### Next, in order
 
-1. The read-audit rows: ~73 DUPLICATION, 42 DOC-HEADER, 45 NAMING, then the
-   tail (DEAD-COMMENT-CODE, NON-LAZY-LIST, NARRATION-COMMENT, RTL-DIRECTIONAL,
-   REFLEXIVE-CATCH, RAW-STRING, FIXED-WIDTH). **Re-measure before acting** —
-   the rows are from 2026-08-02 and every line number in them is now wrong
-   after the reformat; several categories are already closed by the analyzer
-   work. **ONE-WIDGET-PER-FILE is closed**: the three heterogeneous files are
-   split (16 widgets, 16 files, originals removed) and the other 17 findings
-   are cohesive groups that CLAUDE.md section 1 now explicitly permits.
+1. The read-audit rows that survive: ~73 DUPLICATION, 42 DOC-HEADER, 45 NAMING,
+   plus the genuinely data-driven NON-LAZY-LIST subset. **ONE-WIDGET-PER-FILE
+   is closed**: the three heterogeneous files are split (16 widgets, 16 files,
+   originals removed) and the other 17 findings are cohesive groups that
+   CLAUDE.md section 1 now explicitly permits.
 2. Decision 5 (all 71 screen headers to the section 9 template), decision 6
    (tokens single-use audit).
 3. Decision 7 — the 35 `AsyncValue` conversions. A **behaviour change**, so its
@@ -130,6 +148,28 @@ those two files — and the pipeline cannot move to `--check --strict` or delete
 
 Also still owner-gated, unchanged: the `getMySeat` deletion and the
 `more_screen` adjudication (deletion needs owner confirmation, global rule 7).
+
+**Two more went to the device list on 2026-08-14 (D-886), both because no test
+can catch getting them wrong:**
+
+* Sizing the 11 real `Image.network` call sites. Widget tests have no HTTP, so
+  those images render their `errorBuilder` and a golden stays green whatever
+  the decode resolution — a visual-only failure mode behind a green golden,
+  which is the D-666 class exactly.
+* The 4 `EdgeInsets.only(left:)` sites. Each pairs with an explicitly physical
+  `Alignment.centerLeft` on the same back button, so converting the padding
+  alone leaves the two disagreeing. Whether the back chevron belongs on the
+  physical left in Arabic is a Figma question — section 13.5 says ask, never
+  guess — and the Arabic goldens currently agree with what ships.
+
+### Branch state (2026-08-14)
+
+`origin/main` has **already merged this branch** (PR 334), so every code commit
+listed above is in main. `origin/main` is then ~105 commits ahead with other
+work, and this branch carries one commit main lacks (the D-246 docs). Someone
+else's `600d22dd merge: bring main into refactor/app-clean-code-3, and re-close
+the analyzer ratchet` is on main — read it before merging main in here, because
+it means the ratchet has been re-closed once already after a merge.
 
 ---
 
