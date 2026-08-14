@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/core/utils/gregorian_month_names.dart';
+import 'package:simf_app/core/utils/local_days.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
 import 'package:simf_app/core/utils/weekday_names.dart';
 import 'package:simf_app/core/validation/field_limits.dart';
@@ -156,26 +157,17 @@ class _DelegationMeetingRequestSheetState
     unawaited(_loadSlots(country.countryId));
   }
 
-  /// The distinct local days that carry at least one slot, in endpoint order.
-  List<DateTime> get _daysWithSlots {
-    final days = <DateTime>[];
-    for (final slot in _slots) {
-      final local = saudiOf(slot.start);
-      final day = DateTime(local.year, local.month, local.day);
-      if (!days.contains(day)) {
-        days.add(day);
-      }
-    }
-    return days;
-  }
+  /// The distinct local days that carry at least one slot. The endpoint
+  /// derives slots chronologically, so the shared helper's ascending order is
+  /// the endpoint's order; it is also correct if that ever stops holding.
+  List<DateTime> get _daysWithSlots =>
+      distinctLocalDays(_slots, (slot) => saudiOf(slot.start));
 
+  /// The slots on a given local day, in the endpoint's (chronological) order.
   List<DelegationSlot> _slotsForDay(DateTime day) => <DelegationSlot>[
         for (final slot in _slots)
-          if (_isSameDay(saudiOf(slot.start), day)) slot,
+          if (sameLocalDay(saudiOf(slot.start), day)) slot,
       ];
-
-  static bool _isSameDay(DateTime a, DateTime b) =>
-      a.year == b.year && a.month == b.month && a.day == b.day;
 
   Future<void> _submit() async {
     final l10n = widget.l10n;
@@ -553,7 +545,7 @@ class _DelegationMeetingRequestSheetState
             weekday: gregorianWeekdayName(day, isArabic),
             dayNumber: day.day,
             month: gregorianMonthName(day.month, isArabic),
-            selected: _selectedDay != null && _isSameDay(_selectedDay!, day),
+            selected: _selectedDay != null && sameLocalDay(_selectedDay!, day),
             onTap: () => setState(() {
               _selectedDay = day;
               _selectedSlot = null;

@@ -1,7 +1,12 @@
 import 'package:flutter/foundation.dart';
-
+import 'package:simf_app/core/utils/local_days.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
 import 'package:simf_app/features/sessions/data/session_lifecycle.dart';
+
+// Day grouping moved to core/utils (cross-feature); re-exported so the
+// existing `distinctLocalDays` / `sameLocalDay` call sites here and in
+// ai_summary and presentations keep resolving off this file.
+export 'package:simf_app/core/utils/local_days.dart';
 
 /// The session broadcast lifecycle — mirrors `SIMF.Common.Enums.SessionStatus`
 /// (frozen, int-backed: Scheduled=0, Held=1, Recorded=2, Published=3). The wire
@@ -582,31 +587,6 @@ List<SessionListItem> filterSessions(
 /// a midnight-local [DateTime].
 List<DateTime> sessionDays(List<SessionListItem> items) =>
     distinctLocalDays(items, (session) => session.startLocal);
-
-/// The distinct device-local calendar days spanned by [items], ascending, each
-/// a
-/// midnight-local [DateTime]. [localStart] pulls the device-local start out of
-/// an
-/// item, so every day-grouped list (sessions, presentations, …) shares one
-/// algorithm instead of re-declaring it.
-List<DateTime> distinctLocalDays<T>(
-  Iterable<T> items,
-  DateTime Function(T) localStart,
-) {
-  final byKey = <String, DateTime>{};
-  for (final item in items) {
-    final local = localStart(item);
-    final key = '${local.year}-${local.month}-${local.day}';
-    byKey.putIfAbsent(key, () => DateTime(local.year, local.month, local.day));
-  }
-  return byKey.values.toList()..sort();
-}
-
-/// Whether [a] and [b] fall on the same device-local calendar day (time-of-day-
-/// and argument-order-independent) — the one home for the day-equality
-/// predicate.
-bool sameLocalDay(DateTime a, DateTime b) =>
-    a.year == b.year && a.month == b.month && a.day == b.day;
 
 /// Decodes a `speakers[]` array (shared by the list item + the detail). A
 /// missing / null array decodes to an empty list — never null on the wire
