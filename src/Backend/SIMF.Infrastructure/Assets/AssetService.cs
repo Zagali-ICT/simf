@@ -13,7 +13,7 @@ namespace SIMF.Infrastructure.Assets;
 
 /// <summary>The unified media-asset service, now
 /// backed by the centralized <see cref="StoredFile"/> store instead of the legacy
-/// <c>Asset</c> table + <c>IImageAssetStorage</c>. The <see cref="IAssetService"/>
+/// <c>Asset</c> table and its own storage service. The <see cref="IAssetService"/>
 /// contract, every endpoint route and the <see cref="AdminAssetSummary"/> shape are
 /// unchanged, so the app / Website / CP see no difference — only the physical
 /// storage moved. Each <see cref="AssetCategory"/> maps 1:1 to a

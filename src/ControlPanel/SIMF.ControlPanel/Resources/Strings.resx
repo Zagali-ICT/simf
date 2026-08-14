@@ -2433,7 +2433,6 @@
   <data name="Admin.Banners.Field.TitleAr" xml:space="preserve"><value>Title (Arabic)</value></data>
   <data name="Admin.Banners.Field.BodyEn" xml:space="preserve"><value>Body (English)</value></data>
   <data name="Admin.Banners.Field.BodyAr" xml:space="preserve"><value>Body (Arabic)</value></data>
-  <data name="Admin.Banners.Field.ImageUrl" xml:space="preserve"><value>Image URL</value></data>
   <data name="Admin.Banners.Field.LinkUrl" xml:space="preserve"><value>Click-through URL</value></data>
   <data name="Admin.Banners.Field.Start" xml:space="preserve"><value>Start (Saudi time)</value></data>
   <data name="Admin.Banners.Field.End" xml:space="preserve"><value>End (Saudi time)</value></data>

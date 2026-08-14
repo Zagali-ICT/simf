@@ -2426,7 +2426,6 @@
   <data name="Admin.Banners.Field.TitleAr" xml:space="preserve"><value>العنوان (العربية)</value></data>
   <data name="Admin.Banners.Field.BodyEn" xml:space="preserve"><value>النص (الإنجليزية)</value></data>
   <data name="Admin.Banners.Field.BodyAr" xml:space="preserve"><value>النص (العربية)</value></data>
-  <data name="Admin.Banners.Field.ImageUrl" xml:space="preserve"><value>رابط الصورة</value></data>
   <data name="Admin.Banners.Field.LinkUrl" xml:space="preserve"><value>رابط النقر</value></data>
   <data name="Admin.Banners.Field.Start" xml:space="preserve"><value>البداية (بتوقيت السعودية)</value></data>
   <data name="Admin.Banners.Field.End" xml:space="preserve"><value>النهاية (بتوقيت السعودية)</value></data>

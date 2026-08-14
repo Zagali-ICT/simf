@@ -25,6 +25,11 @@ public sealed record PublicBanner(
     string TitleArabic,
     string Body,
     string BodyArabic,
+    // Always null since the banner image became a StoredFile. The key stays on
+    // the wire because the shipped app decodes it (D-219 append-only), but the
+    // app's primary path is /app/assets/Banner/{id}/image, which serves an
+    // upload and 302s an external link alike — so the fallback this fed has
+    // nothing left to do.
     string? ImageUrl,
     string? LinkUrl,
     DateTime Start,

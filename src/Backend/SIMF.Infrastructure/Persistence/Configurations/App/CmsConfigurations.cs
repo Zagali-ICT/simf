@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SIMF.Domain.Cms;
+using SIMF.Domain.Files;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
@@ -38,8 +39,15 @@ internal sealed class BannerConfiguration : IEntityTypeConfiguration<Banner>
         builder.Property(b => b.TitleArabic).HasMaxLength(256).IsRequired();
         builder.Property(b => b.Body).HasMaxLength(2000).IsRequired();
         builder.Property(b => b.BodyArabic).HasMaxLength(2000).IsRequired();
-        builder.Property(b => b.ImageUrl).HasMaxLength(1024);
         builder.Property(b => b.LinkUrl).HasMaxLength(1024);
+
+        // The banner image, in the one file store. Restrict: deleting a file must
+        // never delete the banner that shows it.
+        builder.HasIndex(b => b.ImageFileId);
+        builder.HasOne<StoredFile>()
+            .WithMany()
+            .HasForeignKey(b => b.ImageFileId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(b => new { b.IsActive, b.Start, b.End, b.DisplayOrder });
     }
