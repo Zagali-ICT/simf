@@ -130,15 +130,42 @@ nearly half phantom.
 
 ### Next, in order
 
-1. **Decision 7 — the 35 `AsyncValue` conversions. THE ONLY PHASE LEFT.** A
-   behaviour change, so its own phase with its own verification, not part of
-   the per-file loop. Two things to know before starting:
+1. **Decision 7 — the `AsyncValue` conversions. THE ONLY PHASE LEFT.**
+
+   **Re-measured: 24 screens, not the plan's 35.** Grep
+   `^\s*bool _loading` across `lib` — 11 of the plan's set were converted or
+   deleted in earlier waves. Do not work from the number.
+
+   **`terms_screen` is the proven template** (commit `0a6bf182`). What made it
+   work, in order:
+   1. A `FutureProvider.autoDispose` that folds the screen's EXTRA states into
+      the data type. Terms had `_empty` beside `_loading`/`_error`; returning
+      `ContentBlock?` and mapping both "nothing to show" cases (a 404, and a
+      present-but-empty body) to null collapsed three server outcomes onto the
+      three branches `when` already has.
+   2. The screen usually stops needing to be stateful at all — terms went
+      `ConsumerStatefulWidget` -> `ConsumerWidget`.
+   3. `onRetry` = `ref.invalidate(provider)`; the PULL keeps
+      `refreshAsync(ref, provider.future)`, whose future the RefreshIndicator
+      awaits.
+   4. Existing tests should pass **UNCHANGED** — that is the signal the state
+      machine is faithful. Terms' 5 did.
+   5. The data-state golden must hold **WITHOUT** `--update`. A data golden
+      that moves is a conversion bug, not a re-lock.
+
+   **Expect to find bugs.** The conversion forces you to look at the error
+   branch, and terms was rendering `ApiFailure.message` raw — English exception
+   text to Arabic users. The sweep that followed found two more
+   (`my_area` avatar upload, `seat_picker` seat move); `gate_scan` and
+   `register_visitor` looked like sites and are not. Check the RENDER before
+   fixing: `register_visitor`'s `_loadError` is never displayed.
+
+   Two more things to know:
    * `test/repo/pull_to_refresh_coverage_test.dart` keys on widget NAMES. A
      shared async-body widget that owns the refresh will need that regex
      extended, deliberately, in the same changeset.
-   * The 21 screens whose `Perf:` line now reads "builds every child up front"
-     are the natural scope boundary — that list came out of Decision 5 and did
-     not exist before.
+   * The 21 screens whose `Perf:` line reads "builds every child up front" are
+     a DIFFERENT population from these 24 — list laziness is its own pass.
 2. The surviving read-audit rows: DOC-HEADER (largely absorbed by Decision 5),
    NAMING, and the genuinely data-driven NON-LAZY-LIST subset.
    **ONE-WIDGET-PER-FILE is closed**: the three heterogeneous files are split
