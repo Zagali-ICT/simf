@@ -33,11 +33,37 @@
 #
 # PLACEHOLDERS to confirm before the Deploy stage can run (see deploy/README.md):
 #   * `pool` name - the self-hosted build/deploy agent;
-#   * the Deploy `environment` name;
 #   * the IIS site names and physical paths passed to deploy/iis-deploy.ps1.
+# The Deploy `environment` names are NO LONGER placeholders: they are the two
+# real Azure DevOps Environments, `Pre-production` and `Production` (D-886).
 
 trigger:
 - main
+
+# --- Which environments this run deploys to (chosen in the Run pipeline dialog).
+#
+#     Both default to TRUE, so an ordinary CI run off `main` deploys to both
+#     servers at once. Untick one to hold it back - to rehearse on
+#     pre-production without touching production, or to push a hotfix to
+#     production when pre-production is mid-test.
+#
+#     A `parameters` boolean is used rather than a variable because it is the
+#     only kind the Run pipeline dialog offers as a tick box, and because it
+#     expands at template-parse time, which is what lets it omit the job
+#     entirely below rather than run a job that reports "skipped".
+#
+#     Untick BOTH and the whole Deploy stage is omitted - build, test and
+#     publish still run, and the artifact is still produced, so a build-only run
+#     needs no separate pipeline.
+parameters:
+- name: deployPreProduction
+  displayName: 'Deploy to Pre-production'
+  type: boolean
+  default: true
+- name: deployProduction
+  displayName: 'Deploy to Production'
+  type: boolean
+  default: true
 
 pool:
   name: Default   # PLACEHOLDER: self-hosted agent pool with the .NET 10 SDK (build) + IIS (deploy)
@@ -587,107 +613,55 @@ stages:
       displayName: 'dotnet build + test (src/Tools/SIMF.BadgeDesk)'
 
 # =============================================================================
-# Deploy - ONE JOB PER SERVER
+# Deploy - ONE JOB PER ENVIRONMENT
 # =============================================================================
-# Each package runs on its own box, so each gets its own deployment job bound to
-# its own Azure DevOps Environment. A single job deploying four packages assumed
-# one machine: it extracted every zip onto the same agent, and repointing it at
-# four servers would have meant one agent reaching across the estate.
+# SIMF has exactly TWO Azure DevOps Environments, because the estate is two
+# servers: `Pre-production` and `Production` (D-886). Each server hosts all four
+# SIMF sites, so each job deploys all four packages to its own machine.
 #
-# Ordering is explicit rather than incidental. The API goes first because
-# everything else calls it; the Control Panel and Website follow in parallel,
-# since neither depends on the other; the mobile edge goes LAST because it is the
-# public front door and should only start accepting traffic once the API behind
-# it is already answering.
+# WHY THIS IS PINNED BY A TEST. Azure DevOps CREATES an environment on first
+# reference: a name that matches no real machine does not fail the run, it
+# quietly registers another environment with no resources behind it. This file
+# previously named four - `SIMF-Prod-Api`, `-Cp`, `-Web`, `-Edge` - on the
+# earlier one-server-per-package reading of the estate, and the portal duly
+# listed four environments nobody had registered. A wrong name here is therefore
+# invisible in the run and visible only in the portal weeks later, which is why
+# `PipelineTestGateTests.The_pipeline_deploys_only_to_the_two_real_environments`
+# fails the build on a fifth rather than leaving it to be noticed.
 #
-# PLACEHOLDERS: register four Azure DevOps Environments, one per server, and bind
-# each to that machine's agent. See deploy/README.md.
-- stage: Deploy
-  displayName: 'Deploy to IIS'
-  dependsOn: Build
-  condition: succeeded()
-  jobs:
-  - deployment: DeployApi
-    displayName: 'API server'
-    environment: 'SIMF-Prod-Api'
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - download: current
-            artifact: drop
+# THE TWO JOBS RUN IN PARALLEL. There is deliberately no `dependsOn` between
+# them: pre-production and production deploy at the same time, off the same
+# build, rather than production waiting on a pre-production rehearsal. The
+# per-package ordering that does matter (API first, mobile edge last) is kept
+# WITHIN each job by deploy/deploy-all-packages.yml.
+#
+# Which of the two a run touches is chosen at queue time by the `parameters` at
+# the top of this file. `${{ if }}` omits the job rather than a `condition:`
+# skipping it, so an unticked environment records no deployment against itself
+# at all - a skipped job still writes to the environment's history and would
+# read as a deployment that happened.
+- ${{ if or(eq(parameters.deployPreProduction, true), eq(parameters.deployProduction, true)) }}:
+  - stage: Deploy
+    displayName: 'Deploy to IIS'
+    dependsOn: Build
+    condition: succeeded()
+    jobs:
+    - ${{ if eq(parameters.deployPreProduction, true) }}:
+      - deployment: DeployPreProduction
+        displayName: 'Pre-production server'
+        environment: 'Pre-production'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+              - template: deploy/deploy-all-packages.yml
 
-          - powershell: |
-              ./deploy/pipeline-deploy-one.ps1 `
-                -Package  "api" `
-                -ZipName  "SIMF.Api.zip" `
-                -SiteName "SIMF.API" `
-                -SitePath "D:\System\v1.0.1\api" `
-                -Drop     "$(Pipeline.Workspace)\drop" `
-                -Root     "$(Pipeline.Workspace)\drop_root"
-            displayName: 'Deploy the API'
-
-  - deployment: DeployCp
-    displayName: 'Control Panel server'
-    environment: 'SIMF-Prod-Cp'
-    dependsOn: DeployApi
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - download: current
-            artifact: drop
-
-          - powershell: |
-              ./deploy/pipeline-deploy-one.ps1 `
-                -Package  "cp" `
-                -ZipName  "SIMF.ControlPanel.zip" `
-                -SiteName "SIMF.CP" `
-                -SitePath "D:\System\v1.0.1\cp" `
-                -Drop     "$(Pipeline.Workspace)\drop" `
-                -Root     "$(Pipeline.Workspace)\drop_root"
-            displayName: 'Deploy the Control Panel'
-
-  - deployment: DeployWeb
-    displayName: 'Website server'
-    environment: 'SIMF-Prod-Web'
-    dependsOn: DeployApi
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - download: current
-            artifact: drop
-
-          - powershell: |
-              ./deploy/pipeline-deploy-one.ps1 `
-                -Package  "web" `
-                -ZipName  "SIMF.Web.zip" `
-                -SiteName "SIMF.WEB" `
-                -SitePath "D:\System\v1.0.1\web" `
-                -Drop     "$(Pipeline.Workspace)\drop" `
-                -Root     "$(Pipeline.Workspace)\drop_root"
-            displayName: 'Deploy the Website'
-
-  - deployment: DeployEdge
-    displayName: 'Mobile edge server'
-    environment: 'SIMF-Prod-Edge'
-    dependsOn:
-    - DeployCp
-    - DeployWeb
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - download: current
-            artifact: drop
-
-          - powershell: |
-              ./deploy/pipeline-deploy-one.ps1 `
-                -Package  "edge" `
-                -ZipName  "SIMF.MobileEdge.zip" `
-                -SiteName "SIMF.EDGE" `
-                -SitePath "D:\System\v1.0.1\edge" `
-                -Drop     "$(Pipeline.Workspace)\drop" `
-                -Root     "$(Pipeline.Workspace)\drop_root"
-            displayName: 'Deploy the mobile edge'
+    - ${{ if eq(parameters.deployProduction, true) }}:
+      - deployment: DeployProduction
+        displayName: 'Production server (SIMF APP 01)'
+        environment: 'Production'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+              - template: deploy/deploy-all-packages.yml

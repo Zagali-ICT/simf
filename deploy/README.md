@@ -11,8 +11,9 @@ SIMF web apps and deploy them to IIS, mirroring the V10 ERP pipeline.
 | SimfWeb | `src/Website/SIMF.Web/SIMF.Web.csproj` | `web/SIMF.Web.zip` | site `SIMF.WEB`, path `D:\System\v1.0.1\web` |
 | SimfEdge | `src/Edge/SIMF.MobileEdge/SIMF.MobileEdge.csproj` | `edge/SIMF.MobileEdge.zip` | site `SIMF.EDGE`, path `D:\System\v1.0.1\edge` |
 
-Each package deploys to its **own server**, so each has its own environment
-script and its own deployment job. The **mobile edge** is the presentation tier
+All four packages deploy to **each of the two servers** — `Pre-production` and
+`Production` — so there is one deployment job per server, and each package keeps
+its own environment script on that server. The **mobile edge** is the presentation tier
 for the mobile clients: a YARP reverse proxy published at `edge.simrsnf.com` that
 forwards only `/api/v1/app/**` inward. See
 [the mobile edge section](#the-mobile-edge-at-edgesimrsnfcom) before deploying
@@ -44,12 +45,46 @@ Build, Test & Publish ──▶ Deploy to IIS
   `dotnet build -c Release` → `dotnet test` (a failing test stops the pipeline,
   per SIMF-OPS-001 §5) → `dotnet publish` each app (zipped) → publish artifact
   `drop`.
-- **Deploy to IIS** — FOUR deployment jobs, one per server, each bound to its
-  own Azure DevOps Environment. Each downloads `drop`, extracts only its own
-  zip via [`pipeline-deploy-one.ps1`](pipeline-deploy-one.ps1), and hands only
-  its own site to [`iis-deploy.ps1`](iis-deploy.ps1), which stops the site +
-  app pool, releases file locks, `robocopy /MIR`s the files, and restarts.
-  Order: **API**, then **CP** and **Web** in parallel, then **Edge** last.
+- **Deploy to IIS** — **TWO** deployment jobs, one per Azure DevOps
+  **Environment**, because the estate is two servers: **`Pre-production`** and
+  **`Production`** (`SIMF APP 01`). Each server hosts all four sites, so each
+  job checks out the repo, downloads `drop`, and runs the shared steps in
+  [`deploy-all-packages.yml`](deploy-all-packages.yml) — four calls to
+  [`pipeline-deploy-one.ps1`](pipeline-deploy-one.ps1), each extracting one zip
+  and handing one site to [`iis-deploy.ps1`](iis-deploy.ps1), which stops the
+  site + app pool, releases file locks, `robocopy /MIR`s the files, and
+  restarts. Per-server order: **API**, then **CP**, then **Web**, then **Edge**
+  last.
+- The two jobs carry **no `dependsOn` between them**, so pre-production and
+  production deploy **at the same time** off one build. Production does not wait
+  on a pre-production rehearsal.
+
+### Choosing which environments a run deploys to
+
+Two tick boxes in the **Run pipeline** dialog, both **on** by default:
+
+| Parameter | Label | Effect when unticked |
+|-----------|-------|----------------------|
+| `deployPreProduction` | Deploy to Pre-production | The pre-production job is omitted |
+| `deployProduction` | Deploy to Production | The production job is omitted |
+
+Untick **both** and the whole `Deploy` stage is omitted — build, test and
+publish still run and the `drop` artifact is still produced, so a build-only run
+needs no separate pipeline.
+
+They are `parameters`, not variables: only a parameter renders as a tick box in
+the Run dialog, and only a parameter expands early enough to **omit** the job.
+That distinction matters — a job skipped by a `condition:` still writes to its
+environment's deployment history, so an untouched environment would show a
+deployment that never happened.
+
+> **A deployment job does not clone the repository.** Azure Pipelines states it
+> outright: *"A deployment job doesn't automatically clone the source repo. You
+> can check out the source repo within your job with `checkout: self`."* The
+> deploy scripts live in the repository and the `drop` artifact carries only the
+> published apps, so `deploy-all-packages.yml` opens with `checkout: self`.
+> Without it every deploy step fails with "the term
+> `…/deploy/pipeline-deploy-one.ps1` is not recognized".
 
 ## Building a package locally (`publish.ps1`)
 
@@ -149,10 +184,19 @@ These are **placeholders** — set them to the real SIMF server values:
    needs outbound access to `community.chocolatey.org` + the package source, and
    rights to install an MSI), then creates/starts the instance. Installing
    LocalDB on the agent once removes the per-run download.
-2. **`environment` names** (`SIMF-Prod-Api`, `-Cp`, `-Web`, `-Edge`
-   placeholders) — register FOUR Azure DevOps **Environments**, one per server,
-   and bind each to that machine's agent. One Environment covering the whole
-   estate would put every package back on one box.
+2. ~~**`environment` names**~~ — **no longer a placeholder.** The pipeline names
+   the two real Azure DevOps **Environments**, `Pre-production` and
+   `Production`; each must have its server registered as a VM resource so the
+   deployment job runs on that machine.
+
+   **Azure DevOps creates an environment on first reference.** A name here that
+   matches no registered environment does not fail the run — it quietly adds an
+   empty one to the portal. That is how the portal came to list four
+   `SIMF-Prod-Api` / `-Cp` / `-Web` / `-Edge` entries nobody had created, under
+   the earlier one-server-per-package reading of the estate. **Delete those four
+   in Pipelines → Environments**; they hold no resources and no history worth
+   keeping. `PipelineTestGateTests.The_pipeline_deploys_only_to_the_two_real_environments`
+   now fails the build if a third name appears.
 3. **IIS site names + physical paths** — the `-ApiSiteName/-ApiPath`,
    `-CpSiteName/-CpPath`, `-WebSiteName/-WebPath` and `-EdgeSiteName/-EdgePath`
    arguments in the `Deploy to IIS` step. The IIS sites + app pools must already
@@ -189,20 +233,33 @@ each noting "running both is fine, the last writer wins" - true only while the
 copies agree. They were merged into one file, because one file cannot disagree
 with itself.
 
-On 2026-08-12 the estate moved to **one server per package**, which removes that
-collision outright: a variable set on the Website host is not visible on the API
-host, so there is no last writer. Keeping one file would instead mean shipping
-the API's connection strings, SMTP password and encryption keys to three servers
-that never read them - a worse problem than the one the merge solved.
+On 2026-08-12 they split again, one file per package, on a reading of the estate
+as one server per package - which would have removed the collision outright, a
+variable set on the Website host not being visible on the API host. Keeping one
+file would then have meant shipping the API's connection strings, SMTP password
+and encryption keys to three servers that never read them.
 
-So the scripts split again, one per package, and the keys that legitimately
-appear in more than one file are pinned by `Shared_keys_agree_across_templates`
-in `DeploymentEnvTemplateTests`: same value, same `Secret` flag, or the build
-fails. `Gate` is deliberately allowed to differ, because it records whether
-**that** host refuses to start without the value.
+**The estate is not one server per package (D-886).** It is **two** servers,
+`Pre-production` and `Production`, each hosting all four sites - so all four
+scripts run on the same box, and the last-writer problem the 2026-08-06 merge
+solved would be back, were it not already solved a second way. What actually
+keeps them apart now is the **prefix per application** below
+(`SIMF_API_` / `SIMF_CP_` / `SIMF_WEB_` / `SIMF_EDGE_`): four scripts on one
+machine write four separate namespaces and cannot overwrite each other, whatever
+key names they share. Four files remain the right count for a different reason
+than the one first given - each host still reads only its own application's
+values, and an operator running one script can see exactly which application it
+configures.
 
-A deployment is therefore: **the pipeline publishes and deploys each package to
-its own server, an operator runs that server's one script, restart that pool.**
+The keys that legitimately appear in more than one file are pinned by
+`Shared_keys_agree_across_templates` in `DeploymentEnvTemplateTests`: same
+value, same `Secret` flag, or the build fails. `Gate` is deliberately allowed to
+differ, because it records whether **that** host refuses to start without the
+value.
+
+A deployment is therefore: **the pipeline publishes and deploys all four
+packages to each server, an operator runs that server's four scripts, restart
+the pools.**
 
 Each filled form carries production values, so the repository tracks the four
 **`.template.ps1`** files and **`.gitignore` deliberately ignores the filled

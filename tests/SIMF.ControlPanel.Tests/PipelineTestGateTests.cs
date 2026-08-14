@@ -187,6 +187,127 @@ public class PipelineTestGateTests
             + string.Join('\n', missing));
     }
 
+    /// <summary>
+    /// The pipeline may name ONLY the two Azure DevOps Environments that exist.
+    ///
+    /// <para>Azure DevOps CREATES an environment the first time a deployment job
+    /// names one, so a name matching no real machine does not fail the run - it
+    /// silently registers another environment with no resources behind it. The
+    /// pipeline named four (`SIMF-Prod-Api`, `-Cp`, `-Web`, `-Edge`) on an
+    /// earlier reading of the estate as one server per package, and the portal
+    /// duly listed four environments nobody had registered. The estate is two
+    /// servers (D-886), so two environments is the whole truth.</para>
+    ///
+    /// <para>This is the same shape of guard as the anonymous-endpoint
+    /// allow-list: the wrong count is invisible in a green run and shows up in
+    /// the portal weeks later, so it is pinned to a reviewed set rather than to
+    /// a comment.</para>
+    /// </summary>
+    [Fact]
+    public void The_pipeline_deploys_only_to_the_two_real_environments()
+    {
+        string[] expected = ["Pre-production", "Production"];
+
+        var lines = Pipeline().Split('\n');
+        var named = new List<string>();
+
+        for (var i = 0; i < lines.Length; i++)
+        {
+            var line = lines[i].Trim();
+            if (line.StartsWith('#'))
+            {
+                continue;
+            }
+
+            var inline = Regex.Match(line, @"^environment:\s*'?(?<name>[^'#\s]+)'?");
+            if (inline.Success)
+            {
+                named.Add(inline.Groups["name"].Value);
+                continue;
+            }
+
+            // The full form: `environment:` on its own line, `name:` beneath it.
+            if (line != "environment:")
+            {
+                continue;
+            }
+
+            // Only the block that belongs to this key - stop at the next list
+            // item, so a `name:` further down the file is never mistaken for
+            // this environment's.
+            var name = "(unreadable)";
+            for (var j = i + 1; j < lines.Length; j++)
+            {
+                var candidate = lines[j].Trim();
+                if (candidate.StartsWith("- ", StringComparison.Ordinal))
+                {
+                    break;
+                }
+
+                var match = Regex.Match(candidate, @"^name:\s*'?(?<name>[^'#\s]+)'?");
+                if (match.Success)
+                {
+                    name = match.Groups["name"].Value;
+                    break;
+                }
+            }
+
+            named.Add(name);
+        }
+
+        Assert.NotEmpty(named);
+
+        var distinct = named.Distinct(StringComparer.Ordinal).ToArray();
+        var unexpected = distinct.Except(expected, StringComparer.Ordinal).ToArray();
+
+        Assert.True(
+            unexpected.Length == 0,
+            "azure-pipelines.yml names an Azure DevOps Environment that is not one of the "
+            + "two SIMF has: " + string.Join(", ", unexpected)
+            + ". Azure DevOps CREATES an environment on first reference, so this does not "
+            + "fail the run - it adds an empty environment to the portal. The estate is two "
+            + "servers (D-886): Pre-production and Production. Fix the name, or register the "
+            + "new environment and add it here with the machine it binds to.");
+
+        var missing = expected.Except(distinct, StringComparer.Ordinal).ToArray();
+
+        Assert.True(
+            missing.Length == 0,
+            "azure-pipelines.yml no longer deploys to: " + string.Join(", ", missing)
+            + ". Both environments are deployed by default; a run holds one back with the "
+            + "`deployPreProduction` / `deployProduction` parameters at queue time, NOT by "
+            + "deleting its job.");
+    }
+
+    /// <summary>
+    /// Every YAML template the pipeline references must be in the repository.
+    ///
+    /// <para>The sibling check above does this for `dart run` scripts, after the
+    /// convention gate spent weeks pointing at a file `.gitignore` had excluded.
+    /// A `- template:` reference fails the same way and is worse: the pipeline
+    /// does not compile at all, so nothing runs, including the gates that would
+    /// have reported it.</para>
+    /// </summary>
+    [Fact]
+    public void Every_yaml_template_the_pipeline_references_exists_in_the_repository()
+    {
+        var missing = Pipeline()
+            .Split('\n')
+            .Select(l => l.Trim())
+            .Where(l => !l.StartsWith('#'))
+            .Select(l => Regex.Match(l, @"^-\s*template:\s*(?<path>[^\s@#]+\.ya?ml)"))
+            .Where(m => m.Success)
+            .Select(m => m.Groups["path"].Value.Replace('/', Path.DirectorySeparatorChar))
+            .Where(relative => !File.Exists(Path.Combine(RepoRoot, relative)))
+            .ToArray();
+
+        Assert.True(
+            missing.Length == 0,
+            "azure-pipelines.yml references a YAML template that is NOT in the repository, "
+            + "so the pipeline will not compile and no stage runs at all:\n"
+            + string.Join('\n', missing));
+    }
+
     private static string FindRepoRoot()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);

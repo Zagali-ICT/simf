@@ -1,0 +1,85 @@
+# =============================================================================
+# SIMF - deploy ALL FOUR packages to THIS server.
+#
+# Both deployment jobs in azure-pipelines.yml run these same steps. The estate is
+# TWO servers, one per Azure DevOps Environment (D-886): `Pre-production` and
+# `Production`. Each server hosts all four SIMF sites, so the two jobs differ
+# only in which machine the environment binds them to - not in what they do.
+# The steps therefore live here once instead of being written out twice, because
+# two copies of a deploy sequence drift, and the copy that drifts is the one
+# discovered in production.
+#
+# ORDER IS EXPLICIT, NOT INCIDENTAL. The API goes first because everything else
+# calls it; the Control Panel and the Website follow; the mobile edge goes LAST
+# because it is the public front door and should only start accepting traffic
+# once the API behind it is already answering.
+#
+# `pipeline-deploy-one.ps1` still deploys exactly ONE package per call. It is
+# called four times here rather than being taught to loop, so that a by-hand
+# redeploy of a single package stays the same command it has always been, and so
+# a failure names the package in the run summary instead of inside a log.
+# =============================================================================
+parameters:
+# The deploy root is VERSIONED (see deploy/README.md). Bump it here when the
+# version changes, and repoint the IIS sites' physical paths to match. It is a
+# parameter rather than a constant so the pre-production server can diverge from
+# production without this file being copied to say so.
+- name: sitePathRoot
+  type: string
+  default: 'D:\System\v1.0.1'
+
+steps:
+# A deployment job does NOT clone the repository - "A deployment job doesn't
+# automatically clone the source repo. You can check out the source repo within
+# your job with `checkout: self`" (Azure Pipelines, Deployment jobs). Without
+# this, every step below fails with "the term
+# .../deploy/pipeline-deploy-one.ps1 is not recognized", because the deploy
+# scripts these steps run are IN the repository and nothing else puts them on
+# the agent. The artifact `drop` carries the published apps, not the scripts.
+- checkout: self
+  clean: true
+
+# `deploy` auto-injects an artifact download, but naming it keeps the pipeline
+# readable and pins WHICH artifact lands in $(Pipeline.Workspace).
+- download: current
+  artifact: drop
+
+- powershell: |
+    $(Build.SourcesDirectory)/deploy/pipeline-deploy-one.ps1 `
+      -Package  "api" `
+      -ZipName  "SIMF.Api.zip" `
+      -SiteName "SIMF.API" `
+      -SitePath "${{ parameters.sitePathRoot }}\api" `
+      -Drop     "$(Pipeline.Workspace)\drop" `
+      -Root     "$(Pipeline.Workspace)\drop_root"
+  displayName: 'Deploy the API'
+
+- powershell: |
+    $(Build.SourcesDirectory)/deploy/pipeline-deploy-one.ps1 `
+      -Package  "cp" `
+      -ZipName  "SIMF.ControlPanel.zip" `
+      -SiteName "SIMF.CP" `
+      -SitePath "${{ parameters.sitePathRoot }}\cp" `
+      -Drop     "$(Pipeline.Workspace)\drop" `
+      -Root     "$(Pipeline.Workspace)\drop_root"
+  displayName: 'Deploy the Control Panel'
+
+- powershell: |
+    $(Build.SourcesDirectory)/deploy/pipeline-deploy-one.ps1 `
+      -Package  "web" `
+      -ZipName  "SIMF.Web.zip" `
+      -SiteName "SIMF.WEB" `
+      -SitePath "${{ parameters.sitePathRoot }}\web" `
+      -Drop     "$(Pipeline.Workspace)\drop" `
+      -Root     "$(Pipeline.Workspace)\drop_root"
+  displayName: 'Deploy the Website'
+
+- powershell: |
+    $(Build.SourcesDirectory)/deploy/pipeline-deploy-one.ps1 `
+      -Package  "edge" `
+      -ZipName  "SIMF.MobileEdge.zip" `
+      -SiteName "SIMF.EDGE" `
+      -SitePath "${{ parameters.sitePathRoot }}\edge" `
+      -Drop     "$(Pipeline.Workspace)\drop" `
+      -Root     "$(Pipeline.Workspace)\drop_root"
+  displayName: 'Deploy the mobile edge'
