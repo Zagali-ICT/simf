@@ -1,4 +1,6 @@
 // Tests: SIMF.Api.Tests/DelegatesAndBulkBadgesTests.cs
+// Tests: SIMF.Api.Tests/Journey01DelegationToSignInTests.cs (a minted badge
+//        resolves, activates and signs in — the end-to-end holder journey)
 using System.Globalization;
 using System.IO.Compression;
 using Microsoft.EntityFrameworkCore;
@@ -985,6 +987,17 @@ internal sealed partial class AdminAccountService
                     // Placeholder default data — filled in when the badge is assigned.
                     NationalityId = 0,
                     IsDelegate = request.IsDelegate,
+                    // A pre-generated badge is handed out ready to use, so the
+                    // PROFILE is approved here and not only the account above.
+                    // Admission moved onto the profile, and every badge path —
+                    // resolve, gate scan, activation — reads it there; a profile
+                    // left at the PendingApproval default made the minted QR
+                    // below contradict its own documented invariant ("minted the
+                    // moment AdmissionState reaches Approved") and the holder's
+                    // first scan answered "no such badge".
+                    AdmissionState = AccountState.Approved,
+                    StateChangedAt = now,
+                    StateChangedByUserId = actorUserId,
                     // Back-reference to the persisted batch.
                     BadgeBatchId = badgeBatch.Id,
                     CreatedAt = now,

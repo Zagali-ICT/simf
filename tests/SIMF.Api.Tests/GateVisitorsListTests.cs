@@ -245,6 +245,11 @@ public sealed class GateVisitorsListTests : IClassFixture<SimfApiFactory>
             Name = displayName,
             NationalityId = 682,
             PlaceOfBirth = "Riyadh",
+            // Admission is owned by the PROFILE (D-877) and defaults to
+            // PendingApproval, so a visitor approved only on the account row is
+            // refused at the gate with HolderNotApproved - which turned the
+            // "allowed" visitor in these fixtures into a second denied scan.
+            AdmissionState = AccountState.Approved,
             CreatedAt = SimfClock.Now,
         });
         await appDb.SaveChangesAsync();
