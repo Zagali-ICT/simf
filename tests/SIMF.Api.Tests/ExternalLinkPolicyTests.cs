@@ -1,12 +1,12 @@
 // What may be recorded as an external link, and what may not.
 //
-// Two rules, and they pull in opposite directions, which is why they are pinned
-// together rather than in the file for whichever feature added them:
+// Three rules, and the first two pull in opposite directions, which is why they
+// are pinned together rather than in the file for whichever feature added them:
 //
 //   * a PRIVATE file may never become a link at all. An external link stores no
 //     bytes, so it skips the malware scan, the magic-byte check and encryption
-//     at rest. For an ID document or an avatar that is not a shortcut, it is a
-//     way to serve somebody else's server under this system's name.
+//     at rest. For a speaker presentation that is not a shortcut, it is a way to
+//     serve somebody else's server under this system's name.
 //
 //   * an IMAGE link must NOT be held to the video rule. The obvious-looking
 //     hardening — "validate every external link with LiveStreamUrlPolicy" —
@@ -14,6 +14,12 @@
 //     CDN logo, the seeded placeholder logos, and the whole "External link" tab
 //     of the shared upload control. The image surfaces never read the URL: the
 //     download endpoint 302s and the client follows it.
+//
+//   * the OWNER-SCOPED services (avatar, ID document, VIP photo) never reach the
+//     private-file rule at all: this endpoint takes the owner id from the caller,
+//     so it refuses those three outright with 403 before any URL is looked at.
+//     They used to be the examples for the private-file rule above; the 403 now
+//     shadows that 400, so each behaviour is asserted on its own service.
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -63,29 +69,41 @@ public sealed class ExternalLinkPolicyTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task A_private_file_service_refuses_an_external_link()
     {
+        // SpeakerPresentation is Internal-tier, Authenticated-access and encrypted
+        // at rest; a link row would be none of those while still being served under
+        // this system's name. It is the private service this rule can still be
+        // proven on: the owner-scoped ones are refused earlier (see the 403 test
+        // below), and this one is not, so the request reaches the link validator.
         var token = await CreateAdministratorAndSignInAsync();
 
         var resp = await PostAuthAsync(
             "/api/v1/files/link",
-            new { Service = FileService.IdDocument, Url = "https://cdn.example.com/passport.jpg" },
+            new { Service = FileService.SpeakerPresentation, Url = "https://cdn.example.com/deck.pdf" },
             token);
 
         Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
     }
 
-    [Fact]
-    public async Task An_avatar_refuses_an_external_link_too()
+    [Theory]
+    [InlineData(FileService.Avatar)]
+    [InlineData(FileService.IdDocument)]
+    [InlineData(FileService.VipPhoto)]
+    public async Task An_owner_scoped_service_is_refused_by_the_link_endpoint_before_the_url_is_read(
+        FileService service)
     {
-        // Avatar is Confidential and encrypted at rest; a link row would be
-        // neither, while still being downloadable through the same endpoint.
+        // These three own a person, not a content row, and this endpoint takes the
+        // owner id from the caller — so a link here could replace the active file on
+        // anybody's profile. AuthorizeUpload refuses them before the URL is
+        // validated, which is why the private-file 400 above cannot be shown on
+        // them any more: the 403 fires first, whatever the URL.
         var token = await CreateAdministratorAndSignInAsync();
 
         var resp = await PostAuthAsync(
             "/api/v1/files/link",
-            new { Service = FileService.Avatar, Url = "https://cdn.example.com/face.jpg" },
+            new { Service = service, Url = "https://cdn.example.com/face.jpg" },
             token);
 
-        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, resp.StatusCode);
     }
 
     [Theory]
