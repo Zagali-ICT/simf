@@ -9,6 +9,7 @@ import 'package:simf_app/app/widgets/simf_bottom_nav.dart';
 import 'package:simf_app/app/widgets/simf_confirm_dialog.dart';
 import 'package:simf_app/app/widgets/simf_info_dialog.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/core/utils/refresh.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
 import 'package:simf_app/features/moderation/data/moderation_repository.dart';
 import 'package:simf_app/features/sessions/data/seat_map_models.dart';
@@ -66,6 +67,71 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// after hall check-in/out (plus the day / programme-end prompts). This removes
 /// the prompt that used to appear off the sessions list/detail for
 /// non-attendees.
+///
+/// Route: `RouteNames.sessionDetail`.
+/// Data: [authControllerProvider], [myModeratedSessionsProvider],
+///       [seatMapRepositoryProvider], [sessionCalendarProvider],
+///       [sessionDetailRepositoryProvider], [sessionDetailViewProvider],
+///       [simfDataConfigProvider].
+/// Perf: no list — a single-screen layout.
+/// The detail plus the attendee's seat map, loaded together.
+@immutable
+class SessionDetailView {
+  const SessionDetailView({
+    required this.detail,
+    required this.seatMap,
+    required this.seatMapFailed,
+  });
+
+  final SessionDetail detail;
+  final SessionSeatMap? seatMap;
+
+  /// #18 — true when an approved signed-in account's seat-map fetch FAILED, so
+  /// [seatMap] is null because it failed and not because a guest / pending
+  /// account cannot join. Drives the join area's error+retry, so the Join
+  /// affordance is never silently absent.
+  final bool seatMapFailed;
+}
+
+/// One session's detail view, or **null when the server has no such id** (404).
+final sessionDetailViewProvider = FutureProvider.autoDispose
+    .family<SessionDetailView?, String>((ref, sessionId) async {
+  try {
+    final detail =
+        await ref.watch(sessionDetailRepositoryProvider).getDetail(sessionId);
+    // DEF-MOD-004 — the join / my-seat affordances open the attendee-only
+    // routes (#18 my seat, #109 seat picker), so only an attendee's seat map is
+    // fetched: a guest / pending account has no join section (L-3), and a Staff
+    // / Moderator is not offered one either — the router would bounce them Home
+    // the moment they tapped it.
+    final canJoin = canJoinSession(roleOf(ref.watch(authControllerProvider)));
+    SessionSeatMap? seatMap;
+    if (canJoin) {
+      try {
+        seatMap = await ref
+            .watch(seatMapRepositoryProvider)
+            .getSeatMap(sessionId);
+      } on ApiFailure {
+        // 401 (no token) / 403 (not approved) / transport → no join section.
+        seatMap = null;
+      }
+    }
+    return SessionDetailView(
+      detail: detail,
+      seatMap: seatMap,
+      // A null map for an attendee means the fetch FAILED (a success always
+      // returns one), so the body can show a retry instead of silently
+      // dropping the Join button.
+      seatMapFailed: canJoin && seatMap == null,
+    );
+  } on ApiFailure catch (failure) {
+    if (failure.httpStatus == 404) {
+      return null;
+    }
+    rethrow;
+  }
+});
+
 class SessionDetailScreen extends ConsumerStatefulWidget {
   const SessionDetailScreen({required this.sessionId, super.key});
 
@@ -77,72 +143,17 @@ class SessionDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
-  bool _loading = true;
-  bool _error = false;
-  bool _notFound = false;
   bool _busy = false;
-  SessionDetail? _detail;
-  SessionSeatMap? _seatMap;
-  // #18 — true when an approved signed-in account's seat-map fetch FAILED (so
-  // _seatMap is null because it failed, not because a guest/pending can't join).
-  // Drives the join area's error+retry so the Join affordance is never silently
-  // absent.
-  bool _seatMapError = false;
 
-  @override
-  void initState() {
-    super.initState();
-    unawaited(_load());
-  }
+  /// The current load, watched in `build` and read by the actions.
+  AsyncValue<SessionDetailView?> get _async =>
+      ref.watch(sessionDetailViewProvider(widget.sessionId));
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = false;
-      _notFound = false;
-      _seatMapError = false;
-    });
-    // NOTE: do NOT invalidate hallAttendanceStatusProvider here. `_load()` runs
-    // from initState(), and ref.invalidate reaches for the ProviderScope
-    // through dependOnInheritedWidgetOfExactType, which Flutter forbids before
-    // initState completes — it threw on every mount of this screen. It is also
-    // unnecessary: the setState above puts the page into its loading state,
-    // which unmounts the check-in strip, and the provider is an
-    // autoDispose.family, so it disposes and re-fetches when the strip
-    // remounts. Pull-to-refresh therefore refreshes the strip already.
-    try {
-      final repo = ref.read(sessionDetailRepositoryProvider);
-      final detail = await repo.getDetail(widget.sessionId);
-      // DEF-MOD-004 — the join / my-seat affordances open the attendee-only
-      // routes (#18 my seat, #109 seat picker), so only an attendee's seat map
-      // is fetched: a guest / pending account has no join section (L-3), and a
-      // Staff / Moderator is not offered one either — the router would bounce
-      // them Home the moment they tapped it.
-      final canJoin = canJoinSession(_role);
-      final seatMap = canJoin ? await _safeSeatMap() : null;
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _detail = detail;
-        _seatMap = seatMap;
-        // #18 — a null map for an attendee means the fetch FAILED (a success
-        // always returns a map), so flag it: the body shows a retry instead of
-        // silently dropping the Join button.
-        _seatMapError = canJoin && seatMap == null;
-        _loading = false;
-      });
-    } on ApiFailure catch (failure) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _loading = false;
-        _notFound = failure.httpStatus == 404;
-        _error = failure.httpStatus != 404;
-      });
-    }
-  }
+  SessionDetailView? get _view =>
+      ref.read(sessionDetailViewProvider(widget.sessionId)).valueOrNull;
+
+  Future<void> _refresh() =>
+      refreshAsync(ref, sessionDetailViewProvider(widget.sessionId).future);
 
   /// DEF-MOD-008 — the role the ROUTER gates on. `appRole` and
   /// `effectiveAppRole` disagree for a signed-in but not-yet-approved account
@@ -151,22 +162,11 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
   /// bounces.
   AppRole get _role => roleOf(ref.read(authControllerProvider));
 
-  Future<SessionSeatMap?> _safeSeatMap() async {
-    try {
-      return await ref
-          .read(seatMapRepositoryProvider)
-          .getSeatMap(widget.sessionId);
-    } on ApiFailure {
-      // 401 (no token) / 403 (not approved) / transport → no join section (L-3).
-      return null;
-    }
-  }
-
   /// D-485 — join this session. Open-seating → confirm + one-tap join; an
   /// assigned-seat session opens the seat picker (reload on return). A guest /
   /// pending account never reaches here — the join section is hidden for them.
   Future<void> _join(AppL10n l10n) async {
-    final map = _seatMap;
+    final map = _view?.seatMap;
     if (map == null || _busy) {
       return;
     }
@@ -178,7 +178,7 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
         },
       );
       if (picked == true && mounted) {
-        await _load();
+        await _refresh();
       }
       return;
     }
@@ -219,12 +219,12 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
     if (registered && mounted) {
       await SimfInfoDialog.show(context, title: l10n.joinOpenSuccessBody);
     }
-    // _load() opens with an unguarded setState, so leaving while the dialog is
+    // The reload below is provider-driven, so leaving while the dialog is
     // up would throw "setState after dispose".
     if (!mounted) {
       return;
     }
-    await _load();
+    await _refresh();
   }
 
   /// D-485 — cancel the caller's held reservation (before the session starts).
@@ -266,7 +266,7 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
     if (!mounted) {
       return;
     }
-    await _load();
+    await _refresh();
   }
 
   Future<bool?> _confirm(String title, String body, String action) {
@@ -329,6 +329,8 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
+    final async = _async;
+    final view = async.valueOrNull;
     // Watched (not read) so the affordances rebuild when the session resolves.
     // DEF-MOD-008 — the ROUTER gates on effectiveAppRole (D-666: an unapproved
     // account presents as guest). Reading the raw `appRole` here showed the
@@ -364,21 +366,25 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
                 : null),
       ),
       body: SessionDetailStates(
-        loading: _loading,
-        notFound: _notFound,
-        failed: _error || _detail == null,
-        onRefresh: _load,
+        loading: async.isLoading,
+        // Data-null is the 404 (see [sessionDetailViewProvider]); an error is
+        // any other failure. Feeding the SAME states widget the same flags is
+        // what keeps this conversion pixel-identical.
+        notFound: async.hasValue && view == null,
+        failed: async.hasError,
+        onRefresh: _refresh,
         l10n: l10n,
-        onRetry: () => unawaited(_load()),
+        onRetry: () =>
+            ref.invalidate(sessionDetailViewProvider(widget.sessionId)),
         // Built eagerly, so only reference state that survives every branch:
-        // the loaded body reads `_detail!`, which is why it is guarded by the
-        // same `failed` flag the states widget switches on.
-        child: _detail == null
+        // the loaded body reads `view.detail`, which is why it is guarded by
+        // the same null check the states widget switches on.
+        child: view == null
             ? const SizedBox.shrink()
             // The speaker avatars resolve
             // `{base}/app/assets/SpeakerPhoto/{id}/image` (the D-357
             // SpeakerPhoto asset); the base already includes `/api/v1`.
-            : _detailBody(l10n, ref.read(simfDataConfigProvider).baseUrl),
+            : _detailBody(l10n, ref.read(simfDataConfigProvider).baseUrl, view),
       ),
     );
   }
@@ -396,29 +402,30 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
   /// past the description and speakers, but a widget outside the scrollable
   /// swallows the pull gesture and would break pull-to-refresh at the top of
   /// the page (the standing owner rule that every data page pulls to refresh).
-  Widget _detailBody(AppL10n l10n, String baseUrl) {
+  Widget _detailBody(AppL10n l10n, String baseUrl, SessionDetailView view) {
+    final detail = view.detail;
     return SessionDetailBody(
-      detail: _detail!,
-      header: showArrivalStatus(_detail!, _role)
+      detail: detail,
+      header: showArrivalStatus(detail, _role)
           ? SessionArrivalAction(
               sessionId: widget.sessionId,
-              hasEnded: _detail!.phase(saudiNow()) == SessionPhase.ended,
+              hasEnded: detail.phase(saudiNow()) == SessionPhase.ended,
               l10n: l10n,
             )
           : null,
-      seatMap: _seatMap,
+      seatMap: view.seatMap,
       busy: _busy,
       l10n: l10n,
       baseUrl: baseUrl,
       canAsk: canAskQuestion(_role),
-      onAddToCalendar: () => unawaited(_addToCalendar(_detail!, l10n)),
+      onAddToCalendar: () => unawaited(_addToCalendar(detail, l10n)),
       onRemind: () => _remind(l10n),
       onSessionLink: _openLive,
       onSessionSummary: _openSummary,
       onAskHost: _askHost,
       onJoin: () => unawaited(_join(l10n)),
-      seatMapError: _seatMapError,
-      onRetrySeatMap: () => unawaited(_load()),
+      seatMapError: view.seatMapFailed,
+      onRetrySeatMap: () => unawaited(_refresh()),
       onCancelReservation: () => unawaited(_cancelReservation(l10n)),
       onViewSeat: () => context.pushNamed(
         RouteNames.mySeat,

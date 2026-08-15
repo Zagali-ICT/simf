@@ -19,6 +19,11 @@ import 'package:simf_app/features/splash/splash_controller.dart';
 /// (version-policy update check (D-736) + cold-start session restore), then
 /// routes out once. The previous placeholder screen is parked in
 /// `_legacy_mockup/`.
+///
+/// Route: `RouteNames.splash`.
+/// Data: [appUpdateCheckerProvider], [orgProfileProvider],
+///       [splashControllerProvider].
+/// Perf: no list — a single-screen layout.
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 

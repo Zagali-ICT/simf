@@ -50,6 +50,11 @@ enum QuestionRecipient {
 /// /app/sessions/{id}/questions`, `RequireApprovedAccount`, D-169/D-174). A 400
 /// (`SESSION_NOT_LIVE_FOR_QUESTIONS`) / 404 maps to the "questions are closed"
 /// toast; any other failure to a generic error toast.
+///
+/// Route: `RouteNames.sendQuestion`.
+/// Data: [questionsRepositoryProvider], [sessionDetailRepositoryProvider].
+/// Perf: ListView builds every child up front — correct for a short static
+///       page, a defect on a data feed.
 class SendQuestionScreen extends ConsumerStatefulWidget {
   const SendQuestionScreen({this.sessionId, super.key});
 

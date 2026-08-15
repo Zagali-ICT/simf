@@ -33,6 +33,10 @@ export 'data/chatbot_responder.dart';
 /// /app/ai/assistance/history` and each new turn is persisted server-side by
 /// the assistance endpoint, so the conversation survives navigation /
 /// app-restart and the assistant remembers earlier turns.
+///
+/// Route: `RouteNames.chatbot`.
+/// Data: [aiChatHistoryProvider], [chatbotResponderProvider].
+/// Perf: lazy — builds children on demand (ListView.builder).
 class ChatbotScreen extends ConsumerStatefulWidget {
   const ChatbotScreen({super.key});
 

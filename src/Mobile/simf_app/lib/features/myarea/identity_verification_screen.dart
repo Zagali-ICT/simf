@@ -34,6 +34,10 @@ export 'data/liveness.dart';
 /// detector is unavailable (web / test / no camera / permission denied / a
 /// device without Google Play Services) the screen shows a "camera required"
 /// message with a retry — never a gallery fallback.
+///
+/// Route: `RouteNames.identityVerification`.
+/// Data: none — renders what it is given.
+/// Perf: no list — a single-screen layout.
 class IdentityVerificationScreen extends StatefulWidget {
   const IdentityVerificationScreen({this.showConfirmation = false, super.key});
 

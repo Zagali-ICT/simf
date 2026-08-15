@@ -17,6 +17,10 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 /// recognised" snackbars on a steady QR), and a visible camera-error state
 /// instead of a black dead-end when the camera permission is denied. The
 /// camera-first look keeps the KSA-Project design (node 758:4735, D-657).
+///
+/// Route: `RouteNames.badgeSignIn`.
+/// Data: [authRepositoryProvider].
+/// Perf: no list — a single-screen layout.
 class BadgeSignInScreen extends ConsumerStatefulWidget {
   const BadgeSignInScreen({super.key, this.enableCamera = true});
 

@@ -8,6 +8,8 @@ import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_bottom_nav.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/core/errors/api_error_l10n.dart';
+import 'package:simf_app/core/utils/refresh.dart';
 import 'package:simf_app/features/account/data/profile_repository.dart'
     show avatarBustProvider, myProfileProvider, referenceNumberProvider;
 import 'package:simf_app/features/myarea/data/liveness.dart'
@@ -39,6 +41,38 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// المزيد rows (بطاقتي الذكية، اعدادات الحساب). The language toggle, the
 /// (inert) theme tile, the calendar export and sign-out moved to the shell's
 /// side drawer (D-396).
+///
+/// Route: `RouteNames.myArea`.
+/// Data: [authControllerProvider], [avatarBustProvider],
+///       [myAreaDashboardProvider], [myAreaRepositoryProvider],
+///       [referenceNumberProvider].
+/// Perf: ListView builds every child up front — correct for a short static
+///       page, a defect on a data feed.
+/// The My-Area dashboard, or **null when the account is not Approved**.
+///
+/// A FOURTH shape: the approval gate lives in the provider. The endpoint is
+/// Approved-only, so a pending or rejected account must not call it at all
+/// (L-5) — `initState` used to make that decision and skip the load. Null is
+/// therefore "render the limited card from cache", and the 403 that a status
+/// drifting mid-session produces maps to the same null rather than to an
+/// error, exactly as before. Any other failure propagates to the retry surface.
+final myAreaDashboardProvider =
+    FutureProvider.autoDispose<MyAreaDashboard?>((ref) async {
+  final auth = ref.watch(authControllerProvider);
+  final user = auth is AuthStateSignedIn ? auth.session.user : null;
+  if (user == null || !user.isApproved) {
+    return null;
+  }
+  try {
+    return await ref.watch(myAreaRepositoryProvider).getDashboard();
+  } on ApiFailure catch (failure) {
+    if (failure.httpStatus == 403) {
+      return null;
+    }
+    rethrow;
+  }
+});
+
 class MyAreaScreen extends ConsumerStatefulWidget {
   const MyAreaScreen({super.key});
 
@@ -47,66 +81,19 @@ class MyAreaScreen extends ConsumerStatefulWidget {
 }
 
 class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
-  bool _loading = true;
-  bool _error = false;
-  MyAreaDashboard? _dashboard;
-
-  @override
-  void initState() {
-    super.initState();
-    final user = _currentUser;
-    if (user != null && user.isApproved) {
-      unawaited(_load());
-    } else {
-      // Pending / rejected: render the limited card from cache; no dashboard
-      // call (it is Approved-only and would 403 — L-5).
-      _loading = false;
-    }
-  }
-
   CurrentUser? get _currentUser {
     final auth = ref.read(authControllerProvider);
     return auth is AuthStateSignedIn ? auth.session.user : null;
   }
 
-  /// The pull-to-refresh entry point. Unlike [_load] it also drops the cached
-  /// profile read, so the identity card's reference number refreshes with the
-  /// rest of the card instead of being the one stale line on it.
-  ///
-  /// Kept separate from [_load] because [_load] also runs from `initState`, and
-  /// touching the provider scope there throws
-  /// ("dependOnInheritedWidgetOfExactType called before initState completed").
+  /// The pull-to-refresh entry point. Drops the cached profile read as well as
+  /// re-running the dashboard, so the identity card's reference number
+  /// refreshes with the rest of the card instead of being the one stale line on
+  /// it — `myProfileProvider` is a SHARED cache, and a pull that does not
+  /// invalidate it leaves every selector on the pre-pull row.
   Future<void> _refresh() async {
     ref.invalidate(myProfileProvider);
-    await _load();
-  }
-
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = false;
-    });
-    try {
-      final dashboard = await ref.read(myAreaRepositoryProvider).getDashboard();
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _dashboard = dashboard;
-        _loading = false;
-      });
-    } on ApiFailure catch (e) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        // 403 = signed-in but not Approved (edge): fall back to the limited
-        // card from cache (L-5). Any other failure shows the retry surface.
-        _error = e.httpStatus != 403;
-        _dashboard = null;
-        _loading = false;
-      });
-    }
+    await refreshAsync(ref, myAreaDashboardProvider.future);
   }
 
   /// Runs the guided face-capture / liveness flow (D-404) and uploads the
@@ -136,14 +123,12 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
     try {
       await repo.uploadAvatar(bytes: selfie.bytes, filename: selfie.filename);
       bust.state++;
-      if (mounted) {
-        await _load();
-      }
+      ref.invalidate(myAreaDashboardProvider);
     } on ApiFailure catch (e) {
       // Surface the server's actual (user-safe, bilingual) reason instead of a
       // blanket string, so a failure is legible rather than silent.
       if (mounted) {
-        final serverMsg = e.message.trim();
+        final serverMsg = e.localizedMessage(l10n).trim();
         final text = serverMsg.isEmpty ? l10n.avatarUploadFailed : serverMsg;
         messenger.showSnackBar(SnackBar(content: Text(text)));
       }
@@ -172,17 +157,12 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
   }
 
   Widget _buildBody(AppL10n l10n, String? referenceNumber) {
-    if (_loading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    if (_error) {
-      return _buildErrorState(l10n);
-    }
+    // BUG-013 — a TRUE guest (no account at all). Checked BEFORE the provider,
+    // because the bottom nav switches tabs inside the shell, so the router's
+    // auth redirect never runs and a signed-out visitor lands here; the
+    // limited view below described an account "under review" that was never
+    // submitted, with no way out.
     if (_currentUser == null) {
-      // BUG-013 — a TRUE guest (no account at all). The bottom nav switches
-      // tabs inside the shell, so the router's auth redirect never runs and a
-      // signed-out visitor lands here; the limited view below described an
-      // account "under review" that was never submitted, with no way out.
       return SimfGuestPrompt(
         icon: Icons.person_outline,
         message: l10n.myAreaGuestNote,
@@ -190,24 +170,26 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
         createAccountLabel: l10n.signUpButton,
       );
     }
-    final dashboard = _dashboard;
-    if (dashboard == null) {
-      return _buildLimited(l10n);
-    }
-    return _buildDashboard(l10n, dashboard, referenceNumber);
+    return ref.watch(myAreaDashboardProvider).when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (_, __) => _buildErrorState(l10n),
+          // Null is "not Approved" (see [myAreaDashboardProvider]) — the
+          // limited card from cache, not an error.
+          data: (dashboard) => dashboard == null
+              ? _buildLimited(l10n)
+              : _buildDashboard(l10n, dashboard, referenceNumber),
+        );
   }
 
   Widget _buildErrorState(AppL10n l10n) {
     // Pull-to-refresh also retries: the error surface is hosted in a scrollable
     // so SimfPullToRefresh's gesture fires even though the content is short.
-    return SimfPullToRefresh(
+    return SimfRefreshableMessage(
       onRefresh: _refresh,
-      child: SimfPullableHost(
-        child: SimfErrorState(
-          message: l10n.myAreaError,
-          retryLabel: l10n.retryLabel,
-          onRetry: () => unawaited(_load()),
-        ),
+      child: SimfErrorState(
+        message: l10n.myAreaError,
+        retryLabel: l10n.retryLabel,
+        onRetry: () => ref.invalidate(myAreaDashboardProvider),
       ),
     );
   }

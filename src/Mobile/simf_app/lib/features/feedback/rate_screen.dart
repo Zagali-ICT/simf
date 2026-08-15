@@ -6,6 +6,7 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/core/utils/gregorian_month_names.dart';
+import 'package:simf_app/core/utils/refresh.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
 import 'package:simf_app/core/validation/field_limits.dart';
 import 'package:simf_app/features/feedback/data/feedback_repository.dart';
@@ -20,11 +21,34 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// Page 040 — تقييم الملتقى · Rate (#40, `/rate`, login-only).
 ///
 /// Dynamic, config-driven rating screen. It fetches the form for a rating type
-/// (resolved by [code] — e.g. "App" / "Session" — or [ratingTypeId]) and
-/// optional [targetId] (a session id for a per-session type), then renders the
+/// (resolved by `code` — e.g. "App" / "Session" — or `ratingTypeId`) and
+/// optional `targetId` (a session id for a per-session type), then renders the
 /// optional overall star row, the server-defined grouped + flat questions (each
 /// a 1–5 star bar) and the optional comment box, prefilled from any existing
 /// submission. `GET /app/feedback/form` then `POST /app/feedback/submit`.
+///
+/// Route: `RouteNames.rate`.
+/// Data: [feedbackRepositoryProvider], [ratingFormProvider].
+/// Perf: ListView builds every child up front — correct for a short static
+///       page, a defect on a data feed.
+/// Identifies which rating form to load. A record, so two screens asking for
+/// the same form share one request.
+typedef RatingFormKey = ({
+  String? code,
+  String? ratingTypeId,
+  String? targetId,
+});
+
+/// The rating form for [RatingFormKey], with any existing submission on it.
+final ratingFormProvider = FutureProvider.autoDispose
+    .family<RatingFormView, RatingFormKey>(
+  (ref, key) => ref.watch(feedbackRepositoryProvider).getForm(
+        code: key.code,
+        ratingTypeId: key.ratingTypeId,
+        targetId: key.targetId,
+      ),
+);
+
 class RateScreen extends ConsumerStatefulWidget {
   const RateScreen({
     super.key,
@@ -44,9 +68,6 @@ class RateScreen extends ConsumerStatefulWidget {
 class _RateScreenState extends ConsumerState<RateScreen> {
   final TextEditingController _comment = TextEditingController();
 
-  RatingFormView? _form;
-  bool _loading = true;
-  bool _loadFailed = false;
   bool _submitting = false;
 
   int _overall = 0;
@@ -56,7 +77,7 @@ class _RateScreenState extends ConsumerState<RateScreen> {
   @override
   void initState() {
     super.initState();
-    unawaited(_loadForm());
+    unawaited(_prefillFromExisting());
   }
 
   @override
@@ -65,46 +86,40 @@ class _RateScreenState extends ConsumerState<RateScreen> {
     super.dispose();
   }
 
-  Future<void> _loadForm() async {
-    setState(() {
-      _loading = true;
-      _loadFailed = false;
-    });
+  /// Default to the global "App" rating when no type was specified (the
+  /// More-menu entry point).
+  RatingFormKey get _key => (
+        code: widget.ratingTypeId == null ? (widget.code ?? 'App') : null,
+        ratingTypeId: widget.ratingTypeId,
+        targetId: widget.targetId,
+      );
+
+  /// Seeds the stars, the per-question answers and the comment from any
+  /// EXISTING submission, once.
+  ///
+  /// Awaits the provider's first future rather than listening, for the reason
+  /// the old comment gave about pull-to-refresh: re-running the prefill over a
+  /// part-scored form would reset the user's stars.
+  Future<void> _prefillFromExisting() async {
+    final RatingFormView form;
     try {
-      // Default to the global "App" rating when no type was specified (the
-      // More-menu entry point).
-      final form = await ref.read(feedbackRepositoryProvider).getForm(
-            code: widget.ratingTypeId == null ? (widget.code ?? 'App') : null,
-            ratingTypeId: widget.ratingTypeId,
-            targetId: widget.targetId,
-          );
-      if (!mounted) {
-        return;
-      }
-      // Prefill from any existing submission.
-      final existing = form.existing;
-      if (existing != null) {
-        _overall = existing.overallStars ?? 0;
-        _answers
-          ..clear()
-          ..addAll(existing.answers);
-        if ((existing.comment ?? '').isNotEmpty) {
-          _comment.text = existing.comment!;
-        }
-      }
-      setState(() {
-        _form = form;
-        _loading = false;
-      });
-    } on ApiFailure {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _loading = false;
-        _loadFailed = true;
-      });
+      form = await ref.read(ratingFormProvider(_key).future);
+    } on Object {
+      return; // The failed-load branch renders.
     }
+    final existing = form.existing;
+    if (!mounted || existing == null) {
+      return;
+    }
+    setState(() {
+      _overall = existing.overallStars ?? 0;
+      _answers
+        ..clear()
+        ..addAll(existing.answers);
+      if ((existing.comment ?? '').isNotEmpty) {
+        _comment.text = existing.comment!;
+      }
+    });
   }
 
   Future<void> _submit(AppL10n l10n, RatingFormView form) async {
@@ -176,27 +191,27 @@ class _RateScreenState extends ConsumerState<RateScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    final form = _form;
     return SimfPageShell(
       title: l10n.rateTitle,
       onBack: () => backOrHome(context),
-      body: _loading
-          ? const Center(
+      body: ref.watch(ratingFormProvider(_key)).when(
+            loading: () => const Center(
               child: CircularProgressIndicator(color: SimfTokens.accent),
-            )
-          : _loadFailed || form == null
-              // Only the failed-load branch is pull-to-refreshable: _loadForm
-              // prefills _overall/_answers from any existing submission, so
-              // re-running it over a part-scored form would reset the user's
-              // stars.
-              ? SimfRefreshableMessage(
-                  onRefresh: _loadForm,
-                  child: RateLoadError(
-                    message: l10n.rateLoadFailed,
-                    onRetry: _loadForm,
-                  ),
-                )
-              : _buildForm(l10n, form),
+            ),
+            // Only the failed-load branch is pull-to-refreshable: the prefill
+            // seeds _overall/_answers from any existing submission, so
+            // re-running it over a part-scored form would reset the user's
+            // stars.
+            error: (_, __) => SimfRefreshableMessage(
+              onRefresh: () =>
+                  refreshAsync(ref, ratingFormProvider(_key).future),
+              child: RateLoadError(
+                message: l10n.rateLoadFailed,
+                onRetry: () => ref.invalidate(ratingFormProvider(_key)),
+              ),
+            ),
+            data: (form) => _buildForm(l10n, form),
+          ),
     );
   }
 

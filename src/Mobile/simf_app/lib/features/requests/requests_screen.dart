@@ -25,6 +25,13 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// attendance / participation-document / badge-update). Supersedes the read-only
 /// My-meetings screen. The user can cancel their own pending speaker / document
 /// / badge requests.
+///
+/// Route: `RouteNames.requests`.
+/// Data: [authControllerProvider], [currentUserMeetingAccessProvider],
+///       [myRequestsProvider], [requestsRepositoryProvider],
+///       [simfDataConfigProvider].
+/// Perf: ListView builds every child up front — correct for a short static
+///       page, a defect on a data feed.
 class RequestsScreen extends ConsumerStatefulWidget {
   const RequestsScreen({super.key});
 
@@ -114,14 +121,12 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
       onBack: () => backOrHome(context),
       body: ref.watch(myRequestsProvider).when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (_, __) => SimfPullToRefresh(
+            error: (_, __) => SimfRefreshableMessage(
               onRefresh: _refresh,
-              child: SimfPullableHost(
-                child: SimfErrorState(
-                  message: l10n.requestsError,
-                  retryLabel: l10n.retryLabel,
-                  onRetry: () => ref.invalidate(myRequestsProvider),
-                ),
+              child: SimfErrorState(
+                message: l10n.requestsError,
+                retryLabel: l10n.retryLabel,
+                onRetry: () => ref.invalidate(myRequestsProvider),
               ),
             ),
             data: (items) => _buildBody(l10n, items),

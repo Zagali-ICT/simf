@@ -305,12 +305,25 @@ Under `test/` mirroring the `lib/` path:
 ---
 
 ## 11. Lint gate (see analysis_options.yaml)
-- Adopt `very_good_analysis` at **warning** severity with a recorded baseline; do
-  NOT flip rules to `error` globally (see the ADOPTION note in
-  analysis_options.yaml — ~445 relative imports + 526 inline styles would flood
-  day one and make the gate unsatisfiable).
-- The per-module gate is **"zero NEW analyzer issues + zero issues in the touched
-  module's files"** — not repo-wide zero, until Phase 6.
+- **The gate is repo-wide zero, and CI enforces it.** `very_good_analysis` runs
+  over `lib`, `test`, `integration_test` **and both local packages**, and the
+  MobileApp stage no longer passes `--no-fatal-infos` — an analyzer info fails
+  the build (2026-08-14).
+
+  > This bullet used to read "do NOT flip rules to `error` globally — ~445
+  > relative imports + 526 inline styles would flood day one and make the gate
+  > unsatisfiable", and the per-module gate below used to be "zero NEW issues +
+  > zero in the touched module's files, not repo-wide zero". Both were correct
+  > when written and are now simply done: those two counts, and the ~2,137
+  > infos and 1,628 over-long lines that came after them, are all 0. The
+  > *reasoning* still governs anything added later — **promote a rule only once
+  > it already reads zero**, because a gate that fails every build gets switched
+  > off, which is exactly what happened to the .NET test stage.
+
+- Two rules are OFF rather than clean, each with its measurement recorded at the
+  rule in `analysis_options.yaml` (`specify_nonobvious_property_types`,
+  `public_member_api_docs`), and ~two dozen sites carry a targeted `// ignore:`.
+  **If you add one, write why the analyzer is WRONG about that line, or fix it.**
 - **Never run `dart format` on its own.** The ban's premise was re-measured on
   2026-08-14 against 250 touched files and it holds exactly: Flutter 3.44's
   "tall" formatter strips the trailing commas `require_trailing_commas` demands,
@@ -468,8 +481,15 @@ restarting the app. `SimfPageShell` only DEFINES the refresh widgets; applying t
 is opt-in per screen, which is why a grep for the widget names reads as coverage
 when it is not.
 
-**Exempt screens, with the reason — this list is the audit's baseline, so a new
-screen not on it and not refreshable is a defect, not a judgement call:**
+**The baseline is `test/repo/pull_to_refresh_coverage_test.dart`, not this
+table.** That test enumerates every screen that fetches and asserts the ones
+without a refresh hook are exactly its reviewed `_exempt` map — so a new screen
+that loads data and forgets the pull fails the build, and a screen that
+legitimately should not have one fails until it is added there *with its
+reason*. The table below explains the **categories** and is the place to read
+why; it is not a second copy to keep in step, and it deliberately does not
+match entry-for-entry (`guest` and `forum_guide` appear here because they have
+no pull, but they never fetch, so the test has nothing to excuse).
 
 | Screen(s) | Why exempt |
 |---|---|

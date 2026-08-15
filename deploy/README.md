@@ -77,7 +77,7 @@ Build, Test & Publish ──▶ Deploy to IIS
   were meant to deploy simultaneously, but a self-hosted organisation typically
   has **one parallel job slot**: the second job took an agent, initialised, then
   sat waiting for a slot that only freed when the first finished. A run that
-  appears to hang after *Initialize job* with no step output is that (D-899).
+  appears to hang after *Initialize job* with no step output is that (D-904).
   Sequencing costs nothing that was really being had, and pre-production now
   genuinely rehearses first. The `dependsOn` is conditional — on a
   production-only run `DeployPreProduction` is never emitted, and naming a
@@ -90,11 +90,11 @@ Build, Test & Publish ──▶ Deploy to IIS
 | `deployPreProduction` | Deploy to Pre-production (NO agent yet — deploys to PRODUCTION) | **`false`** |
 | `deployProduction` | Deploy to Production | `true` |
 
-> ### ⚠️ There is only one agent, and it is on production (D-901)
+> ### ⚠️ There is only one agent, and it is on production (D-906)
 >
 > The `Default` pool holds a single agent — `server` on `WIN-MAP9VAMAU4Q`, the
 > **production** box (`SIMF APP 01`). Both deployment jobs draw from that pool,
-> and neither environment has a VM resource to bind it elsewhere (D-900), so
+> and neither environment has a VM resource to bind it elsewhere (D-905), so
 > **both jobs run on production**.
 >
 > `DeployPreProduction` therefore rehearses nothing. It deploys the same four
@@ -323,7 +323,7 @@ These are **placeholders** — set them to the real SIMF server values:
    has been running these deploys all along.
 
    **Do not add `resourceType: virtualMachine`.** It has been tried twice and
-   broke deploys both times (D-898, D-900). It demands a registered VM resource
+   broke deploys both times (D-903, D-905). It demands a registered VM resource
    and the run dies with *"No resource were found in the environment with ID 3"*.
    It is the right construct for an estate whose servers are registered as VM
    resources; this one is not.

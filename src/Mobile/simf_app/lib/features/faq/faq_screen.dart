@@ -17,6 +17,11 @@ import 'package:simf_app/features/faq/widgets/faq_tile.dart';
 /// Group names are surfaced as section headers only when there is more than one
 /// group — a single-group catalogue renders the flat accordion the design
 /// shows.
+///
+/// Route: `RouteNames.faq`.
+/// Data: [faqProvider].
+/// Perf: ListView builds every child up front — correct for a short static
+///       page, a defect on a data feed.
 class FaqScreen extends ConsumerWidget {
   const FaqScreen({super.key});
 
@@ -34,26 +39,22 @@ class FaqScreen extends ConsumerWidget {
       onBack: () => backOrHome(context),
       body: faq.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => SimfPullToRefresh(
+        error: (_, __) => SimfRefreshableMessage(
           onRefresh: onRefresh,
-          child: SimfPullableHost(
-            child: SimfErrorState(
-              message: l10n.faqError,
-              retryLabel: l10n.retryLabel,
-              onRetry: () => ref.invalidate(faqProvider),
-            ),
+          child: SimfErrorState(
+            message: l10n.faqError,
+            retryLabel: l10n.retryLabel,
+            onRetry: () => ref.invalidate(faqProvider),
           ),
         ),
         data: (groups) {
           final hasEntries = groups.any((g) => g.entries.isNotEmpty);
           if (!hasEntries) {
-            return SimfPullToRefresh(
+            return SimfRefreshableMessage(
               onRefresh: onRefresh,
-              child: SimfPullableHost(
-                child: SimfEmptyState(
-                  icon: Icons.help_outline,
-                  message: l10n.faqEmpty,
-                ),
+              child: SimfEmptyState(
+                icon: Icons.help_outline,
+                message: l10n.faqEmpty,
               ),
             );
           }

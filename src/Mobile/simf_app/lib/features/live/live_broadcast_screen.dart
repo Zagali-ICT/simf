@@ -9,6 +9,7 @@ import 'package:simf_app/app/widgets/simf_bottom_nav.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/core/organization_profile/organization_profile.dart';
 import 'package:simf_app/core/site_settings/site_settings.dart';
+import 'package:simf_app/core/utils/refresh.dart';
 import 'package:simf_app/features/live/data/live_models.dart';
 import 'package:simf_app/features/live/data/live_presentation.dart';
 import 'package:simf_app/features/live/data/live_repository.dart';
@@ -56,6 +57,13 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// feed URL is sniffed by `YoutubeUrl`: a YouTube link plays via the IFrame
 /// player, anything else (HLS/MP4) via `video_player`. The player widget owns
 /// its own controller lifecycle, so swapping the active URL just rebuilds it.
+///
+/// Route: `RouteNames.liveBroadcast`.
+/// Data: [authControllerProvider], [liveRepositoryProvider],
+///       [liveSessionProvider], [orgProfileProvider],
+///       [sessionRatePromptTrackerProvider], [siteSettingsProvider],
+///       [upcomingSessionsProvider].
+/// Perf: no list — a single-screen layout.
 class LiveBroadcastScreen extends ConsumerStatefulWidget {
   const LiveBroadcastScreen({this.sessionId, this.liveUrl, super.key});
 
@@ -67,14 +75,43 @@ class LiveBroadcastScreen extends ConsumerStatefulWidget {
       _LiveBroadcastScreenState();
 }
 
-class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
-  bool _loading = false;
-  bool _error = false;
-  bool _notFound = false;
-  LiveSession? _session;
-  // D-433 — the "الجلسات القادمة" strip (a non-blocking second read).
-  List<UpcomingSession> _upcoming = const <UpcomingSession>[];
+/// One live session, or **null when the server has no such id** (a 404).
+///
+/// The fold-to-null shape: the screen answers a missing session with its own
+/// not-found copy rather than the error surface.
+///
+/// Only ever watched behind the login gate and the has-an-id check — a guest
+/// sees the need-login prompt and the id-less global feed never reads a
+/// session, so neither path may start this request.
+final liveSessionProvider =
+    FutureProvider.autoDispose.family<LiveSession?, String>((ref, id) async {
+  try {
+    return await ref.watch(liveRepositoryProvider).getLiveSession(id);
+  } on ApiFailure catch (failure) {
+    if (failure.httpStatus == 404) {
+      return null;
+    }
+    rethrow;
+  }
+});
 
+/// D-433 — the "الجلسات القادمة" strip.
+///
+/// Optional chrome, so a failure yields an EMPTY list rather than an error:
+/// a list failure must not break the live screen, which is exactly what the
+/// old non-blocking second read said by swallowing its own `ApiFailure`.
+final upcomingSessionsProvider = FutureProvider.autoDispose
+    .family<List<UpcomingSession>, String?>((ref, excludeId) async {
+  try {
+    return await ref
+        .watch(liveRepositoryProvider)
+        .getUpcomingSessions(excludeSessionId: excludeId);
+  } on ApiFailure {
+    return const <UpcomingSession>[];
+  }
+});
+
+class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
   /// When true the player shows the sign-language feed instead of the main one.
   /// Only meaningful when the session carries both feeds (the toggle is hidden
   /// otherwise).
@@ -86,13 +123,18 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
 
   /// Non-null only when this view is eligible to prompt on leave — a signed-in
   /// approved attendee who actually had a live feed to watch. Captured in
-  /// [_load] so [dispose] never reads a provider from a dead element. Shares
-  /// the D-690 tracker + the `Session` rating code, so watching online then
-  /// leaving the (ended) session detail can't double-prompt.
+  /// `_captureRateEligibility` so [dispose] never reads a provider from a dead
+  /// element. Shares the D-690 tracker + the `Session` rating code, so watching
+  /// online then leaving the (ended) session detail can't double-prompt.
   SessionRatePromptTracker? _rateTracker;
 
-  bool get _hasId =>
-      widget.sessionId != null && widget.sessionId!.trim().isNotEmpty;
+  /// The trimmed session id, or null when this view is the id-less global feed.
+  String? get _id {
+    final id = widget.sessionId?.trim();
+    return (id == null || id.isEmpty) ? null : id;
+  }
+
+  bool get _hasId => _id != null;
 
   @override
   void initState() {
@@ -101,7 +143,7 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
     // of the stream, so don't fetch the session for them.
     final isSignedIn = ref.read(authControllerProvider) is AuthStateSignedIn;
     if (isSignedIn && _hasId) {
-      unawaited(_load());
+      unawaited(_captureRateEligibility());
     }
   }
 
@@ -152,81 +194,50 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
     });
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = false;
-      _notFound = false;
-    });
+  /// D-712 — capture the after-watch rate eligibility once the session has
+  /// loaded: an approved attendee (a pending account presents as guest via
+  /// `effectiveAppRole` and is excluded) who actually had a live feed to watch.
+  ///
+  /// Awaits the provider's FIRST future rather than listening, for the reason
+  /// the tracker exists: the reference must be captured while this element is
+  /// alive so [dispose] reuses it instead of reading a provider from a dead
+  /// element. Listening would also re-run this on every pull-to-refresh.
+  Future<void> _captureRateEligibility() async {
+    final LiveSession? session;
     try {
-      final session = await ref
-          .read(liveRepositoryProvider)
-          .getLiveSession(widget.sessionId!.trim());
-      if (!mounted) {
-        return;
-      }
-      // D-712 — capture the after-watch rate eligibility: an approved attendee
-      // (a pending account presents as guest via effectiveAppRole and is
-      // excluded) who actually had a live feed to watch. Captured here so
-      // [dispose] reuses the reference instead of reading a provider from a
-      // dead element.
-      final auth = ref.read(authControllerProvider);
-      final isApprovedAttendee = auth is AuthStateSignedIn &&
-          isAttendeeRole(auth.session.user.effectiveAppRole);
-      // 2026-07-22 — respect the CP: no after-watch prompt when the "Session"
-      // rating type is deactivated in RatingConfig
-      // (siteSettings.sessionRatingEnabled). Fail-open (true) while the cached
-      // settings load / on error, matching the server, which also suppresses
-      // the notification when the type is off.
-      final sessionRatingEnabled =
-          ref.read(siteSettingsProvider).valueOrNull?.sessionRatingEnabled ??
-              true;
-      _rateTracker = isApprovedAttendee &&
-              session.liveStreamUrl != null &&
-              sessionRatingEnabled
-          ? ref.read(sessionRatePromptTrackerProvider)
-          : null;
-      setState(() {
-        _session = session;
-        _showSignLanguage = false;
-        _loading = false;
-      });
-      // The upcoming-sessions strip is optional chrome — load it after the main
-      // read, non-blocking (a list failure must not break the live screen).
-      unawaited(_loadUpcoming());
-    } on ApiFailure catch (failure) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _loading = false;
-        _notFound = failure.httpStatus == 404;
-        _error = failure.httpStatus != 404;
-      });
+      session = await ref.read(liveSessionProvider(_id!).future);
+    } on Object {
+      return; // The error branch renders; there was nothing to watch.
     }
-  }
-
-  Future<void> _loadUpcoming() async {
-    try {
-      final upcoming = await ref
-          .read(liveRepositoryProvider)
-          .getUpcomingSessions(excludeSessionId: widget.sessionId?.trim());
-      if (!mounted) {
-        return;
-      }
-      setState(() => _upcoming = upcoming);
-    } on ApiFailure {
-      // Optional strip — ignore a list failure, the live screen still works.
+    if (!mounted || session == null) {
+      return;
     }
+    final auth = ref.read(authControllerProvider);
+    final isApprovedAttendee = auth is AuthStateSignedIn &&
+        isAttendeeRole(auth.session.user.effectiveAppRole);
+    // 2026-07-22 — respect the CP: no after-watch prompt when the "Session"
+    // rating type is deactivated in RatingConfig
+    // (siteSettings.sessionRatingEnabled). Fail-open (true) while the cached
+    // settings load / on error, matching the server, which also suppresses
+    // the notification when the type is off.
+    final sessionRatingEnabled =
+        ref.read(siteSettingsProvider).valueOrNull?.sessionRatingEnabled ??
+            true;
+    _rateTracker = isApprovedAttendee &&
+            session.liveStreamUrl != null &&
+            sessionRatingEnabled
+        ? ref.read(sessionRatePromptTrackerProvider)
+        : null;
   }
 
   /// Owner rule: every data page pulls to refresh. Re-reads the session and the
   /// upcoming strip together; the org profile backs the id-less global feed, so
   /// it is warmed too.
   Future<void> _refresh() async {
+    final id = _id;
     await Future.wait<void>(<Future<void>>[
-      if (_hasId) _load(),
-      _loadUpcoming(),
+      if (id != null) refreshAsync(ref, liveSessionProvider(id).future),
+      refreshAsync(ref, upcomingSessionsProvider(id).future),
       ref.read(orgProfileProvider.notifier).warm(),
     ]);
   }
@@ -303,33 +314,36 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
         ),
       );
     }
-    if (_loading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    if (_notFound) {
-      return SimfPullableHost(
-        child: SimfEmptyState(
-          icon: Icons.live_tv_outlined,
-          message: l10n.sessionNotFound,
-        ),
-      );
-    }
-    if (_error || _session == null) {
-      return SimfPullableHost(
-        child: SimfErrorState(
-          message: l10n.liveBroadcastError,
-          retryLabel: l10n.retryLabel,
-          onRetry: () => unawaited(_load()),
-        ),
-      );
-    }
-    return _content(l10n, _session!);
+    // Reached only past the login gate and the id-less global-feed branch
+    // above, which is what keeps a guest and the global feed from ever
+    // starting this request.
+    final id = _id!;
+    return ref.watch(liveSessionProvider(id)).when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (_, __) => SimfPullableHost(
+            child: SimfErrorState(
+              message: l10n.liveBroadcastError,
+              retryLabel: l10n.retryLabel,
+              onRetry: () => ref.invalidate(liveSessionProvider(id)),
+            ),
+          ),
+          // Null is the not-found state (see [liveSessionProvider]).
+          data: (session) => session == null
+              ? SimfPullableHost(
+                  child: SimfEmptyState(
+                    icon: Icons.live_tv_outlined,
+                    message: l10n.sessionNotFound,
+                  ),
+                )
+              : _content(l10n, session),
+        );
   }
 
   Widget _content(AppL10n l10n, LiveSession session) => LiveContentView(
         l10n: l10n,
         session: session,
-        upcoming: _upcoming,
+        upcoming: ref.watch(upcomingSessionsProvider(_id)).valueOrNull ??
+            const <UpcomingSession>[],
         showSignLanguage: _showSignLanguage,
         hasId: _hasId,
         onSignLanguageChanged: (value) =>

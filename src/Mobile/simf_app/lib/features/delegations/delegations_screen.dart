@@ -16,6 +16,11 @@ import 'package:simf_app/features/delegations/widgets/delegations_body.dart';
 /// delegation (name + role), the date range and member count, topped by a
 /// stats strip (participating countries + total participants) and a search box.
 /// Public (anonymous `GET /app/delegations`).
+///
+/// Route: `RouteNames.delegations`.
+/// Data: [currentUserMeetingAccessProvider], [delegationsProvider].
+/// Perf: ListView builds every child up front — correct for a short static
+///       page, a defect on a data feed.
 class DelegationsScreen extends ConsumerStatefulWidget {
   const DelegationsScreen({super.key});
 

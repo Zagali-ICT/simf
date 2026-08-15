@@ -43,12 +43,12 @@ trigger:
 # --- Which environments this run deploys to (chosen in the Run pipeline dialog).
 #
 #     `deployPreProduction` DEFAULTS TO FALSE, and the reason is not caution
-#     (D-901): THERE IS ONLY ONE AGENT, AND IT IS ON THE PRODUCTION SERVER.
+#     (D-906): THERE IS ONLY ONE AGENT, AND IT IS ON THE PRODUCTION SERVER.
 #
 #     The `Default` pool contains a single agent - `server` on
 #     `WIN-MAP9VAMAU4Q`, which is the production box (SIMF APP 01). Both
 #     deployment jobs draw from that pool, and neither environment has a VM
-#     resource to bind it elsewhere (D-900), so BOTH jobs run on production.
+#     resource to bind it elsewhere (D-905), so BOTH jobs run on production.
 #     `DeployPreProduction` does not rehearse anything: it deploys the same four
 #     packages to the live production server a second time, stopping and
 #     restarting every site again for no gain.
@@ -889,7 +889,7 @@ stages:
 # deploys the whole time.
 #
 # DO NOT ADD `resourceType: virtualMachine` HERE. It has been tried twice and
-# broken deploys both times (D-898, D-900): it demands a registered VM resource,
+# broken deploys both times (D-903, D-905): it demands a registered VM resource,
 # and the run dies with "No resource were found in the environment with ID 3".
 # It is the correct construct for an estate whose servers are registered as VM
 # resources; this one is not. Register both servers first, confirm they appear

@@ -12,6 +12,11 @@ import 'package:simf_app/features/forum_guide/widgets/forum_guide_cards.dart';
 ///
 /// Static in-app copy — no backend (the steps live in [AppL10n]). The caret on
 /// each card is decorative, matching the design (the steps do not navigate).
+///
+/// Route: `RouteNames.forumGuide`.
+/// Data: none — renders what it is given.
+/// Perf: ListView builds every child up front — correct for a short static
+///       page, a defect on a data feed.
 class ForumGuideScreen extends StatelessWidget {
   const ForumGuideScreen({super.key});
 

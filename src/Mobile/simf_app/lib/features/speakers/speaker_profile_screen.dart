@@ -9,6 +9,7 @@ import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/core/net/asset_urls.dart';
+import 'package:simf_app/core/utils/refresh.dart';
 import 'package:simf_app/features/account/data/profile_repository.dart';
 import 'package:simf_app/features/speakers/data/speaker_models.dart';
 import 'package:simf_app/features/speakers/data/speakers_repository.dart';
@@ -35,6 +36,29 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// the `MeetingRequestSheet` (the endpoint enforces the same VIP rule); the
 /// opted-in social links (only when `allowsDataSharing`); and the speaker's
 /// sessions (`SpeakerSessionRow`, tap → session detail 17).
+///
+/// Route: `RouteNames.speakerProfile`.
+/// Data: [authControllerProvider], [currentUserMeetingAccessProvider],
+///       [simfDataConfigProvider], [speakerDetailProvider],
+///       [speakersRepositoryProvider].
+/// Perf: ListView builds every child up front — correct for a short static
+///       page, a defect on a data feed.
+/// One speaker, or **null when the server has no such id** (a 404).
+///
+/// The `newsArticleProvider` shape: a 404 is "this speaker is gone", which the
+/// screen answers with its own not-found copy rather than the error surface.
+final speakerDetailProvider =
+    FutureProvider.autoDispose.family<SpeakerDetail?, String>((ref, id) async {
+  try {
+    return await ref.watch(speakersRepositoryProvider).getSpeaker(id);
+  } on ApiFailure catch (failure) {
+    if (failure.httpStatus == 404) {
+      return null;
+    }
+    rethrow;
+  }
+});
+
 class SpeakerProfileScreen extends ConsumerStatefulWidget {
   const SpeakerProfileScreen({required this.speakerId, super.key});
 
@@ -46,46 +70,11 @@ class SpeakerProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
-  bool _loading = true;
-  bool _error = false;
-  bool _notFound = false;
-  SpeakerDetail? _speaker;
+  /// The active CV tab — UI state, so it stays on the widget.
   int _activeCv = 0;
 
-  @override
-  void initState() {
-    super.initState();
-    unawaited(_load());
-  }
-
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = false;
-      _notFound = false;
-    });
-    try {
-      final speaker = await ref
-          .read(speakersRepositoryProvider)
-          .getSpeaker(widget.speakerId);
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _speaker = speaker;
-        _loading = false;
-      });
-    } on ApiFailure catch (failure) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _loading = false;
-        _notFound = failure.httpStatus == 404;
-        _error = failure.httpStatus != 404;
-      });
-    }
-  }
+  Future<void> _refresh() =>
+      refreshAsync(ref, speakerDetailProvider(widget.speakerId).future);
 
   void _onRequestMeeting(SpeakerDetail speaker, AppL10n l10n) {
     final auth = ref.read(authControllerProvider);
@@ -123,7 +112,11 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    final speaker = _speaker;
+    // The header renders the name/rank/flag as soon as they exist and its
+    // placeholder before that, so it reads the value directly rather than
+    // branching — the three-state handling belongs in the body.
+    final speaker =
+        ref.watch(speakerDetailProvider(widget.speakerId)).valueOrNull;
     final isArabic = l10n.isArabic;
     final rank = speaker?.localizedRank(isArabic: isArabic)?.trim();
     return SimfPageShell(
@@ -141,38 +134,33 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
   }
 
   Widget _buildBody(AppL10n l10n) {
-    if (_loading) {
-      return const Center(
-        child: CircularProgressIndicator(color: SimfTokens.accent),
-      );
-    }
-    if (_notFound) {
-      return SimfPullToRefresh(
-        onRefresh: _load,
-        child: SimfPullableHost(
-          child: SimfEmptyState(
-            icon: Icons.person_off_outlined,
-            message: l10n.speakerNotFound,
+    return ref.watch(speakerDetailProvider(widget.speakerId)).when(
+          loading: () => const Center(
+            child: CircularProgressIndicator(color: SimfTokens.accent),
           ),
-        ),
-      );
-    }
-    if (_error || _speaker == null) {
-      return SimfPullToRefresh(
-        onRefresh: _load,
-        child: SimfPullableHost(
-          child: SimfErrorState(
-            message: l10n.speakerProfileError,
-            retryLabel: l10n.retryLabel,
-            onRetry: () => unawaited(_load()),
+          error: (_, __) => SimfRefreshableMessage(
+            onRefresh: _refresh,
+            child: SimfErrorState(
+              message: l10n.speakerProfileError,
+              retryLabel: l10n.retryLabel,
+              onRetry: () =>
+                  ref.invalidate(speakerDetailProvider(widget.speakerId)),
+            ),
           ),
-        ),
-      );
-    }
-    return SimfPullToRefresh(
-      onRefresh: _load,
-      child: _content(l10n, _speaker!),
-    );
+          // Null is the not-found state (see [speakerDetailProvider]).
+          data: (speaker) => speaker == null
+              ? SimfRefreshableMessage(
+                  onRefresh: _refresh,
+                  child: SimfEmptyState(
+                    icon: Icons.person_off_outlined,
+                    message: l10n.speakerNotFound,
+                  ),
+                )
+              : SimfPullToRefresh(
+                  onRefresh: _refresh,
+                  child: _content(l10n, speaker),
+                ),
+        );
   }
 
   Widget _content(AppL10n l10n, SpeakerDetail speaker) {

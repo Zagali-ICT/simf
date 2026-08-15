@@ -99,8 +99,6 @@ class SimfTokens {
   static const Color headlineInk = Color(0xFF111827);
   /// secondary text on light surfaces
   static const Color greyText = Color(0xFF6C7278);
-  /// #4 — light-grey agenda day-strip band
-  static const Color calendarBand = Color(0xFFE9EAEC);
   /// inline links on light surfaces
   static const Color linkNavy = Color(0xFF00245E);
   /// input text on light surfaces (#111827 at 80%)
@@ -240,7 +238,6 @@ class SimfTokens {
   static const double radiusLg = 16;
   /// exhibitor/sponsor link rows (Figma 1439:11904/11917)
   static const double radius14 = 14;
-  static const double radiusXl = 20;
   /// delegations head-of-delegation box (Figma 1426:10838)
   static const double radius10 = 10;
 
@@ -273,8 +270,6 @@ class SimfTokens {
   static const double scrimOpacityStrong = 0.8;
   /// archive bullet disc top-align nudge (Figma 925:3258)
   static const double bulletTopNudge = 7;
-  /// delegations head-of-delegation box padding (Figma 1426:10838)
-  static const double headBoxPad = 9;
   /// off-grid 2px micro-gap (below the space-4 scale)
   static const double gap2 = 2;
   /// off-grid 6px micro-gap (below the space-4 scale)
@@ -356,8 +351,6 @@ class SimfTokens {
   /// registration-status headline (Figma 1701:3803)
   static const double text24 = 24;
   static const double textHero = 28;
-  /// staff register-visitor headline number
-  static const double text32 = 32;
 
   // Named text styles — built incrementally per screen (§5.1). The font family
   // comes from the theme; these bundle only colour/size/weight/line-height so a
@@ -527,16 +520,6 @@ class SimfTokens {
     color: beigeBorder,
     fontSize: 10,
     fontWeight: FontWeight.w500,
-  );
-  static const TextStyle labelBeigeSemibold11 = TextStyle(
-    color: beigeBorder,
-    fontSize: 11,
-    fontWeight: FontWeight.w600,
-  );
-  static const TextStyle labelGoldBold9 = TextStyle(
-    color: accent,
-    fontSize: 9,
-    fontWeight: FontWeight.w700,
   );
   static const TextStyle labelGoldBoldXl = TextStyle(
     color: accent,
@@ -993,18 +976,10 @@ class SimfTokens {
   static const double videoAspectRatio = 16 / 9;
   /// upcoming-session HH:mm chip
   static const double timeChipWidth = 53;
-  /// AI live-caption badge box
-  static const double aiBadgeSize = 20;
   static const TextStyle bodyWhiteRegularSm = TextStyle(
     color: surface,
     fontSize: textSm,
     fontWeight: FontWeight.w400,
-  );
-  static const TextStyle bodyWhiteMediumTall = TextStyle(
-    color: surface,
-    fontSize: textMd,
-    fontWeight: FontWeight.w500,
-    height: 1.5,
   );
   // sessions (Figma 758:5307+) — seat-map caps / legend swatches / row-label
   // column / seat corner; the my-seat + header action chip; the day banner +
@@ -1266,7 +1241,6 @@ class SimfTokens {
   static const double moderatorQuestionCardWidth = 80;
   static const double moreListHeight = 48;
   static const double moreListSize = 22;
-  static const double moreProfileCardSizeMd = 42;
   static const double moreProfileCardSizeSm = 24;
   static const double myAreaIdentityCardHeight = 48;
   static const double myAreaIdentityCardSize = 18;

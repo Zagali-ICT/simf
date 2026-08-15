@@ -22,6 +22,11 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// /app/content/{key}`, key `about`, D-173) when present and falls back to the
 /// static bilingual copy otherwise; the mission line, the details and the
 /// themes are the forum's fixed framing (static — no structured CMS block).
+///
+/// Route: `RouteNames.aboutForum`.
+/// Data: [contentRepositoryProvider], [orgProfileProvider].
+/// Perf: ListView builds every child up front — correct for a short static
+///       page, a defect on a data feed.
 class AboutScreen extends ConsumerStatefulWidget {
   const AboutScreen({super.key});
 
