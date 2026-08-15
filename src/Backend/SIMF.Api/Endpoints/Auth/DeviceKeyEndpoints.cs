@@ -162,10 +162,10 @@ public sealed class AdminRevokeDeviceKeyEndpoint(IDeviceKeyService service)
     public override void Configure()
     {
         Delete("/admin/device-keys/{id:guid}");
-        // D-207 / D-208: this was the one endpoint in the tree still on the
-        // legacy AdministratorOnly policy, so it was gated but invisible to the
-        // permission catalogue and undelegatable. Administrator holds the "*"
-        // wildcard, so a super-admin keeps access with no action.
+        // Gated through the permission catalogue rather than the legacy
+        // AdministratorOnly policy, so the capability stays visible and
+        // delegatable. Administrator holds the "*" wildcard, so a super-admin
+        // keeps access either way.
         Policies(PermissionCatalog.PolicyFor(PermissionCatalog.DeviceKeys.Revoke),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
