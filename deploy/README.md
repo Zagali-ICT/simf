@@ -498,21 +498,64 @@ variables, naming them and the script that fixes it — rather than booting and
 reporting an encryption key missing while the value sits there under its former
 name.
 
-Per server, in this order:
+The failure looks like this, and the count is the number of live values already
+on the box:
 
-```powershell
-# 1. Provision the new namespace (fill the template's copy first).
-.\deploy\set-env-api.ps1            # or -cp / -web / -edge on that box
-
-# 2. Remove the pre-split variables the host now refuses to start alongside.
-.\deploy\clear-env.ps1 -Full
-
-# 3. Restart that server's app pool.
-.\deploy\ops.ps1 -Action Restart -Target Api
+```
+This server still carries 61 environment variable(s) using the retired 'SIMF_'
+prefix, which this build does not read: SIMF_Ai__Anthropic__ApiKey, ...
 ```
 
-Step 2 after step 1, not before: clearing first leaves the box with no
-configuration at all if step 1 is interrupted.
+**Those 61 hold real production values.** Re-typing them is 61 chances to
+fat-finger a secret, and rotating either data key strands everything already
+encrypted with it. Copy them onto the new names instead, elevated, in this
+order:
+
+```powershell
+# 1. Preview: what maps where, what is unmapped, which boot gates stay unset.
+.\deploy\migrate-env-prefix.ps1 -Report
+
+# 2. Copy each legacy value onto its new prefix. Never overwrites a new-prefix
+#    variable that already has a value, and never prints a value.
+.\deploy\migrate-env-prefix.ps1
+
+# 3. Fill anything still missing (generates the crypto keys it can).
+.\deploy\configure-prod-env.ps1 -Target Api      # then -Cp / -Web / -Edge
+
+# 4. Remove the pre-split variables the host refuses to start alongside.
+.\deploy\clear-env.ps1 -Full
+
+# 5. Restart the pools.
+.\deploy\ops.ps1 -Action Restart -Target All
+```
+
+[`migrate-env-prefix.ps1`](migrate-env-prefix.ps1) derives the mapping from the
+four `set-env-*.template.ps1` files rather than a list of its own, so it stays
+right when a key is added. That matters most for the keys that fan out to
+**more than one** prefix, which are exactly the ones a hand rename misses:
+
+| Legacy name | Goes to |
+|---|---|
+| `SIMF_Storage__LogDirectory` | `SIMF_API_`, `SIMF_CP_`, `SIMF_WEB_`, `SIMF_EDGE_` |
+| `SIMF_Api__BaseUrl` | `SIMF_CP_`, `SIMF_WEB_` |
+| `SIMF_ReverseProxy__KnownProxies__0` | `SIMF_API_`, `SIMF_EDGE_` |
+
+**Step 4 after the copy, never before**: clearing first leaves the box with no
+configuration at all if anything is interrupted. Read the script's *unmapped*
+warning before running it — those are legacy names no template declares, so
+nothing reads them under any prefix.
+
+**Seven keys are boot gates** — a host refuses to start without its own:
+
+| Key | Host |
+|---|---|
+| `SIMF_API_FileStorage__EncryptionKey` | API |
+| `SIMF_API_Storage__UserIdDocumentEncryptionKey` | API |
+| `SIMF_API_Ai__PromptHash__Secret` | API |
+| `SIMF_CP_DataProtection__KeyRingPath` | CP |
+| `SIMF_WEB_DataProtection__KeyRingPath` | Web |
+| `SIMF_EDGE_ReverseProxy__Clusters__api__Destinations__primary__Address` | Edge |
+| `SIMF_EDGE_ReverseProxy__KnownProxies__0` | Edge |
 
 ## The mobile edge at `edge.simrsnf.com`
 
