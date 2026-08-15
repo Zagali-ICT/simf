@@ -23,6 +23,11 @@ import 'package:simf_app/features/accessibility/widgets/accessibility_toggle_row
 /// MediaQuery and high-contrast swaps the theme (`app/app.dart`); the
 /// screen-reader switch drives the navigation announcer (`router.dart`); the
 /// captions switch gates the live-broadcast caption strip.
+///
+/// Route: `RouteNames.accessibility`.
+/// Data: [accessibilityControllerProvider].
+/// Perf: ListView builds every child up front — correct for a short static
+///       page, a defect on a data feed.
 class AccessibilityScreen extends ConsumerWidget {
   const AccessibilityScreen({super.key});
 

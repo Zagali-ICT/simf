@@ -36,6 +36,10 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 /// `_buildResendRow`; the body + CTA
 /// capped by [MaxWidthBody]. Behaviour + render unchanged — the 758:2616 golden
 /// locks it.
+///
+/// Route: `RouteNames.verifyOtp`.
+/// Data: [authControllerProvider].
+/// Perf: no list — a single-screen layout.
 class EmailOtpVerifyScreen extends ConsumerStatefulWidget {
   const EmailOtpVerifyScreen({super.key});
 

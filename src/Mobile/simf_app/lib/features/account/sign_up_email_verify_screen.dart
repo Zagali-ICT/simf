@@ -35,6 +35,10 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// resend link reuses the shared
 /// [authLinkButtonStyle]; the body + actions capped by [MaxWidthBody].
 /// Behaviour + render unchanged — the 505:837 golden locks it.
+///
+/// Route: `RouteNames.emailOtp`.
+/// Data: [authControllerProvider], [simfPrefsStorageProvider].
+/// Perf: no list — a single-screen layout.
 class SignUpEmailVerifyScreen extends ConsumerStatefulWidget {
   const SignUpEmailVerifyScreen({required this.email, super.key});
 

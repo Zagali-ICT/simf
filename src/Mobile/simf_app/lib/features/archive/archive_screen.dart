@@ -20,6 +20,10 @@ import 'package:simf_app/features/archive/widgets/archive_body.dart';
 /// them, the rich sections render to the frame: the الصور والفيديو gallery
 /// (104×104 scrim tiles), عناوين الجلسات (bordered cards) and المتحدثون
 /// السابقون (72×72 photo tiles + a "+N / آخرون" overflow card).
+///
+/// Route: `RouteNames.archive`.
+/// Data: [archiveEditionsProvider].
+/// Perf: no list — a single-screen layout.
 class ArchiveScreen extends ConsumerStatefulWidget {
   const ArchiveScreen({super.key});
 

@@ -26,6 +26,10 @@ import 'package:video_player/video_player.dart';
 /// Contract unchanged: finishing or skipping sets `onboardingCompleted` and
 /// routes to sign-in; the splash gates on that flag. There is **no SIMF API**
 /// (Page_002_API.md).
+///
+/// Route: `RouteNames.onboarding`.
+/// Data: [localeControllerProvider], [simfPrefsStorageProvider].
+/// Perf: lazy — builds children on demand (PageView.builder).
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 

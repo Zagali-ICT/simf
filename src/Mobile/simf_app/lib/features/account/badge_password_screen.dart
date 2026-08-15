@@ -41,6 +41,10 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 /// Built on the navy auth family (D-659) — the same `Scaffold(navySurface)` +
 /// [AccountSubHeader] + gold CTA as its sibling [BadgeActivationScreen]; no
 /// dedicated Figma node.
+///
+/// Route: `RouteNames.badgePassword`.
+/// Data: [authControllerProvider].
+/// Perf: no list — a single-screen layout.
 class BadgePasswordScreen extends ConsumerStatefulWidget {
   const BadgePasswordScreen({
     required this.qrId,

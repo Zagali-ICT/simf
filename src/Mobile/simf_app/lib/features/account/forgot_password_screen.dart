@@ -24,6 +24,10 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 /// foot. Emails a reset code, then routes to the reset screen with the address
 /// carried forward. The request is enumeration-resistant on the server (always
 /// success-shaped), so the app always proceeds to the reset step.
+///
+/// Route: `RouteNames.forgotPassword`.
+/// Data: [authRepositoryProvider].
+/// Perf: no list — a single-screen layout.
 class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({this.email, super.key});
 

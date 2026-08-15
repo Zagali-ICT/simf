@@ -31,6 +31,13 @@ export 'home_greeting.dart';
 /// its own beyond the best-effort unread-notification count (Page_013 L-5), the
 /// best-effort greeting profile, and the best-effort highlights list (reusing
 /// `GET /app/news`); the live banner stays static config (D10, L-6).
+///
+/// Route: `RouteNames.home`.
+/// Data: [authControllerProvider], [bannersProvider],
+///       [currentUserMeetingAccessProvider], [homeProfileProvider],
+///       [newsListProvider], [orgProfileProvider], [simfDataConfigProvider],
+///       [siteSettingsProvider].
+/// Perf: no list — a single-screen layout.
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 

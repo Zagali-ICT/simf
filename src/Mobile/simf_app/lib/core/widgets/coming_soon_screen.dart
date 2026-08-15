@@ -7,6 +7,11 @@ import 'package:simf_app/app/theme/tokens.dart';
 ///
 /// Used in Phase 1 for every non-auth route; replaced in Phase 3 by the
 /// matching `mkp_*` screen.
+///
+/// Route: not named in `router.dart` — reached as a sheet, a tab or a pushed
+///        child.
+/// Data: none — renders what it is given.
+/// Perf: no list — a single-screen layout.
 class ComingSoonScreen extends StatelessWidget {
   const ComingSoonScreen({
     required this.screenNumber,

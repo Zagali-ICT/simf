@@ -40,6 +40,11 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 ///   (D-422) — never `Image.network`, which cannot carry the bearer token.
 /// * Bilingual AR + EN with correct RTL; every control carries an accessible
 ///   name.
+///
+/// Route: `RouteNames.staffSeating`.
+/// Data: [seatMapProvider], [staffSeatingRepositoryProvider].
+/// Perf: ListView builds every child up front — correct for a short static
+///       page, a defect on a data feed.
 class StaffSeatingScreen extends ConsumerStatefulWidget {
   const StaffSeatingScreen({required this.sessionId, super.key});
 
