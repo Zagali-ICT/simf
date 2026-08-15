@@ -38,54 +38,61 @@
 
 /* --------------------------- design tokens --------------------------- */
 .landing {
+  /* THIS BLOCK IS THE PALETTE. Every value below must be a literal.
+     Never define a token here as a reference to its own name. A custom property
+     that names itself is a dependency cycle, so CSS resolves it to the
+     guaranteed-invalid value and every use site silently loses its colour.
+     That is not hypothetical: it shipped to production and flattened the whole
+     public site. The convention checker's SIMF-N3 rule now fails the build on it. */
+
   /* brand */
-  --navy: var(--navy);
-  --primary: var(--primary);
-  --primary-light: var(--primary-light);
-  --secondary: var(--secondary);
-  --secondary-dark: var(--secondary-dark);
-  --secondary-light: var(--secondary-light);
+  --navy: #001640;
+  --primary: #244a77;
+  --primary-light: #e9edf1;
+  --secondary: #498fbd;
+  --secondary-dark: #376b8e;
+  --secondary-light: #edf4f8;
   /* interior page-hero gradient (Figma colors/blue: dark → bright) */
-  --blue-dark: var(--blue-dark);
-  --blue-bright: var(--blue-bright);
+  --blue-dark: #005da2;
+  --blue-bright: #007cd8;
   /* deep-navy hairline for translucent "glass" cards on navy (matches ln-tstat) */
-  --navy-line: var(--navy-line);
-  --gold: var(--gold);
-  --gold-active: var(--gold-active);
-  --gold-dark: var(--gold-dark);
-  --gold-light: var(--gold-light);
-  --gold-darker: var(--gold-darker);
+  --navy-line: #1b3859;
+  --gold: #e8c060;
+  --gold-active: #ba9a4d;
+  --gold-dark: #ae9048;
+  --gold-light: #fdf9ef;
+  --gold-darker: #514322;
   /* neutrals */
-  --ink: var(--ink);
-  --ink-display: var(--ink-display);
-  --border-neutral: var(--border-neutral);
-  --bg-gray: var(--bg-gray);
-  --white: var(--white);
-  --gray-darker: var(--gray-darker);
-  /* speaker-card photo gradient (blue → gold) */
+  --ink: #161616;
+  --ink-display: #1f2a37;
+  --border-neutral: #d2d6db;
+  --bg-gray: #f5f8fa;
+  --white: #ffffff;
+  --gray-darker: #545555;
 
   /* Neutral ramp and one-off surfaces (SIMF-CQP-001 N2). These were written as
      raw hex at their use sites; the values are unchanged, the names say what
      each one is for. */
-  --black: var(--black);
-  --ink-strong: var(--ink-strong);
-  --ink-muted: var(--ink-muted);
-  --ink-subtle: var(--ink-subtle);
-  --icon-neutral: var(--icon-neutral);
-  --border-subtle: var(--border-subtle);
-  --border-input: var(--border-input);
-  --surface-muted: var(--surface-muted);
-  --surface-chip: var(--surface-chip);
-  --surface-chip-hover: var(--surface-chip-hover);
-  --surface-panel: var(--surface-panel);
-  --surface-panel-alt: var(--surface-panel-alt);
-  --text-on-navy-muted: var(--text-on-navy-muted);
-  --primary-hover: var(--primary-hover);
-  --navy-scrim: var(--navy-scrim);
-  --flag-green: var(--flag-green);
+  --black: #000;
+  --ink-strong: #212121;
+  --ink-muted: #757575;
+  --ink-subtle: #6c737f;
+  --icon-neutral: #384250;
+  --border-subtle: #e0e0e0;
+  --border-input: #9da4ae;
+  --surface-muted: #fafafa;
+  --surface-chip: #f3f4f6;
+  --surface-chip-hover: #e5e7eb;
+  --surface-panel: #f1f2f2;
+  --surface-panel-alt: #e7e9f1;
+  --text-on-navy-muted: #bbc7d5;
+  --primary-hover: #1d3c60;
+  --navy-scrim: #001c71;
+  --flag-green: #006923;
 
-  --secondary-tint: var(--secondary-tint);
-  --gold-tint: var(--gold-tint);
+  /* speaker-card photo gradient (blue → gold) */
+  --secondary-tint: #c7dceb;
+  --gold-tint: #f8ebce;
   /* radius / effect */
   --radius-sm: 4px;
   --radius-md: 8px;
