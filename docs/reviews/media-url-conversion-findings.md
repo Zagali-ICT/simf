@@ -134,3 +134,28 @@ is not a retype:
 4. `OrganizationHeroVideoService`'s full-string equality predicate, and the CP's
    *suffix* predicate for the same question, both disappear — the conversion
    removes the two-authoring-paths problem rather than merely documenting it.
+
+## The one thing the repository cannot answer
+
+Rich text can embed an image that no column names and no grep can see:
+`ContentBlock.Content` / `ContentArabic`, and any DB-stored email-template body,
+are free HTML written by an administrator.
+
+Nothing in the repository contains such an image — the content seeds and the
+seeding code carry no `<img` at all, so a freshly deployed system starts clean.
+But an administrator may have pasted one into the live database since, and only
+the live database can say. The query is small:
+
+```sql
+-- Any rich-text row embedding an image the file store does not know about.
+SELECT 'ContentBlock' AS Source, Id, Slug
+  FROM dbo.ContentBlocks
+ WHERE Content LIKE '%<img%' OR ContentArabic LIKE '%<img%';
+```
+
+If it returns rows, those images sit outside the store and the same rule applies
+to them: upload the picture, reference it by id. It is deliberately left as a
+question for the owner rather than guessed at, because the answer is data rather
+than code, and because an empty result is the likely one — the Control Panel
+offers no image button inside those editors, so anything found there was pasted
+as raw HTML on purpose.

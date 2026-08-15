@@ -27,6 +27,7 @@ public sealed class FileServicePolicyTests
         FileService.SessionSummaryVideo,
         FileService.MediaGalleryVideo,
         FileService.OrganizationLiveStream,
+        FileService.ArchiveGalleryVideo,
     ];
 
     [Fact]

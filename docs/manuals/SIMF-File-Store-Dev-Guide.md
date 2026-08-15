@@ -127,8 +127,14 @@ keeps its **stable, per-surface public route**, which internally resolves to a
 The download-by-GUID endpoint is the **internal primitive**; the stable routes are
 thin front-doors over it. Wire JSON keys (`avatarUrl`, `imageUrl`/`thumbnailUrl`,
 `hasPhotoAsset`, presentation `fileName`/`contentType`/`sizeBytes`) are preserved.
-`ArchivePastSpeaker.photoRelativePath` is intentionally an external-URL datum the
-app renders directly — it is **kept**, not migrated.
+`ArchivePastSpeaker.photoRelativePath` **has been migrated** (D-891). It was
+kept out of the store on the grounds that it was an external-URL datum the app
+renders directly, but the real reason it could not move was the write path: the
+archive's children were replaced wholesale on every save, so a file owned by a
+child id was orphaned immediately. Those lists reconcile by id now, the photo is
+an uploaded file like every other, and the wire key keeps its name while carrying
+an absolute URL — which is what the app needs, since it tests the string with
+`isHttpUrl` before it will load anything.
 
 The Flutter app fetches bytes through its **authenticated Dio client** (bearer +
 self-signed-TLS handling), never a bare `Image.network` (D-422).

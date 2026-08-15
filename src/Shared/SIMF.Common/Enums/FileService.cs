@@ -1,4 +1,4 @@
-namespace SIMF.Common.Enums;
+﻿namespace SIMF.Common.Enums;
 
 /// <summary>The business category of a <c>StoredFile</c>: the single
 /// dimension that drives access control, encryption-at-rest, the upload
@@ -97,4 +97,16 @@ public enum FileService
     /// none of its own (owner = OrganizationProfile.SingletonId). Public read; an
     /// external link.</summary>
     OrganizationLiveStream = 22,
+
+    /// <summary>A past edition's speaker photo (owner = ArchivePastSpeaker.Id).
+    /// Public read, uploaded bytes.</summary>
+    ArchivePastSpeakerPhoto = 23,
+
+    /// <summary>A past edition's gallery photo (owner = ArchiveMediaItem.Id).
+    /// Public read, uploaded bytes.</summary>
+    ArchiveGalleryImage = 24,
+
+    /// <summary>A past edition's gallery video (owner = ArchiveMediaItem.Id).
+    /// Public read; an external link, SIMF hosting only the stills.</summary>
+    ArchiveGalleryVideo = 25,
 }

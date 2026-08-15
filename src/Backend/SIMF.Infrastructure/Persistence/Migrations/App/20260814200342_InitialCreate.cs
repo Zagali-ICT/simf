@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -1477,7 +1477,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ArchiveEditionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Kind = table.Column<int>(type: "int", nullable: false),
-                    Url = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: false),
+                    MediaFileId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     CaptionEn = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     CaptionAr = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     DisplayOrder = table.Column<int>(type: "int", nullable: false)
@@ -1491,6 +1491,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         principalTable: "ArchiveEditions",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ArchiveMediaItems_StoredFiles_MediaFileId",
+                        column: x => x.MediaFileId,
+                        principalTable: "StoredFiles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -1974,7 +1980,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     ArchiveEditionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     NameEn = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
                     NameAr = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
-                    PhotoRelativePath = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    PhotoFileId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     CountryId = table.Column<int>(type: "int", nullable: true),
                     DisplayOrder = table.Column<int>(type: "int", nullable: false)
                 },
@@ -1991,6 +1997,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         name: "FK_ArchivePastSpeakers_Countries_CountryId",
                         column: x => x.CountryId,
                         principalTable: "Countries",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_ArchivePastSpeakers_StoredFiles_PhotoFileId",
+                        column: x => x.PhotoFileId,
+                        principalTable: "StoredFiles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -2820,6 +2832,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 columns: new[] { "ArchiveEditionId", "DisplayOrder" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_ArchiveMediaItems_MediaFileId",
+                table: "ArchiveMediaItems",
+                column: "MediaFileId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_ArchivePastSpeakers_ArchiveEditionId_DisplayOrder",
                 table: "ArchivePastSpeakers",
                 columns: new[] { "ArchiveEditionId", "DisplayOrder" });
@@ -2828,6 +2845,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 name: "IX_ArchivePastSpeakers_CountryId",
                 table: "ArchivePastSpeakers",
                 column: "CountryId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ArchivePastSpeakers_PhotoFileId",
+                table: "ArchivePastSpeakers",
+                column: "PhotoFileId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ArchiveSessionTitles_ArchiveEditionId_DisplayOrder",

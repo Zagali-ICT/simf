@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/AssetOwnerPointerTests.cs
+﻿// Tests: SIMF.Api.Tests/AssetOwnerPointerTests.cs
 using Microsoft.EntityFrameworkCore;
 using SIMF.Common.Enums;
 using SIMF.Domain.Files;
@@ -136,6 +136,26 @@ internal static class OwnerPointerSync
                     .FirstOrDefaultAsync(x => x.Id == owner, cancellationToken);
                 if (row is null || !Matches(row.LiveStreamFileId, onlyWhenPointingAt)) { return; }
                 row.LiveStreamFileId = fileId;
+                break;
+            }
+            case FileService.ArchivePastSpeakerPhoto:
+            {
+                var row = await dbContext.ArchivePastSpeakers
+                    .FirstOrDefaultAsync(x => x.Id == owner, cancellationToken);
+                if (row is null || !Matches(row.PhotoFileId, onlyWhenPointingAt)) { return; }
+                row.PhotoFileId = fileId;
+                break;
+            }
+            case FileService.ArchiveGalleryImage:
+            case FileService.ArchiveGalleryVideo:
+            {
+                // One column, two services: a gallery row holds either an
+                // uploaded still or a link to a film, never both, and Kind says
+                // which. Both must land here or the row would point at nothing.
+                var row = await dbContext.ArchiveMediaItems
+                    .FirstOrDefaultAsync(x => x.Id == owner, cancellationToken);
+                if (row is null || !Matches(row.MediaFileId, onlyWhenPointingAt)) { return; }
+                row.MediaFileId = fileId;
                 break;
             }
             case FileService.OrganizationHeroVideo:

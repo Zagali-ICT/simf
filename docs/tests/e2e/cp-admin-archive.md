@@ -9,7 +9,14 @@
 | **Auth setup** | `superadmin@simrsnf.com` / `[REDACTED - supply via SIMF_API_SuperAdmin__TempPassword]` + TOTP via the `Get-Totp` helper |
 | **Last reviewed** | 2026-06-16 (D-440 — gallery/past-speaker image fields now expect a full https URL) |
 
-> **P6 (D-440):** the gallery `url` and past-speaker `photo` fields are now
+> **D-891 supersedes the note below.** The gallery and past-speaker lists are no
+> longer pipe-delimited textareas: each is a per-row editor, and each row carries
+> an **uploaded** picture rather than a URL somebody typed. A gallery **video** is
+> still a link an admin supplies, because SIMF does not host it. The app is
+> unchanged — it still requires an absolute https URL, and the server now composes
+> one from the stored file.
+>
+> _Superseded (D-440):_ the gallery `url` and past-speaker `photo` fields are
 > rendered as **real images in the app** when they hold an **absolute https URL**
 > (the textarea placeholders were updated to a full-URL example). The pipe format
 > is unchanged (`url | image|video | caption`, `nameAr | nameEn | photo-url`); a
@@ -80,6 +87,7 @@
 | E2E-ARC-022 | Excel import — workbook upload → rows created + per-row outcome modal (D-356) | happy | P1 | _to author_ |
 | E2E-ARC-023 | Excel import rejection — non-.xlsx / wrong-sheet upload → bilingual 400, nothing created (D-356) | error | P1 | _to author_ |
 | E2E-ARC-024 | Cover Image via the unified media-asset pipeline — upload then external link (D-357) | happy | P1 | _to author_ |
+| E2E-ARC-027 | Per-row gallery + past-speaker editors — a row keeps its identity across a save, so an uploaded picture survives an unrelated edit (D-891) | happy | P0 | _to author_ |
 | E2E-ARC-025 | Excel round-trip of the dropped edition fields — summary / location / date label / cover path survive export + import (D-506) | happy | P1 | authored ✓ (`Export_includes_the_dropped_edition_columns` + `Import_round_trips_the_dropped_edition_fields`) |
 | E2E-ARC-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-ARC-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
@@ -537,6 +545,72 @@ Scenario: A bad or wrong-sheet upload is rejected without creating anything
 ```
 
 ---
+
+### E2E-ARC-027 — per-row gallery and past-speaker editors (D-891)
+
+The point of this scenario is the SECOND save. A row's picture is a file owned by
+that row's id, so the row has to still be the same row afterwards. Before the
+child lists were reconciled by id, every save deleted and re-inserted them, and
+any attached file was orphaned on the spot - which is why the picture used to be
+a URL somebody typed.
+
+```gherkin
+Scenario: A gallery picture and a speaker photo survive an unrelated edit
+  Given the administrator is on /admin/archive
+  And they open an existing edition for Edit
+  Then the Gallery section is a per-row editor, not a textarea
+  And the Past speakers section is a per-row editor, not a textarea
+
+  When they click "Add gallery item"
+  Then the new row offers Type, Caption and the hint
+       "Save the record first, then add an image."
+  And the new row offers NO upload control yet, the row having no id
+
+  When they set Type="Image" and Caption="Opening ceremony"
+  And they click "Add past speaker"
+  And they fill Name (Arabic)="راشد السبيعي", Name (English)="Rashed Al-Subaie"
+  And they fill Country code="682"
+  And they click "Save"
+  Then a PUT /account/api/admin/archive/{id} returns 200
+  And re-opening the edition shows both rows, each now WITH an "Image" section
+
+  When they upload "opening.jpg" on the gallery row
+  Then a POST /api/v1/admin/assets/ArchiveGalleryImage/{rowId}/image returns 200
+  When they upload "rashed.jpg" on the past-speaker row
+  Then a POST /api/v1/admin/assets/ArchivePastSpeakerPhoto/{rowId}/image returns 200
+
+  When they change ONLY the gallery caption to "Opening ceremony 2024"
+  And they click "Save"
+  Then a PUT /account/api/admin/archive/{id} returns 200
+  And re-opening the edition still shows BOTH uploaded pictures
+  And neither row's id has changed
+```
+
+**Why the last three steps matter:** they are the regression. A caption edit that
+silently detached the picture beside it would look like a successful save, and
+nothing but this assertion would notice.
+
+```gherkin
+Scenario: A gallery VIDEO row takes a link, not an upload
+  Given the Gallery editor has a row with Type="Video"
+  Then the row offers a "Video link" field and no upload control
+  When they set Video link="https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+  And they click "Save"
+  Then a PUT /account/api/admin/archive/{id} returns 200
+  And the app's archive gallery shows that row as a video tile
+
+  When they instead set Video link="https://cdn.example.com/brand/promo"
+  And they click "Save"
+  Then the API returns 400
+  And the message explains a YouTube or direct .mp4 / .m3u8 link is required
+      (the store holds a feed to the same rule the players apply)
+```
+
+**Evidence:** the edition's gallery and past-speaker rows carry
+`MediaFileId` / `PhotoFileId` foreign keys into `StoredFiles`; the app receives an
+ABSOLUTE url for each, because `archive_past_speaker_card.dart` and
+`archive_gallery_tile.dart` both test the string with `isHttpUrl` before loading
+and fall back silently when it fails.
 
 ### E2E-ARC-026 — the list shows the edition's cover thumbnail (D-357)
 

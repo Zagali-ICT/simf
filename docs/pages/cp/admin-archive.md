@@ -146,6 +146,13 @@ caption via `FormatSummary` (`Admin.Archive.Summary`). Default page size
 | Active | checkbox | Edit only | — | bool (Create is always active) | `Admin.Archive.Field.IsActive` |
 | **Cover image** | `SimfImageUpload` (`Category="ArchiveCover"`) | Edit only | — | media-asset pipeline (D-357, see §4.7) | `Admin.Asset.Heading` |
 
+> **The two rich child lists are per-row editors** (D-891), not free text. Each
+> gallery row carries a type, a caption and either an uploaded image or - for a
+> video - a link, and each past-speaker row carries the bilingual name, an ISO
+> 3166-1 numeric country code and an uploaded photo. Both show the save-first
+> hint until the row exists, because a file needs a row id to belong to. Session
+> titles remain the line-delimited `arabic | english` textarea.
+
 On Create the Year defaults to `DateTime.UtcNow.Year` and `IsActive` is `true`
 (the checkbox is hidden — Create is always active). The form runs Create (`POST`)
 when `IsEdit=false` and Edit (`PUT` against `Initial.Id`) when `IsEdit=true`. The
@@ -408,6 +415,7 @@ Scenario id range: **E2E-ARC-001 … E2E-ARC-024**.
 
 | Date | Decision | Change |
 |------|----------|--------|
+| 2026-08-14 | D-891 | **The gallery and past-speaker editors become per-row, and their pictures become uploaded files.** `ArchivePastSpeaker.PhotoRelativePath` and `ArchiveMediaItem.Url` convert to `PhotoFileId` and `MediaFileId` with real foreign keys. The prerequisite was the save path, not the columns: both child lists used to be cleared and re-inserted with fresh ids on every save, which is why D-440 chose a typed URL. They reconcile by `Id` now, so a row survives a save and can own a file. The pipe-delimited textareas are replaced by `SimfRepeater` rows with an upload slot each; a gallery **video** is still a link an admin supplies, SIMF hosting the stills but not the films. Session titles stay a textarea - no media, no identity anyone observes. |
 | 2026-08-14 | D-889 | **The free-text Cover image path is gone; the cover is a typed key.** `ArchiveEdition.CoverImageRelativePath` becomes `Guid? CoverImageFileId` with a real foreign key into `StoredFiles`. The Add/Edit form loses the text field and gains the save-first hint on create; the workbook loses its cover column. `PublicArchiveEdition` gains an append-only `HasCoverAsset`, which is what finally lets an uploaded cover render on the Website instead of the stock fallback. |
 | 2026-06-11 | D-357 | Cover image wired to the unified media-asset pipeline: `SimfImageUpload Category="ArchiveCover"` on the Add/Edit form (Edit only) + a `SimfImageThumb` of `/account/api/admin/assets/ArchiveCover/{id}/image` on Details/Deactivate (complements the existing free-text `CoverImageRelativePath` field). E2E catalogue extended with E2E-ARC-024. |
 | 2026-06-11 | D-199 / D-275 | Reference doc created. Documents the D-199 Archive CRUD on the D-353 `CrudShell` Add/Edit + View/Delete forms (Page ↔ Popup `CrudPresentationToggle`, PageKey `archive`; `SimfConfirm`-gated deactivate), the D-356 Excel export (`POST /export`) + insert-only import (`POST /import`), and the **D-275 "make this year history" snapshot** action (`POST /snapshot-current`, gated by `Archive.Snapshot`, server-computed counters + optional visibility flip). |

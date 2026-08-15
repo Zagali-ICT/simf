@@ -1,4 +1,4 @@
-namespace SIMF.Contracts.Archive;
+﻿namespace SIMF.Contracts.Archive;
 
 /// <summary>Public Archive / Past Editions payload.
 /// Returned by GET /archive. When the archive-visibility operations toggle
@@ -132,11 +132,23 @@ public sealed record AdminArchiveEditionDetail(
     IReadOnlyList<ArchiveSessionTitleInput>? SessionTitles = null,
     IReadOnlyList<ArchivePastSpeakerInput>? PastSpeakers = null);
 
-/// <summary>An editable gallery item for the admin create/update
-/// (replace-all). <c>Kind</c> is the <c>ArchiveMediaKind</c> int.</summary>
+/// <summary>An editable gallery item for the admin create/update.
+/// <c>Kind</c> is the <c>ArchiveMediaKind</c> int.
+///
+/// <para><c>Id</c> is what lets a row keep its identity across a save. The list
+/// used to be replaced wholesale — every child deleted and re-inserted with a
+/// fresh Guid — which is exactly why the image had to be a URL typed into the
+/// row: a file owned by a child id would have been orphaned the next time
+/// anybody pressed Save. Null means a new row.</para></summary>
 public sealed class ArchiveMediaItemInput
 {
+    public Guid? Id { get; set; }
     public int Kind { get; set; }
+
+    /// <summary>The playback URL for a VIDEO row, which SIMF does not host and an
+    /// admin therefore still supplies. Blank for an image row: an image is
+    /// uploaded against the row, and on the way out this carries the URL the
+    /// stored file resolves to, so the editor can show what is attached.</summary>
     public string Url { get; set; } = string.Empty;
     public string? CaptionEn { get; set; }
     public string? CaptionAr { get; set; }
@@ -151,12 +163,19 @@ public sealed class ArchiveSessionTitleInput
     public int DisplayOrder { get; set; }
 }
 
-/// <summary>An editable past speaker for the admin create/update.</summary>
+/// <summary>An editable past speaker for the admin create/update. <c>Id</c>
+/// carries the row's identity across a save, for the reason described on
+/// <see cref="ArchiveMediaItemInput"/>; null means a new row.</summary>
 public sealed class ArchivePastSpeakerInput
 {
+    public Guid? Id { get; set; }
     public string NameEn { get; set; } = string.Empty;
     public string NameAr { get; set; } = string.Empty;
-    public string? PhotoRelativePath { get; set; }
+
+    /// <summary>Read-only on the way out: whether this row already has a photo in
+    /// the store. There is no field on the way in, because a photo is uploaded
+    /// against the row rather than typed into it.</summary>
+    public bool HasPhoto { get; set; }
     // Optional country (ISO 3166-1 numeric) set via the CP editor.
     public int? CountryId { get; set; }
     public int DisplayOrder { get; set; }
