@@ -82,7 +82,8 @@ final _days = <ProgrammeDay>[
         titleAr: 'مستقبل الأمن البحري',
         titleEn: 'The Future of Maritime Security',
         descAr:
-            'نظرة معمّقة على مستقبل الأمن البحري والتحديات الإقليمية والدولية وأثرها على الممرات الملاحية.',
+            'نظرة معمّقة على مستقبل الأمن البحري والتحديات الإقليمية والدولية '
+                'وأثرها على الممرات الملاحية.',
         start: DateTime.utc(2026, 6, 20, 5),
         type: SessionType.workshop,
       ),
@@ -91,7 +92,9 @@ final _days = <ProgrammeDay>[
         code: 'S-02',
         titleAr: 'الاستراتيجيات الدفاعية الحديثة',
         titleEn: 'Modern Defence Strategies',
-        descAr: 'استعراض أحدث المنظومات الدفاعية والشراكات الاستراتيجية في المنطقة.',
+        descAr:
+            'استعراض أحدث المنظومات الدفاعية والشراكات الاستراتيجية في '
+                'المنطقة.',
         start: DateTime.utc(2026, 6, 20, 7, 30),
         type: SessionType.session,
       ),
@@ -118,8 +121,8 @@ final _days = <ProgrammeDay>[
   ),
 ];
 
-/// The screen only calls getDays(); getSessions() returns the flattened list for
-/// completeness (unused by this frame).
+/// The screen only calls getDays(); getSessions() returns the flattened list
+/// for completeness (unused by this frame).
 class _FakeSessionsRepo implements SessionsRepository {
   @override
   Future<List<ProgrammeDay>> getDays() async => _days;

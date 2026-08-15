@@ -18,7 +18,9 @@ class ScanLine extends StatelessWidget {
           ],
         ),
         boxShadow: <BoxShadow>[
-          BoxShadow(color: SimfTokens.accent, blurRadius: SimfTokens.scanLineBlurRadius),
+          BoxShadow(
+              color: SimfTokens.accent,
+              blurRadius: SimfTokens.scanLineBlurRadius,),
         ],
       ),
     );

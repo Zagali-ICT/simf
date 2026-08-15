@@ -1,7 +1,8 @@
 import 'package:flutter/foundation.dart';
-
+import 'package:simf_app/core/utils/bilingual.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
-import 'package:simf_app/features/sessions/data/session_models.dart' show SessionStatus;
+import 'package:simf_app/features/sessions/data/session_models.dart'
+    show SessionStatus;
 
 /// One card on the "my sessions" list — App "تفاصيل الجلسات" (Figma 1388:9067),
 /// mirroring `SIMF.Contracts.Account.MyAreaSessionItem`. The card shows the
@@ -28,6 +29,25 @@ class MyAreaSessionItem {
     this.speakerNameAr,
     this.speakerTitle,
   });
+
+  factory MyAreaSessionItem.fromJson(Map<String, dynamic> json) =>
+      MyAreaSessionItem(
+        id: json['id'] as String? ?? '',
+        title: json['title'] as String? ?? '',
+        titleArabic: json['titleArabic'] as String? ?? '',
+        start: parseWireDateTime(json['start'], 'start'),
+        end: parseWireDateTime(json['end'], 'end'),
+        status: SessionStatus.fromJson(json['status']),
+        attended: json['attended'] as bool? ?? false,
+        isFavourite: json['isFavourite'] as bool? ?? false,
+        hallNameEn: json['hallNameEn'] as String?,
+        hallNameAr: json['hallNameAr'] as String?,
+        categoryNameEn: json['categoryNameEn'] as String?,
+        categoryNameAr: json['categoryNameAr'] as String?,
+        speakerNameEn: json['speakerNameEn'] as String?,
+        speakerNameAr: json['speakerNameAr'] as String?,
+        speakerTitle: json['speakerTitle'] as String?,
+      );
 
   final String id;
   final String title;
@@ -66,36 +86,17 @@ class MyAreaSessionItem {
   bool get isArchived =>
       status == SessionStatus.recorded || status == SessionStatus.published;
 
-  String localizedTitle(bool isArabic) =>
-      _pickRequired(titleArabic, title, isArabic);
+  String localizedTitle({required bool isArabic}) =>
+      pickLocalized(titleArabic, title, isArabic: isArabic);
 
-  String? localizedHall(bool isArabic) =>
-      _pickOptional(hallNameAr, hallNameEn, isArabic);
+  String? localizedHall({required bool isArabic}) =>
+      pickLocalizedOrNull(hallNameAr, hallNameEn, isArabic: isArabic);
 
-  String? localizedCategory(bool isArabic) =>
-      _pickOptional(categoryNameAr, categoryNameEn, isArabic);
+  String? localizedCategory({required bool isArabic}) =>
+      pickLocalizedOrNull(categoryNameAr, categoryNameEn, isArabic: isArabic);
 
-  String? localizedSpeaker(bool isArabic) =>
-      _pickOptional(speakerNameAr, speakerNameEn, isArabic);
-
-  static MyAreaSessionItem fromJson(Map<String, dynamic> json) =>
-      MyAreaSessionItem(
-        id: json['id'] as String? ?? '',
-        title: json['title'] as String? ?? '',
-        titleArabic: json['titleArabic'] as String? ?? '',
-        start: parseWireDateTime(json['start'], 'start'),
-        end: parseWireDateTime(json['end'], 'end'),
-        status: SessionStatus.fromJson(json['status']),
-        attended: json['attended'] as bool? ?? false,
-        isFavourite: json['isFavourite'] as bool? ?? false,
-        hallNameEn: json['hallNameEn'] as String?,
-        hallNameAr: json['hallNameAr'] as String?,
-        categoryNameEn: json['categoryNameEn'] as String?,
-        categoryNameAr: json['categoryNameAr'] as String?,
-        speakerNameEn: json['speakerNameEn'] as String?,
-        speakerNameAr: json['speakerNameAr'] as String?,
-        speakerTitle: json['speakerTitle'] as String?,
-      );
+  String? localizedSpeaker({required bool isArabic}) =>
+      pickLocalizedOrNull(speakerNameAr, speakerNameEn, isArabic: isArabic);
 }
 
 /// The envelope for the "my sessions" list (`MyAreaSessions = { items: [...]
@@ -104,28 +105,15 @@ class MyAreaSessionItem {
 class MyAreaSessions {
   const MyAreaSessions(this.items);
 
-  final List<MyAreaSessionItem> items;
-
-  static MyAreaSessions fromData(Object? data) {
-    final list = (data is Map ? data['items'] : null) as List? ??
-        const <dynamic>[];
+  factory MyAreaSessions.fromData(Object? data) {
+    final list =
+        (data is Map ? data['items'] : null) as List? ?? const <dynamic>[];
     final items = list
         .whereType<Map<dynamic, dynamic>>()
         .map((e) => MyAreaSessionItem.fromJson(e.cast<String, dynamic>()))
         .toList(growable: false);
     return MyAreaSessions(items);
   }
-}
 
-String _pickRequired(String arabic, String english, bool isArabic) {
-  final ar = arabic.trim();
-  final en = english.trim();
-  return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
-}
-
-String? _pickOptional(String? arabic, String? english, bool isArabic) {
-  final ar = arabic?.trim() ?? '';
-  final en = english?.trim() ?? '';
-  final value = isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
-  return value.isEmpty ? null : value;
+  final List<MyAreaSessionItem> items;
 }

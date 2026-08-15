@@ -116,7 +116,7 @@ public sealed class SimfPublicClientTests
             return new HttpResponseMessage(HttpStatusCode.OK) { Content = content };
         });
 
-        var (status, contentType, body) = await client.FetchMediaImageAsync(Guid.NewGuid());
+        var (status, contentType, body, _) = await client.FetchMediaImageAsync(Guid.NewGuid());
 
         Assert.Equal(200, status);
         Assert.Equal("image/png", contentType);
@@ -128,7 +128,7 @@ public sealed class SimfPublicClientTests
     {
         var client = Client(_ => new HttpResponseMessage(HttpStatusCode.NotFound));
 
-        var (status, contentType, body) = await client.FetchMediaImageAsync(Guid.NewGuid());
+        var (status, contentType, body, _) = await client.FetchMediaImageAsync(Guid.NewGuid());
 
         Assert.Equal(404, status);
         Assert.Null(contentType);
@@ -149,7 +149,7 @@ public sealed class SimfPublicClientTests
         });
 
         var owner = Guid.NewGuid();
-        var (status, contentType, body) = await client.FetchAssetImageAsync("SpeakerPhoto", owner);
+        var (status, contentType, body, _) = await client.FetchAssetImageAsync("SpeakerPhoto", owner);
 
         Assert.Equal(200, status);
         Assert.Equal("image/webp", contentType);
@@ -162,11 +162,57 @@ public sealed class SimfPublicClientTests
     {
         var client = Client(_ => new HttpResponseMessage(HttpStatusCode.NotFound));
 
-        var (status, contentType, body) = await client.FetchAssetImageAsync("SpeakerPhoto", Guid.NewGuid());
+        var (status, contentType, body, _) = await client.FetchAssetImageAsync("SpeakerPhoto", Guid.NewGuid());
 
         Assert.Equal(404, status);
         Assert.Null(contentType);
         Assert.Empty(body);
+    }
+
+    // The security fix. An external-link asset 302s to a URL a Control Panel
+    // editor supplied. Following it server-side pulled that host's bytes AND its
+    // Content-Type back onto the Website's origin, so an editor holding a single
+    // per-category asset permission could serve `text/html` + script from
+    // web.simrsnf.com. The redirect must be REPORTED, never followed, and no
+    // bytes may come back with it.
+    [Fact]
+    public async Task FetchAssetImage_reports_a_redirect_and_never_follows_it()
+    {
+        var requests = new List<Uri>();
+        var client = Client(req =>
+        {
+            requests.Add(req.RequestUri!);
+            var redirect = new HttpResponseMessage(HttpStatusCode.Found);
+            redirect.Headers.Location = new Uri("https://attacker.example/payload");
+            return redirect;
+        });
+
+        var image = await client.FetchAssetImageAsync("SpeakerPhoto", Guid.NewGuid());
+
+        Assert.Equal(302, image.StatusCode);
+        Assert.Equal("https://attacker.example/payload", image.RedirectLocation);
+        Assert.Null(image.ContentType);
+        Assert.Empty(image.Bytes);
+
+        // One request only: the external host was never contacted, which is also
+        // what closes the SSRF (a public DNS name resolving to an internal
+        // address would otherwise have been fetched from the Website tier).
+        Assert.Single(requests);
+        Assert.DoesNotContain("attacker.example", requests[0].ToString());
+    }
+
+    // A 3xx with no Location cannot be honoured, and passing a bare 302
+    // downstream would strand the browser.
+    [Fact]
+    public async Task FetchAssetImage_maps_a_redirect_without_a_location_to_502()
+    {
+        var client = Client(_ => new HttpResponseMessage(HttpStatusCode.Found));
+
+        var image = await client.FetchAssetImageAsync("SpeakerPhoto", Guid.NewGuid());
+
+        Assert.Equal(502, image.StatusCode);
+        Assert.Null(image.RedirectLocation);
+        Assert.Empty(image.Bytes);
     }
 
     private static HttpResponseMessage Ok<T>(ApiResult<T> envelope) =>

@@ -15,13 +15,18 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// Page 037 — عن الملتقى · About the forum (#37, `/about`, Guest+).
 ///
 /// **Public.** Pixel-parity to the restructured KSA Figma frame `1116:16448`:
-/// the navy [SimfPageShell] shell, the anchor-mark header, the **الرسالة** (mission)
-/// and **الرؤية** (vision) cards, the **تفاصيل الملتقى** details card
+/// the navy [SimfPageShell] shell, the anchor-mark header, the **الرسالة**
+/// (mission) and **الرؤية** (vision) cards, the **تفاصيل الملتقى** details card
 /// (year / date / location) and the **المحاور الرئيسية** themes card with the
-/// four fixed forum themes. The vision paragraph is hydrated from the CMS
-/// (`GET /app/content/{key}`, key `about`, D-173) when present and falls back to
-/// the static bilingual copy otherwise; the mission line, the details and the
+/// four fixed forum themes. The vision paragraph is hydrated from the CMS (`GET
+/// /app/content/{key}`, key `about`, D-173) when present and falls back to the
+/// static bilingual copy otherwise; the mission line, the details and the
 /// themes are the forum's fixed framing (static — no structured CMS block).
+///
+/// Route: `RouteNames.aboutForum`.
+/// Data: [contentRepositoryProvider], [orgProfileProvider].
+/// Perf: ListView builds every child up front — correct for a short static
+///       page, a defect on a data feed.
 class AboutScreen extends ConsumerStatefulWidget {
   const AboutScreen({super.key});
 
@@ -38,9 +43,9 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
     unawaited(_load());
   }
 
-  /// Best-effort hydrate of the vision paragraph from the CMS. Any failure (incl.
-  /// a 404 = key not seeded) leaves [_block] null and the screen renders the
-  /// static fallback paragraph — the page always shows the forum content.
+  /// Best-effort hydrate of the vision paragraph from the CMS. Any failure
+  /// (incl. a 404 = key not seeded) leaves [_block] null and the screen renders
+  /// the static fallback paragraph — the page always shows the forum content.
   Future<void> _load() async {
     try {
       final block =
@@ -75,13 +80,14 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
 
     final block = _block;
     final visionBody = (block != null && block.hasBody)
-        ? block.localizedBody(isAr)
+        ? block.localizedBody(isArabic: isAr)
         : l10n.aboutHeroBody;
 
-    final forumName = (profile != null && profile.nameFor(isAr).isNotEmpty)
-        ? profile.nameFor(isAr)
-        : l10n.aboutForumName;
-    final forumTitle = profile != null ? profile.titleFor(isAr) : '';
+    final forumName =
+        (profile != null && profile.nameFor(isArabic: isAr).isNotEmpty)
+            ? profile.nameFor(isArabic: isAr)
+            : l10n.aboutForumName;
+    final forumTitle = profile != null ? profile.titleFor(isArabic: isAr) : '';
     final statusBadge = profile != null
         ? '${l10n.aboutStatus(profile.status)} · ${profile.currentYear}'
         : null;
@@ -95,22 +101,29 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
           aboutCards.add(const SizedBox(height: SimfTokens.space4));
         }
         aboutCards.add(
-          AboutTextCard(title: item.titleFor(isAr), body: item.textFor(isAr)),
+          AboutTextCard(
+              title: item.titleFor(isArabic: isAr),
+              body: item.textFor(isArabic: isAr),),
         );
       }
     } else {
-      aboutCards.add(
-        AboutTextCard(title: l10n.aboutMissionTitle, body: l10n.aboutHeroHeading),
-      );
-      aboutCards.add(const SizedBox(height: SimfTokens.space4));
       aboutCards
-          .add(AboutTextCard(title: l10n.aboutVisionTitle, body: visionBody));
+        ..add(
+          AboutTextCard(
+            title: l10n.aboutMissionTitle,
+            body: l10n.aboutHeroHeading,
+          ),
+        )
+        ..add(const SizedBox(height: SimfTokens.space4))
+        ..add(
+          AboutTextCard(title: l10n.aboutVisionTitle, body: visionBody),
+        );
     }
 
     // The "details" list — driven by the profile's details when present.
     final detailRows = (profile != null && profile.details.isNotEmpty)
         ? profile.details
-            .map((d) => (d.nameFor(isAr), d.valueFor(isAr)))
+            .map((d) => (d.nameFor(isArabic: isAr), d.valueFor(isArabic: isAr)))
             .toList()
         : <(String, String)>[
             (l10n.aboutDetailYearLabel, l10n.aboutDetailYearValue),
@@ -161,11 +174,14 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
                 rows: contactRows,
               ),
             ],
-            if (profile?.version != null && profile!.version!.isNotEmpty) ...<Widget>[
+            if (profile?.version != null &&
+                profile!.version!.isNotEmpty) ...<Widget>[
               const SizedBox(height: SimfTokens.space4),
               AboutDetailsCard(
                 title: l10n.aboutVersionTitle,
-                rows: <(String, String)>[(l10n.aboutVersionLabel, profile.version!)],
+                rows: <(String, String)>[
+                  (l10n.aboutVersionLabel, profile.version!),
+                ],
               ),
             ],
             const SizedBox(height: SimfTokens.space4),

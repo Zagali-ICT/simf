@@ -44,24 +44,18 @@ class DelegationsBody extends StatelessWidget {
   /// Clears the flag filter (from the active-filter chip).
   final VoidCallback onClearFilter;
 
-  /// Bi-Meeting rework — when set (the user holds AllowsDelegationMeeting), fired
-  /// with a delegation when its card is tapped to request a meeting with it.
+  /// Bi-Meeting rework — when set (the user holds AllowsDelegationMeeting),
+  /// fired with a delegation when its card is tapped to request a meeting with
+  /// it.
   final void Function(DelegationItem delegation)? onRequestMeeting;
 
   @override
   Widget build(BuildContext context) {
-    final flagItems = data.items
-        .where((item) => item.flagEmoji.isNotEmpty)
-        .toList(growable: false);
-    final filtered = data.items
-        .where(
-          (item) =>
-              (selectedCountryCode == null ||
-                  item.countryCode == selectedCountryCode) &&
-              item.matches(query),
-        )
-        .toList(growable: false);
-    final selectedName = _selectedCountryName();
+    final flagItems = data.flagItems;
+    final filtered =
+        data.visible(query: query, countryCode: selectedCountryCode);
+    final selectedName =
+        data.selectedCountryName(selectedCountryCode, isArabic: isArabic);
 
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
@@ -120,16 +114,4 @@ class DelegationsBody extends StatelessWidget {
 
   /// The localized name of the flag-filtered country (for the active-filter
   /// chip), or null when no flag filter is active.
-  String? _selectedCountryName() {
-    if (selectedCountryCode == null) {
-      return null;
-    }
-    for (final item in data.items) {
-      if (item.countryCode == selectedCountryCode) {
-        return item.localizedCountry(isArabic);
-      }
-    }
-    return null;
-  }
 }
-

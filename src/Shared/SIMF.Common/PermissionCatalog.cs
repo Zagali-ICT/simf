@@ -760,15 +760,17 @@ public static class PermissionCatalog
         public const string Edit = "Operations.Edit";
     }
 
-    /// <summary>The event edition: which year is open, and closing one into
-    /// history. <see cref="Close"/> is separate from <see cref="Open"/> because
-    /// closing is the destructive half — it ends registration against the current
-    /// year and invalidates every badge issued for it.</summary>
+    /// <summary>The event edition: which year the forum is running.
+    /// <see cref="Open"/> is separate from <see cref="View"/> because opening a
+    /// year is the destructive half — it closes the current year into history and
+    /// clears EVERY attendee's badge, so the whole population has to be re-issued.
+    /// There is no separate close code: a year is only ever closed by opening the
+    /// next one, and a code that gated nothing would read, to anyone auditing who
+    /// can end an edition, as though nobody could.</summary>
     public static class Editions
     {
         public const string View = "Editions.View";
         public const string Open = "Editions.Open";
-        public const string Close = "Editions.Close";
     }
 
     /// <summary>System Configuration page.</summary>
@@ -1240,10 +1242,12 @@ public static class PermissionCatalog
         new(Operations.View, "Operations", "View", "View operations toggles", AdminOnly),
         new(Operations.Edit, "Operations", "Edit", "Change operations toggles", AdminOnly),
 
-        // The event edition (which year is open, and closing one into history).
+        // The event edition (which year is open). Opening one closes the previous
+        // year and clears every badge, so the wording an admin reads in the role
+        // editor has to say so rather than sounding like a bookkeeping change.
         new(Editions.View, "Editions", "View", "View the event edition", AdminOnly),
-        new(Editions.Open, "Editions", "Open", "Open a new event edition", AdminOnly),
-        new(Editions.Close, "Editions", "Close", "Close the current edition into history", AdminOnly),
+        new(Editions.Open, "Editions", "Open",
+            "Open a new event edition (closes the current year and clears every badge)", AdminOnly),
 
         // System Configuration settings.
         new(Configuration.View, "Configuration", "View", "View system configuration", AdminOnly),

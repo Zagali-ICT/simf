@@ -611,6 +611,11 @@ public sealed class GateScanTests : IClassFixture<SimfApiFactory>
             Name = "Test Visitor",
             NationalityId = 682, // ISO 3166-1 numeric — SA
             PlaceOfBirth = "Riyadh",
+            // The gate reads admission off the PROFILE, so `approved` has to drive
+            // this and not only the account above. Left at its PendingApproval
+            // default, every holder is refused HolderNotApproved before the gate
+            // ever reaches the allow-list or direction checks the test is about.
+            AdmissionState = approved ? AccountState.Approved : AccountState.PendingApproval,
             CreatedAt = SimfClock.Now,
         });
         await appDb.SaveChangesAsync();

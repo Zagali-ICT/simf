@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 import 'package:simf_app/app/theme/tokens.dart';
 
-/// One session-title card (frame node 927:3308): a 48-high navy box on the beige
-/// 0.2px hairline, the title right-aligned in beige 14px SemiBold (frame's
-/// bordered card, not a bare bullet).
+/// One session-title card (frame node 927:3308): a 48-high navy box on the
+/// beige 0.2px hairline, the title right-aligned in beige 14px SemiBold
+/// (frame's bordered card, not a bare bullet).
 class ArchiveSessionTitleCard extends StatelessWidget {
   const ArchiveSessionTitleCard({required this.text, super.key});
 

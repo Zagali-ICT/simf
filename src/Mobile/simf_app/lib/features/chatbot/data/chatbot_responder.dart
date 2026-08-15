@@ -6,13 +6,20 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 ///
 /// Backed by the centralised AI (`POST /app/ai/assistance` — the `assistance`
 /// prompt, grounded server-side on the live event context). Overridable via
-/// [chatbotResponderProvider] so widget tests inject a fake responder (no network).
+/// [chatbotResponderProvider] so widget tests inject a fake responder (no
+/// network).
+// A seam, not a one-method class dressed up as an interface: it has two
+// implementations - the API responder below and the widget tests' fake -
+// selected through a provider. A top-level function cannot be implemented
+// twice, so the suggested fix would delete the injection point.
+// ignore: one_member_abstracts
 abstract class ChatbotResponder {
   Future<String> reply(String prompt, {required bool isArabic});
 }
 
 /// Calls the centralised AI assistance endpoint and returns its answer text.
-/// Throws [ApiFailure] on a wire error — the screen surfaces it as an error bubble.
+/// Throws [ApiFailure] on a wire error — the screen surfaces it as an error
+/// bubble.
 class ApiChatbotResponder implements ChatbotResponder {
   ApiChatbotResponder(this._client);
 

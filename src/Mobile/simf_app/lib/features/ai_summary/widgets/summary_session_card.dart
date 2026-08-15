@@ -10,8 +10,8 @@ import 'package:simf_app/features/sessions/data/session_models.dart';
 final DateFormat _agendaTime = DateFormat('hh:mm a', 'en');
 
 /// The "الجلسة" info card (frame 1072:14628): the white Medium label over the
-/// bordered selected-session box (gold title + day·time·duration·hall sub-line),
-/// then that day's agenda timeline.
+/// bordered selected-session box (gold title + day·time·duration·hall
+/// sub-line), then that day's agenda timeline.
 class SummarySessionCard extends StatelessWidget {
   const SummarySessionCard({
     required this.label,
@@ -30,9 +30,9 @@ class SummarySessionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hall = session.localizedHall(isArabic);
+    final hall = session.localizedHall(isArabic: isArabic);
     final sub = <String>[
-      gregorianWeekdayName(session.startLocal, isArabic),
+      gregorianWeekdayName(session.startLocal, isArabic: isArabic),
       _agendaTime.format(session.startLocal),
       durationLabel,
       if (hall != null && hall.trim().isNotEmpty) hall,
@@ -78,7 +78,7 @@ class SummarySessionCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
-                  session.localizedTitle(isArabic),
+                  session.localizedTitle(isArabic: isArabic),
                   textAlign: TextAlign.start,
                   style: SimfTokens.labelGoldSemiboldLg,
                 ),
@@ -125,7 +125,7 @@ class SummaryAgendaRow extends StatelessWidget {
         children: <Widget>[
           Expanded(
             child: Text(
-              item.localizedTitle(isArabic),
+              item.localizedTitle(isArabic: isArabic),
               textAlign: TextAlign.start,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,

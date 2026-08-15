@@ -5,14 +5,14 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 /// App-local data layer for the notifications feature — the bell's unread count
-/// (`GET /app/account/notifications/unread-count`, signed-in only — Page_013 E1)
-/// and the Notifications inbox (Page_033, signed-in only): the paged list, the
-/// per-item read, and the mark-all-read.
+/// (`GET /app/account/notifications/unread-count`, signed-in only — Page_013
+/// E1) and the Notifications inbox (Page_033, signed-in only): the paged list,
+/// the per-item read, and the mark-all-read.
 ///
 /// Throws [ApiFailure] on a wire error. The best-effort gating (guest → 0,
-/// silent failure → 0) for the badge lives in [unreadNotificationCountProvider],
-/// not here — the repository stays a thin, honest wrapper over the one shared
-/// [SimfApiClient].
+/// silent failure → 0) for the badge lives in
+/// [unreadNotificationCountProvider], not here — the repository stays a thin,
+/// honest wrapper over the one shared [SimfApiClient].
 class NotificationsRepository {
   NotificationsRepository(this._client);
 

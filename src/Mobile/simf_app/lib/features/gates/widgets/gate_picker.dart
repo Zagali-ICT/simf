@@ -7,9 +7,9 @@ import 'package:simf_app/features/gates/data/gate_models.dart';
 
 /// The assigned-gates dropdown (setup stage), keyed by `gateId`.
 ///
-/// DEF-STF-006 — an INACTIVE gate is tagged (and dimmed) in the list. It used to
-/// look exactly like a working one, so picking it turned every scan into a red
-/// denial with nothing pointing at the gate.
+/// DEF-STF-006 — an INACTIVE gate is tagged (and dimmed) in the list. It used
+/// to look exactly like a working one, so picking it turned every scan into a
+/// red denial with nothing pointing at the gate.
 class GatePicker extends StatelessWidget {
   const GatePicker({
     required this.isArabic,
@@ -24,8 +24,9 @@ class GatePicker extends StatelessWidget {
   final OperatorGate gate;
   final ValueChanged<OperatorGate> onGate;
 
-  static String label(OperatorGate gate, AppL10n l10n, {required bool isArabic}) {
-    final name = gate.localizedName(isArabic);
+  static String label(OperatorGate gate, AppL10n l10n,
+      {required bool isArabic,}) {
+    final name = gate.localizedName(isArabic: isArabic);
     return gate.isActive ? name : '$name — ${l10n.gateInactiveTag}';
   }
 

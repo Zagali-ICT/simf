@@ -18,17 +18,17 @@ class BoothHallRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Frame 922:2624 — the hall box reads "HALL A · القاعة الرئيسية": the hall's
-    // English name (gold, upper-cased) + a beige dot + its Arabic name (beige),
-    // shown together. Both ship on the wire (D-432); when a booth carries neither
-    // hall name, degrade to the single localized hall name → sector → generic
-    // label (D11/Page_015 L-6 — never invent a hall name).
+    // Frame 922:2624 — the hall box reads "HALL A · القاعة الرئيسية": the
+    // hall's English name (gold, upper-cased) + a beige dot + its Arabic name
+    // (beige), shown together. Both ship on the wire (D-432); when a booth
+    // carries neither hall name, degrade to the single localized hall name →
+    // sector → generic label (D11/Page_015 L-6 — never invent a hall name).
     final hallEn = booth.hallName?.trim();
     final hallAr = booth.hallNameArabic?.trim();
     final hasBoth =
         (hallEn?.isNotEmpty ?? false) && (hallAr?.isNotEmpty ?? false);
-    final fallback = booth.localizedHallName(l10n.isArabic) ??
-        booth.localizedSector(l10n.isArabic) ??
+    final fallback = booth.localizedHallName(isArabic: l10n.isArabic) ??
+        booth.localizedSector(isArabic: l10n.isArabic) ??
         l10n.boothsHallFallback;
     final code = booth.code;
     // Both children are a fixed 48 high; the row must NOT stretch — inside the
@@ -51,4 +51,3 @@ class BoothHallRow extends StatelessWidget {
     );
   }
 }
-

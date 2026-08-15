@@ -101,7 +101,9 @@ class _FakeGates implements GatesRepository {
       );
     }
     return result ??
-        GateScanResult.fromJson(<String, dynamic>{'outcome': 0, 'direction': 0});
+        GateScanResult.fromJson(
+          const <String, dynamic>{'outcome': 0, 'direction': 0},
+        );
   }
 
   @override
@@ -127,7 +129,9 @@ class _FakeGates implements GatesRepository {
       );
     }
     return result ??
-        GateScanResult.fromJson(<String, dynamic>{'outcome': 0, 'direction': 0});
+        GateScanResult.fromJson(
+          const <String, dynamic>{'outcome': 0, 'direction': 0},
+        );
   }
 
   @override
@@ -178,14 +182,23 @@ Future<void> _pump(WidgetTester tester, _FakeGates repo) async {
   await tester.pumpAndSettle();
 }
 
-/// Walks the new setup → scanner flow (D-509): pick the movement direction, then
-/// open the scanner. Defaults to Entry (دخول).
-Future<void> _openScanner(WidgetTester tester, {String direction = 'Entry'}) async {
+/// Walks the new setup → scanner flow (D-509): pick the movement direction,
+/// then open the scanner. Defaults to Entry (دخول).
+Future<void> _openScanner(
+  WidgetTester tester, {
+  String direction = 'Entry',
+}) async {
   await tester.tap(find.text(direction));
   await tester.pumpAndSettle();
   await tester.tap(find.widgetWithText(FilledButton, 'Scan code'));
   await tester.pumpAndSettle();
 }
+
+/// RFC 4122 v4: 8-4-4-4-12 lowercase hex, with the version nibble pinned to
+/// `4` and the variant nibble to one of `8`/`9`/`a`/`b`.
+final RegExp _uuidV4 = RegExp(
+  r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
+);
 
 void main() {
   group('GateScanScreen (D-406/D-509, staff gate operator)', () {
@@ -196,8 +209,8 @@ void main() {
       expect(find.text('Scan code'), findsOneWidget);
       expect(find.byType(TextField), findsNothing);
       // Scan stays disabled until a direction is picked.
-      final button =
-          tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Scan code'));
+      final button = tester
+          .widget<FilledButton>(find.widgetWithText(FilledButton, 'Scan code'));
       expect(button.onPressed, isNull);
 
       await _openScanner(tester);
@@ -208,7 +221,7 @@ void main() {
         (tester) async {
       final repo = _FakeGates(
         gates: <OperatorGate>[_gate()],
-        result: GateScanResult.fromJson(<String, dynamic>{
+        result: GateScanResult.fromJson(const <String, dynamic>{
           'outcome': 0,
           'direction': 0,
           'userProfile': <String, dynamic>{
@@ -237,7 +250,7 @@ void main() {
         (tester) async {
       final repo = _FakeGates(
         gates: <OperatorGate>[_gate()],
-        result: GateScanResult.fromJson(<String, dynamic>{
+        result: GateScanResult.fromJson(const <String, dynamic>{
           'outcome': 1,
           'direction': 0,
           'denialReasonCode': 2,
@@ -260,8 +273,8 @@ void main() {
       final repo = _FakeGates(gates: <OperatorGate>[_gate(directionMode: 0)]);
       await _pump(tester, repo);
       // No movement choice needed — scan is enabled straight away.
-      final button =
-          tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Scan code'));
+      final button = tester
+          .widget<FilledButton>(find.widgetWithText(FilledButton, 'Scan code'));
       expect(button.onPressed, isNotNull);
       await tester.tap(find.widgetWithText(FilledButton, 'Scan code'));
       await tester.pumpAndSettle();
@@ -316,9 +329,6 @@ void main() {
 
     testWidgets('G-1: each scan sends a fresh distinct UUIDv4 idempotency key',
         (tester) async {
-      final uuidV4 = RegExp(
-        r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
-      );
       final repo = _FakeGates(gates: <OperatorGate>[_gate()]);
       await _pump(tester, repo);
       await _openScanner(tester);
@@ -336,11 +346,12 @@ void main() {
 
       expect(repo.idempotencyKeys.length, 2);
       expect(repo.idempotencyKeys[0], isNot(repo.idempotencyKeys[1]));
-      expect(uuidV4.hasMatch(repo.idempotencyKeys[0]), isTrue);
-      expect(uuidV4.hasMatch(repo.idempotencyKeys[1]), isTrue);
+      expect(_uuidV4.hasMatch(repo.idempotencyKeys[0]), isTrue);
+      expect(_uuidV4.hasMatch(repo.idempotencyKeys[1]), isTrue);
     });
 
-    testWidgets('G-4: an unreachable server queues the scan and shows '
+    testWidgets(
+        'G-4: an unreachable server queues the scan and shows '
         'saved-offline + the waiting-to-sync banner', (tester) async {
       final repo = _FakeGates(gates: <OperatorGate>[_gate()], offline: true);
       await _pump(tester, repo);
@@ -362,13 +373,18 @@ void main() {
       expect(repo.pendingCount(), 1);
     });
 
-    testWidgets('D-821: an offline ALLOWED verdict is shown as provisional, '
+    testWidgets(
+        'D-821: an offline ALLOWED verdict is shown as provisional, '
         'never as a final answer', (tester) async {
       final repo = _FakeGates(
         gates: <OperatorGate>[_gate()],
         offline: true,
         offlineVerdict: const OfflineGateVerdict.allowed(
-          OfflineBadge(profileTypeCode: 1, sequence: 3000042),
+          OfflineBadge(
+            profileId: '11111111-2222-3333-4444-555555555555',
+            editionYear: 2026,
+            profileTypeCode: 1,
+          ),
         ),
       );
       await _pump(tester, repo);
@@ -378,15 +394,18 @@ void main() {
       await tester.pump();
       await tester.pump();
 
-      expect(find.text('Allowed (offline) — saved for confirmation.'),
-          findsOneWidget,);
+      expect(
+        find.text('Allowed (offline) — saved for confirmation.'),
+        findsOneWidget,
+      );
       // NOT the server's allowed card: the decision is still the server's when
       // the queue drains, and the operator must not read this as final.
       expect(find.text('Allowed'), findsNothing);
       expect(repo.pendingCount(), 1);
     });
 
-    testWidgets('D-821: an offline DENIED verdict names the reason and still '
+    testWidgets(
+        'D-821: an offline DENIED verdict names the reason and still '
         'says the scan was saved', (tester) async {
       final repo = _FakeGates(
         gates: <OperatorGate>[_gate()],
@@ -422,7 +441,8 @@ void main() {
   });
 
   group('GateScanScreen — deferred gate-console defects', () {
-    testWidgets('DEF-STF-005 — a 403 on load shows the SERVER\'s reason, not '
+    testWidgets(
+        "DEF-STF-005 — a 403 on load shows the SERVER's reason, not "
         'the generic permission copy', (tester) async {
       await _pump(
         tester,
@@ -457,13 +477,15 @@ void main() {
       expect(find.text('You are not assigned to this gate.'), findsOneWidget);
     });
 
-    testWidgets('DEF-STF-005 — a 403 with no server body keeps the generic copy',
+    testWidgets(
+        'DEF-STF-005 — a 403 with no server body keeps the generic copy',
         (tester) async {
       await _pump(tester, _FakeGates(listStatus: 403));
       expect(find.textContaining('not authorised to operate'), findsOneWidget);
     });
 
-    testWidgets('DEF-STF-006 — an inactive gate is tagged in the picker and '
+    testWidgets(
+        'DEF-STF-006 — an inactive gate is tagged in the picker and '
         'warns before the first scan', (tester) async {
       await _pump(
         tester,

@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
-
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_logo_image.dart';
 import 'package:simf_app/core/net/asset_urls.dart';
+import 'package:simf_app/core/utils/initials.dart';
 import 'package:simf_app/features/sponsors/data/sponsor_models.dart';
 
 /// The sponsor's real logo (D-357 `SponsorLogo` asset, served anonymously at
-/// `{base}/app/assets/SponsorLogo/{id}/image`) shown **whole** inside its parent
-/// box, falling back to the acronym initials while it loads or when no logo is
-/// set (the route 404s). [hero] picks the initials colour for the box it sits in.
+/// `{base}/app/assets/SponsorLogo/{id}/image`) shown **whole** inside its
+/// parent box, falling back to the acronym initials while it loads or when no
+/// logo is set (the route 404s). [hero] picks the initials colour for the box
+/// it sits in.
 ///
 /// Owner 2026-07-26 — a sponsor mark must FIT its box (the old `BoxFit.cover`
 /// cropped wide logos), so it renders through the shared [SimfLogoImage]. Set
@@ -81,13 +82,6 @@ class SponsorLogo extends StatelessWidget {
 /// "SAMI" / "GAMI" chip). The API has no acronym field, so derive initials from
 /// the localized name — the same interim logo-as-initials treatment the badge
 /// strip uses elsewhere.
-String sponsorBadgeText(Sponsor sponsor, bool isArabic) {
-  final name = sponsor.localizedName(isArabic);
-  final words = name.trim().split(RegExp(r'\s+'));
-  final letters = words
-      .where((w) => w.isNotEmpty)
-      .take(2)
-      .map((w) => w.characters.first)
-      .join();
-  return letters.isEmpty ? '—' : letters.toUpperCase();
+String sponsorBadgeText(Sponsor sponsor, {required bool isArabic}) {
+  return initialsFromWords(sponsor.localizedName(isArabic: isArabic));
 }

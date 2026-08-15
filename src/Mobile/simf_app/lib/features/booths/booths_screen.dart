@@ -8,6 +8,7 @@ import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/app/widgets/simf_search_field.dart';
+import 'package:simf_app/core/utils/refresh.dart';
 import 'package:simf_app/features/booths/widgets/booth_card.dart';
 import 'package:simf_app/features/venuemap/data/venue_map_models.dart';
 import 'package:simf_app/features/venuemap/data/venue_map_repository.dart';
@@ -18,19 +19,33 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 ///
 /// **Public.** Reuses the shipped booth reads (`GET /app/booths` + `/{id}`,
 /// D-199 / D-230) already wired in [VenueMapRepository] — the list of exhibitor
-/// booths; tapping a booth opens the full exhibitor detail screen (Wave 3, Figma
-/// 1439:11881).
+/// booths; tapping a booth opens the full exhibitor detail screen (Wave 3,
+/// Figma 1439:11881).
 ///
 /// Frame mapping: the navy scaffold + centred header (الأجنحة) and the shared
-/// bottom nav from [SimfPageShell]; a bordered search field (ابحث عن جناح أو شركة);
-/// then one exhibitor card per booth — a company header row (short name + full
-/// name beside the square logo tile, gold-hairline divider), the gold-bordered
-/// **code pill** (A-12) beside the deep-navy **hall box**, the booth-officer row
+/// bottom nav from [SimfPageShell]; a bordered search field (ابحث عن جناح أو
+/// شركة); then one exhibitor card per booth — a company header row (short name
+/// + full name beside the square logo tile, gold-hairline divider), the
+///   gold-bordered **code pill** (A-12) beside the deep-navy **hall box**, the
+///   booth-officer row
 /// + email / phone contact boxes (D-432 — now on the wire, server resolves the
-/// officer Contact-first), and a **guide-me** gold CTA. D-764: the logo tile
-/// renders the booth's own `BoothLogo` asset (D-357) via
-/// `{base}/app/assets/BoothLogo/{booth.id}/image`, falling back to the booth
-/// short-name initials when the booth has no uploaded logo.
+///   officer Contact-first), and a **guide-me** gold CTA. D-764: the logo tile
+///   renders the booth's own `BoothLogo` asset (D-357) via
+///   `{base}/app/assets/BoothLogo/{booth.id}/image`, falling back to the booth
+///   short-name initials when the booth has no uploaded logo.
+///
+/// Route: `RouteNames.booths`.
+/// Data: [boothsListProvider], [simfDataConfigProvider],
+///       [venueMapRepositoryProvider].
+/// Perf: lazy — builds children on demand (ListView.separated).
+/// The exhibition booths (`GET /app/booths`).
+///
+/// Load only — `_query` stays on the widget, like `speakersListProvider`'s
+/// screen: the local search field is UI state with no server behind it.
+final boothsListProvider = FutureProvider.autoDispose<List<BoothSummary>>(
+  (ref) => ref.watch(venueMapRepositoryProvider).getBooths(),
+);
+
 class BoothsScreen extends ConsumerStatefulWidget {
   const BoothsScreen({super.key});
 
@@ -39,72 +54,40 @@ class BoothsScreen extends ConsumerStatefulWidget {
 }
 
 class _BoothsScreenState extends ConsumerState<BoothsScreen> {
-  bool _loading = true;
-  bool _error = false;
-  List<BoothSummary> _booths = const <BoothSummary>[];
   String _query = '';
 
-  @override
-  void initState() {
-    super.initState();
-    unawaited(_load());
-  }
-
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = false;
-    });
-    try {
-      final booths = await ref.read(venueMapRepositoryProvider).getBooths();
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _booths = booths;
-        _loading = false;
-      });
-    } on ApiFailure {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _error = true;
-        _loading = false;
-      });
-    }
-  }
+  Future<void> _refresh() => refreshAsync(ref, boothsListProvider.future);
 
   // Wave 3 — tapping a booth opens the full exhibitor detail screen (Figma
   // 1439:11881), replacing the earlier description bottom sheet.
   void _openBooth(BoothSummary booth) {
-    context.pushNamed(
-      RouteNames.exhibitorDetail,
-      pathParameters: <String, String>{RouteParams.boothId: booth.id},
-    );
+    unawaited(context.pushNamed(
+        RouteNames.exhibitorDetail,
+        pathParameters: <String, String>{RouteParams.boothId: booth.id},
+      ),);
   }
 
   // #9 — the booth's "أرشدني" CTA opens the venue map focused on this booth
   // (a pushed map instance that selects + centres the booth's node).
   void _openBoothMap(BoothSummary booth) {
-    context.pushNamed(
-      RouteNames.boothMap,
-      pathParameters: <String, String>{RouteParams.boothId: booth.id},
-    );
+    unawaited(context.pushNamed(
+        RouteNames.boothMap,
+        pathParameters: <String, String>{RouteParams.boothId: booth.id},
+      ),);
   }
 
   // The booths whose name / exhibitor / sector / code matches the query
   // (client-side filter, mirroring the frame's local search field).
-  List<BoothSummary> _filtered(bool isArabic) {
+  List<BoothSummary> _filtered(List<BoothSummary> booths, bool isArabic) {
     final q = _query.trim().toLowerCase();
     if (q.isEmpty) {
-      return _booths;
+      return booths;
     }
-    return _booths.where((booth) {
+    return booths.where((booth) {
       final haystack = <String?>[
-        booth.localizedName(isArabic),
-        booth.localizedExhibitor(isArabic),
-        booth.localizedSector(isArabic),
+        booth.localizedName(isArabic: isArabic),
+        booth.localizedExhibitor(isArabic: isArabic),
+        booth.localizedSector(isArabic: isArabic),
         booth.code,
       ].whereType<String>().join(' ').toLowerCase();
       return haystack.contains(q);
@@ -123,27 +106,26 @@ class _BoothsScreenState extends ConsumerState<BoothsScreen> {
   }
 
   Widget _buildBody(AppL10n l10n) {
-    if (_loading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    if (_error) {
-      // Pull-to-refresh also works in the error state so the user can pull to
-      // retry (the short error content is hosted in the shared always-scrollable
-      // SimfPullableHost so the gesture fires).
-      return SimfPullToRefresh(
-        onRefresh: _load,
-        child: SimfPullableHost(
-          child: SimfErrorState(
-            message: l10n.boothsError,
-            retryLabel: l10n.retryLabel,
-            onRetry: () => unawaited(_load()),
+    return ref.watch(boothsListProvider).when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          // Pull-to-refresh also works in the error state so the user can pull
+          // to retry (the short error content is hosted in the shared
+          // always-scrollable SimfPullableHost so the gesture fires).
+          error: (_, __) => SimfRefreshableMessage(
+            onRefresh: _refresh,
+            child: SimfErrorState(
+              message: l10n.boothsError,
+              retryLabel: l10n.retryLabel,
+              onRetry: () => ref.invalidate(boothsListProvider),
+            ),
           ),
-        ),
-      );
-    }
+          data: (booths) => _buildList(l10n, booths),
+        );
+  }
 
+  Widget _buildList(AppL10n l10n, List<BoothSummary> booths) {
     final isArabic = l10n.isArabic;
-    final filtered = _filtered(isArabic);
+    final filtered = _filtered(booths, isArabic);
     // The card builds {base}/app/assets/BoothLogo/{booth.id}/image.
     final baseUrl = ref.watch(simfDataConfigProvider).baseUrl;
 
@@ -162,13 +144,13 @@ class _BoothsScreenState extends ConsumerState<BoothsScreen> {
           ),
         ),
         Expanded(
-          // Pull-down-from-the-top re-fetches the booths (onRefresh: _load); the
-          // empty / no-match short states use the shared always-scrollable
-          // SimfPullableHost so the gesture fires; the list itself uses
+          // Pull-down-from-the-top re-fetches the booths; the empty / no-match
+          // short states use the shared always-scrollable SimfPullableHost so
+          // the gesture fires; the list itself uses
           // AlwaysScrollableScrollPhysics for the same.
           child: SimfPullToRefresh(
-            onRefresh: _load,
-            child: _booths.isEmpty
+            onRefresh: _refresh,
+            child: booths.isEmpty
                 ? SimfPullableHost(
                     child: SimfEmptyState(
                       icon: Icons.storefront_outlined,

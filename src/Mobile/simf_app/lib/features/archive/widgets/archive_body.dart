@@ -4,8 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
-import 'package:simf_app/features/archive/archive_screen.dart';
 import 'package:simf_app/features/archive/data/archive_models.dart';
+import 'package:simf_app/features/archive/data/archive_repository.dart';
 import 'package:simf_app/features/archive/widgets/archive_bullet.dart';
 import 'package:simf_app/features/archive/widgets/archive_edition_pills.dart';
 import 'package:simf_app/features/archive/widgets/archive_gallery_row.dart';
@@ -37,10 +37,10 @@ class ArchiveBody extends ConsumerWidget {
     final detail = ref.watch(archiveEditionDetailProvider(selected.id));
     final d = detail.asData?.value;
 
-    final summary =
-        d?.localizedSummary(isArabic) ?? selected.localizedSummary(isArabic);
-    final location = d?.localizedLocation(isArabic);
-    final dateLabel = d?.localizedDateLabel(isArabic);
+    final summary = d?.localizedSummary(isArabic: isArabic) ??
+        selected.localizedSummary(isArabic: isArabic);
+    final location = d?.localizedLocation(isArabic: isArabic);
+    final dateLabel = d?.localizedDateLabel(isArabic: isArabic);
 
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
@@ -69,7 +69,7 @@ class ArchiveBody extends ConsumerWidget {
         SimfSectionHeader(title: l10n.archiveTitleLabel),
         const SizedBox(height: SimfTokens.space2),
         ArchiveBullet(
-          text: selected.localizedTitle(isArabic),
+          text: selected.localizedTitle(isArabic: isArabic),
           color: SimfTokens.accent,
           bold: true,
         ),
@@ -112,7 +112,8 @@ class ArchiveBody extends ConsumerWidget {
           const SizedBox(height: SimfTokens.space4),
           for (var i = 0; i < d.sessionTitles.length; i++) ...<Widget>[
             if (i > 0) const SizedBox(height: SimfTokens.space2),
-            ArchiveSessionTitleCard(text: d.sessionTitles[i].localized(isArabic)),
+            ArchiveSessionTitleCard(
+                text: d.sessionTitles[i].localized(isArabic: isArabic),),
           ],
         ],
         if (d != null && d.pastSpeakers.isNotEmpty) ...<Widget>[

@@ -384,6 +384,9 @@ public sealed class MyAreaDashboardTests : IClassFixture<SimfApiFactory>
             SaudiMobile = "+966500112233",
             InternationalMobile = "+447700900123",
             CreatedAt = now,
+            // A badge exists only for an admitted attendee, and admission is
+            // read on the profile rather than the account.
+            AdmissionState = AccountState.Approved,
         };
         app.UserProfiles.Add(profile);
 

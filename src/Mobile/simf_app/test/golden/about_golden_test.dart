@@ -18,14 +18,14 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the About screen against Figma frame **1116:16448** (عن
-/// الملتقى). Regenerate:
-///   flutter test --update-goldens test/golden/about_golden_test.dart
+/// الملتقى). Regenerate: flutter test --update-goldens
+/// test/golden/about_golden_test.dart
 ///
 /// Frame parity expected: the anchor-mark header (forum name), then the الرسالة
-/// + الرؤية text cards, the تفاصيل الملتقى details card (year / date / location)
-/// and the المحاور الرئيسية themes card (four numbered themes). RTL. Rendered on
-/// the static fallback path (no org profile, content fetch fails) so the PNG is
-/// deterministic.
+/// + الرؤية text cards, the تفاصيل الملتقى details card (year / date /
+///   location) and the المحاور الرئيسية themes card (four numbered themes).
+///   RTL. Rendered on the static fallback path (no org profile, content fetch
+///   fails) so the PNG is deterministic.
 
 /// A content repo that always fails → the screen keeps its static vision copy.
 class _FailContentRepo implements ContentRepository {

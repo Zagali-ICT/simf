@@ -1,8 +1,13 @@
-using Microsoft.AspNetCore.Hosting;
+﻿using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Time.Testing;
 using SIMF.Application.Email;
 using SIMF.Infrastructure.Persistence;
@@ -30,6 +35,28 @@ public class SimfApiFactory : WebApplicationFactory<Program>
     // D-157 — two physically separate test databases (one per context).
     private readonly string _identityDatabaseName = $"SIMF_Test_Identity_{Guid.NewGuid():N}";
     private readonly string _appDatabaseName = $"SIMF_Test_App_{Guid.NewGuid():N}";
+
+    /// <summary>Guards <see cref="EnsureDatabaseCreated"/> so the migrate-and-seed
+    /// runs once per factory rather than once per test. See the remarks there.</summary>
+    private bool _databaseReady;
+
+    // ConnectRetryCount=0 because these databases DO NOT EXIST YET when the host
+    // boots. SqlClient's default resiliency (ConnectRetryCount = 1,
+    // ConnectRetryInterval = 10s) turns an open against a missing database into a
+    // 10-SECOND stall before it reports the failure - measured on this LocalDB at
+    // 10,020 ms with the default against 2-21 ms without it. Test host only; the
+    // production connection strings keep their resiliency.
+    private string IdentityConnectionString =>
+        $"Server=(localdb)\\MSSQLLocalDB;Database={_identityDatabaseName};"
+        + "Trusted_Connection=True;TrustServerCertificate=True;ConnectRetryCount=0";
+
+    /// <summary>This factory's own App database name, for
+    /// <see cref="FactoryIsolationTests"/>.</summary>
+    internal string AppDatabaseName => _appDatabaseName;
+
+    private string AppConnectionString =>
+        $"Server=(localdb)\\MSSQLLocalDB;Database={_appDatabaseName};"
+        + "Trusted_Connection=True;TrustServerCertificate=True;ConnectRetryCount=0";
 
     public FakeEmailSender Email { get; } = new();
 
@@ -71,21 +98,73 @@ public class SimfApiFactory : WebApplicationFactory<Program>
     /// safe. The shape satisfies the Identity password policy (upper, lower,
     /// digit, non-alphanumeric).
     /// </summary>
-    private static readonly string DemoSeedPassword =
-        Environment.GetEnvironmentVariable("SIMF_TEST_DEMO_PASSWORD") is { Length: > 0 } supplied
-            ? supplied
-            : $"TestOnly!{Guid.NewGuid():N}Aa1";
+    private static readonly string DemoSeedPassword = ResolveDemoSeedPassword();
+
+    /// <summary>
+    /// A generated demo password that actually satisfies the product's password
+    /// policy, checked with the product's own rules.
+    /// </summary>
+    /// <remarks>
+    /// This used to be `$"TestOnly!{Guid.NewGuid():N}Aa1"` and assumed the shape
+    /// was enough. It was not: a 32-character hex GUID regularly contains a
+    /// sequential run such as "abc", "123" or "234", or three repeated
+    /// characters - both of which <see cref="PasswordPolicy"/> rejects. When the
+    /// draw was unlucky, EVERY demo @simf.local account failed to seed with
+    /// "Password must not contain sequential characters", and the only visible
+    /// symptom was three IdentitySeederTests and two
+    /// DemoOperationalConfigSeederTests failing with "Value is null" somewhere
+    /// far away. It looked exactly like suite interference - it reproduced only
+    /// in full runs and never when a class was re-run alone - because a re-run is
+    /// a NEW PROCESS, and a new process draws a new GUID.
+    ///
+    /// Validating against PasswordPolicy rather than hand-rolling a "safe"
+    /// alphabet keeps this honest: if the product tightens its rules, this
+    /// follows, instead of silently generating rejects again.
+    /// </remarks>
+    private static string ResolveDemoSeedPassword()
+    {
+        if (Environment.GetEnvironmentVariable("SIMF_TEST_DEMO_PASSWORD")
+            is { Length: > 0 } supplied)
+        {
+            return supplied;
+        }
+
+        for (var attempt = 0; attempt < 100; attempt++)
+        {
+            var candidate = $"TestOnly!{Guid.NewGuid():N}Aa1";
+            if (!PasswordPolicy.HasRepeatRun(candidate)
+                && !PasswordPolicy.HasSequentialRun(candidate)
+                && !PasswordPolicy.IsCommon(candidate)
+                && PasswordPolicy.HasUppercase(candidate)
+                && PasswordPolicy.HasLowercase(candidate)
+                && PasswordPolicy.HasDigit(candidate)
+                && PasswordPolicy.HasSpecial(candidate))
+            {
+                return candidate;
+            }
+        }
+
+        throw new InvalidOperationException(
+            "Could not generate a demo seed password that satisfies PasswordPolicy "
+            + "in 100 attempts. Either the policy changed shape or the generator "
+            + "needs rewriting - do not paper over this, the demo accounts silently "
+            + "fail to seed when the password is rejected.");
+    }
 
     public SimfApiFactory()
     {
+        // ConnectRetryCount=0 because these databases DO NOT EXIST YET when the
+        // host boots. SqlClient's default connection resiliency (ConnectRetryCount
+        // = 1, ConnectRetryInterval = 10s) turns an open against a missing
+        // database into a 10-SECOND stall before it reports the failure - measured
+        // on this LocalDB at 10,020 ms with the default against 2-21 ms without
+        // it. Anything that touches the database before EnsureDatabaseCreated has
+        // migrated it pays that, 253 times over. Test host only; the production
+        // connection strings keep their resiliency.
         Environment.SetEnvironmentVariable(
-            "ConnectionStrings__SimfIdentityDb",
-            $"Server=(localdb)\\MSSQLLocalDB;Database={_identityDatabaseName};" +
-            "Trusted_Connection=True;TrustServerCertificate=True");
+            "ConnectionStrings__SimfIdentityDb", IdentityConnectionString);
         Environment.SetEnvironmentVariable(
-            "ConnectionStrings__SimfAppDb",
-            $"Server=(localdb)\\MSSQLLocalDB;Database={_appDatabaseName};" +
-            "Trusted_Connection=True;TrustServerCertificate=True");
+            "ConnectionStrings__SimfAppDb", AppConnectionString);
         // The super-admin seed settings, pinned so the suite is hermetic.
         //
         // Each is set TWICE, unprefixed and `SIMF_API_`-prefixed, because
@@ -203,6 +282,20 @@ public class SimfApiFactory : WebApplicationFactory<Program>
     {
         builder.UseEnvironment("Testing");
 
+        // THE CONNECTION STRINGS ARE PER-FACTORY, NOT PROCESS-WIDE.
+        //
+        // They are also set as environment variables in the constructor, because
+        // AddInfrastructure reads configuration eagerly. But an environment
+        // variable is process-global while WebApplicationFactory builds its host
+        // LAZILY, so whichever factory was constructed LAST wins for any host
+        // that has not been built yet - and that host then opens a database
+        // belonging to another factory, which that factory's Dispose deletes.
+        // UseSetting writes into this builder's own configuration, so these two
+        // values cannot be overwritten by another factory's constructor.
+        builder.UseSetting(
+            "ConnectionStrings:SimfIdentityDb", IdentityConnectionString);
+        builder.UseSetting("ConnectionStrings:SimfAppDb", AppConnectionString);
+
         builder.ConfigureServices(services =>
         {
             services.RemoveAll<IEmailSender>();
@@ -210,16 +303,83 @@ public class SimfApiFactory : WebApplicationFactory<Program>
 
             services.RemoveAll<TimeProvider>();
             services.AddSingleton<TimeProvider>(Time);
+
+            // PBKDF2 is deliberately slow, and the suite pays for that slowness
+            // thousands of times over: ~10 hashes seeding each fixture, plus a
+            // hash for every user a test creates and a verify for every sign-in
+            // it performs - on the order of 5,000 operations per run. Measured on
+            // this code: 33 ms per operation at the framework default of 100,000
+            // iterations, 0.3 ms at 1,000. That is minutes of a run spent proving
+            // nothing: no test asserts on hashing cost or format, and the stored
+            // V3 hash carries its own iteration count, so hashes written here
+            // always verify here.
+            //
+            // TEST HOST ONLY. Production never configures PasswordHasherOptions
+            // and must keep the framework default - PasswordHasherCostTests fails
+            // the build if this line is ever copied into src/.
+            services.Configure<PasswordHasherOptions>(
+                options => options.IterationCount = 1000);
+
+            // Drop the background workers from the test host. Every one of the
+            // 253 hosts otherwise starts the worker lease and the thirteen leased
+            // workers, which take a SQL connection against a database that does
+            // not exist yet, hold a long-lived connection on the App database
+            // (which can then defeat EnsureDeleted in Dispose and leak the
+            // throwaway databases), and tick timers nothing asserts on.
+            //
+            // The filter is the registration SHAPE, not a name list, so a worker
+            // added later is covered without editing this: the lease and every
+            // AddLeasedHostedService<T> register through a FACTORY LAMBDA, which
+            // leaves ImplementationType null. AddHostedService<T> sets it - which
+            // is why this keeps EmailBackgroundService, whose in-process channel
+            // the FakeEmailSender tests drain through, and ASP.NET Core's own
+            // GenericWebHostService, without which there is no TestServer at all.
+            //
+            // The worker TESTS are unaffected: they resolve the worker and call
+            // its scan method directly rather than driving the hosted loop.
+            var leasedWorkers = services
+                .Where(descriptor => descriptor.ServiceType == typeof(IHostedService)
+                    && descriptor.ImplementationType is null)
+                .ToList();
+            foreach (var worker in leasedWorkers)
+            {
+                services.Remove(worker);
+            }
         });
     }
 
-    /// <summary>Applies the migrations to the test database. Call once per test class.</summary>
+    /// <summary>
+    /// Applies the migrations and runs the seeders once per factory. Test classes
+    /// call it from their constructor; every call after the first returns
+    /// immediately.
+    /// </summary>
+    /// <remarks>
+    /// THE GUARD IS THE POINT, not a micro-optimisation. xUnit constructs a NEW
+    /// instance of the test class for EVERY [Fact], while the IClassFixture
+    /// factory is shared across them - so a class of 12 tests called this 12
+    /// times on the same factory, and 11 of those re-ran two Migrate() calls and
+    /// all five seeders against a database that was already migrated and seeded.
+    /// Measured on IdentitySeederTests: 15.1s for the real call, then 11 repeats
+    /// costing 0.74-1.53s each, about 12s wasted in one class. Across the
+    /// assembly that is roughly 2,000 redundant cycles - the bulk of the suite's
+    /// 38-minute run, and the reason the CI test gate is switched off (D-887).
+    ///
+    /// The seeders are idempotent, so the repeats changed nothing; they only
+    /// cost. Anything that genuinely needs to re-run a seeder does so explicitly
+    /// (IdentitySeederTests, SqlContentSeederTests and DemoOperationalConfigSeeder
+    /// -Tests all resolve the seeder and call it themselves), which is unaffected.
+    /// </remarks>
     public void EnsureDatabaseCreated()
     {
+        if (_databaseReady)
+        {
+            return;
+        }
+
         using var scope = Services.CreateScope();
         var services = scope.ServiceProvider;
-        services.GetRequiredService<SimfIdentityDbContext>().Database.Migrate();
-        services.GetRequiredService<SimfAppDbContext>().Database.Migrate();
+        MigrateToLatest(services.GetRequiredService<SimfIdentityDbContext>());
+        MigrateToLatest(services.GetRequiredService<SimfAppDbContext>());
         // D-174 — the production Program skips the seeder under the
         // "Testing" environment so xunit doesn't pay the cost on every
         // class. Phase G11 / page 39 ships seed content blocks that
@@ -252,6 +412,40 @@ public class SimfApiFactory : WebApplicationFactory<Program>
         // SQL seed above creates. Idempotent.
         services.GetRequiredService<SIMF.Infrastructure.Seeding.DemoOperationalConfigSeeder>()
             .SeedAsync().GetAwaiter().GetResult();
+
+        // Set last: a failure part-way through leaves the flag false, so a retry
+        // starts over rather than handing the next test a half-seeded database.
+        _databaseReady = true;
+    }
+
+    /// <summary>
+    /// Applies every migration, naming the last one explicitly instead of calling
+    /// <c>Database.Migrate()</c>.
+    /// </summary>
+    /// <remarks>
+    /// Same migrations, same resulting schema. The difference is what EF does
+    /// FIRST: with no target migration, EF Core 9+ builds the design-time model
+    /// and diffs it against the snapshot to raise its pending-model-changes
+    /// warning. That check is worth having - but once per build
+    /// (<c>dotnet ef migrations has-pending-model-changes</c>), not twice per test
+    /// class. Naming the target short-circuits the differ.
+    ///
+    /// The target is the LAST migration rather than a literal name on purpose: a
+    /// hardcoded "InitialCreate" would silently stop applying every migration
+    /// added after it, which is exactly the coverage loss this suite exists to
+    /// prevent.
+    /// </remarks>
+    private static void MigrateToLatest(DbContext context)
+    {
+        var latest = context.Database.GetMigrations().LastOrDefault();
+        if (latest is null)
+        {
+            throw new InvalidOperationException(
+                $"{context.GetType().Name} reports no migrations, so a test database "
+                + "cannot be built from them. The migrations are the schema of record.");
+        }
+
+        context.Database.GetService<IMigrator>().Migrate(latest);
     }
 
     protected override void Dispose(bool disposing)

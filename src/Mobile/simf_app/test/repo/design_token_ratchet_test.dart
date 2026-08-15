@@ -46,7 +46,7 @@ List<File> _libDartFiles() => Directory('lib')
 
 /// Windows `Directory.listSync` returns backslash paths; normalise so the
 /// comparisons below read the same on every platform.
-String _posix(String path) => path.replaceAll('\\', '/');
+String _posix(String path) => path.replaceAll(r'\', '/');
 
 void main() {
   group('#16 — raw colours live only in tokens.dart', () {

@@ -6,18 +6,22 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/core/utils/gregorian_month_names.dart';
+import 'package:simf_app/core/utils/local_days.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
 import 'package:simf_app/core/utils/weekday_names.dart';
 import 'package:simf_app/core/validation/field_limits.dart';
 import 'package:simf_app/features/delegations/data/delegation_models.dart';
 import 'package:simf_app/features/delegations/data/delegations_repository.dart';
 import 'package:simf_app/features/delegations/widgets/delegation_option_tile.dart';
+import 'package:simf_app/features/speakers/widgets/meeting_request_sheet.dart'
+    show MeetingRequestSheet;
 import 'package:simf_app/features/speakers/widgets/meeting_slot_pickers.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 /// Bi-Meeting rework — the delegation-meeting request sheet (طلب اجتماع وفد),
-/// mirroring the speaker [MeetingRequestSheet]. A delegate of one invited country
-/// asks to meet another invited country's delegation. Two entry points share it:
+/// mirroring the speaker [MeetingRequestSheet]. A delegate of one invited
+/// country asks to meet another invited country's delegation. Two entry points
+/// share it:
 /// - from a **tapped delegation card** — [country] is set (fixed target);
 /// - from the **"طلب اجتماع وفد"** button on the Bi-Meeting page — [country] is
 ///   null, so a searchable delegation picker is shown first.
@@ -26,11 +30,12 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// (`GET /app/countries/{id}/available-slots`). Eligibility
 /// (AllowsDelegationMeeting) is enforced server-side — a 403 surfaces here.
 ///
-/// G3 (owner 2026-07-30, supersedes D-767 R1) — with **no free slot** the request
-/// can no longer be sent subject-only: the sheet shows the "no slots" notice and
-/// the send button is disabled (the API 409s `DELEGATION_MEETING_NO_AVAILABILITY`).
-/// A **failed** slot fetch is a separate state — it shows a load error + Retry, so
-/// a transient network failure never masquerades as "this delegation has no time".
+/// G3 (owner 2026-07-30, supersedes D-767 R1) — with **no free slot** the
+/// request can no longer be sent subject-only: the sheet shows the "no slots"
+/// notice and the send button is disabled (the API 409s
+/// `DELEGATION_MEETING_NO_AVAILABILITY`). A **failed** slot fetch is a separate
+/// state — it shows a load error + Retry, so a transient network failure never
+/// masquerades as "this delegation has no time".
 class DelegationMeetingRequestSheet extends ConsumerStatefulWidget {
   const DelegationMeetingRequestSheet({
     required this.country,
@@ -38,7 +43,8 @@ class DelegationMeetingRequestSheet extends ConsumerStatefulWidget {
     super.key,
   });
 
-  /// The delegation to meet, or **null** for the bilateral entry (show the picker).
+  /// The delegation to meet, or **null** for the bilateral entry (show the
+  /// picker).
   final DelegationItem? country;
   final AppL10n l10n;
 
@@ -65,12 +71,14 @@ class _DelegationMeetingRequestSheetState
   bool _delegationsLoaded = false;
   String _query = '';
 
-  // The chosen delegation's real availability slots, loaded once a target is set.
+  // The chosen delegation's real availability slots, loaded once a target is
+  // set.
   List<DelegationSlot> _slots = const <DelegationSlot>[];
   bool _slotsLoading = false;
   // G3 — the slot fetch FAILED (network / server), which is NOT the same as the
-  // delegation having no availability. Kept apart so the sheet can offer a retry
-  // instead of telling the user something untrue and locking the send button.
+  // delegation having no availability. Kept apart so the sheet can offer a
+  // retry instead of telling the user something untrue and locking the send
+  // button.
   bool _slotsError = false;
   DateTime? _selectedDay;
   DelegationSlot? _selectedSlot;
@@ -129,7 +137,8 @@ class _DelegationMeetingRequestSheetState
       final slots = await ref
           .read(delegationsRepositoryProvider)
           .getAvailableSlots(countryId);
-      // Drop a stale response — the user may have switched target while in flight.
+      // Drop a stale response — the user may have switched target while in
+      // flight.
       if (!mounted || countryId != _selected?.countryId) {
         return;
       }
@@ -156,26 +165,17 @@ class _DelegationMeetingRequestSheetState
     unawaited(_loadSlots(country.countryId));
   }
 
-  /// The distinct local days that carry at least one slot, in endpoint order.
-  List<DateTime> get _daysWithSlots {
-    final days = <DateTime>[];
-    for (final slot in _slots) {
-      final local = saudiOf(slot.start);
-      final day = DateTime(local.year, local.month, local.day);
-      if (!days.contains(day)) {
-        days.add(day);
-      }
-    }
-    return days;
-  }
+  /// The distinct local days that carry at least one slot. The endpoint
+  /// derives slots chronologically, so the shared helper's ascending order is
+  /// the endpoint's order; it is also correct if that ever stops holding.
+  List<DateTime> get _daysWithSlots =>
+      distinctLocalDays(_slots, (slot) => saudiOf(slot.start));
 
+  /// The slots on a given local day, in the endpoint's (chronological) order.
   List<DelegationSlot> _slotsForDay(DateTime day) => <DelegationSlot>[
         for (final slot in _slots)
-          if (_isSameDay(saudiOf(slot.start), day)) slot,
+          if (sameLocalDay(saudiOf(slot.start), day)) slot,
       ];
-
-  static bool _isSameDay(DateTime a, DateTime b) =>
-      a.year == b.year && a.month == b.month && a.day == b.day;
 
   Future<void> _submit() async {
     final l10n = widget.l10n;
@@ -195,9 +195,9 @@ class _DelegationMeetingRequestSheetState
       return;
     }
     // G3 — a slot is now ALWAYS required. The subject-only bypass is gone: the
-    // server 409s a request against a delegation with no free slot, so sending one
-    // could only ever fail. The send button is disabled in that state; this is
-    // the guard for the picked-a-day-but-not-a-time case.
+    // server 409s a request against a delegation with no free slot, so sending
+    // one could only ever fail. The send button is disabled in that state; this
+    // is the guard for the picked-a-day-but-not-a-time case.
     final slot = _selectedSlot;
     if (slot == null) {
       setState(() => _error = l10n.meetingPickDateTime);
@@ -235,17 +235,6 @@ class _DelegationMeetingRequestSheetState
         _error = _failureText(failure, l10n);
       });
     }
-  }
-
-  // A time-of-day as "10:00 ص" / "02:30 PM" — matches the speaker sheet.
-  String _formatTime(TimeOfDay time, bool isArabic) {
-    final hour12 = time.hour % 12 == 0 ? 12 : time.hour % 12;
-    final hh = hour12.toString().padLeft(2, '0');
-    final mm = time.minute.toString().padLeft(2, '0');
-    final meridiem = isArabic
-        ? (time.hour >= 12 ? 'م' : 'ص')
-        : (time.hour >= 12 ? 'PM' : 'AM');
-    return '$hh:$mm $meridiem';
   }
 
   // A35 — the server's own bilingual message wins. The old map hard-coded one
@@ -341,7 +330,8 @@ class _DelegationMeetingRequestSheetState
               width: SimfTokens.space5,
               height: SimfTokens.space5,
               child: CircularProgressIndicator(
-                strokeWidth: SimfTokens.delegationMeetingRequestSheetStrokeWidth,
+                strokeWidth:
+                    SimfTokens.delegationMeetingRequestSheetStrokeWidth,
                 color: SimfTokens.accent,
               ),
             ),
@@ -382,9 +372,10 @@ class _DelegationMeetingRequestSheetState
         ),
       );
 
-  /// G3 — the slot fetch failed: say so and offer a Retry. Deliberately different
-  /// copy from [AppL10n.meetingSlotNone] so a network blip is never read as "this
-  /// delegation has no availability", which would be a lie the user cannot act on.
+  /// G3 — the slot fetch failed: say so and offer a Retry. Deliberately
+  /// different copy from [AppL10n.meetingSlotNone] so a network blip is never
+  /// read as "this delegation has no availability", which would be a lie the
+  /// user cannot act on.
   Widget _slotsRetry(AppL10n l10n) => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -433,9 +424,7 @@ class _DelegationMeetingRequestSheetState
           focusedBorder: const OutlineInputBorder(
             borderSide: BorderSide(color: SimfTokens.accent),
           ),
-          border: const OutlineInputBorder(
-            
-          ),
+          border: const OutlineInputBorder(),
         ),
       );
 
@@ -460,14 +449,12 @@ class _DelegationMeetingRequestSheetState
           focusedBorder: const OutlineInputBorder(
             borderSide: BorderSide(color: SimfTokens.accent),
           ),
-          border: const OutlineInputBorder(
-            
-          ),
+          border: const OutlineInputBorder(),
         ),
       );
 
   /// The bilateral delegation picker — a searchable list of invited delegations
-  /// (flag + country name + member count). Shown only when [country] is null.
+  /// (flag + country name + member count). Shown only when `country` is null.
   Widget _delegationPicker(AppL10n l10n, bool isArabic) {
     if (!_delegationsLoaded) {
       return const Align(
@@ -499,7 +486,8 @@ class _DelegationMeetingRequestSheetState
           _hint(l10n.speakersNoMatches)
         else
           ConstrainedBox(
-            constraints: const BoxConstraints(maxHeight: SimfTokens.delegationMeetingRequestSheetMaxHeight),
+            constraints: const BoxConstraints(
+                maxHeight: SimfTokens.delegationMeetingRequestSheetMaxHeight,),
             child: ListView.separated(
               shrinkWrap: true,
               padding: EdgeInsets.zero,
@@ -561,10 +549,10 @@ class _DelegationMeetingRequestSheetState
           final day = days[i];
           return MeetingDayCard(
             key: ValueKey<String>('delegation-day-$i'),
-            weekday: gregorianWeekdayName(day, isArabic),
+            weekday: gregorianWeekdayName(day, isArabic: isArabic),
             dayNumber: day.day,
-            month: gregorianMonthName(day.month, isArabic),
-            selected: _selectedDay != null && _isSameDay(_selectedDay!, day),
+            month: gregorianMonthName(day.month, isArabic: isArabic),
+            selected: _selectedDay != null && sameLocalDay(_selectedDay!, day),
             onTap: () => setState(() {
               _selectedDay = day;
               _selectedSlot = null;
@@ -586,9 +574,9 @@ class _DelegationMeetingRequestSheetState
           for (var i = 0; i < slots.length; i++)
             MeetingTimeChip(
               key: ValueKey<String>('delegation-time-$i'),
-              label: _formatTime(
-                TimeOfDay.fromDateTime(saudiOf(slots[i].start)),
-                isArabic,
+              label: formatDateTime12h(
+                saudiOf(slots[i].start),
+                isArabic: isArabic,
               ),
               selected: _selectedSlot == slots[i],
               onTap: () => setState(() => _selectedSlot = slots[i]),
@@ -599,9 +587,10 @@ class _DelegationMeetingRequestSheetState
   }
 
   /// G3 — disabled while the slots load, and disabled once they are loaded and
-  /// EMPTY (no free slot ⇒ the server would 409), so the user is never invited to
-  /// send a request that cannot succeed. A failed fetch ([_slotsError]) also
-  /// leaves it disabled — the Retry in the slot section is the way forward there.
+  /// EMPTY (no free slot ⇒ the server would 409), so the user is never invited
+  /// to send a request that cannot succeed. A failed fetch ([_slotsError]) also
+  /// leaves it disabled — the Retry in the slot section is the way forward
+  /// there.
   Widget _sendButton(AppL10n l10n) {
     final enabled = !_submitting && !_slotsLoading && _slots.isNotEmpty;
     return Opacity(
@@ -625,4 +614,3 @@ class _DelegationMeetingRequestSheetState
     );
   }
 }
-

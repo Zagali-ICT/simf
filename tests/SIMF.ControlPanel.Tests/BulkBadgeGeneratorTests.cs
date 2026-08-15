@@ -30,6 +30,17 @@ public sealed class BulkBadgeGeneratorTests : CpComponentTestBase
         return RenderComponent<BulkBadgeGenerator>();
     }
 
+    /// <summary>Names the order, which generate now requires: an order carrying
+    /// only its counts is unrecognisable in the list once two are the same
+    /// size.</summary>
+    private static void NameOrder(IRenderedComponent<BulkBadgeGenerator> cut)
+    {
+        // Re-found between the two changes: the first change re-renders, which
+        // invalidates any element captured from an earlier FindAll.
+        cut.FindAll(".simf-bulk-builder__name input")[0].Change("Ministry of Interior Team");
+        cut.FindAll(".simf-bulk-builder__name input")[1].Change("فريق وزارة الداخلية");
+    }
+
     private static void AddRow(IRenderedComponent<BulkBadgeGenerator> cut, Guid typeId, string count)
     {
         cut.Find(".simf-bulk-builder__add select").Change(typeId.ToString());
@@ -91,6 +102,7 @@ public sealed class BulkBadgeGeneratorTests : CpComponentTestBase
             .SetResult(ApiResult<AdminBulkGenerateBadgesResponse>.Ok(
                 new AdminBulkGenerateBadgesResponse(5)));
 
+        NameOrder(cut);
         AddRow(cut, VipId, "5");
         // Open the confirm popup, then confirm.
         cut.Find(".simf-form__actions button").Click();

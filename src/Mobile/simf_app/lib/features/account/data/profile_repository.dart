@@ -18,8 +18,7 @@ class ProfileRepository {
   Future<UserProfileResponse> getMyProfile() {
     return _client.get<UserProfileResponse>(
       AccountEndpoints.userProfile,
-      decodeData: (data) =>
-          UserProfileResponse.fromJson(_asMap(data)),
+      decodeData: (data) => UserProfileResponse.fromJson(_asMap(data)),
     );
   }
 
@@ -30,8 +29,7 @@ class ProfileRepository {
     return _client.post<UserProfileResponse>(
       AccountEndpoints.userProfile,
       body: request.toJson(),
-      decodeData: (data) =>
-          UserProfileResponse.fromJson(_asMap(data)),
+      decodeData: (data) => UserProfileResponse.fromJson(_asMap(data)),
     );
   }
 
@@ -48,9 +46,8 @@ class ProfileRepository {
   Future<List<ProfileTypeItem>> getProfileTypes({bool? isVisitor}) {
     return _client.get<List<ProfileTypeItem>>(
       AccountEndpoints.profileTypes,
-      queryParameters: isVisitor == null
-          ? null
-          : <String, dynamic>{'isVisitor': isVisitor},
+      queryParameters:
+          isVisitor == null ? null : <String, dynamic>{'isVisitor': isVisitor},
       decodeData: (data) => _keyed(data, 'items', ProfileTypeItem.fromJson),
     );
   }
@@ -82,10 +79,10 @@ class ProfileRepository {
     );
   }
 
-  /// Self-service ID-image upload (multipart) — `POST /app/account/user-profile/id-image`.
-  /// 5 MB / jpeg|png|webp guards are server-side (content-type + magic-byte
-  /// verified), so the MIME is derived from [filename] and sent on the file part.
-  /// Returns true on success.
+  /// Self-service ID-image upload (multipart) — `POST
+  /// /app/account/user-profile/id-image`. 5 MB / jpeg|png|webp guards are
+  /// server-side (content-type + magic-byte verified), so the MIME is derived
+  /// from [filename] and sent on the file part. Returns true on success.
   Future<bool> uploadIdImage({
     required List<int> bytes,
     required String filename,
@@ -95,7 +92,7 @@ class ProfileRepository {
       bytes: bytes,
       filename: filename,
       contentType: mimeForFilename(filename),
-      decodeData: (data) => data is bool ? data : true,
+      decodeData: (data) => data is! bool || data,
     );
   }
 
@@ -153,71 +150,72 @@ final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
   return ProfileRepository(ref.watch(simfApiClientProvider));
 });
 
-/// Best-effort reference number (`SIMF-2026-…`) for the badge + profile ID line.
-/// It lives on the user-profile (the My-Area dashboard doesn't carry it), so the
-/// badge/profile read it here. Null while loading / on error.
-final referenceNumberProvider = FutureProvider.autoDispose<String?>((ref) async {
+/// The signed-in user's profile row — the ONE read of
+/// `GET /app/account/user-profile` that every field-level provider below
+/// selects from. Null for a guest and on any failure, so callers degrade
+/// rather than throw.
+///
+/// D-731 — that GET sits on the shared per-IP "auth" rate-limit bucket
+/// (sign-in / OTP / sign-up), and the surfaces reading it include the Guest+
+/// speaker-profile browse screen. So it (a) short-circuits guests with NO
+/// network call and (b) is **not** autoDispose, so the row is fetched once and
+/// cached rather than re-read on every screen open; browsing many speakers
+/// therefore can't drain the auth budget for co-located attendees behind one
+/// venue IP. It watches the auth controller, so it re-fetches on any auth
+/// transition (sign-in/out, token refresh/reload, or the D-563 stamp-roll +
+/// token revoke that follows an admin account-type change) — the cache tracks
+/// the live row and never goes stale across accounts.
+///
+/// Sharing one read is the point: `referenceNumberProvider` and
+/// `currentUserMeetingAccessProvider` used to fetch this same payload
+/// independently, so opening Badge then My Area then a speaker profile cost
+/// three identical round trips onto that bucket.
+///
+/// **Anything that WRITES the profile must `ref.invalidate` this**, or the
+/// cache serves the pre-save row — see `my_mobile_screen`'s save. A pull-to-
+/// refresh must invalidate THIS, not just a selector over it.
+final myProfileProvider = FutureProvider<UserProfileResponse?>((ref) async {
+  final auth = ref.watch(authControllerProvider);
+  if (auth is! AuthStateSignedIn) {
+    return null;
+  }
   try {
-    final profile = await ref.watch(profileRepositoryProvider).getMyProfile();
-    final ref0 = profile.referenceNumber?.trim();
-    return (ref0 == null || ref0.isEmpty) ? null : ref0;
+    return await ref.watch(profileRepositoryProvider).getMyProfile();
   } on ApiFailure {
     return null;
   }
 });
 
-/// D-729 (owner item 15) — whether the signed-in user is a VIP tier (VVIP/VIP,
-/// server-computed from ProfileType.AllowsVipMeetingSlots). Gates the speaker
-/// "request a meeting" CTA to VIP guests; the endpoint enforces the same rule.
-///
-/// D-731 — the speaker profile is a **Guest+ browse** surface, and the profile
-/// GET behind this sits on the shared per-IP "auth" rate-limit bucket (sign-in /
-/// OTP / sign-up). So this provider (a) short-circuits guests with NO network
-/// call — a guest can never be VIP — and (b) is **not** autoDispose, so the flag
-/// is cached across speaker-profile opens (fetched once, NOT re-fetched on every
-/// open); browsing many speakers therefore can't drain the auth budget for
-/// co-located attendees behind one venue IP. It [watch]es the auth controller,
-/// so it re-fetches on any auth transition (sign-in/out, token refresh/reload,
-/// or the D-563 stamp-roll + token revoke that follows an admin account-type
-/// change) — the cache tracks the live tier and never goes stale. False for
-/// guests / non-VIP / on error.
-final currentUserIsVipProvider = FutureProvider<bool>((ref) async {
-  final auth = ref.watch(authControllerProvider);
-  if (auth is! AuthStateSignedIn) {
-    return false;
-  }
-  try {
-    final profile = await ref.watch(profileRepositoryProvider).getMyProfile();
-    return profile.isVip;
-  } on ApiFailure {
-    return false;
-  }
+/// Best-effort reference number (`SIMF-2026-…`) for the badge + profile ID
+/// line. It lives on the user-profile (the My-Area dashboard doesn't carry
+/// it), so the badge/profile read it here. Null while loading / for a guest /
+/// on error.
+final referenceNumberProvider = FutureProvider<String?>((ref) async {
+  final profile = await ref.watch(myProfileProvider.future);
+  final reference = profile?.referenceNumber?.trim();
+  return (reference == null || reference.isEmpty) ? null : reference;
 });
 
-/// Bi-Meeting rework — the signed-in user's two admin-assigned meeting-eligibility
-/// flags (speaker / delegation), which REPLACE the VIP tier as the Bi-Meeting gate.
-/// Same guest short-circuit + non-autoDispose caching + auth-transition re-fetch as
-/// [currentUserIsVipProvider] (one profile read serves both flags; the gates read
-/// [MeetingAccess.speaker] / [.delegation] / [.any]). [MeetingAccess.none] for
-/// guests / on error.
+/// Bi-Meeting rework (D-760) — the signed-in user's two admin-assigned
+/// meeting-eligibility flags (speaker / delegation). They REPLACE the VIP
+/// tier as the Bi-Meeting gate, so eligibility no longer follows the
+/// audience tier: the gates read [MeetingAccess.speaker] /
+/// [MeetingAccess.delegation] / [MeetingAccess.any], and one profile read
+/// serves both flags. [MeetingAccess.none] for guests / on error.
 final currentUserMeetingAccessProvider =
     FutureProvider<MeetingAccess>((ref) async {
-  final auth = ref.watch(authControllerProvider);
-  if (auth is! AuthStateSignedIn) {
+  final profile = await ref.watch(myProfileProvider.future);
+  if (profile == null) {
     return MeetingAccess.none;
   }
-  try {
-    final profile = await ref.watch(profileRepositoryProvider).getMyProfile();
-    return MeetingAccess(
-      speaker: profile.allowsSpeakerMeeting,
-      delegation: profile.allowsDelegationMeeting,
-    );
-  } on ApiFailure {
-    return MeetingAccess.none;
-  }
+  return MeetingAccess(
+    speaker: profile.allowsSpeakerMeeting,
+    delegation: profile.allowsDelegationMeeting,
+  );
 });
 
-/// The signed-in user's Bi-Meeting entitlements (admin-assigned per-user flags).
+/// The signed-in user's Bi-Meeting entitlements (admin-assigned per-user
+/// flags).
 class MeetingAccess {
   const MeetingAccess({required this.speaker, required this.delegation});
 

@@ -3,7 +3,7 @@
 ///
 /// Depends on `simf_data_pkg` for the single dio client (SIMF-MAA-001 v1.2
 /// §9.1, DECISIONS_LOG D-003). Never instantiates `dio.Dio`.
-library simf_auth_pkg;
+library;
 
 export 'src/application/auth_controller.dart';
 export 'src/application/auth_providers.dart';

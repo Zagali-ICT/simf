@@ -31,12 +31,13 @@ class DeviceKeyPair {
 /// leaves the device.
 ///
 /// NOTE: the .NET ↔ Dart byte-interop (SPKI import + `VerifyData` with
-/// `IeeeP1363FixedFieldConcatenation`) is to be integration-verified against the
-/// running backend (simf-run); the round-trip is unit-tested within Dart here.
-/// A future hardening step (D-738 Tier-2) moves the key into the platform
-/// secure enclave — Android Keystore/StrongBox with setUserAuthenticationRequired
+/// `IeeeP1363FixedFieldConcatenation`) is to be integration-verified against
+/// the running backend (simf-run); the round-trip is unit-tested within Dart
+/// here. A future hardening step (D-738 Tier-2) moves the key into the platform
+/// secure enclave — Android Keystore/StrongBox with
+/// setUserAuthenticationRequired
 /// + iOS Secure Enclave — so it is biometric-bound and non-exportable; the
-/// backend contract (SPKI + ES256) is unchanged. See Page_003 Logic L-2.
+///   backend contract (SPKI + ES256) is unchanged. See Page_003 Logic L-2.
 class DeviceKeyClient {
   const DeviceKeyClient();
 
@@ -91,9 +92,9 @@ class DeviceKeyClient {
       );
     final signature =
         signer.generateSignature(base64.decode(challengeBase64)) as ECSignature;
-    final out = Uint8List(64);
-    out.setRange(0, 32, _bigIntTo32(signature.r));
-    out.setRange(32, 64, _bigIntTo32(signature.s));
+    final out = Uint8List(64)
+      ..setRange(0, 32, _bigIntTo32(signature.r))
+      ..setRange(32, 64, _bigIntTo32(signature.s));
     return base64.encode(out);
   }
 
@@ -101,12 +102,12 @@ class DeviceKeyClient {
     final q = pub.Q!;
     final x = _bigIntTo32(q.x!.toBigInteger()!);
     final y = _bigIntTo32(q.y!.toBigInteger()!);
-    final out = Uint8List(_spkiPrefix.length + 65);
-    out.setRange(0, _spkiPrefix.length, _spkiPrefix);
-    out[_spkiPrefix.length] = 0x04; // uncompressed point marker
-    out.setRange(_spkiPrefix.length + 1, _spkiPrefix.length + 33, x);
-    out.setRange(_spkiPrefix.length + 33, _spkiPrefix.length + 65, y);
-    return out;
+    // uncompressed point marker (0x04), then the X and Y coordinates
+    return Uint8List(_spkiPrefix.length + 65)
+      ..setRange(0, _spkiPrefix.length, _spkiPrefix)
+      ..[_spkiPrefix.length] = 0x04
+      ..setRange(_spkiPrefix.length + 1, _spkiPrefix.length + 33, x)
+      ..setRange(_spkiPrefix.length + 33, _spkiPrefix.length + 65, y);
   }
 
   static SecureRandom _secureRandom() {

@@ -1745,7 +1745,7 @@ internal sealed class SeatReservationService(
     /// no registration for a protocol seat; an administrator blocks it and types the
     /// guest hint.</item>
     /// <item><see cref="SeatTier.Vip"/> — only a VIP-tier visitor (their
-    /// <c>ProfileType.AllowsVipMeetingSlots</c>, the seeded VVIP + VIP rows and the
+    /// <c>ProfileType.IsVipTier</c>, the seeded VVIP + VIP rows and the
     /// same flag the app already reads as <c>isVip</c>).</item>
     /// <item><see cref="SeatTier.Normal"/> — every visitor type, VIP included.</item>
     /// </list></summary>
@@ -1782,7 +1782,7 @@ internal sealed class SeatReservationService(
 
     /// <summary>Is this visitor a VIP-tier attendee? Reuses the EXISTING
     /// VIP-tier notion rather than inventing a parallel one:
-    /// <c>UserProfile.ProfileTypeId → UserProfileType.AllowsVipMeetingSlots</c>, which
+    /// <c>UserProfile.ProfileTypeId → UserProfileType.IsVipTier</c>, which
     /// the seeder sets on the VVIP + VIP audience tiers and the app already
     /// surfaces as <c>isVip</c>. Both tables live on the App DB, so this is a
     /// single local query — no cross-database read.</summary>
@@ -1791,7 +1791,7 @@ internal sealed class SeatReservationService(
         await appDbContext.UserProfiles.AsNoTracking()
             .Where(p => p.UserId == actorUserId && p.ProfileTypeId != null)
             .Join(appDbContext.ProfileTypes.AsNoTracking(),
-                p => p.ProfileTypeId, t => (Guid?)t.Id, (p, t) => t.AllowsVipMeetingSlots)
+                p => p.ProfileTypeId, t => (Guid?)t.Id, (p, t) => t.IsVipTier)
             .FirstOrDefaultAsync(cancellationToken);
 
     /// <summary>Index of <paramref name="label"/> within

@@ -14,12 +14,13 @@ import 'package:simf_app/features/forum_guide/forum_guide_screen.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the Forum-guide screen against Figma frame **1388:7493**
-/// (دليل الملتقى). Regenerate:
-///   flutter test --update-goldens test/golden/forum_guide_golden_test.dart
+/// (دليل الملتقى). Regenerate: flutter test --update-goldens
+/// test/golden/forum_guide_golden_test.dart
 ///
 /// Frame parity expected: the gold intro banner (welcome copy + guide glyph),
 /// then five numbered step cards — a gold index badge, the title over the muted
-/// description, and a decorative gold caret — on the navy-deep card chrome. RTL.
+/// description, and a decorative gold caret — on the navy-deep card chrome.
+/// RTL.
 
 void main() {
   setUpAll(loadGoldenFonts);

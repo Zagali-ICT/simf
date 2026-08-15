@@ -26,7 +26,8 @@ class InterestChip extends StatelessWidget {
       borderRadius: BorderRadius.circular(SimfTokens.radiusPill),
       child: Container(
         alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4, vertical: SimfTokens.space2),
+        padding: const EdgeInsets.symmetric(
+            horizontal: SimfTokens.space4, vertical: SimfTokens.space2,),
         decoration: BoxDecoration(
           color: selected ? SimfTokens.accent : SimfTokens.navyDeep,
           borderRadius: BorderRadius.circular(SimfTokens.radiusPill),

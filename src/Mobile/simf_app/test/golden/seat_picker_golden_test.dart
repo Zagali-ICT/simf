@@ -33,11 +33,26 @@ SessionSeatMap _map() => const SessionSeatMap(
       seatsPerRow: 10, // legacy fallback = max(counts)
       seatCounts: <int>[4, 10, 8, 8, 6, 10],
       reservedCells: <SeatCell>[
-        SeatCell(rowLabel: 'A', seatNumber: 2, kind: SeatReservationKind.userBooking),
-        SeatCell(rowLabel: 'B', seatNumber: 5, kind: SeatReservationKind.userBooking),
-        SeatCell(rowLabel: 'C', seatNumber: 8, kind: SeatReservationKind.userBooking),
-        SeatCell(rowLabel: 'D', seatNumber: 1, kind: SeatReservationKind.userBooking),
-        SeatCell(rowLabel: 'E', seatNumber: 6, kind: SeatReservationKind.userBooking),
+        SeatCell(
+            rowLabel: 'A',
+            seatNumber: 2,
+            kind: SeatReservationKind.userBooking,),
+        SeatCell(
+            rowLabel: 'B',
+            seatNumber: 5,
+            kind: SeatReservationKind.userBooking,),
+        SeatCell(
+            rowLabel: 'C',
+            seatNumber: 8,
+            kind: SeatReservationKind.userBooking,),
+        SeatCell(
+            rowLabel: 'D',
+            seatNumber: 1,
+            kind: SeatReservationKind.userBooking,),
+        SeatCell(
+            rowLabel: 'E',
+            seatNumber: 6,
+            kind: SeatReservationKind.userBooking,),
       ],
       activeReservedCount: 5,
       hallCapacity: 60,

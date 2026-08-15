@@ -183,9 +183,24 @@ Renaming the existing value named tokens, for example `gap5`, `radius10` and
 | SIMF-C7 | Raw `TextFormField` | `navi_form_field.dart` |
 | SIMF-N1 | Inline `style="..."` in a Razor component | none |
 | SIMF-N2 | Raw hex colour in a stylesheet | `theme.tokens.css` |
+| SIMF-N3 | Custom property defined as its own name, `--navy: var(--navy)` | none |
 
 SIMF-C1 reports the applicable location from section 5 with each finding, so the
 tool communicates the taxonomy rather than assuming the reader knows it.
+
+SIMF-N3 is the counterweight to SIMF-N2, and it exists because N2 alone was
+actively dangerous. N2 counts raw hex at *use sites*, so a rewrite that empties
+the palette scores as a perfect result: the wave that closed N2 on `landing.css`
+rewrote the token definitions along with the use sites, producing 38 properties
+of the form `--navy: var(--navy)`. CSS treats a self-reference as a dependency
+cycle and resolves it to the guaranteed-invalid value, so every use site lost its
+colour and the public site shipped with transparent backgrounds and black text.
+The finding count fell 165 -> 98 and the build stayed green throughout.
+
+The lesson generalises beyond CSS: a rule that measures the *absence* of
+something can always be satisfied by deletion, so it needs a companion that
+checks what remains. N3 is deliberately exempt from N2's allowlist — the files
+allowed to hold literal colour are precisely the ones a self-reference ruins.
 
 Numeric values `0` and `1` are permitted everywhere. They are identity and
 neutral values, such as `opacity: 0` and `maxLines: 1`, and are not design

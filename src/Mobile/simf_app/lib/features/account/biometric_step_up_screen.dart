@@ -7,6 +7,7 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/core/errors/api_error_l10n.dart';
 import 'package:simf_app/core/responsive/max_width_body.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 import 'package:simf_app/core/widgets/simf_auth_sweep.dart';
 import 'package:simf_app/features/account/biometric_auth.dart';
 import 'package:simf_app/features/account/device_label.dart';
@@ -31,6 +32,11 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 /// `build` split into the shared [AccountSubHeader] (D-658) / `_buildContent` /
 /// `_buildSubmitButton` / `_buildResendRow`; the body + CTA capped by
 /// [MaxWidthBody].
+///
+/// Route: `RouteNames.biometricStepUp`.
+/// Data: [authControllerProvider], [biometricAuthProvider],
+///       [deviceLabelProvider].
+/// Perf: no list — a single-screen layout.
 class BiometricStepUpScreen extends ConsumerStatefulWidget {
   const BiometricStepUpScreen({super.key});
 
@@ -83,18 +89,14 @@ class _BiometricStepUpScreenState extends ConsumerState<BiometricStepUpScreen> {
     });
   }
 
-  String get _countdownLabel {
-    final m = (_secondsLeft ~/ 60).toString().padLeft(2, '0');
-    final s = (_secondsLeft % 60).toString().padLeft(2, '0');
-    return '$m:$s';
-  }
+  String get _countdownLabel => formatCountdown(_secondsLeft);
 
   bool get _canSubmit => _code.text.trim().length == 6 && !_verifying;
 
   /// Asks the backend to email a step-up code; shows the masked recipient and
-  /// (re)starts the resend countdown. A failure surfaces inline. Kicked off from
-  /// initState, so it must not read inherited widgets (l10n) before the first
-  /// await — the error text is resolved only after, in the catch.
+  /// (re)starts the resend countdown. A failure surfaces inline. Kicked off
+  /// from initState, so it must not read inherited widgets (l10n) before the
+  /// first await — the error text is resolved only after, in the catch.
   Future<void> _send() async {
     setState(() {
       _sending = true;

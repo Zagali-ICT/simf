@@ -5,7 +5,11 @@ import 'package:simf_app/app/widgets/simf_page_shell.dart';
 /// One tab pill (frame node 947:3872): a 48-high card, solid gold when active
 /// else a bordered navy card. Two-word labels wrap to two centred lines.
 class CoverageTab extends StatelessWidget {
-  const CoverageTab({required this.label, required this.active, required this.onTap, super.key,
+  const CoverageTab({
+    required this.label,
+    required this.active,
+    required this.onTap,
+    super.key,
   });
 
   final String label;

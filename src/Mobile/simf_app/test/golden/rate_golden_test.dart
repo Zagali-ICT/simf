@@ -14,14 +14,14 @@ import 'package:simf_app/features/feedback/rate_screen.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the Rate screen against Figma frame **1116:16894** (تقييم
-/// الملتقى). Regenerate:
-///   flutter test --update-goldens test/golden/rate_golden_test.dart
+/// الملتقى). Regenerate: flutter test --update-goldens
+/// test/golden/rate_golden_test.dart
 ///
 /// Frame parity expected: the overall kicker + lead + the big 30px star bar,
 /// then the "قيّم العناصر" section over per-element rows (each a beige-hairline
-/// box: the element name at the inline-start, an 18px star bar at the inline-end),
-/// the comment box, and the full-width gold submit button. RTL, unscored (all
-/// outline stars) so the PNG is stable.
+/// box: the element name at the inline-start, an 18px star bar at the
+/// inline-end), the comment box, and the full-width gold submit button. RTL,
+/// unscored (all outline stars) so the PNG is stable.
 
 class _FormRepo implements FeedbackRepository {
   @override

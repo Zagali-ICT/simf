@@ -144,5 +144,31 @@ void main() {
       expect(find.byType(SelectableText), findsOneWidget);
       expect(repo.calls, greaterThanOrEqualTo(2));
     });
+
+    testWidgets('a network failure shows the localized message, not the raw '
+        'English developer string', (tester) async {
+      // `api_error_l10n.dart` says it outright: a client-SYNTHESIZED failure
+      // (clientNetwork / clientTimeout / clientMalformedResponse /
+      // clientCancelled) carries a raw English developer string, and no screen
+      // should render `ApiFailure.message` directly or an Arabic user reads
+      // English. This screen used to do exactly that. The envelope case above
+      // never caught it, because an envelope message is already bilingual and
+      // passes through `localizedMessage` unchanged.
+      final repo = _FakeContentRepository(
+        block: _block(),
+        failure: const ApiFailure(
+          code: ApiErrorCodes.clientNetwork,
+          message: 'SocketException: failed host lookup',
+        ),
+      );
+      await _pump(tester, repo);
+
+      expect(find.textContaining('SocketException'), findsNothing);
+      expect(
+        find.text('Could not reach the server. Check your internet connection '
+            'and try again.'),
+        findsOneWidget,
+      );
+    });
   });
 }

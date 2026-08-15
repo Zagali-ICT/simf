@@ -23,9 +23,9 @@ class SavedContactTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
     final name = row.subjectAvailable
-        ? row.localizedName(isArabic)
+        ? row.localizedName(isArabic: isArabic)
         : l10n.contactUnavailable;
-    final jobTitle = row.localizedJobTitle(isArabic);
+    final jobTitle = row.localizedJobTitle(isArabic: isArabic);
     final subtitleParts = <String>[
       if (jobTitle != null) jobTitle,
       if (row.organisation != null && row.organisation!.trim().isNotEmpty)
@@ -40,7 +40,8 @@ class SavedContactTile extends StatelessWidget {
           color: SimfTokens.accent,
         ),
         title: Text(name),
-        subtitle: subtitleParts.isEmpty ? null : Text(subtitleParts.join(' · ')),
+        subtitle:
+            subtitleParts.isEmpty ? null : Text(subtitleParts.join(' · ')),
         trailing: const Icon(Icons.chevron_right, color: SimfTokens.inkMuted),
         onTap: onTap,
       ),

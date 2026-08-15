@@ -10,6 +10,7 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/app_theme.dart';
 import 'package:simf_app/features/news/data/news_models.dart';
+import 'package:simf_app/features/news/data/news_repository.dart';
 import 'package:simf_app/features/news/news_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 

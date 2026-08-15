@@ -98,7 +98,8 @@ void main() {
       expect(find.text('HOME'), findsOneWidget);
     });
 
-    testWidgets('shows the CP-configured welcome message (D-461)', (tester) async {
+    testWidgets('shows the CP-configured welcome message (D-461)',
+        (tester) async {
       await _pump(tester, messageEn: 'Welcome to the Fourth Saudi Forum!');
       expect(find.text('Welcome to the Fourth Saudi Forum!'), findsOneWidget);
     });

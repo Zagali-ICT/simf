@@ -5,6 +5,7 @@
 // checkable from the badge itself plus cached rules. It must ABSTAIN on
 // anything that needs live data — a hall booking, an account that was disabled
 // this morning — so the server decides when the queued scan uploads.
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -16,15 +17,18 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../accessibility/_fake_prefs.dart';
 
-/// A badge for (profileTypeCode 1, sequence 3000042) under the fixture key,
+/// A badge for profile-type code 1, edition 2026, under the fixture key,
 /// produced by the C# encoder. See offline_badge_test.dart.
 const String visitorBadge =
-    '1514B39C8841QMMTQCSS7A85NJ8T678WZYZR4E4SE4XRC67CY1GH81VCDWAAG';
+    // A C# encoder token; wrapping breaks the character-for-character compare.
+    // ignore: lines_longer_than_80_chars
+    '15F9NADHE9H94MTGBNK7WMMWB6Q3GTDED9NMBF161ZHXRFWS8KFRCYG8SWRCQ0NP1EJQ0SQXAS0NRA';
 
-/// (profileTypeCode 7, sequence 4999999) — a type the perimeter gate below does
-/// not admit.
+/// Profile-type code 7 — a type the perimeter gate below does not admit.
 const String partnerBadge =
-    '1P04044WDQG6Z6APZ3B15AJZ8SW7MRQEJ3EZGX2Z5H4ZSPYFCSYYPYE0598MG';
+    // A C# encoder token; wrapping breaks the character-for-character compare.
+    // ignore: lines_longer_than_80_chars
+    '1CVTC4V9WG32MWFARN461D6MK7EZ7A0B7SW1S7QZW4EJCXYSYSFBCZ3M69YD16B3TP591QT4GPXPRG';
 
 void main() {
   final key = base64Encode(
@@ -67,7 +71,7 @@ void main() {
     final prefs = FakePrefs();
     final cache = GateOfflineConfigCache(prefs);
     if (cached != null) {
-      cache.write(cached);
+      unawaited(cache.write(cached));
     }
     return GatesRepository(_UnusedClient(), GateScanQueue(prefs), cache);
   }
@@ -79,9 +83,10 @@ void main() {
 
       expect(verdict, isNotNull);
       expect(verdict!.isAllowed, isTrue);
-      expect(verdict.badge?.sequence, 3000042);
-      // The operator can read this out to the Control Panel.
-      expect(verdict.badge?.qrId, 'W00003000042');
+      // The operator can read this out to the Control Panel: a badge names the
+      // ATTENDEE now, which is the id the CP looks people up by.
+      expect(verdict.badge?.profileId, '11111111-2222-3333-4444-555555555555');
+      expect(verdict.badge?.editionYear, 2026);
     });
 
     test('refuses a type this gate does not admit', () {
@@ -92,7 +97,7 @@ void main() {
       expect(verdict?.isAllowed, isFalse);
       expect(verdict?.reason, OfflineDenialReason.profileTypeNotAllowed);
       // The holder is still identified, so the operator knows who was refused.
-      expect(verdict?.badge?.sequence, 4999999);
+      expect(verdict?.badge?.profileId, 'aabbccdd-eeff-0011-2233-445566778899');
     });
 
     test('admits every type when the gate has no allow-list', () {
@@ -191,9 +196,13 @@ void main() {
   });
 
   group('GateOfflineConfigCache', () {
-    test('round-trips through prefs', () {
+    test('round-trips through prefs', () async {
       final prefs = FakePrefs();
-      final cache = GateOfflineConfigCache(prefs)..write(config());
+      final cache = GateOfflineConfigCache(prefs);
+      // Awaited on purpose. FakePrefs.setString is `async` with no `await`, so
+      // its body runs synchronously and a dropped future happened to work; the
+      // real prefs storage crosses a platform channel and would not.
+      await cache.write(config());
 
       final read = cache.read();
       expect(read, isNotNull);

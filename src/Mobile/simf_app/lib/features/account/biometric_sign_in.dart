@@ -34,13 +34,10 @@ Future<void> runBiometricSignIn({
   }
 
   // (2) Face login needs a device key, enrolled on a prior sign-in.
-  bool enrolled;
-  try {
-    enrolled = await notifier.hasEnrolledDeviceKey();
-  } catch (_) {
-    enrolled = false;
-  }
-  if (!enrolled) {
+  // BiometricAuth owns the device-key wiring (D-441) and already degrades a
+  // failed secure-storage read to "not enrolled"; this used to re-write that
+  // try/catch around the same notifier BiometricAuth itself reads.
+  if (!await biometric.isEnabled()) {
     onError(l10n.biometricNotEnrolled);
     return;
   }
@@ -65,7 +62,7 @@ Future<void> runBiometricSignIn({
     await notifier.signInWithDeviceKey();
   } on AuthFailure catch (failure) {
     onError(failure.source.localizedMessage(l10n));
-  } catch (e) {
+  } on Object catch (e) {
     // Non-AuthFailure (for example a FormatException from reloadCurrentUser
     // before the defence in signInWithDeviceKey was added): captured so the
     // session routing below still happens. Shown in a SnackBar AFTER routing,
@@ -79,7 +76,8 @@ Future<void> runBiometricSignIn({
   // establishes the session before its trailing profile reload, so a
   // non-AuthFailure thrown there must not skip the navigation home - the
   // biometric path mirrors the password path (D-441).
-  if (context.mounted && ref.read(authControllerProvider) is AuthStateSignedIn) {
+  if (context.mounted &&
+      ref.read(authControllerProvider) is AuthStateSignedIn) {
     if (unexpectedError != null) {
       // The localized generic message, NOT '$unexpectedError' - a raw Dart
       // toString is untranslated and leaks internal type detail to the user.

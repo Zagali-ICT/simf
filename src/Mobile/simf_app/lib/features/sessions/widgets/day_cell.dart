@@ -9,7 +9,12 @@ String _weekdayEn(DateTime day) {
 }
 
 class DayCell extends StatelessWidget {
-  const DayCell({required this.date, required this.hasSessions, required this.selected, required this.onTap, super.key,
+  const DayCell({
+    required this.date,
+    required this.hasSessions,
+    required this.selected,
+    required this.onTap,
+    super.key,
   });
 
   final DateTime date;

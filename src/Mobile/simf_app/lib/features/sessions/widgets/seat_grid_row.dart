@@ -12,7 +12,19 @@ import 'package:simf_app/features/sessions/data/seat_map_models.dart';
 /// and SeatBox renders it. Splitting them would mean making the enum
 /// public to no other reader.
 class SeatGridRow extends StatelessWidget {
-  const SeatGridRow({required this.rowLabel, required this.seatCount, required this.tier, required this.eligible, required this.inspectMode, required this.seatSize, required this.rowLabelWidth, required this.reserved, required this.map, required this.l10n, required this.availableBorderColor, super.key,
+  const SeatGridRow({
+    required this.rowLabel,
+    required this.seatCount,
+    required this.tier,
+    required this.eligible,
+    required this.inspectMode,
+    required this.seatSize,
+    required this.rowLabelWidth,
+    required this.reserved,
+    required this.map,
+    required this.l10n,
+    required this.availableBorderColor,
+    super.key,
     this.selectedRowLabel,
     this.selectedSeatNumber,
     this.onSeatTap,
@@ -21,13 +33,14 @@ class SeatGridRow extends StatelessWidget {
   final String rowLabel;
   // This row's own count — how many seats it actually draws.
   final int seatCount;
-  // D-771 — the row's seat tier, drawn as a start-edge band + a row-label caption.
+  // D-771 — the row's seat tier, drawn as a start-edge band + a row-label
+  // caption.
   final SeatTier tier;
-  // D-771 — false when THIS caller may not book this row (a VVIP protocol row, or
-  // a VIP row for a non-VIP visitor): its free seats draw locked and inert.
+  // D-771 — false when THIS caller may not book this row (a VVIP protocol row,
+  // or a VIP row for a non-VIP visitor): its free seats draw locked and inert.
   final bool eligible;
-  // D-771 — the staff seating desk: every seat is tappable (occupant lookup), so
-  // a reserved / own seat is not inert here.
+  // D-771 — the staff seating desk: every seat is tappable (occupant lookup),
+  // so a reserved / own seat is not inert here.
   final bool inspectMode;
   // The fixed square size every seat is drawn at (no shrink-to-fit); all rows
   // share it so seats align column-for-column and a wide row scrolls off-edge.
@@ -82,7 +95,9 @@ class SeatGridRow extends StatelessWidget {
       case SeatStatus.ineligible:
         // D-771 — say WHY, not just "unavailable": a VVIP row is protocol
         // seating, a VIP row needs the VIP tier.
-        return '$id · ${tier.isVvip ? l10n.seatTierVvipLocked : l10n.seatTierVipLocked}';
+        final locked =
+            tier.isVvip ? l10n.seatTierVvipLocked : l10n.seatTierVipLocked;
+        return '$id · $locked';
       case SeatStatus.selected:
       case SeatStatus.available:
         return id;
@@ -116,8 +131,9 @@ class SeatGridRow extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        // D-771 — the row's tier band: a thin coloured bar at the row's start edge
-        // (the grid is force-LTR, so "start" is always the left of the plan).
+        // D-771 — the row's tier band: a thin coloured bar at the row's start
+        // edge (the grid is force-LTR, so "start" is always the left of the
+        // plan).
         Container(
           width: SimfTokens.hairlineBold,
           height: seatSize,
@@ -154,7 +170,13 @@ Color tierBandColor(SeatTier tier) => switch (tier) {
 enum SeatStatus { mine, selected, reserved, confirmed, available, ineligible }
 
 class SeatBox extends StatelessWidget {
-  const SeatBox({required this.status, required this.size, required this.seatNumber, required this.availableBorderColor, required this.semanticsLabel, super.key,
+  const SeatBox({
+    required this.status,
+    required this.size,
+    required this.seatNumber,
+    required this.availableBorderColor,
+    required this.semanticsLabel,
+    super.key,
     this.onTap,
   });
 
@@ -208,8 +230,9 @@ class SeatBox extends StatelessWidget {
           color: SimfTokens.surface,
         );
       case SeatStatus.ineligible:
-        // D-771 — a free seat this caller may not book: no fill, a muted border and
-        // a padlock, so it never reads as "available" nor as "someone sits here".
+        // D-771 — a free seat this caller may not book: no fill, a muted border
+        // and a padlock, so it never reads as "available" nor as "someone sits
+        // here".
         fill = SimfTokens.transparent;
         border = Border.all(color: SimfTokens.beigeBorder);
         glyph = const Icon(
