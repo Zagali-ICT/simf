@@ -1904,6 +1904,33 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 });
 
             migrationBuilder.CreateTable(
+                name: "ProfileIdentityDocuments",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ProfileId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Kind = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: false),
+                    Number = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
+                    NumberHash = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ProfileIdentityDocuments", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ProfileIdentityDocuments_UserProfiles_ProfileId",
+                        column: x => x.ProfileId,
+                        principalTable: "UserProfiles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "SeatReservations",
                 columns: table => new
                 {
@@ -3433,6 +3460,18 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 columns: new[] { "Status", "CreatedAt" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_ProfileIdentityDocuments_NumberHash",
+                table: "ProfileIdentityDocuments",
+                column: "NumberHash",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProfileIdentityDocuments_ProfileId_Kind",
+                table: "ProfileIdentityDocuments",
+                columns: new[] { "ProfileId", "Kind" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_ProfileTypes_Code",
                 table: "ProfileTypes",
                 column: "Code",
@@ -4071,6 +4110,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
             migrationBuilder.DropTable(
                 name: "ParticipationDocumentRequests");
+
+            migrationBuilder.DropTable(
+                name: "ProfileIdentityDocuments");
 
             migrationBuilder.DropTable(
                 name: "ProgrammeDays");

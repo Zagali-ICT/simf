@@ -348,5 +348,28 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
                 entity.Property(property).HasConversion(piiConverter).HasMaxLength(256);
             }
         });
+
+        // The same encryption for the child rows that now hold those document
+        // numbers. Registered separately rather than folded into the loop above
+        // because that loop is keyed on UserProfile property NAMES, so a new
+        // entity is invisible to it — and a missed registration is SILENT: a
+        // plaintext number reads back perfectly (Decrypt returns unmarked values
+        // unchanged), so nothing fails and the PII simply sits in the clear.
+        //
+        // NumberHash is deliberately NOT here. It is the deterministic digest the
+        // unique index keys off, and encrypting it under a random nonce would make
+        // it a different value on every write.
+        // Its own converter rather than the one above, because the column is
+        // REQUIRED: a document row exists only when there is a number to put in
+        // it. The nullable converter does not type-check against a non-nullable
+        // property, and papering over that with the stringly-typed Property
+        // overload would only hide the difference the column actually has.
+        var requiredPiiConverter = new ValueConverter<string, string?>(
+            value => _pii.Encrypt(value),
+            value => _pii.Decrypt(value) ?? string.Empty);
+        modelBuilder.Entity<SIMF.Domain.Profiles.ProfileIdentityDocument>()
+            .Property(document => document.Number)
+            .HasConversion(requiredPiiConverter)
+            .HasMaxLength(256);
     }
 }

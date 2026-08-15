@@ -12,7 +12,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Persistence.Migrations.App
 {
     [DbContext(typeof(SimfAppDbContext))]
-    [Migration("20260814200342_InitialCreate")]
+    [Migration("20260815230324_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -4043,6 +4043,60 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         });
                 });
 
+            modelBuilder.Entity("SIMF.Domain.Profiles.ProfileIdentityDocument", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<string>("Number")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("NumberHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<Guid>("ProfileId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NumberHash")
+                        .IsUnique()
+                        .HasDatabaseName("IX_ProfileIdentityDocuments_NumberHash");
+
+                    b.HasIndex("ProfileId", "Kind")
+                        .IsUnique();
+
+                    b.ToTable("ProfileIdentityDocuments", (string)null);
+                });
+
             modelBuilder.Entity("SIMF.Domain.Profiles.UserInterest", b =>
                 {
                     b.Property<Guid>("Id")
@@ -6707,6 +6761,17 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
+            modelBuilder.Entity("SIMF.Domain.Profiles.ProfileIdentityDocument", b =>
+                {
+                    b.HasOne("SIMF.Domain.Profiles.UserProfile", "Profile")
+                        .WithMany("IdentityDocuments")
+                        .HasForeignKey("ProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Profile");
+                });
+
             modelBuilder.Entity("SIMF.Domain.Profiles.UserProfile", b =>
                 {
                     b.HasOne("SIMF.Domain.Badges.BadgeBatch", "BadgeBatch")
@@ -7103,6 +7168,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Navigation("AboutItems");
 
                     b.Navigation("Details");
+                });
+
+            modelBuilder.Entity("SIMF.Domain.Profiles.UserProfile", b =>
+                {
+                    b.Navigation("IdentityDocuments");
                 });
 
             modelBuilder.Entity("SIMF.Domain.Programme.Session", b =>

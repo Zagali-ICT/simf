@@ -814,6 +814,112 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         Assert.Equal(ErrorCodes.DuplicateIdentity, body.Error!.Code);
     }
 
+    // The identity-document collapse — the three number columns are superseded by
+    // the ProfileIdentityDocuments child table (one row per document, one unique
+    // digest index over all of them). These lock the two properties that motivated
+    // the child table: it can hold MORE THAN ONE document, and the numbers reach it
+    // encrypted.
+
+    [Fact]
+    public async Task Upsert_by_a_non_Saudi_with_both_an_iqama_and_a_passport_persists_BOTH_documents()
+    {
+        // The upsert validator's rule is an OR, not an XOR — "either Iqama or
+        // Passport" accepts both — so a single number-plus-kind column would have
+        // had to discard one of the two, and with it the guard that catches this
+        // person re-registering under the other one.
+        var token = await CreateUserAndSignInAsync();
+        var actorId = await GetActorIdAsync(token);
+        var iqama = TestIdentity.MintIqama();
+        var passport = TestIdentity.MintPassport();
+
+        var request = await ValidSaudiRequestAsync();
+        request.IsSaudi = false;
+        request.NationalId = null;
+        request.IqamaNumber = iqama;
+        request.PassportNumber = passport;
+
+        var response = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var profile = await appDb.UserProfiles
+            .Include(p => p.IdentityDocuments)
+            .AsNoTracking()
+            .SingleAsync(p => p.UserId == actorId);
+
+        var documents = profile.IdentityDocuments
+            .ToDictionary(document => document.Kind, document => document.Number);
+        Assert.Equal(2, documents.Count);
+        Assert.Equal(iqama, documents[IdentityDocumentKind.Iqama]);
+        Assert.Equal(passport, documents[IdentityDocumentKind.Passport]);
+        Assert.DoesNotContain(IdentityDocumentKind.NationalId, documents.Keys);
+
+        // Both rows carry the deterministic digest the unique index keys off; a row
+        // without one is invisible to the duplicate guard.
+        Assert.All(profile.IdentityDocuments,
+            document => Assert.Equal(64, document.NumberHash.Length));
+
+        // And the number itself reaches the column ENCRYPTED. Read past EF, because
+        // the value converter decrypts on the way out and would report a plaintext
+        // column as perfectly fine — the failure mode of a missed registration is
+        // silence, not an error.
+        var stored = await appDb.Database
+            .SqlQuery<string>($@"
+                SELECT d.[Number] AS Value
+                FROM [ProfileIdentityDocuments] d
+                WHERE d.[ProfileId] = {profile.Id}")
+            .ToListAsync();
+        Assert.Equal(2, stored.Count);
+        Assert.All(stored, value => Assert.StartsWith("enc:1:", value, StringComparison.Ordinal));
+        Assert.DoesNotContain(iqama, stored);
+        Assert.DoesNotContain(passport, stored);
+    }
+
+    [Fact]
+    public async Task Upsert_round_trips_every_shipped_identity_wire_key_from_the_document_rows()
+    {
+        // The shipped Flutter app decodes isSaudi / nationalId / iqamaNumber /
+        // passportNumber / saudiMobile / internationalMobile. Storage moved to the
+        // child table; the wire may not move with it. The wire assertions alone
+        // cannot tell the two sources apart while both are written in lockstep, so
+        // the document-row assertion at the end is what ties this test to the new
+        // storage: drop the sync and it fails.
+        var token = await CreateUserAndSignInAsync();
+        var actorId = await GetActorIdAsync(token);
+        var iqama = TestIdentity.MintIqama();
+
+        var request = await ValidSaudiRequestAsync();
+        request.IsSaudi = false;
+        request.NationalId = null;
+        request.IqamaNumber = iqama;
+        request.PassportNumber = null;
+        request.SaudiMobile = null;
+        request.InternationalMobile = "+441234567890";
+
+        Assert.Equal(HttpStatusCode.OK, (await PostAuthAsync(Path, request, token)).StatusCode);
+
+        var read = await GetAuthAsync(Path, token);
+        Assert.Equal(HttpStatusCode.OK, read.StatusCode);
+        var body = (await read.Content.ReadFromJsonAsync<ApiResult<UserProfileResponse>>())!;
+
+        Assert.False(body.Data!.IsSaudi);
+        Assert.Null(body.Data.NationalId);
+        Assert.Equal(iqama, body.Data.IqamaNumber);
+        Assert.Null(body.Data.PassportNumber);
+        Assert.Null(body.Data.SaudiMobile);
+        Assert.Equal("+441234567890", body.Data.InternationalMobile);
+
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var kinds = await appDb.UserProfiles
+            .Where(p => p.UserId == actorId)
+            .SelectMany(p => p.IdentityDocuments)
+            .Select(document => document.Kind)
+            .ToListAsync();
+        Assert.Equal(new[] { IdentityDocumentKind.Iqama }, kinds);
+    }
+
     [Fact]
     public async Task Self_service_resave_of_my_own_id_is_not_a_false_conflict()
     {
