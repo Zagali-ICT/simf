@@ -9,11 +9,14 @@
 /// - the capability flags — `hasLiveStream` (a live online feed),
 ///   `hasPublishedSummary` (a published محضر), `hasRecording` (a replay).
 ///
-/// A session can be [ended] yet carry no summary, or [live] with no online
+/// A session can be `ended` yet carry no summary, or `live` with no online
 /// stream (in-hall only) — so callers combine the phase with the flag they
 /// need (e.g. the summary button = `hasPublishedSummary`; the live button =
 /// `hasLiveStream && phase == live`).
 library;
+
+import 'package:simf_app/features/sessions/data/session_models.dart'
+    show SessionStatus;
 
 /// The broadcast time-phase of a session relative to "now", from its
 /// `start`/`end` window.

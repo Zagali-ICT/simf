@@ -18,14 +18,14 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the VIP bilateral-meetings page (اللقاءات الثنائية) against
-/// Figma frame **1408:9726** (D-745). Run:
-///   flutter test --update-goldens test/golden/meetings_golden_test.dart
-/// then open test/golden/goldens/meetings_1408-9726.png and compare to the frame.
+/// Figma frame **1408:9726** (D-745). Run: flutter test --update-goldens
+/// test/golden/meetings_golden_test.dart then open
+/// test/golden/goldens/meetings_1408-9726.png and compare to the frame.
 ///
 /// Parity: back chevron + centred title, the طلب جديد (outline) / السجل (gold)
-/// two-button row, then the approved-upcoming meeting cards — each with the kind
-/// headline over the rank, the nationality flag badge, the speaker photo (anchor
-/// placeholder in tests) + name (gold), and the slot date + clock. RTL.
+/// two-button row, then the approved-upcoming meeting cards — each with the
+/// kind headline over the rank, the nationality flag badge, the speaker photo
+/// (anchor placeholder in tests) + name (gold), and the slot date + clock. RTL.
 
 const _config = SimfDataConfig(
   baseUrl: 'http://test.local/api/v1',
@@ -33,9 +33,9 @@ const _config = SimfDataConfig(
   deviceType: SimfDeviceType.android,
 );
 
-// Two approved, future meetings: a speaker meeting (with a speaker photo + rank)
-// and a delegation meeting (target-country flag, no speaker photo). Fixed future
-// dates keep the "upcoming" filter + the card date deterministic.
+// Two approved, future meetings: a speaker meeting (with a speaker photo +
+// rank) and a delegation meeting (target-country flag, no speaker photo). Fixed
+// future dates keep the "upcoming" filter + the card date deterministic.
 final List<AppRequestItem> _meetings = <AppRequestItem>[
   AppRequestItem(
     kind: AppRequestKind.speakerMeeting,

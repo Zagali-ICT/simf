@@ -23,7 +23,8 @@ Session _guestPayloadSession() => Session(
       accessToken: 'A',
       refreshToken: 'R',
       accessTokenExpiresAt: DateTime.now().add(const Duration(minutes: 30)),
-      // The wire AuthUser carries no role, so the decoded user defaults to Guest.
+      // The wire AuthUser carries no role, so the decoded user defaults to
+      // Guest.
       user: _user(AppRole.guest, RegistrationStatus.pending),
     );
 
@@ -74,7 +75,7 @@ void main() {
           password: any(named: 'password'),
         ),
       ).thenAnswer((_) async => SignInSession(_guestPayloadSession()));
-      when(() => repo.getCurrentUser()).thenAnswer(
+      when(repo.getCurrentUser).thenAnswer(
         (_) async => _user(AppRole.visitor, RegistrationStatus.approved),
       );
 
@@ -112,7 +113,7 @@ void main() {
           code: any(named: 'code'),
         ),
       ).thenAnswer((_) async => _guestPayloadSession());
-      when(() => repo.getCurrentUser()).thenAnswer(
+      when(repo.getCurrentUser).thenAnswer(
         (_) async => _user(AppRole.moderator, RegistrationStatus.approved),
       );
 
@@ -146,7 +147,7 @@ void main() {
           password: any(named: 'password'),
         ),
       ).thenAnswer((_) async => SignInSession(_guestPayloadSession()));
-      when(() => repo.getCurrentUser()).thenAnswer(
+      when(repo.getCurrentUser).thenAnswer(
         (_) async => _user(AppRole.staff, RegistrationStatus.approved),
       );
       // The refresh payload also carries the role-less Guest user.
@@ -167,7 +168,8 @@ void main() {
         equals(AppRole.staff),
       );
 
-      // A mid-session 401 triggers AuthTokenSource.refresh — privilege must survive.
+      // A mid-session 401 triggers AuthTokenSource.refresh — privilege must
+      // survive.
       final ok = await notifier.refresh();
       expect(ok, isTrue);
       expect(
@@ -186,14 +188,14 @@ void main() {
       final secure = _MockSecureStorage();
       when(() => secure.read(any())).thenAnswer((_) async => null);
       when(() => secure.write(any(), any())).thenAnswer((_) async {});
-      when(() => secure.clearAuthValues()).thenAnswer((_) async {});
+      when(secure.clearAuthValues).thenAnswer((_) async {});
       when(
         () => repo.signIn(
           email: any(named: 'email'),
           password: any(named: 'password'),
         ),
       ).thenAnswer((_) async => SignInSession(_guestPayloadSession()));
-      when(() => repo.getCurrentUser()).thenAnswer(
+      when(repo.getCurrentUser).thenAnswer(
         (_) async => _user(AppRole.visitor, RegistrationStatus.approved),
       );
 
@@ -210,10 +212,10 @@ void main() {
       // Signed in for this run…
       expect(container.read(authControllerProvider), isA<AuthStateSignedIn>());
       // …but nothing was written to durable storage and any prior session was
-      // cleared — so a cold start restores nothing (the session does not survive
-      // an app restart).
+      // cleared — so a cold start restores nothing (the session does not
+      // survive an app restart).
       verifyNever(() => secure.write(StorageKeys.refreshToken, any()));
-      verify(() => secure.clearAuthValues()).called(greaterThanOrEqualTo(1));
+      verify(secure.clearAuthValues).called(greaterThanOrEqualTo(1));
     });
 
     test('a remembered sign-in persists the session to durable storage',
@@ -222,14 +224,14 @@ void main() {
       final secure = _MockSecureStorage();
       when(() => secure.read(any())).thenAnswer((_) async => null);
       when(() => secure.write(any(), any())).thenAnswer((_) async {});
-      when(() => secure.clearAuthValues()).thenAnswer((_) async {});
+      when(secure.clearAuthValues).thenAnswer((_) async {});
       when(
         () => repo.signIn(
           email: any(named: 'email'),
           password: any(named: 'password'),
         ),
       ).thenAnswer((_) async => SignInSession(_guestPayloadSession()));
-      when(() => repo.getCurrentUser()).thenAnswer(
+      when(repo.getCurrentUser).thenAnswer(
         (_) async => _user(AppRole.visitor, RegistrationStatus.approved),
       );
 
@@ -240,7 +242,6 @@ void main() {
       await container.read(authControllerProvider.notifier).signIn(
             email: 'visitor@example.sa',
             password: 'pw',
-            rememberSession: true,
           );
 
       expect(container.read(authControllerProvider), isA<AuthStateSignedIn>());
@@ -270,14 +271,17 @@ void main() {
       await _waitFor(container, (s) => s is AuthStateSignedOut);
       final notifier = container.read(authControllerProvider.notifier);
       await notifier.signIn(email: 'v@simf', password: 'pw');
-      expect(container.read(authControllerProvider), isA<AuthStateAwaitingOtp>());
+      expect(
+          container.read(authControllerProvider), isA<AuthStateAwaitingOtp>(),);
 
       final cooldown = await notifier.resendOtp();
 
       expect(cooldown, 60);
       verify(() => repo.resendOtp(otpToken: 'otp-tok')).called(1);
-      // The ticket is unchanged — still awaiting the OTP, not bounced to sign-in.
-      expect(container.read(authControllerProvider), isA<AuthStateAwaitingOtp>());
+      // The ticket is unchanged — still awaiting the OTP, not bounced to
+      // sign-in.
+      expect(
+          container.read(authControllerProvider), isA<AuthStateAwaitingOtp>(),);
     });
 
     test('resendOtp is a no-op (-1) when not awaiting an OTP', () async {

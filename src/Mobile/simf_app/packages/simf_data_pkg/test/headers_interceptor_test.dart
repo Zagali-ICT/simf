@@ -5,7 +5,7 @@ import 'package:simf_data_pkg/src/api/interceptors/headers_interceptor.dart';
 
 class _FakeTokenSource implements AuthTokenSource {
   _FakeTokenSource(this._token);
-  String? _token;
+  final String? _token;
   @override
   String? currentAccessToken() => _token;
   @override

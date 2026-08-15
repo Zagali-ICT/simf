@@ -51,12 +51,14 @@ const _samiWithCountry = BoothSummary(
   countryNameArabic: 'السعودية',
 );
 
-/// Every NetworkImage URL currently in the tree (unwrapping the ResizeImage that
-/// the logo tile's cacheWidth/cacheHeight decode-cap wraps the provider in).
+/// Every NetworkImage URL currently in the tree (unwrapping the ResizeImage
+/// that the logo tile's cacheWidth/cacheHeight decode-cap wraps the provider
+/// in).
 Set<String> _networkImageUrls(WidgetTester tester) => tester
     .widgetList<Image>(find.byType(Image))
     .map((img) => img.image)
-    .map((provider) => provider is ResizeImage ? provider.imageProvider : provider)
+    .map((provider) =>
+        provider is ResizeImage ? provider.imageProvider : provider,)
     .whereType<NetworkImage>()
     .map((n) => n.url)
     .toSet();
@@ -180,8 +182,8 @@ void main() {
           GoRoute(
             path: '/exhibitors/:boothId',
             name: RouteNames.exhibitorDetail,
-            builder: (_, s) =>
-                Scaffold(body: Text('EXHIBITOR ${s.pathParameters['boothId']}')),
+            builder: (_, s) => Scaffold(
+                body: Text('EXHIBITOR ${s.pathParameters['boothId']}'),),
           ),
         ],
       );
@@ -217,25 +219,28 @@ void main() {
       expect(find.text('No booths'), findsOneWidget);
     });
 
-    testWidgets('a booth wires its OWN BoothLogo route (booth id, not the exhibitor)',
+    testWidgets(
+        'a booth wires its OWN BoothLogo route (booth id, not the exhibitor)',
         (tester) async {
       await _pump(
         tester,
         repo: _FakeRepo(booths: const <BoothSummary>[_samiWithLogo]),
       );
-      // The booth renders its own logo (owner = the booth), never the exhibitor's
-      // CompanyLogo — even when the exhibitor has a linked Contact.
+      // The booth renders its own logo (owner = the booth), never the
+      // exhibitor's CompanyLogo — even when the exhibitor has a linked Contact.
       expect(
         _networkImageUrls(tester),
         contains('http://test.local/api/v1/app/assets/BoothLogo/b1/image'),
       );
       expect(
         _networkImageUrls(tester),
-        isNot(contains('http://test.local/api/v1/app/assets/CompanyLogo/c1/image')),
+        isNot(contains(
+            'http://test.local/api/v1/app/assets/CompanyLogo/c1/image',),),
       );
     });
 
-    testWidgets('the booth logo tile falls back to the short-name initials '
+    testWidgets(
+        'the booth logo tile falls back to the short-name initials '
         'when no bytes load', (tester) async {
       await _pump(tester, repo: _FakeRepo(booths: const <BoothSummary>[_sami]));
       // The BoothLogo route 404s in tests → the tile shows the short-name text
@@ -243,7 +248,8 @@ void main() {
       expect(find.text('SAMI'), findsNWidgets(2));
     });
 
-    testWidgets('DEF-LGO-002 — the logo tile paints into a SQUARE box, so a '
+    testWidgets(
+        'DEF-LGO-002 — the logo tile paints into a SQUARE box, so a '
         'square logo is never cropped', (tester) async {
       await _pump(
         tester,
@@ -271,7 +277,8 @@ void main() {
       expect(mark.width, 40); // 48 − 2×4
     });
 
-    testWidgets('PAR-B3 — RTL: the booth logo tile is at the inline start '
+    testWidgets(
+        'PAR-B3 — RTL: the booth logo tile is at the inline start '
         '(right) of the company name', (tester) async {
       await _pump(
         tester,
@@ -285,15 +292,16 @@ void main() {
       expect(logoDx, greaterThan(nameDx));
     });
 
-    testWidgets('booth country FLAG is shown (Figma 1062:12911 flag tile) — '
+    testWidgets(
+        'booth country FLAG is shown (Figma 1062:12911 flag tile) — '
         'but no country text line', (tester) async {
       await _pump(
         tester,
         repo: _FakeRepo(booths: const <BoothSummary>[_samiWithCountry]),
       );
-      // Figma 922:2556 shows the country as a FLAG tile at the inline-end (left)
-      // of the header — NOT a text line. The flag glyph renders; the country
-      // name text does not.
+      // Figma 922:2556 shows the country as a FLAG tile at the inline-end
+      // (left) of the header — NOT a text line. The flag glyph renders; the
+      // country name text does not.
       expect(find.text('\u{1F1F8}\u{1F1E6}'), findsOneWidget);
       expect(find.text('Saudi Arabia'), findsNothing);
       expect(find.text('السعودية'), findsNothing);

@@ -11,7 +11,11 @@ const double flagSpotHitPad = 9;
 /// area); when [selected] the padding box is ringed in gold to mark the active
 /// filter.
 class FlagSpot extends StatelessWidget {
-  const FlagSpot({required this.flag, required this.selected, required this.onTap, super.key,
+  const FlagSpot({
+    required this.flag,
+    required this.selected,
+    required this.onTap,
+    super.key,
   });
 
   final String flag;
@@ -32,7 +36,9 @@ class FlagSpot extends StatelessWidget {
                 borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
               )
             : null,
-        child: Text(flag, style: const TextStyle(fontSize: SimfTokens.delegationsStatsStripFontSize)),
+        child: Text(flag,
+            style: const TextStyle(
+                fontSize: SimfTokens.delegationsStatsStripFontSize,),),
       ),
     );
   }

@@ -22,9 +22,9 @@ class SessionDetailHeader extends StatelessWidget {
   final String? moderateTooltip;
   final VoidCallback? onModerate;
 
-  /// D-771 — the trailing action's glyph. Defaults to the moderator Q&A icon; the
-  /// staff seating desk passes an event-seat icon through the SAME slot (the two
-  /// roles are disjoint, so only one trailing action is ever offered).
+  /// D-771 — the trailing action's glyph. Defaults to the moderator Q&A icon;
+  /// the staff seating desk passes an event-seat icon through the SAME slot
+  /// (the two roles are disjoint, so only one trailing action is ever offered).
   final IconData actionIcon;
 
   @override

@@ -103,9 +103,11 @@ Future<void> _pump(
 
 void main() {
   group('SessionPresentationsScreen (Figma 1388:7621)', () {
-    testWidgets('lists the sessions with the speaker + a session-summary button',
+    testWidgets(
+        'lists the sessions with the speaker + a session-summary button',
         (tester) async {
-      await _pump(tester, <PresentationItem>[_item('p1', 'Future of Investment')]);
+      await _pump(
+          tester, <PresentationItem>[_item('p1', 'Future of Investment')],);
 
       expect(find.text('Future of Investment'), findsOneWidget);
       expect(find.text('Dr. Omari'), findsOneWidget);
@@ -125,7 +127,8 @@ void main() {
 
     testWidgets('tapping the card opens that session detail (17)',
         (tester) async {
-      await _pump(tester, <PresentationItem>[_item('p1', 'Future of Investment')]);
+      await _pump(
+          tester, <PresentationItem>[_item('p1', 'Future of Investment')],);
 
       await tester.tap(find.text('Future of Investment'));
       await tester.pumpAndSettle();
@@ -168,7 +171,8 @@ void main() {
       expect(label.style?.color, SimfTokens.navyDisabledText);
 
       // The tap is consumed and dropped (warnIfMissed off — the disabled button
-      // swallows the pointer): no summary, and it doesn't fall through to detail.
+      // swallows the pointer): no summary, and it doesn't fall through to
+      // detail.
       await tester.tap(find.text('Session summary'), warnIfMissed: false);
       await tester.pumpAndSettle();
 
@@ -195,14 +199,16 @@ void main() {
 
     test('matched session with a published summary → active', () {
       expect(
-        presentationSummaryReady(future, _session('s-p1', hasSummary: true), now),
+        presentationSummaryReady(
+            future, _session('s-p1', hasSummary: true), now,),
         isTrue,
       );
     });
 
     test('matched session without a published summary → inactive', () {
       expect(
-        presentationSummaryReady(future, _session('s-p1', hasSummary: false), now),
+        presentationSummaryReady(
+            future, _session('s-p1', hasSummary: false), now,),
         isFalse,
       );
     });

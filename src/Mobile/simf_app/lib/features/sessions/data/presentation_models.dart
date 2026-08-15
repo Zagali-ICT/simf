@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-
+import 'package:simf_app/core/utils/bilingual.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
 
 /// One downloadable session presentation — App "عروض الجلسات" (Figma
@@ -23,6 +23,21 @@ class PresentationItem {
     required this.sizeBytes,
   });
 
+  factory PresentationItem.fromJson(Map<String, dynamic> json) =>
+      PresentationItem(
+        id: json['id'] as String? ?? '',
+        sessionId: json['sessionId'] as String? ?? '',
+        sessionTitle: json['sessionTitle'] as String? ?? '',
+        sessionTitleArabic: json['sessionTitleArabic'] as String? ?? '',
+        sessionStart: parseWireDateTime(json['sessionStart'], 'sessionStart'),
+        speakerName: json['speakerName'] as String? ?? '',
+        speakerNameArabic: json['speakerNameArabic'] as String? ?? '',
+        fileName: json['fileName'] as String? ?? '',
+        contentType:
+            json['contentType'] as String? ?? 'application/octet-stream',
+        sizeBytes: (json['sizeBytes'] as num?)?.toInt() ?? 0,
+      );
+
   final String id;
   final String sessionId;
   final String sessionTitle;
@@ -38,25 +53,11 @@ class PresentationItem {
   /// wire).
   DateTime get sessionStartLocal => saudiOf(sessionStart);
 
-  String localizedSessionTitle(bool isArabic) =>
-      _pickRequired(sessionTitleArabic, sessionTitle, isArabic);
+  String localizedSessionTitle({required bool isArabic}) =>
+      pickLocalized(sessionTitleArabic, sessionTitle, isArabic: isArabic);
 
-  String? localizedSpeaker(bool isArabic) =>
-      _pickOptional(speakerNameArabic, speakerName, isArabic);
-
-  static PresentationItem fromJson(Map<String, dynamic> json) =>
-      PresentationItem(
-        id: json['id'] as String? ?? '',
-        sessionId: json['sessionId'] as String? ?? '',
-        sessionTitle: json['sessionTitle'] as String? ?? '',
-        sessionTitleArabic: json['sessionTitleArabic'] as String? ?? '',
-        sessionStart: parseWireDateTime(json['sessionStart'], 'sessionStart'),
-        speakerName: json['speakerName'] as String? ?? '',
-        speakerNameArabic: json['speakerNameArabic'] as String? ?? '',
-        fileName: json['fileName'] as String? ?? '',
-        contentType: json['contentType'] as String? ?? 'application/octet-stream',
-        sizeBytes: (json['sizeBytes'] as num?)?.toInt() ?? 0,
-      );
+  String? localizedSpeaker({required bool isArabic}) =>
+      pickLocalizedOrNull(speakerNameArabic, speakerName, isArabic: isArabic);
 }
 
 /// The envelope for the public presentations list (`PublicPresentations`).
@@ -64,28 +65,15 @@ class PresentationItem {
 class PresentationsPage {
   const PresentationsPage(this.items);
 
-  final List<PresentationItem> items;
-
-  static PresentationsPage fromData(Object? data) {
-    final list = (data is Map ? data['items'] : null) as List? ??
-        const <dynamic>[];
+  factory PresentationsPage.fromData(Object? data) {
+    final list =
+        (data is Map ? data['items'] : null) as List? ?? const <dynamic>[];
     final items = list
         .whereType<Map<dynamic, dynamic>>()
         .map((e) => PresentationItem.fromJson(e.cast<String, dynamic>()))
         .toList(growable: false);
     return PresentationsPage(items);
   }
-}
 
-String _pickRequired(String arabic, String english, bool isArabic) {
-  final ar = arabic.trim();
-  final en = english.trim();
-  return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
-}
-
-String? _pickOptional(String? arabic, String? english, bool isArabic) {
-  final ar = arabic?.trim() ?? '';
-  final en = english?.trim() ?? '';
-  final value = isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
-  return value.isEmpty ? null : value;
+  final List<PresentationItem> items;
 }

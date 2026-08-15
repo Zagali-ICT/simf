@@ -30,6 +30,19 @@ namespace SIMF.Api.Tests;
 /// </summary>
 public sealed class DelegationsTests : IClassFixture<SimfApiFactory>
 {
+    // ISO numeric ids are hand-assigned and the fixture database accumulates
+    // across the tests of this class, so picking one at random from the 900..988
+    // band — 89 slots shared by every country these tests create — eventually
+    // collides. When it did, the server's ID-duplicate check fired BEFORE the
+    // rule the test was actually asserting and the failure read like a product
+    // bug: Admin_update_persists_the_invited_flag_dates_and_head reported a 409
+    // where it expected 200. A counter makes each id unique within the run
+    // rather than merely probably-unique. Same fix, and same reason, as
+    // AdminCountriesTests.
+    private static int _nextTestCountryId = 900;
+
+    private static int ClaimCountryId() => Interlocked.Increment(ref _nextTestCountryId);
+
     private readonly SimfApiFactory _factory;
     private readonly HttpClient _client;
 
@@ -167,7 +180,7 @@ public sealed class DelegationsTests : IClassFixture<SimfApiFactory>
     public async Task Admin_update_persists_the_invited_flag_dates_and_head()
     {
         var admin = await CreateAdministratorAndSignInAsync();
-        var id = Random.Shared.Next(900, 989);
+        var id = ClaimCountryId();
         await CreateCountryAsync(admin, id, "ZD");
         var headId = await SeedDelegateAsync(id);
 
@@ -197,7 +210,7 @@ public sealed class DelegationsTests : IClassFixture<SimfApiFactory>
     public async Task Un_inviting_a_country_clears_its_head_and_dates()
     {
         var admin = await CreateAdministratorAndSignInAsync();
-        var id = Random.Shared.Next(900, 989);
+        var id = ClaimCountryId();
         await CreateCountryAsync(admin, id, "ZF");
         var headId = await SeedDelegateAsync(id);
 
@@ -243,7 +256,7 @@ public sealed class DelegationsTests : IClassFixture<SimfApiFactory>
     public async Task Setting_a_non_delegate_as_head_is_a_400()
     {
         var admin = await CreateAdministratorAndSignInAsync();
-        var id = Random.Shared.Next(900, 989);
+        var id = ClaimCountryId();
         await CreateCountryAsync(admin, id, "ZE");
 
         var update = await SendAuthAsync(HttpMethod.Put, $"/api/v1/admin/countries/{id}", admin,

@@ -13,6 +13,7 @@ using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Sessions;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Profiles;
 using SIMF.Domain.Programme;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
@@ -443,6 +444,11 @@ public sealed class HallAttendanceTests : IClassFixture<SimfApiFactory>
                 UserType = UserType.Visitor,
             };
             await users.CreateAsync(user, AuthFlow.Password);
+            // Attendance is keyed by the attendee record, which approval creates
+            // in production; this helper creates the account directly, so it has
+            // to create one too or every arrival is refused.
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            await TestAttendeeProfiles.EnsureForAccountAsync(db, user.Id);
         }
         var sign = await _client.PostAsJsonAsync(
             "/api/v1/app/auth/sign-in",

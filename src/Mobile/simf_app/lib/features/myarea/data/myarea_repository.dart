@@ -3,11 +3,12 @@ import 'package:simf_app/features/myarea/data/myarea_endpoints.dart';
 import 'package:simf_app/features/myarea/data/myarea_models.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// App-local data layer for the My-Area dashboard (Page_014). The dashboard read
-/// is the `ApiResult` envelope; the calendar/contact exports are **raw** text
-/// bodies (`text/calendar` / `text/vcard`) fetched via [SimfApiClient.getText].
-/// All three require an **Approved** account (`RequireApprovedAccount`); a
-/// pending caller gets 403 and the screen shows the limited card (Page_014 L-5).
+/// App-local data layer for the My-Area dashboard (Page_014). The dashboard
+/// read is the `ApiResult` envelope; the calendar/contact exports are **raw**
+/// text bodies (`text/calendar` / `text/vcard`) fetched via
+/// [SimfApiClient.getText]. All three require an **Approved** account
+/// (`RequireApprovedAccount`); a pending caller gets 403 and the screen shows
+/// the limited card (Page_014 L-5).
 class MyAreaRepository {
   MyAreaRepository(this._client);
 

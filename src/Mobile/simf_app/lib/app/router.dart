@@ -11,10 +11,10 @@ import 'package:simf_app/features/account/badge_activation_screen.dart';
 import 'package:simf_app/features/account/badge_password_screen.dart';
 import 'package:simf_app/features/account/badge_sign_in_screen.dart';
 import 'package:simf_app/features/account/biometric_step_up_screen.dart';
-import 'package:simf_app/features/account/my_devices_screen.dart';
 import 'package:simf_app/features/account/data/profile_models.dart';
 import 'package:simf_app/features/account/email_otp_verify_screen.dart';
 import 'package:simf_app/features/account/forgot_password_screen.dart';
+import 'package:simf_app/features/account/my_devices_screen.dart';
 import 'package:simf_app/features/account/reset_password_screen.dart';
 import 'package:simf_app/features/account/sign_in_screen.dart';
 import 'package:simf_app/features/account/sign_up_email_verify_screen.dart';
@@ -100,122 +100,453 @@ class _Route {
 /// exhibitor sign-up + 39 cybersecurity are CP-only / removed — §9 / D-276).
 const List<_Route> _routes = <_Route>[
   // Section 1 — Start & entry (11 screens; 08 exhibitor sign-up removed)
-  _Route(number: 1, name: RouteNames.splash, path: '/splash', labelAr: 'البداية', labelEn: 'Splash'),
-  _Route(number: 2, name: RouteNames.onboarding, path: '/onboarding', labelAr: 'التهيئة', labelEn: 'Onboarding'),
-  _Route(number: 3, name: RouteNames.signIn, path: '/sign-in', labelAr: 'تسجيل الدخول', labelEn: 'Sign in'),
+  _Route(
+      number: 1,
+      name: RouteNames.splash,
+      path: '/splash',
+      labelAr: 'البداية',
+      labelEn: 'Splash',),
+  _Route(
+      number: 2,
+      name: RouteNames.onboarding,
+      path: '/onboarding',
+      labelAr: 'التهيئة',
+      labelEn: 'Onboarding',),
+  _Route(
+      number: 3,
+      name: RouteNames.signIn,
+      path: '/sign-in',
+      labelAr: 'تسجيل الدخول',
+      labelEn: 'Sign in',),
   // Screen 04 (sign-up — type) removed — invented; not in the mockup (D-332).
-  _Route(number: 5, name: RouteNames.signUpForm, path: '/sign-up', labelAr: 'إنشاء حساب', labelEn: 'Sign up'),
-  _Route(number: 6, name: RouteNames.emailOtp, path: '/sign-up/otp', labelAr: 'التحقق بالبريد', labelEn: 'Email verification'),
-  _Route(number: 7, name: RouteNames.signUpVisitor, path: '/sign-up/visitor', labelAr: 'إنشاء حساب · زائر', labelEn: 'Sign up — profile'),
+  _Route(
+      number: 5,
+      name: RouteNames.signUpForm,
+      path: '/sign-up',
+      labelAr: 'إنشاء حساب',
+      labelEn: 'Sign up',),
+  _Route(
+      number: 6,
+      name: RouteNames.emailOtp,
+      path: '/sign-up/otp',
+      labelAr: 'التحقق بالبريد',
+      labelEn: 'Email verification',),
+  _Route(
+      number: 7,
+      name: RouteNames.signUpVisitor,
+      path: '/sign-up/visitor',
+      labelAr: 'إنشاء حساب · زائر',
+      labelEn: 'Sign up — profile',),
   // Page 007‑01 (interests) — mockup 5‑01; split out of #7 (D-332). Sentinel
   // number 701 so it never collides with a mockup screen number; auth-gated.
-  _Route(number: 701, name: RouteNames.signUpInterests, path: '/sign-up/interests', labelAr: 'اهتماماتي', labelEn: 'My interests'),
+  _Route(
+      number: 701,
+      name: RouteNames.signUpInterests,
+      path: '/sign-up/interests',
+      labelAr: 'اهتماماتي',
+      labelEn: 'My interests',),
   // #14 — the standalone "My interests" EDIT surface (opened from My-Area); the
   // same interests page in edit mode. Sentinel 702 (never collides with a
   // mockup screen number); auth-gated.
-  _Route(number: 702, name: RouteNames.myInterests, path: '/my-area/interests', labelAr: 'اهتماماتي', labelEn: 'My interests'),
+  _Route(
+      number: 702,
+      name: RouteNames.myInterests,
+      path: '/my-area/interests',
+      labelAr: 'اهتماماتي',
+      labelEn: 'My interests',),
   // Owner 2026-07-26 — the standalone "My mobile number" add / edit surface
   // (opened from My-Area). Sentinel 703; auth-gated, validation only (no OTP).
-  _Route(number: 703, name: RouteNames.myMobile, path: '/my-area/mobile', labelAr: 'رقم الجوال', labelEn: 'Mobile number'),
+  _Route(
+      number: 703,
+      name: RouteNames.myMobile,
+      path: '/my-area/mobile',
+      labelAr: 'رقم الجوال',
+      labelEn: 'Mobile number',),
   // Screen 08 (exhibitor self-sign-up) removed — exhibitors are CP-only (D-199 / §9).
-  _Route(number: 9, name: RouteNames.terms, path: '/terms', labelAr: 'الشروط والأحكام', labelEn: 'Terms & conditions'),
-  _Route(number: 10, name: RouteNames.registrationSuccess, path: '/registration/success', labelAr: 'تم التسجيل بنجاح', labelEn: 'Registration success'),
-  _Route(number: 11, name: RouteNames.registrationStatus, path: '/registration/status', labelAr: 'حالة التسجيل', labelEn: 'Registration status'),
-  _Route(number: 12, name: RouteNames.guestMode, path: '/guest', labelAr: 'وضع الضيف', labelEn: 'Guest mode'),
+  _Route(
+      number: 9,
+      name: RouteNames.terms,
+      path: '/terms',
+      labelAr: 'الشروط والأحكام',
+      labelEn: 'Terms & conditions',),
+  _Route(
+      number: 10,
+      name: RouteNames.registrationSuccess,
+      path: '/registration/success',
+      labelAr: 'تم التسجيل بنجاح',
+      labelEn: 'Registration success',),
+  _Route(
+      number: 11,
+      name: RouteNames.registrationStatus,
+      path: '/registration/status',
+      labelAr: 'حالة التسجيل',
+      labelEn: 'Registration status',),
+  _Route(
+      number: 12,
+      name: RouteNames.guestMode,
+      path: '/guest',
+      labelAr: 'وضع الضيف',
+      labelEn: 'Guest mode',),
 
   // Section 2 — Core screens (8 screens)
-  _Route(number: 13, name: RouteNames.home, path: '/', labelAr: 'الرئيسية', labelEn: 'Home'),
-  _Route(number: 14, name: RouteNames.myArea, path: '/my-area', labelAr: 'الملف الشخصى', labelEn: 'Profile'),
-  _Route(number: 15, name: RouteNames.venueMap, path: '/map', labelAr: 'الخريطة', labelEn: 'Venue map'),
-  // §9 (D-276) — mockup screen 16 renamed Agenda → Sessions (route + path + label).
-  _Route(number: 16, name: RouteNames.sessions, path: '/sessions', labelAr: 'الجلسات', labelEn: 'Sessions'),
-  _Route(number: 17, name: RouteNames.sessionDetail, path: '/sessions/:sessionId', labelAr: 'تفاصيل الجلسة', labelEn: 'Session detail'),
-  _Route(number: 18, name: RouteNames.mySeat, path: '/sessions/:sessionId/my-seat', labelAr: 'مقعدي', labelEn: 'My seat'),
-  _Route(number: 19, name: RouteNames.speakers, path: '/speakers', labelAr: 'المتحدثون', labelEn: 'Speakers'),
-  _Route(number: 20, name: RouteNames.speakerProfile, path: '/speakers/:speakerId', labelAr: 'القبطان البحري', labelEn: 'Speaker profile'),
+  _Route(
+      number: 13,
+      name: RouteNames.home,
+      path: '/',
+      labelAr: 'الرئيسية',
+      labelEn: 'Home',),
+  _Route(
+      number: 14,
+      name: RouteNames.myArea,
+      path: '/my-area',
+      labelAr: 'الملف الشخصى',
+      labelEn: 'Profile',),
+  _Route(
+      number: 15,
+      name: RouteNames.venueMap,
+      path: '/map',
+      labelAr: 'الخريطة',
+      labelEn: 'Venue map',),
+  // §9 (D-276) — mockup screen 16 renamed Agenda → Sessions (route + path +
+  // label).
+  _Route(
+      number: 16,
+      name: RouteNames.sessions,
+      path: '/sessions',
+      labelAr: 'الجلسات',
+      labelEn: 'Sessions',),
+  _Route(
+      number: 17,
+      name: RouteNames.sessionDetail,
+      path: '/sessions/:sessionId',
+      labelAr: 'تفاصيل الجلسة',
+      labelEn: 'Session detail',),
+  _Route(
+      number: 18,
+      name: RouteNames.mySeat,
+      path: '/sessions/:sessionId/my-seat',
+      labelAr: 'مقعدي',
+      labelEn: 'My seat',),
+  _Route(
+      number: 19,
+      name: RouteNames.speakers,
+      path: '/speakers',
+      labelAr: 'المتحدثون',
+      labelEn: 'Speakers',),
+  _Route(
+      number: 20,
+      name: RouteNames.speakerProfile,
+      path: '/speakers/:speakerId',
+      labelAr: 'القبطان البحري',
+      labelEn: 'Speaker profile',),
 
   // Section 3 — Content & activities. D-499 restored delegations (#21).
-  _Route(number: 21, name: RouteNames.delegations, path: '/delegations', labelAr: 'الوفود', labelEn: 'Delegations'),
-  _Route(number: 22, name: RouteNames.booths, path: '/booths', labelAr: 'الأجنحة', labelEn: 'Booths'),
-  _Route(number: 23, name: RouteNames.sponsors, path: '/sponsors', labelAr: 'الرعاة', labelEn: 'Sponsors'),
+  _Route(
+      number: 21,
+      name: RouteNames.delegations,
+      path: '/delegations',
+      labelAr: 'الوفود',
+      labelEn: 'Delegations',),
+  _Route(
+      number: 22,
+      name: RouteNames.booths,
+      path: '/booths',
+      labelAr: 'الأجنحة',
+      labelEn: 'Booths',),
+  _Route(
+      number: 23,
+      name: RouteNames.sponsors,
+      path: '/sponsors',
+      labelAr: 'الرعاة',
+      labelEn: 'Sponsors',),
   // Wave 3 (Figma 1439:11881 / 11826) — exhibitor + sponsor detail (public, pushed).
-  _Route(number: 220, name: RouteNames.exhibitorDetail, path: '/exhibitors/:boothId', labelAr: 'العارض', labelEn: 'Exhibitor'),
-  _Route(number: 221, name: RouteNames.sponsorDetail, path: '/sponsors/:sponsorId', labelAr: 'الراعي', labelEn: 'Sponsor'),
-  _Route(number: 24, name: RouteNames.archive, path: '/archive', labelAr: 'الأرشيف', labelEn: 'Archive'),
+  _Route(
+      number: 220,
+      name: RouteNames.exhibitorDetail,
+      path: '/exhibitors/:boothId',
+      labelAr: 'العارض',
+      labelEn: 'Exhibitor',),
+  _Route(
+      number: 221,
+      name: RouteNames.sponsorDetail,
+      path: '/sponsors/:sponsorId',
+      labelAr: 'الراعي',
+      labelEn: 'Sponsor',),
+  _Route(
+      number: 24,
+      name: RouteNames.archive,
+      path: '/archive',
+      labelAr: 'الأرشيف',
+      labelEn: 'Archive',),
 
   // Section 4 — Live & Q&A (3 screens; 27 request-interview removed — D-278)
-  _Route(number: 25, name: RouteNames.liveBroadcast, path: '/live', labelAr: 'البث المباشر', labelEn: 'Live broadcast'),
-  _Route(number: 26, name: RouteNames.sendQuestion, path: '/live/question', labelAr: 'إرسال سؤال', labelEn: 'Send question'),
+  _Route(
+      number: 25,
+      name: RouteNames.liveBroadcast,
+      path: '/live',
+      labelAr: 'البث المباشر',
+      labelEn: 'Live broadcast',),
+  _Route(
+      number: 26,
+      name: RouteNames.sendQuestion,
+      path: '/live/question',
+      labelAr: 'إرسال سؤال',
+      labelEn: 'Send question',),
 
   // Section 5 — Media coverage (3 screens)
-  _Route(number: 29, name: RouteNames.news, path: '/news', labelAr: 'الأخبار', labelEn: 'News'),
-  _Route(number: 290, name: RouteNames.newsArticle, path: '/news/:newsId', labelAr: 'الخبر', labelEn: 'News article'),
-  _Route(number: 30, name: RouteNames.gallery, path: '/media', labelAr: 'معرض الصور والفيديوهات', labelEn: 'Media gallery'),
-  _Route(number: 31, name: RouteNames.mediaPartners, path: '/media-partners', labelAr: 'الشركاء الإعلاميون', labelEn: 'Media partners'),
+  _Route(
+      number: 29,
+      name: RouteNames.news,
+      path: '/news',
+      labelAr: 'الأخبار',
+      labelEn: 'News',),
+  _Route(
+      number: 290,
+      name: RouteNames.newsArticle,
+      path: '/news/:newsId',
+      labelAr: 'الخبر',
+      labelEn: 'News article',),
+  _Route(
+      number: 30,
+      name: RouteNames.gallery,
+      path: '/media',
+      labelAr: 'معرض الصور والفيديوهات',
+      labelEn: 'Media gallery',),
+  _Route(
+      number: 31,
+      name: RouteNames.mediaPartners,
+      path: '/media-partners',
+      labelAr: 'الشركاء الإعلاميون',
+      labelEn: 'Media partners',),
 
   // Section 6 — Badge & notifications (2 screens)
-  _Route(number: 32, name: RouteNames.badge, path: '/badge', labelAr: 'بطاقة الدخول · QR', labelEn: 'Entry badge — QR'),
-  _Route(number: 33, name: RouteNames.notifications, path: '/notifications', labelAr: 'الإشعارات', labelEn: 'Notifications'),
+  _Route(
+      number: 32,
+      name: RouteNames.badge,
+      path: '/badge',
+      labelAr: 'بطاقة الدخول · QR',
+      labelEn: 'Entry badge — QR',),
+  _Route(
+      number: 33,
+      name: RouteNames.notifications,
+      path: '/notifications',
+      labelAr: 'الإشعارات',
+      labelEn: 'Notifications',),
 
   // Section 7 — Smart features (4 screens)
-  _Route(number: 34, name: RouteNames.aiSummary, path: '/ai-summary', labelAr: 'ملخص الجلسة بالذكاء الاصطناعي', labelEn: 'AI session summary'),
-  _Route(number: 35, name: RouteNames.meetPeople, path: '/meet', labelAr: 'قابل أشخاص مثلك', labelEn: 'Meet people like you'),
-  _Route(number: 36, name: RouteNames.chatbot, path: '/chatbot', labelAr: 'المساعد الذكي', labelEn: 'AI chatbot'),
-  _Route(number: 37, name: RouteNames.aboutForum, path: '/about', labelAr: 'عن الملتقى — المحاور', labelEn: 'About the forum'),
+  _Route(
+      number: 34,
+      name: RouteNames.aiSummary,
+      path: '/ai-summary',
+      labelAr: 'ملخص الجلسة بالذكاء الاصطناعي',
+      labelEn: 'AI session summary',),
+  _Route(
+      number: 35,
+      name: RouteNames.meetPeople,
+      path: '/meet',
+      labelAr: 'قابل أشخاص مثلك',
+      labelEn: 'Meet people like you',),
+  _Route(
+      number: 36,
+      name: RouteNames.chatbot,
+      path: '/chatbot',
+      labelAr: 'المساعد الذكي',
+      labelEn: 'AI chatbot',),
+  _Route(
+      number: 37,
+      name: RouteNames.aboutForum,
+      path: '/about',
+      labelAr: 'عن الملتقى — المحاور',
+      labelEn: 'About the forum',),
 
   // Section 8 — Settings & legal (3 screens; 39 cybersecurity removed)
-  _Route(number: 38, name: RouteNames.accessibility, path: '/settings/accessibility', labelAr: 'إمكانية الوصول', labelEn: 'Accessibility'),
+  _Route(
+      number: 38,
+      name: RouteNames.accessibility,
+      path: '/settings/accessibility',
+      labelAr: 'إمكانية الوصول',
+      labelEn: 'Accessibility',),
   // Screen 39 (cybersecurity policy) removed from the app — §9 / D-276.
-  _Route(number: 40, name: RouteNames.rate, path: '/rate', labelAr: 'تقييم', labelEn: 'Rate'),
-  _Route(number: 41, name: RouteNames.more, path: '/more', labelAr: 'المزيد', labelEn: 'More'),
+  _Route(
+      number: 40,
+      name: RouteNames.rate,
+      path: '/rate',
+      labelAr: 'تقييم',
+      labelEn: 'Rate',),
+  _Route(
+      number: 41,
+      name: RouteNames.more,
+      path: '/more',
+      labelAr: 'المزيد',
+      labelEn: 'More',),
 
   // FDS-014 visitor contact sharing (D-286; additive, not mockup-numbered →
-  // sentinel numbers 100+ so they never collide with mockup 1–41 or the aux 0s).
-  _Route(number: 100, name: RouteNames.myContacts, path: '/contacts', labelAr: 'جهات اتصالي', labelEn: 'My Contacts'),
-  _Route(number: 101, name: RouteNames.shareMyContact, path: '/contacts/share', labelAr: 'شارك جهة اتصالي', labelEn: 'Share my contact'),
-  _Route(number: 102, name: RouteNames.scanContact, path: '/contacts/scan', labelAr: 'مسح رمز QR', labelEn: 'Scan QR'),
-  _Route(number: 103, name: RouteNames.identityVerification, path: '/my-area/verify-identity', labelAr: 'التحقق من الهوية', labelEn: 'Identity verification'),
-  _Route(number: 104, name: RouteNames.sessionModerate, path: '/sessions/:sessionId/moderate', labelAr: 'أسئلة الجلسة', labelEn: 'Session questions'),
-  _Route(number: 105, name: RouteNames.gateScanner, path: '/gates/scan', labelAr: 'مسح البوابة', labelEn: 'Gate scanner'),
-  // D-426 — exhibitor ("Other") lead capture (approved-only; server 403s visitors).
-  _Route(number: 106, name: RouteNames.scanVisitor, path: '/exhibitor/scan', labelAr: 'مسح بطاقة زائر', labelEn: 'Scan visitor badge'),
+  // sentinel numbers 100+ so they never collide with mockup 1–41 or the aux
+  // 0s).
+  _Route(
+      number: 100,
+      name: RouteNames.myContacts,
+      path: '/contacts',
+      labelAr: 'جهات اتصالي',
+      labelEn: 'My Contacts',),
+  _Route(
+      number: 101,
+      name: RouteNames.shareMyContact,
+      path: '/contacts/share',
+      labelAr: 'شارك جهة اتصالي',
+      labelEn: 'Share my contact',),
+  _Route(
+      number: 102,
+      name: RouteNames.scanContact,
+      path: '/contacts/scan',
+      labelAr: 'مسح رمز QR',
+      labelEn: 'Scan QR',),
+  _Route(
+      number: 103,
+      name: RouteNames.identityVerification,
+      path: '/my-area/verify-identity',
+      labelAr: 'التحقق من الهوية',
+      labelEn: 'Identity verification',),
+  _Route(
+      number: 104,
+      name: RouteNames.sessionModerate,
+      path: '/sessions/:sessionId/moderate',
+      labelAr: 'أسئلة الجلسة',
+      labelEn: 'Session questions',),
+  _Route(
+      number: 105,
+      name: RouteNames.gateScanner,
+      path: '/gates/scan',
+      labelAr: 'مسح البوابة',
+      labelEn: 'Gate scanner',),
+  // D-426 — exhibitor ("Other") lead capture (approved-only; server 403s
+  // visitors).
+  _Route(
+      number: 106,
+      name: RouteNames.scanVisitor,
+      path: '/exhibitor/scan',
+      labelAr: 'مسح بطاقة زائر',
+      labelEn: 'Scan visitor badge',),
   // BUG-025 — named for the booth so it is never read as "My Contacts".
-  _Route(number: 107, name: RouteNames.myVisitors, path: '/exhibitor/visitors', labelAr: 'زوار جناحي', labelEn: 'My Booth Visitors'),
+  _Route(
+      number: 107,
+      name: RouteNames.myVisitors,
+      path: '/exhibitor/visitors',
+      labelAr: 'زوار جناحي',
+      labelEn: 'My Booth Visitors',),
   // D-509 — staff walk-in visitor registration (approved Staff; server enforces
   // Visitors.RegisterOnsite). Figma 1467:12357.
-  _Route(number: 114, name: RouteNames.staffRegisterVisitor, path: '/staff/register-visitor', labelAr: 'تسجيل زائر', labelEn: 'Register visitor'),
+  _Route(
+      number: 114,
+      name: RouteNames.staffRegisterVisitor,
+      path: '/staff/register-visitor',
+      labelAr: 'تسجيل زائر',
+      labelEn: 'Register visitor',),
   // D-771 — the staff seating desk (approved Staff; server enforces
   // Seating.Assist). Derived from the visitor seat picker (109).
-  _Route(number: 118, name: RouteNames.staffSeating, path: '/staff/seating/:sessionId', labelAr: 'إرشاد الضيوف للمقاعد', labelEn: 'Guest seating desk'),
-  // D-500 (Wave 5, الطلبات) — the unified requests feed (approved-only), retitled
-  // "طلباتي" once the meetings page split off (D-745).
-  _Route(number: 108, name: RouteNames.requests, path: '/requests', labelAr: 'طلباتي', labelEn: 'My requests'),
-  // D-745 — the VIP bilateral-meetings page (اللقاءات الثنائية, Figma 1408:9726).
-  _Route(number: 116, name: RouteNames.meetings, path: '/meetings', labelAr: 'اللقاءات الثنائية', labelEn: 'Bilateral meetings'),
-  // Bi-Meeting rework — the other-party confirm screen (deep-link from a notification).
-  _Route(number: 117, name: RouteNames.meetingConfirm, path: '/meeting-confirm', labelAr: 'تأكيد الاجتماع', labelEn: 'Confirm meeting'),
+  _Route(
+      number: 118,
+      name: RouteNames.staffSeating,
+      path: '/staff/seating/:sessionId',
+      labelAr: 'إرشاد الضيوف للمقاعد',
+      labelEn: 'Guest seating desk',),
+  // D-500 (Wave 5, الطلبات) — the unified requests feed (approved-only),
+  // retitled "طلباتي" once the meetings page split off (D-745).
+  _Route(
+      number: 108,
+      name: RouteNames.requests,
+      path: '/requests',
+      labelAr: 'طلباتي',
+      labelEn: 'My requests',),
+  // D-745 — the VIP bilateral-meetings page (اللقاءات الثنائية, Figma
+  // 1408:9726).
+  _Route(
+      number: 116,
+      name: RouteNames.meetings,
+      path: '/meetings',
+      labelAr: 'اللقاءات الثنائية',
+      labelEn: 'Bilateral meetings',),
+  // Bi-Meeting rework — the other-party confirm screen (deep-link from a
+  // notification).
+  _Route(
+      number: 117,
+      name: RouteNames.meetingConfirm,
+      path: '/meeting-confirm',
+      labelAr: 'تأكيد الاجتماع',
+      labelEn: 'Confirm meeting',),
   // (D-609: route 115 My-meetings removed — the screen was deleted; recover it
   //  from git history if it is ever needed again.)
   // D-485 — the session-join flow (approved-only): the seat picker + the hub.
-  _Route(number: 109, name: RouteNames.seatPicker, path: '/sessions/:sessionId/pick-seat', labelAr: 'اختر مقعدك', labelEn: 'Select your seat'),
-  _Route(number: 110, name: RouteNames.joinSessionHub, path: '/sessions/join', labelAr: 'احجز مقعداً', labelEn: 'Book a seat'),
+  _Route(
+      number: 109,
+      name: RouteNames.seatPicker,
+      path: '/sessions/:sessionId/pick-seat',
+      labelAr: 'اختر مقعدك',
+      labelEn: 'Select your seat',),
+  _Route(
+      number: 110,
+      name: RouteNames.joinSessionHub,
+      path: '/sessions/join',
+      labelAr: 'احجز مقعداً',
+      labelEn: 'Book a seat',),
   // #1/#6 — session-summaries list (public; home tile → list → aiSummary details).
-  _Route(number: 111, name: RouteNames.sessionSummaryList, path: '/session-summaries', labelAr: 'ملخص الجلسات', labelEn: 'Session summaries'),
+  _Route(
+      number: 111,
+      name: RouteNames.sessionSummaryList,
+      path: '/session-summaries',
+      labelAr: 'ملخص الجلسات',
+      labelEn: 'Session summaries',),
   // #9 — venue map focused on a booth (booth "أرشدني" CTA; public, pushed).
-  _Route(number: 112, name: RouteNames.boothMap, path: '/booths/:boothId/map', labelAr: 'الخريطة', labelEn: 'Venue map'),
-  // #5 (D-710) — My sessions (عروض الجلسات, Figma 1388:9067), approved-attendee;
-  // restored + linked from the More menu (owner reversed the D-609 removal).
-  _Route(number: 113, name: RouteNames.myAreaSessions, path: '/my-sessions', labelAr: 'عروض الجلسات', labelEn: 'My sessions'),
+  _Route(
+      number: 112,
+      name: RouteNames.boothMap,
+      path: '/booths/:boothId/map',
+      labelAr: 'الخريطة',
+      labelEn: 'Venue map',),
+  // #5 (D-710) — My sessions (عروض الجلسات, Figma 1388:9067),
+  // approved-attendee; restored + linked from the More menu (owner reversed the
+  // D-609 removal).
+  _Route(
+      number: 113,
+      name: RouteNames.myAreaSessions,
+      path: '/my-sessions',
+      labelAr: 'عروض الجلسات',
+      labelEn: 'My sessions',),
 
   // D-464 — المزيد hub entries with no screen yet (Figma 1129:17224). Public;
   // they fall through to ComingSoonScreen (sentinel numbers 200+).
-  _Route(number: 200, name: RouteNames.forumGuide, path: '/forum-guide', labelAr: 'دليل الملتقى', labelEn: 'Forum guide'),
-  _Route(number: 201, name: RouteNames.faq, path: '/faq', labelAr: 'الأسئلة الشائعة', labelEn: 'FAQ'),
-  _Route(number: 202, name: RouteNames.sessionPresentations, path: '/session-presentations', labelAr: 'الجلسات', labelEn: 'Sessions'),
-  _Route(number: 203, name: RouteNames.contactUs, path: '/contact-us', labelAr: 'تواصل معنا', labelEn: 'Contact us'),
+  _Route(
+      number: 200,
+      name: RouteNames.forumGuide,
+      path: '/forum-guide',
+      labelAr: 'دليل الملتقى',
+      labelEn: 'Forum guide',),
+  _Route(
+      number: 201,
+      name: RouteNames.faq,
+      path: '/faq',
+      labelAr: 'الأسئلة الشائعة',
+      labelEn: 'FAQ',),
+  _Route(
+      number: 202,
+      name: RouteNames.sessionPresentations,
+      path: '/session-presentations',
+      labelAr: 'الجلسات',
+      labelEn: 'Sessions',),
+  _Route(
+      number: 203,
+      name: RouteNames.contactUs,
+      path: '/contact-us',
+      labelAr: 'تواصل معنا',
+      labelEn: 'Contact us',),
   // D-668 — About-the-app page (version / release date / organizer + links),
   // reached from the end of the side drawer. Public.
-  _Route(number: 207, name: RouteNames.aboutApp, path: '/about-app', labelAr: 'عن التطبيق', labelEn: 'About the app'),
+  _Route(
+      number: 207,
+      name: RouteNames.aboutApp,
+      path: '/about-app',
+      labelAr: 'عن التطبيق',
+      labelEn: 'About the app',),
   // (B18: routes 204 bilateral-meetings + 206 saved-meetings removed — both
   //  ComingSoon sentinels with no screen, no inbound navigation and nothing
   //  persisted behind them. 204's Home tile went to the real VIP meetings page
@@ -228,24 +559,69 @@ const List<_Route> _routes = <_Route>[
 /// Auxiliary auth routes that aren't numbered in the mockup but live in
 /// API-001 §12 (forgot/reset password) and the TOTP step (§12.3).
 const List<_Route> _auxRoutes = <_Route>[
-  _Route(number: 0, name: RouteNames.forgotPassword, path: '/auth/forgot-password', labelAr: 'استعادة كلمة المرور', labelEn: 'Forgot password'),
-  _Route(number: 0, name: RouteNames.resetPassword, path: '/auth/reset-password', labelAr: 'تعيين كلمة مرور جديدة', labelEn: 'Reset password'),
-  _Route(number: 0, name: RouteNames.verifyOtp, path: '/auth/verify-otp', labelAr: 'رمز التحقق', labelEn: 'Verify OTP'),
+  _Route(
+      number: 0,
+      name: RouteNames.forgotPassword,
+      path: '/auth/forgot-password',
+      labelAr: 'استعادة كلمة المرور',
+      labelEn: 'Forgot password',),
+  _Route(
+      number: 0,
+      name: RouteNames.resetPassword,
+      path: '/auth/reset-password',
+      labelAr: 'تعيين كلمة مرور جديدة',
+      labelEn: 'Reset password',),
+  _Route(
+      number: 0,
+      name: RouteNames.verifyOtp,
+      path: '/auth/verify-otp',
+      labelAr: 'رمز التحقق',
+      labelEn: 'Verify OTP',),
   // Part B (D-430) — badge-QR sign-in / activation (anonymous, pre-login).
-  _Route(number: 0, name: RouteNames.badgeSignIn, path: '/auth/badge', labelAr: 'الدخول بالشارة', labelEn: 'Badge sign-in'),
-  _Route(number: 0, name: RouteNames.badgeActivation, path: '/auth/badge-activation', labelAr: 'تفعيل الحساب', labelEn: 'Activate account'),
+  _Route(
+      number: 0,
+      name: RouteNames.badgeSignIn,
+      path: '/auth/badge',
+      labelAr: 'الدخول بالشارة',
+      labelEn: 'Badge sign-in',),
+  _Route(
+      number: 0,
+      name: RouteNames.badgeActivation,
+      path: '/auth/badge-activation',
+      labelAr: 'تفعيل الحساب',
+      labelEn: 'Activate account',),
   // D-738 — the password step after a has-password badge resolves.
-  _Route(number: 0, name: RouteNames.badgePassword, path: '/auth/badge-password', labelAr: 'إكمال تسجيل الدخول', labelEn: 'Badge password'),
+  _Route(
+      number: 0,
+      name: RouteNames.badgePassword,
+      path: '/auth/badge-password',
+      labelAr: 'إكمال تسجيل الدخول',
+      labelEn: 'Badge password',),
   // #7a — emailed-OTP step-up to ENABLE biometric sign-in (signed-in; backend-
   // enforced, reached from the Face-ID toggle / post-sign-in nudge).
-  _Route(number: 0, name: RouteNames.biometricStepUp, path: '/auth/biometric-step-up', labelAr: 'تأكيد بصمة الوجه', labelEn: 'Confirm Face ID'),
-  _Route(number: 0, name: RouteNames.myDevices, path: '/account/my-devices', labelAr: 'أجهزتي', labelEn: 'My devices'),
+  _Route(
+      number: 0,
+      name: RouteNames.biometricStepUp,
+      path: '/auth/biometric-step-up',
+      labelAr: 'تأكيد بصمة الوجه',
+      labelEn: 'Confirm Face ID',),
+  // #7b — the owner's enrolled-device list, added on main. Wrapped to match
+  // this branch's 80-column rule rather than carried over as the single long
+  // line it arrived as; the whole point of the branch is that the analyzer
+  // reaches zero.
+  _Route(
+      number: 0,
+      name: RouteNames.myDevices,
+      path: '/account/my-devices',
+      labelAr: 'أجهزتي',
+      labelEn: 'My devices',),
 ];
 
 /// Screen numbers that need a signed-in user of **any** role (including a
-/// pending/unapproved account, which resolves to [AppRole.guest]). These are the
-/// universal onboarding + account routes everyone signed-in shares; role-specific
-/// pages live in [_routeRoles] instead (a route there is also auth-gated).
+/// pending/unapproved account, which resolves to [AppRole.guest]). These are
+/// the universal onboarding + account routes everyone signed-in shares;
+/// role-specific pages live in [_routeRoles] instead (a route there is also
+/// auth-gated).
 const Set<int> _authenticatedRoutes = <int>{
   7, // Sign up — visitor profile data (AUTH-only, Page_007 L-1)
   701, // Sign up — interests + the single save (AUTH-only, Page_007-01, D-332)
@@ -277,14 +653,14 @@ const Set<int> _authenticatedRoutes = <int>{
 };
 
 /// The clean role→page model (D-519): the explicit set of [AppRole]s allowed to
-/// open each role-restricted route. A route here is **also** auth-gated (it needs
-/// sign-in). A signed-in user whose role is **not in the set** is redirected
-/// home. The server stays the real authority (per-session grant / GateOperator /
-/// Visitors.RegisterOnsite); this is the UX gate that keeps the wrong role out
-/// of the screen AND lets the nav surfaces show only the role's own pages. This
-/// replaced the old min-role `isAtLeast` ladder, which could not express
-/// "Exhibitor = Visitor + extras" or "Staff/Moderator are focused, NOT a
-/// visitor superset".
+/// open each role-restricted route. A route here is **also** auth-gated (it
+/// needs sign-in). A signed-in user whose role is **not in the set** is
+/// redirected home. The server stays the real authority (per-session grant /
+/// GateOperator / Visitors.RegisterOnsite); this is the UX gate that keeps the
+/// wrong role out of the screen AND lets the nav surfaces show only the role's
+/// own pages. This replaced the old min-role `isAtLeast` ladder, which could
+/// not express "Exhibitor = Visitor + extras" or "Staff/Moderator are focused,
+/// NOT a visitor superset".
 const Set<AppRole> _attendee = <AppRole>{AppRole.visitor, AppRole.exhibitor};
 const Map<int, Set<AppRole>> _routeRoles = <int, Set<AppRole>>{
   // Attendee features — Visitor + Exhibitor (NOT Staff/Moderator: D-519 focused).
@@ -299,17 +675,21 @@ const Map<int, Set<AppRole>> _routeRoles = <int, Set<AppRole>>{
   // it must be reachable by a pending sign-up account (D-694).
   108: _attendee, // Requests feed (D-500, approved-only)
   116: _attendee, // Bilateral meetings (D-745) — role gate keeps guest/staff/
-  // moderator out; VIP-only is enforced in-screen + server-side, not here.
-  117: _attendee, // Meeting confirm (Bi-Meeting) — the other-party confirm screen;
+  // moderator out; per-user meeting eligibility (D-760) is enforced in-screen +
+  // server-side, not here.
+  // Meeting confirm (Bi-Meeting) — the other-party confirm screen;
   // eligibility (target-delegation member) is enforced server-side.
+  117: _attendee,
   109: _attendee, // Seat picker (D-485)
   110: _attendee, // Join-a-session hub (D-485)
-  113: _attendee, // My sessions (D-710, restored — owner reversed the D-609 removal)
-  // 202 (Session presentations — the "الجلسات" list) is PUBLIC (owner 2026-07-22):
-  // a guest opens it from the home "Sessions" tile, so it is intentionally NOT
-  // gated here. Its reads (`GET /app/presentations[/{id}/file]`) are AllowAnonymous.
-  // (D-609: routes 115 My-meetings, 205 Saved-sessions removed — the screens
-  // were deleted, recoverable from git history; 113 My-sessions restored by D-710.)
+  // My sessions (D-710, restored — owner reversed the D-609 removal).
+  113: _attendee,
+  // 202 (Session presentations — the "الجلسات" list) is PUBLIC (owner
+  // 2026-07-22): a guest opens it from the home "Sessions" tile, so it is
+  // intentionally NOT gated here. Its reads (`GET
+  // /app/presentations[/{id}/file]`) are AllowAnonymous. (D-609: routes 115
+  // My-meetings, 205 Saved-sessions removed — the screens were deleted,
+  // recoverable from git history; 113 My-sessions restored by D-710.)
   // Exhibitor-only — lead capture (D-426).
   106: <AppRole>{AppRole.exhibitor}, // Scan visitor badge
   107: <AppRole>{AppRole.exhibitor}, // My Visitors
@@ -318,7 +698,8 @@ const Map<int, Set<AppRole>> _routeRoles = <int, Set<AppRole>>{
   114: <AppRole>{AppRole.staff}, // Walk-in visitor registration
   118: <AppRole>{AppRole.staff}, // Seating desk (D-771)
   // Moderator-only — the session Q&A desk (D-405). Moderator-EXCLUSIVE now
-  // (D-519): Staff no longer inherits it (the old isAtLeast made Staff >= Moderator).
+  // (D-519): Staff no longer inherits it (the old isAtLeast made Staff >=
+  // Moderator).
   104: <AppRole>{AppRole.moderator}, // Session Q&A desk
 };
 
@@ -664,17 +1045,17 @@ Widget _auxScreenFor(BuildContext context, GoRouterState state, _Route r) {
 /// the redirect gate WITHOUT disposing and recreating every page. An earlier
 /// incrementing-counter key gave every page a new key on each refresh, so a
 /// token proactive-refresh churned all pages — silently dropping in-flight work
-/// on a PUSHED route (e.g. the avatar upload that resumes after the multi-second
-/// liveness, whose caller then read `!mounted`) and reloading screens under it.
-/// go_router disambiguates duplicate locations internally, so `pageKey` does not
-/// collide in Flutter's `_debugCheckDuplicatedPageKeys`.
+/// on a PUSHED route (e.g. the avatar upload that resumes after the
+/// multi-second liveness, whose caller then read `!mounted`) and reloading
+/// screens under it. go_router disambiguates duplicate locations internally, so
+/// `pageKey` does not collide in Flutter's `_debugCheckDuplicatedPageKeys`.
 ///
 /// Builds the go_router instance.
 ///
-/// The redirect logic implements the auth gate (SIMF-MAA-001 §8): a request
-/// for a protected route while signed out gets redirected to sign-in. The
-/// router refreshes on every auth-state change ([refreshListenable]) so the
-/// gate re-runs when the cold-start restore resolves or the session ends.
+/// The redirect logic implements the auth gate (SIMF-MAA-001 §8): a request for
+/// a protected route while signed out gets redirected to sign-in. The router
+/// refreshes on every auth-state change (`refreshListenable`) so the gate
+/// re-runs when the cold-start restore resolves or the session ends.
 GoRouter buildRouter(Ref ref) {
   final authRefresh = _AuthRefreshNotifier(ref);
 

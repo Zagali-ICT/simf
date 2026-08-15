@@ -19,7 +19,8 @@ const _speakers = <SpeakerSummary>[
     nameArabic: 'القبطان ريف',
     displayOrder: 0,
     rank: 'Sea captain',
-    countryId: 682, // Saudi Arabia → 🇸🇦 flag inline beside the name (908:1744)
+    countryId:
+        682, // Saudi Arabia → 🇸🇦 flag inline beside the name (908:1744)
     countryNameEn: 'RSNF',
   ),
   SpeakerSummary(
@@ -98,8 +99,8 @@ Future<void> _pump(
       GoRoute(
         path: '/speakers/:speakerId',
         name: RouteNames.speakerProfile,
-        builder: (_, state) =>
-            Scaffold(body: Text('PROFILE ${state.pathParameters['speakerId']}')),
+        builder: (_, state) => Scaffold(
+            body: Text('PROFILE ${state.pathParameters['speakerId']}'),),
       ),
     ],
   );
@@ -142,7 +143,8 @@ void main() {
       expect(find.text('\u{1F1F8}\u{1F1E6}'), findsOneWidget);
     });
 
-    testWidgets('each avatar falls back to the placeholder when there is no '
+    testWidgets(
+        'each avatar falls back to the placeholder when there is no '
         'photo — the host star is per-session (shown on the detail), not here '
         '(D-432)', (tester) async {
       await _pump(tester, repo: _FakeSpeakersRepo(list: _speakers));
@@ -168,12 +170,14 @@ void main() {
       for (final id in <String>['sp1', 'sp2', 'sp3']) {
         expect(
           urls,
-          contains('http://test.local/api/v1/app/assets/SpeakerPhoto/$id/image'),
+          contains(
+              'http://test.local/api/v1/app/assets/SpeakerPhoto/$id/image',),
         );
       }
     });
 
-    testWidgets('RTL card matches Figma 908:1744 — the gold anchor tile sits on '
+    testWidgets(
+        'RTL card matches Figma 908:1744 — the gold anchor tile sits on '
         'the RIGHT (next to the name), the navigation caret on the LEFT',
         (tester) async {
       await _pump(
@@ -199,23 +203,35 @@ void main() {
       // filter on the accent colour so the page header's back button (also
       // ic_back, but white) is excluded — leaving the first card's row caret.
       final nameDy = tester.getCenter(find.text('القبطان ريف')).dy;
-      final caretFinder = find.byWidgetPredicate((w) =>
-          w is SimfSvgIcon &&
-          w.asset.contains('back') &&
-          w.color == SimfTokens.accent,);
+      final caretFinder = find.byWidgetPredicate(
+        (w) =>
+            w is SimfSvgIcon &&
+            w.asset.contains('back') &&
+            w.color == SimfTokens.accent,
+      );
       final caretDx = tester.getCenter(caretFinder.first).dx;
       final caretDy = tester.getCenter(caretFinder.first).dy;
       // Figma (Arabic/RTL frame 908:1744): the gold anchor tile is the right-
       // most element (right of the name), the caret is the left-most.
-      expect(anchorDx, greaterThan(nameDx),
-          reason: 'anchor tile must be right of the name (Figma 908:1744)',);
-      expect(caretDx, lessThan(nameDx),
-          reason: 'caret must be left of the name (Figma 908:1744)',);
-      expect((caretDy - nameDy).abs(), lessThan(60),
-          reason: 'caret shares the first card row',);
+      expect(
+        anchorDx,
+        greaterThan(nameDx),
+        reason: 'anchor tile must be right of the name (Figma 908:1744)',
+      );
+      expect(
+        caretDx,
+        lessThan(nameDx),
+        reason: 'caret must be left of the name (Figma 908:1744)',
+      );
+      expect(
+        (caretDy - nameDy).abs(),
+        lessThan(60),
+        reason: 'caret shares the first card row',
+      );
     });
 
-    testWidgets('the search box filters the list to matching speakers (908:1744)',
+    testWidgets(
+        'the search box filters the list to matching speakers (908:1744)',
         (tester) async {
       await _pump(tester, repo: _FakeSpeakersRepo(list: _speakers));
       expect(find.text('Capt. Reef'), findsOneWidget);
@@ -229,7 +245,8 @@ void main() {
       expect(find.text('Brig. Anchor'), findsNothing);
     });
 
-    testWidgets('the sort control orders the list A→Z; default keeps API order '
+    testWidgets(
+        'the sort control orders the list A→Z; default keeps API order '
         '(908:1744)', (tester) async {
       await _pump(tester, repo: _FakeSpeakersRepo(list: _speakers));
       double dyOf(String name) => tester.getCenter(find.text(name)).dy;

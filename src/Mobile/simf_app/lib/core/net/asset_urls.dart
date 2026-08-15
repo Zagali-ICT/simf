@@ -4,7 +4,8 @@
 /// Every uploaded image is served anonymously from one route shape,
 /// `{base}/app/assets/{kind}/{id}/image`. Before this file that shape was
 /// written out at 18 separate call sites across 14 files, with `SpeakerPhoto`
-/// alone repeated six times, so a change to the route meant finding all of them.
+/// alone repeated six times, so a change to the route meant finding all of
+/// them.
 ///
 /// The route and the kind names are part of the **shipped wire contract**
 /// (D-219): the deployed app decodes against them, so they are copied here

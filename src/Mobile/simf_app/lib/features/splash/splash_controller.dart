@@ -62,10 +62,10 @@ class SplashController extends Notifier<SplashState> {
   }
 
   Future<void> _run() async {
-    // D-495 — load the edition-generic forum config at the splash: the controller
-    // hydrates instantly from local storage, then this refreshes it from the API
-    // (Last-Modified / 304). Available app-wide afterwards via orgProfileProvider.
-    // Fire-and-forget — never blocks boot.
+    // D-495 — load the edition-generic forum config at the splash: the
+    // controller hydrates instantly from local storage, then this refreshes it
+    // from the API (Last-Modified / 304). Available app-wide afterwards via
+    // orgProfileProvider. Fire-and-forget — never blocks boot.
     unawaited(ref.read(orgProfileProvider.notifier).warm());
 
     final checker = ref.read(appUpdateCheckerProvider);
@@ -75,11 +75,11 @@ class SplashController extends Notifier<SplashState> {
       Future<void>.delayed(minDisplay),
       // Hard cap (Logic L-6): a hung policy check never blocks boot.
       checker.check().timeout(
-        const Duration(seconds: 5),
-        onTimeout: () => AppUpdateStatus.upToDate,
-      ),
+            const Duration(seconds: 5),
+            onTimeout: () => AppUpdateStatus.upToDate,
+          ),
     ]);
-    final updateStatus = results[1] as AppUpdateStatus;
+    final updateStatus = results[1]! as AppUpdateStatus;
 
     if (updateStatus == AppUpdateStatus.forced) {
       state = const SplashUpdateRequired();

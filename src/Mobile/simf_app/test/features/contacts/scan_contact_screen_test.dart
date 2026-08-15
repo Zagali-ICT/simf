@@ -59,7 +59,8 @@ void main() {
 
       await _lookUp(tester, 'TOKEN-A');
       await tester.enterText(find.byType(TextField).last, 'met at booth 3');
-      await tester.tap(find.widgetWithText(FilledButton, 'Save to My Contacts'));
+      await tester
+          .tap(find.widgetWithText(FilledButton, 'Save to My Contacts'));
       await tester.pumpAndSettle();
 
       expect(repo.saveCalls, 1);
@@ -85,7 +86,8 @@ void main() {
       await _pump(tester, repo);
 
       await _lookUp(tester, 'MINE');
-      await tester.tap(find.widgetWithText(FilledButton, 'Save to My Contacts'));
+      await tester
+          .tap(find.widgetWithText(FilledButton, 'Save to My Contacts'));
       await tester.pumpAndSettle();
 
       expect(find.text('You can’t save your own card.'), findsOneWidget);

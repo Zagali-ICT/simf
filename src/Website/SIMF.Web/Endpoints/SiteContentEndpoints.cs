@@ -30,6 +30,37 @@ namespace SIMF.Web.Endpoints;
 
 internal static class SiteContentEndpoints
 {
+    /// <summary>The only media types the image proxies will re-serve INLINE.
+    ///
+    /// These proxies re-stream bytes fetched from the API, and an asset may be
+    /// an EXTERNAL LINK: the API answers that with a 302 to a URL a Control
+    /// Panel editor supplied, and HttpClient follows it, so both the body and
+    /// its Content-Type come from a host outside our control. Echoing that type
+    /// back verbatim let a third-party host serve `text/html` from
+    /// web.simrsnf.com — a same-origin script-execution primitive on the public
+    /// forum domain, reachable by any editor holding a per-category asset-write
+    /// permission rather than by an administrator.
+    ///
+    /// The list mirrors what the upload pipeline can actually store, so a
+    /// legitimate image is never affected. Anything else is still served, but as
+    /// an opaque attachment that a browser saves instead of rendering.</summary>
+    private static readonly string[] InlineImageTypes =
+        ["image/png", "image/jpeg", "image/webp", "image/gif", "image/svg+xml"];
+
+    /// <summary>Serves proxied bytes, downgrading any media type outside
+    /// <see cref="InlineImageTypes"/> to a saved attachment.</summary>
+    private static IResult ImageResult(byte[] bytes, string contentType)
+    {
+        // SVG is inline-renderable and CAN carry script, but it is a real image
+        // type the pipeline stores. It is safe here only because it can never
+        // arrive from an attacker-chosen host: see the AllowAutoRedirect:false
+        // handler on SimfPublicClient, which stops the external-link fetch at
+        // the redirect. Both halves are load-bearing; do not remove either.
+        return InlineImageTypes.Contains(contentType, StringComparer.OrdinalIgnoreCase)
+            ? Results.File(bytes, contentType)
+            : Results.File(bytes, "application/octet-stream", fileDownloadName: "asset");
+    }
+
     // A neutral branded placeholder (navy card + gold "SIMF") for the two
     // sections whose renderers need a background image but whose API rows carry
     // none (sessions, news). Already URL-encoded so it drops straight into the
@@ -102,13 +133,17 @@ internal static class SiteContentEndpoints
         routes.MapGet("/content/media/{id:guid}/image",
             async (Guid id, SimfPublicClient api, HttpContext http, CancellationToken ct) =>
         {
-            var (status, contentType, bytes) = await api.FetchMediaImageAsync(id, ct);
-            if (status != 200 || contentType is null || bytes.Length == 0)
+            var image = await api.FetchMediaImageAsync(id, ct);
+            if (image.RedirectLocation is { } mediaTarget)
             {
-                return Results.StatusCode(status);
+                return Results.Redirect(mediaTarget);
+            }
+            if (image.StatusCode != 200 || image.ContentType is null || image.Bytes.Length == 0)
+            {
+                return Results.StatusCode(image.StatusCode);
             }
             http.Response.Headers.CacheControl = "public, max-age=300";
-            return Results.File(bytes, contentType);
+            return ImageResult(image.Bytes, image.ContentType);
         });
 
         // Re-streams one media-asset image same-origin (through the unified asset
@@ -119,13 +154,22 @@ internal static class SiteContentEndpoints
         routes.MapGet("/content/assets/{category}/{ownerId:guid}/image",
             async (string category, Guid ownerId, SimfPublicClient api, HttpContext http, CancellationToken ct) =>
         {
-            var (status, contentType, bytes) = await api.FetchAssetImageAsync(category, ownerId, ct);
-            if (status != 200 || contentType is null || bytes.Length == 0)
+            var image = await api.FetchAssetImageAsync(category, ownerId, ct);
+
+            // An external-link asset: send the BROWSER to the editor-supplied
+            // host, which is what the API's 302 always meant. The Website never
+            // fetches it, so that host's bytes and Content-Type never land on
+            // this origin.
+            if (image.RedirectLocation is { } assetTarget)
             {
-                return Results.StatusCode(status);
+                return Results.Redirect(assetTarget);
+            }
+            if (image.StatusCode != 200 || image.ContentType is null || image.Bytes.Length == 0)
+            {
+                return Results.StatusCode(image.StatusCode);
             }
             http.Response.Headers.CacheControl = "public, max-age=300";
-            return Results.File(bytes, contentType);
+            return ImageResult(image.Bytes, image.ContentType);
         });
 
         // Re-streams one session presentation file same-origin so the public

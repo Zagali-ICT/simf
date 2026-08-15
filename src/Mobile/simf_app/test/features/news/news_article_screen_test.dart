@@ -74,7 +74,8 @@ void main() {
       expect(find.text('This article was not found'), findsOneWidget);
     });
 
-    testWidgets('a non-404 error shows retry, which re-fetches', (tester) async {
+    testWidgets('a non-404 error shows retry, which re-fetches',
+        (tester) async {
       final repo = _FakeNewsRepo(status: 500);
       await _pump(tester, repo);
       expect(find.text('Could not load the news.'), findsOneWidget);

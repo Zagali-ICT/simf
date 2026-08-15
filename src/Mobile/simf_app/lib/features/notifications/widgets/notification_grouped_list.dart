@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/core/utils/gregorian_month_names.dart';
+import 'package:simf_app/core/utils/group_consecutive.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
 import 'package:simf_app/features/notifications/data/notification_models.dart';
 import 'package:simf_app/features/notifications/widgets/notification_card.dart';
@@ -25,17 +25,9 @@ class NotificationGroupedList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Build an ordered (dayLabel, items) list, preserving the newest-first
-    // order the API returns.
-    final groups = <MapEntry<String, List<NotificationItem>>>[];
-    for (final item in items) {
-      final label = _dayLabel(item.createdAt);
-      if (groups.isNotEmpty && groups.last.key == label) {
-        groups.last.value.add(item);
-      } else {
-        groups.add(MapEntry(label, <NotificationItem>[item]));
-      }
-    }
+    // Runs, not buckets: the API returns newest-first, so "Today" heads the
+    // list once rather than collecting every Today row from the whole history.
+    final groups = groupConsecutive(items, (i) => _dayLabel(i.createdAt));
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(
@@ -84,6 +76,7 @@ class NotificationGroupedList extends StatelessWidget {
     }
     // Localised month name (Arabic on the ar UI) — never the intl English
     // fallback that showed "Jun 10" inside the RTL screen.
-    return '${local.day} ${gregorianMonthName(local.month, isArabic)}';
+    final month = gregorianMonthName(local.month, isArabic: isArabic);
+    return '${local.day} $month';
   }
 }

@@ -13,7 +13,8 @@ class MetaItem extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        Icon(icon, size: SimfTokens.metaItemSize, color: SimfTokens.beigeBorder),
+        Icon(icon,
+            size: SimfTokens.metaItemSize, color: SimfTokens.beigeBorder,),
         const SizedBox(width: SimfTokens.space2),
         Text(
           label,

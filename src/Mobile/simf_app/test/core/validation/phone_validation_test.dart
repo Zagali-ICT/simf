@@ -10,7 +10,8 @@ void main() {
       expect(isStandardSaudiMobile('+966501234567'), isTrue);
       expect(isStandardSaudiMobile('009665 0123-4567'), isTrue); // 00 → +
       expect(isStandardSaudiMobile('050 123-4567'), isTrue);
-      expect(isStandardSaudiMobile('٠٥٠١٢٣٤٥٦٧'), isTrue); // Arabic-Indic digits
+      // Arabic-Indic digits.
+      expect(isStandardSaudiMobile('٠٥٠١٢٣٤٥٦٧'), isTrue);
     });
 
     test('rejects non-standard shapes', () {
@@ -31,7 +32,8 @@ void main() {
     });
 
     test('rejects malformed shapes', () {
-      expect(isStandardInternationalMobile('+0447700900123'), isFalse); // 0 lead
+      // A 0 leading the subscriber number, after the country code.
+      expect(isStandardInternationalMobile('+0447700900123'), isFalse);
       expect(isStandardInternationalMobile('+44'), isFalse);
       expect(isStandardInternationalMobile('0501234567'), isFalse); // no + / 00
       expect(isStandardInternationalMobile(''), isFalse);

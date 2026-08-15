@@ -32,8 +32,8 @@ class SimfAuthSweep extends StatelessWidget {
       child: Transform.rotate(
         angle: 0.4936, // 28.28°
         child: Container(
-          width: SimfTokens.simfAuthSweepWidth,
-          height: SimfTokens.simfAuthSweepHeight,
+          width: SimfTokens.sweepBlockWidth,
+          height: SimfTokens.sweepBlockHeight,
           decoration: BoxDecoration(
             color: SimfTokens.surfaceTint,
             borderRadius: BorderRadius.circular(SimfTokens.radiusSheet),

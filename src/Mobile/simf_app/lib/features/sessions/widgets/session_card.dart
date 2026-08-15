@@ -34,7 +34,7 @@ class SessionCard extends StatelessWidget {
             // D-432 — the real session title now ships on the seat map; the
             // seat row/number are shown by the chips below. Fall back to the
             // seat location (or the no-seat hint) when the title is absent.
-            map.localizedSessionTitle(l10n.isArabic) ??
+            map.localizedSessionTitle(isArabic: l10n.isArabic) ??
                 (cell != null
                     ? l10n.seatLocation(cell.rowLabel, cell.seatNumber)
                     : l10n.noSeatYet),

@@ -12,9 +12,9 @@ enum MediaCoverageTab { partners, latestUpdates }
 /// The two media-center tabs (Figma 1049:12629): الشركاء الإعلاميون · احدث
 /// المستجدات. Shared by the News (#29) and Media-partners (#31) screens — the
 /// active tab is a solid gold pill with white text; the inactive one is a
-/// transparent pill with a beige hairline that navigates (replace) to its route.
-/// (Figma 947/1049 dropped the معرض الصور tab from this strip — the Gallery
-/// screen #30 has its own three-tab strip.)
+/// transparent pill with a beige hairline that navigates (replace) to its
+/// route. (Figma 947/1049 dropped the معرض الصور tab from this strip — the
+/// Gallery screen #30 has its own three-tab strip.)
 class MediaCoverageTabs extends StatelessWidget {
   const MediaCoverageTabs({required this.active, super.key});
 
@@ -53,4 +53,3 @@ class MediaCoverageTabs extends StatelessWidget {
     );
   }
 }
-

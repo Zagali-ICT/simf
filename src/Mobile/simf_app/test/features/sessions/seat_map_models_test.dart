@@ -4,8 +4,10 @@ import 'package:simf_app/features/sessions/data/seat_map_models.dart';
 void main() {
   group('SeatReservationKind.fromJson', () {
     test('decodes int / name; unknown → userBooking', () {
-      expect(SeatReservationKind.fromJson(1), SeatReservationKind.adminReservedRow);
-      expect(SeatReservationKind.fromJson(2), SeatReservationKind.randomAssignment);
+      expect(SeatReservationKind.fromJson(1),
+          SeatReservationKind.adminReservedRow,);
+      expect(SeatReservationKind.fromJson(2),
+          SeatReservationKind.randomAssignment,);
       expect(
         SeatReservationKind.fromJson('AdminReservedRow'),
         SeatReservationKind.adminReservedRow,
@@ -29,7 +31,8 @@ void main() {
         SeatSelectionMode.fromJson('OpenSeating'),
         SeatSelectionMode.openSeating,
       );
-      // An older server that omits the field → seat-assigned (the safe default).
+      // An older server that omits the field → seat-assigned (the safe
+      // default).
       expect(SeatSelectionMode.fromJson(null), SeatSelectionMode.assignedSeat);
       expect(SeatSelectionMode.fromJson(9), SeatSelectionMode.assignedSeat);
       expect(SeatSelectionMode.openSeating.isOpenSeating, isTrue);
@@ -47,7 +50,7 @@ void main() {
 
   group('MyReservation.fromJson (D-485)', () {
     test('a seat booking carries row/seat and the status', () {
-      final r = MyReservation.fromJson(<String, dynamic>{
+      final r = MyReservation.fromJson(const <String, dynamic>{
         'reservationId': 'r1',
         'sessionId': 's1',
         'rowLabel': 'A',
@@ -63,7 +66,7 @@ void main() {
     });
 
     test('an open-seating join has null row/seat', () {
-      final r = MyReservation.fromJson(<String, dynamic>{
+      final r = MyReservation.fromJson(const <String, dynamic>{
         'reservationId': 'r2',
         'sessionId': 's1',
         'rowLabel': null,
@@ -78,7 +81,7 @@ void main() {
   });
 
   group('SessionSeatMap.fromJson', () {
-    final map = SessionSeatMap.fromJson(<String, dynamic>{
+    final map = SessionSeatMap.fromJson(const <String, dynamic>{
       'sessionId': 's1',
       'hallId': 'h1',
       'hallCapacity': 6,
@@ -111,13 +114,14 @@ void main() {
       expect(map.isMine('B', 2), isTrue);
       expect(map.isMine('A', 1), isFalse);
       expect(map.myCell!.kind, SeatReservationKind.userBooking);
-      expect(map.reservedCells.single.kind, SeatReservationKind.adminReservedRow);
+      expect(
+          map.reservedCells.single.kind, SeatReservationKind.adminReservedRow,);
       // D-485 — no 'mode' key on the wire → the safe assigned-seat default.
       expect(map.mode, SeatSelectionMode.assignedSeat);
     });
 
     test('binds the open-seating mode when present (D-485)', () {
-      final open = SessionSeatMap.fromJson(<String, dynamic>{
+      final open = SessionSeatMap.fromJson(const <String, dynamic>{
         'rowLabels': <dynamic>[],
         'seatsPerRow': 0,
         'reservedCells': <dynamic>[],
@@ -129,7 +133,7 @@ void main() {
     });
 
     test('an empty layout has no grid', () {
-      final empty = SessionSeatMap.fromJson(<String, dynamic>{
+      final empty = SessionSeatMap.fromJson(const <String, dynamic>{
         'rowLabels': <dynamic>[],
         'seatsPerRow': 0,
         'reservedCells': <dynamic>[],
@@ -147,7 +151,7 @@ void main() {
   // against the old decode.
   group('SeatCell checkedIn (A12)', () {
     test('decodes the checkedIn wire key', () {
-      final confirmed = SeatCell.fromJson(<String, dynamic>{
+      final confirmed = SeatCell.fromJson(const <String, dynamic>{
         'reservationId': 'r1',
         'rowLabel': 'A',
         'seatNumber': 1,
@@ -159,7 +163,7 @@ void main() {
     });
 
     test('an omitted checkedIn key reads as not-yet-arrived', () {
-      final held = SeatCell.fromJson(<String, dynamic>{
+      final held = SeatCell.fromJson(const <String, dynamic>{
         'reservationId': 'r2',
         'rowLabel': 'A',
         'seatNumber': 2,
@@ -169,7 +173,7 @@ void main() {
     });
 
     test('the map exposes the cell by key and flags a confirmed hall', () {
-      final map = SessionSeatMap.fromJson(<String, dynamic>{
+      final map = SessionSeatMap.fromJson(const <String, dynamic>{
         'rowLabels': <dynamic>['A'],
         'seatsPerRow': 2,
         'reservedCells': <dynamic>[
@@ -197,7 +201,7 @@ void main() {
     });
 
     test('a hall with nobody through the gate is not confirmed', () {
-      final map = SessionSeatMap.fromJson(<String, dynamic>{
+      final map = SessionSeatMap.fromJson(const <String, dynamic>{
         'rowLabels': <dynamic>['A'],
         'seatsPerRow': 1,
         'reservedCells': <dynamic>[
@@ -217,7 +221,7 @@ void main() {
 
   group('SessionSeatMap per-row seat counts (Option A)', () {
     test('parses seatCounts and reads each row at its own width', () {
-      final map = SessionSeatMap.fromJson(<String, dynamic>{
+      final map = SessionSeatMap.fromJson(const <String, dynamic>{
         'rowLabels': <dynamic>['A', 'B', 'C', 'D'],
         'seatsPerRow': 10, // legacy fallback = max(counts)
         'seatCounts': <dynamic>[4, 10, 8, 8],
@@ -235,7 +239,7 @@ void main() {
     });
 
     test('an absent seatCounts key stays uniform (back-compat)', () {
-      final map = SessionSeatMap.fromJson(<String, dynamic>{
+      final map = SessionSeatMap.fromJson(const <String, dynamic>{
         'rowLabels': <dynamic>['A', 'B'],
         'seatsPerRow': 3,
         'reservedCells': <dynamic>[],
@@ -249,7 +253,7 @@ void main() {
     });
 
     test('a zero seatsPerRow still has a layout when counts are present', () {
-      final map = SessionSeatMap.fromJson(<String, dynamic>{
+      final map = SessionSeatMap.fromJson(const <String, dynamic>{
         'rowLabels': <dynamic>['A', 'B'],
         'seatsPerRow': 0,
         'seatCounts': <dynamic>[4, 6],
@@ -264,7 +268,7 @@ void main() {
     });
 
     test('a length-mismatched seatCounts falls back to the uniform width', () {
-      final map = SessionSeatMap.fromJson(<String, dynamic>{
+      final map = SessionSeatMap.fromJson(const <String, dynamic>{
         'rowLabels': <dynamic>['A', 'B'],
         'seatsPerRow': 5,
         'seatCounts': <dynamic>[4, 6, 8], // 3 counts for 2 rows
@@ -277,10 +281,11 @@ void main() {
       expect(map.maxSeatsPerRow, 5);
     });
 
-    test('a length-mismatched seatCounts with a zero seatsPerRow reports no '
+    test(
+        'a length-mismatched seatCounts with a zero seatsPerRow reports no '
         'layout (degraded response falls to the safe empty state, never a '
         'zero-column grid)', () {
-      final map = SessionSeatMap.fromJson(<String, dynamic>{
+      final map = SessionSeatMap.fromJson(const <String, dynamic>{
         'rowLabels': <dynamic>['A', 'B', 'C'],
         'seatsPerRow': 0,
         'seatCounts': <dynamic>[5, 3], // 2 counts for 3 rows (one dropped)

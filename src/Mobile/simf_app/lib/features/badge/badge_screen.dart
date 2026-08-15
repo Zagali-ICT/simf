@@ -6,6 +6,7 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_bottom_nav.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/core/utils/refresh.dart';
 import 'package:simf_app/features/account/data/profile_repository.dart' show referenceNumberProvider;
 import 'package:simf_app/features/badge/widgets/badge_actions.dart';
 import 'package:simf_app/features/badge/widgets/badge_qr_card.dart';
@@ -26,6 +27,65 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// bordered **امسح لإضافة شخص** action → the existing contact-QR scanner
 /// (`/contacts/scan`, FDS-014). A pending account (null `qrId`) keeps the
 /// pending state; load failures keep the retry surface (Page_014 L-1).
+///
+/// Route: `RouteNames.badge`.
+/// Data: [authControllerProvider], [badgeIdentityProvider],
+///       [myAreaRepositoryProvider], [referenceNumberProvider].
+/// Perf: ListView builds every child up front — correct for a short static
+///       page, a defect on a data feed.
+/// The badge identity, or **null when the account is not Approved**.
+///
+/// An `AsyncNotifier` rather than a `FutureProvider`, because the two paths
+/// into it differ and a plain provider cannot say so:
+///
+///   * **build** — a pending account must NOT call the dashboard. It is
+///     Approved-only and would 403, and there is a test pinning that it is
+///     never called (Page_014 L-1).
+///   * **recheck** — a PULL always calls, even while the cached auth state
+///     still says pending, because the dashboard's 403 is precisely how
+///     approval is discovered. Gating the refresh on the stale local flag is
+///     what broke this first time round: the pending user could pull forever
+///     and never leave the state.
+///
+/// The 403 maps to null either way, so "not approved" has one meaning.
+///
+/// A signed-OUT visitor is NOT handled here: the screen answers that before
+/// watching, because a guest has no account rather than an unapproved one.
+class BadgeIdentityNotifier extends AutoDisposeAsyncNotifier<MyAreaIdentity?> {
+  @override
+  Future<MyAreaIdentity?> build() async {
+    final auth = ref.watch(authControllerProvider);
+    final user = auth is AuthStateSignedIn ? auth.session.user : null;
+    if (user == null || !user.isApproved) {
+      return null;
+    }
+    return _fetch();
+  }
+
+  /// Re-checks approval by actually calling, whatever the cached state says.
+  Future<void> recheck() async {
+    state = const AsyncValue<MyAreaIdentity?>.loading();
+    state = await AsyncValue.guard(_fetch);
+  }
+
+  Future<MyAreaIdentity?> _fetch() async {
+    try {
+      final dashboard = await ref.read(myAreaRepositoryProvider).getDashboard();
+      return dashboard.identity;
+    } on ApiFailure catch (failure) {
+      if (failure.httpStatus == 403) {
+        return null;
+      }
+      rethrow;
+    }
+  }
+}
+
+final badgeIdentityProvider =
+    AsyncNotifierProvider.autoDispose<BadgeIdentityNotifier, MyAreaIdentity?>(
+  BadgeIdentityNotifier.new,
+);
+
 class BadgeScreen extends ConsumerStatefulWidget {
   const BadgeScreen({super.key});
 
@@ -34,68 +94,40 @@ class BadgeScreen extends ConsumerStatefulWidget {
 }
 
 class _BadgeScreenState extends ConsumerState<BadgeScreen> {
-  bool _loading = true;
-  bool _error = false;
-  bool _notApproved = false;
-  bool _signedOut = false;
-  MyAreaIdentity? _identity;
-
-  @override
-  void initState() {
-    super.initState();
-    final user = _currentUser;
-    if (user == null) {
-      // BUG-013 — a TRUE guest (no account at all). The bottom nav switches
-      // tabs inside the shell, so the router's auth redirect never runs and a
-      // signed-out visitor lands here. Showing the not-approved copy described
-      // a registration they never submitted and offered no way out; the guest
-      // state gets its own copy plus a working sign-in CTA.
-      _loading = false;
-      _signedOut = true;
-    } else if (user.isApproved) {
-      unawaited(_load());
-    } else {
-      // Signed in but not approved: the badge is issued only on approval
-      // (Page_014 L-1). Show the not-approved state instead of calling the
-      // Approved-only dashboard (which would 403).
-      _loading = false;
-      _notApproved = true;
-    }
-  }
-
   CurrentUser? get _currentUser {
     final auth = ref.read(authControllerProvider);
     return auth is AuthStateSignedIn ? auth.session.user : null;
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = false;
-      _notApproved = false;
-    });
-    try {
-      final dashboard = await ref.read(myAreaRepositoryProvider).getDashboard();
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _identity = dashboard.identity;
-        _loading = false;
-      });
-    } on ApiFailure catch (e) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        // 403 = signed-in but not approved (status drifted since boot) → the
-        // not-approved state; any other failure shows the retry surface.
-        _notApproved = e.httpStatus == 403;
-        _error = e.httpStatus != 403;
-        _identity = null;
-        _loading = false;
-      });
+  /// Owner rule: every data page pulls to refresh (CLAUDE.md section 13.6).
+  /// The badge was the one data screen with NO refresh hook anywhere, and it
+  /// was missing where it mattered most: a pending account pulls here to find
+  /// out it has been approved, and until then had to restart the app to see it.
+  /// Re-running [badgeIdentityProvider] re-checks approval by construction —
+  /// the provider reads the auth state and the dashboard 403s while unapproved.
+  ///
+  /// A signed-OUT visitor has nothing to re-fetch, so the gesture completes
+  /// without a call. That guard is about the PULL only — `build` still watches
+  /// [referenceNumberProvider], which has no guest short-circuit, so a guest
+  /// already fired one profile read on mount. Fixing that belongs to the
+  /// provider, not here.
+  ///
+  /// The reference number is re-read unconditionally, and deliberately: it is
+  /// rendered only on the issued-badge branch, so re-reading it while the
+  /// pending state shows looks like waste — but that is exactly the transition
+  /// this method exists for. The provider is `autoDispose` and swallows a
+  /// failure to `null`, so a pending account holds a null it will never shed on
+  /// its own; without this the newly-approved badge would show the `qrId` tail
+  /// fallback instead of its real `SIMF-2026-…` reference.
+  Future<void> _refresh() async {
+    if (_currentUser == null) {
+      return;
     }
+    // Two independent endpoints (dashboard + profile), so they run together.
+    await Future.wait<void>(<Future<void>>[
+      ref.read(badgeIdentityProvider.notifier).recheck(),
+      refreshAsync(ref, referenceNumberProvider.future),
+    ]);
   }
 
   @override
@@ -114,11 +146,12 @@ class _BadgeScreenState extends ConsumerState<BadgeScreen> {
   }
 
   Widget _buildBody(AppL10n l10n, String? referenceNumber) {
-    if (_loading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    if (_signedOut) {
-      // No account at all — the guest copy + a way in (BUG-013).
+    if (_currentUser == null) {
+      // BUG-013 — a TRUE guest (no account at all). Answered BEFORE the
+      // provider: the bottom nav switches tabs inside the shell, so the
+      // router's auth redirect never runs and a signed-out visitor lands here.
+      // Not wrapped in a refresh host either — there is nothing to re-fetch,
+      // and the CTA is the way forward here, not a pull.
       return SimfGuestPrompt(
         icon: Icons.qr_code_2_outlined,
         message: l10n.badgeGuestBody,
@@ -126,48 +159,76 @@ class _BadgeScreenState extends ConsumerState<BadgeScreen> {
         createAccountLabel: l10n.signUpButton,
       );
     }
-    if (_notApproved) {
-      // Signed-in but not approved — show "account not approved", not the QR.
-      return SimfEmptyState(
-        icon: Icons.lock_outline,
-        message: l10n.badgeNotApprovedBody,
-      );
-    }
-    final identity = _identity;
-    if (_error || identity == null) {
-      return SimfErrorState(
-        message: l10n.badgeError,
-        retryLabel: l10n.retryLabel,
-        onRetry: () => unawaited(_load()),
-      );
-    }
-    final qrId = identity.qrId?.trim() ?? '';
-    if (qrId.isEmpty) {
-      // Pending approval — the badge is issued once approved (Page_014 L-1).
-      return SimfEmptyState(
-        icon: Icons.qr_code_2_outlined,
-        message: l10n.badgePendingBody,
-      );
-    }
-    return ListView(
-      padding: const EdgeInsets.all(SimfTokens.space4),
-      children: <Widget>[
-        BadgeQrCard(
-          l10n: l10n,
-          identity: identity,
-          qrId: qrId,
-          maskedId: maskedBadgeId(referenceNumber ?? qrId),
-        ),
-        const SizedBox(height: SimfTokens.space4),
-        // DEF-EXH-005 — the actions gate on the signed-in app ROLE, not on the
-        // dashboard's isVisitor flag (which is false for every partner type, so
-        // Staff / Moderator / Media / Sponsor were all shown the exhibitor-only
-        // scan button and then bounced by the router).
-        BadgeActions(
-          l10n: l10n,
-          role: _currentUser?.effectiveAppRole ?? AppRole.guest,
-        ),
-      ],
+    return ref.watch(badgeIdentityProvider).when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (_, __) => SimfRefreshableMessage(
+            onRefresh: _refresh,
+            child: SimfErrorState(
+              message: l10n.badgeError,
+              retryLabel: l10n.retryLabel,
+              // The same refresh the pull runs, so Retry and pull on the very
+              // same surface do the same thing.
+              onRetry: () => unawaited(_refresh()),
+            ),
+          ),
+          data: (identity) {
+            // Null is "not Approved" (see [badgeIdentityProvider]). Refreshable
+            // because this is the state a user waits in, and the pull is how
+            // they discover approval has landed.
+            if (identity == null) {
+              return SimfRefreshableMessage(
+                onRefresh: _refresh,
+                child: SimfEmptyState(
+                  icon: Icons.lock_outline,
+                  message: l10n.badgeNotApprovedBody,
+                ),
+              );
+            }
+            final qrId = identity.qrId?.trim() ?? '';
+            if (qrId.isEmpty) {
+              // Approved but the badge is not issued yet (Page_014 L-1).
+              return SimfRefreshableMessage(
+                onRefresh: _refresh,
+                child: SimfEmptyState(
+                  icon: Icons.qr_code_2_outlined,
+                  message: l10n.badgePendingBody,
+                ),
+              );
+            }
+            return _buildBadge(l10n, identity, qrId, referenceNumber);
+          },
+        );
+  }
+
+  Widget _buildBadge(
+    AppL10n l10n,
+    MyAreaIdentity identity,
+    String qrId,
+    String? referenceNumber,
+  ) {
+    return SimfPullToRefresh(
+      onRefresh: _refresh,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(SimfTokens.space4),
+        children: <Widget>[
+          BadgeQrCard(
+            l10n: l10n,
+            identity: identity,
+            qrId: qrId,
+            maskedId: maskedBadgeId(referenceNumber ?? qrId),
+          ),
+          const SizedBox(height: SimfTokens.space4),
+          // DEF-EXH-005 — the actions gate on the signed-in app ROLE, not on
+          // the dashboard's isVisitor flag (which is false for every partner
+          // type, so Staff / Moderator / Media / Sponsor were all shown the
+          // exhibitor-only scan button and then bounced by the router).
+          BadgeActions(
+            l10n: l10n,
+            role: _currentUser?.effectiveAppRole ?? AppRole.guest,
+          ),
+        ],
+      ),
     );
   }
 }

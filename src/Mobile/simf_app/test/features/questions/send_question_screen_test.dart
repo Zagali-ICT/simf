@@ -121,9 +121,10 @@ void main() {
       // The "الاسئلة" section label, the question box, the gold submit, and
       // the on-air note all render.
       expect(find.byType(TextField), findsOneWidget);
-      expect(find.widgetWithText(FilledButton, 'Send question'), findsOneWidget);
-      // A17 — the note names the moderator (the gate that is always real), not a
-      // "review" that never happens for a live question.
+      expect(
+          find.widgetWithText(FilledButton, 'Send question'), findsOneWidget,);
+      // A17 — the note names the moderator (the gate that is always real), not
+      // a "review" that never happens for a live question.
       expect(
         find.textContaining(
           'The session moderator picks which questions go on air.',
@@ -202,10 +203,12 @@ void main() {
         detailRepo: _FakeSessionDetailRepo(fail: true),
       );
 
-      // The block is optional context — a failed read leaves the composer alone.
+      // The block is optional context — a failed read leaves the composer
+      // alone.
       expect(find.text('Session details'), findsNothing);
       expect(find.byType(TextField), findsOneWidget);
-      expect(find.widgetWithText(FilledButton, 'Send question'), findsOneWidget);
+      expect(
+          find.widgetWithText(FilledButton, 'Send question'), findsOneWidget,);
     });
 
     testWidgets('no session id shows the open-from-a-session empty state',

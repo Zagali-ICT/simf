@@ -7,8 +7,8 @@ import 'package:simf_app/app/widgets/simf_confirm_dialog.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 
 /// Confirms, then revokes the session (D-373) and lands on sign-in. Shared by
-/// the المزيد page (Figma 1129:17224 "تسجيل الخروج") and the shell drawer so the
-/// sign-out flow has one owner. The captured router survives the await; the
+/// the المزيد page (Figma 1129:17224 "تسجيل الخروج") and the shell drawer so
+/// the sign-out flow has one owner. The captured router survives the await; the
 /// [context] is not used after it.
 Future<void> confirmAndSignOut(
   BuildContext context,

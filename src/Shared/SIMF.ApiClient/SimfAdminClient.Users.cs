@@ -605,6 +605,17 @@ public sealed partial class SimfAdminClient
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
+    /// <summary>Add more badges to an existing order, minting them immediately so
+    /// the order's total always equals the badges that exist.</summary>
+    public Task<ApiCallResult<AdminTopUpBadgeBatchResponse>> TopUpBadgeBatchAsync(
+        AdminTopUpBadgeBatchRequest request,
+        string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminTopUpBadgeBatchResponse>(
+            HttpMethod.Post, "visitors/badge-batches/top-up",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
     /// <summary>Revoke a batch (disable its accounts + mark it inactive).</summary>
     public Task<ApiCallResult<AdminRevokeBadgeBatchResponse>> RevokeBadgeBatchAsync(
         AdminRevokeBadgeBatchRequest request,

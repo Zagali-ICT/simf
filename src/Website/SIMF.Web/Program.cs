@@ -59,16 +59,33 @@ builder.Services.AddMemoryCache();
 
 // The typed client shares one validated API base address - server-to-server.
 //
-// No primary handler is configured, which is the point: the client gets the
-// platform's default, with ordinary certificate-chain validation, and there is
-// no setting that can turn that off. See SimfApiBaseAddress.
+// Certificate-chain validation is the platform default and is never overridden
+// here: nothing in this file turns it off. See SimfApiBaseAddress.
 var apiBaseUri = SimfApiBaseAddress.Resolve(
     builder.Configuration["Api:BaseUrl"], builder.Environment.IsDevelopment());
 
 // The typed client for the SIMF anonymous public-read endpoints.
 // Anonymous, so no bearer token; BaseAddress only — the public endpoints do
 // not require an X-App-Key header in this build.
-builder.Services.AddHttpClient<SimfPublicClient>(client => client.BaseAddress = apiBaseUri);
+builder.Services.AddHttpClient<SimfPublicClient>(client => client.BaseAddress = apiBaseUri)
+    // REDIRECTS ARE NOT FOLLOWED, deliberately.
+    //
+    // The API answers an "external link" asset with a 302 to a URL a Control
+    // Panel editor supplied, so that the BROWSER lands on that third-party host.
+    // Following it here instead made the Website fetch the foreign bytes and
+    // re-serve them from web.simrsnf.com, which put an editor-chosen host's
+    // content — including its Content-Type — on our own origin. The image
+    // proxies' media-type allow-list is the second half of that fix; this is the
+    // half that stops the outbound fetch happening at all, which also closes the
+    // matching SSRF: ValidateExternalLink rejects IP literals but not a public
+    // DNS name that resolves to an internal address, and it was THIS client that
+    // would have resolved it from inside the Website tier.
+    //
+    // Consequence for callers: a 3xx now surfaces as a 3xx instead of silently
+    // becoming the redirect target's 200. SimfPublicClient's asset read returns
+    // it untouched so the endpoint can pass it to the browser.
+    .ConfigurePrimaryHttpMessageHandler(
+        () => new HttpClientHandler { AllowAutoRedirect = false });
 
 // Resolves the forum event dates from the public OrganizationProfile (cached) and
 // formats the shared bilingual range for the marketing pages, so the date is

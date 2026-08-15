@@ -18,6 +18,10 @@ import 'package:simf_app/features/registration/widgets/registration_success_head
 /// D-373: the reference card renders the real DB-issued registration reference
 /// carried from the save ([referenceNumber]); the literal mask remains only as
 /// the no-data fallback so the page stays offline-safe.
+///
+/// Route: `RouteNames.registrationSuccess`.
+/// Data: [siteSettingsProvider].
+/// Perf: no list — a single-screen layout.
 class RegistrationSuccessScreen extends ConsumerWidget {
   const RegistrationSuccessScreen({super.key, this.referenceNumber});
 
@@ -59,8 +63,8 @@ class RegistrationSuccessScreen extends ConsumerWidget {
             child: Transform.rotate(
               angle: 0.4936, // 28.28°
               child: Container(
-                width: SimfTokens.registrationSuccessScreenWidth,
-                height: SimfTokens.registrationSuccessScreenHeight,
+                width: SimfTokens.sweepBlockWidth,
+                height: SimfTokens.sweepBlockHeight,
                 decoration: BoxDecoration(
                   color: SimfTokens.surfaceTint,
                   borderRadius: BorderRadius.circular(SimfTokens.radiusSheet),

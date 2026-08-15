@@ -5,7 +5,8 @@ import 'package:simf_app/app/theme/tokens.dart';
 
 /// A tappable 1–5 star bar. Renders in the ambient direction so the fill grows
 /// from the inline start (right under RTL — matching the Figma — left under
-/// LTR). [value] 0 means unscored (all outlines). Tapping star N sets [value] N.
+/// LTR). [value] 0 means unscored (all outlines). Tapping star N sets [value]
+/// N.
 class StarRow extends StatelessWidget {
   const StarRow({
     required this.value,

@@ -39,7 +39,7 @@ class ModeratorFilterBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final filters = ModeratorQueueFilter.values;
+    const filters = ModeratorQueueFilter.values;
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         SimfTokens.space6,
@@ -65,4 +65,3 @@ class ModeratorFilterBar extends StatelessWidget {
     );
   }
 }
-

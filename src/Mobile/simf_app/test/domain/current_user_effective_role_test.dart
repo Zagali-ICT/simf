@@ -3,7 +3,8 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 
 // Lives in the app suite (not the auth package's own test/) so it compiles
 // against the app's resolved dependency set — running the auth package in
-// isolation currently fails on an unrelated dio-version switch in simf_data_pkg.
+// isolation currently fails on an unrelated dio-version switch in
+// simf_data_pkg.
 
 CurrentUser _user(AppRole role, RegistrationStatus status) => CurrentUser(
       id: 'u1',

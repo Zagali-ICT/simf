@@ -5,31 +5,27 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/core/validation/digit_normalization.dart';
 import 'package:simf_app/core/validation/field_limits.dart';
-import 'package:simf_app/core/validation/phone_validation.dart';
 import 'package:simf_app/core/widgets/simf_field_label.dart';
 import 'package:simf_app/core/widgets/simf_field_style.dart';
+import 'package:simf_app/features/visitor_profile/data/visitor_profile_validators.dart';
 
-/// The one mobile-number form rule, in the field's own file so no screen writes
-/// a second copy: required (D-723), then the C4 (D-371) standard shape — Saudi
-/// `05XXXXXXXX` / `+9665XXXXXXXX` or E.164 international — mirroring the server's
-/// `UpsertUserProfileRequestValidator`. The shapes themselves live once in
-/// `core/validation/phone_validation.dart`; this adds the localized message.
+/// The mobile-number form rule for this field: required (D-723), then the C4
+/// (D-371) standard shape — Saudi `05XXXXXXXX` / `+9665XXXXXXXX` or E.164
+/// international — mirroring the server's `UpsertUserProfileRequestValidator`.
+///
+/// This used to claim it was the single home so "no screen writes a second
+/// copy", while `visitor_profile/data/visitor_profile_validators.dart` carried
+/// the same two rules with the same messages. It now delegates there, and that
+/// file is the home; the shapes themselves live in
+/// `core/validation/phone_validation.dart` beneath both.
 String? validateMobile(
   String? value, {
   required bool saudi,
   required AppL10n l10n,
-}) {
-  final phone = value?.trim() ?? '';
-  if (phone.isEmpty) {
-    return l10n.mobileRequired;
-  }
-  final valid =
-      saudi ? isStandardSaudiMobile(phone) : isStandardInternationalMobile(phone);
-  if (valid) {
-    return null;
-  }
-  return saudi ? l10n.saudiMobileInvalid : l10n.internationalMobileInvalid;
-}
+}) =>
+    saudi
+        ? validateSaudiMobile(value, l10n)
+        : validateInternationalMobile(value, l10n);
 
 /// The mobile-number field. The label, keyboard and [validator] switch on
 /// [saudi]; the screen owns the controllers and validators and passes the

@@ -27,7 +27,8 @@ class IconBox extends StatelessWidget {
       ),
       child: iconAsset == null
           ? Icon(icon, size: SimfTokens.iconBoxSize, color: SimfTokens.accent)
-          : SimfSvgIcon(iconAsset!, size: SimfTokens.iconBoxSize, color: SimfTokens.accent),
+          : SimfSvgIcon(iconAsset!,
+              size: SimfTokens.iconBoxSize, color: SimfTokens.accent,),
     );
   }
 }

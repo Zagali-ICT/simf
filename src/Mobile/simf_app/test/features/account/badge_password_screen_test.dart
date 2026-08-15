@@ -11,8 +11,8 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 /// D-738 — a fake AuthController for the badge password step: `build()` returns
 /// SignedOut, and `signInWithBadge` either throws (wrong password) or sets the
-/// AwaitingOtp state (2FA account). The signed-in success path is covered by the
-/// controller unit test (it drives shared post-auth routing).
+/// AwaitingOtp state (2FA account). The signed-in success path is covered by
+/// the controller unit test (it drives shared post-auth routing).
 class _FakeController extends AuthController {
   _FakeController({this.failure, this.awaitingOtp = false});
 
@@ -34,6 +34,10 @@ class _FakeController extends AuthController {
     lastQrId = qrId;
     lastPassword = password;
     if (failure != null) {
+      // AuthFailure is a sealed RESULT type: production returns it, never
+      // throws. A fake repository throws it to drive the failure path a screen
+      // handles, so it is deliberately neither an Exception nor an Error.
+      // ignore: only_throw_errors
       throw failure!;
     }
     if (awaitingOtp) {
@@ -54,8 +58,8 @@ Future<void> _pump(
     routes: <RouteBase>[
       GoRoute(
         path: '/badge-password',
-        builder: (c, s) =>
-            BadgePasswordScreen(qrId: 'QR1', displayName: name, maskedEmail: masked),
+        builder: (c, s) => BadgePasswordScreen(
+            qrId: 'QR1', displayName: name, maskedEmail: masked,),
       ),
       GoRoute(
         name: RouteNames.verifyOtp,
@@ -99,7 +103,8 @@ void main() {
       expect(find.text('Welcome, Khalid'), findsOneWidget);
       expect(find.textContaining('k***@example.com'), findsOneWidget);
       expect(find.byType(TextFormField), findsOneWidget);
-      expect(find.widgetWithText(TextButton, 'Forgot password?'), findsOneWidget);
+      expect(
+          find.widgetWithText(TextButton, 'Forgot password?'), findsOneWidget,);
     });
 
     testWidgets('renders in Arabic', (tester) async {

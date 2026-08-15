@@ -1,9 +1,11 @@
 import 'package:flutter/foundation.dart';
+import 'package:simf_app/core/utils/bilingual.dart';
 
 /// The venue-map node kind — mirrors `SIMF.Common.Enums.VenueMapNodeKind`
 /// (frozen: Hall=0, Zone=1, Booth=2, PointOfInterest=3). [fromJson] decodes
 /// tolerantly — the wire value is an int today, but an unknown / string value
-/// resolves to [pointOfInterest] (a generic marker) rather than throwing (D-219).
+/// resolves to [pointOfInterest] (a generic marker) rather than throwing
+/// (D-219).
 enum VenueMapNodeKind {
   hall(0, 'Hall'),
   zone(1, 'Zone'),
@@ -51,6 +53,17 @@ class VenueMapNode {
     this.boothId,
   });
 
+  factory VenueMapNode.fromJson(Map<String, dynamic> json) => VenueMapNode(
+        id: json['id'] as String? ?? '',
+        label: json['label'] as String? ?? '',
+        labelArabic: json['labelArabic'] as String? ?? '',
+        kind: VenueMapNodeKind.fromJson(json['kind']),
+        x: (json['x'] as num?)?.toDouble() ?? 0,
+        y: (json['y'] as num?)?.toDouble() ?? 0,
+        hallId: json['hallId'] as String?,
+        boothId: json['boothId'] as String?,
+      );
+
   final String id;
   final String label;
   final String labelArabic;
@@ -62,22 +75,11 @@ class VenueMapNode {
 
   bool get isBooth => kind == VenueMapNodeKind.booth;
 
-  String localizedLabel(bool isArabic) {
+  String localizedLabel({required bool isArabic}) {
     final ar = labelArabic.trim();
     final en = label.trim();
     return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
   }
-
-  static VenueMapNode fromJson(Map<String, dynamic> json) => VenueMapNode(
-        id: json['id'] as String? ?? '',
-        label: json['label'] as String? ?? '',
-        labelArabic: json['labelArabic'] as String? ?? '',
-        kind: VenueMapNodeKind.fromJson(json['kind']),
-        x: (json['x'] as num?)?.toDouble() ?? 0,
-        y: (json['y'] as num?)?.toDouble() ?? 0,
-        hallId: json['hallId'] as String?,
-        boothId: json['boothId'] as String?,
-      );
 }
 
 /// A booth summary — mirrors `SIMF.Contracts.Exhibition.PublicBoothSummary`
@@ -108,57 +110,7 @@ class BoothSummary {
     this.countryNameArabic,
   });
 
-  final String id;
-  final String code;
-  final String name;
-  final String nameArabic;
-  final String? exhibitorName;
-  final String? exhibitorNameArabic;
-  final String? sector;
-  final String? sectorArabic;
-  final String? hallId;
-  // D-432 — the hall display name + booth-officer contact now ship on the wire
-  // (server resolves the officer Contact-first, falling back to inline columns).
-  final String? hallName;
-  final String? hallNameArabic;
-  final String? officerName;
-  final String? officerPhone;
-  final String? officerEmail;
-
-  // P6 — D-440: the exhibitor's Contact id, the owner of the CompanyLogo asset.
-  // D-764: the booth card no longer uses this (it renders the booth's own
-  // BoothLogo via booth.id); it stays on the wire and the exhibitor-detail screen
-  // still reads it (via BoothDetail) as the CompanyLogo fallback for its own logo.
-  final String? exhibitorContactId;
-
-  // D-456 — the exhibitor company's country (ISO 3166-1 numeric) for the corner
-  // flag on the booth logo. Null when the exhibitor has no linked Contact/country.
-  final int? countryId;
-
-  // #9 — the exhibitor company's country NAME (resolved server-side from the
-  // Country lookup), shown beside the flag so the booth shows its country.
-  final String? countryName;
-  final String? countryNameArabic;
-
-  String? localizedCountry(bool isArabic) =>
-      _pick(countryNameArabic, countryName, isArabic);
-
-  String localizedName(bool isArabic) {
-    final ar = nameArabic.trim();
-    final en = name.trim();
-    return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
-  }
-
-  String? localizedExhibitor(bool isArabic) =>
-      _pick(exhibitorNameArabic, exhibitorName, isArabic);
-
-  String? localizedSector(bool isArabic) =>
-      _pick(sectorArabic, sector, isArabic);
-
-  String? localizedHallName(bool isArabic) =>
-      _pick(hallNameArabic, hallName, isArabic);
-
-  static BoothSummary fromJson(Map<String, dynamic> json) => BoothSummary(
+  factory BoothSummary.fromJson(Map<String, dynamic> json) => BoothSummary(
         id: json['id'] as String? ?? '',
         code: json['code'] as String? ?? '',
         name: json['name'] as String? ?? '',
@@ -178,6 +130,62 @@ class BoothSummary {
         countryName: json['countryName'] as String?,
         countryNameArabic: json['countryNameArabic'] as String?,
       );
+
+  final String id;
+  final String code;
+  final String name;
+  final String nameArabic;
+  final String? exhibitorName;
+  final String? exhibitorNameArabic;
+  final String? sector;
+  final String? sectorArabic;
+  final String? hallId;
+  // D-432 — the hall display name + booth-officer contact now ship on the wire
+  // (server resolves the officer Contact-first, falling back to inline
+  // columns).
+  final String? hallName;
+  final String? hallNameArabic;
+  final String? officerName;
+  final String? officerPhone;
+  final String? officerEmail;
+
+  // P6 — D-440: the exhibitor's Contact id, the owner of the CompanyLogo asset.
+  // D-764: the booth card no longer uses this (it renders the booth's own
+  // BoothLogo via booth.id); it stays on the wire and the exhibitor-detail
+  // screen still reads it (via BoothDetail) as the CompanyLogo fallback for its
+  // own logo.
+  final String? exhibitorContactId;
+
+  // D-456 — the exhibitor company's country (ISO 3166-1 numeric) for the corner
+  // flag on the booth logo. Null when the exhibitor has no linked Contact/country.
+  final int? countryId;
+
+  // #9 — the exhibitor company's country NAME (resolved server-side from the
+  // Country lookup), shown beside the flag so the booth shows its country.
+  final String? countryName;
+  final String? countryNameArabic;
+
+  String? localizedCountry({required bool isArabic}) =>
+      pickLocalizedOrNull(countryNameArabic, countryName, isArabic: isArabic);
+
+  String localizedName({required bool isArabic}) {
+    final ar = nameArabic.trim();
+    final en = name.trim();
+    return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
+  }
+
+  String? localizedExhibitor({required bool isArabic}) =>
+      pickLocalizedOrNull(
+        exhibitorNameArabic,
+        exhibitorName,
+        isArabic: isArabic,
+      );
+
+  String? localizedSector({required bool isArabic}) =>
+      pickLocalizedOrNull(sectorArabic, sector, isArabic: isArabic);
+
+  String? localizedHallName({required bool isArabic}) =>
+      pickLocalizedOrNull(hallNameArabic, hallName, isArabic: isArabic);
 }
 
 /// A booth detail — the summary plus the description paragraph
@@ -211,6 +219,34 @@ class BoothDetail {
     this.website,
     this.exhibitorId,
   });
+
+  factory BoothDetail.fromJson(Map<String, dynamic> json) => BoothDetail(
+        id: json['id'] as String? ?? '',
+        code: json['code'] as String? ?? '',
+        name: json['name'] as String? ?? '',
+        nameArabic: json['nameArabic'] as String? ?? '',
+        exhibitorName: json['exhibitorName'] as String?,
+        exhibitorNameArabic: json['exhibitorNameArabic'] as String?,
+        sector: json['sector'] as String?,
+        sectorArabic: json['sectorArabic'] as String?,
+        description: json['description'] as String?,
+        descriptionArabic: json['descriptionArabic'] as String?,
+        hallName: json['hallName'] as String?,
+        hallNameArabic: json['hallNameArabic'] as String?,
+        officerName: json['officerName'] as String?,
+        officerPhone: json['officerPhone'] as String?,
+        officerEmail: json['officerEmail'] as String?,
+        exhibitorContactId: json['exhibitorContactId'] as String?,
+        countryId: (json['countryId'] as num?)?.toInt(),
+        countryName: json['countryName'] as String?,
+        countryNameArabic: json['countryNameArabic'] as String?,
+        city: json['city'] as String?,
+        cityArabic: json['cityArabic'] as String?,
+        tier: (json['tier'] as num?)?.toInt(),
+        tierName: json['tierName'] as String?,
+        website: json['website'] as String?,
+        exhibitorId: json['exhibitorId'] as String?,
+      );
 
   final String id;
   final String code;
@@ -247,63 +283,32 @@ class BoothDetail {
 
   // The linked exhibitor's own id — the owner of the exhibitor's ExhibitorLogo
   // asset (the app renders the exhibitor's own logo, falling back to the legacy
-  // CompanyLogo via [exhibitorContactId]). Null when the booth has no exhibitor.
+  // CompanyLogo via [exhibitorContactId]). Null when the booth has no
+  // exhibitor.
   final String? exhibitorId;
 
-  String localizedName(bool isArabic) {
+  String localizedName({required bool isArabic}) {
     final ar = nameArabic.trim();
     final en = name.trim();
     return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
   }
 
-  String? localizedExhibitor(bool isArabic) =>
-      _pick(exhibitorNameArabic, exhibitorName, isArabic);
-
-  String? localizedDescription(bool isArabic) =>
-      _pick(descriptionArabic, description, isArabic);
-
-  String? localizedHallName(bool isArabic) =>
-      _pick(hallNameArabic, hallName, isArabic);
-
-  String? localizedCountry(bool isArabic) =>
-      _pick(countryNameArabic, countryName, isArabic);
-
-  String? localizedCity(bool isArabic) => _pick(cityArabic, city, isArabic);
-
-  static BoothDetail fromJson(Map<String, dynamic> json) => BoothDetail(
-        id: json['id'] as String? ?? '',
-        code: json['code'] as String? ?? '',
-        name: json['name'] as String? ?? '',
-        nameArabic: json['nameArabic'] as String? ?? '',
-        exhibitorName: json['exhibitorName'] as String?,
-        exhibitorNameArabic: json['exhibitorNameArabic'] as String?,
-        sector: json['sector'] as String?,
-        sectorArabic: json['sectorArabic'] as String?,
-        description: json['description'] as String?,
-        descriptionArabic: json['descriptionArabic'] as String?,
-        hallName: json['hallName'] as String?,
-        hallNameArabic: json['hallNameArabic'] as String?,
-        officerName: json['officerName'] as String?,
-        officerPhone: json['officerPhone'] as String?,
-        officerEmail: json['officerEmail'] as String?,
-        exhibitorContactId: json['exhibitorContactId'] as String?,
-        countryId: (json['countryId'] as num?)?.toInt(),
-        countryName: json['countryName'] as String?,
-        countryNameArabic: json['countryNameArabic'] as String?,
-        city: json['city'] as String?,
-        cityArabic: json['cityArabic'] as String?,
-        tier: (json['tier'] as num?)?.toInt(),
-        tierName: json['tierName'] as String?,
-        website: json['website'] as String?,
-        exhibitorId: json['exhibitorId'] as String?,
+  String? localizedExhibitor({required bool isArabic}) =>
+      pickLocalizedOrNull(
+        exhibitorNameArabic,
+        exhibitorName,
+        isArabic: isArabic,
       );
-}
 
-/// Picks the locale-appropriate value of a bilingual pair, falling back to the
-/// other language, then to null when both are empty.
-String? _pick(String? arabic, String? english, bool isArabic) {
-  final ar = arabic?.trim() ?? '';
-  final en = english?.trim() ?? '';
-  final value = isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
-  return value.isEmpty ? null : value;
+  String? localizedDescription({required bool isArabic}) =>
+      pickLocalizedOrNull(descriptionArabic, description, isArabic: isArabic);
+
+  String? localizedHallName({required bool isArabic}) =>
+      pickLocalizedOrNull(hallNameArabic, hallName, isArabic: isArabic);
+
+  String? localizedCountry({required bool isArabic}) =>
+      pickLocalizedOrNull(countryNameArabic, countryName, isArabic: isArabic);
+
+  String? localizedCity({required bool isArabic}) =>
+      pickLocalizedOrNull(cityArabic, city, isArabic: isArabic);
 }

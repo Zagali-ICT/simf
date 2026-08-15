@@ -35,6 +35,35 @@ public sealed class ListBadgeBatchesEndpoint(IAdminUserBulkService adminAccountS
 }
 
 /// <summary>
+/// <c>POST /api/v1/admin/visitors/badge-batches/top-up</c>.
+/// Adds more badges to an order that already exists, minting them immediately.
+///
+/// <para>Gated on BulkGenerate rather than ManageBatches: this MINTS badges,
+/// which is what that permission exists to control. Re-emailing or revoking an
+/// order is a different authority from creating more of it.</para>
+/// </summary>
+public sealed class TopUpBadgeBatchEndpoint(IAdminUserBulkService adminAccountService)
+    : Endpoint<AdminTopUpBadgeBatchRequest, ApiResult<AdminTopUpBadgeBatchResponse>>
+{
+    public override void Configure()
+    {
+        Post("/admin/visitors/badge-batches/top-up");
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.BulkGenerate), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Tags("Admin");
+        Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
+        Summary(summary => summary.Summary =
+            "Add more badges to an existing bulk order.");
+    }
+
+    public override async Task HandleAsync(AdminTopUpBadgeBatchRequest req, CancellationToken ct)
+    {
+        var actorId = User.ActorId();
+        var response = await adminAccountService.TopUpBadgeBatchAsync(actorId, req, ct);
+        await Send.OkAsync(ApiResult<AdminTopUpBadgeBatchResponse>.Ok(response), ct);
+    }
+}
+
+/// <summary>
 /// <c>POST /api/v1/admin/visitors/badge-batches/re-email</c>.
 /// Re-renders the batch's QR pack and emails a fresh copy to the supplied organiser
 /// address; the badges themselves are unchanged.

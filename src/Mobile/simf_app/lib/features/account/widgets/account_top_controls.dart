@@ -30,7 +30,8 @@ class AccountTopControls extends StatelessWidget {
   Widget build(BuildContext context) {
     final onBack = this.onBack;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space3, vertical: SimfTokens.space2),
+      padding: const EdgeInsets.symmetric(
+          horizontal: SimfTokens.space3, vertical: SimfTokens.space2,),
       child: Row(
         textDirection: TextDirection.ltr,
         children: <Widget>[

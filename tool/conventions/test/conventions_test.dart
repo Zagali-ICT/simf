@@ -1,4 +1,8 @@
+import 'dart:io';
+
+import 'package:path/path.dart' as p;
 import 'package:simf_conventions/src/dart_rules.dart';
+import 'package:simf_conventions/src/repo_root.dart';
 import 'package:simf_conventions/src/text_rules.dart';
 import 'package:simf_conventions/src/violation.dart';
 import 'package:test/test.dart';
@@ -363,6 +367,176 @@ class LiveRepository {}
         ),
         isEmpty,
       );
+    });
+  });
+
+  // The regression these rules exist for. A hex -> token rewrite turned all 38
+  // colour tokens of landing.css into `--navy: var(--navy)`, which CSS resolves
+  // to the guaranteed-invalid value. The public site shipped with no palette,
+  // and N2 read it as a clean sweep because deleting a palette removes every
+  // raw hex it counts.
+  group('SIMF-N3 self-referencing tokens', () {
+    const String landing = 'src/Website/SIMF.Web/wwwroot/css/landing.css';
+
+    test('fires on a token defined as its own name', () {
+      final List<Violation> found = ofRule(
+        analyseCssFile(
+          posixPath: landing,
+          content: '.landing { --navy: var(--navy); }',
+        ),
+        'SIMF-N3',
+      );
+      expect(found, hasLength(1));
+      expect(found.single.message, contains('--navy'));
+      expect(found.single.remedy, Remedy.tokenLiteral);
+    });
+
+    test('tolerates whitespace inside the self-reference', () {
+      expect(
+        ofRule(
+          analyseCssFile(
+            posixPath: landing,
+            content: '.landing {\n  --gold :  var( --gold ) ;\n}',
+          ),
+          'SIMF-N3',
+        ),
+        hasLength(1),
+      );
+    });
+
+    // A var() inside a cycle does NOT fall back — the spec invalidates the whole
+    // property — so this shape is exactly as broken as the bare one, and reads as
+    // more careful. It has to fire.
+    test('fires on the fallback form, which does not actually fall back', () {
+      expect(
+        ofRule(
+          analyseCssFile(
+            posixPath: landing,
+            content: '.landing { --navy: var(--navy, #001640); }',
+          ),
+          'SIMF-N3',
+        ),
+        hasLength(1),
+      );
+    });
+
+    test('is silent when a token falls back to a DIFFERENT token', () {
+      expect(
+        ofRule(
+          analyseCssFile(
+            posixPath: landing,
+            content: '.landing { --brand: var(--primary, #244a77); }',
+          ),
+          'SIMF-N3',
+        ),
+        isEmpty,
+      );
+    });
+
+    test('is silent when a token references a DIFFERENT token', () {
+      // The legitimate shape the refactor was aiming for: an alias. This must
+      // stay legal or the rule bans `--bs-primary: var(--primary)`.
+      expect(
+        ofRule(
+          analyseCssFile(
+            posixPath: landing,
+            content: '.landing { --bs-primary: var(--primary); }',
+          ),
+          'SIMF-N3',
+        ),
+        isEmpty,
+      );
+    });
+
+    test('is silent on a definition holding a real literal', () {
+      expect(
+        ofRule(
+          analyseCssFile(
+            posixPath: landing,
+            content: '.landing { --navy: #001640; }',
+          ),
+          'SIMF-N3',
+        ),
+        isEmpty,
+      );
+    });
+
+    // N2's allowlist names the files that are SUPPOSED to hold literal colour.
+    // Those are exactly the files where a self-reference does the most damage,
+    // so N3 must not inherit that exemption.
+    test('fires inside theme.tokens.css, which N2 exempts', () {
+      const String tokens =
+          'src/Shared/SIMF.Components/wwwroot/css/theme.tokens.css';
+      expect(
+        ofRule(
+          analyseCssFile(
+            posixPath: tokens,
+            content: ':root { --color-primary: var(--color-primary); }',
+          ),
+          'SIMF-N3',
+        ),
+        hasLength(1),
+      );
+      // ...and N2 stays exempt there, so the two rules are independent.
+      expect(
+        ofRule(
+          analyseCssFile(posixPath: tokens, content: ':root { --c: #ff0000; }'),
+          'SIMF-N2',
+        ),
+        isEmpty,
+      );
+    });
+
+    test('ignores the pattern inside a CSS comment', () {
+      expect(
+        ofRule(
+          analyseCssFile(
+            posixPath: landing,
+            content: '/* never write --navy: var(--navy) here */\n'
+                '.landing { --navy: #001640; }',
+          ),
+          'SIMF-N3',
+        ),
+        isEmpty,
+      );
+    });
+  });
+
+  group('repository-root inference', () {
+    // The checker printed "No violations found" from inside a git WORKTREE,
+    // where `.git` is a pointer FILE rather than a directory: the walk-up found
+    // no root, fell back to the working directory, scanned a tree with no
+    // sources under it, and the CI gate passed on an empty scan. These pin both
+    // shapes so the gate cannot go quiet that way again.
+    test('finds a root whose .git is a directory (an ordinary clone)', () {
+      final Directory tmp = Directory.systemTemp.createTempSync('simfroot');
+      addTearDown(() => tmp.deleteSync(recursive: true));
+      final String root = tmp.resolveSymbolicLinksSync();
+      Directory(p.join(root, '.git')).createSync();
+      final Directory deep = Directory(p.join(root, 'tool', 'conventions'))
+        ..createSync(recursive: true);
+
+      expect(inferRepoRoot(deep, fallback: 'FALLBACK'), root);
+    });
+
+    test('finds a root whose .git is a FILE (a git worktree)', () {
+      final Directory tmp = Directory.systemTemp.createTempSync('simfwt');
+      addTearDown(() => tmp.deleteSync(recursive: true));
+      final String root = tmp.resolveSymbolicLinksSync();
+      File(p.join(root, '.git')).writeAsStringSync('gitdir: /somewhere/.git\n');
+      final Directory deep = Directory(p.join(root, 'tool', 'conventions'))
+        ..createSync(recursive: true);
+
+      expect(inferRepoRoot(deep, fallback: 'FALLBACK'), root);
+    });
+
+    test('falls back only when there is no marker at all', () {
+      final Directory tmp = Directory.systemTemp.createTempSync('simfnone');
+      addTearDown(() => tmp.deleteSync(recursive: true));
+      final Directory deep = Directory(p.join(tmp.path, 'a', 'b'))
+        ..createSync(recursive: true);
+
+      expect(inferRepoRoot(deep, fallback: 'FALLBACK'), 'FALLBACK');
     });
   });
 }

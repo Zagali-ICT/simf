@@ -4,10 +4,10 @@
 |---|---|
 | **Route** | `/admin/visitors/badge-batches` |
 | **Component** | `Components/Pages/Admin/BadgeBatchesPage.razor` (+ `.razor.cs`) |
-| **Permission** | `Visitors.ViewBatches` (Administrator baseline) gates the page + the list API; `Visitors.ManageBatches` (Administrator baseline) gates the two destructive row actions (re-email / revoke) and their APIs — split out by the 2026-07-24 security review so read-only batch visibility can be granted without the power to re-email or revoke |
+| **Permission** | `Visitors.ViewBatches` (Administrator baseline) gates the page + the list API; `Visitors.ManageBatches` (Administrator baseline) gates the two destructive row actions (re-email / revoke) and their APIs — split out by the 2026-07-24 security review so read-only batch visibility can be granted without the power to re-email or revoke; `Visitors.BulkGenerate` gates **top-up**, which mints |
 | **Nav** | People → **Badge batches** (`Module.AdminBadgeBatches`) |
 | **Decision** | D-758 (#10 Phase 2) |
-| **E2E** | [`cp-admin-badge-batches.md`](../../tests/e2e/cp-admin-badge-batches.md) (E2E-BBT-001..009) |
+| **E2E** | [`cp-admin-badge-batches.md`](../../tests/e2e/cp-admin-badge-batches.md) (E2E-BBT-001..018) |
 
 ## Purpose
 
@@ -28,12 +28,19 @@ the whole batch.
   badges (tier name + QR id, stable order), rebuilds the QR pack — a **ZIP of PNGs +
   a printable PDF contact sheet** (D-759) — and enqueues it to the organiser. The
   badges themselves are unchanged; the batch remembers the last recipient.
+- **Top-up** — `POST /account/api/admin/visitors/badge-batches/top-up`
+  (`{ BatchId, Batches }`). Adds badges to an order that already exists, minting
+  them immediately so `TotalCount` always equals the badges that exist, and
+  folding the added tier into `CountsSummary` rather than appending a second
+  entry for the same tier. The dialog adds **one tier per run** — the contract
+  takes a list, but an order is topped up to add "3 more VIP", and repeating the
+  action reads better than a second row-builder inside a modal.
 - **Revoke** — `POST /account/api/admin/visitors/badge-batches/revoke` (`{ BatchId }`).
   Disables every account the batch minted (reusing the audience-scoped bulk-delete
   path: `AccountState = Disabled` + token revoke + per-account audit) and marks the
   batch `IsActive = false`. Not reversible.
 
-All three forward through `SimfAdminClient` (CP proxy in `AccountEndpoints`) to the
+All four forward through `SimfAdminClient` (CP proxy in `AccountEndpoints`) to the
 FastEndpoints in `BadgeBatchEndpoints.cs` → `IAdminUserBulkService`
 (`AdminAccountService.Bulk.cs`).
 
@@ -48,8 +55,15 @@ FastEndpoints in `BadgeBatchEndpoints.cs` → `IAdminUserBulkService`
 | Generated | `CreatedAt` (Saudi time) |
 | Status | `IsActive` → Active / Revoked pill |
 
-Row actions (active batches only, gated `Visitors.ManageBatches`): **Re-email QR pack**
-(modal — edit the organiser address, Send) and **Revoke batch** (confirm modal).
+Row actions, active batches only: **Add more badges** (modal — pick a tier and a
+count), **Re-email QR pack** (modal — edit the organiser address, Send) and
+**Revoke batch** (confirm modal).
+
+The three do **not** share one permission. Re-email and revoke carry
+`Visitors.ManageBatches`; **top-up carries `Visitors.BulkGenerate`**, because it
+MINTS badges and that is the permission its endpoint checks. Creating more of an
+order is a different authority from re-emailing or revoking one, and each button
+must carry the permission of the endpoint it calls rather than the page's.
 
 ## Edge cases
 

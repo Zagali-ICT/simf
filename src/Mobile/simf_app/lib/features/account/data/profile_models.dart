@@ -60,6 +60,7 @@ class UpsertUserProfileRequest {
   final String? passportNumber;
   final String? saudiMobile;
   final String? internationalMobile;
+
   /// C6 (D-371) — رقم اللوحة, optional; Saudi standard when filled.
   final String? plateNumber;
   final String? organisationId;
@@ -131,9 +132,10 @@ class UpsertUserProfileRequest {
 }
 
 /// The in-memory sign-up draft carried from the profile-data screen (Page 007)
-/// to the interests screen (Page 007‑01), which adds the interests and fires the
-/// single `POST /app/account/user-profile` save (D-332). [request] is built with
-/// an empty `interestIds`; the interests screen replaces it via [copyWith].
+/// to the interests screen (Page 007‑01), which adds the interests and fires
+/// the single `POST /app/account/user-profile` save (D-332). [request] is built
+/// with an empty `interestIds`; the interests screen replaces it via
+/// `copyWith`.
 @immutable
 class SignUpProfileDraft {
   const SignUpProfileDraft({
@@ -196,89 +198,7 @@ class UserProfileResponse {
     this.jobTitleArabic,
   });
 
-  final String? profileTypeId;
-  final List<String> interestIds;
-  final String arabicName;
-  final String englishName;
-  final String? jobTitle;
-  final String nationalityCode;
-  final String? dateOfBirth;
-  final String placeOfBirth;
-  final bool isSaudi;
-  final String? nationalId;
-  final String? iqamaNumber;
-  final String? passportNumber;
-  final String? saudiMobile;
-  final String? internationalMobile;
-  /// C6 (D-371/D-459) — رقم اللوحة, optional Saudi vehicle plate, stored as the
-  /// canonical Latin code.
-  final String? plateNumber;
-
-  /// C6 (D-459) — the plate rendered in Arabic (Arabic letters + Arabic-Indic
-  /// digits), derived server-side from [plateNumber].
-  final String? plateNumberAr;
-
-  /// C6 (D-459) — the plate rendered in English/Latin (the canonical code).
-  final String? plateNumberEn;
-
-  /// D-373 — the registration reference (SIMF-2026-00000001), issued once
-  /// at profile creation. Customer-facing lookup key; NOT the QR id.
-  final String? referenceNumber;
-  final String? organisationId;
-  final AppGender gender;
-  final bool hasIdImage;
-
-  /// True when a face photo (avatar) is stored. Mandatory for men, optional
-  /// for women (the two-photo split). Append-only wire field (defaults false
-  /// when an older server omits it).
-  final bool hasAvatar;
-  final String? qrId;
-
-  /// D-729 (owner item 15) — true when the account's tier is VVIP/VIP
-  /// (server-computed from ProfileType.AllowsVipMeetingSlots). Gates the
-  /// "request a speaker meeting" CTA to VIP guests. Append-only wire field
-  /// (defaults false when an older server omits it).
-  final bool isVip;
-
-  /// Bi-Meeting rework — the admin-assigned per-user flag that lets this account
-  /// request a **speaker** meeting. Replaces [isVip] as the speaker-meeting gate
-  /// (independent of the VIP tier). Append-only wire field (defaults false).
-  final bool allowsSpeakerMeeting;
-
-  /// Bi-Meeting rework — the admin-assigned per-user flag that lets this account
-  /// request a **delegation** (وفد) meeting. Append-only wire field (defaults false).
-  final bool allowsDelegationMeeting;
-
-  /// D-736 — whether this profile appears in "Meet People Like You"
-  /// recommendations. Defaults to true.
-  final bool showInMeetLikeYou;
-
-  /// Build #13 — true when the assigned profile type is an audience tier
-  /// (VVIP / VIP / Gold / Normal); false for the "Other" (partner / staff) tiers.
-  /// Drives whether the "show me in Meet People Like You" opt-in is offered (only
-  /// to "Other"-type users). Append-only wire field; defaults true.
-  final bool isForVisitor;
-
-  /// D-547 — the attendee's Region id. Read back so an interests-only edit can
-  /// re-send it (the full-profile upsert sets RegionId unconditionally).
-  final String? regionId;
-
-  /// The Arabic job title, read back for the same reason as [regionId].
-  final String? jobTitleArabic;
-
-  /// SUPERSEDED for routing (D-374): the post-sign-in gate now reads the
-  /// server-computed `profileComplete` on the session user — do NOT reuse
-  /// this getter for routing; the server rule is the single authority.
-  /// Kept only for the parked `_legacy_mockup` screen; mirrors the server
-  /// rule: names + ≥1 interest + the ID document (all) + the face photo (men).
-  bool get isComplete =>
-      arabicName.trim().isNotEmpty &&
-      englishName.trim().isNotEmpty &&
-      interestIds.isNotEmpty &&
-      hasIdImage &&
-      (gender != AppGender.male || hasAvatar);
-
-  static UserProfileResponse fromJson(Map<String, dynamic> json) {
+  factory UserProfileResponse.fromJson(Map<String, dynamic> json) {
     return UserProfileResponse(
       profileTypeId: json['profileTypeId'] as String?,
       interestIds: (json['interestIds'] as List<dynamic>? ?? const <dynamic>[])
@@ -307,7 +227,8 @@ class UserProfileResponse {
       qrId: json['qrId'] as String?,
       isVip: json['isVip'] as bool? ?? false,
       allowsSpeakerMeeting: json['allowsSpeakerMeeting'] as bool? ?? false,
-      allowsDelegationMeeting: json['allowsDelegationMeeting'] as bool? ?? false,
+      allowsDelegationMeeting:
+          json['allowsDelegationMeeting'] as bool? ?? false,
       showInMeetLikeYou: json['showInMeetLikeYou'] as bool? ?? true,
       isForVisitor: json['isForVisitor'] as bool? ?? true,
       regionId: json['regionId'] as String?,
@@ -315,11 +236,99 @@ class UserProfileResponse {
     );
   }
 
+  final String? profileTypeId;
+  final List<String> interestIds;
+  final String arabicName;
+  final String englishName;
+  final String? jobTitle;
+  final String nationalityCode;
+  final String? dateOfBirth;
+  final String placeOfBirth;
+  final bool isSaudi;
+  final String? nationalId;
+  final String? iqamaNumber;
+  final String? passportNumber;
+  final String? saudiMobile;
+  final String? internationalMobile;
+
+  /// C6 (D-371/D-459) — رقم اللوحة, optional Saudi vehicle plate, stored as the
+  /// canonical Latin code.
+  final String? plateNumber;
+
+  /// C6 (D-459) — the plate rendered in Arabic (Arabic letters + Arabic-Indic
+  /// digits), derived server-side from [plateNumber].
+  final String? plateNumberAr;
+
+  /// C6 (D-459) — the plate rendered in English/Latin (the canonical code).
+  final String? plateNumberEn;
+
+  /// D-373 — the registration reference (SIMF-2026-00000001), issued once
+  /// at profile creation. Customer-facing lookup key; NOT the QR id.
+  final String? referenceNumber;
+  final String? organisationId;
+  final AppGender gender;
+  final bool hasIdImage;
+
+  /// True when a face photo (avatar) is stored. Mandatory for men, optional
+  /// for women (the two-photo split). Append-only wire field (defaults false
+  /// when an older server omits it).
+  final bool hasAvatar;
+  final String? qrId;
+
+  /// D-729 (owner item 15) — true when the account's tier is VVIP/VIP
+  /// (server-computed from ProfileType.IsVipTier). It used to gate
+  /// the "request a speaker meeting" CTA; the Bi-Meeting rework (D-760) moved
+  /// that to [allowsSpeakerMeeting], so **no screen reads this today**. Kept
+  /// because the server still sends it and it stays part of the frozen wire
+  /// contract (D-219). Append-only wire field (defaults false when an older
+  /// server omits it).
+  final bool isVip;
+
+  /// Bi-Meeting rework — the admin-assigned per-user flag that lets this
+  /// account request a **speaker** meeting. Replaces [isVip] as the
+  /// speaker-meeting gate (independent of the VIP tier). Append-only wire field
+  /// (defaults false).
+  final bool allowsSpeakerMeeting;
+
+  /// Bi-Meeting rework — the admin-assigned per-user flag that lets this
+  /// account request a **delegation** (وفد) meeting. Append-only wire field
+  /// (defaults false).
+  final bool allowsDelegationMeeting;
+
+  /// D-736 — whether this profile appears in "Meet People Like You"
+  /// recommendations. Defaults to true.
+  final bool showInMeetLikeYou;
+
+  /// Build #13 — true when the assigned profile type is an audience tier (VVIP
+  /// / VIP / Gold / Normal); false for the "Other" (partner / staff) tiers.
+  /// Drives whether the "show me in Meet People Like You" opt-in is offered
+  /// (only to "Other"-type users). Append-only wire field; defaults true.
+  final bool isForVisitor;
+
+  /// D-547 — the attendee's Region id. Read back so an interests-only edit can
+  /// re-send it (the full-profile upsert sets RegionId unconditionally).
+  final String? regionId;
+
+  /// The Arabic job title, read back for the same reason as [regionId].
+  final String? jobTitleArabic;
+
+  /// SUPERSEDED for routing (D-374): the post-sign-in gate now reads the
+  /// server-computed `profileComplete` on the session user — do NOT reuse
+  /// this getter for routing; the server rule is the single authority.
+  /// Kept only for the parked `_legacy_mockup` screen; mirrors the server
+  /// rule: names + ≥1 interest + the ID document (all) + the face photo (men).
+  bool get isComplete =>
+      arabicName.trim().isNotEmpty &&
+      englishName.trim().isNotEmpty &&
+      interestIds.isNotEmpty &&
+      hasIdImage &&
+      (gender != AppGender.male || hasAvatar);
+
   /// Builds an edit re-save request mirroring every field of the loaded profile
   /// so an interests-only edit (via `copyWith`) re-POSTs the whole profile
-  /// without nulling a server-set field. The full upsert is the only write
-  /// path and the service sets RegionId + JobTitleArabic unconditionally, so
-  /// both must be carried back here (#14).
+  /// without nulling a server-set field. The full upsert is the only write path
+  /// and the service sets RegionId + JobTitleArabic unconditionally, so both
+  /// must be carried back here (#14).
   ///
   /// EXCEPTION — `profileTypeId` is sent **null** on purpose: on a re-save the
   /// server re-runs the sign-up self-pick validation for any non-null
@@ -329,12 +338,12 @@ class UserProfileResponse {
   /// only writes a user pick when the stored ProfileTypeId is null). So an
   /// interests edit never changes — nor is blocked by — the account's tier.
   /// [showInMeetLikeYou] overrides the loaded opt-in value — Build #13 lets an
-  /// "Other"-type user toggle it on the My-interests edit screen; null keeps the
-  /// current value.
+  /// "Other"-type user toggle it on the My-interests edit screen; null keeps
+  /// the current value.
   ///
   /// [mobile] overrides the stored mobile number (owner 2026-07-26 — add / edit
-  /// the phone number from the profile, validate only, no OTP). It is written to
-  /// the field the profile's nationality selects — [saudiMobile] for a Saudi
+  /// the phone number from the profile, validate only, no OTP). It is written
+  /// to the field the profile's nationality selects — [saudiMobile] for a Saudi
   /// national, [internationalMobile] otherwise — so the pair never carries two
   /// numbers at once. Null keeps both stored values.
   UpsertUserProfileRequest toUpsertRequest({
@@ -374,15 +383,15 @@ class CountryItem {
     required this.nameArabic,
   });
 
-  final String code;
-  final String name;
-  final String nameArabic;
-
-  static CountryItem fromJson(Map<String, dynamic> json) => CountryItem(
+  factory CountryItem.fromJson(Map<String, dynamic> json) => CountryItem(
         code: json['code'] as String? ?? '',
         name: json['name'] as String? ?? '',
         nameArabic: json['nameArabic'] as String? ?? '',
       );
+
+  final String code;
+  final String name;
+  final String nameArabic;
 }
 
 /// Profile-type picker row — `GET /app/account/profile-types` (E4).
@@ -396,19 +405,20 @@ class ProfileTypeItem {
     this.pageColor,
   });
 
-  final String id;
-  final String name;
-  final String nameArabic;
-  final String? pageColor;
-  final bool isVisitor;
-
-  static ProfileTypeItem fromJson(Map<String, dynamic> json) => ProfileTypeItem(
+  factory ProfileTypeItem.fromJson(Map<String, dynamic> json) =>
+      ProfileTypeItem(
         id: json['id'] as String? ?? '',
         name: json['name'] as String? ?? '',
         nameArabic: json['nameArabic'] as String? ?? '',
         pageColor: json['pageColor'] as String?,
         isVisitor: json['isVisitor'] as bool? ?? true,
       );
+
+  final String id;
+  final String name;
+  final String nameArabic;
+  final String? pageColor;
+  final bool isVisitor;
 }
 
 /// Interest picker row — `GET /app/account/interests` (E5).
@@ -421,17 +431,17 @@ class InterestItem {
     required this.displayOrder,
   });
 
-  final String id;
-  final String name;
-  final String nameArabic;
-  final int displayOrder;
-
-  static InterestItem fromJson(Map<String, dynamic> json) => InterestItem(
+  factory InterestItem.fromJson(Map<String, dynamic> json) => InterestItem(
         id: json['id'] as String? ?? '',
         name: json['name'] as String? ?? '',
         nameArabic: json['nameArabic'] as String? ?? '',
         displayOrder: (json['displayOrder'] as num?)?.toInt() ?? 0,
       );
+
+  final String id;
+  final String name;
+  final String nameArabic;
+  final int displayOrder;
 }
 
 /// Organisation typeahead row — `GET /app/organisations?search=&top=` (E6).
@@ -445,16 +455,16 @@ class OrganisationItem {
     this.city,
   });
 
-  final String id;
-  final String nameAr;
-  final String? nameEn;
-  final String? city;
-
-  static OrganisationItem fromJson(Map<String, dynamic> json) =>
+  factory OrganisationItem.fromJson(Map<String, dynamic> json) =>
       OrganisationItem(
         id: json['id'] as String? ?? '',
         nameAr: json['nameAr'] as String? ?? '',
         nameEn: json['nameEn'] as String?,
         city: json['city'] as String?,
       );
+
+  final String id;
+  final String nameAr;
+  final String? nameEn;
+  final String? city;
 }

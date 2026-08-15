@@ -66,13 +66,14 @@ class SeatMapRepository {
     );
   }
 
-  /// B1 — `POST /app/sessions/{id}/seats/move` → change the caller's already-held
-  /// seat to [rowLabel]+[seatNumber] in ONE atomic step (the server acquires the
-  /// destination and releases the source in a single transaction, so a lost race
-  /// leaves the original seat held). Throws [ApiFailure] on 409
-  /// `SEAT_ALREADY_RESERVED` (someone took it first) / `SEAT_MOVE_SAME_SEAT` /
-  /// `SEAT_TIER_RESERVED` / `SEAT_TIER_NOT_ELIGIBLE` / `BOOKING_SESSION_STARTED`,
-  /// or 404 `SEAT_RESERVATION_NOT_FOUND` when there is no seat to move.
+  /// B1 — `POST /app/sessions/{id}/seats/move` → change the caller's
+  /// already-held seat to [rowLabel]+[seatNumber] in ONE atomic step (the
+  /// server acquires the destination and releases the source in a single
+  /// transaction, so a lost race leaves the original seat held). Throws
+  /// [ApiFailure] on 409 `SEAT_ALREADY_RESERVED` (someone took it first) /
+  /// `SEAT_MOVE_SAME_SEAT` / `SEAT_TIER_RESERVED` / `SEAT_TIER_NOT_ELIGIBLE` /
+  /// `BOOKING_SESSION_STARTED`, or 404 `SEAT_RESERVATION_NOT_FOUND` when there
+  /// is no seat to move.
   Future<MyReservation> moveSeat(
     String sessionId, {
     required String rowLabel,
@@ -94,7 +95,8 @@ class SeatMapRepository {
     );
   }
 
-  static MyReservation _decodeReservation(Object? data) => MyReservation.fromJson(
+  static MyReservation _decodeReservation(Object? data) =>
+      MyReservation.fromJson(
         (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{},
       );
 }
@@ -103,10 +105,11 @@ final seatMapRepositoryProvider = Provider<SeatMapRepository>((ref) {
   return SeatMapRepository(ref.watch(simfApiClientProvider));
 });
 
-/// The seat map for [sessionId] as one cached async read — the single source the
-/// My-Seat view (#18) and the Seat-picker (#109) both watch (`GET …/seats`).
-/// `autoDispose.family` so a fresh mount or a retry (`ref.invalidate`) re-fetches,
-/// matching the per-mount `initState` load the two screens used before.
+/// The seat map for `sessionId` as one cached async read — the single source
+/// the My-Seat view (#18) and the Seat-picker (#109) both watch (`GET
+/// …/seats`). `autoDispose.family` so a fresh mount or a retry
+/// (`ref.invalidate`) re-fetches, matching the per-mount `initState` load the
+/// two screens used before.
 final seatMapProvider =
     FutureProvider.autoDispose.family<SessionSeatMap, String>(
   (ref, sessionId) =>
@@ -114,8 +117,8 @@ final seatMapProvider =
 );
 
 /// The native "share my seat location" action (Page_018 E3) — a client-local OS
-/// action, kept behind an overridable provider so the widget test injects a fake
-/// (no MethodChannel).
+/// action, kept behind an overridable provider so the widget test injects a
+/// fake (no MethodChannel).
 class SeatShare {
   const SeatShare();
 

@@ -7,6 +7,7 @@ import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/core/organization_profile/organization_profile.dart';
 import 'package:simf_app/core/startup/app_version_policy.dart';
+import 'package:simf_app/features/about/about_screen.dart' show AboutScreen;
 import 'package:simf_app/features/about/widgets/about_cards.dart';
 import 'package:simf_app/features/about/widgets/check_for_updates_row.dart';
 import 'package:simf_app/features/more/widgets/more_list.dart';
@@ -14,8 +15,7 @@ import 'package:simf_app/features/more/widgets/more_list.dart';
 /// About the app — عن التطبيق · route: [RouteNames.aboutApp]
 /// Purpose: the APP's own about page — version, release date, organizer, a
 ///   manual update check, and the edition's support contacts.
-/// Data: [installedAppVersionProvider], [orgProfileProvider], and the version
-///   policy behind the check-for-updates row (`GET /app/version-policy`, D-736).
+/// Data: [installedAppVersionProvider], [orgProfileProvider].
 /// Figma: no bound node. NOTE `1116-16448` is About the FORUM ([AboutScreen]) —
 ///   a different screen; do not bind it here.
 /// Perf: one short static ListView; pull-to-refresh re-warms the org profile.
@@ -38,8 +38,8 @@ class AboutAppScreen extends ConsumerWidget {
     final l10n = AppL10n.of(context);
     // D-736 — the real installed version (package_info_plus via main()).
     final installedVersion = ref.watch(installedAppVersionProvider);
-    // The edition's org profile (loaded at splash, persisted, null until then) —
-    // reused so "support" shows the same contact the forum-about page does,
+    // The edition's org profile (loaded at splash, persisted, null until then)
+    // — reused so "support" shows the same contact the forum-about page does,
     // never a second hardcoded copy.
     final profile = ref.watch(orgProfileProvider);
     final contactRows = <(String, String)>[

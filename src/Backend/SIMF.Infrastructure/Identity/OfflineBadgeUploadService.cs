@@ -250,7 +250,8 @@ internal sealed class OfflineBadgeUploadService(
                 // therefore assert nothing. The lookup above already restricted
                 // the set to audience types; this makes the service re-check it.
                 expectedIsVisitor: true,
-                presetQrId: qrId);
+                presetQrId: qrId,
+                presetProfileId: item.ProfileId);
 
             // Read the account state rather than inferring it from the returned
             // QR. On every other desk path an empty QR means "not approved", but

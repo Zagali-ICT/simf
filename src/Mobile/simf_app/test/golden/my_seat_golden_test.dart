@@ -15,37 +15,73 @@ import 'package:simf_app/features/sessions/my_seat_screen.dart';
 
 import 'golden_fonts.dart';
 
-/// Golden render of the My-Seat screen against Figma frame **898:2873**
-/// ("Your seat", approved Visitor). Compare to the frame:
-///   flutter test --update-goldens test/golden/my_seat_golden_test.dart
+/// Golden render of the My-Seat screen against Figma frame **898:2873** ("Your
+/// seat", approved Visitor). Compare to the frame: flutter test
+/// --update-goldens test/golden/my_seat_golden_test.dart
 ///
 /// Frame parity expected: the "الجلسة" card (label, session title, the الصف
 /// gold-bordered chip at the inline-start/right + the مقعد beige chip), the
 /// hall card (gold المسرح·STAGE band, the LTR seat grid — a per-row VARIABLE
-/// layout so short rows draw fewer seats centred under the stage; mine gold with
-/// the ✓ icon, reserved navy-filled with the × icon, available beige-bordered
-/// with its seat number, squares ≤20px — and the LTR محجوز·متاح·مقعدك legend),
-/// then the gold إرشادي إلى مقعدي + outlined مشاركة الموقع action row. The
-/// seat-occupancy PATTERN is fixture data — the chrome is the parity claim.
-/// Rendered via the shared `HallSeatMapCard` (D-600).
+/// layout so short rows draw fewer seats centred under the stage; mine gold
+/// with the ✓ icon, reserved navy-filled with the × icon, available
+/// beige-bordered with its seat number, squares ≤20px — and the LTR
+/// محجوز·متاح·مقعدك legend), then the gold إرشادي إلى مقعدي + outlined مشاركة
+/// الموقع action row. The seat-occupancy PATTERN is fixture data — the chrome
+/// is the parity claim. Rendered via the shared `HallSeatMapCard` (D-600).
 
 SessionSeatMap _map() => const SessionSeatMap(
       rowLabels: <String>['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'],
       seatsPerRow: 12, // legacy fallback = max(counts)
       seatCounts: <int>[10, 12, 11, 6, 8, 4, 9, 6],
       reservedCells: <SeatCell>[
-        SeatCell(rowLabel: 'A', seatNumber: 1, kind: SeatReservationKind.userBooking),
-        SeatCell(rowLabel: 'A', seatNumber: 5, kind: SeatReservationKind.userBooking),
-        SeatCell(rowLabel: 'A', seatNumber: 9, kind: SeatReservationKind.userBooking),
-        SeatCell(rowLabel: 'B', seatNumber: 2, kind: SeatReservationKind.userBooking),
-        SeatCell(rowLabel: 'B', seatNumber: 6, kind: SeatReservationKind.userBooking),
-        SeatCell(rowLabel: 'C', seatNumber: 3, kind: SeatReservationKind.userBooking),
-        SeatCell(rowLabel: 'C', seatNumber: 11, kind: SeatReservationKind.userBooking),
-        SeatCell(rowLabel: 'D', seatNumber: 4, kind: SeatReservationKind.userBooking),
-        SeatCell(rowLabel: 'E', seatNumber: 7, kind: SeatReservationKind.userBooking),
-        SeatCell(rowLabel: 'F', seatNumber: 1, kind: SeatReservationKind.userBooking),
-        SeatCell(rowLabel: 'G', seatNumber: 8, kind: SeatReservationKind.userBooking),
-        SeatCell(rowLabel: 'H', seatNumber: 5, kind: SeatReservationKind.userBooking),
+        SeatCell(
+            rowLabel: 'A',
+            seatNumber: 1,
+            kind: SeatReservationKind.userBooking,),
+        SeatCell(
+            rowLabel: 'A',
+            seatNumber: 5,
+            kind: SeatReservationKind.userBooking,),
+        SeatCell(
+            rowLabel: 'A',
+            seatNumber: 9,
+            kind: SeatReservationKind.userBooking,),
+        SeatCell(
+            rowLabel: 'B',
+            seatNumber: 2,
+            kind: SeatReservationKind.userBooking,),
+        SeatCell(
+            rowLabel: 'B',
+            seatNumber: 6,
+            kind: SeatReservationKind.userBooking,),
+        SeatCell(
+            rowLabel: 'C',
+            seatNumber: 3,
+            kind: SeatReservationKind.userBooking,),
+        SeatCell(
+            rowLabel: 'C',
+            seatNumber: 11,
+            kind: SeatReservationKind.userBooking,),
+        SeatCell(
+            rowLabel: 'D',
+            seatNumber: 4,
+            kind: SeatReservationKind.userBooking,),
+        SeatCell(
+            rowLabel: 'E',
+            seatNumber: 7,
+            kind: SeatReservationKind.userBooking,),
+        SeatCell(
+            rowLabel: 'F',
+            seatNumber: 1,
+            kind: SeatReservationKind.userBooking,),
+        SeatCell(
+            rowLabel: 'G',
+            seatNumber: 8,
+            kind: SeatReservationKind.userBooking,),
+        SeatCell(
+            rowLabel: 'H',
+            seatNumber: 5,
+            kind: SeatReservationKind.userBooking,),
       ],
       myCell: SeatCell(
         rowLabel: 'B',

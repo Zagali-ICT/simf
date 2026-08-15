@@ -37,13 +37,13 @@
 | E2E-MOB020-009 | Tap a speaker session → Session detail (17) | happy | P1 | authored ✓ (screen) |
 | E2E-MOB020-010 | RTL render; hero, back chevron and tabs right-to-left | i18n | P1 | authored ✓ (screen) |
 | E2E-MOB020-011 | 125px gold-ringed avatar renders the speaker initials | happy | P1 | _to author_ |
-| E2E-MOB020-012 | **VIP slot picker (D-474/D-477; real slots restored by D-709):** when the speaker has availability windows, the meeting sheet shows the real free slots (from `GET …/available-slots`); picking one sends it. VIP-only is server-enforced (403 → "VIP guests only"). **G3 (owner 2026-07-30, supersedes D-767 R1):** **no free slot** = the no-slots notice **and a DISABLED Send button** — a subject-only request is no longer possible and the API 409s `SPEAKER_MEETING_NO_AVAILABILITY`. A **failed** slot fetch is a separate state: a load error + Retry, never the no-availability notice | happy | P0 | authored ✓ (`meeting_request_sheet_test` real-slot submit + G3 disabled-send + G3 slot-fetch-error, API `SpeakerMeetingVipSlotTests` + `MeetingNoAvailabilityTests`) |
+| E2E-MOB020-012 | **Slot picker (D-474/D-477; real slots restored by D-709):** when the speaker has availability windows, the meeting sheet shows the real free slots (from `GET …/available-slots`); picking one sends it. Eligibility is server-enforced on the per-user `allowsSpeakerMeeting` flag (D-760, replacing the VIP-tier gate): 403 → "Requesting a speaker meeting is not enabled for your account." (copy asserted by E2E-MOB020-022). **G3 (owner 2026-07-30, supersedes D-767 R1):** **no free slot** = the no-slots notice **and a DISABLED Send button** — a subject-only request is no longer possible and the API 409s `SPEAKER_MEETING_NO_AVAILABILITY`. A **failed** slot fetch is a separate state: a load error + Retry, never the no-availability notice | happy | P0 | authored ✓ (`meeting_request_sheet_test` real-slot submit + G3 disabled-send + G3 slot-fetch-error, API `SpeakerMeetingEligibilityAndSlotTests` + `MeetingNoAvailabilityTests`) |
 | E2E-MOB020-023 | Tapping a CV tab pill swaps the navy bio card content | happy | P0 | _to author_ |
 | E2E-MOB020-013 | Active tab pill is gold-filled; the rest are navy with a beige hairline | happy | P1 | _to author_ |
 | E2E-MOB020-014 | Only CV sections with content render a pill (1–4 pills) | edge | P1 | _to author_ |
 | E2E-MOB020-015 | Speaker with no CV content shows no tabs and no bio card | edge | P1 | _to author_ |
 | E2E-MOB020-016 | Meeting form has **no name field**; only subject (+ optional slot) is entered; `requesterName` is auto-sent from the signed-in account | happy | P1 | authored ✓ (`a signed-in visitor can submit a meeting request`) |
-| E2E-MOB020-017 | Meeting form (D-589, Figma 1776:4958/5036): light sheet — the VIP slot is chosen from a row of **day cards** then that day's **time-slot chips**, both sourced from the speaker's **real** available slots (D-709 restored this after the D-703 free-picker interlude); the chips appear only after a day is tapped | happy | P2 | authored ✓ (`meeting_request_sheet_test` — "presents the speaker's REAL available days + that day's slots") |
+| E2E-MOB020-017 | Meeting form (D-589, Figma 1776:4958/5036): light sheet — the meeting slot is chosen from a row of **day cards** then that day's **time-slot chips**, both sourced from the speaker's **real** available slots (D-709 restored this after the D-703 free-picker interlude); the chips appear only after a day is tapped | happy | P2 | authored ✓ (`meeting_request_sheet_test` — "presents the speaker's REAL available days + that day's slots") |
 | E2E-MOB020-019 | Arabic app renders the profile-hero `rankArabic` when populated (CP-entered **or** Excel-imported) | i18n | P1 | _to author_ |
 | E2E-MOB020-020 | Arabic app falls back to the English `rank` in the hero when `rankArabic` is blank — intended, not a bug | i18n | P1 | _to author_ |
 | E2E-MOB020-021 | A failed meeting submit shows the **server's own** bilingual reason (QA A26): a duplicate-pending / slot-taken 409 no longer collapses onto "this speaker does not accept meeting requests"; a network failure still shows localized copy, never the raw dio string | error | P0 | authored ✓ (`meeting_request_sheet_test` — "QA A26 — a 409 surfaces the SERVER reason…" + "…a failure that never reached the server…") |
@@ -266,7 +266,7 @@ Scenario: The request-meeting sheet no longer asks for the requester's name
 ### E2E-MOB020-017 — Meeting form date + time selection (D-589, redesign of D-579)
 
 ```gherkin
-Scenario: The VIP slot is picked from day cards then time chips (light sheet)
+Scenario: The meeting slot is picked from day cards then time chips (light sheet)
   Given an approved Visitor signed in
   And a speaker whose allowsMeetingRequests is true with availability slots
   When the visitor opens the "طلب مقابلة" (Request meeting) sheet
@@ -278,23 +278,26 @@ Scenario: The VIP slot is picked from day cards then time chips (light sheet)
   When the visitor enters a subject, taps a time chip and taps "ارسال الطلب" (Send request)
   Then the POST body's slotStart/slotEnd equal the chosen slot
   # The slot always matches a published availability slot, so the server
-  # (which 409s a non-free slot and 403s a non-VIP) accepts it.
+  # (which 409s a non-free slot and 403s an ineligible account) accepts it.
 ```
 
-### E2E-MOB020-018 — Speaker meeting is VIP-only (D-729, owner item 15)
+### E2E-MOB020-018 — Speaker meeting needs the per-user eligibility flag (D-760; was VIP-only under D-729)
 
 ```gherkin
-Scenario: Only a VIP guest sees and can use the request-meeting CTA
+Scenario: Only an account with allowsSpeakerMeeting sees and can use the CTA
   Given a speaker whose allowsMeetingRequests is true
   When a GUEST views the speaker profile
   Then the "Request meeting" CTA is NOT shown
-  When a signed-in NON-VIP visitor views the speaker profile
-  Then the "Request meeting" CTA is NOT shown (isVip=false on the profile read)
-  When a signed-in VIP (VVIP/VIP tier) visitor views the speaker profile
+  When a signed-in visitor whose allowsSpeakerMeeting is false views the profile
+  Then the "Request meeting" CTA is NOT shown
+  When a signed-in visitor whose allowsSpeakerMeeting is true views the profile
   Then the "Request meeting" CTA IS shown and opens the meeting sheet
+  # Run both directions against a VVIP/VIP-tier AND a Normal-tier visitor: since
+  # D-760 eligibility is admin-assigned per user on the profile row, so the tier
+  # neither grants nor withholds the CTA.
   # Server backstop: POST /api/v1/app/speakers/{id}/meeting-requests returns 403
-  # for a non-VIP even without a slot (the whole request is VIP-only, not just
-  # slot-booking).
+  # FORBIDDEN for an ineligible account even without a slot (the whole request is
+  # gated, not just slot-booking).
 ```
 
 ### E2E-MOB020-019 — Arabic rank in the profile hero

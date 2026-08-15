@@ -7,15 +7,15 @@ import 'package:simf_app/app/widgets/simf_svg_icon.dart';
 import 'package:simf_app/core/country_flag.dart';
 
 /// A shared identity row (Build #13): the navy [SimfCard] chrome carrying — in
-/// RTL — a 44x44 logo/photo tile (or a gold initials avatar) at the inline start,
-/// the white [title] (with an optional inline country flag) over the beige
-/// [subtitle], and a gold caret at the inline end when [onTap] is set.
+/// RTL — a 44x44 logo/photo tile (or a gold initials avatar) at the inline
+/// start, the white [title] (with an optional inline country flag) over the
+/// beige [subtitle], and a gold caret at the inline end when [onTap] is set.
 ///
 /// Built for the "Meet People Like You" partner directory (speakers, sponsors,
 /// booth companies, opted-in members) so every kind renders through one cell
-/// rather than a per-kind copy. When [onTap] is null the row is non-tappable and
-/// shows no caret (an opted-in person has no detail screen — their data is on the
-/// card).
+/// rather than a per-kind copy. When [onTap] is null the row is non-tappable
+/// and shows no caret (an opted-in person has no detail screen — their data is
+/// on the card).
 class SimfIdentityCell extends StatelessWidget {
   const SimfIdentityCell({
     required this.title,
@@ -57,7 +57,8 @@ class SimfIdentityCell extends StatelessWidget {
         padding: const EdgeInsets.all(SimfTokens.space2),
         child: Row(
           children: <Widget>[
-            IdentityLogoOrInitials(imageUrl: imageUrl, initials: _initialsFrom(title)),
+            IdentityLogoOrInitials(
+                imageUrl: imageUrl, initials: _initialsFrom(title),),
             const SizedBox(width: SimfTokens.space4),
             Expanded(
               child: Column(

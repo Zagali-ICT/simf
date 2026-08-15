@@ -112,7 +112,8 @@ void main() {
     testWidgets('shows only the active tab label', (tester) async {
       await _pump(
         tester,
-        const Scaffold(bottomNavigationBar: SimfBottomNav(current: SimfTab.home)),
+        const Scaffold(
+            bottomNavigationBar: SimfBottomNav(current: SimfTab.home),),
       );
 
       expect(find.text('Home'), findsOneWidget);
@@ -140,7 +141,8 @@ void main() {
     testWidgets('sessions icon navigates to /sessions', (tester) async {
       await _pump(
         tester,
-        const Scaffold(bottomNavigationBar: SimfBottomNav(current: SimfTab.home)),
+        const Scaffold(
+            bottomNavigationBar: SimfBottomNav(current: SimfTab.home),),
       );
 
       // D-750 — the program/agenda tab's label + semantics is now "Agenda".
@@ -153,7 +155,8 @@ void main() {
         (tester) async {
       await _pump(
         tester,
-        const Scaffold(bottomNavigationBar: SimfBottomNav(current: SimfTab.home)),
+        const Scaffold(
+            bottomNavigationBar: SimfBottomNav(current: SimfTab.home),),
       );
 
       await tester.tap(find.bySemanticsLabel('Profile'));
@@ -164,7 +167,8 @@ void main() {
     testWidgets('the gold centre action opens the QR badge', (tester) async {
       await _pump(
         tester,
-        const Scaffold(bottomNavigationBar: SimfBottomNav(current: SimfTab.home)),
+        const Scaffold(
+            bottomNavigationBar: SimfBottomNav(current: SimfTab.home),),
       );
 
       await tester.tap(find.bySemanticsLabel('Entry badge'));
@@ -319,7 +323,8 @@ void main() {
       expect(prefs.getString(StorageKeys.preferredLanguage), 'en');
     });
 
-    testWidgets('tapping the sub-page language pill flips the locale AR → EN '
+    testWidgets(
+        'tapping the sub-page language pill flips the locale AR → EN '
         'and persists it', (tester) async {
       final prefs = _FakePrefs();
       await _pump(
@@ -352,7 +357,8 @@ void main() {
       expect(prefs.getString(StorageKeys.preferredLanguage), 'en');
     });
 
-    testWidgets('forced-LTR header (Figma): the back control sits on the LEFT, '
+    testWidgets(
+        'forced-LTR header (Figma): the back control sits on the LEFT, '
         'the ☰ on the right, even under Arabic/RTL', (tester) async {
       await _pump(
         tester,
@@ -365,18 +371,21 @@ void main() {
         locale: const Locale('ar'),
       );
 
-      // Forced LTR (owner 2026-06-28 "match figma in sub page nav"): back on the
-      // left, the trailing cluster (ending in ☰) on the right.
+      // Forced LTR (owner 2026-06-28 "match figma in sub page nav"): back on
+      // the left, the trailing cluster (ending in ☰) on the right.
       final backDx = tester.getCenter(find.byType(SimfCircledBackButton)).dx;
       final menuDx = tester.getCenter(find.byIcon(Icons.menu)).dx;
       expect(backDx, lessThan(menuDx));
     });
 
-    testWidgets('the standard sub-page header is back + title only — no action '
-        'cluster by default (Figma 758-1469, owner 2026-06-28)', (tester) async {
+    testWidgets(
+        'the standard sub-page header is back + title only — no action '
+        'cluster by default (Figma 758-1469, owner 2026-06-28)',
+        (tester) async {
       await _pump(
         tester,
-        SimfPageShell(title: 'My page', onBack: () {}, body: const Text('BODY')),
+        SimfPageShell(
+            title: 'My page', onBack: () {}, body: const Text('BODY'),),
       );
       // The Figma sub-page nav carries no bell / language / menu.
       expect(find.byIcon(Icons.notifications_none_outlined), findsNothing);
@@ -472,15 +481,18 @@ void main() {
       await tester.tap(find.text('My badge'));
       expect(taps, 0);
       final material = tester.widget<Material>(
-        find.ancestor(
-          of: find.text('My badge'),
-          matching: find.byType(Material),
-        ).first,
+        find
+            .ancestor(
+              of: find.text('My badge'),
+              matching: find.byType(Material),
+            )
+            .first,
       );
       expect(material.color, SimfTokens.navyDisabled);
     });
 
-    testWidgets('BUG-014 — a locked tile announces WHY it is locked and stays '
+    testWidgets(
+        'BUG-014 — a locked tile announces WHY it is locked and stays '
         'inert', (tester) async {
       final handle = tester.ensureSemantics();
       var taps = 0;
@@ -566,7 +578,8 @@ void main() {
         Scaffold(
           body: Column(
             children: <Widget>[
-              SimfListRow(title: 'Filled', badge: const Text('A'), onTap: () {}),
+              SimfListRow(
+                  title: 'Filled', badge: const Text('A'), onTap: () {},),
               SimfListRow(
                 title: 'Outlined',
                 badge: const Text('B'),

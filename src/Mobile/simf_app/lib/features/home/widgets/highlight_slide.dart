@@ -6,7 +6,11 @@ import 'package:simf_app/app/theme/tokens.dart';
 /// article. The image rides the D-357 anonymous `NewsImage` route; a spinner
 /// shows while it loads and a navy image-glyph box is the no-image fall-back.
 class HighlightSlide extends StatelessWidget {
-  const HighlightSlide({required this.title, required this.imageUrl, required this.onTap, super.key,
+  const HighlightSlide({
+    required this.title,
+    required this.imageUrl,
+    required this.onTap,
+    super.key,
   });
 
   final String title;
@@ -32,17 +36,17 @@ class HighlightSlide extends StatelessWidget {
                   imageUrl,
                   fit: BoxFit.cover,
                   gaplessPlayback: true,
-                  loadingBuilder: (context, child, progress) =>
-                      progress == null
-                          ? child
-                          : const Center(
-                              child: SizedBox(
-                                width: SimfTokens.highlightSlideWidth,
-                                height: SimfTokens.highlightSlideHeight2,
-                                child:
-                                    CircularProgressIndicator(strokeWidth: SimfTokens.highlightSlideStrokeWidth),
-                              ),
-                            ),
+                  loadingBuilder: (context, child, progress) => progress == null
+                      ? child
+                      : const Center(
+                          child: SizedBox(
+                            width: SimfTokens.highlightSlideWidth,
+                            height: SimfTokens.highlightSlideHeight2,
+                            child: CircularProgressIndicator(
+                                strokeWidth:
+                                    SimfTokens.highlightSlideStrokeWidth,),
+                          ),
+                        ),
                   errorBuilder: (context, error, stackTrace) => const Center(
                     child: Icon(
                       Icons.image_outlined,
@@ -58,7 +62,10 @@ class HighlightSlide extends StatelessWidget {
                   gradient: LinearGradient(
                     begin: Alignment.center,
                     end: Alignment.bottomCenter,
-                    colors: <Color>[SimfTokens.transparent, SimfTokens.navyFill80],
+                    colors: <Color>[
+                      SimfTokens.transparent,
+                      SimfTokens.navyFill80,
+                    ],
                   ),
                 ),
               ),

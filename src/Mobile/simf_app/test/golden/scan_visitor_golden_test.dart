@@ -11,14 +11,14 @@ import 'package:simf_app/features/exhibitor/scan_visitor_screen.dart';
 
 import 'golden_fonts.dart';
 
-/// Render-lock golden of the exhibitor "scan a visitor badge" screen
-/// (مسح بطاقة زائر, D-426). Regenerate:
-///   flutter test --update-goldens test/golden/scan_visitor_golden_test.dart
+/// Render-lock golden of the exhibitor "scan a visitor badge" screen (مسح بطاقة
+/// زائر, D-426). Regenerate: flutter test --update-goldens
+/// test/golden/scan_visitor_golden_test.dart
 ///
 /// No Figma frame is bound (a D-426 functional page); the screen delegates
-/// entirely to the shared `QrScanView`, so this locks that shared scan surface —
-/// the manual-entry field + the "start camera" button (`enableCamera: false`, so
-/// no live camera in the harness). RTL.
+/// entirely to the shared `QrScanView`, so this locks that shared scan surface
+/// — the manual-entry field + the "start camera" button (`enableCamera: false`,
+/// so no live camera in the harness). RTL.
 
 void main() {
   setUpAll(loadGoldenFonts);

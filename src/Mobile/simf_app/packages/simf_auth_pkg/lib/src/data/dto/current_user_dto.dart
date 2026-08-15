@@ -1,9 +1,9 @@
 import 'package:meta/meta.dart';
 
-import '../../domain/app_role.dart';
-import '../../domain/current_user.dart';
-import '../../domain/preferred_language.dart';
-import '../../domain/registration_status.dart';
+import 'package:simf_auth_pkg/src/domain/app_role.dart';
+import 'package:simf_auth_pkg/src/domain/current_user.dart';
+import 'package:simf_auth_pkg/src/domain/preferred_language.dart';
+import 'package:simf_auth_pkg/src/domain/registration_status.dart';
 
 /// Wire shape for the `user` object returned inside `/auth/sign-in` and
 /// `/users/me` (SIMF-MOB-API-001 §5.1).

@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
-
-import '../../config/simf_data_config.dart';
-import '../auth_token_source.dart';
+import 'package:simf_data_pkg/src/api/auth_token_source.dart';
+import 'package:simf_data_pkg/src/config/simf_data_config.dart';
 
 /// Attaches the SIMF standard request headers to every request
 /// (SIMF-API-001 §5).

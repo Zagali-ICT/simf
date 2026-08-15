@@ -17,7 +17,9 @@ class RegistrationSuccessMark extends StatelessWidget {
         decoration: BoxDecoration(
           color: SimfTokens.navyDeep,
           shape: BoxShape.circle,
-          border: Border.all(color: SimfTokens.statusAccepted, width: SimfTokens.registrationSuccessMarkWidthSm),
+          border: Border.all(
+              color: SimfTokens.statusAccepted,
+              width: SimfTokens.registrationSuccessMarkWidthSm,),
         ),
         child: const Icon(
           Icons.check_rounded,
