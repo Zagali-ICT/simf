@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Hosting;
+﻿using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Time.Testing;
 using SIMF.Application.Email;
 using SIMF.Infrastructure.Persistence;
@@ -38,6 +39,24 @@ public class SimfApiFactory : WebApplicationFactory<Program>
     /// <summary>Guards <see cref="EnsureDatabaseCreated"/> so the migrate-and-seed
     /// runs once per factory rather than once per test. See the remarks there.</summary>
     private bool _databaseReady;
+
+    // ConnectRetryCount=0 because these databases DO NOT EXIST YET when the host
+    // boots. SqlClient's default resiliency (ConnectRetryCount = 1,
+    // ConnectRetryInterval = 10s) turns an open against a missing database into a
+    // 10-SECOND stall before it reports the failure - measured on this LocalDB at
+    // 10,020 ms with the default against 2-21 ms without it. Test host only; the
+    // production connection strings keep their resiliency.
+    private string IdentityConnectionString =>
+        $"Server=(localdb)\\MSSQLLocalDB;Database={_identityDatabaseName};"
+        + "Trusted_Connection=True;TrustServerCertificate=True;ConnectRetryCount=0";
+
+    /// <summary>This factory's own App database name, for
+    /// <see cref="FactoryIsolationTests"/>.</summary>
+    internal string AppDatabaseName => _appDatabaseName;
+
+    private string AppConnectionString =>
+        $"Server=(localdb)\\MSSQLLocalDB;Database={_appDatabaseName};"
+        + "Trusted_Connection=True;TrustServerCertificate=True;ConnectRetryCount=0";
 
     public FakeEmailSender Email { get; } = new();
 
@@ -79,10 +98,58 @@ public class SimfApiFactory : WebApplicationFactory<Program>
     /// safe. The shape satisfies the Identity password policy (upper, lower,
     /// digit, non-alphanumeric).
     /// </summary>
-    private static readonly string DemoSeedPassword =
-        Environment.GetEnvironmentVariable("SIMF_TEST_DEMO_PASSWORD") is { Length: > 0 } supplied
-            ? supplied
-            : $"TestOnly!{Guid.NewGuid():N}Aa1";
+    private static readonly string DemoSeedPassword = ResolveDemoSeedPassword();
+
+    /// <summary>
+    /// A generated demo password that actually satisfies the product's password
+    /// policy, checked with the product's own rules.
+    /// </summary>
+    /// <remarks>
+    /// This used to be `$"TestOnly!{Guid.NewGuid():N}Aa1"` and assumed the shape
+    /// was enough. It was not: a 32-character hex GUID regularly contains a
+    /// sequential run such as "abc", "123" or "234", or three repeated
+    /// characters - both of which <see cref="PasswordPolicy"/> rejects. When the
+    /// draw was unlucky, EVERY demo @simf.local account failed to seed with
+    /// "Password must not contain sequential characters", and the only visible
+    /// symptom was three IdentitySeederTests and two
+    /// DemoOperationalConfigSeederTests failing with "Value is null" somewhere
+    /// far away. It looked exactly like suite interference - it reproduced only
+    /// in full runs and never when a class was re-run alone - because a re-run is
+    /// a NEW PROCESS, and a new process draws a new GUID.
+    ///
+    /// Validating against PasswordPolicy rather than hand-rolling a "safe"
+    /// alphabet keeps this honest: if the product tightens its rules, this
+    /// follows, instead of silently generating rejects again.
+    /// </remarks>
+    private static string ResolveDemoSeedPassword()
+    {
+        if (Environment.GetEnvironmentVariable("SIMF_TEST_DEMO_PASSWORD")
+            is { Length: > 0 } supplied)
+        {
+            return supplied;
+        }
+
+        for (var attempt = 0; attempt < 100; attempt++)
+        {
+            var candidate = $"TestOnly!{Guid.NewGuid():N}Aa1";
+            if (!PasswordPolicy.HasRepeatRun(candidate)
+                && !PasswordPolicy.HasSequentialRun(candidate)
+                && !PasswordPolicy.IsCommon(candidate)
+                && PasswordPolicy.HasUppercase(candidate)
+                && PasswordPolicy.HasLowercase(candidate)
+                && PasswordPolicy.HasDigit(candidate)
+                && PasswordPolicy.HasSpecial(candidate))
+            {
+                return candidate;
+            }
+        }
+
+        throw new InvalidOperationException(
+            "Could not generate a demo seed password that satisfies PasswordPolicy "
+            + "in 100 attempts. Either the policy changed shape or the generator "
+            + "needs rewriting - do not paper over this, the demo accounts silently "
+            + "fail to seed when the password is rejected.");
+    }
 
     public SimfApiFactory()
     {
@@ -95,13 +162,9 @@ public class SimfApiFactory : WebApplicationFactory<Program>
         // migrated it pays that, 253 times over. Test host only; the production
         // connection strings keep their resiliency.
         Environment.SetEnvironmentVariable(
-            "ConnectionStrings__SimfIdentityDb",
-            $"Server=(localdb)\\MSSQLLocalDB;Database={_identityDatabaseName};" +
-            "Trusted_Connection=True;TrustServerCertificate=True;ConnectRetryCount=0");
+            "ConnectionStrings__SimfIdentityDb", IdentityConnectionString);
         Environment.SetEnvironmentVariable(
-            "ConnectionStrings__SimfAppDb",
-            $"Server=(localdb)\\MSSQLLocalDB;Database={_appDatabaseName};" +
-            "Trusted_Connection=True;TrustServerCertificate=True;ConnectRetryCount=0");
+            "ConnectionStrings__SimfAppDb", AppConnectionString);
         // The super-admin seed settings, pinned so the suite is hermetic.
         //
         // Each is set TWICE, unprefixed and `SIMF_API_`-prefixed, because
@@ -218,6 +281,20 @@ public class SimfApiFactory : WebApplicationFactory<Program>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
+
+        // THE CONNECTION STRINGS ARE PER-FACTORY, NOT PROCESS-WIDE.
+        //
+        // They are also set as environment variables in the constructor, because
+        // AddInfrastructure reads configuration eagerly. But an environment
+        // variable is process-global while WebApplicationFactory builds its host
+        // LAZILY, so whichever factory was constructed LAST wins for any host
+        // that has not been built yet - and that host then opens a database
+        // belonging to another factory, which that factory's Dispose deletes.
+        // UseSetting writes into this builder's own configuration, so these two
+        // values cannot be overwritten by another factory's constructor.
+        builder.UseSetting(
+            "ConnectionStrings:SimfIdentityDb", IdentityConnectionString);
+        builder.UseSetting("ConnectionStrings:SimfAppDb", AppConnectionString);
 
         builder.ConfigureServices(services =>
         {
