@@ -16,7 +16,19 @@ internal sealed class InvitationConfiguration : IEntityTypeConfiguration<Invitat
 {
     public void Configure(EntityTypeBuilder<Invitation> builder)
     {
-        builder.ToTable("Invitations");
+        // RespondedAt is the response stamp, so it is set exactly when the
+        // invitation has been responded to: null while Pending, non-null once
+        // settled. AdminInvitationService is the only writer and already keeps
+        // the pair in step (create fixes Pending with no stamp; the update
+        // stamps every transition off Pending and refuses to move back), so
+        // this puts that rule on the table as well — the same state-pin shape
+        // as CK_GateAssignments_RevocationPin.
+        //
+        // State is persisted as its int value, and Pending is 0.
+        builder.ToTable("Invitations", table => table.HasCheckConstraint(
+            "CK_Invitations_ResponsePin",
+            "([State] = 0 AND [RespondedAt] IS NULL) OR "
+            + "([State] <> 0 AND [RespondedAt] IS NOT NULL)"));
         builder.HasKey(i => i.Id);
 
         builder.Property(i => i.Notes).HasMaxLength(1000);

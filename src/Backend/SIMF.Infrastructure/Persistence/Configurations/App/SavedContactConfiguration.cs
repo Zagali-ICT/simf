@@ -13,7 +13,11 @@ internal sealed class SavedContactConfiguration : IEntityTypeConfiguration<Saved
 {
     public void Configure(EntityTypeBuilder<SavedContact> builder)
     {
-        builder.ToTable("SavedContacts");
+        // A visitor cannot save their own card. VisitorShareService.SaveAsync
+        // rejects it with a bilingual 400, and this is the backstop behind that
+        // check so no other writer can put the row in.
+        builder.ToTable("SavedContacts", table => table.HasCheckConstraint(
+            "CK_SavedContacts_NotSelf", "[OwnerUserId] <> [SubjectUserId]"));
         builder.HasKey(saved => saved.Id);
         builder.Property(saved => saved.Note).HasMaxLength(512);
         // One ACTIVE saved contact per (owner, subject): the

@@ -12,9 +12,16 @@ internal sealed class SpeakerAvailabilityWindowConfiguration
 {
     public void Configure(EntityTypeBuilder<SpeakerAvailabilityWindow> builder)
     {
-        // A window must end after it starts.
-        builder.ToTable("SpeakerAvailabilityWindows", table => table.HasCheckConstraint(
-            "CK_SpeakerAvailabilityWindows_TimeWindow", "[End] > [Start]"));
+        // A window must end after it starts, and divides into slots of the
+        // 5..480 minute length the service validates.
+        builder.ToTable("SpeakerAvailabilityWindows", table =>
+        {
+            table.HasCheckConstraint(
+                "CK_SpeakerAvailabilityWindows_TimeWindow", "[End] > [Start]");
+            table.HasCheckConstraint(
+                "CK_SpeakerAvailabilityWindows_SlotMinutes",
+                "[SlotMinutes] >= 5 AND [SlotMinutes] <= 480");
+        });
         builder.HasKey(w => w.Id);
 
         builder.HasOne(w => w.Speaker)

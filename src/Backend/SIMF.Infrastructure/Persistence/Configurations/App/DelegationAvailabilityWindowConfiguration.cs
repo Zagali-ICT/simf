@@ -15,8 +15,16 @@ internal sealed class DelegationAvailabilityWindowConfiguration
 {
     public void Configure(EntityTypeBuilder<DelegationAvailabilityWindow> builder)
     {
-        builder.ToTable("DelegationAvailabilityWindows", table => table.HasCheckConstraint(
-            "CK_DelegationAvailabilityWindows_TimeWindow", "[End] > [Start]"));
+        // A window must end after it starts, and divides into slots of the
+        // 5..480 minute length the service validates.
+        builder.ToTable("DelegationAvailabilityWindows", table =>
+        {
+            table.HasCheckConstraint(
+                "CK_DelegationAvailabilityWindows_TimeWindow", "[End] > [Start]");
+            table.HasCheckConstraint(
+                "CK_DelegationAvailabilityWindows_SlotMinutes",
+                "[SlotMinutes] >= 5 AND [SlotMinutes] <= 480");
+        });
         builder.HasKey(w => w.Id);
 
         builder.HasOne(w => w.Country)

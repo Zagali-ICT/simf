@@ -12,7 +12,16 @@ internal sealed class ExhibitorConfiguration : IEntityTypeConfiguration<Exhibito
 {
     public void Configure(EntityTypeBuilder<Exhibitor> builder)
     {
-        builder.ToTable("Exhibitors");
+        // Coordinates are a pair or nothing, and each half has a real range —
+        // the rule AdminExhibitorService already enforces on write, now on the
+        // table too. Each branch anchors on IS NULL / IS NOT NULL because a bare
+        // comparison against a null column yields UNKNOWN, which a CHECK passes.
+        builder.ToTable("Exhibitors", table => table.HasCheckConstraint(
+            "CK_Exhibitors_Coordinates",
+            "([Latitude] IS NULL AND [Longitude] IS NULL) OR "
+            + "([Latitude] IS NOT NULL AND [Longitude] IS NOT NULL "
+            + "AND [Latitude] >= -90 AND [Latitude] <= 90 "
+            + "AND [Longitude] >= -180 AND [Longitude] <= 180)"));
         builder.HasKey(exhibitor => exhibitor.Id);
 
         builder.Property(exhibitor => exhibitor.Name).HasMaxLength(256).IsRequired();

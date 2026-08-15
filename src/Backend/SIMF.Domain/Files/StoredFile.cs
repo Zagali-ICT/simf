@@ -62,18 +62,22 @@ public sealed class StoredFile : BaseAuditEntity
     // Upload-only, all null for an external link. ContentType is server-detected
     // from the bytes, not the client's declaration; SizeBytes and the hex Sha256
     // describe the PLAINTEXT, so an encrypted blob on disk is larger and hashes
-    // differently. The hash is re-checked on private download and by the sweep.
+    // differently. The hash is re-checked on a private download, and only for a
+    // file whose tier is Confidential or above; nothing else re-reads it.
     public string? ContentType { get; set; }
     public long? SizeBytes { get; set; }
     public string? Sha256 { get; set; }
 
     // Retention and disposal. IsDeletable false holds the file against deletion
     // while a legal hold is in force, and the delete endpoint answers 409.
-    // RetainUntil comes from the service's retention period at write time and
-    // drives the secure-erase sweep; null means keep indefinitely, not expired.
+    // RetainUntil is computed from the service's retention period at write time
+    // and null means keep indefinitely. It records the policy, nothing more: no
+    // background sweep reads it today, so a file past its retention date is not
+    // erased on its own and has to be force-deleted by hand.
     // SecureDestroyed marks the bytes going for good, by crypto-shredding the key
     // or overwriting the plaintext, and is what separates a securely erased row
-    // from a merely soft-deleted one.
+    // from a merely soft-deleted one. It is stamped only by the force-delete
+    // (PDPL right-to-erasure) path.
     public bool IsDeletable { get; set; } = true;
     public DateTime? RetainUntil { get; set; }
     public DateTime? SecureDestroyed { get; set; }

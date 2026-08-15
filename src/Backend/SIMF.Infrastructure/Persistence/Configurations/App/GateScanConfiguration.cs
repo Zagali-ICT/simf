@@ -5,7 +5,7 @@ using SIMF.Domain.AccessControl;
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
 /// <summary>
-/// Append-only audit log of every scan. Five non-clustered indexes ride the
+/// Append-only audit log of every scan. Six non-clustered indexes ride the
 /// clustered bigint IDENTITY PK. Opts out of <c>RowAudit</c> because it is
 /// itself an audit log: it already carries the scanning user, the correlation id,
 /// the IP and the user agent, so auditing it would double the write volume for
@@ -16,13 +16,39 @@ internal sealed class GateScanConfiguration : IEntityTypeConfiguration<GateScan>
 {
     public void Configure(EntityTypeBuilder<GateScan> builder)
     {
-        // Pin the Outcome↔DenialReason invariant at the DB:
-        // a Denied scan (Outcome=1) always carries a reason code, an Allowed scan
-        // (Outcome=0) never does. Outcome/DenialReasonCode are stored as int.
-        builder.ToTable("GateScans", table => table.HasCheckConstraint(
-            "CK_GateScans_DenialPin",
-            "([Outcome] = 1 AND [DenialReasonCode] IS NOT NULL) OR " +
-            "([Outcome] = 0 AND [DenialReasonCode] IS NULL)"));
+        // Every enum on this table is stored as int, so the database on its own
+        // would accept any 32-bit number. On an append-only log a garbage value
+        // can never be corrected afterwards, so each enum column is pinned to its
+        // declared range. The bounds are written as literals, matching the house
+        // style (CK_VenueMapNodes_KindArc, CK_RatingAnswers_Stars); appending a
+        // new enum member means widening the matching bound here.
+        builder.ToTable("GateScans", table =>
+        {
+            // A Denied scan (Outcome=1) always carries a reason code, an Allowed
+            // scan (Outcome=0) never does. The two branches between them also
+            // confine Outcome to {0,1}, so ScanOutcome needs no separate range
+            // check.
+            table.HasCheckConstraint(
+                "CK_GateScans_DenialPin",
+                "([Outcome] = 1 AND [DenialReasonCode] IS NOT NULL) OR " +
+                "([Outcome] = 0 AND [DenialReasonCode] IS NULL)");
+
+            // ScanDirection: CheckIn=0 .. CheckOut=1.
+            table.HasCheckConstraint(
+                "CK_GateScans_DirectionRange", "[Direction] BETWEEN 0 AND 1");
+
+            // ScanSource: Simulator=0 .. Kiosk=2. Note that 0 is also what an
+            // unset int lands on, so this check cannot catch a forgotten write --
+            // it only keeps an out-of-range value out of the log.
+            table.HasCheckConstraint(
+                "CK_GateScans_SourceRange", "[Source] BETWEEN 0 AND 2");
+
+            // DenialReasonCode: QrUnknown=0 .. BookingRequiredMissing=8, null on
+            // an allowed scan (which CK_GateScans_DenialPin already requires).
+            table.HasCheckConstraint(
+                "CK_GateScans_DenialReasonRange",
+                "[DenialReasonCode] IS NULL OR [DenialReasonCode] BETWEEN 0 AND 8");
+        });
         builder.HasKey(scan => scan.Id);
         builder.Property(scan => scan.Id).ValueGeneratedOnAdd();
 

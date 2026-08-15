@@ -13,7 +13,17 @@ internal sealed class ContactInquiryConfiguration
 {
     public void Configure(EntityTypeBuilder<ContactInquiry> builder)
     {
-        builder.ToTable("ContactInquiries");
+        // Handling is one fact spread over three columns: the flag, the stamp
+        // and the actor. ContactInquiryService is the only writer and moves all
+        // three in one statement (created unhandled with neither, then set or
+        // cleared together), so this puts that rule on the table too — the same
+        // state-pin shape as CK_GateAssignments_RevocationPin. It is also what
+        // keeps IsHandled honest against HandledAt while the redundant flag
+        // still exists.
+        builder.ToTable("ContactInquiries", table => table.HasCheckConstraint(
+            "CK_ContactInquiries_HandledPin",
+            "([IsHandled] = 0 AND [HandledAt] IS NULL AND [HandledByUserId] IS NULL) OR "
+            + "([IsHandled] = 1 AND [HandledAt] IS NOT NULL AND [HandledByUserId] IS NOT NULL)"));
         builder.HasKey(c => c.Id);
 
         builder.Property(c => c.Name).HasMaxLength(120).IsRequired();

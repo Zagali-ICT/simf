@@ -17,12 +17,18 @@ internal sealed class SessionConfiguration : IEntityTypeConfiguration<Session>
         // A session must end after it starts.
         // The arrival-grace override is null (inherit the hall) or within
         // the one shared bound; same rule as CK_Halls_ArrivalGrace.
+        // The capacity override is null (inherit the hall) or zero-or-positive,
+        // mirroring AdminSessionService.ValidateCapacity and CK_Halls_Capacity —
+        // zero is a real value there too, so this is >= 0 and not > 0.
         builder.ToTable("Sessions", table =>
         {
             table.HasCheckConstraint("CK_Sessions_TimeWindow", "[End] > [Start]");
             table.HasCheckConstraint(
                 "CK_Sessions_ArrivalGrace",
                 $"[ArrivalGraceMinutesOverride] IS NULL OR ([ArrivalGraceMinutesOverride] >= 0 AND [ArrivalGraceMinutesOverride] <= {WalkInModeOptions.MaxArrivalGraceMinutes})");
+            table.HasCheckConstraint(
+                "CK_Sessions_CapacityOverride",
+                "[CapacityOverride] IS NULL OR [CapacityOverride] >= 0");
         });
         builder.HasKey(s => s.Id);
 
@@ -36,9 +42,11 @@ internal sealed class SessionConfiguration : IEntityTypeConfiguration<Session>
         builder.Property(s => s.Language).HasMaxLength(64);
         builder.Property(s => s.LanguageArabic).HasMaxLength(64);
 
-        // Recording metadata (the bytes live out-of-row on disk).
+        // Recording metadata. The bytes live in the one file store, which the
+        // key below points at; these columns hold only the name, media type and
+        // size the admin views show without a join.
         // The recording's file, in the one store. Restrict, matching Hall and
-        // Category above: deleting a file must never delete the session.
+        // Category below: deleting a file must never delete the session.
         builder.HasIndex(s => s.RecordingFileId);
         builder.HasOne<StoredFile>()
             .WithMany()
@@ -76,6 +84,12 @@ internal sealed class SessionConfiguration : IEntityTypeConfiguration<Session>
         builder.Property(s => s.LiveNotice).HasMaxLength(512);
         builder.Property(s => s.LiveNoticeArabic).HasMaxLength(512);
 
+        // Deliberately UNFILTERED, unlike the ProgrammeDay and SessionCategory
+        // uniqueness indexes, which exclude soft-deleted rows. Code is the
+        // session's public URL segment, so a retired code stays reserved: a new
+        // session must not inherit the address an old one's links still point at.
+        // AdminSessionService checks the same way — Code == code with no IsActive
+        // filter — so the index and the service agree.
         builder.HasIndex(s => s.Code).IsUnique();
 
         // Real DB FK to Hall — same context. Restrict matches the
@@ -133,19 +147,21 @@ internal sealed class SessionSummaryConfiguration
         builder.Property(s => s.FullTextArabic).HasMaxLength(8000).IsRequired();
         builder.Property(s => s.AiModel).HasMaxLength(64);
 
-        // Item #35 (2026-07-20) — the optional team summary-video URL. 1024
-        // matches the Session.LiveStreamUrl SSOT (both hold the same kind of
-        // feed URL, validated by the same LiveStreamUrlPolicy).
+        // The optional team summary-video feed. It was a URL column with its own
+        // 1024 length cap; it is a StoredFile key now, exactly like the session's
+        // own live feed, so the key replaces the cap and the URL's bound lives on
+        // StoredFile.ExternalUrl. Restrict for the same reason the session's file
+        // keys carry it: deleting a file must never delete the summary.
         builder.HasIndex(s => s.SummaryVideoFileId);
         builder.HasOne<StoredFile>()
             .WithMany()
             .HasForeignKey(s => s.SummaryVideoFileId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Slice D (2026-07-19) — the pristine AI-draft snapshot mirrors the
-        // Arabic full-text it is captured from (same 8000 SSOT). Nullable: only
-        // AI-generated summaries carry it. AiDraftGeneratedAt is a datetimeoffset
-        // (no length config needed).
+        // The pristine AI-draft snapshot mirrors the Arabic full-text it is
+        // captured from (same 8000 SSOT). Nullable: only AI-generated summaries
+        // carry it. Its companion AiDraftGeneratedAt is a nullable DateTime and
+        // needs no configuration.
         builder.Property(s => s.AiDraftFullTextArabic).HasMaxLength(8000);
 
         // 1:1 — exactly one summary per session, cascade with the session.

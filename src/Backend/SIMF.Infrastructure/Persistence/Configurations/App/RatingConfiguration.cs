@@ -106,10 +106,19 @@ internal sealed class RatingResponseConfiguration : IEntityTypeConfiguration<Rat
             .HasForeignKey(a => a.RatingResponseId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        // One submission per user per (type, target). TargetId is Guid.Empty for
-        // global types so the composite index stays uniform (SQL Server treats
-        // NULLs as distinct, which would let a user rate "App" many times).
+        // One submission per user per (type, target). TargetId is Guid.Empty on a
+        // global type, which keeps the column non-nullable and every row in this
+        // index carrying a value. It is NOT what makes the index bite: SQL Server
+        // treats NULLs as equal here, so a nullable target would have blocked a
+        // second "App" submission just the same.
         builder.HasIndex(r => new { r.UserId, r.RatingTypeId, r.TargetId }).IsUnique();
+
+        // The sessions report averages the overall score per session with a
+        // correlated WHERE TargetId = @session AND IsActive, once per row on the
+        // page (ReportingService.Sessions). TargetId sits third in the unique
+        // index above, which cannot seek on it, so without this the report scans
+        // RatingResponses once per session.
+        builder.HasIndex(r => new { r.TargetId, r.IsActive });
     }
 }
 

@@ -50,10 +50,13 @@ public sealed class DevicePositionPing
     /// still orders correctly in the route projection.</summary>
     public DateTime CapturedAt { get; set; }
 
-    /// <summary>WGS-84 decimal degrees.</summary>
+    /// <summary>WGS-84 decimal degrees, -90..90, enforced by
+    /// CK_DevicePositionPings_Coordinates as well as by the upload
+    /// validation.</summary>
     public double Latitude { get; set; }
 
-    /// <summary>WGS-84 decimal degrees.</summary>
+    /// <summary>WGS-84 decimal degrees, -180..180, under the same check
+    /// constraint as <see cref="Latitude"/>.</summary>
     public double Longitude { get; set; }
 
     /// <summary>The device's own reported horizontal accuracy in metres, when it

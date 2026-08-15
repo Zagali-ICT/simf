@@ -16,7 +16,8 @@ public sealed class HallAllocation
 {
     public Guid Id { get; set; } = Guid.NewGuid();
 
-    /// <summary>Cascade-deleted with the hall.</summary>
+    /// <summary>A real foreign key with delete restricted, so a hall holding
+    /// allocations cannot be hard-deleted under them.</summary>
     public Guid HallId { get; set; }
     public Hall? Hall { get; set; }
 

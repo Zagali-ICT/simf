@@ -11,7 +11,8 @@ public sealed class MeetingTable
 {
     public Guid Id { get; set; } = Guid.NewGuid();
 
-    /// <summary>Cascade-deleted with the hall.</summary>
+    /// <summary>A real foreign key with delete restricted: halls are soft-deleted,
+    /// never hard-deleted out from under a table.</summary>
     public Guid HallId { get; set; }
     public Hall? Hall { get; set; }
 

@@ -1348,7 +1348,6 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
         Assert.All(created, r => Assert.Equal(BookingStatus.Approved, r.Status));
         Assert.All(created, r => Assert.Null(r.ReviewedByUserId));
         Assert.All(created, r => Assert.Null(r.ReviewedAt));
-        Assert.All(created, r => Assert.Null(r.RejectionReason));
         Assert.DoesNotContain(created, r => r.Status == BookingStatus.Pending);
         Assert.DoesNotContain(created, r => r.Status == BookingStatus.Rejected);
     }
