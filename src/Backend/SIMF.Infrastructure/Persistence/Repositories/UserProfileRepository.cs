@@ -18,7 +18,13 @@ internal sealed class UserProfileRepository(
     public Task<UserProfile?> GetWithInterestsAsync(
         Guid userId, bool tracked, CancellationToken cancellationToken = default)
     {
-        IQueryable<UserProfile> query = appDbContext.UserProfiles.Include(p => p.Interests);
+        // IdentityDocuments is Included and NOT optional. The upsert syncs the
+        // collection in place, and an unloaded navigation looks EMPTY — so a user
+        // re-saving their own profile would insert a second copy of every document
+        // and trip the unique digest index on their own number.
+        IQueryable<UserProfile> query = appDbContext.UserProfiles
+            .Include(p => p.Interests)
+            .Include(p => p.IdentityDocuments);
         if (!tracked)
         {
             query = query.AsNoTracking();
@@ -38,23 +44,39 @@ internal sealed class UserProfileRepository(
 
     public void Add(UserProfile profile) => appDbContext.UserProfiles.Add(profile);
 
-    public Task<bool> AnyOtherProfileWithIdentityHashAsync(
+    public async Task<bool> AnyOtherProfileWithIdentityHashAsync(
         Guid excludeUserId, string? nationalIdHash, string? iqamaNumberHash,
         string? passportNumberHash, CancellationToken cancellationToken = default)
     {
-        // The validator forces IsSaudi to partition the identifiers, so at most
-        // one hash is non-null per request; a null hash never matches a stored
-        // NULL because the equality is on the non-null value only.
+        // A null hash never matches a stored NULL, because every equality below is
+        // on the non-null value only.
         if (nationalIdHash is null && iqamaNumberHash is null && passportNumberHash is null)
         {
-            return Task.FromResult(false);
+            return false;
         }
-        return appDbContext.UserProfiles
+        var onSupersededColumns = await appDbContext.UserProfiles
             .AsNoTracking()
             .AnyAsync(p => p.UserId != excludeUserId
                 && ((nationalIdHash != null && p.NationalIdHash == nationalIdHash)
                     || (iqamaNumberHash != null && p.IqamaNumberHash == iqamaNumberHash)
                     || (passportNumberHash != null && p.PassportNumberHash == passportNumberHash)),
+                cancellationToken);
+        if (onSupersededColumns) { return true; }
+
+        // The same question asked of the child table, and it is a STRICTLY WIDER
+        // one: every supplied digest is compared against every stored document
+        // whatever its kind, so somebody who registered on a passport and returns
+        // with an Iqama carrying the same number is caught here. The three columns
+        // above can only ever compare like with like, which is why they miss it.
+        var candidateHashes = new[] { nationalIdHash, iqamaNumberHash, passportNumberHash }
+            .Where(hash => hash is not null)
+            .Select(hash => hash!)
+            .ToList();
+        return await appDbContext.UserProfiles
+            .AsNoTracking()
+            .Where(p => p.UserId != excludeUserId)
+            .SelectMany(p => p.IdentityDocuments)
+            .AnyAsync(document => candidateHashes.Contains(document.NumberHash),
                 cancellationToken);
     }
 
@@ -212,10 +234,15 @@ internal sealed class UserProfileRepository(
         {
             await appDbContext.SaveChangesAsync(cancellationToken);
         }
+        // The fourth name is the child table's single digest index, and it is the
+        // one that now fires on a CROSS-KIND duplicate. Without it that race would
+        // surface as an uncaught 500 instead of the 409 the same duplicate gets on
+        // every other path.
         catch (DbUpdateException ex) when (ex.ViolatesAnyIndex(
             "IX_UserProfiles_NationalIdHash",
             "IX_UserProfiles_IqamaNumberHash",
-            "IX_UserProfiles_PassportNumberHash"))
+            "IX_UserProfiles_PassportNumberHash",
+            Configurations.App.ProfileIdentityDocumentConfiguration.NumberHashIndexName))
         {
             throw ApiException.DuplicateIdentity();
         }

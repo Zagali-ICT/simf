@@ -280,6 +280,14 @@ internal sealed class UserProfileService(
         profile.IqamaNumberHash = pii.BlindIndex(iqamaNumber);
         profile.PassportNumber = passportNumber;
         profile.PassportNumberHash = pii.BlindIndex(passportNumber);
+        // The same three numbers, written to the storage that supersedes those six
+        // columns: one row per document, one unique digest index over all of them,
+        // which is what makes a CROSS-KIND duplicate visible at all. Written in
+        // exact lockstep with the columns, because readers outside this change are
+        // still projecting them; the child rows are what the response is built
+        // from below.
+        ProfileIdentityStorage.SyncDocuments(
+            profile, pii, nationalId, iqamaNumber, passportNumber);
 
         // H-1 — reject an identifier already registered on ANOTHER user's profile
         // (409). Self-excluding (UserId != actorUserId) so a user re-saving their
@@ -945,9 +953,19 @@ internal sealed class UserProfileService(
             DateOfBirth = profile.DateOfBirth,
             PlaceOfBirth = profile.PlaceOfBirth,
             IsSaudi = profile.IsSaudi,
-            NationalId = profile.NationalId,
-            IqamaNumber = profile.IqamaNumber,
-            PassportNumber = profile.PassportNumber,
+            // The three shipped wire keys, answered from the child rows that hold
+            // them, with the superseded column as the fallback. The fallback is not
+            // belt-and-braces: rows written by paths outside this change (the
+            // identity seeder, and anything already in the database) have the
+            // columns and no child rows, and reading only the child would blank a
+            // key that has always been populated — a silent break of the deployed
+            // app rather than a compile error.
+            NationalId = ProfileIdentityStorage.DocumentNumber(
+                profile, IdentityDocumentKind.NationalId) ?? profile.NationalId,
+            IqamaNumber = ProfileIdentityStorage.DocumentNumber(
+                profile, IdentityDocumentKind.Iqama) ?? profile.IqamaNumber,
+            PassportNumber = ProfileIdentityStorage.DocumentNumber(
+                profile, IdentityDocumentKind.Passport) ?? profile.PassportNumber,
             SaudiMobile = profile.SaudiMobile,
             InternationalMobile = profile.InternationalMobile,
             PlateNumber = profile.PlateNumber,

@@ -680,6 +680,13 @@ internal sealed partial class AdminAccountService(
         {
             profile.Id = presetProfileId;
         }
+        // The same three numbers, written to the storage that supersedes the six
+        // columns above: one row per document, one unique digest index over all of
+        // them, which is what makes a CROSS-KIND duplicate visible at all. The
+        // already-normalised values are reused rather than re-derived, so the rows,
+        // the columns and the soft guard all key off the same strings.
+        ProfileIdentityStorage.SyncDocuments(
+            profile, pii, nationalId, iqamaNumber, passportNumber);
         appDbContext.UserProfiles.Add(profile);
 
         // No QR at create — the account is PendingApproval; the approve
@@ -694,10 +701,15 @@ internal sealed partial class AdminAccountService(
         {
             await appDbContext.SaveChangesAsync(cancellationToken);
         }
+        // The fourth name is the child table's single digest index, the one that
+        // now fires on a CROSS-KIND duplicate. Deliberately NOT added to the QrId
+        // catch below, which answers a different conflict with a different code.
         catch (DbUpdateException ex) when (ex.ViolatesAnyIndex(
             "IX_UserProfiles_NationalIdHash",
             "IX_UserProfiles_IqamaNumberHash",
-            "IX_UserProfiles_PassportNumberHash"))
+            "IX_UserProfiles_PassportNumberHash",
+            Persistence.Configurations.App.ProfileIdentityDocumentConfiguration
+                .NumberHashIndexName))
         {
             await AuditFailure(
                 AuditEvents.AdminWalkInRegisterFailed, actorUserId, email, null,

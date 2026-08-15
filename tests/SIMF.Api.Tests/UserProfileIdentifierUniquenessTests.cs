@@ -50,6 +50,56 @@ public sealed class UserProfileIdentifierUniquenessTests : IClassFixture<SimfApi
     }
 
     [Fact]
+    public async Task Two_profiles_presenting_one_number_under_DIFFERENT_kinds_violate_the_digest_index()
+    {
+        // THE case the three per-kind indexes on UserProfile cannot see, and the
+        // reason the documents moved to a child table with ONE index over every
+        // digest: a person registers on a passport and comes back with an Iqama
+        // carrying the same number. The two digests land in different columns up
+        // there, so neither index ever compares them; here they land in the same
+        // column and collide.
+        //
+        // Driven at the DbContext rather than through the API on purpose. The
+        // validator's document shapes are pairwise disjoint (national id 10 digits
+        // from 1, Iqama 10 digits from 2, passport 6-9 alphanumerics), so no single
+        // value can be POSTed as two different kinds — the collision is reachable
+        // only below the validator, which is exactly where the index has to hold.
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var sharedHash = "xkind-" + Guid.NewGuid().ToString("N");
+
+        var onPassport = NewProfile();
+        onPassport.IdentityDocuments.Add(NewDocument(IdentityDocumentKind.Passport, sharedHash));
+        db.UserProfiles.Add(onPassport);
+        await db.SaveChangesAsync();
+
+        var onIqama = NewProfile();
+        onIqama.IdentityDocuments.Add(NewDocument(IdentityDocumentKind.Iqama, sharedHash));
+        db.UserProfiles.Add(onIqama);
+        await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync());
+    }
+
+    [Fact]
+    public async Task Two_profiles_with_different_document_digests_coexist()
+    {
+        // The other half of the rule: the index must not reject two people who
+        // simply hold documents of the same kind with different numbers.
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+
+        var first = NewProfile();
+        first.IdentityDocuments.Add(NewDocument(
+            IdentityDocumentKind.Passport, "pp-" + Guid.NewGuid().ToString("N")));
+        var second = NewProfile();
+        second.IdentityDocuments.Add(NewDocument(
+            IdentityDocumentKind.Passport, "pp-" + Guid.NewGuid().ToString("N")));
+
+        db.UserProfiles.Add(first);
+        db.UserProfiles.Add(second);
+        await db.SaveChangesAsync();
+    }
+
+    [Fact]
     public async Task Two_profiles_with_null_hashes_coexist()
     {
         using var scope = _factory.Services.CreateScope();
@@ -76,6 +126,21 @@ public sealed class UserProfileIdentifierUniquenessTests : IClassFixture<SimfApi
             NationalIdHash = nationalIdHash,
             IqamaNumberHash = iqamaNumberHash,
             PassportNumberHash = passportNumberHash,
+            CreatedAt = SimfClock.Now,
+        };
+
+    /// <summary>A child document row. Id and ProfileId are left UNSET
+    /// deliberately: a populated key reads to EF's change tracker as "this row
+    /// already exists", which turns the insert into an UPDATE that matches nothing
+    /// and kills the save with a concurrency exception. Relationship fixup fills
+    /// ProfileId from the parent.</summary>
+    private static ProfileIdentityDocument NewDocument(
+        IdentityDocumentKind kind, string numberHash) =>
+        new()
+        {
+            Kind = kind,
+            Number = "number-" + Guid.NewGuid().ToString("N"),
+            NumberHash = numberHash,
             CreatedAt = SimfClock.Now,
         };
 }
