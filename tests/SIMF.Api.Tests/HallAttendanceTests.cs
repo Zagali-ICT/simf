@@ -443,6 +443,13 @@ public sealed class HallAttendanceTests : IClassFixture<SimfApiFactory>
                 UserType = UserType.Visitor,
             };
             await users.CreateAsync(user, AuthFlow.Password);
+
+            // Admission lives on the PROFILE, not the account, so an approved
+            // SimfUser with no attendee record is refused at every hall endpoint
+            // with a 403 - which reads as a permission bug rather than a missing
+            // profile. Anything that arrives at a hall needs the record.
+            var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            await TestAttendeeProfiles.EnsureForAccountAsync(appDb, user.Id);
         }
         var sign = await _client.PostAsJsonAsync(
             "/api/v1/app/auth/sign-in",
