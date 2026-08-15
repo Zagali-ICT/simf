@@ -16,18 +16,17 @@ namespace SIMF.Domain.Organisations;
 /// </summary>
 public class Organisation: BaseAuditEntity
 {
-    /// <summary>English organisation name (≤ 256 chars). Optional.</summary>
+    /// <summary>English organisation name (≤ 150 chars). Optional.</summary>
     public string? Name { get; set; }
-    
-    /// <summary>Arabic organisation name (1–256 chars). Required — the
+
+    /// <summary>Arabic organisation name (1–150 chars). Required — the
     /// primary display name in the bilingual lookup.</summary>
     public string NameArabic { get; set; } = string.Empty;
 
-    
-    /// <summary>Commercial registration number / سجل تجاري (≤ 32 chars).
+    /// <summary>Commercial registration number / سجل تجاري (≤ 700 chars).
     /// Optional, but unique across organisations when present so a re-import
     /// updates the matching row instead of duplicating it.</summary>
-    public string? CommercialRegistration { get; set; }//long 700 CR700Id
+    public string? CommercialRegistration { get; set; }
 
     /// <summary>Business sector / activity (≤ 128 chars), e.g.
     /// "Defense Systems". Optional.</summary>

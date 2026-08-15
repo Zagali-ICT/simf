@@ -41,7 +41,12 @@ public sealed class SessionQuestion
     /// <summary>Vestigial: written false at insert and never updated again.
     /// Visibility became <see cref="Status"/> being <see cref="QuestionStatus.Hidden"/>,
     /// which is what both moderation services set, and the hidden marker on a desk
-    /// row is derived from the status at projection time.</summary>
+    /// row is derived from the status at projection time.
+    ///
+    /// <para>The engagement report is the one reader left, and it counts this
+    /// column instead of the status -- so its "hidden" KPI and its Excel column
+    /// read false for every row ever written. Deriving both from the status is
+    /// what lets this column go.</para></summary>
     public bool IsHidden { get; set; }
 
     // Pushed means the moderator handed the question to the speaker to be read out

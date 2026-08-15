@@ -22,7 +22,9 @@ public sealed class SeatReservation
 {
     public Guid Id { get; set; }
 
-    /// <summary>A real foreign key, cascade-deleted with the session.</summary>
+    /// <summary>A real foreign key with delete restricted, so deleting a session
+    /// cannot silently wipe its seat reservations — they are released or cancelled
+    /// explicitly first.</summary>
     public Guid SessionId { get; set; }
     public Session? Session { get; set; }
 
@@ -74,13 +76,6 @@ public sealed class SeatReservation
     /// <summary>Written with <see cref="ReviewedByUserId"/> by that same admin
     /// release, alongside <see cref="ReleasedAt"/>. Null on every live row.</summary>
     public DateTime? ReviewedAt { get; set; }
-
-    /// <summary>Vestigial: nothing writes it, because the reject action it belonged
-    /// to went with the approval queue. Always null, at most 512 chars. Kept rather
-    /// than dropped, because dropping a column is a destructive schema change against
-    /// a frozen baseline and this is where a restored approval step would put its
-    /// reason. Do not read it expecting a value.</summary>
-    public string? RejectionReason { get; set; }
 
     /// <summary>The no-show deadline, stamped at creation as the session's start
     /// minus SeatReservationService.NoShowReleaseGrace. Once it passes, the sweep

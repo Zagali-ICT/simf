@@ -14,10 +14,17 @@ internal sealed class DelegationMeetingRequestConfiguration
 {
     public void Configure(EntityTypeBuilder<DelegationMeetingRequest> builder)
     {
-        // The proposed slot must end after it starts (both nullable).
-        builder.ToTable("DelegationMeetingRequests", table => table.HasCheckConstraint(
-            "CK_DelegationMeetingRequests_Slot",
-            "[SlotStart] IS NULL OR [SlotEnd] IS NULL OR [SlotEnd] > [SlotStart]"));
+        // The proposed slot must end after it starts (both nullable), and the
+        // delegation size is the 1..100 the submit path validates.
+        builder.ToTable("DelegationMeetingRequests", table =>
+        {
+            table.HasCheckConstraint(
+                "CK_DelegationMeetingRequests_Slot",
+                "[SlotStart] IS NULL OR [SlotEnd] IS NULL OR [SlotEnd] > [SlotStart]");
+            table.HasCheckConstraint(
+                "CK_DelegationMeetingRequests_AttendeeCount",
+                "[AttendeeCount] >= 1 AND [AttendeeCount] <= 100");
+        });
         builder.HasKey(r => r.Id);
 
         builder.Property(r => r.Subject).HasMaxLength(1000).IsRequired();

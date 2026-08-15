@@ -4,9 +4,10 @@ using SIMF.Domain.Profiles;
 namespace SIMF.Domain.AccessControl;
 
 /// <summary>
-/// One recorded gate scan. Append-only: an INSTEAD OF UPDATE/DELETE trigger
-/// refuses mutation, and the entity opts out of the row-audit interceptor
-/// because it is itself an audit log.
+/// One recorded gate scan. Append-only by construction: nothing in the codebase
+/// updates or deletes a scan row, and the entity opts out of the row-audit
+/// interceptor because it is itself an audit log. The append-only rule is a code
+/// convention, not a database guarantee -- there is no trigger behind it.
 /// </summary>
 public class GateScan
 {
@@ -22,8 +23,11 @@ public class GateScan
     public Guid? UserProfileId { get; set; }
     public UserProfile? UserProfile { get; set; }
 
-    /// <summary>The 12-character QR exactly as scanned, preserved verbatim even
-    /// after a QR rotation so the scan stays forensically traceable.</summary>
+    /// <summary>Whatever the scanner physically presented, preserved verbatim
+    /// even after a QR rotation so the scan stays forensically traceable. Not a
+    /// bare 12-character serial: the event badge carries an encrypted payload of
+    /// roughly 54 characters, which is why the column is nvarchar(96) and the
+    /// service truncates anything longer rather than failing the write.</summary>
     public string QrIdAtScan { get; set; } = string.Empty;
 
     /// <summary>The visitor's display name as it stood at the moment of the

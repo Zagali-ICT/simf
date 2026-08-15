@@ -26,7 +26,11 @@ internal sealed class OrganisationConfiguration : IEntityTypeConfiguration<Organ
         // CP form MaxLength.
         builder.Property(organisation => organisation.NameArabic).HasMaxLength(150).IsRequired();
         builder.Property(organisation => organisation.Name).HasMaxLength(150);
-        builder.Property(organisation => organisation.CommercialRegistration).HasMaxLength(32);
+        // Owner ask — 700, not the original 32. A government sheet carries more
+        // than a bare CR number in this cell. nvarchar(700) is 1400 bytes, still
+        // inside the 1700-byte key limit, so the filtered unique index below
+        // survives the widening.
+        builder.Property(organisation => organisation.CommercialRegistration).HasMaxLength(700);
         builder.Property(organisation => organisation.Sector).HasMaxLength(128);
         builder.Property(organisation => organisation.City).HasMaxLength(128);
         builder.Property(organisation => organisation.Phone).HasMaxLength(32);

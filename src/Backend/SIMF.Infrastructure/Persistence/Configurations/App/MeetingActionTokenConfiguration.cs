@@ -15,8 +15,11 @@ internal sealed class MeetingActionTokenConfiguration
     {
         builder.HasKey(t => t.Id);
 
-        // HMAC-SHA256 lowercase-hex digest is exactly 64 chars.
-        builder.Property(t => t.TokenHash).HasMaxLength(64).IsRequired();
+        // HMAC-SHA256 lowercase-hex digest: always exactly 64 ASCII chars, so
+        // char(64) rather than nvarchar — half the bytes and no length variance
+        // on the column redemption looks the token up by.
+        builder.Property(t => t.TokenHash)
+            .HasMaxLength(64).IsFixedLength().IsUnicode(false).IsRequired();
 
         builder.HasOne(t => t.SpeakerMeetingRequest)
             .WithMany()

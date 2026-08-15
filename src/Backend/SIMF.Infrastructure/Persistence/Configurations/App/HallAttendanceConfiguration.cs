@@ -17,7 +17,14 @@ internal sealed class HallAttendanceConfiguration : IEntityTypeConfiguration<Hal
 {
     public void Configure(EntityTypeBuilder<HallAttendance> builder)
     {
-        builder.ToTable("HallAttendances");
+        // An attendee cannot leave before they arrived. Leave stays null while the
+        // row is open, which is the ordinary state and the filtered unique index
+        // below depends on; once stamped it must not precede Enter. The bound is
+        // >= and not >, because a scan-in immediately followed by a scan-out lands
+        // both stamps in the same second and is a legitimate record, not a defect.
+        builder.ToTable("HallAttendances", table => table.HasCheckConstraint(
+            "CK_HallAttendances_LeaveOrder",
+            "[Leave] IS NULL OR [Leave] >= [Enter]"));
         builder.HasKey(a => a.Id);
 
         builder.Property(a => a.Method).IsRequired();

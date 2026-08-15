@@ -86,7 +86,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("IsActive", "Name");
 
-                    b.ToTable("Gates", (string)null);
+                    b.ToTable("Gates", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Gates_DirectionModeRange", "[DirectionMode] BETWEEN 0 AND 2");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.AccessControl.GateAssignment", b =>
@@ -95,11 +98,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("CreateBy")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("GateId")
                         .HasColumnType("uniqueidentifier");
@@ -126,7 +129,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("UserId", "IsActive");
 
-                    b.ToTable("GateAssignments", (string)null);
+                    b.ToTable("GateAssignments", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_GateAssignments_RevocationPin", "([IsActive] = 1 AND [RevokedAt] IS NULL AND [RevokedByUserId] IS NULL) OR ([IsActive] = 0 AND [RevokedAt] IS NOT NULL AND [RevokedByUserId] IS NOT NULL)");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.AccessControl.GateProfileTypeAllow", b =>
@@ -236,6 +242,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.ToTable("GateScans", null, t =>
                         {
                             t.HasCheckConstraint("CK_GateScans_DenialPin", "([Outcome] = 1 AND [DenialReasonCode] IS NOT NULL) OR ([Outcome] = 0 AND [DenialReasonCode] IS NULL)");
+
+                            t.HasCheckConstraint("CK_GateScans_DenialReasonRange", "[DenialReasonCode] IS NULL OR [DenialReasonCode] BETWEEN 0 AND 8");
+
+                            t.HasCheckConstraint("CK_GateScans_DirectionRange", "[Direction] BETWEEN 0 AND 1");
+
+                            t.HasCheckConstraint("CK_GateScans_SourceRange", "[Source] BETWEEN 0 AND 2");
                         });
                 });
 
@@ -1043,6 +1055,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.ToTable("DelegationAvailabilityWindows", null, t =>
                         {
+                            t.HasCheckConstraint("CK_DelegationAvailabilityWindows_SlotMinutes", "[SlotMinutes] >= 5 AND [SlotMinutes] <= 480");
+
                             t.HasCheckConstraint("CK_DelegationAvailabilityWindows_TimeWindow", "[End] > [Start]");
                         });
                 });
@@ -1065,7 +1079,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("TokenHash")
                         .IsRequired()
                         .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
+                        .IsUnicode(false)
+                        .HasColumnType("char(64)")
+                        .IsFixedLength();
 
                     b.Property<DateTime?>("UsedAt")
                         .HasColumnType("datetime2");
@@ -1167,6 +1183,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.ToTable("DelegationMeetingRequests", null, t =>
                         {
+                            t.HasCheckConstraint("CK_DelegationMeetingRequests_AttendeeCount", "[AttendeeCount] >= 1 AND [AttendeeCount] <= 100");
+
                             t.HasCheckConstraint("CK_DelegationMeetingRequests_Slot", "[SlotStart] IS NULL OR [SlotEnd] IS NULL OR [SlotEnd] > [SlotStart]");
                         });
                 });
@@ -1219,6 +1237,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.ToTable("HallAllocations", null, t =>
                         {
                             t.HasCheckConstraint("CK_HallAllocations_TimeWindow", "[End] > [Start]");
+
+                            t.HasCheckConstraint("CK_HallAllocations_UnitCount", "[UnitCount] >= 1");
                         });
                 });
 
@@ -1262,6 +1282,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.ToTable("HallAvailabilityWindows", null, t =>
                         {
+                            t.HasCheckConstraint("CK_HallAvailabilityWindows_SlotMinutes", "[SlotMinutes] >= 5 AND [SlotMinutes] <= 480");
+
                             t.HasCheckConstraint("CK_HallAvailabilityWindows_TimeWindow", "[End] > [Start]");
                         });
                 });
@@ -1287,7 +1309,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("TokenHash")
                         .IsRequired()
                         .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
+                        .IsUnicode(false)
+                        .HasColumnType("char(64)")
+                        .IsFixedLength();
 
                     b.Property<DateTime?>("UsedAt")
                         .HasColumnType("datetime2");
@@ -1343,7 +1367,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("HallId", "IsActive");
 
-                    b.ToTable("MeetingTables", (string)null);
+                    b.ToTable("MeetingTables", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_MeetingTables_Capacity", "[Capacity] >= 2 AND [Capacity] <= 100");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.BusinessMeetings.SpeakerAvailabilityWindow", b =>
@@ -1386,6 +1413,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.ToTable("SpeakerAvailabilityWindows", null, t =>
                         {
+                            t.HasCheckConstraint("CK_SpeakerAvailabilityWindows_SlotMinutes", "[SlotMinutes] >= 5 AND [SlotMinutes] <= 480");
+
                             t.HasCheckConstraint("CK_SpeakerAvailabilityWindows_TimeWindow", "[End] > [Start]");
                         });
                 });
@@ -2427,7 +2456,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .IsUnique()
                         .HasFilter("[IsActive] = 1");
 
-                    b.ToTable("SavedContacts", (string)null);
+                    b.ToTable("SavedContacts", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_SavedContacts_NotSelf", "[OwnerUserId] <> [SubjectUserId]");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.Contacts.VisitorShareToken", b =>
@@ -2704,7 +2736,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("OfficerCountryId");
 
-                    b.ToTable("Booths", (string)null);
+                    b.ToTable("Booths", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Booths_OfficerCoordinates", "([OfficerLatitude] IS NULL AND [OfficerLongitude] IS NULL) OR ([OfficerLatitude] IS NOT NULL AND [OfficerLongitude] IS NOT NULL AND [OfficerLatitude] >= -90 AND [OfficerLatitude] <= 90 AND [OfficerLongitude] >= -180 AND [OfficerLongitude] <= 180)");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.Exhibitors.Exhibitor", b =>
@@ -2799,7 +2834,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("IsActive", "NameArabic");
 
-                    b.ToTable("Exhibitors", (string)null);
+                    b.ToTable("Exhibitors", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Exhibitors_Coordinates", "([Latitude] IS NULL AND [Longitude] IS NULL) OR ([Latitude] IS NOT NULL AND [Longitude] IS NOT NULL AND [Latitude] >= -90 AND [Latitude] <= 90 AND [Longitude] >= -180 AND [Longitude] <= 180)");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.Exhibitors.ExhibitorMembership", b =>
@@ -3177,6 +3215,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("RatingTypeId");
 
+                    b.HasIndex("TargetId", "IsActive");
+
                     b.HasIndex("UserId", "RatingTypeId", "TargetId")
                         .IsUnique();
 
@@ -3441,6 +3481,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
+                    b.Property<Guid?>("PairHighUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("PairLowUserId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<Guid>("RequesterUserId")
                         .HasColumnType("uniqueidentifier");
 
@@ -3465,7 +3511,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("TargetUserId");
 
-                    b.ToTable("Connections", (string)null);
+                    b.HasIndex("PairLowUserId", "PairHighUserId")
+                        .IsUnique()
+                        .HasFilter("[IsActive] = 1 AND [PairLowUserId] IS NOT NULL");
+
+                    b.ToTable("Connections", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Connections_NotSelf", "[RequesterUserId] <> [TargetUserId]");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.Notifications.NotificationBroadcast", b =>
@@ -3548,7 +3601,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("Status", "CreatedAt");
 
-                    b.ToTable("NotificationBroadcasts");
+                    b.ToTable("NotificationBroadcasts", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_NotificationBroadcasts_TargetArc", "([TargetMode] = 'Session' AND [SessionId] IS NOT NULL AND [AudienceScope] IS NULL) OR ([TargetMode] = 'Audience' AND [AudienceScope] IS NOT NULL AND [SessionId] IS NULL)");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.Operations.ArchiveVisibility", b =>
@@ -3621,8 +3677,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasColumnType("nvarchar(128)");
 
                     b.Property<string>("CommercialRegistration")
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
+                        .HasMaxLength(700)
+                        .HasColumnType("nvarchar(700)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -4410,7 +4466,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("UserId", "CapturedAt");
 
-                    b.ToTable("DevicePositionPings", (string)null);
+                    b.ToTable("DevicePositionPings", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_DevicePositionPings_Coordinates", "[Latitude] >= -90 AND [Latitude] <= 90 AND [Longitude] >= -180 AND [Longitude] <= 180");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.Programme.Hall", b =>
@@ -4492,7 +4551,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             t.HasCheckConstraint("CK_Halls_ArrivalGrace", "[ArrivalGraceMinutes] IS NULL OR ([ArrivalGraceMinutes] >= 0 AND [ArrivalGraceMinutes] <= 240)");
 
-                            t.HasCheckConstraint("CK_Halls_Geofence", "([GeofenceCenterLat] IS NULL AND [GeofenceCenterLon] IS NULL AND [GeofenceRadiusMeters] IS NULL) OR ([GeofenceCenterLat] IS NOT NULL AND [GeofenceCenterLon] IS NOT NULL AND [GeofenceRadiusMeters] IS NOT NULL AND [GeofenceRadiusMeters] > 0)");
+                            t.HasCheckConstraint("CK_Halls_Capacity", "[Capacity] >= 0");
+
+                            t.HasCheckConstraint("CK_Halls_Geofence", "([GeofenceCenterLat] IS NULL AND [GeofenceCenterLon] IS NULL AND [GeofenceRadiusMeters] IS NULL) OR ([GeofenceCenterLat] IS NOT NULL AND [GeofenceCenterLon] IS NOT NULL AND [GeofenceRadiusMeters] IS NOT NULL AND [GeofenceCenterLat] >= -90 AND [GeofenceCenterLat] <= 90 AND [GeofenceCenterLon] >= -180 AND [GeofenceCenterLon] <= 180 AND [GeofenceRadiusMeters] > 0 AND [GeofenceRadiusMeters] <= 100000)");
                         });
                 });
 
@@ -4536,7 +4597,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .IsUnique()
                         .HasFilter("[Leave] IS NULL");
 
-                    b.ToTable("HallAttendances", (string)null);
+                    b.ToTable("HallAttendances", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_HallAttendances_LeaveOrder", "[Leave] IS NULL OR [Leave] >= [Enter]");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.Programme.ProgrammeDay", b =>
@@ -4748,6 +4812,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.ToTable("Sessions", null, t =>
                         {
                             t.HasCheckConstraint("CK_Sessions_ArrivalGrace", "[ArrivalGraceMinutesOverride] IS NULL OR ([ArrivalGraceMinutesOverride] >= 0 AND [ArrivalGraceMinutesOverride] <= 240)");
+
+                            t.HasCheckConstraint("CK_Sessions_CapacityOverride", "[CapacityOverride] IS NULL OR [CapacityOverride] >= 0");
 
                             t.HasCheckConstraint("CK_Sessions_TimeWindow", "[End] > [Start]");
                         });
@@ -5164,11 +5230,16 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("CountryId");
 
-                    b.HasIndex("UserProfileId");
+                    b.HasIndex("UserProfileId")
+                        .IsUnique()
+                        .HasFilter("[UserProfileId] IS NOT NULL");
 
                     b.HasIndex("IsActive", "DisplayOrder");
 
-                    b.ToTable("Speakers", (string)null);
+                    b.ToTable("Speakers", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Speakers_Location", "([Latitude] IS NULL AND [Longitude] IS NULL) OR ([Latitude] IS NOT NULL AND [Longitude] IS NOT NULL AND [Latitude] >= -90 AND [Latitude] <= 90 AND [Longitude] >= -180 AND [Longitude] <= 180)");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.Programme.SpeakerPresentation", b =>
@@ -5344,7 +5415,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("IsActive", "State", "CreatedAt");
 
-                    b.ToTable("Invitations", (string)null);
+                    b.ToTable("Invitations", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Invitations_ResponsePin", "([State] = 0 AND [RespondedAt] IS NULL) OR ([State] <> 0 AND [RespondedAt] IS NOT NULL)");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.PublicRelations.MediaPartner", b =>
@@ -5444,7 +5518,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("IsActive", "DisplayOrder");
 
-                    b.ToTable("MediaPartners", (string)null);
+                    b.ToTable("MediaPartners", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_MediaPartners_Coordinates", "([Latitude] IS NULL AND [Longitude] IS NULL) OR ([Latitude] IS NOT NULL AND [Longitude] IS NOT NULL AND [Latitude] >= -90 AND [Latitude] <= 90 AND [Longitude] >= -180 AND [Longitude] <= 180)");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.PublicRelations.News", b =>
@@ -5702,7 +5779,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.HasIndex("HallId")
                         .IsUnique();
 
-                    b.ToTable("HallSeatLayouts", (string)null);
+                    b.ToTable("HallSeatLayouts", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_HallSeatLayouts_SeatsPerRow", "[SeatsPerRow] >= 1 AND [SeatsPerRow] <= 80");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.SeatReservations.SeatReservation", b =>
@@ -5730,10 +5810,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<int>("Kind")
                         .HasColumnType("int");
-
-                    b.Property<string>("RejectionReason")
-                        .HasMaxLength(512)
-                        .HasColumnType("nvarchar(512)");
 
                     b.Property<DateTime?>("ReleasedAt")
                         .HasColumnType("datetime2");
@@ -5779,7 +5855,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .IsUnique()
                         .HasFilter("[ReleasedAt] IS NULL AND [RowLabel] IS NOT NULL");
 
-                    b.ToTable("SeatReservations", (string)null);
+                    b.ToTable("SeatReservations", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_SeatReservations_SeatNumber", "[SeatNumber] >= 1");
+
+                            t.HasCheckConstraint("CK_SeatReservations_SeatPair", "([RowLabel] IS NULL AND [SeatNumber] IS NULL) OR ([RowLabel] IS NOT NULL AND [SeatNumber] IS NOT NULL)");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.SessionQuestions.SessionModerator", b =>
@@ -5863,11 +5944,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasKey("Id");
 
-                    b.HasIndex("SubmittedByUserId");
-
                     b.HasIndex("Status", "CreatedAt");
 
-                    b.HasIndex("SessionId", "IsHidden", "Order");
+                    b.HasIndex("SessionId", "IsPushed", "Order");
 
                     b.HasIndex("SessionId", "Status", "Order");
 
@@ -5990,7 +6069,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("IsActive", "Tier", "DisplayOrder");
 
-                    b.ToTable("Sponsors", (string)null);
+                    b.ToTable("Sponsors", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Sponsors_Coordinates", "([Latitude] IS NULL AND [Longitude] IS NULL) OR ([Latitude] IS NOT NULL AND [Longitude] IS NOT NULL AND [Latitude] >= -90 AND [Latitude] <= 90 AND [Longitude] >= -180 AND [Longitude] <= 180)");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.Support.ContactInquiry", b =>
@@ -6048,7 +6130,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("IsHandled", "CreatedAt");
 
-                    b.ToTable("ContactInquiries", (string)null);
+                    b.ToTable("ContactInquiries", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_ContactInquiries_HandledPin", "([IsHandled] = 0 AND [HandledAt] IS NULL AND [HandledByUserId] IS NULL) OR ([IsHandled] = 1 AND [HandledAt] IS NOT NULL AND [HandledByUserId] IS NOT NULL)");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.Venue.VenueMapNode", b =>

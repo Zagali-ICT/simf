@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
 using SIMF.Common;
 
 namespace SIMF.Domain.Common;
@@ -14,8 +11,10 @@ public abstract class BaseEntity
 {
     public Guid Id { get; set; }
 
-    /// <summary>The user who created the row.</summary>
-    public Guid CreateBy { get; set; }
+    /// <summary>The user who created the row. Named to match
+    /// <see cref="BaseAuditEntity.CreatedBy"/>, which records the identical fact
+    /// on the heavier base.</summary>
+    public Guid CreatedBy { get; set; }
 
     /// <summary>Saudi local time, defaulted at construction from the shared
     /// clock, which is fixed at +03:00 with no daylight saving. Deliberately

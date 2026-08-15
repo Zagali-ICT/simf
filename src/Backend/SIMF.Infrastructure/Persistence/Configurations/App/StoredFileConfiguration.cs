@@ -49,7 +49,10 @@ internal sealed class StoredFileConfiguration : IEntityTypeConfiguration<StoredF
         // "files I uploaded" + audit lookups.
         builder.HasIndex(file => file.CreatedBy);
 
-        // The retention secure-erase sweep enumerates live, time-limited rows.
+        // Enumerates live, time-limited rows for a retention review. No sweep
+        // reads it yet — the retention date is recorded, never acted on
+        // automatically — so this index is provisioned ahead of that worker
+        // rather than serving a query today.
         builder.HasIndex(file => file.RetainUntil)
             .HasFilter("[IsActive] = 1 AND [RetainUntil] IS NOT NULL");
     }

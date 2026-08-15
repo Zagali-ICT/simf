@@ -15,7 +15,16 @@ internal sealed class SponsorConfiguration : IEntityTypeConfiguration<Sponsor>
 {
     public void Configure(EntityTypeBuilder<Sponsor> builder)
     {
-        builder.ToTable("Sponsors");
+        // Coordinates are a pair or nothing, and each half has a real range —
+        // the rule AdminSponsorService already enforces on write, now on the
+        // table too. Each branch anchors on IS NULL / IS NOT NULL because a bare
+        // comparison against a null column yields UNKNOWN, which a CHECK passes.
+        builder.ToTable("Sponsors", table => table.HasCheckConstraint(
+            "CK_Sponsors_Coordinates",
+            "([Latitude] IS NULL AND [Longitude] IS NULL) OR "
+            + "([Latitude] IS NOT NULL AND [Longitude] IS NOT NULL "
+            + "AND [Latitude] >= -90 AND [Latitude] <= 90 "
+            + "AND [Longitude] >= -180 AND [Longitude] <= 180)"));
         builder.HasKey(sponsor => sponsor.Id);
 
         builder.Property(sponsor => sponsor.Name).HasMaxLength(256).IsRequired();

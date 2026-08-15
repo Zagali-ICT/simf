@@ -20,7 +20,11 @@ public class Hall : BaseAuditEntity
     /// its own <c>Session.CapacityOverride</c>. A seat layout may not total more
     /// than this, and the hall cannot be shrunk below what it has already
     /// committed: its layout total, or the largest held reservation count on any
-    /// one of its sessions.</summary>
+    /// one of its sessions.
+    ///
+    /// <para>Zero or positive, enforced by CK_Halls_Capacity. Zero is a real
+    /// value, not a sentinel: a hall may be recorded before its seating is
+    /// known.</para></summary>
     public int Capacity { get; set; }
 
     /// <summary>A label rather than a number: "Ground", "Level 2".</summary>
@@ -44,9 +48,11 @@ public class Hall : BaseAuditEntity
     public SeatSelectionMode SeatSelectionMode { get; set; } = SeatSelectionMode.AssignedSeat;
 
     // The optional GPS geofence: a centre in WGS-84 degrees (latitude -90..90,
-    // longitude -180..180) and a radius in metres above zero. All three are null
-    // together or set together, which the CK_Halls_Geofence check constraint
-    // enforces. Null is the ordinary state, and a hall without a geofence records
+    // longitude -180..180) and a radius in metres above zero and at most 100 km.
+    // All three are null together or set together, and CK_Halls_Geofence enforces
+    // both that pairing and every one of those ranges — the ranges used to be
+    // stated here and checked only by the admin service.
+    // Null is the ordinary state, and a hall without a geofence records
     // arrivals by QR door scan only; where one is set, an attendee whose reported
     // position falls inside the radius counts as arrived at the hall.
     public double? GeofenceCenterLat { get; set; }

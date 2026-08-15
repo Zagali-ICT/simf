@@ -14,7 +14,13 @@ internal sealed class DevicePositionPingConfiguration : IEntityTypeConfiguration
 {
     public void Configure(EntityTypeBuilder<DevicePositionPing> builder)
     {
-        builder.ToTable("DevicePositionPings");
+        // A ping must carry an actual coordinate. MovementTrackingService rejects
+        // an out-of-range sample on the upload path already; this is the same rule
+        // held by the database, so the one table in the system that stores raw
+        // positions cannot be seeded or repaired into holding a latitude of 900.
+        builder.ToTable("DevicePositionPings", table => table.HasCheckConstraint(
+            "CK_DevicePositionPings_Coordinates",
+            "[Latitude] >= -90 AND [Latitude] <= 90 AND [Longitude] >= -180 AND [Longitude] <= 180"));
         builder.HasKey(p => p.Id);
 
         builder.Property(p => p.CapturedAt).IsRequired();

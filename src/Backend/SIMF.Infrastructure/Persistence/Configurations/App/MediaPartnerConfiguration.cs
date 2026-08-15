@@ -13,7 +13,17 @@ internal sealed class MediaPartnerConfiguration : IEntityTypeConfiguration<Media
 {
     public void Configure(EntityTypeBuilder<MediaPartner> builder)
     {
-        builder.ToTable("MediaPartners");
+        // Coordinates are a pair or nothing, and each half has a real range —
+        // the rule AdminMediaPartnerService already enforces on write, now on
+        // the table too. Each branch anchors on IS NULL / IS NOT NULL because a
+        // bare comparison against a null column yields UNKNOWN, which a CHECK
+        // passes.
+        builder.ToTable("MediaPartners", table => table.HasCheckConstraint(
+            "CK_MediaPartners_Coordinates",
+            "([Latitude] IS NULL AND [Longitude] IS NULL) OR "
+            + "([Latitude] IS NOT NULL AND [Longitude] IS NOT NULL "
+            + "AND [Latitude] >= -90 AND [Latitude] <= 90 "
+            + "AND [Longitude] >= -180 AND [Longitude] <= 180)"));
         builder.HasKey(m => m.Id);
 
         builder.Property(m => m.Name).HasMaxLength(256).IsRequired();

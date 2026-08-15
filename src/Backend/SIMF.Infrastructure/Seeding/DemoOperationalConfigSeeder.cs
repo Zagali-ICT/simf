@@ -162,7 +162,7 @@ public sealed class DemoOperationalConfigSeeder(
                 UserId = operatorUser.Id,
                 IsActive = true,
                 CreatedAt = now,
-                CreateBy = operatorUser.Id,
+                CreatedBy = operatorUser.Id,
             });
             appDbContext.Gates.Add(gate);
             added++;

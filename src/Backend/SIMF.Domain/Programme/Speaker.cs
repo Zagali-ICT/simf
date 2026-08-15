@@ -34,7 +34,12 @@ public class Speaker : BaseAuditEntity
     /// <summary>The <c>UserProfile</c> of a speaker who also holds a SIMF account,
     /// null for the external speakers who do not. A real foreign key despite there
     /// being no navigation for it: profiles live in the App database beside the
-    /// speakers, not in Identity. Never surfaced publicly.</summary>
+    /// speakers, not in Identity. Never surfaced publicly.
+    ///
+    /// <para>At most one speaker per profile, held by a filtered unique index. The
+    /// link is an identity mapping — the approved-summary read resolves a caller's
+    /// profile to a speaker to decide whether they host the session — so a second
+    /// row claiming the same profile would be a duplicate person.</para></summary>
     public Guid? UserProfileId { get; set; }
 
     // The four long-form pairs behind the four bilingual tabs of the public

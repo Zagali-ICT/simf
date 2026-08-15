@@ -20,20 +20,30 @@ internal sealed class SeatReservationConfiguration : IEntityTypeConfiguration<Se
 {
     public void Configure(EntityTypeBuilder<SeatReservation> builder)
     {
-        builder.ToTable("SeatReservations");
+        // A seat is identified by RowLabel AND SeatNumber together, or by neither:
+        // an OpenSeating join and a walk-in hall hold carry null for both (general
+        // admission, no specific seat), and every seat-specific kind sets both.
+        // Seat numbers are 1-based within their row.
+        builder.ToTable("SeatReservations", table =>
+        {
+            table.HasCheckConstraint(
+                "CK_SeatReservations_SeatPair",
+                "([RowLabel] IS NULL AND [SeatNumber] IS NULL) "
+                + "OR ([RowLabel] IS NOT NULL AND [SeatNumber] IS NOT NULL)");
+            table.HasCheckConstraint(
+                "CK_SeatReservations_SeatNumber", "[SeatNumber] >= 1");
+        });
         builder.HasKey(x => x.Id);
 
-        // RowLabel/SeatNumber are now optional: an OpenSeating join
+        // RowLabel/SeatNumber are optional: an OpenSeating join
         // carries null for both (general admission, no specific seat).
         builder.Property(x => x.RowLabel).HasMaxLength(8);
 
-        // Booking-approval state. NO model-level default: with
-        // Pending = 0 = the CLR default, HasDefaultValue would make EF treat
-        // every Pending insert as "unset" and apply the store default. The
-        // service sets Status explicitly on every create; existing prod rows
-        // are backfilled to Approved by the migration's one-time AddColumn
-        // default (not a persisted model concern).
-        builder.Property(x => x.RejectionReason).HasMaxLength(512);
+        // Status is deliberately left unconfigured. It must NOT get a
+        // model-level default: with Pending = 0 = the CLR default,
+        // HasDefaultValue would make EF treat every Pending insert as "unset"
+        // and apply the store default instead. The service sets Status
+        // explicitly on every create path.
 
         // The admin-typed VVIP guest hint (bilingual, both nullable).
         builder.Property(x => x.GuestHint).HasMaxLength(256);

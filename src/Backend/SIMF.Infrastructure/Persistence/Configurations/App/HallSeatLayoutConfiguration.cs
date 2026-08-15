@@ -11,7 +11,11 @@ internal sealed class HallSeatLayoutConfiguration : IEntityTypeConfiguration<Hal
 {
     public void Configure(EntityTypeBuilder<HallSeatLayout> builder)
     {
-        builder.ToTable("HallSeatLayouts");
+        // The grid width the service validates on every write (1..80 seats per
+        // row); the DB backstop for it.
+        builder.ToTable("HallSeatLayouts", table => table.HasCheckConstraint(
+            "CK_HallSeatLayouts_SeatsPerRow",
+            "[SeatsPerRow] >= 1 AND [SeatsPerRow] <= 80"));
         builder.HasKey(x => x.Id);
 
         builder.Property(x => x.RowLabels).HasMaxLength(256).IsRequired();

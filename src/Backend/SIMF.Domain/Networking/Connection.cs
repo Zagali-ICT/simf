@@ -22,4 +22,25 @@ public sealed class Connection : BaseAuditEntity
 
     /// <summary>When the target answered; null while still pending.</summary>
     public DateTime? RespondedAt { get; set; }
+
+    // The same pair of users in a canonical order, so "at most one active
+    // connection per unordered pair" can be a unique index instead of only a
+    // check-then-insert in the service. A connection is directed -- the requester
+    // asked -- so (Requester, Target) cannot be indexed for that rule: the mirror
+    // row (Target, Requester) is a different key and slips straight through.
+    //
+    // <para>A writer sorts the two ids with <see cref="Guid.CompareTo(Guid)"/> and
+    // puts the smaller in <see cref="PairLowUserId"/>. The ordering only has to be
+    // consistent, not to match SQL Server's own uniqueidentifier collation, because
+    // nothing but .NET ever writes these.</para>
+    //
+    // <para>Nullable, and the unique index is filtered to exclude nulls. No
+    // writer fills them yet, so every row is excluded and the index enforces
+    // nothing today -- the columns and the index are the half of the rule that
+    // lives in the schema, waiting on the insert path to sort the two ids. Once
+    // every writer fills them the pair should become required and the IS NOT
+    // NULL leg of the filter should go.</para>
+    public Guid? PairLowUserId { get; set; }
+
+    public Guid? PairHighUserId { get; set; }
 }

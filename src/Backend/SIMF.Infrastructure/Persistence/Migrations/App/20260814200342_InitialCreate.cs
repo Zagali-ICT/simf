@@ -152,6 +152,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     TargetUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     State = table.Column<int>(type: "int", nullable: false),
                     RespondedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    PairLowUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    PairHighUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -162,6 +164,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Connections", x => x.Id);
+                    table.CheckConstraint("CK_Connections_NotSelf", "[RequesterUserId] <> [TargetUserId]");
                 });
 
             migrationBuilder.CreateTable(
@@ -186,6 +189,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_ContactInquiries", x => x.Id);
+                    table.CheckConstraint("CK_ContactInquiries_HandledPin", "([IsHandled] = 0 AND [HandledAt] IS NULL AND [HandledByUserId] IS NULL) OR ([IsHandled] = 1 AND [HandledAt] IS NOT NULL AND [HandledByUserId] IS NOT NULL)");
                 });
 
             migrationBuilder.CreateTable(
@@ -223,6 +227,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_DevicePositionPings", x => x.Id);
+                    table.CheckConstraint("CK_DevicePositionPings_Coordinates", "[Latitude] >= -90 AND [Latitude] <= 90 AND [Longitude] >= -180 AND [Longitude] <= 180");
                 });
 
             migrationBuilder.CreateTable(
@@ -309,7 +314,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 {
                     table.PrimaryKey("PK_Halls", x => x.Id);
                     table.CheckConstraint("CK_Halls_ArrivalGrace", "[ArrivalGraceMinutes] IS NULL OR ([ArrivalGraceMinutes] >= 0 AND [ArrivalGraceMinutes] <= 240)");
-                    table.CheckConstraint("CK_Halls_Geofence", "([GeofenceCenterLat] IS NULL AND [GeofenceCenterLon] IS NULL AND [GeofenceRadiusMeters] IS NULL) OR ([GeofenceCenterLat] IS NOT NULL AND [GeofenceCenterLon] IS NOT NULL AND [GeofenceRadiusMeters] IS NOT NULL AND [GeofenceRadiusMeters] > 0)");
+                    table.CheckConstraint("CK_Halls_Capacity", "[Capacity] >= 0");
+                    table.CheckConstraint("CK_Halls_Geofence", "([GeofenceCenterLat] IS NULL AND [GeofenceCenterLon] IS NULL AND [GeofenceRadiusMeters] IS NULL) OR ([GeofenceCenterLat] IS NOT NULL AND [GeofenceCenterLon] IS NOT NULL AND [GeofenceRadiusMeters] IS NOT NULL AND [GeofenceCenterLat] >= -90 AND [GeofenceCenterLat] <= 90 AND [GeofenceCenterLon] >= -180 AND [GeofenceCenterLon] <= 180 AND [GeofenceRadiusMeters] > 0 AND [GeofenceRadiusMeters] <= 100000)");
                 });
 
             migrationBuilder.CreateTable(
@@ -359,6 +365,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_NotificationBroadcasts", x => x.Id);
+                    table.CheckConstraint("CK_NotificationBroadcasts_TargetArc", "([TargetMode] = 'Session' AND [SessionId] IS NOT NULL AND [AudienceScope] IS NULL) OR ([TargetMode] = 'Audience' AND [AudienceScope] IS NOT NULL AND [SessionId] IS NULL)");
                 });
 
             migrationBuilder.CreateTable(
@@ -392,7 +399,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: true),
                     NameArabic = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
-                    CommercialRegistration = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: true),
+                    CommercialRegistration = table.Column<string>(type: "nvarchar(700)", maxLength: 700, nullable: true),
                     Sector = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: true),
                     City = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: true),
                     Phone = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: true),
@@ -582,6 +589,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_SavedContacts", x => x.Id);
+                    table.CheckConstraint("CK_SavedContacts_NotSelf", "[OwnerUserId] <> [SubjectUserId]");
                 });
 
             migrationBuilder.CreateTable(
@@ -799,6 +807,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Gates", x => x.Id);
+                    table.CheckConstraint("CK_Gates_DirectionModeRange", "[DirectionMode] BETWEEN 0 AND 2");
                     table.ForeignKey(
                         name: "FK_Gates_Halls_HallId",
                         column: x => x.HallId,
@@ -828,6 +837,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 {
                     table.PrimaryKey("PK_HallAllocations", x => x.Id);
                     table.CheckConstraint("CK_HallAllocations_TimeWindow", "[End] > [Start]");
+                    table.CheckConstraint("CK_HallAllocations_UnitCount", "[UnitCount] >= 1");
                     table.ForeignKey(
                         name: "FK_HallAllocations_Halls_HallId",
                         column: x => x.HallId,
@@ -853,6 +863,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_HallAvailabilityWindows", x => x.Id);
+                    table.CheckConstraint("CK_HallAvailabilityWindows_SlotMinutes", "[SlotMinutes] >= 5 AND [SlotMinutes] <= 480");
                     table.CheckConstraint("CK_HallAvailabilityWindows_TimeWindow", "[End] > [Start]");
                     table.ForeignKey(
                         name: "FK_HallAvailabilityWindows_Halls_HallId",
@@ -878,6 +889,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_HallSeatLayouts", x => x.Id);
+                    table.CheckConstraint("CK_HallSeatLayouts_SeatsPerRow", "[SeatsPerRow] >= 1 AND [SeatsPerRow] <= 80");
                     table.ForeignKey(
                         name: "FK_HallSeatLayouts_Halls_HallId",
                         column: x => x.HallId,
@@ -903,6 +915,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_MeetingTables", x => x.Id);
+                    table.CheckConstraint("CK_MeetingTables_Capacity", "[Capacity] >= 2 AND [Capacity] <= 100");
                     table.ForeignKey(
                         name: "FK_MeetingTables_Halls_HallId",
                         column: x => x.HallId,
@@ -1225,6 +1238,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 {
                     table.PrimaryKey("PK_Sessions", x => x.Id);
                     table.CheckConstraint("CK_Sessions_ArrivalGrace", "[ArrivalGraceMinutesOverride] IS NULL OR ([ArrivalGraceMinutesOverride] >= 0 AND [ArrivalGraceMinutesOverride] <= 240)");
+                    table.CheckConstraint("CK_Sessions_CapacityOverride", "[CapacityOverride] IS NULL OR [CapacityOverride] >= 0");
                     table.CheckConstraint("CK_Sessions_TimeWindow", "[End] > [Start]");
                     table.ForeignKey(
                         name: "FK_Sessions_Halls_HallId",
@@ -1368,12 +1382,13 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     RevokedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     RevokedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CreateBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_GateAssignments", x => x.Id);
+                    table.CheckConstraint("CK_GateAssignments_RevocationPin", "([IsActive] = 1 AND [RevokedAt] IS NULL AND [RevokedByUserId] IS NULL) OR ([IsActive] = 0 AND [RevokedAt] IS NOT NULL AND [RevokedByUserId] IS NOT NULL)");
                     table.ForeignKey(
                         name: "FK_GateAssignments_Gates_GateId",
                         column: x => x.GateId,
@@ -1805,6 +1820,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 {
                     table.PrimaryKey("PK_GateScans", x => x.Id);
                     table.CheckConstraint("CK_GateScans_DenialPin", "([Outcome] = 1 AND [DenialReasonCode] IS NOT NULL) OR ([Outcome] = 0 AND [DenialReasonCode] IS NULL)");
+                    table.CheckConstraint("CK_GateScans_DenialReasonRange", "[DenialReasonCode] IS NULL OR [DenialReasonCode] BETWEEN 0 AND 8");
+                    table.CheckConstraint("CK_GateScans_DirectionRange", "[Direction] BETWEEN 0 AND 1");
+                    table.CheckConstraint("CK_GateScans_SourceRange", "[Source] BETWEEN 0 AND 2");
                     table.ForeignKey(
                         name: "FK_GateScans_Gates_GateId",
                         column: x => x.GateId,
@@ -1835,6 +1853,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_HallAttendances", x => x.Id);
+                    table.CheckConstraint("CK_HallAttendances_LeaveOrder", "[Leave] IS NULL OR [Leave] >= [Enter]");
                     table.ForeignKey(
                         name: "FK_HallAttendances_Halls_HallId",
                         column: x => x.HallId,
@@ -1875,6 +1894,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Invitations", x => x.Id);
+                    table.CheckConstraint("CK_Invitations_ResponsePin", "([State] = 0 AND [RespondedAt] IS NULL) OR ([State] <> 0 AND [RespondedAt] IS NOT NULL)");
                     table.ForeignKey(
                         name: "FK_Invitations_UserProfiles_SentToUserProfileId",
                         column: x => x.SentToUserProfileId,
@@ -1899,7 +1919,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     Status = table.Column<int>(type: "int", nullable: false),
                     ReviewedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     ReviewedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    RejectionReason = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: true),
                     Expires = table.Column<DateTime>(type: "datetime2", nullable: true),
                     GuestHint = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     GuestHintArabic = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true)
@@ -1907,6 +1926,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_SeatReservations", x => x.Id);
+                    table.CheckConstraint("CK_SeatReservations_SeatNumber", "[SeatNumber] >= 1");
+                    table.CheckConstraint("CK_SeatReservations_SeatPair", "([RowLabel] IS NULL AND [SeatNumber] IS NULL) OR ([RowLabel] IS NOT NULL AND [SeatNumber] IS NOT NULL)");
                     table.ForeignKey(
                         name: "FK_SeatReservations_Sessions_SessionId",
                         column: x => x.SessionId,
@@ -2024,6 +2045,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_DelegationAvailabilityWindows", x => x.Id);
+                    table.CheckConstraint("CK_DelegationAvailabilityWindows_SlotMinutes", "[SlotMinutes] >= 5 AND [SlotMinutes] <= 480");
                     table.CheckConstraint("CK_DelegationAvailabilityWindows_TimeWindow", "[End] > [Start]");
                     table.ForeignKey(
                         name: "FK_DelegationAvailabilityWindows_Countries_CountryId",
@@ -2064,6 +2086,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Exhibitors", x => x.Id);
+                    table.CheckConstraint("CK_Exhibitors_Coordinates", "([Latitude] IS NULL AND [Longitude] IS NULL) OR ([Latitude] IS NOT NULL AND [Longitude] IS NOT NULL AND [Latitude] >= -90 AND [Latitude] <= 90 AND [Longitude] >= -180 AND [Longitude] <= 180)");
                     table.ForeignKey(
                         name: "FK_Exhibitors_Countries_CountryId",
                         column: x => x.CountryId,
@@ -2104,6 +2127,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_MediaPartners", x => x.Id);
+                    table.CheckConstraint("CK_MediaPartners_Coordinates", "([Latitude] IS NULL AND [Longitude] IS NULL) OR ([Latitude] IS NOT NULL AND [Longitude] IS NOT NULL AND [Latitude] >= -90 AND [Latitude] <= 90 AND [Longitude] >= -180 AND [Longitude] <= 180)");
                     table.ForeignKey(
                         name: "FK_MediaPartners_Countries_CountryId",
                         column: x => x.CountryId,
@@ -2163,6 +2187,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Speakers", x => x.Id);
+                    table.CheckConstraint("CK_Speakers_Location", "([Latitude] IS NULL AND [Longitude] IS NULL) OR ([Latitude] IS NOT NULL AND [Longitude] IS NOT NULL AND [Latitude] >= -90 AND [Latitude] <= 90 AND [Longitude] >= -180 AND [Longitude] <= 180)");
                     table.ForeignKey(
                         name: "FK_Speakers_Countries_CountryId",
                         column: x => x.CountryId,
@@ -2214,6 +2239,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Sponsors", x => x.Id);
+                    table.CheckConstraint("CK_Sponsors_Coordinates", "([Latitude] IS NULL AND [Longitude] IS NULL) OR ([Latitude] IS NOT NULL AND [Longitude] IS NOT NULL AND [Latitude] >= -90 AND [Latitude] <= 90 AND [Longitude] >= -180 AND [Longitude] <= 180)");
                     table.ForeignKey(
                         name: "FK_Sponsors_Countries_CountryId",
                         column: x => x.CountryId,
@@ -2257,6 +2283,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_DelegationMeetingRequests", x => x.Id);
+                    table.CheckConstraint("CK_DelegationMeetingRequests_AttendeeCount", "[AttendeeCount] >= 1 AND [AttendeeCount] <= 100");
                     table.CheckConstraint("CK_DelegationMeetingRequests_Slot", "[SlotStart] IS NULL OR [SlotEnd] IS NULL OR [SlotEnd] > [SlotStart]");
                     table.ForeignKey(
                         name: "FK_DelegationMeetingRequests_Countries_RequestingCountryId",
@@ -2333,6 +2360,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Booths", x => x.Id);
+                    table.CheckConstraint("CK_Booths_OfficerCoordinates", "([OfficerLatitude] IS NULL AND [OfficerLongitude] IS NULL) OR ([OfficerLatitude] IS NOT NULL AND [OfficerLongitude] IS NOT NULL AND [OfficerLatitude] >= -90 AND [OfficerLatitude] <= 90 AND [OfficerLongitude] >= -180 AND [OfficerLongitude] <= 180)");
                     table.ForeignKey(
                         name: "FK_Booths_Countries_OfficerCountryId",
                         column: x => x.OfficerCountryId,
@@ -2486,6 +2514,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_SpeakerAvailabilityWindows", x => x.Id);
+                    table.CheckConstraint("CK_SpeakerAvailabilityWindows_SlotMinutes", "[SlotMinutes] >= 5 AND [SlotMinutes] <= 480");
                     table.CheckConstraint("CK_SpeakerAvailabilityWindows_TimeWindow", "[End] > [Start]");
                     table.ForeignKey(
                         name: "FK_SpeakerAvailabilityWindows_Speakers_SpeakerId",
@@ -2543,7 +2572,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     DelegationMeetingRequestId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    TokenHash = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: false),
+                    TokenHash = table.Column<string>(type: "char(64)", unicode: false, fixedLength: true, maxLength: 64, nullable: false),
                     ExpiresAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UsedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
@@ -2657,7 +2686,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     SpeakerMeetingRequestId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Action = table.Column<int>(type: "int", nullable: false),
-                    TokenHash = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: false),
+                    TokenHash = table.Column<string>(type: "char(64)", unicode: false, fixedLength: true, maxLength: 64, nullable: false),
                     Expires = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UsedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
@@ -2945,6 +2974,13 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 name: "IX_BusinessMeetings_Status_Start",
                 table: "BusinessMeetings",
                 columns: new[] { "Status", "Start" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Connections_PairLowUserId_PairHighUserId",
+                table: "Connections",
+                columns: new[] { "PairLowUserId", "PairHighUserId" },
+                unique: true,
+                filter: "[IsActive] = 1 AND [PairLowUserId] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Connections_RequesterUserId",
@@ -3459,6 +3495,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 column: "RatingTypeId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_RatingResponses_TargetId_IsActive",
+                table: "RatingResponses",
+                columns: new[] { "TargetId", "IsActive" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_RatingResponses_UserId_RatingTypeId_TargetId",
                 table: "RatingResponses",
                 columns: new[] { "UserId", "RatingTypeId", "TargetId" },
@@ -3581,9 +3622,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 columns: new[] { "SessionId", "IsActive", "DisplayOrder" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_SessionQuestions_SessionId_IsHidden_Order",
+                name: "IX_SessionQuestions_SessionId_IsPushed_Order",
                 table: "SessionQuestions",
-                columns: new[] { "SessionId", "IsHidden", "Order" });
+                columns: new[] { "SessionId", "IsPushed", "Order" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_SessionQuestions_SessionId_Status_Order",
@@ -3594,11 +3635,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 name: "IX_SessionQuestions_Status_CreatedAt",
                 table: "SessionQuestions",
                 columns: new[] { "Status", "CreatedAt" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_SessionQuestions_SubmittedByUserId",
-                table: "SessionQuestions",
-                column: "SubmittedByUserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Sessions_CategoryId",
@@ -3747,7 +3783,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
             migrationBuilder.CreateIndex(
                 name: "IX_Speakers_UserProfileId",
                 table: "Speakers",
-                column: "UserProfileId");
+                column: "UserProfileId",
+                unique: true,
+                filter: "[UserProfileId] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Sponsors_CountryId",
