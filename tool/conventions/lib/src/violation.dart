@@ -91,4 +91,10 @@ abstract final class Remedy {
   static const String sharedComponent = 'the shared NaviFormField';
   static const String themeTokensCss = 'theme.tokens.css (the CSS token SSOT)';
   static const String stylesheet = 'a BEM class in the stylesheet';
+
+  /// The inverse of [themeTokensCss]. N2 moves a literal OUT of a use site; N3
+  /// fires when a token definition lost its literal altogether and now names
+  /// itself, which resolves to nothing at every use site.
+  static const String tokenLiteral =
+      'the token definition must hold a literal value, not its own name';
 }

@@ -1,4 +1,6 @@
 // Tests: SIMF.Api.Tests/DelegatesAndBulkBadgesTests.cs
+// Tests: SIMF.Api.Tests/Journey01DelegationToSignInTests.cs (a minted badge
+//        resolves, activates and signs in — the end-to-end holder journey)
 using System.Globalization;
 using System.IO.Compression;
 using Microsoft.EntityFrameworkCore;
