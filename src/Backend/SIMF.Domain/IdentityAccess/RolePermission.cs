@@ -1,8 +1,5 @@
 namespace SIMF.Domain.IdentityAccess;
 
-/// <summary>
-/// Grants one <see cref="Permission"/> to one <see cref="SimfRole"/>.
-/// </summary>
 public class RolePermission
 {
     public Guid RoleId { get; set; }

@@ -47,17 +47,12 @@ public class AccountCode
     /// code here would silently defeat the hashing rather than fail.</summary>
     public string Code { get; set; } = string.Empty;
 
-    /// <summary>Saudi local time.</summary>
     public DateTime ExpiresAt { get; set; }
 
-    /// <summary>Saudi local time.</summary>
     public DateTime CreatedAt { get; set; }
 
-    /// <summary>Saudi local time; null while the code is unused.</summary>
     public DateTime? ConsumedAt { get; set; }
 
-    /// <summary>How many wrong values have been submitted against this code. The
-    /// code is invalidated once this passes the configured cap, so guessing it
-    /// cannot be brute-forced.</summary>
+    /// <summary>Wrong submissions; the code is invalidated past the configured cap.</summary>
     public int AttemptCount { get; set; }
 }
