@@ -47,6 +47,41 @@ public interface IFileService
     /// allowed (no exists-but-forbidden oracle for private files).</summary>
     Task<FileDownload> DownloadAsync(Guid id, FileAccessContext caller, CancellationToken cancellationToken = default);
 
+    /// <summary>Reads the bytes of an active stored file by id, decrypting per the
+    /// row, for a caller that has ALREADY authorized the read itself. Returns null
+    /// when the id is not an active uploaded file, when the bytes are absent, or
+    /// when the integrity re-check fails.
+    ///
+    /// <para>Caller-authorized AND caller-audited, which is the whole difference
+    /// from <see cref="DownloadAsync"/>: this applies no service-policy check and
+    /// writes no success audit row, because the routes that use it enforce a
+    /// permission the file's own policy cannot express (an avatar reachable under
+    /// three different admin View permissions, a presentation gated by its session)
+    /// and several already write a richer audit of their own. What it does NOT drop
+    /// is the fail-closed SHA-256 re-check on a Confidential+ file: tampered bytes
+    /// are audited and refused here exactly as on the download route.</para>
+    ///
+    /// <para>An external-link row owns no bytes and returns null — a caller that
+    /// serves links must branch on <c>SourceType</c> before asking for content.</para></summary>
+    Task<StoredFileContent?> ReadContentAsync(Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>The owner-scoped form of <see cref="ReadContentAsync"/>: reads the
+    /// newest active file of <paramref name="service"/> belonging to
+    /// <paramref name="ownerEntityId"/> (created-descending, id as the tiebreak for
+    /// the same-tick replace window). Same authorization and audit contract as
+    /// <see cref="ReadContentAsync"/>. Null when the owner has no such file.</summary>
+    Task<StoredFileContent?> ReadOwnerContentAsync(
+        FileService service, Guid ownerEntityId, CancellationToken cancellationToken = default);
+
+    /// <summary>Repair path: writes <paramref name="content"/> for an EXISTING
+    /// uploaded file row, at the storage key and encryption the row already records,
+    /// so the row and its blob cannot drift. For materialising rows whose bytes are
+    /// absent — the content seeder inserts the rows from SQL and puts the shipped
+    /// bytes on disk afterwards. Returns false (writing nothing) when the id is not
+    /// an active uploaded row with a storage key. Audited like any other write.</summary>
+    Task<bool> RestoreBytesAsync(
+        Guid id, byte[] content, Guid actorUserId, CancellationToken cancellationToken = default);
+
     /// <summary>True when <paramref name="id"/> still resolves to content that can
     /// actually be served: an active row whose bytes are on disk, or an active
     /// external link. False for an unknown / soft-deleted id, and — the case that
@@ -109,6 +144,13 @@ public sealed record StoredFileResult(
     FileType FileType,
     bool IsEncrypted,
     long SizeBytes);
+
+/// <summary>The bytes of a stored file plus the content-type recorded on the row.
+/// <see cref="ContentType"/> is deliberately nullable and un-defaulted: each serving
+/// surface has its own fallback (an avatar falls back to <c>image/png</c>, a media
+/// item to <c>application/octet-stream</c>), and picking one here would silently
+/// change the others.</summary>
+public sealed record StoredFileContent(byte[] Content, string? ContentType);
 
 /// <summary>What the download endpoint needs to serve a file: either the bytes
 /// (Upload) or a redirect target (ExternalLink), plus the metadata that drives the

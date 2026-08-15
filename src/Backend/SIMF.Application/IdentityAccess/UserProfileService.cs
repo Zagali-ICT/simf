@@ -41,7 +41,6 @@ internal sealed class UserProfileService(
     IUserProfileRepository profiles,
     IPiiEncryptor pii,
     IFileService fileService,
-    IFileStorageProvider fileStorage,
     IAuditLog auditLog,
     TimeProvider timeProvider,
     INotificationDispatcher notifications,
@@ -686,15 +685,16 @@ internal sealed class UserProfileService(
     public async Task<UserIdDocumentImage?> ReadIdImageAsync(
         Guid actorUserId, CancellationToken cancellationToken = default)
     {
-        // Owner-scoped raw decrypt read from the unified StoredFile
-        // store (App DB, owner = the user). Self-read: the sub-claim gate on the
-        // endpoint is the authorization; no PII audit (self-access, not a third-party
-        // disclosure). AES-GCM integrity is intrinsic (a tampered blob → null).
-        var locator = await profiles.GetOwnerScopedFileAsync(
+        // Owner-scoped read through the file service (App DB, owner = the user).
+        // Self-read: the sub-claim gate on the endpoint is the authorization, so this
+        // is the caller-authorized read, not DownloadAsync; no PII audit (self-access,
+        // not a third-party disclosure). Integrity is doubly covered — AES-GCM fails
+        // the auth tag on a tampered blob, and the service re-checks the SHA-256.
+        var file = await fileService.ReadOwnerContentAsync(
             FileService.IdDocument, actorUserId, cancellationToken);
-        if (locator is not { } file) { return null; }
-        var bytes = await fileStorage.ReadAsync(file.StorageKey, file.IsEncrypted, cancellationToken);
-        return bytes is null ? null : new UserIdDocumentImage(bytes, file.ContentType ?? "application/octet-stream");
+        return file is null
+            ? null
+            : new UserIdDocumentImage(file.Content, file.ContentType ?? "application/octet-stream");
     }
 
     public async Task UploadIdImageForSubjectAsync(
@@ -770,14 +770,14 @@ internal sealed class UserProfileService(
         var subject = await accounts.FindByIdAsync(subjectUserId, cancellationToken);
         if (subject is null || subject.UserType != expectedKind) { return null; }
 
-        // Owner-scoped raw decrypt read from the unified StoredFile store
-        // (App DB, owner = the subject). The UserType guard above + the route's
-        // Visitors.View gate are the authorization; AES-GCM integrity is intrinsic.
-        var locator = await profiles.GetOwnerScopedFileAsync(
+        // Owner-scoped read through the file service (App DB, owner = the subject).
+        // The UserType guard above + the route's Visitors.View gate are the
+        // authorization, which is why this is the caller-authorized read; the service
+        // still applies the fail-closed SHA-256 re-check on these Secret-tier bytes.
+        var file = await fileService.ReadOwnerContentAsync(
             FileService.IdDocument, subjectUserId, cancellationToken);
-        if (locator is not { } file) { return null; }
-        var bytes = await fileStorage.ReadAsync(file.StorageKey, file.IsEncrypted, cancellationToken);
-        if (bytes is null) { return null; }
+        if (file is null) { return null; }
+        var bytes = file.Content;
 
         // A9 (PII) — an admin READ of a visitor's national-ID image is a PII
         // disclosure and must leave an audit trail, mirroring the upload's audit
@@ -868,16 +868,15 @@ internal sealed class UserProfileService(
         var subject = await accounts.FindByIdAsync(subjectUserId, cancellationToken);
         if (subject is null || subject.UserType != expectedKind) { return null; }
 
-        // Resolve the VIP photo from the unified StoredFile store
-        // (App DB, owner-scoped). Raw decrypt read: the ExpectedKind guard above is
-        // the authorization; the admin fetch route also gates on Visitors.View. The
-        // bytes are AES-GCM encrypted at rest, so a tampered blob fails the auth tag
-        // on decrypt (ReadAsync → null) — the integrity guard is intrinsic.
-        var locator = await profiles.GetOwnerScopedFileAsync(
+        // Resolve the VIP photo through the file service (App DB, owner-scoped).
+        // Caller-authorized read: the ExpectedKind guard above is the authorization
+        // and the admin fetch route also gates on Visitors.View. Integrity is doubly
+        // covered — AES-GCM fails the auth tag on a tampered blob, and the service
+        // re-checks the SHA-256 for this Confidential tier.
+        var file = await fileService.ReadOwnerContentAsync(
             FileService.VipPhoto, subjectUserId, cancellationToken);
-        if (locator is not { } file) { return null; }
-        var bytes = await fileStorage.ReadAsync(file.StorageKey, file.IsEncrypted, cancellationToken);
-        if (bytes is null) { return null; }
+        if (file is null) { return null; }
+        var bytes = file.Content;
 
         // PII — an admin READ of a VIP welcome photo is a personal-data
         // disclosure and must leave an audit trail, mirroring the ID-image read

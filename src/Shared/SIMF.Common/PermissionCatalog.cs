@@ -625,12 +625,18 @@ public static class PermissionCatalog
     }
 
     /// <summary>The centralized file store. <see cref="Upload"/> /
-    /// <see cref="Delete"/> gate the single file API; <see cref="View"/> gates the
-    /// management grid. The privileged trio (<see cref="ForceDelete"/> /
+    /// <see cref="Delete"/> gate entry to the single file API; <see cref="View"/>
+    /// gates the management grid. The privileged trio (<see cref="ForceDelete"/> /
     /// <see cref="Reclassify"/> / <see cref="BulkExport"/>) is held separately so
     /// each elevated action is independently grantable and audited. (Public-file
     /// reads need no permission; private downloads reuse the owning entity's
-    /// view permission, enforced per-service by the download endpoint.)</summary>
+    /// view permission, enforced per-service by the download endpoint.)
+    /// <para><see cref="Upload"/> and <see cref="Delete"/> are the OUTER gate only:
+    /// writing through the generic endpoints additionally requires the owning
+    /// module's own write code, resolved per-service from
+    /// <c>FileServicePolicy.UploadPermission</c> / <c>.DeletePermission</c> —
+    /// otherwise one flat code would let whoever may replace a sponsor logo plant
+    /// or delete an attendee's identity document.</para></summary>
     public static class Files
     {
         public const string Upload = "Files.Upload";
@@ -639,6 +645,16 @@ public static class PermissionCatalog
         public const string ForceDelete = "Files.ForceDelete";
         public const string Reclassify = "Files.Reclassify";
         public const string BulkExport = "Files.BulkExport";
+
+        /// <summary>The per-service write gate for the three personal-data
+        /// services (avatar, ID document, VIP photo). It is its own code because no
+        /// module code fits: a personal file may belong to a visitor, an "other"
+        /// account or an admin, so <c>Visitors.Edit</c> would deny the other two
+        /// and mis-scope the first. Generic UPLOAD of these services is refused
+        /// outright in favour of their dedicated routes (which derive the owner
+        /// from the authenticated subject), so in practice this code gates their
+        /// deletion through the central store.</summary>
+        public const string ManagePersonal = "Files.ManagePersonal";
     }
 
     public static class News
@@ -1188,6 +1204,9 @@ public static class PermissionCatalog
         new(Files.ForceDelete, "Files", "ForceDelete", "Force-delete a retained file (privileged)", AdminOnly),
         new(Files.Reclassify, "Files", "Reclassify", "Change a file's service / classification (privileged)", AdminOnly),
         new(Files.BulkExport, "Files", "BulkExport", "Bulk-export files (privileged)", AdminOnly),
+        new(Files.ManagePersonal, "Files", "ManagePersonal",
+            "Manage a personal file — avatar / ID document / VIP photo — through the central store (privileged)",
+            AdminOnly),
         new(Archive.Snapshot, "Archive", "Snapshot", "Snapshot the current event into a past edition", AdminOnly),
         new(Archive.Export, "Archive", "Export", "Export archive editions", AdminOnly),
         new(Archive.Import, "Archive", "Import", "Import archive editions", AdminOnly),

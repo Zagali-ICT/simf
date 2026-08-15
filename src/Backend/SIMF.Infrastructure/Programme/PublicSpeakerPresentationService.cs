@@ -20,7 +20,7 @@ namespace SIMF.Infrastructure.Programme;
 /// Speaker + Session + Presentation are real FKs on <see cref="SimfAppDbContext"/>.</summary>
 internal sealed class PublicSpeakerPresentationService(
     SimfAppDbContext db,
-    IFileStorageProvider fileStorage) : IPublicSpeakerPresentationService
+    IFileService fileService) : IPublicSpeakerPresentationService
 {
     public async Task<PublicPresentations> ListAsync(
         CancellationToken cancellationToken = default)
@@ -79,9 +79,8 @@ internal sealed class PublicSpeakerPresentationService(
             return null;
         }
 
-        var bytes = await PresentationFileReader.ReadBytesAsync(
-            db, fileStorage, row.StoredFileId, cancellationToken);
-        return bytes is null ? null : (bytes, row.ContentType, row.FileName);
+        var file = await fileService.ReadContentAsync(row.StoredFileId, cancellationToken);
+        return file is null ? null : (file.Content, row.ContentType, row.FileName);
     }
 
     public async Task<(byte[] Content, string ContentType, string FileName)?> GetFileAsync(
@@ -99,8 +98,7 @@ internal sealed class PublicSpeakerPresentationService(
             return null;
         }
 
-        var bytes = await PresentationFileReader.ReadBytesAsync(
-            db, fileStorage, row.StoredFileId, cancellationToken);
-        return bytes is null ? null : (bytes, row.ContentType, row.FileName);
+        var file = await fileService.ReadContentAsync(row.StoredFileId, cancellationToken);
+        return file is null ? null : (file.Content, row.ContentType, row.FileName);
     }
 }

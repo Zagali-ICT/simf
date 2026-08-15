@@ -26,7 +26,6 @@ namespace SIMF.Infrastructure.Assets;
 internal sealed class AssetService(
     SimfAppDbContext dbContext,
     IFileService fileService,
-    IFileStorageProvider storage,
     TimeProvider timeProvider,
     ILogger<AssetService> logger) : IAssetService
 {
@@ -130,11 +129,10 @@ internal sealed class AssetService(
                 AssetSourceType.ExternalLink, ToKind(file.FileType), null, null, file.ExternalUrl);
         }
 
-        if (string.IsNullOrEmpty(file.StorageKey)) { return null; }
-        var bytes = await storage.ReadAsync(file.StorageKey, file.IsEncrypted, cancellationToken);
-        if (bytes is null) { return null; }
+        var content = await fileService.ReadContentAsync(file.Id, cancellationToken);
+        if (content is null) { return null; }
         return new AssetResolution(
-            AssetSourceType.Upload, ToKind(file.FileType), bytes, file.ContentType, null);
+            AssetSourceType.Upload, ToKind(file.FileType), content.Content, content.ContentType, null);
     }
 
     public async Task<IReadOnlySet<Guid>> WhichOwnersHaveActiveAssetAsync(

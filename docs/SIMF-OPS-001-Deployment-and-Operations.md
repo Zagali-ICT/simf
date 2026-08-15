@@ -19,6 +19,7 @@
 |---------|------|--------|-------------------|
 | 1.0 | 2026-05-21 | Engineering & Architecture Team | First issue. |
 | 1.1 | 2026-05-21 | Engineering & Architecture Team | Architecture-review amendment (see Amendment A): the §11 load test rewritten to peak-shaped targets; the production scale-out cross-referenced; connection-pool sizing; a real readiness `/health`. |
+| 1.2 | 2026-08-15 | Engineering & Architecture Team | Amendment C: the backup set is four artefacts, not three. Key escrow, backup order, the restore and verification procedure, and the two standing caveats (rotation is not operational; a byte-level restore reverses a crypto-shred). |
 
 ---
 
@@ -244,6 +245,13 @@ state at runtime in the CP (`/admin/ai/prompts`, `PUT /admin/ai/prompts/{id}`).
   the three forum days are the window that matters most.
 
 ## 10. Backup and rollback
+
+> **Superseded in part by Amendment C.** This section describes the backup as
+> "the database and the application". That is not the whole recoverable state:
+> the encrypted file store and the encryption keys are also required, and the
+> keys are the one artefact no backup of the databases or the disk contains.
+> **Amendment C is the authoritative backup and restore runbook. Read it first,
+> and do C.1 today.**
 
 - The database and the application are backed up on a schedule.
 - The **last known-good published build** is retained, so a release can be
@@ -648,6 +656,202 @@ A deploy is accepted only when all of the following pass:
 - [ ] §13 — every checklist step green.
 
 A deploy that fails any line is rolled back per §B.5.
+
+---
+
+## Amendment C — Backup set, key escrow and restore (2026-08-15)
+
+Amends §10, and is the authoritative backup and restore runbook. It exists
+because §10 counted the recoverable state wrong. Companion material:
+§B.1 (the configuration matrix), §B.3 (secret generation),
+`deploy/configure-prod-env.ps1`, `deploy/set-env-api.template.ps1`,
+`docs/manuals/SIMF-File-Store-Dev-Guide.md`.
+
+### C.1 Do this first: escrow the keys (about five minutes)
+
+`deploy/configure-prod-env.ps1` generates the two data-encryption keys on the
+server, writes them straight into the Machine-scope environment, and
+**deliberately never prints them**. That is correct for a provisioning script
+and it leaves one gap: there is no escrow copy anywhere. A backup of both
+databases plus the whole file tree therefore does **not** contain the keys, so a
+rebuilt machine restores to permanently undecryptable Avatar, IdDocument,
+VipPhoto and SpeakerPresentation bytes, and to unreadable national ID / Iqama /
+passport / mobile columns. Nothing about that failure is recoverable later. It
+is recoverable now, by reading the values off the running API box once and
+storing them somewhere else.
+
+On the API server, as Administrator:
+
+```powershell
+# Read the two data keys plus the KEK version stamp. Do NOT run this into a
+# transcript, a log, a shared console or a screen-share.
+'SIMF_API_FileStorage__EncryptionKey',
+'SIMF_API_FileStorage__KekVersion',
+'SIMF_API_Storage__UserIdDocumentEncryptionKey' | ForEach-Object {
+    [pscustomobject]@{
+        Name  = $_
+        Value = [Environment]::GetEnvironmentVariable($_, 'Machine')
+    }
+}
+```
+
+Store the result in the organisation's secret vault, **not** on the file server
+those keys protect and **not** in the same backup set as the store. A backup
+that loses the store and the key together restores nothing; a backup that keeps
+them together concedes both to one compromise.
+
+`SIMF_API_FileStorage__KekVersion` is escrowed alongside the key and not treated
+as trivia. The version stamp is written into every encrypted blob's header, and
+a correct key restored under the wrong version number fails with
+`No KEK available for version N`.
+
+### C.2 The backup set is four artefacts, not three
+
+| # | Artefact | Where it is | Lost by itself means |
+|---|----------|-------------|----------------------|
+| 1 | `SIMF_App` database | `SIMF_API_ConnectionStrings__SimfAppDb` | Everything except accounts. Orphan bytes on disk that nothing can name. |
+| 2 | `SIMF_Identity` database | `SIMF_API_ConnectionStrings__SimfIdentityDb` | Every account, role, permission and second factor. |
+| 3 | The file tree | `SIMF_API_FileStorage__RootPath` (falls back to `%ProgramData%\SIMF\files` when unset, which is a location an operator never chose and may not be backing up) | Every uploaded byte. Rows survive and degrade to 404. |
+| 4 | **The keys** | Machine-scope environment on the API box, escrowed per C.1 | Both encrypted surfaces, permanently. |
+
+Artefact 4 is two independent keys, and a restore missing either one is unusable
+in a different way:
+
+- `SIMF_API_FileStorage__EncryptionKey` (plus `SIMF_API_FileStorage__KekVersion`)
+  is the KEK for the centralized file store. Each file carries its own random
+  data key sealed under the KEK, so without the KEK no per-file key unwraps and
+  every encrypting service is gone at once: Avatar, IdDocument, VipPhoto,
+  SpeakerPresentation. Public images and the session recordings are stored as
+  plaintext and survive; that is the whole of what survives.
+- `SIMF_API_Storage__UserIdDocumentEncryptionKey` is a **separate, independent**
+  AES-256-GCM key over the `UserProfile` identity-document columns (NCA A2-10).
+  It is not derived from the KEK and does not travel with it. Without it the file
+  store may open perfectly while every stored national ID, Iqama, passport number
+  and mobile number stays ciphertext in a database that is otherwise intact.
+
+Related but out of scope here: the Control Panel and Website share a Data
+Protection key ring at `DataProtection__KeyRingPath`. It is a presentation-tier
+artefact, it protects no stored data, and losing it signs every admin out rather
+than destroying anything. Back it up on those hosts; do not confuse it with the
+two data keys above.
+
+### C.3 Order: databases first, then the file tree
+
+Back up in this order, and do not let a scheduler reverse it for convenience:
+
+1. `SIMF_App` and `SIMF_Identity`.
+2. The tree at `FileStorage:RootPath`.
+
+The direction is chosen because its failure mode is the survivable one. Between
+the two steps a new upload can land on disk with no row naming it, which is
+harmless: the restored system simply never mentions it. A row whose bytes are
+missing is equally benign, because the download path answers a clean 404 and the
+owning screen renders its empty state.
+
+Reversed, the same window produces rows that exist with no bytes behind them for
+files uploaded during the gap, and, worse, the silent case: bytes newer than the
+rows. Nothing in this system ever enumerates the disk to reconcile it against
+the database. There is no sweep, no orphan report, no integrity job. A blob
+whose row was never captured is unreachable forever and no operator is ever told
+it happened. Prefer the failure that announces itself.
+
+Backup verification is already a go-live gate: §B.8 item 9 requires a restore
+drill against a non-production environment inside the last 30 days. Amendment C
+defines what that drill has to prove (C.5).
+
+### C.4 Restore procedure
+
+1. Restore `SIMF_App` and `SIMF_Identity`.
+2. Restore the file tree to whatever path this machine will use.
+3. Set `SIMF_API_FileStorage__RootPath` to that path. **It may point anywhere.**
+   A local directory or a UNC share on a file server (`\\fs.simrsnf.local\simf\files`)
+   are equally valid, and no database row is rewritten either way, because every
+   row stores a **relative** `StorageKey` of the form `{Service}/{Id:N}{ext}` and
+   never an absolute path. Relocating the store, splitting it onto a file server,
+   or standing the estate up in a DR site is a configuration change and nothing
+   more. This is also what lets the API tier scale out: a second node reads the
+   same UNC root with no data migration.
+4. Restore the keys from escrow into the Machine-scope environment on the API
+   box: `SIMF_API_FileStorage__EncryptionKey`,
+   `SIMF_API_FileStorage__KekVersion` and
+   `SIMF_API_Storage__UserIdDocumentEncryptionKey`. Re-running
+   `configure-prod-env.ps1` will **not** do this for you: it generates a key only
+   when none is set, it never overwrites one, and there is deliberately no
+   `-Force`. On a rebuilt machine with no key set it would happily generate a
+   **new** one, which boots cleanly and decrypts nothing. Put the escrowed values
+   in before the first start.
+5. Restart the app pools and confirm `/health`, then run C.5.
+
+**What the boot gates do and do not catch.** In Production the API refuses to
+start when `FileStorage:EncryptionKey` is missing, and refuses to start when
+`Storage:UserIdDocumentEncryptionKey` is absent, not base64, or does not decode
+to exactly 32 bytes. The file-store KEK is checked at boot for presence only:
+a KEK that is malformed or the wrong length is caught by the cipher when it is
+first constructed, which is the first file operation rather than start-up. And
+a key that is well-formed but simply **wrong** passes every check on both
+surfaces, because 32 random bytes look exactly like 32 correct bytes until
+something tries to unwrap a data key with them. No boot gate can find that.
+Only C.5 can, which is why C.5 is not optional.
+
+### C.5 Verification: prove it with a private download
+
+After any restore, download a sample of Confidential-or-above files through the
+**normal** API endpoint, signed in as an account entitled to them. Do not read
+the bytes off disk and do not add a bespoke check script.
+
+The download path already recomputes SHA-256 over the served plaintext and
+compares it against the hash recorded on the row, failing closed on a mismatch,
+for Confidential tier and above. One successful private download therefore
+proves, in a single action, that the KEK is the right key, that the blob is the
+right blob, and that the metadata still describes it.
+
+Sample selection matters, because the hash re-check is tier-gated:
+
+- **Avatar** (Confidential) and **VipPhoto** (Confidential): covered by the
+  re-check. Include at least one of each.
+- **IdDocument** (Secret): covered by the re-check, and it is the one service
+  whose loss is a reportable data event. Always include one.
+- **SpeakerPresentation** is encrypted but Internal tier, so a successful
+  download proves the key unwrapped and the file opened; it does not prove the
+  hash. Treat it as a key test, not an integrity test.
+
+Separately, open one profile in the Control Panel that carries a national ID or
+passport number and confirm the value renders as text rather than as ciphertext.
+That is the only check that exercises the second key. The file download says
+nothing about it.
+
+A restore is not accepted until both pass.
+
+### C.6 Two standing caveats
+
+**Key rotation is not operational.** The blob format supports it: every
+encrypted file carries a KEK-version byte in its header, the cipher will hold a
+previous KEK alongside the active one, and the configuration surface for that
+exists (`FileStorage:PreviousEncryptionKey`, `FileStorage:PreviousKekVersion`).
+The operational half is missing on three counts. No deploy template or
+provisioning script has an entry for the previous key, so nothing puts one on a
+server. There is no re-wrap job, so nothing walks the store re-sealing per-file
+keys under the new KEK. And the `StoredFile` row records `CipherFormatVersion`
+but **not** the KEK version, which lives only inside the blob header on disk, so
+rotation progress cannot be inventoried, resumed or reported from SQL. Until
+those exist, treat both data keys as set-once for the life of the store. A key
+believed to be compromised is an incident to escalate, not a variable to edit.
+
+**A byte-level restore silently reverses a crypto-shred.** The PDPL
+right-to-erasure path destroys a file by overwriting the head of its blob on
+disk, which shreds the wrapped data key and makes that one file's ciphertext
+unrecoverable. The shred is local to the blob; the KEK itself is untouched, and
+in practice has never rotated. So restoring a file tree from a point in time
+before the erasure brings back an intact wrapped key, and those bytes decrypt
+again for anyone holding the KEK and filesystem access. The database still
+records `SecureDestroyed` and the API still answers 404, so the resurrection is
+invisible through the application, which is precisely what makes it dangerous.
+Restore the database to a pre-erasure point as well and even that trace is gone.
+
+There is no automated protection against this today. The fix is a **destruction
+ledger**: a durable record of erasures, kept outside the restorable set and
+replayed after any restore so that anything erased is erased again. It is
+recorded here as an open item and is not designed in this amendment.
 
 ---
 

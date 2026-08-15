@@ -7,8 +7,20 @@ namespace SIMF.Application.Files.Abstractions;
 /// no caller change. The on-disk key is always server-built from the
 /// <see cref="FileService"/> + file id (never client input), so path traversal is
 /// impossible by construction, and every read re-validates the key against the
-/// storage root.</summary>
-public interface IFileStorageProvider
+/// storage root.
+///
+/// <para><b>INTERNAL ON PURPOSE.</b> "All file access goes through
+/// <see cref="IFileService"/>" has to be a property the compiler enforces, not a
+/// doc comment: while this was public, eleven read sites and one write site went
+/// straight to the provider and each of them silently lost the service-policy
+/// check, the fail-closed SHA-256 re-check on Confidential+ bytes, and the
+/// download / access-denied audit rows. Only the file subsystem and the DI
+/// composition root may see it, via <c>InternalsVisibleTo("SIMF.Infrastructure")</c>
+/// — so a bypass from SIMF.Api or any other assembly no longer compiles. Need
+/// something the storage layer can do that the service does not expose? Add the
+/// method to <see cref="IFileService"/>, keeping it path-free and backend-neutral,
+/// so an S3 or Blob provider stays a DI change with no caller change.</para></summary>
+internal interface IFileStorageProvider
 {
     /// <summary>Writes <paramref name="content"/> for a file, encrypting at rest
     /// when <paramref name="encrypt"/> is true. The storage key is derived from
@@ -61,11 +73,11 @@ public interface IFileStorageProvider
 
 /// <summary>The key to persist on the <c>StoredFile</c> row plus the cipher
 /// format version used (<c>0</c> = plaintext).</summary>
-public sealed record FileWriteResult(string StorageKey, byte CipherFormatVersion);
+internal sealed record FileWriteResult(string StorageKey, byte CipherFormatVersion);
 
 /// <summary>The outcome of a streamed (plaintext) write: the
 /// storage key, the SHA-256 of the bytes (lowercase hex), and the byte count.</summary>
-public sealed record StreamWriteResult(string StorageKey, string Sha256, long SizeBytes);
+internal sealed record StreamWriteResult(string StorageKey, string Sha256, long SizeBytes);
 
 /// <summary>A seekable read stream over a stored plaintext file
 /// plus its length, for Range streaming. The caller disposes the stream.</summary>

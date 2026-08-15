@@ -102,7 +102,7 @@ public sealed class StaffSeatOccupantEndpoint(ISeatReservationService service)
 /// attendee with no account has no avatar to serve and never reaches here.</para></summary>
 public sealed class StaffSeatOccupantPhotoEndpoint(
     SimfAppDbContext appDb,
-    IFileStorageProvider storage)
+    IFileService files)
     : EndpointWithoutRequest
 {
     public override void Configure()
@@ -139,7 +139,7 @@ public sealed class StaffSeatOccupantPhotoEndpoint(
             return;
         }
 
-        var avatar = await AvatarBytes.ReadAsync(appDb, storage, userId, ct);
+        var avatar = await AvatarBytes.ReadAsync(files, userId, ct);
         if (avatar is null)
         {
             await Send.NotFoundAsync(ct);

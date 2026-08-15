@@ -1,4 +1,4 @@
-// D-568 — the per-service download authorization matrix and the IDOR guarantee:
+﻿// D-568 — the per-service download authorization matrix and the IDOR guarantee:
 // the download endpoint authorizes off the stored file's own FileService policy
 // (never the URL), so a guessed/leaked GUID for a private file is rejected with a
 // uniform 404. Also covers the retention hold (IdDocument is not deletable).
@@ -7,6 +7,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
+using SIMF.Application.Files.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
@@ -45,8 +46,7 @@ public sealed class FileAuthorizationTests : IClassFixture<SimfApiFactory>
 
         // Admin stores an avatar owned by the visitor (owner id == the visitor's
         // identity, which is also their JWT `sub`).
-        var url = await UploadAndGetUrlAsync(
-            FileService.Avatar, FileOwnerEntityType.UserProfile, ownerId, Png, "image/png", "a.png", adminToken);
+        var url = (await SeedFileAsync(FileService.Avatar, ownerId, Png, "image/png", "a.png")).Url;
 
         Assert.Equal(HttpStatusCode.OK, (await GetAsync(url, ownerToken)).StatusCode);          // owner
         Assert.Equal(HttpStatusCode.OK, (await GetAsync(url, adminToken)).StatusCode);          // admin (wildcard)
@@ -60,8 +60,7 @@ public sealed class FileAuthorizationTests : IClassFixture<SimfApiFactory>
         var adminToken = await CreateAdministratorAndSignInAsync();
         var visitor = await AuthFlow.SignInVisitorWithoutTwoFactorAsync(_client, _factory);
 
-        var url = await UploadAndGetUrlAsync(
-            FileService.VipPhoto, FileOwnerEntityType.UserProfile, Guid.NewGuid(), Png, "image/png", "v.png", adminToken);
+        var url = (await SeedFileAsync(FileService.VipPhoto, Guid.NewGuid(), Png, "image/png", "v.png")).Url;
 
         Assert.Equal(HttpStatusCode.OK, (await GetAsync(url, adminToken)).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await GetAsync(url, visitor.AccessToken)).StatusCode);
@@ -87,10 +86,7 @@ public sealed class FileAuthorizationTests : IClassFixture<SimfApiFactory>
     {
         var adminToken = await CreateAdministratorAndSignInAsync();
         var owner = Guid.NewGuid();
-        var resp = await UploadAsync(
-            FileService.IdDocument, FileOwnerEntityType.UserProfile, owner, Png, "image/png", "id.png", adminToken);
-        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
-        var file = (await resp.Content.ReadFromJsonAsync<ApiResult<UploadedFileResponse>>())!.Data!;
+        var file = await SeedFileAsync(FileService.IdDocument, owner, Png, "image/png", "id.png");
 
         var del = await DeleteAsync($"/api/v1/files/{file.Id}", adminToken);
 
@@ -109,6 +105,24 @@ public sealed class FileAuthorizationTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
         return (await resp.Content.ReadFromJsonAsync<ApiResult<UploadedFileResponse>>())!.Data!.Url;
     }
+
+    // The owner-scoped services (Avatar, IdDocument, VipPhoto) are unreachable
+    // through the generic POST /files: it takes both the service and the owner id
+    // from the caller, so allowing them there let anyone holding Files.Upload plant
+    // an identity document on any profile. These tests assert the DOWNLOAD matrix,
+    // and only ever used the upload to put a file in place, so they seed the same
+    // way every internal writer does — through IFileService, in process, where no
+    // endpoint gate applies because there is no request.
+    private async Task<StoredFileResult> SeedFileAsync(
+        FileService service, Guid? ownerId, byte[] bytes, string contentType, string fileName)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var files = scope.ServiceProvider.GetRequiredService<IFileService>();
+        return await files.UploadAsync(new UploadFileCommand(
+            service, ownerId, bytes, fileName, contentType, SeedActorId, FailClosed: true));
+    }
+
+    private static readonly Guid SeedActorId = Guid.Parse("00000000-0000-0000-0000-0000000000A1");
 
     private Task<HttpResponseMessage> UploadAsync(
         FileService service, FileOwnerEntityType ownerType, Guid? ownerId,
