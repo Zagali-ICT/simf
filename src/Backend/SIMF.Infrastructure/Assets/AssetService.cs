@@ -41,6 +41,8 @@ internal sealed class AssetService(
             [AssetCategory.MediaPartnerLogo] = FileService.MediaPartnerLogo,
             [AssetCategory.SponsorLogo] = FileService.SponsorLogo,
             [AssetCategory.ArchiveCover] = FileService.ArchiveCover,
+            [AssetCategory.ArchivePastSpeakerPhoto] = FileService.ArchivePastSpeakerPhoto,
+            [AssetCategory.ArchiveGalleryImage] = FileService.ArchiveGalleryImage,
             [AssetCategory.NewsImage] = FileService.NewsImage,
             [AssetCategory.ProgrammeDayImage] = FileService.ProgrammeDayImage,
             [AssetCategory.OrganizationLogo] = FileService.OrganizationLogo,
@@ -169,6 +171,12 @@ internal sealed class AssetService(
                 .AnyAsync(x => x.Id == ownerId && x.IsActive, cancellationToken),
             AssetCategory.ArchiveCover => dbContext.ArchiveEditions
                 .AnyAsync(x => x.Id == ownerId && x.IsActive, cancellationToken),
+            // A past-edition child is public exactly while its edition is: the
+            // child carries no active flag of its own, the parent's governs.
+            AssetCategory.ArchivePastSpeakerPhoto => dbContext.ArchivePastSpeakers
+                .AnyAsync(x => x.Id == ownerId && x.Edition!.IsActive, cancellationToken),
+            AssetCategory.ArchiveGalleryImage => dbContext.ArchiveMediaItems
+                .AnyAsync(x => x.Id == ownerId && x.Edition!.IsActive, cancellationToken),
             AssetCategory.NewsImage => dbContext.News
                 .AnyAsync(x => x.Id == ownerId && x.IsActive && x.PublishedAt <= now, cancellationToken),
             AssetCategory.ProgrammeDayImage => dbContext.ProgrammeDays
@@ -376,6 +384,18 @@ internal sealed class AssetService(
                         .Where(x => ids.Contains(x.Id)).Select(x => new { x.Id, x.Name })
                         .ToListAsync(cancellationToken))
                         result[(AssetCategory.SponsorLogo, r.Id)] = r.Name;
+                    break;
+                case AssetCategory.ArchivePastSpeakerPhoto:
+                    foreach (var r in await dbContext.ArchivePastSpeakers.AsNoTracking()
+                        .Where(x => ids.Contains(x.Id)).Select(x => new { x.Id, x.NameEn })
+                        .ToListAsync(cancellationToken))
+                        result[(AssetCategory.ArchivePastSpeakerPhoto, r.Id)] = r.NameEn;
+                    break;
+                case AssetCategory.ArchiveGalleryImage:
+                    foreach (var r in await dbContext.ArchiveMediaItems.AsNoTracking()
+                        .Where(x => ids.Contains(x.Id)).Select(x => new { x.Id, x.CaptionEn })
+                        .ToListAsync(cancellationToken))
+                        result[(AssetCategory.ArchiveGalleryImage, r.Id)] = r.CaptionEn ?? "Gallery item";
                     break;
                 case AssetCategory.ArchiveCover:
                     foreach (var r in await dbContext.ArchiveEditions.AsNoTracking()

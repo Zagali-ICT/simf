@@ -1,4 +1,4 @@
-# Mohaned Review: open fix plans
+﻿# Mohaned Review: open fix plans
 
 Owner-raised review items. Each one is a self-contained fix plan: findings
 verified against source first, then a recommendation. **No code is written for
@@ -7,8 +7,40 @@ any item until that item is approved.**
 | # | Item | Raised | Status |
 |---|------|--------|--------|
 | 1 | Device-key label and device identity | 2026-08-13 | **DONE 2026-08-14** (label + My Devices + S1 to S8, S10; S9 deferred) |
-| 2 | File pointers become real foreign keys to the central file table | 2026-08-13 | Waiting for owner approval |
-| 3 | `DisplayName` duplicates the profile name, and the greeting rule is not built | 2026-08-13 | Waiting for owner approval |
+| 2 | File pointers become real foreign keys to the central file table | 2026-08-13 | **DONE 2026-08-14.** Widened by the owner to every media reference in the system, not only the pointers listed below; see the note under the index |
+| 3 | `DisplayName` duplicates the profile name, and the greeting rule is not built | 2026-08-13 | **DONE 2026-08-14** (contract documented, two reads inverted, first-two-word greeting with Arabic compound names pinned) |
+
+> **Item 2 grew, on the owner's instruction: "in all system use ONE style, save at
+> file table and reference by FileId", with no exception for an external URL,
+> since the file table can hold a URL as well as bytes and carries the media type
+> and the permission control either way.**
+>
+> So the work is not the seven pointers this item lists. It is **sixteen columns**:
+> the seven here, plus five that held a path under a different name
+> (`Sponsor`, `News`, `MediaPartner`, `ArchiveEdition` logos and covers, and
+> `Banner.ImageUrl`), plus the stream and video URLs
+> (`Session` x2, `SessionSummary`, `OrganizationProfile` x2, `MediaItem`), plus the
+> two archive children that reverse D-440. Recorded as D-885, D-888, D-889, D-890
+> and D-891.
+>
+> Three things were found only by doing it, and none of them would have failed a
+> build or a test:
+>
+> - the **partner directory** read its speaker and sponsor logos from the retired
+>   path fields as presence sentinels, so every logo there would have become an
+>   initials tile;
+> - the **Website** fell through to a stock cover for every archive edition,
+>   because nothing told it an uploaded cover existed;
+> - `POST /files/link` accepted **any** file service, so a Secret ID document or an
+>   encrypted avatar could be pointed at a third-party host, unscanned and
+>   unencrypted, and still served under this system's name.
+>
+> The plan's own instruction to "move `LiveStreamUrlPolicy` into
+> `CreateExternalLinkAsync` so it guards every external reference" turned out to be
+> wrong and was not followed: that policy accepts only a YouTube id or a
+> `.m3u8`/`.mp4` suffix, so applying it everywhere would have rejected every CDN
+> logo and the whole External link tab. The correct split is per file-service
+> policy and is recorded in `docs/reviews/media-url-conversion-findings.md`.
 
 ---
 

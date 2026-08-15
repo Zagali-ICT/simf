@@ -1083,6 +1083,7 @@
   <data name="Admin.OrganizationProfile.Field.BioEn" xml:space="preserve"><value>النبذة (بالإنجليزية)</value></data>
   <data name="Admin.OrganizationProfile.Field.BioAr" xml:space="preserve"><value>النبذة (بالعربية)</value></data>
   <data name="Admin.OrganizationProfile.Field.CurrentYear" xml:space="preserve"><value>السنة الحالية</value></data>
+  <data name="Admin.OrganizationProfile.Field.Logo" xml:space="preserve"><value>شعار الملتقى</value></data>
   <data name="Admin.OrganizationProfile.Field.Status" xml:space="preserve"><value>الحالة</value></data>
   <data name="Admin.OrganizationProfile.Status.Soon" xml:space="preserve"><value>قريباً</value></data>
   <data name="Admin.OrganizationProfile.Status.Open" xml:space="preserve"><value>مفتوح</value></data>
@@ -3046,6 +3047,20 @@
   <data name="Admin.Archive.Field.Gallery" xml:space="preserve"><value>المعرض — سطر لكل عنصر: رابط | image|video | تعليق</value></data>
   <data name="Admin.Archive.Field.SessionTitles" xml:space="preserve"><value>عناوين الجلسات — سطر لكل عنوان: عربي | إنجليزي</value></data>
   <data name="Admin.Archive.Field.PastSpeakers" xml:space="preserve"><value>المتحدثون السابقون — سطر لكل متحدث: عربي | إنجليزي | مسار الصورة</value></data>
+  <data name="Admin.Archive.Gallery.IndexLabel" xml:space="preserve"><value>عنصر المعرض</value></data>
+  <data name="Admin.Archive.Gallery.Empty" xml:space="preserve"><value>لا توجد عناصر في المعرض بعد.</value></data>
+  <data name="Admin.Archive.Gallery.Add" xml:space="preserve"><value>إضافة عنصر</value></data>
+  <data name="Admin.Archive.Gallery.Kind" xml:space="preserve"><value>النوع</value></data>
+  <data name="Admin.Archive.Gallery.KindImage" xml:space="preserve"><value>صورة</value></data>
+  <data name="Admin.Archive.Gallery.KindVideo" xml:space="preserve"><value>فيديو</value></data>
+  <data name="Admin.Archive.Gallery.Caption" xml:space="preserve"><value>التعليق</value></data>
+  <data name="Admin.Archive.Gallery.VideoUrl" xml:space="preserve"><value>رابط الفيديو</value></data>
+  <data name="Admin.Archive.PastSpeaker.IndexLabel" xml:space="preserve"><value>متحدث سابق</value></data>
+  <data name="Admin.Archive.PastSpeaker.Empty" xml:space="preserve"><value>لا يوجد متحدثون سابقون بعد.</value></data>
+  <data name="Admin.Archive.PastSpeaker.Add" xml:space="preserve"><value>إضافة متحدث</value></data>
+  <data name="Admin.Archive.PastSpeaker.NameAr" xml:space="preserve"><value>الاسم (عربي)</value></data>
+  <data name="Admin.Archive.PastSpeaker.NameEn" xml:space="preserve"><value>الاسم (إنجليزي)</value></data>
+  <data name="Admin.Archive.PastSpeaker.CountryId" xml:space="preserve"><value>رمز الدولة (ISO 3166-1 رقمي)</value></data>
   <data name="Admin.Archive.Field.IsActive" xml:space="preserve"><value>مُفعّل (ظاهر في الأرشيف العام)</value></data>
 
   <!-- D-199 — Ratings admin read-only view. -->

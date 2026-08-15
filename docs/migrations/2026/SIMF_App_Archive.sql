@@ -86,13 +86,16 @@ END
 
 IF @ed2024 IS NOT NULL AND NOT EXISTS (SELECT 1 FROM dbo.ArchivePastSpeakers WHERE ArchiveEditionId = @ed2024)
 BEGIN
-    INSERT INTO dbo.ArchivePastSpeakers (Id, ArchiveEditionId, NameEn, NameAr, PhotoRelativePath, CountryId, DisplayOrder)
+    -- No photo column: a past speaker's photo is a StoredFile keyed from the
+    -- row, uploaded per row through the Control Panel. Naming the retired
+    -- column here would fail the whole seed even passing NULL.
+    INSERT INTO dbo.ArchivePastSpeakers (Id, ArchiveEditionId, NameEn, NameAr, CountryId, DisplayOrder)
     VALUES
-        (NEWID(), @ed2024, N'Mr. Ali',   N'أ. علي',  NULL, @saudi, 0),
-        (NEWID(), @ed2024, N'Dr. Khalid', N'د. خالد', NULL, @saudi, 1),
-        (NEWID(), @ed2024, N'Eng. Ahmed', N'م. أحمد', NULL, @saudi, 2),
-        (NEWID(), @ed2024, N'Ms. Sara',  N'أ. سارة', NULL, @saudi, 3),
-        (NEWID(), @ed2024, N'Eng. Fahd',  N'م. فهد',  NULL, @saudi, 4);
+        (NEWID(), @ed2024, N'Mr. Ali',   N'أ. علي',  @saudi, 0),
+        (NEWID(), @ed2024, N'Dr. Khalid', N'د. خالد', @saudi, 1),
+        (NEWID(), @ed2024, N'Eng. Ahmed', N'م. أحمد', @saudi, 2),
+        (NEWID(), @ed2024, N'Ms. Sara',  N'أ. سارة', @saudi, 3),
+        (NEWID(), @ed2024, N'Eng. Fahd',  N'م. فهد',  @saudi, 4);
 
     -- Align the head-stat counters with Figma 925-3079, once, alongside the
     -- first child seed (a later admin edit is never overwritten).

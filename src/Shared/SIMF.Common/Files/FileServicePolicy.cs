@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/Files/FileServicePolicyTests.cs (every FileService is
+﻿// Tests: SIMF.Api.Tests/Files/FileServicePolicyTests.cs (every FileService is
 //        mapped to a deliberate, reviewed policy — default-deny guard).
 using SIMF.Common.Enums;
 
@@ -133,6 +133,8 @@ public static class FileServicePolicies
                 FileService.MediaGalleryVideo, FileOwnerEntityType.MediaItem),
             [FileService.OrganizationLiveStream] = PublicVideoLink(
                 FileService.OrganizationLiveStream, FileOwnerEntityType.OrganizationProfile),
+            [FileService.ArchiveGalleryVideo] = PublicVideoLink(
+                FileService.ArchiveGalleryVideo, FileOwnerEntityType.ArchiveMediaItem),
 
             // ── Public images (plaintext) ────────────────────────────────────
             [FileService.MediaGalleryImage] = PublicImage(FileService.MediaGalleryImage, FileOwnerEntityType.MediaItem),
@@ -147,6 +149,10 @@ public static class FileServicePolicies
             [FileService.Banner] = PublicImage(FileService.Banner, FileOwnerEntityType.Banner),
             [FileService.BoothLogo] = PublicImage(FileService.BoothLogo, FileOwnerEntityType.Booth),
             [FileService.ExhibitorLogo] = PublicImage(FileService.ExhibitorLogo, FileOwnerEntityType.Exhibitor),
+            [FileService.ArchivePastSpeakerPhoto] = PublicImage(
+                FileService.ArchivePastSpeakerPhoto, FileOwnerEntityType.ArchivePastSpeaker),
+            [FileService.ArchiveGalleryImage] = PublicImage(
+                FileService.ArchiveGalleryImage, FileOwnerEntityType.ArchiveMediaItem),
         };
 
     private static FileServicePolicy PublicImage(FileService service, FileOwnerEntityType owner) =>

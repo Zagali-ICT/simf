@@ -1,4 +1,4 @@
-using System.Reflection;
+﻿using System.Reflection;
 using Xunit;
 
 namespace SIMF.Domain.Tests;
@@ -44,27 +44,11 @@ public sealed class MediaPointerRatchetTests
         "Banner.ImageUrl",
     ];
 
-    /// <summary>The columns still to convert, recorded so the guard is live NOW
-    /// rather than after the last one lands. Every entry is open work; the list
-    /// only ever shrinks, and <see cref="A_recorded_remainder_that_is_gone_is_deleted"/>
-    /// fails if one is left here after being resolved.</summary>
-    private static readonly HashSet<string> KnownRemaining = new(StringComparer.Ordinal)
-    {
-        // The archive authoring rework: per-row uploads replacing a pipe-delimited
-        // textarea that is rewritten whole on every save.
-        "ArchivePastSpeaker.PhotoRelativePath",
-        "ArchiveMediaItem.Url",
-        // The stream / video columns have gone from this list because they are
-        // converted: this branch's own last commit ("the feed URLs become file
-        // keys") took MediaItem.Url, Session.LiveStreamUrl /
-        // LiveSignLanguageUrl, SessionSummary.SummaryVideoUrl and
-        // OrganizationProfile.LiveStreamUrl / BackgroundVideoUrl, and the list
-        // was not shortened with them — so this countdown had already gone red
-        // before main was merged in, exactly as it is designed to.
-        //
-        // The two archive entries above stay. Those really are still strings,
-        // and are the work in flight.
-    };
+    /// <summary>Empty, and that is the point: every column the programme set out
+    /// to convert is converted. It stays here as a hook rather than being deleted,
+    /// so a future conversion that has to land in stages can record its remainder
+    /// and still keep the guard live in the meantime.</summary>
+    private static readonly HashSet<string> KnownRemaining = new(StringComparer.Ordinal);
 
     [Fact]
     public void No_new_media_pointer_string_appears_on_a_domain_entity()
