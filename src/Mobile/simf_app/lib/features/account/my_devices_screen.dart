@@ -8,7 +8,7 @@ import 'package:simf_app/app/widgets/simf_confirm_dialog.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/core/errors/api_error_l10n.dart';
 import 'package:simf_app/core/utils/refresh.dart';
-import 'package:simf_app/core/utils/saudi_time.dart';
+import 'package:simf_app/features/account/widgets/device_row.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 
 /// My Devices — أجهزتي · route: RouteNames.myDevices
@@ -161,138 +161,12 @@ class _MyDevicesScreenState extends ConsumerState<MyDevicesScreen> {
       padding: const EdgeInsets.all(SimfTokens.space4),
       itemCount: devices.length,
       separatorBuilder: (_, __) => const SizedBox(height: SimfTokens.space3),
-      itemBuilder: (_, index) => _DeviceRow(
+      itemBuilder: (_, index) => DeviceRow(
         device: devices[index],
         isThisDevice: devices[index].id == list.localDeviceKeyId,
         busy: _busyId == devices[index].id,
         onRevoke: () => _revoke(devices[index]),
       ),
-    );
-  }
-}
-
-class _DeviceRow extends StatelessWidget {
-  const _DeviceRow({
-    required this.device,
-    required this.isThisDevice,
-    required this.busy,
-    required this.onRevoke,
-  });
-
-  final DeviceKeyEntryDto device;
-  final bool isThisDevice;
-  final bool busy;
-  final VoidCallback onRevoke;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppL10n.of(context);
-    return SimfCard(
-      child: Padding(
-        padding: const EdgeInsets.all(SimfTokens.space4),
-        child: Row(
-          children: <Widget>[
-            Icon(
-              Icons.smartphone,
-              color: device.isActive
-                  ? SimfTokens.accent
-                  : SimfTokens.beigeBorder,
-            ),
-            const SizedBox(width: SimfTokens.space3),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Row(
-                    children: <Widget>[
-                      Flexible(
-                        child: Text(
-                          device.label.isEmpty
-                              ? l10n.myDevicesUnnamed
-                              : device.label,
-                          style: SimfTokens.labelWhiteBoldXl,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      if (isThisDevice) ...<Widget>[
-                        const SizedBox(width: SimfTokens.space2),
-                        _Chip(text: l10n.myDevicesThisDevice),
-                      ],
-                    ],
-                  ),
-                  const SizedBox(height: SimfTokens.space1),
-                  Text(_subtitle(l10n), style: SimfTokens.bodyBeigeMd),
-                ],
-              ),
-            ),
-            if (device.isActive)
-              busy
-                  ? const SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: SimfTokens.accent,
-                      ),
-                    )
-                  : IconButton(
-                      onPressed: onRevoke,
-                      tooltip: l10n.myDevicesRevokeConfirm,
-                      icon: const Icon(
-                        Icons.delete_outline,
-                        color: SimfTokens.danger,
-                      ),
-                    ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Last-used is the line that actually tells the owner whether a device they
-  /// do not recognise has been used, so it wins over "added" when both exist.
-  String _subtitle(AppL10n l10n) {
-    if (!device.isActive) {
-      return device.revokedAt == null
-          ? l10n.myDevicesRevoked
-          : '${l10n.myDevicesRevoked} · ${_stamp(device.revokedAt!)}';
-    }
-    if (device.lastUsedAt != null) {
-      return '${l10n.myDevicesLastUsed} ${_stamp(device.lastUsedAt!)}';
-    }
-    if (device.createdAt != null) {
-      return '${l10n.myDevicesAdded} ${_stamp(device.createdAt!)}';
-    }
-    return l10n.myDevicesNeverUsed;
-  }
-
-  /// Saudi local time, never UTC on a user-facing surface (D-770).
-  String _stamp(DateTime value) {
-    final local = saudiOf(value);
-    final date = '${local.year}-'
-        '${local.month.toString().padLeft(2, '0')}-'
-        '${local.day.toString().padLeft(2, '0')}';
-    return '$date ${formatSaudiTime12(local)}';
-  }
-}
-
-class _Chip extends StatelessWidget {
-  const _Chip({required this.text});
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: SimfTokens.space2,
-        vertical: SimfTokens.space1,
-      ),
-      decoration: BoxDecoration(
-        color: SimfTokens.accent.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-      ),
-      child: Text(text, style: SimfTokens.labelGoldMedium),
     );
   }
 }
