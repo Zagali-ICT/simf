@@ -8,10 +8,11 @@ import 'package:simf_app/features/sessions/data/seat_map_models.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 /// The shared async guard for the seat-map screens (My-Seat #18 + Seat-picker
-/// #109): both read the same `GET …/seats` via `seatMapProvider`, so this renders
-/// the identical chain once — loading → 404 "session removed" (L-6) → error+retry
-/// → "no seat layout" — and hands a laid-out [SessionSeatMap] to [builder] for
-/// the screen's own body (the read-only view vs the selectable picker).
+/// #109): both read the same `GET …/seats` via `seatMapProvider`, so this
+/// renders the identical chain once — loading → 404 "session removed" (L-6) →
+/// error+retry → "no seat layout" — and hands a laid-out [SessionSeatMap] to
+/// [builder] for the screen's own body (the read-only view vs the selectable
+/// picker).
 class SeatMapAsyncView extends StatelessWidget {
   const SeatMapAsyncView({
     required this.value,

@@ -12,7 +12,8 @@ const double _size = 44;
 /// [imageUrl] is set (falling back to the gold initials on load error / 404),
 /// otherwise the gold initials avatar directly.
 class IdentityLogoOrInitials extends StatelessWidget {
-  const IdentityLogoOrInitials({required this.imageUrl, required this.initials, super.key});
+  const IdentityLogoOrInitials(
+      {required this.imageUrl, required this.initials, super.key,});
 
   final String? imageUrl;
   final String initials;

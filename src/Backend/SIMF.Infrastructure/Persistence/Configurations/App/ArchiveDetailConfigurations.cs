@@ -1,7 +1,8 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SIMF.Domain.Archive;
 using SIMF.Domain.Common;
+using SIMF.Domain.Files;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
@@ -18,7 +19,11 @@ internal sealed class ArchiveMediaItemConfiguration
         builder.HasKey(item => item.Id);
 
         builder.Property(item => item.Kind).HasConversion<int>().IsRequired();
-        builder.Property(item => item.Url).HasMaxLength(512).IsRequired();
+        builder.HasIndex(item => item.MediaFileId);
+        builder.HasOne<StoredFile>()
+            .WithMany()
+            .HasForeignKey(item => item.MediaFileId)
+            .OnDelete(DeleteBehavior.Restrict);
         builder.Property(item => item.CaptionEn).HasMaxLength(256);
         builder.Property(item => item.CaptionAr).HasMaxLength(256);
 
@@ -54,7 +59,7 @@ internal sealed class ArchiveSessionTitleConfiguration
 }
 
 /// <summary>EF config for the archive edition's past speakers. Same
-/// owned-snapshot pattern; the photo is a relative path (≤256), never absolute.</summary>
+/// owned-snapshot pattern; the photo is a file-store row keyed from here.</summary>
 internal sealed class ArchivePastSpeakerConfiguration
     : IEntityTypeConfiguration<ArchivePastSpeaker>
 {
@@ -65,7 +70,11 @@ internal sealed class ArchivePastSpeakerConfiguration
 
         builder.Property(speaker => speaker.NameEn).HasMaxLength(128).IsRequired();
         builder.Property(speaker => speaker.NameAr).HasMaxLength(128).IsRequired();
-        builder.Property(speaker => speaker.PhotoRelativePath).HasMaxLength(256);
+        builder.HasIndex(speaker => speaker.PhotoFileId);
+        builder.HasOne<StoredFile>()
+            .WithMany()
+            .HasForeignKey(speaker => speaker.PhotoFileId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(speaker => speaker.Edition)
             .WithMany(edition => edition.PastSpeakers)

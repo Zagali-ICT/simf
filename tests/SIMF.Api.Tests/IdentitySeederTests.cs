@@ -27,6 +27,64 @@ public sealed class IdentitySeederTests : IClassFixture<SimfApiFactory>
         _factory.EnsureDatabaseCreated();
     }
 
+    // The permission seed is ADD-ONLY, so deleting a code from PermissionCatalog
+    // leaves its row (and any custom grants) behind in every already-seeded
+    // database; only RetiredPermissionCodes clears it. Nothing pinned that
+    // before, so Editions.Close was removed from the catalogue and survived in
+    // the database until this was noticed by querying it.
+
+    [Fact]
+    public async Task SeedAsync_retires_a_permission_removed_from_the_catalogue()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var services = scope.ServiceProvider;
+        var identityDb = services.GetRequiredService<SimfIdentityDbContext>();
+
+        // Stand in for an older database that still carries the retired code.
+        const string retired = "Editions.Close";
+        if (!await identityDb.Permissions.AnyAsync(p => p.Code == retired))
+        {
+            identityDb.Permissions.Add(new Permission
+            {
+                Id = Guid.NewGuid(),
+                Code = retired,
+                Page = "Editions",
+                Action = "Close",
+                DisplayName = "Close the current edition into history",
+            });
+            await identityDb.SaveChangesAsync();
+        }
+
+        await services.GetRequiredService<IdentitySeeder>().SeedAsync();
+
+        Assert.False(
+            await identityDb.Permissions.AnyAsync(p => p.Code == retired),
+            $"{retired} was removed from PermissionCatalog, so the seeder must "
+            + "retire its row; add it to IdentitySeeder.RetiredPermissionCodes.");
+    }
+
+    [Fact]
+    public async Task SeedAsync_leaves_no_permission_row_the_catalogue_does_not_define()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var services = scope.ServiceProvider;
+        var identityDb = services.GetRequiredService<SimfIdentityDbContext>();
+
+        await services.GetRequiredService<IdentitySeeder>().SeedAsync();
+
+        var catalogue = PermissionCatalog.All
+            .Select(definition => definition.Code)
+            .ToHashSet(StringComparer.Ordinal);
+        var orphans = await identityDb.Permissions
+            .Select(permission => permission.Code)
+            .ToListAsync();
+
+        // A code in the database that the catalogue no longer defines gates
+        // nothing, yet still reads as a real authority to anyone querying the
+        // table directly.
+        Assert.DoesNotContain(orphans, code => !catalogue.Contains(code));
+    }
+
     [Fact]
     public async Task SeedAsync_creates_the_super_admin()
     {

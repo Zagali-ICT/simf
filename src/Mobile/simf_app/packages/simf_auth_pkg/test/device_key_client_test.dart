@@ -55,7 +55,8 @@ void main() {
       );
 
       // Reconstruct the public key from the SPKI point (0x04 || X || Y) and
-      // verify the r||s signature — proves SPKI + signature are self-consistent.
+      // verify the r||s signature — proves SPKI + signature are
+      // self-consistent.
       final spki = base64.decode(pair.publicKeySpkiBase64);
       final point = spki.sublist(spki.length - 65);
       final domain = ECCurve_secp256r1();
@@ -88,7 +89,8 @@ void main() {
       );
       final otherSpki = base64.decode(other.publicKeySpkiBase64);
       final domain = ECCurve_secp256r1();
-      final q = domain.curve.decodePoint(otherSpki.sublist(otherSpki.length - 65))!;
+      final q =
+          domain.curve.decodePoint(otherSpki.sublist(otherSpki.length - 65))!;
       final verifier = ECDSASigner(SHA256Digest())
         ..init(false, PublicKeyParameter<ECPublicKey>(ECPublicKey(q, domain)));
       expect(

@@ -1,6 +1,6 @@
 import 'package:meta/meta.dart';
 
-import 'api_result.dart';
+import 'package:simf_data_pkg/src/api/api_result.dart';
 
 /// Typed failure returned to the repository / domain layer.
 ///
@@ -28,7 +28,7 @@ class ApiFailure implements Exception {
       code: error.code,
       // The envelope carries both languages; pick by the app's locale so the
       // displayed error is translated (the screens read `message` as-is).
-      message: error.localized(isArabic),
+      message: error.localized(isArabic: isArabic),
       httpStatus: httpStatus,
       details: error.details,
     );

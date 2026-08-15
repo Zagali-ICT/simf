@@ -42,6 +42,10 @@ class _FakeAuthController extends AuthController {
   Future<CurrentUser> refreshCurrentUser() async {
     refreshCalls++;
     if (fail) {
+      // AuthFailure is a sealed RESULT type: production returns it, never
+      // throws. A fake repository throws it to drive the failure path a screen
+      // handles, so it is deliberately neither an Exception nor an Error.
+      // ignore: only_throw_errors
       throw const NetworkUnavailable(
         ApiFailure(code: ApiErrorCodes.clientNetwork, message: 'offline'),
       );
@@ -150,7 +154,8 @@ void main() {
 
       expect(find.text('Your account was not approved'), findsOneWidget);
       expect(find.text('Continue'), findsNothing);
-      // Even with no primary action, a rejected account can return home (D-666).
+      // Even with no primary action, a rejected account can return home
+      // (D-666).
       expect(find.text('Go to home'), findsOneWidget);
     });
 

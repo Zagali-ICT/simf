@@ -17,9 +17,9 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import 'golden_fonts.dart';
 
-/// Golden render of the More screen against Figma frame **1129:17224** (المزيد).
-/// Regenerate:
-///   flutter test --update-goldens test/golden/more_golden_test.dart
+/// Golden render of the More screen against Figma frame **1129:17224**
+/// (المزيد). Regenerate: flutter test --update-goldens
+/// test/golden/more_golden_test.dart
 ///
 /// Frame parity expected (signed-in): the منطقتي profile header card, the three
 /// grouped sections (معلومات الملتقى / الإعدادات / قانوني) of bordered nav rows

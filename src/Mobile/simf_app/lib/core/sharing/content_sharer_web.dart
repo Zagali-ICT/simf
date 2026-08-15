@@ -19,8 +19,8 @@ Future<void> shareTextContent({
 }) =>
     Share.share(content);
 
-/// Web implementation of [shareBinaryContent] — shares the in-memory [bytes] via
-/// the browser share API (no `dart:io` filesystem on web).
+/// Web implementation of [shareBinaryContent] — shares the in-memory [bytes]
+/// via the browser share API (no `dart:io` filesystem on web).
 ///
 /// [sharePositionOrigin] is unused on web (the browser share API is modal).
 Future<void> shareBinaryContent({

@@ -31,7 +31,24 @@ are columns. Logo is `Asset`-backed (category `OrganizationLogo`).
 - **Contact:** phone, email, website.
 - **Live stream:** main home-page YouTube link.
 - **Hero background video (D-756):** a YouTube link (or a direct MP4/HLS link) played muted + looping behind the home hero on both the app and the website; blank falls back to the bundled hero media. Absolute http(s), max 1024.
-- **Hero video upload (D-768):** below the link field, an admin can **upload** a video file (mp4/m4v/webm, up to 200 MB) that SIMF serves from its own API (`GET …/app/organization/hero-video.mp4`, range-streamed). Uploading sets the link field to that served URL, so the **Android** home hero plays a moving video (a YouTube hero renders only on iOS — the Android WebView cannot clip into the band, D-761). **Remove uploaded video** reverts the hero to the banner image; a separately-pasted external/YouTube link is left intact.
+- **Hero video upload (D-768):** below the link field, an admin can **upload** a video file (mp4/m4v/webm, up to 200 MB) that SIMF serves from its own API (`GET …/app/organization/hero-video.mp4`, range-streamed), so the **Android** home hero plays a moving video (a YouTube hero renders only on iOS — the Android WebView cannot clip into the band, D-761). **Remove uploaded video** reverts the hero to the banner image; a separately-pasted external/YouTube link is left intact.
+
+> **One column, two authoring paths.** The live-stream link and the hero video are
+> both `StoredFiles` rows now, and the profile holds `LiveStreamFileId` /
+> `BackgroundVideoFileId`. An upload and a pasted link write the *same* pointer,
+> which is what ended the old arrangement: the upload used to bake its served URL
+> into the very text box an admin pastes into, and the two were told apart by a
+> full-string comparison on the server against a **suffix** test in the CP. One
+> question answered two ways, disagreeing whenever the configured base URL
+> changed — and when they disagreed, Remove silently skipped its clear.
+>
+> Saving the page no longer destroys an uploaded video either. The form is a
+> full-document upsert, so editing the contact phone resubmits the hero URL; the
+> save now asks only whether the value **changed**, not what shape it has.
+>
+> The URL the app and website receive is unchanged: an uploaded video resolves to
+> its absolute `.mp4` route, a pasted link to itself. Both clients classify a hero
+> by reading the string, so it must arrive intact.
 - **Social:** Facebook, X, Instagram, LinkedIn, YouTube, TikTok, Snapchat (each an absolute http(s) URL).
 - **About items** (repeating): title + text (bilingual). **Details** (repeating): name (bilingual) + value **(bilingual — `Value (EN)` + optional `Value (AR)`; D-762)**. A blank `Value (AR)` is stored as null and the app falls back to `Value (EN)` (for a language-neutral value like a year or a URL).
 

@@ -10,13 +10,13 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 /// `gate-check-in-status` — owner 2026-07-31: a session arrival is established
 /// by the GATE SCAN at the hall door, so the session detail only REPORTS the
-/// `HallAttendance` row the door opened. These cover the three render states and
-/// the one distinction that keeps being lost elsewhere: a failed read is not the
-/// same thing as "not checked in yet".
+/// `HallAttendance` row the door opened. These cover the three render states
+/// and the one distinction that keeps being lost elsewhere: a failed read is
+/// not the same thing as "not checked in yet".
 const String _sessionId = 's-1';
 
-/// Answers `getStatus` from a scripted list — one entry per call, the last entry
-/// repeating — so the retry path can fail first and succeed second. A
+/// Answers `getStatus` from a scripted list — one entry per call, the last
+/// entry repeating — so the retry path can fail first and succeed second. A
 /// [HallAttendanceStatus] entry is returned; an [ApiFailure] entry is thrown.
 class _FakeAttendance implements HallAttendanceRepository {
   _FakeAttendance.answering(HallAttendanceStatus status)

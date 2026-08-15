@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:simf_app/core/utils/bilingual.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
 
 /// Visitor-to-visitor contact sharing (SIMF-FDS-014 §5.4–5.7, D-286). All three
@@ -13,11 +14,11 @@ import 'package:simf_app/core/utils/saudi_time.dart';
 class VisitorShareToken {
   const VisitorShareToken(this.token);
 
-  final String token;
-
-  static VisitorShareToken fromData(Object? data) => VisitorShareToken(
+  factory VisitorShareToken.fromData(Object? data) => VisitorShareToken(
         (data is Map ? data['token'] as String? : null) ?? '',
       );
+
+  final String token;
 }
 
 /// A visitor's contact card — projected **live** from their `UserProfile`
@@ -43,38 +44,9 @@ class VisitorCard {
     this.countryNameArabic,
   });
 
-  final String userId;
-  final String name;
-  final String nameArabic;
-  final bool available;
-  final String? jobTitle;
-  final String? jobTitleArabic;
-  final String? organisation;
-  final String? organisationArabic;
-  final String? email;
-  final String? saudiMobile;
-  final String? internationalMobile;
-  final int? countryId;
-  final String? countryName;
-  final String? countryNameArabic;
-
-  /// Name for the active locale (Arabic primary, English fallback).
-  String localizedName(bool isArabic) => _pick(nameArabic, name, isArabic);
-
-  /// Job title for the active locale, or null when none is set.
-  String? localizedJobTitle(bool isArabic) =>
-      _nullIfBlank(_pick(jobTitleArabic, jobTitle, isArabic));
-
-  /// Organisation for the active locale, or null when none is set.
-  String? localizedOrganisation(bool isArabic) =>
-      _nullIfBlank(_pick(organisationArabic, organisation, isArabic));
-
-  /// Country for the active locale, or null when none is set.
-  String? localizedCountry(bool isArabic) =>
-      _nullIfBlank(_pick(countryNameArabic, countryName, isArabic));
-
-  static VisitorCard fromData(Object? data) {
-    final json = (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
+  factory VisitorCard.fromData(Object? data) {
+    final json =
+        (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
     return VisitorCard(
       userId: json['userId'] as String? ?? '',
       name: json['name'] as String? ?? '',
@@ -92,11 +64,43 @@ class VisitorCard {
       countryNameArabic: json['countryNameArabic'] as String?,
     );
   }
+
+  final String userId;
+  final String name;
+  final String nameArabic;
+  final bool available;
+  final String? jobTitle;
+  final String? jobTitleArabic;
+  final String? organisation;
+  final String? organisationArabic;
+  final String? email;
+  final String? saudiMobile;
+  final String? internationalMobile;
+  final int? countryId;
+  final String? countryName;
+  final String? countryNameArabic;
+
+  /// Name for the active locale (Arabic primary, English fallback).
+  String localizedName({required bool isArabic}) =>
+      pickLocalized(nameArabic, name, isArabic: isArabic);
+
+  /// Job title for the active locale, or null when none is set.
+  String? localizedJobTitle({required bool isArabic}) =>
+      pickLocalizedOrNull(jobTitleArabic, jobTitle, isArabic: isArabic);
+
+  /// Organisation for the active locale, or null when none is set.
+  String? localizedOrganisation({required bool isArabic}) =>
+      pickLocalizedOrNull(organisationArabic, organisation, isArabic: isArabic);
+
+  /// Country for the active locale, or null when none is set.
+  String? localizedCountry({required bool isArabic}) =>
+      pickLocalizedOrNull(countryNameArabic, countryName, isArabic: isArabic);
 }
 
 /// One row in the caller's *My Contacts* list — resolved on read from the
-/// subject's profile (no stored PII snapshot, D-157). [organisation] is a single
-/// field here (the saved-row projection does not carry the Arabic variant).
+/// subject's profile (no stored PII snapshot, D-157). [organisation] is a
+/// single field here (the saved-row projection does not carry the Arabic
+/// variant).
 @immutable
 class SavedContactRow {
   const SavedContactRow({
@@ -112,25 +116,9 @@ class SavedContactRow {
     this.savedAt,
   });
 
-  final String id;
-  final String subjectUserId;
-  final String name;
-  final String nameArabic;
-  final bool subjectAvailable;
-  final String? jobTitle;
-  final String? jobTitleArabic;
-  final String? organisation;
-  final String? note;
-  final DateTime? savedAt;
-
-  String localizedName(bool isArabic) => _pick(nameArabic, name, isArabic);
-
-  /// Job title for the active locale, or null when none is set.
-  String? localizedJobTitle(bool isArabic) =>
-      _nullIfBlank(_pick(jobTitleArabic, jobTitle, isArabic));
-
-  static SavedContactRow fromData(Object? data) {
-    final json = (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
+  factory SavedContactRow.fromData(Object? data) {
+    final json =
+        (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
     return SavedContactRow(
       id: json['id'] as String? ?? '',
       subjectUserId: json['subjectUserId'] as String? ?? '',
@@ -145,6 +133,24 @@ class SavedContactRow {
     );
   }
 
+  final String id;
+  final String subjectUserId;
+  final String name;
+  final String nameArabic;
+  final bool subjectAvailable;
+  final String? jobTitle;
+  final String? jobTitleArabic;
+  final String? organisation;
+  final String? note;
+  final DateTime? savedAt;
+
+  String localizedName({required bool isArabic}) =>
+      pickLocalized(nameArabic, name, isArabic: isArabic);
+
+  /// Job title for the active locale, or null when none is set.
+  String? localizedJobTitle({required bool isArabic}) =>
+      pickLocalizedOrNull(jobTitleArabic, jobTitle, isArabic: isArabic);
+
   /// Reads the My-Contacts payload (a bare list, or `{ items: [...] }`).
   static List<SavedContactRow> listFromData(Object? data) {
     final list = data is Map ? data['items'] : data;
@@ -154,11 +160,3 @@ class SavedContactRow {
         .toList(growable: false);
   }
 }
-
-String _pick(String? ar, String? en, bool isArabic) {
-  final a = ar?.trim() ?? '';
-  final e = en?.trim() ?? '';
-  return isArabic ? (a.isNotEmpty ? a : e) : (e.isNotEmpty ? e : a);
-}
-
-String? _nullIfBlank(String value) => value.trim().isEmpty ? null : value;

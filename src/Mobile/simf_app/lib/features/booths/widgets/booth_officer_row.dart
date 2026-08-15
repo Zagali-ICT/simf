@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/core/utils/initials.dart';
 
 /// The booth-officer row (frame 922:2800): the officer's gold name over the
 /// fixed beige role label, beside a gold initials tile (e.g. "RS"). D-432 — the
@@ -41,7 +42,7 @@ class BoothOfficerRow extends StatelessWidget {
             borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
           ),
           child: Text(
-            _initials(name),
+            initialsFromStart(name),
             textDirection: TextDirection.ltr,
             style: SimfTokens.labelNavyBoldSm,
           ),
@@ -52,10 +53,3 @@ class BoothOfficerRow extends StatelessWidget {
 }
 
 /// The first two letters of a booth name, upper-cased, for the officer tile.
-String _initials(String name) {
-  final trimmed = name.trim();
-  if (trimmed.isEmpty) {
-    return '';
-  }
-  return trimmed.substring(0, trimmed.length >= 2 ? 2 : 1).toUpperCase();
-}

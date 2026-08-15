@@ -16,9 +16,10 @@ import 'golden_fonts.dart';
 /// x 25 seats), proving the same-day 2-axis-scroll refinement (D-767): seats
 /// draw at a FIXED size inside a bounded ~8-row viewport that shows BOTH a
 /// vertical scrollbar (more rows below) and a horizontal one (more seats to the
-/// right), instead of shrinking 25 seats into an unreadable row. The mine (gold)
-/// + reserved (navy x) cells stay legible.
-///   flutter test --update-goldens test/golden/seat_map_scroll_golden_test.dart
+/// right), instead of shrinking 25 seats into an unreadable row. The mine
+/// (gold)
+/// + reserved (navy x) cells stay legible. flutter test --update-goldens
+///   test/golden/seat_map_scroll_golden_test.dart
 
 SessionSeatMap _bigHall() {
   final rows = <String>[

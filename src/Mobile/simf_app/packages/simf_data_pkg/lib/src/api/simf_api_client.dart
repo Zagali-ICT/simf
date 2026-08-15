@@ -3,14 +3,13 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
-
-import '../config/simf_data_config.dart';
-import 'api_error_codes.dart';
-import 'api_failure.dart';
-import 'api_result.dart';
-import 'auth_token_source.dart';
-import 'interceptors/headers_interceptor.dart';
-import 'interceptors/logging_interceptor.dart';
+import 'package:simf_data_pkg/src/api/api_error_codes.dart';
+import 'package:simf_data_pkg/src/api/api_failure.dart';
+import 'package:simf_data_pkg/src/api/api_result.dart';
+import 'package:simf_data_pkg/src/api/auth_token_source.dart';
+import 'package:simf_data_pkg/src/api/interceptors/headers_interceptor.dart';
+import 'package:simf_data_pkg/src/api/interceptors/logging_interceptor.dart';
+import 'package:simf_data_pkg/src/config/simf_data_config.dart';
 
 /// The one SIMF API client (SIMF-MAA-001 v1.2 §9.1).
 ///
@@ -45,7 +44,6 @@ class SimfApiClient {
             connectTimeout: config.connectTimeout,
             receiveTimeout: config.receiveTimeout,
             sendTimeout: config.sendTimeout,
-            responseType: ResponseType.json,
             // Accept any HTTP status — the envelope (which the backend
             // always returns) is the authoritative result. SIMF-API-001 §8
             // says the HTTP status and the envelope agree.
@@ -67,8 +65,6 @@ class SimfApiClient {
       PrettyDioLogger(
         enabled: config.enableRequestLogging,
         requestBody: true,
-        responseBody: true,
-        error: true,
       ),
     );
 
@@ -83,8 +79,8 @@ class SimfApiClient {
 
   Future<T> get<T>(
     String path, {
-    Map<String, dynamic>? queryParameters,
     required T Function(Object? data) decodeData,
+    Map<String, dynamic>? queryParameters,
     CancelToken? cancelToken,
   }) {
     return _send<T>(
@@ -99,14 +95,15 @@ class SimfApiClient {
   }
 
   /// [skipAuthRefresh] marks the request so a 401 on it does NOT trigger the
-  /// token-refresh-and-retry path. Set it for the refresh call itself — otherwise
-  /// a 401 on `/app/auth/refresh` re-enters the single-flight [AuthTokenSource.refresh]
-  /// (the same in-flight future the refresh is running inside) and deadlocks.
+  /// token-refresh-and-retry path. Set it for the refresh call itself —
+  /// otherwise a 401 on `/app/auth/refresh` re-enters the single-flight
+  /// [AuthTokenSource.refresh] (the same in-flight future the refresh is
+  /// running inside) and deadlocks.
   Future<T> post<T>(
     String path, {
+    required T Function(Object? data) decodeData,
     Object? body,
     Map<String, dynamic>? queryParameters,
-    required T Function(Object? data) decodeData,
     CancelToken? cancelToken,
     bool skipAuthRefresh = false,
   }) {
@@ -124,9 +121,9 @@ class SimfApiClient {
 
   Future<T> put<T>(
     String path, {
+    required T Function(Object? data) decodeData,
     Object? body,
     Map<String, dynamic>? queryParameters,
-    required T Function(Object? data) decodeData,
     CancelToken? cancelToken,
   }) {
     return _send<T>(
@@ -143,9 +140,9 @@ class SimfApiClient {
 
   Future<T> patch<T>(
     String path, {
+    required T Function(Object? data) decodeData,
     Object? body,
     Map<String, dynamic>? queryParameters,
-    required T Function(Object? data) decodeData,
     CancelToken? cancelToken,
   }) {
     return _send<T>(
@@ -162,9 +159,9 @@ class SimfApiClient {
 
   Future<T> delete<T>(
     String path, {
+    required T Function(Object? data) decodeData,
     Object? body,
     Map<String, dynamic>? queryParameters,
-    required T Function(Object? data) decodeData,
     CancelToken? cancelToken,
   }) {
     return _send<T>(
@@ -202,9 +199,8 @@ class SimfApiClient {
       fileField: MultipartFile.fromBytes(
         bytes,
         filename: filename,
-        contentType: contentType == null
-            ? null
-            : DioMediaType.parse(contentType),
+        contentType:
+            contentType == null ? null : DioMediaType.parse(contentType),
       ),
     });
     return _send<T>(
@@ -254,8 +250,9 @@ class SimfApiClient {
   /// `GET /app/account/avatar/{id}`). Goes through this client so it inherits
   /// the bearer + `X-App-Key` headers and the self-signed-TLS handling that a
   /// bare `Image.network` cannot. Refreshes + replays once on a 401 like the
-  /// other paths. Returns the bytes on a 2xx; throws [ApiFailure] on a transport
-  /// error or a non-2xx status (a 404 = "no avatar", surfaced to the caller).
+  /// other paths. Returns the bytes on a 2xx; throws [ApiFailure] on a
+  /// transport error or a non-2xx status (a 404 = "no avatar", surfaced to the
+  /// caller).
   Future<Uint8List> getBytes(
     String path, {
     Map<String, dynamic>? queryParameters,
@@ -292,14 +289,14 @@ class SimfApiClient {
 
   /// A conditional GET (D-495) — sends [ifModifiedSince] as `If-Modified-Since`
   /// and returns [ConditionalResponse.notModified] on a `304`; otherwise the
-  /// decoded `ApiResult` envelope data plus the response `Last-Modified` token to
-  /// cache for the next revalidation. Unlike [get] it tolerates the non-2xx `304`
-  /// (the envelope path would treat the empty body as malformed). Refreshes +
-  /// replays once on a 401 like the other paths.
+  /// decoded `ApiResult` envelope data plus the response `Last-Modified` token
+  /// to cache for the next revalidation. Unlike [get] it tolerates the non-2xx
+  /// `304` (the envelope path would treat the empty body as malformed).
+  /// Refreshes + replays once on a 401 like the other paths.
   Future<ConditionalResponse<T>> getConditional<T>(
     String path, {
-    String? ifModifiedSince,
     required T Function(Object? data) decodeData,
+    String? ifModifiedSince,
   }) async {
     final response = await _execute(
       (options) => _dio.get<dynamic>(
@@ -340,8 +337,8 @@ class SimfApiClient {
   }
 
   /// Sends [call], refreshing + replaying once on a single 401, and returns the
-  /// raw [Response]. Shared by the envelope path ([_send]) and the raw-text path
-  /// ([getText]).
+  /// raw [Response]. Shared by the envelope path ([_send]) and the raw-text
+  /// path ([getText]).
   Future<Response<dynamic>> _execute(
     Future<Response<dynamic>> Function(Options? options) call,
   ) async {
@@ -446,9 +443,10 @@ class SimfApiClient {
     );
   }
 
-  /// Returns [options] with the skip-refresh marker merged in when [skip] is set
-  /// (else unchanged). Lets [post] tag the refresh call so its own 401 surfaces
-  /// as a normal failure instead of re-entering the single-flight refresh.
+  /// Returns [options] with the skip-refresh marker merged in when [skip] is
+  /// set (else unchanged). Lets [post] tag the refresh call so its own 401
+  /// surfaces as a normal failure instead of re-entering the single-flight
+  /// refresh.
   Options? _maybeSkipRefresh(Options? options, bool skip) {
     if (!skip) {
       return options;

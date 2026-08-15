@@ -10,7 +10,36 @@ import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/features/account/data/profile_models.dart';
 import 'package:simf_app/features/account/data/profile_repository.dart';
 import 'package:simf_app/features/myarea/my_mobile_screen.dart';
+import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
+
+/// The screen now reads the SHARED `myProfileProvider`, which reads the auth
+/// state and the data config — so the harness has to supply both. It used to
+/// read the repository directly and needed neither.
+const _config = SimfDataConfig(
+  baseUrl: 'http://test.local/api/v1',
+  appKey: 'test',
+  deviceType: SimfDeviceType.android,
+);
+
+class _SignedIn extends AuthController {
+  @override
+  AuthState build() => AuthStateSignedIn(
+        Session(
+          accessToken: 'A',
+          refreshToken: 'R',
+          accessTokenExpiresAt: DateTime.now().add(const Duration(minutes: 30)),
+          user: CurrentUser(
+            id: 'u1',
+            email: 'v@example.sa',
+            displayName: 'Raed',
+            appRole: AppRole.visitor,
+            preferredLanguage: PreferredLanguage.fromJson('en'),
+            registrationStatus: RegistrationStatus.approved,
+          ),
+        ),
+      );
+}
 
 /// Cover for the owner's 2026-07-26 request — "Add / Edit phone number in my
 /// profile — NO VERIFY, ONLY VALIDATE".
@@ -128,6 +157,8 @@ Future<void> _pump(WidgetTester tester, _FakeProfileRepository repo) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: <Override>[
+        simfDataConfigProvider.overrideWithValue(_config),
+        authControllerProvider.overrideWith(_SignedIn.new),
         profileRepositoryProvider.overrideWithValue(repo),
       ],
       child: MaterialApp.router(

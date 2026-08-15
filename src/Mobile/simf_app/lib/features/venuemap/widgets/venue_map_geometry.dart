@@ -24,6 +24,8 @@ class VenueMapBounds {
   final double minY;
   final double maxY;
 
-  double normX(double x) => (maxX - minX) <= 0 ? 0.5 : (x - minX) / (maxX - minX);
-  double normY(double y) => (maxY - minY) <= 0 ? 0.5 : (y - minY) / (maxY - minY);
+  double normX(double x) =>
+      (maxX - minX) <= 0 ? 0.5 : (x - minX) / (maxX - minX);
+  double normY(double y) =>
+      (maxY - minY) <= 0 ? 0.5 : (y - minY) / (maxY - minY);
 }

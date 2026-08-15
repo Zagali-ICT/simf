@@ -611,14 +611,11 @@ public sealed class GateScanTests : IClassFixture<SimfApiFactory>
             Name = "Test Visitor",
             NationalityId = 682, // ISO 3166-1 numeric — SA
             PlaceOfBirth = "Riyadh",
-            // Admission is owned by the PROFILE (D-877), so the caller's
-            // `approved` flag has to land HERE as well as on the account row -
-            // the gate reads this one. Mirrored rather than hardcoded because
-            // this helper deliberately mints unapproved holders too, and those
-            // cases assert the HolderNotApproved refusal.
-            AdmissionState = approved
-                ? AccountState.Approved
-                : AccountState.PendingApproval,
+            // The gate reads admission off the PROFILE, so `approved` has to drive
+            // this and not only the account above. Left at its PendingApproval
+            // default, every holder is refused HolderNotApproved before the gate
+            // ever reaches the allow-list or direction checks the test is about.
+            AdmissionState = approved ? AccountState.Approved : AccountState.PendingApproval,
             CreatedAt = SimfClock.Now,
         });
         await appDb.SaveChangesAsync();

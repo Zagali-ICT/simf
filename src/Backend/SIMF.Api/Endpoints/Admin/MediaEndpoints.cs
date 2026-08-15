@@ -108,8 +108,8 @@ public sealed class DeleteMediaEndpoint(IAdminMediaService service)
 }
 
 /// <summary>Upload (or replace) a media item's primary image.
-/// Multipart form upload; bytes persisted out-of-row via
-/// <c>IMediaImageStorage</c> (mirrors <c>AvatarUploadEndpoint</c>). The route
+/// Multipart form upload; bytes persisted out-of-row through
+/// <c>IFileService</c> (mirrors <c>AvatarUploadEndpoint</c>). The route
 /// id is bound from the URL; the file rides the form.</summary>
 public sealed class MediaImageUploadRequest
 {

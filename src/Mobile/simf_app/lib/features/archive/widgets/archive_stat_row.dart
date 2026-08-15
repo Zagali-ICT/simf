@@ -39,4 +39,3 @@ class ArchiveStatRow extends StatelessWidget {
     );
   }
 }
-

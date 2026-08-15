@@ -1,4 +1,4 @@
-namespace SIMF.Common.Enums;
+﻿namespace SIMF.Common.Enums;
 
 /// <summary>The business category of a <c>StoredFile</c>: the single
 /// dimension that drives access control, encryption-at-rest, the upload
@@ -69,4 +69,44 @@ public enum FileService
     /// (owner = OrganizationProfile.SingletonId). Public read, range-streamed;
     /// plaintext (kept seekable for HTTP 206, like <see cref="SessionRecording"/>).</summary>
     OrganizationHeroVideo = 17,
+
+    // The externally hosted feeds. Each is an ExternalLink row rather than
+    // stored bytes: SIMF does not host the broadcast, it points at it. They are
+    // file-store rows all the same, so a feed URL now carries a media type, a
+    // service policy, a sensitivity tier and an owner - none of which the free
+    // text columns they replaced could carry, and none of which a URL column can.
+
+    /// <summary>A session's live broadcast feed (owner = Session.Id). Public read;
+    /// an external link, validated against the players' own rule.</summary>
+    SessionLiveStream = 18,
+
+    /// <summary>A session's sign-language feed, shown beside the main one
+    /// (owner = Session.Id). Public read; an external link.</summary>
+    SessionSignLanguage = 19,
+
+    /// <summary>The short summary video the committee produces for a session's
+    /// minutes, distinct from the broadcast (owner = Session.Id). Public read;
+    /// an external link.</summary>
+    SessionSummaryVideo = 20,
+
+    /// <summary>A gallery item's video (owner = MediaItem.Id). Public read; an
+    /// external link, the gallery hosting only its images.</summary>
+    MediaGalleryVideo = 21,
+
+    /// <summary>The forum-wide live feed the app falls back to when a session has
+    /// none of its own (owner = OrganizationProfile.SingletonId). Public read; an
+    /// external link.</summary>
+    OrganizationLiveStream = 22,
+
+    /// <summary>A past edition's speaker photo (owner = ArchivePastSpeaker.Id).
+    /// Public read, uploaded bytes.</summary>
+    ArchivePastSpeakerPhoto = 23,
+
+    /// <summary>A past edition's gallery photo (owner = ArchiveMediaItem.Id).
+    /// Public read, uploaded bytes.</summary>
+    ArchiveGalleryImage = 24,
+
+    /// <summary>A past edition's gallery video (owner = ArchiveMediaItem.Id).
+    /// Public read; an external link, SIMF hosting only the stills.</summary>
+    ArchiveGalleryVideo = 25,
 }

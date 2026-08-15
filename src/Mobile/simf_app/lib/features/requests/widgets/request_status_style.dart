@@ -44,8 +44,9 @@ Color requestStatusColor(AppRequestStatus status) {
   }
 }
 
-/// The display order of the status chips (Figma 1408:9760): cancelled, rejected,
-/// pending, accepted — only those with at least one request are shown.
+/// The display order of the status chips (Figma 1408:9760): cancelled,
+/// rejected, pending, accepted — only those with at least one request are
+/// shown.
 const List<AppRequestStatus> kRequestChipOrder = <AppRequestStatus>[
   AppRequestStatus.cancelled,
   AppRequestStatus.rejected,

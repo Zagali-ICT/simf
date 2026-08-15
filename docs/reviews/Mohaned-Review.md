@@ -1,4 +1,4 @@
-# Mohaned Review: open fix plans
+﻿# Mohaned Review: open fix plans
 
 Owner-raised review items. Each one is a self-contained fix plan: findings
 verified against source first, then a recommendation. **No code is written for
@@ -7,8 +7,40 @@ any item until that item is approved.**
 | # | Item | Raised | Status |
 |---|------|--------|--------|
 | 1 | Device-key label and device identity | 2026-08-13 | **DONE 2026-08-14** (label + My Devices + S1 to S8, S10; S9 deferred) |
-| 2 | File pointers become real foreign keys to the central file table | 2026-08-13 | Waiting for owner approval |
-| 3 | `DisplayName` duplicates the profile name, and the greeting rule is not built | 2026-08-13 | Waiting for owner approval |
+| 2 | File pointers become real foreign keys to the central file table | 2026-08-13 | **DONE 2026-08-14.** Widened by the owner to every media reference in the system, not only the pointers listed below; see the note under the index |
+| 3 | `DisplayName` duplicates the profile name, and the greeting rule is not built | 2026-08-13 | **DONE 2026-08-14** (contract documented, two reads inverted, first-two-word greeting with Arabic compound names pinned) |
+
+> **Item 2 grew, on the owner's instruction: "in all system use ONE style, save at
+> file table and reference by FileId", with no exception for an external URL,
+> since the file table can hold a URL as well as bytes and carries the media type
+> and the permission control either way.**
+>
+> So the work is not the seven pointers this item lists. It is **sixteen columns**:
+> the seven here, plus five that held a path under a different name
+> (`Sponsor`, `News`, `MediaPartner`, `ArchiveEdition` logos and covers, and
+> `Banner.ImageUrl`), plus the stream and video URLs
+> (`Session` x2, `SessionSummary`, `OrganizationProfile` x2, `MediaItem`), plus the
+> two archive children that reverse D-440. Recorded as D-885, D-888, D-889, D-890
+> and D-891.
+>
+> Three things were found only by doing it, and none of them would have failed a
+> build or a test:
+>
+> - the **partner directory** read its speaker and sponsor logos from the retired
+>   path fields as presence sentinels, so every logo there would have become an
+>   initials tile;
+> - the **Website** fell through to a stock cover for every archive edition,
+>   because nothing told it an uploaded cover existed;
+> - `POST /files/link` accepted **any** file service, so a Secret ID document or an
+>   encrypted avatar could be pointed at a third-party host, unscanned and
+>   unencrypted, and still served under this system's name.
+>
+> The plan's own instruction to "move `LiveStreamUrlPolicy` into
+> `CreateExternalLinkAsync` so it guards every external reference" turned out to be
+> wrong and was not followed: that policy accepts only a YouTube id or a
+> `.m3u8`/`.mp4` suffix, so applying it everywhere would have rejected every CDN
+> logo and the whole External link tab. The correct split is per file-service
+> policy and is recorded in `docs/reviews/media-url-conversion-findings.md`.
 
 ---
 
@@ -176,8 +208,12 @@ worse defect than the one being fixed.
 
 ### 4.3 Resolution order for the fingerprint
 
-1. The OS serial where the platform grants it (Android deployments meeting the
-   official requirements). Used as-is when it is a real value.
+1. ~~The OS serial where the platform grants it.~~ **Never built, and cannot be.**
+   `AndroidDeviceInfo` in the resolved `device_info_plus` exposes no
+   `serialNumber` at all, so there is no Android branch and no value to read; the
+   as-built comment at `device_label.dart:85-91` says exactly that. Section 2.4's
+   own heading already said a serial is not obtainable, and this step contradicted
+   it. Recorded in D-884.
 2. iOS `identifierForVendor`.
 3. A UUID generated once on first enrolment and persisted in secure storage
    under a new `StorageKeys` entry, reused on every later enrolment from that
@@ -241,7 +277,9 @@ Unit, `device_label_test.dart`:
 4. A very long manufacturer plus model is truncated to 64 characters or fewer.
 5. The generated fingerprint is persisted on first call and **reused** on the
    second, rather than regenerated.
-6. A serial reading `unknown` is rejected and falls through to the next source.
+6. ~~A serial reading `unknown` is rejected and falls through.~~ **Impossible by
+   design** once step 1 was dropped: no serial is ever read, so nothing can return
+   `unknown`. The shipped suite has 12 tests and none corresponds to this one.
 
 Widget, `biometric_step_up_screen_test.dart`:
 
@@ -1022,6 +1060,14 @@ Searching for `*RelativePath` finds the columns that were *named* after paths. I
 misses every pointer that was named after something else. The adversarial pass
 found four more, so **family A is seven pointers across five entities, not three**:
 
+> **DELIVERED 2026-08-14.** All seven now carry a typed `Guid` pointer, six of them
+> with a real foreign key into `StoredFiles`; the avatar stays a bare Guid because
+> it crosses into `SIMF_Identity` and SQL Server has no cross-database FK syntax.
+> Commits `8c0f6a81`, `8ffbcec7`, `f1b454de`, `aacb318c` (D-885) and `34d9cbc7`,
+> `88c329b6`, `981bf5bc`, `2d1d6242` (D-888). The table below describes the state
+> before that work, and is kept because the evidence in it is what justified the
+> change.
+
 | Pointer | Current type | Written at | Under this change |
 |---------|--------------|------------|-------------------|
 | `SimfUser.AvatarRelativePath` | `string` | `AccountService.cs:150` | Retype to `Guid?`. **No FK**, D-157 |
@@ -1550,7 +1596,10 @@ the same family as item 2.
 
 `SimfUser.DisplayName` lives in `SIMF_Identity`. The person's real name lives on
 `UserProfile.Name` / `NameArabic` in `SIMF_App`. The first is written from
-**three places, and kept in step with the second by hand from two of them**:
+**ten places directly, plus roughly twelve request-DTO paths that funnel into
+them**, and kept in step with the second by hand from two. An earlier draft of
+this section said "three places"; a full sweep found otherwise. The three below
+are the ones that matter for the greeting, not the whole set:
 
 | Site | What it does |
 |------|--------------|

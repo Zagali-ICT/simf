@@ -1,4 +1,4 @@
-// Session Detail (Figma 5991-85840) — the ANONYMOUS public download route
+﻿// Session Detail (Figma 5991-85840) — the ANONYMOUS public download route
 // GET /api/v1/app/sessions/{sessionId}/downloads/{presentationId}. Unlike the
 // signed-in /app/presentations/{id}/file route, this one is AllowAnonymous and
 // its authorisation IS the session scope: the presentation must belong to the
@@ -142,7 +142,7 @@ public sealed class PublicSessionDownloadTests : IClassFixture<SimfApiFactory>
             SpeakerId = speaker.Id,
             SessionId = session.Id,
             FileName = fileName,
-            StoredFileName = stored.Id.ToString(),
+            StoredFileId = stored.Id,
             ContentType = "application/pdf",
             SizeBytes = PdfBytes.Length,
             UploadedByUserId = actorId,

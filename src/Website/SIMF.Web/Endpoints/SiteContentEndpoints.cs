@@ -252,15 +252,13 @@ internal static class SiteContentEndpoints
             PutBilingual(item, "org", sp.CountryNameAr, sp.CountryNameEn);
             // Portrait URL — prefer an uploaded/linked SpeakerPhoto asset from the
             // unified media-asset pipeline, served same-origin through the
-            // /content/assets proxy; otherwise fall back to the older portrait path.
-            // The card renders whichever is present, else its SVG silhouette.
+            // /content/assets proxy. The old PhotoRelativePath fallback is gone
+            // with the column: there is one place a speaker photo can live now.
+            // The card renders the photo when there is one, else its SVG
+            // silhouette.
             if (sp.HasPhotoAsset)
             {
                 item["photo"] = $"/content/assets/SpeakerPhoto/{sp.Id}/image";
-            }
-            else if (!string.IsNullOrWhiteSpace(sp.PhotoRelativePath))
-            {
-                item["photo"] = sp.PhotoRelativePath;
             }
             rows.Add(item);
         }
@@ -268,9 +266,11 @@ internal static class SiteContentEndpoints
     }
 
     // Sponsors first (already tier-ordered, highest tier first), then media
-    // partners. `logo` carries the entity's LogoRelativePath when present so the
-    // landing's partner card renders the logo image (else it falls back to the
-    // partner name text). Currently a test placeholder seeded on the rows.
+    // partners. `logo` is a self-contained placeholder SVG data-URI: a sponsor or
+    // partner logo lives in the file store and is not publicly servable from this
+    // endpoint, so the landing card shows the placeholder and the name. The
+    // comment here previously claimed `logo` carried the entity's
+    // LogoRelativePath, which the code below has never done.
     private static List<object> MapPartners(PublicSponsors? sponsors, PublicMediaPartners? mediaPartners)
     {
         var rows = new List<object>();

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 
-/// The past-speakers overflow tile (frame node 927:3343): a 72×72 beige-bordered
-/// rounded-rect (r8) with a big gold "+N" over the white "آخرون" label.
+/// The past-speakers overflow tile (frame node 927:3343): a 72×72
+/// beige-bordered rounded-rect (r8) with a big gold "+N" over the white "آخرون"
+/// label.
 class PastSpeakerOverflow extends StatelessWidget {
-  const PastSpeakerOverflow({required this.count, required this.label, super.key});
+  const PastSpeakerOverflow(
+      {required this.count, required this.label, super.key,});
 
   final int count;
   final String label;

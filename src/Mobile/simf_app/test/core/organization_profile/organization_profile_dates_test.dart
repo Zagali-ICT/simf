@@ -18,8 +18,8 @@ void main() {
       // offset.
       expect(p.eventStartDate!.day, 23);
       expect(p.eventEndDate!.day, 25);
-      expect(p.eventDateRange(false), '23-25 November 2026');
-      expect(p.eventDateRange(true), '23-25 نوفمبر 2026');
+      expect(p.eventDateRange(isArabic: false), '23-25 November 2026');
+      expect(p.eventDateRange(isArabic: true), '23-25 نوفمبر 2026');
     });
 
     test('eventDateRange is null when the dates are absent', () {
@@ -28,7 +28,7 @@ void main() {
         'social': <String, dynamic>{},
       });
       expect(p.eventStartDate, isNull);
-      expect(p.eventDateRange(false), isNull);
+      expect(p.eventDateRange(isArabic: false), isNull);
     });
   });
 }

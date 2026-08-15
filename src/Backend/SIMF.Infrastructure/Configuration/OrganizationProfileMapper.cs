@@ -1,4 +1,4 @@
-using SIMF.Contracts;
+﻿using SIMF.Contracts;
 using SIMF.Contracts.Organization;
 using SIMF.Domain.Organization;
 
@@ -14,7 +14,13 @@ internal static class OrganizationProfileMapper
         OrganizationProfile p,
         IReadOnlyList<OrganizationAboutItem> about,
         IReadOnlyList<OrganizationDetail> details,
-        string? logoUrl) =>
+        string? logoUrl,
+        // Resolved by the caller from the file store. Passed in rather than
+        // looked up here because these must reach the clients VERBATIM: both
+        // classify a feed by inspecting the string, so the composed-or-stored URL
+        // is the payload, not a redirect to it.
+        string? liveStreamUrl,
+        string? backgroundVideoUrl) =>
         new(
             p.Name,
             p.NameArabic,
@@ -39,8 +45,8 @@ internal static class OrganizationProfileMapper
             NullIfBlank(p.ContactPhone),
             NullIfBlank(p.ContactEmail),
             SafeUrl(p.ContactWebsite),
-            SafeUrl(p.LiveStreamUrl),
-            SafeUrl(p.BackgroundVideoUrl),
+            SafeUrl(liveStreamUrl),
+            SafeUrl(backgroundVideoUrl),
             new SocialLinks(
                 SafeUrl(p.FacebookUrl),
                 SafeUrl(p.XUrl),

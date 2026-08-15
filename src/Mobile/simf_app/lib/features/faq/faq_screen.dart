@@ -10,12 +10,18 @@ import 'package:simf_app/features/faq/widgets/faq_tile.dart';
 
 /// Page 201 — الأسئلة الشائعة · FAQ (`/faq`, public). Pixel-parity to KSA Figma
 /// frame **1388:7567**: the navy [SimfPageShell] shell over an accordion of
-/// question/answer cards (tap a question to expand its answer). Data-driven from
-/// the public `GET /app/faq` (the D-211 FAQ tables); previously a ComingSoon
-/// placeholder (D-464).
+/// question/answer cards (tap a question to expand its answer). Data-driven
+/// from the public `GET /app/faq` (the D-211 FAQ tables); previously a
+/// ComingSoon placeholder (D-464).
 ///
 /// Group names are surfaced as section headers only when there is more than one
-/// group — a single-group catalogue renders the flat accordion the design shows.
+/// group — a single-group catalogue renders the flat accordion the design
+/// shows.
+///
+/// Route: `RouteNames.faq`.
+/// Data: [faqProvider].
+/// Perf: ListView builds every child up front — correct for a short static
+///       page, a defect on a data feed.
 class FaqScreen extends ConsumerWidget {
   const FaqScreen({super.key});
 
@@ -33,26 +39,22 @@ class FaqScreen extends ConsumerWidget {
       onBack: () => backOrHome(context),
       body: faq.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => SimfPullToRefresh(
+        error: (_, __) => SimfRefreshableMessage(
           onRefresh: onRefresh,
-          child: SimfPullableHost(
-            child: SimfErrorState(
-              message: l10n.faqError,
-              retryLabel: l10n.retryLabel,
-              onRetry: () => ref.invalidate(faqProvider),
-            ),
+          child: SimfErrorState(
+            message: l10n.faqError,
+            retryLabel: l10n.retryLabel,
+            onRetry: () => ref.invalidate(faqProvider),
           ),
         ),
         data: (groups) {
           final hasEntries = groups.any((g) => g.entries.isNotEmpty);
           if (!hasEntries) {
-            return SimfPullToRefresh(
+            return SimfRefreshableMessage(
               onRefresh: onRefresh,
-              child: SimfPullableHost(
-                child: SimfEmptyState(
-                  icon: Icons.help_outline,
-                  message: l10n.faqEmpty,
-                ),
+              child: SimfEmptyState(
+                icon: Icons.help_outline,
+                message: l10n.faqEmpty,
               ),
             );
           }
@@ -68,17 +70,18 @@ class FaqScreen extends ConsumerWidget {
                 SimfTokens.space6,
               ),
               children: <Widget>[
-              for (final group in groups)
-                if (group.entries.isNotEmpty) ...<Widget>[
-                  if (showGroupHeaders) ...<Widget>[
-                    SimfSectionHeader(title: group.localizedName(isArabic)),
-                    const SizedBox(height: SimfTokens.space3),
+                for (final group in groups)
+                  if (group.entries.isNotEmpty) ...<Widget>[
+                    if (showGroupHeaders) ...<Widget>[
+                      SimfSectionHeader(
+                          title: group.localizedName(isArabic: isArabic),),
+                      const SizedBox(height: SimfTokens.space3),
+                    ],
+                    for (final entry in group.entries) ...<Widget>[
+                      FaqTile(entry: entry, isArabic: isArabic),
+                      const SizedBox(height: SimfTokens.space3),
+                    ],
                   ],
-                  for (final entry in group.entries) ...<Widget>[
-                    FaqTile(entry: entry, isArabic: isArabic),
-                    const SizedBox(height: SimfTokens.space3),
-                  ],
-                ],
               ],
             ),
           );

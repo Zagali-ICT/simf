@@ -1,4 +1,4 @@
-// P3.4 — D-235 (Completion Programme §5.4): the recorded Q&A archive — a
+﻿// P3.4 — D-235 (Completion Programme §5.4): the recorded Q&A archive — a
 // published session's questions that were actually ASKED on stage (pushed to the
 // speaker by the moderator), attributed to the asker. Owner 2026-07-19 (two-path
 // Q&A): the archive is the IsPushed set, not every Approved row — a live question
@@ -9,6 +9,8 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using SIMF.Application.Files.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using SIMF.Common;
 using SIMF.Common.Enums;
@@ -184,13 +186,21 @@ public sealed class RecordedQuestionsTests : IClassFixture<SimfApiFactory>
             HallId = hall.Id,
             Start = SimfClock.Now.AddMinutes(-15),
             End = SimfClock.Now.AddMinutes(45),
-            // S-7 — the archive flow marks the session Recorded/Published, which now
-            // requires an attached recording (the past start already clears the Held
-            // clock guard); stamp a pointer so the publish transitions succeed.
-            RecordingStoredFileName = Guid.NewGuid().ToString(),
             IsActive = true, CreatedAt = SimfClock.Now,
         };
         db.Sessions.Add(session);
+        await db.SaveChangesAsync();
+
+        // S-7 — the archive flow marks the session Recorded/Published, which
+        // requires an attached recording (the past start already clears the Held
+        // clock guard). RecordingFileId is a real foreign key now, so the fixture
+        // uploads a file rather than stamping an arbitrary Guid.
+        var files = scope.ServiceProvider.GetRequiredService<IFileService>();
+        using var content = new MemoryStream("FAKE-MP4-RECORDING-BYTES"u8.ToArray());
+        var stored = await files.CreateStreamedAsync(
+            FileService.SessionRecording, session.Id, content, "archive.mp4",
+            "video/mp4", ".mp4", Guid.Empty, CancellationToken.None);
+        session.RecordingFileId = stored.Id;
         await db.SaveChangesAsync();
         return session;
     }

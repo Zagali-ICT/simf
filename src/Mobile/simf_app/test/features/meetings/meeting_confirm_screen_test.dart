@@ -1,7 +1,7 @@
-// Tests: B8 — the delegation TARGET can DECLINE an approved meeting from the app
-// (the screen only ever offered Confirm, so their single exit was an admin cancel);
-// A30 — the screen's copy names the DELEGATION explicitly, so it is no longer
-// confusable with the website's `/meeting/confirm?token=` speaker page.
+// Tests: B8 — the delegation TARGET can DECLINE an approved meeting from the
+// app (the screen only ever offered Confirm, so their single exit was an admin
+// cancel); A30 — the screen's copy names the DELEGATION explicitly, so it is no
+// longer confusable with the website's `/meeting/confirm?token=` speaker page.
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,7 +17,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// client field is library-private, so it cannot be `implements`-ed) and never
 /// touches the injected client.
 class _FakeDelegationsRepository extends DelegationsRepository {
-  _FakeDelegationsRepository(super.client, {this.failure});
+  _FakeDelegationsRepository(super._client, {this.failure});
 
   final ApiFailure? failure;
 
@@ -67,7 +67,8 @@ Future<_FakeDelegationsRepository> _pump(
   String requestId = 'req-1',
   ApiFailure? failure,
 }) async {
-  final repository = _FakeDelegationsRepository(_dummyClient(), failure: failure);
+  final repository =
+      _FakeDelegationsRepository(_dummyClient(), failure: failure);
   await tester.pumpWidget(
     ProviderScope(
       overrides: <Override>[
@@ -148,7 +149,10 @@ void main() {
     await tester.tap(find.byKey(declineKey));
     await tester.pumpAndSettle();
 
-    expect(find.text('This meeting is not awaiting confirmation'), findsOneWidget);
+    expect(
+      find.text('This meeting is not awaiting confirmation'),
+      findsOneWidget,
+    );
     expect(find.text('Meeting declined'), findsNothing);
   });
 }

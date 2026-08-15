@@ -285,11 +285,9 @@ public sealed class BadgeAuthTests : IClassFixture<SimfApiFactory>
             Name = "Badge Holder",
             NameArabic = "حامل الشارة",
             QrId = qrId,
-            // Admission is owned by the PROFILE, not the account (D-877), and it
-            // defaults to PendingApproval. Every badge path here resolves through
-            // the profile's state, so a helper called "CreateApprovedVisitor" that
-            // only approved the SimfUser produced a holder the resolver correctly
-            // refused - which reads as a NotFound badge, not as an unapproved one.
+            // Admission is profile-owned: the QR resolver reads this, not the
+            // account's AccountState, so the default PendingApproval would make
+            // an otherwise-approved badge resolve as not-found.
             AdmissionState = AccountState.Approved,
             CreatedAt = SimfClock.Now,
         });

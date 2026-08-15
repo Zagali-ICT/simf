@@ -8,6 +8,7 @@ import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/app/widgets/simf_scanner_body.dart';
+import 'package:simf_app/core/utils/refresh.dart';
 import 'package:simf_app/core/utils/uuid_v4.dart';
 import 'package:simf_app/features/gates/data/gate_models.dart';
 import 'package:simf_app/features/gates/data/gates_repository.dart';
@@ -17,15 +18,30 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 /// Staff gate-operator console — Figma 758:4651 (setup: pick gate + movement),
 /// 758:4819 (ممنوع / denied), 758:4886 (مسموح / allowed), D-406 / D-509.
-/// Role-gated to `AppRole.staff`+ (router); the server additionally requires the
-/// `Gates.Operate` permission and a gate assignment.
+/// Role-gated to `AppRole.staff`+ (router); the server additionally requires
+/// the `Gates.Operate` permission and a gate assignment.
 ///
-/// Flow (D-509): load the operator's gate assignments → **setup** screen (choose
-/// the gate + the دخول/خروج movement type) → tap **سكان الرمز** to open the
-/// camera (or type the code) → the green **مسموح** or red **ممنوع** result with
-/// the holder / gate / direction → "سكان مرة أخرى". The دخول/خروج choice is sent
-/// to the server and honoured for a **Both**-mode gate; a fixed In/Out gate
-/// locks the toggle to its one direction (no CP round-trip to switch).
+/// Flow (D-509): load the operator's gate assignments → **setup** screen
+/// (choose the gate + the دخول/خروج movement type) → tap **سكان الرمز** to open
+/// the camera (or type the code) → the green **مسموح** or red **ممنوع** result
+/// with the holder / gate / direction → "سكان مرة أخرى". The دخول/خروج choice
+/// is sent to the server and honoured for a **Both**-mode gate; a fixed In/Out
+/// gate locks the toggle to its one direction (no CP round-trip to switch).
+///
+/// Route: `RouteNames.gateScanner`.
+/// Data: [gatesRepositoryProvider], [operatorGatesProvider].
+/// Perf: no list — a single-screen layout.
+/// The gates this operator is assigned to (`GET /app/gates/my-assignments`).
+///
+/// The 403 stays an ERROR — it is a failure with its own copy, and DEF-STF-005
+/// needs the SERVER'S specific text ("no Gates.Operate grant" vs "not assigned
+/// to this gate" are both 403 and need different operator actions). Keeping it
+/// an error means the body can read that message straight off the failure
+/// `when` hands it, which is what removed the `_forbiddenMessage` field.
+final operatorGatesProvider = FutureProvider.autoDispose<List<OperatorGate>>(
+  (ref) => ref.watch(gatesRepositoryProvider).myAssignments(),
+);
+
 class GateScanScreen extends ConsumerStatefulWidget {
   const GateScanScreen({super.key, this.enableCamera = true});
 
@@ -37,76 +53,58 @@ class GateScanScreen extends ConsumerStatefulWidget {
 }
 
 class _GateScanScreenState extends ConsumerState<GateScanScreen> {
-  bool _loading = true;
-  bool _forbidden = false;
-  bool _error = false;
-
-  /// DEF-STF-005 — the server's own bilingual 403 text, when it sent one. A
-  /// missing `Gates.Operate` grant and "you are not assigned to this gate" are
-  /// both 403 but need DIFFERENT operator actions, so the specific message must
-  /// not be flattened into the generic one.
-  String? _forbiddenMessage;
   // The console has two stages: the setup card (gate + movement) and, once the
   // operator taps "Scan code", the live camera / manual-entry scanner.
   bool _scanning = false;
   String _lastQr = '';
-  List<OperatorGate> _gates = const <OperatorGate>[];
   OperatorGate? _gate;
   // The operator's chosen movement type. Null on a Both-mode gate until the
-  // operator picks one (Figma 4651 — "choose the movement type first"); auto-set
-  // for a fixed In/Out gate.
+  // operator picks one (Figma 4651 — "choose the movement type first");
+  // auto-set for a fixed In/Out gate.
   ScanDirection? _direction;
   GateScanResult? _result;
 
-  /// Count of scans held on-device awaiting retry (G-4); drives the sync banner.
+  /// Count of scans held on-device awaiting retry (G-4); drives the sync
+  /// banner.
   int _pending = 0;
 
   @override
   void initState() {
     super.initState();
-    unawaited(_loadGates());
+    unawaited(_openConsole());
   }
 
-  Future<void> _loadGates() async {
-    setState(() {
-      _loading = true;
-      _forbidden = false;
-      _forbiddenMessage = null;
-      _error = false;
-    });
+  /// The load's on-success side effects, which are the reason this awaits the
+  /// provider's FIRST future instead of listening: picking the operator's gate,
+  /// applying its direction defaults, and draining the offline backlog should
+  /// happen when the console OPENS, not again on every pull-to-refresh.
+  Future<void> _openConsole() async {
+    final List<OperatorGate> gates;
     try {
-      final gates = await ref.read(gatesRepositoryProvider).myAssignments();
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _gates = gates;
-        _gate = gates.isEmpty ? null : gates.first;
-        if (_gate != null) {
-          _applyGateDefaults(_gate!);
-        }
-        _pending = ref.read(gatesRepositoryProvider).pendingCount();
-        _loading = false;
-      });
-      // Opening the console is a good moment to drain any backlog left by a
-      // prior offline session (G-4).
-      unawaited(_flushPending());
-      // D-821 — and to refresh the rules this device falls back on when the
-      // link drops. Fire-and-forget: it keeps its previous cache on failure,
-      // and the console must open either way.
-      unawaited(ref.read(gatesRepositoryProvider).refreshOfflineConfig());
-    } on ApiFailure catch (e) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _forbidden = e.httpStatus == 403;
-        _forbiddenMessage = _serverMessage(e);
-        _error = e.httpStatus != 403;
-        _loading = false;
-      });
+      gates = await ref.read(operatorGatesProvider.future);
+    } on Object {
+      return; // The forbidden / error branch renders.
     }
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _gate = gates.isEmpty ? null : gates.first;
+      if (_gate != null) {
+        _applyGateDefaults(_gate!);
+      }
+      _pending = ref.read(gatesRepositoryProvider).pendingCount();
+    });
+    // Opening the console is a good moment to drain any backlog left by a
+    // prior offline session (G-4).
+    unawaited(_flushPending());
+    // D-821 — and to refresh the rules this device falls back on when the
+    // link drops. Fire-and-forget: it keeps its previous cache on failure,
+    // and the console must open either way.
+    unawaited(ref.read(gatesRepositoryProvider).refreshOfflineConfig());
   }
+
+  Future<void> _refresh() => refreshAsync(ref, operatorGatesProvider.future);
 
   /// A fixed In/Out gate locks the movement to its one direction; a Both gate
   /// starts unset so the operator must choose (Figma 4651 hint).
@@ -143,15 +141,15 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
     final repo = ref.read(gatesRepositoryProvider);
     try {
       final result = await repo.recordScanOrQueue(
-            gateId: gate.gateId,
-            qr: trimmed,
-            direction: direction,
-            // A FRESH UUIDv4 per scan (SIMF-API-GATES-001 §9 — ScanIdempotency.
-            // Key is a client UUIDv4): a genuine re-entry of the same badge in
-            // the same direction is a NEW scan, never a 24h-window replay of the
-            // first one (G-1).
-            idempotencyKey: randomUuidV4(),
-          );
+        gateId: gate.gateId,
+        qr: trimmed,
+        direction: direction,
+        // A FRESH UUIDv4 per scan (SIMF-API-GATES-001 §9 — ScanIdempotency.
+        // Key is a client UUIDv4): a genuine re-entry of the same badge in
+        // the same direction is a NEW scan, never a 24h-window replay of the
+        // first one (G-1).
+        idempotencyKey: randomUuidV4(),
+      );
       if (!mounted) {
         return;
       }
@@ -239,8 +237,8 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
     setState(() => _pending = remaining);
   }
 
-  /// "سكان مرة أخرى" — clears the result and returns to the live scanner with the
-  /// same gate + direction so the operator can scan the next holder.
+  /// "سكان مرة أخرى" — clears the result and returns to the live scanner with
+  /// the same gate + direction so the operator can scan the next holder.
   void _scanAgain() {
     setState(() {
       _result = null;
@@ -273,11 +271,14 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
     // The setup stage shows the screen title; once scanning, the bar shows the
     // selected "gate • direction" (Figma 4819/4886).
     final showContext = _scanning || _result != null;
-    final gateName = _gate?.localizedName(isArabic) ?? l10n.gateScannerEntry;
+    final gateName =
+        _gate?.localizedName(isArabic: isArabic) ?? l10n.gateScannerEntry;
     final directionForTitle = _result?.direction ?? _direction;
-    final title = showContext
-        ? '$gateName${directionForTitle == null ? '' : ' • ${_directionLabel(l10n, directionForTitle)}'}'
-        : l10n.gateScanTitle;
+    final directionSuffix = directionForTitle == null
+        ? ''
+        : ' • ${_directionLabel(l10n, directionForTitle)}';
+    final title =
+        showContext ? '$gateName$directionSuffix' : l10n.gateScanTitle;
     return PopScope(
       // Route the system back through _back (go_router); raw pop can't exit
       // this shell-pushed route (D-426).
@@ -352,48 +353,52 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
   }
 
   Widget _body(AppL10n l10n, bool isArabic) {
-    if (_loading) {
-      return const Center(
+    return ref.watch(operatorGatesProvider).when(
+      loading: () => const Center(
         child: CircularProgressIndicator(color: SimfTokens.accent),
-      );
-    }
-    // Both gate-less branches: a staff member granted the gate assignment
-    // after this screen opened must be able to re-check without restarting.
-    if (_forbidden) {
-      return SimfRefreshableMessage(
-        onRefresh: _loadGates,
-        child: SimfEmptyState(
-          icon: Icons.lock_outline,
-          message: _forbiddenMessage ?? l10n.gateForbidden,
-        ),
-      );
-    }
-    if (_error) {
-      return SimfRefreshableMessage(
-        onRefresh: _loadGates,
-        child: SimfErrorState(
-          message: l10n.gateError,
-          retryLabel: l10n.retryLabel,
-          onRetry: () => unawaited(_loadGates()),
-        ),
-      );
-    }
-    if (_gate == null) {
-      return SimfRefreshableMessage(
-        onRefresh: _loadGates,
-        child: SimfEmptyState(
-          icon: Icons.sensor_door_outlined,
-          message: l10n.gateNotAssigned,
-        ),
-      );
-    }
+      ),
+      // Both gate-less branches: a staff member granted the gate assignment
+      // after this screen opened must be able to re-check without restarting.
+      error: (error, _) {
+        final failure = error is ApiFailure ? error : null;
+        final forbidden = failure?.httpStatus == 403;
+        return SimfRefreshableMessage(
+          onRefresh: _refresh,
+          child: forbidden
+              ? SimfEmptyState(
+                  icon: Icons.lock_outline,
+                  // DEF-STF-005 — the server's own reason when it sent one:
+                  // a missing grant and a missing assignment are both 403 and
+                  // need different operator actions.
+                  message: _serverMessage(failure!) ?? l10n.gateForbidden,
+                )
+              : SimfErrorState(
+                  message: l10n.gateError,
+                  retryLabel: l10n.retryLabel,
+                  onRetry: () => ref.invalidate(operatorGatesProvider),
+                ),
+        );
+      },
+      data: (gates) => _gate == null
+          ? SimfRefreshableMessage(
+              onRefresh: _refresh,
+              child: SimfEmptyState(
+                icon: Icons.sensor_door_outlined,
+                message: l10n.gateNotAssigned,
+              ),
+            )
+          : _console(l10n, isArabic, gates),
+    );
+  }
+
+  Widget _console(AppL10n l10n, bool isArabic, List<OperatorGate> gates) {
     final result = _result;
     if (result != null) {
       return GateResultView(
         l10n: l10n,
         isArabic: isArabic,
         result: result,
-        gateName: _gate!.localizedName(isArabic),
+        gateName: _gate!.localizedName(isArabic: isArabic),
         reference: _lastQr,
         onScanAgain: _scanAgain,
       );
@@ -404,7 +409,7 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
         GateSetupView(
           l10n: l10n,
           isArabic: isArabic,
-          gates: _gates,
+          gates: gates,
           gate: _gate!,
           direction: _direction,
           onGate: _onGate,
@@ -447,7 +452,11 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
           ),
           child: Row(
             children: <Widget>[
-              const Icon(Icons.sync, color: SimfTokens.accent, size: SimfTokens.gateScanScreenSizeSm),
+              const Icon(
+                Icons.sync,
+                color: SimfTokens.accent,
+                size: SimfTokens.gateScanScreenSizeSm,
+              ),
               const SizedBox(width: SimfTokens.space2),
               Expanded(
                 child: Text(
@@ -464,5 +473,7 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
   }
 
   static String _directionLabel(AppL10n l10n, ScanDirection d) =>
-      d == ScanDirection.checkOut ? l10n.gateDirectionOut : l10n.gateDirectionIn;
+      d == ScanDirection.checkOut
+          ? l10n.gateDirectionOut
+          : l10n.gateDirectionIn;
 }

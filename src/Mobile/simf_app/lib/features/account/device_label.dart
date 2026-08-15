@@ -12,20 +12,20 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// Every device key ever enrolled carried the hardcoded default `SIMF mobile`,
 /// because `enrolDeviceKey`'s `label` parameter existed and no caller ever
 /// supplied it. Two devices under one account were therefore indistinguishable,
-/// including to an administrator revoking one, and the label already reaches the
-/// `DeviceKeyRegistered` audit detail.
+/// including to an administrator revoking one, and the label already reaches
+/// the `DeviceKeyRegistered` audit detail.
 ///
-/// **A hardware serial is not obtainable.** `device_info_plus` returns `unknown`
-/// on Android unless the app meets Android's privileged requirements, and
-/// `IosDeviceInfo` exposes no serial at all. So the second half of the label is a
-/// *fingerprint*: the OS serial where a deployment does grant it, else iOS
-/// `identifierForVendor`, else a UUID minted once into secure storage. Eight hex
-/// characters of its SHA-256 reach the label, which is ample to tell a handful of
-/// rows apart while storing nothing reversible.
+/// **A hardware serial is not obtainable.** `device_info_plus` returns
+/// `unknown` on Android unless the app meets Android's privileged requirements,
+/// and `IosDeviceInfo` exposes no serial at all. So the second half of the
+/// label is a *fingerprint*: the OS serial where a deployment does grant it,
+/// else iOS `identifierForVendor`, else a UUID minted once into secure storage.
+/// Eight hex characters of its SHA-256 reach the label, which is ample to tell
+/// a handful of rows apart while storing nothing reversible.
 ///
-/// `device_info_plus` deliberately stays out of `simf_auth_pkg`: that package is
-/// auth and transport, and platform plugins do not belong in it. The label is
-/// resolved here and passed into the `label` parameter that already exists.
+/// `device_info_plus` deliberately stays out of `simf_auth_pkg`: that package
+/// is auth and transport, and platform plugins do not belong in it. The label
+/// is resolved here and passed into the `label` parameter that already exists.
 class DeviceLabel {
   const DeviceLabel(
     this._secureStorage, {
@@ -102,8 +102,9 @@ class DeviceLabel {
     final short = digest.substring(0, 8);
     try {
       await _secureStorage.write(StorageKeys.deviceFingerprint, short);
-    } catch (_) {
-      // A storage failure only costs stability across enrolments, not the label.
+    } on Object catch (_) {
+      // A storage failure only costs stability across enrolments, not the
+      // label.
     }
     return short;
   }
@@ -112,7 +113,7 @@ class DeviceLabel {
     try {
       final stored = await _secureStorage.read(StorageKeys.deviceFingerprint);
       return (stored != null && stored.isNotEmpty) ? stored : null;
-    } catch (_) {
+    } on Object catch (_) {
       return null;
     }
   }

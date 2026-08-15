@@ -1,4 +1,14 @@
-include: package:flutter_lints/flutter.yaml
+# analysis_options.yaml — simf_auth_pkg
+#
+# Held to the SAME ruleset as the app (`very_good_analysis`), not the weaker
+# `flutter_lints` it carried before. This package owns the sign-in, refresh and
+# device-key paths named in D-694's blast radius, so it is the last place that
+# should be linted more loosely than its callers.
+#
+# The app's own `analysis_options.yaml` is the reference for any rule turned
+# off below; each is off for the reason recorded there, not by preference.
+
+include: package:very_good_analysis/analysis_options.yaml
 
 analyzer:
   language:
@@ -16,3 +26,8 @@ linter:
     sort_constructors_first: true
     unawaited_futures: true
     use_super_parameters: true
+
+    # OFF to match the app and simf_data_pkg. Turning it on in one package
+    # alone would leave the halves of one codebase disagreeing about whether a
+    # public member needs a doc comment.
+    public_member_api_docs: false

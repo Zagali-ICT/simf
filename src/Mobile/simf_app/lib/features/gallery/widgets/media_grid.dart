@@ -4,7 +4,8 @@ import 'package:simf_app/core/responsive/grid_columns.dart';
 import 'package:simf_app/features/gallery/data/media_models.dart';
 import 'package:simf_app/features/gallery/widgets/gallery_media_tile.dart';
 
-/// A two-up grid of media tiles (frame: 104-high, 8-radius tiles with a 12-gap).
+/// A two-up grid of media tiles (frame: 104-high, 8-radius tiles with a
+/// 12-gap).
 class MediaGrid extends StatelessWidget {
   const MediaGrid({
     required this.items,

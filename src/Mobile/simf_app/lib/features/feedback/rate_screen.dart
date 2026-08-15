@@ -6,6 +6,7 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/core/utils/gregorian_month_names.dart';
+import 'package:simf_app/core/utils/refresh.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
 import 'package:simf_app/core/validation/field_limits.dart';
 import 'package:simf_app/features/feedback/data/feedback_repository.dart';
@@ -20,11 +21,34 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// Page 040 — تقييم الملتقى · Rate (#40, `/rate`, login-only).
 ///
 /// Dynamic, config-driven rating screen. It fetches the form for a rating type
-/// (resolved by [code] — e.g. "App" / "Session" — or [ratingTypeId]) and optional
-/// [targetId] (a session id for a per-session type), then renders the optional
-/// overall star row, the server-defined grouped + flat questions (each a 1–5 star
-/// bar) and the optional comment box, prefilled from any existing submission.
-/// `GET /app/feedback/form` then `POST /app/feedback/submit`.
+/// (resolved by `code` — e.g. "App" / "Session" — or `ratingTypeId`) and
+/// optional `targetId` (a session id for a per-session type), then renders the
+/// optional overall star row, the server-defined grouped + flat questions (each
+/// a 1–5 star bar) and the optional comment box, prefilled from any existing
+/// submission. `GET /app/feedback/form` then `POST /app/feedback/submit`.
+///
+/// Route: `RouteNames.rate`.
+/// Data: [feedbackRepositoryProvider], [ratingFormProvider].
+/// Perf: ListView builds every child up front — correct for a short static
+///       page, a defect on a data feed.
+/// Identifies which rating form to load. A record, so two screens asking for
+/// the same form share one request.
+typedef RatingFormKey = ({
+  String? code,
+  String? ratingTypeId,
+  String? targetId,
+});
+
+/// The rating form for [RatingFormKey], with any existing submission on it.
+final ratingFormProvider = FutureProvider.autoDispose
+    .family<RatingFormView, RatingFormKey>(
+  (ref, key) => ref.watch(feedbackRepositoryProvider).getForm(
+        code: key.code,
+        ratingTypeId: key.ratingTypeId,
+        targetId: key.targetId,
+      ),
+);
+
 class RateScreen extends ConsumerStatefulWidget {
   const RateScreen({
     super.key,
@@ -44,9 +68,6 @@ class RateScreen extends ConsumerStatefulWidget {
 class _RateScreenState extends ConsumerState<RateScreen> {
   final TextEditingController _comment = TextEditingController();
 
-  RatingFormView? _form;
-  bool _loading = true;
-  bool _loadFailed = false;
   bool _submitting = false;
 
   int _overall = 0;
@@ -56,7 +77,7 @@ class _RateScreenState extends ConsumerState<RateScreen> {
   @override
   void initState() {
     super.initState();
-    unawaited(_loadForm());
+    unawaited(_prefillFromExisting());
   }
 
   @override
@@ -65,46 +86,40 @@ class _RateScreenState extends ConsumerState<RateScreen> {
     super.dispose();
   }
 
-  Future<void> _loadForm() async {
-    setState(() {
-      _loading = true;
-      _loadFailed = false;
-    });
+  /// Default to the global "App" rating when no type was specified (the
+  /// More-menu entry point).
+  RatingFormKey get _key => (
+        code: widget.ratingTypeId == null ? (widget.code ?? 'App') : null,
+        ratingTypeId: widget.ratingTypeId,
+        targetId: widget.targetId,
+      );
+
+  /// Seeds the stars, the per-question answers and the comment from any
+  /// EXISTING submission, once.
+  ///
+  /// Awaits the provider's first future rather than listening, for the reason
+  /// the old comment gave about pull-to-refresh: re-running the prefill over a
+  /// part-scored form would reset the user's stars.
+  Future<void> _prefillFromExisting() async {
+    final RatingFormView form;
     try {
-      // Default to the global "App" rating when no type was specified (the
-      // More-menu entry point).
-      final form = await ref.read(feedbackRepositoryProvider).getForm(
-            code: widget.ratingTypeId == null ? (widget.code ?? 'App') : null,
-            ratingTypeId: widget.ratingTypeId,
-            targetId: widget.targetId,
-          );
-      if (!mounted) {
-        return;
-      }
-      // Prefill from any existing submission.
-      final existing = form.existing;
-      if (existing != null) {
-        _overall = existing.overallStars ?? 0;
-        _answers
-          ..clear()
-          ..addAll(existing.answers);
-        if ((existing.comment ?? '').isNotEmpty) {
-          _comment.text = existing.comment!;
-        }
-      }
-      setState(() {
-        _form = form;
-        _loading = false;
-      });
-    } on ApiFailure {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _loading = false;
-        _loadFailed = true;
-      });
+      form = await ref.read(ratingFormProvider(_key).future);
+    } on Object {
+      return; // The failed-load branch renders.
     }
+    final existing = form.existing;
+    if (!mounted || existing == null) {
+      return;
+    }
+    setState(() {
+      _overall = existing.overallStars ?? 0;
+      _answers
+        ..clear()
+        ..addAll(existing.answers);
+      if ((existing.comment ?? '').isNotEmpty) {
+        _comment.text = existing.comment!;
+      }
+    });
   }
 
   Future<void> _submit(AppL10n l10n, RatingFormView form) async {
@@ -176,27 +191,27 @@ class _RateScreenState extends ConsumerState<RateScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    final form = _form;
     return SimfPageShell(
       title: l10n.rateTitle,
       onBack: () => backOrHome(context),
-      body: _loading
-          ? const Center(
+      body: ref.watch(ratingFormProvider(_key)).when(
+            loading: () => const Center(
               child: CircularProgressIndicator(color: SimfTokens.accent),
-            )
-          : _loadFailed || form == null
-              // Only the failed-load branch is pull-to-refreshable: _loadForm
-              // prefills _overall/_answers from any existing submission, so
-              // re-running it over a part-scored form would reset the user's
-              // stars.
-              ? SimfRefreshableMessage(
-                  onRefresh: _loadForm,
-                  child: RateLoadError(
-                    message: l10n.rateLoadFailed,
-                    onRetry: _loadForm,
-                  ),
-                )
-              : _buildForm(l10n, form),
+            ),
+            // Only the failed-load branch is pull-to-refreshable: the prefill
+            // seeds _overall/_answers from any existing submission, so
+            // re-running it over a part-scored form would reset the user's
+            // stars.
+            error: (_, __) => SimfRefreshableMessage(
+              onRefresh: () =>
+                  refreshAsync(ref, ratingFormProvider(_key).future),
+              child: RateLoadError(
+                message: l10n.rateLoadFailed,
+                onRetry: () => ref.invalidate(ratingFormProvider(_key)),
+              ),
+            ),
+            data: (form) => _buildForm(l10n, form),
+          ),
     );
   }
 
@@ -205,129 +220,146 @@ class _RateScreenState extends ConsumerState<RateScreen> {
     final children = <Widget>[];
 
     // D-713 (item 8) — the "watched at" context header on a per-session rating.
-    final watchedSession = form.localizedTargetName(isArabic);
+    final watchedSession = form.localizedTargetName(isArabic: isArabic);
     if (watchedSession != null) {
-      children.add(RateNavyNoteChip(
-        icon: Icons.event_available_outlined,
-        text: l10n.rateWatchedAt(
-          watchedSession,
-          _watchedWhen(isArabic, form.targetStart),
-        ),
-      ),);
-      children.add(const SizedBox(height: SimfTokens.space5));
+      children
+        ..add(
+          RateNavyNoteChip(
+            icon: Icons.event_available_outlined,
+            text: l10n.rateWatchedAt(
+              watchedSession,
+              _watchedWhen(isArabic, form.targetStart),
+            ),
+          ),
+        )
+        ..add(const SizedBox(height: SimfTokens.space5));
     }
 
     if (form.hasOverallStars) {
-      children.add(Column(
-        children: <Widget>[
-          Text(
-            l10n.rateKicker,
-            textAlign: TextAlign.center,
-            style: SimfTokens.bodyBeigeMd,
+      children
+        ..add(
+          Column(
+            children: <Widget>[
+              Text(
+                l10n.rateKicker,
+                textAlign: TextAlign.center,
+                style: SimfTokens.bodyBeigeMd,
+              ),
+              const SizedBox(height: SimfTokens.space6),
+              Text(
+                l10n.rateLead,
+                textAlign: TextAlign.center,
+                style: SimfTokens.labelWhiteBoldTitleTall,
+              ),
+              const SizedBox(height: SimfTokens.space6),
+              StarRow(
+                value: _overall,
+                size: SimfTokens.rateScreenSize,
+                gap: SimfTokens.space3,
+                onChanged: (v) => setState(() => _overall = v),
+              ),
+              const SizedBox(height: SimfTokens.space5),
+              if (_overall < 1)
+                const SizedBox(height: SimfTokens.space5)
+              else
+                Text(
+                  l10n.rateScoreSummary(_overall),
+                  textAlign: TextAlign.center,
+                  style: SimfTokens.bodyBeigeMd,
+                ),
+            ],
           ),
-          const SizedBox(height: SimfTokens.space6),
-          Text(
-            l10n.rateLead,
-            textAlign: TextAlign.center,
-            style: SimfTokens.labelWhiteBoldTitleTall,
-          ),
-          const SizedBox(height: SimfTokens.space6),
-          StarRow(
-            value: _overall,
-            size: SimfTokens.rateScreenSize,
-            gap: SimfTokens.space3,
-            onChanged: (v) => setState(() => _overall = v),
-          ),
-          const SizedBox(height: SimfTokens.space5),
-          if (_overall < 1)
-            const SizedBox(height: SimfTokens.space5)
-          else
-            Text(
-              l10n.rateScoreSummary(_overall),
-              textAlign: TextAlign.center,
-              style: SimfTokens.bodyBeigeMd,
-            ),
-        ],
-      ),);
-      children.add(const SizedBox(height: SimfTokens.space5));
+        )
+        ..add(const SizedBox(height: SimfTokens.space5));
     }
 
     // Grouped questions — a section per group.
     for (final group in form.groups) {
-      children.add(SimfSectionHeader(title: group.localizedName(isArabic)));
-      children.add(const SizedBox(height: SimfTokens.space3));
+      children
+        ..add(
+            SimfSectionHeader(title: group.localizedName(isArabic: isArabic)),)
+        ..add(const SizedBox(height: SimfTokens.space3));
       for (final q in group.questions) {
-        children.add(_questionRow(isArabic, q));
-        children.add(const SizedBox(height: SimfTokens.space4));
+        children
+          ..add(_questionRow(isArabic, q))
+          ..add(const SizedBox(height: SimfTokens.space4));
       }
       children.add(const SizedBox(height: SimfTokens.space3));
     }
 
     // Flat (ungrouped) questions — under the generic "Rate the elements" title.
     if (form.ungroupedQuestions.isNotEmpty) {
-      children.add(SimfSectionHeader(title: l10n.rateElementsTitle));
-      children.add(const SizedBox(height: SimfTokens.space3));
+      children
+        ..add(SimfSectionHeader(title: l10n.rateElementsTitle))
+        ..add(const SizedBox(height: SimfTokens.space3));
       for (final q in form.ungroupedQuestions) {
-        children.add(_questionRow(isArabic, q));
-        children.add(const SizedBox(height: SimfTokens.space4));
+        children
+          ..add(_questionRow(isArabic, q))
+          ..add(const SizedBox(height: SimfTokens.space4));
       }
     }
 
     if (form.allowComment) {
-      final commentLabel =
-          form.localizedCommentLabel(isArabic) ?? l10n.rateCommentLabel;
-      children.add(const SizedBox(height: SimfTokens.space5));
-      children.add(SimfSectionHeader(title: commentLabel));
-      children.add(const SizedBox(height: SimfTokens.space2));
-      children.add(TextField(
-        controller: _comment,
-        maxLength: FieldLimits.feedbackComment,
-        maxLines: 4,
-        minLines: 4,
-        style: SimfTokens.bodyWhiteMd,
-        decoration: InputDecoration(
-          filled: true,
-          fillColor: SimfTokens.navyDeep,
-          hintText: l10n.rateCommentHint,
-          hintStyle: SimfTokens.labelBeigeSm,
-          counterText: '',
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: SimfTokens.space3,
-            vertical: SimfTokens.space3,
+      final commentLabel = form.localizedCommentLabel(isArabic: isArabic) ??
+          l10n.rateCommentLabel;
+      children
+        ..add(const SizedBox(height: SimfTokens.space5))
+        ..add(SimfSectionHeader(title: commentLabel))
+        ..add(const SizedBox(height: SimfTokens.space2))
+        ..add(
+          TextField(
+            controller: _comment,
+            maxLength: FieldLimits.feedbackComment,
+            maxLines: 4,
+            minLines: 4,
+            style: SimfTokens.bodyWhiteMd,
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: SimfTokens.navyDeep,
+              hintText: l10n.rateCommentHint,
+              hintStyle: SimfTokens.labelBeigeSm,
+              counterText: '',
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: SimfTokens.space3,
+                vertical: SimfTokens.space3,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(SimfTokens.radius),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(SimfTokens.radius),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(SimfTokens.radius),
+                borderSide: const BorderSide(color: SimfTokens.accent),
+              ),
+            ),
           ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(SimfTokens.radius),
-            borderSide: BorderSide.none,
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(SimfTokens.radius),
-            borderSide: BorderSide.none,
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(SimfTokens.radius),
-            borderSide: const BorderSide(color: SimfTokens.accent),
-          ),
-        ),
-      ),);
+        );
     }
 
     children.add(const SizedBox(height: SimfTokens.space5));
     // Owner 2026-07-19 — when the visitor did not attend what this rates, keep
     // the form visible but leave submit disabled (the server also 403s).
     if (!form.isEligible) {
-      children.add(
-        RateNavyNoteChip(
-          icon: Icons.info_outline,
-          text: l10n.rateAttendRequired,
-        ),
-      );
-      children.add(const SizedBox(height: SimfTokens.space3));
+      children
+        ..add(
+          RateNavyNoteChip(
+            icon: Icons.info_outline,
+            text: l10n.rateAttendRequired,
+          ),
+        )
+        ..add(const SizedBox(height: SimfTokens.space3));
     }
-    children.add(RateGoldButton(
-      label: l10n.rateSubmit,
-      loading: _submitting,
-      onTap: form.isEligible ? () => unawaited(_submit(l10n, form)) : null,
-    ),);
+    children.add(
+      RateGoldButton(
+        label: l10n.rateSubmit,
+        loading: _submitting,
+        onTap: form.isEligible ? () => unawaited(_submit(l10n, form)) : null,
+      ),
+    );
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(
@@ -341,15 +373,15 @@ class _RateScreenState extends ConsumerState<RateScreen> {
   }
 
   Widget _questionRow(bool isArabic, RatingFormQuestion q) => RateCategoryRow(
-        label: q.localizedText(isArabic),
+        label: q.localizedText(isArabic: isArabic),
         value: _answers[q.id] ?? 0,
         onChanged: (v) => setState(() => _answers[q.id] = v),
       );
 
-  /// The "{day} {month} · {HH:MM}" watch time for the header, device-local and in
-  /// the active locale (mirrors the session-header card). Empty when the session
-  /// start is unknown (an older API), in which case the header shows the title
-  /// alone.
+  /// The "{day} {month} · {HH:MM}" watch time for the header, device-local and
+  /// in the active locale (mirrors the session-header card). Empty when the
+  /// session start is unknown (an older API), in which case the header shows
+  /// the title alone.
   String _watchedWhen(bool isArabic, DateTime? start) {
     if (start == null) {
       return '';
@@ -358,6 +390,6 @@ class _RateScreenState extends ConsumerState<RateScreen> {
     final hh = local.hour.toString().padLeft(2, '0');
     final mm = local.minute.toString().padLeft(2, '0');
     return '${local.day.toString().padLeft(2, '0')} '
-        '${gregorianMonthName(local.month, isArabic)} · $hh:$mm';
+        '${gregorianMonthName(local.month, isArabic: isArabic)} · $hh:$mm';
   }
 }

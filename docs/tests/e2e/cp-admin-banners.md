@@ -1,4 +1,4 @@
-# E2E test catalogue — Banners (`/admin/banners`)
+﻿# E2E test catalogue — Banners (`/admin/banners`)
 
 | | |
 |--|--|
@@ -37,7 +37,7 @@
 > `POST /admin/banners/import`. See E2E-BNR-020..022.
 >
 > **AddEdit form fields (in render order):** Title (English), Title (Arabic),
-> Body (English), Body (Arabic), Image URL, Click-through URL,
+> Body (English), Body (Arabic), Click-through URL,
 > Start (Saudi time) `datetime-local`, End (Saudi time) `datetime-local`, Display order
 > `number`, and (Edit only) an **Active** checkbox. Submit button label is
 > **Save**; the create vs. edit branch is chosen by `_isEdit`.
@@ -48,7 +48,10 @@
 > `Banners.Edit`), served publicly at `GET /app/assets/Banner/{id}/image` while
 > the banner is active AND within its window. The Flutter app rotates these
 > banner images as the **home hero**, overlaying the forum edition (name / theme
-> / dates / location). The free-text Image URL stays as an optional fallback.
+> / dates / location). The free-text Image URL is **gone** (D-889): a pasted URL
+> loaded straight into the app hero, carried no media type, no sensitivity tier
+> and no permission entry, and was a second way to author the same thing. The
+> banner's `ImageFileId` now points at the `StoredFile` this upload creates.
 > See E2E-BNR-024.
 >
 > **BFF routes** (`AccountEndpoints.cs`, all under `/account/api`):
@@ -83,7 +86,7 @@
 | E2E-BNR-020 | Excel export: toolbar Export → POST /export (whole filtered grid vs selected rows; header row) (D-356) | happy | P1 | _to author_ |
 | E2E-BNR-021 | Excel import: toolbar Import → POST /import multipart → "N created…" modal + per-row error (D-356) | happy | P1 | _to author_ |
 | E2E-BNR-022 | Excel import rejection: non-.xlsx / wrong-sheet upload → 400 + bilingual toast, nothing created (D-356) | error | P1 | _to author_ |
-| E2E-BNR-023 | Excel round-trip: export carries Body/BodyArabic/ImageUrl/LinkUrl, and an import workbook with those columns persists all four (D-506) | happy | P1 | _to author_ |
+| E2E-BNR-023 | Excel round-trip: export carries Body/BodyArabic/LinkUrl, and an import workbook with those columns persists all three; a stale ImageUrl column is ignored (D-506, D-889) | happy | P1 | _to author_ |
 | E2E-BNR-024 | #43 — upload a hero image (Edit only) → POST /admin/assets/Banner/{id}/image (Banners.Edit); public serve at /app/assets/Banner/{id}/image within the window; the app home hero rotates it | happy | P1 | _to author_ |
 | E2E-BNR-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-BNR-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
@@ -110,8 +113,10 @@ Scenario: Create, read-back via Edit, toggle Active, then delete one banner
   When the administrator clicks the grid's Add (+) toolbar action
   Then the Add modal opens titled "New banner"
   And it shows fields: Title (English), Title (Arabic), Body (English),
-      Body (Arabic), Image URL, Click-through URL, Start (Saudi time), End (Saudi time),
+      Body (Arabic), Click-through URL, Start (Saudi time), End (Saudi time),
       Display order
+  And no image field is offered, only the hint
+      "Save the record first, then add an image."
   And the Active checkbox is NOT shown (it is Edit-only)
   And Start (Saudi time) defaults to now and End (Saudi time) defaults to now + 1 day
   And Display order defaults to "0"
@@ -120,7 +125,6 @@ Scenario: Create, read-back via Edit, toggle Active, then delete one banner
   And they fill Title (Arabic)="الكلمة الرئيسية لمنتدى 2026"
   And they fill Body (English)="Doors open 09:00 at the main auditorium."
   And they fill Body (Arabic)="تُفتح الأبواب الساعة 09:00 في القاعة الرئيسية."
-  And they fill Image URL="/content/banners/keynote.png"
   And they fill Click-through URL="https://simf.example/agenda"
   And they set Start (Saudi time)="2026-06-10T08:00"
   And they set End (Saudi time)="2026-06-12T18:00"
@@ -137,7 +141,8 @@ Scenario: Create, read-back via Edit, toggle Active, then delete one banner
   When the administrator clicks the row's Edit (pencil) icon action
   Then the BFF calls GET /account/api/admin/banners/{id} and returns 200
   And the Edit modal opens titled "Edit banner" with every field pre-filled
-      from the detail (incl. Image URL and Click-through URL)
+      from the detail (incl. Click-through URL), plus an "Image" section
+      hosting SimfImageUpload Category="Banner"
   And the Active checkbox is now visible and ticked
   When they change Display order to "0"
   And they untick the Active checkbox
@@ -276,12 +281,13 @@ Scenario: Unparseable Start/End is caught before any request fires
 
 ```gherkin
 Scenario: Edit re-reads the detail and pre-fills every field
-  Given a banner exists with Image URL="/img/a.png" and Click-through URL="https://x.test"
+  Given a banner exists with an uploaded image and Click-through URL="https://x.test"
   When the administrator clicks the row's Edit (pencil) icon action
   Then the BFF calls GET /account/api/admin/banners/{id} and returns 200
-  And the Edit modal opens with Title (EN/AR), Body (EN/AR), Image URL,
+  And the Edit modal opens with Title (EN/AR), Body (EN/AR),
       Click-through URL, Start (Saudi time), End (Saudi time), Display order and the
       Active checkbox all populated from AdminBannerDetail
+  And the "Image" section shows the banner's current uploaded image
   And the Start/End values render as yyyy-MM-ddTHH:mm in the datetime-local inputs
 ```
 
@@ -477,9 +483,10 @@ Scenario: Export the filtered grid to an XLSX workbook
   And the browser saves a file named simf-banners-{yyyyMMddHHmmss}.xlsx
   And the workbook's "Banners" sheet header row reads
       Title | TitleArabic | Start | End | DisplayOrder | IsActive
-      | Body | BodyArabic | ImageUrl | LinkUrl
-      (D-506 — the last four were appended so the export round-trips back through
-       import without dropping the body or the image/link URLs)
+      | Body | BodyArabic | LinkUrl
+      (D-506 appended these so the export round-trips back through import without
+       dropping the body or the link; D-889 removed the ImageUrl column, the image
+       now being a StoredFile rather than a typed string)
   And it contains the whole filtered set (the API caps the export at 5000 rows)
   When they instead tick two row checkboxes then click "Export"
   Then the POST carries those two Ids (Query still sent) and the workbook contains
@@ -488,8 +495,8 @@ Scenario: Export the filtered grid to an XLSX workbook
 
 **Evidence captured:**
 - Network: `POST /account/api/admin/banners/export` returns 200 with the xlsx content-type
-- Saved file `simf-banners-*.xlsx` opens with the ten-column header row above
-  (six grid columns + the four D-506 round-trip columns Body/BodyArabic/ImageUrl/LinkUrl)
+- Saved file `simf-banners-*.xlsx` opens with the nine-column header row above
+  (six grid columns + the D-506 round-trip columns Body/BodyArabic/LinkUrl)
 
 ### E2E-BNR-021 — Excel import (D-356)
 
@@ -534,28 +541,29 @@ Scenario: A bad upload is rejected without creating anything
 ### E2E-BNR-023 — Excel round-trip of Body / image / link (D-506)
 
 ```gherkin
-Scenario: The export carries Body/BodyArabic/ImageUrl/LinkUrl and an import re-reads them
+Scenario: The export carries Body/BodyArabic/LinkUrl and an import re-reads them
   Given the administrator is on /admin/banners with at least one banner that has
-      a Body, an Image URL and a Click-through URL
+      a Body and a Click-through URL
   When they click the toolbar "Export" action
-  Then the "Banners" sheet header row now includes Body | BodyArabic | ImageUrl | LinkUrl
-      appended after IsActive (D-506 — previously these four were dropped on export)
-  And each exported row carries that banner's Body, BodyArabic, ImageUrl and LinkUrl
+  Then the "Banners" sheet header row now includes Body | BodyArabic | LinkUrl
+      appended after IsActive (D-506 — previously these were dropped on export;
+      the ImageUrl column left the workbook with D-889)
+  And each exported row carries that banner's Body, BodyArabic and LinkUrl
 
   When they edit one row of the exported workbook to a new Title and re-import it
-      (the "Banners" sheet keeps the Body | BodyArabic | ImageUrl | LinkUrl columns)
+      (the "Banners" sheet keeps the Body | BodyArabic | LinkUrl columns)
   Then a POST /account/api/admin/banners/import fires and creates the row
   And opening that new banner's Edit (GET /account/api/admin/banners/{id}) shows the
-      Body (EN/AR), Image URL and Click-through URL exactly as they were in the workbook
+      Body (EN/AR) and Click-through URL exactly as they were in the workbook
       (round-trip with no field dropped)
 ```
 
 **Evidence captured:**
 - Network: `POST /account/api/admin/banners/export` returns 200; the workbook's
-  "Banners" header row ends with `Body | BodyArabic | ImageUrl | LinkUrl`
+  "Banners" header row ends with `Body | BodyArabic | LinkUrl`
 - API tests: `tests/SIMF.Api.Tests/BannersExcelTests.cs` —
-  `Export_includes_the_body_image_and_link_columns` (export header presence) and
-  `Import_round_trips_the_body_image_and_link` (import → GET detail carries all four)
+  `Export_includes_the_body_and_link_columns_but_not_the_image` and
+  `Import_round_trips_the_body_and_link_and_ignores_a_stale_image_column`
 
 ### E2E-BNR-024 — Upload a hero image (#43)
 

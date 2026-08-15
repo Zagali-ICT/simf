@@ -122,8 +122,9 @@ void main() {
           builder: (_, __) => const Scaffold(body: SizedBox.shrink()),
         ),
         // D-712 — the after-watch rate prompt pushes /rate when the screen is
-        // disposed at teardown; declare the route so that push resolves harmlessly
-        // (the golden is captured before dispose, so this never affects the image).
+        // disposed at teardown; declare the route so that push resolves
+        // harmlessly (the golden is captured before dispose, so this never
+        // affects the image).
         GoRoute(
           path: '/rate',
           name: RouteNames.rate,
@@ -138,7 +139,8 @@ void main() {
           authControllerProvider.overrideWith(_SignedIn.new),
           liveRepositoryProvider.overrideWithValue(_FakeLiveRepo()),
           // D-712 — the screen now reads the rate-prompt tracker (prefs-backed)
-          // for an eligible attendee; the golden must supply the prefs override.
+          // for an eligible attendee; the golden must supply the prefs
+          // override.
           simfPrefsStorageProvider.overrideWithValue(FakePrefs()),
         ],
         child: MaterialApp.router(
@@ -156,7 +158,8 @@ void main() {
         ),
       ),
     );
-    // pump fixed frames (NOT pumpAndSettle — the headless player never settles).
+    // pump fixed frames (NOT pumpAndSettle — the headless player never
+    // settles).
     for (var i = 0; i < 5; i++) {
       await tester.pump(const Duration(milliseconds: 50));
     }

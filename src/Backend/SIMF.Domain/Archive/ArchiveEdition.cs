@@ -29,8 +29,14 @@ public class ArchiveEdition : BaseAuditEntity
     public int Sessions { get; set; }
     public int Speakers { get; set; }
 
-    /// <summary>Path under the media root, such as "archive/simf2023.png".</summary>
-    public string? CoverImageRelativePath { get; set; }
+    /// <summary>The edition's cover image, as its row in the one file store. A real foreign key:
+    /// both sides live in the App database.
+    ///
+    /// <para>This was <c>CoverImageRelativePath</c>, admin-typed free text. An uploaded image and
+    /// a linked one are now the same thing, a <c>StoredFile</c>, so the value is
+    /// validated and stored once instead of living untyped on this row.</para>
+    /// </summary>
+    public Guid? CoverImageFileId { get; set; }
 
     /// <summary>The edition's venue, such as "الرياض · واجهة الرياض".</summary>
     public string? LocationEn { get; set; }

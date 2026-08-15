@@ -75,7 +75,8 @@ class SimfNavTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final foreground =
         enabled ? SimfTokens.accent : SimfTokens.navyDisabledText;
-    final labelColor = enabled ? SimfTokens.surface : SimfTokens.navyDisabledText;
+    final labelColor =
+        enabled ? SimfTokens.surface : SimfTokens.navyDisabledText;
     final asset = iconAsset;
     final Widget top = asset != null
         ? SimfSvgIcon(asset, size: 24, color: foreground)
@@ -83,9 +84,8 @@ class SimfNavTile extends StatelessWidget {
     final Widget tile = SimfCard(
       onTap: enabled ? onTap : null,
       color: enabled ? SimfTokens.navyDeep : SimfTokens.navyDisabled,
-      borderColor: enabled
-          ? SimfTokens.beigeBorder
-          : SimfTokens.navyDisabledBorder,
+      borderColor:
+          enabled ? SimfTokens.beigeBorder : SimfTokens.navyDisabledBorder,
       borderWidth: enabled ? SimfTokens.hairline : 1,
       child: TileBody(
         top: top,
@@ -118,7 +118,8 @@ class SimfStatTile extends StatelessWidget {
   final String label;
 
   /// Optional tap target. Null (the default) keeps the tile inert — a plain
-  /// statistic; non-null makes the whole card tappable via [SimfCard]'s InkWell.
+  /// statistic; non-null makes the whole card tappable via [SimfCard]'s
+  /// InkWell.
   final VoidCallback? onTap;
 
   @override
@@ -136,4 +137,3 @@ class SimfStatTile extends StatelessWidget {
     );
   }
 }
-

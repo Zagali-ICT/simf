@@ -66,7 +66,8 @@ void main() {
   group('JoinSessionHubScreen (D-485)', () {
     testWidgets('lists the sessions; tapping one opens its detail',
         (tester) async {
-      await _pump(tester, <SessionListItem>[_item('s1', 'Opening'), _item('s2', 'Closing')]);
+      await _pump(tester,
+          <SessionListItem>[_item('s1', 'Opening'), _item('s2', 'Closing')],);
 
       expect(find.text('Choose a session to join'), findsOneWidget);
       expect(find.text('Opening'), findsOneWidget);

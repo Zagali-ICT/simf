@@ -36,11 +36,11 @@ class ContactSocialCard extends StatelessWidget {
         children: <Widget>[
           ContactCardHeading(l10n.contactSocialTitle),
           const SizedBox(height: SimfTokens.space4), // gap-16
-          // The frame lays the brand boxes left→right (X … TikTok); force LTR so
-          // they keep that order under RTL. Spread edge-to-edge only when the
-          // full five are set (the frame's layout); fewer links cluster at the
-          // start so a partial set never floats to opposite edges. (At most five
-          // social fields exist, so 5×48 always fits.)
+          // The frame lays the brand boxes left→right (X … TikTok); force LTR
+          // so they keep that order under RTL. Spread edge-to-edge only when
+          // the full five are set (the frame's layout); fewer links cluster at
+          // the start so a partial set never floats to opposite edges. (At most
+          // five social fields exist, so 5×48 always fits.)
           Directionality(
             textDirection: TextDirection.ltr,
             child: Row(
@@ -67,4 +67,3 @@ class ContactSocialCard extends StatelessWidget {
     );
   }
 }
-

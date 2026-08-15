@@ -43,7 +43,8 @@ class BoothCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            BoothCompanyHeader(booth: booth, isArabic: isArabic, baseUrl: baseUrl),
+            BoothCompanyHeader(
+                booth: booth, isArabic: isArabic, baseUrl: baseUrl,),
             const SizedBox(height: SimfTokens.space4),
             BoothHallRow(booth: booth, l10n: l10n),
             // D-432 — the booth-officer row + email/phone boxes (now on the

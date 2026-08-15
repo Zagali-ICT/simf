@@ -47,17 +47,21 @@ public sealed class SiteContentMapperTests
         Assert.Equal("United States", first["org_en"]);
     }
 
+    // The asset is the only source of a speaker portrait. `photoRelativePath`
+    // still rides the wire because the shipped app decodes the key, but nothing
+    // can write it any more and the Website must not render it: a value arriving
+    // in that field is stale data, not a fallback.
     [Fact]
-    public void Speaker_photo_prefers_the_asset_proxy_then_falls_back_to_legacy_path()
+    public void Speaker_photo_comes_from_the_asset_proxy_and_never_from_the_legacy_path()
     {
         var withAsset = Guid.NewGuid();
         var speakers = new PublicSpeakers(new[]
         {
-            // Has an uploaded/linked asset → same-origin asset proxy URL wins,
-            // even though a legacy path is also present.
+            // Has an uploaded/linked asset → the same-origin asset proxy URL.
             new PublicSpeakerSummary(withAsset, "A", "أ", null, null, null, null, null,
-                "/legacy/a.jpg", 0, HasPhotoAsset: true),
-            // No asset, legacy portrait path only → the legacy path.
+                null, 0, HasPhotoAsset: true),
+            // No asset, but a legacy portrait path still set → NO photo key.
+            // This is the case the old fallback served and the one that changed.
             new PublicSpeakerSummary(Guid.NewGuid(), "B", "ب", null, null, null, null, null,
                 "/legacy/b.jpg", 1, HasPhotoAsset: false),
             // Neither → no photo key (the card renders its silhouette).
@@ -68,7 +72,7 @@ public sealed class SiteContentMapperTests
         var result = SiteContentEndpoints.Compose(null, speakers, null, null, null, null, null, null);
 
         Assert.Equal($"/content/assets/SpeakerPhoto/{withAsset}/image", Row(result, "speakers", 0)["photo"]);
-        Assert.Equal("/legacy/b.jpg", Row(result, "speakers", 1)["photo"]);
+        Assert.False(Row(result, "speakers", 1).ContainsKey("photo"));
         Assert.False(Row(result, "speakers", 2).ContainsKey("photo"));
     }
 

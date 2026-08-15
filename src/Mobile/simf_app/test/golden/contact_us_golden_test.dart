@@ -14,13 +14,14 @@ import 'package:simf_app/features/contact_us/data/contact_us_repository.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the Contact-us screen against Figma frame **1388:7711**
-/// (تواصل معنا). Regenerate:
-///   flutter test --update-goldens test/golden/contact_us_golden_test.dart
+/// (تواصل معنا). Regenerate: flutter test --update-goldens
+/// test/golden/contact_us_golden_test.dart
 ///
-/// Frame parity expected: the navy shell over the "أرسل رسالة" form card
-/// (name / email / message fields + gold send button), the "معلومات التواصل"
-/// panel (phone / email / location rows, each with a gold icon box + a beige
-/// divider), and the "وسائل التواصل الاجتماعي" row of bordered brand boxes. RTL.
+/// Frame parity expected: the navy shell over the "أرسل رسالة" form card (name
+/// / email / message fields + gold send button), the "معلومات التواصل" panel
+/// (phone / email / location rows, each with a gold icon box + a beige
+/// divider), and the "وسائل التواصل الاجتماعي" row of bordered brand boxes.
+/// RTL.
 ///
 /// A pinned org profile (all fields set) + a no-op repo → the PNG is stable
 /// run-to-run.

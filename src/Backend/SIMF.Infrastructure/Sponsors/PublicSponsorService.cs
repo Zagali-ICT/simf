@@ -1,6 +1,8 @@
 // Tests: SIMF.Api.Tests/SponsorsTests.cs
 using Microsoft.EntityFrameworkCore;
+using SIMF.Application.Assets.Abstractions;
 using SIMF.Application.Sponsors.Abstractions;
+using SIMF.Common.Enums;
 using SIMF.Contracts.Sponsors;
 using SIMF.Domain.Sponsors;
 using SIMF.Infrastructure.Persistence;
@@ -16,8 +18,9 @@ namespace SIMF.Infrastructure.Sponsors;
 /// columns — superseding the removed shared <c>Contact</c>
 /// directory. The JSON field names are unchanged, preserving the
 /// shipped mobile/public wire contract.</para></summary>
-internal sealed class PublicSponsorService(SimfAppDbContext appDbContext)
-    : IPublicSponsorService
+internal sealed class PublicSponsorService(
+    SimfAppDbContext appDbContext,
+    IAssetService assetService) : IPublicSponsorService
 {
     public async Task<PublicSponsors> ListAsync(
         CancellationToken cancellationToken = default)
@@ -37,7 +40,6 @@ internal sealed class PublicSponsorService(SimfAppDbContext appDbContext)
                 sponsor.Name,
                 sponsor.NameArabic,
                 sponsor.Tier,
-                sponsor.LogoRelativePath,
                 sponsor.Url,
                 sponsor.DisplayOrder,
                 // The tagline is sponsor-owned.
@@ -57,6 +59,14 @@ internal sealed class PublicSponsorService(SimfAppDbContext appDbContext)
             })
             .ToListAsync(cancellationToken);
 
+        // Which sponsors actually have a logo in the store — one batched query
+        // for the whole list, no N+1. The wire's LogoRelativePath is retained but
+        // always null, so HasLogo is what a client branches on.
+        var withLogo = await assetService.WhichOwnersHaveActiveAssetAsync(
+            AssetCategory.SponsorLogo,
+            rows.Select(r => r.Id).ToList(),
+            cancellationToken);
+
         var groups = rows
             .Select(r => new PublicSponsor(
                 r.Id,
@@ -64,7 +74,8 @@ internal sealed class PublicSponsorService(SimfAppDbContext appDbContext)
                 r.NameArabic,
                 (int)r.Tier,
                 r.Tier.ToString(),
-                r.LogoRelativePath,
+                // The logo is a StoredFile; the client builds the URL from the id.
+                null,
                 r.Url,
                 r.DisplayOrder,
                 r.PhonePrimary,
@@ -79,7 +90,8 @@ internal sealed class PublicSponsorService(SimfAppDbContext appDbContext)
                 r.TaglineArabic,
                 r.CountryId,
                 r.CountryNameEn,
-                r.CountryNameAr))
+                r.CountryNameAr,
+                withLogo.Contains(r.Id)))
             .GroupBy(sponsor => new { sponsor.Tier, sponsor.TierName })
             .OrderBy(group => group.Key.Tier)
             .Select(group => new PublicSponsorTierGroup(
@@ -106,7 +118,6 @@ internal sealed class PublicSponsorService(SimfAppDbContext appDbContext)
                 sponsor.Name,
                 sponsor.NameArabic,
                 sponsor.Tier,
-                sponsor.LogoRelativePath,
                 sponsor.Url,
                 // The about is sponsor-owned (like the tagline).
                 sponsor.About,
@@ -129,7 +140,8 @@ internal sealed class PublicSponsorService(SimfAppDbContext appDbContext)
             row.NameArabic,
             (int)row.Tier,
             row.Tier.ToString(),
-            row.LogoRelativePath,
+            // The logo is a StoredFile; the client builds the URL from the id.
+            null,
             row.Url,
             row.About,
             row.AboutArabic,

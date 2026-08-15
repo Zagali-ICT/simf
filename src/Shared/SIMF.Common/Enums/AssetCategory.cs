@@ -1,4 +1,4 @@
-namespace SIMF.Common.Enums;
+﻿namespace SIMF.Common.Enums;
 
 /// <summary>Which entity family a unified media <c>Asset</c> belongs to.
 /// One active asset exists per (category, owner). Persisted as an int;
@@ -32,4 +32,14 @@ public enum AssetCategory
     /// independent of the linked <c>Contact</c>'s <see cref="CompanyLogo"/> — shown
     /// on the app exhibitor-detail screen. Public read.</summary>
     ExhibitorLogo = 10,
+
+    /// <summary>A past edition's speaker photo
+    /// (owner = <c>ArchivePastSpeaker.Id</c>). Public read.</summary>
+    ArchivePastSpeakerPhoto = 11,
+
+    /// <summary>A past edition's gallery photo
+    /// (owner = <c>ArchiveMediaItem.Id</c>). Public read. A gallery VIDEO is not
+    /// an asset category: SIMF does not host it, so it is an external-link file
+    /// rather than something uploaded through this pipeline.</summary>
+    ArchiveGalleryImage = 12,
 }

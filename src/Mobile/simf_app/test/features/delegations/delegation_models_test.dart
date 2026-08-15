@@ -28,7 +28,7 @@ DelegationItem _item({
 void main() {
   group('Delegations.fromData', () {
     test('parses the stats and the item fields', () {
-      final data = Delegations.fromData(<String, dynamic>{
+      final data = Delegations.fromData(const <String, dynamic>{
         'countryCount': 2,
         'totalParticipants': 19,
         'items': <dynamic>[
@@ -58,8 +58,9 @@ void main() {
       expect(item.headTitle, 'Deputy Minister of Defense');
       expect(item.headTitleArabic, 'نائب وزير الدفاع');
       // Owner 2026-07-19 — the head-of-delegation title localizes AR/EN.
-      expect(item.localizedHeadTitle(true), 'نائب وزير الدفاع');
-      expect(item.localizedHeadTitle(false), 'Deputy Minister of Defense');
+      expect(item.localizedHeadTitle(isArabic: true), 'نائب وزير الدفاع');
+      expect(item.localizedHeadTitle(isArabic: false),
+          'Deputy Minister of Defense',);
       expect(item.arrivalDate, DateTime(2026, 1, 12));
       expect(item.departureDate, DateTime(2026, 1, 15));
       expect(item.hasHead, isTrue);
@@ -74,7 +75,7 @@ void main() {
     });
 
     test('countryCount falls back to the item count when absent', () {
-      final data = Delegations.fromData(<String, dynamic>{
+      final data = Delegations.fromData(const <String, dynamic>{
         'items': <dynamic>[
           <String, dynamic>{'countryId': 1, 'countryCode': 'SA'},
         ],
@@ -86,7 +87,8 @@ void main() {
   group('DelegationItem', () {
     test('flagEmoji maps an alpha-2 code to its regional-indicator pair', () {
       // SA → 🇸🇦 = U+1F1F8 U+1F1E6.
-      expect(_item(code: 'SA').flagEmoji.runes.toList(), <int>[0x1F1F8, 0x1F1E6]);
+      expect(
+          _item(code: 'SA').flagEmoji.runes.toList(), <int>[0x1F1F8, 0x1F1E6],);
     });
 
     test('flagEmoji is empty for a malformed code', () {
@@ -96,12 +98,12 @@ void main() {
 
     test('headInitial returns the first character of the localized head', () {
       final item = _item(head: 'James', headAr: 'جيمس');
-      expect(item.headInitial(false), 'J');
-      expect(item.headInitial(true), 'ج');
+      expect(item.headInitial(isArabic: false), 'J');
+      expect(item.headInitial(isArabic: true), 'ج');
     });
 
     test('headInitial is empty when there is no head', () {
-      expect(_item().headInitial(false), '');
+      expect(_item().headInitial(isArabic: false), '');
     });
 
     test('matches filters by country name, code and head', () {
@@ -118,15 +120,68 @@ void main() {
       final item = _item(name: 'France', nameAr: 'فرنسا');
       expect(item.hasHead, isFalse);
       expect(item.hasDateRange, isFalse);
-      expect(item.localizedHead(false), isNull);
+      expect(item.localizedHead(isArabic: false), isNull);
     });
 
     test('localized helpers pick per locale', () {
       final item = _item();
-      expect(item.localizedCountry(false), 'United States');
-      expect(item.localizedCountry(true), 'الولايات المتحدة');
-      expect(item.localizedCountrySubtitle(false), 'الولايات المتحدة');
-      expect(item.localizedCountrySubtitle(true), 'United States');
+      expect(item.localizedCountry(isArabic: false), 'United States');
+      expect(item.localizedCountry(isArabic: true), 'الولايات المتحدة');
+      expect(
+          item.localizedCountrySubtitle(isArabic: false), 'الولايات المتحدة',);
+      expect(item.localizedCountrySubtitle(isArabic: true), 'United States');
+    });
+  });
+
+  group('Delegations list rules', () {
+    // These three were derived inside DelegationsBody.build, so nothing tested
+    // them. The interesting one is the flag filter combining with the search.
+    final page = Delegations(
+      countryCount: 3,
+      totalParticipants: 30,
+      items: <DelegationItem>[
+        _item(), // US, the fixture default — a code that yields a flag
+        _item(code: 'EG', name: 'Egypt', nameAr: 'مصر'),
+        // A code that yields no flag: the strip must skip it.
+        _item(code: 'XXX', name: 'Nowhere', nameAr: 'لا مكان'),
+      ],
+    );
+
+    test('flagItems drops rows whose code yields no flag', () {
+      expect(page.flagItems.map((i) => i.countryCode), <String>['US', 'EG']);
+    });
+
+    test('visible with no filters returns everything, in order', () {
+      expect(page.visible().map((i) => i.countryCode).toList(), hasLength(3));
+    });
+
+    test('visible narrows to the selected country', () {
+      expect(
+        page.visible(countryCode: 'EG').map((i) => i.countryCode),
+        <String>['EG'],
+      );
+    });
+
+    test('visible applies the free-text query in both languages', () {
+      expect(page.visible(query: 'Egypt').map((i) => i.countryCode),
+          <String>['EG'],);
+      expect(page.visible(query: 'مصر').map((i) => i.countryCode),
+          <String>['EG'],);
+    });
+
+    test('the flag filter and the query compose to nothing when they conflict',
+        () {
+      expect(page.visible(query: 'Egypt', countryCode: 'US'), isEmpty);
+    });
+
+    test('selectedCountryName follows the active language', () {
+      expect(page.selectedCountryName('EG', isArabic: false), 'Egypt');
+      expect(page.selectedCountryName('EG', isArabic: true), 'مصر');
+    });
+
+    test('selectedCountryName is null for no selection or an unknown code', () {
+      expect(page.selectedCountryName(null, isArabic: false), isNull);
+      expect(page.selectedCountryName('ZZ', isArabic: false), isNull);
     });
   });
 }

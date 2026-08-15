@@ -1,4 +1,4 @@
-// D-199 (Mockup screen 24) — public Archive endpoint: anonymous read + the
+﻿// D-199 (Mockup screen 24) — public Archive endpoint: anonymous read + the
 // archive-visibility gate (D-166). When the toggle is off the public list is
 // empty regardless of how many active editions exist.
 using System.Net;
@@ -172,9 +172,11 @@ public sealed class ArchiveTests : IClassFixture<SimfApiFactory>
                 Speakers = 11,
                 Gallery = new List<ArchiveMediaItemInput>
                 {
-                    new() { Kind = 0, Url = "archive/2010/a.png", DisplayOrder = 0 },
-                    new() { Kind = 0, Url = "archive/2010/b.png", DisplayOrder = 1 },
-                    new() { Kind = 1, Url = "archive/2010/c.mp4", DisplayOrder = 2 },
+                    // An image row's picture is uploaded against the row; a VIDEO
+                    // row carries a real external link the players can classify.
+                    new() { Kind = 0, DisplayOrder = 0 },
+                    new() { Kind = 0, DisplayOrder = 1 },
+                    new() { Kind = 1, Url = "https://cdn.example.com/2010/c.mp4", DisplayOrder = 2 },
                 },
                 SessionTitles = new List<ArchiveSessionTitleInput>
                 {
@@ -199,7 +201,7 @@ public sealed class ArchiveTests : IClassFixture<SimfApiFactory>
 
         // Every projected child list returns each row once, ordered by DisplayOrder.
         Assert.Equal(
-            new[] { "archive/2010/a.png", "archive/2010/b.png", "archive/2010/c.mp4" },
+            new[] { string.Empty, string.Empty, "https://cdn.example.com/2010/c.mp4" },
             detail.Gallery!.Select(g => g.Url).ToArray());
         Assert.Equal(
             new[] { "Opening", "Closing" },

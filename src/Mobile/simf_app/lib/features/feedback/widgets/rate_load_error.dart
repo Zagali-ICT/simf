@@ -5,7 +5,8 @@ import 'package:simf_app/app/theme/tokens.dart';
 
 /// Form-load failure with a retry button.
 class RateLoadError extends StatelessWidget {
-  const RateLoadError({required this.message, required this.onRetry, super.key});
+  const RateLoadError(
+      {required this.message, required this.onRetry, super.key,});
 
   final String message;
   final VoidCallback onRetry;

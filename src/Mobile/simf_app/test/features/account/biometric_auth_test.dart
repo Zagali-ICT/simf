@@ -134,7 +134,8 @@ Widget _nudgeHost() => Consumer(
 
 void main() {
   group('maybeOfferBiometricEnrolment nudge (D-441 / D-445; #7a)', () {
-    testWidgets('available + not enabled → shows the nudge; tapping Enable '
+    testWidgets(
+        'available + not enabled → shows the nudge; tapping Enable '
         'routes to the step-up screen', (tester) async {
       final biometric = _FakeBiometricAuth();
       await _pump(tester, _nudgeHost(), biometric: biometric);
@@ -199,7 +200,8 @@ void main() {
       expect(find.byType(SwitchListTile), findsNothing);
     });
 
-    testWidgets('toggling on confirms intent, then routes to the step-up screen',
+    testWidgets(
+        'toggling on confirms intent, then routes to the step-up screen',
         (tester) async {
       final biometric = _FakeBiometricAuth();
       await _pump(
@@ -238,7 +240,8 @@ void main() {
 
       await tester.tap(tile);
       await tester.pumpAndSettle();
-      // The destructive-action confirm — nothing is revoked until the user agrees.
+      // The destructive-action confirm — nothing is revoked until the user
+      // agrees.
       expect(
         find.text('Your Face ID sign-in data will be permanently deleted '
             'from this device.'),

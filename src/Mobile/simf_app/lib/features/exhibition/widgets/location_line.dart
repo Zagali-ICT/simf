@@ -28,7 +28,8 @@ class LocationLine extends StatelessWidget {
           Text(
             flag,
             textDirection: TextDirection.ltr,
-            style: const TextStyle(fontSize: SimfTokens.textXl, height: 1), // 20
+            style:
+                const TextStyle(fontSize: SimfTokens.textXl, height: 1), // 20
           ),
         ],
       ],

@@ -9,7 +9,8 @@ void main() {
 
   group('isVCardPayload', () {
     test('true for a vCard', () => expect(isVCardPayload(vcard), isTrue));
-    test('false for a bare token', () => expect(isVCardPayload('ABC123'), isFalse));
+    test('false for a bare token',
+        () => expect(isVCardPayload('ABC123'), isFalse),);
     test('tolerates leading whitespace/case', () {
       expect(isVCardPayload('  begin:vcard\nEND:VCARD'), isTrue);
     });

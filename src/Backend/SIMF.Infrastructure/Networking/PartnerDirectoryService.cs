@@ -4,6 +4,7 @@ using SIMF.Application.Exhibition.Abstractions;
 using SIMF.Application.Networking.Abstractions;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Application.Sponsors.Abstractions;
+using SIMF.Common.Enums;
 using SIMF.Contracts.Networking;
 using SIMF.Domain.Organization;
 using SIMF.Infrastructure.IdentityAccess;
@@ -59,7 +60,16 @@ internal sealed class PartnerDirectoryService(
         var speakers = await speakerService.ListAsync(cancellationToken);
         entries.AddRange(speakers.Items.Select(s => new PartnerDirectoryEntry(
             PartnerDirectoryKind.Speaker, s.Id, s.Name, s.NameArabic,
-            s.Rank, s.RankArabic, s.PhotoRelativePath, null,
+            s.Rank, s.RankArabic,
+            // This field is a PRESENCE SENTINEL, not a path the client loads:
+            // partner_directory_models.dart only tests it for null and then
+            // builds /app/assets/SpeakerPhoto/{id}/image itself. It used to
+            // carry Speaker.PhotoRelativePath, a column that no longer exists,
+            // so it now carries that same served path when the speaker actually
+            // has a photo in the store. Emitting null here instead would drop
+            // every partner-directory speaker to an initials avatar on devices
+            // already in the field.
+            s.HasPhotoAsset ? SpeakerPhotoAssetPath(s.Id) : null, null,
             s.CountryId, s.CountryNameEn, s.CountryNameAr)));
 
         // 2) Sponsors — the same public list (Contact-first name / logo / country,
@@ -70,7 +80,13 @@ internal sealed class PartnerDirectoryService(
             .SelectMany(g => g.Sponsors)
             .Select(s => new PartnerDirectoryEntry(
                 PartnerDirectoryKind.Sponsor, s.Id, s.NameEn, s.NameAr,
-                s.Tagline, s.TaglineArabic, s.LogoRelativePath, null,
+                s.Tagline, s.TaglineArabic,
+                // The same presence sentinel as the speaker branch above, and
+                // the same trap: this used to carry Sponsor.LogoRelativePath,
+                // which is now permanently null, so reading it would have shown
+                // every sponsor in the directory as an initials tile with no
+                // compiler error and no failing test to say so.
+                s.HasLogo ? SponsorLogoAssetPath(s.Id) : null, null,
                 s.CountryId, s.CountryNameEn, s.CountryNameAr)));
 
         // Sponsor / booth-company de-dup key (owner decision 2026-07-22): a company
@@ -161,4 +177,13 @@ internal sealed class PartnerDirectoryService(
     /// de-dup key now that the shared Contact directory is gone.</summary>
     private static string NormalizeNameKey(string? name) =>
         (name ?? string.Empty).Trim().ToLowerInvariant();
+
+    /// <summary>The served path for a speaker's photo, which is what the app
+    /// builds for itself from the id. Relative, never absolute — the client
+    /// prepends its own base URL.</summary>
+    private static string SpeakerPhotoAssetPath(Guid speakerId) =>
+        $"/app/assets/{nameof(AssetCategory.SpeakerPhoto)}/{speakerId}/image";
+
+    private static string SponsorLogoAssetPath(Guid sponsorId) =>
+        $"/app/assets/{nameof(AssetCategory.SponsorLogo)}/{sponsorId}/image";
 }

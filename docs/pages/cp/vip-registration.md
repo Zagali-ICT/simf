@@ -72,7 +72,9 @@ holder gets no empty toolbar or actions column.
 
 The 3 موج text fields persist to additive nullable `UserProfile` columns
 (`MawjId`, `Honorific`, `PreferredLanguage`); the photo path persists to
-`VipPhotoRelativePath` (separate VIP-photo store). See decision **D-429**.
+`VipPhotoFileId`, a real foreign key into the one `StoredFiles` table (there is
+no separate VIP-photo store; D-568 unified them, D-885 made the pointer a key).
+See decision **D-429**.
 
 ## 4. Tests
 

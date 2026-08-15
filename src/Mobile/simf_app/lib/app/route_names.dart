@@ -1,7 +1,7 @@
 /// The mockup screens as named go_router routes.
 ///
 /// Names are stable — the router declares them once here; widgets and the
-/// Phase 3 `mkp_*` screens reference [RouteNames.xxx] rather than literal
+/// Phase 3 `mkp_*` screens reference `RouteNames.xxx` rather than literal
 /// strings. The mapping screen-number → route-name follows `Mockup.html`.
 ///
 /// §9 (D-276): mockup screens 08 (exhibitor self-sign-up) and 39 (cybersecurity
@@ -73,8 +73,8 @@ class RouteNames {
   static const String news = 'news';
 
   /// The single news article, opened from the news list or the home highlights
-  /// carousel. Routed (not an imperative push) so it deep-links like every other
-  /// detail screen and appears in the page index.
+  /// carousel. Routed (not an imperative push) so it deep-links like every
+  /// other detail screen and appears in the page index.
   static const String newsArticle = 'newsArticle';
   static const String gallery = 'gallery';
   static const String mediaPartners = 'mediaPartners';
@@ -88,9 +88,9 @@ class RouteNames {
   // #1/#6 — the session-summaries LIST (home tile → list → the aiSummary details
   // page). Additive, public (Guest+, like the summary it lists).
   static const String sessionSummaryList = 'sessionSummaryList';
-  // #5 (D-710) — My sessions (عروض الجلسات, Figma 1388:9067): the attendee's own
-  // booked/attended sessions. Restored + linked from the More menu (owner reversed
-  // the D-609 removal).
+  // #5 (D-710) — My sessions (عروض الجلسات, Figma 1388:9067): the attendee's
+  // own booked/attended sessions. Restored + linked from the More menu (owner
+  // reversed the D-609 removal).
   static const String myAreaSessions = 'myAreaSessions';
   static const String meetPeople = 'meetPeople';
   static const String chatbot = 'chatbot';
@@ -110,9 +110,10 @@ class RouteNames {
   static const String sessionPresentations = 'sessionPresentations';
   static const String contactUs = 'contactUs';
 
-  // D-500 (Wave 5, الطلبات 1408:9726) — the unified requests feed (reached from My
-  // Area; Approved account). Supersedes the D-479 read-only My-meetings route.
-  // Retitled "طلباتي" (My requests) once the meetings page split off (D-745).
+  // D-500 (Wave 5, الطلبات 1408:9726) — the unified requests feed (reached from
+  // My Area; Approved account). Supersedes the D-479 read-only My-meetings
+  // route. Retitled "طلباتي" (My requests) once the meetings page split off
+  // (D-745).
   static const String requests = 'requests';
 
   // D-745 (owner 2026-07-11) — the bilateral-meetings page (اللقاءات الثنائية,
@@ -146,13 +147,15 @@ class RouteNames {
   // My Area; signed-in + Approved).
   static const String identityVerification = 'identityVerification';
   // Moderator (محاور) per-session Q&A desk (D-405; additive, reached from a
-  // session's detail; role-gated to Moderator+, server enforces per-session grant).
+  // session's detail; role-gated to Moderator+, server enforces per-session
+  // grant).
   static const String sessionModerate = 'sessionModerate';
   // Staff gate-operator scanner (D-406; additive, drawer entry; role-gated to
   // Staff, server enforces the Gates.Operate grant).
   static const String gateScanner = 'gateScanner';
-  // Staff walk-in visitor registration (D-509; additive, drawer entry; role-gated
-  // to Staff, server enforces the Visitors.RegisterOnsite grant). Figma 1467:12357.
+  // Staff walk-in visitor registration (D-509; additive, drawer entry;
+  // role-gated to Staff, server enforces the Visitors.RegisterOnsite grant).
+  // Figma 1467:12357.
   static const String staffRegisterVisitor = 'staffRegisterVisitor';
   // D-771 — the staff seating desk (owner 2026-07-26; additive, role-gated to
   // Staff, server enforces the Seating.Assist grant). Entered from the session

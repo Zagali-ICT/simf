@@ -316,6 +316,96 @@ enums stay frozen against rename/reorder; additive values remain allowed. The
 freeze must be **re-instated before the production publish / handover**, per
 D-219's standing requirement. See `docs/decisions/DECISIONS_LOG.md` D-877..D-881.
 
+### D-895 RE-INSTATEMENT — the freeze is ON again (2026-08-14)
+
+Owner directive. **Every lift above is CLOSED.** D-186, D-199, D-211, D-217,
+D-219 and D-881 are spent and are kept below only as history. In particular
+D-219's open-ended *"and further audit-surfaced additions"* — the standing
+authorisation that everything schema-shaped since 2026-06-01 rode on — is
+terminated. From now on a schema or enum change needs a **new, named lift**,
+argued for on its own.
+
+**The surface, as observed at re-instatement.** `origin/main` at
+`96feb6cb` carries exactly one migration per context under
+`src/Backend/SIMF.Infrastructure/Persistence/Migrations/`:
+
+| Context | Migration |
+|---|---|
+| `SimfAppDbContext` | `App/20260814150708_InitialCreate` |
+| `SimfIdentityDbContext` | `Identity/20260814115334_InitialCreate` |
+
+The App id moved from `20260814115348` when the image pipeline landed under the
+carve-out below and re-minted it — which is the carve-out working as written,
+not a breach. Identity was untouched by that work.
+
+Both are create-only — no `Alter` / `Add` / `Rename` / `Drop` — so the pair IS
+the schema. **The rule is what is frozen, not those two ids:** they were minted
+by a merge and seventeen different ids have existed on `main`, seven of them
+inside two days. The rule is *one `InitialCreate` per context, and no schema
+change without a named lift.* The ids are recorded as state, so a reader can
+tell whether they are still looking at the sealed schema.
+
+**Scope.** EF migrations under that path only. `docs/migrations/2026/*.sql` is a
+separate hand-run channel for content seeds and is not frozen by this — but note
+`SIMF_App_RegistrationReferenceSequence_Hotfix.sql` carries real DDL and is
+superseded by the App `InitialCreate`.
+
+**Enums: unchanged, and the wording corrected.** Rename and reorder stay
+forbidden; **additive values remain allowed**. That allowance is deliberate —
+every use of it so far (D-111, D-217's 40/41, D-230's 42) persists by name or
+appends a fresh integer, so it never touched the wire contract, and the mobile
+risk is *rename*, which stays banned. Withdrawing it would put a new
+notification kind behind an owner lift for no contract benefit. Two corrections:
+the frozen surface is the **whole `src/Shared/SIMF.Common/Enums/` directory**
+(58 enums), not the nine names D-110 listed as if exhaustive; and D-110's
+`UserType.Other` reference is stale — D-186 removed it and reserved slot `1`.
+
+**One carve-out, already sanctioned — mostly spent, and it closes itself.** The
+per-entity image pipeline (`docs/SIMF-Remaining-Work-Register.md` §2.1) adds App
+tables/columns and was explicitly slated to land *before* the freeze-seal;
+`feat/media-one-store` carried the bulk of it, converting `*RelativePath`
+strings to `*FileId` FKs — which **drops columns** and re-minted the App
+migration id in the table above.
+
+Two pointers are knowingly unconverted — `ArchivePastSpeaker.PhotoRelativePath`
+and `ArchiveMediaItem.Url` — and that work is in flight. **The carve-out stays
+open for exactly those two**, because closing it mid-conversion would put a
+half-finished pipeline behind an owner lift for no benefit.
+
+It closes on evidence rather than on a date: the remaining pointers are counted
+down by `tests/SIMF.Domain.Tests/MediaPointerRatchetTests.cs`, whose list only
+ever shrinks, and **when that list empties the carve-out is spent**. Any pointer
+conversion beyond those two needs a new lift. **Nothing else** gets this
+treatment.
+
+**Named as NOT built, so nobody reads a lift above as still open:**
+
+- **D-880's `QrId` widening never happened.** `UserProfile.QrId` is still
+  `nvarchar(16)`. Widening it for an encrypted badge needs a new lift.
+- **D-877's admission relocation is incomplete.** Both `SimfUser.AccountState`
+  and `UserProfile.AdmissionState` are live and written today. D-877 called it
+  "a relocation, not a copy", and as built it is a dual-write. Finishing it means
+  **dropping an Identity column**, so it needs a new lift — and until then the
+  D-157 "no duplicated data" rule is being bent on this one fact, which is worth
+  knowing before anyone reads a value from either.
+- **D-199's "statistics snapshots" were never built** — statistics are computed
+  live. If D6 lands wanting persisted snapshots, that is a new lift.
+- **G-OI-2** (geofence → arrival → attendance chain, FR-305/506/1103, and
+  question-gating FR-704) and **D6** (the statistics metric list) remain open
+  decisions. Some geofence *columns* exist; whether the behaviour is complete was
+  not established here, so treat it as open.
+
+**Also frozen by not being mentioned:** four stale branches (`refactor-code`,
+`refactor-code-2`, `refactor/app-clean-code-3`, `state-management-refactor`)
+still carry the pre-squash 15-migration App stack. Merging any of them
+resurrects deleted migrations and breaks the one-per-context rule.
+
+**This is enforced by a test, not by this paragraph** —
+`tests/SIMF.Domain.Tests/SchemaFreezeTests.cs` fails the build if a second
+migration appears in either folder. Before this, nothing anywhere pinned the
+freeze; it was prose, which is exactly how six lifts accumulated without the
+baseline text ever being corrected.
+
 ---
 
 ## Security: the anonymous surface (moved here 2026-08-12)
@@ -327,9 +417,13 @@ told non-SIMF sessions about a SIMF test file. It is SIMF-specific and belongs h
 
 - **No AllowAnonymous outside the authentication surface.** The test is not a fixed list of endpoint names — it is: **can this endpoint's caller possibly hold a bearer token yet?** If yes, gate it. If no, it belongs to the authentication surface and must carry its **own** credential instead (an emailed code, a reset token, a refresh token, a badge/activation code, a device-key challenge signature).
 
-   This rule previously read "except SignIn / SignUp / ForgotPassword". That wording was wrong in practice and was corrected on 2026-07-29 after SIMF's BF-13 permission matrix was executed: the real anonymous surface there is **17 endpoints**, and every one of the extra 14 is legitimate — email verification, the second factor (OTP + TOTP + recovery code), password reset / forced change, token refresh, badge onboarding, and device-key sign-in. Each runs **before** a bearer token exists, so requiring one would break sign-up, 2FA and password reset outright. Enforcing the literal three-name list would have meant breaking authentication to satisfy a rule.
+   This rule previously read "except SignIn / SignUp / ForgotPassword". That wording was wrong in practice and was corrected on 2026-07-29 after SIMF's BF-13 permission matrix was executed: the anonymous **auth** surface was 17 endpoints then and is **20** now, and every entry beyond the three is legitimate — email verification, the second factor (OTP + TOTP + recovery code), mandatory TOTP enrolment, password reset / forced change, token refresh, badge onboarding, and device-key challenge + sign-in. Each runs **before** a bearer token exists, so requiring one would break sign-up, 2FA and password reset outright. Enforcing the literal three-name list would have meant breaking authentication to satisfy a rule.
 
-   **Pin the surface with a test, not a comment.** Enumerate the mapped anonymous endpoints and assert the set equals a reviewed allow-list with a per-entry justification (see `tests/SIMF.Api.Tests/BusinessFlow13PermissionMatrixTests.cs`), so a **new** unauthenticated entry point fails the build and has to be argued for. A prose rule cannot detect the 18th; a test can.
+   **Do not treat that number as fixed.** It is a count of a list that grows with the auth surface, and it has now drifted twice (17, then 19, while the array held more). The allow-list in the test is the authority; this sentence is a description of it, and the two are updated together or not at all.
+
+   **Pin the surface with a test, not a comment.** Enumerate the mapped anonymous endpoints and assert the set equals a reviewed allow-list with a per-entry justification (see `tests/SIMF.Api.Tests/BusinessFlow13PermissionMatrixTests.cs`), so a **new** unauthenticated entry point fails the build and has to be argued for. A prose rule cannot detect the 21st; a test can.
+
+   That allow-list covers `/auth/` only, which is why it is paired with `No_endpoint_outside_the_authentication_surface_is_anonymous` in the same file. That guard is absolute rather than allow-listed: **no `/admin/` route may be anonymous**, and **no endpoint may carry both `AllowAnonymous` and an authorization policy** — the second resolves in favour of anonymous, so such an endpoint reads as gated to a reviewer while being open in fact.
 
 - Authentication is not enough; enforce authorization consistently (permissions per manifest / rules).
 

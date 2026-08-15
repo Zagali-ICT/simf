@@ -50,4 +50,3 @@ class CoverageTabs extends StatelessWidget {
     );
   }
 }
-

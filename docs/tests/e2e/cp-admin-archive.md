@@ -1,4 +1,4 @@
-# E2E test catalogue — Previous Editions (Archive) CRUD (`/admin/archive`)
+﻿# E2E test catalogue — Previous Editions (Archive) CRUD (`/admin/archive`)
 
 | | |
 |--|--|
@@ -9,7 +9,14 @@
 | **Auth setup** | `superadmin@simrsnf.com` / `[REDACTED - supply via SIMF_API_SuperAdmin__TempPassword]` + TOTP via the `Get-Totp` helper |
 | **Last reviewed** | 2026-06-16 (D-440 — gallery/past-speaker image fields now expect a full https URL) |
 
-> **P6 (D-440):** the gallery `url` and past-speaker `photo` fields are now
+> **D-891 supersedes the note below.** The gallery and past-speaker lists are no
+> longer pipe-delimited textareas: each is a per-row editor, and each row carries
+> an **uploaded** picture rather than a URL somebody typed. A gallery **video** is
+> still a link an admin supplies, because SIMF does not host it. The app is
+> unchanged — it still requires an absolute https URL, and the server now composes
+> one from the stored file.
+>
+> _Superseded (D-440):_ the gallery `url` and past-speaker `photo` fields are
 > rendered as **real images in the app** when they hold an **absolute https URL**
 > (the textarea placeholders were updated to a full-URL example). The pipe format
 > is unchanged (`url | image|video | caption`, `nameAr | nameEn | photo-url`); a
@@ -80,6 +87,7 @@
 | E2E-ARC-022 | Excel import — workbook upload → rows created + per-row outcome modal (D-356) | happy | P1 | _to author_ |
 | E2E-ARC-023 | Excel import rejection — non-.xlsx / wrong-sheet upload → bilingual 400, nothing created (D-356) | error | P1 | _to author_ |
 | E2E-ARC-024 | Cover Image via the unified media-asset pipeline — upload then external link (D-357) | happy | P1 | _to author_ |
+| E2E-ARC-027 | Per-row gallery + past-speaker editors — a row keeps its identity across a save, so an uploaded picture survives an unrelated edit (D-891) | happy | P0 | _to author_ |
 | E2E-ARC-025 | Excel round-trip of the dropped edition fields — summary / location / date label / cover path survive export + import (D-506) | happy | P1 | authored ✓ (`Export_includes_the_dropped_edition_columns` + `Import_round_trips_the_dropped_edition_fields`) |
 | E2E-ARC-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-ARC-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
@@ -115,8 +123,9 @@ Scenario: Create, list, edit, then deactivate one archive edition
   And they set Attendees="1200"
   And they set Sessions="18"
   And they set Speakers="42"
-  And they fill Cover image path="archive/2019/cover.jpg"
-  And they click "Save"
+  Then no cover-image field is offered, only the hint
+      "Save the record first, then add an image."
+  When they click "Save"
   Then the BFF forwards POST /account/api/admin/archive and the API returns HTTP 200
   And the modal closes
   And a green SimfAlert toast reads "Edition saved."
@@ -189,7 +198,8 @@ Scenario: Add modal opens with sensible defaults
   When they click "Add edition"
   Then the "Add edition" modal opens (title "Add edition")
   And the Year number input is pre-set to the current UTC year (DateTime.UtcNow.Year)
-  And Title (English), Title (Arabic), both Summary fields and Cover image path are blank
+  And Title (English), Title (Arabic) and both Summary fields are blank
+  And there is no cover-image field, only the save-first hint
   And Attendees, Sessions and Speakers default to "0"
   And the "Active (visible in public archive)" checkbox is ticked
   And the footer shows "Cancel" and "Save"
@@ -252,7 +262,9 @@ Scenario: Edit pre-fills the row and can toggle public visibility off
   When the administrator clicks the 2021 row's Edit (pencil) action
   Then the "Edit edition" modal opens (title "Edit edition")
   And every field is pre-filled from the row (Year=2021, both titles, both summaries,
-      Attendees=900, Sessions, Speakers, Cover image path)
+      Attendees=900, Sessions, Speakers)
+  And an "Image" section hosts SimfImageUpload Category="ArchiveCover", showing
+      the edition's current cover if one is attached
   And the "Active (visible in public archive)" checkbox reflects the row's IsActive=true
   When they untick the IsActive checkbox
   And change Attendees to "950"
@@ -485,10 +497,11 @@ Scenario: Export the filtered grid to an XLSX workbook
   And the browser saves a file named simf-archive-{timestamp}.xlsx
   And the workbook's "Archive" sheet header row is
       Year | TitleEn | TitleAr | Attendees | Sessions | Speakers | IsActive
-      | SummaryEn | SummaryAr | LocationEn | LocationAr | CoverImageRelativePath
+      | SummaryEn | SummaryAr | LocationEn | LocationAr
       | DateLabelEn | DateLabelAr
-      (the trailing summary/location/date-label/cover columns were appended in D-506
-       so the full edition round-trips through export + import)
+      (the trailing summary/location/date-label columns were appended in D-506 so
+       the full edition round-trips through export + import; the cover column left
+       the workbook in D-889, the cover being a StoredFile and not a typed string)
   When they instead select two rows then click "Export"
   Then the request carries those two Ids and a null Query
   And the workbook contains exactly those two editions
@@ -532,6 +545,72 @@ Scenario: A bad or wrong-sheet upload is rejected without creating anything
 ```
 
 ---
+
+### E2E-ARC-027 — per-row gallery and past-speaker editors (D-891)
+
+The point of this scenario is the SECOND save. A row's picture is a file owned by
+that row's id, so the row has to still be the same row afterwards. Before the
+child lists were reconciled by id, every save deleted and re-inserted them, and
+any attached file was orphaned on the spot - which is why the picture used to be
+a URL somebody typed.
+
+```gherkin
+Scenario: A gallery picture and a speaker photo survive an unrelated edit
+  Given the administrator is on /admin/archive
+  And they open an existing edition for Edit
+  Then the Gallery section is a per-row editor, not a textarea
+  And the Past speakers section is a per-row editor, not a textarea
+
+  When they click "Add gallery item"
+  Then the new row offers Type, Caption and the hint
+       "Save the record first, then add an image."
+  And the new row offers NO upload control yet, the row having no id
+
+  When they set Type="Image" and Caption="Opening ceremony"
+  And they click "Add past speaker"
+  And they fill Name (Arabic)="راشد السبيعي", Name (English)="Rashed Al-Subaie"
+  And they fill Country code="682"
+  And they click "Save"
+  Then a PUT /account/api/admin/archive/{id} returns 200
+  And re-opening the edition shows both rows, each now WITH an "Image" section
+
+  When they upload "opening.jpg" on the gallery row
+  Then a POST /api/v1/admin/assets/ArchiveGalleryImage/{rowId}/image returns 200
+  When they upload "rashed.jpg" on the past-speaker row
+  Then a POST /api/v1/admin/assets/ArchivePastSpeakerPhoto/{rowId}/image returns 200
+
+  When they change ONLY the gallery caption to "Opening ceremony 2024"
+  And they click "Save"
+  Then a PUT /account/api/admin/archive/{id} returns 200
+  And re-opening the edition still shows BOTH uploaded pictures
+  And neither row's id has changed
+```
+
+**Why the last three steps matter:** they are the regression. A caption edit that
+silently detached the picture beside it would look like a successful save, and
+nothing but this assertion would notice.
+
+```gherkin
+Scenario: A gallery VIDEO row takes a link, not an upload
+  Given the Gallery editor has a row with Type="Video"
+  Then the row offers a "Video link" field and no upload control
+  When they set Video link="https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+  And they click "Save"
+  Then a PUT /account/api/admin/archive/{id} returns 200
+  And the app's archive gallery shows that row as a video tile
+
+  When they instead set Video link="https://cdn.example.com/brand/promo"
+  And they click "Save"
+  Then the API returns 400
+  And the message explains a YouTube or direct .mp4 / .m3u8 link is required
+      (the store holds a feed to the same rule the players apply)
+```
+
+**Evidence:** the edition's gallery and past-speaker rows carry
+`MediaFileId` / `PhotoFileId` foreign keys into `StoredFiles`; the app receives an
+ABSOLUTE url for each, because `archive_past_speaker_card.dart` and
+`archive_gallery_tile.dart` both test the string with `isHttpUrl` before loading
+and fall back silently when it fails.
 
 ### E2E-ARC-026 — the list shows the edition's cover thumbnail (D-357)
 
@@ -584,7 +663,8 @@ restructure. Confirm the render visually in the Chrome DevTools MCP smoke.
   (`ExportArchiveEndpoint` gated by `Archive.Export`; `ImportArchiveEndpoint`
   gated by `Archive.Import`, insert-only, required headers `Year/TitleEn/TitleAr`,
   duplicate-year 409 recorded as a per-row error). **D-506** appended the dropped
-  edition columns (`SummaryEn/SummaryAr/LocationEn/LocationAr/CoverImageRelativePath/DateLabelEn/DateLabelAr`)
+  edition columns (`SummaryEn/SummaryAr/LocationEn/LocationAr/DateLabelEn/DateLabelAr`;
+  the cover column was removed again by D-889)
   to both the export `_columns` (after `IsActive`) and the import `ApplyRowAsync`
   read set, so the full edition now survives a round-trip; required headers are
   unchanged (the new columns are optional). Lower-layer coverage:
@@ -619,22 +699,24 @@ already exists is 409 (covered by `tests/SIMF.Api.Tests/AssetEndpointsTests.cs`)
 ### E2E-ARC-025 — Excel round-trip of the dropped edition fields (D-506)
 
 ```gherkin
-Scenario: Summary, location, date label and cover path survive export + import
+Scenario: Summary, location and date label survive export + import
   Given the administrator is on /admin/archive
-  And an edition exists with SummaryEn/SummaryAr, LocationEn/LocationAr,
-      DateLabelEn/DateLabelAr and a CoverImageRelativePath all set
+  And an edition exists with SummaryEn/SummaryAr, LocationEn/LocationAr and
+      DateLabelEn/DateLabelAr all set
   When they click the toolbar "Export" action
   Then the "Archive" sheet header row carries the appended columns
-      SummaryEn | SummaryAr | LocationEn | LocationAr | CoverImageRelativePath
+      SummaryEn | SummaryAr | LocationEn | LocationAr
       | DateLabelEn | DateLabelAr (after Year..IsActive)
-  And that edition's data row holds the real summary / location / date-label /
-      cover-path values (not blanks)
+  And that edition's data row holds the real summary / location / date-label
+      values (not blanks)
+  And the workbook carries no cover column at all — a stale workbook naming one
+      fails loudly rather than silently dropping the image
 
   When they import a workbook whose "Archive" sheet carries those same columns
       for a brand-new year
   Then a POST /account/api/admin/archive/import creates the row (0 errors)
   And the created edition's grid summary (and GET detail) carries every one of
-      SummaryEn, SummaryAr, LocationEn, LocationAr, CoverImageRelativePath,
+      SummaryEn, SummaryAr, LocationEn, LocationAr,
       DateLabelEn and DateLabelAr — none are dropped at the IO boundary
   And an absent (omitted) optional column simply stays null
 ```

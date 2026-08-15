@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/ProgrammeSessionsTests.cs
+﻿// Tests: SIMF.Api.Tests/ProgrammeSessionsTests.cs
 // Tests: SIMF.Api.Tests/SessionLifecycleTests.cs
 // Tests: SIMF.Api.Tests/SessionRecordingTests.cs
 // Tests: SIMF.Api.Tests/RecordedQuestionsTests.cs
@@ -133,7 +133,6 @@ internal sealed class ProgrammeSessionService(
                         link.Role,
                         // §7: country (flag) + photo shown with the speaker.
                         link.Speaker!.CountryId,
-                        link.Speaker!.PhotoRelativePath,
                     })
                     .ToList(),
             })
@@ -177,7 +176,7 @@ internal sealed class ProgrammeSessionService(
                             speaker.CountryId,
                             countryEn,
                             countryAr,
-                            speaker.PhotoRelativePath,
+                            null, // photo comes from the StoredFile store
                             TitleArabic: speaker.RankArabic);
                     })
                     .ToList();
@@ -319,9 +318,17 @@ internal sealed class ProgrammeSessionService(
                 session.CapacityOverride,
                 session.Status,
                 session.PublishedAt,
-                HasRecordingFile = session.RecordingStoredFileName != null,
-                session.LiveStreamUrl,
-                session.LiveSignLanguageUrl,
+                HasRecordingFile = session.RecordingFileId != null,
+                // The feeds are file-store rows; the wire keeps carrying the URL
+                // itself, both clients classifying a feed by reading the string.
+                LiveStreamUrl = dbContext.StoredFiles
+                    .Where(f => f.Id == session.LiveStreamFileId && f.IsActive)
+                    .Select(f => f.ExternalUrl)
+                    .FirstOrDefault(),
+                LiveSignLanguageUrl = dbContext.StoredFiles
+                    .Where(f => f.Id == session.LiveSignLanguageFileId && f.IsActive)
+                    .Select(f => f.ExternalUrl)
+                    .FirstOrDefault(),
                 session.LiveCaptions,
                 session.LiveCaptionsArabic,
                 // The informational live notice shown WITH the feed. Read
@@ -366,7 +373,6 @@ internal sealed class ProgrammeSessionService(
                         link.DisplayOrder,
                         link.Role,
                         link.Speaker!.CountryId,
-                        link.Speaker!.PhotoRelativePath,
                     })
                     .ToList(),
                 // Website Session-detail "أبرز المخرجات" bullets,
@@ -447,7 +453,7 @@ internal sealed class ProgrammeSessionService(
                     speaker.CountryId,
                     countryEn,
                     countryAr,
-                    speaker.PhotoRelativePath,
+                    null, // photo comes from the StoredFile store
                     speakersWithPhoto.Contains(speaker.Id),
                     TitleArabic: speaker.RankArabic);
             })
@@ -559,10 +565,10 @@ internal sealed class ProgrammeSessionService(
             .Where(session => session.Id == id
                 && session.IsActive
                 && session.Status == SessionStatus.Published
-                && session.RecordingStoredFileName != null)
+                && session.RecordingFileId != null)
             .Select(session => new
             {
-                session.RecordingStoredFileName,
+                session.RecordingFileId,
                 session.RecordingContentType,
                 session.RecordingFileName,
             })
@@ -571,7 +577,7 @@ internal sealed class ProgrammeSessionService(
         return row is null
             ? null
             : new SessionRecordingRef(
-                row.RecordingStoredFileName!,
+                row.RecordingFileId!.Value,
                 row.RecordingContentType ?? "application/octet-stream",
                 row.RecordingFileName ?? "recording");
     }
@@ -679,8 +685,14 @@ internal sealed class ProgrammeSessionService(
                 // YouTube/HLS feed that doubles as the recording; no schema change)
                 // and the team's OPTIONAL short summary cut. Each is null when
                 // unset, and the app hides that player.
-                summary.Session!.LiveStreamUrl,
-                summary.SummaryVideoUrl))
+                dbContext.StoredFiles
+                    .Where(f => f.Id == summary.Session!.LiveStreamFileId && f.IsActive)
+                    .Select(f => f.ExternalUrl)
+                    .FirstOrDefault(),
+                dbContext.StoredFiles
+                    .Where(f => f.Id == summary.SummaryVideoFileId && f.IsActive)
+                    .Select(f => f.ExternalUrl)
+                    .FirstOrDefault()))
             .SingleOrDefaultAsync(cancellationToken);
     }
 

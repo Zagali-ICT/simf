@@ -62,7 +62,8 @@ class _FakeMyAreaRepository implements MyAreaRepository {
   @override
   Future<String> getContactCardVcf() async => '';
   @override
-  Future<String> getCalendarIcs() async => 'BEGIN:VCALENDAR\r\nEND:VCALENDAR\r\n';
+  Future<String> getCalendarIcs() async =>
+      'BEGIN:VCALENDAR\r\nEND:VCALENDAR\r\n';
   @override
   Future<bool> uploadAvatar({
     required List<int> bytes,
@@ -105,7 +106,11 @@ Future<void> _pump(
         (RouteNames.signIn, '/sign-in', 'SIGN-IN'),
         // D-519 role-specific entries.
         (RouteNames.gateScanner, '/gates/scan', 'GATE'),
-        (RouteNames.staffRegisterVisitor, '/staff/register-visitor', 'REGISTER'),
+        (
+          RouteNames.staffRegisterVisitor,
+          '/staff/register-visitor',
+          'REGISTER'
+        ),
         (RouteNames.scanVisitor, '/exhibitor/scan', 'SCAN-VISITOR'),
         (RouteNames.myVisitors, '/exhibitor/visitors', 'MY-VISITORS'),
         (RouteNames.registrationStatus, '/registration/status', 'REG-STATUS'),
@@ -125,7 +130,8 @@ Future<void> _pump(
       overrides: <Override>[
         authControllerProvider.overrideWith(() => auth),
         myAreaRepositoryProvider.overrideWithValue(_FakeMyAreaRepository()),
-        localeControllerProvider.overrideWith(() => LocaleController(prefs: prefs)),
+        localeControllerProvider
+            .overrideWith(() => LocaleController(prefs: prefs)),
       ],
       child: MaterialApp.router(
         routerConfig: router,
@@ -265,7 +271,8 @@ void main() {
       );
     }
 
-    testWidgets('Staff sees the gate + register entries, not the exhibitor ones',
+    testWidgets(
+        'Staff sees the gate + register entries, not the exhibitor ones',
         (tester) async {
       await pumpRole(tester, AppRole.staff);
       expect(find.text('Gate scanner'), findsOneWidget);
@@ -274,7 +281,8 @@ void main() {
       expect(find.text('My Booth Visitors'), findsNothing);
     });
 
-    testWidgets('Exhibitor sees the scan + my-visitors entries, not the staff ones',
+    testWidgets(
+        'Exhibitor sees the scan + my-visitors entries, not the staff ones',
         (tester) async {
       await pumpRole(tester, AppRole.exhibitor);
       expect(find.text('Scan visitor badge'), findsOneWidget);
@@ -341,7 +349,8 @@ void main() {
       expect(find.text('Registration status'), findsOneWidget); // the exception
       expect(find.text('Contact us'), findsOneWidget); // D-668 end group
       expect(find.text('About the app'), findsOneWidget);
-      expect(find.text('Notifications'), findsOneWidget); // signed-in keeps it (D-669)
+      expect(find.text('Notifications'),
+          findsOneWidget,); // signed-in keeps it (D-669)
       expect(find.text('Sign out'), findsOneWidget); // still signed in
     });
   });

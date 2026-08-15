@@ -69,7 +69,11 @@ class SimfEmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Icon(icon, size: SimfTokens.simfStatesSize, color: SimfTokens.beigeBorder),
+            Icon(
+              icon,
+              size: SimfTokens.simfStatesSize,
+              color: SimfTokens.beigeBorder,
+            ),
             const SizedBox(height: SimfTokens.space3),
             Text(
               message,
@@ -87,15 +91,16 @@ class SimfEmptyState extends StatelessWidget {
   }
 }
 
-/// The **true-guest** surface for a signed-in-only tab: the empty-state icon and
-/// message over a working sign-in button and a create-account link.
+/// The **true-guest** surface for a signed-in-only tab: the empty-state icon
+/// and message over a working sign-in button and a create-account link.
 ///
 /// The bottom nav switches tabs INSIDE the shell (no go_router navigation), so
 /// the router's auth redirect never runs and a visitor with no account at all
 /// reaches the badge and profile tabs. Both used to render the PENDING-account
-/// copy ("your account is not approved yet…" / "under review…"), which describes
-/// a submitted registration that does not exist and offered no way out — a dead
-/// end (BUG-013). The pending copy stays for genuinely pending accounts.
+/// copy ("your account is not approved yet…" / "under review…"), which
+/// describes a submitted registration that does not exist and offered no way
+/// out — a dead end (BUG-013). The pending copy stays for genuinely pending
+/// accounts.
 class SimfGuestPrompt extends StatelessWidget {
   const SimfGuestPrompt({
     required this.icon,
@@ -135,8 +140,8 @@ class SimfGuestPrompt extends StatelessWidget {
   }
 }
 
-/// The standard loading surface: the accent spinner, centered — one home for the
-/// loader chrome so screens don't re-emit the raw indicator. Completes the
+/// The standard loading surface: the accent spinner, centered — one home for
+/// the loader chrome so screens don't re-emit the raw indicator. Completes the
 /// loading / error / empty triad with [SimfErrorState] and [SimfEmptyState].
 class SimfLoadingState extends StatelessWidget {
   const SimfLoadingState({super.key});

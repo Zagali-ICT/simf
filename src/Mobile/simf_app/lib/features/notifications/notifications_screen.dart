@@ -8,6 +8,7 @@ import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/app/widgets/simf_search_field.dart';
+import 'package:simf_app/core/utils/refresh.dart';
 import 'package:simf_app/features/notifications/data/notification_models.dart';
 import 'package:simf_app/features/notifications/data/notifications_repository.dart';
 import 'package:simf_app/features/notifications/widgets/notification_filter_chip.dart';
@@ -25,8 +26,8 @@ const Set<String> _sessionsChipGroups = <String>{
 const Set<String> _vipChipGroups = <String>{'Vip'};
 
 /// The only in-app locations a notification `clickUrl` may open — a guard so a
-/// stale or foreign value never pushes an unknown route (the router has no error
-/// page). Only the path is matched; the query string is ignored (D-678).
+/// stale or foreign value never pushes an unknown route (the router has no
+/// error page). Only the path is matched; the query string is ignored (D-678).
 const Set<String> _allowedClickPaths = <String>{
   '/rate',
   '/badge',
@@ -53,7 +54,8 @@ String _groupForItem(NotificationItem item) {
       return 'Sessions';
     case 'MeetingScheduled':
     case 'MeetingCancelled':
-    // Bi-Meeting rework — the other-party confirm request + the 15-min reminder.
+    // Bi-Meeting rework — the other-party confirm request + the 15-min
+    // reminder.
     case 'MeetingRequested':
     case 'MeetingReminder':
       return 'Meetings';
@@ -82,6 +84,20 @@ enum _NotifFilter { all, sessions, vip }
 /// the list grouped by **اليوم / أمس / date**, and a per-severity category icon
 /// with an unread dot. Tapping an unread row marks it read then refreshes; the
 /// trailing "mark all read" action clears every unread.
+///
+/// Route: `RouteNames.notifications`.
+/// Data: [notificationsListProvider], [notificationsRepositoryProvider].
+/// Perf: no list — a single-screen layout.
+/// The inbox (`GET /app/notifications`).
+///
+/// Load only. The read-state flips this screen makes are NOT pushed back into
+/// the provider - see `_readLocally` on the state, which is what preserves the
+/// no-reload behaviour a provider cannot express by mutation.
+final notificationsListProvider =
+    FutureProvider.autoDispose<List<NotificationItem>>(
+  (ref) => ref.watch(notificationsRepositoryProvider).getNotifications(),
+);
+
 class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});
 
@@ -91,12 +107,18 @@ class NotificationsScreen extends ConsumerStatefulWidget {
 }
 
 class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
-  bool _loading = true;
-  bool _error = false;
   bool _markingAll = false;
-  List<NotificationItem> _items = const <NotificationItem>[];
   String _query = '';
   _NotifFilter _filter = _NotifFilter.all;
+
+  /// Ids this screen has SUCCESSFULLY told the server are read.
+  ///
+  /// The rows flip without a reload, which is deliberate (#14) and is the one
+  /// thing a provider cannot do by mutation. Applied as an overlay at render
+  /// and cleared whenever fresh data arrives, because the server is then
+  /// authoritative — the old code got the same effect by replacing the whole
+  /// `_items` list on reload.
+  final Set<String> _readLocally = <String>{};
 
   @override
   void initState() {
@@ -107,41 +129,35 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   /// #13 — opening the inbox loads the list, then marks everything read so an
   /// opened inbox never stays unread and the Home bell badge clears. (The
   /// backend models read/unread only — there is no separate "seen" state.)
+  ///
+  /// Awaits the provider's first future rather than listening, so it still runs
+  /// exactly ONCE per inbox open. Hooking it to every data arrival would also
+  /// fire it on each pull-to-refresh.
   Future<void> _openInbox() async {
-    await _load();
-    if (!mounted || _error) {
+    final List<NotificationItem> items;
+    try {
+      items = await ref.read(notificationsListProvider.future);
+    } on Object {
+      return; // The error branch renders; nothing to mark.
+    }
+    if (!mounted || !items.any((n) => !n.isRead)) {
       return;
     }
-    if (_items.any((n) => !n.isRead)) {
-      await _markAllRead(reload: false);
-    }
+    await _markAllRead(items);
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = false;
-    });
-    try {
-      final items =
-          await ref.read(notificationsRepositoryProvider).getNotifications();
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _items = items;
-        _loading = false;
-      });
-    } on ApiFailure {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _loading = false;
-        _error = true;
-      });
-    }
+  Future<void> _refresh() async {
+    _readLocally.clear();
+    await refreshAsync(ref, notificationsListProvider.future);
   }
+
+  /// The server list with this screen's own read-flips applied.
+  List<NotificationItem> _withLocalReads(List<NotificationItem> items) =>
+      _readLocally.isEmpty
+          ? items
+          : items
+              .map((n) => _readLocally.contains(n.id) ? n.markedRead() : n)
+              .toList(growable: false);
 
   Future<void> _onTapItem(NotificationItem item) async {
     // Deep-link first so an actionable notification always navigates, even if
@@ -161,11 +177,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       // #14 — clear the Home bell badge (a separate count provider) + flip the
       // item locally instead of a full reload.
       ref.invalidate(unreadNotificationCountProvider);
-      setState(() {
-        _items = _items
-            .map((n) => n.id == item.id ? n.markedRead() : n)
-            .toList(growable: false);
-      });
+      setState(() => _readLocally.add(item.id));
     }
   }
 
@@ -180,34 +192,34 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     if (clickUrl != null && clickUrl.isNotEmpty) {
       final uri = Uri.tryParse(clickUrl);
       if (uri != null && _allowedClickPaths.contains(uri.path)) {
-        context.push(clickUrl);
+        unawaited(context.push(clickUrl));
         return;
       }
     }
     // Fallback for pre-migration rows (no/again-null clickUrl).
     if (item.kind == 'SessionRatingRequest' &&
         (item.relatedEntityId ?? '').isNotEmpty) {
-      context.pushNamed(
-        RouteNames.rate,
-        queryParameters: <String, String>{
-          'code': 'Session',
-          'targetId': item.relatedEntityId!,
-        },
-      );
+      unawaited(context.pushNamed(
+          RouteNames.rate,
+          queryParameters: <String, String>{
+            'code': 'Session',
+            'targetId': item.relatedEntityId!,
+          },
+        ),);
       return;
     }
     // "بطاقتك الذكية جاهزة" (AccountApproved) and BookingConfirmed both land on
     // the badge/QR screen (758-1469) so a tap opens the user's entry QR even
     // when the row predates the clickUrl column.
     if (item.kind == 'BookingConfirmed' || item.kind == 'AccountApproved') {
-      context.pushNamed(RouteNames.badge);
+      unawaited(context.pushNamed(RouteNames.badge));
     }
   }
 
   Future<void> _onMarkAll(AppL10n l10n) async {
     setState(() => _markingAll = true);
     final messenger = ScaffoldMessenger.of(context);
-    final ok = await _markAllRead(reload: false);
+    final ok = await _markAllRead(_currentItems);
     if (!mounted) {
       return;
     }
@@ -221,8 +233,11 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
 
   /// Marks every notification read on the server, clears the Home bell badge
   /// (#14 — a separate count provider that the screen must invalidate), and
-  /// reflects the read state locally (or re-fetches when [reload]).
-  Future<bool> _markAllRead({required bool reload}) async {
+  /// reflects the read state locally rather than re-fetching.
+  ///
+  /// The `reload: true` branch this replaced had no caller — both sites passed
+  /// false — so the parameter went with it.
+  Future<bool> _markAllRead(List<NotificationItem> items) async {
     try {
       await ref.read(notificationsRepositoryProvider).markAllRead();
     } on ApiFailure {
@@ -232,19 +247,22 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     if (!mounted) {
       return true;
     }
-    if (reload) {
-      await _load();
-    } else {
-      setState(() {
-        _items = _items.map((n) => n.markedRead()).toList(growable: false);
-      });
-    }
+    setState(() => _readLocally.addAll(items.map((n) => n.id)));
     return true;
   }
 
+  /// Whatever the provider currently holds, for the mark-all button. Empty
+  /// while loading or on failure, where the button is not reachable anyway.
+  List<NotificationItem> get _currentItems =>
+      ref.read(notificationsListProvider).valueOrNull ??
+      const <NotificationItem>[];
+
   /// Items after the active chip + search filter, newest-first order preserved.
-  List<NotificationItem> _visibleItems(bool isArabic) {
-    Iterable<NotificationItem> it = _items;
+  List<NotificationItem> _visibleItems(
+    List<NotificationItem> items,
+    bool isArabic,
+  ) {
+    Iterable<NotificationItem> it = items;
     switch (_filter) {
       case _NotifFilter.sessions:
         it = it.where((n) => _sessionsChipGroups.contains(_groupForItem(n)));
@@ -257,8 +275,8 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     if (q.isNotEmpty) {
       it = it.where(
         (n) =>
-            n.localizedTitle(isArabic).toLowerCase().contains(q) ||
-            n.localizedBody(isArabic).toLowerCase().contains(q),
+            n.localizedTitle(isArabic: isArabic).toLowerCase().contains(q) ||
+            n.localizedBody(isArabic: isArabic).toLowerCase().contains(q),
       );
     }
     return it.toList(growable: false);
@@ -275,35 +293,35 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   }
 
   Widget _buildBody(AppL10n l10n) {
-    if (_loading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    if (_error) {
-      return SimfPullToRefresh(
-        onRefresh: _load,
-        child: SimfPullableHost(
-          child: SimfErrorState(
-            message: l10n.notificationsError,
-            retryLabel: l10n.retryLabel,
-            onRetry: () => unawaited(_load()),
+    return ref.watch(notificationsListProvider).when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (_, __) => SimfRefreshableMessage(
+            onRefresh: _refresh,
+            child: SimfErrorState(
+              message: l10n.notificationsError,
+              retryLabel: l10n.retryLabel,
+              onRetry: () => ref.invalidate(notificationsListProvider),
+            ),
           ),
-        ),
-      );
-    }
-    if (_items.isEmpty) {
-      return SimfPullToRefresh(
-        onRefresh: _load,
-        child: SimfPullableHost(
-          child: SimfEmptyState(
-            icon: Icons.notifications_none_outlined,
-            message: l10n.notificationsEmpty,
-          ),
-        ),
-      );
-    }
+          data: (serverItems) {
+            final items = _withLocalReads(serverItems);
+            return items.isEmpty
+                ? SimfRefreshableMessage(
+                    onRefresh: _refresh,
+                    child: SimfEmptyState(
+                      icon: Icons.notifications_none_outlined,
+                      message: l10n.notificationsEmpty,
+                    ),
+                  )
+                : _buildInbox(l10n, items);
+          },
+        );
+  }
+
+  Widget _buildInbox(AppL10n l10n, List<NotificationItem> items) {
     final isArabic = l10n.isArabic;
-    final hasUnread = _items.any((n) => !n.isRead);
-    final visible = _visibleItems(isArabic);
+    final hasUnread = items.any((n) => !n.isRead);
+    final visible = _visibleItems(items, isArabic);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
@@ -356,7 +374,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
         const SizedBox(height: SimfTokens.space2),
         Expanded(
           child: SimfPullToRefresh(
-            onRefresh: _load,
+            onRefresh: _refresh,
             child: visible.isEmpty
                 ? SimfPullableHost(
                     child: SimfEmptyState(

@@ -316,7 +316,6 @@ public sealed class SponsorsTests : IClassFixture<SimfApiFactory>
                 Name = "Sponsor Inline Name", NameArabic = "الاسم المضمّن للراعي",
                 Tier = SponsorTier.Bronze,
                 Url = "https://sponsor.example",
-                LogoRelativePath = "sponsors/inline.png",
                 PhonePrimary = "+44 20 7946 0000",
                 CountryId = countryId,
                 IsActive = true,
@@ -329,10 +328,12 @@ public sealed class SponsorsTests : IClassFixture<SimfApiFactory>
             .Content.ReadFromJsonAsync<ApiResult<PublicSponsors>>())!.Data!;
         var card = body.Groups.SelectMany(g => g.Sponsors).Single(s => s.Id == sponsorId);
 
-        // Name / logo / website come from the sponsor's own inline columns.
+        // Name / website come from the sponsor's own inline columns. The logo
+        // does not: it is a StoredFile keyed by sponsor id, so the wire field
+        // survives (append-only) carrying null and the client builds the URL.
         Assert.Equal("Sponsor Inline Name", card.NameEn);
         Assert.Equal("الاسم المضمّن للراعي", card.NameAr);
-        Assert.Equal("sponsors/inline.png", card.LogoRelativePath);
+        Assert.Null(card.LogoRelativePath);
         Assert.Equal("https://sponsor.example", card.Url);
         // The extra contact cluster + country name come from the sponsor too.
         Assert.Equal("+44 20 7946 0000", card.PhonePrimary);

@@ -27,7 +27,7 @@ class NewsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final category = item.localizedCategory(isArabic);
+    final category = item.localizedCategory(isArabic: isArabic);
     return Material(
       color: SimfTokens.navyDeep,
       borderRadius: const BorderRadius.all(Radius.circular(SimfTokens.radius)),
@@ -68,7 +68,7 @@ class NewsCard extends StatelessWidget {
                     ),
                     const SizedBox(height: SimfTokens.space2),
                     Text(
-                      item.localizedTitle(isArabic),
+                      item.localizedTitle(isArabic: isArabic),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: SimfTokens.labelWhiteBoldLg,
@@ -98,4 +98,3 @@ class NewsCard extends StatelessWidget {
     return '$dd-$mm-${publishedAt.year}';
   }
 }
-

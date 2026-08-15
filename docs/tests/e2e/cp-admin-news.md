@@ -1,4 +1,4 @@
-# E2E test catalogue — News CRUD (`/admin/news`)
+﻿# E2E test catalogue — News CRUD (`/admin/news`)
 
 | | |
 |--|--|
@@ -68,7 +68,9 @@ Scenario: Create, edit (toggle Active), then delete one article
   Then the modal titled "Add news article" opens
   And it shows the fields: Title (English), Title (Arabic), Category (English),
       Category (Arabic), Excerpt (English), Excerpt (Arabic), Body (English),
-      Body (Arabic), Image path, Publish date, Display order
+      Body (Arabic), Publish date, Display order
+  And no image field is offered, only the hint
+      "Save the record first, then add an image."
   And no "Active" checkbox is shown (Add hides it; only Edit shows it)
 
   When they fill Title (English)="SIMF 2026 opens registration"
@@ -153,7 +155,7 @@ Scenario: Add modal exposes the full author form without the Active toggle
   Then the modal titled "Add news article" opens
   And the fields render in order: Title (English), Title (Arabic),
       Category (English), Category (Arabic), Excerpt (English),
-      Excerpt (Arabic), Body (English), Body (Arabic), Image path,
+      Excerpt (Arabic), Body (English), Body (Arabic),
       Publish date, Display order
   And Publish date defaults to today (the form seeds PublishedAt = UtcNow)
   And Display order defaults to "0"
@@ -171,7 +173,10 @@ Scenario: Edit fetches the full detail and surfaces the Active checkbox
   And the modal titled "Edit news article" opens
   And Title (English), Title (Arabic), Category (English), Category (Arabic),
       Excerpt (English), Excerpt (Arabic), Body (English), Body (Arabic),
-      Image path, Publish date and Display order are all pre-filled from the detail
+      Publish date and Display order are all pre-filled from the detail
+  And an "Image" section hosts SimfImageUpload Category="NewsImage" with an
+      "Upload file" and an "External link" tab, showing the current image if one
+      is attached
   And an "Active" checkbox is visible (this control appears only in Edit)
   And the checkbox state matches the row's current IsActive
 ```
@@ -396,7 +401,7 @@ Scenario: Delete requires explicit SimfConfirm confirmation
   When they click the Delete (trash) icon on a row
   Then a GET /account/api/admin/news/{id} fetches the full AdminNewsDetail
   And the CrudShell opens the NewsViewDelete form showing the article's read-only
-      details (incl. the cover-image preview when ImageRelativePath is set) and a
+      details (incl. the cover-image preview when the article has an image) and a
       red "Delete" button (the old native browser confirm() is gone)
   When they click "Delete"
   Then a SimfConfirm dialog appears reading

@@ -1,4 +1,4 @@
-using SIMF.Common.Enums;
+﻿using SIMF.Common.Enums;
 using SIMF.Domain.Common;
 
 namespace SIMF.Domain.Organization;
@@ -21,8 +21,11 @@ namespace SIMF.Domain.Organization;
 /// </summary>
 public sealed class OrganizationProfile : BaseAuditEntity
 {
-    public static readonly Guid SingletonId =
-        Guid.Parse("00000000-0000-0000-0000-000000000003");
+    /// <summary>The fixed singleton id. The literal lives in
+    /// <see cref="SIMF.Common.OrganizationProfileIds"/> so the Control Panel — which
+    /// cannot reference the domain — addresses the same row rather than keeping a
+    /// second copy of the Guid that nothing would notice drifting.</summary>
+    public static readonly Guid SingletonId = SIMF.Common.OrganizationProfileIds.Singleton;
 
     public OrganizationProfile()
     {
@@ -99,16 +102,25 @@ public sealed class OrganizationProfile : BaseAuditEntity
     // BackgroundVideoUrl at the file it stored.
 
     /// <summary>The forum-wide live feed, distinct from the per-session
-    /// <c>Session.LiveStreamUrl</c>. The app's live screen prefers a session's own
-    /// feed and falls back to this one; with neither set it shows an empty
-    /// state.</summary>
-    public string? LiveStreamUrl { get; set; }
+    /// <c>Session.LiveStreamFileId</c>. The app's live screen prefers a session's
+    /// own feed and falls back to this one; with neither set it shows an empty
+    /// state. A <c>StoredFiles</c> row, as every media reference is.</summary>
+    public Guid? LiveStreamFileId { get; set; }
 
-    /// <summary>The muted, looping video behind the home hero. The website plays a
-    /// YouTube link or a direct MP4/HLS link; the app plays only a direct link and
-    /// falls through to its banner carousel on a YouTube one. Null, or a link the
-    /// hero code will not take, leaves the bundled hero media in place.</summary>
-    public string? BackgroundVideoUrl { get; set; }
+    /// <summary>The muted, looping video behind the home hero, as a
+    /// <c>StoredFiles</c> row. The website plays a YouTube link or a direct
+    /// MP4/HLS link; the app plays only a direct link and falls through to its
+    /// banner carousel on a YouTube one. Null, or a link the hero code will not
+    /// take, leaves the bundled hero media in place.
+    ///
+    /// <para>One column for both authoring paths. An upload streams bytes to the
+    /// store and points here; a pasted link becomes an external-link row and
+    /// points here too. Before this there were two: an upload wrote a served URL
+    /// into the same free-text box an admin could paste into, and the only thing
+    /// telling them apart was a full-string comparison on the server against a
+    /// suffix test in the Control Panel - two predicates for one question, which
+    /// disagreed whenever the configured base URL changed.</para></summary>
+    public Guid? BackgroundVideoFileId { get; set; }
 
     // Seven fixed columns rather than a child table: the shipped SocialLinks wire
     // contract names each network, so adding one costs a column, a contract field

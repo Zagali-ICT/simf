@@ -43,7 +43,7 @@ class VenueMapMarker extends StatelessWidget {
         ),
         const SizedBox(height: SimfTokens.gap2),
         Text(
-          node.localizedLabel(isArabic),
+          node.localizedLabel(isArabic: isArabic),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           textAlign: TextAlign.center,
@@ -57,7 +57,7 @@ class VenueMapMarker extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       child: Semantics(
         button: true,
-        label: node.localizedLabel(isArabic),
+        label: node.localizedLabel(isArabic: isArabic),
         child: marker,
       ),
     );

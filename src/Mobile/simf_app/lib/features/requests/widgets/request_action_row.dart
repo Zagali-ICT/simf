@@ -7,10 +7,10 @@ import 'package:simf_app/app/widgets/simf_svg_icon.dart';
 import 'package:simf_app/features/requests/data/request_models.dart';
 
 /// The top action row (Figma 1408:9736): two equal buttons — "طلب جديد" (opens
-/// the new-request sheet, beige-outlined) and "السجل" (the gold-filled "all/log"
-/// view; tapping it clears any status filter). Accepted stays filterable via the
-/// "مقبول" status chip below (D-592: the app's extra "المقبولة" button dropped to
-/// match the frame).
+/// the new-request sheet, beige-outlined) and "السجل" (the gold-filled
+/// "all/log" view; tapping it clears any status filter). Accepted stays
+/// filterable via the "مقبول" status chip below (D-592: the app's extra
+/// "المقبولة" button dropped to match the frame).
 class RequestActionRow extends StatelessWidget {
   const RequestActionRow({
     required this.l10n,
@@ -35,9 +35,9 @@ class RequestActionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // The Figma lays this row left→right (طلب جديد · السجل) — a fixed LTR control
-    // row in the mock — so force LTR to match it exactly rather than letting the
-    // RTL shell mirror it.
+    // The Figma lays this row left→right (طلب جديد · السجل) — a fixed LTR
+    // control row in the mock — so force LTR to match it exactly rather than
+    // letting the RTL shell mirror it.
     return Directionality(
       textDirection: TextDirection.ltr,
       child: Row(
@@ -67,8 +67,9 @@ class RequestActionRow extends StatelessWidget {
   }
 }
 
-/// One equal-width pill in the [RequestActionRow]: gold-filled when [active], else
-/// a beige-hairline outline. Label SemiBold-12 over a 14px trailing Figma glyph.
+/// One equal-width pill in the [RequestActionRow]: gold-filled when [active],
+/// else a beige-hairline outline. Label SemiBold-12 over a 14px trailing Figma
+/// glyph.
 class RequestActionButton extends StatelessWidget {
   const RequestActionButton({
     required this.label,
@@ -118,7 +119,8 @@ class RequestActionButton extends StatelessWidget {
               ),
             ),
             const SizedBox(width: SimfTokens.space1),
-            SimfSvgIcon(asset, size: SimfTokens.requestActionRowSize, color: fg),
+            SimfSvgIcon(asset,
+                size: SimfTokens.requestActionRowSize, color: fg,),
           ],
         ),
       ),

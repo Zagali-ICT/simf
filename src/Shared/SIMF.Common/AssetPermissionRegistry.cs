@@ -1,4 +1,4 @@
-using SIMF.Common.Enums;
+﻿using SIMF.Common.Enums;
 
 namespace SIMF.Common;
 
@@ -28,6 +28,10 @@ public static class AssetPermissionRegistry
             [AssetCategory.SponsorLogo] =
                 new(PermissionCatalog.Sponsors.View, PermissionCatalog.Sponsors.Edit),
             [AssetCategory.ArchiveCover] =
+                new(PermissionCatalog.Archive.View, PermissionCatalog.Archive.Edit),
+            [AssetCategory.ArchivePastSpeakerPhoto] =
+                new(PermissionCatalog.Archive.View, PermissionCatalog.Archive.Edit),
+            [AssetCategory.ArchiveGalleryImage] =
                 new(PermissionCatalog.Archive.View, PermissionCatalog.Archive.Edit),
             [AssetCategory.NewsImage] =
                 new(PermissionCatalog.News.View, PermissionCatalog.News.Edit),
