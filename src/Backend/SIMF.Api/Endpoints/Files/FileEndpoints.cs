@@ -3,6 +3,7 @@
 using System.Security.Claims;
 using FastEndpoints;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using SIMF.Api.Endpoints.Admin;
@@ -13,6 +14,7 @@ using SIMF.Common.Enums;
 using SIMF.Common.Files;
 using SIMF.Common.Options;
 using SIMF.Contracts.Files;
+using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Api.Endpoints.Files;
 
@@ -29,6 +31,64 @@ internal static class FileEndpointSupport
             .Select(c => c.Value)
             .ToHashSet(StringComparer.Ordinal);
         return new FileAccessContext(isAuthenticated, userId, permissions);
+    }
+
+    /// <summary>True when the caller holds the permission code or the admin
+    /// wildcard — the same test <c>AssetAuth.Has</c> applies to the per-category
+    /// asset gates.</summary>
+    public static bool Has(ClaimsPrincipal user, string code) =>
+        user.HasClaim(PermissionCatalog.ClaimType, PermissionCatalog.Wildcard)
+        || user.HasClaim(PermissionCatalog.ClaimType, code);
+
+    /// <summary>Authorizes an upload (bytes or external link) for a service.
+    /// The flat <c>Files.Upload</c> policy on the route only opens the endpoint; the
+    /// service decides which module's write code the caller must actually hold, so
+    /// holding the sponsor-logo gate is not the same as holding the
+    /// identity-document gate.
+    ///
+    /// <para>A service that names a dedicated route is refused here outright,
+    /// before any permission is consulted: its owner is a person, and this endpoint
+    /// takes the owner id from a client form field, so accepting it would let a
+    /// caller plant a file on anyone's profile.</para></summary>
+    public static void AuthorizeUpload(ClaimsPrincipal user, FileService service)
+    {
+        var policy = PolicyFor(service);
+        if (policy.DedicatedUploadRoute is { Length: > 0 } route)
+        {
+            throw new ApiException(ErrorCodes.Forbidden, 403,
+                $"{service} files cannot be written through the generic file endpoint, which would take "
+                + $"the owner from the request and let a caller write to another person's profile. Use: {route}.",
+                "لا يمكن رفع هذا النوع من الملفات عبر الواجهة العامة للملفات؛ استخدم المسار المخصص له.");
+        }
+        RequirePermission(user, policy.UploadPermission);
+    }
+
+    /// <summary>Authorizes a delete for the service the STORED FILE carries — the
+    /// route carries only a GUID, so the caller never names the service. Same
+    /// reasoning as the upload gate: one flat <c>Files.Delete</c> across every
+    /// service would let whoever may delete a sponsor logo delete an attendee's
+    /// identity document.</summary>
+    public static void AuthorizeDelete(ClaimsPrincipal user, FileService service) =>
+        RequirePermission(user, PolicyFor(service).DeletePermission);
+
+    private static FileServicePolicy PolicyFor(FileService service)
+    {
+        // An undefined enum value would otherwise reach Resolve's default-deny
+        // throw and surface as a 500; it is a bad request, and it is the client's.
+        if (!Enum.IsDefined(service))
+        {
+            throw new ApiException(ErrorCodes.ValidationFailed, 400,
+                "Unknown file service.", "نوع الملف غير معروف.");
+        }
+        return FileServicePolicies.Resolve(service);
+    }
+
+    private static void RequirePermission(ClaimsPrincipal user, string code)
+    {
+        if (Has(user, code)) { return; }
+        throw new ApiException(ErrorCodes.Forbidden, 403,
+            $"This action requires the '{code}' permission.",
+            "ليس لديك الصلاحية اللازمة لتنفيذ هذا الإجراء.");
     }
 
     /// <summary>Strips characters that could break / inject into the
@@ -53,7 +113,10 @@ internal static class FileEndpointSupport
 
 /// <summary>The single upload endpoint. Multipart; the service category +
 /// owner ride the form; the file is validated, scanned (fail-closed in
-/// Production), encrypted-per-policy and stored. Gated by <c>Files.Upload</c>.</summary>
+/// Production), encrypted-per-policy and stored. <c>Files.Upload</c> opens the
+/// endpoint; the service's own <c>UploadPermission</c> decides whether this caller
+/// may write THAT category, and a service with a dedicated route is refused here
+/// entirely (<see cref="FileEndpointSupport.AuthorizeUpload"/>).</summary>
 public sealed class FileUploadRequest
 {
     public FileService Service { get; set; }
@@ -62,9 +125,13 @@ public sealed class FileUploadRequest
     /// booth an admin is uploading a photo for). The owner *family*
     /// (<c>OwnerEntityType</c>) is NOT accepted from the client: it is forced from
     /// the service's policy in <c>StoredFileService</c>, so a caller cannot
-    /// over-post a mismatched owner family. For owner-scoped self-service uploads
-    /// (avatar / ID) the id is server-derived from the subject by the internal
-    /// caller, never trusted from this form.</summary>
+    /// over-post a mismatched owner family.
+    ///
+    /// <para>This id is only ever a CONTENT entity (a speaker, a booth, a news
+    /// article). The services whose owner is a person — avatar, ID document, VIP
+    /// photo — are refused on this endpoint precisely because the id arrives from
+    /// the client here: their dedicated routes derive it from the authenticated
+    /// subject instead.</para></summary>
     public Guid? OwnerEntityId { get; set; }
     public IFormFile? File { get; set; }
 }
@@ -88,6 +155,7 @@ public sealed class FileUploadEndpoint(
     public override async Task HandleAsync(FileUploadRequest req, CancellationToken ct)
     {
         var actorId = User.ActorId();
+        FileEndpointSupport.AuthorizeUpload(User, req.Service);
 
         var file = req.File;
         if (file is null || file.Length == 0)
@@ -115,8 +183,10 @@ public sealed class FileUploadEndpoint(
 }
 
 /// <summary>Record an external image link (a logo / cover hosted
-/// elsewhere). Owner-upsert; the download endpoint 302-redirects to it. Gated by
-/// <c>Files.Upload</c>, same as the byte upload.</summary>
+/// elsewhere). Owner-upsert; the download endpoint 302-redirects to it. Gated
+/// exactly like the byte upload: <c>Files.Upload</c> plus the service's own
+/// <c>UploadPermission</c>, and the personal services are refused here too — a
+/// link row replaces the owner's active file, so it writes the same slot.</summary>
 public sealed class FileLinkRequest
 {
     public FileService Service { get; set; }
@@ -139,6 +209,7 @@ public sealed class FileLinkEndpoint(IFileService service)
     public override async Task HandleAsync(FileLinkRequest req, CancellationToken ct)
     {
         var actorId = User.ActorId();
+        FileEndpointSupport.AuthorizeUpload(User, req.Service);
 
         var result = await service.CreateExternalLinkAsync(
             new CreateExternalLinkCommand(req.Service, req.OwnerEntityId, req.Url, actorId), ct);
@@ -210,14 +281,18 @@ public sealed class FileDownloadEndpoint(IFileService service)
     }
 }
 
-/// <summary>Soft-delete a file. Gated by <c>Files.Delete</c>; 409 when the
-/// file is under a retention hold.</summary>
+/// <summary>Soft-delete a file. <c>Files.Delete</c> opens the endpoint; the
+/// permission that actually decides is the stored file's own
+/// <c>DeletePermission</c>, read from its service — one flat delete code across
+/// every service would mean whoever may delete a sponsor logo may delete an
+/// attendee's identity document. 409 when the file is under a retention
+/// hold.</summary>
 public sealed class FileDeleteRoute
 {
     public Guid Id { get; set; }
 }
 
-public sealed class FileDeleteEndpoint(IFileService service)
+public sealed class FileDeleteEndpoint(IFileService service, SimfAppDbContext appDb)
     : Endpoint<FileDeleteRoute, ApiResult<bool>>
 {
     public override void Configure()
@@ -232,6 +307,21 @@ public sealed class FileDeleteEndpoint(IFileService service)
     public override async Task HandleAsync(FileDeleteRoute req, CancellationToken ct)
     {
         var actorId = User.ActorId();
+
+        // The row's own service, not the caller's word for it — the route carries
+        // only a GUID. An unknown id falls through unauthorized to DeleteAsync,
+        // which owns the 404, so this lookup never becomes an existence oracle of
+        // its own. Soft-deleted rows are included: DeleteAsync is idempotent on
+        // them and their service still decides who may act on them.
+        var stored = await appDb.StoredFiles.AsNoTracking()
+            .Where(f => f.Id == req.Id)
+            .Select(f => (FileService?)f.Service)
+            .FirstOrDefaultAsync(ct);
+        if (stored is { } fileService)
+        {
+            FileEndpointSupport.AuthorizeDelete(User, fileService);
+        }
+
         await service.DeleteAsync(req.Id, actorId, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }

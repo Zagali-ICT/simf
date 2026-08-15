@@ -49,9 +49,11 @@ public sealed class StoredFile : BaseAuditEntity
     public string? Sha256 { get; set; }
 
     // IsDeletable false is a legal hold, and the delete endpoint answers 409. RetainUntil
-    // records the service's retention policy only — no sweep reads it, so an expired file
-    // must be force-deleted by hand. SecureDestroyed means the bytes are gone for good
-    // (crypto-shredded or overwritten), stamped only by the right-to-erasure path.
+    // is aspirational today: it is computed from the service's FileServicePolicy.Retention,
+    // and no policy in the registry sets one, so the column stays null on every row. No
+    // sweep reads it either — disposal is always deliberate, through the force-delete path.
+    // SecureDestroyed means the bytes are gone for good (crypto-shredded or overwritten),
+    // stamped only by the right-to-erasure path.
     public bool IsDeletable { get; set; } = true;
     public DateTime? RetainUntil { get; set; }
     public DateTime? SecureDestroyed { get; set; }

@@ -319,26 +319,9 @@ internal sealed class StoredFileService(
         var bytes = await storage.ReadAsync(file.StorageKey, file.IsEncrypted, cancellationToken);
         if (bytes is null) { throw NotFound(); }
 
-        // Integrity verification on a private file (SAMA
-        // H-29/30). FAIL CLOSED: a stored-hash mismatch means the bytes on disk
-        // were tampered with (or a decrypt returned garbage) — audit it and refuse
-        // to serve, never hand the caller unverified bytes. Only Confidential+
-        // tiers carry the per-read hash check (public images are not hashed on read).
-        if (policy.Tier >= FileSensitivityTier.Confidential && !string.IsNullOrEmpty(file.Sha256))
+        if (!await IntegrityVerifiedAsync(file, policy.Tier, bytes, caller.UserId, cancellationToken))
         {
-            var actual = Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
-            if (!string.Equals(actual, file.Sha256, StringComparison.OrdinalIgnoreCase))
-            {
-                logger.LogError(
-                    "Integrity mismatch on file {Id} (service={Service}) — refusing to serve tampered bytes.",
-                    id, file.Service);
-                await auditLog.WriteFailureAsync(
-                    AuditEvents.FileIntegrityFailed,
-                    caller.UserId,
-                    detail: $"id={id}; service={file.Service}; expected={file.Sha256}; actual={actual}",
-                    cancellationToken: cancellationToken);
-                throw NotFound();
-            }
+            throw NotFound();
         }
 
         // Per-row audit only for non-public reads (public reads would flood the log).
@@ -356,6 +339,62 @@ internal sealed class StoredFileService(
             ContentType: file.ContentType ?? "application/octet-stream",
             FileName: file.OriginalFileName,
             file.Service, policy.Tier, policy.Access, file.FileType);
+    }
+
+    public async Task<StoredFileContent?> ReadContentAsync(
+        Guid id, CancellationToken cancellationToken = default)
+    {
+        var file = await dbContext.StoredFiles.AsNoTracking()
+            .FirstOrDefaultAsync(f => f.Id == id && f.IsActive, cancellationToken);
+        return file is null ? null : await ReadVerifiedAsync(file, cancellationToken);
+    }
+
+    public async Task<StoredFileContent?> ReadOwnerContentAsync(
+        FileService service, Guid ownerEntityId, CancellationToken cancellationToken = default)
+    {
+        var file = await dbContext.StoredFiles.AsNoTracking()
+            .Where(f => f.Service == service && f.OwnerEntityId == ownerEntityId && f.IsActive)
+            // Newest active wins; Id is a deterministic tiebreak for the rare
+            // same-tick case (a fake TimeProvider, or a brief replace window).
+            .OrderByDescending(f => f.CreatedAt)
+            .ThenByDescending(f => f.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+        return file is null ? null : await ReadVerifiedAsync(file, cancellationToken);
+    }
+
+    public async Task<bool> RestoreBytesAsync(
+        Guid id, byte[] content, Guid actorUserId, CancellationToken cancellationToken = default)
+    {
+        if (content is null || content.Length == 0)
+        {
+            throw new ApiException(ErrorCodes.ValidationFailed, 400,
+                "No file content was supplied.", "لم يتم تزويد محتوى الملف.");
+        }
+
+        var file = await dbContext.StoredFiles.AsNoTracking()
+            .FirstOrDefaultAsync(f => f.Id == id && f.IsActive, cancellationToken);
+        if (file is null
+            || file.SourceType != FileSourceType.Upload
+            || string.IsNullOrEmpty(file.StorageKey))
+        {
+            return false;
+        }
+
+        // The provider rebuilds the SAME {service}/{id:N}{ext} key the row records,
+        // so writing by (service, id, extension) cannot land the bytes anywhere the
+        // row does not already point at.
+        await storage.WriteAsync(
+            file.Service, file.Id, Path.GetExtension(file.StorageKey), content,
+            file.IsEncrypted, cancellationToken);
+
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.FileUploaded,
+            actorUserId,
+            $"id={file.Id}; service={file.Service}; bytes={content.LongLength}; "
+                + $"encrypted={file.IsEncrypted}; restored",
+            cancellationToken);
+
+        return true;
     }
 
     public async Task<bool> ContentExistsAsync(Guid id, CancellationToken cancellationToken = default)
@@ -448,6 +487,59 @@ internal sealed class StoredFileService(
             actorUserId,
             $"id={id}; service={file.Service}; force-delete",
             cancellationToken);
+    }
+
+    /// <summary>The read half shared by <see cref="ReadContentAsync"/> and
+    /// <see cref="ReadOwnerContentAsync"/>: decrypt per the row, then apply the same
+    /// fail-closed integrity re-check the download route applies. No policy check and
+    /// no success audit — those callers authorize and audit themselves.</summary>
+    private async Task<StoredFileContent?> ReadVerifiedAsync(
+        StoredFile file, CancellationToken cancellationToken)
+    {
+        // An external link owns no bytes here; the caller serves the URL itself.
+        if (file.SourceType == FileSourceType.ExternalLink) { return null; }
+        if (string.IsNullOrEmpty(file.StorageKey)) { return null; }
+
+        var bytes = await storage.ReadAsync(file.StorageKey, file.IsEncrypted, cancellationToken);
+        if (bytes is null) { return null; }
+
+        var tier = FileServicePolicies.Resolve(file.Service).Tier;
+        if (!await IntegrityVerifiedAsync(file, tier, bytes, actorUserId: null, cancellationToken))
+        {
+            return null;
+        }
+        return new StoredFileContent(bytes, file.ContentType);
+    }
+
+    /// <summary>Integrity verification on a private file (SAMA H-29/30). FAIL
+    /// CLOSED: a stored-hash mismatch means the bytes on disk were tampered with (or
+    /// a decrypt returned garbage) — audit it and refuse to serve, never hand the
+    /// caller unverified bytes. Only Confidential+ tiers carry the per-read hash
+    /// check (public images are not hashed on read).</summary>
+    private async Task<bool> IntegrityVerifiedAsync(
+        StoredFile file, FileSensitivityTier tier, byte[] bytes, Guid? actorUserId,
+        CancellationToken cancellationToken)
+    {
+        if (tier < FileSensitivityTier.Confidential || string.IsNullOrEmpty(file.Sha256))
+        {
+            return true;
+        }
+
+        var actual = Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
+        if (string.Equals(actual, file.Sha256, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        logger.LogError(
+            "Integrity mismatch on file {Id} (service={Service}) — refusing to serve tampered bytes.",
+            file.Id, file.Service);
+        await auditLog.WriteFailureAsync(
+            AuditEvents.FileIntegrityFailed,
+            actorUserId,
+            detail: $"id={file.Id}; service={file.Service}; expected={file.Sha256}; actual={actual}",
+            cancellationToken: cancellationToken);
+        return false;
     }
 
     private static bool IsAuthorized(FileServicePolicy policy, StoredFile file, FileAccessContext caller) =>

@@ -18,7 +18,7 @@ namespace SIMF.Infrastructure.Media;
 /// </summary>
 internal sealed class PublicMediaService(
     SimfAppDbContext dbContext,
-    IFileStorageProvider storage) : IPublicMediaService
+    IFileService fileService) : IPublicMediaService
 {
     public async Task<PublicMediaPage> ListAsync(
         string? album, int skip, int top, MediaKind? kind = null,
@@ -112,14 +112,7 @@ internal sealed class PublicMediaService(
         var fileId = await fileIdQuery.SingleOrDefaultAsync(cancellationToken);
         if (fileId is not { } fid) { return null; }
 
-        var file = await dbContext.StoredFiles
-            .AsNoTracking()
-            .Where(f => f.Id == fid && f.IsActive)
-            .Select(f => new { f.StorageKey, f.ContentType, f.IsEncrypted })
-            .FirstOrDefaultAsync(cancellationToken);
-        if (file?.StorageKey is not { Length: > 0 } key) { return null; }
-
-        var bytes = await storage.ReadAsync(key, file.IsEncrypted, cancellationToken);
-        return bytes is null ? null : (bytes, file.ContentType ?? "application/octet-stream");
+        var file = await fileService.ReadContentAsync(fid, cancellationToken);
+        return file is null ? null : (file.Content, file.ContentType ?? "application/octet-stream");
     }
 }

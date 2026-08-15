@@ -23,7 +23,6 @@ namespace SIMF.Infrastructure.Programme;
 internal sealed class AdminSpeakerPresentationService(
     SimfAppDbContext db,
     IFileService fileService,
-    IFileStorageProvider fileStorage,
     IAuditLog auditLog,
     TimeProvider timeProvider,
     ILogger<AdminSpeakerPresentationService> logger) : IAdminSpeakerPresentationService
@@ -149,9 +148,8 @@ internal sealed class AdminSpeakerPresentationService(
         {
             return null;
         }
-        var bytes = await PresentationFileReader.ReadBytesAsync(
-            db, fileStorage, row.StoredFileId, cancellationToken);
-        return bytes is null ? null : (bytes, row.ContentType, row.FileName);
+        var file = await fileService.ReadContentAsync(row.StoredFileId, cancellationToken);
+        return file is null ? null : (file.Content, row.ContentType, row.FileName);
     }
 
     public async Task DeleteAsync(

@@ -9,7 +9,6 @@ using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
-using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Api.Endpoints.Admin;
 
@@ -119,8 +118,7 @@ public sealed class UploadOtherAvatarEndpoint(
 /// admin View permission (the avatar is the account's, on SimfUser/Identity).
 /// </summary>
 public abstract class AdminAvatarFetchEndpointBase(
-    SimfAppDbContext appDb, IFileStorageProvider storage,
-    IAdminUserProvisioningService provisioning)
+    IFileService files, IAdminUserProvisioningService provisioning)
     : EndpointWithoutRequest
 {
     public abstract Guid SubjectId { get; }
@@ -147,9 +145,9 @@ public abstract class AdminAvatarFetchEndpointBase(
         }
 
         // Resolve the subject's avatar from the StoredFile store.
-        // Authorization is the route's admin View permission (Configure below);
-        // this is a raw decrypt read, not IFileService.DownloadAsync (see AvatarBytes).
-        var avatar = await AvatarBytes.ReadAsync(appDb, storage, SubjectId, ct);
+        // Authorization is the route's admin View permission (Configure below), so
+        // this is the caller-authorized read, not DownloadAsync (see AvatarBytes).
+        var avatar = await AvatarBytes.ReadAsync(files, SubjectId, ct);
         if (avatar is null)
         {
             await Send.NotFoundAsync(ct);
@@ -163,9 +161,8 @@ public abstract class AdminAvatarFetchEndpointBase(
 
 /// <summary><c>GET /api/v1/admin/visitors/{id}/avatar</c>.</summary>
 public sealed class FetchVisitorAvatarEndpoint(
-    SimfAppDbContext appDb, IFileStorageProvider storage,
-    IAdminUserProvisioningService provisioning)
-    : AdminAvatarFetchEndpointBase(appDb, storage, provisioning)
+    IFileService files, IAdminUserProvisioningService provisioning)
+    : AdminAvatarFetchEndpointBase(files, provisioning)
 {
     public override Guid SubjectId => Route<Guid>("id");
     public override UserType ExpectedType => UserType.Visitor;
@@ -183,9 +180,8 @@ public sealed class FetchVisitorAvatarEndpoint(
 
 /// <summary><c>GET /api/v1/admin/others/{id}/avatar</c>.</summary>
 public sealed class FetchOtherAvatarEndpoint(
-    SimfAppDbContext appDb, IFileStorageProvider storage,
-    IAdminUserProvisioningService provisioning)
-    : AdminAvatarFetchEndpointBase(appDb, storage, provisioning)
+    IFileService files, IAdminUserProvisioningService provisioning)
+    : AdminAvatarFetchEndpointBase(files, provisioning)
 {
     public override Guid SubjectId => Route<Guid>("id");
     public override UserType ExpectedType => UserType.Visitor;
@@ -207,9 +203,8 @@ public sealed class FetchOtherAvatarEndpoint(
 /// StoredFile read (avatars live in the one central file store for every user
 /// type, admins included).</summary>
 public sealed class FetchAdminAvatarEndpoint(
-    SimfAppDbContext appDb, IFileStorageProvider storage,
-    IAdminUserProvisioningService provisioning)
-    : AdminAvatarFetchEndpointBase(appDb, storage, provisioning)
+    IFileService files, IAdminUserProvisioningService provisioning)
+    : AdminAvatarFetchEndpointBase(files, provisioning)
 {
     public override Guid SubjectId => Route<Guid>("id");
     public override UserType ExpectedType => UserType.Admin;
