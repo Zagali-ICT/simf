@@ -8,9 +8,8 @@ import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/core/utils/refresh.dart';
 import 'package:simf_app/features/moderation/data/moderation_models.dart';
 import 'package:simf_app/features/moderation/data/moderation_repository.dart';
-import 'package:simf_app/features/moderation/widgets/moderator_filter_bar.dart';
+import 'package:simf_app/features/moderation/widgets/moderator_desk.dart';
 import 'package:simf_app/features/moderation/widgets/moderator_header.dart';
-import 'package:simf_app/features/moderation/widgets/moderator_question_card.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 /// Moderator (محاور) per-session Q&A desk — Figma 1461:12227 (D-405 / D-509).
@@ -377,64 +376,19 @@ class _SessionModerateScreenState extends ConsumerState<SessionModerateScreen> {
                 ),
         );
       },
-      data: (queues) => _buildDesk(l10n, queues),
-    );
-  }
-
-  Widget _buildDesk(AppL10n l10n, ModeratorQueues queues) {
-    final rows = filterModeratorQueue(
-      queues.desk,
-      _filter,
-      rejected: queues.rejected,
-    );
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        ModeratorFilterBar(
-          l10n: l10n,
-          filter: _filter,
-          counts: moderatorQueueCounts(_desk, rejected: _rejected),
-          onChanged: (f) => setState(() => _filter = f),
-        ),
-        Expanded(
-          child: rows.isEmpty
-              ? SimfEmptyState(
-                  icon: Icons.forum_outlined,
-                  message: l10n.moderatorEmpty,
-                )
-              : SimfPullToRefresh(
-                  onRefresh: _refresh,
-                  // FR-MOD-003 — the queue the moderator reads on stage is
-                  // now orderable from the desk itself (the reorder endpoint
-                  // had no interface at all). Handles are built per card, so
-                  // a rejected row simply has none.
-                  child: ReorderableListView.builder(
-                    padding: const EdgeInsets.all(SimfTokens.space4),
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    buildDefaultDragHandles: false,
-                    itemCount: rows.length,
-                    onReorderItem: (oldIndex, newIndex) =>
-                        unawaited(_reorder(rows, oldIndex, newIndex)),
-                    itemBuilder: (context, i) => Padding(
-                      key: ValueKey<String>(rows[i].id),
-                      padding: const EdgeInsets.only(
-                        bottom: SimfTokens.space3,
-                      ),
-                      child: ModeratorQuestionCard(
-                        l10n: l10n,
-                        question: rows[i],
-                        answered: rows[i].isAnswered,
-                        rejected: rows[i].isRejected,
-                        dragHandleIndex: rows[i].isRejected ? null : i,
-                        onReject: () => unawaited(_reject(rows[i])),
-                        onAnswered: () => unawaited(_toggleAnswered(rows[i])),
-                        onPush: () => unawaited(_push(rows[i])),
-                      ),
-                    ),
-                  ),
-                ),
-        ),
-      ],
+      data: (queues) => ModeratorDesk(
+        l10n: l10n,
+        desk: queues.desk,
+        rejected: queues.rejected,
+        filter: _filter,
+        onFilterChanged: (f) => setState(() => _filter = f),
+        onRefresh: _refresh,
+        onReorder: (rows, oldIndex, newIndex) =>
+            unawaited(_reorder(rows, oldIndex, newIndex)),
+        onReject: (q) => unawaited(_reject(q)),
+        onToggleAnswered: (q) => unawaited(_toggleAnswered(q)),
+        onPush: (q) => unawaited(_push(q)),
+      ),
     );
   }
 }

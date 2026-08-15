@@ -1158,6 +1158,7 @@ class SimfTokens {
   static const double delegationMeetingRequestSheetWidthMd = 80;
   static const double delegationOptionTileFontSize = 22;
   static const double delegationsStatsStripFontSize = 14;
+  static const double deviceRowStrokeWidth = 2;
   static const double emailOtpVerifyScreenHeightMd = 64;
   static const double emailOtpVerifyScreenHeightSm = 48;
   static const double emailOtpVerifyScreenMaxWidth = 560;
