@@ -2,10 +2,7 @@ using SIMF.Common.Enums;
 
 namespace SIMF.Domain.Ai;
 
-/// <summary>
-/// One telemetry row per AI call, written on success and on failure alike. The
-/// Control Panel's invocations grid pages over this table.
-/// </summary>
+/// <summary>One telemetry row per AI call, written on failure as well as success.</summary>
 public sealed class AiInvocation
 {
     public Guid Id { get; set; }
@@ -17,11 +14,10 @@ public sealed class AiInvocation
     public AiProvider Provider { get; set; }
     public string Model { get; set; } = string.Empty;
 
-    /// <summary>The substituted inputs, as JSON. The service redacts personal
-    /// data and secrets before this is persisted.</summary>
+    /// <summary>The substituted inputs as JSON. The service redacts personal data
+    /// and secrets before this is persisted.</summary>
     public string InputJson { get; set; } = string.Empty;
 
-    /// <summary>The provider's response; null when the call failed.</summary>
     public string? OutputText { get; set; }
 
     public int? TokensInput { get; set; }
@@ -31,12 +27,10 @@ public sealed class AiInvocation
     /// <summary>One of the stable API error codes; null on success.</summary>
     public string? ErrorCode { get; set; }
 
-    /// <summary>Null for an anonymous caller. A bare Guid: the user lives in the
-    /// Identity database.</summary>
+    /// <summary>Bare Guid: the user lives in the Identity database. Null when anonymous.</summary>
     public Guid? CallerUserId { get; set; }
 
-    /// <summary>Which bucket the caller fell into — Anonymous, Visitor, Staff,
-    /// Admin or Moderator.</summary>
+    /// <summary>Anonymous, Visitor, Staff, Admin or Moderator.</summary>
     public string CallerKind { get; set; } = string.Empty;
 
     public DateTime CreatedAt { get; set; }
