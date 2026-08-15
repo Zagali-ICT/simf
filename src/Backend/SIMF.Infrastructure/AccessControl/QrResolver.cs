@@ -6,6 +6,7 @@ using SIMF.Common.Badges;
 using SIMF.Common.Options;
 using SIMF.Infrastructure.Persistence;
 using SIMF.Common;
+using SIMF.Common.Enums;
 
 namespace SIMF.Infrastructure.AccessControl;
 
@@ -88,13 +89,23 @@ internal sealed class QrResolver(
                 {
                     user.LockoutEnd,
                     user.DisplayName,
+                    // Carried so a disabled ACCOUNT denies at the gate. Admission
+                    // lives on the profile, but nothing ever writes Disabled
+                    // there — blocking and the dormant sweep both write it to the
+                    // account — so without this the gate never saw it and the
+                    // HolderDisabled denial was unreachable. A read added to a
+                    // query this method already ran, not a second writable copy:
+                    // the profile stays the one place admission is decided.
+                    user.AccountState,
                 })
                 .SingleOrDefaultAsync(cancellationToken);
 
         return new QrResolution(
             profileRow.Id,
             profileRow.UserId,
-            profileRow.AdmissionState,
+            userRow?.AccountState == AccountState.Disabled
+                ? AccountState.Disabled
+                : profileRow.AdmissionState,
             userRow?.LockoutEnd != null && userRow.LockoutEnd > now,
             profileRow.ProfileTypeId,
             profileRow.profileTypeActive,
