@@ -2,8 +2,11 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Time.Testing;
 using SIMF.Application.Email;
 using SIMF.Infrastructure.Persistence;
@@ -83,14 +86,22 @@ public class SimfApiFactory : WebApplicationFactory<Program>
 
     public SimfApiFactory()
     {
+        // ConnectRetryCount=0 because these databases DO NOT EXIST YET when the
+        // host boots. SqlClient's default connection resiliency (ConnectRetryCount
+        // = 1, ConnectRetryInterval = 10s) turns an open against a missing
+        // database into a 10-SECOND stall before it reports the failure - measured
+        // on this LocalDB at 10,020 ms with the default against 2-21 ms without
+        // it. Anything that touches the database before EnsureDatabaseCreated has
+        // migrated it pays that, 253 times over. Test host only; the production
+        // connection strings keep their resiliency.
         Environment.SetEnvironmentVariable(
             "ConnectionStrings__SimfIdentityDb",
             $"Server=(localdb)\\MSSQLLocalDB;Database={_identityDatabaseName};" +
-            "Trusted_Connection=True;TrustServerCertificate=True");
+            "Trusted_Connection=True;TrustServerCertificate=True;ConnectRetryCount=0");
         Environment.SetEnvironmentVariable(
             "ConnectionStrings__SimfAppDb",
             $"Server=(localdb)\\MSSQLLocalDB;Database={_appDatabaseName};" +
-            "Trusted_Connection=True;TrustServerCertificate=True");
+            "Trusted_Connection=True;TrustServerCertificate=True;ConnectRetryCount=0");
         // The super-admin seed settings, pinned so the suite is hermetic.
         //
         // Each is set TWICE, unprefixed and `SIMF_API_`-prefixed, because
@@ -231,6 +242,32 @@ public class SimfApiFactory : WebApplicationFactory<Program>
             // the build if this line is ever copied into src/.
             services.Configure<PasswordHasherOptions>(
                 options => options.IterationCount = 1000);
+
+            // Drop the background workers from the test host. Every one of the
+            // 253 hosts otherwise starts the worker lease and the thirteen leased
+            // workers, which take a SQL connection against a database that does
+            // not exist yet, hold a long-lived connection on the App database
+            // (which can then defeat EnsureDeleted in Dispose and leak the
+            // throwaway databases), and tick timers nothing asserts on.
+            //
+            // The filter is the registration SHAPE, not a name list, so a worker
+            // added later is covered without editing this: the lease and every
+            // AddLeasedHostedService<T> register through a FACTORY LAMBDA, which
+            // leaves ImplementationType null. AddHostedService<T> sets it - which
+            // is why this keeps EmailBackgroundService, whose in-process channel
+            // the FakeEmailSender tests drain through, and ASP.NET Core's own
+            // GenericWebHostService, without which there is no TestServer at all.
+            //
+            // The worker TESTS are unaffected: they resolve the worker and call
+            // its scan method directly rather than driving the hosted loop.
+            var leasedWorkers = services
+                .Where(descriptor => descriptor.ServiceType == typeof(IHostedService)
+                    && descriptor.ImplementationType is null)
+                .ToList();
+            foreach (var worker in leasedWorkers)
+            {
+                services.Remove(worker);
+            }
         });
     }
 
@@ -264,8 +301,8 @@ public class SimfApiFactory : WebApplicationFactory<Program>
 
         using var scope = Services.CreateScope();
         var services = scope.ServiceProvider;
-        services.GetRequiredService<SimfIdentityDbContext>().Database.Migrate();
-        services.GetRequiredService<SimfAppDbContext>().Database.Migrate();
+        MigrateToLatest(services.GetRequiredService<SimfIdentityDbContext>());
+        MigrateToLatest(services.GetRequiredService<SimfAppDbContext>());
         // D-174 — the production Program skips the seeder under the
         // "Testing" environment so xunit doesn't pay the cost on every
         // class. Phase G11 / page 39 ships seed content blocks that
@@ -302,6 +339,36 @@ public class SimfApiFactory : WebApplicationFactory<Program>
         // Set last: a failure part-way through leaves the flag false, so a retry
         // starts over rather than handing the next test a half-seeded database.
         _databaseReady = true;
+    }
+
+    /// <summary>
+    /// Applies every migration, naming the last one explicitly instead of calling
+    /// <c>Database.Migrate()</c>.
+    /// </summary>
+    /// <remarks>
+    /// Same migrations, same resulting schema. The difference is what EF does
+    /// FIRST: with no target migration, EF Core 9+ builds the design-time model
+    /// and diffs it against the snapshot to raise its pending-model-changes
+    /// warning. That check is worth having - but once per build
+    /// (<c>dotnet ef migrations has-pending-model-changes</c>), not twice per test
+    /// class. Naming the target short-circuits the differ.
+    ///
+    /// The target is the LAST migration rather than a literal name on purpose: a
+    /// hardcoded "InitialCreate" would silently stop applying every migration
+    /// added after it, which is exactly the coverage loss this suite exists to
+    /// prevent.
+    /// </remarks>
+    private static void MigrateToLatest(DbContext context)
+    {
+        var latest = context.Database.GetMigrations().LastOrDefault();
+        if (latest is null)
+        {
+            throw new InvalidOperationException(
+                $"{context.GetType().Name} reports no migrations, so a test database "
+                + "cannot be built from them. The migrations are the schema of record.");
+        }
+
+        context.Database.GetService<IMigrator>().Migrate(latest);
     }
 
     protected override void Dispose(bool disposing)
