@@ -48,7 +48,8 @@ internal sealed class AdminProfileTypeQueryService(
                 profileType.IsActive,
                 profileType.IsForVisitor,
                 profileType.IsAppRegisterable,
-                profileType.ShowInPartnerDirectory))
+                profileType.ShowInPartnerDirectory,
+                profileType.IsVipTier))
             .ToListAsync(cancellationToken);
     }
 }

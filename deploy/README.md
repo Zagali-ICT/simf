@@ -73,18 +73,38 @@ Build, Test & Publish ──▶ Deploy to IIS
   site + app pool, releases file locks, `robocopy /MIR`s the files, and
   restarts. Per-server order: **API**, then **CP**, then **Web**, then **Edge**
   last.
-- The two jobs carry **no `dependsOn` between them**, so pre-production and
-  production deploy **at the same time** off one build. Production does not wait
-  on a pre-production rehearsal.
+- **Production waits for pre-production.** They originally had no `dependsOn` and
+  were meant to deploy simultaneously, but a self-hosted organisation typically
+  has **one parallel job slot**: the second job took an agent, initialised, then
+  sat waiting for a slot that only freed when the first finished. A run that
+  appears to hang after *Initialize job* with no step output is that (D-904).
+  Sequencing costs nothing that was really being had, and pre-production now
+  genuinely rehearses first. The `dependsOn` is conditional — on a
+  production-only run `DeployPreProduction` is never emitted, and naming a
+  missing job fails the pipeline at compile time.
 
 ### Choosing which environments a run deploys to
 
-Two tick boxes in the **Run pipeline** dialog, both **on** by default:
+| Parameter | Label | Default |
+|-----------|-------|---------|
+| `deployPreProduction` | Deploy to Pre-production (NO agent yet — deploys to PRODUCTION) | **`false`** |
+| `deployProduction` | Deploy to Production | `true` |
 
-| Parameter | Label | Effect when unticked |
-|-----------|-------|----------------------|
-| `deployPreProduction` | Deploy to Pre-production | The pre-production job is omitted |
-| `deployProduction` | Deploy to Production | The production job is omitted |
+> ### ⚠️ There is only one agent, and it is on production (D-906)
+>
+> The `Default` pool holds a single agent — `server` on `WIN-MAP9VAMAU4Q`, the
+> **production** box (`SIMF APP 01`). Both deployment jobs draw from that pool,
+> and neither environment has a VM resource to bind it elsewhere (D-905), so
+> **both jobs run on production**.
+>
+> `DeployPreProduction` therefore rehearses nothing. It deploys the same four
+> packages to the live production server a second time, stopping and restarting
+> every site again. Left on, every run took production down twice — which is why
+> it now defaults to **off**.
+>
+> **To get a real pre-production deploy, install an Azure Pipelines agent on the
+> pre-production server.** Until then, ticking that box deploys to production
+> whatever its label says.
 
 And three that are **off** by default:
 
@@ -296,29 +316,26 @@ These are **placeholders** — set them to the real SIMF server values:
    half of the error message: **Security → Pipeline permissions** on that
    environment, and authorize this pipeline.
 
-   Both jobs use the explicit form, so the steps run **on that machine** rather
-   than on the build agent:
+   **Both environments are empty shells, and that is how this estate works.**
+   Neither has a VM resource registered, so each is what Azure calls an
+   "abstract shell to record deployment history" and the steps fall back to the
+   **`Default` pool agent** — the agent named `server` on `WIN-MAP9VAMAU4Q` that
+   has been running these deploys all along.
 
-   ```yaml
-   environment:
-     name: SIM-RNSF
-     resourceType: virtualMachine
-   ```
+   **Do not add `resourceType: virtualMachine`.** It has been tried twice and
+   broke deploys both times (D-903, D-905). It demands a registered VM resource
+   and the run dies with *"No resource were found in the environment with ID 3"*.
+   It is the right construct for an estate whose servers are registered as VM
+   resources; this one is not.
 
-   **This is not decoration.** With the bare `environment: 'SIM-RNSF'` form, a
-   VM resource that is ever removed or unregistered does not fail — the
-   environment silently degrades to a history-recording shell and the steps fall
-   back to the `Default` pool agent, which has an agent on **both** servers. The
-   deploy would land on an arbitrary machine and report success. `resourceType`
-   turns that silent mis-deploy into an immediate failure.
+   **The cost, so it is a known risk rather than a surprise:** nothing binds a
+   job to a machine. The `Default` pool has an agent on both servers, so
+   `DeployProduction` can run on the pre-production box and vice versa.
+   Sequencing the jobs narrows the window; it does not close it. Registering
+   both servers as VM resources — the environment → **Add resource** → **Virtual
+   machines**, script run as Administrator with a **unique** agent name — is the
+   fix, and only then is `resourceType` worth revisiting.
 
-   **Order matters.** This line was added once *before* the VM resources
-   existed and broke every deploy with "Environment could not be found" until it
-   was reverted (D-896). If a run reports **no matching resources**, the server
-   is not registered — register it, do **not** drop back to the bare form, which
-   trades a loud failure for a wrong-machine deploy. Azure's documentation warns
-   the value is case-sensitive while its own examples disagree on the casing, so
-   if the VM *is* registered and still does not match, try `VirtualMachine`.
 4. **IIS site names + physical paths** — the `-ApiSiteName/-ApiPath`,
    `-CpSiteName/-CpPath`, `-WebSiteName/-WebPath` and `-EdgeSiteName/-EdgePath`
    arguments in the `Deploy to IIS` step. The IIS sites + app pools must already

@@ -524,6 +524,104 @@ public sealed class AdminProfileTypeTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task IsVipTier_round_trips_through_Create_Get_Update_and_the_grid()
+    {
+        // The VIP-tier marker had NO admin write path — the seeder was the only
+        // writer anywhere, so a profile type created from the Control Panel could
+        // never be VIP however the admin filled the form, and no amount of CP work
+        // could add a third VIP tier. It is now bound on create and update.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var name = $"Platinum {Guid.NewGuid():N}";
+
+        var created = await PostAuthAsync(
+            "/api/v1/admin/profile-types",
+            new AdminCreateProfileTypeRequest
+            {
+                UserType = "Visitor",
+                // Audience side: the VIP tier is only meaningful there.
+                IsVisitor = true,
+                Name = name,
+                NameArabic = "بلاتيني",
+                PageColor = "#E5E4E2",
+                IsActive = true,
+                IsVipTier = true,
+            }, adminToken);
+        Assert.Equal(HttpStatusCode.OK, created.StatusCode);
+        var detail = (await created.Content
+            .ReadFromJsonAsync<ApiResult<AdminProfileTypeSummary>>())!.Data!;
+        Assert.True(detail.IsVipTier);
+
+        var get = await GetAuthAsync(
+            $"/api/v1/admin/profile-types/{detail.Id}", adminToken);
+        var fetched = (await get.Content
+            .ReadFromJsonAsync<ApiResult<AdminProfileTypeSummary>>())!.Data!;
+        Assert.True(fetched.IsVipTier);
+
+        // Clearing it must actually clear it — the update assigns
+        // unconditionally, so an admin can demote a tier.
+        var update = await PutAuthAsync(
+            $"/api/v1/admin/profile-types/{detail.Id}",
+            new AdminUpdateProfileTypeRequest
+            {
+                Name = detail.Name,
+                NameArabic = detail.NameArabic,
+                PageColor = detail.PageColor,
+                IsActive = true,
+                IsVisitor = detail.IsVisitor,
+                IsVipTier = false,
+            }, adminToken);
+        Assert.Equal(HttpStatusCode.OK, update.StatusCode);
+        var after = (await update.Content
+            .ReadFromJsonAsync<ApiResult<AdminProfileTypeSummary>>())!.Data!;
+        Assert.False(after.IsVipTier);
+
+        // The grid projection carries it too. IsVipTier is the LAST positional
+        // bool on the summary record, so a mis-ordered projection would land the
+        // neighbouring flag here and surface as a wrong value, not a compile error.
+        var list = await PostAuthAsync(
+            "/api/v1/admin/profile-types/list",
+            new GridQuery
+            {
+                Top = 200,
+                Filters = new Dictionary<string, string>
+                {
+                    ["userType"] = "Visitor",
+                    ["isVisitor"] = "true",
+                },
+            }, adminToken);
+        var page = (await list.Content
+            .ReadFromJsonAsync<ApiResult<GridPage<AdminProfileTypeSummary>>>())!.Data!;
+        var listed = Assert.Single(page.Items, row => row.Id == detail.Id);
+        Assert.False(listed.IsVipTier);
+        Assert.True(listed.IsVisitor);
+    }
+
+    [Fact]
+    public async Task A_created_profile_type_is_not_VIP_unless_the_admin_asks()
+    {
+        // The default has to stay false: IsVipTier grants VIP-tier SEAT
+        // self-reservation, so a type that silently defaulted to VIP would hand
+        // every holder a protocol-adjacent seat.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+
+        var created = await PostAuthAsync(
+            "/api/v1/admin/profile-types",
+            new AdminCreateProfileTypeRequest
+            {
+                UserType = "Visitor",
+                IsVisitor = true,
+                Name = $"Plain {Guid.NewGuid():N}",
+                NameArabic = "عادي",
+                PageColor = "#64748B",
+                IsActive = true,
+            }, adminToken);
+        Assert.Equal(HttpStatusCode.OK, created.StatusCode);
+        var detail = (await created.Content
+            .ReadFromJsonAsync<ApiResult<AdminProfileTypeSummary>>())!.Data!;
+        Assert.False(detail.IsVipTier);
+    }
+
+    [Fact]
     public async Task Update_flipping_IsVisitor_persists_and_audits_the_change()
     {
         // D-186 review-pass (threat-detection H-1): an admin flipping

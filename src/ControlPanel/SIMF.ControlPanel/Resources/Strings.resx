@@ -355,6 +355,8 @@
   <data name="Admin.ProfileTypes.Field.ShowInAppHint" xml:space="preserve"><value>When off, this type is admin-assigned only and never appears when a user registers in the mobile app (e.g. Staff, Moderator).</value></data>
   <data name="Admin.ProfileTypes.Field.ShowInMeetPeople" xml:space="preserve"><value>Show in Meet People (same interests)</value></data>
   <data name="Admin.ProfileTypes.Field.ShowInMeetPeopleHint" xml:space="preserve"><value>When off, no account of this partner type appears in the app's Meet People directory or the "people like you" suggestions, even if the person opted in.</value></data>
+  <data name="Admin.ProfileTypes.Field.IsVipTier" xml:space="preserve"><value>VIP tier</value></data>
+  <data name="Admin.ProfileTypes.Field.IsVipTierHint" xml:space="preserve"><value>Marks this as a VIP audience tier: its holders may reserve a VIP-tier seat themselves, and the app shows them as VIP. It does not allow meeting requests — that is set per person on the account.</value></data>
   <data name="Admin.ProfileTypes.Field.NameInvalid" xml:space="preserve"><value>Name must be 1–128 characters.</value></data>
   <data name="Admin.ProfileTypes.Field.NameArabicInvalid" xml:space="preserve"><value>Arabic name must be 1–128 characters.</value></data>
   <data name="Admin.ProfileTypes.Field.PageColorInvalid" xml:space="preserve"><value>Page colour must be 1–32 characters.</value></data>

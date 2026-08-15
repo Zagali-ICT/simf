@@ -353,6 +353,8 @@
   <data name="Admin.ProfileTypes.Field.ShowInAppHint" xml:space="preserve"><value>عند إيقافه، يُسنَد هذا النوع من قِبل المشرف فقط ولا يظهر عند تسجيل المستخدم في تطبيق الجوال (مثل: فريق، منسّق).</value></data>
   <data name="Admin.ProfileTypes.Field.ShowInMeetPeople" xml:space="preserve"><value>إظهاره في "تواصل مع أشخاص" (الاهتمامات المشتركة)</value></data>
   <data name="Admin.ProfileTypes.Field.ShowInMeetPeopleHint" xml:space="preserve"><value>عند إيقافه، لا يظهر أي حساب من هذا النوع في دليل "تواصل مع أشخاص" أو في اقتراحات "أشخاص مثلك"، حتى لو فعّل الشخص الخيار بنفسه.</value></data>
+  <data name="Admin.ProfileTypes.Field.IsVipTier" xml:space="preserve"><value>فئة كبار الشخصيات</value></data>
+  <data name="Admin.ProfileTypes.Field.IsVipTierHint" xml:space="preserve"><value>يحدد هذا النوع كفئة من كبار الشخصيات: يستطيع أصحابه حجز مقعد من فئة كبار الشخصيات بأنفسهم، ويظهرون في التطبيق ضمن كبار الشخصيات. لا يمنح ذلك إمكانية طلب المقابلات؛ فهي تُضبط لكل شخص على حسابه.</value></data>
   <data name="Admin.ProfileTypes.Field.NameInvalid" xml:space="preserve"><value>يجب أن يتراوح الاسم بين 1 و128 حرفًا.</value></data>
   <data name="Admin.ProfileTypes.Field.NameArabicInvalid" xml:space="preserve"><value>يجب أن يتراوح الاسم العربي بين 1 و128 حرفًا.</value></data>
   <data name="Admin.ProfileTypes.Field.PageColorInvalid" xml:space="preserve"><value>يجب أن يتراوح لون الصفحة بين 1 و32 حرفًا.</value></data>

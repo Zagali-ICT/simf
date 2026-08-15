@@ -49,9 +49,10 @@ public sealed class UserProfileType : BaseAuditEntity
     /// <summary>Marks this type as a VIP audience tier. It decides who may
     /// self-reserve a VIP-tier seat
     /// (<c>SeatReservationService.IsVipVisitorAsync</c>) and it is what the app
-    /// receives as <c>isVip</c>. The seeder sets it on the VVIP and VIP rows, and
-    /// nothing else writes it — there is no admin API or Control Panel path, so a
-    /// type created from the Control Panel is never VIP.
+    /// receives as <c>isVip</c>. The seeder sets it on the VVIP and VIP rows;
+    /// an admin sets it on any other audience tier from the Control Panel's
+    /// Visitors profile-types form. A partner type is never a VIP tier, so that
+    /// form does not offer the toggle.
     ///
     /// <para>It is a column at all because the test used to be "the profile
     /// type's Name contains 'VIP'", which would wrongly match any future type
