@@ -48,6 +48,110 @@ public sealed class ProfileTypeFormTests : CpComponentTestBase
     }
 
     [Fact]
+    public void Audience_form_offers_the_VIP_tier_toggle_and_the_partner_form_does_not()
+    {
+        // The VIP tier is an AUDIENCE notion (VVIP / VIP), the pool VIP-tier seat
+        // self-reservation draws from — the mirror image of the Meet-People
+        // toggle, which is partner-only. Gate the box the same way so a partner
+        // type can never be marked VIP from the form.
+        var audience = RenderComponent<ProfileTypeForm>(parameters => parameters
+            .Add(p => p.IsPartnerForm, false));
+        Assert.Contains(
+            "Admin.ProfileTypes.Field.IsVipTier",
+            audience.Markup);
+
+        var partner = RenderComponent<ProfileTypeForm>(parameters => parameters
+            .Add(p => p.IsPartnerForm, true));
+        Assert.DoesNotContain(
+            "Admin.ProfileTypes.Field.IsVipTier",
+            partner.Markup);
+    }
+
+    [Fact]
+    public void Audience_create_posts_the_ticked_VIP_tier_flag()
+    {
+        // The whole point of the field: until it was bound, the seeder was the
+        // only writer of IsVipTier anywhere, so a CP-created type could never be
+        // VIP. Pin that the ticked box actually reaches the wire.
+        JSInterop.Mode = JSRuntimeMode.Loose;
+        var summary = new AdminProfileTypeSummary(
+            Guid.NewGuid(), "Platinum", "بلاتيني", "#E5E4E2",
+            "Visitor", "None", IsActive: true, IsVisitor: true,
+            IsAppRegisterable: true);
+        var handler = JSInterop.Setup<ApiResult<AdminProfileTypeSummary>>(
+            "simfAccount.postJson", _ => true)
+            .SetResult(ApiResult<AdminProfileTypeSummary>.Ok(summary));
+
+        var cut = RenderComponent<ProfileTypeForm>(parameters => parameters
+            .Add(p => p.IsPartnerForm, false));
+
+        cut.FindAll("input.simf-field__input")[0].Change("Platinum");
+        cut.FindAll("input.simf-field__input")[1].Change("بلاتيني");
+        // The VIP-tier box is the last checkbox on the audience form.
+        cut.FindAll("input[type=checkbox]").Last().Change(true);
+        cut.Find("form").Submit();
+
+        var body = (AdminCreateProfileTypeRequest)handler.Invocations
+            .Single().Arguments[1]!;
+        Assert.True(body.IsVipTier);
+    }
+
+    [Fact]
+    public void Audience_create_leaves_the_VIP_tier_flag_off_by_default()
+    {
+        // IsVipTier grants VIP-tier seat self-reservation, so an untouched form
+        // must not send true.
+        JSInterop.Mode = JSRuntimeMode.Loose;
+        var summary = new AdminProfileTypeSummary(
+            Guid.NewGuid(), "Plain", "عادي", "#64748B",
+            "Visitor", "None", IsActive: true, IsVisitor: true,
+            IsAppRegisterable: true);
+        var handler = JSInterop.Setup<ApiResult<AdminProfileTypeSummary>>(
+            "simfAccount.postJson", _ => true)
+            .SetResult(ApiResult<AdminProfileTypeSummary>.Ok(summary));
+
+        var cut = RenderComponent<ProfileTypeForm>(parameters => parameters
+            .Add(p => p.IsPartnerForm, false));
+
+        cut.FindAll("input.simf-field__input")[0].Change("Plain");
+        cut.FindAll("input.simf-field__input")[1].Change("عادي");
+        cut.Find("form").Submit();
+
+        var body = (AdminCreateProfileTypeRequest)handler.Invocations
+            .Single().Arguments[1]!;
+        Assert.False(body.IsVipTier);
+    }
+
+    [Fact]
+    public void Edit_mode_prefills_the_VIP_tier_flag_and_sends_it_back()
+    {
+        // The update request defaults IsVipTier to false, so a form that did not
+        // pre-fill and resend it would silently DEMOTE a VIP tier on any
+        // unrelated edit — the way ShowInPartnerDirectory once failed open.
+        JSInterop.Mode = JSRuntimeMode.Loose;
+        var existing = new AdminProfileTypeSummary(
+            Guid.NewGuid(), "VIP", "كبار", "#FFD700",
+            "Visitor", "None", IsActive: true, IsVisitor: true,
+            IsAppRegisterable: true, ShowInPartnerDirectory: true,
+            IsVipTier: true);
+        var handler = JSInterop.Setup<ApiResult<AdminProfileTypeSummary>>(
+            "simfAccount.putJson", _ => true)
+            .SetResult(ApiResult<AdminProfileTypeSummary>.Ok(existing));
+
+        var cut = RenderComponent<ProfileTypeForm>(parameters => parameters
+            .Add(p => p.Initial, existing)
+            .Add(p => p.IsPartnerForm, false));
+
+        // Change something unrelated, then save.
+        cut.FindAll("input.simf-field__input")[0].Change("VIP renamed");
+        cut.Find("form").Submit();
+
+        var body = (AdminUpdateProfileTypeRequest)handler.Invocations
+            .Single().Arguments[1]!;
+        Assert.True(body.IsVipTier);
+    }
+
+    [Fact]
     public void Audience_create_posts_IsVisitor_true_and_UserType_Visitor()
     {
         // D-190 review-loop: the form Create path sends

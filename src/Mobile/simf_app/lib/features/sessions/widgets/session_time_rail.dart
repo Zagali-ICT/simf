@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 
 import 'package:simf_app/app/theme/tokens.dart';
 
-/// The left time column of a timeline row, with its HH:mm formatter.
-/// The trailing vertical time rail (frame 1310:3241): the start time at the top
-/// (beige SemiBold), a thin beige connector down the middle, and the end time at
-/// the bottom (white). Clock values stay LTR. Sized to fit "HH:MM" on one line,
-/// full row height.
+/// The left time column of a timeline row, with its HH:mm formatter. The
+/// trailing vertical time rail (frame 1310:3241): the start time at the top
+/// (beige SemiBold), a thin beige connector down the middle, and the end time
+/// at the bottom (white). Clock values stay LTR. Sized to fit "HH:MM" on one
+/// line, full row height.
 class SessionTimeRail extends StatelessWidget {
   const SessionTimeRail({required this.start, required this.end, super.key});
 
@@ -15,13 +15,14 @@ class SessionTimeRail extends StatelessWidget {
 
   /// Floor for the rail height so the from→to connector is always visible. The
   /// connector is an [Expanded] line, so on a short row (a title-only session,
-  /// no description/banner) it collapses to zero — the "line missing between from
-  /// and to time" the owner reported. This floor (two ~15px time labels + a ~14px
-  /// connector) keeps it drawn; taller rows let it stretch to fill.
+  /// no description/banner) it collapses to zero — the "line missing between
+  /// from and to time" the owner reported. This floor (two ~15px time labels +
+  /// a ~14px connector) keeps it drawn; taller rows let it stretch to fill.
   static const double _minRailHeight = SimfTokens.timeRailMinHeight;
 
-  static String _hhmm(DateTime t) =>
-      '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+  static String _two(int value) => value.toString().padLeft(2, '0');
+
+  static String _hhmm(DateTime t) => '${_two(t.hour)}:${_two(t.minute)}';
 
   @override
   Widget build(BuildContext context) {

@@ -23,6 +23,11 @@ class SimfPrefsStorage {
 
   bool? getBool(String key) => _prefs.getBool(key);
 
+  // The bool here is the VALUE being stored, not a flag that changes what the
+  // call does, and this method mirrors `SharedPreferences.setBool(key, value)`
+  // one for one. Naming the parameter would make the wrapper read differently
+  // from the API it wraps, and differently from `setString` right above it.
+  // ignore: avoid_positional_boolean_parameters
   Future<bool> setBool(String key, bool value) => _prefs.setBool(key, value);
 
   double? getDouble(String key) => _prefs.getDouble(key);

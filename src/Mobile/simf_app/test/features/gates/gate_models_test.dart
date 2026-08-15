@@ -4,7 +4,7 @@ import 'package:simf_app/features/gates/data/gate_models.dart';
 void main() {
   group('OperatorGate.fromJson / listFromData', () {
     test('parses a gate assignment', () {
-      final g = OperatorGate.fromJson(<String, dynamic>{
+      final g = OperatorGate.fromJson(const <String, dynamic>{
         'gateId': 'g1',
         'code': 'MAIN',
         'name': 'Main Gate',
@@ -12,8 +12,8 @@ void main() {
         'isActive': true,
       });
       expect(g.gateId, 'g1');
-      expect(g.localizedName(true), 'البوابة الرئيسية');
-      expect(g.localizedName(false), 'Main Gate');
+      expect(g.localizedName(isArabic: true), 'البوابة الرئيسية');
+      expect(g.localizedName(isArabic: false), 'Main Gate');
       // No directionMode on the wire → the operator-switchable default (D-509).
       expect(g.directionMode, GateDirectionMode.both);
     });
@@ -38,7 +38,7 @@ void main() {
 
   group('GateScanResult.fromJson', () {
     test('an allowed scan with a profile', () {
-      final r = GateScanResult.fromJson(<String, dynamic>{
+      final r = GateScanResult.fromJson(const <String, dynamic>{
         'scanId': 42,
         'outcome': 0,
         'direction': 0,
@@ -50,7 +50,7 @@ void main() {
       });
       expect(r.isAllowed, isTrue);
       expect(r.direction, ScanDirection.checkIn);
-      expect(r.userProfile?.localizedName(false), 'Raed');
+      expect(r.userProfile?.localizedName(isArabic: false), 'Raed');
       expect(r.userProfile?.profileTypeName, 'VIP');
       expect(r.denialMessage, isNull);
       // DEF-CHK-004 — no advisory on an ordinary allowed scan.
@@ -60,7 +60,7 @@ void main() {
     test('an allowed scan can carry an advisory notice', () {
       // DEF-CHK-004 — a hall-door scan taken outside every session window is
       // still allowed, but the server flags that no attendance was recorded.
-      final r = GateScanResult.fromJson(<String, dynamic>{
+      final r = GateScanResult.fromJson(const <String, dynamic>{
         'scanId': 43,
         'outcome': 0,
         'direction': 0,
@@ -75,7 +75,7 @@ void main() {
     });
 
     test('a denied scan carries the server message', () {
-      final r = GateScanResult.fromJson(<String, dynamic>{
+      final r = GateScanResult.fromJson(const <String, dynamic>{
         'scanId': 7,
         'outcome': 1,
         'direction': 1,

@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 
 class InfoRow extends StatelessWidget {
-  const InfoRow({required this.icon, required this.value, required this.sublabel, required this.valueLtr, super.key,
+  const InfoRow({
+    required this.icon,
+    required this.value,
+    required this.sublabel,
+    required this.valueLtr,
+    super.key,
   });
 
   final IconData icon;
@@ -24,8 +29,8 @@ class InfoRow extends StatelessWidget {
         ),
       ),
       padding: const EdgeInsets.all(SimfTokens.space2), // p-8
-      // Icon leads (right edge under RTL), value + sub-label follow to its inline
-      // end — matches Figma 1388:7711.
+      // Icon leads (right edge under RTL), value + sub-label follow to its
+      // inline end — matches Figma 1388:7711.
       child: Row(
         children: <Widget>[
           Container(
@@ -34,9 +39,11 @@ class InfoRow extends StatelessWidget {
             alignment: Alignment.center,
             decoration: const BoxDecoration(
               color: SimfTokens.accent,
-              borderRadius: BorderRadius.all(Radius.circular(SimfTokens.radius)),
+              borderRadius:
+                  BorderRadius.all(Radius.circular(SimfTokens.radius)),
             ),
-            child: Icon(icon, color: SimfTokens.navy, size: SimfTokens.infoRowSize),
+            child: Icon(icon,
+                color: SimfTokens.navy, size: SimfTokens.infoRowSize,),
           ),
           const SizedBox(width: SimfTokens.space2),
           Expanded(

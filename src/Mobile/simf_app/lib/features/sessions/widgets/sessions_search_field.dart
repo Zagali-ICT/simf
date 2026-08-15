@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/app_assets.dart';
 import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_search_field.dart'
+    show SimfSearchField;
 import 'package:simf_app/app/widgets/simf_svg_icon.dart';
 
 /// The bordered search field (frame node 883:2316).
@@ -54,8 +56,7 @@ class SessionsSearchField extends StatelessWidget {
               color: SimfTokens.surface,
             ),
           ),
-          prefixIconConstraints:
-              const BoxConstraints(),
+          prefixIconConstraints: const BoxConstraints(),
           contentPadding: const EdgeInsets.symmetric(
             horizontal: SimfTokens.space3,
             vertical: SimfTokens.space3,

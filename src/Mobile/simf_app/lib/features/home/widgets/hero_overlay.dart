@@ -16,7 +16,7 @@ class HeroOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     final isArabic = l10n.isArabic;
     final p = profile;
-    final name = p?.nameFor(isArabic) ?? '';
+    final name = p?.nameFor(isArabic: isArabic) ?? '';
 
     // No edition config yet → the original discover copy (zero regression).
     if (p == null || name.isEmpty) {
@@ -37,9 +37,9 @@ class HeroOverlay extends StatelessWidget {
       );
     }
 
-    final theme = p.titleFor(isArabic);
-    final dates = p.eventDateRange(isArabic);
-    final location = p.locationFor(isArabic);
+    final theme = p.titleFor(isArabic: isArabic);
+    final dates = p.eventDateRange(isArabic: isArabic);
+    final location = p.locationFor(isArabic: isArabic);
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.start,

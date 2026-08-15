@@ -46,8 +46,8 @@ class FakeContactsRepo implements ContactsRepository {
   String? lastSavedNote;
   String? lastRemovedId;
 
-  ApiFailure _fail(int status) =>
-      ApiFailure(code: ApiErrorCodes.clientNetwork, message: 'x', httpStatus: status);
+  ApiFailure _fail(int status) => ApiFailure(
+      code: ApiErrorCodes.clientNetwork, message: 'x', httpStatus: status,);
 
   @override
   Future<String> getMyShareToken() async {

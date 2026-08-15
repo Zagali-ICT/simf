@@ -1,6 +1,6 @@
 /// D-469 — the 13 official Saudi administrative regions, for the birth-location
-/// field: a Saudi registrant picks a region from a dropdown; everyone else types
-/// their place of birth free-form "as in passport". Mirrors the server
+/// field: a Saudi registrant picks a region from a dropdown; everyone else
+/// types their place of birth free-form "as in passport". Mirrors the server
 /// `SaudiRegions` (no shared runtime). The selected region's localized name is
 /// stored in the existing free-text `placeOfBirth` field — no schema change.
 library;

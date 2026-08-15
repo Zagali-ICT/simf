@@ -51,7 +51,8 @@ class _FakeNotificationsRepository implements NotificationsRepository {
   }
 
   @override
-  Future<List<NotificationItem>> getNotifications({int skip = 0, int top = 50}) async =>
+  Future<List<NotificationItem>> getNotifications(
+          {int skip = 0, int top = 50,}) async =>
       const <NotificationItem>[];
 
   @override

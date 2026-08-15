@@ -62,7 +62,7 @@ class PlaceOfBirthField extends StatelessWidget {
             maxLength: FieldLimits.placeOfBirth,
             style: simfInputStyle,
             autovalidateMode: AutovalidateMode.onUserInteraction,
-            validator: (String? v) => (v == null || v.trim().isEmpty)
+            validator: (v) => (v == null || v.trim().isEmpty)
                 ? l10n.placeOfBirthRequired
                 : null,
             decoration: simfFieldDecoration(

@@ -1,31 +1,38 @@
 using System.Globalization;
 using System.Security.Cryptography;
+using System.Buffers.Binary;
 using System.Text;
 
 namespace SIMF.Common.Badges;
 
 /// <summary>
-/// The offline event badge payload: a profile-type number and a
-/// sequence number, encrypted so a gate can validate the badge with NO network.
+/// The event badge payload, encrypted so a gate can validate the badge with NO
+/// network. It carries the three questions a scanner has to answer on its own:
+/// who is this, is the badge from the open year, and is this tier admitted here.
 /// </summary>
-/// <param name="ProfileTypeCode">
-/// <c>UserProfileType.Code</c>. Travels inside the badge so an offline gate can
-/// check it against that gate's allowed-profile-type list without a lookup.
-/// </param>
-/// <param name="Sequence">
-/// The badge serial. Each offline desk is assigned a range when its key is
-/// provisioned (desk 3 issues 3000001 upward), so disconnected desks can mint
-/// badges simultaneously with no coordination and no collisions.
-/// </param>
-public readonly record struct EventBadgePayload(int ProfileTypeCode, long Sequence);
+/// <param name="ProfileId">WHO — the attendee record, which every attendee has
+/// with or without an app account. Sixteen raw bytes; the same value written as
+/// 32 hexadecimal characters would push the printed code past the gate's
+/// 96-character ceiling on its own.</param>
+/// <param name="EditionYear">WHEN — the edition the badge was issued for, so a
+/// device can refuse last year's badge without asking anything.</param>
+/// <param name="ProfileTypeCode">WHAT — the tier, so a device can decide whether
+/// this type is admitted at THIS gate.</param>
+public readonly record struct EventBadgePayload(
+    Guid ProfileId, int EditionYear, int ProfileTypeCode);
 
 /// <summary>
 /// Encodes and decodes the offline event badge.
 ///
 /// <para>Wire format: <c>{keyVersion}{base32(nonce || ciphertext || tag)}</c>,
-/// where the plaintext is the ASCII string <c>"{profileTypeCode},{sequence}"</c>.
-/// Two plain numbers separated by a comma is what keeps the code small enough to
-/// stay readable when a badge is creased or the lighting is poor.</para>
+/// where the plaintext is 20 RAW BYTES — a 16-byte profile id, a 2-byte edition
+/// year and a 2-byte profile-type code, all big-endian.</para>
+///
+/// <para>Raw bytes rather than text is a size decision, not a taste one. The
+/// profile id written as 32 hexadecimal characters would exceed the gate's
+/// 96-character ceiling on its own, and anything over that ceiling is refused as
+/// "not recognised" BEFORE it is ever decrypted — which at a desk with a queue is
+/// undiagnosable. Packed as bytes the whole badge is 78 characters.</para>
 ///
 /// <para>ENCRYPTED, not merely signed. AES-GCM's authentication tag means a
 /// successful decrypt IS the validation: a badge that decrypts to a well-formed
@@ -71,8 +78,12 @@ public static class EventBadgeCodec
     /// <summary>Required key length: AES-256.</summary>
     public const int KeyBytes = 32;
 
+    /// <summary>The plaintext width: a 16-byte profile id, a 2-byte edition year
+    /// and a 2-byte profile-type code.</summary>
+    public const int PlaintextBytes = 20;
+
     /// <summary>Upper bound on an accepted scan, so a hostile or garbled input
-    /// cannot push work into the decoder. A real badge is ~61 characters.</summary>
+    /// cannot push work into the decoder. A real badge is 78 characters.</summary>
     public const int MaxEncodedLength = 128;
 
     /// <summary>
@@ -82,15 +93,15 @@ public static class EventBadgeCodec
     public static string Encode(
         EventBadgePayload payload, ReadOnlySpan<byte> key, int keyVersion)
     {
-        if (payload.ProfileTypeCode < 0)
+        if (payload.ProfileTypeCode is < 0 or > ushort.MaxValue)
         {
             throw new ArgumentOutOfRangeException(
-                nameof(payload), "The profile-type code cannot be negative.");
+                nameof(payload), "The profile-type code must fit in two bytes.");
         }
-        if (payload.Sequence < 0)
+        if (payload.EditionYear is < 0 or > ushort.MaxValue)
         {
             throw new ArgumentOutOfRangeException(
-                nameof(payload), "The badge sequence cannot be negative.");
+                nameof(payload), "The edition year must fit in two bytes.");
         }
         if (key.Length != KeyBytes)
         {
@@ -103,9 +114,15 @@ public static class EventBadgeCodec
                 nameof(keyVersion), "The key version must be 0..31.");
         }
 
-        var plaintext = Encoding.ASCII.GetBytes(string.Create(
-            CultureInfo.InvariantCulture,
-            $"{payload.ProfileTypeCode},{payload.Sequence}"));
+        var plaintext = new byte[PlaintextBytes];
+        // A fixed 16-byte layout, not the .NET Guid byte order, so the Dart
+        // scanner reads the same id back without knowing about mixed-endian
+        // Guid internals.
+        WriteGuidBigEndian(payload.ProfileId, plaintext.AsSpan(0, 16));
+        BinaryPrimitives.WriteUInt16BigEndian(
+            plaintext.AsSpan(16, 2), (ushort)payload.EditionYear);
+        BinaryPrimitives.WriteUInt16BigEndian(
+            plaintext.AsSpan(18, 2), (ushort)payload.ProfileTypeCode);
 
         var blob = new byte[NonceBytes + plaintext.Length + TagBytes];
         var nonce = blob.AsSpan(0, NonceBytes);
@@ -184,29 +201,26 @@ public static class EventBadgeCodec
     {
         payload = default;
 
-        Span<char> chars = stackalloc char[plaintext.Length];
-        for (var i = 0; i < plaintext.Length; i++)
-        {
-            // The plaintext we write is ASCII digits and one comma. Anything
-            // else means a successful decrypt of a payload we did not author.
-            if (plaintext[i] > 0x7F) { return false; }
-            chars[i] = (char)plaintext[i];
-        }
+        // A fixed-width payload, so anything else is a successful decrypt of
+        // something this system did not author. There is no ASCII check any
+        // more: every byte is legitimately arbitrary now.
+        if (plaintext.Length != PlaintextBytes) { return false; }
 
-        var separator = chars.IndexOf(',');
-        if (separator <= 0 || separator == chars.Length - 1) { return false; }
-
-        if (!int.TryParse(
-                chars[..separator], NumberStyles.None,
-                CultureInfo.InvariantCulture, out var profileTypeCode)
-            || !long.TryParse(
-                chars[(separator + 1)..], NumberStyles.None,
-                CultureInfo.InvariantCulture, out var sequence))
-        {
-            return false;
-        }
-
-        payload = new EventBadgePayload(profileTypeCode, sequence);
+        payload = new EventBadgePayload(
+            ReadGuidBigEndian(plaintext[..16]),
+            BinaryPrimitives.ReadUInt16BigEndian(plaintext.Slice(16, 2)),
+            BinaryPrimitives.ReadUInt16BigEndian(plaintext.Slice(18, 2)));
         return true;
     }
+
+    /// <summary>Writes a Guid in a fixed byte order rather than .NET's, whose
+    /// first three fields are little-endian on this platform and would decode to
+    /// a different id on the scanner.</summary>
+    private static void WriteGuidBigEndian(Guid value, Span<byte> destination)
+    {
+        value.TryWriteBytes(destination, bigEndian: true, out _);
+    }
+
+    private static Guid ReadGuidBigEndian(ReadOnlySpan<byte> source) =>
+        new(source, bigEndian: true);
 }

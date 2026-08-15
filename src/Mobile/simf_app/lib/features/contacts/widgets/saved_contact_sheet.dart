@@ -27,8 +27,8 @@ class _SavedContactSheetState extends ConsumerState<SavedContactSheet> {
 
   Future<void> _exportVcard() async {
     final l10n = AppL10n.of(context);
-    // Anchor rect read before the await — the iPad share sheet must point at the
-    // row as it was at tap time, and this sheet may be dismissed by then.
+    // Anchor rect read before the await — the iPad share sheet must point at
+    // the row as it was at tap time, and this sheet may be dismissed by then.
     final origin = shareOriginFromContext(context);
     setState(() => _busy = true);
     try {
@@ -97,9 +97,9 @@ class _SavedContactSheetState extends ConsumerState<SavedContactSheet> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
             ContactCard(
-              name: row.localizedName(isArabic),
+              name: row.localizedName(isArabic: isArabic),
               available: row.subjectAvailable,
-              jobTitle: row.localizedJobTitle(isArabic),
+              jobTitle: row.localizedJobTitle(isArabic: isArabic),
               organisation: row.organisation,
               note: row.note,
             ),

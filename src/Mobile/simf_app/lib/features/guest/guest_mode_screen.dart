@@ -20,6 +20,10 @@ import 'package:simf_app/app/widgets/simf_page_shell.dart';
 /// and a bordered sign-in action. The mockup frame's tile grid, "open to
 /// everyone" rows and bottom-nav are home-dashboard navigation this entry
 /// screen does not carry, so they are not rendered here.
+///
+/// Route: `RouteNames.guestMode`.
+/// Data: none — renders what it is given.
+/// Perf: no list — a single-screen layout.
 class GuestModeScreen extends StatelessWidget {
   const GuestModeScreen({super.key});
 
@@ -45,7 +49,9 @@ class GuestModeScreen extends StatelessWidget {
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: SimfTokens.accent.withValues(alpha: 0.08),
-                    border: Border.all(color: SimfTokens.accent, width: SimfTokens.guestModeScreenWidthSm),
+                    border: Border.all(
+                        color: SimfTokens.accent,
+                        width: SimfTokens.guestModeScreenWidthSm,),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(

@@ -4,7 +4,7 @@ import 'package:simf_app/features/sponsors/data/sponsor_models.dart';
 void main() {
   group('SponsorDetail.fromData', () {
     test('decodes the about, city, tier, website and country', () {
-      final detail = SponsorDetail.fromData(<String, dynamic>{
+      final detail = SponsorDetail.fromData(const <String, dynamic>{
         'id': 's1',
         'nameEn': 'Aramco',
         'nameAr': 'أرامكو السعودية',
@@ -25,24 +25,26 @@ void main() {
       expect(detail.tier, 10);
       expect(detail.tierName, 'Platinum');
       expect(detail.url, 'https://aramco.com');
-      expect(detail.localizedName(true), 'أرامكو السعودية');
-      expect(detail.localizedAbout(false), 'A global energy company.');
-      expect(detail.localizedAbout(true), 'شركة طاقة عالمية.');
-      expect(detail.localizedCity(true), 'الظهران');
-      expect(detail.localizedCountry(true), 'المملكة العربية السعودية');
+      expect(detail.localizedName(isArabic: true), 'أرامكو السعودية');
+      expect(
+          detail.localizedAbout(isArabic: false), 'A global energy company.',);
+      expect(detail.localizedAbout(isArabic: true), 'شركة طاقة عالمية.');
+      expect(detail.localizedCity(isArabic: true), 'الظهران');
+      expect(
+          detail.localizedCountry(isArabic: true), 'المملكة العربية السعودية',);
     });
 
     test('optional fields fall back / decode to null', () {
-      final detail = SponsorDetail.fromData(<String, dynamic>{
+      final detail = SponsorDetail.fromData(const <String, dynamic>{
         'id': 's2',
         'nameEn': 'Co',
         'nameAr': '',
         'tier': 40,
         'tierName': 'Bronze',
       });
-      expect(detail.localizedName(true), 'Co'); // falls back to EN
-      expect(detail.localizedAbout(false), isNull);
-      expect(detail.localizedCity(false), isNull);
+      expect(detail.localizedName(isArabic: true), 'Co'); // falls back to EN
+      expect(detail.localizedAbout(isArabic: false), isNull);
+      expect(detail.localizedCity(isArabic: false), isNull);
       expect(detail.url, isNull);
     });
   });

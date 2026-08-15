@@ -40,6 +40,28 @@ param (
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
+# Elevation is checked HERE, before anything else, because the failure without
+# it is unreadable: Import-Module below dies with "Process should have elevated
+# status to access IIS configuration data", naming the module rather than the
+# cause, after the deploy has already extracted an artifact and looks underway.
+#
+# The Azure Pipelines agent installs as a service under a NON-admin account by
+# default, so a pipeline deploy hits this on a machine where the same script has
+# always worked by hand in an elevated console. Fix it on the agent, not here:
+# services.msc -> the agent service -> Log On -> an account in the local
+# Administrators group -> restart the service.
+$identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+$isElevated = (New-Object Security.Principal.WindowsPrincipal($identity)).IsInRole(
+    [Security.Principal.WindowsBuiltInRole]::Administrator)
+if (-not $isElevated) {
+    throw ("iis-deploy.ps1 needs elevation to read IIS configuration, and is " +
+           "running as '$($identity.Name)' without it. Stopping app pools, " +
+           "mirroring site folders and restarting sites all require it. If this " +
+           "is a pipeline agent, set its Windows service to log on as an " +
+           "account in the local Administrators group and restart the service; " +
+           "if it is a console, re-open it as Administrator.")
+}
+
 Import-Module WebAdministration
 
 function Ensure-Directory([string]$Path) {
@@ -181,12 +203,14 @@ function Robocopy-MirrorWithRetry([string]$From, [string]$To, [int]$MaxAttempts 
 }
 
 # The SIMF apps, in deploy order. Each joins the run only when its site name AND
-# its physical path are both supplied: on a per-server estate a job passes just
-# its own pair, and on a single box an operator can still pass all four.
+# its physical path are both supplied, so one call can deploy a single site or
+# all four. The pipeline passes one pair per call (see pipeline-deploy-one.ps1);
+# an operator deploying by hand can pass all four at once.
 #
-# The API is first and the mobile edge last, which matters when they do share a
-# machine: everything calls the API, and the edge is the public front door, so it
-# should be the last thing to start accepting traffic.
+# The API is first and the mobile edge last, which matters because they DO share
+# a machine on both SIMF servers (D-886): everything calls the API, and the edge
+# is the public front door, so it should be the last thing to start accepting
+# traffic.
 $candidates = @(
     @{ Name = "API";  Site = $ApiSiteName;  Path = $ApiPath;  Folder = "api"  },
     @{ Name = "CP";   Site = $CpSiteName;   Path = $CpPath;   Folder = "cp"   },

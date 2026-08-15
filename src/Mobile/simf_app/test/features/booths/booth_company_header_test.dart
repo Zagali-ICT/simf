@@ -62,7 +62,8 @@ void main() {
       expect(_exhibitorLine(company), findsNothing);
     });
 
-    testWidgets('an exhibitor name differing only by whitespace is not repeated',
+    testWidgets(
+        'an exhibitor name differing only by whitespace is not repeated',
         (tester) async {
       await _pumpHeader(
         tester,

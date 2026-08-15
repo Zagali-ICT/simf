@@ -64,6 +64,7 @@
 | E2E-VPT-012 | Deactivate in-use → 409 `PROFILE_TYPE_IN_USE` (bilingual, row stays Active) | error | P0 | _to author_ |
 | E2E-VPT-013 | Server 500 on `/list` → red fallback toast, no rows render | resilience | P2 | _to author_ |
 | E2E-VPT-014 | RTL / Arabic render mirrors page + Add modal | i18n | P1 | _to author_ |
+| E2E-VPT-015 | VIP tier toggle — ticking it on Add makes the new type VIP; the flag survives an unrelated Edit and can be cleared | happy | P0 | authored ✓ (`ProfileTypeFormTests` CP + `AdminProfileTypeTests.IsVipTier_round_trips_through_Create_Get_Update_and_the_grid` API) |
 | E2E-VPT-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-VPT-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
@@ -318,6 +319,56 @@ Scenario: Arabic toggle mirrors the page and the Add modal
   And the field labels are Arabic (Name (English) / Name (Arabic) / Page colour / "ظاهر في القوائم (نشط)")
   And the read-only Account type shows "زائر (جمهور)"
   And the form actions appear in reverse order
+```
+
+### E2E-VPT-015 — VIP tier toggle
+
+```gherkin
+Scenario: An administrator can create a new VIP audience tier
+  Given the administrator is on /admin/profile-types/visitor
+  When they click "Add profile type"
+  Then the modal shows a "VIP tier" checkbox, UNTICKED
+  And its helper reads "Marks this as a VIP audience tier: its holders may
+      reserve a VIP-tier seat themselves, and the app shows them as VIP. It does
+      not allow meeting requests - that is set per person on the account."
+  When they enter Name "Platinum", Arabic name "بلاتيني", colour "#E5E4E2"
+  And they tick "VIP tier" and click Save
+  Then the POST body carries isVipTier=true
+  And the created row comes back with isVipTier=true
+  # Before this field was bound, the seeder was the only writer of the flag, so
+  # this create landed a NON-VIP row however the form was filled.
+
+Scenario: The flag survives an edit that does not touch it
+  Given Visitor profile-type "Platinum" has isVipTier=true
+  When the administrator opens Edit, changes only the Arabic name, and saves
+  Then the PUT body still carries isVipTier=true
+  And the row stays VIP
+  # The update request defaults the field to false, so a form that failed to
+  # pre-fill and resend it would silently demote the tier - the way
+  # ShowInPartnerDirectory once failed open (D-843).
+
+Scenario: The flag can be cleared
+  Given Visitor profile-type "Platinum" has isVipTier=true
+  When the administrator opens Edit, unticks "VIP tier", and saves
+  Then the PUT body carries isVipTier=false
+  And a holder of "Platinum" is refused a VIP-tier seat with 409
+      SEAT_TIER_NOT_ELIGIBLE
+
+Scenario: The toggle is audience-only
+  Given the administrator is on /admin/profile-types/other
+  When they click "Add profile type"
+  Then NO "VIP tier" checkbox is shown
+  # A partner type (Sponsor, Exhibitor, Media, Staff) is never a VIP tier; the
+  # request carries isVipTier=false.
+
+Scenario: VIP tier does not grant a meeting
+  Given Visitor profile-type "Platinum" has isVipTier=true
+  And an approved account of type "Platinum" whose allowsSpeakerMeeting is false
+  When that account opens a speaker profile in the app
+  Then the "Request meeting" CTA is NOT shown
+  And POST /api/v1/app/speakers/{id}/meeting-requests returns 403
+  # The tier and the meeting gate were split by D-760; see
+  # docs/tests/e2e/mobile-speaker-profile.md E2E-MOB020-018.
 ```
 
 ---

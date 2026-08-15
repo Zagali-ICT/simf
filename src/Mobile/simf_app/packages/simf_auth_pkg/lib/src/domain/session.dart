@@ -1,6 +1,6 @@
 import 'package:meta/meta.dart';
 
-import 'current_user.dart';
+import 'package:simf_auth_pkg/src/domain/current_user.dart';
 
 /// The signed-in session: the access token, the refresh token, and the
 /// current user. Held in memory by `AuthController` while the user is

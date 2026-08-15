@@ -173,9 +173,9 @@ void main() {
       // Reset password (signed-in only, D-658) — a deliberate profile action
       // beyond frame 1129:17224.
       expect(find.text('Reset password'), findsOneWidget);
-      // G1 (2026-07-30) — the self-service change-email row was REMOVED with the
-      // feature: an email can now only be changed by an administrator from the
-      // Control Panel account-edit form.
+      // G1 (2026-07-30) — the self-service change-email row was REMOVED with
+      // the feature: an email can now only be changed by an administrator from
+      // the Control Panel account-edit form.
       expect(find.text('Change email'), findsNothing);
       // قانوني rows.
       expect(find.text('Terms & conditions'), findsOneWidget);

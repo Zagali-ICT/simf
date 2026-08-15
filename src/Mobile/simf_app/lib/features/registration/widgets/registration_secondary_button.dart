@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 
 import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/registration/widgets/registration_primary_button.dart'
+    show RegistrationPrimaryButton;
+import 'package:simf_app/features/registration/widgets/registration_sign_out_link.dart'
+    show RegistrationSignOutLink;
 
 /// The full-width **outlined** secondary button beneath the gold primary action
 /// (h48, radius-4, beige hairline border, beige bold label). Distinct from the

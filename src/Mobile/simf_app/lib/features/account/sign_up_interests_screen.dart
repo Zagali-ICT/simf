@@ -34,6 +34,33 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// `SimfTokens` (`chipBorderNavy` added); the pill extracted to [InterestChip];
 /// header to the shared [AccountSubHeader] (D-658); the body capped by
 /// [MaxWidthBody]. Behaviour + render unchanged — the 505:1083 golden locks it.
+///
+/// Route: `RouteNames.signUpInterests`.
+/// Data: [interestsSetupProvider], [profileRepositoryProvider].
+/// Perf: no list — a single-screen layout.
+/// The interests lookup, plus the current profile in #14 EDIT mode.
+@immutable
+class InterestsSetup {
+  const InterestsSetup({required this.interests, this.profile});
+
+  final List<InterestItem> interests;
+
+  /// Non-null only in edit mode, where the save is a lossless full re-POST and
+  /// so needs the profile it is re-sending.
+  final UserProfileResponse? profile;
+}
+
+/// Keyed on `editMode` because the two modes fetch DIFFERENT things: edit mode
+/// needs the profile as well, sign-up only the lookup. The third mode — no
+/// draft and not editing — never watches this at all.
+final interestsSetupProvider =
+    FutureProvider.autoDispose.family<InterestsSetup, bool>((ref, edit) async {
+  final repo = ref.watch(profileRepositoryProvider);
+  final profile = edit ? await repo.getMyProfile() : null;
+  final interests = await repo.getInterests();
+  return InterestsSetup(interests: interests, profile: profile);
+});
+
 class SignUpInterestsScreen extends ConsumerStatefulWidget {
   const SignUpInterestsScreen({super.key, this.draft, this.editMode = false});
 
@@ -55,107 +82,67 @@ class SignUpInterestsScreen extends ConsumerStatefulWidget {
 }
 
 class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
-  List<InterestItem> _interests = const <InterestItem>[];
+
   final Set<String> _selected = <String>{};
 
   /// #14 edit mode — the loaded profile, re-sent in full on save so an
   /// interests-only change nulls no other field.
   UserProfileResponse? _editProfile;
 
-  /// "Show me in Meet People Like You" visibility. The in-app opt-in was removed
-  /// (owner 2026-07-24) — this now lives only in the CP; the value is seeded from
-  /// the loaded profile and re-sent verbatim on save so a full profile re-POST
-  /// never clobbers the CP-set flag.
+  /// "Show me in Meet People Like You" visibility. The in-app opt-in was
+  /// removed (owner 2026-07-24) — this now lives only in the CP; the value is
+  /// seeded from the loaded profile and re-sent verbatim on save so a full
+  /// profile re-POST never clobbers the CP-set flag.
   bool _showInMeetLikeYou = true;
 
-  bool _loading = true;
-  String? _loadError;
   bool _submitting = false;
   String? _submitError;
 
   @override
   void initState() {
     super.initState();
-    if (widget.editMode) {
-      // #14 edit mode — self-load the profile + lookup; the current interests
-      // are pre-selected inside _loadForEdit once both have loaded.
-      unawaited(_loadForEdit());
-      return;
-    }
     // Pre-select any interests already on the carried draft (re-entry / edit).
-    final existing = widget.draft?.request.interestIds ?? const <String>[];
-    _selected.addAll(existing);
-    if (widget.draft != null) {
-      unawaited(_load());
-    } else {
-      _loading = false;
+    _selected.addAll(widget.draft?.request.interestIds ?? const <String>[]);
+    if (_needsLoad) {
+      unawaited(_seedFromSetup());
     }
   }
 
-  /// #14 edit mode — load the current profile (for a lossless re-save) and the
-  /// interests lookup, then pre-select the profile's saved interests.
-  Future<void> _loadForEdit() async {
-    final repo = ref.read(profileRepositoryProvider);
-    setState(() {
-      _loading = true;
-      _loadError = null;
-    });
+  /// The third mode — no draft and not editing — has nothing to fetch, so it
+  /// never watches the provider and renders the (empty) lookup directly.
+  bool get _needsLoad => widget.editMode || widget.draft != null;
+
+  /// Seeds the selection from whichever source this mode has, ONCE.
+  ///
+  /// Edit mode pre-selects the profile's saved interests and captures the
+  /// profile for the lossless re-save; sign-up mode drops any carried draft id
+  /// that is no longer in the active lookup. Awaits the provider's first future
+  /// rather than listening, because the user edits the selection afterwards.
+  Future<void> _seedFromSetup() async {
+    final InterestsSetup setup;
     try {
-      final profile = await repo.getMyProfile();
-      final interests = await repo.getInterests();
-      if (!mounted) {
-        return;
-      }
-      setState(() {
+      setup = await ref.read(interestsSetupProvider(widget.editMode).future);
+    } on Object {
+      return; // The load-error branch renders.
+    }
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      final profile = setup.profile;
+      if (profile != null) {
         _editProfile = profile;
         _showInMeetLikeYou = profile.showInMeetLikeYou;
-        _interests = interests;
         _selected
           ..clear()
           ..addAll(
-            profile.interestIds.where((id) => interests.any((i) => i.id == id)),
+            profile.interestIds
+                .where((id) => setup.interests.any((i) => i.id == id)),
           );
-        _loading = false;
-      });
-    } on ApiFailure catch (failure) {
-      if (!mounted) {
-        return;
+      } else {
+        _selected.retainWhere((id) => setup.interests.any((i) => i.id == id));
       }
-      final l10n = AppL10n.of(context);
-      setState(() {
-        _loadError = failure.localizedMessage(l10n);
-        _loading = false;
-      });
-    }
-  }
-
-  Future<void> _load() async {
-    final repo = ref.read(profileRepositoryProvider);
-    setState(() {
-      _loading = true;
-      _loadError = null;
     });
-    try {
-      final interests = await repo.getInterests();
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _interests = interests;
-        // Drop any pre-selected id that is not in the active lookup.
-        _selected.retainWhere((id) => interests.any((i) => i.id == id));
-        _loading = false;
-      });
-    } on ApiFailure catch (failure) {
-      if (!mounted) {
-        return;
-      }
-      final l10n = AppL10n.of(context);
-      setState(() {
-        _loadError = failure.localizedMessage(l10n);
-        _loading = false;
-      });
-    }
   }
 
   void _toggleInterest(String id, AppL10n l10n) {
@@ -175,21 +162,37 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
     });
   }
 
-  Widget _buildBody(AppL10n l10n) => SignUpInterestsBody(
-        l10n: l10n,
-        interests: _interests,
-        selected: _selected,
-        loading: _loading,
-        loadError: _loadError,
-        submitting: _submitting,
-        submitError: _submitError,
-        editMode: widget.editMode,
-        draft: widget.draft,
-        onToggleInterest: _toggleInterest,
-        onSave: _save,
-        onRetry: _load,
-        onRetryEdit: _loadForEdit,
-      );
+  Widget _buildBody(AppL10n l10n) {
+    final async = _needsLoad
+        ? ref.watch(interestsSetupProvider(widget.editMode))
+        : const AsyncValue<InterestsSetup>.data(
+            InterestsSetup(interests: <InterestItem>[]),
+          );
+    final error = async.error;
+    Future<void> retry() async =>
+        ref.invalidate(interestsSetupProvider(widget.editMode));
+
+    return SignUpInterestsBody(
+      l10n: l10n,
+      interests: async.valueOrNull?.interests ?? const <InterestItem>[],
+      selected: _selected,
+      loading: async.isLoading,
+      loadError: error == null
+          ? null
+          : (error is ApiFailure
+              ? error.localizedMessage(l10n)
+              : l10n.errorGenericBody),
+      submitting: _submitting,
+      submitError: _submitError,
+      editMode: widget.editMode,
+      draft: widget.draft,
+      onToggleInterest: _toggleInterest,
+      onSave: _save,
+      // One provider behind both, so one retry serves both entry points.
+      onRetry: retry,
+      onRetryEdit: retry,
+    );
+  }
 
   Future<void> _save() async {
     if (widget.editMode) {

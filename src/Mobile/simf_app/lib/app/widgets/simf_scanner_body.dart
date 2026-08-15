@@ -6,6 +6,7 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/camera_error_card.dart';
 import 'package:simf_app/app/widgets/or_divider.dart';
+import 'package:simf_app/app/widgets/qr_scan_view.dart' show QrScanView;
 import 'package:simf_app/app/widgets/simf_scanner_frame.dart';
 import 'package:simf_app/core/motion/motion_durations.dart';
 import 'package:simf_app/core/utils/scan_gate.dart';
@@ -56,7 +57,8 @@ class SimfScannerBody extends StatefulWidget {
   /// Optional lead-in hint above the viewfinder.
   final String? hint;
 
-  /// Optional caption under the viewfinder (e.g. the gate's "point at the badge").
+  /// Optional caption under the viewfinder (e.g. the gate's "point at the
+  /// badge").
   final String? bottomHint;
 
   /// Off in widget tests (no camera) so the manual-entry path drives the flow.
@@ -235,8 +237,8 @@ class _SimfScannerBodyState extends State<SimfScannerBody> {
         ),
       );
     }
-    // The "Stop camera" control stays OUTSIDE the camera surface (D-426) so EMUI
-    // can't swallow it behind the platform view.
+    // The "Stop camera" control stays OUTSIDE the camera surface (D-426) so
+    // EMUI can't swallow it behind the platform view.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
@@ -266,18 +268,18 @@ class _SimfScannerBodyState extends State<SimfScannerBody> {
                   showGallery: false,
                   showToggleCamera: false,
                   // Keep the built-in torch (auto-hides where unsupported) and
-                  // drop zxing's own crop-border overlay — our gold brackets are
-                  // the viewfinder.
+                  // drop zxing's own crop-border overlay — our gold brackets
+                  // are the viewfinder.
                   showScannerOverlay: false,
                   tryInverted: true,
                   // Spend more effort per frame locking onto the code — more
                   // reliable reads under real lighting/angle/distance on device.
                   tryHarder: true,
-                  // Decode the WHOLE frame, not zxing's default centre-50% crop.
-                  // A QR held to fill the gold viewfinder pushes its corner
-                  // finder patterns outside a 0.5 crop, so ZXing can't lock on —
-                  // the reason a phone camera (full-frame) reads a code the app
-                  // could not.
+                  // Decode the WHOLE frame, not zxing's default centre-50%
+                  // crop. A QR held to fill the gold viewfinder pushes its
+                  // corner finder patterns outside a 0.5 crop, so ZXing can't
+                  // lock on — the reason a phone camera (full-frame) reads a
+                  // code the app could not.
                   cropPercent: 1,
                   loading: const ColoredBox(color: SimfTokens.black),
                 ),
@@ -324,11 +326,11 @@ class _SimfScannerBodyState extends State<SimfScannerBody> {
           // Disabled (not a spinner) while busy: an onCode that opens a modal
           // stays pending, and an infinite spinner would hang pumpAndSettle.
           onPressed: _processing ? null : _submitManual,
-          style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(SimfTokens.buttonHeight)),
+          style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(SimfTokens.buttonHeight),),
           child: Text(widget.continueLabel),
         ),
       ],
     );
   }
 }
-

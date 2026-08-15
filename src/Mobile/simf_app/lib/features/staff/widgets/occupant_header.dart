@@ -8,7 +8,11 @@ import 'package:simf_app/features/staff/data/staff_seating_models.dart';
 /// (D-422); until they do (or when there is no photo) a labelled placeholder
 /// keeps the row's height stable and the a11y tree named.
 class OccupantHeader extends StatelessWidget {
-  const OccupantHeader({required this.result, required this.photo, required this.l10n, super.key,
+  const OccupantHeader({
+    required this.result,
+    required this.photo,
+    required this.l10n,
+    super.key,
   });
 
   final StaffSeatOccupant result;
@@ -43,8 +47,8 @@ class OccupantHeader extends StatelessWidget {
         const SizedBox(width: SimfTokens.space3),
         Expanded(
           child: Text(
-            result.localizedGuestHint(l10n.isArabic) ??
-                result.localizedName(l10n.isArabic),
+            result.localizedGuestHint(isArabic: l10n.isArabic) ??
+                result.localizedName(isArabic: l10n.isArabic),
             style: SimfTokens.labelWhiteBoldTitle,
           ),
         ),

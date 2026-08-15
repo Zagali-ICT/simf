@@ -1,13 +1,13 @@
 # SIMF convention report
 
-Generated 2026-08-09 by `dart run tool/conventions`.
+Generated 2026-08-14 by `dart run tool/conventions`.
 
 ## Summary
 
 | Rule | Findings |
 |------|----------|
-| SIMF-C3 | 12 |
-| **Total** | **12** |
+| SIMF-C3 | 11 |
+| **Total** | **11** |
 
 ## account feature
 
@@ -28,13 +28,6 @@ Fix : split the file; move this and its state into a widget
 Issue : _buildFacePhotoField() returning Widget in a 1198-line file (limit 400)  (line 1107, SIMF-C3)
 Fix : split the file; move this and its state into a widget
 Issue : _buildOrganisationField() returning Widget in a 1198-line file (limit 400)  (line 1136, SIMF-C3)
-Fix : split the file; move this and its state into a widget
-
-## sessions feature
-
-
-Issue file : src/Mobile/simf_app/lib/features/sessions/session_detail_screen.dart
-Issue : _buildBody() returning Widget in a 467-line file (limit 400)  (line 381, SIMF-C3)
 Fix : split the file; move this and its state into a widget
 
 ## staff feature

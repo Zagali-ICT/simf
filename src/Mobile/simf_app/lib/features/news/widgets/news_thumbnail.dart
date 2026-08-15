@@ -11,7 +11,8 @@ import 'package:simf_app/features/news/widgets/news_image_fallback.dart';
 /// fetch
 /// -failure fall-back. 155 wide, stretched to the card height.
 class NewsThumbnail extends StatelessWidget {
-  const NewsThumbnail({required this.imageUrl, required this.category, super.key});
+  const NewsThumbnail(
+      {required this.imageUrl, required this.category, super.key,});
 
   final String imageUrl;
   final String category;
@@ -41,7 +42,8 @@ class NewsThumbnail extends StatelessWidget {
                     child: SizedBox(
                       width: SimfTokens.newsThumbnailWidth,
                       height: SimfTokens.newsThumbnailHeight,
-                      child: CircularProgressIndicator(strokeWidth: SimfTokens.newsThumbnailStrokeWidth),
+                      child: CircularProgressIndicator(
+                          strokeWidth: SimfTokens.newsThumbnailStrokeWidth,),
                     ),
                   ),
                 );

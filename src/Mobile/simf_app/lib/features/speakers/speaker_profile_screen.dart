@@ -9,6 +9,7 @@ import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/core/net/asset_urls.dart';
+import 'package:simf_app/core/utils/refresh.dart';
 import 'package:simf_app/features/account/data/profile_repository.dart';
 import 'package:simf_app/features/speakers/data/speaker_models.dart';
 import 'package:simf_app/features/speakers/data/speakers_repository.dart';
@@ -28,13 +29,36 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// **Public** read (`GET /app/speakers/{id}`) — behaviour unchanged. Frame
 /// mapping: the two-line header (`SpeakerProfileHeader`), the 125px gold-ringed
 /// avatar (`SpeakerAvatar`, D-357 photo + placeholder), the four CV tab pills
-/// (`SpeakerCvTabs`) over the navy bio card (`SpeakerCvCard`). Below the frame's
-/// minimal content the screen keeps its full behaviour: the **Request meeting**
-/// action (only when `allowsMeetingRequests` **and the viewer is a VIP tier**,
-/// D-729) — login-only (`POST …/meeting-requests`, D-269), opening the
-/// `MeetingRequestSheet` (the endpoint enforces the same VIP rule); the
+/// (`SpeakerCvTabs`) over the navy bio card (`SpeakerCvCard`). Below the
+/// frame's minimal content the screen keeps its full behaviour: the **Request
+/// meeting** action (only when `allowsMeetingRequests` **and the viewer is a
+/// VIP tier**, D-729) — login-only (`POST …/meeting-requests`, D-269), opening
+/// the `MeetingRequestSheet` (the endpoint enforces the same VIP rule); the
 /// opted-in social links (only when `allowsDataSharing`); and the speaker's
 /// sessions (`SpeakerSessionRow`, tap → session detail 17).
+///
+/// Route: `RouteNames.speakerProfile`.
+/// Data: [authControllerProvider], [currentUserMeetingAccessProvider],
+///       [simfDataConfigProvider], [speakerDetailProvider],
+///       [speakersRepositoryProvider].
+/// Perf: ListView builds every child up front — correct for a short static
+///       page, a defect on a data feed.
+/// One speaker, or **null when the server has no such id** (a 404).
+///
+/// The `newsArticleProvider` shape: a 404 is "this speaker is gone", which the
+/// screen answers with its own not-found copy rather than the error surface.
+final speakerDetailProvider =
+    FutureProvider.autoDispose.family<SpeakerDetail?, String>((ref, id) async {
+  try {
+    return await ref.watch(speakersRepositoryProvider).getSpeaker(id);
+  } on ApiFailure catch (failure) {
+    if (failure.httpStatus == 404) {
+      return null;
+    }
+    rethrow;
+  }
+});
+
 class SpeakerProfileScreen extends ConsumerStatefulWidget {
   const SpeakerProfileScreen({required this.speakerId, super.key});
 
@@ -46,70 +70,37 @@ class SpeakerProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
-  bool _loading = true;
-  bool _error = false;
-  bool _notFound = false;
-  SpeakerDetail? _speaker;
+  /// The active CV tab — UI state, so it stays on the widget.
   int _activeCv = 0;
 
-  @override
-  void initState() {
-    super.initState();
-    unawaited(_load());
-  }
-
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = false;
-      _notFound = false;
-    });
-    try {
-      final speaker =
-          await ref.read(speakersRepositoryProvider).getSpeaker(widget.speakerId);
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _speaker = speaker;
-        _loading = false;
-      });
-    } on ApiFailure catch (failure) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _loading = false;
-        _notFound = failure.httpStatus == 404;
-        _error = failure.httpStatus != 404;
-      });
-    }
-  }
+  Future<void> _refresh() =>
+      refreshAsync(ref, speakerDetailProvider(widget.speakerId).future);
 
   void _onRequestMeeting(SpeakerDetail speaker, AppL10n l10n) {
     final auth = ref.read(authControllerProvider);
     if (auth is! AuthStateSignedIn) {
       // Login-only (E2) — send a guest to sign in (Page_020 L-5).
-      context.pushNamed(RouteNames.signIn);
+      unawaited(context.pushNamed(RouteNames.signIn));
       return;
     }
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      // Figma 1776:4958 — a light "طلب مقابلة" sheet with its own gold drag
-      // handle (so the default grey handle is off) and rounded top corners.
-      backgroundColor: SimfTokens.cardBeige,
-      showDragHandle: false,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(SimfTokens.radius)),
-      ),
-      builder: (_) => MeetingRequestSheet(
-        speakerId: speaker.id,
-        defaultName: auth.session.user.displayName,
-        baseUrl: ref.read(simfDataConfigProvider).baseUrl,
-        l10n: l10n,
-      ),
-    );
+    unawaited(showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        // Figma 1776:4958 — a light "طلب مقابلة" sheet with its own gold drag
+        // handle (so the default grey handle is off) and rounded top corners.
+        backgroundColor: SimfTokens.cardBeige,
+        showDragHandle: false,
+        shape: const RoundedRectangleBorder(
+          borderRadius:
+              BorderRadius.vertical(top: Radius.circular(SimfTokens.radius)),
+        ),
+        builder: (_) => MeetingRequestSheet(
+          speakerId: speaker.id,
+          defaultName: auth.session.user.displayName,
+          baseUrl: ref.read(simfDataConfigProvider).baseUrl,
+          l10n: l10n,
+        ),
+      ),);
   }
 
   Future<void> _copyLink(String url, AppL10n l10n) async {
@@ -121,15 +112,19 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    final speaker = _speaker;
+    // The header renders the name/rank/flag as soon as they exist and its
+    // placeholder before that, so it reads the value directly rather than
+    // branching — the three-state handling belongs in the body.
+    final speaker =
+        ref.watch(speakerDetailProvider(widget.speakerId)).valueOrNull;
     final isArabic = l10n.isArabic;
-    final rank = speaker?.localizedRank(isArabic)?.trim();
+    final rank = speaker?.localizedRank(isArabic: isArabic)?.trim();
     return SimfPageShell(
       onBack: () => backOrHome(context),
       header: SpeakerProfileHeader(
         title: speaker == null
             ? l10n.speakerProfileTitle
-            : speaker.localizedName(isArabic),
+            : speaker.localizedName(isArabic: isArabic),
         rank: rank,
         flag: speaker?.flagEmoji ?? '',
         onBack: () => backOrHome(context),
@@ -139,38 +134,33 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
   }
 
   Widget _buildBody(AppL10n l10n) {
-    if (_loading) {
-      return const Center(
-        child: CircularProgressIndicator(color: SimfTokens.accent),
-      );
-    }
-    if (_notFound) {
-      return SimfPullToRefresh(
-        onRefresh: _load,
-        child: SimfPullableHost(
-          child: SimfEmptyState(
-            icon: Icons.person_off_outlined,
-            message: l10n.speakerNotFound,
+    return ref.watch(speakerDetailProvider(widget.speakerId)).when(
+          loading: () => const Center(
+            child: CircularProgressIndicator(color: SimfTokens.accent),
           ),
-        ),
-      );
-    }
-    if (_error || _speaker == null) {
-      return SimfPullToRefresh(
-        onRefresh: _load,
-        child: SimfPullableHost(
-          child: SimfErrorState(
-            message: l10n.speakerProfileError,
-            retryLabel: l10n.retryLabel,
-            onRetry: () => unawaited(_load()),
+          error: (_, __) => SimfRefreshableMessage(
+            onRefresh: _refresh,
+            child: SimfErrorState(
+              message: l10n.speakerProfileError,
+              retryLabel: l10n.retryLabel,
+              onRetry: () =>
+                  ref.invalidate(speakerDetailProvider(widget.speakerId)),
+            ),
           ),
-        ),
-      );
-    }
-    return SimfPullToRefresh(
-      onRefresh: _load,
-      child: _content(l10n, _speaker!),
-    );
+          // Null is the not-found state (see [speakerDetailProvider]).
+          data: (speaker) => speaker == null
+              ? SimfRefreshableMessage(
+                  onRefresh: _refresh,
+                  child: SimfEmptyState(
+                    icon: Icons.person_off_outlined,
+                    message: l10n.speakerNotFound,
+                  ),
+                )
+              : SimfPullToRefresh(
+                  onRefresh: _refresh,
+                  child: _content(l10n, speaker),
+                ),
+        );
   }
 
   Widget _content(AppL10n l10n, SpeakerDetail speaker) {
@@ -179,18 +169,21 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
     // uploaded photo; the base already includes `/api/v1`.
     final baseUrl = ref.watch(simfDataConfigProvider).baseUrl;
     // Bi-Meeting rework — requesting a speaker meeting is gated by the per-user
-    // AllowsSpeakerMeeting flag (replaces the VIP tier). False while the profile
-    // loads / for guests / unentitled (the endpoint also gates server-side).
+    // AllowsSpeakerMeeting flag (replaces the VIP tier). False while the
+    // profile loads / for guests / unentitled (the endpoint also gates
+    // server-side).
     final canRequestSpeakerMeeting =
         ref.watch(currentUserMeetingAccessProvider).value?.speaker ?? false;
     final sections = <SpeakerCvSection>[
-      SpeakerCvSection(l10n.cvBio, speaker.localizedBio(isArabic)),
+      SpeakerCvSection(l10n.cvBio, speaker.localizedBio(isArabic: isArabic)),
       SpeakerCvSection(
         l10n.cvQualifications,
-        speaker.localizedQualifications(isArabic),
+        speaker.localizedQualifications(isArabic: isArabic),
       ),
-      SpeakerCvSection(l10n.cvTraining, speaker.localizedTraining(isArabic)),
-      SpeakerCvSection(l10n.cvAwards, speaker.localizedAwards(isArabic)),
+      SpeakerCvSection(
+          l10n.cvTraining, speaker.localizedTraining(isArabic: isArabic),),
+      SpeakerCvSection(
+          l10n.cvAwards, speaker.localizedAwards(isArabic: isArabic),),
     ].where((s) => s.body != null).toList();
     final activeCv =
         sections.isEmpty ? 0 : _activeCv.clamp(0, sections.length - 1);
@@ -212,7 +205,8 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(
         SimfTokens.space4,
-        SimfTokens.space8 + SimfTokens.space6, // 56px — matches Figma large gap above avatar
+        SimfTokens.space8 +
+            SimfTokens.space6, // 56px — matches Figma large gap above avatar
         SimfTokens.space4,
         SimfTokens.space6,
       ),
@@ -220,8 +214,8 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
         SpeakerAvatar(
           imageUrl:
               AssetUrls.image(baseUrl, AssetKind.speakerPhoto, speaker.id),
-          initials: speakerInitials(speaker.localizedName(isArabic)),
-          name: speaker.localizedName(isArabic),
+          initials: speakerInitials(speaker.localizedName(isArabic: isArabic)),
+          name: speaker.localizedName(isArabic: isArabic),
         ),
         const SizedBox(height: SimfTokens.space8 + SimfTokens.space2), // 40
         if (sections.isNotEmpty) ...<Widget>[
@@ -234,9 +228,11 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
           const SizedBox(height: SimfTokens.space6), // 24
           SpeakerCvCard(body: sections[activeCv].body!),
         ],
-        // Bi-Meeting rework — the "request meeting" CTA shows only when the speaker
-        // accepts requests AND this user holds AllowsSpeakerMeeting (endpoint enforces).
-        if (speaker.allowsMeetingRequests && canRequestSpeakerMeeting) ...<Widget>[
+        // Bi-Meeting rework — the "request meeting" CTA shows only when the
+        // speaker accepts requests AND this user holds AllowsSpeakerMeeting
+        // (endpoint enforces).
+        if (speaker.allowsMeetingRequests &&
+            canRequestSpeakerMeeting) ...<Widget>[
           const SizedBox(height: SimfTokens.space5),
           // Figma 1049:2302 — a text-only gold CTA (no leading icon).
           FilledButton(
@@ -251,7 +247,8 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
             children: <Widget>[
               for (final s in socials)
                 ActionChip(
-                  avatar: Icon(s.icon, size: SimfTokens.speakerProfileScreenSize),
+                  avatar:
+                      Icon(s.icon, size: SimfTokens.speakerProfileScreenSize),
                   label: Text(l10n.copyLinkLabel),
                   onPressed: () => unawaited(_copyLink(s.url, l10n)),
                 ),

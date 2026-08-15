@@ -24,7 +24,8 @@ String? _mimeForFilename(String filename) {
 /// Authority: the endpoints require the JWT **`Visitors.RegisterOnsite`**
 /// permission (the same capability the CP walk-in desk uses) — a staff app user
 /// without that grant gets 403. Creating a walk-in lands a **PendingApproval**
-/// visitor; the optional ID-document + avatar are attached afterwards by user id.
+/// visitor; the optional ID-document + avatar are attached afterwards by user
+/// id.
 class StaffRepository {
   StaffRepository(this._client);
 

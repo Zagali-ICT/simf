@@ -27,6 +27,10 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 /// verified and attached. Built on the navy auth family (D-659) — the same
 /// `Scaffold(navySurface)` + [AccountSubHeader] + [OtpMark] + gold CTA as its
 /// sibling reset-password (918:2341); no dedicated Figma node.
+///
+/// Route: `RouteNames.badgeActivation`.
+/// Data: [authRepositoryProvider].
+/// Perf: no list — a single-screen layout.
 class BadgeActivationScreen extends ConsumerStatefulWidget {
   const BadgeActivationScreen({
     required this.qrId,
@@ -95,10 +99,11 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
       _error = null;
     });
     try {
-      final result = await ref.read(authRepositoryProvider).badgeActivationStart(
-            qrId: widget.qrId,
-            email: widget.needsEmail ? _email.text.trim() : null,
-          );
+      final result =
+          await ref.read(authRepositoryProvider).badgeActivationStart(
+                qrId: widget.qrId,
+                email: widget.needsEmail ? _email.text.trim() : null,
+              );
       if (!mounted) {
         return;
       }
@@ -202,7 +207,9 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
   }
 
   String _passwordRequirementMessage(
-      PasswordRequirement req, AppL10n l10n,) {
+    PasswordRequirement req,
+    AppL10n l10n,
+  ) {
     switch (req) {
       case PasswordRequirement.length:
         return l10n.passwordLength;
@@ -260,7 +267,10 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
                 style: SimfTokens.bodyBeige,
               ),
               const SizedBox(height: SimfTokens.space8),
-              if (_emailStep) ..._emailStepFields(l10n) else ..._codeStepFields(l10n),
+              if (_emailStep)
+                ..._emailStepFields(l10n)
+              else
+                ..._codeStepFields(l10n),
               if (_error != null) ...<Widget>[
                 const SizedBox(height: SimfTokens.space3),
                 Text(

@@ -3,8 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/core/responsive/grid_columns.dart';
 
 /// The point of this helper is that a phone renders EXACTLY as before while a
-/// tablet stops stretching tiles, so both halves are asserted: the compact count
-/// is the frame's own number, and the wider classes add columns.
+/// tablet stops stretching tiles, so both halves are asserted: the compact
+/// count is the frame's own number, and the wider classes add columns.
 void main() {
   Future<int> columnsAt(WidgetTester tester, double width, int compact) async {
     late int result;
@@ -45,7 +45,7 @@ void main() {
   });
 
   testWidgets('the count never drops below the frame count', (tester) async {
-    for (final double width in <double>[375, 600, 905, 1024, 1440]) {
+    for (final width in <double>[375, 600, 905, 1024, 1440]) {
       expect(
         await columnsAt(tester, width, 2),
         greaterThanOrEqualTo(2),

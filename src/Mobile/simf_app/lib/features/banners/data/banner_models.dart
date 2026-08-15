@@ -17,24 +17,7 @@ class PublicBannerItem {
     this.linkUrl,
   });
 
-  final String id;
-  final String title;
-  final String titleArabic;
-  final String body;
-  final String bodyArabic;
-  final int displayOrder;
-  final String? imageUrl;
-  final String? linkUrl;
-
-  String titleFor(bool isArabic) => isArabic ? titleArabic : title;
-
-  /// The uploaded banner image served by the row id. `baseUrl` already includes
-  /// `/api/v1`, so it is not re-appended. A 404 (no upload) → the caller falls
-  /// back to [imageUrl] then a placeholder.
-  String assetImageUrl(String baseUrl) =>
-      AssetUrls.image(baseUrl, AssetKind.banner, id);
-
-  static PublicBannerItem fromJson(Map<String, dynamic> json) =>
+  factory PublicBannerItem.fromJson(Map<String, dynamic> json) =>
       PublicBannerItem(
         id: json['id'] as String? ?? '',
         title: json['title'] as String? ?? '',
@@ -46,14 +29,32 @@ class PublicBannerItem {
         linkUrl: json['linkUrl'] as String?,
       );
 
+  final String id;
+  final String title;
+  final String titleArabic;
+  final String body;
+  final String bodyArabic;
+  final int displayOrder;
+  final String? imageUrl;
+  final String? linkUrl;
+
+  String titleFor({required bool isArabic}) => isArabic ? titleArabic : title;
+
+  /// The uploaded banner image served by the row id. `baseUrl` already includes
+  /// `/api/v1`, so it is not re-appended. A 404 (no upload) → the caller falls
+  /// back to [imageUrl] then a placeholder.
+  String assetImageUrl(String baseUrl) =>
+      AssetUrls.image(baseUrl, AssetKind.banner, id);
+
   /// Decode the `GET /app/banners` payload (`{ "items": [ … ] }`).
   static List<PublicBannerItem> listFromData(dynamic data) {
     final map =
         (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
     final items = (map['items'] as List?) ?? const <dynamic>[];
     return items
-        .map((m) =>
-            PublicBannerItem.fromJson((m as Map).cast<String, dynamic>()),)
+        .map(
+          (m) => PublicBannerItem.fromJson((m as Map).cast<String, dynamic>()),
+        )
         .toList();
   }
 }

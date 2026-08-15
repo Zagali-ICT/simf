@@ -117,7 +117,8 @@ void main() {
       // force the user forever. Same version → up to date.
       expect(eval('1.0.0', min: '1.0.0+42'), AppUpdateStatus.upToDate);
       expect(eval('1.0.0+7', min: '1.0.0+42'), AppUpdateStatus.upToDate);
-      // A genuinely higher minimum still forces, build metadata notwithstanding.
+      // A genuinely higher minimum still forces, build metadata
+      // notwithstanding.
       expect(eval('1.0.0', min: '1.1.0+9'), AppUpdateStatus.forced);
       // Build metadata on latest doesn't fabricate an optional update.
       expect(eval('1.0.0', latest: '1.0.0+99'), AppUpdateStatus.upToDate);

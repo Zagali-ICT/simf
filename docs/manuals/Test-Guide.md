@@ -64,7 +64,12 @@ and Application layers gain code from increment 2.
 | `RegistrationEndpointsTests` (added) | Integration | resend-code returns 429 once the per-account cap is reached |
 
 `SimfApiFactory` now applies the EF migrations (rather than `EnsureCreated`), so
-the migrations themselves are exercised by every integration test.
+the migrations themselves are exercised by every integration test **class**. The
+class distinction is load-bearing: xUnit builds a new instance of a test class for
+every `[Fact]`, so `EnsureDatabaseCreated()` is called once per test, and it
+guards itself to migrate and seed only on the first of those calls. Each test
+class still gets its own freshly migrated and seeded pair of databases; it simply
+stops rebuilding them between the tests inside that class.
 
 ## 7. Increment 4b — sign-in and the second factors
 

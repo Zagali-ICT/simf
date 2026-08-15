@@ -91,6 +91,17 @@
             </SimfCheckbox>
             <div class="simf-field__helper">@L["Admin.ProfileTypes.Field.ShowInMeetPeopleHint"]</div>
         }
+        @* VIP audience tier. Only on the Visitors (audience) form: ticked marks
+           the type as VIP, which is what lets its holders self-reserve a
+           VIP-tier SEAT and what the app reads as isVip. It does NOT grant a
+           meeting — that is the per-user flag on the account itself. *@
+        @if (ShowVipTierToggle)
+        {
+            <SimfCheckbox @bind-Value="_model.IsVipTier" Disabled="_busy">
+                @L["Admin.ProfileTypes.Field.IsVipTier"]
+            </SimfCheckbox>
+            <div class="simf-field__helper">@L["Admin.ProfileTypes.Field.IsVipTierHint"]</div>
+        }
     </div>
     <div class="simf-form__actions">
         <SimfButton Loading="_busy" LoadingLabel="@L["Admin.ProfileTypes.Submitting"]">

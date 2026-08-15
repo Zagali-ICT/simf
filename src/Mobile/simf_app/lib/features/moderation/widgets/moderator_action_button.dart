@@ -62,7 +62,9 @@ class ModeratorActionButton extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Icon(icon, size: SimfTokens.moderatorActionButtonSize, color: solid ? SimfTokens.surface : color),
+            Icon(icon,
+                size: SimfTokens.moderatorActionButtonSize,
+                color: solid ? SimfTokens.surface : color,),
             const SizedBox(width: SimfTokens.space3),
             Flexible(
               child: Text(

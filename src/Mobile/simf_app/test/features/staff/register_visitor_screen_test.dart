@@ -30,7 +30,10 @@ class _FakeProfileRepo implements ProfileRepository {
   Future<List<CountryItem>> getCountries() async {
     if (fail) {
       throw const ApiFailure(
-          code: ApiErrorCodes.clientNetwork, message: 'x', httpStatus: 500,);
+        code: ApiErrorCodes.clientNetwork,
+        message: 'x',
+        httpStatus: 500,
+      );
     }
     return const <CountryItem>[
       CountryItem(code: 'SA', name: 'Saudi Arabia', nameArabic: 'السعودية'),
@@ -43,14 +46,24 @@ class _FakeProfileRepo implements ProfileRepository {
       profileTypes ??
       const <ProfileTypeItem>[
         ProfileTypeItem(
-            id: 'pt-normal', name: 'Normal', nameArabic: 'عادي', isVisitor: true,),
+          id: 'pt-normal',
+          name: 'Normal',
+          nameArabic: 'عادي',
+          isVisitor: true,
+        ),
         ProfileTypeItem(
-            id: 'pt-vip', name: 'VIP', nameArabic: 'كبار الزوار', isVisitor: true,),
+          id: 'pt-vip',
+          name: 'VIP',
+          nameArabic: 'كبار الزوار',
+          isVisitor: true,
+        ),
       ];
 
   @override
-  Future<List<OrganisationItem>> searchOrganisations(
-          {String? search, int top = 20,}) async =>
+  Future<List<OrganisationItem>> searchOrganisations({
+    String? search,
+    int top = 20,
+  }) async =>
       const <OrganisationItem>[
         OrganisationItem(id: 'org-1', nameAr: 'أكمي', nameEn: 'Acme'),
       ];
@@ -92,10 +105,11 @@ class _FakeStaffRepo implements StaffRepository {
   }
 
   @override
-  Future<bool> uploadIdImage(
-      {required String userId,
-      required List<int> bytes,
-      required String filename,}) async {
+  Future<bool> uploadIdImage({
+    required String userId,
+    required List<int> bytes,
+    required String filename,
+  }) async {
     idUploadCalls++;
     if (idUploadCalls <= idUploadFailures) {
       throw const ApiFailure(
@@ -108,10 +122,11 @@ class _FakeStaffRepo implements StaffRepository {
   }
 
   @override
-  Future<bool> uploadAvatar(
-      {required String userId,
-      required List<int> bytes,
-      required String filename,}) async {
+  Future<bool> uploadAvatar({
+    required String userId,
+    required List<int> bytes,
+    required String filename,
+  }) async {
     avatarUploadCalls++;
     return true;
   }
@@ -286,10 +301,12 @@ void main() {
       final email = find.byType(TextFormField).at(5);
       await tester.enterText(email, 'a' * 80);
       await tester.pump();
-      final emailState = tester.widget<TextField>(find.descendant(
-        of: email,
-        matching: find.byType(TextField),
-      ),);
+      final emailState = tester.widget<TextField>(
+        find.descendant(
+          of: email,
+          matching: find.byType(TextField),
+        ),
+      );
       expect(emailState.controller!.text.length, 50);
     });
 
@@ -326,7 +343,8 @@ void main() {
       expect(find.textContaining('pending approval'), findsOneWidget);
     });
 
-    testWidgets('D-700 — a national ID with a bad checksum shows the inline '
+    testWidgets(
+        'D-700 — a national ID with a bad checksum shows the inline '
         'error and never posts', (tester) async {
       final staff = _FakeStaffRepo();
       await _pump(tester, profile: _FakeProfileRepo(), staff: staff);
@@ -352,7 +370,8 @@ void main() {
   });
 
   group('StaffRegisterVisitorScreen — BUG-019 design-system rebuild', () {
-    testWidgets('19i — the inputs use the shared simfFieldDecoration '
+    testWidgets(
+        '19i — the inputs use the shared simfFieldDecoration '
         '(unfilled), not a page-local filled copy', (tester) async {
       await _pump(tester, profile: _FakeProfileRepo(), staff: _FakeStaffRepo());
 
@@ -366,7 +385,8 @@ void main() {
       expect(
         decorations.every((d) => d?.filled == false),
         isTrue,
-        reason: 'every input must come from simfFieldDecoration (filled: false)',
+        reason:
+            'every input must come from simfFieldDecoration (filled: false)',
       );
       // Sanity-check the shared decoration really is unfilled.
       expect(simfFieldDecoration().filled, isFalse);
@@ -429,7 +449,8 @@ void main() {
       expect(staff.lastRequest?.profileTypeId, 'pt-vip');
     });
 
-    testWidgets('19l — a pristine submit reveals every field error AND scrolls '
+    testWidgets(
+        '19l — a pristine submit reveals every field error AND scrolls '
         'the first one into view', (tester) async {
       tester.view.physicalSize = const Size(400, 800);
       tester.view.devicePixelRatio = 1.0;
@@ -455,7 +476,8 @@ void main() {
         return rect.top >= viewport.top && rect.bottom <= viewport.bottom;
       });
       expect(
-        visible, isNotEmpty,
+        visible,
+        isNotEmpty,
         reason: 'at least the first invalid field must be on screen',
       );
     });
@@ -530,13 +552,14 @@ void main() {
   });
 
   group('StaffRegisterVisitorScreen — deferred walk-in defects', () {
-    testWidgets('DEF-STF-003 — the name inputs cap at the server\'s 50, not '
+    testWidgets(
+        "DEF-STF-003 — the name inputs cap at the server's 50, not "
         '100', (tester) async {
       await _pump(tester, profile: _FakeProfileRepo(), staff: _FakeStaffRepo());
 
       // UserProfile.Name / NameArabic are nvarchar(50) and
-      // AdminWalkInRegistrationRequestValidator caps both at 50. The inputs used
-      // to accept 100, so a long name round-tripped into a 400.
+      // AdminWalkInRegistrationRequestValidator caps both at 50. The inputs
+      // used to accept 100, so a long name round-tripped into a 400.
       final fields = find.byType(TextFormField);
       await tester.enterText(fields.at(0), 'ب' * 80);
       await tester.enterText(fields.at(1), 'B' * 80);
@@ -554,7 +577,8 @@ void main() {
       expect(english.controller!.text.length, 50);
     });
 
-    testWidgets('DEF-STF-003 — a server field rejection paints ON the field, '
+    testWidgets(
+        'DEF-STF-003 — a server field rejection paints ON the field, '
         'and clears when it is edited', (tester) async {
       final staff = _FakeStaffRepo(
         registerFailure: const ApiFailure(
@@ -585,7 +609,8 @@ void main() {
         findsOneWidget,
       );
 
-      // Correcting the field drops the server message without another round-trip.
+      // Correcting the field drops the server message without another
+      // round-trip.
       await tester.enterText(find.byType(TextFormField).at(1), 'Raed S');
       await tester.pumpAndSettle();
       expect(
@@ -594,7 +619,8 @@ void main() {
       );
     });
 
-    testWidgets('DEF-STF-004 — a failed attachment upload is surfaced and can '
+    testWidgets(
+        'DEF-STF-004 — a failed attachment upload is surfaced and can '
         'be retried WITHOUT registering the visitor again', (tester) async {
       _mockImagePicker(tester);
       final staff = _FakeStaffRepo(idUploadFailures: 1);
@@ -628,7 +654,8 @@ void main() {
       expect(find.text('The attachments were uploaded.'), findsOneWidget);
     });
 
-    testWidgets('DEF-STF-007 — an empty classification lookup explains itself '
+    testWidgets(
+        'DEF-STF-007 — an empty classification lookup explains itself '
         'instead of silently blocking submit', (tester) async {
       final staff = _FakeStaffRepo();
       await _pump(

@@ -18,7 +18,7 @@ extension AppTextSizeScale on AppTextSize {
       case AppTextSize.small:
         return 0.85;
       case AppTextSize.normal:
-        return 1.0;
+        return 1;
       case AppTextSize.large:
         return 1.15;
       case AppTextSize.extraLarge:
@@ -116,24 +116,40 @@ class AccessibilityController extends Notifier<AccessibilitySettings> {
     unawaited(_pushToServer());
   }
 
+  // These four are passed as tear-offs to AccessibilityToggleRow's `onChanged`,
+  // which is a ValueChanged<bool>. A named parameter cannot satisfy that
+  // signature, so the rule is asking here for code that does not compile.
+  // ignore: avoid_positional_boolean_parameters
   Future<void> setHighContrast(bool value) async {
     await prefs.setBool(StorageKeys.accessibilityHighContrast, value);
     state = state.copyWith(highContrast: value);
     unawaited(_pushToServer());
   }
 
+  // These four are passed as tear-offs to AccessibilityToggleRow's `onChanged`,
+  // which is a ValueChanged<bool>. A named parameter cannot satisfy that
+  // signature, so the rule is asking here for code that does not compile.
+  // ignore: avoid_positional_boolean_parameters
   Future<void> setReduceMotion(bool value) async {
     await prefs.setBool(StorageKeys.accessibilityReduceMotion, value);
     state = state.copyWith(reduceMotion: value);
     unawaited(_pushToServer());
   }
 
+  // These four are passed as tear-offs to AccessibilityToggleRow's `onChanged`,
+  // which is a ValueChanged<bool>. A named parameter cannot satisfy that
+  // signature, so the rule is asking here for code that does not compile.
+  // ignore: avoid_positional_boolean_parameters
   Future<void> setScreenReaderAssist(bool value) async {
     await prefs.setBool(StorageKeys.accessibilityScreenReader, value);
     state = state.copyWith(screenReaderAssist: value);
     unawaited(_pushToServer());
   }
 
+  // These four are passed as tear-offs to AccessibilityToggleRow's `onChanged`,
+  // which is a ValueChanged<bool>. A named parameter cannot satisfy that
+  // signature, so the rule is asking here for code that does not compile.
+  // ignore: avoid_positional_boolean_parameters
   Future<void> setCaptions(bool value) async {
     await prefs.setBool(StorageKeys.accessibilityCaptions, value);
     state = state.copyWith(captions: value);
@@ -167,7 +183,8 @@ class AccessibilityController extends Notifier<AccessibilitySettings> {
 
   /// Best-effort write-through. A failed sync must never disturb the choice the
   /// user just made: the local prefs are already written and stay authoritative
-  /// until the next successful sync (same contract as `OrgProfileController.warm`).
+  /// until the next successful sync (same contract as
+  /// `OrgProfileController.warm`).
   Future<void> _pushToServer() async {
     try {
       await ref.read(accessibilityPreferencesRepositoryProvider).save(state);
@@ -189,8 +206,7 @@ class AccessibilitySync {
 
   Future<void> hydrate() async {
     try {
-      final repository =
-          _ref.read(accessibilityPreferencesRepositoryProvider);
+      final repository = _ref.read(accessibilityPreferencesRepositoryProvider);
       final remote = await repository.fetch();
       if (remote == null) {
         // The account has never saved a choice. Do NOT apply the server's
@@ -215,12 +231,13 @@ class AccessibilitySync {
 }
 
 final accessibilitySyncProvider =
-    Provider<AccessibilitySync>((ref) => AccessibilitySync(ref));
+    Provider<AccessibilitySync>(AccessibilitySync.new);
 
 final accessibilityControllerProvider =
     NotifierProvider<AccessibilityController, AccessibilitySettings>(() {
   throw UnimplementedError(
     'accessibilityControllerProvider must be overridden at app startup with '
-    'an AccessibilityController whose prefs comes from simfPrefsStorageProvider.',
+    'an AccessibilityController whose prefs comes from '
+        'simfPrefsStorageProvider.',
   );
 });

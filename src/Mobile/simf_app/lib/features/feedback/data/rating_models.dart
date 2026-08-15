@@ -11,24 +11,24 @@ class RatingFormQuestion {
     required this.isRequired,
   });
 
-  final String id;
-  final String text;
-  final String textArabic;
-  final bool isRequired;
-
-  String localizedText(bool isArabic) {
-    final ar = textArabic.trim();
-    final en = text.trim();
-    return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
-  }
-
-  static RatingFormQuestion fromJson(Map<String, dynamic> json) {
+  factory RatingFormQuestion.fromJson(Map<String, dynamic> json) {
     return RatingFormQuestion(
       id: json['id'] as String? ?? '',
       text: json['text'] as String? ?? '',
       textArabic: json['textArabic'] as String? ?? '',
       isRequired: json['isRequired'] as bool? ?? false,
     );
+  }
+
+  final String id;
+  final String text;
+  final String textArabic;
+  final bool isRequired;
+
+  String localizedText({required bool isArabic}) {
+    final ar = textArabic.trim();
+    final en = text.trim();
+    return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
   }
 }
 
@@ -42,18 +42,7 @@ class RatingFormGroup {
     required this.questions,
   });
 
-  final String id;
-  final String name;
-  final String nameArabic;
-  final List<RatingFormQuestion> questions;
-
-  String localizedName(bool isArabic) {
-    final ar = nameArabic.trim();
-    final en = name.trim();
-    return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
-  }
-
-  static RatingFormGroup fromJson(Map<String, dynamic> json) {
+  factory RatingFormGroup.fromJson(Map<String, dynamic> json) {
     final rawQuestions = (json['questions'] as List?) ?? const <dynamic>[];
     return RatingFormGroup(
       id: json['id'] as String? ?? '',
@@ -64,6 +53,17 @@ class RatingFormGroup {
           .map((e) => RatingFormQuestion.fromJson(e.cast<String, dynamic>()))
           .toList(growable: false),
     );
+  }
+
+  final String id;
+  final String name;
+  final String nameArabic;
+  final List<RatingFormQuestion> questions;
+
+  String localizedName({required bool isArabic}) {
+    final ar = nameArabic.trim();
+    final en = name.trim();
+    return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
   }
 }
 
@@ -127,6 +127,38 @@ class RatingFormView {
     this.isEligible = true,
   });
 
+  factory RatingFormView.fromData(Object? data) {
+    final json =
+        (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
+    final rawGroups = (json['groups'] as List?) ?? const <dynamic>[];
+    final rawUngrouped =
+        (json['ungroupedQuestions'] as List?) ?? const <dynamic>[];
+    return RatingFormView(
+      ratingTypeId: json['ratingTypeId'] as String? ?? '',
+      code: json['code'] as String? ?? '',
+      name: json['name'] as String? ?? '',
+      nameArabic: json['nameArabic'] as String? ?? '',
+      hasOverallStars: json['hasOverallStars'] as bool? ?? true,
+      allowComment: json['allowComment'] as bool? ?? false,
+      commentLabel: json['commentLabel'] as String?,
+      commentLabelArabic: json['commentLabelArabic'] as String?,
+      targetId: json['targetId'] as String?,
+      groups: rawGroups
+          .whereType<Map<dynamic, dynamic>>()
+          .map((e) => RatingFormGroup.fromJson(e.cast<String, dynamic>()))
+          .toList(growable: false),
+      ungroupedQuestions: rawUngrouped
+          .whereType<Map<dynamic, dynamic>>()
+          .map((e) => RatingFormQuestion.fromJson(e.cast<String, dynamic>()))
+          .toList(growable: false),
+      existing: RatingExistingSubmission.fromJson(json['existing']),
+      targetName: json['targetName'] as String?,
+      targetNameArabic: json['targetNameArabic'] as String?,
+      targetStart: parseWireOrNull(json['targetStart'] as String? ?? ''),
+      isEligible: json['isEligible'] as bool? ?? true,
+    );
+  }
+
   final String ratingTypeId;
   final String code;
   final String name;
@@ -154,47 +186,19 @@ class RatingFormView {
 
   /// The rated session's title in the active locale, or null when there is no
   /// per-session target (a Global "App" rating).
-  String? localizedTargetName(bool isArabic) {
+  String? localizedTargetName({required bool isArabic}) {
     final ar = (targetNameArabic ?? '').trim();
     final en = (targetName ?? '').trim();
-    final value = isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
+    final value =
+        isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
     return value.isEmpty ? null : value;
   }
 
-  String? localizedCommentLabel(bool isArabic) {
+  String? localizedCommentLabel({required bool isArabic}) {
     final ar = (commentLabelArabic ?? '').trim();
     final en = (commentLabel ?? '').trim();
-    final value = isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
+    final value =
+        isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
     return value.isEmpty ? null : value;
-  }
-
-  static RatingFormView fromData(Object? data) {
-    final json = (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
-    final rawGroups = (json['groups'] as List?) ?? const <dynamic>[];
-    final rawUngrouped = (json['ungroupedQuestions'] as List?) ?? const <dynamic>[];
-    return RatingFormView(
-      ratingTypeId: json['ratingTypeId'] as String? ?? '',
-      code: json['code'] as String? ?? '',
-      name: json['name'] as String? ?? '',
-      nameArabic: json['nameArabic'] as String? ?? '',
-      hasOverallStars: json['hasOverallStars'] as bool? ?? true,
-      allowComment: json['allowComment'] as bool? ?? false,
-      commentLabel: json['commentLabel'] as String?,
-      commentLabelArabic: json['commentLabelArabic'] as String?,
-      targetId: json['targetId'] as String?,
-      groups: rawGroups
-          .whereType<Map<dynamic, dynamic>>()
-          .map((e) => RatingFormGroup.fromJson(e.cast<String, dynamic>()))
-          .toList(growable: false),
-      ungroupedQuestions: rawUngrouped
-          .whereType<Map<dynamic, dynamic>>()
-          .map((e) => RatingFormQuestion.fromJson(e.cast<String, dynamic>()))
-          .toList(growable: false),
-      existing: RatingExistingSubmission.fromJson(json['existing']),
-      targetName: json['targetName'] as String?,
-      targetNameArabic: json['targetNameArabic'] as String?,
-      targetStart: parseWireOrNull(json['targetStart'] as String? ?? ''),
-      isEligible: json['isEligible'] as bool? ?? true,
-    );
   }
 }

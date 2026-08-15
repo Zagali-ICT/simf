@@ -20,10 +20,10 @@ import 'golden_fonts.dart';
 ///   flutter test --update-goldens test/golden/staff_register_visitor_golden_test.dart
 ///
 /// **Re-locked after the BUG-019 design-system rebuild (2026-07-26).** The
-/// screen now renders the shared account chrome ([SimfFormScaffold]: back
+/// screen now renders the shared account chrome (`SimfFormScaffold`: back
 /// chevron + the shared EN/ع language pill + the crest header) over the beige
 /// card, with the two-column field grid built from the shared field widgets
-/// (`simfFieldDecoration` inputs, [SimfPickerField] lookups, the gender pills,
+/// (`simfFieldDecoration` inputs, `SimfPickerField` lookups, the gender pills,
 /// the beige document tabs, the attachment fields and the terms + gold التالي
 /// CTA). Locks the layout, typography, colour, spacing and RTL of the rebuilt
 /// tablet screen — the previous golden captured the hand-rolled header, the

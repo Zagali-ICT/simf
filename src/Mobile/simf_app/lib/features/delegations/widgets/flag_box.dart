@@ -17,7 +17,8 @@ class FlagBox extends StatelessWidget {
         border: Border.all(color: SimfTokens.line),
         borderRadius: BorderRadius.circular(SimfTokens.radiusLarge),
       ),
-      child: Text(emoji, style: const TextStyle(fontSize: SimfTokens.flagBoxFontSize)),
+      child: Text(emoji,
+          style: const TextStyle(fontSize: SimfTokens.flagBoxFontSize),),
     );
   }
 }

@@ -18,15 +18,20 @@ export 'data/meet_repository.dart';
 /// Page 035 — قابل أشخاص مثلك · Meet people (#35, `/meet`, approved account).
 ///
 /// **Build #13 rework** — this was the AI "% match" recommender; it is now the
-/// curated + opt-in **partner directory**: Sponsors, Speakers and Booth companies
-/// plus opted-in "Other"-type members (Normal / VIP visitors excluded). Tapping a
-/// speaker opens the speaker profile, a sponsor the sponsor detail, a booth its
-/// exhibitor detail; an opted-in person shows their data on the card (no per-person
-/// screen). The whole feature is gated by the CP switch — when off the backend
-/// returns an empty list (and the Home entry point is hidden). Data:
-/// `partnerDirectoryProvider` → `GET /app/networking/partner-directory`. Reuses the
-/// speakers/sponsors list visual language via the shared [SimfIdentityCell] (no
-/// bespoke Figma node; owner-approved reuse of the existing list chrome).
+/// curated + opt-in **partner directory**: Sponsors, Speakers and Booth
+/// companies plus opted-in "Other"-type members (Normal / VIP visitors
+/// excluded). Tapping a speaker opens the speaker profile, a sponsor the
+/// sponsor detail, a booth its exhibitor detail; an opted-in person shows their
+/// data on the card (no per-person screen). The whole feature is gated by the
+/// CP switch — when off the backend returns an empty list (and the Home entry
+/// point is hidden). Data: `partnerDirectoryProvider` → `GET
+/// /app/networking/partner-directory`. Reuses the speakers/sponsors list visual
+/// language via the shared [SimfIdentityCell] (no bespoke Figma node;
+/// owner-approved reuse of the existing list chrome).
+///
+/// Route: `RouteNames.meetPeople`.
+/// Data: [partnerDirectoryProvider], [simfDataConfigProvider].
+/// Perf: lazy — builds children on demand (ListView.separated).
 class MeetPeopleScreen extends ConsumerWidget {
   const MeetPeopleScreen({super.key});
 
@@ -36,33 +41,30 @@ class MeetPeopleScreen extends ConsumerWidget {
     final directory = ref.watch(partnerDirectoryProvider);
     final baseUrl = ref.watch(simfDataConfigProvider).baseUrl;
 
-    Future<void> onRefresh() => refreshAsync(ref, partnerDirectoryProvider.future);
+    Future<void> onRefresh() =>
+        refreshAsync(ref, partnerDirectoryProvider.future);
 
     return SimfPageShell(
       title: l10n.meetPeopleTitle,
       onBack: () => backOrHome(context),
       body: directory.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => SimfPullToRefresh(
+        error: (_, __) => SimfRefreshableMessage(
           onRefresh: onRefresh,
-          child: SimfPullableHost(
-            child: SimfErrorState(
-              message: l10n.meetPeopleError,
-              retryLabel: l10n.retryLabel,
-              onRetry: () => ref.invalidate(partnerDirectoryProvider),
-            ),
+          child: SimfErrorState(
+            message: l10n.meetPeopleError,
+            retryLabel: l10n.retryLabel,
+            onRetry: () => ref.invalidate(partnerDirectoryProvider),
           ),
         ),
         data: (entries) {
           final isArabic = l10n.isArabic;
           if (entries.isEmpty) {
-            return SimfPullToRefresh(
+            return SimfRefreshableMessage(
               onRefresh: onRefresh,
-              child: SimfPullableHost(
-                child: SimfEmptyState(
+              child: SimfEmptyState(
                 icon: Icons.people_outline,
                 message: l10n.meetPeopleEmpty,
-              ),
               ),
             );
           }
@@ -77,8 +79,8 @@ class MeetPeopleScreen extends ConsumerWidget {
               itemBuilder: (context, index) {
                 final entry = entries[index];
                 return SimfIdentityCell(
-                  title: entry.localizedName(isArabic),
-                  subtitle: entry.localizedSubtitle(isArabic),
+                  title: entry.localizedName(isArabic: isArabic),
+                  subtitle: entry.localizedSubtitle(isArabic: isArabic),
                   imageUrl: entry.logoUrl(baseUrl),
                   countryId: entry.countryId,
                   onTap: _onTapFor(context, entry),

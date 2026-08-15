@@ -5,8 +5,8 @@ import 'package:simf_app/features/accessibility/data/accessibility_controller.da
 
 /// The gold-bordered organiser caption strip under the player (frame 934:3613).
 /// P5 — D-439: when the session carries admin-typed [caption] text it is shown
-/// in readable white; otherwise the muted placeholder [hint] is shown (and for a
-/// YouTube feed the player's own CC supplies captions meanwhile).
+/// in readable white; otherwise the muted placeholder [hint] is shown (and for
+/// a YouTube feed the player's own CC supplies captions meanwhile).
 ///
 /// A15 (2026-07-26) — the strip used to carry a gold "AI" badge next to copy
 /// promising live translation of the spoken audio. It renders a STATIC
@@ -31,7 +31,7 @@ class CaptionStrip extends ConsumerWidget {
     bool captionsEnabled;
     try {
       captionsEnabled = ref.watch(accessibilityControllerProvider).captions;
-    } catch (_) {
+    } on Object catch (_) {
       captionsEnabled = true;
     }
     if (!captionsEnabled) {

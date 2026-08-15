@@ -14,6 +14,23 @@ using SIMF.Contracts.Sponsors;
 
 namespace SIMF.ApiClient;
 
+/// <summary>One proxied image read: the upstream status, and EITHER the bytes to
+/// re-stream OR the location the caller should redirect the browser to.
+///
+/// The two are mutually exclusive by construction. That is the point: the caller
+/// cannot accidentally re-serve a redirect target's body from its own origin,
+/// because when a redirect is reported there is no body to serve.</summary>
+/// <param name="StatusCode">Upstream HTTP status; 503 when unreachable.</param>
+/// <param name="ContentType">Upstream media type, or null when there are no bytes.</param>
+/// <param name="Bytes">The image bytes; empty on any non-success or a redirect.</param>
+/// <param name="RedirectLocation">Where the BROWSER should go, when the upstream
+/// answered with a 3xx. Null in every other case.</param>
+public readonly record struct ImageFetch(
+    int StatusCode,
+    string? ContentType,
+    byte[] Bytes,
+    string? RedirectLocation);
+
 /// <summary>
 /// A typed client over the SIMF anonymous public-read endpoints (the public
 /// programme and speakers surface). Unlike <see cref="SimfAuthClient"/>
@@ -138,57 +155,62 @@ public sealed class SimfPublicClient(HttpClient http)
     /// <summary>Fetch one gallery item's primary image bytes
     /// (<c>GET /api/v1/app/media/{id}/image</c>) so a same-origin proxy can
     /// re-stream it to the browser. Returns the upstream status, content type
-    /// and bytes; an unreachable service surfaces as 503 with no bytes.</summary>
-    public async Task<(int StatusCode, string? ContentType, byte[] Bytes)> FetchMediaImageAsync(
-        Guid id, CancellationToken cancellationToken = default)
-    {
-        using var message = new HttpRequestMessage(
-            HttpMethod.Get, $"{BasePath}media/{id}/image");
-        try
-        {
-            using var response = await http.SendAsync(message, cancellationToken);
-            if (!response.IsSuccessStatusCode)
-            {
-                return ((int)response.StatusCode, null, []);
-            }
-            var bytes = await response.Content.ReadAsByteArrayAsync(cancellationToken);
-            return (
-                (int)response.StatusCode,
-                response.Content.Headers.ContentType?.MediaType,
-                bytes);
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            throw;
-        }
-        catch (Exception exception) when (exception is HttpRequestException
-            or TaskCanceledException)
-        {
-            return ((int)HttpStatusCode.ServiceUnavailable, null, []);
-        }
-    }
+    /// and bytes; an unreachable service surfaces as 503 with no bytes.
+    /// A redirect is REPORTED rather than followed — see
+    /// <see cref="ReadImageAsync"/>.</summary>
+    public Task<ImageFetch> FetchMediaImageAsync(
+        Guid id, CancellationToken cancellationToken = default) =>
+        ReadImageAsync($"{BasePath}media/{id}/image", cancellationToken);
 
     /// <summary>Fetch a unified media asset's bytes
     /// (<c>GET /api/v1/app/assets/{category}/{ownerId}/image</c>) so the Website's
-    /// same-origin proxy can re-stream it. An external-link asset is followed
-    /// transparently by HttpClient; an unreachable service surfaces as 503.</summary>
-    public async Task<(int StatusCode, string? ContentType, byte[] Bytes)> FetchAssetImageAsync(
-        string category, Guid ownerId, CancellationToken cancellationToken = default)
+    /// same-origin proxy can re-stream it.
+    ///
+    /// An EXTERNAL-LINK asset answers with a 302 to an editor-supplied URL. That
+    /// redirect is reported, never followed — see <see cref="ReadImageAsync"/>.
+    /// An unreachable service surfaces as 503.</summary>
+    public Task<ImageFetch> FetchAssetImageAsync(
+        string category, Guid ownerId, CancellationToken cancellationToken = default) =>
+        ReadImageAsync($"{BasePath}assets/{category}/{ownerId}/image", cancellationToken);
+
+    /// <summary>One proxied image read.
+    ///
+    /// <para><b>Redirects are reported, not followed.</b> The Website registers
+    /// this client with <c>AllowAutoRedirect = false</c>, because an
+    /// external-link asset 302s to a URL a Control Panel editor chose. Following
+    /// it server-side pulled a third party's bytes AND their Content-Type back
+    /// onto the Website's own origin, which is a same-origin script-execution
+    /// primitive on the public domain. Handing the caller
+    /// <see cref="ImageFetch.RedirectLocation"/> lets it send the BROWSER to
+    /// that host instead, which is what the API's 302 always intended.</para>
+    ///
+    /// <para>A redirect without a Location header is reported as a 502: it is an
+    /// upstream that cannot be honoured, and returning a bare 302 downstream
+    /// would strand the browser.</para></summary>
+    private async Task<ImageFetch> ReadImageAsync(
+        string path, CancellationToken cancellationToken)
     {
-        using var message = new HttpRequestMessage(
-            HttpMethod.Get, $"{BasePath}assets/{category}/{ownerId}/image");
+        using var message = new HttpRequestMessage(HttpMethod.Get, path);
         try
         {
             using var response = await http.SendAsync(message, cancellationToken);
+            var status = (int)response.StatusCode;
+
+            if (status is >= 300 and <= 399)
+            {
+                var location = response.Headers.Location?.ToString();
+                return string.IsNullOrWhiteSpace(location)
+                    ? new ImageFetch((int)HttpStatusCode.BadGateway, null, [], null)
+                    : new ImageFetch(status, null, [], location);
+            }
             if (!response.IsSuccessStatusCode)
             {
-                return ((int)response.StatusCode, null, []);
+                return new ImageFetch(status, null, [], null);
             }
+
             var bytes = await response.Content.ReadAsByteArrayAsync(cancellationToken);
-            return (
-                (int)response.StatusCode,
-                response.Content.Headers.ContentType?.MediaType,
-                bytes);
+            return new ImageFetch(
+                status, response.Content.Headers.ContentType?.MediaType, bytes, null);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -197,7 +219,7 @@ public sealed class SimfPublicClient(HttpClient http)
         catch (Exception exception) when (exception is HttpRequestException
             or TaskCanceledException)
         {
-            return ((int)HttpStatusCode.ServiceUnavailable, null, []);
+            return new ImageFetch((int)HttpStatusCode.ServiceUnavailable, null, [], null);
         }
     }
 

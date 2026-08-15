@@ -1,6 +1,6 @@
 import 'package:meta/meta.dart';
 
-import 'token_payload_dto.dart';
+import 'package:simf_auth_pkg/src/data/dto/token_payload_dto.dart';
 
 /// Wire shape for the `data` of `POST /app/auth/sign-in` — the backend
 /// `SignInResponse` (`mfaRequired` / `mfaToken` / `otpToken` / `tokens` /

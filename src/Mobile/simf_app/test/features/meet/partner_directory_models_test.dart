@@ -29,8 +29,18 @@ void main() {
     test('listFromData reads the { entries: [...] } envelope', () {
       final list = PartnerDirectoryEntry.listFromData(<String, dynamic>{
         'entries': <dynamic>[
-          <String, dynamic>{'kind': 'sponsor', 'id': 'p1', 'name': 'Acme', 'nameArabic': 'أكمي'},
-          <String, dynamic>{'kind': 'booth', 'id': 'b1', 'name': 'Co', 'nameArabic': 'شركة'},
+          <String, dynamic>{
+            'kind': 'sponsor',
+            'id': 'p1',
+            'name': 'Acme',
+            'nameArabic': 'أكمي',
+          },
+          <String, dynamic>{
+            'kind': 'booth',
+            'id': 'b1',
+            'name': 'Co',
+            'nameArabic': 'شركة',
+          },
         ],
       });
       expect(list, hasLength(2));
@@ -40,38 +50,60 @@ void main() {
 
     test('localizedName / localizedSubtitle fall back across languages', () {
       const arOnly = PartnerDirectoryEntry(
-        kind: 'person', id: 'u1', name: '', nameArabic: 'محمد',
+        kind: 'person',
+        id: 'u1',
+        name: '',
+        nameArabic: 'محمد',
         subtitleArabic: 'مهندس',
       );
-      expect(arOnly.localizedName(false), 'محمد'); // en empty → ar fallback
-      expect(arOnly.localizedName(true), 'محمد');
-      expect(arOnly.localizedSubtitle(false), 'مهندس');
-      expect(arOnly.localizedSubtitle(true), 'مهندس');
+      expect(arOnly.localizedName(isArabic: false),
+          'محمد',); // en empty → ar fallback
+      expect(arOnly.localizedName(isArabic: true), 'محمد');
+      expect(arOnly.localizedSubtitle(isArabic: false), 'مهندس');
+      expect(arOnly.localizedSubtitle(isArabic: true), 'مهندس');
       const noSub = PartnerDirectoryEntry(
-        kind: 'person', id: 'u2', name: 'X', nameArabic: 'س',
+        kind: 'person',
+        id: 'u2',
+        name: 'X',
+        nameArabic: 'س',
       );
-      expect(noSub.localizedSubtitle(true), isNull);
+      expect(noSub.localizedSubtitle(isArabic: true), isNull);
     });
 
     test('logoUrl builds the right asset route per kind', () {
       const base = 'http://t/api/v1';
       const speaker = PartnerDirectoryEntry(
-        kind: 'speaker', id: 's1', name: 'S', nameArabic: 'س',
+        kind: 'speaker',
+        id: 's1',
+        name: 'S',
+        nameArabic: 'س',
         logoRelativePath: 'x.png',
       );
       const sponsor = PartnerDirectoryEntry(
-        kind: 'sponsor', id: 'p1', name: 'P', nameArabic: 'ب',
+        kind: 'sponsor',
+        id: 'p1',
+        name: 'P',
+        nameArabic: 'ب',
         logoRelativePath: 'x.png',
       );
       const booth = PartnerDirectoryEntry(
-        kind: 'booth', id: 'b1', name: 'B', nameArabic: 'ب',
+        kind: 'booth',
+        id: 'b1',
+        name: 'B',
+        nameArabic: 'ب',
         logoContactId: 'c9',
       );
       const person = PartnerDirectoryEntry(
-        kind: 'person', id: 'u1', name: 'U', nameArabic: 'م',
+        kind: 'person',
+        id: 'u1',
+        name: 'U',
+        nameArabic: 'م',
       );
       const noLogoSpeaker = PartnerDirectoryEntry(
-        kind: 'speaker', id: 's2', name: 'S', nameArabic: 'س',
+        kind: 'speaker',
+        id: 's2',
+        name: 'S',
+        nameArabic: 'س',
       );
 
       expect(speaker.logoUrl(base), '$base/app/assets/SpeakerPhoto/s1/image');
@@ -82,7 +114,10 @@ void main() {
       expect(noLogoSpeaker.logoUrl(base), isNull);
       // Booth with no exhibitor contact → no company logo.
       const boothNoContact = PartnerDirectoryEntry(
-        kind: 'booth', id: 'b2', name: 'B', nameArabic: 'ب',
+        kind: 'booth',
+        id: 'b2',
+        name: 'B',
+        nameArabic: 'ب',
       );
       expect(boothNoContact.logoUrl(base), isNull);
     });

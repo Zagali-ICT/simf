@@ -25,7 +25,7 @@ import 'golden_fonts.dart';
 /// **Both**-gate state (both pills unselected, hint shown, scan disabled) — the
 /// frame additionally highlights دخول, which is the post-selection state.
 
-final _gate = OperatorGate.fromJson(<String, dynamic>{
+final _gate = OperatorGate.fromJson(const <String, dynamic>{
   'gateId': 'g1',
   'code': 'MAIN',
   'name': 'Main Gate',

@@ -82,7 +82,8 @@ internal sealed class AdminProfileTypeCommandService(
                 profileType.IsActive,
                 profileType.IsForVisitor,
                 profileType.IsAppRegisterable,
-                profileType.ShowInPartnerDirectory))
+                profileType.ShowInPartnerDirectory,
+                profileType.IsVipTier))
             .ToListAsync(cancellationToken);
 
         return GridPage<AdminProfileTypeSummary>.Of(page, total,
@@ -154,6 +155,11 @@ internal sealed class AdminProfileTypeCommandService(
             IsAppRegisterable = request.IsAppRegisterable,
             // Meet-People networking visibility (default true).
             ShowInPartnerDirectory = request.ShowInPartnerDirectory,
+            // VIP audience tier — VIP-tier seat self-reservation + the app's
+            // isVip. Default false; not a meetings gate. Until this was bound
+            // the seeder was the ONLY writer, so a CP-created type could never
+            // be VIP.
+            IsVipTier = request.IsVipTier,
             IsActive = request.IsActive,
             CreatedAt = now,
             // The small number the printed badge carries. Allocated, not
@@ -248,6 +254,9 @@ internal sealed class AdminProfileTypeCommandService(
         profileType.IsAppRegisterable = request.IsAppRegisterable;
         // Meet-People networking visibility.
         profileType.ShowInPartnerDirectory = request.ShowInPartnerDirectory;
+        // VIP audience tier. Assigned unconditionally like the flags above, so
+        // an edit that clears the checkbox actually clears it.
+        profileType.IsVipTier = request.IsVipTier;
         profileType.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -329,7 +338,8 @@ internal sealed class AdminProfileTypeCommandService(
             profileType.IsActive,
             profileType.IsForVisitor,
             profileType.IsAppRegisterable,
-            profileType.ShowInPartnerDirectory);
+            profileType.ShowInPartnerDirectory,
+            profileType.IsVipTier);
 
     /// <summary>Parses the wire-side stringly mobile-app-role,
     /// rejecting unknown values with a typed 400. Null / empty defaults

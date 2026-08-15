@@ -81,7 +81,8 @@ Future<void> _pumpOnboarding(WidgetTester tester, _FakePrefs prefs) async {
     ProviderScope(
       overrides: <Override>[
         simfPrefsStorageProvider.overrideWithValue(prefs),
-        localeControllerProvider.overrideWith(() => LocaleController(prefs: prefs)),
+        localeControllerProvider
+            .overrideWith(() => LocaleController(prefs: prefs)),
       ],
       child: MaterialApp.router(
         theme: SimfTheme.dark(),
@@ -107,6 +108,9 @@ Future<bool> _isBundled(String key) async {
   try {
     await rootBundle.load(key);
     return true;
+    // Catching an Error on purpose: this boundary must degrade rather than
+    // crash, and the platform raises an Error rather than an Exception here.
+    // ignore: avoid_catching_errors
   } on FlutterError {
     return false;
   }
@@ -201,7 +205,8 @@ void main() {
       }
     });
 
-    testWidgets('DEF-ONB-006 — each step shows its OWN title, not title 1 '
+    testWidgets(
+        'DEF-ONB-006 — each step shows its OWN title, not title 1 '
         'three times', (tester) async {
       final prefs = _FakePrefs();
       await _pumpOnboarding(tester, prefs);
@@ -221,7 +226,8 @@ void main() {
       expect(find.text('Your smart badge and networking'), findsOneWidget);
     });
 
-    testWidgets('DEF-ONB-004 — the carousel ships ONE background clip, not '
+    testWidgets(
+        'DEF-ONB-004 — the carousel ships ONE background clip, not '
         'three byte-identical copies', (tester) async {
       // The screen opens a single decoder on AppAssets.onboardVideo and keeps
       // it across swipes; the per-step placeholders onboard_02/03.mp4 were the

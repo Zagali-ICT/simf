@@ -4,8 +4,8 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 
 /// These rules decide which actions a session detail OFFERS, so a wrong answer
 /// either hides a legitimate action or dangles one the router will bounce. They
-/// were getters inside a 500-line widget; as pure functions they can be asserted
-/// per role, which is what the defect ids below were fixed for.
+/// were getters inside a 500-line widget; as pure functions they can be
+/// asserted per role, which is what the defect ids below were fixed for.
 void main() {
   group('canJoinSession (DEF-MOD-004)', () {
     test('is offered to attendees', () {

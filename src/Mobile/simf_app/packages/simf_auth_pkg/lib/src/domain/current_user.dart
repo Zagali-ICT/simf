@@ -1,8 +1,8 @@
 import 'package:meta/meta.dart';
 
-import 'app_role.dart';
-import 'preferred_language.dart';
-import 'registration_status.dart';
+import 'package:simf_auth_pkg/src/domain/app_role.dart';
+import 'package:simf_auth_pkg/src/domain/preferred_language.dart';
+import 'package:simf_auth_pkg/src/domain/registration_status.dart';
 
 /// The signed-in user as the app sees it.
 ///
@@ -36,7 +36,7 @@ class CurrentUser {
 
   /// Convenience: is this user allowed past the auth wall? Pending and
   /// rejected accounts can sign in but cannot see Visitor-protected
-  /// screens; the screen-level gate uses [appRole.isAtLeast] for the
+  /// screens; the screen-level gate uses `appRole.isAtLeast` for the
   /// permission check and [registrationStatus] for the route decision.
   bool get isApproved => registrationStatus == RegistrationStatus.approved;
 
@@ -45,8 +45,9 @@ class CurrentUser {
   /// presents as [AppRole.guest] regardless of the role its token carries — the
   /// menus, home layout and route role-gate all treat it as a guest. The one
   /// thing it reaches as itself is the registration-status gate, which is
-  /// auth-gated (any signed-in user), not role-gated. Once approved this returns
-  /// the real [appRole]. Single source of truth for the "pending ⇒ guest" rule.
+  /// auth-gated (any signed-in user), not role-gated. Once approved this
+  /// returns the real [appRole]. Single source of truth for the "pending ⇒
+  /// guest" rule.
   AppRole get effectiveAppRole => isApproved ? appRole : AppRole.guest;
 
   CurrentUser copyWith({

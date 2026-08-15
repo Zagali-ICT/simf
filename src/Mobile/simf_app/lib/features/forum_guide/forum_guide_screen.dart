@@ -6,12 +6,17 @@ import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/features/forum_guide/widgets/forum_guide_cards.dart';
 
 /// Page 200 — دليل الملتقى · Forum guide (`/forum-guide`, public). Pixel-parity
-/// to KSA Figma frame **1388:7493**: the navy [SimfPageShell] shell, a gold intro
-/// banner, then five numbered step cards (gold index badge + title + muted
-/// description) on the navy-deep card chrome.
+/// to KSA Figma frame **1388:7493**: the navy [SimfPageShell] shell, a gold
+/// intro banner, then five numbered step cards (gold index badge + title +
+/// muted description) on the navy-deep card chrome.
 ///
 /// Static in-app copy — no backend (the steps live in [AppL10n]). The caret on
 /// each card is decorative, matching the design (the steps do not navigate).
+///
+/// Route: `RouteNames.forumGuide`.
+/// Data: none — renders what it is given.
+/// Perf: ListView builds every child up front — correct for a short static
+///       page, a defect on a data feed.
 class ForumGuideScreen extends StatelessWidget {
   const ForumGuideScreen({super.key});
 

@@ -64,8 +64,8 @@ void main() {
       final result = ApiResult<Object>.fromJson(json, (_) => Object());
       expect(result.error!.message, contains('incorrect'));
       expect(result.error!.messageArabic, contains('غير صحيحة'));
-      expect(result.error!.localized(true), contains('غير صحيحة'));
-      expect(result.error!.localized(false), contains('incorrect'));
+      expect(result.error!.localized(isArabic: true), contains('غير صحيحة'));
+      expect(result.error!.localized(isArabic: false), contains('incorrect'));
     });
 
     test('decodes field-level details on a VALIDATION_FAILED envelope', () {
@@ -149,7 +149,7 @@ void main() {
         equals('البريد الإلكتروني أو كلمة المرور غير صحيحة.'),
       );
       expect(
-        ApiFailure.fromEnvelope(error, isArabic: false).message,
+        ApiFailure.fromEnvelope(error).message,
         equals('The email or password is incorrect.'),
       );
     });

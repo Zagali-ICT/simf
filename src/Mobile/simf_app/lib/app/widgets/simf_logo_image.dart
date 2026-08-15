@@ -86,8 +86,8 @@ class SimfLogoImage extends StatelessWidget {
     );
   }
 
-  /// The provider this BOX paints: [full] itself, or a decode-capped resize when
-  /// the caller gave a cap. The full-size viewer always paints [full].
+  /// The provider this BOX paints: [full] itself, or a decode-capped resize
+  /// when the caller gave a cap. The full-size viewer always paints [full].
   ImageProvider _thumbnail(NetworkImage full) =>
       (cacheWidth == null && cacheHeight == null)
           ? full

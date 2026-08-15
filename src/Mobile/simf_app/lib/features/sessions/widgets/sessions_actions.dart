@@ -7,7 +7,8 @@ import 'package:simf_app/app/widgets/simf_svg_icon.dart';
 /// The action row (frame 908:1733 / 908:1737): a gold-outlined "share location"
 /// next to a gold-filled "guide me to my seat".
 class SessionsActions extends StatelessWidget {
-  const SessionsActions({required this.l10n, required this.onNavigate, super.key, this.onShare});
+  const SessionsActions(
+      {required this.l10n, required this.onNavigate, super.key, this.onShare,});
 
   final AppL10n l10n;
   final VoidCallback onNavigate;
@@ -60,7 +61,8 @@ class SessionsActions extends StatelessWidget {
                 vertical: SimfTokens.space3,
               ),
             ),
-            icon: const Icon(Icons.share_outlined, size: SimfTokens.sessionsActionsSize),
+            icon: const Icon(Icons.share_outlined,
+                size: SimfTokens.sessionsActionsSize,),
             label: Text(
               l10n.shareLocation,
               style: SimfTokens.labelSemiboldSm,

@@ -32,6 +32,20 @@ update). Details + Delete (soft-delete via Deactivate) per row.
 | Name (Arabic) | text | yes | 128 | |
 | PageColor | text + `<input type="color">` paired swatch (D-120) | yes | 32 | accepts `#rrggbb`, 3-digit hex, `var(--brand-blue)` CSS variables |
 | Active | checkbox | no | — | Edit-only |
+| Show in the app sign-up picker | checkbox | no | — | default on; off = a CP-only type an admin assigns rather than a customer picks |
+| VIP tier | checkbox | no | — | default OFF; audience form only. See below. |
+
+**VIP tier.** Ticking it marks the type as a VIP audience tier, which does two
+things and only two: its holders may **self-reserve a VIP-tier seat**, and the
+app reports them as `isVip`. It does **not** grant a meeting — speaker-meeting
+eligibility is the per-user `AllowsSpeakerMeeting` flag on the account, set from
+the account edit form, not from here (D-760).
+
+The checkbox exists because the flag previously had no admin write path at all:
+the identity seeder was the only writer anywhere, so it could only ever be true
+on the seeded VVIP and VIP rows, and a type created from this page could never
+be VIP however the form was filled. It is deliberately absent from the Other
+(partner) form — a Sponsor or Exhibitor type is never a VIP tier.
 
 PageColor uses the paired text+swatch (D-120): the text is the source of
 truth (accepts the full free-text contract), the swatch is a visual
@@ -58,6 +72,7 @@ shortcut that writes `#rrggbb` back. When the text isn't a canonical
 | Edit name + color → wizard picks up new color | E2E-VPT-002 |
 | Deactivate in-use → 409 `ProfileTypeInUse` toast (bilingual) | E2E-VPT-003 |
 | Cross-UserType id rejection | E2E-VPT-004 |
+| VIP tier: create ticked, survives an unrelated edit, can be cleared, absent on the Other form | E2E-VPT-015 |
 
 ## 12. Related
 
@@ -68,4 +83,6 @@ shortcut that writes `#rrggbb` back. When the text isn't a canonical
 - Consumer: [`admin-visitors.md`](admin-visitors.md) walk-in wizard
 - Decisions: D-115 (backend), D-118 (CP pages), D-120 (PageColor picker).
 
-_Last reviewed:_ 2026-05-28 by Claude (D-133 slice 3).
+_Last reviewed:_ 2026-08-14 by Claude — added the **VIP tier** toggle (the flag
+had no admin write path; the seeder was its only writer) and documented the two
+form checkboxes the field table had been missing. Prior: 2026-05-28 (D-133 slice 3).

@@ -16,8 +16,8 @@ import 'package:simf_app/features/sessions/widgets/session_text_sections.dart';
 /// The scrolling body: the header card, description, speakers, my-seat card and
 /// the CTA row — all RTL-primary on the navy shell (frame 889:2450).
 ///
-/// #29 (owner Q10, 2026-07-30) — a **workshop** is the one exception: its detail
-/// is the title + time block ONLY (see [_workshopBody]).
+/// #29 (owner Q10, 2026-07-30) — a **workshop** is the one exception: its
+/// detail is the title + time block ONLY (see [_workshopBody]).
 class SessionDetailBody extends StatelessWidget {
   const SessionDetailBody({
     required this.detail,
@@ -41,16 +41,17 @@ class SessionDetailBody extends StatelessWidget {
     super.key,
   });
 
-  /// Optional strip pinned above the first card — today the gate check-in status.
-  /// It is rendered as the ListView's first CHILD rather than stacked above the
-  /// list, because a widget outside the scrollable emits no ScrollNotification
-  /// and `RefreshIndicator` would therefore ignore a pull that started on it,
-  /// breaking pull-to-refresh at the very top of the page.
+  /// Optional strip pinned above the first card — today the gate check-in
+  /// status. It is rendered as the ListView's first CHILD rather than stacked
+  /// above the list, because a widget outside the scrollable emits no
+  /// ScrollNotification and `RefreshIndicator` would therefore ignore a pull
+  /// that started on it, breaking pull-to-refresh at the very top of the page.
   final Widget? header;
 
   final SessionDetail detail;
   // D-485 — the seat map (null for a guest / pending account): drives the join
-  // section — the Join CTA when `myCell` is null, the reservation card otherwise.
+  // section — the Join CTA when `myCell` is null, the reservation card
+  // otherwise.
   final SessionSeatMap? seatMap;
   final bool busy;
   final AppL10n l10n;
@@ -92,7 +93,7 @@ class SessionDetailBody extends StatelessWidget {
     }
 
     final isArabic = l10n.isArabic;
-    final description = detail.localizedDescription(isArabic);
+    final description = detail.localizedDescription(isArabic: isArabic);
 
     // Owner 2026-07-14 — gate the two header actions on the session's phase:
     // the ملخص الجلسة summary exists only once the session has ENDED (a future /
@@ -143,11 +144,11 @@ class SessionDetailBody extends StatelessWidget {
         // اسأل المحاور (Figma 1056:12876) — sits between the speakers and the
         // my-seat card. The ask is offered until the session ENDS (the backend
         // closes questions at End). #7 (owner): a FUTURE session takes
-        // ahead-of-time questions ("before it starts", no booking required). S-4:
-        // a LIVE session (now within [start, end]) takes in-hall questions — but
-        // only when it has NO broadcast feed; a broadcast session's live ask lives
-        // on the live-broadcast screen (check-in gated), so we don't double it.
-        // The backend enforces the same window + hall-arrival gate.
+        // ahead-of-time questions ("before it starts", no booking required).
+        // S-4: a LIVE session (now within [start, end]) takes in-hall questions
+        // — but only when it has NO broadcast feed; a broadcast session's live
+        // ask lives on the live-broadcast screen (check-in gated), so we don't
+        // double it. The backend enforces the same window + hall-arrival gate.
         if (canAsk && _showAsk(detail)) ...<Widget>[
           const SizedBox(height: SimfTokens.space5),
           AskHostCard(
@@ -195,9 +196,8 @@ class SessionDetailBody extends StatelessWidget {
             onJoin: onJoin,
             // D-750 — case-1 (open-seating) reads "register to attend"; case-2
             // (assigned-seat) keeps the default join label.
-            label: seatMap!.mode.isOpenSeating
-                ? l10n.joinOpenRegisterCta
-                : null,
+            label:
+                seatMap!.mode.isOpenSeating ? l10n.joinOpenRegisterCta : null,
           ),
         ] else if (seatMapError && phase != SessionPhase.ended) ...<Widget>[
           // #18 — an approved attendee whose seat map failed to load gets a
@@ -220,9 +220,9 @@ class SessionDetailBody extends StatelessWidget {
         if (seatMap?.myCell != null) ...<Widget>[
           const SizedBox(height: SimfTokens.space3),
           CancelReservationLink(
-            // A13 — the control and the dialog it opens must agree: the dialog is
-            // titled "إلغاء الحجز" (cancelBookingConfirmTitle), so the link says
-            // "إلغاء الحجز" too, not the bare "إلغاء".
+            // A13 — the control and the dialog it opens must agree: the dialog
+            // is titled "إلغاء الحجز" (cancelBookingConfirmTitle), so the link
+            // says "إلغاء الحجز" too, not the bare "إلغاء".
             label: l10n.cancelBookingCta,
             busy: busy,
             onCancel: onCancelReservation,
@@ -257,11 +257,12 @@ class SessionDetailBody extends StatelessWidget {
     );
   }
 
-  /// S-4 — decides whether the اسأل المحاور card shows. A FUTURE session (before
-  /// start) takes ahead-of-time questions; a LIVE session (now within its
-  /// [start, end] window) takes in-hall questions but only when it has NO
-  /// broadcast feed — a broadcast session's live ask lives on the live-broadcast
-  /// screen. After End there is no ask (the backend closes the window).
+  /// S-4 — decides whether the اسأل المحاور card shows. A FUTURE session
+  /// (before start) takes ahead-of-time questions; a LIVE session (now within
+  /// its [start, end] window) takes in-hall questions but only when it has NO
+  /// broadcast feed — a broadcast session's live ask lives on the
+  /// live-broadcast screen. After End there is no ask (the backend closes the
+  /// window).
   static bool _showAsk(SessionDetail detail) {
     final nowUtc = saudiNow();
     if (detail.start.isAfter(nowUtc)) {

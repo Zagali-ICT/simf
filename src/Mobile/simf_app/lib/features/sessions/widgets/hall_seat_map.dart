@@ -63,12 +63,12 @@ class HallSeatMapCard extends StatefulWidget {
   final Color availableBorderColor;
   final double swatchSize;
 
-  /// D-771 — INSPECT mode, for the staff seating desk. False (default) keeps the
-  /// visitor picker's booking semantics: only an available (or already selected)
-  /// seat is tappable, and a seat whose tier the caller may not book draws locked
-  /// and inert. True makes EVERY seat tappable — reserved, own, VVIP, VIP alike —
-  /// because the desk is looking up occupants, not reserving, so neither the
-  /// reservation state nor tier eligibility should block a tap.
+  /// D-771 — INSPECT mode, for the staff seating desk. False (default) keeps
+  /// the visitor picker's booking semantics: only an available (or already
+  /// selected) seat is tappable, and a seat whose tier the caller may not book
+  /// draws locked and inert. True makes EVERY seat tappable — reserved, own,
+  /// VVIP, VIP alike — because the desk is looking up occupants, not reserving,
+  /// so neither the reservation state nor tier eligibility should block a tap.
   final bool inspectMode;
 
   @override
@@ -144,8 +144,9 @@ class _HallSeatMapCardState extends State<HallSeatMapCard> {
                       SeatGridRow(
                         rowLabel: row,
                         seatCount: map.seatsInRow(index),
-                        // D-771 — the row's tier + whether THIS caller may book it;
-                        // an ineligible row draws its seats locked and inert.
+                        // D-771 — the row's tier + whether THIS caller may book
+                        // it; an ineligible row draws its seats locked and
+                        // inert.
                         tier: map.tierOfRow(index),
                         eligible:
                             widget.inspectMode || map.canReserveRow(index),

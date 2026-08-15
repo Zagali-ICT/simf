@@ -24,14 +24,18 @@ public interface ISecondFactorTokenRepository
         Guid tokenId, DateTime now, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Atomically increments the wrong-code attempt counter in a single UPDATE,
-    /// so concurrent wrong submissions cannot lose increments and hand back
-    /// brute-force budget (a read-modify-write <c>AttemptCount++</c> could). The
-    /// cap itself is still checked as a separate read in the caller, so a
-    /// simultaneous burst can slip a few guesses past the gate — a pre-existing
-    /// check-then-act window this does not widen.
+    /// Atomically increments the wrong-code attempt counter in a single UPDATE
+    /// and returns the new count, so concurrent wrong submissions cannot lose
+    /// increments and hand back brute-force budget (a read-modify-write
+    /// <c>AttemptCount++</c> could).
+    ///
+    /// <para>The cap is still read separately when the ticket is fetched, which
+    /// on its own leaves a check-then-act window a simultaneous burst could slip
+    /// through. Callers close it by deciding on the count returned here — taken
+    /// after the guess was compared, unlike the fetched value — and burning the
+    /// ticket once the budget is spent.</para>
     /// </summary>
-    Task IncrementAttemptCountAsync(
+    Task<int> IncrementAttemptCountAsync(
         Guid tokenId, CancellationToken cancellationToken = default);
 
     Task UpdateAsync(SecondFactorToken token, CancellationToken cancellationToken = default);

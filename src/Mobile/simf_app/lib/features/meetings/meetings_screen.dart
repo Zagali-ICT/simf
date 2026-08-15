@@ -21,15 +21,21 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 /// Bilateral meetings — اللقاءات الثنائية · route: [RouteNames.meetings]
 /// Purpose: lists **all** the user's bilateral meeting requests (speaker +
-///   delegation), each carrying its status (pending / accepted / rejected /
-///   cancelled), above the two "request meeting" buttons and the "السجل" link to
-///   the full requests history (R9, D-767; was accepted+upcoming only, D-745).
-/// Data: [myMeetingRequestsProvider] (a filtered view of [myRequestsProvider] —
-///   `GET /app/my-requests`), gated by [currentUserMeetingAccessProvider].
-/// Figma: 1408:9726 (اللقاءات الثنائية).
-/// Perf: non-lazy ListView over the (small) meetings subset; pull-to-refresh.
-/// Contract: reads the D-219-frozen my-requests feed; VIP enforced server-side
-///   (the meeting-request endpoint 403s non-VIP) and mirrored here in-screen.
+/// delegation), each carrying its status (pending / accepted / rejected /
+/// cancelled), above the two "request meeting" buttons and the "السجل" link to
+/// the full requests history (R9, D-767; was accepted+upcoming only, D-745).
+/// Data: [authControllerProvider], [currentUserMeetingAccessProvider],
+///       [myMeetingRequestsProvider], [simfDataConfigProvider].
+/// 1408:9726 (اللقاءات الثنائية). Perf: non-lazy ListView over the (small)
+/// meetings subset; pull-to-refresh. Contract: reads the D-219-frozen
+/// my-requests feed; VIP enforced server-side (the meeting-request endpoint
+/// 403s non-VIP) and mirrored here in-screen.
+///
+/// Route: `RouteNames.meetings`.
+/// Data: [authControllerProvider], [currentUserMeetingAccessProvider],
+///       [myMeetingRequestsProvider], [simfDataConfigProvider].
+/// Perf: ListView builds every child up front — correct for a short static
+///       page, a defect on a data feed.
 class MeetingsScreen extends ConsumerStatefulWidget {
   const MeetingsScreen({super.key});
 
@@ -38,14 +44,14 @@ class MeetingsScreen extends ConsumerStatefulWidget {
 }
 
 class _MeetingsScreenState extends ConsumerState<MeetingsScreen> {
-  /// "طلب مقابلة متحدث" — open the SPEAKER meeting-request sheet (Figma 1776:5036)
-  /// with the speaker picker. The feed refreshes when the sheet closes so a
-  /// just-submitted meeting can appear once approved.
+  /// "طلب مقابلة متحدث" — open the SPEAKER meeting-request sheet (Figma
+  /// 1776:5036) with the speaker picker. The feed refreshes when the sheet
+  /// closes so a just-submitted meeting can appear once approved.
   Future<void> _openSpeakerMeeting() async {
     final auth = ref.read(authControllerProvider);
     if (auth is! AuthStateSignedIn) {
       if (mounted) {
-        context.pushNamed(RouteNames.signIn);
+        unawaited(context.pushNamed(RouteNames.signIn));
       }
       return;
     }
@@ -66,7 +72,7 @@ class _MeetingsScreenState extends ConsumerState<MeetingsScreen> {
     final auth = ref.read(authControllerProvider);
     if (auth is! AuthStateSignedIn) {
       if (mounted) {
-        context.pushNamed(RouteNames.signIn);
+        unawaited(context.pushNamed(RouteNames.signIn));
       }
       return;
     }
@@ -76,7 +82,8 @@ class _MeetingsScreenState extends ConsumerState<MeetingsScreen> {
     );
   }
 
-  /// Shared modal-sheet host for both request flows; refreshes the feed on close.
+  /// Shared modal-sheet host for both request flows; refreshes the feed on
+  /// close.
   Future<void> _openMeetingSheet(WidgetBuilder builder) async {
     await showModalBottomSheet<void>(
       context: context,
@@ -105,7 +112,8 @@ class _MeetingsScreenState extends ConsumerState<MeetingsScreen> {
     final l10n = AppL10n.of(context);
     // Bi-Meeting rework — gate the whole page on the two per-user meeting flags
     // (speaker OR delegation). Resolve access first so an unentitled user never
-    // briefly sees the list; a failed check is treated as no-access (safe default).
+    // briefly sees the list; a failed check is treated as no-access (safe
+    // default).
     return SimfPageShell(
       title: l10n.meetingsTitle,
       onBack: () => backOrHome(context),
@@ -131,14 +139,12 @@ class _MeetingsScreenState extends ConsumerState<MeetingsScreen> {
   Widget _meetingsBody(AppL10n l10n, MeetingAccess access) {
     return ref.watch(myMeetingRequestsProvider).when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (_, __) => SimfPullToRefresh(
+          error: (_, __) => SimfRefreshableMessage(
             onRefresh: _refresh,
-            child: SimfPullableHost(
-              child: SimfErrorState(
-                message: l10n.requestsError,
-                retryLabel: l10n.retryLabel,
-                onRetry: () => ref.invalidate(myRequestsProvider),
-              ),
+            child: SimfErrorState(
+              message: l10n.requestsError,
+              retryLabel: l10n.retryLabel,
+              onRetry: () => ref.invalidate(myRequestsProvider),
             ),
           ),
           data: (items) => _buildList(l10n, access, items),

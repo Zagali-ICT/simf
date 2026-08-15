@@ -5,7 +5,11 @@ import 'package:simf_app/app/theme/tokens.dart';
 /// failure). Points at system settings and keeps the manual path below usable,
 /// so the scanner is never a silent black dead-end.
 class CameraErrorCard extends StatelessWidget {
-  const CameraErrorCard({required this.message, required this.retryLabel, required this.onRetry, super.key,
+  const CameraErrorCard({
+    required this.message,
+    required this.retryLabel,
+    required this.onRetry,
+    super.key,
   });
 
   final String message;

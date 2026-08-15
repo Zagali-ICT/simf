@@ -442,7 +442,11 @@ Identity. This records how the §5.1 entities map onto the implementation.
   token store (the `AspNetUserTokens` table); there is no separate `TotpSecret`
   table.
 - `EmailVerificationCode` is realised as **`AccountCode`** with the `Purpose`
-  field (Amendment A.4) and an `AttemptCount` for the per-code attempt cap.
+  field (Amendment A.4) and an `AttemptCount` for the per-code attempt cap. Its
+  code column is `Code` and stores a keyed HMAC, never the code itself: the
+  code is emailed and never persisted, and nothing queries the column — the row
+  is found by `(UserId, Purpose, ConsumedAt)` and the submitted value is
+  re-hashed and compared in constant time.
 - The Identity tables keep their default ASP.NET Core Identity names
   (`AspNetUsers`, `AspNetRoles`, and so on); the SIMF-specific entities use the
   standard SIMF table names (`Permissions`, `RolePermissions`, `RefreshTokens`,
