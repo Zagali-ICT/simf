@@ -51,7 +51,7 @@ The four filterable columns (`code`, `name`, `nameArabic`, `floor`) expose a
 per-column filter input; `capacity` and `isActive` do not (verified against
 `AdminHallService.ListAllAsync`). The grid summary (`AdminHallSummary`) carries
 `Id, Code, Name, NameArabic, Capacity, Floor, IsActive, CreatedAt, Purpose` —
-it **omits** `EquipmentNotes` and the geofence triple, which load only via the
+it **omits** `FacilityNotes` and the geofence triple, which load only via the
 per-id detail fetch (`AdminHallDetail`) before Edit / Details / Deactivate.
 
 ## Row actions (quiet per-row icons)
@@ -88,7 +88,7 @@ only). Each text field carries a UI `MaxLength` that matches the server cap.
 | Name (Arabic) | `Admin.Halls.Field.NameArabic` → Name (Arabic) | **yes** | 128 | 1–128 |
 | Capacity | `Admin.Halls.Field.Capacity` → Capacity | **yes** | n/a (`Type="number"`) | integer ≥ 0; bound via `_capacityInput` string |
 | Floor | `Admin.Halls.Field.Floor` → Floor | no | 32 | `null` when blank |
-| Equipment + accessibility notes | `Admin.Halls.Field.EquipmentNotes` → Equipment + accessibility notes | no | 1024 | `SimfTextarea Rows="3"`; `null` when blank |
+| Equipment + accessibility notes | `Admin.Halls.Field.FacilityNotes` → Equipment + accessibility notes | no | 1024 | `SimfTextarea Rows="3"`; `null` when blank |
 | Geofence centre latitude | `Admin.Halls.Field.GeofenceLat` → Geofence centre latitude | no | n/a | `_geoLatInput` string; invariant-culture parse |
 | Geofence centre longitude | `Admin.Halls.Field.GeofenceLon` → Geofence centre longitude | no | n/a | `_geoLonInput` string |
 | Geofence radius (metres) | `Admin.Halls.Field.GeofenceRadius` → Geofence radius (metres) | no | n/a (`Type="number"`) | `_geoRadiusInput` string |
@@ -103,7 +103,7 @@ Field hints (verbatim, shown under the inputs):
   (zero or more). Drives the Sessions booking cap."
 - Floor: `Admin.Halls.Field.FloorHint` = "Optional. Up to 32 characters (e.g.
   \"Ground\", \"Level 2\")."
-- Equipment notes: `Admin.Halls.Field.EquipmentNotesHint` = "Optional. Up to
+- Equipment notes: `Admin.Halls.Field.FacilityNotesHint` = "Optional. Up to
   1024 characters."
 - Geofence (lat field): `Admin.Halls.Field.GeofenceHint` = "Optional. Set
   latitude, longitude and radius together to enable GPS arrival, or leave all
@@ -127,7 +127,7 @@ Field hints (verbatim, shown under the inputs):
   set all three or leave all empty."
 
 **On send:** Code is `.Trim().ToUpperInvariant()`-ed; Name/NameArabic trimmed;
-blank Floor/EquipmentNotes sent as `null`; geofence values parsed
+blank Floor/FacilityNotes sent as `null`; geofence values parsed
 invariant-culture. Create → `POST /account/api/admin/halls`
 (`AdminCreateHallRequest`); Edit → `PUT /account/api/admin/halls/{Initial.Id}`
 (`AdminUpdateHallRequest`, includes `IsActive`).

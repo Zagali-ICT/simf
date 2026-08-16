@@ -44,7 +44,7 @@ public sealed class SpeakerMeetingRequest
     public string? ResponseNote { get; set; }
 
     /// <summary>The reminder worker's once-only guard, committed before it dispatches.</summary>
-    public DateTime? ReminderSent { get; set; }
+    public DateTime? ReminderSentAt { get; set; }
 
     // Hall check-in is the only route to Done, and only an Accepted meeting may take it.
     public DateTime? CheckedInAt { get; set; }

@@ -81,7 +81,7 @@
 | E2E-SES-047 | Seat-release warning (A1/A6) — an edit that moves the Hall or the Start/End window opens a `SimfConfirm` naming the exact registration + admin-row-block counts before it submits; Cancel leaves the form untouched | error | P0 | authored ✓ (`SessionLifecycleNoticeTests.A1_Get_stamps_the_holding_a_hall_or_time_change_would_release`) |
 | E2E-SES-048 | Seat-release reporting (A1/A6) — after confirming, the toast names what was released and a `SeatReservation.Released` audit row records `reason=HallChanged\|Rescheduled; reservations=N; adminBlocks=M`; a slot-preserving edit reports nothing | happy/regression | P0 | authored ✓ (`SessionLifecycleNoticeTests.A1_A6_Hall_change_reports_and_audits_what_it_released` + `.A1_An_edit_that_leaves_the_slot_alone_reports_no_releases`) |
 | E2E-SES-049 | Release notice reaches the inbox (A2) — the affected attendee gets the in-app row **and** an email, bilingual, quoting the new start on the Saudi wall clock with no UTC anywhere | happy/regression | P1 | authored ✓ (`SessionLifecycleNoticeTests.A2_Released_seat_notice_is_emailed_not_only_in_app`) |
-| E2E-SES-050 | Reschedule re-arms the workers (A4) — moving Start/End clears `ReminderSent` + `RatingPromptSent` so the reminder fires for the new time; a title-only edit leaves both stamped | happy/regression | P1 | authored ✓ (`SessionLifecycleNoticeTests.A4_Moving_the_window_rearms_the_reminder_and_rating_prompt` + `.A4_An_edit_that_keeps_the_window_does_not_rearm_the_reminder`) |
+| E2E-SES-050 | Reschedule re-arms the workers (A4) — moving Start/End clears `ReminderSentAt` + `RatingPromptSentAt` so the reminder fires for the new time; a title-only edit leaves both stamped | happy/regression | P1 | authored ✓ (`SessionLifecycleNoticeTests.A4_Moving_the_window_rearms_the_reminder_and_rating_prompt` + `.A4_An_edit_that_keeps_the_window_does_not_rearm_the_reminder`) |
 | E2E-SES-051 | Booking-conflict copy (A5) — the 409 `SESSION_HAS_ACTIVE_BOOKINGS` message names `/admin/sessions/seat-plans` (bilingual) and never the read-only `/admin/bookings` monitor | error | P1 | authored ✓ (`SessionLifecycleNoticeTests.A5_Active_booking_conflict_points_at_the_seat_plans_page`) |
 | E2E-SES-052 | Cancellation notice (B2) — deactivating a session dispatches `SessionCancelled` (in-app + email, bilingual, Saudi wall clock) to everyone holding a seat or who favourited it; the audit row carries `notified=N`; a session nobody saved notifies nobody | happy/regression | P0 | authored ✓ (`SessionLifecycleNoticeTests.B2_Deactivating_a_session_notifies_everyone_who_saved_it` + `.B2_A_session_nobody_saved_is_cancelled_without_notifying_anyone`) |
 | E2E-SES-053 | Cancellation notice on the edit-form path (B2) — clearing the **Active** checkbox and saving announces exactly like Deactivate (`SessionCancelled` in-app + email + `Session.Deactivated` audit with `notified=N`); an edit that leaves Active ticked announces nothing | happy/regression | P0 | authored ✓ (`SessionLifecycleNoticeTests.B2_Unticking_Active_on_the_edit_form_notifies_exactly_like_Deactivate` + `.B2_An_edit_that_leaves_Active_ticked_announces_no_cancellation`) |
@@ -1006,9 +1006,9 @@ Feature: A moved session is still remindable, and a cancelled one is announced
 
 Scenario: Moving the window clears the worker stamps (A4)
   Given session SES-001 has already had its "starting soon" reminder sent
-      (Session.ReminderSent is stamped) and its rating prompt sent
+      (Session.ReminderSentAt is stamped) and its rating prompt sent
   When the administrator moves Start/End by 3 hours and saves
-  Then Session.ReminderSent and Session.RatingPromptSent are both null again
+  Then Session.ReminderSentAt and Session.RatingPromptSentAt are both null again
   And SessionReminderWorker picks the session up for the NEW start time
 
 Scenario: An unrelated save does not resend an already-delivered reminder (A4)

@@ -27,7 +27,7 @@ fires at Start + grace.
 
 ## Dedup — why there is no new column
 
-D-217 gave `SessionReminderWorker` a `Session.ReminderSent` claim stamp because that
+D-217 gave `SessionReminderWorker` a `Session.ReminderSentAt` claim stamp because that
 reminder is once **per session**. This one is once per **(attendee, session)**: two
 holders of the same session must both be nudged. That is exactly the D-713
 dispatcher guard — `NotificationRequest.DeduplicateByRelatedEntity` with the session

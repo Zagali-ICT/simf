@@ -47,7 +47,7 @@ public sealed class SessionRatingPromptWorkerTests : IClassFixture<SimfApiFactor
             var idDb = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
 
             var session = await appDb.Sessions.SingleAsync(s => s.Id == sessionId);
-            Assert.NotNull(session.RatingPromptSent);
+            Assert.NotNull(session.RatingPromptSentAt);
 
             var count = await idDb.Notifications.CountAsync(n =>
                 n.Kind == NotificationKind.SessionRatingRequest
@@ -88,7 +88,7 @@ public sealed class SessionRatingPromptWorkerTests : IClassFixture<SimfApiFactor
         var idDb = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
 
         var session = await appDb.Sessions.SingleAsync(s => s.Id == sessionId);
-        Assert.NotNull(session.RatingPromptSent);
+        Assert.NotNull(session.RatingPromptSentAt);
 
         var count = await idDb.Notifications.CountAsync(n =>
             n.Kind == NotificationKind.SessionRatingRequest
@@ -117,7 +117,7 @@ public sealed class SessionRatingPromptWorkerTests : IClassFixture<SimfApiFactor
 
         // Stamped (so it stops scanning) but no prompt sent to the absent booker.
         var session = await appDb.Sessions.SingleAsync(s => s.Id == sessionId);
-        Assert.NotNull(session.RatingPromptSent);
+        Assert.NotNull(session.RatingPromptSentAt);
 
         var count = await idDb.Notifications.CountAsync(n =>
             n.Kind == NotificationKind.SessionRatingRequest
@@ -139,7 +139,7 @@ public sealed class SessionRatingPromptWorkerTests : IClassFixture<SimfApiFactor
         using var scope = _factory.Services.CreateScope();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var session = await appDb.Sessions.SingleAsync(s => s.Id == sessionId);
-        Assert.Null(session.RatingPromptSent);
+        Assert.Null(session.RatingPromptSentAt);
     }
 
     [Fact]
@@ -155,7 +155,7 @@ public sealed class SessionRatingPromptWorkerTests : IClassFixture<SimfApiFactor
         using var scope = _factory.Services.CreateScope();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var session = await appDb.Sessions.SingleAsync(s => s.Id == sessionId);
-        Assert.Null(session.RatingPromptSent);
+        Assert.Null(session.RatingPromptSentAt);
     }
 
     [Fact]
@@ -180,7 +180,7 @@ public sealed class SessionRatingPromptWorkerTests : IClassFixture<SimfApiFactor
 
             // Not stamped, so re-enabling the type resumes prompting this session.
             var session = await appDb.Sessions.SingleAsync(s => s.Id == sessionId);
-            Assert.Null(session.RatingPromptSent);
+            Assert.Null(session.RatingPromptSentAt);
 
             var count = await idDb.Notifications.CountAsync(n =>
                 n.Kind == NotificationKind.SessionRatingRequest

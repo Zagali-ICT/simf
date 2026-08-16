@@ -39,16 +39,14 @@ public sealed class SeatReservation
     /// Approved, a released row Cancelled, and nothing writes the other two.</summary>
     public BookingStatus Status { get; set; }
 
-    /// <summary><b>Not a review decision, despite the name.</b> Read it as "who
-    /// released this"; only a Control Panel seat-plan release writes it.</summary>
-    public Guid? ReviewedByUserId { get; set; }
+    /// <summary>Only a Control Panel seat-plan release writes it; null means the
+    /// no-show sweep or the holder gave the seat up.</summary>
+    public Guid? ReleasedByUserId { get; set; }
 
-    public DateTime? ReviewedAt { get; set; }
-
-    /// <summary>The no-show deadline: past it the sweep releases the seat unless the
-    /// holder has checked in. Null exempts the row, the holder being present already
-    /// — admin blocks and walk-in holds.</summary>
-    public DateTime? Expires { get; set; }
+    /// <summary>Past it the sweep releases the seat unless the holder has checked in.
+    /// Null exempts the row, the holder being present already — admin blocks and
+    /// walk-in holds.</summary>
+    public DateTime? NoShowReleaseAt { get; set; }
 
     // No registration stands behind a blocked VVIP seat, so this typed hint IS the
     // occupant record, e.g. "Reserved for the Minister". AdminReservedRow only.

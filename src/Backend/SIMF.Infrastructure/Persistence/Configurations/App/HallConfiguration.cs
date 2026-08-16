@@ -37,7 +37,7 @@ internal sealed class HallConfiguration : IEntityTypeConfiguration<Hall>
         builder.Property(hall => hall.Name).HasMaxLength(128).IsRequired();
         builder.Property(hall => hall.NameArabic).HasMaxLength(128).IsRequired();
         builder.Property(hall => hall.Floor).HasMaxLength(32);
-        builder.Property(hall => hall.EquipmentNotes).HasMaxLength(1024);
+        builder.Property(hall => hall.FacilityNotes).HasMaxLength(1024);
 
         builder.HasIndex(hall => hall.Code).IsUnique();
         builder.HasIndex(hall => new { hall.IsActive, hall.Name });

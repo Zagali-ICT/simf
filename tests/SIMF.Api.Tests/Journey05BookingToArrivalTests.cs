@@ -218,7 +218,7 @@ public sealed class Journey05BookingToArrivalTests : IClassFixture<SimfApiFactor
             .SingleAsync(r => r.Id == booking.ReservationId);
         Assert.Equal(BookingStatus.Approved, stored.Status);
         Assert.Null(stored.ReleasedAt);
-        Assert.Null(stored.ReviewedByUserId);
+        Assert.Null(stored.ReleasedByUserId);
     }
 
     [Fact]

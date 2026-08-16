@@ -3,8 +3,8 @@
 //           (and destroyed admin row-blocks) with no count, no audit, no warning.
 //   A2    — the seat-release notice was in-app only, so a visitor who never opens
 //           the app never learned their seat was gone.
-//   A4    — a rescheduled session was permanently un-remindable (ReminderSent /
-//           RatingPromptSent were never cleared).
+//   A4    — a rescheduled session was permanently un-remindable (ReminderSentAt /
+//           RatingPromptSentAt were never cleared).
 //   A5    — the SESSION_HAS_ACTIVE_BOOKINGS message sent the admin to the read-only
 //           bookings monitor instead of the page that can release a seat.
 //   B2    — cancelling a session told nobody at all.
@@ -166,10 +166,10 @@ public sealed class SessionLifecycleNoticeTests : IClassFixture<BulkBadgeEmailAp
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         var stored = await LoadSessionAsync(session.Id);
-        // SessionReminderWorker filters on ReminderSent == null; leaving the stamp
+        // SessionReminderWorker filters on ReminderSentAt == null; leaving the stamp
         // made a moved session permanently un-remindable.
-        Assert.Null(stored.ReminderSent);
-        Assert.Null(stored.RatingPromptSent);
+        Assert.Null(stored.ReminderSentAt);
+        Assert.Null(stored.RatingPromptSentAt);
     }
 
     [Fact]
@@ -188,8 +188,8 @@ public sealed class SessionLifecycleNoticeTests : IClassFixture<BulkBadgeEmailAp
 
         var stored = await LoadSessionAsync(session.Id);
         // An unrelated save must not resend an already-delivered reminder.
-        Assert.NotNull(stored.ReminderSent);
-        Assert.NotNull(stored.RatingPromptSent);
+        Assert.NotNull(stored.ReminderSentAt);
+        Assert.NotNull(stored.RatingPromptSentAt);
     }
 
     // -- A5: the conflict names the page that can actually do the work -------
@@ -471,8 +471,8 @@ public sealed class SessionLifecycleNoticeTests : IClassFixture<BulkBadgeEmailAp
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var session = await db.Sessions.SingleAsync(row => row.Id == sessionId);
-        session.ReminderSent = SimfClock.Now;
-        session.RatingPromptSent = SimfClock.Now;
+        session.ReminderSentAt = SimfClock.Now;
+        session.RatingPromptSentAt = SimfClock.Now;
         await db.SaveChangesAsync();
     }
 

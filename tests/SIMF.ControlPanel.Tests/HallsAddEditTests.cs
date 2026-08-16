@@ -12,7 +12,7 @@ public sealed class HallsAddEditTests : CpComponentTestBase
 {
     private static AdminHallDetail Detail() => new(
         Guid.NewGuid(), "HALL-A", "Main Hall", "Ø§Ù„Ù‚Ø§Ø¹Ø© Ø§Ù„Ø±Ø¦ÙŠØ³ÙŠØ©", 250, "Ground",
-        EquipmentNotes: "Projector + PA", IsActive: true,
+        FacilityNotes: "Projector + PA", IsActive: true,
         DateTime.UnixEpoch, UpdatedAt: null);
 
     [Fact]

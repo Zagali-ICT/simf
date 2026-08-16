@@ -20,7 +20,7 @@ Last updated: 2026-06-13 — CP config-page documentation (D-380).
 | `NameArabic` | string | 1–128 chars | `HasMaxLength(128)`, `IsRequired` |
 | `Capacity` | int | ≥ 0 | — |
 | `Floor` | string? | ≤ 32, null when blank | `HasMaxLength(32)` |
-| `EquipmentNotes` | string? | ≤ 1024, null when blank | `HasMaxLength(1024)` |
+| `FacilityNotes` | string? | ≤ 1024, null when blank | `HasMaxLength(1024)` |
 | `Purpose` | `HallPurpose` | default `General` (0) — D-248 | enum int |
 | `GeofenceCenterLat` | double? | −90..90; all-three-or-none — D-240 | — |
 | `GeofenceCenterLon` | double? | −180..180 | — |
@@ -59,7 +59,7 @@ unless the `isActive` filter is set.
 - **Page**: `Skip = max(0, Skip)`, `Top = clamp(Top>0 ? Top : 25, 1, 200)`.
 - Projects to `AdminHallSummary` (adds `(int)Purpose`); returns `GridPage.Of`.
 
-The summary deliberately omits `EquipmentNotes` and the geofence triple — those
+The summary deliberately omits `FacilityNotes` and the geofence triple — those
 load only via `GetAsync` (`AdminHallDetail`) before Edit / Details / Deactivate.
 
 ## L-5 Audit + actor

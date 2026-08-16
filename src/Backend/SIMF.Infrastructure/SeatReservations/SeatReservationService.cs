@@ -33,7 +33,7 @@ internal sealed class SeatReservationService(
     /// <summary>How long before a session starts an
     /// un-checked-in seat reservation is auto-released so the seat can go to
     /// someone else ("cancelled if you don't check in 3 minutes before start").
-    /// A reservation's <c>Expires</c> is stamped at <c>Start - NoShowReleaseGrace</c>;
+    /// A reservation's <c>NoShowReleaseAt</c> is stamped at <c>Start - NoShowReleaseGrace</c>;
     /// the no-show release scan reads it. Defined here (not on the worker) so the
     /// stamp written at creation and the scan that reads it share one source.</summary>
     internal static readonly TimeSpan NoShowReleaseGrace = TimeSpan.FromMinutes(3);
@@ -43,7 +43,7 @@ internal sealed class SeatReservationService(
     /// carrying no profile — an admin-typed user — cannot hold one and is refused
     /// here rather than booking a seat that resolves to nobody.
     ///
-    /// <para>The ACTOR columns (<c>CreatedByUserId</c>, <c>ReviewedByUserId</c>)
+    /// <para>The ACTOR columns (<c>CreatedByUserId</c>, <c>ReleasedByUserId</c>)
     /// and the audit trail keep the account id: who did it and who it is for are
     /// different questions, and on an admin block they are different people.</para>
     ///
@@ -246,7 +246,7 @@ internal sealed class SeatReservationService(
             Status = BookingStatus.Approved,
             // The no-show release deadline: 3 minutes before the session
             // starts. If the holder has not checked in by then the seat is freed.
-            Expires = ctx.Start - NoShowReleaseGrace,
+            NoShowReleaseAt = ctx.Start - NoShowReleaseGrace,
         };
         await PersistWithUniquenessGuardAsync(reservation, cancellationToken);
         // Hard capacity backstop against a concurrent booking that raced the
@@ -387,7 +387,7 @@ internal sealed class SeatReservationService(
                 // step; the hold stays provisional until hall check-in.
                 Status = BookingStatus.Approved,
                 // The no-show release deadline: 3 minutes before start.
-                Expires = session.Start - NoShowReleaseGrace,
+                NoShowReleaseAt = session.Start - NoShowReleaseGrace,
             }),
             cancellationToken);
 
@@ -548,7 +548,7 @@ internal sealed class SeatReservationService(
                 Status = BookingStatus.Approved,
                 // The moved hold keeps the SAME no-show deadline as the seat
                 // it replaces: 3 minutes before the session starts.
-                Expires = ctx.Start - NoShowReleaseGrace,
+                NoShowReleaseAt = ctx.Start - NoShowReleaseGrace,
             };
             appDbContext.SeatReservations.Add(target);
             added = target;
@@ -1019,14 +1019,12 @@ internal sealed class SeatReservationService(
         // A release must also close the booking's lifecycle. Leaving Status
         // untouched left an Approved row with ReleasedAt set (a stale
         // "confirmed-but-gone" state the CP/app could still read as active), so mark
-        // it Cancelled. The ReviewedBy/ReviewedAt pair records the admin who
-        // performed THIS RELEASE; there is no approval queue left for it to record a
-        // review decision (see BookingStatus), and this is its only writer.
+        // it Cancelled. ReleasedByUserId records the admin who performed THIS
+        // RELEASE; the no-show sweep and the holder's own cancel leave it null.
         var now = timeProvider.SimfNow();
         reservation.ReleasedAt = now;
         reservation.Status = BookingStatus.Cancelled;
-        reservation.ReviewedByUserId = actorUserId;
-        reservation.ReviewedAt = now;
+        reservation.ReleasedByUserId = actorUserId;
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         var eventType = reservation.Kind == SeatReservationKind.AdminReservedRow
@@ -1207,10 +1205,10 @@ internal sealed class SeatReservationService(
 
     /// <summary>The no-show release: free
     /// every ACTIVE (Approved, still-held) visitor seat reservation whose no-show
-    /// deadline (<c>Expires</c> = the session's <c>Start − 3min</c>) has passed
+    /// deadline (<c>NoShowReleaseAt</c> = the session's <c>Start − 3min</c>) has passed
     /// <b>and whose holder never checked in</b> (no <c>HallAttendance</c> for that
     /// session — arrival by gate scan or geofence). A walk-in who booked at or after
-    /// the deadline (<c>CreatedAt &gt;= Expires</c>) is exempt — they are present,
+    /// the deadline (<c>CreatedAt &gt;= NoShowReleaseAt</c>) is exempt — they are present,
     /// not a no-show. Each freed holder is notified (<see cref="NotificationKind.BookingReleased"/>).
     /// Admin blocks (null holder) are never touched. Returns the number released.
     /// Called once per minute by <c>ReservationNoShowReleaseWorker</c>; extracted so
@@ -1222,9 +1220,9 @@ internal sealed class SeatReservationService(
             .Where(r => r.Status == BookingStatus.Approved
                 && r.ReleasedAt == null
                 && r.ReservedForProfileId != null
-                && r.Expires != null
-                && r.Expires <= now
-                && r.CreatedAt < r.Expires)
+                && r.NoShowReleaseAt != null
+                && r.NoShowReleaseAt <= now
+                && r.CreatedAt < r.NoShowReleaseAt)
             .ToListAsync(cancellationToken);
         if (due.Count == 0)
         {
@@ -1358,7 +1356,7 @@ internal sealed class SeatReservationService(
             CreatedAt = timeProvider.SimfNow(),
             // Never expires: the holder is physically in the hall, so the
             // no-show sweep must not release them.
-            Expires = null,
+            NoShowReleaseAt = null,
         };
 
         appDbContext.SeatReservations.Add(hold);
@@ -2046,7 +2044,7 @@ internal sealed class SeatReservationService(
                     // 2026-07-18 (reservation-only) — confirmed on create, no approval.
                     Status = BookingStatus.Approved,
                     // The no-show release deadline: 3 minutes before start.
-                    Expires = ctx.Start - NoShowReleaseGrace,
+                    NoShowReleaseAt = ctx.Start - NoShowReleaseGrace,
                 };
             }
         }

@@ -90,7 +90,7 @@ public sealed class HallsExcelTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Import_round_trips_the_extra_columns_onto_the_summary()
     {
-        // D-506 — a workbook carrying EquipmentNotes, the geofence triple and
+        // D-506 — a workbook carrying FacilityNotes, the geofence triple and
         // SeatSelectionMode imports and those fields land on the grid summary
         // (they were previously dropped: neither exported nor imported).
         var adminToken = await CreateAdministratorAndSignInAsync();
@@ -98,7 +98,7 @@ public sealed class HallsExcelTests : IClassFixture<SimfApiFactory>
         var name = $"Roundtrip {Guid.NewGuid():N}";
         var workbook = BuildHallsWorkbookWithExtras(
             "Halls", code, name, "قاعة جولة", 150, "2",
-            equipmentNotes: "Projector + PA system",
+            facilityNotes: "Projector + PA system",
             lat: 24.7136, lon: 46.6753, radius: 250, seatMode: "OpenSeating");
 
         var response = await PostFileAuthAsync(
@@ -115,7 +115,7 @@ public sealed class HallsExcelTests : IClassFixture<SimfApiFactory>
         var page = (await list.Content
             .ReadFromJsonAsync<ApiResult<GridPage<AdminHallSummary>>>())!.Data!;
         var row = Assert.Single(page.Items, item => item.Name == name);
-        Assert.Equal("Projector + PA system", row.EquipmentNotes);
+        Assert.Equal("Projector + PA system", row.FacilityNotes);
         Assert.Equal(24.7136, row.GeofenceCenterLat);
         Assert.Equal(46.6753, row.GeofenceCenterLon);
         Assert.Equal(250, row.GeofenceRadiusMeters);
@@ -126,7 +126,7 @@ public sealed class HallsExcelTests : IClassFixture<SimfApiFactory>
     public async Task Export_includes_the_extra_columns()
     {
         // D-506 — the export header row now carries the previously dropped
-        // EquipmentNotes / geofence / SeatSelectionMode columns.
+        // FacilityNotes / geofence / SeatSelectionMode columns.
         var adminToken = await CreateAdministratorAndSignInAsync();
         await CreateHallAsync(adminToken, NewCode(), $"Export Cols {Guid.NewGuid():N}");
 
@@ -141,7 +141,7 @@ public sealed class HallsExcelTests : IClassFixture<SimfApiFactory>
         using var workbook = new XLWorkbook(stream);
         var sheet = workbook.Worksheet("Halls");
         var headers = sheet.Row(1).CellsUsed().Select(cell => cell.GetString()).ToList();
-        Assert.Contains("EquipmentNotes", headers);
+        Assert.Contains("FacilityNotes", headers);
         Assert.Contains("GeofenceCenterLat", headers);
         Assert.Contains("GeofenceCenterLon", headers);
         Assert.Contains("GeofenceRadiusMeters", headers);
@@ -216,12 +216,12 @@ public sealed class HallsExcelTests : IClassFixture<SimfApiFactory>
         return stream.ToArray();
     }
 
-    // D-506 — a single-row workbook that also carries the EquipmentNotes,
+    // D-506 — a single-row workbook that also carries the FacilityNotes,
     // geofence and SeatSelectionMode columns (header names must match the import
     // bindings exactly; import is by header name, not position).
     private static byte[] BuildHallsWorkbookWithExtras(
         string sheetName, string code, string name, string nameArabic,
-        int capacity, string floor, string equipmentNotes,
+        int capacity, string floor, string facilityNotes,
         double lat, double lon, double radius, string seatMode)
     {
         using var workbook = new XLWorkbook();
@@ -231,7 +231,7 @@ public sealed class HallsExcelTests : IClassFixture<SimfApiFactory>
         sheet.Cell(1, 3).Value = "NameArabic";
         sheet.Cell(1, 4).Value = "Capacity";
         sheet.Cell(1, 5).Value = "Floor";
-        sheet.Cell(1, 6).Value = "EquipmentNotes";
+        sheet.Cell(1, 6).Value = "FacilityNotes";
         sheet.Cell(1, 7).Value = "GeofenceCenterLat";
         sheet.Cell(1, 8).Value = "GeofenceCenterLon";
         sheet.Cell(1, 9).Value = "GeofenceRadiusMeters";
@@ -241,7 +241,7 @@ public sealed class HallsExcelTests : IClassFixture<SimfApiFactory>
         sheet.Cell(2, 3).Value = nameArabic;
         sheet.Cell(2, 4).Value = capacity;
         sheet.Cell(2, 5).Value = floor;
-        sheet.Cell(2, 6).Value = equipmentNotes;
+        sheet.Cell(2, 6).Value = facilityNotes;
         sheet.Cell(2, 7).Value = lat;
         sheet.Cell(2, 8).Value = lon;
         sheet.Cell(2, 9).Value = radius;

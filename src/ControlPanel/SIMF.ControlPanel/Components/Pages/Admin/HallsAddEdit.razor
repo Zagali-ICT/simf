@@ -46,11 +46,11 @@
                        Helper="@L["Admin.Halls.Field.FloorHint"]"
                        MaxLength="32"
                        @bind-Value="_model.Floor" Disabled="_busy" />
-        <SimfTextarea Label="@L["Admin.Halls.Field.EquipmentNotes"]"
-                      Helper="@L["Admin.Halls.Field.EquipmentNotesHint"]"
+        <SimfTextarea Label="@L["Admin.Halls.Field.FacilityNotes"]"
+                      Helper="@L["Admin.Halls.Field.FacilityNotesHint"]"
                       Rows="3" MaxLength="1024"
-                      Value="@_model.EquipmentNotes"
-                      ValueChanged="@(v => _model.EquipmentNotes = v)" />
+                      Value="@_model.FacilityNotes"
+                      ValueChanged="@(v => _model.FacilityNotes = v)" />
         <SimfTextField Label="@L["Admin.Halls.Field.GeofenceLat"]"
                        Helper="@L["Admin.Halls.Field.GeofenceHint"]"
                        Value="@_geoLatInput"

@@ -18,7 +18,7 @@ namespace SIMF.Infrastructure.Operations;
 /// reminded, then dispatches an in-app <see cref="NotificationKind.SessionReminder"/>
 /// to every attendee with an active seat in that session.
 ///
-/// <para>Dedup: <c>Session.ReminderSent</c> is the once-only guard.
+/// <para>Dedup: <c>Session.ReminderSentAt</c> is the once-only guard.
 /// A session is stamped and committed BEFORE its batch
 /// is dispatched, so a restart mid-tick cannot resend (unlike an in-memory
 /// set, or a stamp saved only after the whole loop). The notification rows
@@ -110,7 +110,7 @@ internal sealed class SessionReminderWorker(
 
     /// <summary>
     /// The core scan, extracted for direct unit testing. For each due session
-    /// it claims the session — stamping <c>ReminderSent</c> and committing
+    /// it claims the session — stamping <c>ReminderSentAt</c> and committing
     /// it BEFORE dispatch — then notifies every attendee with an active seat,
     /// so a restart mid-tick can never re-send. Returns the number of sessions
     /// reminded. A single attendee's dispatch failure is logged and skipped —
@@ -124,7 +124,7 @@ internal sealed class SessionReminderWorker(
         var windowEnd = now + leadTime;
         var due = await db.Sessions
             .Where(s => s.IsActive
-                && s.ReminderSent == null
+                && s.ReminderSentAt == null
                 && s.Start > now
                 && s.Start <= windowEnd)
             .ToListAsync(cancellationToken);
@@ -151,13 +151,13 @@ internal sealed class SessionReminderWorker(
                 .Distinct()
                 .ToListAsync(cancellationToken);
 
-            // Claim the session BEFORE dispatching: stamp ReminderSent and
+            // Claim the session BEFORE dispatching: stamp ReminderSentAt and
             // commit it so a restart mid-batch (or a second worker instance)
             // cannot re-send this session's reminder. The notification writes
             // land on SIMF_Identity and cannot share a transaction with this
             // SIMF_App stamp. A zero-attendee session is still claimed
             // so the worker stops re-scanning it every minute until it starts.
-            session.ReminderSent = now;
+            session.ReminderSentAt = now;
             await db.SaveChangesAsync(cancellationToken);
 
             foreach (var userId in attendeeIds)

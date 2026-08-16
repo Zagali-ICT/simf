@@ -460,7 +460,7 @@ internal sealed class StoredFileService(
         var file = await dbContext.StoredFiles
             .FirstOrDefaultAsync(f => f.Id == id, cancellationToken)
             ?? throw NotFound();
-        if (file.SecureDestroyed is not null) { return; } // idempotent
+        if (file.SecureDestroyedAt is not null) { return; } // idempotent
 
         // PDPL right-to-erasure. Securely destroy the bytes (crypto-shred the
         // wrapped DEK for an encrypted file, overwrite the header for a plaintext
