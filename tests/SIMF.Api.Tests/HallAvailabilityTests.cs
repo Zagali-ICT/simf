@@ -219,9 +219,6 @@ public sealed class HallAvailabilityTests : IClassFixture<SimfApiFactory>
                     {
                         Id = Guid.NewGuid(),
                         Code = def.Code,
-                        Page = def.Page,
-                        Action = def.Action,
-                        DisplayName = def.DisplayName,
                     };
                     db.Permissions.Add(permission);
                     await db.SaveChangesAsync();

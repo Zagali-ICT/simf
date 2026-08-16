@@ -1,6 +1,7 @@
 // Tests: SIMF.Api.Tests/VisitorContactSharingTests.cs
 using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
+using SIMF.Application.Abstractions;
 using SIMF.Application.Contacts.Abstractions;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
@@ -17,10 +18,20 @@ namespace SIMF.Infrastructure.Contacts;
 /// lookups on the App DB + a permitted email round-trip on the Identity DB),
 /// and manages the caller's <em>My Contacts</em>. Cross-DB references are
 /// bare-Guid logical FKs resolved on read — no EF join, no PII snapshot.
+///
+/// <para>The share code is a replayable credential — it resolves to a card the
+/// holder is not otherwise entitled to — so it is encrypted at rest here and
+/// looked up by keyed digest. The encryption is applied in this service rather
+/// than by a value converter because a converter needs the encryptor injected
+/// into the DbContext, and an entity configuration discovered by
+/// <c>ApplyConfigurationsFromAssembly</c> is constructed without dependencies.
+/// This is the only reader of the table, so there is no second path that could
+/// see the raw column and mistake ciphertext for a code.</para>
 /// </summary>
 internal sealed class VisitorShareService(
     SimfAppDbContext appDbContext,
     IIdentityUserDirectory userDirectory,
+    IPiiEncryptor pii,
     TimeProvider timeProvider) : IVisitorShareService
 {
     // Crockford base32 (excludes I, L, O, U, 0, 1) — mirrors the QrId minter.
@@ -32,26 +43,20 @@ internal sealed class VisitorShareService(
     public async Task<VisitorShareTokenResponse> GetOrMintTokenAsync(
         Guid userId, CancellationToken cancellationToken = default)
     {
-        var existing = await appDbContext.VisitorShareTokens
+        var stored = await appDbContext.VisitorShareTokens
             .AsNoTracking()
             .Where(token => token.UserId == userId && token.IsActive)
             .OrderByDescending(token => token.CreatedAt)
             .Select(token => token.Token)
             .FirstOrDefaultAsync(cancellationToken);
-        if (existing is not null)
+        if (stored is not null)
         {
-            return new VisitorShareTokenResponse(existing);
+            // The owner is entitled to read their own code back, which is why this
+            // column is encrypted and not hashed.
+            return new VisitorShareTokenResponse(pii.Decrypt(stored)!);
         }
 
-        var minted = await MintUniqueTokenAsync(cancellationToken);
-        appDbContext.VisitorShareTokens.Add(new VisitorShareToken
-        {
-            Id = Guid.NewGuid(),
-            UserId = userId,
-            Token = minted,
-            IsActive = true,
-            CreatedAt = timeProvider.SimfNow(),
-        });
+        var minted = await MintAndAddAsync(userId, timeProvider.SimfNow(), cancellationToken);
         await appDbContext.SaveChangesAsync(cancellationToken);
         return new VisitorShareTokenResponse(minted);
     }
@@ -69,15 +74,7 @@ internal sealed class VisitorShareService(
             token.RevokedAt = now;
         }
 
-        var minted = await MintUniqueTokenAsync(cancellationToken);
-        appDbContext.VisitorShareTokens.Add(new VisitorShareToken
-        {
-            Id = Guid.NewGuid(),
-            UserId = userId,
-            Token = minted,
-            IsActive = true,
-            CreatedAt = now,
-        });
+        var minted = await MintAndAddAsync(userId, now, cancellationToken);
         await appDbContext.SaveChangesAsync(cancellationToken);
         return new VisitorShareTokenResponse(minted);
     }
@@ -86,9 +83,12 @@ internal sealed class VisitorShareService(
         string token, CancellationToken cancellationToken = default)
     {
         var normalised = (token ?? string.Empty).Trim().ToUpperInvariant();
-        var owner = await appDbContext.VisitorShareTokens
+        // An empty code has no digest to match, and asking the database for one
+        // would compare a required column against NULL rather than answering.
+        var digest = normalised.Length == 0 ? null : pii.BlindIndex(normalised);
+        var owner = digest is null ? null : await appDbContext.VisitorShareTokens
             .AsNoTracking()
-            .Where(row => row.Token == normalised && row.IsActive)
+            .Where(row => row.TokenHash == digest && row.IsActive)
             .Select(row => (Guid?)row.UserId)
             .FirstOrDefaultAsync(cancellationToken);
         if (owner is null)
@@ -323,17 +323,43 @@ internal sealed class VisitorShareService(
 
     // -- Token minting (Crockford base32; uniqueness-checked) -----------------
 
-    private async Task<string> MintUniqueTokenAsync(CancellationToken cancellationToken)
+    /// <summary>Mints a fresh code, adds its row to the change tracker and returns
+    /// the code in the clear for the caller to hand back. The row keeps the
+    /// encrypted code and its digest; the caller saves.</summary>
+    private async Task<string> MintAndAddAsync(
+        Guid userId, DateTime now, CancellationToken cancellationToken)
+    {
+        var (code, digest) = await MintUniqueTokenAsync(cancellationToken);
+        appDbContext.VisitorShareTokens.Add(new VisitorShareToken
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            Token = pii.Encrypt(code)!,
+            TokenHash = digest,
+            IsActive = true,
+            CreatedAt = now,
+        });
+        return code;
+    }
+
+    /// <summary>A code no active or revoked row already carries, with its digest.
+    /// The clash check runs against the digest because that is the unique column;
+    /// the ciphertext differs on every write and could never collide.</summary>
+    private async Task<(string Code, string Digest)> MintUniqueTokenAsync(
+        CancellationToken cancellationToken)
     {
         for (var attempt = 0; attempt < MaxMintAttempts; attempt++)
         {
             var candidate = GenerateToken();
+            // BlindIndex returns null only for null/empty, which a generated code
+            // never is, so the digest is always present.
+            var digest = pii.BlindIndex(candidate)!;
             var clash = await appDbContext.VisitorShareTokens
                 .AsNoTracking()
-                .AnyAsync(t => t.Token == candidate, cancellationToken);
+                .AnyAsync(t => t.TokenHash == digest, cancellationToken);
             if (!clash)
             {
-                return candidate;
+                return (candidate, digest);
             }
         }
         throw new InvalidOperationException(

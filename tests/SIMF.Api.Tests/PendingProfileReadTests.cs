@@ -241,6 +241,79 @@ public sealed class PendingProfileReadTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Both_admin_reads_answer_the_identity_numbers_from_the_document_rows()
+    {
+        // The CP's pending-review modal and its full profile view were the last
+        // readers of UserProfile's NationalId / IqamaNumber / PassportNumber
+        // columns. Both now project the ProfileIdentityDocuments child rows.
+        //
+        // The profile below is written with document rows and NOTHING ELSE — no
+        // superseded column is set — which is the only arrangement that can tell
+        // the two sources apart. While both were written in lockstep, a reader
+        // still on the columns answered identically and no assertion could see the
+        // difference.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var visitor = await CreatePendingVisitorAsync(adminToken, displayName: "Document Rows");
+        const string iqama = "2101798276";
+        const string passport = "AB123456";
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            var profile = await appDb.UserProfiles
+                .Include(p => p.IdentityDocuments)
+                .FirstOrDefaultAsync(p => p.UserId == visitor);
+            if (profile is null)
+            {
+                profile = new UserProfile
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = visitor,
+                    Name = "Document Rows",
+                    NameArabic = "صفوف الوثائق",
+                    CreatedAt = SimfClock.Now,
+                };
+                appDb.UserProfiles.Add(profile);
+            }
+            profile.IsSaudi = false;
+            profile.IdentityDocuments.Add(NewDocument(IdentityDocumentKind.Iqama, iqama));
+            profile.IdentityDocuments.Add(NewDocument(IdentityDocumentKind.Passport, passport));
+            await appDb.SaveChangesAsync();
+        }
+
+        var pending = await GetAuthAsync(
+            $"/api/v1/admin/visitors/{visitor}/profile-for-approval", adminToken);
+        Assert.Equal(HttpStatusCode.OK, pending.StatusCode);
+        var pendingData = (await pending.Content
+            .ReadFromJsonAsync<ApiResult<PendingProfileResponse>>())!.Data!;
+        Assert.Null(pendingData.NationalId);
+        Assert.Equal(iqama, pendingData.IqamaNumber);
+        Assert.Equal(passport, pendingData.PassportNumber);
+
+        var full = await GetAuthAsync(
+            $"/api/v1/admin/visitors/{visitor}/profile", adminToken);
+        Assert.Equal(HttpStatusCode.OK, full.StatusCode);
+        var fullData = (await full.Content
+            .ReadFromJsonAsync<ApiResult<AdminUserProfileView>>())!.Data!;
+        Assert.Null(fullData.NationalId);
+        Assert.Equal(iqama, fullData.IqamaNumber);
+        Assert.Equal(passport, fullData.PassportNumber);
+    }
+
+    /// <summary>A child document row. Id and ProfileId are left UNSET on purpose:
+    /// a populated key reads to the change tracker as "this row already exists",
+    /// which turns the insert into an UPDATE that matches nothing.</summary>
+    private static ProfileIdentityDocument NewDocument(
+        IdentityDocumentKind kind, string number) =>
+        new()
+        {
+            Kind = kind,
+            Number = number,
+            NumberHash = "read-" + Guid.NewGuid().ToString("N"),
+            CreatedAt = SimfClock.Now,
+        };
+
+    [Fact]
     public async Task Others_pending_list_row_reports_HasAvatar_once_a_photo_is_set()
     {
         // Phase B (D-568 parity) — the pending queue grid renders the applicant's

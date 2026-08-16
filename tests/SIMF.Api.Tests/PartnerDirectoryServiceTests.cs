@@ -1,4 +1,4 @@
-// Build #13 — "Meet People Like You" partner directory
+﻿// Build #13 — "Meet People Like You" partner directory
 // (GET /api/v1/app/networking/partner-directory, policy RequireApprovedAccount).
 // Verifies the deduped union of curated Speakers / Sponsors / Booth companies +
 // the opted-in "Other"-type accounts, and the CP switch that empties it.
@@ -83,7 +83,7 @@ public sealed class PartnerDirectoryServiceTests : IClassFixture<SimfApiFactory>
             {
                 Id = Guid.NewGuid(),
                 Name = $"PD Sponsor {Guid.NewGuid().ToString("N")[..8]}",
-                NameArabic = "راعٍ",
+                NameArabic = $"راعٍ {Guid.NewGuid().ToString("N")[..8]}",
                 Tier = SponsorTier.Gold,
                 DisplayOrder = 0,
                 IsActive = true,
@@ -117,7 +117,7 @@ public sealed class PartnerDirectoryServiceTests : IClassFixture<SimfApiFactory>
             {
                 Id = Guid.NewGuid(),
                 Name = $"PD Logo {Guid.NewGuid().ToString("N")[..8]}",
-                NameArabic = "راعٍ بشعار",
+                NameArabic = $"راعٍ بشعار {Guid.NewGuid().ToString("N")[..8]}",
                 Tier = SponsorTier.Gold,
                 DisplayOrder = 0,
                 IsActive = true,
@@ -210,7 +210,7 @@ public sealed class PartnerDirectoryServiceTests : IClassFixture<SimfApiFactory>
             {
                 Id = Guid.NewGuid(),
                 Name = companyName,
-                NameArabic = "راعٍ مزدوج",
+                NameArabic = $"راعٍ مزدوج {Guid.NewGuid().ToString("N")[..8]}",
                 Tier = SponsorTier.Gold,
                 DisplayOrder = 0,
                 IsActive = true,
@@ -272,7 +272,7 @@ public sealed class PartnerDirectoryServiceTests : IClassFixture<SimfApiFactory>
             {
                 Id = Guid.NewGuid(),
                 Name = companyName,
-                NameArabic = "راعٍ",
+                NameArabic = $"راعٍ {Guid.NewGuid().ToString("N")[..8]}",
                 Tier = SponsorTier.Gold,
                 DisplayOrder = 0,
                 IsActive = true,

@@ -52,14 +52,13 @@ internal sealed class GateScanConfiguration : IEntityTypeConfiguration<GateScan>
         builder.HasKey(scan => scan.Id);
         builder.Property(scan => scan.Id).ValueGeneratedOnAdd();
 
-        // Widened 32 -> 64 -> 96, the last step when the badge tag went to a full
-        // 16 bytes; GateOperatorService pins the same 96 in QrIdAtScanMaxLength.
-        // The offline event badge is an ENCRYPTED
-        // payload (~54 chars), not a bare 12-character serial, and the scanner
-        // sends the whole blob so the SERVER decrypts it independently rather
-        // than trusting the device's result. That keeps this audit column
-        // exactly what was physically presented at the gate, which is the point
-        // of an append-only scan log.
+        // 96, with headroom over the ~54-character encrypted badge payload. The
+        // offline event badge is an ENCRYPTED blob, not a bare 12-character
+        // serial, and the scanner sends the whole blob so the SERVER decrypts it
+        // independently rather than trusting the device's result. That keeps this
+        // audit column exactly what was physically presented at the gate, which
+        // is the point of an append-only scan log. GateOperatorService pins its
+        // own inbound length guard to this number, so the two move together.
         builder.Property(scan => scan.QrIdAtScan).HasMaxLength(96).IsRequired();
         // Snapshot fields capture the visitor's identity at the
         // moment of the scan so the audit row survives cross-DB drift.

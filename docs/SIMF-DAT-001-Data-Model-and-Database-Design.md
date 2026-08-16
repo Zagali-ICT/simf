@@ -90,7 +90,7 @@ repeated in every list.
 |--------|----------------|---------------|
 | `User` | `Email`, `PasswordHash`, `DisplayName`, `AccountState` (enum), `UserType` (enum: Visitor / Admin) | has many `UserRole`; **optionally** linked to one attendee profile (§5.2). The link is owned by the profile, not by this row, and may be absent |
 | `Role` | `Name`, `IsBaseline` | has many `RolePermission`, `UserRole` |
-| `Permission` | `Page`, `Action`, `DisplayName`, `Code` | one action on one page; the fixed page-and-action catalogue in SIMF-RPM-001 §8; has many `RolePermission` |
+| `Permission` | `Code` | one action on one page, identified by its `Page.Action` code; the fixed page-and-action catalogue in SIMF-RPM-001 §8; the page, action and display name are presentation metadata held in the in-process `PermissionCatalog`, not columns; has many `RolePermission` |
 | `RolePermission` | — | links `Role` and `Permission` |
 | `UserRole` | — | links `User` and `Role` |
 | `RefreshToken` | `TokenHash`, `ExpiresAt`, `RevokedAt`, `RotatedFromId` | belongs to `User` |

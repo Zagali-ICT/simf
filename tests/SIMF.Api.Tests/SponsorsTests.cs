@@ -96,6 +96,56 @@ public sealed class SponsorsTests : IClassFixture<SimfApiFactory>
         Assert.True(after!.HasLogo);
     }
 
+    // CreateAsync refuses a second ACTIVE sponsor on the same (Tier, NameAr).
+    // UpdateAsync ran that guard only when the name or tier moved, so REVIVING a
+    // retired sponsor onto a name a live one has since taken skipped the check
+    // entirely and produced the exact pair create would have rejected.
+    [Fact]
+    public async Task Reactivating_a_sponsor_onto_a_taken_tier_and_name_is_409()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+        var nameAr = $"شركة الرعاية {suffix}";
+
+        var original = await PostAuthAsync(
+            "/api/v1/admin/sponsors",
+            new AdminCreateSponsorRequest
+            {
+                NameEn = $"Reviving Co {suffix}", NameAr = nameAr,
+                Tier = (int)SponsorTier.Gold, DisplayOrder = 0,
+            }, admin);
+        Assert.Equal(HttpStatusCode.OK, original.StatusCode);
+        var originalId = (await original.Content
+            .ReadFromJsonAsync<ApiResult<AdminSponsorDetail>>())!.Data!.Id;
+
+        // Retired, so the tier/name pair is free again…
+        await DeleteAuthAsync($"/api/v1/admin/sponsors/{originalId}", admin);
+
+        // …and a replacement legitimately takes it.
+        var replacement = await PostAuthAsync(
+            "/api/v1/admin/sponsors",
+            new AdminCreateSponsorRequest
+            {
+                NameEn = $"Replacement Co {suffix}", NameAr = nameAr,
+                Tier = (int)SponsorTier.Gold, DisplayOrder = 1,
+            }, admin);
+        Assert.Equal(HttpStatusCode.OK, replacement.StatusCode);
+
+        // Reviving the original with name and tier UNCHANGED would leave two
+        // active Gold sponsors under one Arabic name.
+        var revive = await PutAuthAsync(
+            $"/api/v1/admin/sponsors/{originalId}",
+            new AdminUpdateSponsorRequest
+            {
+                NameEn = $"Reviving Co {suffix}", NameAr = nameAr,
+                Tier = (int)SponsorTier.Gold, DisplayOrder = 0,
+                IsActive = true,
+            }, admin);
+        Assert.Equal(HttpStatusCode.Conflict, revive.StatusCode);
+        var body = (await revive.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SponsorDuplicate, body.Error!.Code);
+    }
+
     private async Task<AdminSponsorSummary?> AdminListAndFindAsync(Guid id, string token)
     {
         var resp = await PostAuthAsync(

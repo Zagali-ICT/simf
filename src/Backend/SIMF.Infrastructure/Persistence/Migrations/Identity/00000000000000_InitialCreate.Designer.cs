@@ -12,7 +12,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Persistence.Migrations.Identity
 {
     [DbContext(typeof(SimfIdentityDbContext))]
-    [Migration("20260814115334_InitialCreate")]
+    [Migration("00000000000000_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -236,7 +236,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                     b.HasIndex("UserProfileId", "Purpose")
                         .HasFilter("[UserProfileId] IS NOT NULL");
 
-                    b.ToTable("AccountCodes");
+                    b.ToTable("AccountCodes", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_AccountCodes_OneOwner", "([UserId] IS NOT NULL AND [UserProfileId] IS NULL) OR ([UserId] IS NULL AND [UserProfileId] IS NOT NULL)");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.IdentityAccess.DeviceKey", b =>
@@ -287,7 +290,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
 
                     b.HasIndex("UserId", "RevokedAt");
 
-                    b.ToTable("DeviceKeys", (string)null);
+                    b.ToTable("DeviceKeys", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_DeviceKeys_ChallengePin", "([CurrentChallenge] IS NULL AND [ChallengeExpiresAt] IS NULL) OR ([CurrentChallenge] IS NOT NULL AND [ChallengeExpiresAt] IS NOT NULL)");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.IdentityAccess.PasswordHistoryEntry", b =>
@@ -320,32 +326,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
                     b.Property<string>("Code")
                         .IsRequired()
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
 
-                    b.Property<string>("DisplayName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("Page")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
                     b.HasKey("Id");
 
                     b.HasIndex("Code")
-                        .IsUnique();
-
-                    b.HasIndex("Page", "Action")
                         .IsUnique();
 
                     b.ToTable("Permissions");

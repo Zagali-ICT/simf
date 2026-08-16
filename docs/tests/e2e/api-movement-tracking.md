@@ -74,6 +74,8 @@ when the id no longer resolves.
 | E2E-MOV-009 | An out-of-range coordinate is rejected | error | P1 | code-reviewed |
 | E2E-MOV-010 | An oversized batch is rejected | error | P1 | code-reviewed |
 | E2E-MOV-011 | A dangling hall id renders a nameless leg, not an error | resilience | P1 | code-reviewed |
+| E2E-MOV-012 | An out-of-range accuracy radius (negative / absurd) is rejected | error | P1 | _to author_ |
+| E2E-MOV-013 | A sample omitting accuracy is still accepted (the field is optional) | happy | P1 | _to author_ |
 
 ## Scenarios
 
@@ -217,7 +219,7 @@ The route is also rate-limited under the `auth` policy.
 
 **Evidence captured:** `MovementTrackingTests.Capture_endpoint_requires_an_approved_account`.
 
-### E2E-MOV-009 / E2E-MOV-010 — Input guards
+### E2E-MOV-009 / E2E-MOV-010 / E2E-MOV-012 / E2E-MOV-013 — Input guards
 
 ```gherkin
 Scenario: An out-of-range coordinate is refused
@@ -227,10 +229,29 @@ Scenario: An out-of-range coordinate is refused
 Scenario: An oversized batch is refused
   When the device POSTs 201 samples
   Then the response is 400 with error.code "VALIDATION_FAILED"
+
+Scenario: An out-of-range accuracy radius is refused
+  When the device POSTs a sample with accuracyMeters = -5
+  Then the response is 400 with error.code "VALIDATION_FAILED"
+
+  When the device POSTs a sample with accuracyMeters = 250000
+  Then the response is 400 with error.code "VALIDATION_FAILED"
+
+Scenario: A sample that reports no accuracy is still accepted
+  When the device POSTs a sample with accuracyMeters omitted
+  Then the response is 200 and the sample is stored
 ```
 
 A device batching a long offline stretch is normal; an unbounded batch is not
 (`MaxSamplesPerUpload` = 200).
+
+The accuracy radius is bounded at `MaxAccuracyMeters` = 10,000 m. The coordinates
+beside it were already range-checked while the radius was stored verbatim, so any
+number at all reached the column. A consumer GPS fix is good to single-digit
+metres and even a coarse cell-tower fix to a few thousand; past that the sample
+locates nothing a venue-scale geofence can use. The field stays **optional** on
+the wire — `accuracyMeters` is nullable and a device that reports none must keep
+working, so the bound must never turn an absent value into a 400.
 
 ### E2E-MOV-011 — Dangling hall id
 

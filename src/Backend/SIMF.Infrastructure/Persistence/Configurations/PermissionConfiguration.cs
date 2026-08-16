@@ -10,12 +10,10 @@ internal sealed class PermissionConfiguration : IEntityTypeConfiguration<Permiss
     {
         builder.HasKey(permission => permission.Id);
 
-        builder.Property(permission => permission.Page).HasMaxLength(100).IsRequired();
-        builder.Property(permission => permission.Action).HasMaxLength(100).IsRequired();
-        builder.Property(permission => permission.DisplayName).HasMaxLength(200).IsRequired();
         builder.Property(permission => permission.Code).HasMaxLength(150).IsRequired();
 
+        // Code is "Page.Action", so this one unique index still enforces the
+        // one-row-per-page-and-action rule the old (Page, Action) index did.
         builder.HasIndex(permission => permission.Code).IsUnique();
-        builder.HasIndex(permission => new { permission.Page, permission.Action }).IsUnique();
     }
 }

@@ -18,9 +18,9 @@ internal sealed class RowAuditConfiguration : IEntityTypeConfiguration<RowAudit>
         // The Identity context lives in its own physically separate
         // database (SIMF_Identity), so its RowAudits no longer co-habits a DB
         // with the App context's table. The `identity` schema qualifier is
-        // retained from the earlier one-shared-DB design (C-1, superseded) —
-        // harmless under the split, and changing it now would be a frozen-schema
-        // change.
+        // retained from the earlier one-shared-DB design (superseded) — it is
+        // harmless under the split and it is what keeps the two audit tables
+        // visibly distinct when both databases are read side by side.
         builder.ToTable("RowAudits", schema: "identity");
         builder.HasKey(audit => audit.Id);
         builder.Property(audit => audit.Id).ValueGeneratedOnAdd();

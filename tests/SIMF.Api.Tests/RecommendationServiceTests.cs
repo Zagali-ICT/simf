@@ -268,7 +268,6 @@ public sealed class RecommendationServiceTests : IClassFixture<SimfApiFactory>
                 NameArabic = "مستخدم",
                 PlaceOfBirth = "Riyadh",
                 IsSaudi = true,
-                NationalId = "1234567890",
                 NationalityId = 0,
                 // D-736 — a candidate only appears in Meet-People-Like-You when opted
                 // in; the recommender filters on this flag. Set it explicitly so the
@@ -325,7 +324,6 @@ public sealed class RecommendationServiceTests : IClassFixture<SimfApiFactory>
                 NameArabic = "بانتظار",
                 PlaceOfBirth = "Riyadh",
                 IsSaudi = true,
-                NationalId = "1234567890",
                 NationalityId = 0,
                 CreatedAt = SimfClock.Now,
             };

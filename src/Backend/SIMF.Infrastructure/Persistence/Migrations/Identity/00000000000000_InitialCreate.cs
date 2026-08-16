@@ -19,9 +19,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Page = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    Action = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    DisplayName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     Code = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false)
                 },
                 constraints: table =>
@@ -168,6 +165,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AccountCodes", x => x.Id);
+                    table.CheckConstraint("CK_AccountCodes_OneOwner", "([UserId] IS NOT NULL AND [UserProfileId] IS NULL) OR ([UserId] IS NULL AND [UserProfileId] IS NOT NULL)");
                     table.ForeignKey(
                         name: "FK_AccountCodes_Users_UserId",
                         column: x => x.UserId,
@@ -194,6 +192,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_DeviceKeys", x => x.Id);
+                    table.CheckConstraint("CK_DeviceKeys_ChallengePin", "([CurrentChallenge] IS NULL AND [ChallengeExpiresAt] IS NULL) OR ([CurrentChallenge] IS NOT NULL AND [ChallengeExpiresAt] IS NOT NULL)");
                     table.ForeignKey(
                         name: "FK_DeviceKeys_Users_UserId",
                         column: x => x.UserId,
@@ -448,12 +447,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                 name: "IX_Permissions_Code",
                 table: "Permissions",
                 column: "Code",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Permissions_Page_Action",
-                table: "Permissions",
-                columns: new[] { "Page", "Action" },
                 unique: true);
 
             migrationBuilder.CreateIndex(

@@ -34,7 +34,7 @@
 | E2E-SPN-009 | Auth gate (action) — admin with View but not Create → POST 403 | auth | P1 | _to author_ |
 | E2E-SPN-010 | Validation — blank name(s) → client-side bilingual toast, no POST | error | P1 | _to author_ |
 | E2E-SPN-011 | Validation — server length/tier/order rejection (400 `SponsorInvalid`) | error | P1 | _to author_ |
-| E2E-SPN-012 | Conflict — duplicate active NameAr in same tier → 409 `SponsorDuplicate` | error | P1 | _to author_ |
+| E2E-SPN-012 | Conflict — duplicate active NameAr in same tier → 409 `SponsorDuplicate`, on Add **and** on re-activating a retired sponsor | error | P1 | _to author_ |
 | E2E-SPN-013 | Server 500 on `/list` → bilingual fallback toast | resilience | P2 | _to author_ |
 | E2E-SPN-014 | Modal Cancel discards edits | happy | P2 | _to author_ |
 | E2E-SPN-015 | RTL/Arabic render — page + modal mirror | i18n | P1 | _to author_ |
@@ -318,6 +318,18 @@ Scenario: Duplicate active Arabic name in the same tier returns 409
       "An active sponsor named 'ساب' already exists in this tier." /
       "يوجد راعٍ نشط بالاسم 'ساب' في هذه الفئة بالفعل."
   And the same Arabic name in a DIFFERENT tier (e.g. "Silver") would NOT conflict
+
+Scenario: Reviving a retired sponsor onto a name a live one now holds returns 409
+  Given a sponsor "شركة الرعاية" in tier "Gold" was created and then deleted
+  And a NEW active sponsor has since been created with the same Arabic name in "Gold"
+  When the administrator edits the retired sponsor and ticks Active back on,
+       changing neither the Arabic name nor the tier
+  Then the API returns HTTP 409 with ApiResult.Error.Code = "SponsorDuplicate"
+  And the retired sponsor stays inactive
+  # The duplicate rule counts ACTIVE rows only, so re-activation contends for the
+  # (Tier, NameAr) pair with no key change at all. The update guard previously ran
+  # only when the name or tier MOVED, so this path created exactly the pair the
+  # create path refuses.
 ```
 
 ### E2E-SPN-013 — Server 500 on list

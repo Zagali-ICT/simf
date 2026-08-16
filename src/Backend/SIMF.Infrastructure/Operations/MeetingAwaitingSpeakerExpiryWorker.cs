@@ -225,7 +225,6 @@ internal sealed class MeetingAwaitingSpeakerExpiryWorker(
             req.MeetingTableId = null;
             req.SlotStart = null;
             req.SlotEnd = null;
-            req.AvailabilityWindowId = null;
             req.RespondedAt = null;
             req.RespondedByUserId = null;
             req.ResponseNote = null;

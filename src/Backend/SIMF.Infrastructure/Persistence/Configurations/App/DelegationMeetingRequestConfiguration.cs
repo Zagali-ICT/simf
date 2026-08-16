@@ -40,13 +40,10 @@ internal sealed class DelegationMeetingRequestConfiguration
             .HasForeignKey(r => r.TargetCountryId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Bi-Meeting rework — the picked delegation-availability window (SetNull), the
-        // hall + optional table an Approve bound the meeting to (SetNull; a deleted
-        // hall/table clears the binding). Mirrors SpeakerMeetingRequestConfiguration.
-        builder.HasOne<DelegationAvailabilityWindow>()
-            .WithMany()
-            .HasForeignKey(r => r.AvailabilityWindowId)
-            .OnDelete(DeleteBehavior.SetNull);
+        // The hall + optional table an Approve bound the meeting to (SetNull; a deleted
+        // hall/table clears the binding). Mirrors SpeakerMeetingRequestConfiguration,
+        // except that a delegation request holds no availability-window reference:
+        // nothing ever picked one, so the column and its FK were removed.
         builder.HasOne(r => r.Hall)
             .WithMany()
             .HasForeignKey(r => r.HallId)

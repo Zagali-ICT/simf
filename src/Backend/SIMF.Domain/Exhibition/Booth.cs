@@ -45,8 +45,10 @@ public class Booth : BaseAuditEntity
     public int? OfficerCountryId { get; set; }
     public Country? OfficerCountry { get; set; }
 
-    // Vestigial free text from before exhibitors were curated rows. Nothing writes
-    // them, and the public projection reads them only when ExhibitorId is null.
+    // Vestigial free text from before exhibitors were curated rows. No application
+    // code writes them — the admin write surface dropped them and only the content
+    // seed SQL still fills them — and the public projection reads them only when
+    // ExhibitorId is null. They stay because they are on the public wire contract.
     public string? ExhibitorName { get; set; }
     public string? ExhibitorNameArabic { get; set; }
 

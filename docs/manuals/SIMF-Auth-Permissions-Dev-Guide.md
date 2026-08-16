@@ -20,7 +20,7 @@ SIMF authorization is **roles-only**. A user holds roles; a role holds permissio
 
 The three entities:
 
-- **`Permission`** (`Permission.cs`) — one action on one page. Fields: `Id`, `Page`, `Action`, `DisplayName`, `Code`, and a `RolePermissions` back-collection. `Code` is the stable identifier used in authorization checks; `Page`/`Action`/`DisplayName` are metadata for the assignment UI.
+- **`Permission`** (`Permission.cs`) — one action on one page. Fields: `Id`, `Code`, and a `RolePermissions` back-collection. `Code` is the stable identifier used in authorization checks, and it is the only permission field that is persisted. The matching `Page`/`Action`/`DisplayName` live on the in-process `PermissionDef` only: the assignment UI reads them straight off `PermissionCatalog`, so the columns that once mirrored them were written by the seeder and never read back, and have been removed.
 - **`SimfRole`** (`SimfRole.cs`) — extends ASP.NET Core Identity's `IdentityRole<Guid>`. Roles are dynamic (an admin creates them and assigns permissions). `IsBaseline` marks built-in roles that cannot be deleted.
 - **`RolePermission`** (`RolePermission.cs`) — grants one `Permission` to one `SimfRole`. Composite PK `{ RoleId, PermissionId }`, both FKs cascade-delete (`RolePermissionConfiguration.cs`).
 
@@ -210,7 +210,7 @@ foreach (var permission in PermissionCatalog.All)
 ```
 
 `EnsurePermissionAsync` is idempotent **by `Code`**:
-1. `dbContext.Permissions.SingleOrDefaultAsync(p => p.Code == code)`. If null, insert a new `Permission` (fresh `Guid.NewGuid()` Id, plus Page/Action/DisplayName) and save. If it already exists, the existing row is reused — Page/Action/DisplayName are **not** re-written on an existing row.
+1. `dbContext.Permissions.SingleOrDefaultAsync(p => p.Code == code)`. If null, insert a new `Permission` (fresh `Guid.NewGuid()` Id plus the `Code`) and save. If it already exists, the existing row is reused untouched. `Code` is the whole row, so there is no other column a re-seed could drift on.
 2. For each role name in `grantToRoles`: `FindByNameAsync(roleName)` (skip with `continue` if the role is missing), then check `RolePermissions.AnyAsync(rp => rp.RoleId == role.Id && rp.PermissionId == permission.Id)` and only add a `RolePermission` if the grant does not already exist.
 
 Both the row insert and each grant are conditional, so re-running on every boot is a no-op once seeded. The work is pure data — `INSERT`s into `Permission` and `RolePermission` — with no DDL, so it is **freeze-safe**: it does not touch the frozen EF schema or the enum contract, and adding catalogue entries only adds data rows.

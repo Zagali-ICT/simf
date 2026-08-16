@@ -102,6 +102,59 @@ public sealed class RowAuditTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task An_identity_document_number_is_redacted_out_of_its_audit_row()
+    {
+        // The identity documents moved off UserProfile's NationalId / IqamaNumber
+        // / PassportNumber columns and onto ProfileIdentityDocument.Number. All
+        // three column names were in the interceptor's redaction set; the column
+        // they moved to was not, so the collapse would have carried the numbers out
+        // of an encrypted, redacted column and into a plaintext audit row.
+        //
+        // The interceptor reads the MODEL value, which is the number BEFORE the PII
+        // value converter encrypts it — so nothing about the column's encryption
+        // protects the audit trail here.
+        var number = "1" + Guid.NewGuid().ToString("N")[..9];
+        var profileId = Guid.NewGuid();
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+
+        appDb.UserProfiles.Add(new UserProfile
+        {
+            Id = profileId,
+            UserId = Guid.NewGuid(),
+            Name = "Audit Redaction",
+            NameArabic = "تدقيق الحجب",
+            NationalityId = 0,
+            IsSaudi = true,
+            CreatedAt = SimfClock.Now,
+            IdentityDocuments =
+            {
+                new ProfileIdentityDocument
+                {
+                    Kind = IdentityDocumentKind.NationalId,
+                    Number = number,
+                    NumberHash = "audit-" + Guid.NewGuid().ToString("N"),
+                    CreatedAt = SimfClock.Now,
+                },
+            },
+        });
+        await appDb.SaveChangesAsync();
+
+        var audit = await appDb.RowAudits
+            .AsNoTracking()
+            .Where(row => row.EntityType == nameof(ProfileIdentityDocument))
+            .OrderByDescending(row => row.OccurredAt)
+            .ToListAsync();
+        var written = Assert.Single(
+            audit,
+            row => row.NewValuesJson != null
+                && row.NewValuesJson.Contains(profileId.ToString(), StringComparison.OrdinalIgnoreCase));
+
+        Assert.DoesNotContain(number, written.NewValuesJson!, StringComparison.Ordinal);
+        Assert.Contains("\"Number\":\"***\"", written.NewValuesJson!, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task RowAudits_table_itself_does_not_appear_in_RowAudits()
     {
         var interestId = Guid.NewGuid();

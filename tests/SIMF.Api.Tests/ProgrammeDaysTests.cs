@@ -95,6 +95,61 @@ public sealed class ProgrammeDaysTests : IClassFixture<SimfApiFactory>
         Assert.Equal(ErrorCodes.ProgrammeDayInvalid, body.Error!.Code);
     }
 
+    // Both siblings over this shape (AdminThemeService, AdminSponsorService) reject
+    // a negative DisplayOrder on create AND update; the programme day accepted one,
+    // which then sorts ahead of every legitimate row in the CP grid.
+    [Fact]
+    public async Task Create_with_a_negative_display_order_is_400_PROGRAMME_DAY_INVALID()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var response = await PostAuthAsync(
+            "/api/v1/admin/programme-days",
+            new AdminCreateProgrammeDayRequest
+            {
+                Date = new DateOnly(2030, 3, 3),
+                Title = "Negative order",
+                TitleArabic = "ترتيب سالب",
+                DisplayOrder = -1,
+            },
+            token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.ProgrammeDayInvalid, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Update_with_a_negative_display_order_is_400_PROGRAMME_DAY_INVALID()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var create = await PostAuthAsync(
+            "/api/v1/admin/programme-days",
+            new AdminCreateProgrammeDayRequest
+            {
+                Date = new DateOnly(2030, 3, 4),
+                Title = "Reorder me",
+                TitleArabic = "أعد ترتيبي",
+                DisplayOrder = 2,
+            },
+            token);
+        var id = (await create.Content
+            .ReadFromJsonAsync<ApiResult<AdminProgrammeDayDetail>>())!.Data!.Id;
+
+        var response = await PutAuthAsync(
+            $"/api/v1/admin/programme-days/{id}",
+            new AdminUpdateProgrammeDayRequest
+            {
+                Date = new DateOnly(2030, 3, 4),
+                Title = "Reorder me",
+                TitleArabic = "أعد ترتيبي",
+                DisplayOrder = -5,
+                IsActive = true,
+            },
+            token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.ProgrammeDayInvalid, body.Error!.Code);
+    }
+
     [Fact]
     public async Task Second_active_day_on_the_same_date_is_400_PROGRAMME_DAY_INVALID()
     {
@@ -317,6 +372,17 @@ public sealed class ProgrammeDaysTests : IClassFixture<SimfApiFactory>
         where TBody : class
     {
         var request = new HttpRequestMessage(HttpMethod.Post, url)
+        {
+            Content = JsonContent.Create(body),
+        };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return _client.SendAsync(request);
+    }
+
+    private Task<HttpResponseMessage> PutAuthAsync<TBody>(string url, TBody body, string token)
+        where TBody : class
+    {
+        var request = new HttpRequestMessage(HttpMethod.Put, url)
         {
             Content = JsonContent.Create(body),
         };

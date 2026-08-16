@@ -531,9 +531,6 @@ public sealed class BusinessFlow13PermissionMatrixTests : IClassFixture<SimfApiF
             {
                 Id = Guid.NewGuid(),
                 Code = def.Code,
-                Page = def.Page,
-                Action = def.Action,
-                DisplayName = def.DisplayName,
             };
             db.Permissions.Add(permission);
             await db.SaveChangesAsync();

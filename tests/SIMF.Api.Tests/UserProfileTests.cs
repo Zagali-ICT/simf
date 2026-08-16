@@ -895,7 +895,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
     }
 
     // H-1 (FIX A) — the self-service write path must populate the identity blind
-    // index (so the filtered UNIQUE indexes + the duplicate-identity guard see it)
+    // index (so the unique digest index + the duplicate-identity guard see it)
     // and reject a National ID / Iqama / passport already on ANOTHER user's row,
     // while never false-flagging a user re-saving their OWN id.
     [Fact]
@@ -909,9 +909,14 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
 
         using var scope = _factory.Services.CreateScope();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        // Read off the document row. The digest used to live in a
+        // UserProfile.NationalIdHash column of its own; it is now the child row's
+        // NumberHash, which is the column the one unique index keys off.
         var hash = await appDb.UserProfiles
             .Where(p => p.UserId == actorId)
-            .Select(p => p.NationalIdHash)
+            .SelectMany(p => p.IdentityDocuments)
+            .Where(document => document.Kind == IdentityDocumentKind.NationalId)
+            .Select(document => document.NumberHash)
             .SingleAsync();
         Assert.False(string.IsNullOrEmpty(hash));
     }

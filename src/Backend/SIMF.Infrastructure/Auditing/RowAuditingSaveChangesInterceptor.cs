@@ -1,3 +1,5 @@
+// Tests: SIMF.Api.Tests/RowAuditTests.cs (insert / update / no self-recursion,
+//        and an identity document's number redacted out of its audit row)
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
@@ -66,12 +68,17 @@ internal sealed class RowAuditingSaveChangesInterceptor(
         "PasswordHash",
         "SecurityStamp",
         "ConcurrencyStamp",
-        // A2-10 — the UserProfile PII identifiers are encrypted at rest; the
-        // row-audit reads the model (plaintext) value, so redact them here too so
-        // the audit trail records *that* they changed without leaking the PII.
-        "NationalId",
-        "IqamaNumber",
-        "PassportNumber",
+        // A2-10 — the PII identifiers are encrypted at rest; the row-audit reads
+        // the model (plaintext) value, so redact them here too so the audit trail
+        // records *that* they changed without leaking the PII.
+        //
+        // "Number" is ProfileIdentityDocument.Number, the single column that took
+        // over from UserProfile's NationalId / IqamaNumber / PassportNumber. It is
+        // named here rather than covered by a suffix rule because the identity
+        // document is the only entity in either model with a property called
+        // exactly "Number" — the others (PlateNumber, ReferenceNumber) are
+        // distinct names carrying non-secret values.
+        "Number",
         "SaudiMobile",
         "InternationalMobile",
     };
