@@ -65,6 +65,7 @@
 | E2E-PGD-016 | Per-column filter narrows the grid (Title EN / Title AR) | function | P2 | _to author_ |
 | E2E-PGD-017 | Column sort toggles (Date / Order) | function | P2 | _to author_ |
 | E2E-PGD-018 | App parity: an authored day + its logo appear on `/app/programme/days` (day-strip + banner) | happy | P0 | _to author_ |
+| E2E-PGD-019 | Validation: a negative Display order → 400 `PROGRAMME_DAY_INVALID`, on Add and on Edit | error | P1 | _to author_ |
 | E2E-PGD-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-PGD-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
@@ -335,6 +336,33 @@ Scenario: An authored day + logo drive the app's Sessions screen
   And the app renders the day in the day-strip, the day banner (logo), and groups those sessions under it
   And while NO ProgrammeDay rows exist the app instead synthesises one day per distinct session date (HasImage=false) so the agenda never blanks
 ```
+
+### E2E-PGD-019 — A negative display order is refused on both write paths
+
+```gherkin
+Scenario: Add refuses a negative display order
+  Given the administrator is on /admin/programme-days
+  When they open Add and save Date="2030-03-03", Title (EN)="Negative order",
+       Title (AR)="ترتيب سالب" and Display order = -1
+  Then the POST /account/api/admin/programme-days returns HTTP 400
+  And the error code is PROGRAMME_DAY_INVALID
+  And the bilingual message reads
+      EN "Display order must be zero or a positive integer."
+       / AR "يجب أن يكون ترتيب العرض صفراً أو عدداً صحيحاً موجباً."
+  And no programme day is created
+
+Scenario: Edit refuses a negative display order
+  Given an existing programme day with Display order = 2
+  When the administrator edits it and sets Display order = -5
+  Then the PUT /account/api/admin/programme-days/{id} returns HTTP 400
+  And the error code is PROGRAMME_DAY_INVALID
+  And the stored day keeps Display order = 2
+```
+
+Display order is the grid's sort key and the default ordering (`DisplayOrder` then
+`Date`), so a negative value silently pins the row ahead of every legitimate day.
+Both siblings over this shape (`AdminThemeService`, `AdminSponsorService`) already
+rejected it on create and update; the programme day accepted it on both.
 
 ---
 

@@ -107,6 +107,7 @@ internal sealed class AdminSessionCategoryService(
         CancellationToken cancellationToken = default)
     {
         var (name, nameArabic) = ValidateAndNormalise(request.Name, request.NameArabic);
+        await EnsureNameIsFreeAsync(name, null, cancellationToken);
 
         var now = timeProvider.SimfNow();
         var category = new SessionCategory
@@ -145,6 +146,13 @@ internal sealed class AdminSessionCategoryService(
             ?? throw NotFound();
 
         var (name, nameArabic) = ValidateAndNormalise(request.Name, request.NameArabic);
+
+        // Read the CURRENT state before the assignments below overwrite it.
+        var renamed = !string.Equals(category.Name, name, StringComparison.OrdinalIgnoreCase);
+        if (request.IsActive && (renamed || !category.IsActive))
+        {
+            await EnsureNameIsFreeAsync(name, id, cancellationToken);
+        }
 
         category.Name = name;
         category.NameArabic = nameArabic;
@@ -185,6 +193,32 @@ internal sealed class AdminSessionCategoryService(
             actorUserId,
             $"id={category.Id}; name={category.Name}",
             cancellationToken);
+    }
+
+    /// <summary>The unique index over <c>Name</c> is FILTERED to the active rows,
+    /// so the name is contended only among them — which makes reactivation a clash
+    /// path in its own right, with no rename involved. Every sibling lookup
+    /// (AdminThemeService, AdminHallService) pre-checks for the same reason: without
+    /// it the collision surfaces from SaveChanges as a raw DbUpdateException, and
+    /// the caller gets a 500 where the answer is a 409.</summary>
+    private async Task EnsureNameIsFreeAsync(
+        string name, Guid? excludeId, CancellationToken cancellationToken)
+    {
+        var clash = await db.SessionCategories
+            .AsNoTracking()
+            .AnyAsync(
+                category => category.IsActive
+                    && category.Name == name
+                    && (excludeId == null || category.Id != excludeId),
+                cancellationToken);
+        if (!clash)
+        {
+            return;
+        }
+        throw new ApiException(
+            ErrorCodes.SessionCategoryInvalid, 409,
+            $"A session category named '{name}' already exists.",
+            $"يوجد تصنيف جلسة بالاسم '{name}' بالفعل.");
     }
 
     private static (string Name, string NameArabic) ValidateAndNormalise(

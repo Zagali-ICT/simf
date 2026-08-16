@@ -99,6 +99,55 @@ public sealed class MovementTrackingTests : IClassFixture<SimfApiFactory>
         Assert.Equal(0, body.MatchedToHall);
     }
 
+    // Lat/lon were range-checked but the accuracy radius was stored verbatim, so a
+    // device (or a hand-rolled caller) could post a negative or absurd radius into
+    // a column the dwell/route reads will later have to trust.
+    [Fact]
+    public async Task A_negative_accuracy_radius_is_rejected()
+    {
+        var tokens = await AuthFlow.SignInApprovedVisitorWithoutTwoFactorAsync(_client, _factory);
+
+        var response = await PostAuthAsync("/api/v1/app/movement/pings",
+            new RecordDevicePositionsRequest
+            {
+                Samples = [new(SimfClock.Now.AddMinutes(-1), HallLat, HallLon, -5)],
+            }, tokens.AccessToken);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.ValidationFailed, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task An_absurd_accuracy_radius_is_rejected()
+    {
+        var tokens = await AuthFlow.SignInApprovedVisitorWithoutTwoFactorAsync(_client, _factory);
+
+        var response = await PostAuthAsync("/api/v1/app/movement/pings",
+            new RecordDevicePositionsRequest
+            {
+                Samples = [new(SimfClock.Now.AddMinutes(-1), HallLat, HallLon, 250_000)],
+            }, tokens.AccessToken);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task A_sample_with_no_accuracy_is_still_accepted()
+    {
+        // The field is optional on the wire — a device that reports no accuracy
+        // must keep working, so the new bound must not turn null into a 400.
+        var tokens = await AuthFlow.SignInApprovedVisitorWithoutTwoFactorAsync(_client, _factory);
+
+        var response = await PostAuthAsync("/api/v1/app/movement/pings",
+            new RecordDevicePositionsRequest
+            {
+                Samples = [new(SimfClock.Now.AddMinutes(-1), HallLat, HallLon)],
+            }, tokens.AccessToken);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
     [Fact]
     public async Task Dwell_aggregation_sums_time_between_consecutive_pings_in_a_hall()
     {

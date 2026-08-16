@@ -197,6 +197,57 @@ public sealed class VisitorContactSharingTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Share_token_is_never_stored_in_the_clear()
+    {
+        // The share code is a replayable credential: whoever holds it can resolve
+        // the owner's card, which carries the mobile number this database keeps
+        // encrypted and the email that lives on the Identity database entirely. A
+        // reader of SIMF_App must not come away with a code they can replay, so the
+        // stored column is ciphertext and the lookup keys off a keyed digest.
+        var (token, userId) = await CreateApprovedVisitorAsync();
+        var code = await GetShareTokenAsync(token);
+
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var stored = await appDb.VisitorShareTokens
+            .AsNoTracking()
+            .Where(row => row.UserId == userId && row.IsActive)
+            .Select(row => new { row.Token, row.TokenHash })
+            .SingleAsync();
+
+        Assert.StartsWith("enc:1:", stored.Token, StringComparison.Ordinal);
+        Assert.DoesNotContain(code, stored.Token, StringComparison.Ordinal);
+        // The lookup key is a keyed digest, so it is neither the code itself nor
+        // anything an offline sweep of the code space could invert without the key.
+        Assert.DoesNotContain(code, stored.TokenHash, StringComparison.Ordinal);
+        Assert.Equal(64, stored.TokenHash.Length);
+    }
+
+    [Fact]
+    public async Task Rotating_leaves_no_readable_copy_of_the_revoked_code()
+    {
+        // Revoked rows stay for the audit trail; they must not become a plaintext
+        // archive of every code the owner has ever handed out.
+        var (token, userId) = await CreateApprovedVisitorAsync();
+        var oldCode = await GetShareTokenAsync(token);
+        var rotate = await PostAuthAsync(
+            "/api/v1/app/account/share-token/rotate", new { }, token);
+        Assert.Equal(HttpStatusCode.OK, rotate.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var stored = await appDb.VisitorShareTokens
+            .AsNoTracking()
+            .Where(row => row.UserId == userId)
+            .Select(row => row.Token)
+            .ToListAsync();
+
+        Assert.Equal(2, stored.Count);
+        Assert.All(stored, value =>
+            Assert.DoesNotContain(oldCode, value, StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task Share_token_requires_authentication()
     {
         var response = await _client.GetAsync("/api/v1/app/account/share-token");

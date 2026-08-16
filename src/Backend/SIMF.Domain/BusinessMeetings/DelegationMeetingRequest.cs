@@ -35,9 +35,6 @@ public sealed class DelegationMeetingRequest
     /// <see cref="MeetingRequestStatuses.SlotHolding"/>, which the filtered index follows.</summary>
     public MeetingRequestStatus Status { get; set; } = MeetingRequestStatus.Pending;
 
-    /// <summary>Vestigial: nothing writes a window id here; the expiry sweep only clears it.</summary>
-    public Guid? AvailabilityWindowId { get; set; }
-
     /// <summary>Cleared on cancel or revert, which is what releases the slot.</summary>
     public Guid? HallId { get; set; }
     public Hall? Hall { get; set; }

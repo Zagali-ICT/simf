@@ -1,3 +1,4 @@
+// Tests: SIMF.Api.Tests/VisitorContactSharingTests.cs
 using SIMF.Domain.Common;
 
 namespace SIMF.Domain.Contacts;
@@ -13,20 +14,32 @@ public sealed class VisitorShareToken : BaseAuditEntity
     /// <summary>A bare Guid: the user lives in the Identity database.</summary>
     public Guid UserId { get; set; }
 
-    /// <summary>The shareable code encoded into the visitor's QR, an opaque
-    /// Crockford base32 string, unique across the table.
+    /// <summary>The shareable code encoded into the visitor's QR — an opaque
+    /// Crockford base32 string — held AES-GCM encrypted at rest in the
+    /// <c>enc:1:</c> form the profile's PII columns use.
     ///
-    /// <para>Stored in plaintext, and deliberately so — this is the one token in
-    /// the system that does not follow the <c>OpaqueToken.Hash</c> convention
-    /// <c>RefreshToken</c>, <c>SecondFactorToken</c>, <c>MeetingActionToken</c> and
-    /// <c>TotpRecoveryCode</c> all use. Two reasons. The owner re-reads this value
-    /// every time they reopen the share screen, so a one-way hash would mean nobody
-    /// could ever see their own QR again after minting it. And it guards nothing an
-    /// attacker would not already hold: the card it resolves to is projected live
-    /// from <c>UserProfile</c> in this same database, so a reader who has this table
-    /// has the contact details directly and does not need the code. Encrypting it
-    /// would buy a schema change and a blind index for no reduction in exposure.</para></summary>
+    /// <para>Encrypted rather than hashed because the owner re-reads the code every
+    /// time they reopen the share screen, which a one-way digest would make
+    /// impossible: the sibling tokens (<c>RefreshToken</c>,
+    /// <c>SecondFactorToken</c>, <c>MeetingActionToken</c>, <c>TotpRecoveryCode</c>)
+    /// are shown once and never again, so <c>OpaqueToken.Hash</c> fits them and not
+    /// this. Encrypted rather than left readable because the code is replay value a
+    /// database reader does not otherwise hold: it resolves to a card carrying the
+    /// mobile number, which this same database keeps as ciphertext, and the email,
+    /// which lives on the Identity database entirely. Storing the code in the clear
+    /// would hand a reader of this one table the very fields the rest of the schema
+    /// is at pains to protect.</para>
+    ///
+    /// <para>Random-nonce encryption cannot be equality-queried, so the lookup keys
+    /// off <see cref="TokenHash"/> instead; this column carries no index.</para></summary>
     public string Token { get; set; } = string.Empty;
+
+    /// <summary>The keyed HMAC-SHA256 digest of the code — the deterministic lookup
+    /// key a scanned code is resolved through, and the column carrying the
+    /// uniqueness constraint. Keyed rather than a bare hash so a database leak
+    /// cannot brute-force the small twelve-character code space back to plaintext
+    /// offline. Required: a row exists only when there is a code behind it.</summary>
+    public string TokenHash { get; set; } = string.Empty;
 
     public DateTime? RevokedAt { get; set; }
 }

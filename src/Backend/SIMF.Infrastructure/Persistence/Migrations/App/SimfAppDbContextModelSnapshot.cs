@@ -1140,9 +1140,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<int>("AttendeeCount")
                         .HasColumnType("int");
 
-                    b.Property<Guid?>("AvailabilityWindowId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<DateTime?>("CheckedInAt")
                         .HasColumnType("datetime2");
 
@@ -1201,8 +1198,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasColumnType("int");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("AvailabilityWindowId");
 
                     b.HasIndex("MeetingTableId");
 
@@ -2525,9 +2520,16 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("Token")
                         .IsRequired()
-                        .HasMaxLength(32)
+                        .HasMaxLength(256)
                         .IsUnicode(false)
-                        .HasColumnType("varchar(32)");
+                        .HasColumnType("varchar(256)");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .IsUnicode(false)
+                        .HasColumnType("char(64)")
+                        .IsFixedLength();
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -2540,7 +2542,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Token")
+                    b.HasIndex("TokenHash")
                         .IsUnique();
 
                     b.HasIndex("UserId")
@@ -6493,11 +6495,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
             modelBuilder.Entity("SIMF.Domain.BusinessMeetings.DelegationMeetingRequest", b =>
                 {
-                    b.HasOne("SIMF.Domain.BusinessMeetings.DelegationAvailabilityWindow", null)
-                        .WithMany()
-                        .HasForeignKey("AvailabilityWindowId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("SIMF.Domain.Programme.Hall", "Hall")
                         .WithMany()
                         .HasForeignKey("HallId")
