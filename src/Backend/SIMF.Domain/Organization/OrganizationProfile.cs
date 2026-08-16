@@ -75,6 +75,18 @@ public sealed class OrganizationProfile : BaseAuditEntity
 
     public string? ContactWebsite { get; set; }
 
+    /// <summary>The organisation's logo, in the one file store.
+    ///
+    /// <para>Added last of the file pointers: this row already pointed at its
+    /// live stream and its hero video, while the logo alone was reachable only
+    /// through the store's polymorphic <c>OwnerEntityType</c>/<c>OwnerEntityId</c>
+    /// pair - a bare Guid no foreign key can constrain. The two readers that
+    /// wanted it (<c>OrganizationProfileReadService</c> and
+    /// <c>OrganizationProfileAdminService</c>) each ran their own
+    /// <c>AnyAsync</c> against <c>StoredFiles</c> to answer nothing more than
+    /// "is there a logo".</para></summary>
+    public Guid? LogoFileId { get; set; }
+
     /// <summary>The forum-wide fallback feed; the live screen prefers a session's own.</summary>
     public Guid? LiveStreamFileId { get; set; }
 

@@ -56,6 +56,13 @@ internal sealed class OrganizationProfileConfiguration
         builder.Property(p => p.ContactPhone).HasMaxLength(64);
         builder.Property(p => p.ContactEmail).HasMaxLength(256);
         builder.Property(p => p.ContactWebsite).HasMaxLength(1024);
+        // The logo, completing the set: this row already pointed at its live feed
+        // and hero video while the logo was reverse-linked only.
+        builder.HasIndex(p => p.LogoFileId);
+        builder.HasOne<StoredFile>()
+            .WithMany()
+            .HasForeignKey(p => p.LogoFileId)
+            .OnDelete(DeleteBehavior.Restrict);
         builder.HasIndex(p => p.LiveStreamFileId);
         builder.HasOne<StoredFile>()
             .WithMany()

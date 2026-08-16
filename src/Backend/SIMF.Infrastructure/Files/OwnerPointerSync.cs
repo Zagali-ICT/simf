@@ -57,6 +57,14 @@ internal static class OwnerPointerSync
 
         switch (service)
         {
+            case FileService.OrganizationLogo:
+            {
+                var row = await dbContext.OrganizationProfile
+                    .FirstOrDefaultAsync(x => x.Id == owner, cancellationToken);
+                if (row is null || !Matches(row.LogoFileId, onlyWhenPointingAt)) { return; }
+                row.LogoFileId = fileId;
+                break;
+            }
             case FileService.SpeakerPhoto:
             {
                 var row = await dbContext.Speakers

@@ -2694,6 +2694,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
+                    b.Property<Guid?>("LogoFileId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<double?>("MapX")
                         .HasColumnType("float");
 
@@ -2792,6 +2795,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("IsActive");
 
+                    b.HasIndex("LogoFileId");
+
                     b.HasIndex("OfficerCountryId");
 
                     b.ToTable("Booths", null, t =>
@@ -2852,6 +2857,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
+                    b.Property<Guid?>("LogoFileId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<double?>("Longitude")
                         .HasColumnType("float");
 
@@ -2889,6 +2897,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.HasKey("Id");
 
                     b.HasIndex("CountryId");
+
+                    b.HasIndex("LogoFileId");
 
                     b.HasIndex("IsActive", "NameArabic");
 
@@ -3990,6 +4000,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(512)
                         .HasColumnType("nvarchar(512)");
 
+                    b.Property<Guid?>("LogoFileId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<decimal?>("Longitude")
                         .HasPrecision(10, 6)
                         .HasColumnType("decimal(10,6)");
@@ -4079,6 +4092,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.HasIndex("BackgroundVideoFileId");
 
                     b.HasIndex("LiveStreamFileId");
+
+                    b.HasIndex("LogoFileId");
 
                     b.ToTable("OrganizationProfile", null, t =>
                         {
@@ -4719,6 +4734,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("int");
 
+                    b.Property<Guid?>("ImageFileId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
@@ -4746,6 +4764,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.HasIndex("Date")
                         .IsUnique()
                         .HasFilter("[IsActive] = 1");
+
+                    b.HasIndex("ImageFileId");
 
                     b.HasIndex("IsActive", "DisplayOrder", "Date");
 
@@ -5262,6 +5282,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(32)
                         .HasColumnType("nvarchar(32)");
 
+                    b.Property<Guid?>("PhotoFileId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("Qualifications")
                         .HasMaxLength(1024)
                         .HasColumnType("nvarchar(1024)");
@@ -5309,6 +5332,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .IsUnique();
 
                     b.HasIndex("CountryId");
+
+                    b.HasIndex("PhotoFileId");
 
                     b.HasIndex("UserProfileId")
                         .IsUnique()
@@ -6617,6 +6642,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasForeignKey("HallId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("SIMF.Domain.Files.StoredFile", "LogoFile")
+                        .WithMany()
+                        .HasForeignKey("LogoFileId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("SIMF.Domain.Common.Country", "OfficerCountry")
                         .WithMany()
                         .HasForeignKey("OfficerCountryId")
@@ -6625,6 +6655,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Navigation("Exhibitor");
 
                     b.Navigation("Hall");
+
+                    b.Navigation("LogoFile");
 
                     b.Navigation("OfficerCountry");
                 });
@@ -6636,7 +6668,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasForeignKey("CountryId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("SIMF.Domain.Files.StoredFile", "LogoFile")
+                        .WithMany()
+                        .HasForeignKey("LogoFileId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Country");
+
+                    b.Navigation("LogoFile");
                 });
 
             modelBuilder.Entity("SIMF.Domain.Exhibitors.ExhibitorMembership", b =>
@@ -6789,6 +6828,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .WithMany()
                         .HasForeignKey("LiveStreamFileId")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("SIMF.Domain.Files.StoredFile", null)
+                        .WithMany()
+                        .HasForeignKey("LogoFileId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("SIMF.Domain.Profiles.ProfileIdentityDocument", b =>
@@ -6869,6 +6913,16 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Navigation("Session");
 
                     b.Navigation("UserProfile");
+                });
+
+            modelBuilder.Entity("SIMF.Domain.Programme.ProgrammeDay", b =>
+                {
+                    b.HasOne("SIMF.Domain.Files.StoredFile", "ImageFile")
+                        .WithMany()
+                        .HasForeignKey("ImageFileId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ImageFile");
                 });
 
             modelBuilder.Entity("SIMF.Domain.Programme.Session", b =>
@@ -6989,12 +7043,19 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasForeignKey("CountryId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("SIMF.Domain.Files.StoredFile", "PhotoFile")
+                        .WithMany()
+                        .HasForeignKey("PhotoFileId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("SIMF.Domain.Profiles.UserProfile", null)
                         .WithMany()
                         .HasForeignKey("UserProfileId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Country");
+
+                    b.Navigation("PhotoFile");
                 });
 
             modelBuilder.Entity("SIMF.Domain.Programme.SpeakerPresentation", b =>
