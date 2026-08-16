@@ -450,9 +450,6 @@ public sealed class IdentitySeeder(
                 {
                     Id = Guid.NewGuid(),
                     Code = def.Code,
-                    Page = def.Page,
-                    Action = def.Action,
-                    DisplayName = def.DisplayName,
                 };
                 dbContext.Permissions.Add(permission);
                 permissionsByCode[def.Code] = permission;

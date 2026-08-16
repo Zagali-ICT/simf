@@ -29,6 +29,12 @@ internal sealed class MovementTrackingService(
     /// out of signal, or the attendee left the venue.</summary>
     internal static readonly TimeSpan MaxLegGap = TimeSpan.FromMinutes(10);
 
+    /// <summary>The widest horizontal accuracy worth storing. A consumer GPS fix is
+    /// good to single-digit metres and even a coarse cell-tower fix to a few
+    /// thousand, so a radius past this locates nothing that a venue-scale geofence
+    /// could use — it is a unit mix-up or a hand-rolled caller, not a reading.</summary>
+    internal const double MaxAccuracyMeters = 10_000;
+
     public async Task<RecordDevicePositionsResponse> RecordPositionsAsync(
         Guid userId,
         RecordDevicePositionsRequest request,
@@ -54,6 +60,24 @@ internal sealed class MovementTrackingService(
                     ErrorCodes.ValidationFailed, 400,
                     "A position sample carries an out-of-range coordinate.",
                     "إحدى عيّنات الموقع تحمل إحداثية خارج النطاق.");
+            }
+            // The accuracy radius was stored verbatim while the coordinates beside
+            // it were range-checked. It is optional on the wire, so null stays
+            // valid; anything present has to be a real distance. The non-finite
+            // guard is belt-and-braces — the JSON reader rejects NaN before it gets
+            // here — but SQL Server's float cannot hold one, so a caller that ever
+            // did reach SaveChanges with it would fail the whole batch.
+            if (sample.AccuracyMeters is { } accuracy
+                && (double.IsNaN(accuracy)
+                    || double.IsInfinity(accuracy)
+                    || accuracy is < 0 or > MaxAccuracyMeters))
+            {
+                throw new ApiException(
+                    ErrorCodes.ValidationFailed, 400,
+                    "A position sample's accuracy must be between 0 and "
+                        + $"{MaxAccuracyMeters:0} metres.",
+                    "يجب أن تكون دقة عيّنة الموقع بين 0 و "
+                        + $"{MaxAccuracyMeters:0} متر.");
             }
         }
 

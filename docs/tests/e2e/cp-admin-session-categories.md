@@ -65,6 +65,9 @@
 | E2E-SCT-019 | Excel export: toolbar Export downloads an .xlsx of the filtered grid / selected rows (D-356) | happy | P1 | _to author_ |
 | E2E-SCT-020 | Excel import: upload a workbook → rows created + result modal with per-row outcome (D-356) | happy | P1 | _to author_ |
 | E2E-SCT-021 | Excel import: a non-workbook / wrong-sheet upload → bilingual rejection, nothing created (D-356) | error | P1 | _to author_ |
+| E2E-SCT-022 | Add a category reusing an ACTIVE category's English name → 409, not 500 | conflict | P1 | _to author_ |
+| E2E-SCT-023 | Rename a category onto an ACTIVE category's English name → 409 | conflict | P1 | _to author_ |
+| E2E-SCT-024 | Re-activate a retired category whose English name a live one now holds → 409 | conflict | P2 | _to author_ |
 | E2E-SCT-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-SCT-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
@@ -419,6 +422,54 @@ Scenario: A bad upload is rejected without creating anything
   And the grid is unchanged
 ```
 
+### E2E-SCT-022 — Adding a category on a taken active name is a conflict
+
+```gherkin
+Scenario: A duplicate English name is refused with a conflict, not a server error
+  Given the administrator is on /admin/session-categories
+  And an ACTIVE category already exists with English name "Keynote"
+  When they open Add and save English name "Keynote" with Arabic name "كلمة رئيسية"
+  Then the POST /account/api/admin/session-categories returns HTTP 409
+  And the error code is SESSION_CATEGORY_INVALID
+  And a bilingual conflict toast names the clashing category
+      (EN "A session category named 'Keynote' already exists."
+       / AR "يوجد تصنيف جلسة بالاسم 'Keynote' بالفعل.")
+  And the response is NOT a 500 — the unique index is pre-checked, never left to
+      surface as a raw DbUpdateException
+  And no second category is created
+```
+
+### E2E-SCT-023 — Renaming onto a taken active name is a conflict
+
+```gherkin
+Scenario: An edit that moves a category onto a live name is refused
+  Given an ACTIVE category "Keynote" and a second ACTIVE category "Panel" exist
+  When the administrator edits "Panel" and changes its English name to "Keynote"
+  Then the PUT /account/api/admin/session-categories/{id} returns HTTP 409
+  And the error code is SESSION_CATEGORY_INVALID
+  And "Panel" keeps its original name in the grid after the modal reports the error
+
+  When they instead edit "Panel" and change only its display order
+  Then the save succeeds — an edit that does not move the name is never blocked
+      by the category's own row
+```
+
+### E2E-SCT-024 — Re-activating onto a name a live row now holds is a conflict
+
+```gherkin
+Scenario: Reviving a retired category whose name was reused is refused
+  Given a category "Forum" was created and then deleted (Active pill reads "Inactive")
+  And a NEW active category has since been created with the English name "Forum"
+  When the administrator edits the retired "Forum" and ticks Active back on,
+       changing no name
+  Then the PUT /account/api/admin/session-categories/{id} returns HTTP 409
+  And the error code is SESSION_CATEGORY_INVALID
+  And the retired row stays Inactive
+  # The unique index is filtered to [IsActive] = 1, so re-activation contends for
+  # the name with no rename involved — a "check only when the name changed" guard
+  # would miss this path and hand the admin a 500.
+```
+
 ---
 
 ## Implementation notes
@@ -450,8 +501,16 @@ Scenario: A bad upload is rejected without creating anything
   guard in `SaveAsync` (no request fires). The 1–128 length bound is enforced
   **server-side** and returns `SESSION_CATEGORY_INVALID` (HTTP 400) with the
   bilingual message; the EF column and the `MaxLength="128"` field cap also bound
-  the input. There is no uniqueness/duplicate-name constraint on this lookup, so a
-  409/conflict scenario does not apply (omitted deliberately).
+  the input. **Corrected:** this note previously said the lookup carried no
+  uniqueness constraint and that a 409 scenario did not apply. It does —
+  `SessionCategoryConfiguration` declares a unique index on `Name` **filtered to
+  `[IsActive] = 1`**, so the English name is contended among the ACTIVE rows only.
+  `AdminSessionCategoryService` now pre-checks it and answers `409` with
+  `SESSION_CATEGORY_INVALID`; without the pre-check the index raised a raw
+  `DbUpdateException` and the admin saw a 500. Because the index is **filtered**,
+  three paths can collide — create, rename, and re-activating a retired row whose
+  name a live row has since taken (no rename involved) — which is why
+  E2E-SCT-022..024 are catalogued separately.
 - **API integration tests** at `tests/SIMF.Api.Tests/SessionCategoriesTests.cs`
   cover the create → get → list, update, deactivate, validation (400) and the
   permission policy at the API layer (no browser). The E2E catalogue layers the

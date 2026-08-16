@@ -48,9 +48,6 @@ public sealed class IdentitySeederTests : IClassFixture<SimfApiFactory>
             {
                 Id = Guid.NewGuid(),
                 Code = retired,
-                Page = "Editions",
-                Action = "Close",
-                DisplayName = "Close the current edition into history",
             });
             await identityDb.SaveChangesAsync();
         }

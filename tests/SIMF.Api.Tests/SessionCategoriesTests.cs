@@ -81,6 +81,104 @@ public sealed class SessionCategoriesTests : IClassFixture<SimfApiFactory>
         Assert.Equal(ErrorCodes.SessionCategoryInvalid, body.Error!.Code);
     }
 
+    // The unique index on SessionCategories.Name is FILTERED to the active rows
+    // ("[IsActive] = 1"), so every path that leaves a second ACTIVE row holding one
+    // name must be pre-checked. Without the pre-check the collision reaches
+    // SaveChanges as a raw DbUpdateException and the caller sees a 500, not a 409.
+    [Fact]
+    public async Task Create_reusing_an_active_category_name_is_409_not_500()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var name = $"Plenary {Guid.NewGuid():N}"[..24];
+
+        var first = await PostAuthAsync(
+            "/api/v1/admin/session-categories",
+            new AdminCreateSessionCategoryRequest { Name = name, NameArabic = "عام" },
+            token);
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+
+        var second = await PostAuthAsync(
+            "/api/v1/admin/session-categories",
+            new AdminCreateSessionCategoryRequest { Name = name, NameArabic = "عام آخر" },
+            token);
+        Assert.Equal(HttpStatusCode.Conflict, second.StatusCode);
+        var body = (await second.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SessionCategoryInvalid, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Renaming_a_category_onto_an_active_name_is_409_not_500()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var taken = $"Workshop {Guid.NewGuid():N}"[..24];
+
+        await PostAuthAsync(
+            "/api/v1/admin/session-categories",
+            new AdminCreateSessionCategoryRequest { Name = taken, NameArabic = "ورشة" },
+            token);
+
+        var other = await PostAuthAsync(
+            "/api/v1/admin/session-categories",
+            new AdminCreateSessionCategoryRequest
+            {
+                Name = $"Panel {Guid.NewGuid():N}"[..24],
+                NameArabic = "حلقة نقاش",
+            },
+            token);
+        var otherId = (await other.Content
+            .ReadFromJsonAsync<ApiResult<AdminSessionCategoryDetail>>())!.Data!.Id;
+
+        var rename = await PutAuthAsync(
+            $"/api/v1/admin/session-categories/{otherId}",
+            new AdminUpdateSessionCategoryRequest
+            {
+                Name = taken,
+                NameArabic = "حلقة نقاش",
+                IsActive = true,
+            },
+            token);
+        Assert.Equal(HttpStatusCode.Conflict, rename.StatusCode);
+    }
+
+    // The filtered index makes REACTIVATION a collision path of its own: the name
+    // is unchanged, so a "check only when the name changed" guard (the sibling
+    // pattern for an unfiltered unique key) would sail straight past it.
+    [Fact]
+    public async Task Reactivating_a_category_whose_name_is_now_taken_is_409_not_500()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var name = $"Forum {Guid.NewGuid():N}"[..24];
+
+        var original = await PostAuthAsync(
+            "/api/v1/admin/session-categories",
+            new AdminCreateSessionCategoryRequest { Name = name, NameArabic = "منتدى" },
+            token);
+        var originalId = (await original.Content
+            .ReadFromJsonAsync<ApiResult<AdminSessionCategoryDetail>>())!.Data!.Id;
+
+        // Retired, so the filtered index no longer holds the name…
+        await DeleteAuthAsync($"/api/v1/admin/session-categories/{originalId}", token);
+
+        // …and a fresh active category legitimately claims it.
+        var replacement = await PostAuthAsync(
+            "/api/v1/admin/session-categories",
+            new AdminCreateSessionCategoryRequest { Name = name, NameArabic = "منتدى جديد" },
+            token);
+        Assert.Equal(HttpStatusCode.OK, replacement.StatusCode);
+
+        // Bringing the retired one back would put two ACTIVE rows on one name.
+        var revive = await PutAuthAsync(
+            $"/api/v1/admin/session-categories/{originalId}",
+            new AdminUpdateSessionCategoryRequest
+            {
+                Name = name,
+                NameArabic = "منتدى",
+                IsActive = true,
+            },
+            token);
+        Assert.Equal(HttpStatusCode.Conflict, revive.StatusCode);
+    }
+
     [Fact]
     public async Task Deactivate_marks_the_category_inactive()
     {
@@ -220,6 +318,17 @@ public sealed class SessionCategoriesTests : IClassFixture<SimfApiFactory>
         where TBody : class
     {
         var request = new HttpRequestMessage(HttpMethod.Post, url)
+        {
+            Content = JsonContent.Create(body),
+        };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return _client.SendAsync(request);
+    }
+
+    private Task<HttpResponseMessage> PutAuthAsync<TBody>(string url, TBody body, string token)
+        where TBody : class
+    {
+        var request = new HttpRequestMessage(HttpMethod.Put, url)
         {
             Content = JsonContent.Create(body),
         };

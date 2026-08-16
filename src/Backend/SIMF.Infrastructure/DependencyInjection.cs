@@ -735,8 +735,6 @@ public static class DependencyInjection
             SIMF.Infrastructure.AccessControl.GateOperatorService>();
         services.AddScoped<SIMF.Application.AccessControl.Abstractions.IGateConfigCache,
             SIMF.Infrastructure.AccessControl.GateConfigCache>();
-        services.AddScoped<SIMF.Application.AccessControl.Abstractions.IScanIdempotencyStore,
-            SIMF.Infrastructure.AccessControl.ScanIdempotencyStore>();
         // The failure-rate circuit is singleton (in-memory state per process).
         services.AddSingleton<SIMF.Application.AccessControl.Abstractions.IGateFailureCircuit,
             SIMF.Infrastructure.AccessControl.GateFailureCircuit>();

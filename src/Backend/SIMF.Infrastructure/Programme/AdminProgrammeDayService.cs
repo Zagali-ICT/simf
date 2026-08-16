@@ -127,6 +127,7 @@ internal sealed class AdminProgrammeDayService(
     {
         var (title, titleArabic) =
             ValidateAndNormalise(request.Title, request.TitleArabic);
+        EnsureDisplayOrderIsValid(request.DisplayOrder);
         await EnsureUniqueDateAsync(request.Date, null, cancellationToken);
 
         var now = timeProvider.SimfNow();
@@ -168,6 +169,7 @@ internal sealed class AdminProgrammeDayService(
 
         var (title, titleArabic) =
             ValidateAndNormalise(request.Title, request.TitleArabic);
+        EnsureDisplayOrderIsValid(request.DisplayOrder);
         await EnsureUniqueDateAsync(request.Date, id, cancellationToken);
 
         day.Date = request.Date;
@@ -211,6 +213,21 @@ internal sealed class AdminProgrammeDayService(
             actorUserId,
             $"id={day.Id}; date={day.Date:yyyy-MM-dd}",
             cancellationToken);
+    }
+
+    /// <summary>DisplayOrder is the CP grid's sort key and its default ordering, so
+    /// a negative value silently pins the row ahead of every legitimate day. The
+    /// siblings over this shape (AdminThemeService, AdminSponsorService) reject it
+    /// on both write paths; this one accepted it.</summary>
+    private static void EnsureDisplayOrderIsValid(int displayOrder)
+    {
+        if (displayOrder < 0)
+        {
+            throw new ApiException(
+                ErrorCodes.ProgrammeDayInvalid, 400,
+                "Display order must be zero or a positive integer.",
+                "يجب أن يكون ترتيب العرض صفراً أو عدداً صحيحاً موجباً.");
+        }
     }
 
     /// <summary>One active programme day per date — the invariant the

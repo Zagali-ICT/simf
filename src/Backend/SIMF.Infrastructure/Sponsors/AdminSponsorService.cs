@@ -218,10 +218,15 @@ internal sealed class AdminSponsorService(
                 "The sponsor was not found.",
                 "لم يتم العثور على الراعي.");
 
+        // Reactivation is a clash path of its own: the duplicate rule only counts
+        // ACTIVE rows, so bringing a retired sponsor back can collide with a name
+        // that went live in the meantime WITHOUT the name or tier moving at all.
+        // Checking only the moved-key case let an update create exactly the pair
+        // CreateAsync refuses.
         var renamedOrRetiered =
             !string.Equals(sponsor.NameArabic, nameAr, StringComparison.Ordinal)
             || sponsor.Tier != tier;
-        if (request.IsActive && renamedOrRetiered)
+        if (request.IsActive && (renamedOrRetiered || !sponsor.IsActive))
         {
             var clash = await appDbContext.Sponsors.AsNoTracking().AnyAsync(
                 s => s.Id != id
