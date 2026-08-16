@@ -52,18 +52,19 @@ internal sealed class SessionConfiguration : IEntityTypeConfiguration<Session>
         builder.Property(s => s.Language).HasMaxLength(64);
         builder.Property(s => s.LanguageArabic).HasMaxLength(64);
 
-        // Recording metadata. The bytes live in the one file store, which the
-        // key below points at; these columns hold only the name, media type and
-        // size the admin views show without a join.
         // The recording's file, in the one store. Restrict, matching Hall and
         // Category below: deleting a file must never delete the session.
+        //
+        // The navigation replaces four columns that used to sit here holding the
+        // recording's name, media type, size and uploader. The store owns all
+        // four, so each upload wrote the same facts twice with nothing keeping
+        // the pairs equal afterwards - and they were not equal, the store
+        // canonicalising the media type where the copy kept the client's string.
         builder.HasIndex(s => s.RecordingFileId);
-        builder.HasOne<StoredFile>()
+        builder.HasOne(s => s.RecordingFile)
             .WithMany()
             .HasForeignKey(s => s.RecordingFileId)
             .OnDelete(DeleteBehavior.Restrict);
-        builder.Property(s => s.RecordingFileName).HasMaxLength(260);
-        builder.Property(s => s.RecordingContentType).HasMaxLength(128);
 
         // §8 — live broadcast stream URLs (manual stub provider).
         // The feeds are StoredFile rows now, so the key replaces the length cap:

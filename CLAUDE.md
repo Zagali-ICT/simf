@@ -427,6 +427,27 @@ context rule holds and `SchemaFreezeTests` is unchanged. Enums are untouched, an
 the shipped mobile wire contract stays append-only — now pinned by
 `tests/SIMF.Api.Tests/AppWireContractPinTests.cs` rather than by review.
 
+### D-926 named lift — the file store owns a file's facts, once
+
+Nine columns dropped: `Session`'s five `Recording*` metadata columns and
+`SpeakerPresentation`'s `FileName` / `ContentType` / `SizeBytes` /
+`UploadedByUserId`. Both entities already pointed at `StoredFiles` with a real
+FK; they now read the name, media type, size and uploader through a navigation
+rather than keeping their own copy.
+
+Those copies were not merely redundant. `IFileService` canonicalises a media type
+on upload and the copies kept the client's raw string, so the two disagreed for
+any non-canonical upload — and the copy was what the admin grid displayed.
+
+**The path half of the rule is complete and separately guarded.** No
+`*RelativePath` or `*StoredFileName` column remains in the domain;
+`MediaPointerRatchetTests` holds that line and now also fails the build when an
+entity carries a `*FileId` alongside a fact the store already records.
+
+One loss, recorded rather than glossed: `CK_SpeakerPresentations_SizeBytes` went
+with its column and has no home on the store, whose `SizeBytes` is nullable for
+external links.
+
 ### D-925 — the migration id is PINNED, and you regenerate with the script
 
 `00000000000000_InitialCreate`, on both contexts. Regenerate with
