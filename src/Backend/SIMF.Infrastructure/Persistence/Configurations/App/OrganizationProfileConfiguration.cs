@@ -59,17 +59,17 @@ internal sealed class OrganizationProfileConfiguration
         // The logo, completing the set: this row already pointed at its live feed
         // and hero video while the logo was reverse-linked only.
         builder.HasIndex(p => p.LogoFileId);
-        builder.HasOne<StoredFile>()
+        builder.HasOne(p => p.LogoFile)
             .WithMany()
             .HasForeignKey(p => p.LogoFileId)
             .OnDelete(DeleteBehavior.Restrict);
         builder.HasIndex(p => p.LiveStreamFileId);
-        builder.HasOne<StoredFile>()
+        builder.HasOne(p => p.LiveStreamFile)
             .WithMany()
             .HasForeignKey(p => p.LiveStreamFileId)
             .OnDelete(DeleteBehavior.Restrict);
         builder.HasIndex(p => p.BackgroundVideoFileId);
-        builder.HasOne<StoredFile>()
+        builder.HasOne(p => p.BackgroundVideoFile)
             .WithMany()
             .HasForeignKey(p => p.BackgroundVideoFileId)
             .OnDelete(DeleteBehavior.Restrict);

@@ -72,12 +72,12 @@ internal sealed class SessionConfiguration : IEntityTypeConfiguration<Session>
         // Cascade, for the reason the other file keys carry it - deleting a file
         // must never silently delete the session.
         builder.HasIndex(s => s.LiveStreamFileId);
-        builder.HasOne<StoredFile>()
+        builder.HasOne(s => s.LiveStreamFile)
             .WithMany()
             .HasForeignKey(s => s.LiveStreamFileId)
             .OnDelete(DeleteBehavior.Restrict);
         builder.HasIndex(s => s.LiveSignLanguageFileId);
-        builder.HasOne<StoredFile>()
+        builder.HasOne(s => s.LiveSignLanguageFile)
             .WithMany()
             .HasForeignKey(s => s.LiveSignLanguageFileId)
             .OnDelete(DeleteBehavior.Restrict);
@@ -164,7 +164,7 @@ internal sealed class SessionSummaryConfiguration
         // StoredFile.ExternalUrl. Restrict for the same reason the session's file
         // keys carry it: deleting a file must never delete the summary.
         builder.HasIndex(s => s.SummaryVideoFileId);
-        builder.HasOne<StoredFile>()
+        builder.HasOne(s => s.SummaryVideoFile)
             .WithMany()
             .HasForeignKey(s => s.SummaryVideoFileId)
             .OnDelete(DeleteBehavior.Restrict);

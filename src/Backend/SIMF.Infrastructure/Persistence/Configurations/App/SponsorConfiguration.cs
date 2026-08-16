@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SIMF.Domain.Files;
 using SIMF.Domain.Sponsors;
@@ -38,7 +38,7 @@ internal sealed class SponsorConfiguration : IEntityTypeConfiguration<Sponsor>
         // The sponsor logo, in the one file store. Restrict: deleting a file must never
         // delete the row that shows it.
         builder.HasIndex(sponsor => sponsor.LogoFileId);
-        builder.HasOne<StoredFile>()
+        builder.HasOne(sponsor => sponsor.LogoFile)
             .WithMany()
             .HasForeignKey(sponsor => sponsor.LogoFileId)
             .OnDelete(DeleteBehavior.Restrict);

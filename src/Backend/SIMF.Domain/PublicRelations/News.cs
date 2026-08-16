@@ -1,4 +1,5 @@
-using SIMF.Domain.Common;
+﻿using SIMF.Domain.Common;
+using SIMF.Domain.Files;
 
 namespace SIMF.Domain.PublicRelations;
 
@@ -21,6 +22,7 @@ public class News : BaseAuditEntity
 
     public Guid? ImageFileId { get; set; }
 
+    public StoredFile? ImageFile { get; set; }
     /// <summary>Gates public visibility: a public read requires it to be in the past, so an
     /// article dated ahead is authored but not shown. The admin grid ignores it.</summary>
     public DateTime PublishedAt { get; set; }

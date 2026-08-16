@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SIMF.Domain.Files;
 using SIMF.Domain.Archive;
@@ -42,7 +42,7 @@ internal sealed class ArchiveEditionConfiguration
         // The cover image, in the one file store. Restrict: deleting a file must never
         // delete the row that shows it.
         builder.HasIndex(edition => edition.CoverImageFileId);
-        builder.HasOne<StoredFile>()
+        builder.HasOne(edition => edition.CoverImageFile)
             .WithMany()
             .HasForeignKey(edition => edition.CoverImageFileId)
             .OnDelete(DeleteBehavior.Restrict);

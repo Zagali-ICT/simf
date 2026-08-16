@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SIMF.Domain.Files;
 using SIMF.Domain.PublicRelations;
@@ -31,7 +31,7 @@ internal sealed class MediaPartnerConfiguration : IEntityTypeConfiguration<Media
         // The partner logo, in the one file store. Restrict: deleting a file must never
         // delete the row that shows it.
         builder.HasIndex(m => m.LogoFileId);
-        builder.HasOne<StoredFile>()
+        builder.HasOne(m => m.LogoFile)
             .WithMany()
             .HasForeignKey(m => m.LogoFileId)
             .OnDelete(DeleteBehavior.Restrict);

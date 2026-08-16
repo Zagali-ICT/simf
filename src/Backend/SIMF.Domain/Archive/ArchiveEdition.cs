@@ -1,4 +1,5 @@
-using SIMF.Domain.Common;
+﻿using SIMF.Domain.Common;
+using SIMF.Domain.Files;
 
 namespace SIMF.Domain.Archive;
 
@@ -21,6 +22,7 @@ public class ArchiveEdition : BaseAuditEntity
 
     public Guid? CoverImageFileId { get; set; }
 
+    public StoredFile? CoverImageFile { get; set; }
     public string? LocationEn { get; set; }
     public string? LocationAr { get; set; }
 

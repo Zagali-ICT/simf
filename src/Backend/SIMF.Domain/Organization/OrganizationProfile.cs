@@ -1,5 +1,6 @@
 ﻿using SIMF.Common.Enums;
 using SIMF.Domain.Common;
+using SIMF.Domain.Files;
 
 namespace SIMF.Domain.Organization;
 
@@ -87,13 +88,16 @@ public sealed class OrganizationProfile : BaseAuditEntity
     /// "is there a logo".</para></summary>
     public Guid? LogoFileId { get; set; }
 
+    public StoredFile? LogoFile { get; set; }
     /// <summary>The forum-wide fallback feed; the live screen prefers a session's own.</summary>
     public Guid? LiveStreamFileId { get; set; }
 
+    public StoredFile? LiveStreamFile { get; set; }
     /// <summary>The muted, looping home-hero video. The website takes a YouTube or a direct
     /// MP4/HLS link; the app takes only a direct link, else falls through to its carousel.</summary>
     public Guid? BackgroundVideoFileId { get; set; }
 
+    public StoredFile? BackgroundVideoFile { get; set; }
     // Fixed columns, not a child table: the shipped SocialLinks wire contract names each network.
 
     public string? FacebookUrl { get; set; }

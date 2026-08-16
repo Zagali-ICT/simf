@@ -20,7 +20,7 @@ internal sealed class ArchiveMediaItemConfiguration
 
         builder.Property(item => item.Kind).HasConversion<int>().IsRequired();
         builder.HasIndex(item => item.MediaFileId);
-        builder.HasOne<StoredFile>()
+        builder.HasOne(item => item.MediaFile)
             .WithMany()
             .HasForeignKey(item => item.MediaFileId)
             .OnDelete(DeleteBehavior.Restrict);
@@ -71,7 +71,7 @@ internal sealed class ArchivePastSpeakerConfiguration
         builder.Property(speaker => speaker.NameEn).HasMaxLength(128).IsRequired();
         builder.Property(speaker => speaker.NameAr).HasMaxLength(128).IsRequired();
         builder.HasIndex(speaker => speaker.PhotoFileId);
-        builder.HasOne<StoredFile>()
+        builder.HasOne(speaker => speaker.PhotoFile)
             .WithMany()
             .HasForeignKey(speaker => speaker.PhotoFileId)
             .OnDelete(DeleteBehavior.Restrict);

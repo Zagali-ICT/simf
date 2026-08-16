@@ -1,4 +1,5 @@
 ﻿using SIMF.Common.Enums;
+using SIMF.Domain.Files;
 
 namespace SIMF.Domain.Archive;
 
@@ -17,6 +18,7 @@ public sealed class ArchiveMediaItem
     /// <see cref="Kind"/> picks which file service the write path uses.</summary>
     public Guid? MediaFileId { get; set; }
 
+    public StoredFile? MediaFile { get; set; }
     public string? CaptionEn { get; set; }
     public string? CaptionAr { get; set; }
 

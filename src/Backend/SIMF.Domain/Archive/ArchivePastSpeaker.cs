@@ -1,4 +1,5 @@
-﻿namespace SIMF.Domain.Archive;
+﻿using SIMF.Domain.Files;
+namespace SIMF.Domain.Archive;
 
 /// <summary>A past speaker snapshot on an archive edition, not a live Speaker row.
 /// It has no active flag of its own: the parent edition's visibility governs.</summary>
@@ -14,6 +15,7 @@ public sealed class ArchivePastSpeaker
 
     public Guid? PhotoFileId { get; set; }
 
+    public StoredFile? PhotoFile { get; set; }
     public int? CountryId { get; set; }
 
     public int DisplayOrder { get; set; }

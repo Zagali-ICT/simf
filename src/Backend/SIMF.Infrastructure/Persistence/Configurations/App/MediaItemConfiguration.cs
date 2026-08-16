@@ -53,19 +53,19 @@ internal sealed class MediaItemConfiguration : IEntityTypeConfiguration<MediaIte
         // deactivates rows rather than removing them, which is precisely what
         // makes the key worth having.
         builder.HasIndex(item => item.ImageFileId);
-        builder.HasOne<StoredFile>()
+        builder.HasOne(item => item.ImageFile)
             .WithMany()
             .HasForeignKey(item => item.ImageFileId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(item => item.ThumbnailFileId);
-        builder.HasOne<StoredFile>()
+        builder.HasOne(item => item.ThumbnailFile)
             .WithMany()
             .HasForeignKey(item => item.ThumbnailFileId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(item => item.VideoFileId);
-        builder.HasOne<StoredFile>()
+        builder.HasOne(item => item.VideoFile)
             .WithMany()
             .HasForeignKey(item => item.VideoFileId)
             .OnDelete(DeleteBehavior.Restrict);

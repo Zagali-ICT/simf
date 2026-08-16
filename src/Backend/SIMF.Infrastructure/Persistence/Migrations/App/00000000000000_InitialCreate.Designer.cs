@@ -6378,10 +6378,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
             modelBuilder.Entity("SIMF.Domain.Archive.ArchiveEdition", b =>
                 {
-                    b.HasOne("SIMF.Domain.Files.StoredFile", null)
+                    b.HasOne("SIMF.Domain.Files.StoredFile", "CoverImageFile")
                         .WithMany()
                         .HasForeignKey("CoverImageFileId")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("CoverImageFile");
                 });
 
             modelBuilder.Entity("SIMF.Domain.Archive.ArchiveMediaItem", b =>
@@ -6392,12 +6394,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("SIMF.Domain.Files.StoredFile", null)
+                    b.HasOne("SIMF.Domain.Files.StoredFile", "MediaFile")
                         .WithMany()
                         .HasForeignKey("MediaFileId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Edition");
+
+                    b.Navigation("MediaFile");
                 });
 
             modelBuilder.Entity("SIMF.Domain.Archive.ArchivePastSpeaker", b =>
@@ -6413,12 +6417,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasForeignKey("CountryId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("SIMF.Domain.Files.StoredFile", null)
+                    b.HasOne("SIMF.Domain.Files.StoredFile", "PhotoFile")
                         .WithMany()
                         .HasForeignKey("PhotoFileId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Edition");
+
+                    b.Navigation("PhotoFile");
                 });
 
             modelBuilder.Entity("SIMF.Domain.Archive.ArchiveSessionTitle", b =>
@@ -6616,10 +6622,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
             modelBuilder.Entity("SIMF.Domain.Cms.Banner", b =>
                 {
-                    b.HasOne("SIMF.Domain.Files.StoredFile", null)
+                    b.HasOne("SIMF.Domain.Files.StoredFile", "ImageFile")
                         .WithMany()
                         .HasForeignKey("ImageFileId")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ImageFile");
                 });
 
             modelBuilder.Entity("SIMF.Domain.Common.Country", b =>
@@ -6779,20 +6787,26 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
             modelBuilder.Entity("SIMF.Domain.Media.MediaItem", b =>
                 {
-                    b.HasOne("SIMF.Domain.Files.StoredFile", null)
+                    b.HasOne("SIMF.Domain.Files.StoredFile", "ImageFile")
                         .WithMany()
                         .HasForeignKey("ImageFileId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("SIMF.Domain.Files.StoredFile", null)
+                    b.HasOne("SIMF.Domain.Files.StoredFile", "ThumbnailFile")
                         .WithMany()
                         .HasForeignKey("ThumbnailFileId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("SIMF.Domain.Files.StoredFile", null)
+                    b.HasOne("SIMF.Domain.Files.StoredFile", "VideoFile")
                         .WithMany()
                         .HasForeignKey("VideoFileId")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ImageFile");
+
+                    b.Navigation("ThumbnailFile");
+
+                    b.Navigation("VideoFile");
                 });
 
             modelBuilder.Entity("SIMF.Domain.Organization.OrganizationAboutItem", b =>
@@ -6819,20 +6833,26 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
             modelBuilder.Entity("SIMF.Domain.Organization.OrganizationProfile", b =>
                 {
-                    b.HasOne("SIMF.Domain.Files.StoredFile", null)
+                    b.HasOne("SIMF.Domain.Files.StoredFile", "BackgroundVideoFile")
                         .WithMany()
                         .HasForeignKey("BackgroundVideoFileId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("SIMF.Domain.Files.StoredFile", null)
+                    b.HasOne("SIMF.Domain.Files.StoredFile", "LiveStreamFile")
                         .WithMany()
                         .HasForeignKey("LiveStreamFileId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("SIMF.Domain.Files.StoredFile", null)
+                    b.HasOne("SIMF.Domain.Files.StoredFile", "LogoFile")
                         .WithMany()
                         .HasForeignKey("LogoFileId")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("BackgroundVideoFile");
+
+                    b.Navigation("LiveStreamFile");
+
+                    b.Navigation("LogoFile");
                 });
 
             modelBuilder.Entity("SIMF.Domain.Profiles.ProfileIdentityDocument", b =>
@@ -6854,7 +6874,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("SIMF.Domain.Files.StoredFile", null)
+                    b.HasOne("SIMF.Domain.Files.StoredFile", "IdImageFile")
                         .WithMany()
                         .HasForeignKey("IdImageFileId")
                         .OnDelete(DeleteBehavior.Restrict);
@@ -6874,18 +6894,22 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasForeignKey("RegionId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("SIMF.Domain.Files.StoredFile", null)
+                    b.HasOne("SIMF.Domain.Files.StoredFile", "VipPhotoFile")
                         .WithMany()
                         .HasForeignKey("VipPhotoFileId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("BadgeBatch");
 
+                    b.Navigation("IdImageFile");
+
                     b.Navigation("Organisation");
 
                     b.Navigation("ProfileType");
 
                     b.Navigation("Region");
+
+                    b.Navigation("VipPhotoFile");
                 });
 
             modelBuilder.Entity("SIMF.Domain.Programme.HallAttendance", b =>
@@ -6938,12 +6962,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("SIMF.Domain.Files.StoredFile", null)
+                    b.HasOne("SIMF.Domain.Files.StoredFile", "LiveSignLanguageFile")
                         .WithMany()
                         .HasForeignKey("LiveSignLanguageFileId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("SIMF.Domain.Files.StoredFile", null)
+                    b.HasOne("SIMF.Domain.Files.StoredFile", "LiveStreamFile")
                         .WithMany()
                         .HasForeignKey("LiveStreamFileId")
                         .OnDelete(DeleteBehavior.Restrict);
@@ -6956,6 +6980,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Navigation("Category");
 
                     b.Navigation("Hall");
+
+                    b.Navigation("LiveSignLanguageFile");
+
+                    b.Navigation("LiveStreamFile");
 
                     b.Navigation("RecordingFile");
                 });
@@ -7009,12 +7037,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("SIMF.Domain.Files.StoredFile", null)
+                    b.HasOne("SIMF.Domain.Files.StoredFile", "SummaryVideoFile")
                         .WithMany()
                         .HasForeignKey("SummaryVideoFileId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Session");
+
+                    b.Navigation("SummaryVideoFile");
                 });
 
             modelBuilder.Entity("SIMF.Domain.Programme.SessionTheme", b =>
@@ -7101,20 +7131,24 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasForeignKey("CountryId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("SIMF.Domain.Files.StoredFile", null)
+                    b.HasOne("SIMF.Domain.Files.StoredFile", "LogoFile")
                         .WithMany()
                         .HasForeignKey("LogoFileId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Country");
+
+                    b.Navigation("LogoFile");
                 });
 
             modelBuilder.Entity("SIMF.Domain.PublicRelations.News", b =>
                 {
-                    b.HasOne("SIMF.Domain.Files.StoredFile", null)
+                    b.HasOne("SIMF.Domain.Files.StoredFile", "ImageFile")
                         .WithMany()
                         .HasForeignKey("ImageFileId")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ImageFile");
                 });
 
             modelBuilder.Entity("SIMF.Domain.SeatReservations.HallSeatLayout", b =>
@@ -7175,12 +7209,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasForeignKey("CountryId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("SIMF.Domain.Files.StoredFile", null)
+                    b.HasOne("SIMF.Domain.Files.StoredFile", "LogoFile")
                         .WithMany()
                         .HasForeignKey("LogoFileId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Country");
+
+                    b.Navigation("LogoFile");
                 });
 
             modelBuilder.Entity("SIMF.Domain.Venue.VenueMapNode", b =>

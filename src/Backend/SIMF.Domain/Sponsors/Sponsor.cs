@@ -1,5 +1,6 @@
-using SIMF.Common.Enums;
+﻿using SIMF.Common.Enums;
 using SIMF.Domain.Common;
+using SIMF.Domain.Files;
 
 namespace SIMF.Domain.Sponsors;
 
@@ -16,6 +17,7 @@ public sealed class Sponsor : BaseAuditEntity
 
     public Guid? LogoFileId { get; set; }
 
+    public StoredFile? LogoFile { get; set; }
     public string? Url { get; set; }
 
     /// <summary>A short strapline under the sponsor name; omitted from the public

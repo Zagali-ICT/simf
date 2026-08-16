@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SIMF.Domain.Cms;
 using SIMF.Domain.Files;
@@ -44,7 +44,7 @@ internal sealed class BannerConfiguration : IEntityTypeConfiguration<Banner>
         // The banner image, in the one file store. Restrict: deleting a file must
         // never delete the banner that shows it.
         builder.HasIndex(b => b.ImageFileId);
-        builder.HasOne<StoredFile>()
+        builder.HasOne(b => b.ImageFile)
             .WithMany()
             .HasForeignKey(b => b.ImageFileId)
             .OnDelete(DeleteBehavior.Restrict);

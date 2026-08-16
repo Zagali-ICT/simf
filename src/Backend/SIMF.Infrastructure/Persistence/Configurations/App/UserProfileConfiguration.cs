@@ -115,13 +115,13 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
         // is exactly why the key is worth having: it turns "should never" into
         // "cannot".
         builder.HasIndex(profile => profile.IdImageFileId);
-        builder.HasOne<StoredFile>()
+        builder.HasOne(profile => profile.IdImageFile)
             .WithMany()
             .HasForeignKey(profile => profile.IdImageFileId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(profile => profile.VipPhotoFileId);
-        builder.HasOne<StoredFile>()
+        builder.HasOne(profile => profile.VipPhotoFile)
             .WithMany()
             .HasForeignKey(profile => profile.VipPhotoFileId)
             .OnDelete(DeleteBehavior.Restrict);

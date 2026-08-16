@@ -1,10 +1,11 @@
-// Tests: SIMF.Api.Tests/UserProfileTests.cs (the collapsed MobileNumber column
+﻿// Tests: SIMF.Api.Tests/UserProfileTests.cs (the collapsed MobileNumber column
 //        is filled from either shipped wire field, and both keys still
 //        round-trip over the real HTTP surface)
 //        SIMF.Api.Tests/AdminAccountMobileTests.cs (the desk edit writes it too)
 using SIMF.Common.Enums;
 using SIMF.Domain.Common;
 using SIMF.Domain.Organisations;
+using SIMF.Domain.Files;
 
 namespace SIMF.Domain.Profiles;
 
@@ -236,6 +237,7 @@ public class UserProfile : BaseAuditEntity
     /// Null for everyone who is not VVIP or VIP.</summary>
     public Guid? VipPhotoFileId { get; set; }
 
+    public StoredFile? VipPhotoFile { get; set; }
     /// <summary>Marks the profile as a delegation member (وفد); a delegate is
     /// otherwise an ordinary visitor. The create path refuses the flag unless the
     /// nationality is an invited country (<see cref="Common.Country.IsInvited"/>).
@@ -343,6 +345,7 @@ public class UserProfile : BaseAuditEntity
     /// holding anything of the sort.</para></summary>
     public Guid? IdImageFileId { get; set; }
 
+    public StoredFile? IdImageFile { get; set; }
     // The five accessibility choices the app used to keep in device preferences
     // ONLY, so they never followed the user to a second device and did not
     // survive a reinstall. They are per-account settings, so they live on the
