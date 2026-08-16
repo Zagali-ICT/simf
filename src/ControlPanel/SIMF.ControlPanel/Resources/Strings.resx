@@ -853,8 +853,8 @@
   <data name="Admin.Halls.SeatMode.Open" xml:space="preserve"><value>Open seating (general admission)</value></data>
   <data name="Admin.Halls.Field.Floor" xml:space="preserve"><value>Floor</value></data>
   <data name="Admin.Halls.Field.FloorHint" xml:space="preserve"><value>Optional. Up to 32 characters (e.g. "Ground", "Level 2").</value></data>
-  <data name="Admin.Halls.Field.EquipmentNotes" xml:space="preserve"><value>Equipment + accessibility notes</value></data>
-  <data name="Admin.Halls.Field.EquipmentNotesHint" xml:space="preserve"><value>Optional. Up to 1024 characters.</value></data>
+  <data name="Admin.Halls.Field.FacilityNotes" xml:space="preserve"><value>Equipment + accessibility notes</value></data>
+  <data name="Admin.Halls.Field.FacilityNotesHint" xml:space="preserve"><value>Optional. Up to 1024 characters.</value></data>
   <data name="Admin.Halls.Field.GeofenceLat" xml:space="preserve"><value>Geofence centre latitude</value></data>
   <data name="Admin.Halls.Field.GeofenceLon" xml:space="preserve"><value>Geofence centre longitude</value></data>
   <data name="Admin.Halls.Field.GeofenceRadius" xml:space="preserve"><value>Geofence radius (metres)</value></data>

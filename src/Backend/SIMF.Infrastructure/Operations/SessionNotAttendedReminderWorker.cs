@@ -25,7 +25,7 @@ namespace SIMF.Infrastructure.Operations;
 /// people who booked and have not arrived, while there is still a session to
 /// arrive at.</para>
 ///
-/// <para><b>Dedup.</b> Unlike <c>Session.ReminderSent</c> this needs
+/// <para><b>Dedup.</b> Unlike <c>Session.ReminderSentAt</c> this needs
 /// once-per-(attendee, session), not once-per-session: two holders of the same
 /// session must both be nudged, and the sweep re-runs every tick inside the
 /// window. That is exactly what the dispatcher's dedup guard gives —

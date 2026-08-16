@@ -46,7 +46,7 @@ public sealed class SessionReminderWorkerTests : IClassFixture<SimfApiFactory>
             var idDb = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
 
             var session = await appDb.Sessions.SingleAsync(s => s.Id == sessionId);
-            Assert.NotNull(session.ReminderSent);
+            Assert.NotNull(session.ReminderSentAt);
 
             var count = await idDb.Notifications.CountAsync(n =>
                 n.Kind == NotificationKind.SessionReminder
@@ -83,7 +83,7 @@ public sealed class SessionReminderWorkerTests : IClassFixture<SimfApiFactory>
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var session = await appDb.Sessions.SingleAsync(s => s.Id == sessionId);
         // The far-future session is left untouched.
-        Assert.Null(session.ReminderSent);
+        Assert.Null(session.ReminderSentAt);
     }
 
     [Fact]
@@ -109,7 +109,7 @@ public sealed class SessionReminderWorkerTests : IClassFixture<SimfApiFactory>
 
         Assert.True(probe.Dispatched);
         Assert.True(probe.StampCommittedAtFirstDispatch,
-            "ReminderSent must be committed before dispatch so a restart cannot resend.");
+            "ReminderSentAt must be committed before dispatch so a restart cannot resend.");
     }
 
     // -- Helpers ---------------------------------------------------------------
@@ -138,7 +138,7 @@ public sealed class SessionReminderWorkerTests : IClassFixture<SimfApiFactory>
             var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
             var session = await db.Sessions.AsNoTracking()
                 .SingleAsync(s => s.Id == sessionId, cancellationToken);
-            StampCommittedAtFirstDispatch = session.ReminderSent != null;
+            StampCommittedAtFirstDispatch = session.ReminderSentAt != null;
         }
     }
 

@@ -12,7 +12,7 @@ namespace SIMF.Infrastructure.Operations;
 /// #6/#17 (owner 2026-07-20, FR-503/903) — background worker that frees seats
 /// abandoned by no-shows. Once per minute it asks the seat service to release every
 /// ACTIVE (confirmed, still-held) visitor reservation whose no-show deadline (the
-/// session's <c>Start − 3min</c>, stamped on <c>Expires</c> at booking) has
+/// session's <c>Start − 3min</c>, stamped on <c>NoShowReleaseAt</c> at booking) has
 /// passed and whose holder never checked in — so the seat can go to someone else
 /// ("cancelled if you don't check in 3 minutes before start"). The release rule
 /// itself lives in <see cref="ISeatReservationService.ReleaseNoShowsAsync"/>

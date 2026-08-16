@@ -1,7 +1,7 @@
 // Bi-Meeting rework — tests for the 15-minute meeting-reminder scan. Exercises the
 // internal MeetingReminderWorker.RunReminderScanAsync directly (InternalsVisibleTo),
 // mirroring SessionReminderWorkerTests: the lead-window bound + the once-only
-// ReminderSent dedup, for both the speaker and delegation meeting paths.
+// ReminderSentAt dedup, for both the speaker and delegation meeting paths.
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -46,7 +46,7 @@ public sealed class MeetingReminderWorkerTests : IClassFixture<SimfApiFactory>
             var idDb = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
 
             var req = await appDb.SpeakerMeetingRequests.SingleAsync(r => r.Id == requestId);
-            Assert.NotNull(req.ReminderSent);
+            Assert.NotNull(req.ReminderSentAt);
 
             var count = await idDb.Notifications.CountAsync(n =>
                 n.Kind == NotificationKind.MeetingReminder
@@ -82,7 +82,7 @@ public sealed class MeetingReminderWorkerTests : IClassFixture<SimfApiFactory>
         using var scope = _factory.Services.CreateScope();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var req = await appDb.SpeakerMeetingRequests.SingleAsync(r => r.Id == requestId);
-        Assert.Null(req.ReminderSent);
+        Assert.Null(req.ReminderSentAt);
     }
 
     [Fact]
@@ -103,7 +103,7 @@ public sealed class MeetingReminderWorkerTests : IClassFixture<SimfApiFactory>
         var idDb = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
 
         var req = await appDb.DelegationMeetingRequests.SingleAsync(r => r.Id == requestId);
-        Assert.NotNull(req.ReminderSent);
+        Assert.NotNull(req.ReminderSentAt);
 
         // The requester is always a recipient (plus any eligible target-delegation member).
         var count = await idDb.Notifications.CountAsync(n =>

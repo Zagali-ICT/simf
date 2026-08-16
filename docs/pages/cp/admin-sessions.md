@@ -318,7 +318,7 @@ deactivation also produces a `Session.Deactivated` row alongside the ordinary
 - **Delete is a soft-delete** — `IsActive=false`; the row stays visible with the
   grey "Inactive" pill in the CP, and disappears from the app + public agenda.
 - **Rescheduling re-arms the workers (A4)** — moving Start/End clears
-  `Session.ReminderSent` and `Session.RatingPromptSent`, because both workers
+  `Session.ReminderSentAt` and `Session.RatingPromptSentAt`, because both workers
   treat a non-null stamp as "already done" and a moved session would otherwise be
   permanently un-remindable. An edit that leaves the window alone does **not**
   clear them, so an already-delivered reminder is never re-sent.

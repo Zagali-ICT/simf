@@ -52,11 +52,11 @@ public sealed class StoredFile : BaseAuditEntity
     // is aspirational today: it is computed from the service's FileServicePolicy.Retention,
     // and no policy in the registry sets one, so the column stays null on every row. No
     // sweep reads it either — disposal is always deliberate, through the force-delete path.
-    // SecureDestroyed means the bytes are gone for good (crypto-shredded or overwritten),
+    // SecureDestroyedAt means the bytes are gone for good (crypto-shredded or overwritten),
     // stamped only by the right-to-erasure path.
     public bool IsDeletable { get; set; } = true;
     public DateTime? RetainUntil { get; set; }
-    public DateTime? SecureDestroyed { get; set; }
+    public DateTime? SecureDestroyedAt { get; set; }
 
     // OwnerEntityId is polymorphic: OwnerEntityType fixes which table it points into. For
     // the owner-scoped services (Avatar, IdDocument, VipPhoto) it is mandatory and the
@@ -66,7 +66,7 @@ public sealed class StoredFile : BaseAuditEntity
 
     public void MarkSecurelyDestroyed(DateTime whenUtc)
     {
-        SecureDestroyed ??= whenUtc;
+        SecureDestroyedAt ??= whenUtc;
         IsActive = false;
     }
 }

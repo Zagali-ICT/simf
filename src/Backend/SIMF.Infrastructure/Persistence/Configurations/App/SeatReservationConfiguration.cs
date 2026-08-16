@@ -6,7 +6,7 @@ namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
 /// <summary>SeatReservation EF config.
 /// Real FKs to Session and to the holder's UserProfile; the ACTOR columns
-/// (CreatedByUserId / ReviewedByUserId) stay logical FKs to SimfUser on the
+/// (CreatedByUserId / ReleasedByUserId) stay logical FKs to SimfUser on the
 /// Identity DB, because an actor is a signed-in account while a holder is an
 /// attendee — and an attendee need not have an account.
 /// <para>Filtered unique indexes enforce business invariants:</para>
@@ -92,8 +92,8 @@ internal sealed class SeatReservationConfiguration : IEntityTypeConfiguration<Se
         builder.HasIndex(x => new { x.Status, x.ReleasedAt });
 
         // M-6 — the expiry worker scans still-held bookings past their hold
-        // window; index Expires, narrowed to held rows that carry one.
-        builder.HasIndex(x => x.Expires)
-            .HasFilter("[ReleasedAt] IS NULL AND [Expires] IS NOT NULL");
+        // window; index NoShowReleaseAt, narrowed to held rows that carry one.
+        builder.HasIndex(x => x.NoShowReleaseAt)
+            .HasFilter("[ReleasedAt] IS NULL AND [NoShowReleaseAt] IS NOT NULL");
     }
 }

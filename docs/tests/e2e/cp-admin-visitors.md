@@ -50,7 +50,7 @@
 | E2E-VIS-030 | Edit login email (D-214 + #24) — golden change → 200 + save toast, stamp roll + old-session revoke + new address unverified (re-verify at next sign-in); duplicate → 409 `ADMIN_EMAIL_ALREADY_REGISTERED` inline SimfAlert; name-only edit keeps the session; bad format → 400 | happy | P1 | _to author_ |
 | E2E-VIS-031 | Bulk add (#10 batch-builder) — gated toolbar "Bulk add" opens the `BulkBadgeGenerator` dialog; build a batch (type + count → Add), Generate → confirm → `bulk-generate` 200; hidden without `Visitors.BulkGenerate` | happy | P1 | authored ✓ (BulkBadgeGeneratorTests; gate by CpNavigationPermission/PermissionEnforcement) |
 | E2E-VIS-032 | B22 — Edit account carries **Nationality**: pick a country -> saved onto `UserProfile.NationalityId`; leaving the picker empty keeps the stored value; an unknown / inactive code -> 400 `PROFILE_NATIONALITY_UNKNOWN` and nothing is written; the edit stays gated by the account-management permission | happy / error / auth-gate | P1 | authored ✓ (`AdminAccountNationalityTests`, API) |
-| E2E-VIS-033 | **FR-PHN-002** — Edit account carries the **mobile numbers**: correct a wrong Saudi / international mobile -> saved onto `UserProfile.SaudiMobile` / `.InternationalMobile`; leaving a field empty keeps the stored number; a malformed number -> 400 and **nothing** is written (not even the display name); the value is stored **canonicalised** (DEF-PHN-003); gated by the existing `Visitors.Edit` / `Others.Edit` permission | happy / error / auth-gate | P0 | authored ✓ (`AdminAccountMobileTests`, API — 7 cases) |
+| E2E-VIS-033 | **FR-PHN-002** — Edit account carries the **mobile number**: correct a wrong Saudi / international mobile -> saved onto the canonical `UserProfile.MobileNumber` plus the two lockstep columns; supplying NEITHER field keeps the stored number, supplying EITHER replaces it; a malformed number -> 400 and **nothing** is written (not even the display name); the value is stored **canonicalised and folded** (DEF-PHN-003 + the mobile-number collapse); gated by the existing `Visitors.Edit` / `Others.Edit` permission | happy / error / auth-gate | P0 | authored ✓ (`AdminAccountMobileTests`, API — 7 cases) |
 
 ## Scenarios
 
@@ -782,6 +782,13 @@ two `SimfTextField`s (`Admin.Edit.SaudiMobile` / `Admin.Edit.InternationalMobile
 `type=tel`), and `PUT /admin/{visitors,others}/{id}` carries the two optional
 fields, validated by the **same** shape predicates as the self-service upsert.
 
+Since the **mobile-number collapse** the two fields describe ONE attribute stored
+once, in canonical E.164, on `UserProfile.MobileNumber`; the two columns are
+still written in lockstep as exact complements. Two consequences show up below:
+a Saudi local number is **stored folded** to `+966...`, and a number supplied on
+one side **replaces** the number stored on the other instead of sitting beside
+it. "No change" is now per-attribute: supply neither field and nothing moves.
+
 ```gherkin
 Feature: Correct an account's mobile number from the Control Panel
 
@@ -794,14 +801,15 @@ Scenario: Correct a wrong Saudi mobile
   Then the "Saudi mobile" field is pre-filled with "0501111111"
   When they replace it with "0559876543" and save
   Then the response is 200 and the toast reads "The account was updated."
-  And UserProfile.SaudiMobile is "0559876543"
+  And UserProfile.SaudiMobile is "+966559876543" (folded onto the canonical form)
+  And UserProfile.MobileNumber is "+966559876543"
 
 Scenario: The number is stored canonicalised (DEF-PHN-003)
   When the administrator types "+966-55 598 7654" and saves
   Then UserProfile.SaudiMobile is "+966555987654"
        (separators stripped - the same string the app would have written)
 
-Scenario: An empty field means "no change"
+Scenario: Supplying neither field means "no change"
   When the administrator edits only the display name and saves
   Then UserProfile.SaudiMobile is still "0501111111" - the contact detail is not wiped
 
@@ -811,10 +819,15 @@ Scenario: A malformed number is rejected and nothing is written
   And UserProfile.SaudiMobile is still "0501111111"
   And the display name is unchanged - the whole edit rolled back
 
-Scenario: An international mobile is accepted in E.164
+Scenario: An international mobile is accepted in E.164, and REPLACES the stored number
   When the administrator types "0044-7700 900123" in "International mobile"
   Then UserProfile.InternationalMobile is "+447700900123"
-  And the untouched Saudi number is unchanged
+  And UserProfile.MobileNumber is "+447700900123"
+  And UserProfile.SaudiMobile is NULL - one attendee has one number
+       (the row holding two different numbers, with nothing saying which to ring,
+        is the defect the collapse removes; and since a number can never be
+        blanked, coalescing would make moving an attendee onto a foreign number
+        impossible)
   And "+44" alone is rejected with 400 (too short for E.164)
 
 Scenario: The mobile edit stays permission-gated
@@ -832,4 +845,4 @@ inherits them.
 
 _Last reviewed:_ 2026-07-22 by Claude (#10 front-end redesign - the walk-in wizard regrouped into SimfFormSection cards + SimfSelect/SimfDatePicker/SimfFileUpload (behaviour-preserving, E2E-VIS structure note + WalkInRegistrationFormTests); added E2E-VIS-031 - the gated "Bulk add" toolbar dialog hosting the shared BulkBadgeGenerator batch-builder). Prior: 2026-07-22 by Claude (#24 DoD - added E2E-VIS-030, the dedicated edit-email scenario for PUT /admin/visitors/{id}: golden change, stamp roll + old-session revoke + EmailConfirmed=false re-verify, duplicate 409 ADMIN_EMAIL_ALREADY_REGISTERED inline, name-only keeps the session, bad-format 400). Prior: 2026-07-22 by SIMF Team (Build #24 - noted on E2E-VIS-001 that an Edit which changes the email now marks it unverified (EmailConfirmed=false) for re-verification at next sign-in; not a lockout). Prior: 2026-07-21 by Claude (VIP edit - the shared EditAccountForm gained a Photo & ID section; E2E-VIS-029). Earlier: 2026-07-11 by Claude (W4 on-site remediation - H-1 duplicate-identity guard; E2E-VIS-027). Earlier: 2026-07-09 by SIMF Team (D-728 - E2E-VIS-026 change-account-type); 2026-06-20 (D-469 - E2E-VIS-025 Saudi birth-location region dropdown); 2026-06-10 (D-356 Phase 5 - Excel + toggle; E2E-VIS-023/024).
 
-_Last reviewed:_ 2026-07-27 by Claude (FR-PHN-002 - the Edit account form and PUT /admin/{visitors,others}/{id} now carry optional SaudiMobile / InternationalMobile, validated by the self-service shapes and stored canonicalised (DEF-PHN-003); gated by the existing Visitors.Edit / Others.Edit permission - no new permission; E2E-VIS-033). Prior: 2026-07-26 by Claude (B22 - the Edit account form and PUT /admin/{visitors,others}/{id} now carry an optional NationalityCode; E2E-VIS-032).
+_Last reviewed:_ 2026-08-16 by Claude (the mobile-number collapse - the two Edit fields and both wire keys are unchanged, but they now describe ONE canonical E.164 UserProfile.MobileNumber written by ProfileMobileStorage.Sync; a Saudi local number is stored folded, and supplying either field replaces the stored number instead of adding a second; E2E-VIS-033). Prior: 2026-07-27 by Claude (FR-PHN-002 - the Edit account form and PUT /admin/{visitors,others}/{id} now carry optional SaudiMobile / InternationalMobile, validated by the self-service shapes and stored canonicalised (DEF-PHN-003); gated by the existing Visitors.Edit / Others.Edit permission - no new permission; E2E-VIS-033). Prior: 2026-07-26 by Claude (B22 - the Edit account form and PUT /admin/{visitors,others}/{id} now carry an optional NationalityCode; E2E-VIS-032).

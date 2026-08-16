@@ -523,14 +523,14 @@ internal sealed class AdminSessionService(
         session.End = request.End;
         // A rescheduled session must stay remindable and rateable. Both workers
         // treat a non-null stamp as "already done" (SessionReminderWorker filters on
-        // ReminderSent == null, SessionRatingPromptWorker on RatingPromptSent ==
+        // ReminderSentAt == null, SessionRatingPromptWorker on RatingPromptSentAt ==
         // null), so a session moved after its reminder fired would never fire again
         // for the new time. Cleared ONLY when the window actually moves — an unrelated
         // save (title, speakers, captions) must not re-arm an already-sent reminder.
         if (timeChanged)
         {
-            session.ReminderSent = null;
-            session.RatingPromptSent = null;
+            session.ReminderSentAt = null;
+            session.RatingPromptSentAt = null;
         }
         session.CapacityOverride = request.CapacityOverride;
         // The live feeds become file-store rows, which validates each URL against

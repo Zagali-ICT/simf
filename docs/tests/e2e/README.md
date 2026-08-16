@@ -54,7 +54,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/visitors/vip` | [`cp-vip-registration.md`](cp-vip-registration.md) | E2E-VIPR-001..011 |
 | `/admin/visitors/vip/export` | [`cp-vip-export.md`](cp-vip-export.md) | E2E-VIPX-001..008 |
 | `/admin/delegates` | [`cp-admin-delegates.md`](cp-admin-delegates.md) | E2E-DLG-001..012 |
-| `/admin/visitors/badge-batches` | [`cp-admin-badge-batches.md`](cp-admin-badge-batches.md) | E2E-BBT-001..015 |
+| `/admin/visitors/badge-batches` | [`cp-admin-badge-batches.md`](cp-admin-badge-batches.md) | E2E-BBT-001..019 |
 | `/admin/editions` | [`cp-admin-editions.md`](cp-admin-editions.md) | E2E-CPED-001..010 |
 | `/admin/attendees` | [`cp-admin-attendees.md`](cp-admin-attendees.md) | E2E-ATT-001..016 |
 | `/admin/print-bag` | [`cp-admin-print-bag.md`](cp-admin-print-bag.md) | E2E-PRT-001..011 |
@@ -256,7 +256,7 @@ API endpoints land (D-249). The per-screen design docs live under
 | #7 `signUpVisitor` — **profile data** (Visitor/Other + ProfileType + 3 lookups; Next→interests) | [`mobile-sign-up-visitor.md`](mobile-sign-up-visitor.md) | E2E-MOB007-001..022 |
 | #7‑01 `signUpInterests` — **interests (1–10) + the single `POST /app/account/user-profile` save** | [`mobile-sign-up-interests.md`](mobile-sign-up-interests.md) | E2E-MOB7A-001..008 |
 | #702 `myInterests` — **edit interests after sign-up** (same screen, edit mode) | [`mobile-my-interests.md`](mobile-my-interests.md) | E2E-MYINT-001..007 |
-| #703 `myMobile` — **add / edit the mobile number** (validate only, NO OTP) | [`mobile-my-mobile.md`](mobile-my-mobile.md) | E2E-MYMOB-001..011 |
+| #703 `myMobile` — **add / edit the mobile number** (validate only, NO OTP) | [`mobile-my-mobile.md`](mobile-my-mobile.md) | E2E-MYMOB-001..012 |
 | _(cross-surface app logo / photo boxes + the full-size viewer)_ | [`mobile-logo-viewer.md`](mobile-logo-viewer.md) | E2E-LOGO-001..008 |
 | #9 `terms` (`GET /app/content/terms`) | [`mobile-terms.md`](mobile-terms.md) | E2E-MOB009-001..008 |
 | #10 `registrationSuccess` (no API — static confirmation) | [`mobile-registration-success.md`](mobile-registration-success.md) | E2E-MOB010-001..007 |
@@ -360,10 +360,10 @@ being quoted in planning as if current.
 - **Pages catalogued:** 197 (97 Control Panel + 69 mobile + 19 Website + 10
   API-only surfaces + 1 system-wide). One of them — `cp-admin-companies.md` —
   is **retired**: its route was renamed away and it now carries no live scenarios.
-- **Total scenarios:** 3126 Coverage-matrix rows, every id distinct. That
+- **Total scenarios:** 3127 Coverage-matrix rows, every id distinct. That
   includes the **360** generated element-sweep rows (`E2E-{NS}-ELS-001/002`, two
   per live page — see `tools/qa/generate_els_rows.py`); the hand-authored
-  functional total is 2764.
+  functional total is 2765.
 - **Authored:** all pages. The D-133 "pending" stubs are fully authored, and
   every event-module and P2–P5 page added since has its own file.
 - **Execution:** the canonical run today is a Chrome DevTools MCP browser pass

@@ -146,7 +146,7 @@ public interface ISeatReservationService
     /// than assigning a specific place. Picking a seat runs inside a SERIALIZABLE
     /// transaction that counts capacity first, and running that per door scan
     /// would deadlock-storm a rush; a null row and seat also never touch the
-    /// per-seat filtered unique index. <c>Expires</c> is left null so the no-show
+    /// per-seat filtered unique index. <c>NoShowReleaseAt</c> is left null so the no-show
     /// sweep cannot release someone who is physically present.</para>
     /// </summary>
     Task<bool> EnsureWalkInHoldAsync(

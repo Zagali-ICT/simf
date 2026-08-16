@@ -179,7 +179,7 @@ Scenario: The clock-end prompt is attendance-gated, not booking-based (owner 202
   When the SessionRatingPromptWorker scans the ended session
   Then visitor A gets exactly one SessionRatingRequest
   And visitor B gets none (a booking is not attendance)
-  And the session is stamped RatingPromptSent so it is not re-scanned
+  And the session is stamped RatingPromptSentAt so it is not re-scanned
 
 Scenario: Viewing a session's detail never opens the rate form (owner 2026-07-22)
   Given an approved visitor opens an ENDED session's detail without attending it

@@ -44,9 +44,9 @@ public class Session : BaseAuditEntity
     public int? ArrivalGraceMinutesOverride { get; set; }
 
     /// <summary>Stamped by the reminder worker; the null check is its once-only guard.</summary>
-    public DateTime? ReminderSent { get; set; }
+    public DateTime? ReminderSentAt { get; set; }
 
-    public DateTime? RatingPromptSent { get; set; }
+    public DateTime? RatingPromptSentAt { get; set; }
 
     /// <summary>Broadcast lifecycle; orthogonal to the
     /// <see cref="BaseAuditEntity.IsActive"/> soft-delete flag.</summary>

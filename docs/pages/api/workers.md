@@ -18,9 +18,9 @@ exactly once" is the property that is easiest to lose and hardest to notice.
 | Worker | Poll | Guarantee | Dedup |
 |---|---|---|---|
 | `RegistrationGateAutoCloseWorker` | 1 min | Closes the registration gate on schedule | state transition |
-| `SessionReminderWorker` | 1 min | "Session starting soon" to booked attendees, 30 min ahead | `Session.ReminderSent` claim stamp (D-217), committed **before** dispatch |
+| `SessionReminderWorker` | 1 min | "Session starting soon" to booked attendees, 30 min ahead | `Session.ReminderSentAt` claim stamp (D-217), committed **before** dispatch |
 | **`SessionNotAttendedReminderWorker`** | 1 min | **FR-903** — "the session started and you have not arrived" | D-713 dispatcher guard, per (attendee, session) |
-| `MeetingReminderWorker` | 1 min | 15-min meeting reminder (email + app) | `ReminderSent` on the request row |
+| `MeetingReminderWorker` | 1 min | 15-min meeting reminder (email + app) | `ReminderSentAt` on the request row |
 | `MeetingAwaitingSpeakerExpiryWorker` | — | Reverts a stuck `AwaitingSpeaker` request to Pending, freeing the slot | status transition |
 | `ReservationNoShowReleaseWorker` | — | Releases no-show seats 3 min before start | `ReleasedAt` on the reservation |
 | **`MatchRecommendationPushWorker`** | 15 min | **FR-803** — pushes >=80% matches to opted-in attendees | D-713 dispatcher guard, per (caller, candidate) |

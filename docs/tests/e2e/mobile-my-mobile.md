@@ -14,11 +14,23 @@
 | **Last reviewed** | 2026-07-26 (created for the owner phone request) |
 
 > **What this is.** A self-service add/edit of the profile's mobile number.
-> `UserProfile.SaudiMobile` / `.InternationalMobile` already existed and the
-> server validator already checked both shapes, so this is **UI only** — no
-> schema change, no new endpoint. The profile's `isSaudi` picks which of the two
-> fields is edited. **There is deliberately no verification step**: a valid
-> shape is saved as typed (normalised).
+> The server validator already checked both shapes, so the screen itself is
+> **UI only** — no new endpoint. The profile's `isSaudi` picks which of the two
+> wire fields is edited. **There is deliberately no verification step**: a valid
+> shape is saved as typed (canonicalised).
+>
+> **Storage since the mobile-number collapse.** The number is stored **once**, in
+> canonical E.164, on `UserProfile.MobileNumber`. A Saudi mobile IS an
+> international mobile with `+966`, so the old `SaudiMobile` / `International‑
+> Mobile` pair was one attribute in two columns — a row could hold two different
+> numbers with nothing saying which to ring. The pair is still written, in
+> lockstep, because every reader still projects it, and **both wire keys
+> (`saudiMobile`, `internationalMobile`) are still emitted and accepted** — the
+> shipped app decodes them by name. What changed for this screen: the Saudi local
+> `05XXXXXXXX` spelling is **stored folded** to `+9665XXXXXXXX`, so a number saved
+> as `0501234567` reads back as `+966501234567`. Acceptance is unchanged — both
+> spellings are still accepted, and a Saudi local number is still rejected by the
+> *international* field.
 
 ## Coverage matrix
 
@@ -33,8 +45,9 @@
 | E2E-MYMOB-007 | Load failure → error state + Retry; no write fired | resilience | P1 | authored ✓ (widget) |
 | E2E-MYMOB-008 | Auth gate — anonymous open of `/my-area/mobile` redirects to sign-in | auth | P0 | authored ✓ (router-gate matrix) |
 | E2E-MYMOB-009 | RTL render (Arabic) — labels mirror, the NUMBER stays LTR | i18n | P1 | spec |
-| E2E-MYMOB-010 | **DEF-PHN-003** — the SERVER canonicalises on write: separators stripped and a leading `00` rewritten to `+`, so the app's `+966501234567` and the CP/Website `+966-555987654` land in the column as **one** form | validation | P0 | authored ✓ (`UserProfileTests.POST_stores_the_Saudi_mobile_canonicalised` theory + `..._international_mobile_canonicalised`; `AdminAccountMobileTests.Admin_edit_stores_the_mobile_canonicalised`) |
+| E2E-MYMOB-010 | **DEF-PHN-003** — the SERVER canonicalises on write: separators stripped, a leading `00` rewritten to `+`, and the Saudi local `05…` spelling folded onto `+966…`, so however it was typed it lands in the column as **one** form | validation | P0 | authored ✓ (`UserProfileTests.POST_stores_the_Saudi_mobile_canonicalised` theory + `..._international_mobile_canonicalised`; `AdminAccountMobileTests.Admin_edit_stores_the_mobile_canonicalised`) |
 | E2E-MYMOB-011 | **DEF-PHN-004** — the mobile is required **server-side** too (at least one, Saudi or international), so a save can no longer clear the number the app then refuses to submit without | validation | P0 | authored ✓ (`UserProfileTests.POST_rejects_a_profile_with_no_mobile_at_all`, `..._rejects_a_save_that_blanks_an_existing_mobile`, `..._accepts_an_international_only_mobile_for_a_Saudi`) |
+| E2E-MYMOB-012 | **Mobile-number collapse** — the number is stored ONCE in canonical E.164 on `UserProfile.MobileNumber`; the Saudi local spelling folds onto `+966…`; both shipped wire keys still round-trip, Saudi first when both arrive | validation | P0 | authored ✓ (`UserProfileTests.Upsert_of_a_Saudi_number_alone_...`, `..._of_an_international_number_alone_...`, `..._folds_the_Saudi_local_spelling_...`, `Both_mobile_wire_keys_are_still_emitted_over_the_real_HTTP_surface`; `MobileNumberTests.The_saudi_local_spelling_folds_onto_the_international_form`) |
 | E2E-MYMOB-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-MYMOB-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
@@ -45,13 +58,14 @@
 ```gherkin
 Feature: Add or edit my mobile number
 Scenario: A signed-in Saudi user corrects their mobile number
-  Given a signed-in user whose profile stores saudiMobile "0501234567"
+  Given a signed-in user whose profile stores saudiMobile "+966501234567"
   When they open My-Area and tap the "رقم الجوال / Mobile number" row
-  Then the screen loads their profile and shows "0501234567" as the current number
-  And the input is pre-filled with "0501234567"
+  Then the screen loads their profile and shows "+966501234567" as the current number
+  And the input is pre-filled with "+966501234567"
   When they replace it with "0559876543" and tap "Save"
   Then the app POSTs ONE UpsertUserProfileRequest to /app/account/user-profile
   And the body carries saudiMobile "0559876543"
+  # …which the server stores, and reads back, folded as "+966559876543"
   And NO OTP screen is shown at any point
   And on ApiResult.Ok a "Your mobile number was updated" toast shows and the screen pops back to My-Area
 ```
@@ -120,8 +134,14 @@ value was persisted exactly as typed. So one column held `+966501234567` (the
 app, which canonicalises client-side) and `+966-555987654` (the Control-Panel /
 Website `SimfPhoneInput`, which emits `+dial-local`). Two spellings of one
 number defeat search, export and de-duplication. Every write path now stores
-`MobileNumber.Normalize`'s output — the *same* normaliser the validator matches
-against, not a second copy.
+`MobileNumber.Canonicalize`'s output.
+
+`Canonicalize` is `Normalize` — the *same* normaliser the validator matches
+against, not a second copy — plus the Saudi local fold. The fold lives on the
+**storage** path and nowhere else, deliberately: `Normalize` stays the match
+form, so folding it there would make `0501234567` satisfy the E.164 test and a
+Saudi local number would start being accepted into the **international** field.
+Widening what is stored must not widen what is accepted.
 
 ```gherkin
 Scenario Outline: A number is stored in exactly one form, whoever typed it
@@ -132,14 +152,57 @@ Scenario Outline: A number is stored in exactly one form, whoever typed it
   Examples:
     | typed             | stored         |
     | +966-501234567    | +966501234567  |   # the CP / Website dash form
-    | 050 123-4567      | 0501234567     |   # spaces + dash
+    | 050 123-4567      | +966501234567  |   # spaces + dash, then folded
     | 00966501234567    | +966501234567  |   # the 00 international prefix
     | 0044-7700 900123  | +447700900123  |   # international, both rules
+    | 05012345          | 05012345       |   # NOT the Saudi mobile shape: not folded
 ```
 
 **Covered (lower layer):** `UserProfileTests.POST_stores_the_Saudi_mobile_canonicalised`
 (theory, 3 cases) + `POST_stores_the_international_mobile_canonicalised`; the
-admin path is `AdminAccountMobileTests.Admin_edit_stores_the_mobile_canonicalised`.
+admin path is `AdminAccountMobileTests.Admin_edit_stores_the_mobile_canonicalised`;
+the fold itself is `MobileNumberTests`.
+
+### E2E-MYMOB-012 — The mobile-number collapse: one column, both wire keys
+
+`SaudiMobile` and `InternationalMobile` were one attribute in two columns. Two
+columns let a row hold two DIFFERENT numbers with nothing on it saying which to
+ring, made every reader coalesce, and de-duplicated against nothing. The number
+now lives once on `UserProfile.MobileNumber` in canonical E.164; the pair is
+written in lockstep as exact complements (Saudi set / international NULL, or the
+reverse) because every reader still projects it.
+
+```gherkin
+Scenario: A Saudi-only registrant round-trips both wire keys
+  Given a signed-in user saving saudiMobile "+966501234567" and no international number
+  Then UserProfile.MobileNumber holds "+966501234567"
+  And GET /app/account/user-profile returns saudiMobile "+966501234567"
+  And it returns internationalMobile null
+  And BOTH keys are present in the JSON body
+
+Scenario: An international-only registrant round-trips both wire keys
+  Given a signed-in user saving internationalMobile "+447700900123" and no Saudi number
+  Then UserProfile.MobileNumber holds "+447700900123"
+  And GET /app/account/user-profile returns internationalMobile "+447700900123"
+  And it returns saudiMobile null
+
+Scenario: Saudi wins when both arrive
+  Given a save carrying BOTH a Saudi and an international number
+  Then the canonical column holds the Saudi one
+  # the precedence VipRosterService already displays with: SaudiMobile ?? InternationalMobile
+
+Scenario: An admin correction replaces the number rather than adding a second one
+  Given a stored Saudi mobile and an admin PUT carrying only an international number
+  Then the canonical column holds the international number
+  And SaudiMobile is NULL
+  # blanking is forbidden, so coalescing would make moving an attendee onto a
+  # foreign number impossible
+```
+
+**Covered (lower layer):** `UserProfileTests.Upsert_of_a_Saudi_number_alone_fills_the_canonical_column_and_both_wire_keys`,
+`..._of_an_international_number_alone_...`, `..._folds_the_Saudi_local_spelling_onto_the_canonical_international_form`,
+`Both_mobile_wire_keys_are_still_emitted_over_the_real_HTTP_surface`;
+`AdminAccountMobileTests.Admin_edit_sets_the_international_mobile`.
 
 ### E2E-MYMOB-011 — The mobile is REQUIRED on the server too (DEF-PHN-004)
 
@@ -162,7 +225,7 @@ Scenario: A save with no mobile at all is rejected
         "رقم الجوال مطلوب (سعودي أو دولي).")
 
 Scenario: A later save cannot blank a stored number
-  Given a stored Saudi mobile "0501234567"
+  Given a stored Saudi mobile "+966501234567"
   When a save submits a blank mobile
   Then the response is 400
   And the stored number survives the rejected save

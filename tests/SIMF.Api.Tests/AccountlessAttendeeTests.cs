@@ -100,7 +100,7 @@ public sealed class AccountlessAttendeeTests : IClassFixture<SimfApiFactory>
         // creator column is an Identity account and a walk-in holds none.
         Assert.Equal(operatorUserId, hold.CreatedByUserId);
         // Never released by the no-show sweep — they are physically present.
-        Assert.Null(hold.Expires);
+        Assert.Null(hold.NoShowReleaseAt);
 
         // The seating desk resolves the same badge to that hold. This is what used
         // to answer "no seat" for the very badge the hold was just created for.

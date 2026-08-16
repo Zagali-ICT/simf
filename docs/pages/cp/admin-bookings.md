@@ -10,7 +10,7 @@
 | **Required permissions** | `Bookings.View` (page + list), `Bookings.Export` (Excel export) — `PermissionCatalog.Bookings.*`. **`Bookings.Approve` / `Bookings.Reject` were retired** with the approval step. |
 | **Backend endpoints** | BFF `/account/api/admin/bookings/*` → API: `POST /admin/bookings/list` (`GridQuery`), `POST /admin/bookings/export` (`AdminGridExportRequest`). The approve/reject/bulk-approve endpoints were removed. |
 | **Source** | [`BookingsList.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/BookingsList.razor), [`SeatReservationEndpoints.cs`](../../../src/Backend/SIMF.Api/Endpoints/Sessions/SeatReservationEndpoints.cs), [`ExportBookingsEndpoint`](../../../src/Backend/SIMF.Api/Endpoints/Admin/BookingsExcelEndpoints.cs), [`SeatReservationService.cs`](../../../src/Backend/SIMF.Infrastructure/SeatReservations/SeatReservationService.cs), [`ReservationNoShowReleaseWorker.cs`](../../../src/Backend/SIMF.Infrastructure/Operations/ReservationNoShowReleaseWorker.cs), [`SeatReservations.cs`](../../../src/Shared/SIMF.Contracts/Sessions/SeatReservations.cs) |
-| **Backed by** | Existing `dbo.SeatReservations` (no new table). `Expires` now carries the no-show deadline (`Start − 3min`). |
+| **Backed by** | Existing `dbo.SeatReservations` (no new table). `NoShowReleaseAt` carries the no-show deadline (`Start − 3min`). |
 | **Tests** | [`docs/tests/e2e/cp-admin-bookings.md`](../../tests/e2e/cp-admin-bookings.md) |
 | **Last reviewed** | 2026-07-21 |
 

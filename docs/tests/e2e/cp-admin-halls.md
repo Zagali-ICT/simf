@@ -42,7 +42,7 @@
 | E2E-HAL-021 | Excel import: upload a workbook → rows created/updated + result modal with per-row outcome (D-356) | happy | P1 | _to author_ |
 | E2E-HAL-022 | Excel import: a non-.xlsx / wrong-sheet upload → bilingual rejection, nothing created (D-356) | error | P1 | _to author_ |
 | E2E-HAL-023 | Edit preserves a re-sent geofence — regression (D-505) | error | P0 | _to author_ |
-| E2E-HAL-024 | Excel round-trip: import a workbook carrying EquipmentNotes / geofence / SeatSelectionMode → fields land on the summary; export header carries them (D-506) | happy | P1 | _to author_ |
+| E2E-HAL-024 | Excel round-trip: import a workbook carrying FacilityNotes / geofence / SeatSelectionMode → fields land on the summary; export header carries them (D-506) | happy | P1 | _to author_ |
 
 > `E2E-HAL-025` and `E2E-HAL-026..030` are catalogued in their own sections
 > further down — **On-site remediation (W4)** and **QA B16 — hall occupancy
@@ -425,7 +425,7 @@ Scenario: Export the filtered grid (or just selected rows) to an XLSX workbook
       AdminGridExportRequest { Ids: [], Query: <current GridQuery> }
   And the browser saves an .xlsx whose sheet has the header row
       Code | Name | NameArabic | Capacity | Floor | IsActive |
-      EquipmentNotes | GeofenceCenterLat | GeofenceCenterLon |
+      FacilityNotes | GeofenceCenterLat | GeofenceCenterLon |
       GeofenceRadiusMeters | SeatSelectionMode
       (the last five appended by D-506 so the export round-trips)
   And the workbook contains every hall in the current filtered grid (capped at 5000 rows)
@@ -443,7 +443,7 @@ Scenario: Import halls from a workbook and see the per-row outcome
   Then OnImportAsync calls CrudGridExcel.TriggerImportAsync, opening the file picker
       (input id "halls-import-input", accept=".xlsx")
   When they choose an .xlsx whose sheet has Code/Name/NameArabic/Capacity rows for two new halls
-      (and optionally the D-506 EquipmentNotes / GeofenceCenterLat / GeofenceCenterLon /
+      (and optionally the D-506 FacilityNotes / GeofenceCenterLat / GeofenceCenterLon /
        GeofenceRadiusMeters / SeatSelectionMode columns — bound by header name)
   Then a POST /account/api/admin/halls/import fires as multipart form data
   And the import-result modal shows "2 created, 0 updated, 0 skipped."
@@ -526,26 +526,26 @@ returns null; passes after the bind model inherits the contract).
 
 ```gherkin
 Scenario: Import a workbook carrying the extra fields; export carries them too
-  # Regression for D-506: EquipmentNotes, the geofence triple and
+  # Regression for D-506: FacilityNotes, the geofence triple and
   # SeatSelectionMode were dropped — neither exported nor imported. The grid
   # summary now carries them and the import binds them by header name.
   Given the administrator is on /admin/halls
   When they import a workbook whose sheet has the columns
       Code | Name | NameArabic | Capacity | Floor |
-      EquipmentNotes | GeofenceCenterLat | GeofenceCenterLon |
+      FacilityNotes | GeofenceCenterLat | GeofenceCenterLon |
       GeofenceRadiusMeters | SeatSelectionMode
-  And one row sets EquipmentNotes="Projector + PA system",
+  And one row sets FacilityNotes="Projector + PA system",
       GeofenceCenterLat=24.7136, GeofenceCenterLon=46.6753,
       GeofenceRadiusMeters=250, SeatSelectionMode="OpenSeating"
   Then POST /account/api/admin/halls/import returns HTTP 200 with 1 created, 0 errors
-  And the new grid row's summary carries EquipmentNotes="Projector + PA system",
+  And the new grid row's summary carries FacilityNotes="Projector + PA system",
       the geofence triple (24.7136 / 46.6753 / 250) and SeatSelectionMode=1 (OpenSeating)
   And SeatSelectionMode also accepts the raw int (0/1); blank → 0 (AssignedSeat)
   And an unknown SeatSelectionMode value, a non-numeric geofence value, or a
       partial geofence (one of the three set) → a per-row 400 error, not a batch abort
 
   When they then Export the grid
-  Then the .xlsx header row also contains EquipmentNotes, GeofenceCenterLat,
+  Then the .xlsx header row also contains FacilityNotes, GeofenceCenterLat,
       GeofenceCenterLon, GeofenceRadiusMeters and SeatSelectionMode
       (SeatSelectionMode written by display name AssignedSeat/OpenSeating)
 ```
@@ -731,8 +731,8 @@ Scenario: re-home the session first and the hall deactivates normally
 
 ---
 
-_Last reviewed:_ 2026-07-27 by Claude (QA B16 follow-up — the occupancy view now filters `isActive` so a soft-deleted session no longer reads as a live booking, and a capped page says so; E2E-HAL-029/030). Prior: 2026-07-26 by Claude (QA B16 — hall occupancy view; E2E-HAL-026..028). Prior: 2026-07-11 by Claude (W4 on-site remediation — H-3 capacity-shrink guard; E2E-HAL-025). Prior: 2026-06-26 by Claude (D-506 — Excel export/import field-drop fix: EquipmentNotes + geofence triple + SeatSelectionMode now round-trip; scenario E2E-HAL-024 added, E2E-HAL-020/021 column lists reconciled). Prior: 2026-06-10 (D-356 Phase 5 — Excel export/import + D-353 Page<->Popup toggle scenarios E2E-HAL-017..022; E2E-HAL-001 deactivate step reconciled to the CrudShell + SimfConfirm gate).
-_Last reviewed:_ 2026-07-26 by Claude (session-lifecycle QA package — A37 hall in-use deactivation guard, `HALL_IN_USE` now enforced rather than reserved; E2E-HAL-032). Prior: 2026-07-11 by Claude (W4 on-site remediation — H-3 capacity-shrink guard; E2E-HAL-025). Prior: 2026-06-26 by Claude (D-506 — Excel export/import field-drop fix: EquipmentNotes + geofence triple + SeatSelectionMode now round-trip; scenario E2E-HAL-024 added, E2E-HAL-020/021 column lists reconciled). Prior: 2026-06-10 (D-356 Phase 5 — Excel export/import + D-353 Page<->Popup toggle scenarios E2E-HAL-017..022; E2E-HAL-001 deactivate step reconciled to the CrudShell + SimfConfirm gate).
+_Last reviewed:_ 2026-07-27 by Claude (QA B16 follow-up — the occupancy view now filters `isActive` so a soft-deleted session no longer reads as a live booking, and a capped page says so; E2E-HAL-029/030). Prior: 2026-07-26 by Claude (QA B16 — hall occupancy view; E2E-HAL-026..028). Prior: 2026-07-11 by Claude (W4 on-site remediation — H-3 capacity-shrink guard; E2E-HAL-025). Prior: 2026-06-26 by Claude (D-506 — Excel export/import field-drop fix: FacilityNotes + geofence triple + SeatSelectionMode now round-trip; scenario E2E-HAL-024 added, E2E-HAL-020/021 column lists reconciled). Prior: 2026-06-10 (D-356 Phase 5 — Excel export/import + D-353 Page<->Popup toggle scenarios E2E-HAL-017..022; E2E-HAL-001 deactivate step reconciled to the CrudShell + SimfConfirm gate).
+_Last reviewed:_ 2026-07-26 by Claude (session-lifecycle QA package — A37 hall in-use deactivation guard, `HALL_IN_USE` now enforced rather than reserved; E2E-HAL-032). Prior: 2026-07-11 by Claude (W4 on-site remediation — H-3 capacity-shrink guard; E2E-HAL-025). Prior: 2026-06-26 by Claude (D-506 — Excel export/import field-drop fix: FacilityNotes + geofence triple + SeatSelectionMode now round-trip; scenario E2E-HAL-024 added, E2E-HAL-020/021 column lists reconciled). Prior: 2026-06-10 (D-356 Phase 5 — Excel export/import + D-353 Page<->Popup toggle scenarios E2E-HAL-017..022; E2E-HAL-001 deactivate step reconciled to the CrudShell + SimfConfirm gate).
 
 ---
 
