@@ -34,7 +34,9 @@ public sealed class OrganizationProfile : BaseAuditEntity
 
     public string? BioArabic { get; set; }
 
-    // Only Version reaches a screen; SysVersion, VersionDate and ReleaseDate render nowhere.
+    // Version and SysVersion are both edited on the Control Panel's profile page;
+    // VersionDate and ReleaseDate are carried on the admin and public contracts but no
+    // screen writes or renders them. All four stay because the contracts are append-only.
 
     public string? Version { get; set; }
 
@@ -54,7 +56,8 @@ public sealed class OrganizationProfile : BaseAuditEntity
 
     public ForumStatus Status { get; set; } = ForumStatus.Open;
 
-    // Coordinates are decimal degrees, refused on write outside ±90 / ±180; nothing plots them.
+    // Coordinates are decimal degrees, refused on write outside ±90 / ±180 by the admin
+    // save and by a check constraint behind it; nothing plots them yet.
 
     public string? LocationText { get; set; }
 

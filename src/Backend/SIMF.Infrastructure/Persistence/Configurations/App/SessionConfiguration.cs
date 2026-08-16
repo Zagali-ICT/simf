@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using SIMF.Common.Enums;
 using SIMF.Common.Options;
 using SIMF.Contracts.Sessions;
 using SIMF.Domain.Files;
@@ -20,6 +21,11 @@ internal sealed class SessionConfiguration : IEntityTypeConfiguration<Session>
         // The capacity override is null (inherit the hall) or zero-or-positive,
         // mirroring AdminSessionService.ValidateCapacity and CK_Halls_Capacity —
         // zero is a real value there too, so this is >= 0 and not > 0.
+        // PublishedAt is pinned to the Published status: SetStatusAsync stamps the
+        // two together and is the only writer of either column, so "published with
+        // no stamp" (and "stamped but not published") are unreachable through the
+        // service and are refused by the schema too — the shape
+        // CK_ContactInquiries_HandledPin uses for its own paired columns.
         builder.ToTable("Sessions", table =>
         {
             table.HasCheckConstraint("CK_Sessions_TimeWindow", "[End] > [Start]");
@@ -29,6 +35,10 @@ internal sealed class SessionConfiguration : IEntityTypeConfiguration<Session>
             table.HasCheckConstraint(
                 "CK_Sessions_CapacityOverride",
                 "[CapacityOverride] IS NULL OR [CapacityOverride] >= 0");
+            table.HasCheckConstraint(
+                "CK_Sessions_PublishedAtPin",
+                $"([Status] = {(int)SessionStatus.Published} AND [PublishedAt] IS NOT NULL) OR "
+                + $"([Status] <> {(int)SessionStatus.Published} AND [PublishedAt] IS NULL)");
         });
         builder.HasKey(s => s.Id);
 
@@ -116,8 +126,8 @@ internal sealed class SessionConfiguration : IEntityTypeConfiguration<Session>
         // status (e.g. the Recorded ones awaiting publish), most-recent first.
         // Status is stored as int (enum, by convention); no HasDefaultValue —
         // the service always writes an explicit value (avoids the EF "0 looks
-        // unset" default-backfill trap), and the migration backfills existing
-        // rows to Scheduled (0).
+        // unset" default-backfill trap), and a new row takes Scheduled (0) from
+        // the property initialiser on the entity.
         builder.HasIndex(s => new { s.Status, s.Start });
     }
 }

@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SIMF.Domain.SeatReservations;
 
@@ -32,6 +32,14 @@ internal sealed class SeatReservationConfiguration : IEntityTypeConfiguration<Se
                 + "OR ([RowLabel] IS NOT NULL AND [SeatNumber] IS NOT NULL)");
             table.HasCheckConstraint(
                 "CK_SeatReservations_SeatNumber", "[SeatNumber] >= 1");
+            // NO pair constraint on the release stamp, deliberately. One was
+            // added here while ReviewedAt / ReviewedByUserId were an admin-only
+            // pair that a single writer set together. That pair no longer
+            // exists: ReviewedAt folded into ReleasedAt, which FIVE paths write
+            // — a self-release, a seat change, a cancelled session and the
+            // no-show sweep, none of which has an actor — against one writer of
+            // ReleasedByUserId. Pinning them together now would reject every
+            // release a person did not perform.
         });
         builder.HasKey(x => x.Id);
 

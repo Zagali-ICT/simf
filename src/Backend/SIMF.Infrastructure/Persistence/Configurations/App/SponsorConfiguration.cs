@@ -84,5 +84,18 @@ internal sealed class SponsorConfiguration : IEntityTypeConfiguration<Sponsor>
             sponsor.Tier,
             sponsor.DisplayOrder,
         });
+
+        // At most one ACTIVE sponsor per (tier, Arabic name). AdminSponsorService
+        // already returns a 409 SponsorDuplicate on that clash, but its check is a
+        // read followed by a write, so two concurrent creates can both pass it and
+        // land a duplicate on the public page. This is the backstop that makes the
+        // rule true of the table, exactly as ExhibitorMembership.UserId does.
+        //
+        // Filtered on IsActive = 1 because the rule itself is scoped to active rows:
+        // the service deliberately lets an inactive row keep a name an active row is
+        // using, so an unfiltered index would reject a legitimate soft-deleted row.
+        builder.HasIndex(sponsor => new { sponsor.Tier, sponsor.NameArabic })
+            .IsUnique()
+            .HasFilter("[IsActive] = 1");
     }
 }

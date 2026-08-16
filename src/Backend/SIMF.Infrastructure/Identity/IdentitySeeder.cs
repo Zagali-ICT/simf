@@ -1,6 +1,7 @@
 // Tests: SIMF.Api.Tests/IdentitySeederTests.cs (super-admin, TOTP, audit,
 //        idempotency, baseline lookups + core content,
 //        2FA-disable-persists-across-reseed, demo-account matrix,
+//        demo national id written as a document row with a digest,
 //        demo-image repair when the bytes or the row have gone);
 //        SIMF.Api.Tests/DemoAccountSeedGateTests.cs (demo seed is
 //        a no-op outside Development / with Seed:EnableDemoAccounts off);
@@ -41,6 +42,7 @@ public sealed class IdentitySeeder(
     IOptions<SuperAdminOptions> options,
     IOptions<DemoSeedOptions> demoOptions,
     IQrIdMinter qrIdMinter,
+    SIMF.Application.Abstractions.IPiiEncryptor pii,
     IFileService fileService,
     IAuditLog auditLog,
     TimeProvider timeProvider,
@@ -835,7 +837,6 @@ public sealed class IdentitySeeder(
                 Gender = Gender.Male,
                 NationalityId = SaudiArabiaCountryId,
                 IsSaudi = true,
-                NationalId = demo.NationalId,
                 // A demo account is seeded ready to use, so its profile is
                 // admitted outright — the QR minted just below only works for an
                 // approved attendee, and a demo that cannot pass a gate would be
@@ -843,6 +844,13 @@ public sealed class IdentitySeeder(
                 AdmissionState = AccountState.Approved,
                 CreatedAt = now,
             };
+            // The demo national id, written through the same helper both real
+            // write paths use, so a seeded profile carries a document row with a
+            // blind-index digest rather than a bare column the duplicate-identity
+            // guard cannot see. The seeder used to write the number with NO digest
+            // at all, which left every demo account invisible to that guard.
+            ProfileIdentityStorage.SyncDocuments(
+                profile, pii, demo.NationalId, null, null);
             // Approved accounts carry a QR badge.
             await qrIdMinter.MintIfMissingAsync(profile, cancellationToken);
             appDbContext.UserProfiles.Add(profile);

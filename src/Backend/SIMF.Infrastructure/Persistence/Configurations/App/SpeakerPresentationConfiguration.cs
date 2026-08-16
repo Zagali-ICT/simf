@@ -15,7 +15,13 @@ internal sealed class SpeakerPresentationConfiguration
 {
     public void Configure(EntityTypeBuilder<SpeakerPresentation> builder)
     {
-        builder.ToTable("SpeakerPresentations");
+        // A presentation row stands for stored bytes, so its size is a real
+        // positive count. AdminSpeakerPresentationService already refuses an empty
+        // upload (400 SPEAKER_PRESENTATION_INVALID) before it ever reaches here;
+        // this keeps a seed or a repair script from recording a zero-byte
+        // presentation the download endpoint would then serve as an empty file.
+        builder.ToTable("SpeakerPresentations", table => table.HasCheckConstraint(
+            "CK_SpeakerPresentations_SizeBytes", "[SizeBytes] > 0"));
         builder.HasKey(x => x.Id);
 
         builder.Property(x => x.FileName).HasMaxLength(256).IsRequired();

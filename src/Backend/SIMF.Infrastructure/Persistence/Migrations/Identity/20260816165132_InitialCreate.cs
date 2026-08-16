@@ -165,6 +165,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AccountCodes", x => x.Id);
+                    table.CheckConstraint("CK_AccountCodes_OneOwner", "([UserId] IS NOT NULL AND [UserProfileId] IS NULL) OR ([UserId] IS NULL AND [UserProfileId] IS NOT NULL)");
                     table.ForeignKey(
                         name: "FK_AccountCodes_Users_UserId",
                         column: x => x.UserId,
@@ -191,6 +192,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_DeviceKeys", x => x.Id);
+                    table.CheckConstraint("CK_DeviceKeys_ChallengePin", "([CurrentChallenge] IS NULL AND [ChallengeExpiresAt] IS NULL) OR ([CurrentChallenge] IS NOT NULL AND [ChallengeExpiresAt] IS NOT NULL)");
                     table.ForeignKey(
                         name: "FK_DeviceKeys_Users_UserId",
                         column: x => x.UserId,

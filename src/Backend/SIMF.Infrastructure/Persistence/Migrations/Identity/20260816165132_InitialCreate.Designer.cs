@@ -12,7 +12,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Persistence.Migrations.Identity
 {
     [DbContext(typeof(SimfIdentityDbContext))]
-    [Migration("20260816145850_InitialCreate")]
+    [Migration("20260816165132_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -236,7 +236,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                     b.HasIndex("UserProfileId", "Purpose")
                         .HasFilter("[UserProfileId] IS NOT NULL");
 
-                    b.ToTable("AccountCodes");
+                    b.ToTable("AccountCodes", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_AccountCodes_OneOwner", "([UserId] IS NOT NULL AND [UserProfileId] IS NULL) OR ([UserId] IS NULL AND [UserProfileId] IS NOT NULL)");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.IdentityAccess.DeviceKey", b =>
@@ -287,7 +290,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
 
                     b.HasIndex("UserId", "RevokedAt");
 
-                    b.ToTable("DeviceKeys", (string)null);
+                    b.ToTable("DeviceKeys", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_DeviceKeys_ChallengePin", "([CurrentChallenge] IS NULL AND [ChallengeExpiresAt] IS NULL) OR ([CurrentChallenge] IS NOT NULL AND [ChallengeExpiresAt] IS NOT NULL)");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.IdentityAccess.PasswordHistoryEntry", b =>

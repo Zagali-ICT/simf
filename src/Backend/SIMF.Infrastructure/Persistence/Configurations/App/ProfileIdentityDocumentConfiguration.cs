@@ -15,9 +15,10 @@ namespace SIMF.Infrastructure.Persistence.Configurations.App;
 /// <para>The one index that matters here is the unique digest index. It is the
 /// single index over EVERY document number, which is what makes a CROSS-KIND
 /// duplicate — the same person registering once on a passport and again on an
-/// Iqama — detectable at all. No arrangement of the three per-kind filtered
-/// uniques still on <see cref="UserProfile"/> can see that, because the two
-/// numbers never share a column.</para>
+/// Iqama — detectable at all, and it is now the WHOLE duplicate-identity
+/// constraint. It replaced three per-kind filtered uniques on
+/// <see cref="UserProfile"/>, none of which could see that case, because the two
+/// numbers never shared a column.</para>
 /// </summary>
 internal sealed class ProfileIdentityDocumentConfiguration
     : IEntityTypeConfiguration<ProfileIdentityDocument>
@@ -46,8 +47,8 @@ internal sealed class ProfileIdentityDocumentConfiguration
             .IsRequired();
 
         // Sized to hold the encrypted blob, matching the width the PII converter
-        // loop in SimfAppDbContext gives the plaintext columns on the parent row.
-        // Written here rather than left to convention because this column has to
+        // loop in SimfAppDbContext gives the parent row's remaining plaintext
+        // columns. Written here rather than left to convention because this has to
         // survive encryption — a column sized for a 20-character Iqama would
         // truncate the ciphertext and lose the number outright.
         builder.Property(document => document.Number)
@@ -57,17 +58,17 @@ internal sealed class ProfileIdentityDocumentConfiguration
         // The keyed HMAC-SHA256 digest, 64 hex characters. Deliberately OUTSIDE
         // the PII converter: encrypting a digest under a random nonce would make
         // it a different value on every write and destroy the determinism the
-        // unique index below depends on. Same reasoning as the three *Hash
-        // columns on UserProfile.
+        // unique index below depends on. Same reasoning that kept the three *Hash
+        // columns it replaced outside that converter.
         builder.Property(document => document.NumberHash)
             .HasMaxLength(64)
             .IsRequired();
 
         // THE cross-kind duplicate guard, and the whole reason this table exists.
         //
-        // Not filtered, unlike the profile's uniques: the column is required
-        // here, so there are no NULL rows to exempt. A document row exists only
-        // when there is a number to put in it.
+        // Not filtered, unlike the per-kind uniques it replaced: the column is
+        // required here, so there are no NULL rows to exempt. A document row
+        // exists only when there is a number to put in it.
         builder.HasIndex(document => document.NumberHash)
             .IsUnique()
             .HasDatabaseName(NumberHashIndexName);

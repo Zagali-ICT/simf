@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/AdminResetTwoFactorTests.cs,
+﻿// Tests: SIMF.Api.Tests/AdminResetTwoFactorTests.cs,
 //        SIMF.Api.Tests/AdminCreateUserTests.cs,
 //        SIMF.Api.Tests/ControlPanelTwoFactorEnrolmentTests.cs (a created
 //        admin is TwoFactorEnabled AND can still complete a first sign-in),
@@ -635,19 +635,12 @@ internal sealed partial class AdminAccountService(
             // derived on read" invariant + the badge/gate/export key.
             PlateNumber = SaudiPlate.Normalize(request.PlateNumber),
             IsSaudi = request.IsSaudi,
-            // Store the same normalised values the duplicate-identity guard
-            // keyed on, plus their blind-index hashes, so the stored row and the
-            // guard/index agree (a trailing-space passport can no longer slip past).
-            NationalId = nationalId,
-            IqamaNumber = iqamaNumber,
-            PassportNumber = passportNumber,
-            NationalIdHash = nationalIdHash,
-            IqamaNumberHash = iqamaNumberHash,
-            PassportNumberHash = passportNumberHash,
-            // The mobile is set below through ProfileMobileStorage.Sync, which
-            // writes the canonical column and the two superseded ones together.
-            // Setting either column here as well would be a second copy of the
-            // split rule, and the two copies are what drift.
+            // Neither the identity documents nor the mobile are set here. The
+            // documents live in ProfileIdentityDocuments, written by
+            // ProfileIdentityStorage.SyncDocuments; the mobile is written by
+            // ProfileMobileStorage.Sync, which fills the canonical column and the
+            // two it supersedes together. Setting either here as well would be a
+            // second copy of a split rule, and two copies are what drift.
             // The desk-required organisation pick (الجهة).
             OrganisationId = organisationId,
             // Delegation-member flag (a delegate is a normal visitor).
@@ -687,11 +680,12 @@ internal sealed partial class AdminAccountService(
         {
             profile.Id = presetProfileId;
         }
-        // The same three numbers, written to the storage that supersedes the six
-        // columns above: one row per document, one unique digest index over all of
-        // them, which is what makes a CROSS-KIND duplicate visible at all. The
-        // already-normalised values are reused rather than re-derived, so the rows,
-        // the columns and the soft guard all key off the same strings.
+        // The three captured numbers, written to the only storage that holds
+        // them: one row per document, one unique digest index over all of them,
+        // which is what makes a CROSS-KIND duplicate visible at all. The
+        // already-normalised values are reused rather than re-derived, so the rows
+        // and the soft guard above key off the same strings — a trailing-space
+        // passport cannot slip past one and be stored by the other.
         ProfileIdentityStorage.SyncDocuments(
             profile, pii, nationalId, iqamaNumber, passportNumber);
         appDbContext.UserProfiles.Add(profile);
@@ -708,13 +702,14 @@ internal sealed partial class AdminAccountService(
         {
             await appDbContext.SaveChangesAsync(cancellationToken);
         }
-        // The fourth name is the child table's single digest index, the one that
-        // now fires on a CROSS-KIND duplicate. Deliberately NOT added to the QrId
-        // catch below, which answers a different conflict with a different code.
+        // ONE index name now, where there used to be three per-kind ones beside
+        // it: the child table's single digest index is the whole duplicate-identity
+        // constraint, and it fires on a cross-kind duplicate the three could not
+        // see. Named from the constant, not a string, so removing the index cannot
+        // leave a filter that silently stops matching and turns this 409 into a
+        // 500. Deliberately NOT added to the QrId catch below, which answers a
+        // different conflict with a different code.
         catch (DbUpdateException ex) when (ex.ViolatesAnyIndex(
-            "IX_UserProfiles_NationalIdHash",
-            "IX_UserProfiles_IqamaNumberHash",
-            "IX_UserProfiles_PassportNumberHash",
             Persistence.Configurations.App.ProfileIdentityDocumentConfiguration
                 .NumberHashIndexName))
         {

@@ -14,14 +14,34 @@ internal sealed class SessionQuestionConfiguration : IEntityTypeConfiguration<Se
 {
     public void Configure(EntityTypeBuilder<SessionQuestion> builder)
     {
-        builder.ToTable("SessionQuestions");
+        builder.ToTable("SessionQuestions", table =>
+        {
+            // Escalation is written as a set of three by the Committee's
+            // EscalateAsync, and nothing ever clears it. All three null means
+            // "never escalated"; any partial combination is an escalation whose
+            // role, actor or time is missing, which no reader can interpret.
+            table.HasCheckConstraint(
+                "CK_SessionQuestions_EscalationTrio",
+                "([AssignedToRole] IS NULL AND [EscalatedByUserId] IS NULL "
+                + "AND [EscalatedAt] IS NULL) "
+                + "OR ([AssignedToRole] IS NOT NULL AND [EscalatedByUserId] IS NOT NULL "
+                + "AND [EscalatedAt] IS NOT NULL)");
+            // The on-stage marker and its timestamp move together: a push stamps
+            // both, and hiding (from either the desk or the Committee) clears
+            // both. A pushed row with no PushedAt would sort into the recorded
+            // archive with no time to show against it.
+            table.HasCheckConstraint(
+                "CK_SessionQuestions_PushedPair",
+                "([IsPushed] = 0 AND [PushedAt] IS NULL) "
+                + "OR ([IsPushed] = 1 AND [PushedAt] IS NOT NULL)");
+        });
         builder.HasKey(q => q.Id);
 
         builder.Property(q => q.QuestionText).HasMaxLength(1000).IsRequired();
 
-        // Q&A pipeline columns. No HasDefaultValue on Status — the
-        // service always writes an explicit value (the migration backfills
-        // existing rows). Phase/Status stored as int by convention.
+        // Q&A pipeline columns. No HasDefaultValue on Status — the service
+        // always writes an explicit value on every create path.
+        // Phase/Status stored as int by convention.
         builder.Property(q => q.AiFilterVerdict).HasMaxLength(256);
         builder.Property(q => q.AssignedToRole).HasMaxLength(64);
 
