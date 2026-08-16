@@ -12,7 +12,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Persistence.Migrations.App
 {
     [DbContext(typeof(SimfAppDbContext))]
-    [Migration("20260816081425_InitialCreate")]
+    [Migration("20260816090437_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -5978,8 +5978,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.ToTable("SeatReservations", null, t =>
                         {
-                            t.HasCheckConstraint("CK_SeatReservations_ReviewPair", "([ReviewedByUserId] IS NULL AND [ReviewedAt] IS NULL) OR ([ReviewedByUserId] IS NOT NULL AND [ReviewedAt] IS NOT NULL)");
-
                             t.HasCheckConstraint("CK_SeatReservations_SeatNumber", "[SeatNumber] >= 1");
 
                             t.HasCheckConstraint("CK_SeatReservations_SeatPair", "([RowLabel] IS NULL AND [SeatNumber] IS NULL) OR ([RowLabel] IS NOT NULL AND [SeatNumber] IS NOT NULL)");

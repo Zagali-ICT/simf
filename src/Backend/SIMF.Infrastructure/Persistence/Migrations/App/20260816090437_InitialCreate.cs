@@ -1993,7 +1993,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_SeatReservations", x => x.Id);
-                    table.CheckConstraint("CK_SeatReservations_ReviewPair", "([ReviewedByUserId] IS NULL AND [ReviewedAt] IS NULL) OR ([ReviewedByUserId] IS NOT NULL AND [ReviewedAt] IS NOT NULL)");
                     table.CheckConstraint("CK_SeatReservations_SeatNumber", "[SeatNumber] >= 1");
                     table.CheckConstraint("CK_SeatReservations_SeatPair", "([RowLabel] IS NULL AND [SeatNumber] IS NULL) OR ([RowLabel] IS NOT NULL AND [SeatNumber] IS NOT NULL)");
                     table.ForeignKey(
