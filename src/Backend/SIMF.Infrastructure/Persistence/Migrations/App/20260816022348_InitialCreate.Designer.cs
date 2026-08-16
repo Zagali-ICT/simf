@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SIMF.Infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Persistence.Migrations.App
 {
     [DbContext(typeof(SimfAppDbContext))]
-    partial class SimfAppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260816022348_InitialCreate")]
+    partial class InitialCreate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -847,6 +850,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("CountsSummary")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -876,6 +884,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
+                    b.Property<int>("TotalCount")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -892,46 +903,15 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         new
                         {
                             Id = new Guid("0f1e2d3c-4b5a-6978-8796-a5b4c3d2e1f0"),
+                            CountsSummary = "Direct registration",
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             CreatedBy = new Guid("00000000-0000-0000-0000-000000000000"),
                             IsActive = true,
                             IsDelegate = false,
                             Name = "Direct registration",
-                            NameArabic = "تسجيل مباشر"
+                            NameArabic = "تسجيل مباشر",
+                            TotalCount = 0
                         });
-                });
-
-            modelBuilder.Entity("SIMF.Domain.Badges.BadgeBatchItem", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("BadgeBatchId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("Count")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid>("CreatedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("DisplayOrder")
-                        .HasColumnType("int");
-
-                    b.Property<Guid>("ProfileTypeId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ProfileTypeId");
-
-                    b.HasIndex("BadgeBatchId", "DisplayOrder");
-
-                    b.ToTable("BadgeBatchItems", (string)null);
                 });
 
             modelBuilder.Entity("SIMF.Domain.BusinessMeetings.BusinessMeeting", b =>
@@ -6413,23 +6393,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Navigation("Edition");
                 });
 
-            modelBuilder.Entity("SIMF.Domain.Badges.BadgeBatchItem", b =>
-                {
-                    b.HasOne("SIMF.Domain.Badges.BadgeBatch", "BadgeBatch")
-                        .WithMany("Items")
-                        .HasForeignKey("BadgeBatchId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("SIMF.Domain.Profiles.UserProfileType", null)
-                        .WithMany()
-                        .HasForeignKey("ProfileTypeId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("BadgeBatch");
-                });
-
             modelBuilder.Entity("SIMF.Domain.BusinessMeetings.BusinessMeeting", b =>
                 {
                     b.HasOne("SIMF.Domain.BusinessMeetings.MeetingTable", "MeetingTable")
@@ -7175,11 +7138,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Navigation("PastSpeakers");
 
                     b.Navigation("SessionTitles");
-                });
-
-            modelBuilder.Entity("SIMF.Domain.Badges.BadgeBatch", b =>
-                {
-                    b.Navigation("Items");
                 });
 
             modelBuilder.Entity("SIMF.Domain.BusinessMeetings.BusinessMeeting", b =>
