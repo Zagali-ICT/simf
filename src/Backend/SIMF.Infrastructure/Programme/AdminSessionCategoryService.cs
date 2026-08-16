@@ -1,13 +1,16 @@
 // Tests: SIMF.Api.Tests/SessionCategoriesTests.cs
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Grids;
 using SIMF.Contracts.Admin;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.Programme;
+using SIMF.Infrastructure.Common.Grids;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Programme;
@@ -25,72 +28,35 @@ internal sealed class AdminSessionCategoryService(
     TimeProvider timeProvider,
     ILogger<AdminSessionCategoryService> logger) : IAdminSessionCategoryService
 {
-    public async Task<GridPage<AdminSessionCategorySummary>> ListAsync(
-        GridQuery query, CancellationToken cancellationToken = default)
-    {
-        var (skip, top) = query.ClampPage(25, 200);
+    /// <summary>
+    /// The grid contract for /admin/session-categories: one entry per key
+    /// SessionCategoriesList.razor can send, as both its filter and its sort. The
+    /// display-order key is "order", not "displayOrder" — that is the column key the
+    /// page sends, and a key not declared here is a 400.
+    /// </summary>
+    private static readonly GridColumns<SessionCategory> Columns =
+        new GridColumns<SessionCategory>()
+            .Add("name", category => category.Name, searchable: true)
+            .Add("nameArabic", category => category.NameArabic, searchable: true)
+            .Add("order", category => category.DisplayOrder)
+            .Add("isActive", category => category.IsActive)
+            .DefaultOrder("order")
+            .DefaultOrder("name")
+            .PageSize(fallback: 25, max: 200);
 
-        var rows = db.SessionCategories.AsNoTracking().AsQueryable();
+    private static readonly
+        Expression<Func<SessionCategory, AdminSessionCategorySummary>> ToSummary =
+        category => new AdminSessionCategorySummary(
+            category.Id,
+            category.Name,
+            category.NameArabic,
+            category.DisplayOrder,
+            category.IsActive);
 
-        if (!string.IsNullOrWhiteSpace(query.Search))
-        {
-            var term = query.Search.Trim();
-            rows = rows.Where(category =>
-                EF.Functions.Like(category.Name, $"%{term}%")
-                || EF.Functions.Like(category.NameArabic, $"%{term}%"));
-        }
-
-        // CP grid per-column filters. Unknown columns are ignored.
-        foreach (var (column, raw) in query.Filters)
-        {
-            if (string.IsNullOrWhiteSpace(raw)) { continue; }
-            var v = raw.Trim();
-            switch (column.ToLowerInvariant())
-            {
-                case "name":
-                    rows = rows.Where(category => category.Name.Contains(v));
-                    break;
-                case "namearabic":
-                    rows = rows.Where(category => category.NameArabic.Contains(v));
-                    break;
-                case "isactive":
-                    if (bool.TryParse(v, out var isActive))
-                    {
-                        rows = rows.Where(category => category.IsActive == isActive);
-                    }
-                    break;
-            }
-        }
-
-        // CP grid sortable columns. Default: DisplayOrder, then Name.
-        rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
-        {
-            ("name", true) => rows.OrderByDescending(category => category.Name),
-            ("name", false) => rows.OrderBy(category => category.Name),
-            ("namearabic", true) => rows.OrderByDescending(category => category.NameArabic),
-            ("namearabic", false) => rows.OrderBy(category => category.NameArabic),
-            ("order", true) => rows.OrderByDescending(category => category.DisplayOrder),
-            ("order", false) => rows.OrderBy(category => category.DisplayOrder),
-            ("isactive", true) => rows.OrderByDescending(category => category.IsActive),
-            ("isactive", false) => rows.OrderBy(category => category.IsActive),
-            _ => rows.OrderBy(category => category.DisplayOrder).ThenBy(category => category.Name),
-        };
-
-        var total = await rows.CountAsync(cancellationToken);
-        var page = await rows
-            .Skip(skip)
-            .Take(top)
-            .Select(category => new AdminSessionCategorySummary(
-                category.Id,
-                category.Name,
-                category.NameArabic,
-                category.DisplayOrder,
-                category.IsActive))
-            .ToListAsync(cancellationToken);
-
-        return GridPage<AdminSessionCategorySummary>.Of(page, total,
-            skip, top);
-    }
+    public Task<GridPage<AdminSessionCategorySummary>> ListAsync(
+        GridQuery query, CancellationToken cancellationToken = default) =>
+        db.SessionCategories.ToGridPageAsync(
+            query, Columns, category => category.Id, ToSummary, cancellationToken);
 
     public async Task<AdminSessionCategoryDetail?> GetAsync(
         Guid id, CancellationToken cancellationToken = default)

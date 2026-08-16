@@ -1,9 +1,12 @@
 // Tests: SIMF.Api.Tests/ContactInquiryTests.cs
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.Support.Abstractions;
 using SIMF.Common;
+using SIMF.Common.Grids;
 using SIMF.Contracts.Support;
 using SIMF.Domain.Support;
+using SIMF.Infrastructure.Common.Grids;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Support;
@@ -19,6 +22,24 @@ internal sealed class ContactInquiryService(
     private const int NameMaxLength = 120;
     private const int EmailMaxLength = 256;
     private const int MessageMaxLength = 4000;
+
+    /// <summary>The grid contract for /admin/contact-inquiries: one entry per key
+    /// ContactInquiriesList.razor can send, as both its filter and its sort.</summary>
+    private static readonly GridColumns<ContactInquiry> Columns = new GridColumns<ContactInquiry>()
+        .Add("name", inquiry => inquiry.Name, searchable: true)
+        .Add("email", inquiry => inquiry.Email, searchable: true)
+        .Add("message", inquiry => inquiry.Message, searchable: true)
+        .Add("isHandled", inquiry => inquiry.IsHandled)
+        .Add("createdAt", inquiry => inquiry.CreatedAt)
+        // Open inquiries first — false sorts before true — then newest first.
+        .DefaultOrder("isHandled")
+        .DefaultOrder("createdAt", descending: true)
+        .PageSize(fallback: 25, max: 200);
+
+    private static readonly Expression<Func<ContactInquiry, AdminContactInquiryRow>> ToRow =
+        inquiry => new AdminContactInquiryRow(
+            inquiry.Id, inquiry.Name, inquiry.Email, inquiry.Message, inquiry.IsHandled,
+            inquiry.SubmittedByUserId, inquiry.CreatedAt, inquiry.HandledAt);
 
     public async Task<Guid> SubmitAsync(
         SubmitContactInquiryRequest request,
@@ -40,49 +61,10 @@ internal sealed class ContactInquiryService(
         return inquiry.Id;
     }
 
-    public async Task<GridPage<AdminContactInquiryRow>> ListAsync(
-        GridQuery query, CancellationToken cancellationToken = default)
-    {
-        var (skip, top) = query.ClampPage(25, 200);
-
-        var rows = dbContext.ContactInquiries.AsNoTracking().AsQueryable();
-
-        if (!string.IsNullOrWhiteSpace(query.Search))
-        {
-            var term = query.Search.Trim();
-            rows = rows.Where(c =>
-                EF.Functions.Like(c.Name, $"%{term}%")
-                || EF.Functions.Like(c.Email, $"%{term}%")
-                || EF.Functions.Like(c.Message, $"%{term}%"));
-        }
-        if (query.Filters.TryGetValue("isHandled", out var handledFilter)
-            && bool.TryParse(handledFilter, out var isHandled))
-        {
-            rows = rows.Where(c => c.IsHandled == isHandled);
-        }
-
-        // Default ordering: open inquiries first, then newest first.
-        rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
-        {
-            ("createdat", true) => rows.OrderByDescending(c => c.CreatedAt),
-            ("createdat", false) => rows.OrderBy(c => c.CreatedAt),
-            ("name", true) => rows.OrderByDescending(c => c.Name),
-            ("name", false) => rows.OrderBy(c => c.Name),
-            _ => rows.OrderBy(c => c.IsHandled).ThenByDescending(c => c.CreatedAt),
-        };
-
-        var total = await rows.CountAsync(cancellationToken);
-        var page = await rows
-            .Skip(skip)
-            .Take(top)
-            .Select(c => new AdminContactInquiryRow(
-                c.Id, c.Name, c.Email, c.Message, c.IsHandled,
-                c.SubmittedByUserId, c.CreatedAt, c.HandledAt))
-            .ToListAsync(cancellationToken);
-
-        return GridPage<AdminContactInquiryRow>.Of(page, total,
-            skip, top);
-    }
+    public Task<GridPage<AdminContactInquiryRow>> ListAsync(
+        GridQuery query, CancellationToken cancellationToken = default) =>
+        dbContext.ContactInquiries.ToGridPageAsync(
+            query, Columns, inquiry => inquiry.Id, ToRow, cancellationToken);
 
     public async Task MarkHandledAsync(
         Guid actorUserId, Guid id, bool handled,

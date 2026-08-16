@@ -11,15 +11,14 @@ public partial class OtherProfileTypesList
     [Inject] private IStringLocalizer<Strings> L { get; set; } = default!;
     [Inject] private IJSRuntime JS { get; set; } = default!;
 
-    // This page is the partner-side queue. Server-side
-    // contract collapsed UserType into Visitor; the partner/audience
-    // split now lives on ProfileType.IsVisitor — we filter on that.
+    // This page is the partner-side queue. The server-side contract collapsed
+    // UserType into Visitor, leaving no user-type column to filter on; the
+    // partner/audience split now lives on ProfileType.IsVisitor alone.
     private GridQuery _query = new()
     {
         Top = 20,
         Filters = new Dictionary<string, string>
         {
-            ["userType"] = "Visitor",
             ["isVisitor"] = "false",
         },
     };
@@ -37,8 +36,7 @@ public partial class OtherProfileTypesList
 
     private async Task OnQueryChangedAsync(GridQuery next)
     {
-        // Keep both filters pinned across grid-state changes.
-        next.Filters["userType"] = "Visitor";
+        // Keep the filter pinned across grid-state changes.
         next.Filters["isVisitor"] = "false";
         _query = next;
         await LoadAsync();

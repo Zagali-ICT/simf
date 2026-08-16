@@ -8,9 +8,11 @@ using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Application.Notifications;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Grids;
 using SIMF.Contracts.Admin;
 using SIMF.Domain.Notifications;
 using SIMF.Domain.SeatReservations;
+using SIMF.Infrastructure.Common.Grids;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Notifications;
@@ -436,19 +438,32 @@ internal sealed class NotificationBroadcastService(
         CancellationToken cancellationToken) =>
         BuildRecipientQuery(mode, sessionId, scope).CountAsync(cancellationToken);
 
+    /// <summary>
+    /// The grid contract for the Announcements history. Announcements.razor declares
+    /// no sortable or filterable column, so the set is deliberately just the natural
+    /// order — newest first — and any sort or filter key a client invents is a 400
+    /// rather than a request that appears to work and changes nothing. The tiebreak
+    /// the grid adds is the real gain here: two broadcasts queued in the same tick
+    /// used to be free to swap places between page 1 and page 2.
+    /// </summary>
+    private static readonly GridColumns<NotificationBroadcast> Columns =
+        new GridColumns<NotificationBroadcast>()
+            .Add("createdAt", broadcast => broadcast.CreatedAt)
+            .DefaultOrder("createdAt", descending: true)
+            .PageSize(fallback: 25, max: 200);
+
     public async Task<GridPage<AdminBroadcastSummary>> ListAsync(
         GridQuery query, CancellationToken cancellationToken = default)
     {
-        var (skip, top) = query.ClampPage(25, 200);
+        // Paged as entities rather than projected: the summary carries the composer's
+        // name, which lives in the Identity DB and may not be joined to this query.
+        var page = await appDbContext.NotificationBroadcasts.ToGridPageAsync(
+            query, Columns, broadcast => broadcast.Id, broadcast => broadcast,
+            cancellationToken);
 
-        var broadcasts = appDbContext.NotificationBroadcasts.AsNoTracking()
-            .OrderByDescending(row => row.CreatedAt);
+        var items = await MapAsync(page.Items, cancellationToken);
 
-        var total = await broadcasts.CountAsync(cancellationToken);
-        var rows = await broadcasts.Skip(skip).Take(top).ToListAsync(cancellationToken);
-        var items = await MapAsync(rows, cancellationToken);
-
-        return GridPage<AdminBroadcastSummary>.Of(items, total, skip, top);
+        return GridPage<AdminBroadcastSummary>.Of(items, page.Total, page.Skip, page.Top);
     }
 
     public async Task<AdminBroadcastSummary?> GetAsync(
@@ -466,7 +481,7 @@ internal sealed class NotificationBroadcastService(
     // Projects broadcast rows to summaries, resolving the composer's display name
     // (Identity DB) and the target session's title (App DB) in one round-trip each.
     private async Task<List<AdminBroadcastSummary>> MapAsync(
-        List<NotificationBroadcast> rows, CancellationToken cancellationToken)
+        IReadOnlyList<NotificationBroadcast> rows, CancellationToken cancellationToken)
     {
         if (rows.Count == 0)
         {

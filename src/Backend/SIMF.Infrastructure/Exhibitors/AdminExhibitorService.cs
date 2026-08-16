@@ -1,5 +1,6 @@
 // Tests: SIMF.Api.Tests/ExhibitorsTests.cs
 // Tests: SIMF.Api.Tests/ExhibitorVisitorScanTests.cs
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.Assets.Abstractions;
 using SIMF.Application.Auditing;
@@ -7,9 +8,11 @@ using SIMF.Application.Exhibitors.Abstractions;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Grids;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Exhibitors;
 using SIMF.Domain.Exhibitors;
+using SIMF.Infrastructure.Common.Grids;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Exhibitors;
@@ -34,83 +37,52 @@ internal sealed class AdminExhibitorService(
     IAssetService assetService,
     SimfIdentityDbContext identityDbContext) : IAdminExhibitorService
 {
+    /// <summary>
+    /// The grid contract for /admin/exhibitors: one entry per key
+    /// ExhibitorsList.razor can send, as both its filter and its sort. A key not
+    /// declared here is a 400, not a silently ignored request. AccountCount is
+    /// absent on purpose — it is a computed sub-query the grid neither sorts nor
+    /// filters on.
+    /// </summary>
+    private static readonly GridColumns<Exhibitor> Columns = new GridColumns<Exhibitor>()
+        .Add("nameEn", exhibitor => exhibitor.Name, searchable: true)
+        .Add("nameAr", exhibitor => exhibitor.NameArabic, searchable: true)
+        .Add("isActive", exhibitor => exhibitor.IsActive)
+        .DefaultOrder("nameAr")
+        .PageSize(fallback: 25, max: 200);
+
+    /// <summary>Not static, unlike every other grid projection: AccountCount is a
+    /// correlated sub-query over a table Exhibitor has no navigation to, so the
+    /// projection has to close over the context. HasExhibitorLogo is deliberately
+    /// left at its default and filled in once the page has materialised — it comes
+    /// from the file store, not from this query.</summary>
+    private Expression<Func<Exhibitor, AdminExhibitorSummary>> ToSummary =>
+        exhibitor => new AdminExhibitorSummary(
+            exhibitor.Id, exhibitor.Name, exhibitor.NameArabic,
+            exhibitor.ContactEmail, exhibitor.ContactPhone, exhibitor.Website,
+            appDbContext.Set<ExhibitorMembership>().Count(
+                membership => membership.ExhibitorId == exhibitor.Id && membership.IsActive),
+            exhibitor.IsActive, exhibitor.CreatedAt, exhibitor.Tier);
+
     public async Task<GridPage<AdminExhibitorSummary>> ListAllAsync(
         GridQuery query, CancellationToken cancellationToken = default)
     {
-        var (skip, top) = query.ClampPage(25, 200);
+        var page = await appDbContext.Exhibitors.ToGridPageAsync(
+            query, Columns, exhibitor => exhibitor.Id, ToSummary, cancellationToken);
 
-        var rows = appDbContext.Exhibitors.AsNoTracking().AsQueryable();
-        if (!string.IsNullOrWhiteSpace(query.Search))
-        {
-            var term = query.Search.Trim();
-            rows = rows.Where(c =>
-                EF.Functions.Like(c.Name, $"%{term}%")
-                || EF.Functions.Like(c.NameArabic, $"%{term}%"));
-        }
-
-        // CP grid per-column filters. Unknown columns are ignored.
-        // AccountCount is a computed sub-query, so it is not server-filterable.
-        foreach (var (column, raw) in query.Filters)
-        {
-            if (string.IsNullOrWhiteSpace(raw)) { continue; }
-            var v = raw.Trim();
-            switch (column.ToLowerInvariant())
-            {
-                case "nameen":
-                    rows = rows.Where(c => c.Name.Contains(v));
-                    break;
-                case "namear":
-                    rows = rows.Where(c => c.NameArabic.Contains(v));
-                    break;
-                case "isactive":
-                    if (bool.TryParse(v, out var isActive))
-                    {
-                        rows = rows.Where(c => c.IsActive == isActive);
-                    }
-                    break;
-            }
-        }
-
-        // CP grid sortable columns. Default: NameAr.
-        rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
-        {
-            ("nameen", false) => rows.OrderBy(c => c.Name),
-            ("nameen", true) => rows.OrderByDescending(c => c.Name),
-            ("namear", true) => rows.OrderByDescending(c => c.NameArabic),
-            ("isactive", false) => rows.OrderBy(c => c.IsActive),
-            ("isactive", true) => rows.OrderByDescending(c => c.IsActive),
-            _ => rows.OrderBy(c => c.NameArabic),
-        };
-        var total = await rows.CountAsync(cancellationToken);
-        var pageRows = await rows
-            .Skip(skip).Take(top)
-            .Select(c => new
-            {
-                c.Id, c.Name, c.NameArabic,
-                c.ContactEmail, c.ContactPhone, c.Website,
-                AccountCount = appDbContext.Set<ExhibitorMembership>()
-                    .Count(m => m.ExhibitorId == c.Id && m.IsActive),
-                c.IsActive, c.CreatedAt, c.Tier,
-            })
-            .ToListAsync(cancellationToken);
-
-        // The exhibitor now also owns its own ExhibitorLogo (the app + the grid
-        // render this, not the linked Contact's) — one batched query over the
-        // page's exhibitor ids.
+        // The exhibitor owns its own ExhibitorLogo (the app + the grid render this,
+        // not the linked Contact's) — one batched query over the page's exhibitor
+        // ids rather than a per-row read.
         var exhibitorLogoOwners = await assetService.WhichOwnersHaveActiveAssetAsync(
-            AssetCategory.ExhibitorLogo, pageRows.Select(row => row.Id).ToList(), cancellationToken);
+            AssetCategory.ExhibitorLogo,
+            page.Items.Select(row => row.Id).ToList(),
+            cancellationToken);
 
-        var page = pageRows
-            .Select(c => new AdminExhibitorSummary(
-                c.Id, c.Name, c.NameArabic,
-                c.ContactEmail, c.ContactPhone, c.Website,
-                c.AccountCount,
-                c.IsActive, c.CreatedAt, c.Tier,
-                exhibitorLogoOwners.Contains(c.Id)))
-            .ToList();
-
-        return GridPage<AdminExhibitorSummary>.Of(page, total,
-            skip, top);
+        return GridPage<AdminExhibitorSummary>.Of(
+            page.Items
+                .Select(row => row with { HasExhibitorLogo = exhibitorLogoOwners.Contains(row.Id) })
+                .ToList(),
+            page.Total, page.Skip, page.Top);
     }
 
     public async Task<AdminExhibitorDetail?> GetAsync(

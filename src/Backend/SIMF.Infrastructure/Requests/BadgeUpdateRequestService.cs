@@ -8,8 +8,10 @@ using SIMF.Application.Notifications;
 using SIMF.Application.Requests.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Grids;
 using SIMF.Contracts.Requests;
 using SIMF.Domain.Requests;
+using SIMF.Infrastructure.Common.Grids;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Requests;
@@ -93,57 +95,62 @@ internal sealed class BadgeUpdateRequestService(
         return new BadgeUpdateRequestSubmitted(req.Id, req.Status, req.CreatedAt);
     }
 
+    /// <summary>
+    /// The grid contract for /admin/badge-requests: one entry per key
+    /// BadgeRequestsList.razor can send, as a sort and as a filter. A key not
+    /// declared here is a 400, not a silently ignored request.
+    /// </summary>
+    private static readonly GridColumns<BadgeUpdateRequest> Columns =
+        new GridColumns<BadgeUpdateRequest>()
+            .Add("jobTitle", request => request.RequestedJobTitle)
+            .Add("status", request => request.Status)
+            .Add("createdAt", request => request.CreatedAt)
+            .Add("respondedAt", request => request.RespondedAt)
+            .DefaultOrder("createdAt", descending: true)
+            .PageSize(fallback: 25, max: 200);
+
     public async Task<GridPage<AdminBadgeUpdateRequestRow>> ListAllAsync(
         Guid actorUserId, GridQuery query,
         CancellationToken cancellationToken = default)
     {
-        var (skip, top) = query.ClampPage(25, 200);
-
-        var rows = appDbContext.BadgeUpdateRequests.AsNoTracking().AsQueryable();
-        var statusFilter = string.Empty;
-        if (query.Filters.TryGetValue("status", out var statusRaw)
-            && Enum.TryParse<MeetingRequestStatus>(statusRaw, ignoreCase: true, out var status))
-        {
-            rows = rows.Where(r => r.Status == status);
-            statusFilter = status.ToString();
-        }
-        if (query.Filters.TryGetValue("jobTitle", out var jtRaw) && !string.IsNullOrWhiteSpace(jtRaw))
-        {
-            var v = jtRaw.Trim();
-            rows = rows.Where(r => r.RequestedJobTitle.Contains(v));
-        }
-
-        rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
-        {
-            ("jobtitle", false) => rows.OrderBy(r => r.RequestedJobTitle),
-            ("jobtitle", true) => rows.OrderByDescending(r => r.RequestedJobTitle),
-            ("status", false) => rows.OrderBy(r => r.Status),
-            ("status", true) => rows.OrderByDescending(r => r.Status),
-            ("createdat", false) => rows.OrderBy(r => r.CreatedAt),
-            ("respondedat", false) => rows.OrderBy(r => r.RespondedAt),
-            ("respondedat", true) => rows.OrderByDescending(r => r.RespondedAt),
-            _ => rows.OrderByDescending(r => r.CreatedAt),
-        };
-
-        var total = await rows.CountAsync(cancellationToken);
-        var pageRows = await rows.Skip(skip).Take(top).ToListAsync(cancellationToken);
+        // The rows are paged as entities rather than projected, because the
+        // requester's display name is a second App-DB read the SELECT cannot carry.
+        var page = await appDbContext.BadgeUpdateRequests.ToGridPageAsync(
+            query, Columns, request => request.Id, request => request, cancellationToken);
 
         var names = await ResolveRequesterNamesAsync(
-            pageRows.Select(r => r.RequestedByUserId), cancellationToken);
+            page.Items.Select(request => request.RequestedByUserId), cancellationToken);
+
+        // The audit keeps recording the CANONICAL status name rather than the raw
+        // filter text, so entries written before and after the grid conversion read
+        // the same. An unparseable value never reaches here — the grid 400s first.
+        var statusFilter =
+            query.Filters.TryGetValue("status", out var statusRaw)
+            && Enum.TryParse<MeetingRequestStatus>(statusRaw, ignoreCase: true, out var status)
+                ? status.ToString()
+                : string.Empty;
 
         await auditLog.WriteSuccessAsync(
             AuditEvents.AdminBadgeUpdateRequestsListed,
             actorUserId,
-            JsonSerializer.Serialize(new { count = pageRows.Count, total, top, skip, statusFilter }),
+            JsonSerializer.Serialize(new
+            {
+                count = page.Items.Count,
+                total = page.Total,
+                top = page.Top,
+                skip = page.Skip,
+                statusFilter,
+            }),
             cancellationToken);
 
-        var items = pageRows.Select(r => new AdminBadgeUpdateRequestRow(
-            r.Id, r.RequestedByUserId, names.GetValueOrDefault(r.RequestedByUserId),
-            r.RequestedJobTitle, r.CurrentJobTitle, r.Status, r.ResponseNote,
-            r.CreatedAt, r.RespondedAt))
+        var items = page.Items.Select(request => new AdminBadgeUpdateRequestRow(
+            request.Id, request.RequestedByUserId,
+            names.GetValueOrDefault(request.RequestedByUserId),
+            request.RequestedJobTitle, request.CurrentJobTitle, request.Status,
+            request.ResponseNote, request.CreatedAt, request.RespondedAt))
             .ToList();
-        return GridPage<AdminBadgeUpdateRequestRow>.Of(items, total,
-            skip, top);
+        return GridPage<AdminBadgeUpdateRequestRow>.Of(
+            items, page.Total, page.Skip, page.Top);
     }
 
     public async Task<AdminBadgeUpdateRequestDetail> GetAsync(

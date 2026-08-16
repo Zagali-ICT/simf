@@ -1,13 +1,16 @@
 // Tests: SIMF.Api.Tests/AdminHallsTests.cs
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Grids;
 using SIMF.Common.Options;
 using SIMF.Contracts.Admin;
 using SIMF.Domain.Programme;
+using SIMF.Infrastructure.Common.Grids;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Programme;
@@ -21,81 +24,37 @@ internal sealed class AdminHallService(
     TimeProvider timeProvider,
     ILogger<AdminHallService> logger) : IAdminHallService
 {
-    public async Task<GridPage<AdminHallSummary>> ListAllAsync(
-        GridQuery query, CancellationToken cancellationToken = default)
-    {
-        var (skip, top) = query.ClampPage(25, 200);
+    /// <summary>
+    /// The grid contract for /admin/halls: one entry per key HallsList.razor can
+    /// send, as both its filter and its sort. A key not declared here is a 400, not
+    /// a silently ignored request.
+    /// </summary>
+    private static readonly GridColumns<Hall> Columns = new GridColumns<Hall>()
+        .Add("code", hall => hall.Code, searchable: true)
+        .Add("name", hall => hall.Name, searchable: true)
+        .Add("nameArabic", hall => hall.NameArabic, searchable: true)
+        .Add("capacity", hall => hall.Capacity)
+        .Add("floor", hall => hall.Floor)
+        .Add("isActive", hall => hall.IsActive)
+        .DefaultOrder("code")
+        .PageSize(fallback: 25, max: 200);
 
-        var rows = dbContext.Halls.AsNoTracking().AsQueryable();
+    private static readonly Expression<Func<Hall, AdminHallSummary>> ToSummary =
+        hall => new AdminHallSummary(
+            hall.Id, hall.Code, hall.Name, hall.NameArabic,
+            hall.Capacity, hall.Floor, hall.IsActive, hall.CreatedAt,
+            (int)hall.Purpose,
+            // Appended for the grid Excel round-trip (positional
+            // order must match the AdminHallSummary record exactly).
+            hall.FacilityNotes,
+            hall.GeofenceCenterLat, hall.GeofenceCenterLon, hall.GeofenceRadiusMeters,
+            (int)hall.SeatSelectionMode,
+            hall.ArrivalGraceMinutes);
 
-        if (!string.IsNullOrWhiteSpace(query.Search))
-        {
-            var term = query.Search.Trim();
-            rows = rows.Where(hall =>
-                EF.Functions.Like(hall.Code, $"%{term}%")
-                || EF.Functions.Like(hall.Name, $"%{term}%")
-                || EF.Functions.Like(hall.NameArabic, $"%{term}%"));
-        }
-        if (query.Filters.TryGetValue("isActive", out var activeFilter)
-            && bool.TryParse(activeFilter, out var isActive))
-        {
-            rows = rows.Where(hall => hall.IsActive == isActive);
-        }
-
-        // CP grid per-column text filters. Unknown columns are ignored;
-        // isActive is handled above. Floor is nullable, so guard the null case.
-        foreach (var (column, raw) in query.Filters)
-        {
-            if (string.IsNullOrWhiteSpace(raw)) { continue; }
-            var v = raw.Trim();
-            switch (column.ToLowerInvariant())
-            {
-                case "code":
-                    rows = rows.Where(hall => hall.Code.Contains(v));
-                    break;
-                case "name":
-                    rows = rows.Where(hall => hall.Name.Contains(v));
-                    break;
-                case "namearabic":
-                    rows = rows.Where(hall => hall.NameArabic.Contains(v));
-                    break;
-                case "floor":
-                    rows = rows.Where(hall => hall.Floor != null && hall.Floor.Contains(v));
-                    break;
-            }
-        }
-
-        rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
-        {
-            ("code", true) => rows.OrderByDescending(hall => hall.Code),
-            ("code", false) => rows.OrderBy(hall => hall.Code),
-            ("name", true) => rows.OrderByDescending(hall => hall.Name),
-            ("name", false) => rows.OrderBy(hall => hall.Name),
-            ("namearabic", true) => rows.OrderByDescending(hall => hall.NameArabic),
-            ("namearabic", false) => rows.OrderBy(hall => hall.NameArabic),
-            ("capacity", true) => rows.OrderByDescending(hall => hall.Capacity),
-            ("capacity", false) => rows.OrderBy(hall => hall.Capacity),
-            _ => rows.OrderBy(hall => hall.Code),
-        };
-
-        var total = await rows.CountAsync(cancellationToken);
-        var page = await rows
-            .Skip(skip).Take(top)
-            .Select(hall => new AdminHallSummary(
-                hall.Id, hall.Code, hall.Name, hall.NameArabic,
-                hall.Capacity, hall.Floor, hall.IsActive, hall.CreatedAt,
-                (int)hall.Purpose,
-                // Appended for the grid Excel round-trip (positional
-                // order must match the AdminHallSummary record exactly).
-                hall.FacilityNotes,
-                hall.GeofenceCenterLat, hall.GeofenceCenterLon, hall.GeofenceRadiusMeters,
-                (int)hall.SeatSelectionMode,
-                hall.ArrivalGraceMinutes))
-            .ToListAsync(cancellationToken);
-
-        return GridPage<AdminHallSummary>.Of(page, total,
-            skip, top);
-    }
+    public Task<GridPage<AdminHallSummary>> ListAllAsync(
+        GridQuery query, CancellationToken cancellationToken = default) =>
+        dbContext.Halls.ToGridPageAsync(
+            query, Columns, hall => hall.Id, ToSummary, cancellationToken);
 
     public async Task<AdminHallDetail?> GetAsync(
         Guid id, CancellationToken cancellationToken = default) =>

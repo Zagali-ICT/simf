@@ -1,4 +1,5 @@
 ﻿// Tests: SIMF.Api.Tests/AdminArchiveTests.cs
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Archive.Abstractions;
@@ -8,9 +9,11 @@ using SIMF.Application.Editions.Abstractions;
 using SIMF.Application.Operations.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Grids;
 using SIMF.Contracts.Admin;
 using SIMF.Contracts.Archive;
 using SIMF.Domain.Archive;
+using SIMF.Infrastructure.Common.Grids;
 using SIMF.Infrastructure.Persistence;
 using SIMF.Application.Files.Abstractions;
 
@@ -34,87 +37,55 @@ internal sealed class AdminArchiveService(
     private const int MinYear = 2000;
     private const int MaxYear = 2100;
 
+    /// <summary>
+    /// The grid contract for /admin/archive: one entry per key ArchiveList.razor can
+    /// send, as both its filter and its sort. A key not declared here is a 400, not
+    /// a silently ignored request.
+    /// </summary>
+    private static readonly GridColumns<ArchiveEdition> Columns =
+        new GridColumns<ArchiveEdition>()
+            .Add("year", edition => edition.Year)
+            .Add("titleEn", edition => edition.TitleEn, searchable: true)
+            .Add("titleAr", edition => edition.TitleAr, searchable: true)
+            .Add("isActive", edition => edition.IsActive)
+            // Newest edition first, the order the archive page reads in.
+            .DefaultOrder("year", descending: true)
+            .PageSize(fallback: 50, max: 500);
+
+    private static readonly
+        Expression<Func<ArchiveEdition, AdminArchiveEditionSummary>> ToSummary =
+        edition => new AdminArchiveEditionSummary(
+            edition.Id, edition.Year, edition.TitleEn, edition.TitleAr,
+            edition.SummaryEn, edition.SummaryAr,
+            edition.Attendees, edition.Sessions, edition.Speakers,
+            // The cover is a StoredFile; HasCover is the flag the grid renders
+            // from, and the client builds the URL from the id.
+            null,
+            edition.IsActive,
+            edition.CreatedAt,
+            false,
+            edition.LocationEn, edition.LocationAr,
+            edition.DateLabelEn, edition.DateLabelAr);
+
     public async Task<GridPage<AdminArchiveEditionSummary>> ListAllAsync(
         GridQuery query, CancellationToken cancellationToken = default)
     {
-        var (skip, top) = query.ClampPage(50, 500);
-
-        var rows = appDbContext.ArchiveEditions.AsNoTracking().AsQueryable();
-
-        if (!string.IsNullOrWhiteSpace(query.Search))
-        {
-            var term = query.Search.Trim();
-            rows = rows.Where(edition =>
-                EF.Functions.Like(edition.TitleEn, $"%{term}%")
-                || EF.Functions.Like(edition.TitleAr, $"%{term}%"));
-        }
-
-        if (query.Filters.TryGetValue("isActive", out var activeFilter)
-            && bool.TryParse(activeFilter, out var isActive))
-        {
-            rows = rows.Where(edition => edition.IsActive == isActive);
-        }
-
-        // Per-column grid filters (SimfDataGrid). Each filterable
-        // column contributes a Contains() narrowing on its mapped property.
-        foreach (var filter in query.Filters)
-        {
-            var value = filter.Value;
-            if (string.IsNullOrWhiteSpace(value)) { continue; }
-
-            rows = filter.Key.ToLowerInvariant() switch
-            {
-                "titleen" => rows.Where(edition => edition.TitleEn.Contains(value)),
-                "titlear" => rows.Where(edition => edition.TitleAr.Contains(value)),
-                _ => rows,
-            };
-        }
-
-        rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
-        {
-            ("year", false) => rows.OrderBy(edition => edition.Year),
-            ("titleen", true) => rows.OrderByDescending(edition => edition.TitleEn),
-            ("titleen", false) => rows.OrderBy(edition => edition.TitleEn),
-            _ => rows.OrderByDescending(edition => edition.Year),
-        };
-
-        var total = await rows.CountAsync(cancellationToken);
-        var pageRows = await rows.Skip(skip).Take(top)
-            .Select(edition => new
-            {
-                edition.Id, edition.Year, edition.TitleEn, edition.TitleAr,
-                edition.SummaryEn, edition.SummaryAr,
-                edition.Attendees, edition.Sessions, edition.Speakers,
-                edition.IsActive,
-                edition.CreatedAt,
-                edition.LocationEn, edition.LocationAr,
-                edition.DateLabelEn, edition.DateLabelAr,
-            })
-            .ToListAsync(cancellationToken);
+        var page = await appDbContext.ArchiveEditions.ToGridPageAsync(
+            query, Columns, edition => edition.Id, ToSummary, cancellationToken);
 
         // The grid renders the cover thumbnail only when an active ArchiveCover
         // asset exists (StoredFile store via the /assets proxy, not the legacy
         // CoverImageRelativePath) — one batched query for the page, no N+1.
         var coverOwners = await assetService.WhichOwnersHaveActiveAssetAsync(
-            AssetCategory.ArchiveCover, pageRows.Select(edition => edition.Id).ToList(), cancellationToken);
+            AssetCategory.ArchiveCover,
+            page.Items.Select(edition => edition.Id).ToList(),
+            cancellationToken);
 
-        var page = pageRows
-            .Select(edition => new AdminArchiveEditionSummary(
-                edition.Id, edition.Year, edition.TitleEn, edition.TitleAr,
-                edition.SummaryEn, edition.SummaryAr,
-                edition.Attendees, edition.Sessions, edition.Speakers,
-                // The cover is a StoredFile; HasCoverAsset below is the flag the
-                // grid renders from, and the client builds the URL from the id.
-                null,
-                edition.IsActive,
-                edition.CreatedAt,
-                coverOwners.Contains(edition.Id),
-                edition.LocationEn, edition.LocationAr,
-                edition.DateLabelEn, edition.DateLabelAr))
-            .ToList();
-
-        return GridPage<AdminArchiveEditionSummary>.Of(page, total,
-            skip, top);
+        return GridPage<AdminArchiveEditionSummary>.Of(
+            page.Items
+                .Select(edition => edition with { HasCover = coverOwners.Contains(edition.Id) })
+                .ToList(),
+            page.Total, page.Skip, page.Top);
     }
 
     public async Task<AdminArchiveEditionDetail?> GetAsync(

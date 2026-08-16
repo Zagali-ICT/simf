@@ -13,6 +13,8 @@ using Xunit;
 
 namespace SIMF.Api.Tests;
 
+[Trait(TestAreas.TraitName, TestAreas.Ops)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Fast)]
 public sealed class GridColumnsTests
 {
     private static readonly GridColumns<Theme> Columns = new GridColumns<Theme>()

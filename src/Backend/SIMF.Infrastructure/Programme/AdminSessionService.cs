@@ -3,6 +3,7 @@
 // Tests: SIMF.Api.Tests/SessionLifecycleTests.cs
 // Tests: SIMF.Api.Tests/SessionRecordingTests.cs
 // Tests: SIMF.Api.Tests/SessionLiveNoticeTests.cs (informational live notice)
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -12,11 +13,13 @@ using SIMF.Application.Programme.Abstractions;
 using Microsoft.Extensions.Options;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Grids;
 using SIMF.Common.Options;
 using SIMF.Contracts.Admin;
 using SIMF.Contracts.Sessions;
 using SIMF.Domain.Programme;
 using SIMF.Domain.SeatReservations;
+using SIMF.Infrastructure.Common.Grids;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Programme;
@@ -52,70 +55,45 @@ internal sealed class AdminSessionService(
     private const string SeatPlanPageArabic =
         "صفحة مخططات مقاعد الجلسات (/admin/sessions/seat-plans)";
 
-    public async Task<GridPage<AdminSessionSummary>> ListAllAsync(
-        GridQuery query, CancellationToken cancellationToken = default)
-    {
-        var (skip, top) = query.ClampPage(25, 200);
-
-        var rows = dbContext.Sessions
-            .AsNoTracking()
-            .Include(session => session.Hall)
-            .AsQueryable();
-
-        if (!string.IsNullOrWhiteSpace(query.Search))
-        {
-            var term = query.Search.Trim();
-            rows = rows.Where(session =>
-                EF.Functions.Like(session.Code, $"%{term}%")
-                || EF.Functions.Like(session.Title, $"%{term}%")
-                || EF.Functions.Like(session.TitleArabic, $"%{term}%"));
-        }
-        if (query.Filters.TryGetValue("isActive", out var activeFilter)
-            && bool.TryParse(activeFilter, out var isActive))
-        {
-            rows = rows.Where(session => session.IsActive == isActive);
-        }
-        if (query.Filters.TryGetValue("hallId", out var hallIdRaw)
-            && Guid.TryParse(hallIdRaw, out var hallId))
-        {
-            rows = rows.Where(session => session.HallId == hallId);
-        }
+    /// <summary>
+    /// The grid contract for /admin/sessions: one entry per key SessionsList.razor
+    /// can send, plus the two the hall-schedule panel sends
+    /// (<c>hallId</c> + <c>isActive</c>). A key not declared here is a 400, not a
+    /// silently ignored request.
+    /// </summary>
+    private static readonly GridColumns<Session> Columns = new GridColumns<Session>()
+        .Add("code", session => session.Code, searchable: true)
+        .Add("title", session => session.Title, searchable: true)
+        .Add("titleArabic", session => session.TitleArabic, searchable: true)
+        .Add("start", session => session.Start)
+        .Add("end", session => session.End)
+        .Add("isActive", session => session.IsActive)
+        .Add("hallId", session => session.HallId)
         // "Sessions for this speaker" — the Speakers grid deep-links here with
         // ?speakerId={id}. The session↔speaker link is the M-to-M SessionSpeaker
-        // set, so match any session the speaker is linked to.
-        if (query.Filters.TryGetValue("speakerId", out var speakerIdRaw)
-            && Guid.TryParse(speakerIdRaw, out var speakerId))
+        // set, so this is a navigation subquery and not a column comparison.
+        .AddFilter("speakerId", raw =>
         {
-            rows = rows.Where(session => session.Speakers.Any(link => link.SpeakerId == speakerId));
-        }
+            if (!Guid.TryParse(raw, out var speakerId))
+            {
+                throw GridFilters.ValueInvalid("speakerId", raw, "a speaker id (GUID)");
+            }
+            return session => session.Speakers.Any(link => link.SpeakerId == speakerId);
+        })
+        .DefaultOrder("start")
+        .PageSize(fallback: 25, max: 200);
 
-        rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
-        {
-            ("code", true) => rows.OrderByDescending(session => session.Code),
-            ("code", false) => rows.OrderBy(session => session.Code),
-            ("title", true) => rows.OrderByDescending(session => session.Title),
-            ("title", false) => rows.OrderBy(session => session.Title),
-            // "start" / "end" match the grid column Keys in SessionsList.razor. They
-            // used to read an older persisted key, left behind when those columns
-            // were renamed, and no caller ever sent it. The effect was worse than
-            // a dead sort: BOTH date columns fell through to the catch-all, so Start
-            // could only ever sort ascending and clicking End sorted the grid by
-            // START. Add a column here and you must add its key here too.
-            ("start", true) => rows.OrderByDescending(session => session.Start),
-            ("start", false) => rows.OrderBy(session => session.Start),
-            ("end", true) => rows.OrderByDescending(session => session.End),
-            ("end", false) => rows.OrderBy(session => session.End),
-            _ => rows.OrderBy(session => session.Start),
-        };
-
-        var total = await rows.CountAsync(cancellationToken);
+    public Task<GridPage<AdminSessionSummary>> ListAllAsync(
+        GridQuery query, CancellationToken cancellationToken = default)
+    {
         // Hoisted to a local so it rides the query as a parameter (the option
         // monitor cannot be translated to SQL).
         var globalGraceMinutes = GlobalArrivalGraceMinutes;
-        var page = await rows
-            .Skip(skip)
-            .Take(top)
-            .Select(session => new AdminSessionSummary(
+
+        // Built per call rather than held in a static field: it closes over the
+        // grace value above and reads StoredFiles off this instance's context.
+        Expression<Func<Session, AdminSessionSummary>> toSummary =
+            session => new AdminSessionSummary(
                 session.Id,
                 session.Code,
                 session.Title,
@@ -161,11 +139,10 @@ internal sealed class AdminSessionService(
                 WalkInModeOptions.ResolveArrivalGraceMinutes(
                     session.ArrivalGraceMinutesOverride,
                     session.Hall!.ArrivalGraceMinutes,
-                    globalGraceMinutes)))
-            .ToListAsync(cancellationToken);
+                    globalGraceMinutes));
 
-        return GridPage<AdminSessionSummary>.Of(page, total,
-            skip, top);
+        return dbContext.Sessions.ToGridPageAsync(
+            query, Columns, session => session.Id, toSummary, cancellationToken);
     }
 
     public async Task<AdminSessionDetail?> GetAsync(

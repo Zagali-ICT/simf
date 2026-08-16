@@ -1,14 +1,17 @@
 // Tests: SIMF.Api.Tests/SystemSettingsTests.cs
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
 using SIMF.Application.Configuration.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Grids;
 using SIMF.Contracts.Admin;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.Configuration;
 using SIMF.Domain.Organization;
+using SIMF.Infrastructure.Common.Grids;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Configuration;
@@ -24,57 +27,26 @@ internal sealed class AdminSystemSettingService(
     TimeProvider timeProvider,
     ILogger<AdminSystemSettingService> logger) : IAdminSystemSettingService
 {
-    public async Task<GridPage<AdminSystemSettingSummary>> ListAsync(
-        GridQuery query, CancellationToken cancellationToken = default)
-    {
-        var (skip, top) = query.ClampPage(50, 200);
+    /// <summary>
+    /// The grid contract for /admin/system-settings: one entry per key
+    /// ConfigurationList can send. The page's Active column is display-only, so no
+    /// <c>isActive</c> key exists here either.
+    /// </summary>
+    private static readonly GridColumns<SystemSetting> Columns = new GridColumns<SystemSetting>()
+        .Add("key", setting => setting.Key, searchable: true)
+        .Add("value", setting => setting.Value, searchable: true)
+        .Add("description", setting => setting.Description)
+        .DefaultOrder("key")
+        .PageSize(fallback: 50, max: 200);
 
-        var rows = db.SystemSettings.AsNoTracking().AsQueryable();
+    private static readonly Expression<Func<SystemSetting, AdminSystemSettingSummary>> ToSummary =
+        setting => new AdminSystemSettingSummary(
+            setting.Id, setting.Key, setting.Value, setting.Description, setting.IsActive);
 
-        // CP grid per-column filters. Unknown columns are ignored.
-        foreach (var (column, raw) in query.Filters)
-        {
-            if (string.IsNullOrWhiteSpace(raw)) { continue; }
-            var v = raw.Trim();
-            switch (column.ToLowerInvariant())
-            {
-                case "key":
-                    rows = rows.Where(s => s.Key.Contains(v));
-                    break;
-                case "value":
-                    rows = rows.Where(s => s.Value.Contains(v));
-                    break;
-                case "description":
-                    rows = rows.Where(s => s.Description != null && s.Description.Contains(v));
-                    break;
-            }
-        }
-
-        if (!string.IsNullOrWhiteSpace(query.Search))
-        {
-            var term = query.Search.Trim();
-            rows = rows.Where(s =>
-                EF.Functions.Like(s.Key, $"%{term}%")
-                || EF.Functions.Like(s.Value, $"%{term}%"));
-        }
-
-        // CP grid sortable columns. Default: Key ascending.
-        rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
-        {
-            ("key", true) => rows.OrderByDescending(s => s.Key),
-            _ => rows.OrderBy(s => s.Key),
-        };
-
-        var total = await rows.CountAsync(cancellationToken);
-        var page = await rows
-            .Skip(skip).Take(top)
-            .Select(s => new AdminSystemSettingSummary(
-                s.Id, s.Key, s.Value, s.Description, s.IsActive))
-            .ToListAsync(cancellationToken);
-
-        return GridPage<AdminSystemSettingSummary>.Of(page, total,
-            skip, top);
-    }
+    public Task<GridPage<AdminSystemSettingSummary>> ListAsync(
+        GridQuery query, CancellationToken cancellationToken = default) =>
+        db.SystemSettings.ToGridPageAsync(
+            query, Columns, setting => setting.Id, ToSummary, cancellationToken);
 
     public async Task<AdminSystemSettingDetail?> GetAsync(
         Guid id, CancellationToken cancellationToken = default)

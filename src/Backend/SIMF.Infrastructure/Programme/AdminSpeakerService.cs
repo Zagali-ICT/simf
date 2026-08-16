@@ -5,9 +5,11 @@ using SIMF.Application.Auditing;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Grids;
 using SIMF.Application.Assets.Abstractions;
 using SIMF.Contracts.Admin;
 using SIMF.Domain.Programme;
+using SIMF.Infrastructure.Common.Grids;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Programme;
@@ -30,97 +32,71 @@ internal sealed class AdminSpeakerService(
     TimeProvider timeProvider,
     ILogger<AdminSpeakerService> logger) : IAdminSpeakerService
 {
+    /// <summary>
+    /// The grid contract for /admin/speakers: one entry per key SpeakersList.razor
+    /// can send, as both its filter and its sort. A key not declared here is a 400,
+    /// not a silently ignored request. <c>nameArabic</c> is declared even though the
+    /// page shows no column for it, because it is one of the three columns the free
+    /// -text search covers and the search set is drawn from these declarations.
+    /// </summary>
+    private static readonly GridColumns<Speaker> Columns = new GridColumns<Speaker>()
+        .Add("code", speaker => speaker.Code, searchable: true)
+        .Add("name", speaker => speaker.Name, searchable: true)
+        .Add("nameArabic", speaker => speaker.NameArabic, searchable: true)
+        .Add("displayOrder", speaker => speaker.DisplayOrder)
+        .Add("isActive", speaker => speaker.IsActive)
+        .DefaultOrder("displayOrder")
+        .DefaultOrder("name")
+        .PageSize(fallback: 25, max: 200);
+
     public async Task<GridPage<AdminSpeakerSummary>> ListAllAsync(
         GridQuery query, CancellationToken cancellationToken = default)
     {
-        var (skip, top) = query.ClampPage(25, 200);
-
-        var rows = dbContext.Speakers.AsNoTracking().AsQueryable();
-
-        if (!string.IsNullOrWhiteSpace(query.Search))
-        {
-            var term = query.Search.Trim();
-            rows = rows.Where(speaker =>
-                EF.Functions.Like(speaker.Code, $"%{term}%")
-                || EF.Functions.Like(speaker.Name, $"%{term}%")
-                || EF.Functions.Like(speaker.NameArabic, $"%{term}%"));
-        }
-        if (query.Filters.TryGetValue("isActive", out var activeFilter)
-            && bool.TryParse(activeFilter, out var isActive))
-        {
-            rows = rows.Where(speaker => speaker.IsActive == isActive);
-        }
-
-        rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
-        {
-            ("code", true) => rows.OrderByDescending(speaker => speaker.Code),
-            ("code", false) => rows.OrderBy(speaker => speaker.Code),
-            ("name", true) => rows.OrderByDescending(speaker => speaker.Name),
-            ("name", false) => rows.OrderBy(speaker => speaker.Name),
-            ("displayorder", true) => rows.OrderByDescending(speaker => speaker.DisplayOrder),
-            _ => rows.OrderBy(speaker => speaker.DisplayOrder)
-                     .ThenBy(speaker => speaker.Name),
-        };
-
-        var total = await rows.CountAsync(cancellationToken);
-        var pageRaw = await rows
-            .Skip(skip)
-            .Take(top)
-            .Select(speaker => new
+        // The country columns come off the navigation rather than a second
+        // id-keyed round trip. A left join yields the same nulls the dictionary
+        // lookup did, both for an unset CountryId and for an id whose row is gone.
+        var page = await dbContext.Speakers.ToGridPageAsync(
+            query, Columns, speaker => speaker.Id,
+            speaker => new
             {
                 speaker.Id,
                 speaker.Code,
                 speaker.Name,
                 speaker.NameArabic,
-                speaker.Rank, speaker.RankArabic,
+                speaker.Rank,
+                speaker.RankArabic,
                 speaker.CountryId,
+                CountryNameEn = speaker.Country == null ? null : speaker.Country.Name,
+                CountryNameAr = speaker.Country == null ? null : speaker.Country.NameArabic,
+                CountryCode = speaker.Country == null ? null : speaker.Country.Code,
                 speaker.DisplayOrder,
                 speaker.IsActive,
                 speaker.CreatedAt,
-            })
-            .ToListAsync(cancellationToken);
-
-        var countryIds = pageRaw
-            .Where(row => row.CountryId.HasValue)
-            .Select(row => row.CountryId!.Value)
-            .Distinct()
-            .ToList();
-        var countriesById = await dbContext.Countries
-            .AsNoTracking()
-            .Where(country => countryIds.Contains(country.Id))
-            .Select(country => new { country.Id, country.Name, country.NameArabic, country.Code })
-            .ToDictionaryAsync(country => country.Id, cancellationToken);
+            },
+            cancellationToken);
 
         // The grid renders the real photo thumbnail only when an active
         // speaker-photo asset exists (the /assets/SpeakerPhoto/{id}/image proxy
         // resolves from the StoredFile store, not the legacy PhotoRelativePath),
         // otherwise it falls back to an initials tile — so a missing photo never
         // shows a broken image. One batched query for the whole page, no N+1.
-        var speakerIds = pageRaw.Select(row => row.Id).ToList();
+        // It stays behind IAssetService: which FileService backs a category is that
+        // service's mapping to own, not something to restate in a projection here.
         var photoOwners = await assetService.WhichOwnersHaveActiveAssetAsync(
-            AssetCategory.SpeakerPhoto, speakerIds, cancellationToken);
+            AssetCategory.SpeakerPhoto,
+            page.Items.Select(row => row.Id).ToList(),
+            cancellationToken);
 
-        var page = pageRaw
-            .Select(row =>
-            {
-                string? en = null, ar = null, code = null;
-                if (row.CountryId.HasValue
-                    && countriesById.TryGetValue(row.CountryId.Value, out var country))
-                {
-                    en = country.Name;
-                    ar = country.NameArabic;
-                    code = country.Code;
-                }
-                return new AdminSpeakerSummary(
-                    row.Id, row.Code, row.Name, row.NameArabic, row.Rank, row.RankArabic,
-                    row.CountryId, en, ar, code,
-                    row.DisplayOrder, row.IsActive, photoOwners.Contains(row.Id),
-                    row.CreatedAt);
-            })
+        var summaries = page.Items
+            .Select(row => new AdminSpeakerSummary(
+                row.Id, row.Code, row.Name, row.NameArabic, row.Rank, row.RankArabic,
+                row.CountryId, row.CountryNameEn, row.CountryNameAr, row.CountryCode,
+                row.DisplayOrder, row.IsActive, photoOwners.Contains(row.Id),
+                row.CreatedAt))
             .ToList();
 
-        return GridPage<AdminSpeakerSummary>.Of(page, total,
-            skip, top);
+        return GridPage<AdminSpeakerSummary>.Of(
+            summaries, page.Total, page.Skip, page.Top);
     }
 
     public async Task<AdminSpeakerDetail?> GetAsync(

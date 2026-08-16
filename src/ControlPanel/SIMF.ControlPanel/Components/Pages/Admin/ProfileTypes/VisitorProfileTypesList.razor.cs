@@ -11,15 +11,14 @@ public partial class VisitorProfileTypesList
     [Inject] private IStringLocalizer<Strings> L { get; set; } = default!;
     [Inject] private IJSRuntime JS { get; set; } = default!;
 
-    // Every non-admin profile type lives under UserType.Visitor;
-    // the audience-vs-partner split rides on IsVisitor. This page is
-    // the audience queue.
+    // Every non-admin profile type lives under UserType.Visitor, so there is no
+    // user-type column left to filter on; the audience-vs-partner split rides on
+    // IsVisitor alone. This page is the audience queue.
     private GridQuery _query = new()
     {
         Top = 20,
         Filters = new Dictionary<string, string>
         {
-            ["userType"] = "Visitor",
             ["isVisitor"] = "true",
         },
     };
@@ -37,9 +36,8 @@ public partial class VisitorProfileTypesList
 
     private async Task OnQueryChangedAsync(GridQuery next)
     {
-        // Always re-apply both filters — the grid drops filter keys on
-        // sort/page change, but both pins are structural to this page.
-        next.Filters["userType"] = "Visitor";
+        // Always re-apply the filter — the grid drops filter keys on
+        // sort/page change, but this pin is structural to the page.
         next.Filters["isVisitor"] = "true";
         _query = next;
         await LoadAsync();

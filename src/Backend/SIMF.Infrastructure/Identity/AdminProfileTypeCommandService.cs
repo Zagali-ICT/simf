@@ -1,14 +1,17 @@
 // Tests: SIMF.Api.Tests/AdminProfileTypeTests.cs
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Grids;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Profiles;
+using SIMF.Infrastructure.Common.Grids;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Identity;
@@ -25,70 +28,57 @@ internal sealed class AdminProfileTypeCommandService(
     TimeProvider timeProvider,
     ILogger<AdminProfileTypeCommandService> logger) : IAdminProfileTypeCommandService
 {
-    public async Task<GridPage<AdminProfileTypeSummary>> ListAllAsync(
-        GridQuery query, CancellationToken cancellationToken = default)
-    {
-        var (skip, top) = query.ClampPage(25, 200);
-
-        var rows = dbContext.ProfileTypes.AsNoTracking().AsQueryable();
-
-        if (!string.IsNullOrWhiteSpace(query.Search))
+    /// <summary>
+    /// The grid contract for /admin/profile-types: one entry per key the Visitor
+    /// and Other profile-type pages can send. <c>isVisitor</c> is the audience /
+    /// partner split those two pages pin; <c>createdAt</c> was previously sortable
+    /// ascending only, so a descending click silently returned alphabetical order.
+    /// </summary>
+    private static readonly GridColumns<UserProfileType> Columns = new GridColumns<UserProfileType>()
+        .Add("name", profileType => profileType.Name, searchable: true)
+        .Add("nameArabic", profileType => profileType.NameArabic, searchable: true)
+        .Add("isActive", profileType => profileType.IsActive)
+        .Add("isVisitor", profileType => profileType.IsForVisitor)
+        .Add("createdAt", profileType => profileType.CreatedAt)
+        // The scope key stays in the allow-list even though the two CP pages no
+        // longer send it. Every non-admin profile type lives under Visitor, so the
+        // old service could ignore the key entirely and still look right; dropping
+        // it now would turn a request that has always worked into a 400 for
+        // anything still sending it. Honouring it makes the answer correct rather
+        // than accidental.
+        .AddFilter("userType", raw =>
         {
-            var term = query.Search.Trim();
-            rows = rows.Where(profileType =>
-                EF.Functions.Like(profileType.Name, $"%{term}%")
-                || EF.Functions.Like(profileType.NameArabic, $"%{term}%"));
-        }
+            if (!Enum.TryParse<UserType>(raw, ignoreCase: true, out var scope))
+            {
+                throw GridFilters.ValueInvalid(
+                    "userType", raw, $"one of: {string.Join(", ", Enum.GetNames<UserType>())}");
+            }
 
-        if (query.Filters.TryGetValue("name", out var nameFilter)
-            && !string.IsNullOrWhiteSpace(nameFilter))
-        {
-            rows = rows.Where(profileType =>
-                EF.Functions.Like(profileType.Name, $"%{nameFilter}%"));
-        }
-        if (query.Filters.TryGetValue("isActive", out var activeFilter)
-            && bool.TryParse(activeFilter, out var isActive))
-        {
-            rows = rows.Where(profileType => profileType.IsActive == isActive);
-        }
-        // The CP Other-profile-types page filters this server-side.
-        if (query.Filters.TryGetValue("isVisitor", out var isVisitorFilter)
-            && bool.TryParse(isVisitorFilter, out var isVisitorValue))
-        {
-            rows = rows.Where(profileType => profileType.IsForVisitor == isVisitorValue);
-        }
+            return scope == UserType.Visitor
+                ? profileType => true
+                : profileType => false;
+        })
+        .DefaultOrder("name")
+        .PageSize(fallback: 25, max: 200);
 
-        rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
-        {
-            ("name", true) => rows.OrderByDescending(profileType => profileType.Name),
-            ("name", false) => rows.OrderBy(profileType => profileType.Name),
-            ("namearabic", true) => rows.OrderByDescending(profileType => profileType.NameArabic),
-            ("namearabic", false) => rows.OrderBy(profileType => profileType.NameArabic),
-            ("createdat", false) => rows.OrderBy(profileType => profileType.CreatedAt),
-            _ => rows.OrderBy(profileType => profileType.Name),
-        };
+    private static readonly Expression<Func<UserProfileType, AdminProfileTypeSummary>> ToSummaryRow =
+        profileType => new AdminProfileTypeSummary(
+            profileType.Id,
+            profileType.Name,
+            profileType.NameArabic,
+            profileType.PageColor,
+            nameof(UserType.Visitor),
+            profileType.MobileAppRole.ToString(),
+            profileType.IsActive,
+            profileType.IsForVisitor,
+            profileType.IsAppRegisterable,
+            profileType.ShowInPartnerDirectory,
+            profileType.IsVipTier);
 
-        var total = await rows.CountAsync(cancellationToken);
-        var page = await rows
-            .Skip(skip)
-            .Take(top)
-            .Select(profileType => new AdminProfileTypeSummary(
-                profileType.Id,
-                profileType.Name,
-                profileType.NameArabic,
-                profileType.PageColor,
-                nameof(UserType.Visitor),
-                profileType.MobileAppRole.ToString(),
-                profileType.IsActive,
-                profileType.IsForVisitor,
-                profileType.IsAppRegisterable,
-                profileType.ShowInPartnerDirectory,
-                profileType.IsVipTier))
-            .ToListAsync(cancellationToken);
-
-        return GridPage<AdminProfileTypeSummary>.Of(page, total,
-            skip, top);
-    }
+    public Task<GridPage<AdminProfileTypeSummary>> ListAllAsync(
+        GridQuery query, CancellationToken cancellationToken = default) =>
+        dbContext.ProfileTypes.ToGridPageAsync(
+            query, Columns, profileType => profileType.Id, ToSummaryRow, cancellationToken);
 
     public async Task<AdminProfileTypeSummary?> GetAsync(
         Guid id, CancellationToken cancellationToken = default)
