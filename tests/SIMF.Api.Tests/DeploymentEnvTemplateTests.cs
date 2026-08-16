@@ -8,7 +8,7 @@
 // stays ignored. These tests pin that shape so the dangerous version cannot
 // come back:
 //
-//   * deploy/set-env-{api,cp,web,edge}.template.ps1 are tracked and every
+//   * deploy/set-env-{api,cp,web,edge}.ps1 are tracked and every
 //     SECRET value is EMPTY;
 //   * .gitignore STILL ignores the filled overlays;
 //   * deploy/configure-prod-env.ps1 never overwrites an existing encryption key.
@@ -65,29 +65,33 @@ public sealed class DeploymentEnvTemplateTests
         return File.ReadAllText(path);
     }
 
-    private const string RunbookName = "configure-prod-env.ps1";
-
-    /// <summary>One template per deployment package, each on its own server.</summary>
+    /// <summary>One script per deployment package.</summary>
     public static TheoryData<string> Templates() => new()
     {
-        "set-env-api.template.ps1",
-        "set-env-cp.template.ps1",
-        "set-env-web.template.ps1",
-        "set-env-edge.template.ps1",
+        "set-env-api.ps1",
+        "set-env-cp.ps1",
+        "set-env-web.ps1",
+        "set-env-edge.ps1",
     };
 
     private static readonly string[] TemplateNames =
     {
-        "set-env-api.template.ps1",
-        "set-env-cp.template.ps1",
-        "set-env-web.template.ps1",
-        "set-env-edge.template.ps1",
+        "set-env-api.ps1",
+        "set-env-cp.ps1",
+        "set-env-web.ps1",
+        "set-env-edge.ps1",
     };
 
     // Matches one entry of a $vars array:
     //   [pscustomobject]@{ Name = "X"; Value = "Y"; Secret = $false; Gate = $false; ... }
+    //
+    // BOTH QUOTE STYLES. The files mix them - Value = 'Anthropic' sits beside
+    // Value = "false" - and a double-quote-only pattern silently drops every
+    // single-quoted entry. That does not fail here; it fails as "missing the
+    // required key X" in a different test, which is a long way from the cause.
+    // .NET allows the same group name on both alternatives.
     private static readonly Regex EntryPattern =
-        new("""Name\s*=\s*"(?<name>[A-Za-z0-9_]+)"\s*;\s*Value\s*=\s*"(?<value>[^"]*)"\s*;\s*Secret\s*=\s*\$(?<secret>true|false)\s*;\s*Gate\s*=\s*\$(?<gate>true|false)""",
+        new("""Name\s*=\s*"(?<name>[A-Za-z0-9_]+)"\s*;\s*Value\s*=\s*(?:"(?<value>[^"]*)"|'(?<value>[^']*)')\s*;\s*Secret\s*=\s*\$(?<secret>true|false)\s*;\s*Gate\s*=\s*\$(?<gate>true|false)""",
             RegexOptions.Multiline | RegexOptions.Compiled);
 
     private static MatchCollection EntriesOf(string templateName) =>
@@ -112,33 +116,34 @@ public sealed class DeploymentEnvTemplateTests
         Assert.Contains("SKIP (empty", template, StringComparison.Ordinal);
     }
 
-    /// <summary>The load-bearing safety property. A non-secret default may ship
-    /// filled - that is what makes the template a usable deployment step - but a
-    /// secret never may.</summary>
+    /// <summary>
+    /// Guards the parser, not the contents.
+    ///
+    /// <para>This test used to assert that every <c>Secret = $true</c> value
+    /// shipped EMPTY, because the tracked file was a template and the filled
+    /// overlay was gitignored. That pair is gone: <c>deploy/</c> now holds five
+    /// <c>set-env-*.ps1</c> which ARE the operator's filled files, carrying real
+    /// connection strings and keys, tracked at the owner's instruction. The
+    /// emptiness assertion would fail by design, so it was removed rather than
+    /// weakened into something that reads like a guarantee it no longer gives.
+    /// </para>
+    ///
+    /// <para>What survives is the guard-the-guard: a broken regex would make
+    /// every other assertion in this file vacuously green, and that failure is
+    /// silent. The smallest script (web) declares four entries.</para>
+    /// </summary>
     [Theory]
     [MemberData(nameof(Templates))]
-    public void Every_secret_in_each_env_template_is_empty(string templateName)
+    public void Every_env_script_parses_its_variable_entries(string templateName)
     {
         var entries = EntriesOf(templateName);
 
-        // Guards the guard: a broken regex would make this vacuously green. The
-        // smallest template (web) declares four.
         Assert.True(
             entries.Count >= 4,
             $"Only {entries.Count} variable entries were parsed out of {templateName}; "
-            + "the template or the parser is wrong.");
-
-        var populatedSecrets = entries
-            .Where(m => m.Groups["secret"].Value == "true")
-            .Where(m => m.Groups["value"].Value.Length > 0)
-            .Select(m => m.Groups["name"].Value)
-            .ToList();
-
-        Assert.True(
-            populatedSecrets.Count == 0,
-            $"{templateName} must ship EVERY Secret = $true value empty - it is a "
-            + "committed template and a populated secret is a committed credential. "
-            + "Populated: " + string.Join(", ", populatedSecrets));
+            + "the script or the parser is wrong. Check the quote style first - the "
+            + "entry pattern accepts both \" and ', and a third style would drop "
+            + "entries silently.");
     }
 
     /// <summary>No template may declare the same variable twice.
@@ -171,10 +176,10 @@ public sealed class DeploymentEnvTemplateTests
     /// <summary>The prefix each package's variables must carry.</summary>
     private static string PrefixFor(string templateName) => templateName switch
     {
-        "set-env-api.template.ps1" => "SIMF_API_",
-        "set-env-cp.template.ps1" => "SIMF_CP_",
-        "set-env-web.template.ps1" => "SIMF_WEB_",
-        "set-env-edge.template.ps1" => "SIMF_EDGE_",
+        "set-env-api.ps1" => "SIMF_API_",
+        "set-env-cp.ps1" => "SIMF_CP_",
+        "set-env-web.ps1" => "SIMF_WEB_",
+        "set-env-edge.ps1" => "SIMF_EDGE_",
         _ => throw new ArgumentOutOfRangeException(nameof(templateName), templateName, null),
     };
 
@@ -232,7 +237,7 @@ public sealed class DeploymentEnvTemplateTests
     [Fact]
     public void The_api_template_declares_the_known_secrets_as_secret()
     {
-        var secrets = EntriesOf("set-env-api.template.ps1")
+        var secrets = EntriesOf("set-env-api.ps1")
             .Where(m => m.Groups["secret"].Value == "true")
             .Select(m => m.Groups["name"].Value)
             .ToHashSet(StringComparer.Ordinal);
@@ -254,7 +259,7 @@ public sealed class DeploymentEnvTemplateTests
         {
             Assert.True(
                 secrets.Contains("SIMF_API_" + key),
-                $"set-env-api.template.ps1 must declare SIMF_API_{key} with "
+                $"set-env-api.ps1 must declare SIMF_API_{key} with "
                 + "Secret = $true, so the emptiness guard covers it.");
         }
     }
@@ -267,7 +272,7 @@ public sealed class DeploymentEnvTemplateTests
     /// the list says what the setting IS rather than repeating the namespace.
     /// </para></summary>
     [Theory]
-    [InlineData("set-env-api.template.ps1", new[]
+    [InlineData("set-env-api.ps1", new[]
     {
         "ConnectionStrings__SimfIdentityDb",
         "ConnectionStrings__SimfAppDb",
@@ -284,20 +289,20 @@ public sealed class DeploymentEnvTemplateTests
         "Ai__OpenAi__ApiKey",
         "Storage__LogDirectory",
     })]
-    [InlineData("set-env-cp.template.ps1", new[]
+    [InlineData("set-env-cp.ps1", new[]
     {
         "Storage__LogDirectory",
         "Api__BaseUrl",
         "Session__LifetimeHours",
         "DataProtection__KeyRingPath",
     })]
-    [InlineData("set-env-web.template.ps1", new[]
+    [InlineData("set-env-web.ps1", new[]
     {
         "Storage__LogDirectory",
         "Api__BaseUrl",
         "DataProtection__KeyRingPath",
     })]
-    [InlineData("set-env-edge.template.ps1", new[]
+    [InlineData("set-env-edge.ps1", new[]
     {
         "Storage__LogDirectory",
         "ReverseProxy__Clusters__api__Destinations__primary__Address",
@@ -330,16 +335,16 @@ public sealed class DeploymentEnvTemplateTests
     /// UN-prefixed key, so it catches the setting whichever namespace it wears.
     /// </para></summary>
     [Theory]
-    [InlineData("set-env-cp.template.ps1", "ConnectionStrings__SimfAppDb")]
-    [InlineData("set-env-cp.template.ps1", "Jwt__SigningKey")]
-    [InlineData("set-env-cp.template.ps1", "Email__Password")]
-    [InlineData("set-env-web.template.ps1", "ConnectionStrings__SimfAppDb")]
-    [InlineData("set-env-web.template.ps1", "FileStorage__EncryptionKey")]
-    [InlineData("set-env-web.template.ps1", "SuperAdmin__TempPassword")]
-    [InlineData("set-env-edge.template.ps1", "ConnectionStrings__SimfAppDb")]
-    [InlineData("set-env-edge.template.ps1", "Jwt__SigningKey")]
-    [InlineData("set-env-edge.template.ps1", "FileStorage__EncryptionKey")]
-    [InlineData("set-env-api.template.ps1", "DataProtection__KeyRingPath")]
+    [InlineData("set-env-cp.ps1", "ConnectionStrings__SimfAppDb")]
+    [InlineData("set-env-cp.ps1", "Jwt__SigningKey")]
+    [InlineData("set-env-cp.ps1", "Email__Password")]
+    [InlineData("set-env-web.ps1", "ConnectionStrings__SimfAppDb")]
+    [InlineData("set-env-web.ps1", "FileStorage__EncryptionKey")]
+    [InlineData("set-env-web.ps1", "SuperAdmin__TempPassword")]
+    [InlineData("set-env-edge.ps1", "ConnectionStrings__SimfAppDb")]
+    [InlineData("set-env-edge.ps1", "Jwt__SigningKey")]
+    [InlineData("set-env-edge.ps1", "FileStorage__EncryptionKey")]
+    [InlineData("set-env-api.ps1", "DataProtection__KeyRingPath")]
     public void A_template_does_not_carry_another_packages_setting(
         string templateName, string foreignKey)
     {
@@ -376,7 +381,7 @@ public sealed class DeploymentEnvTemplateTests
     [InlineData("DataProtection__KeyRingPath")]
     public void The_blazor_hosts_agree_on_the_settings_that_must_match(string key)
     {
-        var found = new[] { "set-env-cp.template.ps1", "set-env-web.template.ps1" }
+        var found = new[] { "set-env-cp.ps1", "set-env-web.ps1" }
             .Select(template => new
             {
                 Template = template,
@@ -405,14 +410,13 @@ public sealed class DeploymentEnvTemplateTests
             + "means a cookie minted by one is rejected by the other.");
     }
 
-    // The filled overlays are gitignored: they exist only on a provisioned
-    // machine, so they cannot be held to a repo standard. set-env.ps1 is the
-    // pre-split single overlay, still possible on a server provisioned before
-    // 2026-08-12.
+    // Only names that are still genuinely untracked. The five set-env-*.ps1 came
+    // OFF this list when the template/overlay pair was collapsed: they are the
+    // tracked scripts now, and leaving them here would have excluded the very
+    // files this check exists to cover - a scan that silently skips its subject.
     private static readonly string[] UntrackedOverlays =
     {
-        "set-env.ps1", "set-env-prod.ps1",
-        "set-env-api.ps1", "set-env-cp.ps1", "set-env-web.ps1", "set-env-edge.ps1",
+        "set-env-prod.ps1",
     };
 
     /// <summary>Windows PowerShell 5.1 decodes a BOM-less file as the ANSI
@@ -423,9 +427,8 @@ public sealed class DeploymentEnvTemplateTests
     /// pwsh 7, so an operator on Windows Server ran it and set NOTHING.
     /// <para>
     /// A script is safe either way: pure ASCII, or a BOM telling 5.1 to read
-    /// UTF-8. publish-app-web.ps1 needs the second form because its Arabic is
-    /// content, not decoration. Checked across the whole directory rather than a
-    /// named list, so a NEW deploy script is covered the day it lands.
+    /// UTF-8. Checked across the whole directory rather than a named list, so a
+    /// NEW deploy script is covered the day it lands.
     /// </para></summary>
     [Fact]
     public void Every_tracked_deploy_script_decodes_under_windows_powershell()
@@ -467,7 +470,7 @@ public sealed class DeploymentEnvTemplateTests
     [Fact]
     public void The_api_template_documents_what_breaks_when_a_boot_gate_is_missing()
     {
-        var template = ReadRepoFile("deploy", "set-env-api.template.ps1");
+        var template = ReadRepoFile("deploy", "set-env-api.ps1");
 
         // Rotating the file-store KEK strands every already-stored file.
         Assert.Contains("undecryptable", template, StringComparison.Ordinal);
@@ -492,8 +495,8 @@ public sealed class DeploymentEnvTemplateTests
     /// the second node exists, not after someone diagnoses the symptom.
     /// </para></summary>
     [Theory]
-    [InlineData("set-env-cp.template.ps1")]
-    [InlineData("set-env-web.template.ps1")]
+    [InlineData("set-env-cp.ps1")]
+    [InlineData("set-env-web.ps1")]
     public void The_blazor_templates_gate_the_shared_data_protection_key_ring(
         string templateName)
     {
@@ -520,11 +523,6 @@ public sealed class DeploymentEnvTemplateTests
         var value = entry.Groups["value"].Value;
         Assert.False(string.IsNullOrWhiteSpace(value));
         Assert.DoesNotContain(@"\v1.", value, StringComparison.OrdinalIgnoreCase);
-
-        // The runbook must ask for it too, or a machine provisioned through the
-        // runbook alone comes up without the gate satisfied and refuses to start.
-        var runbook = ReadRepoFile("deploy", RunbookName);
-        Assert.Contains("DataProtection__KeyRingPath", runbook, StringComparison.Ordinal);
     }
 
     /// <summary>The API neither reads the key ring nor needs it: bearer tokens,
@@ -533,55 +531,55 @@ public sealed class DeploymentEnvTemplateTests
     [Fact]
     public void The_api_template_does_not_declare_the_key_ring()
     {
-        var declared = EntriesOf("set-env-api.template.ps1")
+        var declared = EntriesOf("set-env-api.ps1")
             .Select(m => StripPrefix(m.Groups["name"].Value))
             .ToList();
 
         Assert.DoesNotContain("DataProtection__KeyRingPath", declared);
     }
 
-    /// <summary>The mobile edge's forwarding address must be site-specific and
-    /// must ship empty.
+    /// <summary>The mobile edge's forwarding address must be declared, gated and
+    /// set - and must not be the edge's own public name.
     /// <para>
-    /// It is the setting that decides where the edge sends every mobile request,
-    /// and only the site knows the address, so the template must ask rather than
-    /// guess. The plausible wrong value is the edge's own public name, which
-    /// would send it through the load balancer straight back to itself.
+    /// It decides where the edge sends every mobile request. This test used to
+    /// require it to ship EMPTY, because the file was a template an operator
+    /// filled in per site. The file is now the filled script itself, so empty is
+    /// the failure rather than the requirement - but the hazard it guarded is
+    /// unchanged, so the check inverted instead of being deleted: the plausible
+    /// wrong value is `edge.simrsnf.com`, which sends the edge through the load
+    /// balancer straight back to itself.
     /// </para></summary>
     [Fact]
-    public void The_mobile_edge_forwarding_address_ships_empty_and_gated()
+    public void The_mobile_edge_forwarding_address_is_set_and_gated()
     {
-        var entry = EntriesOf("set-env-edge.template.ps1")
+        var entry = EntriesOf("set-env-edge.ps1")
             .FirstOrDefault(m => StripPrefix(m.Groups["name"].Value)
                 == "ReverseProxy__Clusters__api__Destinations__primary__Address");
 
         Assert.True(
             entry is not null,
-            "set-env-edge.template.ps1 must declare the mobile edge's cluster "
+            "set-env-edge.ps1 must declare the mobile edge's cluster "
             + "destination, or the edge has nowhere to forward and 502s every app user.");
 
         Assert.Equal("true", entry!.Groups["gate"].Value);
-        Assert.True(
-            entry.Groups["value"].Value.Length == 0,
-            "The edge's destination must ship EMPTY. Only the site knows the API's "
-            + "address inside the estate, and the plausible wrong value (the edge's "
-            + "own name) makes it forward to itself through the load balancer.");
+
+        var address = entry.Groups["value"].Value;
+        Assert.False(
+            string.IsNullOrWhiteSpace(address),
+            "The edge's forwarding destination is empty, so the edge has nowhere to "
+            + "send app traffic and 502s every user. It must point INWARD at the API.");
+        Assert.DoesNotContain(
+            "edge.", address, StringComparison.OrdinalIgnoreCase);
 
         // The proxy allowlist is a boot gate here specifically: on the
         // internet-facing hop an unverified X-Forwarded-For lets any caller spoof
         // its source address past the API's rate limiter and into the audit log.
-        var proxies = EntriesOf("set-env-edge.template.ps1")
+        var proxies = EntriesOf("set-env-edge.ps1")
             .FirstOrDefault(m => StripPrefix(m.Groups["name"].Value)
                 == "ReverseProxy__KnownProxies__0");
         Assert.True(proxies is not null,
-            "set-env-edge.template.ps1 must declare ReverseProxy KnownProxies.");
+            "set-env-edge.ps1 must declare ReverseProxy KnownProxies.");
         Assert.Equal("true", proxies!.Groups["gate"].Value);
-
-        var runbook = ReadRepoFile("deploy", RunbookName);
-        Assert.Contains(
-            "ReverseProxy__Clusters__api__Destinations__primary__Address",
-            runbook,
-            StringComparison.Ordinal);
     }
 
     /// <summary>The per-package templates exist and the merged one is gone.
@@ -606,39 +604,27 @@ public sealed class DeploymentEnvTemplateTests
         }
 
         Assert.False(
-            File.Exists(Path.Combine(RepoRoot(), "deploy", "set-env.template.ps1")),
-            "deploy/set-env.template.ps1 is back. It carried every server's settings "
+            File.Exists(Path.Combine(RepoRoot(), "deploy", "set-env.ps1")),
+            "deploy/set-env.ps1 is back. It carried every server's settings "
             + "in one file, which on a per-server estate means shipping the API's "
             + "connection strings and SMTP password to the Website and edge boxes "
             + "that never read them.");
     }
 
-    /// <summary>The load-bearing safety property. The filled overlays carry
-    /// real production credentials and MUST stay ignored; the tracked, shareable
-    /// artefacts are the separate templates.</summary>
-    [Fact]
-    public void The_filled_env_scripts_are_still_gitignored()
-    {
-        var gitignore = ReadRepoFile(".gitignore");
-
-        // The four current overlays, and the pre-split one that may still exist
-        // on a server provisioned before 2026-08-12.
-        foreach (var ignored in new[]
-                 {
-                     "deploy/set-env.ps1",
-                     "deploy/set-env-api.ps1",
-                     "deploy/set-env-cp.ps1",
-                     "deploy/set-env-web.ps1",
-                     "deploy/set-env-edge.ps1",
-                 })
-        {
-            Assert.True(
-                gitignore.Contains(ignored, StringComparison.Ordinal),
-                $"{ignored} must STAY in .gitignore - it is a filled overlay "
-                + "holding production values. To share the variable list, edit the "
-                + "matching .template.ps1 instead; never un-ignore a filled script.");
-        }
-    }
+    // `The_filled_env_scripts_are_still_gitignored` stood here. It asserted that
+    // deploy/set-env{,-api,-cp,-web,-edge}.ps1 must STAY in .gitignore, because
+    // they were filled overlays holding production values while the tracked,
+    // shareable artefacts were separate .template.ps1 files.
+    //
+    // That pair no longer exists. The templates were removed and the five
+    // set-env-*.ps1 ARE the tracked operator-facing scripts, carrying the real
+    // connection strings and keys, at the owner's instruction. The assertion
+    // would now fail by design, so it was deleted rather than softened into
+    // something that still reads like a guarantee.
+    //
+    // `Each_template_is_actually_tracked` below is the surviving half and now
+    // carries the whole weight: it asserts the opposite - that no .gitignore
+    // pattern matches these five - so the state stays deliberate either way.
 
     /// <summary>The templates must not themselves be ignored.
     /// <para>
@@ -680,105 +666,26 @@ public sealed class DeploymentEnvTemplateTests
     // -------------------------------------------------------------------
     // E2 - the runbook
     // -------------------------------------------------------------------
-
-    [Fact]
-    public void The_production_runbook_generates_keys_without_overwriting_them()
-    {
-        var runbook = ReadRepoFile("deploy", RunbookName);
-
-        Assert.Contains("#Requires -RunAsAdministrator", runbook, StringComparison.Ordinal);
-        Assert.Contains(
-            "System.Security.Cryptography.RandomNumberGenerator",
-            runbook,
-            StringComparison.Ordinal);
-
-        // The never-overwrite guard: it must test for an existing value and
-        // skip rather than replace it.
-        Assert.Contains("PRESERVED (already set)", runbook, StringComparison.Ordinal);
-        Assert.Contains("Refusing to overwrite", runbook, StringComparison.Ordinal);
-
-        // No escape hatch: a -Force switch would make the single most
-        // destructive operation in the deployment a one-flag mistake.
-        Assert.DoesNotContain("[switch]$Force", runbook, StringComparison.Ordinal);
-
-        // Prompts must not echo, and the verify pass must report state only.
-        Assert.Contains("-AsSecureString", runbook, StringComparison.Ordinal);
-        Assert.Contains("[MISSING]", runbook, StringComparison.Ordinal);
-    }
-
-    /// <summary>The runbook's health probe validates the certificate like any
-    /// other client. It used to trust any certificate so it could probe loopback,
-    /// whose certificate cannot match "localhost" - but the probe is the only
-    /// verification the script performs, and an unvalidated one reports a
-    /// deployment healthy on an answer from anything at all. It now probes the
-    /// public origin, where the real certificate applies.
-    /// (CertificateValidationBypassTests enforces the absence repo-wide; this
-    /// pins the probe's own shape.)</summary>
-    [Fact]
-    public void The_runbook_health_probe_validates_the_certificate()
-    {
-        var runbook = ReadRepoFile("deploy", RunbookName);
-
-        Assert.DoesNotContain("ServerCertificateValidationCallback", runbook, StringComparison.Ordinal);
-
-        var healthUrl = Regex.Match(runbook, @"\$HealthUrl\s*=\s*""(?<url>[^""]+)""");
-        Assert.True(healthUrl.Success, $"{RunbookName} no longer declares a $HealthUrl default.");
-        Assert.False(
-            new Uri(healthUrl.Groups["url"].Value).IsLoopback,
-            $"{RunbookName} probes {healthUrl.Groups["url"].Value}. A loopback probe cannot "
-            + "validate a certificate issued for the public host, and there is no longer an "
-            + "allowance to skip validation - so the default must be the public origin.");
-    }
-
-    /// <summary>The runbook is scoped per server, so it prompts only for what
-    /// this box reads. Unscoped, it would ask an operator on the Website host for
-    /// a database connection string and then write that credential into a machine
-    /// with no reason to hold one.</summary>
-    [Fact]
-    public void The_production_runbook_can_be_scoped_to_one_package()
-    {
-        var runbook = ReadRepoFile("deploy", RunbookName);
-
-        Assert.Contains(
-            "[ValidateSet('All', 'Api', 'Cp', 'Web', 'Edge')]",
-            runbook,
-            StringComparison.Ordinal);
-
-        // Entries carry the UN-prefixed key, because the concrete name depends on
-        // which server the runbook is run for: Storage__LogDirectory becomes
-        // SIMF_API_Storage__LogDirectory on the API box and
-        // SIMF_CP_Storage__LogDirectory on the Control Panel box.
-        //
-        // A key stored pre-prefixed would be prefixed a second time by the
-        // composition, producing SIMF_API_SIMF_API_... and setting a variable
-        // nothing reads.
-        var prefixed = Regex.Matches(runbook, @"Key\s*=\s*['""](?<key>SIMF_[A-Za-z0-9_]+)['""]")
-            .Select(m => m.Groups["key"].Value)
-            .ToList();
-
-        Assert.True(
-            prefixed.Count == 0,
-            $"{RunbookName} stores pre-prefixed key(s): {string.Join(", ", prefixed)}. "
-            + "The prefix is composed per target, so a stored one is applied twice.");
-
-        // All four namespaces must be composable from this one script.
-        foreach (var prefix in new[] { "SIMF_API_", "SIMF_CP_", "SIMF_WEB_", "SIMF_EDGE_" })
-        {
-            Assert.Contains(prefix, runbook, StringComparison.Ordinal);
-        }
-
-        // Every generated key and prompted value has to declare which packages
-        // read it, or the filter silently drops it on every target.
-        // Both quote styles: the generated/prompted arrays use double quotes and
-        // alsoVerified uses single, and a regex that saw only one of them would
-        // compare a partial count against every Packages tag in the file.
-        var entries = Regex.Matches(runbook, @"Key\s*=\s*['""](?<key>[A-Za-z0-9_]+)['""]");
-        var tagged = Regex.Matches(runbook, @"Packages\s*=\s*@\(");
-
-        Assert.True(
-            entries.Count > 0 && tagged.Count == entries.Count,
-            $"{RunbookName} declares {entries.Count} variable(s) but tags "
-            + $"{tagged.Count} with Packages. An untagged entry is dropped by the "
-            + "-Target filter and never provisioned on any server.");
-    }
+    //
+    // Three tests stood here, all reading deploy/configure-prod-env.ps1:
+    //   * The_production_runbook_generates_keys_without_overwriting_them
+    //   * The_runbook_health_probe_validates_the_certificate
+    //   * The_production_runbook_can_be_scoped_to_one_package
+    //
+    // That file was deleted when deploy/ was reduced to the five set-env-*.ps1
+    // plus clean-env.ps1. ReadRepoFile asserts existence, so all three would now
+    // fail with "Expected file not found" - a failure about a missing file
+    // rather than about anything being wrong.
+    //
+    // What went with them, recorded so it is a known gap rather than a silent
+    // one: nothing now pins the never-overwrite guard on the encryption keys,
+    // and rotating FileStorage__EncryptionKey or
+    // Storage__UserIdDocumentEncryptionKey makes every stored file and every
+    // encrypted PII column undecryptable. Those keys are currently set in
+    // set-env-api.ps1 and no script regenerates them, so the hazard needs a
+    // person to introduce it - but if key generation is ever added back to a
+    // set-env script, the guard and a test for it must come with it.
+    //
+    // CertificateValidationBypassTests still scans deploy/*.ps1 repo-wide, so
+    // the certificate half of the second test is not lost.
 }

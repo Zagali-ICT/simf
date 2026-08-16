@@ -30,7 +30,7 @@ release may live under it - uploads and logs are configured outside this tree fo
 exactly that reason (`SIMF_FileStorage__RootPath`, `SIMF_Storage__LogDirectory`).
 
 The **Flutter app's web build** (a static IIS site, proof of concept — D-376) is
-published separately by [`app-web/publish-app-web.ps1`](app-web/publish-app-web.ps1)
+published separately by [`set-env-webapp.ps1`](set-env-webapp.ps1)
 with the API base compiled in; guide:
 [`docs/deploy/SIMF-AppWeb-IIS-Deploy.md`](../docs/deploy/SIMF-AppWeb-IIS-Deploy.md).
 It is not part of the .NET pipeline above.
@@ -67,12 +67,14 @@ Build, Test & Publish ──▶ Deploy to IIS
   **Environment**, because the estate is two servers: **`SIMF-Prod`**
   (pre-production) and **`SIM-RNSF`** (production, `SIMF APP 01`). Each server
   hosts all four sites, so each job downloads `drop` and runs the shared steps in
-  [`deploy-all-packages.yml`](deploy-all-packages.yml) — four calls to
-  [`pipeline-deploy-one.ps1`](pipeline-deploy-one.ps1), each extracting one zip
-  and handing one site to [`iis-deploy.ps1`](iis-deploy.ps1), which stops the
-  site + app pool, releases file locks, `robocopy /MIR`s the files, and
-  restarts. Per-server order: **API**, then **CP**, then **Web**, then **Edge**
-  last.
+  [`deploy-all-packages.yml`](deploy-all-packages.yml) — one step per package,
+  each extracting its zip, stopping the site + app pool, releasing file locks,
+  `robocopy /MIR`ing the files and restarting. Per-server order: **API**, then
+  **CP**, then **Web**, then **Edge** last.
+- That logic is **inline in the YAML**, not in a script. It used to live in
+  `pipeline-deploy-one.ps1` calling `iis-deploy.ps1`; both were deleted so
+  `deploy/` holds only the five `set-env-*.ps1` and `clean-env.ps1`. The
+  sequence is unchanged, and the artifact no longer has to carry scripts.
 - **Production waits for pre-production.** They originally had no `dependsOn` and
   were meant to deploy simultaneously, but a self-hosted organisation typically
   has **one parallel job slot**: the second job took an agent, initialised, then
@@ -146,16 +148,18 @@ environment's deployment history, so an untouched environment would show a
 deployment that never happened.
 
 > **A deployment job does not clone the repository.** Azure Pipelines states it
-> outright: *"A deployment job doesn't automatically clone the source repo."* So
-> the two scripts the deploy steps run — `pipeline-deploy-one.ps1` and the
-> `iis-deploy.ps1` it calls — are **staged into the `drop` artifact** by the
-> Build stage and run from `$(Pipeline.Workspace)\drop\deploy\` (D-888).
+> outright: *"A deployment job doesn't automatically clone the source repo."*
+> That is why the stop / mirror / start sequence is written **inline** in
+> `deploy-all-packages.yml` and calls no file from the repo.
 >
-> The first version used `checkout: self` instead, which pulled the whole
-> repository and its history onto each production server every run to obtain
-> 12 KB of PowerShell. They are named individually rather than copied with
-> `deploy/*.ps1`, because the filled `set-env-*.ps1` in that folder hold
-> production secrets and must never reach a build artifact.
+> Two earlier shapes are worth knowing so they are not reintroduced. The first
+> used `checkout: self`, which pulled the whole repository and its history onto
+> each production server every run to obtain 12 KB of PowerShell. The second
+> staged `pipeline-deploy-one.ps1` and `iis-deploy.ps1` into the artifact by
+> name — never with a `deploy/*.ps1` wildcard, because the `set-env-*.ps1` in
+> that folder hold production secrets and must never reach a build artifact.
+> Inlining removes both problems: the drop carries published applications and
+> nothing else.
 
 ## Building a package locally (`publish.ps1`)
 
@@ -166,19 +170,18 @@ restores, then publishes each sequentially in `Release`, stopping at the first
 failure — and on a failure it re-runs that publish verbosely so the real error is
 visible rather than swallowed.
 
-Output folders are named to match the `iis-deploy.ps1` contract, so the package
-deploys with no repackaging step:
+Output folders are named per package, matching the layout the pipeline expects:
 
 ```powershell
 .\publish.ps1
 # -> publish\api  publish\cp  publish\web  publish\edge
-
-.\deploy\iis-deploy.ps1 -ArtifactRoot .\publish `
-    -ApiSiteName  "SIMF.API"  -ApiPath  "D:\System\v1.0.1\api"  `
-    -CpSiteName   "SIMF.CP"   -CpPath   "D:\System\v1.0.1\cp"   `
-    -WebSiteName  "SIMF.WEB"  -WebPath  "D:\System\v1.0.1\web"  `
-    -EdgeSiteName "SIMF.EDGE" -EdgePath "D:\System\v1.0.1\edge"
 ```
+
+There is no longer a companion deploy script to point at that output —
+`iis-deploy.ps1` was deleted along with the rest, and the stop / mirror / start
+sequence now lives inline in `deploy-all-packages.yml`. For a **manual** release,
+copy each folder over its site's physical path (`D:\System\v1.0.1\{api,cp,web,edge}`)
+with the site and its app pool stopped, then start them again.
 
 `publish/` is git-ignored. There is no separate Worker output because the
 background workers run in-process inside the API app pool (see below).
@@ -194,47 +197,27 @@ The script builds and packages **only**. It applies no configuration and no
 secrets — those remain Machine-scope environment variables set on each server by
 its own `set-env-{api|cp|web|edge}.ps1`, below.
 
-## Operating the sites (`ops.ps1`)
+## Operating the sites
 
-[`ops.ps1`](ops.ps1) is the single entry point for installing, removing, and
-controlling the four IIS apps and the background-worker tier on the server. Run
-it **as Administrator**.
+`ops.ps1` was deleted with the rest of the extra scripts. **Creating an IIS site
+or app pool is now a manual IIS Manager job**, and so are start / stop / status.
+Know what that costs before the next fresh server:
 
-| Action | Effect |
-|--------|--------|
-| `Status` | Report each site + app-pool state |
-| `Start` / `Stop` / `Restart` | Control the site + its application pool |
-| `Install` | Create the app pool (No Managed Code) + site + HTTP binding if missing |
-| `Uninstall` | Remove the site + app pool |
+- Each of the two servers hosts **all four sites**, so a new box needs four app
+  pools (No Managed Code) and four sites created by hand.
+- The **API and the edge need distinct hostnames** on the same box — two sites
+  cannot share one. `ops.ps1` used to refuse the mistake; nothing does now.
+- TLS bindings and the CA certificate are configured separately (see the HLD /
+  SIMF-OPS-001).
 
-`-Target` selects the scope: `All` (default), `Api`, `Cp`, `Web`, `Edge`, or
-`Workers`.
+Routine restarts are covered: each `set-env-*.ps1` restarts its own app pool at
+the end, and a deploy stops and starts each site itself.
 
 The 10 background workers run **in-process inside the API application pool**, so
-`-Target Workers` maps to the API app: restarting the workers restarts the API
-pool. Their live health is on the Control Panel "Background services" page
-(`/admin/ops/services`, gated by `ServicesMonitor.View`) plus the `/health`
-`workers` check, and their logs are written to their own `SIMF.Workers` folder
-under `Storage:LogDirectory`. When the workers later move to a dedicated Windows
-Service, only the `Workers` block in `ops.ps1` changes.
-
-```
-.\ops.ps1 -Action Status
-.\ops.ps1 -Action Restart -Target Workers
-.\ops.ps1 -Action Install -Target All -ApiPort 12340 -CpPort 12341 -WebPort 12342 `
-    -EdgePort 12343
-.\ops.ps1 -Action Install -Target Edge -CertThumbprint <thumbprint>
-```
-
-Each of the two servers hosts all four sites, so **`-Target All` is the normal
-case** on both `SIMF-Prod` and `SIM-RNSF` (D-886); the individual targets
-remain for installing or restarting one site at a time. `ops.ps1` refuses to
-install while `-ApiHost` and `-EdgeHost` name the same host, since two sites
-cannot share a hostname — so the API and the edge need distinct hostnames on the
-same box.
-
-TLS bindings and the CA certificate are configured separately (see the HLD /
-SIMF-OPS-001); `Install` creates the HTTP binding only.
+restarting the workers means restarting the API pool. Their live health is on the
+Control Panel "Background services" page (`/admin/ops/services`, gated by
+`ServicesMonitor.View`) plus the `/health` `workers` check, and their logs go to
+their own `SIMF.Workers` folder under `Storage:LogDirectory`.
 
 ## ⚠️ Prerequisite — code must be on `main`
 
@@ -336,14 +319,13 @@ These are **placeholders** — set them to the real SIMF server values:
    machines**, script run as Administrator with a **unique** agent name — is the
    fix, and only then is `resourceType` worth revisiting.
 
-4. **IIS site names + physical paths** — the `-ApiSiteName/-ApiPath`,
-   `-CpSiteName/-CpPath`, `-WebSiteName/-WebPath` and `-EdgeSiteName/-EdgePath`
-   arguments in the `Deploy to IIS` step. The IIS sites + app pools must already
-   exist on the server (this script deploys files; it does not create sites) —
-   create them with `ops.ps1 -Action Install`. The edge pair is optional in
-   `iis-deploy.ps1`, so an estate without an edge leaves that zip unused.
+4. **IIS site names + physical paths** — the `packages` list and `sitePathRoot`
+   parameter at the top of [`deploy-all-packages.yml`](deploy-all-packages.yml).
+   The IIS sites + app pools must **already exist** on the server: the deploy
+   copies files, it does not create sites, and `ops.ps1` (which used to create
+   them) is gone. Create them in IIS Manager before the first deploy.
 
-## Secrets / production config — the `set-env-*.ps1` templates
+## Secrets / production config — the `set-env-*.ps1` scripts
 
 Per SIMF-OPS-001 §6, production overrides and every secret are applied as
 **Machine-scope environment variables** on the server by a per-service script —
@@ -353,12 +335,12 @@ Administrator**, then **restart the IIS app pool** so `w3wp` picks them up:
 
 | Script | Server | Key groups |
 |--------|--------|-----------|
-| [set-env-api.template.ps1](set-env-api.template.ps1) | SimfAPI | The bulk, ~62 keys: `SIMF_ConnectionStrings__*`, `SIMF_Jwt__*`, `SIMF_FileStorage__*`, `SIMF_Email__*`, `SIMF_SuperAdmin__*`, `SIMF_Seed__DemoPassword`, `SIMF_Ai__*`, `SIMF_MeetingLinks__*`, `SIMF_Cors__WebAppOrigins__n`, `SIMF_RateLimit__*`, `SIMF_WalkInMode__*`, `SIMF_Swagger__*` |
-| [set-env-cp.template.ps1](set-env-cp.template.ps1) | SimfCP | `SIMF_Api__BaseUrl`, `SIMF_Session__LifetimeHours`, `SIMF_DataProtection__KeyRingPath` |
-| [set-env-web.template.ps1](set-env-web.template.ps1) | SimfWeb | `SIMF_Api__BaseUrl`, `SIMF_DataProtection__KeyRingPath` |
-| [set-env-edge.template.ps1](set-env-edge.template.ps1) | SimfEdge | `SIMF_ReverseProxy__Clusters__api__Destinations__primary__Address`, `SIMF_ReverseProxy__KnownProxies__0` |
-| [configure-prod-env.ps1](configure-prod-env.ps1) | any (`-Target`) | Generates the missing crypto keys, prompts for the rest, verifies, restarts the pool, health-checks |
-| [clear-env.ps1](clear-env.ps1) | any (`-Target`) | Removes the Machine-scope `SIMF_*` secrets (keeps the shared non-secret config unless `-Full`) |
+| [set-env-api.ps1](set-env-api.ps1) | SimfAPI | The bulk, 62 keys: `SIMF_API_ConnectionStrings__*`, `SIMF_API_Jwt__*`, `SIMF_API_FileStorage__*`, `SIMF_API_Email__*`, `SIMF_API_SuperAdmin__*`, `SIMF_API_Seed__DemoPassword`, `SIMF_API_Ai__*`, `SIMF_API_MeetingLinks__*`, `SIMF_API_Cors__WebAppOrigins__n`, `SIMF_API_RateLimit__*`, `SIMF_API_WalkInMode__*`, `SIMF_API_Swagger__*` |
+| [set-env-cp.ps1](set-env-cp.ps1) | SimfCP | `SIMF_CP_Api__BaseUrl`, `SIMF_CP_Session__LifetimeHours`, `SIMF_CP_DataProtection__KeyRingPath` |
+| [set-env-web.ps1](set-env-web.ps1) | SimfWeb | `SIMF_WEB_Api__BaseUrl`, `SIMF_WEB_DataProtection__KeyRingPath` |
+| [set-env-edge.ps1](set-env-edge.ps1) | SimfEdge | `SIMF_EDGE_ReverseProxy__Clusters__api__Destinations__primary__Address`, `SIMF_EDGE_ReverseProxy__KnownProxies__0` |
+| [set-env-webapp.ps1](set-env-webapp.ps1) | Flutter web bundle | Compiled in by `flutter build web`, not environment variables: `ApiBase` (the EDGE), `OutDir`, optional app key / support contacts / social links |
+| [clean-env.ps1](clean-env.ps1) | any (`-Target`) | Removes the Machine-scope `SIMF_*` secrets (keeps the shared non-secret config unless `-Full`) |
 
 All four carry `ASPNETCORE_ENVIRONMENT` and `SIMF_Storage__LogDirectory`, because
 every host reads both.
@@ -390,65 +372,57 @@ than the one first given - each host still reads only its own application's
 values, and an operator running one script can see exactly which application it
 configures.
 
-The keys that legitimately appear in more than one file are pinned by
-`Shared_keys_agree_across_templates` in `DeploymentEnvTemplateTests`: same
-value, same `Secret` flag, or the build fails. `Gate` is deliberately allowed to
-differ, because it records whether **that** host refuses to start without the
-value.
+The two Blazor hosts are pinned to agree on `Api__BaseUrl` and
+`DataProtection__KeyRingPath` by
+`The_blazor_hosts_agree_on_the_settings_that_must_match` in
+`DeploymentEnvTemplateTests` — same value, or the build fails. `Gate` is
+deliberately allowed to differ, because it records whether **that** host refuses
+to start without the value.
 
 A deployment is therefore: **the pipeline publishes and deploys all four
-packages to each server, an operator runs that server's four scripts, restart
-the pools.**
-
-Each filled form carries production values, so the repository tracks the four
-**`.template.ps1`** files and **`.gitignore` deliberately ignores the filled
-`set-env-{api,cp,web,edge}.ps1`** you create on each server:
+packages to each server, an operator runs that server's scripts, and each script
+restarts its own pool.**
 
 ```powershell
-# on the API server
-Copy-Item .\deploy\set-env-api.template.ps1 .\deploy\set-env-api.ps1
-# fill the Secret entries in set-env-api.ps1 on the server, then run as Administrator
+# on the server, as Administrator
 .\deploy\set-env-api.ps1
+.\deploy\set-env-cp.ps1
+.\deploy\set-env-web.ps1
+.\deploy\set-env-edge.ps1
 ```
 
-Every entry marked `Secret = $true` ships **empty**, and a test fails the build
-if one is ever committed with a value. Non-secret settings that are identical on
-every SIMF box (the environment name, the storage roots) ship **pre-filled**, so
-an operator fills roughly a dozen secrets rather than sixty variables. Non-secret
-settings that differ per site - public origins, proxy IPs, the SMTP host - are
-marked `SITE-SPECIFIC` and also ship empty.
+> ### These five files carry live production credentials
+>
+> There is no longer a template/overlay pair. The `.template.ps1` files were
+> deleted and these `set-env-*.ps1` **are** the operator's filled scripts,
+> holding the real connection strings, the JWT signing key, both encryption
+> keys, the SMTP password and the AI key. They are **tracked** at the owner's
+> instruction, and the `.gitignore` rules that used to hide them were removed.
+>
+> A credential pushed once is in git history permanently, and deleting the file
+> later does not remove it from history. Rotate anything that reaches a remote
+> you do not control.
 
-**Never delete a `.gitignore` entry for a filled `set-env-*.ps1` to make it
-trackable - that commits live production credentials.** Edit the matching
-template instead; it is the shared, reviewable copy. Each variable carries a
-comment saying what breaks when it is missing, including the Production **boot
-gates** that stop a host starting at all.
+Each variable carries a comment saying what breaks when it is missing, including
+the Production **boot gates** that stop a host starting at all. Five entries are
+deliberately blank, because blank is their correct value:
+`WalkInMode__ExpiresAt` (null = never expires), `WalkInMode__BadgeKey` and
+`PreviousBadgeKey` (blank disables offline badges / signals no rotation in
+progress), and the Gemini and OpenAI keys (the provider is `Anthropic`).
 
-### First-time provisioning — `configure-prod-env.ps1`
+### First-time provisioning on a fresh server
 
-[`configure-prod-env.ps1`](configure-prod-env.ps1) is the runbook for a fresh
-server. Run it **as Administrator**; it is safe to re-run.
+`configure-prod-env.ps1` was the runbook for this and has been deleted. On a new
+box the sequence is: create the IIS sites and app pools in IIS Manager, copy the
+five scripts across, and run each as Administrator.
 
-1. **Generates** a cryptographically-random base64 32-byte AES key
-   (`RandomNumberGenerator`) for each key that is not already set, and writes it
-   straight to the Machine environment **without printing it**.
-2. **Never overwrites an existing encryption key.** Rotating
-   `FileStorage:EncryptionKey` makes every previously stored file
-   undecryptable, and rotating `Storage:UserIdDocumentEncryptionKey` strands
-   every encrypted PII column — so the script warns loudly and skips. There is
-   no `-Force`: a genuine rotation needs a decrypt-and-re-encrypt migration.
-3. **Prompts** for the values it cannot generate (connection strings, SMTP
-   credentials, the public Website origin) using `Read-Host -AsSecureString`, so
-   nothing is echoed.
-4. **Verifies**, reporting each key's **name** and whether it is set — never a
-   value.
-5. **Restarts** the IIS app pools and **health-checks** the API.
-
-```powershell
-.\deploy\configure-prod-env.ps1 -Target Api               # this server's full pass
-.\deploy\configure-prod-env.ps1 -Target Edge -VerifyOnly  # audit only, changes nothing
-.\deploy\configure-prod-env.ps1 -Target Cp -SkipPrompts   # keys + verify, no prompts
-```
+**What went with the runbook, so it is a known gap rather than a surprise:** it
+generated the base64 32-byte AES keys and — crucially — **refused to overwrite an
+existing one**, because rotating `FileStorage:EncryptionKey` makes every stored
+file undecryptable and rotating `Storage:UserIdDocumentEncryptionKey` strands
+every encrypted PII column. Those keys now come from the values already in
+`set-env-api.ps1`. If key generation is ever added back to a set-env script, the
+never-overwrite guard has to come with it.
 
 **Pass `-Target`.** Each key and prompt declares which packages read it, and the
 runbook asks only for that server's set. Unscoped it would ask an operator on the
@@ -506,44 +480,31 @@ This server still carries 61 environment variable(s) using the retired 'SIMF_'
 prefix, which this build does not read: SIMF_Ai__Anthropic__ApiKey, ...
 ```
 
-**Those 61 hold real production values.** Re-typing them is 61 chances to
-fat-finger a secret, and rotating either data key strands everything already
-encrypted with it. Copy them onto the new names instead, elevated, in this
-order:
+Those 61 hold real production values, but you no longer need to move them: the
+five `set-env-*.ps1` in this folder already carry the values under the new
+prefixed names. Run them, then clear the old ones, elevated, in this order:
 
 ```powershell
-# 1. Preview: what maps where, what is unmapped, which boot gates stay unset.
-.\deploy\migrate-env-prefix.ps1 -Report
+# 1. Write the new SIMF_API_ / SIMF_CP_ / SIMF_WEB_ / SIMF_EDGE_ variables.
+#    Each script restarts its own pool at the end.
+.\deploy\set-env-api.ps1
+.\deploy\set-env-cp.ps1
+.\deploy\set-env-web.ps1
+.\deploy\set-env-edge.ps1
 
-# 2. Copy each legacy value onto its new prefix. Never overwrites a new-prefix
-#    variable that already has a value, and never prints a value.
-.\deploy\migrate-env-prefix.ps1
-
-# 3. Fill anything still missing (generates the crypto keys it can).
-.\deploy\configure-prod-env.ps1 -Target Api      # then -Cp / -Web / -Edge
-
-# 4. Remove the pre-split variables the host refuses to start alongside.
-.\deploy\clear-env.ps1 -Full
-
-# 5. Restart the pools.
-.\deploy\ops.ps1 -Action Restart -Target All
+# 2. THEN remove the pre-split variables the host refuses to start alongside.
+.\deploy\clean-env.ps1 -Full
 ```
 
-[`migrate-env-prefix.ps1`](migrate-env-prefix.ps1) derives the mapping from the
-four `set-env-*.template.ps1` files rather than a list of its own, so it stays
-right when a key is added. That matters most for the keys that fan out to
-**more than one** prefix, which are exactly the ones a hand rename misses:
+**Step 2 after step 1, never before**: clearing first leaves the box with no
+configuration at all if anything is interrupted.
 
-| Legacy name | Goes to |
-|---|---|
-| `SIMF_Storage__LogDirectory` | `SIMF_API_`, `SIMF_CP_`, `SIMF_WEB_`, `SIMF_EDGE_` |
-| `SIMF_Api__BaseUrl` | `SIMF_CP_`, `SIMF_WEB_` |
-| `SIMF_ReverseProxy__KnownProxies__0` | `SIMF_API_`, `SIMF_EDGE_` |
-
-**Step 4 after the copy, never before**: clearing first leaves the box with no
-configuration at all if anything is interrupted. Read the script's *unmapped*
-warning before running it — those are legacy names no template declares, so
-nothing reads them under any prefix.
+`migrate-env-prefix.ps1`, which used to copy each legacy value onto its new
+prefix, is gone with the other extra scripts. It mattered for the keys that fan
+out to more than one prefix — `SIMF_Storage__LogDirectory` feeds all four,
+`SIMF_Api__BaseUrl` feeds CP and Web, `SIMF_ReverseProxy__KnownProxies__0` feeds
+API and Edge — so if you ever do have to move values by hand, those are the ones
+a one-to-one rename misses.
 
 **Seven keys are boot gates** — a host refuses to start without its own:
 
@@ -600,24 +561,21 @@ needs no affinity and no shared state.
 
 **Order of operations.**
 
-```powershell
-# 1. On the edge server, as Administrator.
-.\ops.ps1 -Action Install -Target Edge -CertThumbprint <thumbprint>
-
-# 2. Fill in set-env-edge.ps1 on that server and run it as Administrator.
-#    BOTH edge variables are BOOT GATES - it refuses to start without them.
-#      SIMF_ReverseProxy__Clusters__api__Destinations__primary__Address = https://api.simrsnf.com/
-#      SIMF_ReverseProxy__KnownProxies__0                               = the WAF / load balancer address
-
-# 3. Deploy this package to that server.
-.\pipeline-deploy-one.ps1 -Package edge -ZipName SIMF.MobileEdge.zip `
-    -SiteName SIMF.EDGE -SitePath D:\System\v1.0.1\edge -Drop <drop> -Root <root>
-```
-
+1. On the edge server, create the `SIMF.EDGE` site and its app pool in IIS
+   Manager and bind the certificate. (`ops.ps1 -Action Install` did this and has
+   been deleted.)
+2. Run `set-env-edge.ps1` on that server as Administrator. **Both edge variables
+   are BOOT GATES** - it refuses to start without them:
+   - `SIMF_EDGE_ReverseProxy__Clusters__api__Destinations__primary__Address`
+     = `https://api.simrsnf.com/` - inward at the API, never the edge's own name
+   - `SIMF_EDGE_ReverseProxy__KnownProxies__0` = the WAF / load balancer address
+3. Deploy the package by running the pipeline with `deployProduction` ticked; the
+   edge step is the last of the four.
 4. Publish `edge.simrsnf.com` in DNS and bind its certificate to the edge site.
 5. Firewall: presentation to application on 443; application to data on 1433 and
-   445. Resolve the key-ring rule noted against `SIMF_DataProtection__KeyRingPath`
-   in the CP and Web templates first, or neither host boots.
+   445. Resolve the key-ring rule noted against
+   `SIMF_CP_DataProtection__KeyRingPath` / `SIMF_WEB_DataProtection__KeyRingPath`
+   first, or neither host boots.
 6. Ship the mobile release built against `edge.simrsnf.com`.
 7. Only then withdraw the API's public DNS record.
 

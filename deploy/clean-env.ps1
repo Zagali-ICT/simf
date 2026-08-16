@@ -10,16 +10,20 @@
 # and shows "The SIMF service could not be reached". Use -Full to wipe everything
 # (a true scrub / decommission), which also drops those shared values.
 #
+# The preserve list covers CURRENT names only. A pre-split SIMF_ variable is
+# ALWAYS removed, whatever -Full and -Target say, because no build reads one and
+# every host refuses to start in Production while one exists.
+#
 # Machine scope is shared by every app on the box. On a dedicated server that is
 # exactly one package, so clearing the whole SIMF_* namespace is the right
 # default. On a box that still runs several packages - the single-server estate
 # this deployment is moving away from - use -Target to clear only one package's
 # variables and leave the others running.
 #
-#   Scrub secrets, keep CP reachable:  .\deploy\clear-env.ps1
-#   Only the edge's variables:            .\deploy\clear-env.ps1 -Target Edge
-#   Wipe EVERYTHING (incl. Api BaseUrl): .\deploy\clear-env.ps1 -Full
-#   Also drop the host env:               .\deploy\clear-env.ps1 -IncludeAspNetEnv
+#   Scrub secrets, keep CP reachable:  .\deploy\clean-env.ps1
+#   Only the edge's variables:            .\deploy\clean-env.ps1 -Target Edge
+#   Wipe EVERYTHING (incl. Api BaseUrl): .\deploy\clean-env.ps1 -Full
+#   Also drop the host env:               .\deploy\clean-env.ps1 -IncludeAspNetEnv
 #   Then restart the IIS app pools (or the server) so w3wp drops the values.
 # =============================================================================
 
@@ -109,6 +113,33 @@ function Test-Preserved([string]$name) {
     return $false
 }
 
+# A PRE-SPLIT variable: SIMF_ without one of the four application prefixes.
+#
+# These are ALWAYS removed - without -Full, and whatever -Target says. No build
+# reads them, and SimfLegacyEnvironmentGuard refuses to start ANY host in
+# Production while even one exists, so a "preserved" legacy variable is not a
+# kindness, it is an outage.
+#
+# That is what used to happen. Get-KeySuffix strips the bare SIMF_ so a legacy
+# name is matched against the preserve list, and SIMF_Api__BaseUrl,
+# SIMF_Ai__DefaultProvider, SIMF_Ai__Anthropic__DefaultModel and
+# SIMF_Cors__WebAppOrigins__* are all on it. A default run therefore kept the
+# exact set the guard rejects, and the Control Panel would not boot afterwards
+# with the reason pointing back at this script.
+#
+# The harness variables are excluded from the LEGACY classification, matching
+# the guard, which does not fire on them either. They are still cleared by the
+# ordinary path below on a full-box run - this only keeps them from being
+# reported as a half-finished upgrade, which they are not.
+function Test-LegacyName([string]$name) {
+    foreach ($prefix in $applicationPrefixes) {
+        if ($name.StartsWith($prefix, [StringComparison]::Ordinal)) { return $false }
+    }
+    if ($name.StartsWith('SIMF_TEST_', [StringComparison]::Ordinal)) { return $false }
+    if ($name.StartsWith('SIMF_SMOKE_', [StringComparison]::Ordinal)) { return $false }
+    return $name.StartsWith('SIMF_', [StringComparison]::Ordinal)
+}
+
 $mode = if ($Full) { "FULL wipe (incl. shared config)" } else { "secrets only (shared config kept)" }
 $scope = if ($Target -eq 'All') { "every SIMF_* on this box" } else { "the $Target package only" }
 Write-Host ("=== SIMF clear env (Machine scope) - {0}, {1} ===" -f $mode, $scope) -ForegroundColor Cyan
@@ -122,23 +153,28 @@ $simfNames   = @($machineVars.Keys | Where-Object { $_ -like 'SIMF_*' } | Sort-O
 # template carries #Requires and an apply loop, so running it to inspect it
 # would SET the variables this script exists to remove.
 if ($Target -ne 'All') {
-    $templateName = "set-env-$($Target.ToLowerInvariant()).template.ps1"
-    $templatePath = Join-Path $PSScriptRoot $templateName
-    if (-not (Test-Path $templatePath)) {
-        throw "Cannot scope to '$Target': $templateName was not found beside this script."
+    $scriptName = "set-env-$($Target.ToLowerInvariant()).ps1"
+    $scriptPath = Join-Path $PSScriptRoot $scriptName
+    if (-not (Test-Path $scriptPath)) {
+        throw "Cannot scope to '$Target': $scriptName was not found beside this script."
     }
     $declared = [regex]::Matches(
-        (Get-Content -Raw -LiteralPath $templatePath),
+        (Get-Content -Raw -LiteralPath $scriptPath),
         'Name\s*=\s*"(?<name>[^"]+)"') | ForEach-Object { $_.Groups['name'].Value }
 
     $before = $simfNames.Count
-    $simfNames = @($simfNames | Where-Object { $declared -contains $_ })
-    Write-Host ("  scoped to {0}: {1} of {2} live SIMF_* variable(s) belong to this package." `
-        -f $templateName, $simfNames.Count, $before) -ForegroundColor DarkGray
+    # Legacy names survive the scoping filter on purpose. They are declared by no
+    # package - that is what makes them legacy - so an intersection would drop
+    # them, and a scoped clean would leave the box unable to start any host.
+    $simfNames = @($simfNames | Where-Object {
+        ($declared -contains $_) -or (Test-LegacyName $_) })
+    Write-Host ("  scoped to {0}: {1} of {2} live SIMF_* variable(s) belong to this package (pre-split names are always included)." `
+        -f $scriptName, $simfNames.Count, $before) -ForegroundColor DarkGray
 }
 
 $removed = 0
 $kept    = 0
+$legacyRemoved = 0
 if ($simfNames.Count -eq 0) {
     Write-Host "  No SIMF_* Machine variables found - nothing to clear." -ForegroundColor DarkGray
 } else {
@@ -147,6 +183,15 @@ if ($simfNames.Count -eq 0) {
             [Environment]::SetEnvironmentVariable($name, $null, [EnvironmentVariableTarget]::Machine)
             Write-Host ("  removed {0} (RETIRED - no application reads it)" -f $name) -ForegroundColor Yellow
             $removed++
+            continue
+        }
+        # Before the preserve check, never after: a pre-split name must not be
+        # rescued by a preserve entry that matches its stripped suffix.
+        if (Test-LegacyName $name) {
+            [Environment]::SetEnvironmentVariable($name, $null, [EnvironmentVariableTarget]::Machine)
+            Write-Host ("  removed {0} (PRE-SPLIT prefix - no build reads it, and every host refuses to start while it exists)" -f $name) -ForegroundColor Yellow
+            $removed++
+            $legacyRemoved++
             continue
         }
         if (-not $Full -and (Test-Preserved $name)) {
@@ -174,6 +219,9 @@ if ($IncludeAspNetEnv) {
 
 Write-Host ""
 Write-Host ("{0} variable(s) removed, {1} kept." -f $removed, $kept) -ForegroundColor Green
+if ($legacyRemoved -gt 0) {
+    Write-Host ("{0} of those used the pre-split SIMF_ prefix. This server was half-upgraded: every host refuses to start in Production while one of those exists, so re-run this server's set-env script before starting the pool." -f $legacyRemoved) -ForegroundColor Yellow
+}
 if (-not $Full -and $kept -gt 0) {
     Write-Host "Kept the non-secret shared config (Api__BaseUrl etc., under each application prefix) so the CP + Website stay reachable." -ForegroundColor Green
     Write-Host "Use -Full to wipe those too." -ForegroundColor DarkGray
