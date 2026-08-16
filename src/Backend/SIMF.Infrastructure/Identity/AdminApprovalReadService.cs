@@ -29,6 +29,22 @@ internal sealed class AdminApprovalReadService(
     IQrResolver qrResolver)
     : IAdminApprovalReadService
 {
+    /// <summary>One projected identity document. A named type rather than an
+    /// anonymous one so the two projections below and the per-kind lookup they
+    /// share can all name it; EF projects straight into the constructor, and the
+    /// PII value converter decrypts <c>Number</c> on the way out exactly as it did
+    /// when the number lived on the profile row.</summary>
+    private sealed record IdentityDocumentRow(IdentityDocumentKind Kind, string Number);
+
+    /// <summary>The registrant's document of one kind, or null when they hold
+    /// none. This is what replaced the three <c>NationalId</c> /
+    /// <c>IqamaNumber</c> / <c>PassportNumber</c> columns these projections used
+    /// to read: the wire still carries all three keys, but they are now derived
+    /// from the child rows rather than from three columns of their own.</summary>
+    private static string? NumberOf(
+        IReadOnlyList<IdentityDocumentRow>? documents, IdentityDocumentKind kind) =>
+        documents?.FirstOrDefault(document => document.Kind == kind)?.Number;
+
     // Every non-admin account is UserType.Visitor. The
     // audience-vs-partner queue split routes on the linked
     // ProfileType.IsVisitor flag — true (or no profile yet) lands on
@@ -148,9 +164,9 @@ internal sealed class AdminApprovalReadService(
                 p.DateOfBirth,
                 p.PlaceOfBirth,
                 p.IsSaudi,
-                p.NationalId,
-                p.IqamaNumber,
-                p.PassportNumber,
+                Documents = p.IdentityDocuments
+                    .Select(document => new IdentityDocumentRow(document.Kind, document.Number))
+                    .ToList(),
                 p.SaudiMobile,
                 p.InternationalMobile,
                 HasIdImage = p.IdImageFileId != null,
@@ -187,9 +203,9 @@ internal sealed class AdminApprovalReadService(
             profile?.DateOfBirth,
             string.IsNullOrEmpty(profile?.PlaceOfBirth) ? null : profile.PlaceOfBirth,
             profile?.IsSaudi ?? false,
-            profile?.NationalId,
-            profile?.IqamaNumber,
-            profile?.PassportNumber,
+            NumberOf(profile?.Documents, IdentityDocumentKind.NationalId),
+            NumberOf(profile?.Documents, IdentityDocumentKind.Iqama),
+            NumberOf(profile?.Documents, IdentityDocumentKind.Passport),
             profile?.SaudiMobile,
             profile?.InternationalMobile,
             profile?.HasIdImage ?? false,
@@ -257,9 +273,9 @@ internal sealed class AdminApprovalReadService(
                 p.DateOfBirth,
                 p.PlaceOfBirth,
                 p.IsSaudi,
-                p.NationalId,
-                p.IqamaNumber,
-                p.PassportNumber,
+                Documents = p.IdentityDocuments
+                    .Select(document => new IdentityDocumentRow(document.Kind, document.Number))
+                    .ToList(),
                 p.SaudiMobile,
                 p.InternationalMobile,
                 p.Gender,
@@ -292,9 +308,9 @@ internal sealed class AdminApprovalReadService(
             profile?.DateOfBirth,
             string.IsNullOrEmpty(profile?.PlaceOfBirth) ? null : profile.PlaceOfBirth,
             profile?.IsSaudi ?? false,
-            profile?.NationalId,
-            profile?.IqamaNumber,
-            profile?.PassportNumber,
+            NumberOf(profile?.Documents, IdentityDocumentKind.NationalId),
+            NumberOf(profile?.Documents, IdentityDocumentKind.Iqama),
+            NumberOf(profile?.Documents, IdentityDocumentKind.Passport),
             profile?.SaudiMobile,
             profile?.InternationalMobile,
             profile?.HasIdImage ?? false,

@@ -291,7 +291,6 @@ public sealed class AdminInvitationsTests : IClassFixture<SimfApiFactory>
             NameArabic = "ضيف كبير",
             PlaceOfBirth = "Riyadh",
             IsSaudi = true,
-            NationalId = "1234567890",
             NationalityId = 0,
             CreatedAt = SimfClock.Now,
         };

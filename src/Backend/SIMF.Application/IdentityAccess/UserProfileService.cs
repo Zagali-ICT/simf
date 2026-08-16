@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/UserProfileTests.cs (upsert round-trip, ID image
+﻿// Tests: SIMF.Api.Tests/UserProfileTests.cs (upsert round-trip, ID image
 //        round-trip, get-empty-when-not-saved-yet, nationality-unknown,
 //        Me_profileComplete flip + male-without-photo,
 //        DisplayName-placeholder-replaced + admin-name-preserved,
@@ -7,7 +7,9 @@
 //        the mobile-number collapse [the canonical column is filled from either
 //        wire field, the Saudi local spelling folds, and both shipped wire keys
 //        still round-trip],
-//        DEF-PHN-004 mobile required / cannot be blanked / international-only OK)
+//        DEF-PHN-004 mobile required / cannot be blanked / international-only OK,
+//        both an Iqama and a passport persist as two document rows, and every
+//        shipped identity wire key still round-trips from those rows)
 //        SIMF.Api.Tests/UserProfileRollbackTests.cs (H16 — transaction rollback)
 //        SIMF.Api.Tests/GateOperatorModelTests.cs (BUG-018 — an operational
 //        (IsForVisitor=false) profile type is exempt from the visitor
@@ -269,36 +271,27 @@ internal sealed class UserProfileService(
         profile.DateOfBirth = request.DateOfBirth;
         profile.PlaceOfBirth = request.PlaceOfBirth;
         profile.IsSaudi = request.IsSaudi;
-        // H-1 — normalise + blind-index the identity columns exactly like the
-        // walk-in desk (AdminAccountService), so the self-service write path (the
-        // dominant one) also populates the hashes the filtered UNIQUE indexes and
-        // the duplicate-identity guard key off. Without the hashes these rows were
-        // invisible to both, defeating H-1 for the dominant registration path.
+        // H-1 — normalise the identity numbers exactly like the walk-in desk
+        // (AdminAccountService) before either the guard or the storage sees them,
+        // so the digest the unique index enforces and the digest the soft guard
+        // queries are computed from the same strings.
         var nationalId = request.IsSaudi ? NormaliseOptional(request.NationalId) : null;
         var iqamaNumber = request.IsSaudi ? null : NormaliseOptional(request.IqamaNumber);
         var passportNumber = request.IsSaudi ? null : NormaliseOptional(request.PassportNumber);
-        profile.NationalId = nationalId;
-        profile.NationalIdHash = pii.BlindIndex(nationalId);
-        profile.IqamaNumber = iqamaNumber;
-        profile.IqamaNumberHash = pii.BlindIndex(iqamaNumber);
-        profile.PassportNumber = passportNumber;
-        profile.PassportNumberHash = pii.BlindIndex(passportNumber);
-        // The same three numbers, written to the storage that supersedes those six
-        // columns: one row per document, one unique digest index over all of them,
-        // which is what makes a CROSS-KIND duplicate visible at all. Written in
-        // exact lockstep with the columns, because readers outside this change are
-        // still projecting them; the child rows are what the response is built
-        // from below.
+        // One row per document, behind one unique digest index over all of them,
+        // which is what makes a CROSS-KIND duplicate visible at all. This is the
+        // only storage: the three number columns and their three blind-index
+        // siblings are gone, and the response below is built from these rows.
         ProfileIdentityStorage.SyncDocuments(
             profile, pii, nationalId, iqamaNumber, passportNumber);
 
         // H-1 — reject an identifier already registered on ANOTHER user's profile
         // (409). Self-excluding (UserId != actorUserId) so a user re-saving their
         // OWN id is never a false conflict. A concurrent duplicate that slips this
-        // soft guard hits the filtered UNIQUE index and is translated below (FIX E).
+        // soft guard hits the unique digest index and is translated below (FIX E).
         if (await profiles.AnyOtherProfileWithIdentityHashAsync(
-                actorUserId, profile.NationalIdHash, profile.IqamaNumberHash,
-                profile.PassportNumberHash, cancellationToken))
+                actorUserId, pii.BlindIndex(nationalId), pii.BlindIndex(iqamaNumber),
+                pii.BlindIndex(passportNumber), cancellationToken))
         {
             throw ApiException.DuplicateIdentity();
         }
@@ -957,19 +950,17 @@ internal sealed class UserProfileService(
             DateOfBirth = profile.DateOfBirth,
             PlaceOfBirth = profile.PlaceOfBirth,
             IsSaudi = profile.IsSaudi,
-            // The three shipped wire keys, answered from the child rows that hold
-            // them, with the superseded column as the fallback. The fallback is not
-            // belt-and-braces: rows written by paths outside this change (the
-            // identity seeder, and anything already in the database) have the
-            // columns and no child rows, and reading only the child would blank a
-            // key that has always been populated — a silent break of the deployed
-            // app rather than a compile error.
+            // The three shipped wire keys, answered from the child rows that are
+            // now the only place holding them. There is no column left to fall back
+            // to, and no row that would need one: every write path — this one, the
+            // walk-in desk and the identity seeder — writes the child rows, and the
+            // two databases were regenerated with no data carried forward.
             NationalId = ProfileIdentityStorage.DocumentNumber(
-                profile, IdentityDocumentKind.NationalId) ?? profile.NationalId,
+                profile, IdentityDocumentKind.NationalId),
             IqamaNumber = ProfileIdentityStorage.DocumentNumber(
-                profile, IdentityDocumentKind.Iqama) ?? profile.IqamaNumber,
+                profile, IdentityDocumentKind.Iqama),
             PassportNumber = ProfileIdentityStorage.DocumentNumber(
-                profile, IdentityDocumentKind.Passport) ?? profile.PassportNumber,
+                profile, IdentityDocumentKind.Passport),
             SaudiMobile = profile.SaudiMobile,
             InternationalMobile = profile.InternationalMobile,
             PlateNumber = profile.PlateNumber,

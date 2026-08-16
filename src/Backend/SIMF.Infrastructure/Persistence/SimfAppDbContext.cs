@@ -344,9 +344,6 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
         {
             foreach (var property in new[]
             {
-                nameof(SIMF.Domain.Profiles.UserProfile.NationalId),
-                nameof(SIMF.Domain.Profiles.UserProfile.IqamaNumber),
-                nameof(SIMF.Domain.Profiles.UserProfile.PassportNumber),
                 // The canonical number and the two columns it supersedes. All
                 // three are the same fact, so all three carry the same
                 // protection — leaving the new one in plaintext would have made
@@ -360,10 +357,10 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
             }
         });
 
-        // The same encryption for the child rows that now hold those document
-        // numbers. Registered separately rather than folded into the loop above
-        // because that loop is keyed on UserProfile property NAMES, so a new
-        // entity is invisible to it — and a missed registration is SILENT: a
+        // The identity-document numbers used to be three more names in the loop
+        // above. They are now one column on their own entity, so they need their
+        // own registration — the loop is keyed on UserProfile property NAMES, and
+        // a different entity is invisible to it. A missed registration is SILENT: a
         // plaintext number reads back perfectly (Decrypt returns unmarked values
         // unchanged), so nothing fails and the PII simply sits in the clear.
         //

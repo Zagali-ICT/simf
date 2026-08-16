@@ -1,3 +1,7 @@
+// Tests: SIMF.Api.Tests/UserProfileIdentifierUniquenessTests.cs (the unique
+//        digest index catches a same-kind AND a cross-kind duplicate, and
+//        SaveProfileIdentityChangesAsync translates the violation into a 409
+//        rather than letting it escape as a 500)
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.IdentityAccess;
 using SIMF.Common;
@@ -48,30 +52,22 @@ internal sealed class UserProfileRepository(
         Guid excludeUserId, string? nationalIdHash, string? iqamaNumberHash,
         string? passportNumberHash, CancellationToken cancellationToken = default)
     {
-        // A null hash never matches a stored NULL, because every equality below is
-        // on the non-null value only.
-        if (nationalIdHash is null && iqamaNumberHash is null && passportNumberHash is null)
-        {
-            return false;
-        }
-        var onSupersededColumns = await appDbContext.UserProfiles
-            .AsNoTracking()
-            .AnyAsync(p => p.UserId != excludeUserId
-                && ((nationalIdHash != null && p.NationalIdHash == nationalIdHash)
-                    || (iqamaNumberHash != null && p.IqamaNumberHash == iqamaNumberHash)
-                    || (passportNumberHash != null && p.PassportNumberHash == passportNumberHash)),
-                cancellationToken);
-        if (onSupersededColumns) { return true; }
-
-        // The same question asked of the child table, and it is a STRICTLY WIDER
-        // one: every supplied digest is compared against every stored document
-        // whatever its kind, so somebody who registered on a passport and returns
-        // with an Iqama carrying the same number is caught here. The three columns
-        // above can only ever compare like with like, which is why they miss it.
+        // A caller who supplied no document at all cannot collide with anyone.
         var candidateHashes = new[] { nationalIdHash, iqamaNumberHash, passportNumberHash }
             .Where(hash => hash is not null)
             .Select(hash => hash!)
             .ToList();
+        if (candidateHashes.Count == 0)
+        {
+            return false;
+        }
+
+        // One question asked of the child table, where there used to be a second
+        // one asked of three per-kind hash columns first. This one is STRICTLY
+        // WIDER and subsumes it: every supplied digest is compared against every
+        // stored document whatever its kind, so somebody who registered on a
+        // passport and returns with an Iqama carrying the same number is caught.
+        // The three columns could only ever compare like with like.
         return await appDbContext.UserProfiles
             .AsNoTracking()
             .Where(p => p.UserId != excludeUserId)
@@ -234,14 +230,14 @@ internal sealed class UserProfileRepository(
         {
             await appDbContext.SaveChangesAsync(cancellationToken);
         }
-        // The fourth name is the child table's single digest index, and it is the
-        // one that now fires on a CROSS-KIND duplicate. Without it that race would
-        // surface as an uncaught 500 instead of the 409 the same duplicate gets on
-        // every other path.
+        // ONE index name now, where there used to be three per-kind ones beside
+        // it. The child table's single digest index is the whole duplicate-identity
+        // constraint; without this filter matching it, a duplicate that slips the
+        // soft guard surfaces as an uncaught 500 instead of the 409 the same
+        // duplicate gets on every other path. Named from the constant rather than
+        // spelled out, because this filter matches index names as STRINGS and a
+        // renamed index would silently stop matching.
         catch (DbUpdateException ex) when (ex.ViolatesAnyIndex(
-            "IX_UserProfiles_NationalIdHash",
-            "IX_UserProfiles_IqamaNumberHash",
-            "IX_UserProfiles_PassportNumberHash",
             Configurations.App.ProfileIdentityDocumentConfiguration.NumberHashIndexName))
         {
             throw ApiException.DuplicateIdentity();
