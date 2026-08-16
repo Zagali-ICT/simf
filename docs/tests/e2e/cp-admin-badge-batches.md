@@ -112,13 +112,23 @@ Scenario: E2E-BBT-011 An order carries a name in both languages
   When they enter "Ministry of Interior Team" and "فريق وزارة الداخلية" and confirm
   Then the order is created and its list row shows that name beside its counts
 
-Scenario: E2E-BBT-012 Top-up mints immediately and moves both denormalised fields
+Scenario: E2E-BBT-012 Top-up mints immediately and folds into the order's lines
   Given an order "Ministry of Interior Team" of Normal x 10 + VIP x 5
   When the admin tops it up with VIP x 3
   Then 3 more badges exist against that order
-   And TotalCount reads 18
-   And CountsSummary reads "Normal x 10 + VIP x 8" - the added tier is FOLDED
-       into the existing one, not appended as a second "VIP x 3" entry
+   And the order holds exactly TWO BadgeBatchItem lines, Normal 10 and VIP 8 -
+       the added tier is FOLDED into the line it already had, not appended as a
+       second "VIP x 3" line
+   And TotalCount reads 18, being the sum of those line counts
+
+Scenario: E2E-BBT-019 Renaming a profile type re-labels every historical order
+  Given an order "Ministry of Interior Team" holding VIP x 3
+  When an admin renames the "VIP" profile type to "Platinum"
+   And reopens /admin/visitors/badge-batches
+  Then that order's Contents cell reads "Platinum x 3"
+   And nowhere on the page does the retired name "VIP" still appear, because the
+       breakdown is composed on read from the order's lines joined to the live
+       profile type rather than from a label frozen at mint time
 
 Scenario: E2E-BBT-013 A revoked order cannot be topped up
   Given an order that has been revoked
@@ -192,7 +202,9 @@ both 409 guards) or `tests/SIMF.Api.Tests/PermissionEnforcementTests.cs` (the
   untranslated keys, no horizontal overflow and no console errors, and the
   order name rendered in Arabic.
 
-**Known gap seen on this run:** the Contents column reads its tier names in
-**English** under the Arabic UI, because `CountsSummary` is a single
-denormalised English string. Pre-existing, logged as
-`docs/SIMF-Follow-Up-Backlog.md` §3.10.
+**Known gap seen on that run — now closed:** the Contents column read its tier
+names in **English** under the Arabic UI, because `CountsSummary` was a single
+denormalised English string stored on the batch. It was logged as
+`docs/SIMF-Follow-Up-Backlog.md` §3.10 and is resolved: the counts are
+`BadgeBatchItem` child rows, and both the bilingual `Tiers` breakdown and the
+`CountsSummary` string are composed on read against the live profile-type names.

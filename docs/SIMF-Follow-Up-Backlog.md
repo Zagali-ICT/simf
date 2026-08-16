@@ -236,6 +236,22 @@ maintain the stored string. That is now display-irrelevant, and could
 be retired if the stored summary is ever dropped — which would be a
 schema change and is not proposed here.
 
+**Follow-up, done 2026-08-16.** The stored summary WAS dropped, under the
+D-881 freeze lift. `BadgeBatch.CountsSummary` and `BadgeBatch.TotalCount`
+are gone; the counts are `BadgeBatchItem` child rows (`BadgeBatchId`,
+`ProfileTypeId`, `Count`, `DisplayOrder`) written from the same planned
+collection the generate path was already holding in memory. Both the
+bilingual `Tiers` breakdown and the `CountsSummary` string on
+`AdminBadgeBatchSummary` are composed on READ from those rows joined to the
+live profile type, and `TotalCount` is their sum — so the list can no longer
+disagree with itself, and a renamed tier corrects history rather than
+breaking it. `MergeCountsSummary` is retired: the top-up folds by
+profile-type **id**, which also closes a latent defect in the string merge,
+which matched tiers by NAME and so quietly started a second line for the
+same tier if it was renamed between two top-ups. The direct-registration
+order needs no id-based exclusion any more: it is not a badge order, so it
+simply has no lines.
+
 ### 3.8 `myComment.txt` drain — TRIAGED (H31 — D-089)
 
 The owner's working note at repo root was triaged item-by-item; the

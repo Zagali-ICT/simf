@@ -31,8 +31,9 @@ the whole batch.
 - **Top-up** — `POST /account/api/admin/visitors/badge-batches/top-up`
   (`{ BatchId, Batches }`). Adds badges to an order that already exists, minting
   them immediately so `TotalCount` always equals the badges that exist, and
-  folding the added tier into `CountsSummary` rather than appending a second
-  entry for the same tier. The dialog adds **one tier per run** — the contract
+  folding the added tier into the order's existing `BadgeBatchItem` row rather
+  than appending a second line for the same tier. The dialog adds **one tier per
+  run** — the contract
   takes a list, but an order is topped up to add "3 more VIP", and repeating the
   action reads better than a second row-builder inside a modal.
 - **Revoke** — `POST /account/api/admin/visitors/badge-batches/revoke` (`{ BatchId }`).
@@ -48,8 +49,8 @@ FastEndpoints in `BadgeBatchEndpoints.cs` → `IAdminUserBulkService`
 
 | Column | Source |
 |---|---|
-| Contents | `CountsSummary` (e.g. `VIP × 3 + Normal × 2`, built invariant-culture at generate time) |
-| Total | `TotalCount` |
+| Contents | `Tiers` in the reading language, falling back to `CountsSummary`. Both are composed **at read time** from the order's `BadgeBatchItem` rows joined to the LIVE profile-type names — `CountsSummary` (e.g. `VIP × 3 + Normal × 2`) is the invariant-culture English rendering of the same rows, so renaming a tier corrects every historical order instead of freezing the name it carried at mint time |
+| Total | `TotalCount` — the sum of the `BadgeBatchItem` counts, derived on read rather than cached on the batch |
 | Delegation | `IsDelegate` pill |
 | Emailed to | `RecipientEmail` (last organiser, or —) |
 | Generated | `CreatedAt` (Saudi time) |

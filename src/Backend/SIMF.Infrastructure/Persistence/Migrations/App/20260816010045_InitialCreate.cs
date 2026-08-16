@@ -107,8 +107,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     NameArabic = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    CountsSummary = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: false),
-                    TotalCount = table.Column<int>(type: "int", nullable: false),
                     IsDelegate = table.Column<bool>(type: "bit", nullable: false),
                     RecipientEmail = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -920,6 +918,35 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         name: "FK_MeetingTables_Halls_HallId",
                         column: x => x.HallId,
                         principalTable: "Halls",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "BadgeBatchItems",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    BadgeBatchId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ProfileTypeId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Count = table.Column<int>(type: "int", nullable: false),
+                    DisplayOrder = table.Column<int>(type: "int", nullable: false),
+                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_BadgeBatchItems", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_BadgeBatchItems_BadgeBatches_BadgeBatchId",
+                        column: x => x.BadgeBatchId,
+                        principalTable: "BadgeBatches",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_BadgeBatchItems_ProfileTypes_ProfileTypeId",
+                        column: x => x.ProfileTypeId,
+                        principalTable: "ProfileTypes",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -2736,8 +2763,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
             migrationBuilder.InsertData(
                 table: "BadgeBatches",
-                columns: new[] { "Id", "CountsSummary", "CreatedAt", "CreatedBy", "DeletedAt", "IsActive", "IsDelegate", "Name", "NameArabic", "RecipientEmail", "TotalCount", "UpdatedAt", "UpdatedBy" },
-                values: new object[] { new Guid("0f1e2d3c-4b5a-6978-8796-a5b4c3d2e1f0"), "Direct registration", new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new Guid("00000000-0000-0000-0000-000000000000"), null, true, false, "Direct registration", "تسجيل مباشر", null, 0, null, null });
+                columns: new[] { "Id", "CreatedAt", "CreatedBy", "DeletedAt", "IsActive", "IsDelegate", "Name", "NameArabic", "RecipientEmail", "UpdatedAt", "UpdatedBy" },
+                values: new object[] { new Guid("0f1e2d3c-4b5a-6978-8796-a5b4c3d2e1f0"), new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new Guid("00000000-0000-0000-0000-000000000000"), null, true, false, "Direct registration", "تسجيل مباشر", null, null, null });
 
             migrationBuilder.InsertData(
                 table: "Countries",
@@ -2916,6 +2943,16 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 name: "IX_BadgeBatches_IsActive_CreatedAt",
                 table: "BadgeBatches",
                 columns: new[] { "IsActive", "CreatedAt" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_BadgeBatchItems_BadgeBatchId_DisplayOrder",
+                table: "BadgeBatchItems",
+                columns: new[] { "BadgeBatchId", "DisplayOrder" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_BadgeBatchItems_ProfileTypeId",
+                table: "BadgeBatchItems",
+                column: "ProfileTypeId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_BadgeUpdateRequests_RequestedByUserId",
@@ -4020,6 +4057,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
             migrationBuilder.DropTable(
                 name: "ArchiveVisibility");
+
+            migrationBuilder.DropTable(
+                name: "BadgeBatchItems");
 
             migrationBuilder.DropTable(
                 name: "BadgeUpdateRequests");

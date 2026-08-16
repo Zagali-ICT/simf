@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SIMF.Application.Abstractions;
 using SIMF.Domain.AccessControl;
@@ -304,6 +304,12 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     // placeholder badges can be re-emailed / revoked as a unit. Each member
     // UserProfile carries a nullable BadgeBatchId back-reference (intra-App FK).
     public DbSet<BadgeBatch> BadgeBatches => Set<BadgeBatch>();
+
+    // What each order holds, one row per profile type. Replaced the rendered
+    // "VIP × 3 + Normal × 2" string on BadgeBatches, which could not be queried
+    // and froze the tier name at mint time; the label is composed on read from
+    // these rows joined to the live profile type.
+    public DbSet<BadgeBatchItem> BadgeBatchItems => Set<BadgeBatchItem>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
