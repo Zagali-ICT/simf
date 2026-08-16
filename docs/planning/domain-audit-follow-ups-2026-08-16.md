@@ -1,7 +1,7 @@
 # Domain-model audit — findings deferred to a later wave
 
 Date: 2026-08-16
-Source: the domain-model audit programme (PRs 352-361, decisions D-916..D-924)
+Source: the domain-model audit programme (PRs 352-361, decisions D-917..D-925)
 
 Everything here was **found and verified** during the programme and deliberately
 **not acted on**, either because it sat outside the lane that found it or because
@@ -23,7 +23,7 @@ index, so the planner seeks that one and never reaches this. Its leading column 
 constant-true besides: nothing in the backend writes `SessionSummary.IsActive =
 false`.
 
-Same class of finding as the `SessionOutcomes` leg dropped in D-918. Dropping it
+Same class of finding as the `SessionOutcomes` leg dropped in D-919. Dropping it
 is a schema change, so it needs the lift.
 
 ### 1.2 The admission relocation is still a dual-write
@@ -54,7 +54,7 @@ here so the two `QrId`-shaped columns are not confused again.
   asserts `CipherFormatVersion` 0 and 1 at lines 49 and 63, and is the natural
   home for a one-line `KekVersion` assertion on each.
 - No test covers `StoredFileService.RestoreBytesAsync` refreshing a stale
-  `KekVersion` stamp - the bug D-921 fixed. The safety property is that the save
+  `KekVersion` stamp - the bug D-922 fixed. The safety property is that the save
   fires only when the stamps differ, which is exactly what a test should pin.
 - `tests/SIMF.Api.Tests/SessionSummaryCommitteeTests.cs` lines 960-983 assign the
   three summary actor columns directly. If 1.1's sibling question - whether those
@@ -81,6 +81,13 @@ and `DECISIONS_LOG.md`; `ReminderSentUtc` in `docs/tests/e2e/bi-meeting-lifecycl
 
 Gaps rather than errors:
 
+- **The two rotation keys have no declared home.** D-922 added
+  `SIMF_API_FileStorage__PreviousEncryptionKey` and `__PreviousKekVersion` to
+  `deploy/set-env-api.template.ps1`; PR 362 deleted every template in favour of
+  five `set-env-*.ps1` that are tracked on no branch, so this merge dropped both
+  declarations rather than re-homing them. Add them to `deploy/set-env-api.ps1`
+  when that file lands. Until then the rotation window the column measures cannot
+  be configured, which is consistent with the re-wrap job not existing either.
 - `SIMF-OPS-001` section B.1's configuration matrix has **no `FileStorage` rows at
   all** - not `EncryptionKey`, not `RootPath`, not the new `KekVersion` pair. It
   predates the centralised file store.
@@ -100,10 +107,12 @@ Gaps rather than errors:
   would also add `CreatedBy` and `DeletedAt`, which the entity does not have. The
   divergence is documented on the class.
 - **`SessionSummary`'s three actor columns and its `IsActive`.** Redundant as
-  history against `RowAudit`, unique as current state. See D-918.
-- **The superseded mobile pair and the three per-kind identity columns.** Written
-  in lockstep with their replacements because the shipped app decodes those JSON
-  keys by name. They retire when the app does, not before.
+  history against `RowAudit`, unique as current state. See D-919.
+- **The superseded mobile pair.** `SaudiMobile` and `InternationalMobile` are
+  still written in lockstep with `MobileNumber`, because the shipped app decodes
+  those JSON keys by name. They retire when the app does, not before. The three
+  per-kind identity columns were the same case until PR 355 dropped them, so the
+  child table's `NumberHash` index is now the only uniqueness guard.
 
 ---
 
@@ -115,7 +124,7 @@ each time. Not a merge failure - a merge *success*: a timestamped migration id
 gives every branch its own filename, so git had nothing to conflict on and both
 files survived, with `mergeStatus: succeeded` on both pull requests.
 
-**Fixed by D-924** - the id is pinned to `00000000000000_InitialCreate`,
+**Fixed by D-925** - the id is pinned to `00000000000000_InitialCreate`,
 regeneration goes through `tools/migrations/Regenerate-Migration.ps1`, and
 `SchemaFreezeTests` fails the build on any other id. Two branches that regenerate
 now write the same path and collide loudly.

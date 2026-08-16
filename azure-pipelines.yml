@@ -564,32 +564,12 @@ stages:
         arguments: '--configuration $(buildConfiguration) --no-restore --output $(Build.ArtifactStagingDirectory)/edge'
         zipAfterPublish: true
 
-    # --- The two deploy scripts travel WITH the packages (D-888).
-    #
-    #     The deploy jobs need `pipeline-deploy-one.ps1` and the `iis-deploy.ps1`
-    #     it calls, and a deployment job does not clone the repository. The first
-    #     fix for that was `checkout: self` in the deploy template, which pulled
-    #     the whole repo - hundreds of MB of history and ~5,000 files, re-cleaned
-    #     every run - onto each production server to obtain 12 KB of PowerShell.
-    #     On a changeset whose purpose is a quick deploy, that was the wrong
-    #     trade: the artifact already travels to both servers, so the scripts
-    #     ride along and the clone disappears.
-    #
-    #     NAMED INDIVIDUALLY, NOT `deploy/*.ps1`. The filled
-    #     `set-env-{api,cp,web,edge}.ps1` carry production secrets and live in
-    #     this folder, kept out of the repository by .gitignore. A wildcard would
-    #     put any that ever appeared on an agent's working tree into a build
-    #     artifact, which is a place secrets must never reach. Two names cannot
-    #     do that. A new script the deploy jobs need must be added here by name.
-    - task: CopyFiles@2
-      displayName: 'Stage the deploy scripts into the artifact'
-      inputs:
-        SourceFolder: '$(Build.SourcesDirectory)/deploy'
-        Contents: |
-          pipeline-deploy-one.ps1
-          iis-deploy.ps1
-        TargetFolder: '$(Build.ArtifactStagingDirectory)/deploy'
-
+    # No deploy scripts are staged into the artifact any more. The stop / mirror
+    # / start sequence is written inline in deploy/deploy-all-packages.yml, so
+    # the drop carries published applications and nothing else. That also
+    # removes the standing hazard of a `deploy/*.ps1` wildcard ever sweeping a
+    # filled `set-env-*.ps1` - which holds production secrets - into a build
+    # artifact.
     - task: PublishBuildArtifacts@1
       displayName: 'Publish Artifacts'
       inputs:

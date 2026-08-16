@@ -406,7 +406,7 @@ migration appears in either folder. Before this, nothing anywhere pinned the
 freeze; it was prose, which is exactly how six lifts accumulated without the
 baseline text ever being corrected.
 
-### D-923 named lift — the domain-model audit programme (2026-08-15/16)
+### D-924 named lift — the domain-model audit programme (2026-08-15/16)
 
 The first lift taken under D-895's "new, named lift" rule, and it was recorded at
 the **end** of the programme rather than the start. The owner instructed a deep
@@ -414,7 +414,7 @@ audit of the domain model for normalisation and duplication defects; fixing what
 it found changed the App schema across seven branches, and no lift row was taken
 while that ran.
 
-`docs/decisions/DECISIONS_LOG.md` D-923 enumerates every change, per branch. In
+`docs/decisions/DECISIONS_LOG.md` D-924 enumerates every change, per branch. In
 outline: a `ProfileIdentityDocuments` child table, `UserProfile.MobileNumber`,
 `BadgeBatchItems`, the three per-kind identity-number columns and their digests
 dropped, the constraint sweep's CHECK constraints and filtered unique indexes,
@@ -427,7 +427,7 @@ context rule holds and `SchemaFreezeTests` is unchanged. Enums are untouched, an
 the shipped mobile wire contract stays append-only — now pinned by
 `tests/SIMF.Api.Tests/AppWireContractPinTests.cs` rather than by review.
 
-### D-924 — the migration id is PINNED, and you regenerate with the script
+### D-925 — the migration id is PINNED, and you regenerate with the script
 
 `00000000000000_InitialCreate`, on both contexts. Regenerate with
 `tools/migrations/Regenerate-Migration.ps1`, never with a bare

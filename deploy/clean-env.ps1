@@ -1,0 +1,267 @@
+# =============================================================================
+# SIMF - CLEAR environment variables  (safe to commit - contains NO secrets)
+#
+# Removes the Machine-scope SIMF_* SECRETS the set-env-* scripts create (DB creds,
+# JWT / encryption keys, super-admin password, AI API keys, prompt-hash, etc.).
+#
+# By DEFAULT it PRESERVES the non-secret, CP/Website-facing shared config so a
+# clear does not knock the Control Panel / Website offline. The one that matters
+# most is Api__BaseUrl - without it the CP falls back to http://localhost:5175
+# and shows "The SIMF service could not be reached". Use -Full to wipe everything
+# (a true scrub / decommission), which also drops those shared values.
+#
+# The preserve list covers CURRENT names only. A pre-split SIMF_ variable is
+# ALWAYS removed, whatever -Full and -Target say, because no build reads one and
+# every host refuses to start in Production while one exists.
+#
+# Machine scope is shared by every app on the box. On a dedicated server that is
+# exactly one package, so clearing the whole SIMF_* namespace is the right
+# default. On a box that still runs several packages - the single-server estate
+# this deployment is moving away from - use -Target to clear only one package's
+# variables and leave the others running.
+#
+#   Scrub secrets, keep CP reachable:  .\deploy\clean-env.ps1
+#   Only the edge's variables:            .\deploy\clean-env.ps1 -Target Edge
+#   Wipe EVERYTHING (incl. Api BaseUrl): .\deploy\clean-env.ps1 -Full
+#   Also drop the host env:               .\deploy\clean-env.ps1 -IncludeAspNetEnv
+#   Then restart the IIS app pools (or the server) so w3wp drops the values.
+# =============================================================================
+
+#Requires -RunAsAdministrator
+
+[CmdletBinding()]
+param(
+    # Which package's variables to clear. 'All' (the default) clears every SIMF_*
+    # on the box, which is correct on a dedicated server and is what this script
+    # has always done. Naming a package reads that package's template for the set
+    # of names it declares and clears only those, so an operator on a shared or
+    # transitional box cannot knock the other packages over.
+    #
+    # ASPNETCORE_ENVIRONMENT is never scoped by this: it is host-level and shared
+    # by every app on the box, so it stays behind -IncludeAspNetEnv alone.
+    [ValidateSet('All', 'Api', 'Cp', 'Web', 'Edge')]
+    [string]$Target = 'All',
+
+    # Wipe EVERY SIMF_* variable, including the non-secret shared config that is
+    # normally preserved (Api__BaseUrl, CORS origins, AI routing). Use for a
+    # full scrub / decommission - it WILL take the CP + Website offline until
+    # set-env is run again.
+    [switch]$Full,
+
+    # Also remove ASPNETCORE_ENVIRONMENT (host-level, shared). Without it the host
+    # falls back to its default (Production). Off by default so a clear doesn't
+    # silently flip the environment.
+    [switch]$IncludeAspNetEnv
+)
+
+$ErrorActionPreference = "Stop"
+
+# Non-secret, CP/Website-facing shared config that is KEPT unless -Full is given.
+# These are public values (URLs / origins / model id), never credentials.
+#
+# Listed UN-prefixed and matched against the part after the application prefix,
+# because each application now reads its own (SIMF_API_, SIMF_CP_, SIMF_WEB_,
+# SIMF_EDGE_). Naming SIMF_CP_Api__BaseUrl here would preserve the Control
+# Panel's copy and silently wipe the Website's.
+$preserveExactSuffix = @(
+    "Api__BaseUrl"                     # CP + Website -> API endpoint
+    "Ai__DefaultProvider"              # non-secret AI routing
+    "Ai__Anthropic__DefaultModel"      # non-secret model id
+)
+
+# RETIRED variables: ALWAYS removed - without -Full, and even though one of them
+# used to be on the preserve list above.
+#
+# SIMF_Api__AllowSelfSignedCertificate installed a blanket
+# accept-any-certificate handler on the CP/Website API clients, and was deleted
+# on 2026-08-08. No application reads it any more, so leaving it set changes
+# nothing today - but a box provisioned before that date still carries the
+# value, and a stale security toggle sitting in the machine environment is
+# exactly what gets "restored" by someone debugging a TLS error later. Removing
+# it here is the supported way to clean an already-provisioned server.
+# Matched on the suffix, so a pre-split SIMF_Api__AllowSelfSignedCertificate and
+# a per-application SIMF_CP_Api__AllowSelfSignedCertificate are both removed.
+$retiredSuffix = @(
+    "Api__AllowSelfSignedCertificate"
+)
+$preservePrefixSuffix = @(
+    "Cors__WebAppOrigins__"              # public web-app origin(s)
+)
+
+# The four live application prefixes, longest-first so SIMF_API_ is stripped
+# before the bare SIMF_ of a pre-split variable.
+$applicationPrefixes = @('SIMF_EDGE_', 'SIMF_WEB_', 'SIMF_API_', 'SIMF_CP_')
+
+function Get-KeySuffix([string]$name) {
+    foreach ($prefix in $applicationPrefixes) {
+        if ($name.StartsWith($prefix, [StringComparison]::Ordinal)) {
+            return $name.Substring($prefix.Length)
+        }
+    }
+    # A pre-split SIMF_ variable: strip the bare prefix so the preserve list
+    # still recognises it on a server that has not been re-provisioned yet.
+    if ($name.StartsWith('SIMF_', [StringComparison]::Ordinal)) {
+        return $name.Substring('SIMF_'.Length)
+    }
+    return $name
+}
+
+function Test-Preserved([string]$name) {
+    $suffix = Get-KeySuffix $name
+    if ($preserveExactSuffix -contains $suffix) { return $true }
+    foreach ($p in $preservePrefixSuffix) { if ($suffix -like ($p + "*")) { return $true } }
+    return $false
+}
+
+# A PRE-SPLIT variable: SIMF_ without one of the four application prefixes.
+#
+# These are ALWAYS removed - without -Full, and whatever -Target says. No build
+# reads them, and SimfLegacyEnvironmentGuard refuses to start ANY host in
+# Production while even one exists, so a "preserved" legacy variable is not a
+# kindness, it is an outage.
+#
+# That is what used to happen. Get-KeySuffix strips the bare SIMF_ so a legacy
+# name is matched against the preserve list, and SIMF_Api__BaseUrl,
+# SIMF_Ai__DefaultProvider, SIMF_Ai__Anthropic__DefaultModel and
+# SIMF_Cors__WebAppOrigins__* are all on it. A default run therefore kept the
+# exact set the guard rejects, and the Control Panel would not boot afterwards
+# with the reason pointing back at this script.
+#
+# The harness variables are excluded from the LEGACY classification, matching
+# the guard, which does not fire on them either. They are still cleared by the
+# ordinary path below on a full-box run - this only keeps them from being
+# reported as a half-finished upgrade, which they are not.
+function Test-LegacyName([string]$name) {
+    foreach ($prefix in $applicationPrefixes) {
+        if ($name.StartsWith($prefix, [StringComparison]::Ordinal)) { return $false }
+    }
+    if ($name.StartsWith('SIMF_TEST_', [StringComparison]::Ordinal)) { return $false }
+    if ($name.StartsWith('SIMF_SMOKE_', [StringComparison]::Ordinal)) { return $false }
+    return $name.StartsWith('SIMF_', [StringComparison]::Ordinal)
+}
+
+$mode = if ($Full) { "FULL wipe (incl. shared config)" } else { "secrets only (shared config kept)" }
+$scope = if ($Target -eq 'All') { "every SIMF_* on this box" } else { "the $Target package only" }
+Write-Host ("=== SIMF clear env (Machine + User scope) - {0}, {1} ===" -f $mode, $scope) -ForegroundColor Cyan
+
+# BOTH SCOPES, and the reason is a real outage. This script cleared Machine only,
+# while SimfLegacyEnvironmentGuard reads Environment.GetEnvironmentVariables()
+# with no target - the PROCESS environment, which is Machine plus User plus
+# whatever the process inherited. A User-scope copy therefore survived every run
+# and the host kept refusing to start, naming this script as the fix while this
+# script reported nothing left to do.
+#
+# The two are tracked as pairs rather than as names: the same variable can exist
+# in both scopes with different values, and removing it from one proves nothing
+# about the other.
+#
+# The loop variable is $scopeTarget and NOT $target. PowerShell variable names
+# are case-insensitive, so `foreach ($target in ...)` assigns straight into the
+# script's own -Target parameter, and its ValidateSet then rejects "Machine"
+# before a single variable is read. Do not rename it back.
+$simfEntries = @()
+foreach ($scopeTarget in @([EnvironmentVariableTarget]::Machine, [EnvironmentVariableTarget]::User)) {
+    $live = [Environment]::GetEnvironmentVariables($scopeTarget)
+    foreach ($key in $live.Keys) {
+        if ($key -like 'SIMF_*') {
+            $simfEntries += [pscustomobject]@{ Name = [string]$key; Target = $scopeTarget }
+        }
+    }
+}
+$simfEntries = @($simfEntries | Sort-Object Name, Target)
+$simfNames = @($simfEntries | ForEach-Object { $_.Name } | Select-Object -Unique)
+
+# Scoped to one package: intersect the live namespace with the names that
+# package's template declares. Read by regex rather than by dot-sourcing - the
+# template carries #Requires and an apply loop, so running it to inspect it
+# would SET the variables this script exists to remove.
+if ($Target -ne 'All') {
+    $scriptName = "set-env-$($Target.ToLowerInvariant()).ps1"
+    $scriptPath = Join-Path $PSScriptRoot $scriptName
+    if (-not (Test-Path $scriptPath)) {
+        throw "Cannot scope to '$Target': $scriptName was not found beside this script."
+    }
+    $declared = [regex]::Matches(
+        (Get-Content -Raw -LiteralPath $scriptPath),
+        'Name\s*=\s*"(?<name>[^"]+)"') | ForEach-Object { $_.Groups['name'].Value }
+
+    $before = $simfEntries.Count
+    # Legacy names survive the scoping filter on purpose. They are declared by no
+    # package - that is what makes them legacy - so an intersection would drop
+    # them, and a scoped clean would leave the box unable to start any host.
+    $simfEntries = @($simfEntries | Where-Object {
+        ($declared -contains $_.Name) -or (Test-LegacyName $_.Name) })
+    Write-Host ("  scoped to {0}: {1} of {2} live SIMF_* variable(s) belong to this package (pre-split names are always included)." `
+        -f $scriptName, $simfEntries.Count, $before) -ForegroundColor DarkGray
+}
+
+$removed = 0
+$kept    = 0
+$legacyRemoved = 0
+if ($simfEntries.Count -eq 0) {
+    Write-Host "  No SIMF_* variables found in Machine or User scope - nothing to clear." -ForegroundColor DarkGray
+} else {
+    foreach ($entry in $simfEntries) {
+        $name = $entry.Name
+        $where = $entry.Target
+        if ($retiredSuffix -contains (Get-KeySuffix $name)) {
+            [Environment]::SetEnvironmentVariable($name, $null, $where)
+            Write-Host ("  removed {0} [{1}] (RETIRED - no application reads it)" -f $name, $where) -ForegroundColor Yellow
+            $removed++
+            continue
+        }
+        # Before the preserve check, never after: a pre-split name must not be
+        # rescued by a preserve entry that matches its stripped suffix.
+        if (Test-LegacyName $name) {
+            [Environment]::SetEnvironmentVariable($name, $null, $where)
+            Write-Host ("  removed {0} [{1}] (PRE-SPLIT prefix - no build reads it, and every host refuses to start while it exists)" -f $name, $where) -ForegroundColor Yellow
+            $removed++
+            $legacyRemoved++
+            continue
+        }
+        if (-not $Full -and (Test-Preserved $name)) {
+            Write-Host ("  keep    {0} [{1}] (non-secret shared config)" -f $name, $where) -ForegroundColor DarkCyan
+            $kept++
+            continue
+        }
+        # Setting a variable to $null deletes it from that scope.
+        [Environment]::SetEnvironmentVariable($name, $null, $where)
+        Write-Host ("  removed {0} [{1}]" -f $name, $where) -ForegroundColor Yellow
+        $removed++
+    }
+}
+
+if ($IncludeAspNetEnv) {
+    # $scopeTarget, not $target - see the note on the enumeration loop above.
+    foreach ($scopeTarget in @([EnvironmentVariableTarget]::Machine, [EnvironmentVariableTarget]::User)) {
+        $hostEnv = [Environment]::GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", $scopeTarget)
+        if (-not [string]::IsNullOrWhiteSpace($hostEnv)) {
+            [Environment]::SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", $null, $scopeTarget)
+            Write-Host ("  removed ASPNETCORE_ENVIRONMENT [{0}] (host reverts to its default = Production)" -f $scopeTarget) -ForegroundColor Yellow
+            $removed++
+        } else {
+            Write-Host ("  ASPNETCORE_ENVIRONMENT was not set at {0} scope - skipped." -f $scopeTarget) -ForegroundColor DarkGray
+        }
+    }
+}
+
+Write-Host ""
+Write-Host ("{0} variable(s) removed, {1} kept." -f $removed, $kept) -ForegroundColor Green
+if ($legacyRemoved -gt 0) {
+    Write-Host ("{0} of those used the pre-split SIMF_ prefix. This server was half-upgraded: every host refuses to start in Production while one of those exists, so re-run this server's set-env script before starting the pool." -f $legacyRemoved) -ForegroundColor Yellow
+}
+if (-not $Full -and $kept -gt 0) {
+    Write-Host "Kept the non-secret shared config (Api__BaseUrl etc., under each application prefix) so the CP + Website stay reachable." -ForegroundColor Green
+    Write-Host "Use -Full to wipe those too." -ForegroundColor DarkGray
+}
+Write-Host ""
+Write-Host "NOW RUN iisreset - RECYCLING THE APP POOL IS NOT ENOUGH." -ForegroundColor Yellow
+Write-Host "w3wp does not read the machine environment itself. It inherits an environment BLOCK from WAS, which" -ForegroundColor Yellow
+Write-Host "captured it when the service started, so a recycled pool is handed the SAME stale block and the host" -ForegroundColor Yellow
+Write-Host "still sees variables this script has already deleted. Restarting WAS (iisreset, or Restart-Service WAS" -ForegroundColor Yellow
+Write-Host "-Force) is what makes a removal take effect." -ForegroundColor Yellow
+if ($Target -eq 'All') {
+    Write-Host "Re-provision with the template for this server:  .\deploy\set-env-{api|cp|web|edge}.ps1" -ForegroundColor Green
+} else {
+    Write-Host ("Re-provision with:  .\deploy\set-env-{0}.ps1" -f $Target.ToLowerInvariant()) -ForegroundColor Green
+}
