@@ -142,11 +142,29 @@ function Test-LegacyName([string]$name) {
 
 $mode = if ($Full) { "FULL wipe (incl. shared config)" } else { "secrets only (shared config kept)" }
 $scope = if ($Target -eq 'All') { "every SIMF_* on this box" } else { "the $Target package only" }
-Write-Host ("=== SIMF clear env (Machine scope) - {0}, {1} ===" -f $mode, $scope) -ForegroundColor Cyan
+Write-Host ("=== SIMF clear env (Machine + User scope) - {0}, {1} ===" -f $mode, $scope) -ForegroundColor Cyan
 
-# Enumerate the live Machine environment and pick our whole namespace.
-$machineVars = [Environment]::GetEnvironmentVariables([EnvironmentVariableTarget]::Machine)
-$simfNames   = @($machineVars.Keys | Where-Object { $_ -like 'SIMF_*' } | Sort-Object)
+# BOTH SCOPES, and the reason is a real outage. This script cleared Machine only,
+# while SimfLegacyEnvironmentGuard reads Environment.GetEnvironmentVariables()
+# with no target - the PROCESS environment, which is Machine plus User plus
+# whatever the process inherited. A User-scope copy therefore survived every run
+# and the host kept refusing to start, naming this script as the fix while this
+# script reported nothing left to do.
+#
+# The two are tracked as pairs rather than as names: the same variable can exist
+# in both scopes with different values, and removing it from one proves nothing
+# about the other.
+$simfEntries = @()
+foreach ($target in @([EnvironmentVariableTarget]::Machine, [EnvironmentVariableTarget]::User)) {
+    $live = [Environment]::GetEnvironmentVariables($target)
+    foreach ($key in $live.Keys) {
+        if ($key -like 'SIMF_*') {
+            $simfEntries += [pscustomobject]@{ Name = [string]$key; Target = $target }
+        }
+    }
+}
+$simfEntries = @($simfEntries | Sort-Object Name, Target)
+$simfNames = @($simfEntries | ForEach-Object { $_.Name } | Select-Object -Unique)
 
 # Scoped to one package: intersect the live namespace with the names that
 # package's template declares. Read by regex rather than by dot-sourcing - the
@@ -162,58 +180,62 @@ if ($Target -ne 'All') {
         (Get-Content -Raw -LiteralPath $scriptPath),
         'Name\s*=\s*"(?<name>[^"]+)"') | ForEach-Object { $_.Groups['name'].Value }
 
-    $before = $simfNames.Count
+    $before = $simfEntries.Count
     # Legacy names survive the scoping filter on purpose. They are declared by no
     # package - that is what makes them legacy - so an intersection would drop
     # them, and a scoped clean would leave the box unable to start any host.
-    $simfNames = @($simfNames | Where-Object {
-        ($declared -contains $_) -or (Test-LegacyName $_) })
+    $simfEntries = @($simfEntries | Where-Object {
+        ($declared -contains $_.Name) -or (Test-LegacyName $_.Name) })
     Write-Host ("  scoped to {0}: {1} of {2} live SIMF_* variable(s) belong to this package (pre-split names are always included)." `
-        -f $scriptName, $simfNames.Count, $before) -ForegroundColor DarkGray
+        -f $scriptName, $simfEntries.Count, $before) -ForegroundColor DarkGray
 }
 
 $removed = 0
 $kept    = 0
 $legacyRemoved = 0
-if ($simfNames.Count -eq 0) {
-    Write-Host "  No SIMF_* Machine variables found - nothing to clear." -ForegroundColor DarkGray
+if ($simfEntries.Count -eq 0) {
+    Write-Host "  No SIMF_* variables found in Machine or User scope - nothing to clear." -ForegroundColor DarkGray
 } else {
-    foreach ($name in $simfNames) {
+    foreach ($entry in $simfEntries) {
+        $name = $entry.Name
+        $where = $entry.Target
         if ($retiredSuffix -contains (Get-KeySuffix $name)) {
-            [Environment]::SetEnvironmentVariable($name, $null, [EnvironmentVariableTarget]::Machine)
-            Write-Host ("  removed {0} (RETIRED - no application reads it)" -f $name) -ForegroundColor Yellow
+            [Environment]::SetEnvironmentVariable($name, $null, $where)
+            Write-Host ("  removed {0} [{1}] (RETIRED - no application reads it)" -f $name, $where) -ForegroundColor Yellow
             $removed++
             continue
         }
         # Before the preserve check, never after: a pre-split name must not be
         # rescued by a preserve entry that matches its stripped suffix.
         if (Test-LegacyName $name) {
-            [Environment]::SetEnvironmentVariable($name, $null, [EnvironmentVariableTarget]::Machine)
-            Write-Host ("  removed {0} (PRE-SPLIT prefix - no build reads it, and every host refuses to start while it exists)" -f $name) -ForegroundColor Yellow
+            [Environment]::SetEnvironmentVariable($name, $null, $where)
+            Write-Host ("  removed {0} [{1}] (PRE-SPLIT prefix - no build reads it, and every host refuses to start while it exists)" -f $name, $where) -ForegroundColor Yellow
             $removed++
             $legacyRemoved++
             continue
         }
         if (-not $Full -and (Test-Preserved $name)) {
-            Write-Host ("  keep    {0} (non-secret shared config)" -f $name) -ForegroundColor DarkCyan
+            Write-Host ("  keep    {0} [{1}] (non-secret shared config)" -f $name, $where) -ForegroundColor DarkCyan
             $kept++
             continue
         }
-        # Setting a variable to $null deletes it from the Machine environment.
-        [Environment]::SetEnvironmentVariable($name, $null, [EnvironmentVariableTarget]::Machine)
-        Write-Host ("  removed {0}" -f $name) -ForegroundColor Yellow
+        # Setting a variable to $null deletes it from that scope.
+        [Environment]::SetEnvironmentVariable($name, $null, $where)
+        Write-Host ("  removed {0} [{1}]" -f $name, $where) -ForegroundColor Yellow
         $removed++
     }
 }
 
 if ($IncludeAspNetEnv) {
-    $hostEnv = [Environment]::GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", [EnvironmentVariableTarget]::Machine)
-    if (-not [string]::IsNullOrWhiteSpace($hostEnv)) {
-        [Environment]::SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", $null, [EnvironmentVariableTarget]::Machine)
-        Write-Host "  removed ASPNETCORE_ENVIRONMENT (host reverts to its default = Production)" -ForegroundColor Yellow
-        $removed++
-    } else {
-        Write-Host "  ASPNETCORE_ENVIRONMENT was not set at Machine scope - skipped." -ForegroundColor DarkGray
+    foreach ($target in @([EnvironmentVariableTarget]::Machine, [EnvironmentVariableTarget]::User)) {
+        $hostEnv = [Environment]::GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", $target)
+        if (-not [string]::IsNullOrWhiteSpace($hostEnv)) {
+            [Environment]::SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", $null, $target)
+            Write-Host ("  removed ASPNETCORE_ENVIRONMENT [{0}] (host reverts to its default = Production)" -f $target) -ForegroundColor Yellow
+            $removed++
+        } else {
+            Write-Host ("  ASPNETCORE_ENVIRONMENT was not set at {0} scope - skipped." -f $target) -ForegroundColor DarkGray
+        }
     }
 }
 
@@ -226,7 +248,12 @@ if (-not $Full -and $kept -gt 0) {
     Write-Host "Kept the non-secret shared config (Api__BaseUrl etc., under each application prefix) so the CP + Website stay reachable." -ForegroundColor Green
     Write-Host "Use -Full to wipe those too." -ForegroundColor DarkGray
 }
-Write-Host "Restart the IIS app pools (or the server) so w3wp drops the cleared values." -ForegroundColor Green
+Write-Host ""
+Write-Host "NOW RUN iisreset - RECYCLING THE APP POOL IS NOT ENOUGH." -ForegroundColor Yellow
+Write-Host "w3wp does not read the machine environment itself. It inherits an environment BLOCK from WAS, which" -ForegroundColor Yellow
+Write-Host "captured it when the service started, so a recycled pool is handed the SAME stale block and the host" -ForegroundColor Yellow
+Write-Host "still sees variables this script has already deleted. Restarting WAS (iisreset, or Restart-Service WAS" -ForegroundColor Yellow
+Write-Host "-Force) is what makes a removal take effect." -ForegroundColor Yellow
 if ($Target -eq 'All') {
     Write-Host "Re-provision with the template for this server:  .\deploy\set-env-{api|cp|web|edge}.ps1" -ForegroundColor Green
 } else {
