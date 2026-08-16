@@ -1,8 +1,9 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SIMF.Domain.Exhibition;
 using SIMF.Domain.Exhibitors;
 using SIMF.Domain.Programme;
+using SIMF.Domain.Files;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
@@ -90,5 +91,15 @@ internal sealed class BoothConfiguration : IEntityTypeConfiguration<Booth>
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(booth => new { booth.IsActive });
-    }
+    
+        // The booth's file, in the one store. Restrict: deleting a file must never
+        // delete the booth. OwnerPointerSync keeps this column in step with the
+        // store's own OwnerEntityType/OwnerEntityId pair, which stays because the
+        // serve path and the permission policy both key off it.
+        builder.HasIndex(x => x.LogoFileId);
+        builder.HasOne(x => x.LogoFile)
+            .WithMany()
+            .HasForeignKey(x => x.LogoFileId)
+            .OnDelete(DeleteBehavior.Restrict);
+}
 }

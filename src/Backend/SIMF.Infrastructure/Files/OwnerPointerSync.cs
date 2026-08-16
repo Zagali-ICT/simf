@@ -25,8 +25,10 @@ namespace SIMF.Infrastructure.Files;
 /// through <c>DELETE /files/{id}</c> never reaches that service, and would
 /// otherwise leave the owning row pointing at a dead file.</para>
 ///
-/// <para>A service with no pointer column falls through to a no-op, which is the
-/// common case: only five of the sixteen have one.</para></summary>
+/// <para>A service with no pointer column falls through to a no-op. That used to be
+/// the common case; Speaker, Booth, Exhibitor and ProgrammeDay gained columns so
+/// their files stopped being reachable only through the polymorphic pair, which no
+/// foreign key can constrain.</para></summary>
 internal static class OwnerPointerSync
 {
     /// <summary>Point the owner's row at <paramref name="fileId"/>.</summary>
@@ -55,6 +57,38 @@ internal static class OwnerPointerSync
 
         switch (service)
         {
+            case FileService.SpeakerPhoto:
+            {
+                var row = await dbContext.Speakers
+                    .FirstOrDefaultAsync(x => x.Id == owner, cancellationToken);
+                if (row is null || !Matches(row.PhotoFileId, onlyWhenPointingAt)) { return; }
+                row.PhotoFileId = fileId;
+                break;
+            }
+            case FileService.BoothLogo:
+            {
+                var row = await dbContext.Booths
+                    .FirstOrDefaultAsync(x => x.Id == owner, cancellationToken);
+                if (row is null || !Matches(row.LogoFileId, onlyWhenPointingAt)) { return; }
+                row.LogoFileId = fileId;
+                break;
+            }
+            case FileService.ExhibitorLogo:
+            {
+                var row = await dbContext.Exhibitors
+                    .FirstOrDefaultAsync(x => x.Id == owner, cancellationToken);
+                if (row is null || !Matches(row.LogoFileId, onlyWhenPointingAt)) { return; }
+                row.LogoFileId = fileId;
+                break;
+            }
+            case FileService.ProgrammeDayImage:
+            {
+                var row = await dbContext.ProgrammeDays
+                    .FirstOrDefaultAsync(x => x.Id == owner, cancellationToken);
+                if (row is null || !Matches(row.ImageFileId, onlyWhenPointingAt)) { return; }
+                row.ImageFileId = fileId;
+                break;
+            }
             case FileService.SponsorLogo:
             {
                 var row = await dbContext.Sponsors
