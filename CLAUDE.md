@@ -427,6 +427,24 @@ context rule holds and `SchemaFreezeTests` is unchanged. Enums are untouched, an
 the shipped mobile wire contract stays append-only — now pinned by
 `tests/SIMF.Api.Tests/AppWireContractPinTests.cs` rather than by review.
 
+### D-924 — the migration id is PINNED, and you regenerate with the script
+
+`00000000000000_InitialCreate`, on both contexts. Regenerate with
+`tools/migrations/Regenerate-Migration.ps1`, never with a bare
+`dotnet ef migrations add`, which stamps a fresh timestamp.
+
+This exists because `main` was left unable to compile **twice on 2026-08-16** —
+three `InitialCreate` classes in one namespace each time. It is a merge *success*,
+not a merge failure: a timestamped id gives every branch its own filename, so two
+branches that both regenerate merge without conflicting and both files survive. No
+pull-request gate can see it, because neither PR is individually wrong; the
+breakage exists only after both land. A pinned id makes them write the same path,
+so git raises a real conflict — which you resolve by running the script once on
+the merged model, the only correct resolution anyway.
+
+`SchemaFreezeTests` fails the build on any other id, and on a filename that has
+drifted from the `[Migration("...")]` attribute EF actually reads.
+
 ---
 
 ## Security: the anonymous surface (moved here 2026-08-12)

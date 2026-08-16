@@ -55,6 +55,56 @@ public sealed class SchemaFreezeTests
         Assert.EndsWith("_InitialCreate.cs", migrations[0], StringComparison.Ordinal);
     }
 
+    [Theory]
+    [MemberData(nameof(Contexts))]
+    public void The_InitialCreate_id_is_pinned(string context)
+    {
+        // The rule above catches two migrations, but only once they are already on
+        // main - and that is exactly how it went wrong, twice on 2026-08-16.
+        //
+        // `dotnet ef migrations add` stamps a fresh UTC timestamp, so two branches
+        // that both regenerate InitialCreate produce two DIFFERENT paths. Git has
+        // nothing to conflict on, the pull request reports mergeStatus "succeeded",
+        // and both files land. Neither pull request is individually wrong, so no
+        // gate on either one can see it; the breakage exists only in the state
+        // after both merge, and by then main no longer compiles.
+        //
+        // Pinning the id makes the second branch write the SAME path as the first,
+        // which git raises as an ordinary content conflict, resolved by running
+        // tools/migrations/Regenerate-Migration.ps1 once on the merged model. That
+        // is the only correct resolution in any case: a schema built by taking one
+        // side of a merge is a schema nobody generated.
+        var folder = Path.Combine(
+            RepoRoot(), MigrationsRoot.Replace('/', Path.DirectorySeparatorChar), context);
+
+        var migration = Directory
+            .EnumerateFiles(folder, "*_InitialCreate.cs")
+            .Select(Path.GetFileNameWithoutExtension)
+            .Single(name => !name!.EndsWith(".Designer", StringComparison.Ordinal))!;
+
+        Assert.True(
+            migration == PinnedMigrationId,
+            $"The {context} migration is '{migration}' but must be "
+            + $"'{PinnedMigrationId}'. Regenerate it with "
+            + "tools/migrations/Regenerate-Migration.ps1, which re-pins the id; "
+            + "a raw 'dotnet ef migrations add' stamps a timestamp, and a "
+            + "timestamped id is what let two regenerated migrations merge into "
+            + "main side by side without conflicting.");
+
+        // The filename is convention; this attribute is the id EF actually reads
+        // and writes to __EFMigrationsHistory. They drift only if someone renames
+        // the file by hand, which is precisely when it matters.
+        var designer = File.ReadAllText(
+            Path.Combine(folder, $"{PinnedMigrationId}.Designer.cs"));
+
+        Assert.Contains($"[Migration(\"{PinnedMigrationId}\")]", designer, StringComparison.Ordinal);
+    }
+
+    // Not a timestamp, and deliberately not one: nothing about it invites a reader
+    // to think it records when the schema was written. It sorts before any real
+    // timestamp, so a future delta migration still applies after it.
+    private const string PinnedMigrationId = "00000000000000_InitialCreate";
+
     [Fact]
     public void The_frozen_enum_surface_is_still_where_the_freeze_says_it_is()
     {
