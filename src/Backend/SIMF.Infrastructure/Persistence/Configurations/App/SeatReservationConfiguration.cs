@@ -39,14 +39,16 @@ internal sealed class SeatReservationConfiguration : IEntityTypeConfiguration<Se
             // seven create paths. Nothing kept the pair consistent, so a writer
             // that stamped ReleasedAt and forgot Status left a row the seat
             // indexes read as free while the grid still rendered it as held.
-            // Bonus: Pending = 0 is the CLR default, so this also rejects an
-            // insert that never set Status at all -- which the deliberately
-            // absent model-level default (see below) cannot catch on its own.
-            // Literal ints, matching the house style (CK_GateScans_*).
+            // ONE direction only. An earlier form of this also demanded
+            // Status = Approved whenever ReleasedAt was null, which outlawed
+            // Pending and Rejected - both real members of the enum, and both
+            // exercised deliberately by GateOfflineRosterTests' status theory.
+            // A dormant state is still a legal state; the invariant worth
+            // pinning is only that a RELEASED row cannot read as held.
+            // Literal int, matching the house style (CK_GateScans_*).
             table.HasCheckConstraint(
                 "CK_SeatReservations_ReleasePin",
-                "([ReleasedAt] IS NULL AND [Status] = 1) "
-                + "OR ([ReleasedAt] IS NOT NULL AND [Status] = 3)");
+                "[ReleasedAt] IS NULL OR [Status] = 3");
 
             // An admin row-block (Kind = AdminReservedRow = 1) blocks the seat
             // off for nobody, so it carries no holder; every other kind exists

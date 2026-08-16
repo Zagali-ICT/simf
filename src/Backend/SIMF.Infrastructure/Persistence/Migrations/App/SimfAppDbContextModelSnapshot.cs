@@ -5946,7 +5946,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             t.HasCheckConstraint("CK_SeatReservations_AdminBlockHasNoHolder", "([Kind] = 1 AND [ReservedForProfileId] IS NULL) OR ([Kind] <> 1 AND [ReservedForProfileId] IS NOT NULL)");
 
-                            t.HasCheckConstraint("CK_SeatReservations_ReleasePin", "([ReleasedAt] IS NULL AND [Status] = 1) OR ([ReleasedAt] IS NOT NULL AND [Status] = 3)");
+                            t.HasCheckConstraint("CK_SeatReservations_ReleasePin", "[ReleasedAt] IS NULL OR [Status] = 3");
 
                             t.HasCheckConstraint("CK_SeatReservations_SeatNumber", "[SeatNumber] >= 1");
 

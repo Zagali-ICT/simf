@@ -1,4 +1,4 @@
-// The people a door is expecting, downloaded so a scanner can decide entry with
+﻿// The people a door is expecting, downloaded so a scanner can decide entry with
 // no network.
 //
 // The badge already lets a device answer "is this genuine", "is this from the
@@ -289,7 +289,11 @@ public sealed class GateOfflineRosterTests : IClassFixture<SimfApiFactory>
                 ? SeatReservationKind.OpenSeating
                 : SeatReservationKind.UserBooking,
             ReservedForProfileId = profileId,
-            Status = status,
+            // Every release path in production writes the pair together
+            // (SeatReservationService x4, AdminSessionService), and
+            // CK_SeatReservations_ReleasePin now holds them to it, so a released
+            // fixture row is Cancelled whatever status the caller asked for.
+            Status = released ? BookingStatus.Cancelled : status,
             ReleasedAt = released ? now : null,
             CreatedByUserId = Guid.NewGuid(),
             CreatedAt = createdAt ?? now,

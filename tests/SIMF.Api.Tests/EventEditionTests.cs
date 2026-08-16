@@ -1,4 +1,4 @@
-// The yearly lifecycle: an admin opens a year, content and registrations
+﻿// The yearly lifecycle: an admin opens a year, content and registrations
 // accumulate against it, then the year is closed into history and the next opens.
 //
 // Two halves that are easy to confuse, and the confusion is the point of these
@@ -59,10 +59,12 @@ public sealed class EventEditionTests : IClassFixture<SimfApiFactory>
         foreach (var profileId in new[] { first, second })
         {
             var profile = await db.UserProfiles.AsNoTracking().SingleAsync(p => p.Id == profileId);
-            // Cleared, not deleted: the attendee stays, labelled with the year
-            // they belong to, and collects a fresh badge.
+            // Cleared, not deleted: the attendee is carried into the new edition
+            // and collects a fresh badge there, so the year moves WITH the badge.
+            // It used to stay behind - EditionYear was written once at insert - and
+            // the gate then refused the new badge as outside its year.
             Assert.Null(profile.QrId);
-            Assert.Equal(openYear, profile.EditionYear);
+            Assert.Equal(openYear + 1, profile.EditionYear);
             Assert.Equal(AccountState.Approved, profile.AdmissionState);
         }
     }

@@ -1993,7 +1993,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 {
                     table.PrimaryKey("PK_SeatReservations", x => x.Id);
                     table.CheckConstraint("CK_SeatReservations_AdminBlockHasNoHolder", "([Kind] = 1 AND [ReservedForProfileId] IS NULL) OR ([Kind] <> 1 AND [ReservedForProfileId] IS NOT NULL)");
-                    table.CheckConstraint("CK_SeatReservations_ReleasePin", "([ReleasedAt] IS NULL AND [Status] = 1) OR ([ReleasedAt] IS NOT NULL AND [Status] = 3)");
+                    table.CheckConstraint("CK_SeatReservations_ReleasePin", "[ReleasedAt] IS NULL OR [Status] = 3");
                     table.CheckConstraint("CK_SeatReservations_SeatNumber", "[SeatNumber] >= 1");
                     table.CheckConstraint("CK_SeatReservations_SeatPair", "([RowLabel] IS NULL AND [SeatNumber] IS NULL) OR ([RowLabel] IS NOT NULL AND [SeatNumber] IS NOT NULL)");
                     table.ForeignKey(

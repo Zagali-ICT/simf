@@ -20,7 +20,12 @@ internal static class OrganizationProfileMapper
         // classify a feed by inspecting the string, so the composed-or-stored URL
         // is the payload, not a redirect to it.
         string? liveStreamUrl,
-        string? backgroundVideoUrl) =>
+        string? backgroundVideoUrl,
+        // The running year is EventEdition's fact, not the profile's - the profile
+        // used to keep a second copy that nothing synced, so opening an edition left
+        // this screen a year behind. Passed in, like the URLs above, because the
+        // caller is the one holding the edition service.
+        int currentYear) =>
         new(
             p.Name,
             p.NameArabic,
@@ -36,7 +41,7 @@ internal static class OrganizationProfileMapper
             p.ReleaseDate,
             p.EventStartDate,
             p.EventEndDate,
-            p.CurrentYear,
+            currentYear,
             p.Status.ToString(),
             NullIfBlank(p.LocationText),
             NullIfBlank(p.LocationTextArabic),
