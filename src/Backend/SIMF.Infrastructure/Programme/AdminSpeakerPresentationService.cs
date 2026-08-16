@@ -35,11 +35,17 @@ internal sealed class AdminSpeakerPresentationService(
         return await db.SpeakerPresentations.AsNoTracking()
             .Where(p => p.SpeakerId == speakerId && p.IsActive)
             .OrderByDescending(p => p.CreatedAt)
+            // Name, media type and size are read off the store row. The media type
+            // in particular is the canonical one IFileService derived, where the
+            // copy this table used to keep was whatever the client sent.
             .Join(db.Sessions.AsNoTracking(),
                 p => p.SessionId, s => s.Id,
                 (p, s) => new AdminSpeakerPresentationRow(
                     p.Id, p.SpeakerId, p.SessionId, s.Title, s.TitleArabic,
-                    p.FileName, p.ContentType, p.SizeBytes, p.CreatedAt))
+                    p.StoredFile!.OriginalFileName ?? string.Empty,
+                    p.StoredFile!.ContentType ?? "application/octet-stream",
+                    p.StoredFile!.SizeBytes ?? 0,
+                    p.CreatedAt))
             .ToListAsync(cancellationToken);
     }
 
@@ -104,17 +110,14 @@ internal sealed class AdminSpeakerPresentationService(
                 actorUserId, FailClosed: false),
             cancellationToken);
 
+        // The key is the whole row: UploadAsync has already recorded this file's
+        // name, canonical media type, size and uploader on the store row.
         var presentation = new SpeakerPresentation
         {
             Id = presentationId,
             SpeakerId = speakerId,
             SessionId = sessionId,
-            FileName = safeName,
             StoredFileId = result.Id,
-            ContentType = string.IsNullOrWhiteSpace(contentType)
-                ? "application/octet-stream" : contentType,
-            SizeBytes = content.Length,
-            UploadedByUserId = actorUserId,
             IsActive = true,
             CreatedAt = timeProvider.SimfNow(),
         };
@@ -132,9 +135,19 @@ internal sealed class AdminSpeakerPresentationService(
             "Speaker presentation {File} uploaded for speaker {SpeakerId} session {SessionId} by {Actor}",
             safeName, speakerId, sessionId, actorUserId);
 
+        // Read the media type back off the store rather than echoing what the
+        // client sent: IFileService canonicalises it, and the caller should see
+        // the value every later read will return, not a different one.
+        var storedContentType = await db.StoredFiles
+            .AsNoTracking()
+            .Where(file => file.Id == result.Id)
+            .Select(file => file.ContentType)
+            .SingleOrDefaultAsync(cancellationToken);
+
         return new AdminSpeakerPresentationRow(
             presentation.Id, speakerId, sessionId, session.Title, session.TitleArabic,
-            safeName, presentation.ContentType, presentation.SizeBytes, presentation.CreatedAt);
+            safeName, storedContentType ?? "application/octet-stream", result.SizeBytes,
+            presentation.CreatedAt);
     }
 
     public async Task<(byte[] Content, string ContentType, string FileName)?> GetFileAsync(
@@ -142,21 +155,34 @@ internal sealed class AdminSpeakerPresentationService(
     {
         var row = await db.SpeakerPresentations.AsNoTracking()
             .Where(p => p.Id == presentationId && p.IsActive)
-            .Select(p => new { p.StoredFileId, p.ContentType, p.FileName })
+            .Select(p => new
+            {
+                p.StoredFileId,
+                ContentType = p.StoredFile!.ContentType,
+                FileName = p.StoredFile!.OriginalFileName,
+            })
             .SingleOrDefaultAsync(cancellationToken);
         if (row is null)
         {
             return null;
         }
         var file = await fileService.ReadContentAsync(row.StoredFileId, cancellationToken);
-        return file is null ? null : (file.Content, row.ContentType, row.FileName);
+        return file is null
+            ? null
+            : (file.Content,
+               row.ContentType ?? "application/octet-stream",
+               row.FileName ?? "presentation");
     }
 
     public async Task DeleteAsync(
         Guid actorUserId, Guid presentationId,
         CancellationToken cancellationToken = default)
     {
+        // The store row is loaded because the audit line names the file, and that
+        // name is a write-time snapshot: it has to be read before the file is
+        // retired, not after.
         var presentation = await db.SpeakerPresentations
+            .Include(p => p.StoredFile)
             .SingleOrDefaultAsync(p => p.Id == presentationId, cancellationToken)
             ?? throw new ApiException(
                 ErrorCodes.SpeakerPresentationNotFound, 404,
@@ -188,7 +214,7 @@ internal sealed class AdminSpeakerPresentationService(
             AuditEvents.SpeakerPresentationDeleted,
             actorUserId,
             $"presentationId={presentation.Id}; speakerId={presentation.SpeakerId}; "
-                + $"file={presentation.FileName}",
+                + $"file={presentation.StoredFile?.OriginalFileName}",
             cancellationToken);
     }
 

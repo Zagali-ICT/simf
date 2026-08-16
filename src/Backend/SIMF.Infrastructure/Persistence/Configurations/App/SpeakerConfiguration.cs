@@ -1,8 +1,9 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SIMF.Domain.Common;
 using SIMF.Domain.Profiles;
 using SIMF.Domain.Programme;
+using SIMF.Domain.Files;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
@@ -96,5 +97,15 @@ internal sealed class SpeakerConfiguration : IEntityTypeConfiguration<Speaker>
             .IsUnique()
             .HasFilter("[UserProfileId] IS NOT NULL");
         builder.HasIndex(speaker => new { speaker.IsActive, speaker.DisplayOrder });
-    }
+    
+        // The speaker's file, in the one store. Restrict: deleting a file must never
+        // delete the speaker. OwnerPointerSync keeps this column in step with the
+        // store's own OwnerEntityType/OwnerEntityId pair, which stays because the
+        // serve path and the permission policy both key off it.
+        builder.HasIndex(x => x.PhotoFileId);
+        builder.HasOne(x => x.PhotoFile)
+            .WithMany()
+            .HasForeignKey(x => x.PhotoFileId)
+            .OnDelete(DeleteBehavior.Restrict);
+}
 }

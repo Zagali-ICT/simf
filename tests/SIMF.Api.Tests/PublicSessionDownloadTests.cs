@@ -143,11 +143,7 @@ public sealed class PublicSessionDownloadTests : IClassFixture<SimfApiFactory>
             Id = presentationId,
             SpeakerId = speaker.Id,
             SessionId = session.Id,
-            FileName = fileName,
             StoredFileId = stored.Id,
-            ContentType = "application/pdf",
-            SizeBytes = PdfBytes.Length,
-            UploadedByUserId = actorId,
             IsActive = true,
             CreatedAt = now,
         });

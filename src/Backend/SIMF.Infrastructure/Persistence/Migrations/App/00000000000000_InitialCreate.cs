@@ -1256,11 +1256,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     Status = table.Column<int>(type: "int", nullable: false),
                     PublishedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     RecordingFileId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    RecordingFileName = table.Column<string>(type: "nvarchar(260)", maxLength: 260, nullable: true),
-                    RecordingContentType = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: true),
-                    RecordingSizeBytes = table.Column<long>(type: "bigint", nullable: true),
-                    RecordingUploadedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    RecordingUploadedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     LiveStreamFileId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     LiveSignLanguageFileId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     LiveCaptions = table.Column<string>(type: "nvarchar(2048)", maxLength: 2048, nullable: true),
@@ -2612,11 +2607,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     SpeakerId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     SessionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    FileName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
                     StoredFileId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ContentType = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
-                    SizeBytes = table.Column<long>(type: "bigint", nullable: false),
-                    UploadedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -2627,7 +2618,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_SpeakerPresentations", x => x.Id);
-                    table.CheckConstraint("CK_SpeakerPresentations_SizeBytes", "[SizeBytes] > 0");
                     table.ForeignKey(
                         name: "FK_SpeakerPresentations_Sessions_SessionId",
                         column: x => x.SessionId,

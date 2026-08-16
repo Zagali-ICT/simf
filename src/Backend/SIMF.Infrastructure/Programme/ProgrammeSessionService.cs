@@ -479,9 +479,9 @@ internal sealed class ProgrammeSessionService(
             .OrderBy(presentation => presentation.CreatedAt)
             .Select(presentation => new PublicSessionDownload(
                 presentation.Id,
-                presentation.FileName,
-                presentation.ContentType,
-                presentation.SizeBytes))
+                presentation.StoredFile!.OriginalFileName ?? string.Empty,
+                presentation.StoredFile!.ContentType ?? "application/octet-stream",
+                presentation.StoredFile!.SizeBytes ?? 0))
             .ToListAsync(cancellationToken);
 
         // The gold badge shows the session's 1-based
@@ -566,11 +566,15 @@ internal sealed class ProgrammeSessionService(
                 && session.IsActive
                 && session.Status == SessionStatus.Published
                 && session.RecordingFileId != null)
+            // The media type and name come off the store row, which is the only
+            // place they are written. The store's type is also the canonical one:
+            // the copy that used to live on Session held whatever the uploading
+            // client sent, so this projection is a correction as well as a join.
             .Select(session => new
             {
                 session.RecordingFileId,
-                session.RecordingContentType,
-                session.RecordingFileName,
+                ContentType = session.RecordingFile!.ContentType,
+                FileName = session.RecordingFile!.OriginalFileName,
             })
             .SingleOrDefaultAsync(cancellationToken);
 
@@ -578,8 +582,8 @@ internal sealed class ProgrammeSessionService(
             ? null
             : new SessionRecordingRef(
                 row.RecordingFileId!.Value,
-                row.RecordingContentType ?? "application/octet-stream",
-                row.RecordingFileName ?? "recording");
+                row.ContentType ?? "application/octet-stream",
+                row.FileName ?? "recording");
     }
 
     public async Task<IReadOnlyList<PublicRecordedQuestion>> ListRecordedQuestionsAsync(
