@@ -639,7 +639,7 @@ internal sealed class GateOperatorService(
     /// assigns the GateScan identity.
     /// </summary>
     private async Task StageIdempotencyAsync(
-        string idempotencyKey, Guid gateId, string requestHash, string responseHash,
+        string idempotencyKey, Guid gateId, string requestHash,
         DateTime now, CancellationToken cancellationToken)
     {
         var existing = await appDbContext.ScanIdempotencies
@@ -648,7 +648,6 @@ internal sealed class GateOperatorService(
         if (existing is not null)
         {
             existing.RequestHash = requestHash;
-            existing.ResponseHash = responseHash;
             existing.ScanId = null;
             existing.StoredAt = now;
             return;
@@ -659,7 +658,6 @@ internal sealed class GateOperatorService(
             Key = idempotencyKey,
             GateId = gateId,
             RequestHash = requestHash,
-            ResponseHash = responseHash,
             ScanId = null,
             StoredAt = now,
         });
@@ -761,8 +759,7 @@ internal sealed class GateOperatorService(
         if (!string.IsNullOrWhiteSpace(idempotencyKey) && requestHash is not null)
         {
             await StageIdempotencyAsync(
-                idempotencyKey, context.GateId, requestHash, HashResponse(response),
-                now, cancellationToken);
+                idempotencyKey, context.GateId, requestHash, now, cancellationToken);
         }
         var replayResult = await TrySaveScanAsync(
             scan, idempotencyKey, context.GateId, context.AcceptLanguage, cancellationToken);
@@ -904,8 +901,7 @@ internal sealed class GateOperatorService(
         if (!string.IsNullOrWhiteSpace(idempotencyKey) && requestHash is not null)
         {
             await StageIdempotencyAsync(
-                idempotencyKey, context.GateId, requestHash, HashResponse(response),
-                now, cancellationToken);
+                idempotencyKey, context.GateId, requestHash, now, cancellationToken);
         }
         var replayResult = await TrySaveScanAsync(
             scan, idempotencyKey, context.GateId, context.AcceptLanguage, cancellationToken);
@@ -1100,9 +1096,6 @@ internal sealed class GateOperatorService(
     private static string HashRequest(Guid gateId, GateScanRequest request, string idempotencyKey) =>
         OpaqueToken.Hash(
             $"{gateId:N}|{idempotencyKey}|{request.Qr}|{request.Source}|{request.RequestedDirection}");
-
-    private static string HashResponse(GateScanResponse response) =>
-        OpaqueToken.Hash(JsonSerializer.Serialize(response));
 
     /// <summary>The bundle of holder-derived display fields a denial response
     /// echoes back. Built once from a <see cref="QrResolution"/>; passed to

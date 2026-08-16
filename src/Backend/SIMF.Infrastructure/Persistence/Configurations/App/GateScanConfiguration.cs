@@ -114,5 +114,23 @@ internal sealed class GateScanConfiguration : IEntityTypeConfiguration<GateScan>
             .WithMany()
             .HasForeignKey(scan => scan.GateId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // The holder FK was left to convention, and convention is wrong for an
+        // audit log. UserProfileId is OPTIONAL (null when the QR resolved to
+        // nothing), and the model default for an optional reference is
+        // ClientSetNull: deleting a UserProfile while any of its scans are
+        // tracked makes EF NULL the FK on those rows and UPDATE them, quietly
+        // severing scans from the person who presented the badge. On an
+        // append-only forensic log that is history loss, not a cleanup.
+        // Restrict refuses the delete instead. The database itself is already
+        // NO ACTION (the FK carries no ON DELETE clause), so this pins the
+        // in-memory behaviour to match what the store already enforces rather
+        // than changing any DDL. The IX_GateScan_UserProfile_ScannedAt index
+        // (UserProfileId leading) already covers the FK, so no duplicate index
+        // is created.
+        builder.HasOne(scan => scan.UserProfile)
+            .WithMany()
+            .HasForeignKey(scan => scan.UserProfileId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

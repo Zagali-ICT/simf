@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using SIMF.Application.Archive.Abstractions;
 using SIMF.Application.Assets.Abstractions;
 using SIMF.Application.Auditing;
+using SIMF.Application.Editions.Abstractions;
 using SIMF.Application.Operations.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
@@ -23,6 +24,7 @@ internal sealed class AdminArchiveService(
     SimfAppDbContext appDbContext,
     IFileService fileService,
     IFeedLinkService feedLinks,
+    IEventEditionService editions,
     IAuditLog auditLog,
     TimeProvider timeProvider,
     IOperationsToggleService operationsToggleService,
@@ -356,7 +358,12 @@ internal sealed class AdminArchiveService(
     {
         // Fully automatic: the year + bilingual title are generated
         // and the three counters are computed from live App data (no client input).
-        var year = timeProvider.SimfNow().Year;
+        //
+        // The year is the open edition's, not the wall clock's. They part company
+        // exactly when this is used: an edition that ran in December is archived in
+        // January, and the clock would file it under the wrong year and then collide
+        // with the real one.
+        var year = await editions.GetOpenYearAsync(cancellationToken);
 
         var sessions = await appDbContext.Sessions.AsNoTracking()
             .CountAsync(session => session.IsActive, cancellationToken);

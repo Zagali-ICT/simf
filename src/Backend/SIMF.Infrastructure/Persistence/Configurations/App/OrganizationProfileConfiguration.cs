@@ -48,6 +48,15 @@ internal sealed class OrganizationProfileConfiguration
         builder.Property(p => p.Version).HasMaxLength(64);
         builder.Property(p => p.SysVersion).HasMaxLength(64);
 
+        // Three properties the contracts still carry but the table no longer stores.
+        // CurrentYear is read from the EventEdition singleton, the row that actually
+        // knows which year is open. VersionDate and ReleaseDate had no field on the
+        // profile form, so the full-document save posted null over them every time.
+        // Each is filled on read, so the JSON keys are unchanged.
+        builder.Ignore(p => p.CurrentYear);
+        builder.Ignore(p => p.VersionDate);
+        builder.Ignore(p => p.ReleaseDate);
+
         builder.Property(p => p.LocationText).HasMaxLength(512);
         builder.Property(p => p.LocationTextArabic).HasMaxLength(512);
         builder.Property(p => p.Latitude).HasPrecision(9, 6);
@@ -112,7 +121,6 @@ internal sealed class OrganizationProfileConfiguration
             Title = "The Saudi International Maritime Forum",
             TitleArabic = "الملتقى البحري السعودي الدولي",
             Version = "1.0.0",
-            CurrentYear = 2026,
             Status = ForumStatus.Open,
             EventStartDate = new DateTime(2026, 1, 1, 0, 0, 0),
             EventEndDate = new DateTime(2026, 4, 30, 0, 0, 0),

@@ -35,27 +35,63 @@ public sealed class OrganizationProfile : BaseAuditEntity
 
     public string? BioArabic { get; set; }
 
-    // Version and SysVersion are both edited on the Control Panel's profile page;
-    // VersionDate and ReleaseDate are carried on the admin and public contracts but no
-    // screen writes or renders them. All four stay because the contracts are append-only.
+    // Version and SysVersion are both edited on the Control Panel's profile page.
 
     public string? Version { get; set; }
 
+    /// <summary>Carried on the admin and public contracts, which are append-only, but
+    /// no longer a column. The Control Panel's profile form has no field for it, so the
+    /// full-document save posted null every time and wiped whatever was there; a column
+    /// only one writer can reach, and only to erase, is not storage.</summary>
     public DateTime? VersionDate { get; set; }
 
     public string? SysVersion { get; set; }
 
+    /// <summary>Not a column, for the same reason as <see cref="VersionDate"/>.</summary>
     public DateTime? ReleaseDate { get; set; }
 
-    // Date-only; Status is set by hand, never derived, so a finished edition still reads Open.
+    // Date-only.
 
     public DateTime? EventStartDate { get; set; }
 
     public DateTime? EventEndDate { get; set; }
 
+    /// <summary>The open forum year. Not a column: it was one, hand-typed on this page
+    /// while <c>EventEdition.Year</c> was set on another, with nothing syncing the two, so
+    /// opening a new edition left the app's About screen on last year. The property stays
+    /// because the contracts name the key; every read fills it from the edition.</summary>
     public int CurrentYear { get; set; }
 
+    /// <summary>The hand-set fallback behind <see cref="EffectiveStatus"/>. Read through
+    /// that method rather than directly.</summary>
     public ForumStatus Status { get; set; } = ForumStatus.Open;
+
+    /// <summary>The lifecycle state to show, worked out from the event window instead of
+    /// read off <see cref="Status"/>.
+    ///
+    /// <para>The stored value is a dropdown an admin sets once and then forgets, so a
+    /// finished edition went on reading Open long after it ended. It survives as the
+    /// fallback for a profile whose window is not filled in yet, which is the seeded
+    /// state and the only case where the dates cannot answer.</para></summary>
+    /// <param name="today">Today in Saudi local time. The window is date-only, so only
+    /// the date part is compared.</param>
+    public ForumStatus EffectiveStatus(DateTime today)
+    {
+        if (EventStartDate is not { } start || EventEndDate is not { } end)
+        {
+            return Status;
+        }
+
+        var day = today.Date;
+        if (day < start.Date)
+        {
+            return ForumStatus.Soon;
+        }
+
+        // The closing day is still an open day: an edition is running right up to
+        // the end of the date an admin entered as its last one.
+        return day > end.Date ? ForumStatus.Archived : ForumStatus.Open;
+    }
 
     // Coordinates are decimal degrees, refused on write outside ±90 / ±180 by the admin
     // save and by a check constraint behind it; nothing plots them yet.

@@ -897,6 +897,19 @@ internal sealed class AdminSessionService(
             return await ToDetailAsync(session, cancellationToken); // idempotent — nothing to delete
         }
 
+        // The same guard ValidateStatusGuards applies on the way in: a Recorded or
+        // Published session is defined by having a recording, so removing one here
+        // would leave the row in a state the status move itself refuses to create
+        // (and the app would offer a published recording that streams nothing).
+        // Move the session back to Held first, which is the undo step for it.
+        if (session.Status is SessionStatus.Recorded or SessionStatus.Published)
+        {
+            throw new ApiException(
+                ErrorCodes.SessionStatusGuardFailed, 400,
+                "A Recorded or Published session must keep its recording. Move it back to Held before deleting.",
+                "يجب أن تحتفظ الجلسة المُسجّلة أو المنشورة بتسجيلها. أعدها إلى منعقدة قبل حذفه.");
+        }
+
         var priorFileId = session.RecordingFileId;
         session.RecordingFileId = null;
         session.RecordingFile = null;

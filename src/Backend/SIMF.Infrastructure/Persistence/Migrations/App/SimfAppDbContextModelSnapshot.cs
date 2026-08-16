@@ -270,12 +270,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .IsUnicode(false)
                         .HasColumnType("varchar(64)");
 
-                    b.Property<string>("ResponseHash")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .IsUnicode(false)
-                        .HasColumnType("varchar(64)");
-
                     b.Property<long?>("ScanId")
                         .HasColumnType("bigint");
 
@@ -1219,11 +1213,17 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .IsUnique()
                         .HasFilter("[HallId] IS NOT NULL AND [SlotStart] IS NOT NULL AND [Status] <> 0 AND [Status] <> 2 AND [Status] <> 3");
 
+                    b.HasIndex("RequestedByUserId", "TargetCountryId")
+                        .IsUnique()
+                        .HasFilter("[Status] = 0");
+
                     b.HasIndex("TargetCountryId", "Status", "CreatedAt");
 
                     b.ToTable("DelegationMeetingRequests", null, t =>
                         {
                             t.HasCheckConstraint("CK_DelegationMeetingRequests_AttendeeCount", "[AttendeeCount] >= 1 AND [AttendeeCount] <= 100");
+
+                            t.HasCheckConstraint("CK_DelegationMeetingRequests_NotSelf", "[RequestingCountryId] <> [TargetCountryId]");
 
                             t.HasCheckConstraint("CK_DelegationMeetingRequests_Slot", "[SlotStart] IS NULL OR [SlotEnd] IS NULL OR [SlotEnd] > [SlotStart]");
                         });
@@ -1537,6 +1537,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.HasIndex("HallId", "SlotStart")
                         .IsUnique()
                         .HasFilter("[HallId] IS NOT NULL AND [SlotStart] IS NOT NULL AND [Status] <> 0 AND [Status] <> 2 AND [Status] <> 3");
+
+                    b.HasIndex("RequestedByUserId", "SpeakerId")
+                        .IsUnique()
+                        .HasFilter("[Status] = 0");
 
                     b.HasIndex("SpeakerId", "SlotStart")
                         .IsUnique()
@@ -2579,15 +2583,15 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<DateTime>("OpenedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid?>("OpenedByUserId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<int>("Year")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
-                    b.ToTable("EventEdition", (string)null);
+                    b.ToTable("EventEdition", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_EventEdition_Year", "[Year] BETWEEN 2000 AND 2999");
+                        });
 
                     b.HasData(
                         new
@@ -3501,9 +3505,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<int>("Kind")
                         .HasColumnType("int");
 
-                    b.Property<Guid?>("ThumbnailFileId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("Title")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
@@ -3524,8 +3525,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.HasKey("Id");
 
                     b.HasIndex("ImageFileId");
-
-                    b.HasIndex("ThumbnailFileId");
 
                     b.HasIndex("VideoFileId");
 
@@ -3955,9 +3954,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("CurrentYear")
-                        .HasColumnType("int");
-
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("datetime2");
 
@@ -4027,9 +4023,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(1024)
                         .HasColumnType("nvarchar(1024)");
 
-                    b.Property<DateTime?>("ReleaseDate")
-                        .HasColumnType("datetime2");
-
                     b.Property<string>("Slogan")
                         .HasMaxLength(512)
                         .HasColumnType("nvarchar(512)");
@@ -4073,9 +4066,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
 
-                    b.Property<DateTime?>("VersionDate")
-                        .HasColumnType("datetime2");
-
                     b.Property<string>("XUrl")
                         .HasMaxLength(1024)
                         .HasColumnType("nvarchar(1024)");
@@ -4105,7 +4095,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             Id = new Guid("00000000-0000-0000-0000-000000000003"),
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             CreatedBy = new Guid("00000000-0000-0000-0000-000000000000"),
-                            CurrentYear = 2026,
                             EventEndDate = new DateTime(2026, 4, 30, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             EventStartDate = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             IsActive = true,
@@ -4446,7 +4435,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("VipPhotoFileId");
 
-                    b.ToTable("UserProfiles", (string)null);
+                    b.ToTable("UserProfiles", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_UserProfiles_AccessibilityTextSize", "[AccessibilityTextSize] IN ('small', 'normal', 'large', 'extraLarge')");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.Profiles.UserProfileType", b =>
@@ -4912,6 +4904,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                             t.HasCheckConstraint("CK_Sessions_PublishedAtPin", "([Status] = 3 AND [PublishedAt] IS NOT NULL) OR ([Status] <> 3 AND [PublishedAt] IS NULL)");
 
+                            t.HasCheckConstraint("CK_Sessions_RecordedHasRecording", "[Status] NOT IN (2, 3) OR [RecordingFileId] IS NOT NULL");
+
                             t.HasCheckConstraint("CK_Sessions_TimeWindow", "[End] > [Start]");
                         });
                 });
@@ -5161,6 +5155,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.ToTable("SessionSummaries", null, t =>
                         {
+                            t.HasCheckConstraint("CK_SessionSummaries_PublishPin", "([PublishedAt] IS NULL AND [PublishedByUserId] IS NULL) OR ([PublishedAt] IS NOT NULL AND [PublishedByUserId] IS NOT NULL AND [ApprovedAt] IS NOT NULL)");
+
                             t.HasCheckConstraint("CK_SessionSummaries_ReviewOrder", "[ApprovedAt] IS NULL OR ([ReviewSubmittedAt] IS NOT NULL AND [ApprovedAt] >= [ReviewSubmittedAt])");
                         });
                 });
@@ -5607,6 +5603,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("LogoFileId");
 
+                    b.HasIndex("Name")
+                        .IsUnique();
+
                     b.HasIndex("IsActive", "DisplayOrder");
 
                     b.ToTable("MediaPartners", null, t =>
@@ -5945,6 +5944,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.ToTable("SeatReservations", null, t =>
                         {
+                            t.HasCheckConstraint("CK_SeatReservations_AdminBlockHasNoHolder", "([Kind] = 1 AND [ReservedForProfileId] IS NULL) OR ([Kind] <> 1 AND [ReservedForProfileId] IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_SeatReservations_ReleasePin", "([ReleasedAt] IS NULL AND [Status] = 1) OR ([ReleasedAt] IS NOT NULL AND [Status] = 3)");
+
                             t.HasCheckConstraint("CK_SeatReservations_SeatNumber", "[SeatNumber] >= 1");
 
                             t.HasCheckConstraint("CK_SeatReservations_SeatPair", "([RowLabel] IS NULL AND [SeatNumber] IS NULL) OR ([RowLabel] IS NOT NULL AND [SeatNumber] IS NOT NULL)");
@@ -5994,9 +5997,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<Guid?>("EscalatedByUserId")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<bool>("IsHidden")
-                        .HasColumnType("bit");
 
                     b.Property<bool>("IsPushed")
                         .HasColumnType("bit");
@@ -6357,7 +6357,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasOne("SIMF.Domain.Profiles.UserProfile", "UserProfile")
                         .WithMany()
-                        .HasForeignKey("UserProfileId");
+                        .HasForeignKey("UserProfileId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Gate");
 
@@ -6789,19 +6790,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasForeignKey("ImageFileId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("SIMF.Domain.Files.StoredFile", "ThumbnailFile")
-                        .WithMany()
-                        .HasForeignKey("ThumbnailFileId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("SIMF.Domain.Files.StoredFile", "VideoFile")
                         .WithMany()
                         .HasForeignKey("VideoFileId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("ImageFile");
-
-                    b.Navigation("ThumbnailFile");
 
                     b.Navigation("VideoFile");
                 });

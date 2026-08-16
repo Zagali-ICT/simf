@@ -61,6 +61,16 @@ public enum IdentityDocumentKind
 /// <see cref="Number"/> by name, because the interceptor reads the model value
 /// and would otherwise write the number to the audit trail in the clear.</para>
 ///
+/// <para><b>Hard-deleted, so the inherited soft-delete columns are inert.</b>
+/// <c>ProfileIdentityStorage</c> REMOVES a document the registrant no longer
+/// claims rather than deactivating it, because a soft-deleted row would keep its
+/// digest in the unique index and bar that person from ever registering the
+/// corrected number. Nothing writes or reads <c>IsActive</c> / <c>DeletedAt</c>
+/// on this entity, and no query filters on them; they come from
+/// <c>BaseAuditEntity</c>, which is shared with some thirty other entities, so
+/// they cannot be dropped for this one from here. Do not start honouring them:
+/// the delete has to stay hard.</para>
+///
 /// <para><b>Not scoped to an edition.</b> The digest index is global. A returning
 /// attendee keeps ONE profile row across editions
 /// (<see cref="UserProfile.EditionYear"/> re-stamps it), so their documents are

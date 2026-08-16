@@ -74,23 +74,33 @@ internal sealed class EventEditionService(
         var closingYear = row.Year;
 
         // Clear every badge so the new year re-issues them. Nobody is deleted:
-        // the attendee records stay, labelled with the year they belong to, and
-        // a returning attendee is issued a fresh badge rather than left holding
-        // one that every door refuses with no route to a live one.
+        // the attendee records stay, and a returning attendee is issued a fresh
+        // badge rather than left holding one that every door refuses with no
+        // route to a live one.
+        //
+        // The year moves with them. It is stamped once, at insert, so without
+        // this the column recorded the year an attendee FIRST registered rather
+        // than the one their badge is valid in — and the gate refuses a badge
+        // whose year is not the open one, so every re-issued badge would have
+        // been dead on arrival. Only the rows carried forward are re-labelled;
+        // an attendee who never held a badge in the closing year keeps the year
+        // they registered for, which is what makes the edition a queryable
+        // dimension rather than a moving pointer.
         //
         // A set-based UPDATE, not a load-and-loop: this is the whole attendee
-        // table, and materialising it to null one column would be the slowest
+        // table, and materialising it to write two columns would be the slowest
         // possible way to do it at exactly the moment an operator is waiting.
         var cleared = await appDbContext.UserProfiles
             .Where(profile => profile.QrId != null)
             .ExecuteUpdateAsync(
-                setters => setters.SetProperty(profile => profile.QrId, (string?)null),
+                setters => setters
+                    .SetProperty(profile => profile.QrId, (string?)null)
+                    .SetProperty(profile => profile.EditionYear, year),
                 cancellationToken);
 
         row.Year = year;
         row.OpenedAt = now;
         row.LastClosedAt = now;
-        row.OpenedByUserId = actorUserId;
         row.LastReissueCount = cleared;
         await appDbContext.SaveChangesAsync(cancellationToken);
         cache.Set(year);

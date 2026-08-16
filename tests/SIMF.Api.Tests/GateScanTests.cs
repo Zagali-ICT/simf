@@ -313,7 +313,6 @@ public sealed class GateScanTests : IClassFixture<SimfApiFactory>
                 Key = key,
                 GateId = gate.Id,
                 RequestHash = "stale-request-hash",
-                ResponseHash = "stale-response-hash",
                 ScanId = null,
                 StoredAt = _factory.Time.SimfNow() - TimeSpan.FromHours(25),
             });

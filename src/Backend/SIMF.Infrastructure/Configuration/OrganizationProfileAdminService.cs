@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
 using SIMF.Application.Configuration.Abstractions;
+using SIMF.Application.Editions.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
@@ -25,6 +26,7 @@ internal sealed class OrganizationProfileAdminService(
     IOrganizationProfileReadService readCache,
     IFeedLinkService feedLinks,
     HeroVideoUrlResolver heroVideo,
+    IEventEditionService editions,
     IAuditLog auditLog,
     TimeProvider timeProvider,
     ILogger<OrganizationProfileAdminService> logger) : IOrganizationProfileAdminService
@@ -55,6 +57,12 @@ internal sealed class OrganizationProfileAdminService(
             ? $"app/assets/{AssetCategory.OrganizationLogo}/{OrganizationProfile.SingletonId}/image"
             : null;
 
+        // Neither of these is stored on the row any more, so fill them before the
+        // mapper reads them. The year belongs to the edition singleton, and the
+        // status is the event window's answer rather than the stale dropdown's.
+        profile.CurrentYear = await editions.GetOpenYearAsync(cancellationToken);
+        profile.Status = profile.EffectiveStatus(timeProvider.SimfNow());
+
         return OrganizationProfileMapper.ToResponse(
             profile, about, details, logoUrl,
             await feedLinks.ResolveAsync(profile.LiveStreamFileId, cancellationToken),
@@ -84,12 +92,13 @@ internal sealed class OrganizationProfileAdminService(
         profile.Bio = Trim(request.Bio, 4000);
         profile.BioArabic = Trim(request.BioArabic, 4000);
         profile.Version = Trim(request.Version, 64);
-        profile.VersionDate = request.VersionDate;
         profile.SysVersion = Trim(request.SysVersion, 64);
-        profile.ReleaseDate = request.ReleaseDate;
         profile.EventStartDate = request.EventStartDate;
         profile.EventEndDate = request.EventEndDate;
-        profile.CurrentYear = request.CurrentYear;
+        // CurrentYear, VersionDate and ReleaseDate stay on the request for the
+        // contract's sake and are deliberately dropped here: the year is owned by
+        // the edition singleton, and the other two have no field on the form, so
+        // honouring them meant writing null over the row on every save.
         profile.Status = ParseStatus(request.Status);
         profile.LocationText = Trim(request.LocationText, 512);
         profile.LocationTextArabic = Trim(request.LocationTextArabic, 512);

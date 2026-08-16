@@ -26,8 +26,9 @@ public sealed class SessionQuestion
     public int Order { get; set; }
 
     /// <summary>Vestigial: never updated, visibility having moved onto
-    /// <see cref="Status"/>. The engagement report still counts it, so its
-    /// "hidden" KPI reads false for every row.</summary>
+    /// <see cref="Status"/>, and no longer mapped to a column - every reader
+    /// derives hidden from <see cref="Status"/> now. Still here only because one
+    /// create path assigns it; delete both together.</summary>
     public bool IsHidden { get; set; }
 
     // Pushed = handed to the speaker to read out on stage. Hiding clears both;

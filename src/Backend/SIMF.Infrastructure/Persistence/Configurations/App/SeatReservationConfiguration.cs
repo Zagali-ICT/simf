@@ -32,8 +32,38 @@ internal sealed class SeatReservationConfiguration : IEntityTypeConfiguration<Se
                 + "OR ([RowLabel] IS NOT NULL AND [SeatNumber] IS NOT NULL)");
             table.HasCheckConstraint(
                 "CK_SeatReservations_SeatNumber", "[SeatNumber] >= 1");
-            // NO pair constraint on the release stamp, deliberately. One was
-            // added here while ReviewedAt / ReviewedByUserId were an admin-only
+
+            // Status carries no fact ReleasedAt does not: a live row is
+            // Approved (1) and a released row Cancelled (3), and the two are
+            // written together by every one of the five release paths and all
+            // seven create paths. Nothing kept the pair consistent, so a writer
+            // that stamped ReleasedAt and forgot Status left a row the seat
+            // indexes read as free while the grid still rendered it as held.
+            // Bonus: Pending = 0 is the CLR default, so this also rejects an
+            // insert that never set Status at all -- which the deliberately
+            // absent model-level default (see below) cannot catch on its own.
+            // Literal ints, matching the house style (CK_GateScans_*).
+            table.HasCheckConstraint(
+                "CK_SeatReservations_ReleasePin",
+                "([ReleasedAt] IS NULL AND [Status] = 1) "
+                + "OR ([ReleasedAt] IS NOT NULL AND [Status] = 3)");
+
+            // An admin row-block (Kind = AdminReservedRow = 1) blocks the seat
+            // off for nobody, so it carries no holder; every other kind exists
+            // BECAUSE someone holds it. Both halves matter: a holderless
+            // UserBooking is an orphaned seat no visitor can cancel, and an
+            // AdminReservedRow with a holder is what the "blocked vs taken"
+            // distinction is read from -- ReservedForProfileId IS NULL is the
+            // only thing that tells them apart.
+            table.HasCheckConstraint(
+                "CK_SeatReservations_AdminBlockHasNoHolder",
+                "([Kind] = 1 AND [ReservedForProfileId] IS NULL) "
+                + "OR ([Kind] <> 1 AND [ReservedForProfileId] IS NOT NULL)");
+
+            // NO pair constraint on ReleasedAt / ReleasedByUserId,
+            // deliberately -- unlike the ReleasedAt / Status pair above, which
+            // every release path does write together. One was added here while
+            // ReviewedAt / ReviewedByUserId were an admin-only
             // pair that a single writer set together. That pair no longer
             // exists: ReviewedAt folded into ReleasedAt, which FIVE paths write
             // — a self-release, a seat change, a cancelled session and the

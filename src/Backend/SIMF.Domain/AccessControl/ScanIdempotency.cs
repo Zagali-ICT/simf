@@ -9,8 +9,6 @@ public class ScanIdempotency
 
     public string RequestHash { get; set; } = string.Empty;
 
-    public string ResponseHash { get; set; } = string.Empty;
-
     /// <summary>The scan row written, where one was; both allowed and denied scans write one.</summary>
     public long? ScanId { get; set; }
 

@@ -1,4 +1,4 @@
-// Tests: SIMF.Infrastructure/Identity/RetentionPurgeService.cs
+﻿// Tests: SIMF.Infrastructure/Identity/RetentionPurgeService.cs
 using Microsoft.Extensions.DependencyInjection;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common.Enums;
@@ -94,12 +94,12 @@ public sealed class RetentionPurgeServiceTests : IClassFixture<SimfApiFactory>
             // Scan idempotency: stored > 2d (dead) vs fresh (live).
             app.ScanIdempotencies.Add(new ScanIdempotency
             {
-                Key = scanDead, GateId = gateId, RequestHash = "rh", ResponseHash = "sh",
+                Key = scanDead, GateId = gateId, RequestHash = "rh",
                 StoredAt = now.AddDays(-3),
             });
             app.ScanIdempotencies.Add(new ScanIdempotency
             {
-                Key = scanLive, GateId = gateId, RequestHash = "rh", ResponseHash = "sh",
+                Key = scanLive, GateId = gateId, RequestHash = "rh",
                 StoredAt = now,
             });
             await app.SaveChangesAsync();

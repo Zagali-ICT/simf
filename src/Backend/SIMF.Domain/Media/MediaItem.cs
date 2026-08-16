@@ -25,9 +25,10 @@ public class MediaItem : BaseAuditEntity
     /// <summary>A poster image for video tiles. Nothing writes this column today,
     /// but the <c>thumbnailUrl</c> it feeds is decoded by the shipped app as the
     /// first branch of the gallery tile, and that wire key is append-only.</summary>
-    public Guid? ThumbnailFileId { get; set; }
-
-    public StoredFile? ThumbnailFile { get; set; }
+    // No ThumbnailFileId. A thumbnail was never storable - no FileService value
+    // covers one - so the column, its FK and its index existed for a file that
+    // could not be created, and /media/{id}/thumbnail always 404'd. The
+    // thumbnailUrl wire key stays and reads null, which the app already handles.
     public string? Album { get; set; }
     public string? AlbumArabic { get; set; }
 

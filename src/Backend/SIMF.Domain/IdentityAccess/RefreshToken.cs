@@ -16,7 +16,15 @@ public class RefreshToken
 
     public DateTime? RevokedAt { get; set; }
 
-    /// <summary>The token this one replaced; null for the first in a chain.</summary>
+    /// <summary>The token this one replaced; null for the first in a chain.
+    ///
+    /// <para>Written on every rotation and read by nothing. Reuse is already caught
+    /// without it: the rotation revokes the presented token conditionally, and a
+    /// revoke that affects no row is what answers 401, so the chain adds no evidence
+    /// the single row does not already carry. It is also deliberately NOT a declared
+    /// self-reference — a replacement inherits the chain's original
+    /// <see cref="ExpiresAt"/>, so the retention purge deletes a whole chain in one
+    /// set-based statement, which a same-table foreign key can refuse outright.</para></summary>
     public Guid? RotatedFromId { get; set; }
 
     public bool IsActive(DateTime now) => RevokedAt is null && now < ExpiresAt;

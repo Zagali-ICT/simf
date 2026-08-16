@@ -260,6 +260,8 @@ internal sealed partial class AdminAccountService
                     await accounts.UpdateSecurityStampAsync(target);
                     await refreshTokenRepository.RevokeAllForUserAsync(
                         target.Id, now, innerCt);
+                    await RevokeProfileAdmissionAsync(
+                        target.Id, actorUserId, now, innerCt);
                     await auditLog.WriteAsync(new AuditEntry
                     {
                         EventType = AuditEvents.AdminUserDeleted,
@@ -582,6 +584,8 @@ internal sealed partial class AdminAccountService
                     await accounts.UpdateSecurityStampAsync(target);
                     await refreshTokenRepository.RevokeAllForUserAsync(
                         target.Id, now, innerCt);
+                    await RevokeProfileAdmissionAsync(
+                        target.Id, actorUserId, now, innerCt);
                     await auditLog.WriteAsync(new AuditEntry
                     {
                         EventType = AuditEvents.AdminUserDeleted,
@@ -625,6 +629,32 @@ internal sealed partial class AdminAccountService
             actorUserId, deleted, kind, skipped);
         return new AdminBulkDeleteResponse(deleted, skipped);
     }
+
+    /// <summary>Withdraws the attendee's admission when their account is disabled.
+    ///
+    /// <para>Admission is decided on the PROFILE, so disabling only the Identity
+    /// row left every door still admitting the holder: the offline hall roster
+    /// reads the profile alone, so it carried admitted=true for an account that
+    /// had just been disabled. The same pairing the approve / reject / revoke-order
+    /// paths already make — two facts that change together, not one fact
+    /// mirrored.</para>
+    ///
+    /// <para>Guarded on the current state, so a profile the revoke-order path has
+    /// already disabled is not re-stamped and a retried unit of work is a no-op.
+    /// Matches nothing for an Admin-typed subject, who carries no profile.</para>
+    /// </summary>
+    private Task RevokeProfileAdmissionAsync(
+        Guid subjectUserId, Guid actorUserId, DateTime now,
+        CancellationToken cancellationToken) =>
+        appDbContext.UserProfiles
+            .Where(profile => profile.UserId == subjectUserId
+                && profile.AdmissionState != AccountState.Disabled)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(profile => profile.AdmissionState, AccountState.Disabled)
+                    .SetProperty(profile => profile.StateChangedAt, now)
+                    .SetProperty(profile => profile.StateChangedByUserId, (Guid?)actorUserId),
+                cancellationToken);
 
     public async Task<AdminCreateUserResponse> DuplicateUserByKindAsync(
         Guid actorUserId,

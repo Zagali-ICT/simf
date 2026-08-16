@@ -20,7 +20,7 @@ internal sealed class ScanIdempotencyConfiguration
 
         builder.Property(idem => idem.Key).HasMaxLength(64).IsRequired();
 
-        // Both hashes are OpaqueToken.Hash output: SHA-256 as lowercase hex, so
+        // The hash is OpaqueToken.Hash output: SHA-256 as lowercase hex, so
         // exactly 64 characters drawn from [0-9a-f]. nvarchar(128) was double the
         // width and double the bytes per character for an alphabet that is pure
         // ASCII. varchar(64) is the honest type.
@@ -32,8 +32,6 @@ internal sealed class ScanIdempotencyConfiguration
         // matching. Those columns get away with char because they are compared in
         // SQL, which ignores trailing spaces. This one is not.
         builder.Property(idem => idem.RequestHash)
-            .HasMaxLength(64).IsUnicode(false).IsRequired();
-        builder.Property(idem => idem.ResponseHash)
             .HasMaxLength(64).IsUnicode(false).IsRequired();
 
         builder.HasIndex(idem => idem.StoredAt)

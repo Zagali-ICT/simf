@@ -94,6 +94,22 @@ internal sealed class UserProfileService(
                 $"Nationality code '{request.NationalityCode}' is not supported.",
                 $"الجنسية '{request.NationalityCode}' غير مدعومة.");
 
+        // The Saudi flag and the nationality must agree. IsSaudi is NOT derived
+        // from the nationality — the walk-in desk and the offline badge upload
+        // both set it with no nationality captured at all (NationalityId stays
+        // 0), which is why the column exists — but this surface always resolves a
+        // real country, so here the pair can be checked. A row claiming Saudi
+        // under a foreign nationality is a contradiction that then decides which
+        // identity document the validator demands, and the app derives the flag
+        // from the nationality picker, so only a hand-built call can reach this.
+        if (request.IsSaudi != (nationalityId == UserProfile.SaudiNationalityId))
+        {
+            throw new ApiException(
+                ErrorCodes.ValidationFailed, 400,
+                "The Saudi-national flag does not match the selected nationality.",
+                "لا يتوافق خيار \"سعودي الجنسية\" مع الجنسية المختارة.");
+        }
+
         var user = await accounts.FindByIdAsync(actorUserId, cancellationToken)
             ?? throw new ApiException(
                 ErrorCodes.AuthAccountNotFound, 404,

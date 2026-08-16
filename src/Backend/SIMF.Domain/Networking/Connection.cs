@@ -17,9 +17,14 @@ public sealed class Connection : BaseAuditEntity
 
     public ConnectionState State { get; set; } = ConnectionState.Pending;
 
+    /// <summary>When the target first answered, so it is stamped once and never moved:
+    /// a later removal by either party does not rewrite the moment of the response.</summary>
     public DateTime? RespondedAt { get; set; }
 
-    /// <summary>The same two users in sorted order, backing the filtered unique index that enforces one active connection per unordered pair. No writer fills the pair yet, so every row is filtered out and the index enforces nothing today.</summary>
+    /// <summary>The same two users in sorted order, backing the filtered unique index that
+    /// enforces one active connection per unordered pair. Filled on insert by
+    /// NetworkingService.RequestAsync; both halves are null only on rows written before
+    /// that, which the index filter excludes.</summary>
     public Guid? PairLowUserId { get; set; }
 
     public Guid? PairHighUserId { get; set; }

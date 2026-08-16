@@ -61,11 +61,17 @@ internal sealed class NetworkingService(
                 cancellationToken);
         if (duplicate)
         {
-            throw new ApiException(
-                ErrorCodes.ConnectionAlreadyExists, 409,
-                "A connection with this user already exists.",
-                "يوجد اتصال مع هذا المستخدم بالفعل.");
+            throw DuplicateConnection();
         }
+
+        // The sorted pair is what IX_Connections_PairLowUserId_PairHighUserId keys on, so
+        // it has to be written on the way in: sorted, a request and its mirror image
+        // collapse to one key, and the index rejects the second of two concurrent
+        // requests that both read past the duplicate check above.
+        var pairLow = requesterUserId.CompareTo(targetUserId) < 0
+            ? requesterUserId
+            : targetUserId;
+        var pairHigh = pairLow == requesterUserId ? targetUserId : requesterUserId;
 
         var now = timeProvider.SimfNow();
         var connection = new Connection
@@ -74,11 +80,23 @@ internal sealed class NetworkingService(
             RequesterUserId = requesterUserId,
             TargetUserId = targetUserId,
             State = ConnectionState.Pending,
+            PairLowUserId = pairLow,
+            PairHighUserId = pairHigh,
             IsActive = true,
             CreatedAt = now,
         };
         appDbContext.Connections.Add(connection);
-        await appDbContext.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await appDbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException ex) when (ex.ViolatesAnyIndex(
+            "IX_Connections_PairLowUserId_PairHighUserId"))
+        {
+            // Lost the race to a concurrent request on the same pair, which is the same
+            // situation the read above reports, so give the caller the same answer.
+            throw DuplicateConnection();
+        }
 
         await auditLog.WriteSuccessAsync(
             AuditEvents.ConnectionRequested,
@@ -149,14 +167,29 @@ internal sealed class NetworkingService(
                 "أنت لست طرفاً في هذا الاتصال.");
         }
 
+        // The target turning down a request that is still Pending is a DECLINE, and it is
+        // not the same act as either party dropping a connection that was already
+        // accepted. Deactivate hides both from the feed, so the state is the only thing
+        // left that tells the two apart afterwards.
+        var declined = connection.TargetUserId == actorUserId
+            && connection.State == ConnectionState.Pending;
+        if (declined)
+        {
+            connection.State = ConnectionState.Declined;
+        }
+
         connection.Deactivate();
-        connection.RespondedAt = timeProvider.SimfNow();
+        // First response only: RespondedAt is when the target answered, so a removal that
+        // comes later must not drag it forward.
+        connection.RespondedAt ??= timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteSuccessAsync(
             AuditEvents.ConnectionRemoved,
             actorUserId,
-            $"connectionId={connection.Id}",
+            declined
+                ? $"connectionId={connection.Id}; declined=true"
+                : $"connectionId={connection.Id}",
             cancellationToken);
     }
 
@@ -224,6 +257,13 @@ internal sealed class NetworkingService(
         }
         return connection;
     }
+
+    /// <summary>One bilingual 409 in one place, raised by both the duplicate read and the
+    /// unique-index race that the read cannot cover.</summary>
+    private static ApiException DuplicateConnection() =>
+        new(ErrorCodes.ConnectionAlreadyExists, 409,
+            "A connection with this user already exists.",
+            "يوجد اتصال مع هذا المستخدم بالفعل.");
 
     private static ConnectionResult ToResult(Connection c) =>
         new(c.Id, c.RequesterUserId, c.TargetUserId, c.State, c.CreatedAt);
