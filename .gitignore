@@ -1,24 +1,18 @@
 # SIMF — .gitignore
 
-# ── Production secrets — NEVER commit real values (SIMF-OPS-001 §6) ──
-# deploy/set-env-{api,cp,web,edge}.template.ps1 are the tracked templates, one
-# per deployment package: every Secret entry is empty and a test enforces it.
-# The matching deploy/set-env-{api,cp,web,edge}.ps1 are the FILLED overlays an
-# operator creates on each server — real connection strings, SMTP password and
-# keys — and must stay untracked. Never delete these rules to "share" a script.
+# ── Production secrets ────────────────────────────────────────────────
+# The .template.ps1 / filled-overlay pair is gone. deploy/ now holds five
+# set-env-*.ps1 (api, cp, web, edge, webapp) and clean-env.ps1, and those five
+# ARE the operator-facing files: they carry the real connection strings, the
+# JWT signing key, both encryption keys, the SMTP password and the AI key.
 #
-# The templates survive the wildcard below because it matches only the filled
-# form: set-env-api.ps1 is ignored, set-env-api.template.ps1 is not.
-#
-# deploy/set-env.ps1 is the pre-split single overlay (2026-08-06 to 2026-08-12),
-# still ignored so an existing server's copy cannot be committed by accident.
+# They are therefore tracked ON PURPOSE, at the owner's instruction, and the
+# ignore rules that used to cover them have been removed. Understand what that
+# means before committing: a credential pushed once is in git history
+# permanently, and removing the file later does not remove it from history.
+# Rotate anything that reaches a remote you do not control.
 set-env-prod.ps1
 set-env-*.local.ps1
-deploy/set-env.ps1
-deploy/set-env-api.ps1
-deploy/set-env-cp.ps1
-deploy/set-env-web.ps1
-deploy/set-env-edge.ps1
 
 # ── Runtime file store — personal data, NEVER commit ───────────────
 # App_Data/files is the filesystem storage root (FilesystemFileStorageProvider),

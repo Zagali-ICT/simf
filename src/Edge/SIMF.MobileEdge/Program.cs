@@ -71,7 +71,7 @@ if (legacyNames.Count > 0)
         + (legacyNames.Count > 8 ? ", ..." : string.Empty)
         + ". Each SIMF application now reads its own prefix ('SIMF_EDGE_' here). "
         + "Re-provision with deploy/set-env-edge.ps1, clear the old variables with "
-        + "deploy/clear-env.ps1, then restart the pool.");
+        + "deploy/clean-env.ps1, then restart the pool.");
 }
 
 // Per-project log files under {Storage:LogDirectory}/SIMF.MobileEdge/log-{Date}.log,

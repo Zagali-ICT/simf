@@ -152,7 +152,7 @@ public sealed class DeploymentEnvPrefixTests
         Assert.Contains("SIMF_API_", message, StringComparison.Ordinal);
         // What to run.
         Assert.Contains("set-env-", message, StringComparison.Ordinal);
-        Assert.Contains("clear-env.ps1", message, StringComparison.Ordinal);
+        Assert.Contains("clean-env.ps1", message, StringComparison.Ordinal);
     }
 
     /// <summary>A long list is truncated rather than printed whole - a server

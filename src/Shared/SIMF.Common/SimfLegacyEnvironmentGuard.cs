@@ -73,7 +73,7 @@ public static class SimfLegacyEnvironmentGuard
         + $". Each SIMF application now reads its own prefix ('{currentPrefix}' here) so "
         + "that two applications on one server can hold different values for the same "
         + "key. Re-provision this server with its deploy/set-env-{api|cp|web|edge}.ps1 "
-        + "and remove the old variables with deploy/clear-env.ps1, then restart the pool.";
+        + "and remove the old variables with deploy/clean-env.ps1, then restart the pool.";
 
     /// <summary>The legacy names among <paramref name="environmentNames"/>.
     /// Separated from the environment read so it can be tested without setting
