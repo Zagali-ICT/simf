@@ -154,12 +154,17 @@ Write-Host ("=== SIMF clear env (Machine + User scope) - {0}, {1} ===" -f $mode,
 # The two are tracked as pairs rather than as names: the same variable can exist
 # in both scopes with different values, and removing it from one proves nothing
 # about the other.
+#
+# The loop variable is $scopeTarget and NOT $target. PowerShell variable names
+# are case-insensitive, so `foreach ($target in ...)` assigns straight into the
+# script's own -Target parameter, and its ValidateSet then rejects "Machine"
+# before a single variable is read. Do not rename it back.
 $simfEntries = @()
-foreach ($target in @([EnvironmentVariableTarget]::Machine, [EnvironmentVariableTarget]::User)) {
-    $live = [Environment]::GetEnvironmentVariables($target)
+foreach ($scopeTarget in @([EnvironmentVariableTarget]::Machine, [EnvironmentVariableTarget]::User)) {
+    $live = [Environment]::GetEnvironmentVariables($scopeTarget)
     foreach ($key in $live.Keys) {
         if ($key -like 'SIMF_*') {
-            $simfEntries += [pscustomobject]@{ Name = [string]$key; Target = $target }
+            $simfEntries += [pscustomobject]@{ Name = [string]$key; Target = $scopeTarget }
         }
     }
 }
@@ -227,14 +232,15 @@ if ($simfEntries.Count -eq 0) {
 }
 
 if ($IncludeAspNetEnv) {
-    foreach ($target in @([EnvironmentVariableTarget]::Machine, [EnvironmentVariableTarget]::User)) {
-        $hostEnv = [Environment]::GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", $target)
+    # $scopeTarget, not $target - see the note on the enumeration loop above.
+    foreach ($scopeTarget in @([EnvironmentVariableTarget]::Machine, [EnvironmentVariableTarget]::User)) {
+        $hostEnv = [Environment]::GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", $scopeTarget)
         if (-not [string]::IsNullOrWhiteSpace($hostEnv)) {
-            [Environment]::SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", $null, $target)
-            Write-Host ("  removed ASPNETCORE_ENVIRONMENT [{0}] (host reverts to its default = Production)" -f $target) -ForegroundColor Yellow
+            [Environment]::SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", $null, $scopeTarget)
+            Write-Host ("  removed ASPNETCORE_ENVIRONMENT [{0}] (host reverts to its default = Production)" -f $scopeTarget) -ForegroundColor Yellow
             $removed++
         } else {
-            Write-Host ("  ASPNETCORE_ENVIRONMENT was not set at {0} scope - skipped." -f $target) -ForegroundColor DarkGray
+            Write-Host ("  ASPNETCORE_ENVIRONMENT was not set at {0} scope - skipped." -f $scopeTarget) -ForegroundColor DarkGray
         }
     }
 }
