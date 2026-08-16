@@ -12,7 +12,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Persistence.Migrations.App
 {
     [DbContext(typeof(SimfAppDbContext))]
-    [Migration("20260816144314_InitialCreate")]
+    [Migration("20260816145611_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />

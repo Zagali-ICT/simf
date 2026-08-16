@@ -286,6 +286,7 @@ if (-not $VerifyOnly) {
             Write-Warning ("  Refusing to overwrite. If this key changed, {0}." -f $key.Consequence)
             if ($key.Catastrophic) {
                 Write-Warning "  This is IRREVERSIBLE data loss - a real rotation needs a decrypt-and-re-encrypt migration, not an env-var edit."
+                Write-Warning "  CONFIRM this key is in the secret vault. A preserved key that was never escrowed is one rebuilt machine away from permanent loss - SIMF-OPS-001 Amendment C, C.1."
             }
             continue
         }
@@ -295,6 +296,14 @@ if (-not $VerifyOnly) {
             Set-MachineVar $key.Name $generated
             # Report the NAME only. The value is never printed.
             Write-Host ("  generated + set: {0}  ({1})" -f $key.Name, $key.Purpose) -ForegroundColor Green
+            if ($key.Catastrophic) {
+                # This is the only moment anyone is looking at this key. It exists
+                # nowhere but this machine's environment, and no backup of the
+                # databases or the file tree contains it - so a rebuilt machine
+                # without an escrow copy restores to undecryptable bytes.
+                Write-Warning ("  ESCROW REQUIRED: {0} exists ONLY on this machine." -f $key.Name)
+                Write-Warning ("  Read it into the organisation's secret vault now - SIMF-OPS-001 Amendment C, C.1. Without it, {0}." -f $key.Consequence)
+            }
         }
         finally {
             $generated = $null
