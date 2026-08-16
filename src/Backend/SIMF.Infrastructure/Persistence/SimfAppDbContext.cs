@@ -341,6 +341,11 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
                 nameof(SIMF.Domain.Profiles.UserProfile.NationalId),
                 nameof(SIMF.Domain.Profiles.UserProfile.IqamaNumber),
                 nameof(SIMF.Domain.Profiles.UserProfile.PassportNumber),
+                // The canonical number and the two columns it supersedes. All
+                // three are the same fact, so all three carry the same
+                // protection — leaving the new one in plaintext would have made
+                // the collapse a PII regression.
+                nameof(SIMF.Domain.Profiles.UserProfile.MobileNumber),
                 nameof(SIMF.Domain.Profiles.UserProfile.SaudiMobile),
                 nameof(SIMF.Domain.Profiles.UserProfile.InternationalMobile),
             })

@@ -1,3 +1,7 @@
+// Tests: SIMF.Api.Tests/UserProfileTests.cs (the collapsed MobileNumber column
+//        is filled from either shipped wire field, and both keys still
+//        round-trip over the real HTTP surface)
+//        SIMF.Api.Tests/AdminAccountMobileTests.cs (the desk edit writes it too)
 using SIMF.Common.Enums;
 using SIMF.Domain.Common;
 using SIMF.Domain.Organisations;
@@ -180,10 +184,54 @@ public class UserProfile : BaseAuditEntity
     /// it.</summary>
     public bool ShowInMeetLikeYou { get; set; }
 
-    // Both optional: a Saudi mobile is +966xxxxxxxxx, an international one is
-    // +cc-local.
+    /// <summary>The attendee's ONE mobile number, in canonical E.164
+    /// (<c>+966501234567</c>, <c>+447700900123</c>) — the single column that
+    /// supersedes <see cref="SaudiMobile"/> and
+    /// <see cref="InternationalMobile"/>.
+    ///
+    /// <para>A Saudi mobile IS an international mobile with <c>+966</c> on the
+    /// front, so the two columns were never two attributes. Two columns let a row
+    /// hold two DIFFERENT numbers with nothing on the row saying which one to
+    /// ring, forced every reader to coalesce, and de-duplicated against nothing —
+    /// the same person's number stored <c>0501234567</c> in one row and
+    /// <c>+966501234567</c> in another looked like two people. This column holds
+    /// the folded form (the Saudi local <c>05XXXXXXXX</c> spelling becomes
+    /// <c>+9665XXXXXXXX</c>), so one number is one string.</para>
+    ///
+    /// <para>Written only through <c>ProfileMobileStorage.Sync</c>, which sets
+    /// this column and the two superseded ones together, so a row can never say
+    /// two things.</para></summary>
+    public string? MobileNumber { get; set; }
+
+    /// <summary>SUPERSEDED by <see cref="MobileNumber"/>. Still written, in exact
+    /// lockstep, and still the only thing every reader projects — which is why it
+    /// cannot go yet.
+    ///
+    /// <para>Populated when the canonical number is Saudi (<c>+966…</c>) and NULL
+    /// otherwise; <see cref="InternationalMobile"/> is its exact complement, so
+    /// at most one of the pair is ever set. Saudi wins when both arrive, matching
+    /// the precedence the VIP roster already displays with
+    /// (<c>VipRosterService</c> picks <c>SaudiMobile ?? InternationalMobile</c>).</para>
+    ///
+    /// <para><b>Readers that must move to <see cref="MobileNumber"/> before this
+    /// pair can be dropped:</b> <c>UserProfileService.ToResponse</c> (the
+    /// <c>saudiMobile</c> / <c>internationalMobile</c> wire keys the shipped app
+    /// decodes — those two JSON names are append-only and must keep being emitted
+    /// and accepted whatever the storage does), <c>VipRosterService</c>,
+    /// <c>MyAreaService</c>, <c>AdminApprovalReadService</c>,
+    /// <c>VisitorShareService</c> (+ the vCard endpoint),
+    /// <c>ExhibitorVisitorService</c>, <c>OfflineBadgeUploadService</c>,
+    /// <c>AdminAccountService</c>, <c>AiAuditDetail</c>, and the Control-Panel
+    /// pages that bind them (Pending/View/Edit for visitors and others, the
+    /// walk-in form, the VIP export). Legacy rows written before this column
+    /// existed carry the pair and a NULL <see cref="MobileNumber"/>, so a reader
+    /// that switches early would blank a value that has always been
+    /// populated.</para></summary>
     public string? SaudiMobile { get; set; }
 
+    /// <summary>SUPERSEDED by <see cref="MobileNumber"/> — see the remarks on
+    /// <see cref="SaudiMobile"/>. Populated when the canonical number is NOT
+    /// Saudi, and NULL when it is.</summary>
     public string? InternationalMobile { get; set; }
 
     /// <summary>Optional Saudi vehicle plate, stored normalised: 3 letters then

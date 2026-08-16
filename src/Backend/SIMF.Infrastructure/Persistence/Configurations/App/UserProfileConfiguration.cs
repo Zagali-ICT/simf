@@ -102,6 +102,9 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
         builder.Property(profile => profile.ShowInMeetLikeYou)
             .HasDefaultValue(true);
 
+        // The canonical E.164 number. 24 is the international width; the pair
+        // below is superseded and keeps the lengths it already had.
+        builder.Property(profile => profile.MobileNumber).HasMaxLength(24);
         builder.Property(profile => profile.SaudiMobile).HasMaxLength(20);
         builder.Property(profile => profile.InternationalMobile).HasMaxLength(24);
         // Stored normalized (3 letters + 1–4 digits, no separators).

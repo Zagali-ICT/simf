@@ -1,9 +1,10 @@
 // Tests: SIMF.Api.Tests/AdminAccountMobileTests.cs (the optional mobile
-//        correction, stored canonicalised)
+//        correction, stored canonicalised in the one collapsed column)
 // Tests: SIMF.Api.Tests/AdminAccountNationalityTests.cs (nationality)
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
+using SIMF.Application.IdentityAccess;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.Auditing;
@@ -107,10 +108,11 @@ internal sealed partial class AdminAccountService
         var resolvedNationalityId = await ResolveEditNationalityAsync(
             actorUserId, trimmedEmail, target.Id, nationalityCode, cancellationToken);
 
-        // The optional mobile correction. Canonicalised here so a desk-typed
-        // "+966-55 598 7654" lands in the column in the SAME form the app would
-        // have written; null = "leave it as it is", which is also why an admin
-        // cannot blank a number — the mobile is mandatory.
+        // The optional mobile correction, reduced to null/not-null HERE so the
+        // "was anything supplied?" question below (and the audit line) reads the
+        // same value the write does; a blank string is "not supplied", not a
+        // blanking, because the mobile is mandatory. The canonical form itself is
+        // settled once, inside ProfileMobileStorage.Sync.
         var normalisedSaudiMobile = MobileNumber.NormalizeOptional(saudiMobile);
         var normalisedInternationalMobile =
             MobileNumber.NormalizeOptional(internationalMobile);
@@ -304,7 +306,7 @@ internal sealed partial class AdminAccountService
             {
                 return;
             }
-            appDbContext.UserProfiles.Add(new UserProfile
+            var created = new UserProfile
             {
                 Id = Guid.NewGuid(),
                 UserId = subjectId,
@@ -312,10 +314,10 @@ internal sealed partial class AdminAccountService
                 AllowsSpeakerMeeting = allowsSpeakerMeeting,
                 AllowsDelegationMeeting = allowsDelegationMeeting,
                 NationalityId = nationalityId ?? 0,
-                SaudiMobile = saudiMobile,
-                InternationalMobile = internationalMobile,
                 CreatedAt = now,
-            });
+            };
+            ProfileMobileStorage.Sync(created, saudiMobile, internationalMobile);
+            appDbContext.UserProfiles.Add(created);
         }
         else
         {
@@ -326,16 +328,20 @@ internal sealed partial class AdminAccountService
             {
                 profile.NationalityId = resolved;
             }
-            // An omitted number leaves the stored one alone (the
-            // same "null = no change" contract as the nationality above), so a
-            // desk editing only the email never wipes the contact detail.
-            if (saudiMobile is not null)
+            // "null = no change" is now per-ATTRIBUTE, not per-column, because the
+            // mobile is one attribute: an edit that supplies neither number leaves
+            // the row alone (a desk fixing only the email never wipes the contact
+            // detail), and an edit that supplies EITHER number replaces the stored
+            // one outright.
+            //
+            // It deliberately does NOT coalesce a supplied international number
+            // against the stored Saudi one. That is what used to leave the row
+            // holding two different numbers with nothing saying which to ring —
+            // and since blanking is forbidden (the mobile is mandatory), coalescing
+            // would make moving a Saudi attendee onto a foreign number impossible.
+            if (saudiMobile is not null || internationalMobile is not null)
             {
-                profile.SaudiMobile = saudiMobile;
-            }
-            if (internationalMobile is not null)
-            {
-                profile.InternationalMobile = internationalMobile;
+                ProfileMobileStorage.Sync(profile, saudiMobile, internationalMobile);
             }
             profile.UpdatedAt = now;
         }

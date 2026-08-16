@@ -1,7 +1,10 @@
 // Tests: SIMF.Api.Tests/AdminResetTwoFactorTests.cs,
 //        SIMF.Api.Tests/AdminCreateUserTests.cs,
 //        SIMF.Api.Tests/ControlPanelTwoFactorEnrolmentTests.cs (a created
-//        admin is TwoFactorEnabled AND can still complete a first sign-in)
+//        admin is TwoFactorEnabled AND can still complete a first sign-in),
+//        SIMF.Api.Tests/WalkInRegistrationTests.cs +
+//        SIMF.Api.Tests/AdminAccountMobileTests.cs (the desk-created profile's
+//        mobile lands in the one canonical column and the two lockstep ones)
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -641,19 +644,23 @@ internal sealed partial class AdminAccountService(
             NationalIdHash = nationalIdHash,
             IqamaNumberHash = iqamaNumberHash,
             PassportNumberHash = passportNumberHash,
-            // Store the canonical number, exactly like the plate
-            // above and the self-service path (UserProfileService): a desk-typed
-            // "+966-55 598 7654" must land in the column as the same string the
-            // app would have written for that number.
-            SaudiMobile = MobileNumber.NormalizeOptional(request.SaudiMobile),
-            InternationalMobile =
-                MobileNumber.NormalizeOptional(request.InternationalMobile),
+            // The mobile is set below through ProfileMobileStorage.Sync, which
+            // writes the canonical column and the two superseded ones together.
+            // Setting either column here as well would be a second copy of the
+            // split rule, and the two copies are what drift.
             // The desk-required organisation pick (الجهة).
             OrganisationId = organisationId,
             // Delegation-member flag (a delegate is a normal visitor).
             IsDelegate = request.IsDelegate,
             CreatedAt = now,
         };
+        // The canonical number plus the two columns it supersedes, written
+        // together and by the SAME helper the self-service upsert uses, so a
+        // desk-typed "+966-55 598 7654" and an app-typed "0555987654" land as one
+        // string. Deliberately after the initializer rather than inside it: three
+        // columns from two inputs is a rule, not three assignments.
+        ProfileMobileStorage.Sync(
+            profile, request.SaudiMobile, request.InternationalMobile);
         // Visitor kind owns interests; Other kind ignores them per the prompt.
         if (kind == UserType.Visitor)
         {

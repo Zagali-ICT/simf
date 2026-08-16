@@ -4259,6 +4259,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
 
+                    b.Property<string>("MobileNumber")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(50)

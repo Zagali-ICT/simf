@@ -6,13 +6,15 @@ namespace SIMF.Api.Tests;
 /// <summary>
 /// DEF-PHN-003 — unit tests for the shared <see cref="MobileNumber"/> helper.
 ///
-/// <para>Scope settled at integration 2026-07-27: DEF-PHN-003 as filed is a
-/// SEPARATOR defect (<c>+966501234567</c> vs <c>+966-555987654</c> — one spelling,
-/// one dash apart), and that is what is fixed. The two spellings D-371 accepts
-/// (<c>05XXXXXXXX</c> and <c>+9665XXXXXXXX</c>) are deliberately NOT folded onto
-/// each other: two concurrent fixes chose OPPOSITE target forms, and picking one
-/// rewrites stored data and changes duplicate detection, so it is an owner
-/// decision. These tests pin the current, agreed contract.</para>
+/// <para>It began as a SEPARATOR defect (<c>+966501234567</c> vs
+/// <c>+966-555987654</c> — one spelling, one dash apart). The mobile-number
+/// collapse then settled the question that fix left open: the two spellings D-371
+/// accepts (<c>05XXXXXXXX</c> and <c>+9665XXXXXXXX</c>) DO now fold onto each
+/// other, onto <c>+966…</c>, because the profile stores the number once and two
+/// spellings of one number de-duplicate against nothing. Two earlier concurrent
+/// fixes had chosen opposite target forms, which is why the direction is spelled
+/// out here and in <see cref="MobileNumber"/> rather than left to the next
+/// reader.</para>
 ///
 /// <para>Acceptance is deliberately NOT changed: <see cref="MobileNumber.Normalize"/>
 /// stays the MATCH form the D-371 shapes are applied to, so a Saudi local number
@@ -26,9 +28,6 @@ public sealed class MobileNumberTests
     // typed the spacing, dashes or a leading 00, one spelling reaches the column as
     // one string.
     [Theory]
-    [InlineData("0501234567", "0501234567")]
-    [InlineData("05 0123-4567", "0501234567")]
-    [InlineData("  050 123 4567  ", "0501234567")]
     [InlineData("+966501234567", "+966501234567")]
     [InlineData("+966-50-123-4567", "+966501234567")]
     [InlineData("  +966 50 123 4567  ", "+966501234567")]
@@ -36,13 +35,24 @@ public sealed class MobileNumberTests
     public void Separators_are_canonicalised_within_a_spelling(string typed, string stored)
         => Assert.Equal(stored, MobileNumber.NormalizeOptional(typed));
 
-    // OPEN QUESTION, pinned so a future change is deliberate: the two accepted Saudi
-    // spellings still store DIFFERENTLY. That is a known, owner-facing decision (see
-    // the class remarks) — not an oversight. If someone folds them, this test fails
-    // and they must make the choice consciously and record it.
+    // DECIDED — the two accepted Saudi spellings now fold onto ONE stored form.
+    // The mobile-number collapse made the choice the pin above left open: a Saudi
+    // mobile IS an international mobile with +966, the profile stores it once in
+    // canonical E.164, and two spellings of one number de-duplicate against
+    // nothing. +966 is the target because it is the only form a non-Saudi number
+    // can also be written in, so one column can hold either.
+    [Theory]
+    [InlineData("0501234567", "+966501234567")]
+    [InlineData("05 0123-4567", "+966501234567")]
+    [InlineData("  050 123 4567  ", "+966501234567")]
+    [InlineData("0559876543", "+966559876543")]
+    public void The_saudi_local_spelling_folds_onto_the_international_form(
+        string typed, string stored)
+        => Assert.Equal(stored, MobileNumber.NormalizeOptional(typed));
+
     [Fact]
-    public void The_two_accepted_saudi_spellings_are_not_folded_onto_each_other()
-        => Assert.NotEqual(
+    public void The_two_accepted_saudi_spellings_store_identically()
+        => Assert.Equal(
             MobileNumber.NormalizeOptional("+966501234567"),
             MobileNumber.NormalizeOptional("0501234567"));
 

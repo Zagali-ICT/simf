@@ -1298,6 +1298,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     BadgeBatchId = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValue: new Guid("0f1e2d3c-4b5a-6978-8796-a5b4c3d2e1f0")),
                     EditionYear = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
                     ShowInMeetLikeYou = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
+                    MobileNumber = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     SaudiMobile = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     InternationalMobile = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     PlateNumber = table.Column<string>(type: "nvarchar(7)", maxLength: 7, nullable: true),

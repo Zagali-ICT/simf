@@ -12,7 +12,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Persistence.Migrations.App
 {
     [DbContext(typeof(SimfAppDbContext))]
-    [Migration("20260815230324_InitialCreate")]
+    [Migration("20260816022348_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -4261,6 +4261,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("MawjId")
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("MobileNumber")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
 
                     b.Property<string>("Name")
                         .IsRequired()

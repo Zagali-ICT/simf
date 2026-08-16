@@ -52,7 +52,11 @@ public sealed class AdminAccountMobileTests : IClassFixture<SimfApiFactory>
             token);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        Assert.Equal("0559876543", (await LoadProfileAsync(id)).SaudiMobile);
+        // Folded onto the canonical +966 form on the way in (the mobile-number
+        // collapse), and written to the canonical column in the same breath.
+        var corrected = await LoadProfileAsync(id);
+        Assert.Equal("+966559876543", corrected.SaudiMobile);
+        Assert.Equal("+966559876543", corrected.MobileNumber);
     }
 
     [Fact]
@@ -96,8 +100,14 @@ public sealed class AdminAccountMobileTests : IClassFixture<SimfApiFactory>
 
         var profile = await LoadProfileAsync(id);
         Assert.Equal("+447700900123", profile.InternationalMobile);
-        // The Saudi number was not sent, so it is untouched.
-        Assert.Equal("0501111111", profile.SaudiMobile);
+        Assert.Equal("+447700900123", profile.MobileNumber);
+        // The mobile is ONE attribute, so a supplied international number REPLACES
+        // the stored Saudi one rather than sitting beside it. The row holding two
+        // different numbers, with nothing on it saying which to ring, is the defect
+        // the collapse removes — and since a number can never be blanked, leaving
+        // the Saudi one in place would make moving an attendee onto a foreign
+        // number impossible.
+        Assert.Null(profile.SaudiMobile);
     }
 
     [Fact]

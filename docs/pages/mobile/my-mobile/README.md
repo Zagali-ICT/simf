@@ -25,13 +25,36 @@ self-service profile edits.
 > the number is validated for shape and saved. Do not add a verification phase
 > without a new owner decision.
 
-## 2. No schema change, no new endpoint
+## 2. No new endpoint
 
-`UserProfile.SaudiMobile` / `.InternationalMobile` already exist
-(`UserProfileConfiguration` — `HasMaxLength(20)` / `(24)`), the app's
-`UpsertUserProfileRequest` already carries both, and
+The app's `UpsertUserProfileRequest` already carries both mobile fields and
 `UpsertUserProfileRequestValidator` already enforces the C4 (D-371) shapes on
 them. So this screen is **UI only**: it reuses the existing full-profile upsert.
+
+### Where the number is stored (the mobile-number collapse)
+
+`UserProfile.SaudiMobile` and `.InternationalMobile` were **one attribute in two
+columns** — a Saudi mobile is an international mobile with `+966` on the front.
+Two columns let a row hold two different numbers with nothing saying which to
+ring, made every reader coalesce, and de-duplicated against nothing.
+
+The number now lives **once**, in canonical E.164, on
+`UserProfile.MobileNumber` (`HasMaxLength(24)`, PII-encrypted at rest by the
+same `IPiiEncryptor` converter as the pair). `ProfileMobileStorage.Sync` is the
+only writer: it sets the canonical column and the two superseded ones together,
+as exact complements (Saudi set / international NULL, or the reverse), with
+**Saudi winning** when both arrive — the precedence `VipRosterService` already
+displays with.
+
+The pair is **not** dropped in this change and is still written in lockstep,
+because every reader still projects it and because the shipped Flutter app
+decodes `saudiMobile` and `internationalMobile` **by name**. Both wire keys keep
+being emitted and accepted whatever the storage does; the reader list that must
+move before the columns can go is on `UserProfile.SaudiMobile`.
+
+One user-visible consequence: the Saudi local `05XXXXXXXX` spelling is now
+**stored folded** to `+9665XXXXXXXX`, so a number saved as `0501234567` reads
+back as `+966501234567`. Acceptance is unchanged — see §4.
 
 ## 3. Behaviour
 
@@ -63,10 +86,18 @@ the same functions the sign-up profile form and the staff walk-in form use.
 | Non-Saudi | E.164 — `+`, non-zero lead, 8–15 digits (`00…` accepted) | `internationalMobileInvalid` |
 
 Arabic-Indic digits fold to Western, spaces / dashes are stripped, and a leading
-`00` is rewritten to `+` (`normalizePhone`) **before** submit, so the stored
-value always matches the server's `+`-only shapes. Client `maxLength` 17 and the
-server shapes both stay inside the EF column caps (20 / 24) — the triple-lock
+`00` is rewritten to `+` (`normalizePhone`) **before** submit, so the submitted
+value always matches the server's shapes. Client `maxLength` 17 and the server
+shapes both stay inside the EF column caps (20 / 24 / 24) — the triple-lock
 holds with no change.
+
+**The fold does not widen acceptance.** The Saudi local → `+966` fold lives in
+`MobileNumber.Canonicalize` (the storage path) and *not* in
+`MobileNumber.Normalize` (the match form the validators run against). Folding it
+in the match form would make `0501234567` satisfy the E.164 test, and a Saudi
+local number would start being accepted into the **international** field. The
+two rows in the table above are unchanged by the collapse, and so is
+`phone_validation.dart`.
 
 ## 5. i18n / RTL
 

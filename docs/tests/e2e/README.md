@@ -256,7 +256,7 @@ API endpoints land (D-249). The per-screen design docs live under
 | #7 `signUpVisitor` — **profile data** (Visitor/Other + ProfileType + 3 lookups; Next→interests) | [`mobile-sign-up-visitor.md`](mobile-sign-up-visitor.md) | E2E-MOB007-001..022 |
 | #7‑01 `signUpInterests` — **interests (1–10) + the single `POST /app/account/user-profile` save** | [`mobile-sign-up-interests.md`](mobile-sign-up-interests.md) | E2E-MOB7A-001..008 |
 | #702 `myInterests` — **edit interests after sign-up** (same screen, edit mode) | [`mobile-my-interests.md`](mobile-my-interests.md) | E2E-MYINT-001..007 |
-| #703 `myMobile` — **add / edit the mobile number** (validate only, NO OTP) | [`mobile-my-mobile.md`](mobile-my-mobile.md) | E2E-MYMOB-001..011 |
+| #703 `myMobile` — **add / edit the mobile number** (validate only, NO OTP) | [`mobile-my-mobile.md`](mobile-my-mobile.md) | E2E-MYMOB-001..012 |
 | _(cross-surface app logo / photo boxes + the full-size viewer)_ | [`mobile-logo-viewer.md`](mobile-logo-viewer.md) | E2E-LOGO-001..008 |
 | #9 `terms` (`GET /app/content/terms`) | [`mobile-terms.md`](mobile-terms.md) | E2E-MOB009-001..008 |
 | #10 `registrationSuccess` (no API — static confirmation) | [`mobile-registration-success.md`](mobile-registration-success.md) | E2E-MOB010-001..007 |
@@ -360,10 +360,10 @@ being quoted in planning as if current.
 - **Pages catalogued:** 197 (97 Control Panel + 69 mobile + 19 Website + 10
   API-only surfaces + 1 system-wide). One of them — `cp-admin-companies.md` —
   is **retired**: its route was renamed away and it now carries no live scenarios.
-- **Total scenarios:** 3126 Coverage-matrix rows, every id distinct. That
+- **Total scenarios:** 3127 Coverage-matrix rows, every id distinct. That
   includes the **360** generated element-sweep rows (`E2E-{NS}-ELS-001/002`, two
   per live page — see `tools/qa/generate_els_rows.py`); the hand-authored
-  functional total is 2764.
+  functional total is 2765.
 - **Authored:** all pages. The D-133 "pending" stubs are fully authored, and
   every event-module and P2–P5 page added since has its own file.
 - **Execution:** the canonical run today is a Chrome DevTools MCP browser pass
