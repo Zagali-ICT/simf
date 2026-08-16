@@ -54,7 +54,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/visitors/vip` | [`cp-vip-registration.md`](cp-vip-registration.md) | E2E-VIPR-001..011 |
 | `/admin/visitors/vip/export` | [`cp-vip-export.md`](cp-vip-export.md) | E2E-VIPX-001..008 |
 | `/admin/delegates` | [`cp-admin-delegates.md`](cp-admin-delegates.md) | E2E-DLG-001..012 |
-| `/admin/visitors/badge-batches` | [`cp-admin-badge-batches.md`](cp-admin-badge-batches.md) | E2E-BBT-001..015 |
+| `/admin/visitors/badge-batches` | [`cp-admin-badge-batches.md`](cp-admin-badge-batches.md) | E2E-BBT-001..019 |
 | `/admin/editions` | [`cp-admin-editions.md`](cp-admin-editions.md) | E2E-CPED-001..010 |
 | `/admin/attendees` | [`cp-admin-attendees.md`](cp-admin-attendees.md) | E2E-ATT-001..016 |
 | `/admin/print-bag` | [`cp-admin-print-bag.md`](cp-admin-print-bag.md) | E2E-PRT-001..011 |

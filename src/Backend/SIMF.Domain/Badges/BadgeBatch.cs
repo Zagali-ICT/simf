@@ -13,9 +13,9 @@ namespace SIMF.Domain.Badges;
 public class BadgeBatch : BaseAuditEntity
 {
     /// <summary>Who the order is for, as a person would say it — "Ministry of
-    /// Interior Team". Distinct from <see cref="CountsSummary"/>, which says what
-    /// is in it: an order identified only by its counts is unrecognisable in a
-    /// list once there are several the same size.</summary>
+    /// Interior Team". Distinct from <see cref="Items"/>, which say what is in
+    /// it: an order identified only by its counts is unrecognisable in a list
+    /// once there are several the same size.</summary>
     public string Name { get; set; } = string.Empty;
 
     /// <summary>The Arabic twin of <see cref="Name"/>. Arabic is the primary
@@ -33,15 +33,13 @@ public class BadgeBatch : BaseAuditEntity
     /// </summary>
     public static readonly Guid DirectRegistrationId =
         new("0F1E2D3C-4B5A-6978-8796-A5B4C3D2E1F0");
-    /// <summary>A readable breakdown of what the batch minted, such as
-    /// "VIP × 3 + Normal × 2", rendered as-is in the batches list so an admin
-    /// recognises the run without expanding it. Built with the invariant culture,
-    /// because Arabic-Indic digits or a Hijri date would drift once stored.</summary>
-    public string CountsSummary { get; set; } = string.Empty;
-
-    /// <summary>Denormalised from the member rows so the list does not count the
-    /// profiles table once per row.</summary>
-    public int TotalCount { get; set; }
+    /// <summary>What the order holds, one line per profile type. This replaced a
+    /// rendered <c>CountsSummary</c> string ("VIP × 3 + Normal × 2") and a
+    /// <c>TotalCount</c> cache of the same fact: both are composed on READ from
+    /// these lines joined to the LIVE profile-type names, so a renamed tier
+    /// corrects every historical order instead of leaving each one labelled with
+    /// the name it carried at mint time. See <see cref="BadgeBatchItem"/>.</summary>
+    public ICollection<BadgeBatchItem> Items { get; set; } = new List<BadgeBatchItem>();
 
     /// <summary>True when every badge in the batch was flagged as a delegation
     /// member.</summary>

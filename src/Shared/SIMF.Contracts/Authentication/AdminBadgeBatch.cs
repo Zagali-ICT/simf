@@ -7,8 +7,14 @@ namespace SIMF.Contracts.Authentication;
 /// <see cref="IsActive"/> = false.
 /// </summary>
 /// <param name="Id">The batch id.</param>
-/// <param name="CountsSummary">Human breakdown of what was minted, e.g. <c>"VIP × 3 + Normal × 2"</c>.</param>
-/// <param name="TotalCount">Total badges minted in the batch.</param>
+/// <param name="CountsSummary">Human breakdown of what was minted, e.g. <c>"VIP × 3 + Normal × 2"</c>.
+/// Composed on READ from the order's child rows joined to the live profile-type
+/// names, not stored: as a column it froze the tier name at mint time, so renaming
+/// a tier left every historical order labelled with a name no longer in use.
+/// English and invariant-culture by construction - a reader with room for the
+/// bilingual breakdown should prefer <paramref name="Tiers"/>.</param>
+/// <param name="TotalCount">Total badges minted in the batch. The sum of the
+/// child-row counts, derived on read rather than cached alongside them.</param>
 /// <param name="IsDelegate">True when every badge was flagged as a delegation member.</param>
 /// <param name="RecipientEmail">The organiser the QR pack was (last) emailed to, if any.</param>
 /// <param name="CreatedAt">When the batch was generated (Saudi local).</param>
@@ -16,13 +22,13 @@ namespace SIMF.Contracts.Authentication;
 /// <param name="Name">Who the order is for, in English.</param>
 /// <param name="NameArabic">The Arabic twin of <paramref name="Name"/>.</param>
 /// <param name="Tiers">The breakdown with both languages of each tier name, so a
-/// reader can render it in the language they are reading. Derived from the member
-/// rows on read, NOT stored: <paramref name="CountsSummary"/> is a single English
-/// string, so an Arabic page rendering it showed English tier names.</param>
+/// reader can render it in the language they are reading. Derived from the order's
+/// child rows on read, NOT stored: <paramref name="CountsSummary"/> is a single
+/// English string, so an Arabic page rendering it showed English tier names.</param>
 /// <param name="IsDirectRegistration">The seeded order self-registrations are filed
-/// against. It carries no <paramref name="Tiers"/> on purpose - it is not a badge
-/// order - and its stored summary is English prose, so a reader is expected to
-/// render its own localised label rather than echo that prose.</param>
+/// against. It is not a badge order, so it has no child rows and therefore neither
+/// <paramref name="Tiers"/> nor a <paramref name="CountsSummary"/>; a reader is
+/// expected to render its own localised label.</param>
 public sealed record AdminBadgeBatchSummary(
     Guid Id,
     string CountsSummary,

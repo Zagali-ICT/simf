@@ -133,10 +133,11 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailAp
     }
 
     // -- Top-up ---------------------------------------------------------------
-    // TopUpBadgeBatchAsync and MergeCountsSummary had NO coverage: the Control
-    // Panel test stubs the HTTP layer, so it passed whether or not the two 409
-    // guards below existed. MergeCountsSummary in particular parses its own
-    // " × "-delimited prose back into counts, which is not code to leave unpinned.
+    // TopUpBadgeBatchAsync and its fold had NO coverage: the Control Panel test
+    // stubs the HTTP layer, so it passed whether or not the two 409 guards below
+    // existed. The fold used to parse the order's own " × "-delimited prose back
+    // into counts; it merges child rows by profile-type id now, and either way it
+    // is not code to leave unpinned.
 
     [Fact]
     public async Task Top_up_mints_more_badges_and_folds_a_repeated_tier_into_the_summary()
@@ -200,13 +201,18 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailAp
 
         using var scope = _factory.Services.CreateScope();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        var batch = await appDb.BadgeBatches.SingleAsync(b => b.Id == batchId);
 
-        // TotalCount and CountsSummary are denormalised from the member rows, so
-        // both must move together; updating one alone leaves the orders list
-        // quietly disagreeing with itself.
-        Assert.Equal(9, batch.TotalCount);
-        Assert.Equal($"{normal.Name} × 6 + {vip.Name} × 3", batch.CountsSummary);
+        // The order holds ONE line per tier, folded in place rather than a second
+        // line for a tier it already had, and in the order the lines were entered.
+        var lines = await appDb.BadgeBatchItems
+            .AsNoTracking()
+            .Where(item => item.BadgeBatchId == batchId)
+            .OrderBy(item => item.DisplayOrder)
+            .ToListAsync();
+        Assert.Equal(2, lines.Count);
+        Assert.Equal((normal.Id, 6), (lines[0].ProfileTypeId, lines[0].Count));
+        Assert.Equal((vip.Id, 3), (lines[1].ProfileTypeId, lines[1].Count));
+        Assert.Equal(9, lines.Sum(item => item.Count));
 
         var members = await appDb.UserProfiles
             .Where(p => p.BadgeBatchId == batchId)
@@ -574,10 +580,15 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailAp
         // Every badge back-references the same, persisted batch row.
         var batchId = Assert.Single(badges.Select(b => b.BadgeBatchId).Distinct());
         Assert.NotEqual(BadgeBatch.DirectRegistrationId, batchId);
-        var batch = await appDb.BadgeBatches.SingleAsync(b => b.Id == batchId);
-        Assert.Equal(2, batch.TotalCount);
+        var batch = await appDb.BadgeBatches
+            .Include(b => b.Items)
+            .SingleAsync(b => b.Id == batchId);
         Assert.True(batch.IsActive);
-        Assert.Contains("× 2", batch.CountsSummary);
+        // What the order holds is a child row, not a rendered string, so the count
+        // can be read back as a number instead of parsed out of prose.
+        var line = Assert.Single(batch.Items);
+        Assert.Equal(typeId, line.ProfileTypeId);
+        Assert.Equal(2, line.Count);
     }
 
     [Fact]
@@ -754,6 +765,161 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailAp
         Assert.Empty(minted.Interests);
         Assert.Equal(0, minted.NationalityId);
         Assert.Null(minted.IdImageFileId);
+    }
+
+    // -- Badge-order lines (BadgeBatchItem) -----------------------------------
+    // The order's contents used to be a rendered string, "VIP × 3 + Normal × 2",
+    // built at mint time. Nothing could be asked of it without parsing, it was
+    // English whoever read it, and it froze the tier name — renaming a profile
+    // type left every historical order labelled with a name that no longer
+    // existed. The counts are child rows now, and the label is composed on read
+    // against the LIVE profile type.
+
+    [Fact]
+    public async Task Bulk_generate_writes_one_order_line_per_profile_type_with_its_count()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var normal = await NamedVisitorProfileTypeAsync("LineNormal");
+        var vip = await NamedVisitorProfileTypeAsync("LineVip");
+
+        var response = await PostAuthAsync(
+            "/api/v1/admin/visitors/bulk-generate",
+            new AdminBulkGenerateBadgesRequest
+            {
+                Name = "Two tier order",
+                NameArabic = "طلب من فئتين",
+                Batches = new List<BulkBadgeBatch>
+                {
+                    new() { ProfileTypeId = normal.Id, Count = 4 },
+                    new() { ProfileTypeId = vip.Id, Count = 3 },
+                },
+            },
+            admin);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var batchId = await BatchIdForTypeAsync(normal.Id);
+
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var lines = await appDb.BadgeBatchItems
+            .AsNoTracking()
+            .Where(item => item.BadgeBatchId == batchId)
+            .OrderBy(item => item.DisplayOrder)
+            .ToListAsync();
+
+        Assert.Equal(2, lines.Count);
+        Assert.Equal(normal.Id, lines[0].ProfileTypeId);
+        Assert.Equal(4, lines[0].Count);
+        Assert.Equal(vip.Id, lines[1].ProfileTypeId);
+        Assert.Equal(3, lines[1].Count);
+        // Entry order is kept, so the composed breakdown reads back the way the
+        // admin typed it rather than in whatever order the rows come off disk.
+        Assert.Equal(new[] { 0, 1 }, lines.Select(item => item.DisplayOrder).ToArray());
+    }
+
+    [Fact]
+    public async Task The_readable_summary_follows_a_profile_type_rename_rather_than_freezing_the_old_name()
+    {
+        // This is the test that justifies the whole change. The old column stored
+        // the tier NAME at mint time, so renaming "TierBefore" to "TierAfter" left
+        // every order that already existed still reading "TierBefore" - history
+        // labelled with a name that is not in the system any more, and no way to
+        // correct it short of rewriting stored prose.
+        var admin = await CreateAdministratorAndSignInAsync();
+        var tier = await NamedVisitorProfileTypeAsync("RenameTier");
+
+        await PostAuthAsync(
+            "/api/v1/admin/visitors/bulk-generate",
+            new AdminBulkGenerateBadgesRequest
+            {
+                Name = "Rename order",
+                NameArabic = "طلب إعادة التسمية",
+                Batches = new List<BulkBadgeBatch> { new() { ProfileTypeId = tier.Id, Count = 5 } },
+            },
+            admin);
+        var batchId = await BatchIdForTypeAsync(tier.Id);
+
+        var renamed = $"Renamed{Guid.NewGuid():N}"[..20];
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            var profileType = await appDb.ProfileTypes.SingleAsync(p => p.Id == tier.Id);
+            profileType.Name = renamed;
+            await appDb.SaveChangesAsync();
+        }
+
+        var listResponse = await PostAuthAsync(
+            "/api/v1/admin/visitors/badge-batches/list", new GridQuery { Top = 200 }, admin);
+        Assert.Equal(HttpStatusCode.OK, listResponse.StatusCode);
+        var page = (await listResponse.Content
+            .ReadFromJsonAsync<ApiResult<GridPage<AdminBadgeBatchSummary>>>())!;
+        var row = Assert.Single(page.Data!.Items, b => b.Id == batchId);
+
+        // Composed on read from the order's lines joined to the live profile type,
+        // so the rename corrects history instead of breaking it.
+        Assert.Equal($"{renamed} × 5", row.CountsSummary);
+        Assert.DoesNotContain(tier.Name, row.CountsSummary, StringComparison.Ordinal);
+        // The bilingual breakdown the Control Panel actually renders moves with it.
+        var onlyTier = Assert.Single(row.Tiers!);
+        Assert.Equal(renamed, onlyTier.Name);
+        Assert.Equal(5, onlyTier.Count);
+    }
+
+    [Fact]
+    public async Task An_orders_total_equals_the_sum_of_its_line_counts_including_after_a_top_up()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var normal = await NamedVisitorProfileTypeAsync("TotalNormal");
+        var vip = await NamedVisitorProfileTypeAsync("TotalVip");
+
+        await PostAuthAsync(
+            "/api/v1/admin/visitors/bulk-generate",
+            new AdminBulkGenerateBadgesRequest
+            {
+                Name = "Total order",
+                NameArabic = "طلب الإجمالي",
+                Batches = new List<BulkBadgeBatch>
+                {
+                    new() { ProfileTypeId = normal.Id, Count = 4 },
+                    new() { ProfileTypeId = vip.Id, Count = 3 },
+                },
+            },
+            admin);
+        var batchId = await BatchIdForTypeAsync(normal.Id);
+
+        var topUp = await PostAuthAsync(
+            "/api/v1/admin/visitors/badge-batches/top-up",
+            new AdminTopUpBadgeBatchRequest
+            {
+                BatchId = batchId,
+                Batches = new List<BulkBadgeBatch> { new() { ProfileTypeId = normal.Id, Count = 2 } },
+            },
+            admin);
+        Assert.Equal(HttpStatusCode.OK, topUp.StatusCode);
+
+        int lineTotal;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            lineTotal = await appDb.BadgeBatchItems
+                .AsNoTracking()
+                .Where(item => item.BadgeBatchId == batchId)
+                .SumAsync(item => item.Count);
+        }
+
+        // The total is no longer a second copy of the same fact that could drift
+        // from the lines; it IS the sum of them, on every surface that reads it.
+        Assert.Equal(9, lineTotal);
+        var topUpBody = (await topUp.Content
+            .ReadFromJsonAsync<ApiResult<AdminTopUpBadgeBatchResponse>>())!;
+        Assert.Equal(lineTotal, topUpBody.Data!.TotalCount);
+
+        var listResponse = await PostAuthAsync(
+            "/api/v1/admin/visitors/badge-batches/list", new GridQuery { Top = 200 }, admin);
+        var page = (await listResponse.Content
+            .ReadFromJsonAsync<ApiResult<GridPage<AdminBadgeBatchSummary>>>())!;
+        var row = Assert.Single(page.Data!.Items, b => b.Id == batchId);
+        Assert.Equal(lineTotal, row.TotalCount);
     }
 
     private async Task<Guid> BatchIdForTypeAsync(Guid profileTypeId)
