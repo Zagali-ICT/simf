@@ -105,14 +105,39 @@ $vars = @(
     # discarded and only fails later, at first decrypt. Verify with:
     #   python -c "import base64;print(len(base64.b64decode('KEY')))"
     #
-    # ROTATION WARNING for the two data keys below: changing either strands
-    # everything already encrypted with it. Set once, back up, never rotate
-    # casually - and back the key up somewhere other than the store it protects,
-    # because a backup that loses both together restores nothing.
-    [pscustomobject]@{ Name = "SIMF_API_FileStorage__EncryptionKey"; Value = ""; Secret = $true; Gate = $true; Note = "KEK for the centralized file store; rotating it makes every stored file undecryptable" }
+    # ROTATION WARNING for the two data keys below. They are NOT equivalent, and
+    # the difference decides whether a rotation is survivable:
+    #
+    #   FileStorage__EncryptionKey wraps a per-file data key rather than the file
+    #   itself, so it has a rotation path: promote the new key into
+    #   EncryptionKey/KekVersion, move the outgoing pair into
+    #   PreviousEncryptionKey/PreviousKekVersion, and everything already stored
+    #   still opens. What strands files is clearing the previous pair before every
+    #   blob has been re-wrapped under the new KEK - and the job that performs
+    #   that walk does not exist yet (designed, not built: SIMF-OPS-001 C.7). So
+    #   in practice treat this key as set-once as well, for now.
+    #
+    #   Storage__UserIdDocumentEncryptionKey has no previous-key slot at all.
+    #   Changing it strands every encrypted national ID / Iqama / passport /
+    #   mobile column outright, with no window and no way back.
+    #
+    # Either way: set once, back up, never rotate casually - and back the key up
+    # somewhere other than the store it protects, because a backup that loses
+    # both together restores nothing.
+    [pscustomobject]@{ Name = "SIMF_API_FileStorage__EncryptionKey"; Value = ""; Secret = $true; Gate = $true; Note = "KEK for the centralized file store; clearing it without a Previous key below makes every stored file undecryptable" }
     [pscustomobject]@{ Name = "SIMF_API_Storage__UserIdDocumentEncryptionKey"; Value = ""; Secret = $true; Gate = $true; Note = "encrypts the national ID / Iqama / passport / mobile columns at rest (NCA A2-10)" }
     [pscustomobject]@{ Name = "SIMF_API_Ai__PromptHash__Secret"; Value = ""; Secret = $true; Gate = $true; Note = "HMAC secret; the dev fallback is publicly derivable and would poison the AI audit trail" }
     [pscustomobject]@{ Name = "SIMF_API_FileStorage__KekVersion"; Value = ""; Secret = $false; Gate = $false; Note = "default 1" }
+
+    # Rotation window ONLY. While these are set the API holds both KEKs, so blobs
+    # wrapped under the outgoing one still decrypt; leave both empty when no
+    # rotation is in flight. There is no guessable default for the version - it is
+    # the number the outgoing key was deployed under, which is why C.1 escrows the
+    # version stamp next to the key. Clear the pair only once
+    #   SELECT KekVersion, COUNT(*) FROM dbo.StoredFiles WHERE IsEncrypted = 1 GROUP BY KekVersion
+    # returns the active version and nothing else. See SIMF-OPS-001 C.7.
+    [pscustomobject]@{ Name = "SIMF_API_FileStorage__PreviousEncryptionKey"; Value = ""; Secret = $true; Gate = $false; Note = "accepted during rotation only" }
+    [pscustomobject]@{ Name = "SIMF_API_FileStorage__PreviousKekVersion"; Value = ""; Secret = $false; Gate = $false; Note = "the version PreviousEncryptionKey matches" }
 
     # --- Filesystem paths -----------------------------------------------------
     # RootPath is the ONE setting that decides where every uploaded avatar, ID

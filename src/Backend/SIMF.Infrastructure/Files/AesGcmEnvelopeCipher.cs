@@ -56,6 +56,8 @@ internal sealed class AesGcmEnvelopeCipher : IFileCipher
 
     public byte CurrentFormatVersion => FormatVersion;
 
+    public byte ActiveKekVersion => _activeKekVersion;
+
     public byte[] Encrypt(byte[] plaintext)
     {
         ArgumentNullException.ThrowIfNull(plaintext);

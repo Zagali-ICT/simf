@@ -77,6 +77,10 @@ internal sealed class StoredFileService(
             SourceType = FileSourceType.Upload,
             IsEncrypted = policy.EncryptAtRest,
             CipherFormatVersion = write.CipherFormatVersion,
+            // The KEK that actually wrapped this file's data key, carried out of
+            // the write rather than re-read from configuration, so a rotation can
+            // be inventoried and resumed from SQL.
+            KekVersion = write.KekVersion,
             StorageKey = write.StorageKey,
             OriginalFileName = SanitizeFileName(command.OriginalFileName),
             ContentType = detected.ContentType,
@@ -152,6 +156,9 @@ internal sealed class StoredFileService(
             SourceType = FileSourceType.Upload,
             IsEncrypted = false,
             CipherFormatVersion = 0,
+            // Streamed recordings are written plaintext (AES-GCM is not seekable),
+            // so no KEK wrapped anything here.
+            KekVersion = null,
             StorageKey = write.StorageKey,
             OriginalFileName = SanitizeFileName(originalFileName),
             ContentType = contentType,
@@ -265,6 +272,11 @@ internal sealed class StoredFileService(
         file.OriginalFileName = null;
         file.IsEncrypted = false;
         file.CipherFormatVersion = 0;
+        // This row is being converted from an upload to an external link, so the
+        // bytes it named are gone and the KEK stamp left behind would name a key
+        // this row no longer has anything to do with - and would be counted by a
+        // rotation inventory that has nothing to re-wrap.
+        file.KekVersion = null;
         file.IsDeletable = policy.DeletableDefault;
 
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -371,7 +383,9 @@ internal sealed class StoredFileService(
                 "No file content was supplied.", "لم يتم تزويد محتوى الملف.");
         }
 
-        var file = await dbContext.StoredFiles.AsNoTracking()
+        // Tracked, not AsNoTracking: a restore re-seals the bytes and can move the
+        // row's cipher stamps, which have to be saved with it.
+        var file = await dbContext.StoredFiles
             .FirstOrDefaultAsync(f => f.Id == id && f.IsActive, cancellationToken);
         if (file is null
             || file.SourceType != FileSourceType.Upload
@@ -383,9 +397,22 @@ internal sealed class StoredFileService(
         // The provider rebuilds the SAME {service}/{id:N}{ext} key the row records,
         // so writing by (service, id, extension) cannot land the bytes anywhere the
         // row does not already point at.
-        await storage.WriteAsync(
+        var write = await storage.WriteAsync(
             file.Service, file.Id, Path.GetExtension(file.StorageKey), content,
             file.IsEncrypted, cancellationToken);
+
+        // The restored bytes are sealed under whatever KEK is active NOW, which
+        // during a rotation window is not the one this row was stamped with. Left
+        // stale, the row would name a key the blob is no longer wrapped under, and
+        // a rotation inventory would read this file as already re-wrapped when it
+        // is not - the one failure this column exists to prevent.
+        if (file.CipherFormatVersion != write.CipherFormatVersion
+            || file.KekVersion != write.KekVersion)
+        {
+            file.CipherFormatVersion = write.CipherFormatVersion;
+            file.KekVersion = write.KekVersion;
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
 
         await auditLog.WriteSuccessAsync(
             AuditEvents.FileUploaded,

@@ -76,11 +76,17 @@ internal sealed class GateScanConfiguration : IEntityTypeConfiguration<GateScan>
             .HasDatabaseName("IX_GateScan_Gate_ScannedAt")
             .IsDescending(false, true);
 
-        builder.HasIndex(scan => new { scan.UserProfileId, scan.ScannedAt })
+        // Both of these cover (UserProfileId, ScannedAt) and differ only in the
+        // filter, so each needs the NAMED HasIndex overload. The unnamed one is
+        // keyed on the property set alone: a second unnamed call over the same
+        // pair reconfigures the first rather than declaring a second index, and
+        // it did - the history index below was silently renamed and filtered out
+        // of existence, leaving one index where the migration should build two.
+        builder.HasIndex(scan => new { scan.UserProfileId, scan.ScannedAt }, "IX_GateScan_UserProfile_ScannedAt")
             .HasDatabaseName("IX_GateScan_UserProfile_ScannedAt")
             .IsDescending(false, true);
 
-        builder.HasIndex(scan => new { scan.UserProfileId, scan.ScannedAt })
+        builder.HasIndex(scan => new { scan.UserProfileId, scan.ScannedAt }, "IX_GateScan_UserProfile_LastAllowed")
             .HasDatabaseName("IX_GateScan_UserProfile_LastAllowed")
             .IsDescending(false, true)
             .HasFilter("[Outcome] = 0 AND [UserProfileId] IS NOT NULL");

@@ -406,6 +406,27 @@ migration appears in either folder. Before this, nothing anywhere pinned the
 freeze; it was prose, which is exactly how six lifts accumulated without the
 baseline text ever being corrected.
 
+### D-923 named lift — the domain-model audit programme (2026-08-15/16)
+
+The first lift taken under D-895's "new, named lift" rule, and it was recorded at
+the **end** of the programme rather than the start. The owner instructed a deep
+audit of the domain model for normalisation and duplication defects; fixing what
+it found changed the App schema across seven branches, and no lift row was taken
+while that ran.
+
+`docs/decisions/DECISIONS_LOG.md` D-923 enumerates every change, per branch. In
+outline: a `ProfileIdentityDocuments` child table, `UserProfile.MobileNumber`,
+`BadgeBatchItems`, the three per-kind identity-number columns and their digests
+dropped, the constraint sweep's CHECK constraints and filtered unique indexes,
+`VisitorShareToken.TokenHash`, `StoredFile.KekVersion`, two AI CHECK constraints,
+one dead index leg dropped and one collapsed index restored. On the Identity
+side, only `Permission.Page` / `.Action` / `.DisplayName` were dropped.
+
+Both histories were **regenerated**, not extended, so the one-`InitialCreate`-per-
+context rule holds and `SchemaFreezeTests` is unchanged. Enums are untouched, and
+the shipped mobile wire contract stays append-only — now pinned by
+`tests/SIMF.Api.Tests/AppWireContractPinTests.cs` rather than by review.
+
 ---
 
 ## Security: the anonymous surface (moved here 2026-08-12)

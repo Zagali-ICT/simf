@@ -21,7 +21,7 @@
 | 1.1 | 2026-05-21 | Engineering & Architecture Team | Architecture-review amendment (see Amendment A): one database with two DbContexts and separate migration histories; GpsPresence as batched append-only telemetry with a retention purge; peak-load indexes; Booking.Status Rejected, Hall geofence, the account-code generalisation; SQL Server Standard edition. |
 | 1.2 | 2026-05-21 | Engineering & Architecture Team | Increment-2 build amendment (see Amendment B): records how the §5.1 Identity & Access entities map onto ASP.NET Core Identity. |
 | 1.3 | 2026-07-19 | Apexium | Corrected the Booking lifecycle to match the built code (reservation-only, auto-confirm): attendee seat reservations are confirmed immediately (Status `Approved`) with no Control Panel approval, held provisionally until gate check-in (`CheckedIn`) and released by the pre-start sweep (`Released`) if not checked in; the `Pending` / `Rejected` approval queue is retained but dormant and always empty. Updated §5.4, §8 and Amendment A.4. |
-| 1.4 | 2026-08-16 | Apexium | Profile-owned admission amendment (see Amendment C): the attendee record, not the account, is the primary registration entity and owns admission; identity documents become a one-to-many child collection; the two mobile attributes collapse to one canonical number; the badge order gains a name and per-profile-type child lines; the yearly edition becomes an entity. Section 8 is rewritten around the constraint posture the schema actually carries (CHECK constraints, filtered unique indexes, blind indexes over encrypted columns). Corrected four claims that were never built or no longer true: the `GateScan` INSTEAD-OF trigger, the persisted statistics snapshot, the shared-database sentence in §5.3.1, and the `CheckedIn` / `Released` booking states, which are not members of the enum at all. Updated §4, §5.1–§5.5, §5.8, §5.11, §5.12, §7, §8 and Amendments A.3, A.4 and B. §5.6, §5.7, §5.9 and §5.10 were not re-verified — see Amendment C.7. |
+| 1.4 | 2026-08-16 | Apexium | Profile-owned admission amendment (see Amendment C): the attendee record, not the account, is the primary registration entity and owns admission; identity documents become a one-to-many child collection; the two mobile attributes collapse to one canonical number; the badge order gains a name and per-profile-type child lines; the yearly edition becomes an entity. Section 8 is rewritten around the constraint posture the schema actually carries (CHECK constraints, filtered unique indexes, blind indexes over encrypted columns). Corrected four claims that were never built or no longer true: the `GateScan` INSTEAD-OF trigger, the persisted statistics snapshot, the shared-database sentence in §5.3.1, and the `CheckedIn` / `Released` booking states, which are not members of the enum at all. A second verification pass over the generated migrations corrected five more: `GateScan` carries **five** indexes and not six (§5.3.2, §A.3); `Notification` is built in `SIMF_Identity`, not `SIMF_App`, and `NotificationDelivery` was never built (§3, §5.9, §A.1); `SubTopic` was never built and a session is tagged with **many** themes rather than belonging to one (§5.4, §7); `Session.IsLive` and `Session.BroadcastMode` do not exist (§5.4); and the bilingual pair convention this document writes as `XAr` / `XEn` is built as `X` / `XArabic` on every live table, that spelling surviving only on the `Archive*` tables and `EmailTemplates` (§C.0). Updated §4, §5.1–§5.5, §5.8, §5.9, §5.11, §5.12, §7, §8 and Amendments A.1, A.3, A.4 and B. §5.6, §5.7 and §5.10 were not re-verified — see Amendment C.7. |
 
 ---
 
@@ -49,7 +49,9 @@ matters to a contract it is aligned across the layers per SIMF-SES-001 section
 - **Two physically separated databases** (D-157, superseding C-1; reaffirmed
   D-246). `SIMF_Identity` holds the Identity & Access tables; `SIMF_App` holds
   all other tables. No cross-database relation/FK and no duplicated data — see
-  §A.1.
+  §A.1. **One context boundary does not follow that split:** `Notification`
+  (§5.9) is keyed by account and is built in `SIMF_Identity`, so a reader
+  looking for it among the App tables will not find it.
 - **EF Core, code-first.** The schema is defined in code and applied through
   reviewed migrations.
 - **A context owns its tables.** Each bounded context owns its own tables. A
@@ -111,7 +113,7 @@ them.
 
 | Entity | Key attributes | Relationships |
 |--------|----------------|---------------|
-| `AttendeeProfile` | `ArabicFullName`, `EnglishName`, `Gender`, `DateOfBirth`, `PlaceOfBirth`, `IsSaudi`, `MobileNumber`, `JobTitle`, `ReferenceNumber`, `AdmissionState` (enum), `StateChangedAt`, `StateChangedByUserId`, `RejectionReason`, `EditionYear` | **owns** an optional link to a `User` (§5.1); has many `IdentityDocument`; belongs to a `BadgeBatch` (§5.3, **required**) and, once assigned, to a `ProfileType` (nullable until approval); references `Country`, `Organisation`, `Region`, `Asset` (ID document, VIP photo) |
+| `AttendeeProfile` | `Name`, `NameArabic`, `Gender`, `DateOfBirth`, `PlaceOfBirth`, `IsSaudi`, `MobileNumber`, `JobTitle`, `ReferenceNumber`, `AdmissionState` (enum), `StateChangedAt`, `StateChangedByUserId`, `RejectionReason`, `EditionYear` | **owns** an optional link to a `User` (§5.1); has many `IdentityDocument`; belongs to a `BadgeBatch` (§5.3, **required**) and, once assigned, to a `ProfileType` (nullable until approval); references `Country`, `Organisation`, `Region`, `Asset` (ID document, VIP photo) |
 | `IdentityDocument` | `Kind` (NationalId / Iqama / Passport), `Number` (encrypted), `NumberHash` (blind index) | belongs to `AttendeeProfile`; **one row per document**, cascade-deleted with the profile |
 | `Exhibitor` | `Name`, `NameArabic`, `Tier`, contact email / phone / website, social links, `City` + `CityArabic`, `Latitude` / `Longitude` | references `Country`; has many `ExhibitorMembership` and `Booth` (§5.5) |
 | `ExhibitorMembership` | `ContactName`, `RoleLabel` (free text, e.g. "Booth Manager") | belongs to `Exhibitor`; holds a **logical** `UserId` into `SIMF_Identity`. Deactivating the row revokes that officer's lead scanning and their access to the booth's captured contacts |
@@ -222,31 +224,53 @@ the logical keys, and the real reason is the physical split.
 
 #### 5.3.2 Gate Module — `GateScan` indexes
 
-Six non-clustered indexes ride the clustered bigint PK. Three of them are
+**Five** non-clustered indexes ride the clustered bigint PK. Three of them are
 filtered, and are counted in the filtered-index total in §8:
 
 | Index | Columns | Filter | Purpose |
 |-------|---------|--------|---------|
 | `IX_GateScan_Gate_ScannedAt` | `(GateId, ScannedAt DESC)` | — | Per-gate firehose; powers admin reports filtered by gate + date range |
-| `IX_GateScan_UserProfile_ScannedAt` | `(UserProfileId, ScannedAt DESC)` | — | Per-visitor history |
 | `IX_GateScan_UserProfile_LastAllowed` | `(UserProfileId, ScannedAt DESC)` | `WHERE Outcome = Allowed AND UserProfileId IS NOT NULL` | "Currently inside" derivation (design notes §3.3) — single-row seek per visitor |
 | `IX_GateScan_Gate_UserProfile_5sWindow` | `(GateId, UserProfileId, ScannedAt DESC)` | `WHERE UserProfileId IS NOT NULL` | 5-second duplicate absorption per design notes §3.2 |
 | `IX_GateScan_ScannedBy_ScannedAt` | `(ScannedByUserId, ScannedAt DESC)` | — | Operator daily report (`my-reports/today`) |
 | `UX_GateScan_Idempotency` | `(IdempotencyKey, GateId)` | `WHERE IdempotencyKey IS NOT NULL` | Unique filtered — replay enforcement |
 
+A sixth index, an **unfiltered** `IX_GateScan_UserProfile_ScannedAt` over
+`(UserProfileId, ScannedAt DESC)` for per-visitor history, is declared in the EF
+configuration but is **not in the generated schema**, and earlier revisions of
+this document listed it as though it were. It is declared on the same property
+pair as `IX_GateScan_UserProfile_LastAllowed`, and an unnamed `HasIndex` over a
+property set EF has already seen reconfigures that index rather than adding a
+second one — so the later declaration silently renames the earlier and applies
+its filter, leaving one index where two were intended. A full per-visitor history
+read spans both outcomes, so it cannot use the filtered index at all and has **no
+supporting index**: it scans. The count above is what the migration creates;
+correcting the configuration is a code change outside this document, and this
+note stays until the schema carries both indexes.
+
 ### 5.4 Forum Programme
 
 | Entity | Key attributes | Relationships |
 |--------|----------------|---------------|
-| `Theme` | `TitleAr`, `TitleEn`, `Order` | has many `SubTopic`, `Session` |
-| `SubTopic` | `TitleAr`, `TitleEn` | belongs to `Theme` |
+| `Theme` | `Name`, `NameArabic`, `DisplayOrder`, `PageColor` | tags many `Session` through `SessionTheme` |
+| `SubTopic` | `TitleAr`, `TitleEn` | **PROPOSED, NOT BUILT** — no such table or entity exists |
 | `Hall` | `Code`, `Name`, `NameArabic`, `Capacity`, `Floor`, `Purpose`, `SeatSelectionMode`, geofence centre + radius, `ArrivalGraceMinutes` | has one `HallSeatLayout`; has many `Session`, `Booth` |
 | `HallSeatLayout` | `RowLabels`, `SeatsPerRow`, `SeatCounts?` (ragged rows), `SeatTiers?` | belongs to `Hall`; one row per hall, not one row per seat |
-| `Session` | `TitleAr`, `TitleEn`, `DescriptionAr`, `DescriptionEn`, `StartAt`, `EndAt`, `IsLive`, `BroadcastMode` (Live / NonLive) | belongs to `Theme`, `Hall`, a session-category `Category`; has many `SessionSpeaker` |
-| `Speaker` | `NameAr`, `NameEn`, `Rank`, `Bio`, `Qualifications`, `TrainingExperience`, `Awards` | references `Country`, `Asset` (photo); has many `SessionSpeaker`, `SpeakerPresentation` |
-| `SessionSpeaker` | `RoleInSession` (Speaker / Host) | links `Session` and `Speaker` |
+| `Session` | `Title`, `TitleArabic`, `Description`, `DescriptionArabic`, `Start`, `End`, `Type` (enum), `Status` (enum) | belongs to `Hall` and a session-category `Category`; tagged with many `Theme` through `SessionTheme`; has many `SessionSpeaker` |
+| `SessionTheme` | composite key `(SessionId, ThemeId)` | links `Session` and `Theme` |
+| `Speaker` | `Name`, `NameArabic`, `Rank`, `Bio`, `Qualifications`, `TrainingExperience`, `Awards` | references `Country`, `Asset` (photo); has many `SessionSpeaker`, `SpeakerPresentation` |
+| `SessionSpeaker` | `Role` (Speaker / Host), `DisplayOrder` | links `Session` and `Speaker` |
 | `SpeakerPresentation` | — | belongs to `Speaker` and `Session`; references `Asset` (the PPT file) |
 | `Booking` | `Kind`, `Status` (only `Approved` and `Cancelled` are written), `RowLabel?` + `SeatNumber?` (both null on general admission), `CreatedByUserId`, `CreatedAt`, `ReleasedAt?`, `ReleasedByUserId?`, `NoShowReleaseAt?`, `GuestHint` | belongs to `Session`; held by an `AttendeeProfile` (null on an admin block, which is what tells *blocked* from *taken*) |
+
+**A session is tagged with themes, not owned by one.** Earlier revisions gave
+`Session` a `ThemeId` and read the programme as a one-theme-per-session tree with
+a `SubTopic` level beneath it. Neither was built: there is no `SubTopic` table and
+no `ThemeId` column, and the relationship is many-to-many through `SessionTheme`,
+so a session that spans two themes is listed under both. `Session.IsLive` and
+`Session.BroadcastMode` were listed here and do not exist either — a session's
+state is `Status`, its kind is `Type`, and the live feed is the stream file
+referenced from the row.
 
 A `Booking` is for a specific seat in a session, or for general admission when the
 row and seat are both null. The reservation is confirmed immediately (Status
@@ -355,11 +379,25 @@ the year through the profile.
 
 | Entity | Key attributes | Relationships |
 |--------|----------------|---------------|
-| `Notification` | `Type`, `TitleAr`, `TitleEn`, `Body`, `CreatedAt`, `ReadAt` | belongs to a recipient `User` |
-| `NotificationDelivery` | `Channel` (InApp / Email / SMS / WhatsApp), `Status`, `SentAt` | belongs to `Notification` |
+| `Notification` | `Kind`, `Title`, `TitleArabic`, `Body`, `BodyArabic`, `Severity`, `CreatedAt`, `ReadAt`, `RelatedEntityType` / `RelatedEntityId`, `ClickUrl`, `GroupCode` | belongs to a recipient `User`. Built in **`SIMF_Identity`** — see below |
+| `NotificationDelivery` | `Channel` (InApp / Email / SMS / WhatsApp), `Status`, `SentAt` | **PROPOSED, NOT BUILT** — no such table exists |
 
-One `Notification` produces one `NotificationDelivery` per channel it is sent
-on, which is how the system records what went out where.
+**`Notification` lives in the Identity database, not the App one**, which is the
+single exception to §3's "`SIMF_App` holds all other tables". It is keyed by
+account rather than by attendee profile, so placing it beside the user row keeps
+the recipient reference a real foreign key instead of a logical one; the cost is
+that a notification cannot carry a database-level reference to the App row it is
+about, which is why `RelatedEntityType` / `RelatedEntityId` are a loose pair
+rather than a key. `NotificationBroadcast`, the admin-composed fan-out that
+creates them, is built in `SIMF_App`, so the fan-out crosses the two databases
+and the broadcast holds no key to the rows it produced.
+
+**`NotificationDelivery` was never built**, and this document previously
+described it in the present tense along with the one-row-per-channel rule that
+depended on it. No per-channel delivery ledger exists: the in-app notification is
+the `Notification` row itself, and what goes out over email is recorded by the
+sending path, not by this model. The entity is kept in the table above, marked,
+because the design argument for a delivery ledger stands.
 
 ### 5.10 Cognitive AI
 
@@ -452,8 +490,8 @@ erDiagram
     AttendeeProfile ||--o{ HallAttendance : records
     AttendeeProfile ||--o{ Booking : makes
 
-    Theme ||--o{ SubTopic : contains
-    Theme ||--o{ Session : groups
+    Theme ||--o{ SessionTheme : tags
+    Session ||--o{ SessionTheme : "tagged with"
     Hall ||--o{ Session : hosts
     Session ||--o{ SessionSpeaker : features
     Speaker ||--o{ SessionSpeaker : appears
@@ -474,7 +512,6 @@ erDiagram
     Edition ||--o{ EditionStat : reports
     Edition ||--o{ EditionSpeaker : lists
     User ||--o{ Notification : receives
-    Notification ||--o{ NotificationDelivery : sent_on
     FaqGroup ||--o{ FaqEntry : contains
     Interest ||--o{ UserInterest : typed
 ```
@@ -615,7 +652,9 @@ below are authoritative.
 SIMF uses **two physically separated SQL Server 2022 databases** — `SIMF_Identity`
 (the Identity & Access tables, via `SimfIdentityDbContext`) and `SIMF_App` (all
 other tables, via `SimfAppDbContext`) — each with its **own migration history**,
-generated and applied per context. **This is decision D-157 (2026-05-29),
+generated and applied per context. The one table that does not sit where that
+sentence implies is `Notification` (§5.9), which is account-keyed and built in
+`SIMF_Identity`. **This is decision D-157 (2026-05-29),
 reaffirmed D-246 (2026-06-02), superseding the earlier one-shared-database design
 (C-1).** Consequences of physical separation, by design:
 - **No cross-database foreign keys.** Any reference from one database to the
@@ -645,10 +684,11 @@ kept off the booking and authentication hot paths, and governed by an explicit
 In addition to the foreign-key indexes, the peak-load reads are served by:
 `HallAttendance` on `(SessionId, UserProfileId)` filtered to open rows, on
 `(HallId, Leave)` for the live per-hall count, and on `UserProfileId` for the
-per-attendee history; `GateScan` on the six shapes in §5.3.2 (the venue-entry
+per-attendee history; `GateScan` on the five shapes in §5.3.2 (the venue-entry
 record this amendment originally named is `GateScan`); `Notification` on
 `(UserId, CreatedAt)` for the bell and the paged grid, and on `(UserId, ReadAt)`
-for the polled unread count; `GpsPresence` on `(UserId, CapturedAt)` for the
+for the polled unread count — both in `SIMF_Identity`, where that table is built;
+`GpsPresence` on `(UserId, CapturedAt)` for the
 route projection and `(HallId, CapturedAt)` for the dwell aggregation. The
 telemetry indexes lead on the **device capture** time rather than the received
 time, so a batch uploaded after a connectivity gap still orders correctly.
@@ -710,9 +750,10 @@ Identity. This records how the §5.1 entities map onto the implementation.
 
 The profile / edition / badge programme (D-877 through D-881, with the as-built
 position recorded in D-895) changes facts this model asserted, not only the names
-it used for them. The changes below are authoritative and amend §4, §5.1–§5.5,
-§5.8, §5.11, §5.12, §7, §8 and Amendments A.3, A.4 and B. §C.7 records which
-sections were **not** re-verified.
+it used for them. The changes below are authoritative and amend §3, §4, §5.1–§5.5,
+§5.8, §5.9, §5.11, §5.12, §7, §8 and Amendments A.1, A.3, A.4 and B. §C.7 records
+which sections were **not** re-verified, and §C.8 the five further statements a
+second pass over the generated migrations refuted.
 
 ### C.0 Logical name to built name — extends Amendment B
 Amendment B recorded how §5.1 is *realised*; this document keeps logical names
@@ -729,6 +770,20 @@ to grep for a table that does not exist.
 | `Category` | one lookup table per list (§5.12) |
 | the live edition (§5.8) | `EventEdition`, a single row |
 | `Edition` / `EditionStat` / `EditionSpeaker` (§5.8) | the `Archive*` marketing tables |
+
+The **bilingual pairs** of §6 map by rule rather than one by one, and the schema
+spells them **two different ways**. The live tables use an unsuffixed English
+column plus an `Arabic` twin — `Title` / `TitleArabic`, `Name` / `NameArabic`,
+`Description` / `DescriptionArabic`. The `Ar` / `En` spelling this document uses
+throughout §5 is built on only six tables: the five `Archive*` marketing tables
+(§5.8) and `EmailTemplates`, which carry `TitleAr` / `TitleEn`, `NameAr` /
+`NameEn`, `BodyAr` / `BodyEn` and their siblings for real.
+
+The convention in §6 — paired columns, not a translations table — is unchanged
+and correct either way; only the spelling varies. So an `XAr` / `XEn` name in a
+section below is a **logical** attribute name and not evidence of a built column
+unless the entity is one of those six. Sections corrected against the migrations
+(§5.2, §5.3, §5.4, §5.9) use the built spelling directly.
 
 ### C.1 The attendee record is primary and owns admission — amends §5.1, §5.2, §7
 The registration entity is the **attendee profile**, and the sign-in account is an
@@ -815,11 +870,11 @@ has **no** INSTEAD-OF trigger and never had one, and `StatisticSnapshot` was nev
 built.
 
 ### C.7 Sections not re-verified in this revision
-This pass verified §4, §5.1, §5.2, §5.3, §5.4, §5.8, §5.11, §7, §8 and Amendments
-A and B against the as-built EF configuration and the generated migrations. §5.5
-and §5.12 were corrected only where the sections above depend on them — the
-exhibitor and booth rows, the shape of the dynamic-category lookups, and the
-`ProfileType` row — and were not otherwise re-verified. §5.6, §5.7, §5.9 and
+This pass verified §4, §5.1, §5.2, §5.3, §5.4, §5.8, §5.9, §5.11, §7, §8 and
+Amendments A and B against the as-built EF configuration and the generated
+migrations. §5.5 and §5.12 were corrected only where the sections above depend on
+them — the exhibitor and booth rows, the shape of the dynamic-category lookups,
+and the `ProfileType` row — and were not otherwise re-verified. §5.6, §5.7 and
 §5.10 were **not** re-verified at all.
 
 Those sections are still the approved logical model and remain in force as design
@@ -829,7 +884,37 @@ document says which of its parts have been checked recently and which have not; 
 controlled document that hides which half is authoritative is worse than one that
 is openly out of date in a named place.
 
-### C.8 Freeze status at this revision
+### C.8 Second verification pass against the regenerated migrations
+The corrections in C.1 to C.6 were written against the schema as specified. A
+second pass read the two generated `InitialCreate` migrations column by column and
+found five further statements this document was still making that the built
+schema does not support. They are recorded here rather than folded silently into
+the sections above, because four of them predate this programme entirely and a
+reader tracing an old design note needs to know they were checked and refuted.
+
+- **`GateScan` has five indexes, not six** (§5.3.2, §A.3). The sixth is declared
+  in the EF configuration and never reaches the schema, for the reason set out in
+  §5.3.2. This is a defect in the configuration, not in the model, and the
+  document now states what the migration creates.
+- **`Notification` is built in `SIMF_Identity`** (§3, §5.9, §A.1), the sole
+  departure from "`SIMF_App` holds all other tables", and
+  **`NotificationDelivery` was never built** — so neither was the
+  one-row-per-channel delivery rule that depended on it.
+- **`SubTopic` was never built**, and a session is **tagged with many themes**
+  through `SessionTheme` rather than belonging to one (§5.4, §7). The programme
+  is not the two-level tree the ERD drew.
+- **`Session.IsLive` and `Session.BroadcastMode` do not exist** (§5.4). The
+  built columns are `Status` and `Type`.
+- **The bilingual pair convention is spelled two ways in the schema** (§C.0). The
+  live tables use `X` / `XArabic`; the `XAr` / `XEn` spelling this document uses
+  throughout §5 is built on six tables only — the five `Archive*` tables and
+  `EmailTemplates`.
+
+Nothing in C.1 to C.6 was contradicted by this pass: the profile, document,
+mobile, badge-order, edition and §8 statements all held, including the §8 counts,
+which were re-counted against the migrations rather than carried forward.
+
+### C.9 Freeze status at this revision
 The D-110 schema freeze is **re-instated** and every lift taken during this
 programme is closed. The sealed surface is one `InitialCreate` migration per
 context, create-only, so that pair **is** the schema. A further schema or enum

@@ -824,18 +824,39 @@ A restore is not accepted until both pass.
 
 ### C.6 Two standing caveats
 
-**Key rotation is not operational.** The blob format supports it: every
-encrypted file carries a KEK-version byte in its header, the cipher will hold a
-previous KEK alongside the active one, and the configuration surface for that
-exists (`FileStorage:PreviousEncryptionKey`, `FileStorage:PreviousKekVersion`).
-The operational half is missing on three counts. No deploy template or
-provisioning script has an entry for the previous key, so nothing puts one on a
-server. There is no re-wrap job, so nothing walks the store re-sealing per-file
-keys under the new KEK. And the `StoredFile` row records `CipherFormatVersion`
-but **not** the KEK version, which lives only inside the blob header on disk, so
-rotation progress cannot be inventoried, resumed or reported from SQL. Until
-those exist, treat both data keys as set-once for the life of the store. A key
-believed to be compromised is an incident to escalate, not a variable to edit.
+**Key rotation is observable and configurable, but still not operational.** The
+blob format always supported it: every encrypted file carries a KEK-version byte
+in its header, and the cipher will hold a previous KEK alongside the active one.
+Two of the three missing operational pieces are now in place.
+
+- The previous key has a home on a server. `FileStorage:PreviousEncryptionKey`
+  and `FileStorage:PreviousKekVersion` are declared in
+  `deploy/set-env-api.template.ps1` next to the active pair, ship empty, and are
+  set only for the duration of a rotation window.
+- Rotation progress can be counted in SQL. The `StoredFile` row now records
+  `KekVersion` alongside `CipherFormatVersion`, written from the cipher that
+  actually wrapped that file's data key, so the inventory below is a query rather
+  than a walk over every blob header on disk.
+
+```sql
+SELECT KekVersion, COUNT(*) AS Files
+FROM   dbo.StoredFiles
+WHERE  IsEncrypted = 1 AND IsActive = 1
+GROUP  BY KekVersion;
+```
+
+A `NULL` in that result means the row predates the column, **not** that it is
+current: the blob is wrapped under some KEK nobody recorded, so it is due for
+re-wrapping like any out-of-date row. A plaintext or external-link row is
+excluded by `IsEncrypted = 1` and carries `NULL` legitimately.
+
+The third piece is still missing: **there is no re-wrap job**, so nothing walks
+the store re-sealing per-file keys under a new KEK. It is designed in C.7 and
+deliberately not built, because when it runs is an owner decision and not a
+technical one. Until it exists, a rotation can be started but never finished,
+which means the previous key can never be retired. **Continue to treat both data
+keys as set-once for the life of the store.** A key believed to be compromised is
+an incident to escalate, not a variable to edit.
 
 **A byte-level restore silently reverses a crypto-shred.** The PDPL
 right-to-erasure path destroys a file by overwriting the head of its blob on
@@ -852,6 +873,103 @@ There is no automated protection against this today. The fix is a **destruction
 ledger**: a durable record of erasures, kept outside the restorable set and
 replayed after any restore so that anything erased is erased again. It is
 recorded here as an open item and is not designed in this amendment.
+
+### C.7 The KEK re-wrap pass (design only, NOT built)
+
+This is the missing third piece from C.6. It is written down here so the design
+is settled before it is needed, and because the two halves that shipped
+(the previous-key configuration entries and the `StoredFile.KekVersion` column)
+only make sense as preparation for it. **Nothing described below exists in the
+code.** Building it needs an owner decision on when it runs, which is the open
+question at the end of this section.
+
+**What a re-wrap is, and what it is not.** Only the small wrapped data key at the
+head of each blob is re-sealed. The body ciphertext is never touched and never
+re-encrypted, so the work is proportional to the file *count*, not to the number
+of bytes stored, and the plaintext never exists again at any point. The cipher
+needs one new operation for this, taking a blob and returning the same blob with
+its header re-wrapped under the active KEK; it must not go through
+`Decrypt`/`Encrypt`, because that would mint a new data key and rewrite the whole
+body for no reason.
+
+**What it selects.**
+
+```sql
+SELECT Id, StorageKey
+FROM   dbo.StoredFiles
+WHERE  IsEncrypted = 1
+  AND  SecureDestroyedAt IS NULL
+  AND  (KekVersion IS NULL OR KekVersion <> @activeKekVersion)
+ORDER  BY Id
+OFFSET 0 ROWS FETCH NEXT @batchSize ROWS ONLY;
+```
+
+Three of those clauses are load-bearing:
+
+- `KekVersion IS NULL` is included on purpose. A null means the row predates the
+  column, so its blob is wrapped under an unrecorded key. Treating null as
+  "probably current" is exactly how a file gets left behind and then stranded
+  when the previous key is retired.
+- `IsActive` is **not** filtered. A soft-deleted row's bytes are still on disk and
+  still needed by a restore or an audit, so skipping those rows would quietly
+  destroy them at the moment the old key is removed. Only `SecureDestroyedAt`
+  rows are excluded, and those have had their headers shredded deliberately.
+- Ordering by `Id` gives a stable page order across restarts, since the selection
+  set only ever shrinks.
+
+**How it avoids re-wrapping a file mid-download.** It does not coordinate with
+readers at all, and does not need to. The write is the same temp-file plus
+`File.Move(overwrite: true)` the storage provider already uses, so a partially
+written header can never replace a good one. On Windows the move fails with a
+sharing violation while another handle holds the destination; the pass treats
+that as **skip and count**, never as an error, and the row is simply picked up by
+the next pass because its `KekVersion` is still stale. Encrypted blobs are also
+the easy case: they are read whole through `ReadAsync` rather than held open for
+range streaming, which only applies to the plaintext recording services, so the
+contended window is milliseconds long.
+
+**Order of writes: blob first, row second.** This is the one ordering decision
+that matters, and it is chosen for its failure mode rather than for tidiness. A
+crash between the two leaves a blob on the new key and a row still naming the old
+one. During a rotation window both KEKs are configured, so the file opens
+perfectly; the next pass re-selects the row, and re-wrapping a blob that is
+already current is idempotent. Reversed, the same crash leaves a row claiming the
+new key over a blob still on the old one, and that lie is only discovered after
+the previous key has been retired on the strength of a clean inventory, at which
+point the file is unrecoverable.
+
+**How it is resumable.** There is no job-state table, no cursor and no checkpoint
+file, because the `KekVersion` column *is* the state. The pass re-runs its own
+selection each batch, so it can be stopped, restarted, run twice concurrently on
+one node, or resumed days later, and it converges on the same result. Interrupt
+it at any point and the store is left in a valid mixed state that decrypts, which
+is precisely what the two-key window is for.
+
+**How it reports progress.** The inventory query in C.6 is the report: it is a
+single `GROUP BY` an operator can run at any time against the live database, from
+outside the job, with no instrumentation to trust. The pass additionally logs one
+line per batch (attempted, re-wrapped, skipped-locked, bytes-missing) and writes
+one audit entry per run naming the from-version, the to-version and the totals.
+Rows whose bytes are missing from disk are counted and reported, never treated as
+a failure, since a row pointing at nothing is an already-known condition that a
+restore may have produced.
+
+**The completion criterion, which is the whole point.** The rotation is finished
+when the C.6 inventory returns the active version and nothing else. Only then may
+`FileStorage:PreviousEncryptionKey` and `FileStorage:PreviousKekVersion` be
+cleared from the API server's environment and the old key destroyed. Clearing
+them earlier is the single irreversible mistake available in this procedure, and
+before the `KekVersion` column existed there was no way to know you were about to
+make it.
+
+**Open item for the owner: when does it run?** A scheduled worker finishes a
+rotation with no operator involvement, but it also rewrites files during event
+days for no urgent reason. An operator-triggered admin action keeps the work
+inside a chosen maintenance window at the cost of somebody having to remember to
+finish the rotation. The recommendation is the **operator-triggered** form, with
+the inventory query surfaced next to it, because a rotation is already a
+deliberate, rare, escalated act rather than routine housekeeping, and because a
+half-finished rotation is safe to sit in indefinitely. This is not decided.
 
 ---
 

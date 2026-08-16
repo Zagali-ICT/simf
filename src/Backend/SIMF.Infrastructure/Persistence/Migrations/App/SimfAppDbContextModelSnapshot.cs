@@ -229,15 +229,19 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .IsDescending(false, true)
                         .HasDatabaseName("IX_GateScan_ScannedBy_ScannedAt");
 
-                    b.HasIndex("UserProfileId", "ScannedAt")
-                        .IsDescending(false, true)
-                        .HasDatabaseName("IX_GateScan_UserProfile_LastAllowed")
-                        .HasFilter("[Outcome] = 0 AND [UserProfileId] IS NOT NULL");
-
                     b.HasIndex("GateId", "UserProfileId", "ScannedAt")
                         .IsDescending(false, false, true)
                         .HasDatabaseName("IX_GateScan_Gate_UserProfile_5sWindow")
                         .HasFilter("[UserProfileId] IS NOT NULL");
+
+                    b.HasIndex(new[] { "UserProfileId", "ScannedAt" }, "IX_GateScan_UserProfile_LastAllowed")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("IX_GateScan_UserProfile_LastAllowed")
+                        .HasFilter("[Outcome] = 0 AND [UserProfileId] IS NOT NULL");
+
+                    b.HasIndex(new[] { "UserProfileId", "ScannedAt" }, "IX_GateScan_UserProfile_ScannedAt")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("IX_GateScan_UserProfile_ScannedAt");
 
                     b.ToTable("GateScans", null, t =>
                         {
@@ -310,7 +314,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("UserId", "CreatedAt");
 
-                    b.ToTable("AiChatMessages", (string)null);
+                    b.ToTable("AiChatMessages", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_AiChatMessages_Role", "[Role] IN ('user', 'assistant')");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.Ai.AiInvocation", b =>
@@ -377,7 +384,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("Feature", "CreatedAt");
 
-                    b.ToTable("AiInvocations", (string)null);
+                    b.ToTable("AiInvocations", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_AiInvocations_CallerKind", "[CallerKind] IN ('Anonymous', 'Visitor', 'Staff', 'Admin', 'Moderator')");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.Ai.AiPrompt", b =>
@@ -3359,6 +3369,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<bool>("IsEncrypted")
                         .HasColumnType("bit");
 
+                    b.Property<byte?>("KekVersion")
+                        .HasColumnType("tinyint");
+
                     b.Property<string>("OriginalFileName")
                         .HasMaxLength(260)
                         .HasColumnType("nvarchar(260)");
@@ -3404,6 +3417,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.HasKey("Id");
 
                     b.HasIndex("CreatedBy");
+
+                    b.HasIndex("KekVersion")
+                        .HasFilter("[IsEncrypted] = 1");
 
                     b.HasIndex("RetainUntil")
                         .HasFilter("[IsActive] = 1 AND [RetainUntil] IS NOT NULL");
@@ -5015,7 +5031,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasKey("Id");
 
-                    b.HasIndex("SessionId", "IsActive", "DisplayOrder");
+                    b.HasIndex("SessionId", "DisplayOrder");
 
                     b.ToTable("SessionOutcomes", (string)null);
                 });

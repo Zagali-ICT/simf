@@ -442,11 +442,14 @@ server. Run it **as Administrator**; it is safe to re-run.
 1. **Generates** a cryptographically-random base64 32-byte AES key
    (`RandomNumberGenerator`) for each key that is not already set, and writes it
    straight to the Machine environment **without printing it**.
-2. **Never overwrites an existing encryption key.** Rotating
-   `FileStorage:EncryptionKey` makes every previously stored file
+2. **Never overwrites an existing encryption key.** Replacing
+   `FileStorage:EncryptionKey` in place — without moving the outgoing key into
+   `FileStorage:PreviousEncryptionKey` — makes every previously stored file
    undecryptable, and rotating `Storage:UserIdDocumentEncryptionKey` strands
-   every encrypted PII column — so the script warns loudly and skips. There is
-   no `-Force`: a genuine rotation needs a decrypt-and-re-encrypt migration.
+   every encrypted PII column outright, that key having no previous-key slot at
+   all — so the script warns loudly and skips. There is no `-Force`: a genuine
+   file-store rotation is a deliberate operator procedure with a re-wrap pass
+   (SIMF-OPS-001 §C.7), never a re-run of this script.
 3. **Prompts** for the values it cannot generate (connection strings, SMTP
    credentials, the public Website origin) using `Read-Host -AsSecureString`, so
    nothing is echoed.
