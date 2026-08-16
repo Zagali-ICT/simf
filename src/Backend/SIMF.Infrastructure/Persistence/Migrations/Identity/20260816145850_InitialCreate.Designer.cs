@@ -12,7 +12,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Persistence.Migrations.Identity
 {
     [DbContext(typeof(SimfIdentityDbContext))]
-    [Migration("20260814115334_InitialCreate")]
+    [Migration("20260816145850_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -320,32 +320,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
                     b.Property<string>("Code")
                         .IsRequired()
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
 
-                    b.Property<string>("DisplayName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("Page")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
                     b.HasKey("Id");
 
                     b.HasIndex("Code")
-                        .IsUnique();
-
-                    b.HasIndex("Page", "Action")
                         .IsUnique();
 
                     b.ToTable("Permissions");

@@ -19,9 +19,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Page = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    Action = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    DisplayName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     Code = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false)
                 },
                 constraints: table =>
@@ -448,12 +445,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                 name: "IX_Permissions_Code",
                 table: "Permissions",
                 column: "Code",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Permissions_Page_Action",
-                table: "Permissions",
-                columns: new[] { "Page", "Action" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
