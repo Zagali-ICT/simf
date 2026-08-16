@@ -1,6 +1,7 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SIMF.Domain.Exhibitors;
+using SIMF.Domain.Files;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
@@ -55,5 +56,15 @@ internal sealed class ExhibitorConfiguration : IEntityTypeConfiguration<Exhibito
             exhibitor.IsActive,
             exhibitor.NameArabic,
         });
-    }
+    
+        // The exhibitor's file, in the one store. Restrict: deleting a file must never
+        // delete the exhibitor. OwnerPointerSync keeps this column in step with the
+        // store's own OwnerEntityType/OwnerEntityId pair, which stays because the
+        // serve path and the permission policy both key off it.
+        builder.HasIndex(x => x.LogoFileId);
+        builder.HasOne(x => x.LogoFile)
+            .WithMany()
+            .HasForeignKey(x => x.LogoFileId)
+            .OnDelete(DeleteBehavior.Restrict);
+}
 }

@@ -79,6 +79,16 @@ and `DECISIONS_LOG.md`; `ReminderSentUtc` in `docs/tests/e2e/bi-meeting-lifecycl
 `DECISIONS_LOG.md` D-895 is doubly stale on the second one: it corrects
 `ReminderSentUtc` to `ReminderSent`, and the built column is `ReminderSentAt`.
 
+- **A zero-byte presentation has no DB-level guard any more.** D-926 dropped
+  `CK_SpeakerPresentations_SizeBytes` (`[SizeBytes] > 0`) with the column it
+  constrained. It cannot move to `StoredFile.SizeBytes`, which is nullable so an
+  `ExternalLink` row can have no byte count. `AdminSpeakerPresentationService`
+  still returns 400 `SPEAKER_PRESENTATION_INVALID` on an empty upload, so every
+  real creation path is covered; a seed or repair script writing straight to the
+  table is not. A filtered CHECK on the store (`SizeBytes > 0 WHERE SourceType
+  <> ExternalLink`) would close it for every file at once, and is worth
+  considering the next time the file schema is open.
+
 Gaps rather than errors:
 
 - **The two rotation keys have no declared home.** D-922 added

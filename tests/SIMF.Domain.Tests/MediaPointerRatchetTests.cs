@@ -64,6 +64,57 @@ public sealed class MediaPointerRatchetTests
             + string.Join(", ", added));
     }
 
+    /// <summary>Facts the store row owns. An entity that points at a file has no
+    /// business holding its own copy of any of these.</summary>
+    private static readonly string[] StoreOwnedFacts =
+    [
+        "FileName", "ContentType", "MimeType", "SizeBytes", "Sha256",
+        "UploadedAt", "UploadedByUserId",
+    ];
+
+    [Fact]
+    public void An_entity_that_points_at_a_file_does_not_copy_what_the_store_records()
+    {
+        // The pointer rule above was satisfied while the duplication was not:
+        // Session and SpeakerPresentation both held a real FileId AND their own
+        // name, media type, size and uploader, so every upload wrote each fact
+        // twice with nothing keeping the pairs equal afterwards.
+        //
+        // They were not equal, either. IFileService canonicalises the media type
+        // on the way in; the copies kept whatever the client sent, and the copies
+        // were what the admin views displayed. That is the failure mode worth
+        // guarding - not the storage cost, but two answers to one question with
+        // the wrong one on screen.
+        var offenders = new List<string>();
+
+        foreach (var type in typeof(SIMF.Domain.Files.StoredFile).Assembly.GetTypes())
+        {
+            if (!type.IsClass || type.IsAbstract || type == typeof(SIMF.Domain.Files.StoredFile))
+            {
+                continue;
+            }
+
+            var properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+            if (!properties.Any(p => p.Name.EndsWith("FileId", StringComparison.Ordinal)))
+            {
+                continue;
+            }
+
+            offenders.AddRange(properties
+                .Where(p => StoreOwnedFacts.Any(fact =>
+                    p.Name.EndsWith(fact, StringComparison.Ordinal)))
+                .Select(p => $"{type.Name}.{p.Name}"));
+        }
+
+        Assert.True(
+            offenders.Count == 0,
+            "These entities hold a file key AND their own copy of something the "
+            + "StoredFile row already records. Delete the copy and read it through "
+            + "the navigation: the store's value is the canonical one, and a copy "
+            + "that nothing keeps in step is a second answer waiting to be wrong. "
+            + "Offenders: " + string.Join(", ", offenders));
+    }
+
     [Fact]
     public void A_recorded_remainder_that_is_gone_is_deleted()
     {

@@ -177,6 +177,7 @@ internal sealed class AdminSessionService(
             .Include(row => row.Speakers).ThenInclude(speakerLink => speakerLink.Speaker)
             .Include(row => row.Themes)
             .Include(row => row.Outcomes)
+            .Include(row => row.RecordingFile)
             .SingleOrDefaultAsync(row => row.Id == id, cancellationToken);
         if (session is null)
         {
@@ -373,6 +374,7 @@ internal sealed class AdminSessionService(
             .Include(row => row.Speakers)
             .Include(row => row.Themes)
             .Include(row => row.Outcomes)
+            .Include(row => row.RecordingFile)
             .SingleOrDefaultAsync(row => row.Id == id, cancellationToken)
             ?? throw new ApiException(
                 ErrorCodes.SessionNotFound, 404,
@@ -859,12 +861,10 @@ internal sealed class AdminSessionService(
             System.IO.Path.GetExtension(fileName), actorUserId, cancellationToken);
 
         var now = timeProvider.SimfNow();
+        // The key is the whole write. The store already recorded this file's name,
+        // media type, size and uploader as part of CreateStreamedAsync, so there
+        // is nothing else about it to keep here.
         session.RecordingFileId = result.Id;
-        session.RecordingFileName = fileName;
-        session.RecordingContentType = contentType;
-        session.RecordingSizeBytes = result.SizeBytes;
-        session.RecordingUploadedAt = now;
-        session.RecordingUploadedByUserId = actorUserId;
         session.UpdatedAt = now;
         await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -899,15 +899,11 @@ internal sealed class AdminSessionService(
 
         var priorFileId = session.RecordingFileId;
         session.RecordingFileId = null;
-        session.RecordingFileName = null;
-        session.RecordingContentType = null;
-        session.RecordingSizeBytes = null;
-        session.RecordingUploadedAt = null;
-        session.RecordingUploadedByUserId = null;
+        session.RecordingFile = null;
         session.UpdatedAt = timeProvider.SimfNow();
-        // Clear the metadata first, then drop the file: if the file delete
-        // fails the app already sees "no recording" and only an orphan file
-        // is left behind (harmless), never a row pointing at a missing file.
+        // Clear the key first, then drop the file: if the file delete fails the
+        // app already sees "no recording" and only an orphan file is left behind
+        // (harmless), never a row pointing at a missing file.
         await dbContext.SaveChangesAsync(cancellationToken);
         await RetireRecordingAsync(priorFileId, null, actorUserId, cancellationToken);
 
@@ -949,6 +945,9 @@ internal sealed class AdminSessionService(
             .Include(row => row.Speakers).ThenInclude(link => link.Speaker)
             .Include(row => row.Themes)
             .Include(row => row.Outcomes)
+            // The recording's name, size and upload instant are read off the store
+            // row now, so the detail projection needs it loaded.
+            .Include(row => row.RecordingFile)
             .SingleOrDefaultAsync(row => row.Id == id, cancellationToken)
         ?? throw new ApiException(
             ErrorCodes.SessionNotFound, 404,
@@ -1425,9 +1424,12 @@ internal sealed class AdminSessionService(
             session.Status,
             session.PublishedAt,
             session.RecordingFileId is not null,
-            session.RecordingFileName,
-            session.RecordingSizeBytes,
-            session.RecordingUploadedAt,
+            // Read off the store row rather than off a copy kept here. The
+            // contract's field names are unchanged, so the Control Panel sees
+            // exactly what it saw before - it is the source that moved.
+            session.RecordingFile?.OriginalFileName,
+            session.RecordingFile?.SizeBytes,
+            session.RecordingFile?.CreatedAt,
             await feedLinks.ResolveAsync(session.LiveStreamFileId, cancellationToken),
             await feedLinks.ResolveAsync(session.LiveSignLanguageFileId, cancellationToken),
             // AI live-caption text.

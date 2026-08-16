@@ -1,6 +1,7 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SIMF.Domain.Programme;
+using SIMF.Domain.Files;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
@@ -33,5 +34,15 @@ internal sealed class ProgrammeDayConfiguration
         builder.HasIndex(d => d.Date)
             .IsUnique()
             .HasFilter("[IsActive] = 1");
-    }
+    
+        // The day's file, in the one store. Restrict: deleting a file must never
+        // delete the day. OwnerPointerSync keeps this column in step with the
+        // store's own OwnerEntityType/OwnerEntityId pair, which stays because the
+        // serve path and the permission policy both key off it.
+        builder.HasIndex(x => x.ImageFileId);
+        builder.HasOne(x => x.ImageFile)
+            .WithMany()
+            .HasForeignKey(x => x.ImageFileId)
+            .OnDelete(DeleteBehavior.Restrict);
+}
 }

@@ -4834,24 +4834,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<DateTime?>("RatingPromptSentAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("RecordingContentType")
-                        .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
-
                     b.Property<Guid?>("RecordingFileId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("RecordingFileName")
-                        .HasMaxLength(260)
-                        .HasColumnType("nvarchar(260)");
-
-                    b.Property<long?>("RecordingSizeBytes")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTime?>("RecordingUploadedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("RecordingUploadedByUserId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime?>("ReminderSentAt")
@@ -5347,11 +5330,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("ContentType")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -5361,19 +5339,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("FileName")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
                     b.Property<Guid>("SessionId")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<long>("SizeBytes")
-                        .HasColumnType("bigint");
 
                     b.Property<Guid>("SpeakerId")
                         .HasColumnType("uniqueidentifier");
@@ -5387,9 +5357,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("UploadedByUserId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.HasKey("Id");
 
                     b.HasIndex("SessionId");
@@ -5398,10 +5365,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("SpeakerId", "IsActive");
 
-                    b.ToTable("SpeakerPresentations", null, t =>
-                        {
-                            t.HasCheckConstraint("CK_SpeakerPresentations_SizeBytes", "[SizeBytes] > 0");
-                        });
+                    b.ToTable("SpeakerPresentations", (string)null);
                 });
 
             modelBuilder.Entity("SIMF.Domain.Programme.Theme", b =>
@@ -6930,7 +6894,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasForeignKey("LiveStreamFileId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("SIMF.Domain.Files.StoredFile", null)
+                    b.HasOne("SIMF.Domain.Files.StoredFile", "RecordingFile")
                         .WithMany()
                         .HasForeignKey("RecordingFileId")
                         .OnDelete(DeleteBehavior.Restrict);
@@ -6938,6 +6902,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Navigation("Category");
 
                     b.Navigation("Hall");
+
+                    b.Navigation("RecordingFile");
                 });
 
             modelBuilder.Entity("SIMF.Domain.Programme.SessionFavourite", b =>
@@ -7045,7 +7011,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("SIMF.Domain.Files.StoredFile", null)
+                    b.HasOne("SIMF.Domain.Files.StoredFile", "StoredFile")
                         .WithMany()
                         .HasForeignKey("StoredFileId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -7054,6 +7020,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Navigation("Session");
 
                     b.Navigation("Speaker");
+
+                    b.Navigation("StoredFile");
                 });
 
             modelBuilder.Entity("SIMF.Domain.PublicRelations.Invitation", b =>

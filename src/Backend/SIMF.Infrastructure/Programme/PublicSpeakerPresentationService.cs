@@ -44,8 +44,14 @@ internal sealed class PublicSpeakerPresentationService(
                     .FirstOrDefault(),
                 Presentation = db.SpeakerPresentations
                     .Where(p => p.SessionId == s.Id && p.IsActive)
-                    .OrderBy(p => p.FileName)
-                    .Select(p => new { p.Id, p.FileName, p.ContentType, p.SizeBytes })
+                    .OrderBy(p => p.StoredFile!.OriginalFileName)
+                    .Select(p => new
+                    {
+                        p.Id,
+                        FileName = p.StoredFile!.OriginalFileName,
+                        ContentType = p.StoredFile!.ContentType,
+                        SizeBytes = p.StoredFile!.SizeBytes,
+                    })
                     .FirstOrDefault(),
             })
             .ToListAsync(cancellationToken);
@@ -61,7 +67,7 @@ internal sealed class PublicSpeakerPresentationService(
                 r.Speaker?.NameArabic ?? string.Empty,
                 r.Presentation?.FileName ?? string.Empty,
                 r.Presentation?.ContentType ?? string.Empty,
-                r.Presentation?.SizeBytes ?? 0))
+                r.Presentation?.SizeBytes ?? 0L))
             .ToList();
 
         return new PublicPresentations(items);
@@ -72,7 +78,12 @@ internal sealed class PublicSpeakerPresentationService(
     {
         var row = await db.SpeakerPresentations.AsNoTracking()
             .Where(p => p.Id == presentationId && p.IsActive && p.Session!.IsActive)
-            .Select(p => new { p.StoredFileId, p.ContentType, p.FileName })
+            .Select(p => new
+            {
+                p.StoredFileId,
+                ContentType = p.StoredFile!.ContentType,
+                FileName = p.StoredFile!.OriginalFileName,
+            })
             .SingleOrDefaultAsync(cancellationToken);
         if (row is null)
         {
@@ -80,7 +91,11 @@ internal sealed class PublicSpeakerPresentationService(
         }
 
         var file = await fileService.ReadContentAsync(row.StoredFileId, cancellationToken);
-        return file is null ? null : (file.Content, row.ContentType, row.FileName);
+        return file is null
+            ? null
+            : (file.Content,
+               row.ContentType ?? "application/octet-stream",
+               row.FileName ?? "presentation");
     }
 
     public async Task<(byte[] Content, string ContentType, string FileName)?> GetFileAsync(
@@ -91,7 +106,12 @@ internal sealed class PublicSpeakerPresentationService(
         var row = await db.SpeakerPresentations.AsNoTracking()
             .Where(p => p.Id == presentationId && p.SessionId == sessionId
                 && p.IsActive && p.Session!.IsActive)
-            .Select(p => new { p.StoredFileId, p.ContentType, p.FileName })
+            .Select(p => new
+            {
+                p.StoredFileId,
+                ContentType = p.StoredFile!.ContentType,
+                FileName = p.StoredFile!.OriginalFileName,
+            })
             .SingleOrDefaultAsync(cancellationToken);
         if (row is null)
         {
@@ -99,6 +119,10 @@ internal sealed class PublicSpeakerPresentationService(
         }
 
         var file = await fileService.ReadContentAsync(row.StoredFileId, cancellationToken);
-        return file is null ? null : (file.Content, row.ContentType, row.FileName);
+        return file is null
+            ? null
+            : (file.Content,
+               row.ContentType ?? "application/octet-stream",
+               row.FileName ?? "presentation");
     }
 }

@@ -15,17 +15,19 @@ internal sealed class SpeakerPresentationConfiguration
 {
     public void Configure(EntityTypeBuilder<SpeakerPresentation> builder)
     {
-        // A presentation row stands for stored bytes, so its size is a real
-        // positive count. AdminSpeakerPresentationService already refuses an empty
-        // upload (400 SPEAKER_PRESENTATION_INVALID) before it ever reaches here;
-        // this keeps a seed or a repair script from recording a zero-byte
-        // presentation the download endpoint would then serve as an empty file.
-        builder.ToTable("SpeakerPresentations", table => table.HasCheckConstraint(
-            "CK_SpeakerPresentations_SizeBytes", "[SizeBytes] > 0"));
+        // CK_SpeakerPresentations_SizeBytes ([SizeBytes] > 0) went with the column
+        // it constrained. The size now lives once, on the store row, where it
+        // cannot carry the same constraint: StoredFile.SizeBytes is nullable
+        // because an ExternalLink row has no byte count, so "> 0" would reject a
+        // legitimate file rather than a zero-byte one.
+        //
+        // What remains is AdminSpeakerPresentationService's 400
+        // SPEAKER_PRESENTATION_INVALID on an empty upload, which is where every
+        // real presentation is created. The gap the constraint covered - a seed or
+        // repair script writing a zero-byte row straight to the table - is now
+        // uncovered, and is recorded as such rather than assumed away.
+        builder.ToTable("SpeakerPresentations");
         builder.HasKey(x => x.Id);
-
-        builder.Property(x => x.FileName).HasMaxLength(256).IsRequired();
-        builder.Property(x => x.ContentType).HasMaxLength(128).IsRequired();
 
         builder.HasOne(x => x.Speaker)
             .WithMany()
@@ -39,8 +41,10 @@ internal sealed class SpeakerPresentationConfiguration
 
         // The bytes, in the one file store. Required: a presentation row with no
         // file has nothing to present. Restrict for the same reason Session is —
-        // Speaker already owns the only cascade path into this table.
-        builder.HasOne<StoredFile>()
+        // Speaker already owns the only cascade path into this table. The
+        // navigation is what the name, media type, size and uploader are read
+        // through, now that this table no longer keeps its own copies of them.
+        builder.HasOne(x => x.StoredFile)
             .WithMany()
             .HasForeignKey(x => x.StoredFileId)
             .OnDelete(DeleteBehavior.Restrict);

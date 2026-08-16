@@ -1,6 +1,7 @@
-using SIMF.Domain.Common;
+﻿using SIMF.Domain.Common;
 using SIMF.Domain.Exhibitors;
 using SIMF.Domain.Programme;
+using SIMF.Domain.Files;
 
 namespace SIMF.Domain.Exhibition;
 
@@ -65,4 +66,16 @@ public class Booth : BaseAuditEntity
     // is built from VenueMapNode rows, which carry their own X / Y.
     public double? MapX { get; set; }
     public double? MapY { get; set; }
+
+    /// <summary>The booth's logo, in the one file store.
+    ///
+    /// <para>Until this column existed the link ran one way only: the
+    /// <c>StoredFile</c> carried <c>OwnerEntityType</c>/<c>OwnerEntityId</c> back to
+    /// this row and nothing here pointed at the file. That is a polymorphic pair no
+    /// foreign key can constrain, so nothing stopped a file naming a row that had
+    /// been deleted, and "which file is current" was decided in code rather than by
+    /// the schema. <c>OwnerPointerSync</c> keeps this column in step for
+    /// <c>FileService.BoothLogo</c>.</para></summary>
+    public Guid? LogoFileId { get; set; }
+    public StoredFile? LogoFile { get; set; }
 }

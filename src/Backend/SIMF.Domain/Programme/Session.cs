@@ -1,5 +1,6 @@
 ﻿using SIMF.Common.Enums;
 using SIMF.Domain.Common;
+using SIMF.Domain.Files;
 
 namespace SIMF.Domain.Programme;
 
@@ -57,13 +58,18 @@ public class Session : BaseAuditEntity
     // RecordingFileId doubles as the "has recording" sentinel gating both the
     // transition to Recorded/Published and the public stream.
     public Guid? RecordingFileId { get; set; }
-    public string? RecordingFileName { get; set; }
-    public string? RecordingContentType { get; set; }
-    public long? RecordingSizeBytes { get; set; }
-    public DateTime? RecordingUploadedAt { get; set; }
 
-    /// <summary>Bare Guid: the user lives in the Identity database, so no key crosses the two.</summary>
-    public Guid? RecordingUploadedByUserId { get; set; }
+    /// <summary>The recording's row in the one file store, which owns its name,
+    /// media type, size and uploader.
+    ///
+    /// <para>Those four were columns here until they were removed: the store had
+    /// the same four, so every upload wrote each fact twice and nothing kept the
+    /// pairs equal afterwards. They were not equal, either - the store
+    /// canonicalises the media type on the way in and the copy kept whatever the
+    /// client sent. Reading them through this navigation costs a join on the admin
+    /// views that quoted them, which is the trade the duplication was avoiding and
+    /// is worth paying for one fact in one place.</para></summary>
+    public StoredFile? RecordingFile { get; set; }
 
     /// <summary>An external link held as a <c>StoredFiles</c> row, which gives the feed a media
     /// type, a policy and an owner. The URL must reach clients verbatim - they classify it to
