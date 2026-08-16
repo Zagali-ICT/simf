@@ -430,7 +430,24 @@ public sealed class CommittedSecretsTests
             11,
             932,
             "d86de87544827a8b3f648148ea921eb300bf9e17f9971e851cff27f85da43cce",
-            Array.Empty<string>()),
+            new[]
+            {
+                // The SQL login in the API's two connection strings. D-916 tracked the
+                // five set-env scripts with their live values on purpose ("the five now
+                // carry live production values and are TRACKED"), and the owner has
+                // confirmed the credentials stay as they are, so this is a recorded
+                // exposure rather than an accident.
+                //
+                // It is listed here rather than the guard being softened, because the
+                // list is itself asserted: A_recorded_remainder_that_is_gone_is_deleted
+                // fails the build if the value ever leaves this file, so the entry can
+                // only be removed, never quietly kept past a rotation. The value is the
+                // same one already in git history from the deleted root txt.txt, so
+                // tracking this file republishes rather than newly discloses it.
+                //
+                // Retire this entry when the simf_app SQL login is rotated.
+                "deploy/set-env-api.ps1",
+            }),
 
         // Seed:DemoPassword — the D-585 demo-account shared password. Blanked
         // in config (round 1) and removed from the fixture + the two docs
