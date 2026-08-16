@@ -1285,12 +1285,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     PlaceOfBirth = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
                     NationalityId = table.Column<int>(type: "int", nullable: false),
                     IsSaudi = table.Column<bool>(type: "bit", nullable: false),
-                    NationalId = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    IqamaNumber = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    PassportNumber = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    NationalIdHash = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
-                    IqamaNumberHash = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
-                    PassportNumberHash = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
                     JobTitle = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     JobTitleArabic = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     OrganisationId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
@@ -3902,20 +3896,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 column: "IdImageFileId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_UserProfiles_IqamaNumberHash",
-                table: "UserProfiles",
-                column: "IqamaNumberHash",
-                unique: true,
-                filter: "[IqamaNumberHash] IS NOT NULL");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_UserProfiles_NationalIdHash",
-                table: "UserProfiles",
-                column: "NationalIdHash",
-                unique: true,
-                filter: "[NationalIdHash] IS NOT NULL");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_UserProfiles_NationalityId",
                 table: "UserProfiles",
                 column: "NationalityId");
@@ -3924,13 +3904,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 name: "IX_UserProfiles_OrganisationId",
                 table: "UserProfiles",
                 column: "OrganisationId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_UserProfiles_PassportNumberHash",
-                table: "UserProfiles",
-                column: "PassportNumberHash",
-                unique: true,
-                filter: "[PassportNumberHash] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserProfiles_ProfileTypeId",

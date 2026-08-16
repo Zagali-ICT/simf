@@ -45,18 +45,21 @@ public enum IdentityDocumentKind
 /// prevent.</para>
 ///
 /// <para><b>Why ONE unique index and not three.</b> The three per-kind filtered
-/// uniques on <see cref="UserProfile"/> can only ever catch a repeat of the SAME
-/// kind: a person registering once on a passport and again on an Iqama passes all
-/// three. A single unique index over <see cref="NumberHash"/> — one column now
-/// holding every document number's digest — catches the cross-kind repeat as
-/// well, because both digests land in the same index.</para>
+/// uniques this replaced on <see cref="UserProfile"/> could only ever catch a
+/// repeat of the SAME kind: a person registering once on a passport and again on
+/// an Iqama passed all three. A single unique index over
+/// <see cref="NumberHash"/> — one column holding every document number's
+/// digest — catches the cross-kind repeat as well, because both digests land in
+/// the same index. It is now the whole duplicate-identity constraint.</para>
 ///
-/// <para><b>Encryption and determinism, unchanged from the parent row.</b>
+/// <para><b>Encryption and determinism, carried over from the parent row.</b>
 /// <see cref="Number"/> is the plaintext the PII value converter encrypts at rest
 /// under a RANDOM nonce, so it can never be equality-queried or unique-indexed;
 /// <see cref="NumberHash"/> is the deterministic keyed HMAC that can, and it
 /// deliberately sits OUTSIDE that converter, because encrypting a digest destroys
-/// the determinism the index depends on.</para>
+/// the determinism the index depends on. The row audit redacts
+/// <see cref="Number"/> by name, because the interceptor reads the model value
+/// and would otherwise write the number to the audit trail in the clear.</para>
 ///
 /// <para><b>Not scoped to an edition.</b> The digest index is global. A returning
 /// attendee keeps ONE profile row across editions
@@ -74,9 +77,10 @@ public class ProfileIdentityDocument : BaseAuditEntity
 
     public UserProfile? Profile { get; set; }
 
-    /// <summary>Which document this is. The discriminator that takes over
-    /// <c>UserProfile.IsSaudi</c>'s job of choosing between the three
-    /// columns.</summary>
+    /// <summary>Which document this is: what the registrant actually supplied.
+    /// Distinct from <c>UserProfile.IsSaudi</c>, which says which document is
+    /// REQUIRED of them — the two answer different questions, which is why the
+    /// flag survived the collapse of the three number columns.</summary>
     public IdentityDocumentKind Kind { get; set; }
 
     /// <summary>The document number as the registrant typed it, trimmed.

@@ -12,7 +12,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Persistence.Migrations.App
 {
     [DbContext(typeof(SimfAppDbContext))]
-    [Migration("20260815230324_InitialCreate")]
+    [Migration("20260816022645_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -4233,14 +4233,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
-                    b.Property<string>("IqamaNumber")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<string>("IqamaNumberHash")
-                        .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
-
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
@@ -4272,27 +4264,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<string>("NationalId")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<string>("NationalIdHash")
-                        .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
-
                     b.Property<int>("NationalityId")
                         .HasColumnType("int");
 
                     b.Property<Guid?>("OrganisationId")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("PassportNumber")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<string>("PassportNumberHash")
-                        .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
 
                     b.Property<string>("PlaceOfBirth")
                         .IsRequired()
@@ -4364,21 +4340,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("IdImageFileId");
 
-                    b.HasIndex("IqamaNumberHash")
-                        .IsUnique()
-                        .HasFilter("[IqamaNumberHash] IS NOT NULL");
-
-                    b.HasIndex("NationalIdHash")
-                        .IsUnique()
-                        .HasFilter("[NationalIdHash] IS NOT NULL");
-
                     b.HasIndex("NationalityId");
 
                     b.HasIndex("OrganisationId");
-
-                    b.HasIndex("PassportNumberHash")
-                        .IsUnique()
-                        .HasFilter("[PassportNumberHash] IS NOT NULL");
 
                     b.HasIndex("ProfileTypeId");
 

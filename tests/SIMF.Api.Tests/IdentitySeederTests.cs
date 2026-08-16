@@ -337,11 +337,78 @@ public sealed class IdentitySeederTests : IClassFixture<SimfApiFactory>
         }
 
         // Idempotent — a second seed adds no duplicate demo profiles.
-        var demoProfileCount = database.UserProfiles.Count(p => p.NationalId!.StartsWith("100000000"));
+        //
+        // Counted over the demo accounts' own user ids. The predicate here used to
+        // be `p.NationalId.StartsWith("100000000")`, which asserted nothing at all:
+        // NationalId was encrypted at rest, so EF translated the StartsWith into a
+        // LIKE against ciphertext, matched no row either side of the re-seed, and
+        // compared 0 to 0.
+        var demoUserIds = await DemoProfileUserIdsAsync(users);
+        var demoProfileCount = await database.UserProfiles
+            .CountAsync(p => p.UserId != null && demoUserIds.Contains(p.UserId.Value));
+        Assert.Equal(8, demoProfileCount);
         await seeder.SeedAsync();
         Assert.Equal(
             demoProfileCount,
-            database.UserProfiles.Count(p => p.NationalId!.StartsWith("100000000")));
+            await database.UserProfiles
+                .CountAsync(p => p.UserId != null && demoUserIds.Contains(p.UserId.Value)));
+    }
+
+    [Fact]
+    public async Task SeedAsync_writes_each_demo_national_id_as_a_document_row_with_a_digest()
+    {
+        // The seeder used to write the demo national id straight onto
+        // UserProfile.NationalId, with no blind-index digest and no child row —
+        // which made every demo account invisible to the duplicate-identity guard,
+        // and would have silently dropped the number altogether once the column
+        // went. It now writes through ProfileIdentityStorage, the same helper the
+        // self-service upsert and the walk-in desk use.
+        using var scope = _factory.Services.CreateScope();
+        var seeder = scope.ServiceProvider.GetRequiredService<IdentitySeeder>();
+        var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+        var database = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+
+        await seeder.SeedAsync();
+
+        var demoUserIds = await DemoProfileUserIdsAsync(users);
+        var documents = await database.UserProfiles
+            .AsNoTracking()
+            .Where(p => p.UserId != null && demoUserIds.Contains(p.UserId.Value))
+            .SelectMany(p => p.IdentityDocuments)
+            .ToListAsync();
+
+        Assert.Equal(demoUserIds.Count, documents.Count);
+        Assert.All(documents, document =>
+        {
+            Assert.Equal(IdentityDocumentKind.NationalId, document.Kind);
+            // The digest the unique index and the guard both key off. A row
+            // without one is in the table and invisible to both.
+            Assert.Equal(64, document.NumberHash.Length);
+            // Read back through the value converter, so the seeded number is the
+            // plaintext the demo matrix declares.
+            Assert.StartsWith("100000000", document.Number, StringComparison.Ordinal);
+        });
+    }
+
+    /// <summary>The Identity user ids of the eight profile-carrying demo accounts
+    /// (everything but the CP-only admin). Resolved by email because the profile
+    /// row no longer carries a column a test can pattern-match on.</summary>
+    private static async Task<List<Guid>> DemoProfileUserIdsAsync(UserManager<SimfUser> users)
+    {
+        string[] emails =
+        [
+            "vvip@simf.local", "vip@simf.local", "visitor@simf.local", "staff@simf.local",
+            "moderator@simf.local", "exhibitor@simf.local", "media@simf.local",
+            "sponsor@simf.local",
+        ];
+        var ids = new List<Guid>(emails.Length);
+        foreach (var email in emails)
+        {
+            var user = await users.FindByEmailAsync(email);
+            Assert.NotNull(user);
+            ids.Add(user!.Id);
+        }
+        return ids;
     }
 
     [Fact]
@@ -392,13 +459,20 @@ public sealed class IdentitySeederTests : IClassFixture<SimfApiFactory>
         }
 
         // Idempotent — a re-seed uploads nothing new (the pointers stay put).
+        // Selected by demo user id for the same reason as above: the old
+        // NationalId LIKE predicate matched ciphertext and returned two empty
+        // lists, which are trivially equal.
+        var demoUserIds = await DemoProfileUserIdsAsync(users);
         var pointersBefore = await database.UserProfiles
-            .Where(p => p.NationalId!.StartsWith("100000000"))
+            .Where(p => p.UserId != null && demoUserIds.Contains(p.UserId.Value))
+            .OrderBy(p => p.Id)
             .Select(p => p.IdImageFileId)
             .ToListAsync();
+        Assert.Equal(demoUserIds.Count, pointersBefore.Count);
         await seeder.SeedAsync();
         var pointersAfter = await database.UserProfiles
-            .Where(p => p.NationalId!.StartsWith("100000000"))
+            .Where(p => p.UserId != null && demoUserIds.Contains(p.UserId.Value))
+            .OrderBy(p => p.Id)
             .Select(p => p.IdImageFileId)
             .ToListAsync();
         Assert.Equal(pointersBefore, pointersAfter);

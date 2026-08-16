@@ -58,22 +58,32 @@ public class UserProfile : BaseAuditEntity
     /// that. Validated in the service layer instead.</summary>
     public int NationalityId { get; set; }
 
-    /// <summary>Chooses which of the identity documents in
-    /// <see cref="IdentityDocuments"/> a registrant must supply. Still the
-    /// discriminator every write path partitions on; it is NOT superseded by
-    /// <see cref="ProfileIdentityDocument.Kind"/>, which records what was
-    /// supplied rather than what is required.</summary>
+    /// <summary>Chooses which identity document a registrant must supply — a
+    /// Saudi's national id, or a non-Saudi's Iqama and/or passport. It records
+    /// what is REQUIRED, which is why it survived the collapse of the three
+    /// number columns: <see cref="ProfileIdentityDocument.Kind"/> records what was
+    /// actually supplied, and the two answer different questions.
+    ///
+    /// <para>Not derived from <see cref="NationalityId"/> even though a Saudi is
+    /// nationality 682. Two write paths legitimately set this flag with no
+    /// nationality at all — quick-register leaves <see cref="NationalityId"/> at
+    /// 0, and the offline badge upload sends an empty country code — so deriving
+    /// it would mis-classify exactly the desk-captured rows that have the least
+    /// data to spare. It is also on the shipped app wire as
+    /// <c>isSaudi</c>.</para></summary>
     public bool IsSaudi { get; set; }
 
     /// <summary>
     /// Every identity document this attendee holds — one row per document,
-    /// each carrying its own encrypted number and deterministic digest.
+    /// each carrying its own encrypted number and deterministic digest, and the
+    /// ONLY place those numbers live.
     ///
-    /// <para>This is the storage of record. It exists because an attendee can
-    /// hold MORE THAN ONE document at once (the upsert validator's "either Iqama
-    /// or Passport" is an OR, not an XOR) and because a single unique index over
-    /// every digest catches a CROSS-KIND duplicate, which no arrangement of the
-    /// three per-kind filtered indexes below can see.</para>
+    /// <para>It replaced three columns per number (a plaintext one and a
+    /// blind-index one for each of national id, Iqama and passport) because an
+    /// attendee can hold MORE THAN ONE document at once — the upsert validator's
+    /// "either Iqama or Passport" is an OR, not an XOR — and because a single
+    /// unique index over every digest catches a CROSS-KIND duplicate, which no
+    /// arrangement of three per-kind filtered indexes can see.</para>
     ///
     /// <para>Load it before writing through it: an unloaded navigation looks
     /// empty, and a sync against an empty collection inserts a second copy of
@@ -81,47 +91,6 @@ public class UserProfile : BaseAuditEntity
     /// </summary>
     public ICollection<ProfileIdentityDocument> IdentityDocuments { get; set; } =
         new List<ProfileIdentityDocument>();
-
-    // SUPERSEDED by IdentityDocuments, and kept only because readers outside this
-    // change still project them. Written in exact LOCKSTEP with the child rows on
-    // every write path, so the two can never disagree while both exist.
-    //
-    // A Saudi carries a national id (10 digits), a non-Saudi resident an iqama
-    // (10 digits), and anyone else a passport number. All three are encrypted at
-    // rest under a random nonce, which is why none of them can be equality-queried
-    // or unique-indexed, and why the blind-index columns below exist.
-    //
-    // The readers and writers that must move to IdentityDocuments before these six
-    // columns can be dropped: AdminApprovalReadService (which projects them into
-    // the CP pending-review DTOs), the four CP pages behind it (PendingVisitors,
-    // PendingOthers, VisitorsViewDelete, OthersViewDelete), and IdentitySeeder,
-    // which writes the columns for demo accounts and no child row. No SQL content
-    // seed names them, so dropping the columns is a code change only.
-    public string? NationalId { get; set; }
-
-    public string? IqamaNumber { get; set; }
-
-    public string? PassportNumber { get; set; }
-
-    // Deterministic blind indexes of the normalised document numbers above
-    // (keyed HMAC-SHA256, 64 hex chars). The plaintext columns cannot be
-    // unique-indexed, so the "no two profiles share an identity document" rule is
-    // enforced by a filtered UNIQUE index on these stable digests instead.
-    // Computed on write by the walk-in registration path; null when the matching
-    // number is unset, or when the row was written by a path that does not
-    // compute them. Deliberately outside the SimfAppDbContext PII-encryption
-    // converter loop: encrypting a digest would destroy the determinism the
-    // index depends on.
-    //
-    // Each of these can only ever catch a repeat of the SAME kind. The single
-    // unique digest index on ProfileIdentityDocument is what catches the
-    // cross-kind repeat, and it is the reason these three are now a backstop
-    // rather than the guard.
-    public string? NationalIdHash { get; set; }
-
-    public string? IqamaNumberHash { get; set; }
-
-    public string? PassportNumberHash { get; set; }
 
     /// <summary>Optional professional title shown beside the name, e.g.
     /// "Captain" or "Director of Operations".</summary>

@@ -75,29 +75,14 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
         builder.Property(profile => profile.NationalityId).IsRequired();
         builder.HasIndex(profile => profile.NationalityId);
         builder.Property(profile => profile.PlaceOfBirth).HasMaxLength(128);
-        builder.Property(profile => profile.NationalId).HasMaxLength(20);
-        builder.Property(profile => profile.IqamaNumber).HasMaxLength(20);
-        builder.Property(profile => profile.PassportNumber).HasMaxLength(32);
-
-        // Blind-index columns for the duplicate-identity guard. The
-        // plaintext id columns above are randomly-nonce encrypted (SimfAppDbContext
-        // OnModelCreating) so they CANNOT be unique-indexed; these deterministic
-        // keyed-HMAC digests can. Filtered UNIQUE so two profiles cannot share a
-        // National ID / Iqama / Passport, while the many null rows (no id of that
-        // kind, or a row not written through the guarded path) never collide. Same
-        // filtered-unique style as QrId / ReferenceNumber above.
-        builder.Property(profile => profile.NationalIdHash).HasMaxLength(64);
-        builder.Property(profile => profile.IqamaNumberHash).HasMaxLength(64);
-        builder.Property(profile => profile.PassportNumberHash).HasMaxLength(64);
-        builder.HasIndex(profile => profile.NationalIdHash)
-            .IsUnique()
-            .HasFilter("[NationalIdHash] IS NOT NULL");
-        builder.HasIndex(profile => profile.IqamaNumberHash)
-            .IsUnique()
-            .HasFilter("[IqamaNumberHash] IS NOT NULL");
-        builder.HasIndex(profile => profile.PassportNumberHash)
-            .IsUnique()
-            .HasFilter("[PassportNumberHash] IS NOT NULL");
+        // The identity documents are NOT configured here. They live one row per
+        // document on ProfileIdentityDocument, behind a SINGLE unique digest
+        // index, which replaced the six columns this block used to describe: a
+        // plaintext NationalId / IqamaNumber / PassportNumber, and a filtered
+        // unique blind-index digest beside each of them. Three per-kind indexes
+        // can only ever compare like with like, so none of them could see a
+        // person who registered on a passport and returned on an Iqama carrying
+        // the same number; one index over every digest can.
         // "Show in Meet People Like You" visibility toggle.
         builder.Property(profile => profile.ShowInMeetLikeYou)
             .HasDefaultValue(true);
