@@ -19,9 +19,8 @@ internal sealed class NotificationConfiguration : IEntityTypeConfiguration<Notif
     {
         builder.HasKey(notification => notification.Id);
 
-        // NotificationKind enum persisted as its name string.
-        // Existing rows are converted by the data migration in the
-        // matching EF migration (UPDATE FROM the old dot-form values).
+        // NotificationKind persisted as its name string, so appending a value can
+        // never renumber a stored row.
         builder.Property(notification => notification.Kind)
             .HasConversion<string>()
             .HasMaxLength(64)
@@ -49,8 +48,7 @@ internal sealed class NotificationConfiguration : IEntityTypeConfiguration<Notif
         builder.Property(notification => notification.RelatedEntityType)
             .HasMaxLength(64);
 
-        // Additive nullable columns for the backend-driven tile
-        // (app-internal deep-link + group code).
+        // The backend-driven tile: app-internal deep-link + group code.
         builder.Property(notification => notification.ClickUrl)
             .HasMaxLength(512);
         builder.Property(notification => notification.GroupCode)
@@ -73,11 +71,10 @@ internal sealed class NotificationConfiguration : IEntityTypeConfiguration<Notif
             notification.ReadAt,
         });
 
-        // Notification lives on the Identity DB alongside
-        // AspNetUsers, so UserId becomes a real FK (was a bare Guid): cascade so
-        // a deleted user's notifications go with them. The (UserId, CreatedAt)
-        // index above already covers the FK. (No orphan rows exist on a fresh
-        // recreate — notifications are only created at runtime for a real user.)
+        // Notification lives on the Identity DB alongside AspNetUsers, so UserId is a
+        // real FK rather than the cross-database bare Guid the App entities use:
+        // cascade, so a deleted user's notifications go with them. The
+        // (UserId, CreatedAt) index above already covers the FK.
         builder.HasOne<SimfUser>()
             .WithMany()
             .HasForeignKey(notification => notification.UserId)

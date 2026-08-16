@@ -10,6 +10,19 @@ internal sealed class AccountCodeConfiguration : IEntityTypeConfiguration<Accoun
 {
     public void Configure(EntityTypeBuilder<AccountCode> builder)
     {
+        // Exactly one owner: a code belongs either to an account (UserId) or to
+        // an attendee who holds none yet (UserProfileId), never to both and never
+        // to neither. Every writer already honours it, and the redemption paths
+        // key off whichever column is set, so a row with both would be redeemable
+        // down two different flows and a row with neither is unreachable and
+        // undeletable by the account cascade. Anchored on IS NULL / IS NOT NULL
+        // rather than a bare comparison: SQL Server passes a CHECK that evaluates
+        // to UNKNOWN, so an unanchored predicate would let the null cases through.
+        builder.ToTable("AccountCodes", table => table.HasCheckConstraint(
+            "CK_AccountCodes_OneOwner",
+            "([UserId] IS NOT NULL AND [UserProfileId] IS NULL) OR "
+            + "([UserId] IS NULL AND [UserProfileId] IS NOT NULL)"));
+
         builder.HasKey(code => code.Id);
 
         builder.Property(code => code.Code).HasMaxLength(16).IsRequired();

@@ -32,6 +32,15 @@ internal sealed class SeatReservationConfiguration : IEntityTypeConfiguration<Se
                 + "OR ([RowLabel] IS NOT NULL AND [SeatNumber] IS NOT NULL)");
             table.HasCheckConstraint(
                 "CK_SeatReservations_SeatNumber", "[SeatNumber] >= 1");
+            // The release stamp is a pair: AdminReleaseAsync is the only writer
+            // and it sets both columns from the same clock read. Half a pair is a
+            // row nobody can attribute — an actor with no time, or a time with no
+            // actor — so refuse it at the database rather than trust the one
+            // writer to stay the only one.
+            table.HasCheckConstraint(
+                "CK_SeatReservations_ReviewPair",
+                "([ReviewedByUserId] IS NULL AND [ReviewedAt] IS NULL) "
+                + "OR ([ReviewedByUserId] IS NOT NULL AND [ReviewedAt] IS NOT NULL)");
         });
         builder.HasKey(x => x.Id);
 

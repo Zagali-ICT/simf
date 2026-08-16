@@ -6,9 +6,11 @@ using SIMF.Common.Enums;
 namespace SIMF.Domain.IdentityAccess;
 
 /// <summary>
-/// A single-use, time-limited code sent to someone, for verifying an email
-/// address or resetting a password. One table serves both, distinguished by
-/// <see cref="Purpose"/>. The row holds only a keyed hash of the code
+/// A single-use, time-limited code emailed to someone. One table serves every
+/// such flow, distinguished by <see cref="Purpose"/>: verifying an address at
+/// sign-up, resetting a password, the visitor sign-in second factor, activating
+/// a badge, stepping up before a biometric key is enrolled, and confirming a new
+/// login address. The row holds only a keyed hash of the code
 /// (<see cref="Code"/>) — the code itself is emailed and never persisted.
 /// </summary>
 public class AccountCode

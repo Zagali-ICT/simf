@@ -18,9 +18,17 @@ internal sealed class SpeakerConfiguration : IEntityTypeConfiguration<Speaker>
         // The contact card's coordinate is a pair or nothing, and when set it is a
         // real coordinate. Mirrors the range + pairing rules AdminSpeakerService
         // already enforces, and the same shape as CK_Halls_Geofence.
-        builder.ToTable("Speakers", table => table.HasCheckConstraint(
-            "CK_Speakers_Location",
-            "([Latitude] IS NULL AND [Longitude] IS NULL) OR ([Latitude] IS NOT NULL AND [Longitude] IS NOT NULL AND [Latitude] >= -90 AND [Latitude] <= 90 AND [Longitude] >= -180 AND [Longitude] <= 180)"));
+        builder.ToTable("Speakers", table =>
+        {
+            table.HasCheckConstraint(
+                "CK_Speakers_Location",
+                "([Latitude] IS NULL AND [Longitude] IS NULL) OR ([Latitude] IS NOT NULL AND [Longitude] IS NOT NULL AND [Latitude] >= -90 AND [Latitude] <= 90 AND [Longitude] >= -180 AND [Longitude] <= 180)");
+            // Zero or positive, the same rule AdminSpeakerService already refuses a
+            // negative order with (400 SPEAKER_INVALID). Held here too so a seed or
+            // a repair script cannot store a speaker that sorts ahead of every
+            // hand-ordered one. Same shape as CK_Halls_Capacity.
+            table.HasCheckConstraint("CK_Speakers_DisplayOrder", "[DisplayOrder] >= 0");
+        });
         builder.HasKey(speaker => speaker.Id);
 
         builder.Property(speaker => speaker.Code).HasMaxLength(16).IsRequired();

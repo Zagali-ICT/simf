@@ -12,7 +12,15 @@ internal sealed class CountryConfiguration : IEntityTypeConfiguration<Country>
 {
     public void Configure(EntityTypeBuilder<Country> builder)
     {
-        builder.ToTable("Countries");
+        // The delegation window is an ordered pair. Nothing enforced the order:
+        // AdminCountryService.NormalizeDelegation only clears both when the country is
+        // not invited, and the Excel import parses each date independently, so a
+        // departure before its arrival reached the table from either write path.
+        // Null-tolerant, because a half-filled window is legitimate.
+        builder.ToTable("Countries", table => table.HasCheckConstraint(
+            "CK_Countries_DelegationWindow",
+            "[DelegationArrivalDate] IS NULL OR [DelegationDepartureDate] IS NULL"
+                + " OR [DelegationDepartureDate] >= [DelegationArrivalDate]"));
         builder.HasKey(country => country.Id);
         // ValueGeneratedNever — Id is supplied by the seed / CP form, never
         // by SQL Server. Without this, EF would default to IDENTITY for
