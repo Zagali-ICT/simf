@@ -55,7 +55,7 @@ public sealed class DelegationMeetingRequest
     public Guid? ConfirmedByUserId { get; set; }
 
     /// <summary>The reminder worker's once-only guard, committed before it dispatches.</summary>
-    public DateTime? ReminderSent { get; set; }
+    public DateTime? ReminderSentAt { get; set; }
 
     /// <summary>Hall check-in is what moves the request to Done.</summary>
     public DateTime? CheckedInAt { get; set; }

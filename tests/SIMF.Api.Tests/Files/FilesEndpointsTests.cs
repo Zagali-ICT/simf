@@ -400,7 +400,7 @@ public sealed class FilesEndpointsTests : IClassFixture<SimfApiFactory>
     {
         // P7 — PDPL right-to-erasure: an IdDocument is retention-held
         // (IsDeletable=false) so the ordinary delete is 409, but ForceDelete
-        // securely destroys the bytes and stamps SecureDestroyed.
+        // securely destroys the bytes and stamps SecureDestroyedAt.
         var token = await CreateAdministratorAndSignInAsync();
         var file = await SeedFileAsync(FileService.IdDocument, Guid.NewGuid(), Png, "image/png", "id.png");
 
@@ -413,7 +413,7 @@ public sealed class FilesEndpointsTests : IClassFixture<SimfApiFactory>
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var row = await db.StoredFiles.FirstAsync(f => f.Id == file.Id);
-        Assert.NotNull(row.SecureDestroyed);
+        Assert.NotNull(row.SecureDestroyedAt);
         Assert.False(row.IsActive);
         var storage = scope.ServiceProvider.GetRequiredService<IFileStorageProvider>();
         Assert.Null(await storage.ReadAsync(row.StorageKey!, row.IsEncrypted));

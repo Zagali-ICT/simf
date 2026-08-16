@@ -296,7 +296,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     NameArabic = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
                     Capacity = table.Column<int>(type: "int", nullable: false),
                     Floor = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: true),
-                    EquipmentNotes = table.Column<string>(type: "nvarchar(1024)", maxLength: 1024, nullable: true),
+                    FacilityNotes = table.Column<string>(type: "nvarchar(1024)", maxLength: 1024, nullable: true),
                     Purpose = table.Column<int>(type: "int", nullable: false),
                     SeatSelectionMode = table.Column<int>(type: "int", nullable: false),
                     GeofenceCenterLat = table.Column<double>(type: "float", nullable: true),
@@ -647,7 +647,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     Sha256 = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
                     IsDeletable = table.Column<bool>(type: "bit", nullable: false),
                     RetainUntil = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    SecureDestroyed = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    SecureDestroyedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     OwnerEntityType = table.Column<int>(type: "int", nullable: false),
                     OwnerEntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -1211,8 +1211,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     CapacityOverride = table.Column<int>(type: "int", nullable: true),
                     SeatSelectionModeOverride = table.Column<int>(type: "int", nullable: true),
                     ArrivalGraceMinutesOverride = table.Column<int>(type: "int", nullable: true),
-                    ReminderSent = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    RatingPromptSent = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ReminderSentAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    RatingPromptSentAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
                     PublishedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     RecordingFileId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
@@ -1944,9 +1944,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     ReleasedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    ReviewedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    ReviewedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    Expires = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ReleasedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    NoShowReleaseAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     GuestHint = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     GuestHintArabic = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true)
                 },
@@ -2300,7 +2299,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     ResponseNote = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
                     ConfirmedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     ConfirmedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    ReminderSent = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ReminderSentAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CheckedInAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CheckedInByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -2669,7 +2668,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     MeetingTableId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     SpeakerDecisionAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     ResponseNote = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
-                    ReminderSent = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ReminderSentAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CheckedInAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CheckedInByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -3593,10 +3592,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 column: "StoredAt");
 
             migrationBuilder.CreateIndex(
-                name: "IX_SeatReservations_Expires",
+                name: "IX_SeatReservations_NoShowReleaseAt",
                 table: "SeatReservations",
-                column: "Expires",
-                filter: "[ReleasedAt] IS NULL AND [Expires] IS NOT NULL");
+                column: "NoShowReleaseAt",
+                filter: "[ReleasedAt] IS NULL AND [NoShowReleaseAt] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_SeatReservations_ReservedForProfileId_ReleasedAt",

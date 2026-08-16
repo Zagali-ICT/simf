@@ -12,7 +12,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Persistence.Migrations.App
 {
     [DbContext(typeof(SimfAppDbContext))]
-    [Migration("20260815230324_InitialCreate")]
+    [Migration("20260816022700_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -1132,7 +1132,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid?>("MeetingTableId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime?>("ReminderSent")
+                    b.Property<DateTime?>("ReminderSentAt")
                         .HasColumnType("datetime2");
 
                     b.Property<Guid>("RequestedByUserId")
@@ -1446,7 +1446,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid?>("MeetingTableId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime?>("ReminderSent")
+                    b.Property<DateTime?>("ReminderSentAt")
                         .HasColumnType("datetime2");
 
                     b.Property<Guid>("RequestedByUserId")
@@ -3352,7 +3352,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<DateTime?>("RetainUntil")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime?>("SecureDestroyed")
+                    b.Property<DateTime?>("SecureDestroyedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<int>("SensitivityTier")
@@ -4555,7 +4555,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("EquipmentNotes")
+                    b.Property<string>("FacilityNotes")
                         .HasMaxLength(1024)
                         .HasColumnType("nvarchar(1024)");
 
@@ -4793,7 +4793,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<DateTime?>("PublishedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime?>("RatingPromptSent")
+                    b.Property<DateTime?>("RatingPromptSentAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("RecordingContentType")
@@ -4816,7 +4816,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid?>("RecordingUploadedByUserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime?>("ReminderSent")
+                    b.Property<DateTime?>("ReminderSentAt")
                         .HasColumnType("datetime2");
 
                     b.Property<int?>("SeatSelectionModeOverride")
@@ -5854,9 +5854,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid>("CreatedByUserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime?>("Expires")
-                        .HasColumnType("datetime2");
-
                     b.Property<string>("GuestHint")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
@@ -5868,16 +5865,16 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<int>("Kind")
                         .HasColumnType("int");
 
+                    b.Property<DateTime?>("NoShowReleaseAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime?>("ReleasedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid?>("ReservedForProfileId")
+                    b.Property<Guid?>("ReleasedByUserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime?>("ReviewedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("ReviewedByUserId")
+                    b.Property<Guid?>("ReservedForProfileId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("RowLabel")
@@ -5895,8 +5892,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Expires")
-                        .HasFilter("[ReleasedAt] IS NULL AND [Expires] IS NOT NULL");
+                    b.HasIndex("NoShowReleaseAt")
+                        .HasFilter("[ReleasedAt] IS NULL AND [NoShowReleaseAt] IS NOT NULL");
 
                     b.HasIndex("ReservedForProfileId", "ReleasedAt");
 
