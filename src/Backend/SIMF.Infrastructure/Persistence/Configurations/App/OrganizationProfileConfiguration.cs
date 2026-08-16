@@ -9,15 +9,31 @@ namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
 /// <summary>The singleton Organization Profile + its two child lists.
 /// One profile row (fixed <see cref="OrganizationProfile.SingletonId"/>) seeded via
-/// EF model data so it exists from day-one; the about/detail lists and the social /
-/// welcome values copied from the old SiteSettings keys are seeded in the migration
-/// (they depend on existing data). Real DB FKs child → profile (same DbContext).</summary>
+/// EF model data so it exists from day-one; the about/detail lists and the social
+/// handles are filled by the idempotent content seed
+/// <c>docs/migrations/2026/SIMF_App_Organization.sql</c>, which only writes a column
+/// that is still empty. Real DB FKs child → profile (same DbContext).</summary>
 internal sealed class OrganizationProfileConfiguration
     : IEntityTypeConfiguration<OrganizationProfile>
 {
     public void Configure(EntityTypeBuilder<OrganizationProfile> builder)
     {
-        builder.ToTable("OrganizationProfile");
+        // Two rules the entity states that nothing behind the admin save enforced.
+        // OrganizationProfileAdminService.ValidateCoordinate refuses coordinates
+        // outside +-90 / +-180 on its own path only, and nothing at all checked the
+        // event window's order. Both are null-tolerant: a profile with no dates and
+        // no coordinates is the seeded state.
+        builder.ToTable("OrganizationProfile", table =>
+        {
+            table.HasCheckConstraint(
+                "CK_OrganizationProfile_EventWindow",
+                "[EventStartDate] IS NULL OR [EventEndDate] IS NULL"
+                    + " OR [EventEndDate] >= [EventStartDate]");
+            table.HasCheckConstraint(
+                "CK_OrganizationProfile_Coordinates",
+                "([Latitude] IS NULL OR ([Latitude] >= -90 AND [Latitude] <= 90))"
+                    + " AND ([Longitude] IS NULL OR ([Longitude] >= -180 AND [Longitude] <= 180))");
+        });
         builder.HasKey(p => p.Id);
 
         builder.Property(p => p.Name).HasMaxLength(256).IsRequired();
@@ -78,9 +94,9 @@ internal sealed class OrganizationProfileConfiguration
             .HasForeignKey(d => d.OrganizationProfileId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        // Seed the singleton with the current (2026) edition skeleton. The list
-        // content + the social / welcome values migrated from the SiteSettings keys
-        // are inserted by the D495 migration (they depend on existing rows).
+        // Seed the singleton with the current (2026) edition skeleton. The about /
+        // detail list content and the social handles are inserted afterwards by the
+        // content seed SQL named in the class summary, not from here.
         builder.HasData(new OrganizationProfile
         {
             Id = OrganizationProfile.SingletonId,

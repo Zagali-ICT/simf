@@ -11,7 +11,17 @@ internal sealed class DeviceKeyConfiguration : IEntityTypeConfiguration<DeviceKe
 {
     public void Configure(EntityTypeBuilder<DeviceKey> builder)
     {
-        builder.ToTable("DeviceKeys");
+        // The in-flight challenge is a pair: the nonce and its deadline are
+        // written together when one is issued and cleared together when it is
+        // consumed, revoked or superseded. Without the pin, a half-written row
+        // would carry a nonce with no expiry, which the verify path only refuses
+        // because it separately re-checks both for null. Anchored on IS NULL /
+        // IS NOT NULL: a bare comparison against a nullable column evaluates to
+        // UNKNOWN, and SQL Server passes UNKNOWN on a CHECK.
+        builder.ToTable("DeviceKeys", table => table.HasCheckConstraint(
+            "CK_DeviceKeys_ChallengePin",
+            "([CurrentChallenge] IS NULL AND [ChallengeExpiresAt] IS NULL) OR "
+            + "([CurrentChallenge] IS NOT NULL AND [ChallengeExpiresAt] IS NOT NULL)"));
         builder.HasKey(k => k.Id);
 
         // ES256 SubjectPublicKeyInfo DER fits in ~91 base64 chars;

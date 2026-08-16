@@ -36,7 +36,14 @@ internal sealed class StoredFileConfiguration : IEntityTypeConfiguration<StoredF
         builder.Property(file => file.ExternalUrl).HasMaxLength(1024);
         builder.Property(file => file.OriginalFileName).HasMaxLength(260);
         builder.Property(file => file.ContentType).HasMaxLength(128);
-        builder.Property(file => file.Sha256).HasMaxLength(64);
+        // char(64), not nvarchar(64): a SHA-256 rendered as hex is always exactly 64
+        // ASCII characters, so the variable-length Unicode column cost four bytes per
+        // stored byte for no gain. Every writer either stores that 64-char hex or
+        // null, so the fixed length never pads a short value into a failed compare.
+        builder.Property(file => file.Sha256)
+            .HasMaxLength(64)
+            .IsUnicode(false)
+            .IsFixedLength();
 
         // The polymorphic owner back-link the owning row resolves on read, and the
         // scope of the owner-or-admin download check. Filtered to live rows.
