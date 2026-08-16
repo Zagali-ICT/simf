@@ -17,6 +17,8 @@ namespace SIMF.Api.Tests;
 /// observe the audit row land in the SAME transaction as the data
 /// change — no HTTP layer in the path.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Ops)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class RowAuditTests : IClassFixture<SimfApiFactory>
 {
     private readonly SimfApiFactory _factory;

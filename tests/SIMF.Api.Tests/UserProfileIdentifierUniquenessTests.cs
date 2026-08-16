@@ -16,6 +16,8 @@ using SIMF.Common;
 
 namespace SIMF.Api.Tests;
 
+[Trait(TestAreas.TraitName, TestAreas.Profiles)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class UserProfileIdentifierUniquenessTests : IClassFixture<SimfApiFactory>
 {
     private readonly SimfApiFactory _factory;

@@ -13,6 +13,8 @@ namespace SIMF.Api.Tests;
 /// re-sign-in once 24h elapse. Isolated in its own fixture because it advances
 /// the test clock (which would future-date tokens issued by other tests).
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Identity)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class RefreshAbsoluteCapTests : IClassFixture<SimfApiFactory>
 {
     private readonly SimfApiFactory _factory;

@@ -8,6 +8,8 @@ namespace SIMF.Api.Tests;
 /// D-469 — the Saudi administrative-region constant used by the birth-location
 /// dropdown (mirrored by the app's <c>saudi_regions.dart</c>).
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Profiles)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Fast)]
 public sealed class SaudiRegionsTests
 {
     [Fact]

@@ -22,6 +22,8 @@ namespace SIMF.Api.Tests;
 /// the approval workflow changes until the capability is deliberately armed in
 /// appsettings / set-env-*.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Badges)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class WalkInModeTests : IClassFixture<SimfApiFactory>
 {
     private readonly SimfApiFactory _factory;

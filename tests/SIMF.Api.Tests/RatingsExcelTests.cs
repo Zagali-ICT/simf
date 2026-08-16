@@ -19,6 +19,8 @@ namespace SIMF.Api.Tests;
 /// covers the export round-trip (an XLSX workbook) plus the <c>Ratings.Export</c>
 /// permission gate (a non-admin caller is forbidden).
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Reporting)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class RatingsExcelTests : IClassFixture<SimfApiFactory>
 {
     private const string AdministratorRole = "Administrator";

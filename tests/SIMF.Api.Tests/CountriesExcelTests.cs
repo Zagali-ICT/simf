@@ -23,6 +23,8 @@ namespace SIMF.Api.Tests;
 /// and the service requires unique, so each test mints fresh ids/codes to keep
 /// the shared test database deterministic.</para>
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Reporting)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class CountriesExcelTests : IClassFixture<SimfApiFactory>
 {
     private const string AdministratorRole = "Administrator";

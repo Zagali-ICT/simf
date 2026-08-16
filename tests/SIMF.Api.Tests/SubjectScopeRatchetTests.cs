@@ -14,6 +14,8 @@ using Xunit;
 
 namespace SIMF.Api.Tests;
 
+[Trait(TestAreas.TraitName, TestAreas.Security)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Fast)]
 public sealed class SubjectScopeRatchetTests
 {
     /// <summary>The markers that count as scoping IN THE ENDPOINT FILE. Each is a

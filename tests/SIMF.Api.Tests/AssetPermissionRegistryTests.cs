@@ -9,6 +9,8 @@ namespace SIMF.Api.Tests;
 /// permission gate, so a new category can never ship on the generic asset
 /// endpoints without an explicit view + write permission. Fails the build if a
 /// category is added without wiring its gate in <see cref="AssetPermissionRegistry"/>.</summary>
+[Trait(TestAreas.TraitName, TestAreas.Files)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Fast)]
 public sealed class AssetPermissionRegistryTests
 {
     [Fact]

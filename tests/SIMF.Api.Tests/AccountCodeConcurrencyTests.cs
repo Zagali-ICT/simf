@@ -20,6 +20,8 @@ namespace SIMF.Api.Tests;
 /// under concurrency: the old code passed every sequential test it had while the
 /// invariant it was supposed to enforce did not actually hold.</para>
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Identity)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class AccountCodeConcurrencyTests : IClassFixture<SimfApiFactory>
 {
     // Comfortably past the 5-attempt cap, so the burst has to trip it.

@@ -11,6 +11,14 @@ public interface IFileCipher
     /// <c>StoredFile</c> row so the read path can select the right decryptor.</summary>
     byte CurrentFormatVersion { get; }
 
+    /// <summary>The KEK version <see cref="Encrypt"/> wraps under right now —
+    /// stamped into the blob header AND recorded on the <c>StoredFile</c> row, so
+    /// rotation progress can be counted in SQL instead of by reading the second
+    /// byte of every blob on disk. Read it from the cipher rather than from
+    /// configuration: the recorded version must be the one that actually wrapped
+    /// the key, not a setting that could be re-read after a reload.</summary>
+    byte ActiveKekVersion { get; }
+
     /// <summary>Seals <paramref name="plaintext"/> into a self-describing blob
     /// (format version + KEK version + wrapped DEK + nonce + tag + ciphertext).</summary>
     byte[] Encrypt(byte[] plaintext);

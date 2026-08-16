@@ -20,6 +20,8 @@ namespace SIMF.Api.Tests;
 /// seam instead: a ticket consumes exactly once, and the attempt counter
 /// increments without a read-modify-write.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Identity)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class SecondFactorTokenAtomicTests : IClassFixture<SimfApiFactory>
 {
     private readonly SimfApiFactory _factory;

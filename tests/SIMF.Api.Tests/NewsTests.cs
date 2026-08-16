@@ -18,6 +18,8 @@ namespace SIMF.Api.Tests;
 /// PublicRelations/Administrator policy), the unique-English-title 409,
 /// soft-delete + publish-window filtering on the public feed, and the
 /// anonymous public read contract. Mirrors AdminArchiveTests / DelegationsTests.</summary>
+[Trait(TestAreas.TraitName, TestAreas.Content)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class NewsTests : IClassFixture<SimfApiFactory>
 {
     private const string AdministratorRole = "Administrator";

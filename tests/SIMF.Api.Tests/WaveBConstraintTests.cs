@@ -12,6 +12,8 @@ using SIMF.Common;
 
 namespace SIMF.Api.Tests;
 
+[Trait(TestAreas.TraitName, TestAreas.Ops)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class WaveBConstraintTests : IClassFixture<SimfApiFactory>
 {
     private readonly SimfApiFactory _factory;

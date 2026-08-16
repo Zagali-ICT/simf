@@ -17,6 +17,8 @@ using Xunit;
 
 namespace SIMF.Api.Tests;
 
+[Trait(TestAreas.TraitName, TestAreas.Programme)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class PublicPresentationsTests : IClassFixture<SimfApiFactory>
 {
     // "%PDF-1.4" — a minimal valid PDF magic header (the bytes are opaque here).

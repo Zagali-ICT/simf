@@ -406,6 +406,45 @@ migration appears in either folder. Before this, nothing anywhere pinned the
 freeze; it was prose, which is exactly how six lifts accumulated without the
 baseline text ever being corrected.
 
+### D-924 named lift — the domain-model audit programme (2026-08-15/16)
+
+The first lift taken under D-895's "new, named lift" rule, and it was recorded at
+the **end** of the programme rather than the start. The owner instructed a deep
+audit of the domain model for normalisation and duplication defects; fixing what
+it found changed the App schema across seven branches, and no lift row was taken
+while that ran.
+
+`docs/decisions/DECISIONS_LOG.md` D-924 enumerates every change, per branch. In
+outline: a `ProfileIdentityDocuments` child table, `UserProfile.MobileNumber`,
+`BadgeBatchItems`, the three per-kind identity-number columns and their digests
+dropped, the constraint sweep's CHECK constraints and filtered unique indexes,
+`VisitorShareToken.TokenHash`, `StoredFile.KekVersion`, two AI CHECK constraints,
+one dead index leg dropped and one collapsed index restored. On the Identity
+side, only `Permission.Page` / `.Action` / `.DisplayName` were dropped.
+
+Both histories were **regenerated**, not extended, so the one-`InitialCreate`-per-
+context rule holds and `SchemaFreezeTests` is unchanged. Enums are untouched, and
+the shipped mobile wire contract stays append-only — now pinned by
+`tests/SIMF.Api.Tests/AppWireContractPinTests.cs` rather than by review.
+
+### D-925 — the migration id is PINNED, and you regenerate with the script
+
+`00000000000000_InitialCreate`, on both contexts. Regenerate with
+`tools/migrations/Regenerate-Migration.ps1`, never with a bare
+`dotnet ef migrations add`, which stamps a fresh timestamp.
+
+This exists because `main` was left unable to compile **twice on 2026-08-16** —
+three `InitialCreate` classes in one namespace each time. It is a merge *success*,
+not a merge failure: a timestamped id gives every branch its own filename, so two
+branches that both regenerate merge without conflicting and both files survive. No
+pull-request gate can see it, because neither PR is individually wrong; the
+breakage exists only after both land. A pinned id makes them write the same path,
+so git raises a real conflict — which you resolve by running the script once on
+the merged model, the only correct resolution anyway.
+
+`SchemaFreezeTests` fails the build on any other id, and on a filename that has
+drifted from the `[Migration("...")]` attribute EF actually reads.
+
 ---
 
 ## Security: the anonymous surface (moved here 2026-08-12)

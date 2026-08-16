@@ -15,6 +15,8 @@ using SIMF.Common.Enums;
 
 namespace SIMF.Api.Tests;
 
+[Trait(TestAreas.TraitName, TestAreas.Programme)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class SessionSummaryTests : IClassFixture<SimfApiFactory>
 {
     private readonly SimfApiFactory _factory;

@@ -31,6 +31,15 @@ public sealed class StoredFile : BaseAuditEntity
     /// <summary>On-disk blob layout: 0 plaintext, 1 the current envelope format.</summary>
     public byte CipherFormatVersion { get; set; }
 
+    /// <summary>Which Key-Encryption-Key wrapped this file's data key, copied from
+    /// the cipher at write time. The same number is inside the blob header; it is
+    /// mirrored here because a header is only readable one file at a time, so
+    /// without the column "how much of the store is still on key 1" cannot be
+    /// answered from SQL, only guessed. Null means no KEK applies (a plaintext or
+    /// external-link row) or the row predates this column, which a re-wrap pass
+    /// must treat as unknown-and-therefore-due rather than as current.</summary>
+    public byte? KekVersion { get; set; }
+
     // Exactly one is set, per SourceType. The server builds StorageKey as
     // {Service}/{Id:N}.{ext} beneath the storage root, taking nothing from the client,
     // so an uploaded name cannot steer a write out of the root.

@@ -26,6 +26,8 @@ using Xunit;
 
 namespace SIMF.Api.Tests.Files;
 
+[Trait(TestAreas.TraitName, TestAreas.Files)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class FilesEndpointsTests : IClassFixture<SimfApiFactory>
 {
     private const string AdministratorRole = "Administrator";

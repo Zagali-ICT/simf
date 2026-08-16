@@ -19,6 +19,8 @@ namespace SIMF.Api.Tests;
 /// Integration tests for the admin-driven 2FA reset endpoint
 /// (decision D-041).
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Identity)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class AdminResetTwoFactorTests : IClassFixture<SimfApiFactory>
 {
     private const string AdministratorRole = "Administrator";

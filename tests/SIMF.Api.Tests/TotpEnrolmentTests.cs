@@ -15,6 +15,8 @@ namespace SIMF.Api.Tests;
 /// <summary>
 /// Integration tests for the TOTP enrolment endpoints (myComment item #11).
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Identity)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class TotpEnrolmentTests : IClassFixture<SimfApiFactory>
 {
     private readonly SimfApiFactory _factory;

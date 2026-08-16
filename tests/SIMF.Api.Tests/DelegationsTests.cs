@@ -28,6 +28,8 @@ namespace SIMF.Api.Tests;
 /// per-viewer rule: a signed-in caller never sees their own country, and the two
 /// aggregate stats are recomputed over the filtered list.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Profiles)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class DelegationsTests : IClassFixture<SimfApiFactory>
 {
     // ISO numeric ids are hand-assigned and the fixture database accumulates

@@ -11,6 +11,8 @@ using SIMF.Common;
 
 namespace SIMF.Api.Tests;
 
+[Trait(TestAreas.TraitName, TestAreas.Ops)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Fast)]
 public sealed class WorkerHeartbeatRegistryTests
 {
     private static readonly TimeSpan OneMinute = TimeSpan.FromMinutes(1);

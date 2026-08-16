@@ -21,6 +21,8 @@ namespace SIMF.Api.Tests;
 /// a checked-in holder, a future deadline, a walk-in booked after the deadline, an
 /// admin block and an already-released row are all left alone.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Seats)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class ReservationNoShowReleaseWorkerTests : IClassFixture<SimfApiFactory>
 {
     private readonly SimfApiFactory _factory;

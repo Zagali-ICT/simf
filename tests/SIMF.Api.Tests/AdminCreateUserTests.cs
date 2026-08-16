@@ -19,6 +19,8 @@ namespace SIMF.Api.Tests;
 /// Integration tests for the admin-create-user and list-users endpoints
 /// (decision D-042).
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Identity)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class AdminCreateUserTests : IClassFixture<SimfApiFactory>
 {
     private const string AdministratorRole = "Administrator";

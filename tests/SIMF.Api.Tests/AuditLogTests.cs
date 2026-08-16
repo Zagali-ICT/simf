@@ -15,6 +15,8 @@ namespace SIMF.Api.Tests;
 /// Integration tests that the account-creation endpoints write to the operation
 /// log with the expected fields (SIMF-FDS-001 section 9).
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Ops)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class AuditLogTests : IClassFixture<SimfApiFactory>
 {
     private const string ValidPassword = "Zx9#mKp2!";

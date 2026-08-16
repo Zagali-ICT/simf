@@ -15,6 +15,8 @@ namespace SIMF.Api.Tests;
 /// <summary>Integration tests for the "تواصل معنا / Contact us" inquiries
 /// (Figma 1388:7567): the public anonymous submit + the CP inbox list/handled
 /// toggle.</summary>
+[Trait(TestAreas.TraitName, TestAreas.Content)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class ContactInquiryTests : IClassFixture<SimfApiFactory>
 {
     private const string AdministratorRole = "Administrator";

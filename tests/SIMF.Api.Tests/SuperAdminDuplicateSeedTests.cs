@@ -25,6 +25,8 @@ using Xunit;
 
 namespace SIMF.Api.Tests;
 
+[Trait(TestAreas.TraitName, TestAreas.Identity)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class SuperAdminDuplicateSeedTests : IClassFixture<SimfApiFactory>
 {
     // Satisfies the Identity policy, so the account really is created and the

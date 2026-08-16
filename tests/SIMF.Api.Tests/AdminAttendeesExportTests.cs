@@ -19,6 +19,8 @@ namespace SIMF.Api.Tests;
 /// <see cref="GridQuery"/> filters the list uses (incl. the CreatedAt date
 /// range) and is gated by the dedicated <c>Attendees.Export</c> permission.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Reporting)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class AdminAttendeesExportTests : IClassFixture<SimfApiFactory>
 {
     private const string AdministratorRole = "Administrator";

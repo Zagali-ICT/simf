@@ -21,6 +21,8 @@ namespace SIMF.Api.Tests;
 /// Integration tests for the Interests admin CRUD + the visitor-facing
 /// active list (P9 — D-050; الاهتمامات).
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Profiles)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class InterestTests : IClassFixture<SimfApiFactory>
 {
     private const string AdministratorRole = "Administrator";

@@ -3,6 +3,8 @@ using Xunit;
 namespace SIMF.Api.Tests;
 
 /// <summary>Integration tests for <c>CorrelationIdMiddleware</c>.</summary>
+[Trait(TestAreas.TraitName, TestAreas.Ops)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class CorrelationIdTests : IClassFixture<SimfApiFactory>
 {
     private readonly HttpClient _client;

@@ -23,6 +23,8 @@ namespace SIMF.Api.Tests;
 /// <see cref="SessionNotAttendedReminderWorker.RunNotAttendedScanAsync"/> directly
 /// (InternalsVisibleTo), mirroring <see cref="SessionReminderWorkerTests"/>.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Programme)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class SessionNotAttendedReminderWorkerTests : IClassFixture<SimfApiFactory>
 {
     private readonly SimfApiFactory _factory;

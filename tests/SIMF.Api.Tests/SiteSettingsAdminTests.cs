@@ -21,6 +21,8 @@ namespace SIMF.Api.Tests;
 /// order-independent on the shared test DB. Partial-update semantics: null =
 /// leave unchanged, blank = clear.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Content)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class SiteSettingsAdminTests : IClassFixture<SimfApiFactory>
 {
     private const string AdministratorRole = "Administrator";

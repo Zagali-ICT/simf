@@ -20,6 +20,8 @@ using Xunit;
 
 namespace SIMF.Api.Tests;
 
+[Trait(TestAreas.TraitName, TestAreas.Gates)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class HallAttendanceTests : IClassFixture<SimfApiFactory>
 {
     // A fixed venue centre + a tight 100 m geofence.

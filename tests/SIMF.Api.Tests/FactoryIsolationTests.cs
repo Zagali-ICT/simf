@@ -27,6 +27,8 @@ namespace SIMF.Api.Tests;
 /// are still set, because AddInfrastructure reads configuration eagerly - this
 /// test is what proves the per-builder values are the ones that win.
 /// </remarks>
+[Trait(TestAreas.TraitName, TestAreas.Ops)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class FactoryIsolationTests
 {
     [Fact]

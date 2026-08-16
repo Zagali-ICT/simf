@@ -15,6 +15,8 @@ namespace SIMF.Api.Tests;
 /// the approval state; the six-value <see cref="AccountState"/> collapses onto
 /// the app's three-value <c>{Pending, Approved, Rejected}</c> vocabulary.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Identity)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class CurrentUserEndpointTests : IClassFixture<SimfApiFactory>
 {
     private readonly SimfApiFactory _factory;

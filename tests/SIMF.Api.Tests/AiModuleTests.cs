@@ -16,6 +16,8 @@ using Xunit;
 
 namespace SIMF.Api.Tests;
 
+[Trait(TestAreas.TraitName, TestAreas.Ai)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class AiModuleTests : IClassFixture<SimfApiFactory>
 {
     private const string AdministratorRole = "Administrator";

@@ -20,6 +20,8 @@ namespace SIMF.Api.Tests;
 /// error that does not abort the batch, the upload-defence rejections
 /// (not-a-workbook, wrong sheet) and the Export/Import permission gate.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Reporting)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class ConfigurationExcelTests : IClassFixture<SimfApiFactory>
 {
     private const string AdministratorRole = "Administrator";

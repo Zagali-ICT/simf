@@ -11,6 +11,8 @@ namespace SIMF.Api.Tests;
 /// the test clock, which would future-date tokens issued by other tests sharing
 /// the same factory.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Identity)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class RefreshExpiryTests : IClassFixture<SimfApiFactory>
 {
     private readonly SimfApiFactory _factory;

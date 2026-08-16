@@ -18,6 +18,8 @@ namespace SIMF.Api.Tests;
 /// the Gates resource: export round-trip, a positive import, the upload-defence
 /// rejections (not-a-workbook, wrong sheet) and the Export permission gate.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Reporting)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class GatesExcelTests : IClassFixture<SimfApiFactory>
 {
     private const string AdministratorRole = "Administrator";

@@ -32,6 +32,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AiChatMessages", x => x.Id);
+                    table.CheckConstraint("CK_AiChatMessages_Role", "[Role] IN ('user', 'assistant')");
                 });
 
             migrationBuilder.CreateTable(
@@ -56,6 +57,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AiInvocations", x => x.Id);
+                    table.CheckConstraint("CK_AiInvocations_CallerKind", "[CallerKind] IN ('Anonymous', 'Visitor', 'Staff', 'Admin', 'Moderator')");
                 });
 
             migrationBuilder.CreateTable(
@@ -639,6 +641,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     SourceType = table.Column<int>(type: "int", nullable: false),
                     IsEncrypted = table.Column<bool>(type: "bit", nullable: false),
                     CipherFormatVersion = table.Column<byte>(type: "tinyint", nullable: false),
+                    KekVersion = table.Column<byte>(type: "tinyint", nullable: true),
                     StorageKey = table.Column<string>(type: "nvarchar(400)", maxLength: 400, nullable: true),
                     ExternalUrl = table.Column<string>(type: "nvarchar(1024)", maxLength: 1024, nullable: true),
                     OriginalFileName = table.Column<string>(type: "nvarchar(260)", maxLength: 260, nullable: true),
@@ -714,7 +717,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Token = table.Column<string>(type: "varchar(256)", unicode: false, maxLength: 256, nullable: false),
-                    TokenHash = table.Column<string>(type: "char(64)", unicode: false, fixedLength: true, maxLength: 64, nullable: false),
+                    TokenHash = table.Column<string>(type: "varchar(64)", unicode: false, maxLength: 64, nullable: false),
                     RevokedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
@@ -3271,6 +3274,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 filter: "[Outcome] = 0 AND [UserProfileId] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
+                name: "IX_GateScan_UserProfile_ScannedAt",
+                table: "GateScans",
+                columns: new[] { "UserProfileId", "ScannedAt" },
+                descending: new[] { false, true });
+
+            migrationBuilder.CreateIndex(
                 name: "UX_GateScan_Idempotency",
                 table: "GateScans",
                 columns: new[] { "IdempotencyKey", "GateId" },
@@ -3696,9 +3705,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_SessionOutcomes_SessionId_IsActive_DisplayOrder",
+                name: "IX_SessionOutcomes_SessionId_DisplayOrder",
                 table: "SessionOutcomes",
-                columns: new[] { "SessionId", "IsActive", "DisplayOrder" });
+                columns: new[] { "SessionId", "DisplayOrder" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_SessionQuestions_SessionId_IsPushed_Order",
@@ -3892,6 +3901,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 name: "IX_StoredFiles_CreatedBy",
                 table: "StoredFiles",
                 column: "CreatedBy");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_StoredFiles_KekVersion",
+                table: "StoredFiles",
+                column: "KekVersion",
+                filter: "[IsEncrypted] = 1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_StoredFiles_OwnerEntityType_OwnerEntityId",

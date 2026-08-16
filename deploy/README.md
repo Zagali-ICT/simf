@@ -427,11 +427,19 @@ box the sequence is: create the IIS sites and app pools in IIS Manager, copy the
 five scripts across, and run each as Administrator.
 
 **What went with the runbook, so it is a known gap rather than a surprise:** it
-generated the base64 32-byte AES keys and — crucially — **refused to overwrite an
-existing one**, because rotating `FileStorage:EncryptionKey` makes every stored
-file undecryptable and rotating `Storage:UserIdDocumentEncryptionKey` strands
-every encrypted PII column. Those keys now come from the values already in
-`set-env-api.ps1`. If key generation is ever added back to a set-env script, the
+generated the base64 32-byte AES keys and - crucially - **refused to overwrite an
+existing one**. The two keys are not equivalent, and the difference decides
+whether a rotation is survivable. `FileStorage:EncryptionKey` wraps a per-file
+data key rather than the file itself, so it has a path: promote the new key, move
+the outgoing pair into `FileStorage:PreviousEncryptionKey` /
+`PreviousKekVersion`, and everything already stored still opens - but the job
+that re-wraps each blob under the new KEK is designed and not built
+(SIMF-OPS-001 C.7), so treat it as set-once for now.
+`Storage:UserIdDocumentEncryptionKey` has no previous-key slot at all: changing
+it strands every encrypted PII column outright, with no window and no way back.
+
+Those keys now come from the values already in `set-env-api.ps1`, and no script
+regenerates them. If key generation is ever added back to a set-env script, the
 never-overwrite guard has to come with it.
 
 **Pass `-Target`.** Each key and prompt declares which packages read it, and the

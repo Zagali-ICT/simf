@@ -27,6 +27,8 @@ namespace SIMF.Api.Tests;
 /// <para>The service is constructed directly rather than driven over HTTP so the
 /// filter can be faked without touching the shared API fixture.</para>
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Programme)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class SessionQuestionVerdictClampTests : IClassFixture<SimfApiFactory>
 {
     /// <summary>Mirrors SessionQuestionConfiguration's HasMaxLength(256).</summary>

@@ -20,6 +20,8 @@ namespace SIMF.Api.Tests;
 /// the upload-defence rejections (not-a-workbook, wrong sheet) and the
 /// Export/Import permission gate.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Reporting)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class InterestExcelTests : IClassFixture<SimfApiFactory>
 {
     private const string AdministratorRole = "Administrator";

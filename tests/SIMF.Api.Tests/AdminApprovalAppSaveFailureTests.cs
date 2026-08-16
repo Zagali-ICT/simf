@@ -86,6 +86,8 @@ public sealed class AppSaveFailingOnApproveApiFactory : SimfApiFactory
     }
 }
 
+[Trait(TestAreas.TraitName, TestAreas.Profiles)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class AdminApprovalAppSaveFailureTests
     : IClassFixture<AppSaveFailingOnApproveApiFactory>
 {

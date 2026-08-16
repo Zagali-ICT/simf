@@ -7,6 +7,8 @@ namespace SIMF.Api.Tests.Files;
 /// <summary>D-568 — unit cover for the clamd INSTREAM reply parser, in isolation
 /// from a live daemon. <c>OK</c> = clean, <c>… FOUND</c> = infected (with the
 /// signature name), anything else = Skipped so the fail-closed layer decides.</summary>
+[Trait(TestAreas.TraitName, TestAreas.Files)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Fast)]
 public sealed class ClamAvResponseParsingTests
 {
     [Theory]

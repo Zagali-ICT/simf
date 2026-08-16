@@ -16,6 +16,8 @@ namespace SIMF.Api.Tests;
 /// reuse detection, sign-out, and the bearer authentication middleware
 /// (SIMF-API-001 section 12.4).
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Programme)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class SessionTests : IClassFixture<SimfApiFactory>
 {
     private readonly SimfApiFactory _factory;

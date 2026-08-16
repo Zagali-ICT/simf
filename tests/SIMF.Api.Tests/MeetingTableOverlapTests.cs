@@ -29,6 +29,8 @@ using Xunit;
 
 namespace SIMF.Api.Tests;
 
+[Trait(TestAreas.TraitName, TestAreas.Meetings)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class MeetingTableOverlapTests : IClassFixture<SimfApiFactory>
 {
     /// <summary>A future anchor for the two request-family binds (they are bound only

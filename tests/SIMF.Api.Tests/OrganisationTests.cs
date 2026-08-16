@@ -17,6 +17,8 @@ namespace SIMF.Api.Tests;
 
 /// <summary>Integration tests for the Organisation lookup module: admin CRUD,
 /// the gov Excel upsert import, and the public picker search.</summary>
+[Trait(TestAreas.TraitName, TestAreas.Profiles)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class OrganisationTests : IClassFixture<SimfApiFactory>
 {
     private const string AdministratorRole = "Administrator";

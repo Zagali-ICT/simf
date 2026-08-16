@@ -98,6 +98,8 @@ public sealed class ThrowingRefreshTokenApiFactory : SimfApiFactory
     }
 }
 
+[Trait(TestAreas.TraitName, TestAreas.Profiles)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class UserProfileRollbackTests : IClassFixture<ThrowingRefreshTokenApiFactory>
 {
     private readonly ThrowingRefreshTokenApiFactory _factory;

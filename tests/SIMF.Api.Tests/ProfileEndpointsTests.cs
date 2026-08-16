@@ -16,6 +16,8 @@ namespace SIMF.Api.Tests;
 /// (myComment item #11). Avatars are persisted on the filesystem via
 /// <c>FilesystemAvatarStorage</c> against the factory's per-run temp dir.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Profiles)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class ProfileEndpointsTests : IClassFixture<SimfApiFactory>
 {
     private static readonly byte[] OnePixelPng =

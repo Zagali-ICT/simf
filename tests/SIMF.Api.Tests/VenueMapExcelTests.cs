@@ -24,6 +24,8 @@ namespace SIMF.Api.Tests;
 /// human-readable code; a blank code leaves the link unset), so the round-trip
 /// needs no hall / booth fixtures.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Reporting)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class VenueMapExcelTests : IClassFixture<SimfApiFactory>
 {
     private const string AdministratorRole = "Administrator";

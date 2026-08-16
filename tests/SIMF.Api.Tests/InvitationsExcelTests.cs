@@ -20,6 +20,8 @@ namespace SIMF.Api.Tests;
 /// The integration DB is shared across runs, so the admin user is keyed on a
 /// fresh <see cref="Guid"/> per test.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Reporting)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class InvitationsExcelTests : IClassFixture<SimfApiFactory>
 {
     private const string AdministratorRole = "Administrator";

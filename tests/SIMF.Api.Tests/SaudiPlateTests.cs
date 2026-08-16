@@ -8,6 +8,8 @@ namespace SIMF.Api.Tests;
 /// 17-letter validation, canonical Latin normalisation and the Arabic / English
 /// renderings (mirrored by the Flutter <c>plate_validation_test.dart</c>).
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Profiles)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Fast)]
 public sealed class SaudiPlateTests
 {
     // Relaxed rule (owner 2026-07-06): at least one plate letter and/or at

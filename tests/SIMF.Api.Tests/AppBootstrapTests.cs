@@ -18,6 +18,8 @@ namespace SIMF.Api.Tests;
 /// on-login bundle (current user + unread-notification count + server time),
 /// composed from existing reads and available to any signed-in account.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Ops)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class AppBootstrapTests : IClassFixture<SimfApiFactory>
 {
     private readonly SimfApiFactory _factory;

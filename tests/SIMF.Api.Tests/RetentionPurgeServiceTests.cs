@@ -16,6 +16,8 @@ namespace SIMF.Api.Tests;
 /// Identity DB (refresh tokens, 2FA tickets, account codes) and the App DB
 /// (scan-idempotency records).
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Ops)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class RetentionPurgeServiceTests : IClassFixture<SimfApiFactory>
 {
     private readonly SimfApiFactory _factory;

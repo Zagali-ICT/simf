@@ -37,6 +37,8 @@ namespace SIMF.Api.Tests;
 /// overload to set them APART, one per direction, which is what actually pins the
 /// decoupling.</para>
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Meetings)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class SpeakerMeetingEligibilityAndSlotTests : IClassFixture<SimfApiFactory>
 {
     private static readonly DateTime WindowStart = new(2030, 2, 1, 9, 0, 0);

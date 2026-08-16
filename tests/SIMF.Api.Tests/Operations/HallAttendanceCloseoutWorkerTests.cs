@@ -12,6 +12,8 @@ using SIMF.Common;
 
 namespace SIMF.Api.Tests.Operations;
 
+[Trait(TestAreas.TraitName, TestAreas.Gates)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class HallAttendanceCloseoutWorkerTests : IClassFixture<SimfApiFactory>
 {
     private readonly SimfApiFactory _factory;

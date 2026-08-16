@@ -17,6 +17,8 @@ using Xunit;
 
 namespace SIMF.Api.Tests;
 
+[Trait(TestAreas.TraitName, TestAreas.Meetings)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class SpeakerAvailabilityTests : IClassFixture<SimfApiFactory>
 {
     // D-753 — availability windows are bounded to the forum days (MIN/MAX over the

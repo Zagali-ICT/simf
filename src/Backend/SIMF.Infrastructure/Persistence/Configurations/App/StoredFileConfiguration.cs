@@ -56,6 +56,17 @@ internal sealed class StoredFileConfiguration : IEntityTypeConfiguration<StoredF
         // "files I uploaded" + audit lookups.
         builder.HasIndex(file => file.CreatedBy);
 
+        // Counts the store by KEK version, which is what makes a key rotation
+        // inventoried rather than guessed: "how many files are still on key 1" is
+        // a GROUP BY here instead of a walk over every blob header on disk. Kept
+        // to encrypted rows, because a plaintext row has no KEK and would only
+        // dilute the count. The filter deliberately does NOT exclude nulls - an
+        // encrypted row with no recorded version is exactly what a re-wrap pass
+        // has to find. Provisioned ahead of that worker, on the same reasoning as
+        // the RetainUntil index below.
+        builder.HasIndex(file => file.KekVersion)
+            .HasFilter("[IsEncrypted] = 1");
+
         // Enumerates live, time-limited rows for a retention review. No sweep
         // reads it yet — the retention date is recorded, never acted on
         // automatically — so this index is provisioned ahead of that worker

@@ -24,6 +24,8 @@ namespace SIMF.Api.Tests;
 /// ranker so the push contract — one notification per (caller, candidate), never a
 /// second — is pinned independently of the scoring.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Meetings)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class MatchRecommendationPushWorkerTests : IClassFixture<SimfApiFactory>
 {
     private readonly SimfApiFactory _factory;

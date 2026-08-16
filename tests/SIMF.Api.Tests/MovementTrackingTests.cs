@@ -23,6 +23,8 @@ namespace SIMF.Api.Tests;
 /// and the route projection — including the "inert until a hall has a boundary"
 /// guarantee that made Q6 buildable without the venue-boundary decision.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Gates)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class MovementTrackingTests : IClassFixture<SimfApiFactory>
 {
     private const string AdministratorRole = "Administrator";

@@ -20,6 +20,8 @@ namespace SIMF.Api.Tests;
 /// modals, so the resource is export-only — this covers the export round-trip
 /// for a seeded hall + table and the Export permission gate (non-admin → 403).
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Reporting)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class MeetingTablesExcelTests : IClassFixture<SimfApiFactory>
 {
     private const string AdministratorRole = "Administrator";

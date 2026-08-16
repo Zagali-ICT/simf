@@ -21,6 +21,8 @@ namespace SIMF.Api.Tests;
 /// touched by the visitor endpoints) and the optional <c>ProfileTypeId</c>
 /// import column.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Profiles)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class AdminGridVisitorsTests : IClassFixture<SimfApiFactory>
 {
     private const string AdministratorRole = "Administrator";

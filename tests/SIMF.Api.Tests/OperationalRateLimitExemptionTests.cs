@@ -33,6 +33,8 @@ namespace SIMF.Api.Tests;
 /// is a security decision (a route opted out of the global per-IP cap) that
 /// should be argued for rather than merged quietly.</para>
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Ops)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class OperationalRateLimitExemptionTests : IClassFixture<SimfApiFactory>
 {
     private readonly SimfApiFactory _factory;
@@ -225,6 +227,8 @@ public sealed class GlobalCapApiFactory : SimfApiFactory
             GlobalPermitLimit.ToString(System.Globalization.CultureInfo.InvariantCulture));
 }
 
+[Trait(TestAreas.TraitName, TestAreas.Ops)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class OperationalExemptionRequiresABearerTests
     : IClassFixture<GlobalCapApiFactory>, IDisposable
 {

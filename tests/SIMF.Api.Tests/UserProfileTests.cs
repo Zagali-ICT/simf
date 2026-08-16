@@ -23,6 +23,8 @@ namespace SIMF.Api.Tests;
 /// Approved user so the QR id is present and the actor can hit the
 /// profile endpoints.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Profiles)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
 {
     private const string Path = "/api/v1/app/account/user-profile";

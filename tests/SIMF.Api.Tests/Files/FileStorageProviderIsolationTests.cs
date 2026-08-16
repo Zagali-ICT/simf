@@ -40,6 +40,8 @@ namespace SIMF.Api.Tests.Files;
 /// backend-neutral so an S3 or Blob provider stays a DI change with no caller
 /// change. Do not widen the allow-list below.</para>
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Files)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Fast)]
 public sealed class FileStorageProviderIsolationTests
 {
     /// <summary>The one CONSUMER allowed to hold the storage seam: the file

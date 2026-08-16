@@ -6,6 +6,8 @@ namespace SIMF.Api.Tests;
 
 /// <summary>D-677 — the kind → (group, clickUrl) catalog the dispatcher stamps
 /// every row from. Pure unit tests (no DB).</summary>
+[Trait(TestAreas.TraitName, TestAreas.Ops)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Fast)]
 public sealed class NotificationKindCatalogTests
 {
     [Theory]

@@ -45,6 +45,8 @@ public sealed class ThrowingEmailQueueApiFactory : SimfApiFactory
     }
 }
 
+[Trait(TestAreas.TraitName, TestAreas.Ops)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class EmailEnqueueFailureTests : IClassFixture<ThrowingEmailQueueApiFactory>
 {
     private readonly ThrowingEmailQueueApiFactory _factory;

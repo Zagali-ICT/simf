@@ -25,8 +25,10 @@ internal interface IFileStorageProvider
     /// <summary>Writes <paramref name="content"/> for a file, encrypting at rest
     /// when <paramref name="encrypt"/> is true. The storage key is derived from
     /// <paramref name="service"/> + <paramref name="fileId"/> + a sanitized
-    /// <paramref name="extension"/>. Returns the key to persist on the row and the
-    /// cipher format version used (<c>0</c> when stored in plaintext).</summary>
+    /// <paramref name="extension"/>. Returns the key to persist on the row, the
+    /// cipher format version used (<c>0</c> when stored in plaintext) and the KEK
+    /// version the per-file key was wrapped under (null when stored in
+    /// plaintext).</summary>
     Task<FileWriteResult> WriteAsync(
         FileService service, Guid fileId, string extension, byte[] content, bool encrypt,
         CancellationToken cancellationToken = default);
@@ -71,9 +73,13 @@ internal interface IFileStorageProvider
     Task SecureEraseAsync(string storageKey, CancellationToken cancellationToken = default);
 }
 
-/// <summary>The key to persist on the <c>StoredFile</c> row plus the cipher
-/// format version used (<c>0</c> = plaintext).</summary>
-internal sealed record FileWriteResult(string StorageKey, byte CipherFormatVersion);
+/// <summary>The key to persist on the <c>StoredFile</c> row, the cipher
+/// format version used (<c>0</c> = plaintext), and the KEK version that wrapped
+/// this file's data key (<c>null</c> = plaintext, no KEK involved). The KEK
+/// version is carried out of the write rather than re-read from configuration so
+/// the row records the key that was actually used.</summary>
+internal sealed record FileWriteResult(
+    string StorageKey, byte CipherFormatVersion, byte? KekVersion);
 
 /// <summary>The outcome of a streamed (plaintext) write: the
 /// storage key, the SHA-256 of the bytes (lowercase hex), and the byte count.</summary>

@@ -41,6 +41,26 @@ public sealed class E2eCatalogueIntegrityTests
     private static readonly Regex MatrixRow =
         new(@"^\|\s*(E2E-[A-Z0-9][A-Z0-9-]*-\d{3,4})\s*\|", RegexOptions.Compiled);
 
+    /// <summary>A PAGE-INDEX row claiming a live route: first cell the backticked
+    /// route, second its status.
+    ///
+    /// <para>The status must BEGIN with the ✅ marker, for the same reason the
+    /// inline copy of this pattern in
+    /// <see cref="Every_route_PAGE_INDEX_calls_Real_actually_has_a_page"/> does —
+    /// matching "Real" anywhere in the cell would also fire on a retired row that
+    /// quotes the marker it used to carry. Keep the two in step.</para></summary>
+    private static readonly Regex RealPageRow =
+        new(@"^\|\s*`(/[^`]*)`\s*\|\s*✅\s*Real[^|]*\|", RegexOptions.Compiled);
+
+    /// <summary>A Markdown link into the catalogue directory, however many `../`
+    /// segments the row climbs to reach it.</summary>
+    private static readonly Regex CatalogueLink =
+        new(@"\((?:\.\./)*tests/e2e/([^)#]+\.md)\)", RegexOptions.Compiled);
+
+    /// <summary>The Priority cell of a Coverage-matrix row, bold or plain.</summary>
+    private static readonly Regex P0Cell =
+        new(@"\|\s*\*{0,2}P0\*{0,2}\s*\|", RegexOptions.Compiled);
+
     /// <summary>The index, the template and the execution playbook are not
     /// per-page catalogues and carry ids only as references.</summary>
     private static readonly HashSet<string> NotCatalogues =
@@ -206,6 +226,76 @@ public sealed class E2eCatalogueIntegrityTests
             + string.Join('\n', broken));
     }
 
+    [Fact]
+    public void Every_route_PAGE_INDEX_calls_Real_has_a_catalogue_file_with_a_P0_scenario()
+    {
+        // docs/tests/e2e/README.md states the coverage gate in prose — "every ✅
+        // Real page in PAGE-INDEX.md has a per-page catalogue file here with >= 1
+        // P0 scenario" — and until this fact landed nothing enforced it. The five
+        // checks above all run the OTHER way: they take the catalogue as given and
+        // ask whether it is indexed, unique and correctly counted. A brand-new Real
+        // page with no catalogue file at all satisfied every one of them, because a
+        // file that does not exist has no ids to collide and no row to count.
+        //
+        // The claim is read from the row's LAST cell — the `Test` column in all
+        // four PAGE-INDEX table shapes (Route|Status|Audience|Doc|Test and the
+        // shorter Route|Status|Notes|Test) — so a Real row that links nothing at
+        // all fails here rather than passing for lack of anything to check.
+        var uncovered = new List<string>();
+        foreach (var (route, testCell) in RealRoutesInPageIndex())
+        {
+            var linked = CatalogueLink.Matches(testCell)
+                .Select(match => match.Groups[1].Value)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            if (linked.Count == 0)
+            {
+                uncovered.Add($"  {route} — marked Real, but its Test column links no docs/tests/e2e file");
+                continue;
+            }
+
+            var rejected = new List<string>();
+            foreach (var name in linked)
+            {
+                if (NotCatalogues.Contains(name))
+                {
+                    rejected.Add($"{name} is the index/template/plan, not a per-page catalogue");
+                    continue;
+                }
+                var path = Path.Combine(CatalogueDirectory, name);
+                if (!File.Exists(path))
+                {
+                    rejected.Add($"{name} does not exist");
+                    continue;
+                }
+                if (!HasP0Scenario(path))
+                {
+                    rejected.Add($"{name} has no P0 Coverage-matrix row");
+                    continue;
+                }
+                rejected.Clear();
+                break;
+            }
+
+            if (rejected.Count > 0)
+            {
+                uncovered.Add($"  {route} — {string.Join("; ", rejected)}");
+            }
+        }
+
+        Assert.True(
+            uncovered.Count == 0,
+            "docs/pages/PAGE-INDEX.md marks a route \"Real\" that no per-page E2E "
+            + "catalogue file covers, so the page ships with nothing to regression-"
+            + "drive it — the exact gap docs/tests/e2e/README.md's coverage gate "
+            + "says must not exist. Copy docs/tests/e2e/_TEMPLATE.md to "
+            + "{cp|web}-{slug}.md, author it with at least one P0 scenario (the "
+            + "golden path and the auth gate are P0 on every other page), add its "
+            + "row to the README index, and point the PAGE-INDEX Test cell at it.\n"
+            + string.Join('\n', uncovered));
+    }
+
     /// <summary>Route parameters vary in spelling (`{id}` / `{id:guid}` /
     /// `{slug?}`), so compare on the shape rather than the literal text.</summary>
     private static string NormaliseRoute(string route) =>
@@ -220,6 +310,31 @@ public sealed class E2eCatalogueIntegrityTests
         [.. Directory.EnumerateFiles(CatalogueDirectory, "*.md")
             .Where(path => !NotCatalogues.Contains(Path.GetFileName(path)))
             .OrderBy(path => path, StringComparer.Ordinal)];
+
+    /// <summary>Every PAGE-INDEX row marked Real, paired with its `Test` cell —
+    /// always the LAST cell of the row in each of the index's table shapes.</summary>
+    private static List<(string Route, string TestCell)> RealRoutesInPageIndex()
+    {
+        var rows = new List<(string, string)>();
+        var indexPath = Path.Combine(FindRepoRoot(), "docs", "pages", "PAGE-INDEX.md");
+        foreach (var line in File.ReadLines(indexPath))
+        {
+            var row = RealPageRow.Match(line);
+            if (!row.Success)
+            {
+                continue;
+            }
+            var cells = line.TrimEnd().TrimEnd('|').Split('|');
+            rows.Add((row.Groups[1].Value, cells[^1]));
+        }
+        return rows;
+    }
+
+    /// <summary>A P0 scenario "counts" on the same terms as a scenario id does:
+    /// only where it is a Coverage-matrix ROW. Prose naming a P0 elsewhere in the
+    /// file is not coverage.</summary>
+    private static bool HasP0Scenario(string path) =>
+        File.ReadLines(path).Any(line => MatrixRow.IsMatch(line) && P0Cell.IsMatch(line));
 
     private static List<(string File, List<string> Ids)> MatrixIdsPerFile()
     {

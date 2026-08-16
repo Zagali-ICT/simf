@@ -22,6 +22,8 @@ namespace SIMF.Api.Tests;
 /// is robust on the non-reset integration DB (the booth code is the create
 /// de-dup key).
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Reporting)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class BoothsExcelTests : IClassFixture<SimfApiFactory>
 {
     private const string AdministratorRole = "Administrator";

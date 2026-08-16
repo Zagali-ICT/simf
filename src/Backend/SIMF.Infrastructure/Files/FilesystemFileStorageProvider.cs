@@ -76,7 +76,10 @@ internal sealed class FilesystemFileStorageProvider : IFileStorageProvider
             "Stored file {Key} ({Bytes} bytes on disk, encrypted={Encrypted}).",
             storageKey, bytes.Length, encrypt);
 
-        return new FileWriteResult(storageKey, encrypt ? _cipher.CurrentFormatVersion : (byte)0);
+        return new FileWriteResult(
+            storageKey,
+            encrypt ? _cipher.CurrentFormatVersion : (byte)0,
+            encrypt ? _cipher.ActiveKekVersion : null);
     }
 
     public async Task<byte[]?> ReadAsync(

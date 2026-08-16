@@ -24,6 +24,8 @@ namespace SIMF.Api.Tests;
 /// D-473 (#10) — a delegate is a normal visitor with <c>IsDelegate</c> set and an
 /// invited country; plus the bulk-generate of placeholder badges by profile type.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Badges)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailApiFactory>
 {
     private readonly BulkBadgeEmailApiFactory _factory;

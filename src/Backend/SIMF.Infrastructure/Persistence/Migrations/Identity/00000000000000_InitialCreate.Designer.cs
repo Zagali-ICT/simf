@@ -12,7 +12,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Persistence.Migrations.Identity
 {
     [DbContext(typeof(SimfIdentityDbContext))]
-    [Migration("20260816165132_InitialCreate")]
+    [Migration("00000000000000_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />

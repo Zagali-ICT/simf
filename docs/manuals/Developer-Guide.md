@@ -567,22 +567,43 @@ resolved on read; there is no cross-DB transaction. The legacy table schema
 qualifiers (`identity` / `app`) are a harmless artefact of the old shared-DB
 design.
 
-### 17.2 Adding a migration
+### 17.2 Changing the schema — regenerate, do not add
+
+Each context has exactly **one** migration, `InitialCreate`, and it *is* the
+schema (D-110, re-instated by D-895). So a schema change is not a new migration:
+it is a regeneration of the existing one, and there is a script for it.
 
 ```powershell
-# Identity context
-dotnet ef migrations add MyMigration `
+# Both contexts, or pass -Context App / -Context Identity for one
+./tools/migrations/Regenerate-Migration.ps1
+
+# Then prove the model and the migration agree — this is the whole check
+dotnet ef migrations has-pending-model-changes `
     --project src/Backend/SIMF.Infrastructure `
     --startup-project src/Backend/SIMF.Infrastructure `
-    --context SimfIdentityDbContext `
-    --output-dir Persistence/Migrations/Identity
-
-# App context — same command, swap --context + --output-dir to App
+    --context SimfAppDbContext
 ```
 
-Run on startup automatically (outside the test host) — see
-`Program.cs.MigrateAsync`. **D-110 freeze:** no schema changes without
-explicit owner approval.
+**Use the script rather than `dotnet ef migrations add` directly.** The id is
+pinned to `00000000000000_InitialCreate`, and the script re-pins it after EF
+stamps a fresh timestamp. That is not cosmetic. A timestamped id gives every
+branch a different filename, so two branches that both regenerate the migration
+merge with **no conflict** — git sees two unrelated files, the pull request
+reports `mergeStatus: succeeded`, and `main` ends up with two classes named
+`InitialCreate` and no longer compiles. It happened twice on 2026-08-16, three
+migrations deep each time. A pinned id turns that into an ordinary content
+conflict on one path, which is loud and which you resolve by running the script
+once on the merged model.
+
+`SchemaFreezeTests` fails the build if either context carries more than one
+migration, or if its id is not the pinned one.
+
+**Never pass `--no-build`.** EF reads the model from the compiled assembly, so a
+stale build silently generates the *previous* schema.
+
+Migrations run on startup automatically (outside the test host) — see
+`Program.cs.MigrateAsync`. **D-895:** no schema change without a new, named
+freeze lift.
 
 ### 17.3 Repository pattern
 

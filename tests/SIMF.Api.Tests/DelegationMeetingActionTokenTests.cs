@@ -20,6 +20,8 @@ namespace SIMF.Api.Tests;
 /// member on Approve, the first click flips AwaitingSpeaker → Accepted (mirroring the
 /// in-app tap). It rides the SAME public /app/meeting-actions/{token} endpoints as the
 /// speaker links, so these assert the shared endpoint also serves a delegation token.</summary>
+[Trait(TestAreas.TraitName, TestAreas.Meetings)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class DelegationMeetingActionTokenTests : IClassFixture<SimfApiFactory>
 {
     private readonly SimfApiFactory _factory;

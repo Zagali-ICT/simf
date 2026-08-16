@@ -20,6 +20,8 @@ namespace SIMF.Api.Tests;
 /// stays the MATCH form the D-371 shapes are applied to, so a Saudi local number
 /// is still not an E.164 international one. Only what is STORED changed.</para>
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Profiles)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Fast)]
 public sealed class MobileNumberTests
 {
     private const string SaudiCanonical = "0501234567";

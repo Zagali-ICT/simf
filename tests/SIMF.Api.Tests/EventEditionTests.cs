@@ -20,6 +20,8 @@ using Xunit;
 
 namespace SIMF.Api.Tests;
 
+[Trait(TestAreas.TraitName, TestAreas.Programme)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class EventEditionTests : IClassFixture<SimfApiFactory>
 {
     private readonly SimfApiFactory _factory;

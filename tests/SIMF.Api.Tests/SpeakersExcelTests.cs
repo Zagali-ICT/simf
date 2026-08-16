@@ -19,6 +19,8 @@ namespace SIMF.Api.Tests;
 /// (ZIP-magic assertion), the Export permission gate, and an import round-trip
 /// (Code/Name/NameArabic) asserting the rows are created and then listed.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Reporting)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class SpeakersExcelTests : IClassFixture<SimfApiFactory>
 {
     private const string AdministratorRole = "Administrator";

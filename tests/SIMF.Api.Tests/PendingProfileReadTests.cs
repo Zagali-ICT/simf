@@ -23,6 +23,8 @@ namespace SIMF.Api.Tests;
 /// unknown id, approved target, and wrong-type id all return the same
 /// 404 + ErrorCodes.NotFound.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Profiles)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class PendingProfileReadTests : IClassFixture<SimfApiFactory>
 {
     private const string Password = "Zx9#mKp2!";

@@ -18,6 +18,8 @@ namespace SIMF.Api.Tests;
 /// invalid access token (SIMF-API-001 section 12). Each test mints a token
 /// directly and presents it at a protected endpoint.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Identity)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class JwtMiddlewareTests : IClassFixture<SimfApiFactory>
 {
     // Must match SimfApiFactory's Jwt__SigningKey and the configured issuer/audience.

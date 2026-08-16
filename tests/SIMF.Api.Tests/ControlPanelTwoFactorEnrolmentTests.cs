@@ -38,6 +38,8 @@ using Xunit;
 
 namespace SIMF.Api.Tests;
 
+[Trait(TestAreas.TraitName, TestAreas.Identity)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class ControlPanelTwoFactorEnrolmentTests
     : IClassFixture<ControlPanelTwoFactorApiFactory>
 {

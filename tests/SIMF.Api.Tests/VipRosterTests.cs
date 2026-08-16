@@ -20,6 +20,8 @@ namespace SIMF.Api.Tests;
 /// <c>.../roster/export</c>). Confirms the roster includes VVIP/VIP visitors
 /// with their موج extras, excludes non-VIP tiers, and renders a CSV.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Profiles)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class VipRosterTests : IClassFixture<SimfApiFactory>
 {
     private const string Password = "Zx9#mKp2!";

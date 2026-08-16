@@ -9,6 +9,8 @@ using Xunit;
 
 namespace SIMF.Api.Tests;
 
+[Trait(TestAreas.TraitName, TestAreas.Security)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class SecurityResponseTests : IClassFixture<SimfApiFactory>
 {
     private readonly SimfApiFactory _factory;

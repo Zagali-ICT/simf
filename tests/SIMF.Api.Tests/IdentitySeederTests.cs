@@ -15,6 +15,8 @@ using SIMF.Common.Enums;
 namespace SIMF.Api.Tests;
 
 /// <summary>Integration tests for <see cref="IdentitySeeder"/>.</summary>
+[Trait(TestAreas.TraitName, TestAreas.Identity)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class IdentitySeederTests : IClassFixture<SimfApiFactory>
 {
     private const string SuperAdminEmail = "superadmin@simf.test";

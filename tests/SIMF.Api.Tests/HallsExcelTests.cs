@@ -19,6 +19,8 @@ namespace SIMF.Api.Tests;
 /// export round-trip, a positive import, the upload-defence rejections
 /// (not-a-workbook, wrong sheet) and the export permission gate.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Reporting)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class HallsExcelTests : IClassFixture<SimfApiFactory>
 {
     private const string AdministratorRole = "Administrator";

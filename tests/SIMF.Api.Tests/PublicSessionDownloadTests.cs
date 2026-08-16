@@ -16,6 +16,8 @@ using Xunit;
 
 namespace SIMF.Api.Tests;
 
+[Trait(TestAreas.TraitName, TestAreas.Programme)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class PublicSessionDownloadTests : IClassFixture<SimfApiFactory>
 {
     private static readonly byte[] PdfBytes = Encoding.ASCII.GetBytes("%PDF-1.4 session download");
