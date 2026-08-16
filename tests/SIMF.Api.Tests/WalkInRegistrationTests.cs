@@ -21,6 +21,8 @@ namespace SIMF.Api.Tests;
 /// the D-425 create-as-PendingApproval behaviour (no QR until approval),
 /// optional-email behaviour and the type-scoped profile-type guard.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Badges)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
 {
     private const string Password = "Zx9#mKp2!";

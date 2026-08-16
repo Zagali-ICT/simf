@@ -9,6 +9,8 @@ namespace SIMF.Api.Tests;
 // Covers the D-355 production OpenAPI Basic-auth gate in isolation (no host):
 // the /swagger surface must challenge without valid credentials and pass through
 // with them, while non-Swagger paths are never gated.
+[Trait(TestAreas.TraitName, TestAreas.Security)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Fast)]
 public sealed class SwaggerBasicAuthMiddlewareTests
 {
     private const string User = "simf-docs";

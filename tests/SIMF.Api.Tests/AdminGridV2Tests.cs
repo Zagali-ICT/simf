@@ -19,6 +19,8 @@ namespace SIMF.Api.Tests;
 /// Integration tests for the SimfDataGrid v2 admin endpoints (decision D-044 b)
 /// — bulk delete, duplicate, export (XLSX), import (XLSX).
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Profiles)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class AdminGridV2Tests : IClassFixture<SimfApiFactory>
 {
     private const string AdministratorRole = "Administrator";

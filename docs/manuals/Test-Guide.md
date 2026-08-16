@@ -146,10 +146,64 @@ dotnet test tests/SIMF.Api.Tests
 
 # By name
 dotnet test --filter "FullyQualifiedName~AdminInterestsCreate"
-
-# By category (skip the slow ones)
-dotnet test --filter "Category!=Slow"
 ```
+
+### 12.1.1 Selecting a slice of SIMF.Api.Tests
+
+`SIMF.Api.Tests` is ~2,470 tests over 299 classes and takes about 35 minutes,
+so nobody runs it whole while working on one feature. Every class carries two
+traits for that reason.
+
+`Area` names the feature the class covers, from a closed vocabulary of thirteen
+values defined in `tests/SIMF.Api.Tests/TestAreas.cs`:
+
+| Area | Classes | Covers |
+|------|--------:|--------|
+| `identity` | 42 | sign-in, tokens, second factor, passwords, roles, permissions, device keys |
+| `reporting` | 39 | Excel exports, admin exports, statistics, the reporting endpoints |
+| `programme` | 36 | sessions, speakers, questions, summaries, ratings, programme days, editions |
+| `profiles` | 35 | user profiles, registration, admission approval, attendee grids, lookups |
+| `ops` | 33 | workers, health, rate limits, notifications, email, audit, configuration, deployment |
+| `meetings` | 26 | business / speaker / delegation meetings, networking, leads, requests |
+| `content` | 22 | CMS, news, media, sponsors, booths, exhibitors, FAQ, venue map, site settings |
+| `gates` | 16 | gate and hall scanning: arrival, attendance, movement, offline roster |
+| `ai` | 11 | AI providers, routing, prompts, the assistant, transcripts, AI filtering |
+| `security` | 10 | the anonymous surface, permission matrix, PII, secrets, TLS, hardening ratchets |
+| `badges` | 10 | badge issue, self-claim, badge sign-in, offline upload, the walk-in desk |
+| `files` | 10 | central file store, assets, storage providers, upload scanning, encryption at rest |
+| `seats` | 9 | seat reservations, seat changes, bookings, hall capacity and schedule |
+
+`Speed` says whether the class pays for a migrate-and-seed cycle through
+`SimfApiFactory` (`Seeded`, 263 classes) or asserts in process without booting
+the API (`Fast`, 36 classes).
+
+```powershell
+# One feature area (the usual working loop)
+dotnet test tests/SIMF.Api.Tests --filter "Area=files"
+
+# Everything that does NOT boot the API - seconds, not minutes
+dotnet test tests/SIMF.Api.Tests --filter "Speed=Fast"
+
+# Combine: & is AND, | is OR
+dotnet test tests/SIMF.Api.Tests --filter "Area=meetings&Speed=Seeded"
+dotnet test tests/SIMF.Api.Tests --filter "Area=gates|Area=seats"
+
+# Exclude one area from an otherwise full run
+dotnet test tests/SIMF.Api.Tests --filter "Area!=reporting"
+```
+
+Two rules keep this usable:
+
+- **A trait is not optional.** `TestAreaTraitTests` fails the build when a test
+  class carries no `Area`, or carries one outside `TestAreas.All`. Without that
+  guard the filters quietly stop covering new classes, which is worse than
+  having no filters at all: a `--filter` that silently skips the class you
+  changed still reports green.
+- **Use the `TestAreas` constants, not string literals.** A typo in a literal
+  compiles, and the filter that misses it just returns fewer tests.
+
+Beware `!=` on a trait that does not exist. It matches *everything*, so a
+mistyped exclusion silently runs the full 35-minute gate instead of trimming it.
 
 ### 12.2 E2E (browser today)
 

@@ -13,6 +13,8 @@ namespace SIMF.Api.Tests;
 /// Administrator-role <c>admin@simf.local</c>). The super-admin bootstrap is
 /// untouched by the gate and must still seed.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Identity)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class DemoAccountSeedGateTests : IClassFixture<DemoAccountsDisabledApiFactory>
 {
     // The super-admin credential the factory configures (SuperAdmin:Email).

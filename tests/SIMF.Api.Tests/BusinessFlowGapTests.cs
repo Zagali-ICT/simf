@@ -38,6 +38,8 @@ using Xunit;
 
 namespace SIMF.Api.Tests;
 
+[Trait(TestAreas.TraitName, TestAreas.Badges)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class BusinessFlowGapTests : IClassFixture<SimfApiFactory>
 {
     private const string AdministratorRole = "Administrator";

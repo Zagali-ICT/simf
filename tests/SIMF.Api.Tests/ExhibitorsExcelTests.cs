@@ -20,6 +20,8 @@ namespace SIMF.Api.Tests;
 /// round-trip (ZIP magic), an insert-only import round-trip (the created rows
 /// appear in the list) and the Export permission gate.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Reporting)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class ExhibitorsExcelTests : IClassFixture<SimfApiFactory>
 {
     private const string AdministratorRole = "Administrator";

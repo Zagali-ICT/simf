@@ -32,6 +32,8 @@ public sealed class FaceGateApiFactory : SimfApiFactory
 /// committed to the repo; the disabled pass-through is covered implicitly
 /// by <see cref="UserProfileTests"/>' round-trip test (1x1 PNG, gate off).
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Profiles)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class UserProfileFaceGateTests : IClassFixture<FaceGateApiFactory>
 {
     private const string Path = "/api/v1/app/account/user-profile/id-image";

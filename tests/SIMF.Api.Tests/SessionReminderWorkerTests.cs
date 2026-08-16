@@ -20,6 +20,8 @@ namespace SIMF.Api.Tests;
 /// (InternalsVisibleTo) so the once-only dedup and the lead-window bound are
 /// covered without driving the BackgroundService loop.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Programme)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class SessionReminderWorkerTests : IClassFixture<SimfApiFactory>
 {
     private readonly SimfApiFactory _factory;

@@ -15,6 +15,8 @@ namespace SIMF.Api.Tests;
 /// Integration tests for the account-creation endpoints — sign-up, verify-email
 /// and resend-code (SIMF-API-001 section 12.4).
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Profiles)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class RegistrationEndpointsTests : IClassFixture<SimfApiFactory>
 {
     private const string ValidPassword = "Zx9#mKp2!";

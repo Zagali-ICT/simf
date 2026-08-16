@@ -29,6 +29,8 @@ namespace SIMF.Api.Tests;
 /// empty, and every country code is class-local so a shared-database sibling test
 /// can never seed or consume this class's windows.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Meetings)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class MeetingNoAvailabilityTests : IClassFixture<SimfApiFactory>
 {
     private static readonly DateTime WindowStart =

@@ -30,6 +30,8 @@ using Xunit;
 
 namespace SIMF.Api.Tests;
 
+[Trait(TestAreas.TraitName, TestAreas.Profiles)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class Journey02RegisterApproveRosterTests : IClassFixture<SimfApiFactory>
 {
     private const string Password = "Zx9#mKp2!";

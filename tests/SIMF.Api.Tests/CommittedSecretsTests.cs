@@ -34,6 +34,8 @@ using Xunit;
 
 namespace SIMF.Api.Tests;
 
+[Trait(TestAreas.TraitName, TestAreas.Security)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Fast)]
 public sealed class CommittedSecretsTests
 {
     // The appsettings files are checked into the repo. The test project runs

@@ -8,6 +8,10 @@ namespace SIMF.Application.Tests.IdentityAccess;
 /// Tests for <see cref="TotpVerifier"/>, including the secret-normalisation
 /// behaviour added for myComment #35 (the key with spaces silently failed).
 /// </summary>
+// Fully qualified because this file sits in SIMF.Api.Tests but declares the
+// SIMF.Application.Tests.IdentityAccess namespace, so TestAreas is not in scope.
+[Trait(SIMF.Api.Tests.TestAreas.TraitName, SIMF.Api.Tests.TestAreas.Identity)]
+[Trait(SIMF.Api.Tests.TestAreas.SpeedTraitName, SIMF.Api.Tests.TestAreas.Fast)]
 public sealed class TotpVerifierTests
 {
     private const string SecretWithSpaces = "dbji csx7 c3mj s2qa sjcl rbcl kiqk ovr3";

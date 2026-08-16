@@ -28,6 +28,8 @@ using Xunit;
 
 namespace SIMF.Api.Tests;
 
+[Trait(TestAreas.TraitName, TestAreas.Badges)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class BadgeAccountCreationTests : IClassFixture<SimfApiFactory>
 {
     private const string Password = "Str0ng!Passw0rd#2026";

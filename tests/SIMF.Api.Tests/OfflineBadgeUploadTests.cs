@@ -22,6 +22,8 @@ using Xunit;
 
 namespace SIMF.Api.Tests;
 
+[Trait(TestAreas.TraitName, TestAreas.Badges)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class OfflineBadgeUploadTests : IClassFixture<SimfApiFactory>
 {
     /// <summary>A fixed AES-256 key, base64, so the test can mint a badge the

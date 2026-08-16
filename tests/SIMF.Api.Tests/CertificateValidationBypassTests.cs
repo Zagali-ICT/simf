@@ -30,6 +30,8 @@ namespace SIMF.Api.Tests;
 /// live in a comment. If a certificate does not validate, fix the certificate.
 /// </para>
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Security)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Fast)]
 public sealed class CertificateValidationBypassTests
 {
     private static string RepoRoot()

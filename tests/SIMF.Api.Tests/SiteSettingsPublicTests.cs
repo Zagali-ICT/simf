@@ -18,6 +18,8 @@ namespace SIMF.Api.Tests;
 /// keys); each case touches a distinct field so they stay order-independent on the
 /// shared test DB.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Content)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class SiteSettingsPublicTests : IClassFixture<SimfApiFactory>
 {
     private readonly SimfApiFactory _factory;

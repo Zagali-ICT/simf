@@ -22,6 +22,8 @@ namespace SIMF.Api.Tests;
 /// subject. Runs on the base factory (the C7 face gate is off), and seeds the
 /// stored image in-process through <see cref="IUserProfileService"/> so the HTTP
 /// GET exercises the real, audited read path.</summary>
+[Trait(TestAreas.TraitName, TestAreas.Profiles)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class AdminIdDocumentAuditTests : IClassFixture<SimfApiFactory>
 {
     private const string AdministratorRole = "Administrator";

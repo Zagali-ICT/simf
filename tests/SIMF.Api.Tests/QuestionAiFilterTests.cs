@@ -13,6 +13,8 @@ namespace SIMF.Api.Tests;
 /// mapping + the safe fallbacks are covered offline (no provider / key). The
 /// filter is advisory only — every path returns a verdict and never throws.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Ai)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Fast)]
 public sealed class QuestionAiFilterTests
 {
     private static AiQuestionFilter Filter(string? output, bool throwOnCall = false) =>

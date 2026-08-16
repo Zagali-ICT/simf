@@ -4,6 +4,8 @@ using Xunit;
 namespace SIMF.Api.Tests;
 
 /// <summary>Unit tests for the API response envelope (SIMF-API-001 section 6).</summary>
+[Trait(TestAreas.TraitName, TestAreas.Ops)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Fast)]
 public sealed class ApiResultTests
 {
     [Fact]

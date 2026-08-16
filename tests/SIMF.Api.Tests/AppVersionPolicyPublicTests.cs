@@ -18,6 +18,8 @@ namespace SIMF.Api.Tests;
 /// deactivated keys. Each case writes its own keys immediately before the GET —
 /// xUnit runs a class serially, so the reads always see the case's own state.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Ops)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class AppVersionPolicyPublicTests : IClassFixture<SimfApiFactory>
 {
     private readonly SimfApiFactory _factory;

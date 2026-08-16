@@ -22,6 +22,8 @@ namespace SIMF.Api.Tests;
 /// checked-in audience join, the per-day / global dedup and the back-fill window
 /// are covered without driving the BackgroundService loop.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Programme)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class ProgrammeRatingPromptWorkerTests : IClassFixture<SimfApiFactory>
 {
     private static readonly TimeSpan Ast = TimeSpan.FromHours(3);

@@ -19,6 +19,8 @@ namespace SIMF.Api.Tests;
 /// same <see cref="GridQuery"/> filters the list uses (incl. the date range)
 /// and is gated by the dedicated <c>OperationLog.Export</c> permission.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Reporting)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class AdminOperationLogExportTests : IClassFixture<SimfApiFactory>
 {
     private const string AdministratorRole = "Administrator";

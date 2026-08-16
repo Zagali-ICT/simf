@@ -7,6 +7,8 @@ using Xunit;
 
 namespace SIMF.Api.Tests;
 
+[Trait(TestAreas.TraitName, TestAreas.Programme)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Fast)]
 public sealed class EventDateRangeTests
 {
     [Fact]

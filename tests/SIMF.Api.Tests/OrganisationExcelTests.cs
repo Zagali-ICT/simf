@@ -19,6 +19,8 @@ namespace SIMF.Api.Tests;
 /// covers the export round-trip + the Export permission gate; the import path
 /// is covered by the existing Organisation import tests.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Reporting)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class OrganisationExcelTests : IClassFixture<SimfApiFactory>
 {
     private const string AdministratorRole = "Administrator";

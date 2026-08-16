@@ -31,6 +31,8 @@ public sealed class MeetingLinksUnsetApiFactory : SimfApiFactory
         Environment.SetEnvironmentVariable("MeetingLinks__PublicWebBaseUrl", string.Empty);
 }
 
+[Trait(TestAreas.TraitName, TestAreas.Meetings)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class SpeakerMeetingLinksUnsetTests
     : IClassFixture<MeetingLinksUnsetApiFactory>
 {

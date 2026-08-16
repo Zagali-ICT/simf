@@ -24,6 +24,8 @@ namespace SIMF.Api.Tests;
 /// <c>/admin/staff</c> or <c>/admin/visitors</c> now land in PendingApproval
 /// and must be approved before they can sign in to the CP / mint a QR id.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Profiles)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class AdminApprovalTests : IClassFixture<SimfApiFactory>
 {
     private const string Password = "Zx9#mKp2!";

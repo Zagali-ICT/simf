@@ -20,6 +20,8 @@ namespace SIMF.Api.Tests;
 /// Export permission gate. An empty queue still renders a valid header-only
 /// workbook, so no seat-reservation seed data is required.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Reporting)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class BookingsExcelTests : IClassFixture<SimfApiFactory>
 {
     private const string AdministratorRole = "Administrator";

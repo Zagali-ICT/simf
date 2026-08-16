@@ -24,6 +24,8 @@ using Xunit;
 
 namespace SIMF.Api.Tests;
 
+[Trait(TestAreas.TraitName, TestAreas.Identity)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class ChangeEmailRemovedTests : IClassFixture<SimfApiFactory>
 {
     private const string SendOtpUrl = "/api/v1/app/auth/change-email/send-otp";

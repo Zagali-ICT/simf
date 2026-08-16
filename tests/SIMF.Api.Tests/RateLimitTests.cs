@@ -13,6 +13,8 @@ namespace SIMF.Api.Tests;
 /// (SIMF-API-001 section 10) and that a rejection is recorded in the operation
 /// log. Uses <see cref="RateLimitedApiFactory"/>, whose permit limit is 3.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Ops)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class RateLimitTests : IClassFixture<RateLimitedApiFactory>
 {
     private readonly RateLimitedApiFactory _factory;

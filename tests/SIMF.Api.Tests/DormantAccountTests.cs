@@ -10,6 +10,8 @@ using SIMF.Common;
 
 namespace SIMF.Api.Tests;
 
+[Trait(TestAreas.TraitName, TestAreas.Identity)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class DormantAccountTests : IClassFixture<DormantAccountApiFactory>
 {
     private readonly DormantAccountApiFactory _factory;

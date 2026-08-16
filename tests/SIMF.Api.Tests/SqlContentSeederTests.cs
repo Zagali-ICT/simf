@@ -14,6 +14,8 @@ namespace SIMF.Api.Tests;
 /// <see cref="SimfApiFactory.EnsureDatabaseCreated"/>; these tests re-run them to
 /// assert idempotency and inspect the result.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Content)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class SqlContentSeederTests : IClassFixture<SimfApiFactory>
 {
     private readonly SimfApiFactory _factory;

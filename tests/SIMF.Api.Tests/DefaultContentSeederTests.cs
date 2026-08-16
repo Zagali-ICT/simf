@@ -14,6 +14,8 @@ namespace SIMF.Api.Tests;
 /// CP configuration grid is not empty. The production fixture skips this seeder,
 /// so the tests invoke it explicitly against their own isolated database.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Content)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class DefaultContentSeederTests : IClassFixture<SimfApiFactory>
 {
     private readonly SimfApiFactory _factory;

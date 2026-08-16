@@ -20,6 +20,8 @@ namespace SIMF.Api.Tests;
 /// <summary>Integration tests for the P12 — D-053 notifications surface
 /// (list / unread-count / mark-read / mark-all / delete + actor-scoped
 /// isolation).</summary>
+[Trait(TestAreas.TraitName, TestAreas.Ops)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class NotificationTests : IClassFixture<SimfApiFactory>
 {
     private readonly SimfApiFactory _factory;

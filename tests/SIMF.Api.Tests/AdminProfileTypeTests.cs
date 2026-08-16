@@ -21,6 +21,8 @@ namespace SIMF.Api.Tests;
 /// post-create, soft-delete with in-use protection, and the 403 floor
 /// for non-admin callers.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Profiles)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class AdminProfileTypeTests : IClassFixture<SimfApiFactory>
 {
     private const string AdministratorRole = "Administrator";

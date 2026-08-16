@@ -11,6 +11,8 @@ namespace SIMF.Api.Tests;
 /// instead the model is blanked so the provider substitutes its own DefaultModel.
 /// This pins that decision so a naive go-live (flip DefaultProvider + set a key)
 /// actually works without editing each prompt's Model.</summary>
+[Trait(TestAreas.TraitName, TestAreas.Ai)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Fast)]
 public sealed class AiServiceModelResolutionTests
 {
     [Theory]

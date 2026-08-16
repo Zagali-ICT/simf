@@ -24,6 +24,8 @@ namespace SIMF.Api.Tests;
 /// from its code). Test data carries Guid-unique codes so it is robust on the
 /// non-reset integration DB (the session code is the create de-dup key).
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Reporting)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class SessionsExcelTests : IClassFixture<SimfApiFactory>
 {
     private const string AdministratorRole = "Administrator";

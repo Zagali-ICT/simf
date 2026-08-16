@@ -26,6 +26,8 @@ using Xunit;
 
 namespace SIMF.Api.Tests;
 
+[Trait(TestAreas.TraitName, TestAreas.Identity)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class SuperAdminSeedFailureTests : IClassFixture<SimfApiFactory>
 {
     // Fails the Identity policy on every count that matters: too short, no

@@ -9,6 +9,8 @@ namespace SIMF.Api.Tests.Files;
 /// <summary>D-568 — unit cover for the envelope cipher: round-trip, tamper-detect
 /// (body + wrapped-DEK), the boot-fail-fast key gate, and the rotation window where
 /// a previous KEK still decrypts older blobs. No host, DB or filesystem.</summary>
+[Trait(TestAreas.TraitName, TestAreas.Files)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Fast)]
 public sealed class AesGcmEnvelopeCipherTests
 {
     private const int HeaderLen = 90; // 1+1 + 12+16+32 + 12+16

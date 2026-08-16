@@ -51,6 +51,8 @@ public sealed class SpeakerMeetingQaApiFactory : SimfApiFactory
     }
 }
 
+[Trait(TestAreas.TraitName, TestAreas.Meetings)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class SpeakerMeetingQaTests : IClassFixture<SpeakerMeetingQaApiFactory>
 {
     private const string AdministratorRole = "Administrator";

@@ -19,6 +19,8 @@ namespace SIMF.Api.Tests;
 /// Integration tests for sign-in and the two second factors (SIMF-API-001
 /// section 12.4).
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Identity)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class SignInTests : IClassFixture<SimfApiFactory>
 {
     private const string Password = "Zx9#mKp2!";

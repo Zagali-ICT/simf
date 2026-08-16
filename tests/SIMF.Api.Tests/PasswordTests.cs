@@ -17,6 +17,8 @@ namespace SIMF.Api.Tests;
 /// Integration tests for password recovery — forgot-password, reset-password
 /// and change-password (SIMF-API-001 section 12.7).
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Identity)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class PasswordTests : IClassFixture<SimfApiFactory>
 {
     private const string Password = AuthFlow.Password;

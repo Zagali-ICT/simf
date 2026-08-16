@@ -9,6 +9,8 @@ using Xunit;
 
 namespace SIMF.Api.Tests;
 
+[Trait(TestAreas.TraitName, TestAreas.Identity)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class PasswordHistoryTests : IClassFixture<PasswordHistoryApiFactory>
 {
     private const string Fresh1 = "Fresh1#Aa9x";

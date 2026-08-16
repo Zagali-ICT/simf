@@ -18,6 +18,8 @@ namespace SIMF.Api.Tests;
 /// is export-only (its drafts are created / edited / published through bespoke
 /// endpoints), so this covers the export round-trip + the Export permission gate.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Reporting)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class SessionSummariesExcelTests : IClassFixture<SimfApiFactory>
 {
     private const string AdministratorRole = "Administrator";

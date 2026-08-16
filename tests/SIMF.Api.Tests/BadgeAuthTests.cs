@@ -20,6 +20,8 @@ namespace SIMF.Api.Tests;
 /// placeholder-email activation chain (enter email → code → set password →
 /// sign in), and the already-activated + bad-code guards.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Badges)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class BadgeAuthTests : IClassFixture<SimfApiFactory>
 {
     private const string Password = "Zx9#mKp2!";

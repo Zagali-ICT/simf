@@ -21,6 +21,8 @@ namespace SIMF.Api.Tests;
 /// Other accounts require a <c>ProfileTypeId</c> at create time, so the
 /// import test exercises the mandatory column path.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Profiles)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class AdminGridOthersTests : IClassFixture<SimfApiFactory>
 {
     private const string AdministratorRole = "Administrator";

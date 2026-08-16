@@ -23,6 +23,8 @@ using Xunit;
 
 namespace SIMF.Api.Tests;
 
+[Trait(TestAreas.TraitName, TestAreas.Ops)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class NoSubRateLimitTests : IClassFixture<SimfApiFactory>
 {
     // Must match SimfApiFactory's Jwt__SigningKey env var; the test

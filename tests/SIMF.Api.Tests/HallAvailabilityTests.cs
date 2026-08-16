@@ -17,6 +17,8 @@ using Xunit;
 
 namespace SIMF.Api.Tests;
 
+[Trait(TestAreas.TraitName, TestAreas.Seats)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class HallAvailabilityTests : IClassFixture<SimfApiFactory>
 {
     // Far-future windows so the slots are in the future regardless of the test clock.

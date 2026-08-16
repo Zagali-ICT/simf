@@ -26,6 +26,8 @@ namespace SIMF.Api.Tests;
 /// asserts the value the fixture actually publishes, using the product's rules
 /// rather than a restatement of them.
 /// </remarks>
+[Trait(TestAreas.TraitName, TestAreas.Identity)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class DemoSeedPasswordTests
 {
     [Fact]

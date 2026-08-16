@@ -19,6 +19,8 @@ namespace SIMF.Api.Tests;
 /// config, and supports the D-173 <c>Last-Modified</c> / <c>304</c> revalidation. The
 /// admin GET/PUT are gated by OrganizationProfile.View / .Manage and validate URLs.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Content)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class OrganizationProfileTests : IClassFixture<SimfApiFactory>
 {
     private const string AdministratorRole = "Administrator";

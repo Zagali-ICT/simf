@@ -15,6 +15,8 @@ namespace SIMF.Api.Tests;
 /// for TOTP (decision D-040). Every test enrols a fresh visitor in TOTP so the
 /// tests don't interfere with each other.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Identity)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class RecoveryCodesTests : IClassFixture<SimfApiFactory>
 {
     private readonly SimfApiFactory _factory;

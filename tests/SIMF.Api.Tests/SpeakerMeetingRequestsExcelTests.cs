@@ -17,6 +17,8 @@ namespace SIMF.Api.Tests;
 /// The queue is export-only (created from the app, responded to from the CP), so
 /// this covers the export round-trip + the Export permission gate.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Reporting)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class SpeakerMeetingRequestsExcelTests : IClassFixture<SimfApiFactory>
 {
     private const string AdministratorRole = "Administrator";

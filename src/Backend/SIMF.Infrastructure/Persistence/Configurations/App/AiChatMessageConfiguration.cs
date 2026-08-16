@@ -11,7 +11,11 @@ internal sealed class AiChatMessageConfiguration : IEntityTypeConfiguration<AiCh
 {
     public void Configure(EntityTypeBuilder<AiChatMessage> builder)
     {
-        builder.ToTable("AiChatMessages");
+        // Role is a two-value set, written only by AiChatHistoryService's
+        // RoleUser / RoleAssistant consts and read back onto the AiChatTurn wire
+        // contract. Bounded here so a third value cannot be inserted at all.
+        builder.ToTable("AiChatMessages", table => table.HasCheckConstraint(
+            "CK_AiChatMessages_Role", "[Role] IN ('user', 'assistant')"));
         builder.HasKey(x => x.Id);
 
         builder.Property(x => x.Role).HasMaxLength(16).IsRequired();

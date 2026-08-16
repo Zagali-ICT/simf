@@ -7,6 +7,8 @@ namespace SIMF.Api.Tests;
 /// Integration test for the readiness endpoint (SIMF-OPS-001 section 13,
 /// Amendment A.4).
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Ops)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class HealthEndpointTests(SimfApiFactory factory)
     : IClassFixture<SimfApiFactory>
 {

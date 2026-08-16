@@ -58,6 +58,8 @@ public sealed class DelegationEmailApiFactory : SimfApiFactory
     }
 }
 
+[Trait(TestAreas.TraitName, TestAreas.Meetings)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class DelegationMeetingQaFixesTests
     : IClassFixture<DelegationEmailApiFactory>
 {

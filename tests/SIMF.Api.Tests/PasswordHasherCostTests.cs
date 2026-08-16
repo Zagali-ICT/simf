@@ -22,6 +22,8 @@ namespace SIMF.Api.Tests;
 /// report it. Copying the override into production would quietly weaken every
 /// stored password in the product, and nothing else would report that either.
 /// </remarks>
+[Trait(TestAreas.TraitName, TestAreas.Identity)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class PasswordHasherCostTests : IClassFixture<SimfApiFactory>
 {
     private readonly SimfApiFactory _factory;

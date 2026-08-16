@@ -22,6 +22,8 @@ namespace SIMF.Api.Tests;
 /// wrong password — the public badge is never a valid-QR oracle and never
 /// substitutes for the password.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Badges)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class BadgeSignInTests : IClassFixture<SimfApiFactory>
 {
     private const string Password = "Zx9#mKp2!";

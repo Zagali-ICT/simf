@@ -16,6 +16,8 @@ using Xunit;
 
 namespace SIMF.Api.Tests.Operations;
 
+[Trait(TestAreas.TraitName, TestAreas.Ops)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Fast)]
 public sealed class MobileEdgeRoutingTests
 {
     private static string RepoRoot()

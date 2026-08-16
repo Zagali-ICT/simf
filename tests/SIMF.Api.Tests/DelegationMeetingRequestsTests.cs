@@ -23,6 +23,8 @@ namespace SIMF.Api.Tests;
 /// their delegation meets another invited country's delegation ("count X meets
 /// country Y"); the team Accepts/Rejects and the requester is notified + emailed.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Meetings)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class DelegationMeetingRequestsTests : IClassFixture<SimfApiFactory>
 {
     private readonly SimfApiFactory _factory;

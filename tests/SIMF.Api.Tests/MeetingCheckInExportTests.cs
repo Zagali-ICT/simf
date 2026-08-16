@@ -25,6 +25,8 @@ namespace SIMF.Api.Tests;
 /// carry the check-in stamps, and the delegation meeting-request desk has its own
 /// gated XLSX export.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Reporting)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class MeetingCheckInExportTests : IClassFixture<SimfApiFactory>
 {
     private const string AdministratorRole = "Administrator";

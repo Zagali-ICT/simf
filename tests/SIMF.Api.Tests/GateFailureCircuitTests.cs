@@ -13,6 +13,8 @@ using SIMF.Common;
 
 namespace SIMF.Api.Tests;
 
+[Trait(TestAreas.TraitName, TestAreas.Gates)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Fast)]
 public sealed class GateFailureCircuitTests
 {
     [Fact]

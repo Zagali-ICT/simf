@@ -15,6 +15,8 @@ namespace SIMF.Api.Tests;
 /// <see cref="AssistanceContextBuilder"/>: it must fold the live sessions, FAQ, and
 /// booths into one bilingual context block, and stay under the shared AI input-value
 /// cap while never half-emitting a fact.</summary>
+[Trait(TestAreas.TraitName, TestAreas.Ai)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Fast)]
 public sealed class AssistanceContextBuilderTests
 {
     [Fact]

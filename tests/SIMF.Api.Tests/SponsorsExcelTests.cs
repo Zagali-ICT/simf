@@ -19,6 +19,8 @@ namespace SIMF.Api.Tests;
 /// round-trip (ZIP magic), the Export permission gate, and an insert-only import
 /// round-trip that maps the Tier display name back to its int value.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Reporting)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class SponsorsExcelTests : IClassFixture<SimfApiFactory>
 {
     private const string AdministratorRole = "Administrator";

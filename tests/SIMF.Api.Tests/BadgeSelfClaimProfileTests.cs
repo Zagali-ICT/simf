@@ -24,6 +24,8 @@ namespace SIMF.Api.Tests;
 /// (<c>POST /app/auth/badge-activation/complete</c>). Sibling of
 /// <see cref="BadgeAuthTests"/>, which covers the password/email half.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Badges)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class BadgeSelfClaimProfileTests : IClassFixture<SimfApiFactory>
 {
     private const string Password = "Zx9#mKp2!";

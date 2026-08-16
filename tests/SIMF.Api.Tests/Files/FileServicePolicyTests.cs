@@ -8,6 +8,8 @@ namespace SIMF.Api.Tests.Files;
 /// deliberate, reviewed <see cref="FileServicePolicy"/> (default-deny), and the
 /// security invariants of that policy hold — so a new service cannot ship without
 /// an explicit access + encryption decision. Mirrors <c>AssetPermissionRegistryTests</c>.</summary>
+[Trait(TestAreas.TraitName, TestAreas.Files)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Fast)]
 public sealed class FileServicePolicyTests
 {
     /// <summary>The public services that serve video rather than images. Every

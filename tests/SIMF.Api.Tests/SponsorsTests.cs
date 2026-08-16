@@ -20,6 +20,8 @@ namespace SIMF.Api.Tests;
 
 /// <summary>D-199 — Sponsors module. Mirrors DelegationsTests: public anonymous
 /// read (active-only, grouped/ordered by tier) + admin CRUD + 409 duplicate.</summary>
+[Trait(TestAreas.TraitName, TestAreas.Content)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class SponsorsTests : IClassFixture<SimfApiFactory>
 {
     private const string AdministratorRole = "Administrator";

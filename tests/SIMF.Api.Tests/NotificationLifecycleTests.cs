@@ -21,6 +21,8 @@ namespace SIMF.Api.Tests;
 /// trigger should write the right Kind into the recipient's row + queue
 /// an email through the FakeEmailSender.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Ops)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class NotificationLifecycleTests : IClassFixture<SimfApiFactory>
 {
     private const string AdministratorRole = "Administrator";

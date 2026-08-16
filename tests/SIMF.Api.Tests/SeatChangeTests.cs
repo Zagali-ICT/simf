@@ -23,6 +23,8 @@ using Xunit;
 
 namespace SIMF.Api.Tests;
 
+[Trait(TestAreas.TraitName, TestAreas.Seats)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class SeatChangeTests : IClassFixture<SimfApiFactory>
 {
     // Row A = VVIP (protocol), row B = VIP, row C = Normal — the tier fixture.

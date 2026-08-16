@@ -10,6 +10,8 @@ using Xunit;
 
 namespace SIMF.Api.Tests;
 
+[Trait(TestAreas.TraitName, TestAreas.Meetings)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class NetworkingTests : IClassFixture<SimfApiFactory>
 {
     private const string Path = "/api/v1/app/account/connections";

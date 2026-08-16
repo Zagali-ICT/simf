@@ -10,6 +10,8 @@ using Xunit;
 
 namespace SIMF.Api.Tests;
 
+[Trait(TestAreas.TraitName, TestAreas.Ai)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Fast)]
 public sealed class YoutubeTranscriptServiceTests
 {
     private const string ValidUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";

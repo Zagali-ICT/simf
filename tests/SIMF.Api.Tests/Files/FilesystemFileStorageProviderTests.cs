@@ -12,6 +12,8 @@ namespace SIMF.Api.Tests.Files;
 /// encrypt-at-rest (ciphertext on disk, plaintext on read), the separator-boundary
 /// path guard that closes the sibling-prefix bypass, and secure-erase. Each test
 /// uses its own throwaway root, cleaned up on Dispose.</summary>
+[Trait(TestAreas.TraitName, TestAreas.Files)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Fast)]
 public sealed class FilesystemFileStorageProviderTests : IDisposable
 {
     // A real 32-byte test KEK so the encrypt-at-rest path exercises the cipher.

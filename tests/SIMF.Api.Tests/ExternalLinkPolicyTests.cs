@@ -33,6 +33,8 @@ using Xunit;
 
 namespace SIMF.Api.Tests;
 
+[Trait(TestAreas.TraitName, TestAreas.Security)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class ExternalLinkPolicyTests : IClassFixture<SimfApiFactory>
 {
     private const string AdministratorRole = "Administrator";

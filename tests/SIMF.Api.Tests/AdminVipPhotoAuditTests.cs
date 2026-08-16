@@ -23,6 +23,8 @@ namespace SIMF.Api.Tests;
 /// the subject. Seeds the stored photo in-process through
 /// <see cref="IUserProfileService"/> (unified StoredFile store) so the HTTP GET
 /// exercises the real, audited read path.</summary>
+[Trait(TestAreas.TraitName, TestAreas.Profiles)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class AdminVipPhotoAuditTests : IClassFixture<SimfApiFactory>
 {
     private const string AdministratorRole = "Administrator";

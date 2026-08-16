@@ -15,6 +15,8 @@ namespace SIMF.Api.Tests;
 
 /// <summary>P2.1 (D-211) — integration tests for the two-level FAQ admin CRUD
 /// (groups → entries).</summary>
+[Trait(TestAreas.TraitName, TestAreas.Content)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class FaqTests : IClassFixture<SimfApiFactory>
 {
     private const string AdministratorRole = "Administrator";

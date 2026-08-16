@@ -29,6 +29,8 @@ public sealed class BiometricStepUpApiFactory : SimfApiFactory
         Environment.SetEnvironmentVariable("DeviceKey__RequireStepUpForEnrol", "true");
 }
 
+[Trait(TestAreas.TraitName, TestAreas.Identity)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class DeviceKeyStepUpTests : IClassFixture<BiometricStepUpApiFactory>
 {
     private readonly BiometricStepUpApiFactory _factory;

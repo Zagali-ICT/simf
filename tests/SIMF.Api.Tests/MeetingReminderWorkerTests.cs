@@ -19,6 +19,8 @@ using SIMF.Common;
 
 namespace SIMF.Api.Tests;
 
+[Trait(TestAreas.TraitName, TestAreas.Meetings)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class MeetingReminderWorkerTests : IClassFixture<SimfApiFactory>
 {
     private readonly SimfApiFactory _factory;

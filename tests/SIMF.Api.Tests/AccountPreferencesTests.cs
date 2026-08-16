@@ -19,6 +19,8 @@ using Xunit;
 
 namespace SIMF.Api.Tests;
 
+[Trait(TestAreas.TraitName, TestAreas.Identity)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class AccountPreferencesTests : IClassFixture<SimfApiFactory>
 {
     private const string Url = "/api/v1/app/account/preferences";

@@ -22,6 +22,8 @@ namespace SIMF.Api.Tests;
 /// <summary>D-500 — the unified requests feed lists the signed-in user's requests
 /// across every kind (here: document + badge + a surfaced seat booking); the user
 /// can self-cancel a still-pending one of their own.</summary>
+[Trait(TestAreas.TraitName, TestAreas.Meetings)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class MyRequestsTests : IClassFixture<SimfApiFactory>
 {
     private readonly SimfApiFactory _factory;

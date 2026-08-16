@@ -14,6 +14,8 @@ using Xunit;
 
 namespace SIMF.Api.Tests;
 
+[Trait(TestAreas.TraitName, TestAreas.Security)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Fast)]
 public sealed class SiemRulesShapeTests
 {
     // The rule files are checked into the repo at docs/soc/siem-rules.

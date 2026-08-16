@@ -19,6 +19,8 @@ namespace SIMF.Api.Tests;
 /// <summary>Integration tests for the Region lookup module: admin CRUD
 /// (create → list → get → update → deactivate), duplicate-Code conflict,
 /// validation, the admin auth-gate, and the signed-in public picker read.</summary>
+[Trait(TestAreas.TraitName, TestAreas.Profiles)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class RegionTests : IClassFixture<SimfApiFactory>
 {
     private const string AdministratorRole = "Administrator";

@@ -13,6 +13,8 @@ namespace SIMF.Api.Tests;
 /// here is that a threshold exists, that it is the stated 80%, and that it is
 /// compared against a number that can actually BE a percentage.
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Meetings)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Fast)]
 public sealed class RecommendationThresholdTests
 {
     [Fact]

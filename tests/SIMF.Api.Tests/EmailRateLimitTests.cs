@@ -17,6 +17,8 @@ namespace SIMF.Api.Tests;
 /// email returns 429 even though every request comes from the same test
 /// IP — proving the partitions are independent.</para>
 /// </summary>
+[Trait(TestAreas.TraitName, TestAreas.Ops)]
+[Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
 public sealed class EmailRateLimitTests : IClassFixture<EmailRateLimitedApiFactory>
 {
     private readonly HttpClient _client;
