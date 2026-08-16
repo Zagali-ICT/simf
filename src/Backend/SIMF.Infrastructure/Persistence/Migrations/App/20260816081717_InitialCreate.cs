@@ -107,8 +107,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     NameArabic = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    CountsSummary = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: false),
-                    TotalCount = table.Column<int>(type: "int", nullable: false),
                     IsDelegate = table.Column<bool>(type: "bit", nullable: false),
                     RecipientEmail = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -296,7 +294,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     NameArabic = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
                     Capacity = table.Column<int>(type: "int", nullable: false),
                     Floor = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: true),
-                    EquipmentNotes = table.Column<string>(type: "nvarchar(1024)", maxLength: 1024, nullable: true),
+                    FacilityNotes = table.Column<string>(type: "nvarchar(1024)", maxLength: 1024, nullable: true),
                     Purpose = table.Column<int>(type: "int", nullable: false),
                     SeatSelectionMode = table.Column<int>(type: "int", nullable: false),
                     GeofenceCenterLat = table.Column<double>(type: "float", nullable: true),
@@ -647,7 +645,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     Sha256 = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
                     IsDeletable = table.Column<bool>(type: "bit", nullable: false),
                     RetainUntil = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    SecureDestroyed = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    SecureDestroyedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     OwnerEntityType = table.Column<int>(type: "int", nullable: false),
                     OwnerEntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -920,6 +918,35 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         name: "FK_MeetingTables_Halls_HallId",
                         column: x => x.HallId,
                         principalTable: "Halls",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "BadgeBatchItems",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    BadgeBatchId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ProfileTypeId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Count = table.Column<int>(type: "int", nullable: false),
+                    DisplayOrder = table.Column<int>(type: "int", nullable: false),
+                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_BadgeBatchItems", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_BadgeBatchItems_BadgeBatches_BadgeBatchId",
+                        column: x => x.BadgeBatchId,
+                        principalTable: "BadgeBatches",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_BadgeBatchItems_ProfileTypes_ProfileTypeId",
+                        column: x => x.ProfileTypeId,
+                        principalTable: "ProfileTypes",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -1211,8 +1238,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     CapacityOverride = table.Column<int>(type: "int", nullable: true),
                     SeatSelectionModeOverride = table.Column<int>(type: "int", nullable: true),
                     ArrivalGraceMinutesOverride = table.Column<int>(type: "int", nullable: true),
-                    ReminderSent = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    RatingPromptSent = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ReminderSentAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    RatingPromptSentAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
                     PublishedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     RecordingFileId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
@@ -1292,6 +1319,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     BadgeBatchId = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValue: new Guid("0f1e2d3c-4b5a-6978-8796-a5b4c3d2e1f0")),
                     EditionYear = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
                     ShowInMeetLikeYou = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
+                    MobileNumber = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     SaudiMobile = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     InternationalMobile = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     PlateNumber = table.Column<string>(type: "nvarchar(7)", maxLength: 7, nullable: true),
@@ -1938,9 +1966,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     ReleasedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    ReviewedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    ReviewedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    Expires = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ReleasedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    NoShowReleaseAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     GuestHint = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     GuestHintArabic = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true)
                 },
@@ -2294,7 +2321,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     ResponseNote = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
                     ConfirmedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     ConfirmedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    ReminderSent = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ReminderSentAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CheckedInAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CheckedInByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -2663,7 +2690,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     MeetingTableId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     SpeakerDecisionAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     ResponseNote = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
-                    ReminderSent = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ReminderSentAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CheckedInAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CheckedInByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -2730,8 +2757,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
             migrationBuilder.InsertData(
                 table: "BadgeBatches",
-                columns: new[] { "Id", "CountsSummary", "CreatedAt", "CreatedBy", "DeletedAt", "IsActive", "IsDelegate", "Name", "NameArabic", "RecipientEmail", "TotalCount", "UpdatedAt", "UpdatedBy" },
-                values: new object[] { new Guid("0f1e2d3c-4b5a-6978-8796-a5b4c3d2e1f0"), "Direct registration", new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new Guid("00000000-0000-0000-0000-000000000000"), null, true, false, "Direct registration", "تسجيل مباشر", null, 0, null, null });
+                columns: new[] { "Id", "CreatedAt", "CreatedBy", "DeletedAt", "IsActive", "IsDelegate", "Name", "NameArabic", "RecipientEmail", "UpdatedAt", "UpdatedBy" },
+                values: new object[] { new Guid("0f1e2d3c-4b5a-6978-8796-a5b4c3d2e1f0"), new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new Guid("00000000-0000-0000-0000-000000000000"), null, true, false, "Direct registration", "تسجيل مباشر", null, null, null });
 
             migrationBuilder.InsertData(
                 table: "Countries",
@@ -2910,6 +2937,16 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 name: "IX_BadgeBatches_IsActive_CreatedAt",
                 table: "BadgeBatches",
                 columns: new[] { "IsActive", "CreatedAt" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_BadgeBatchItems_BadgeBatchId_DisplayOrder",
+                table: "BadgeBatchItems",
+                columns: new[] { "BadgeBatchId", "DisplayOrder" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_BadgeBatchItems_ProfileTypeId",
+                table: "BadgeBatchItems",
+                column: "ProfileTypeId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_BadgeUpdateRequests_RequestedByUserId",
@@ -3587,10 +3624,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 column: "StoredAt");
 
             migrationBuilder.CreateIndex(
-                name: "IX_SeatReservations_Expires",
+                name: "IX_SeatReservations_NoShowReleaseAt",
                 table: "SeatReservations",
-                column: "Expires",
-                filter: "[ReleasedAt] IS NULL AND [Expires] IS NOT NULL");
+                column: "NoShowReleaseAt",
+                filter: "[ReleasedAt] IS NULL AND [NoShowReleaseAt] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_SeatReservations_ReservedForProfileId_ReleasedAt",
@@ -3993,6 +4030,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
             migrationBuilder.DropTable(
                 name: "ArchiveVisibility");
+
+            migrationBuilder.DropTable(
+                name: "BadgeBatchItems");
 
             migrationBuilder.DropTable(
                 name: "BadgeUpdateRequests");

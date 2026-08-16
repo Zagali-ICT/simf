@@ -1,9 +1,12 @@
-// Tests: SIMF.Api.Tests/UserProfileTests.cs (upsert round-trip, ID image
+﻿// Tests: SIMF.Api.Tests/UserProfileTests.cs (upsert round-trip, ID image
 //        round-trip, get-empty-when-not-saved-yet, nationality-unknown,
 //        Me_profileComplete flip + male-without-photo,
 //        DisplayName-placeholder-replaced + admin-name-preserved,
 //        RegionId round-trip + optional + unknown/inactive → 400,
 //        DEF-PHN-003 mobile stored canonicalised [Saudi theory + international],
+//        the mobile-number collapse [the canonical column is filled from either
+//        wire field, the Saudi local spelling folds, and both shipped wire keys
+//        still round-trip],
 //        DEF-PHN-004 mobile required / cannot be blanked / international-only OK,
 //        both an Iqama and a passport persist as two document rows, and every
 //        shipped identity wire key still round-trips from those rows)
@@ -293,14 +296,15 @@ internal sealed class UserProfileService(
             throw ApiException.DuplicateIdentity();
         }
 
-        // DEF-PHN-003 — store the CANONICAL number (separators stripped, a
-        // leading `00` rewritten to `+`), not the raw text. A plain trim let the
-        // one column hold "+966501234567" from the app and "+966-555987654" from
-        // the Control-Panel / Website phone input — two spellings of one number.
-        // Same reasoning (and the same shared-normaliser shape) as the plate below.
-        profile.SaudiMobile = MobileNumber.NormalizeOptional(request.SaudiMobile);
-        profile.InternationalMobile =
-            MobileNumber.NormalizeOptional(request.InternationalMobile);
+        // The mobile number, written to the storage that supersedes the two
+        // columns: ONE canonical E.164 value, because a Saudi mobile is an
+        // international mobile with +966 and the pair only ever let a row hold two
+        // different numbers with nothing saying which to ring. Written in exact
+        // lockstep with the columns, because readers outside this change are still
+        // projecting them, and because both shipped wire keys are built from them
+        // below.
+        ProfileMobileStorage.Sync(
+            profile, request.SaudiMobile, request.InternationalMobile);
         // رقم اللوحة, stored normalized (validator-checked shape;
         // separators stripped so the column holds the canonical ≤7 chars).
         profile.PlateNumber = NormalisePlate(request.PlateNumber);

@@ -15,7 +15,7 @@ public sealed record AdminHallSummary(
     int Purpose = 0,
     // Carried so the grid Excel export can round-trip them (not rendered
     // as grid columns). Optional; the geofence triple is all-three-or-none.
-    string? EquipmentNotes = null,
+    string? FacilityNotes = null,
     double? GeofenceCenterLat = null,
     double? GeofenceCenterLon = null,
     double? GeofenceRadiusMeters = null,
@@ -35,7 +35,7 @@ public sealed record AdminHallDetail(
     string NameArabic,
     int Capacity,
     string? Floor,
-    string? EquipmentNotes,
+    string? FacilityNotes,
     bool IsActive,
     DateTime CreatedAt,
     DateTime? UpdatedAt,
@@ -55,7 +55,7 @@ public sealed class AdminCreateHallRequest
     public string NameArabic { get; set; } = string.Empty;
     public int Capacity { get; set; }
     public string? Floor { get; set; }
-    public string? EquipmentNotes { get; set; }
+    public string? FacilityNotes { get; set; }
     // Optional GPS geofence (all three set together, or all null).
     public double? GeofenceCenterLat { get; set; }
     public double? GeofenceCenterLon { get; set; }
@@ -78,7 +78,7 @@ public class AdminUpdateHallRequest
     public string NameArabic { get; set; } = string.Empty;
     public int Capacity { get; set; }
     public string? Floor { get; set; }
-    public string? EquipmentNotes { get; set; }
+    public string? FacilityNotes { get; set; }
     public bool IsActive { get; set; } = true;
     // Optional GPS geofence (all three set together, or all null).
     public double? GeofenceCenterLat { get; set; }

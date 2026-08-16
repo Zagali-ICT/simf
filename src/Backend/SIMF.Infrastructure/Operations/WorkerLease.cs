@@ -16,7 +16,7 @@ namespace SIMF.Infrastructure.Operations;
 /// node that is correct. On the four the customer server requirements workbook
 /// specifies it is not: the same session reminder is sent four times, four
 /// no-show sweeps race for the same seats, and the once-only guards that make
-/// each worker idempotent (<c>Session.ReminderSentUtc</c> and its siblings) are
+/// each worker idempotent (<c>Session.ReminderSentAt</c> and its siblings) are
 /// read-then-written by four processes at once, which is precisely the interval
 /// they do not cover.</para>
 ///

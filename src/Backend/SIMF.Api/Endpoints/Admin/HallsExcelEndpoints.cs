@@ -38,7 +38,7 @@ public sealed class ExportHallsEndpoint(IAdminHallService service, IGridExcelExp
         // the existing column order is unchanged; import binds by header name).
         // SeatSelectionMode is exported by its display name (AssignedSeat/
         // OpenSeating); the geofence triple is all-three-or-none.
-        new("EquipmentNotes", row => row.EquipmentNotes),
+        new("FacilityNotes", row => row.FacilityNotes),
         new("GeofenceCenterLat", row => row.GeofenceCenterLat),
         new("GeofenceCenterLon", row => row.GeofenceCenterLon),
         new("GeofenceRadiusMeters", row => row.GeofenceRadiusMeters),
@@ -114,7 +114,7 @@ public sealed class ImportHallsEndpoint(IAdminHallService service, IGridExcelImp
             // Optional fields the grid summary now round-trips. The
             // geofence triple is all-three-or-none; a partial geofence row is
             // rejected by CreateAsync as a per-row error (not a batch abort).
-            EquipmentNotes = NullIfBlank(row.Cells.GetValueOrDefault("EquipmentNotes", string.Empty)),
+            FacilityNotes = NullIfBlank(row.Cells.GetValueOrDefault("FacilityNotes", string.Empty)),
             GeofenceCenterLat = ParseGeo(row.Cells.GetValueOrDefault("GeofenceCenterLat", string.Empty)),
             GeofenceCenterLon = ParseGeo(row.Cells.GetValueOrDefault("GeofenceCenterLon", string.Empty)),
             GeofenceRadiusMeters = ParseGeo(row.Cells.GetValueOrDefault("GeofenceRadiusMeters", string.Empty)),

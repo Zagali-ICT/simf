@@ -270,8 +270,8 @@ public sealed class BadgeAccountCreationTests : IClassFixture<SimfApiFactory>
             var batch = new BadgeBatch
             {
                 Id = Guid.NewGuid(),
-                CountsSummary = "Visitor x 1",
-                TotalCount = 1,
+                // No lines: this test only needs an order to belong to, and what
+                // the order holds is a child row now rather than a stored string.
                 IsDelegate = false,
                 IsActive = true,
                 CreatedAt = SimfClock.Now,

@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SIMF.Application.Abstractions;
 using SIMF.Domain.AccessControl;
@@ -305,6 +305,12 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     // UserProfile carries a nullable BadgeBatchId back-reference (intra-App FK).
     public DbSet<BadgeBatch> BadgeBatches => Set<BadgeBatch>();
 
+    // What each order holds, one row per profile type. Replaced the rendered
+    // "VIP × 3 + Normal × 2" string on BadgeBatches, which could not be queried
+    // and froze the tier name at mint time; the label is composed on read from
+    // these rows joined to the live profile type.
+    public DbSet<BadgeBatchItem> BadgeBatchItems => Set<BadgeBatchItem>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -338,6 +344,11 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
         {
             foreach (var property in new[]
             {
+                // The canonical number and the two columns it supersedes. All
+                // three are the same fact, so all three carry the same
+                // protection — leaving the new one in plaintext would have made
+                // the collapse a PII regression.
+                nameof(SIMF.Domain.Profiles.UserProfile.MobileNumber),
                 nameof(SIMF.Domain.Profiles.UserProfile.SaudiMobile),
                 nameof(SIMF.Domain.Profiles.UserProfile.InternationalMobile),
             })

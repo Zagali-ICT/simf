@@ -23,7 +23,6 @@ internal sealed class BadgeBatchConfiguration : IEntityTypeConfiguration<BadgeBa
 
         builder.Property(batch => batch.Name).HasMaxLength(200).IsRequired();
         builder.Property(batch => batch.NameArabic).HasMaxLength(200).IsRequired();
-        builder.Property(batch => batch.CountsSummary).HasMaxLength(512).IsRequired();
         // Matches the organiser-email cap validated in BulkGenerateBadgesAsync.
         builder.Property(batch => batch.RecipientEmail).HasMaxLength(256);
 
@@ -42,8 +41,9 @@ internal sealed class BadgeBatchConfiguration : IEntityTypeConfiguration<BadgeBa
             Id = BadgeBatch.DirectRegistrationId,
             Name = "Direct registration",
             NameArabic = "تسجيل مباشر",
-            CountsSummary = "Direct registration",
-            TotalCount = 0,
+            // No BadgeBatchItems rows: this is not a badge order, so it has no
+            // per-tier breakdown to seed. Readers key off IsDirectRegistration and
+            // render their own localised label.
             IsDelegate = false,
             IsActive = true,
             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0),

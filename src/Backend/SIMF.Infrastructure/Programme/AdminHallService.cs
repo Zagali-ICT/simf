@@ -87,7 +87,7 @@ internal sealed class AdminHallService(
                 (int)hall.Purpose,
                 // Appended for the grid Excel round-trip (positional
                 // order must match the AdminHallSummary record exactly).
-                hall.EquipmentNotes,
+                hall.FacilityNotes,
                 hall.GeofenceCenterLat, hall.GeofenceCenterLon, hall.GeofenceRadiusMeters,
                 (int)hall.SeatSelectionMode,
                 hall.ArrivalGraceMinutes))
@@ -108,8 +108,8 @@ internal sealed class AdminHallService(
         Guid actorUserId, AdminCreateHallRequest request,
         CancellationToken cancellationToken = default)
     {
-        var (code, name, nameArabic, floor, equipmentNotes) = Validate(request.Code,
-            request.Name, request.NameArabic, request.Floor, request.EquipmentNotes,
+        var (code, name, nameArabic, floor, facilityNotes) = Validate(request.Code,
+            request.Name, request.NameArabic, request.Floor, request.FacilityNotes,
             request.Capacity);
         var (geoLat, geoLon, geoRadius) = ValidateGeofence(
             request.GeofenceCenterLat, request.GeofenceCenterLon, request.GeofenceRadiusMeters);
@@ -130,7 +130,7 @@ internal sealed class AdminHallService(
             Id = Guid.NewGuid(),
             Code = code, Name = name, NameArabic = nameArabic,
             Capacity = request.Capacity,
-            Floor = floor, EquipmentNotes = equipmentNotes,
+            Floor = floor, FacilityNotes = facilityNotes,
             GeofenceCenterLat = geoLat, GeofenceCenterLon = geoLon, GeofenceRadiusMeters = geoRadius,
             SeatSelectionMode = mode,
             ArrivalGraceMinutes = ValidateArrivalGrace(request.ArrivalGraceMinutes),
@@ -162,8 +162,8 @@ internal sealed class AdminHallService(
                 "The hall was not found.",
                 "لم يتم العثور على القاعة.");
 
-        var (code, name, nameArabic, floor, equipmentNotes) = Validate(request.Code,
-            request.Name, request.NameArabic, request.Floor, request.EquipmentNotes,
+        var (code, name, nameArabic, floor, facilityNotes) = Validate(request.Code,
+            request.Name, request.NameArabic, request.Floor, request.FacilityNotes,
             request.Capacity);
         var (geoLat, geoLon, geoRadius) = ValidateGeofence(
             request.GeofenceCenterLat, request.GeofenceCenterLon, request.GeofenceRadiusMeters);
@@ -198,7 +198,7 @@ internal sealed class AdminHallService(
 
         hall.Code = code; hall.Name = name; hall.NameArabic = nameArabic;
         hall.Capacity = request.Capacity;
-        hall.Floor = floor; hall.EquipmentNotes = equipmentNotes;
+        hall.Floor = floor; hall.FacilityNotes = facilityNotes;
         hall.GeofenceCenterLat = geoLat; hall.GeofenceCenterLon = geoLon;
         hall.GeofenceRadiusMeters = geoRadius;
         hall.SeatSelectionMode = ParseSeatSelectionMode(request.SeatSelectionMode);
@@ -241,7 +241,7 @@ internal sealed class AdminHallService(
             cancellationToken);
     }
 
-    private static (string code, string name, string nameArabic, string? floor, string? equipmentNotes)
+    private static (string code, string name, string nameArabic, string? floor, string? facilityNotes)
         Validate(string codeRaw, string nameRaw, string nameArabicRaw,
                  string? floorRaw, string? notesRaw, int capacity)
     {
@@ -291,7 +291,7 @@ internal sealed class AdminHallService(
 
     private static AdminHallDetail ToDetail(Hall hall) =>
         new(hall.Id, hall.Code, hall.Name, hall.NameArabic,
-            hall.Capacity, hall.Floor, hall.EquipmentNotes,
+            hall.Capacity, hall.Floor, hall.FacilityNotes,
             hall.IsActive, hall.CreatedAt, hall.UpdatedAt,
             hall.GeofenceCenterLat, hall.GeofenceCenterLon, hall.GeofenceRadiusMeters,
             (int)hall.SeatSelectionMode,

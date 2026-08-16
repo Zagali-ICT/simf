@@ -12,7 +12,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Persistence.Migrations.App
 {
     [DbContext(typeof(SimfAppDbContext))]
-    [Migration("20260816022645_InitialCreate")]
+    [Migration("20260816081717_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -850,11 +850,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("CountsSummary")
-                        .IsRequired()
-                        .HasMaxLength(512)
-                        .HasColumnType("nvarchar(512)");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -884,9 +879,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
-                    b.Property<int>("TotalCount")
-                        .HasColumnType("int");
-
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -903,15 +895,46 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         new
                         {
                             Id = new Guid("0f1e2d3c-4b5a-6978-8796-a5b4c3d2e1f0"),
-                            CountsSummary = "Direct registration",
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             CreatedBy = new Guid("00000000-0000-0000-0000-000000000000"),
                             IsActive = true,
                             IsDelegate = false,
                             Name = "Direct registration",
-                            NameArabic = "تسجيل مباشر",
-                            TotalCount = 0
+                            NameArabic = "تسجيل مباشر"
                         });
+                });
+
+            modelBuilder.Entity("SIMF.Domain.Badges.BadgeBatchItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BadgeBatchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Count")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("ProfileTypeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProfileTypeId");
+
+                    b.HasIndex("BadgeBatchId", "DisplayOrder");
+
+                    b.ToTable("BadgeBatchItems", (string)null);
                 });
 
             modelBuilder.Entity("SIMF.Domain.BusinessMeetings.BusinessMeeting", b =>
@@ -1132,7 +1155,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid?>("MeetingTableId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime?>("ReminderSent")
+                    b.Property<DateTime?>("ReminderSentAt")
                         .HasColumnType("datetime2");
 
                     b.Property<Guid>("RequestedByUserId")
@@ -1446,7 +1469,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid?>("MeetingTableId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime?>("ReminderSent")
+                    b.Property<DateTime?>("ReminderSentAt")
                         .HasColumnType("datetime2");
 
                     b.Property<Guid>("RequestedByUserId")
@@ -3352,7 +3375,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<DateTime?>("RetainUntil")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime?>("SecureDestroyed")
+                    b.Property<DateTime?>("SecureDestroyedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<int>("SensitivityTier")
@@ -4254,6 +4277,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
 
+                    b.Property<string>("MobileNumber")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -4519,7 +4546,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("EquipmentNotes")
+                    b.Property<string>("FacilityNotes")
                         .HasMaxLength(1024)
                         .HasColumnType("nvarchar(1024)");
 
@@ -4757,7 +4784,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<DateTime?>("PublishedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime?>("RatingPromptSent")
+                    b.Property<DateTime?>("RatingPromptSentAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("RecordingContentType")
@@ -4780,7 +4807,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid?>("RecordingUploadedByUserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime?>("ReminderSent")
+                    b.Property<DateTime?>("ReminderSentAt")
                         .HasColumnType("datetime2");
 
                     b.Property<int?>("SeatSelectionModeOverride")
@@ -5818,9 +5845,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid>("CreatedByUserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime?>("Expires")
-                        .HasColumnType("datetime2");
-
                     b.Property<string>("GuestHint")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
@@ -5832,16 +5856,16 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<int>("Kind")
                         .HasColumnType("int");
 
+                    b.Property<DateTime?>("NoShowReleaseAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime?>("ReleasedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid?>("ReservedForProfileId")
+                    b.Property<Guid?>("ReleasedByUserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime?>("ReviewedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("ReviewedByUserId")
+                    b.Property<Guid?>("ReservedForProfileId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("RowLabel")
@@ -5859,8 +5883,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Expires")
-                        .HasFilter("[ReleasedAt] IS NULL AND [Expires] IS NOT NULL");
+                    b.HasIndex("NoShowReleaseAt")
+                        .HasFilter("[ReleasedAt] IS NULL AND [NoShowReleaseAt] IS NOT NULL");
 
                     b.HasIndex("ReservedForProfileId", "ReleasedAt");
 
@@ -6351,6 +6375,23 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .IsRequired();
 
                     b.Navigation("Edition");
+                });
+
+            modelBuilder.Entity("SIMF.Domain.Badges.BadgeBatchItem", b =>
+                {
+                    b.HasOne("SIMF.Domain.Badges.BadgeBatch", "BadgeBatch")
+                        .WithMany("Items")
+                        .HasForeignKey("BadgeBatchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SIMF.Domain.Profiles.UserProfileType", null)
+                        .WithMany()
+                        .HasForeignKey("ProfileTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("BadgeBatch");
                 });
 
             modelBuilder.Entity("SIMF.Domain.BusinessMeetings.BusinessMeeting", b =>
@@ -7098,6 +7139,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Navigation("PastSpeakers");
 
                     b.Navigation("SessionTitles");
+                });
+
+            modelBuilder.Entity("SIMF.Domain.Badges.BadgeBatch", b =>
+                {
+                    b.Navigation("Items");
                 });
 
             modelBuilder.Entity("SIMF.Domain.BusinessMeetings.BusinessMeeting", b =>

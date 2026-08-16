@@ -21,8 +21,7 @@ public class Hall : BaseAuditEntity
     /// <summary>A label rather than a number: "Ground", "Level 2".</summary>
     public string? Floor { get; set; }
 
-    /// <summary>Covers accessibility as well as equipment.</summary>
-    public string? EquipmentNotes { get; set; }
+    public string? FacilityNotes { get; set; }
 
     /// <summary>General may back both <c>Session.HallId</c> and
     /// <c>Booth.HallId</c>; a meeting may target only Meeting or General.</summary>

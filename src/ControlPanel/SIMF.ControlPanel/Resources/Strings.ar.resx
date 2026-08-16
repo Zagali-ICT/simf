@@ -851,8 +851,8 @@
   <data name="Admin.Halls.SeatMode.Open" xml:space="preserve"><value>مقاعد مفتوحة (دخول عام)</value></data>
   <data name="Admin.Halls.Field.Floor" xml:space="preserve"><value>الطابق</value></data>
   <data name="Admin.Halls.Field.FloorHint" xml:space="preserve"><value>اختياري. حتى 32 حرفاً (مثل "الأرضي" أو "الطابق 2").</value></data>
-  <data name="Admin.Halls.Field.EquipmentNotes" xml:space="preserve"><value>ملاحظات المعدات وإمكانية الوصول</value></data>
-  <data name="Admin.Halls.Field.EquipmentNotesHint" xml:space="preserve"><value>اختياري. حتى 1024 حرفاً.</value></data>
+  <data name="Admin.Halls.Field.FacilityNotes" xml:space="preserve"><value>ملاحظات المعدات وإمكانية الوصول</value></data>
+  <data name="Admin.Halls.Field.FacilityNotesHint" xml:space="preserve"><value>اختياري. حتى 1024 حرفاً.</value></data>
   <data name="Admin.Halls.Field.GeofenceLat" xml:space="preserve"><value>خط عرض مركز السياج الجغرافي</value></data>
   <data name="Admin.Halls.Field.GeofenceLon" xml:space="preserve"><value>خط طول مركز السياج الجغرافي</value></data>
   <data name="Admin.Halls.Field.GeofenceRadius" xml:space="preserve"><value>نصف قطر السياج (بالأمتار)</value></data>
