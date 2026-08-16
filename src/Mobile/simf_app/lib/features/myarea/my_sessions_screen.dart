@@ -16,6 +16,11 @@ import 'package:simf_app/features/sessions/widgets/session_filter_tabs.dart';
 /// clock: القادمة (still to come), حضرتها (attended), فاتتني (ended & not
 /// attended), and الأرشيف (recorded / published). Each card carries the المفضلة
 /// heart and taps through to the session detail. Reads `GET /app/account/sessions`.
+///
+/// Route: `RouteNames.myAreaSessions`.
+/// Data: [mySessionsProvider].
+/// Perf: ListView builds every child up front — correct for a short static
+///       page, a defect on a data feed.
 class MySessionsScreen extends ConsumerStatefulWidget {
   const MySessionsScreen({super.key});
 

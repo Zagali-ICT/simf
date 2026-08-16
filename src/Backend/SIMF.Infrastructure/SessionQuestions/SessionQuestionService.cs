@@ -1,5 +1,6 @@
 // Tests: SIMF.Api.Tests/SessionQuestionsTests.cs
 // Tests: SIMF.Api.Tests/QuestionArrivalGatingTests.cs
+// Tests: SIMF.Api.Tests/SessionQuestionVerdictClampTests.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -39,6 +40,13 @@ internal sealed class SessionQuestionService(
     /// not-yet-ended) session accepts questions from any approved user — see the
     /// window check + the phase-gated venue check below.</summary>
     private static readonly TimeSpan PostEndWindow = TimeSpan.Zero;
+
+    /// <summary>Mirrors SessionQuestionConfiguration's HasMaxLength on
+    /// <c>AiFilterVerdict</c>. The filter is ADVISORY — it must never block a
+    /// submit — but the verdict was persisted verbatim, so a filter that answered
+    /// at length failed the INSERT and took the audience member's question with it.
+    /// An over-long verdict loses its tail instead.</summary>
+    private const int MaxAiFilterVerdictLength = 256;
 
     public async Task<SessionQuestionSubmitted> SubmitAsync(
         Guid sessionId,
@@ -164,7 +172,7 @@ internal sealed class SessionQuestionService(
         {
             var verdict = await questionAiFilter.ScreenAsync(
                 sessionId, submittedByUserId, text, cancellationToken);
-            aiFilterVerdict = verdict.Verdict;
+            aiFilterVerdict = ClampVerdict(verdict.Verdict);
         }
 
         var question = new SessionQuestion
@@ -198,4 +206,12 @@ internal sealed class SessionQuestionService(
         return new SessionQuestionSubmitted(
             question.Id, sessionId, question.Order, question.CreatedAt);
     }
+
+    /// <summary>Trim a verdict to what the column holds. Null stays null — an
+    /// absent verdict and an empty one mean different things to the Committee
+    /// queue that reads this.</summary>
+    private static string? ClampVerdict(string? verdict) =>
+        verdict is not null && verdict.Length > MaxAiFilterVerdictLength
+            ? verdict[..MaxAiFilterVerdictLength]
+            : verdict;
 }

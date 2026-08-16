@@ -42,7 +42,6 @@ public sealed class NewsTests : IClassFixture<SimfApiFactory>
         BodyArabic = "نص الخبر الكامل هنا.",
         Category = "NAVAL",
         CategoryArabic = "بحرية",
-        ImageRelativePath = "news/feature.jpg",
         PublishedAt = publishedAt ?? SimfClock.Now.AddMinutes(-5),
         DisplayOrder = 1,
     };

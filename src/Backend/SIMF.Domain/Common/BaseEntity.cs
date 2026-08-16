@@ -1,54 +1,54 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
+// Tests: SIMF.Domain.Tests/BaseAuditEntityTests.cs
 using SIMF.Common;
 
 namespace SIMF.Domain.Common;
 
-/// <summary>
-/// The lighter of the two bases: an id, a creating user and a creation stamp,
-/// with no update or soft-delete columns. Entities that need those derive from
-/// <see cref="BaseAuditEntity"/> instead.
-/// </summary>
+/// <summary>Entities needing update and soft-delete columns derive from <see cref="BaseAuditEntity"/> instead.</summary>
 public abstract class BaseEntity
 {
     public Guid Id { get; set; }
 
-    /// <summary>The user who created the row.</summary>
-    public Guid CreateBy { get; set; }
+    public Guid CreatedBy { get; set; }
 
-    /// <summary>Saudi local time, defaulted at construction from the shared
-    /// clock, which is fixed at +03:00 with no daylight saving. Deliberately
-    /// neither <c>DateTime.Now</c>, which depends on the host, nor
-    /// <c>UtcNow</c>, which no surface here displays.</summary>
+    /// <summary>Saudi local time from the shared clock (fixed +03:00): deliberately neither <c>DateTime.Now</c>, which follows the host, nor <c>UtcNow</c>, which no surface displays.</summary>
     public DateTime CreatedAt { get; set; } = SimfClock.Now;
 }
 
-/// <summary>
-/// The base for entities that carry a full audit trail: who created and last
-/// changed the row, when, and whether it is soft-deleted. The audit
-/// save-changes interceptor fills the stamps that are left unset.
-/// </summary>
+/// <summary>Full audit trail; the audit save-changes interceptor fills any stamp left unset.</summary>
 public abstract class BaseAuditEntity
 {
     public Guid Id { get; set; }
 
-    /// <summary>Saudi local time, stamped by the audit interceptor when left
-    /// unset.</summary>
+    /// <summary>Saudi local time.</summary>
     public DateTime CreatedAt { get; set; }
 
-    /// <summary>The signed-in user who created the row, stamped by the audit
-    /// interceptor when unset. Empty for seeder and system writes, which have no
-    /// actor bound to them.</summary>
+    /// <summary>Empty for seeder and system writes, which have no actor bound to them.</summary>
     public Guid CreatedBy { get; set; }
 
     public DateTime? UpdatedAt { get; set; }
     public Guid? UpdatedBy { get; set; }
 
-    /// <summary>Soft-delete flag: false hides the row without losing it.</summary>
     public bool IsActive { get; set; } = true;
 
+    /// <summary>When this row was soft-deleted. Stamped by <see cref="Deactivate"/>,
+    /// so a soft-deleted row always says WHEN, not merely that it is gone: the
+    /// high-level and low-level designs both describe soft-delete as flipping
+    /// <see cref="IsActive"/> and stamping this, and the offline-sync design reads
+    /// it to build the deletion "tombstones" an app replays against its local
+    /// cache. A restore clears it back to null.</summary>
     public DateTime? DeletedAt { get; set; }
 
-    public void Deactivate() => IsActive = false;
+    /// <summary>Soft-deletes the row, recording the instant it happened.
+    ///
+    /// <para>Several services call this without first checking whether the row is
+    /// already inactive, so the stamp is written only when it is absent: the
+    /// instant worth keeping is when the row was deleted, not when a repeat call
+    /// asked again. A service holding an injected <c>TimeProvider</c> may still
+    /// assign <see cref="DeletedAt"/> itself to pin its own clock, and doing so
+    /// before or after this call gives the same result.</para></summary>
+    public void Deactivate()
+    {
+        IsActive = false;
+        DeletedAt ??= SimfClock.Now;
+    }
 }

@@ -42,9 +42,14 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
         // Admission state, stored as the enum NAME rather than its ordinal, so
         // reordering the enum can never re-interpret stored rows. Matches how the
         // Identity side persists the same enum.
+        // The DB default is FAIL-CLOSED and exists only so a raw-SQL content
+        // seed cannot fail on a column it does not know about. Every
+        // tracked write sets this explicitly; a row that reaches the table
+        // without one is not admitted anywhere until somebody approves it.
         builder.Property(profile => profile.AdmissionState)
             .HasConversion<string>()
             .HasMaxLength(32)
+            .HasDefaultValue(SIMF.Common.Enums.AccountState.PendingApproval)
             .IsRequired();
 
         // The admission queue reads "everyone awaiting a decision" on every load
@@ -70,33 +75,21 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
         builder.Property(profile => profile.NationalityId).IsRequired();
         builder.HasIndex(profile => profile.NationalityId);
         builder.Property(profile => profile.PlaceOfBirth).HasMaxLength(128);
-        builder.Property(profile => profile.NationalId).HasMaxLength(20);
-        builder.Property(profile => profile.IqamaNumber).HasMaxLength(20);
-        builder.Property(profile => profile.PassportNumber).HasMaxLength(32);
-
-        // Blind-index columns for the duplicate-identity guard. The
-        // plaintext id columns above are randomly-nonce encrypted (SimfAppDbContext
-        // OnModelCreating) so they CANNOT be unique-indexed; these deterministic
-        // keyed-HMAC digests can. Filtered UNIQUE so two profiles cannot share a
-        // National ID / Iqama / Passport, while the many null rows (no id of that
-        // kind, or a row not written through the guarded path) never collide. Same
-        // filtered-unique style as QrId / ReferenceNumber above.
-        builder.Property(profile => profile.NationalIdHash).HasMaxLength(64);
-        builder.Property(profile => profile.IqamaNumberHash).HasMaxLength(64);
-        builder.Property(profile => profile.PassportNumberHash).HasMaxLength(64);
-        builder.HasIndex(profile => profile.NationalIdHash)
-            .IsUnique()
-            .HasFilter("[NationalIdHash] IS NOT NULL");
-        builder.HasIndex(profile => profile.IqamaNumberHash)
-            .IsUnique()
-            .HasFilter("[IqamaNumberHash] IS NOT NULL");
-        builder.HasIndex(profile => profile.PassportNumberHash)
-            .IsUnique()
-            .HasFilter("[PassportNumberHash] IS NOT NULL");
+        // The identity documents are NOT configured here. They live one row per
+        // document on ProfileIdentityDocument, behind a SINGLE unique digest
+        // index, which replaced the six columns this block used to describe: a
+        // plaintext NationalId / IqamaNumber / PassportNumber, and a filtered
+        // unique blind-index digest beside each of them. Three per-kind indexes
+        // can only ever compare like with like, so none of them could see a
+        // person who registered on a passport and returned on an Iqama carrying
+        // the same number; one index over every digest can.
         // "Show in Meet People Like You" visibility toggle.
         builder.Property(profile => profile.ShowInMeetLikeYou)
             .HasDefaultValue(true);
 
+        // The canonical E.164 number. 24 is the international width; the pair
+        // below is superseded and keeps the lengths it already had.
+        builder.Property(profile => profile.MobileNumber).HasMaxLength(24);
         builder.Property(profile => profile.SaudiMobile).HasMaxLength(20);
         builder.Property(profile => profile.InternationalMobile).HasMaxLength(24);
         // Stored normalized (3 letters + 1–4 digits, no separators).
@@ -209,14 +202,33 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
             .HasForeignKey(profile => profile.RegionId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // The bulk-badge batch this placeholder profile was
-        // minted by. Intra-App-DB FK (nullable + Restrict, same shape as the
-        // Organisation / Region FKs) so a batch cannot be hard-deleted while any
-        // badge references it — batches are soft-deleted (revoke → IsActive=false).
+        // Zero, not the open year, and deliberately: the stamping interceptor
+        // fills this for every tracked write, and the default exists only so a
+        // RAW SQL content seed cannot fail on a column it does not know about.
+        // Zero is the "predates the edition column" value the gate already
+        // admits, so such a row behaves exactly as a pre-existing one.
+        builder.Property(profile => profile.EditionYear).HasDefaultValue(0);
+
+        // The order this attendee arrived on. REQUIRED: everyone belongs to one,
+        // and whoever arrived without a bulk order behind them belongs to the
+        // seeded direct-registration order, so "which order did this attendee
+        // come from" always has an answer. It used to be nullable and set only by
+        // the bulk mint, which left it unanswerable for everyone who registered
+        // themselves.
+        //
+        // Intra-App-DB FK with Restrict, the same shape as the Organisation and
+        // Region FKs, so an order cannot be hard-deleted while anyone references
+        // it — orders are soft-deleted (revoke → IsActive=false).
+        // Same reasoning as the two above: a raw-SQL seed that predates the
+        // column lands in the direct-registration order rather than failing.
+        builder.Property(profile => profile.BadgeBatchId)
+            .HasDefaultValue(SIMF.Domain.Badges.BadgeBatch.DirectRegistrationId);
+
         builder.HasIndex(profile => profile.BadgeBatchId);
         builder.HasOne(profile => profile.BadgeBatch)
             .WithMany()
             .HasForeignKey(profile => profile.BadgeBatchId)
+            .IsRequired()
             .OnDelete(DeleteBehavior.Restrict);
 
         // M-to-M with Interests. Composite-PK join table

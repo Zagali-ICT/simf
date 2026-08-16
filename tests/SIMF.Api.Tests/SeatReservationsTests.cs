@@ -623,7 +623,7 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
             var row = await db.SeatReservations.SingleAsync(r => r.Id == reservationId);
             Assert.NotNull(row.ReleasedAt);
             Assert.Equal(BookingStatus.Cancelled, row.Status);
-            Assert.Equal(adminId, row.ReviewedByUserId);
+            Assert.Equal(adminId, row.ReleasedByUserId);
 
             var idDb = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
             var count = await idDb.Notifications.CountAsync(n =>
@@ -681,9 +681,9 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Reserving_stamps_the_no_show_deadline_on_the_hold()
     {
-        // #6/#17 — a visitor seat pick is stamped with Expires = the session's
+        // #6/#17 — a visitor seat pick is stamped with NoShowReleaseAt = the session's
         // Start − 3min (the no-show release deadline); an admin-reserved row seat
-        // never expires (Expires null).
+        // never expires (NoShowReleaseAt null).
         var (session, _) = await SeedSessionWithLayoutAsync(new[] { "A" }, seatsPerRow: 5);
         var visitor = await SignInApprovedVisitorAsync();
         var pick = await PostAuthAsync(
@@ -702,17 +702,17 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var mine = await db.SeatReservations.SingleAsync(r => r.Id == reservationId);
-        Assert.NotNull(mine.Expires);
+        Assert.NotNull(mine.NoShowReleaseAt);
         var expected = session.Start - SeatReservationService.NoShowReleaseGrace;
         Assert.True(
-            (mine.Expires!.Value - expected).Duration() < TimeSpan.FromSeconds(1),
-            $"no-show deadline {mine.Expires} not ~ {expected}");
+            (mine.NoShowReleaseAt!.Value - expected).Duration() < TimeSpan.FromSeconds(1),
+            $"no-show deadline {mine.NoShowReleaseAt} not ~ {expected}");
 
         var adminSeat = await db.SeatReservations
             .Where(r => r.SessionId == session.Id
                 && r.Kind == SeatReservationKind.AdminReservedRow)
             .FirstAsync();
-        Assert.Null(adminSeat.Expires);
+        Assert.Null(adminSeat.NoShowReleaseAt);
     }
 
     // -- H-2: a layout change may not orphan active reservations ---------------
@@ -1308,11 +1308,11 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task Every_create_path_writes_Approved_and_never_stamps_a_review()
+    public async Task Every_create_path_writes_Approved_and_never_stamps_a_release()
     {
         // A9 — the D-227 approval queue is gone (owner, 2026-07-18). Lock the
         // as-built truth the docs now state: no production path writes Pending or
-        // Rejected, ReviewedBy/ReviewedAt stay null until a RELEASE stamps them,
+        // Rejected, ReleasedBy/ReleasedAt stay null until a RELEASE stamps them,
         // and RejectionReason is never written at all. If an approval step is
         // ever restored this test is the thing that must change with it.
         var (assigned, _) = await SeedSessionWithLayoutAsync(
@@ -1346,9 +1346,8 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
 
         Assert.Equal(4, created.Count);
         Assert.All(created, r => Assert.Equal(BookingStatus.Approved, r.Status));
-        Assert.All(created, r => Assert.Null(r.ReviewedByUserId));
-        Assert.All(created, r => Assert.Null(r.ReviewedAt));
-        Assert.All(created, r => Assert.Null(r.RejectionReason));
+        Assert.All(created, r => Assert.Null(r.ReleasedByUserId));
+        Assert.All(created, r => Assert.Null(r.ReleasedAt));
         Assert.DoesNotContain(created, r => r.Status == BookingStatus.Pending);
         Assert.DoesNotContain(created, r => r.Status == BookingStatus.Rejected);
     }

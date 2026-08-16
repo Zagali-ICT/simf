@@ -31,7 +31,8 @@ class _CapturingInterceptor extends Interceptor {
 
 QuestionsRepository _repository(_CapturingInterceptor capture) {
   final dio = Dio(
-    BaseOptions(baseUrl: 'https://api.test/api/v1', validateStatus: (_) => true),
+    BaseOptions(
+        baseUrl: 'https://api.test/api/v1', validateStatus: (_) => true,),
   )..interceptors.add(capture);
   final client = SimfApiClient.build(
     config: const SimfDataConfig(
@@ -48,7 +49,9 @@ QuestionsRepository _repository(_CapturingInterceptor capture) {
 
 void main() {
   group('QuestionsRepository.submitQuestion', () {
-    test('S-5 — posts isAtVenue == false (the app never self-certifies presence)',
+    test(
+        'S-5 — posts isAtVenue == false (the app never self-certifies '
+            'presence)',
         () async {
       final capture = _CapturingInterceptor();
       final repo = _repository(capture);
@@ -60,8 +63,9 @@ void main() {
       );
 
       final body = capture.body!;
-      // The core S-5 assertion: the self-assert flag is no longer trusted, so the
-      // app sends it false and lets the server be the authoritative venue gate.
+      // The core S-5 assertion: the self-assert flag is no longer trusted, so
+      // the app sends it false and lets the server be the authoritative venue
+      // gate.
       expect(body['isAtVenue'], isFalse);
       expect(body['questionText'], 'How deep is the reef?');
       expect(body['recipient'], 0);

@@ -54,12 +54,38 @@ share-my-contact; exhibitor → scan-visitor; retry re-fetches the dashboard;
 not-approved / pending states gate the QR. Reads `GET /app/account/dashboard` +
 `referenceNumberProvider`. No missing API.
 
+## Pull-to-refresh (2026-08-14)
+
+The screen shipped with **no** refresh hook on any branch — a CLAUDE.md §13.6
+regression, and the owner rule is that every data-loaded page pulls to refresh.
+It mattered most in the state where it was missing: `initState` deliberately
+does not call the dashboard while the account is unapproved (that endpoint is
+`RequireApprovedAccount` and would 403), so a pending user had no way to
+re-check and the only route out of the state was restarting the app.
+
+Per branch, decided rather than blanket-wrapped:
+
+| Branch | Refresh |
+|---|---|
+| issued badge | `SimfPullToRefresh` over the list, which also gained `AlwaysScrollableScrollPhysics` so the gesture fires on short content |
+| pending / not-approved / load-error | `SimfRefreshableMessage` (the shared `SimfPullToRefresh` + `SimfPullableHost` pairing) |
+| signed-out guest | **none** — no account to fetch, so a pull could only fire a 401; the sign-in CTA is the way forward |
+| loading | **none** — a spinner is transient, not a refresh surface |
+
+`_refresh` re-reads the reference number through `refreshAsync`, never the raw
+`ref.invalidate` + `await ref.read(p.future)` idiom, which rethrows and rejects
+the RefreshIndicator's future on top of the error the user can already see.
+
 ## Tests
 
 `test/features/badge/badge_screen_test.dart` (QR + identity render, strip tint +
 gold fallback, `maskedBadgeId` unit test, Arabic name, not-approved, pending,
-error+retry, role actions) and `test/core/utils/hex_color_test.dart` (the
-`parseHexColor` parser). E2E: `docs/tests/e2e/mobile-badge.md`.
+error+retry, role actions, **and one pull-to-refresh test per branch** — the
+pending one proves approval is discovered without an app restart) and
+`test/core/utils/hex_color_test.dart` (the `parseHexColor` parser).
+`test/repo/pull_to_refresh_coverage_test.dart` is the repo-wide ratchet that
+stops the regression recurring anywhere. E2E: `docs/tests/e2e/mobile-badge.md`
+(E2E-MOB032-010).
 
 ## Related decisions
 

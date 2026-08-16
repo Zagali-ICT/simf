@@ -211,19 +211,32 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                     b.Property<DateTime>("ExpiresAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("PendingEmail")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
                     b.Property<string>("Purpose")
                         .IsRequired()
                         .HasMaxLength(32)
                         .HasColumnType("nvarchar(32)");
 
-                    b.Property<Guid>("UserId")
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("UserProfileId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
                     b.HasIndex("UserId", "Purpose");
 
-                    b.ToTable("AccountCodes");
+                    b.HasIndex("UserProfileId", "Purpose")
+                        .HasFilter("[UserProfileId] IS NOT NULL");
+
+                    b.ToTable("AccountCodes", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_AccountCodes_OneOwner", "([UserId] IS NOT NULL AND [UserProfileId] IS NULL) OR ([UserId] IS NULL AND [UserProfileId] IS NOT NULL)");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.IdentityAccess.DeviceKey", b =>
@@ -274,7 +287,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
 
                     b.HasIndex("UserId", "RevokedAt");
 
-                    b.ToTable("DeviceKeys", (string)null);
+                    b.ToTable("DeviceKeys", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_DeviceKeys_ChallengePin", "([CurrentChallenge] IS NULL AND [ChallengeExpiresAt] IS NULL) OR ([CurrentChallenge] IS NOT NULL AND [ChallengeExpiresAt] IS NOT NULL)");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.IdentityAccess.PasswordHistoryEntry", b =>
@@ -307,32 +323,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
                     b.Property<string>("Code")
                         .IsRequired()
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
 
-                    b.Property<string>("DisplayName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("Page")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
                     b.HasKey("Id");
 
                     b.HasIndex("Code")
-                        .IsUnique();
-
-                    b.HasIndex("Page", "Action")
                         .IsUnique();
 
                     b.ToTable("Permissions");
@@ -731,8 +729,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                     b.HasOne("SIMF.Domain.IdentityAccess.SimfUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("SIMF.Domain.IdentityAccess.DeviceKey", b =>

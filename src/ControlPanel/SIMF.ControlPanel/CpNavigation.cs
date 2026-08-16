@@ -181,6 +181,7 @@ public static class CpNavigation
             new("Module.ServicesMonitor", "/admin/ops/services", RequiredPermission: PermissionCatalog.ServicesMonitor.View, Icon: "bar-chart"),
             new("Module.OperationLog", "/admin/operation-log", RequiredPermission: PermissionCatalog.OperationLog.View, Icon: "list-tree"),
             new("Module.OperationsToggles", "/admin/operations", RequiredPermission: PermissionCatalog.Operations.View, Icon: "sliders"),
+            new("Module.EventEdition", "/admin/editions", RequiredPermission: PermissionCatalog.Editions.View, Icon: "calendar"),
         ]),
         // Each report gates on its own permission, so an operator can be given
         // the gate log without the attendee roster.

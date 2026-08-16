@@ -31,9 +31,11 @@ class RegistrationStatusHero extends StatelessWidget {
           decoration: BoxDecoration(
             color: SimfTokens.navyDeep,
             shape: BoxShape.circle,
-            border: Border.all(color: color, width: SimfTokens.registrationStatusHeroWidthSm),
+            border: Border.all(
+                color: color, width: SimfTokens.registrationStatusHeroWidthSm,),
           ),
-          child: Icon(icon, size: SimfTokens.registrationStatusHeroSize, color: color),
+          child: Icon(icon,
+              size: SimfTokens.registrationStatusHeroSize, color: color,),
         ),
         const SizedBox(height: SimfTokens.space4),
         Text(

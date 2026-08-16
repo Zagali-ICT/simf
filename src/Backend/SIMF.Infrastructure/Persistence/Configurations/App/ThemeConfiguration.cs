@@ -14,7 +14,12 @@ internal sealed class ThemeConfiguration : IEntityTypeConfiguration<Theme>
 {
     public void Configure(EntityTypeBuilder<Theme> builder)
     {
-        builder.ToTable("Themes");
+        // Zero or positive, the same rule AdminThemeService already refuses a
+        // negative order with (400 THEME_INVALID). Held here too so a seed or a
+        // repair script cannot store a theme that sorts ahead of every
+        // hand-ordered one. Same shape as CK_Halls_Capacity.
+        builder.ToTable("Themes", table => table.HasCheckConstraint(
+            "CK_Themes_DisplayOrder", "[DisplayOrder] >= 0"));
         builder.HasKey(theme => theme.Id);
 
         builder.Property(theme => theme.Code).HasMaxLength(16).IsRequired();

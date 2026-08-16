@@ -24,6 +24,14 @@ Auth-setup uses the `Get-Totp` helper — never a literal secret.
 | E2E-BBT-008 | Auth gate — `Visitors.ViewBatches` gates the page, nav item and list API | auth | P0 | _to author_ |
 | E2E-BBT-009 | RTL (Arabic) — grid, pills and both dialogs mirror; no horizontal overflow | i18n | P1 | _to author_ |
 | E2E-BBT-010 | View-only cannot re-email or revoke (`Visitors.ManageBatches` gate) | auth | P0 | _to author_ |
+| E2E-BBT-011 | An order is created with a bilingual name, and the row shows it | happy | P0 | _to author_ |
+| E2E-BBT-012 | Top-up mints immediately and moves both denormalised fields | happy | P0 | automated |
+| E2E-BBT-013 | A revoked order cannot be topped up | negative | P1 | automated |
+| E2E-BBT-014 | The direct-registration order cannot be topped up | negative | P0 | automated |
+| E2E-BBT-015 | Top-up is gated on `Visitors.BulkGenerate`, not `ManageBatches` | auth | P0 | automated |
+| E2E-BBT-016 | The top-up dialog shows what the order already holds | function | P1 | automated |
+| E2E-BBT-017 | Top-up refuses no tier / a bad count before posting anything | validation | P1 | automated |
+| E2E-BBT-018 | A refused top-up keeps the dialog open with the reason in it | negative | P1 | automated |
 | E2E-BBT-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-BBT-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
@@ -93,4 +101,110 @@ Scenario: E2E-BBT-009 The desk renders correctly in Arabic (RTL)
   When the admin opens "/admin/visitors/badge-batches"
   Then the grid, status pills, and both dialogs render right-to-left
   And there is no horizontal overflow (scrollWidth == clientWidth)
+
+# D-878 — an order carries a name, and can be topped up.
+
+Scenario: E2E-BBT-011 An order carries a name in both languages
+  Given the admin is generating a bulk order
+  When they leave either name field empty and confirm
+  Then the form refuses with "Give the order a name in both English and Arabic"
+   And nothing is posted
+  When they enter "Ministry of Interior Team" and "فريق وزارة الداخلية" and confirm
+  Then the order is created and its list row shows that name beside its counts
+
+Scenario: E2E-BBT-012 Top-up mints immediately and folds into the order's lines
+  Given an order "Ministry of Interior Team" of Normal x 10 + VIP x 5
+  When the admin tops it up with VIP x 3
+  Then 3 more badges exist against that order
+   And the order holds exactly TWO BadgeBatchItem lines, Normal 10 and VIP 8 -
+       the added tier is FOLDED into the line it already had, not appended as a
+       second "VIP x 3" line
+   And TotalCount reads 18, being the sum of those line counts
+
+Scenario: E2E-BBT-019 Renaming a profile type re-labels every historical order
+  Given an order "Ministry of Interior Team" holding VIP x 3
+  When an admin renames the "VIP" profile type to "Platinum"
+   And reopens /admin/visitors/badge-batches
+  Then that order's Contents cell reads "Platinum x 3"
+   And nowhere on the page does the retired name "VIP" still appear, because the
+       breakdown is composed on read from the order's lines joined to the live
+       profile type rather than from a label frozen at mint time
+
+Scenario: E2E-BBT-013 A revoked order cannot be topped up
+  Given an order that has been revoked
+  When the admin tries to top it up
+  Then the API answers 409 and no badge is minted
+
+Scenario: E2E-BBT-014 The direct-registration order cannot be topped up
+  Given the seeded direct-registration order, where everyone who registered
+    themselves is filed
+  When the admin tries to top it up
+  Then the API answers 409 - it is not a badge order, and minting into it would
+    invent attendees nobody asked for
+
+Scenario: E2E-BBT-015 Top-up is gated on BulkGenerate, not ManageBatches
+  Given an account WITH "Visitors.ManageBatches" but WITHOUT "Visitors.BulkGenerate"
+   And that account CAN reach the orders list, so the role really is working
+  When it calls the top-up API
+  Then the response is 403 - re-emailing or revoking an order is a different
+    authority from creating more of it
+   And it is 403 rather than 404: the gate is checked before the order is looked
+       up, so the caller learns nothing about which order ids exist
+   And on "/admin/visitors/badge-batches" that account sees the re-email and
+       revoke actions but NOT "Add more badges"
+   And both halves matter: a hidden button over an open API would be theatre
+
+Scenario: E2E-BBT-016 The top-up dialog shows what the order already holds
+  Given an admin holding "Visitors.BulkGenerate" on "/admin/visitors/badge-batches"
+   When they press "Add more badges" on "Ministry of Interior Team"
+   Then the dialog names the order and shows its current counts and total
+    And nothing is minted until they confirm - "add 3" is only meaningful next
+        to what is already there
+
+Scenario: E2E-BBT-017 Top-up refuses no tier / a bad count before posting anything
+  Given the top-up dialog is open
+   When the admin confirms with no profile type chosen
+   Then an error asks them to choose one, and NOTHING is posted
+   When they choose VIP and enter "", or "0", or "abc"
+   Then an error asks for a count of 1 or more, and NOTHING is posted
+    And the errors appear INSIDE the dialog, where the fields still are
+
+Scenario: E2E-BBT-018 A refused top-up keeps the dialog open with the reason in it
+  Given the top-up dialog is open on an order the server will refuse
+        (a revoked order, or the direct-registration order)
+   When the admin confirms
+   Then the refusal is shown inside the dialog and the dialog STAYS open
+    And no badge is minted
 ```
+
+## Run on 2026-08-14 — top-up driven live
+
+Driven at `localhost:5158` against a database built from scratch by this
+branch's migrations. `automated` in the matrix marks a scenario pinned in
+`tests/SIMF.ControlPanel.Tests/BadgeBatchesPageTests.cs` (dialog behaviour),
+`tests/SIMF.Api.Tests/DelegatesAndBulkBadgesTests.cs` (the mint, the fold and
+both 409 guards) or `tests/SIMF.Api.Tests/PermissionEnforcementTests.cs` (the
+403). The following were additionally exercised in the browser:
+
+- **011** — an order created as "Ministry of Interior Team" /
+  "فريق وزارة الداخلية" with Normal x 4; the list row showed that name.
+- **012** — topping it up with VIP x 3 answered **200**, the toast read
+  "Minted 3 more badge(s); the order now holds 7", and the row moved to
+  **"Normal × 4 + VIP × 3"** with total 7. SQL confirmed the badges are real
+  rather than a counter: 7 member profiles, **7 of them holding a QR**.
+- **014** — the seeded direct-registration order answered **409** with
+  "Direct registrations are not a badge order and cannot be topped up."
+- **017** — confirming with no tier chosen showed the inline error and made
+  **zero** network requests.
+- **018** — on that 409 the dialog **stayed open** with the server's reason
+  inside it, and no page-level toast appeared.
+- **009 (RTL)** — the whole page and the dialog rendered `dir=rtl` with no
+  untranslated keys, no horizontal overflow and no console errors, and the
+  order name rendered in Arabic.
+
+**Known gap seen on that run — now closed:** the Contents column read its tier
+names in **English** under the Arabic UI, because `CountsSummary` was a single
+denormalised English string stored on the batch. It was logged as
+`docs/SIMF-Follow-Up-Backlog.md` §3.10 and is resolved: the counts are
+`BadgeBatchItem` child rows, and both the bilingual `Tiers` breakdown and the
+`CountsSummary` string are composed on read against the live profile-type names.

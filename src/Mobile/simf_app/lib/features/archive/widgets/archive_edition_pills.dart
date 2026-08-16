@@ -41,4 +41,3 @@ class ArchiveEditionPills extends StatelessWidget {
     );
   }
 }
-

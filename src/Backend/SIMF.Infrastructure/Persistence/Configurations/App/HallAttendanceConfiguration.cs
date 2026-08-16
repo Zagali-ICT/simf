@@ -17,7 +17,14 @@ internal sealed class HallAttendanceConfiguration : IEntityTypeConfiguration<Hal
 {
     public void Configure(EntityTypeBuilder<HallAttendance> builder)
     {
-        builder.ToTable("HallAttendances");
+        // An attendee cannot leave before they arrived. Leave stays null while the
+        // row is open, which is the ordinary state and the filtered unique index
+        // below depends on; once stamped it must not precede Enter. The bound is
+        // >= and not >, because a scan-in immediately followed by a scan-out lands
+        // both stamps in the same second and is a legitimate record, not a defect.
+        builder.ToTable("HallAttendances", table => table.HasCheckConstraint(
+            "CK_HallAttendances_LeaveOrder",
+            "[Leave] IS NULL OR [Leave] >= [Enter]"));
         builder.HasKey(a => a.Id);
 
         builder.Property(a => a.Method).IsRequired();
@@ -45,6 +52,17 @@ internal sealed class HallAttendanceConfiguration : IEntityTypeConfiguration<Hal
 
         // Live per-hall presence count rides this (open rows in a hall).
         builder.HasIndex(a => new { a.HallId, a.Leave });
+
+        // The per-SESSION reads, none of which the filtered unique index above can
+        // serve: that index only contains the OPEN rows, so a query without a
+        // "[Leave] IS NULL" predicate cannot use it and falls back to a table scan.
+        // The attendance and session reports both count distinct attendees per
+        // session (over ALL rows, not just open ones) as a correlated subquery —
+        // once per grid row — and the question-gate checks (SessionId,
+        // UserProfileId) existence the same way. Leave is the third key column so
+        // the "still inside" count on the same report reads from the index too,
+        // instead of a lookup per row.
+        builder.HasIndex(a => new { a.SessionId, a.UserProfileId, a.Leave });
 
         // The per-attendee attendance-history lookup.
         builder.HasIndex(a => a.UserProfileId);

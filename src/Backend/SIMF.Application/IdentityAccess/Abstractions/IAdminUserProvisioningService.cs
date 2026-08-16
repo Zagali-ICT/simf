@@ -168,7 +168,12 @@ public interface IAdminUserProvisioningService
         AdminWalkInRegistrationRequest request,
         CancellationToken cancellationToken = default,
         bool? expectedIsVisitor = null,
-        string? presetQrId = null);
+        string? presetQrId = null,
+        // The attendee id an offline desk minted for the badge it printed. The
+        // desk is disconnected, so it generates one and encrypts it into the
+        // paper; the server has to create the record under that id or the badge
+        // already in someone's hand resolves to nobody. Empty means "mint one".
+        Guid presetProfileId = default);
 
     // -- Per-family avatar scope guard ----------------------------------------
 

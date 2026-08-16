@@ -8,8 +8,8 @@
 // the API rather than in a browser:
 //
 //   -004  an app/visitor-audience token is refused on an admin endpoint
-//   -005  anonymous is 401, and the anonymous auth surface is EXACTLY the three
-//         endpoints it is allowed to be
+//   -005  anonymous is 401; the anonymous AUTH surface is exactly its reviewed
+//         allow-list; and no endpoint outside that surface is anonymous at all
 //   -006  over-posting a protected field on an UPDATE is ignored (the D-544
 //         dual-DTO rule)
 //   -007  a baseline role grant behaves as the catalogue declares it
@@ -49,21 +49,26 @@ public sealed class BusinessFlow13PermissionMatrixTests : IClassFixture<SimfApiF
     /// point and must be a deliberate, reviewed decision — which is what failing
     /// this test forces.
     ///
-    /// <para><b>This list is 19 entries, not 3</b> (17 before #2 added the two
-    /// mandatory-enrolment steps on 2026-07-30). CLAUDE.md §4 states the rule
-    /// as "No AllowAnonymous except: SignIn / SignUp / ForgotPassword", and the
-    /// first draft of this test encoded that literally and failed against 14 more.
-    /// None of the 14 is a defect: they are the rest of the pre-authentication
-    /// surface, and each carries its own credential instead of a bearer token — an
-    /// emailed code, a reset token, a refresh token, a badge activation code, or a
-    /// device-key challenge signature. Gating them on a bearer token would make
-    /// them unreachable by the only callers that need them, i.e. it would break
-    /// sign-up, 2FA and password reset outright. The rule's spirit is "the
-    /// authentication surface, and nothing else"; the literal three-endpoint
-    /// wording is stale and is flagged for the owner rather than enforced.</para>
+    /// <para><b>This list is 20 entries, not 3.</b> CLAUDE.md §4 once stated the
+    /// rule as "No AllowAnonymous except: SignIn / SignUp / ForgotPassword", and
+    /// the first draft of this test encoded that literally and failed against 14
+    /// more. None of those is a defect: they are the rest of the
+    /// pre-authentication surface, and each carries its own credential instead of
+    /// a bearer token — an emailed code, a reset token, a refresh token, a badge
+    /// activation code, or a device-key challenge signature. Gating them on a
+    /// bearer token would make them unreachable by the only callers that need
+    /// them, i.e. it would break sign-up, 2FA and password reset outright. The
+    /// rule's spirit is "the authentication surface, and nothing else", and the
+    /// project rules were corrected to say so rather than keeping a literal
+    /// three-name list that could only be satisfied by breaking authentication.
+    /// <b>Keep the count in this sentence and in CLAUDE.md §4 in step with the
+    /// list</b> — it has drifted twice (17, then 19) while the array grew.</para>
     ///
-    /// <para>The value of the test is unchanged by widening it: a 20th anonymous
-    /// endpoint still breaks the build.</para></summary>
+    /// <para>The value of the test is unchanged by widening it: a 21st anonymous
+    /// auth endpoint still breaks the build. What this list does NOT constrain is
+    /// everything outside <c>/auth/</c> — see
+    /// <see cref="No_endpoint_outside_the_authentication_surface_is_anonymous"/>,
+    /// which is the half that guards <c>/admin/</c>.</para></summary>
     private static readonly string[] ExpectedAnonymousAuthRoutes =
     [
         // The three the rule names.
@@ -155,12 +160,19 @@ public sealed class BusinessFlow13PermissionMatrixTests : IClassFixture<SimfApiF
 
     /// <summary>E2E-BF-13-005, second half — and the more useful one. The first
     /// asserts one route stays shut; this asserts no NEW door opened. It
-    /// enumerates the mapped auth surface and requires the anonymous set to equal
-    /// {sign-in, sign-up, forgot-password} exactly, so adding a fourth
-    /// AllowAnonymous auth endpoint breaks the build until someone justifies
-    /// it.</summary>
+    /// enumerates the mapped <c>/auth/</c> surface and requires the anonymous set
+    /// to equal <see cref="ExpectedAnonymousAuthRoutes"/> exactly, so a new
+    /// AllowAnonymous auth endpoint breaks the build until someone justifies it
+    /// by adding it there.
+    ///
+    /// <para>The name used to say "the three endpoints", which the array it
+    /// compares against outgrew long ago — it is 20 routes, each with a written
+    /// justification. That mattered enough to fix rather than leave: a failure
+    /// message framed as "should be three" invites the reader to delete entries
+    /// until it is three, and every one of those deletions breaks sign-up, the
+    /// second factor or password reset.</para></summary>
     [Fact]
-    public void The_anonymous_auth_surface_is_exactly_the_three_endpoints_it_should_be()
+    public void The_anonymous_auth_surface_is_exactly_its_reviewed_allow_list()
     {
         var anonymous = _factory.Services
             .GetServices<EndpointDataSource>()
@@ -168,7 +180,7 @@ public sealed class BusinessFlow13PermissionMatrixTests : IClassFixture<SimfApiF
             .OfType<RouteEndpoint>()
             .Distinct()
             .Where(endpoint => endpoint.Metadata.GetMetadata<IAllowAnonymous>() is not null)
-            .Select(endpoint => "/" + (endpoint.RoutePattern.RawText ?? "").TrimStart('/'))
+            .Select(RouteOf)
             .Where(path => path.Contains("/auth/", StringComparison.OrdinalIgnoreCase))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
@@ -200,6 +212,92 @@ public sealed class BusinessFlow13PermissionMatrixTests : IClassFixture<SimfApiF
             + "or sign-up may now be unreachable for new users:\n  "
             + string.Join("\n  ", missing));
     }
+
+    /// <summary>E2E-BF-13-005, third part — the half the allow-list above cannot
+    /// reach. That test filters to <c>/auth/</c> before it compares, which is
+    /// correct for what it pins but leaves every other route unexamined: an
+    /// <c>AllowAnonymous</c> on an admin endpoint passes it without complaint.
+    /// This asserts the two things that are never legitimate anywhere.
+    ///
+    /// <para><b>Admin routes.</b> The whole <c>/admin/</c> surface is
+    /// permission-gated by design, and the project rules call an ungated admin
+    /// endpoint a security defect outright. There is no reviewed exception, so
+    /// this is an absolute rule and not a second allow-list.</para>
+    ///
+    /// <para><b>Anonymous AND policy-gated is a contradiction that resolves the
+    /// dangerous way.</b> ASP.NET Core lets <c>AllowAnonymous</c> short-circuit
+    /// authorization, so an endpoint carrying both reads as gated to anyone
+    /// reviewing it — the policy is right there in the source — while being open
+    /// in fact. That is strictly worse than a plainly ungated endpoint, because
+    /// the gate is what a reviewer checks for. It cannot be caught by reading the
+    /// endpoint, only by asking the built routing table, which is what this
+    /// does.</para>
+    ///
+    /// <para>Deliberately NOT asserted here: the full public-read surface
+    /// (sessions, news, media and the rest). Those are legitimately anonymous and
+    /// change with ordinary content work, so pinning them by name would be a
+    /// list nobody maintains. The rule this encodes is the invariant one.</para></summary>
+    [Fact]
+    public void No_endpoint_outside_the_authentication_surface_is_anonymous()
+    {
+        var anonymous = _factory.Services
+            .GetServices<EndpointDataSource>()
+            .SelectMany(source => source.Endpoints)
+            .OfType<RouteEndpoint>()
+            .Distinct()
+            .Where(endpoint => endpoint.Metadata.GetMetadata<IAllowAnonymous>() is not null)
+            .ToList();
+
+        // A sweep that matches nothing passes silently, so prove the enumeration
+        // itself still works before trusting either verdict below.
+        Assert.True(
+            anonymous.Count > 0,
+            "No anonymous endpoints matched at all — the enumeration is broken, "
+            + "not the gates.");
+
+        var adminRoutes = anonymous
+            .Select(RouteOf)
+            .Where(path => path.Contains("/admin/", StringComparison.OrdinalIgnoreCase))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        Assert.True(
+            adminRoutes.Count == 0,
+            "ADMIN endpoint(s) are reachable with no token by anyone on the "
+            + "network. An admin route is permission-gated by design and there is "
+            + "no reviewed exception — gate it, do not add an allow-list:\n  "
+            + string.Join("\n  ", adminRoutes));
+
+        // Read the DECLARED intent, not the built authorization metadata. When an
+        // endpoint declares AllowAnonymous, FastEndpoints emits no IAuthorizeData
+        // for it at all — the policy is dropped during route building, so the
+        // contradiction is invisible in the routing table and the obvious version
+        // of this check silently passes. Verified by probing a planted endpoint:
+        // IAllowAnonymous=true, IAuthorizeData count=0, while the definition still
+        // carried PreBuiltUserPolicies=[RequireApprovedAccount]. The definition is
+        // therefore the only place the two declarations coexist.
+        var policyGated = anonymous
+            .Select(endpoint => (
+                Route: RouteOf(endpoint),
+                Definition: endpoint.Metadata.GetMetadata<FastEndpoints.EndpointDefinition>()))
+            .Where(entry => entry.Definition?.PreBuiltUserPolicies is { Count: > 0 })
+            .Select(entry => entry.Route)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        Assert.True(
+            policyGated.Count == 0,
+            "Endpoint(s) declare an authorization policy AND AllowAnonymous. "
+            + "AllowAnonymous wins and the policy is discarded, so these are OPEN "
+            + "while reading as gated to anyone reviewing the source — remove "
+            + "whichever of the two is wrong:\n  "
+            + string.Join("\n  ", policyGated));
+    }
+
+    private static string RouteOf(RouteEndpoint endpoint) =>
+        "/" + (endpoint.RoutePattern.RawText ?? string.Empty).TrimStart('/');
 
     /// <summary>E2E-BF-13-006 — the D-544 dual-DTO rule. An admin UPDATE binds its
     /// OWN request DTO and maps explicitly, so a field the caller is not supposed
@@ -431,9 +529,6 @@ public sealed class BusinessFlow13PermissionMatrixTests : IClassFixture<SimfApiF
             {
                 Id = Guid.NewGuid(),
                 Code = def.Code,
-                Page = def.Page,
-                Action = def.Action,
-                DisplayName = def.DisplayName,
             };
             db.Permissions.Add(permission);
             await db.SaveChangesAsync();

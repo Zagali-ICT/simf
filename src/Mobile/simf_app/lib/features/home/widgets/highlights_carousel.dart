@@ -59,11 +59,11 @@ class _HighlightsCarouselState extends State<HighlightsCarousel> {
         return;
       }
       final next = (_index + 1) % widget.items.length;
-      _controller.animateToPage(
-        next,
-        duration: MotionDurations.carouselSlide,
-        curve: Curves.easeInOut,
-      );
+      unawaited(_controller.animateToPage(
+          next,
+          duration: MotionDurations.carouselSlide,
+          curve: Curves.easeInOut,
+        ),);
     });
   }
 
@@ -87,7 +87,7 @@ class _HighlightsCarouselState extends State<HighlightsCarousel> {
             itemBuilder: (context, i) {
               final post = widget.items[i];
               return HighlightSlide(
-                title: post.localizedTitle(widget.l10n.isArabic),
+                title: post.localizedTitle(isArabic: widget.l10n.isArabic),
                 imageUrl: AssetUrls.image(
                   widget.baseUrl,
                   AssetKind.newsImage,
@@ -106,4 +106,3 @@ class _HighlightsCarouselState extends State<HighlightsCarousel> {
     );
   }
 }
-

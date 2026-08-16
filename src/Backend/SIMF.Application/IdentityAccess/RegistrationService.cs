@@ -7,6 +7,7 @@ using SIMF.Application.Abstractions;
 using SIMF.Application.Auditing;
 using SIMF.Application.Email;
 using SIMF.Application.IdentityAccess.Abstractions;
+using SIMF.Application.Security;
 using SIMF.Application.Notifications;
 using SIMF.Application.Operations.Abstractions;
 using SIMF.Common;
@@ -193,8 +194,16 @@ public sealed class RegistrationService(
 
         if (!CodesMatch(code.Code, AccountCodeHasher.Hash(request.Code)))
         {
-            code.AttemptCount++;
-            await accountCodeRepository.UpdateAsync(code, cancellationToken);
+            // Atomic increment, and the decision is taken on the returned count —
+            // the cap check above read AttemptCount before this guess was compared,
+            // so concurrent wrong tries would each read 0 and write 1 and never
+            // reach MaxCodeAttempts. Burn the code once the budget is spent.
+            var attempts = await accountCodeRepository.IncrementAttemptCountAsync(
+                code.Id, cancellationToken);
+            if (attempts >= MaxCodeAttempts)
+            {
+                await accountCodeRepository.TryConsumeAsync(code.Id, now, cancellationToken);
+            }
             await AuditAsync(
                 AuditEvents.EmailVerificationCodeIncorrect, AuditOutcome.Failure, user.Email!,
                 user.Id, ErrorCodes.AuthCodeInvalid, cancellationToken: cancellationToken);
@@ -205,11 +214,18 @@ public sealed class RegistrationService(
                 "رمز التحقق غير صحيح.");
         }
 
+        // Consuming is the gate, not a side effect: two concurrent verifies of one
+        // valid code both passed the unconsumed read above, and only the caller
+        // that flips ConsumedAt may advance the account state.
+        var consumed = false;
         await transactionRunner.ExecuteAsync(
             async token =>
             {
-                code.ConsumedAt = now;
-                await accountCodeRepository.UpdateAsync(code, token);
+                consumed = await accountCodeRepository.TryConsumeAsync(code.Id, now, token);
+                if (!consumed)
+                {
+                    return;
+                }
 
                 user.EmailConfirmed = true;
                 user.AccountState = AccountState.EmailVerified;
@@ -217,6 +233,18 @@ public sealed class RegistrationService(
                 await accounts.UpdateAsync(user).EnsureSuccessAsync();
             },
             cancellationToken);
+
+        if (!consumed)
+        {
+            await AuditAsync(
+                AuditEvents.EmailVerificationCodeIncorrect, AuditOutcome.Failure, user.Email!,
+                user.Id, ErrorCodes.AuthCodeInvalid, cancellationToken: cancellationToken);
+            throw new ApiException(
+                ErrorCodes.AuthCodeInvalid,
+                400,
+                "The verification code is not correct.",
+                "رمز التحقق غير صحيح.");
+        }
 
         await AuditAsync(
             AuditEvents.EmailVerificationSucceeded, AuditOutcome.Success, user.Email!,
@@ -470,8 +498,7 @@ public sealed class RegistrationService(
             user.Id, AccountCodePurpose.EmailVerification, cancellationToken);
         if (previous is not null)
         {
-            previous.ConsumedAt = now;
-            await accountCodeRepository.UpdateAsync(previous, cancellationToken);
+            await accountCodeRepository.TryConsumeAsync(previous.Id, now, cancellationToken);
         }
 
         // M3 (security) — store only the keyed hash; return the plaintext to email.
@@ -537,7 +564,5 @@ public sealed class RegistrationService(
 
     /// <summary>Compares the codes in constant time, so no timing side channel leaks.</summary>
     private static bool CodesMatch(string stored, string supplied) =>
-        CryptographicOperations.FixedTimeEquals(
-            Encoding.UTF8.GetBytes(stored),
-            Encoding.UTF8.GetBytes(supplied));
+        ConstantTime.Matches(stored, supplied);
 }

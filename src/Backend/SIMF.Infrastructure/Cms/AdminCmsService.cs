@@ -245,8 +245,10 @@ internal sealed class AdminCmsService(
             .Select(b => new AdminBannerSummary(
                 b.Id, b.Title, b.TitleArabic,
                 b.Start, b.End, b.DisplayOrder, b.IsActive, b.CreatedAt,
-                // Round-trip body + image/link through the grid Excel export.
-                b.Body, b.BodyArabic, b.ImageUrl, b.LinkUrl))
+                // Round-trip body + link through the grid Excel export. The
+                // image is not a column any more: it is uploaded, so there is
+                // nothing for a spreadsheet to carry.
+                b.Body, b.BodyArabic, b.LinkUrl))
             .ToListAsync(cancellationToken);
 
         return GridPage<AdminBannerSummary>.Of(page, total,
@@ -279,7 +281,6 @@ internal sealed class AdminCmsService(
             TitleArabic = request.TitleArabic.Trim(),
             Body = request.Body.Trim(),
             BodyArabic = request.BodyArabic.Trim(),
-            ImageUrl = NullIfBlank(request.ImageUrl),
             LinkUrl = NullIfBlank(request.LinkUrl),
             Start = request.Start,
             End = request.End,
@@ -315,7 +316,6 @@ internal sealed class AdminCmsService(
         banner.TitleArabic = request.TitleArabic.Trim();
         banner.Body = request.Body.Trim();
         banner.BodyArabic = request.BodyArabic.Trim();
-        banner.ImageUrl = NullIfBlank(request.ImageUrl);
         banner.LinkUrl = NullIfBlank(request.LinkUrl);
         banner.Start = request.Start;
         banner.End = request.End;
@@ -401,6 +401,6 @@ internal sealed class AdminCmsService(
 
     private static AdminBannerDetail ToBannerDetail(Banner banner) =>
         new(banner.Id, banner.Title, banner.TitleArabic, banner.Body, banner.BodyArabic,
-            banner.ImageUrl, banner.LinkUrl, banner.Start, banner.End,
+            banner.LinkUrl, banner.Start, banner.End,
             banner.DisplayOrder, banner.IsActive, banner.CreatedAt, banner.UpdatedAt);
 }

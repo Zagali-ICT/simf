@@ -49,4 +49,3 @@ class ArchivePlaceTimeRow extends StatelessWidget {
     );
   }
 }
-

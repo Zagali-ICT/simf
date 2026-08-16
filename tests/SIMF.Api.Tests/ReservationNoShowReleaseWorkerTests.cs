@@ -16,7 +16,7 @@ namespace SIMF.Api.Tests;
 /// #6/#17 — tests for the no-show release rule
 /// (<see cref="ISeatReservationService.ReleaseNoShowsAsync"/>) that
 /// <c>ReservationNoShowReleaseWorker</c> runs once per minute. An active hold whose
-/// no-show deadline (Start − 3min, on <c>Expires</c>) has passed is released
+/// no-show deadline (Start − 3min, on <c>NoShowReleaseAt</c>) has passed is released
 /// ONLY when its holder never checked in and it was booked ahead of the deadline;
 /// a checked-in holder, a future deadline, a walk-in booked after the deadline, an
 /// admin block and an already-released row are all left alone.
@@ -56,7 +56,7 @@ public sealed class ReservationNoShowReleaseWorkerTests : IClassFixture<SimfApiF
             createdAt: now.AddHours(-2), expires: now.AddMinutes(30));
 
         // (d) Approved, deadline passed, but a WALK-IN booked after it (CreatedAt >=
-        //     Expires) → exempt (they are present, not a no-show).
+        //     NoShowReleaseAt) → exempt (they are present, not a no-show).
         var walkInId = await SeedReservationAsync(sessionId, "A", 4,
             status: BookingStatus.Approved,
             createdAt: now, expires: now.AddMinutes(-1));
@@ -204,7 +204,7 @@ public sealed class ReservationNoShowReleaseWorkerTests : IClassFixture<SimfApiF
             CreatedByUserId = holder ?? Guid.NewGuid(),
             CreatedAt = createdAt,
             Status = status,
-            Expires = expires,
+            NoShowReleaseAt = expires,
             ReleasedAt = releasedAt,
         };
         db.SeatReservations.Add(reservation);

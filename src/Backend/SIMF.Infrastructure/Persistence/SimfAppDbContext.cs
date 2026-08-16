@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SIMF.Application.Abstractions;
 using SIMF.Domain.AccessControl;
@@ -96,6 +96,10 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
 
     /// <summary>Archive visibility switch.</summary>
     public DbSet<ArchiveVisibility> ArchiveVisibility => Set<ArchiveVisibility>();
+
+    /// <summary>The year the forum is currently running.</summary>
+    public DbSet<SIMF.Domain.Editions.EventEdition> EventEdition =>
+        Set<SIMF.Domain.Editions.EventEdition>();
 
     /// <summary>Country lookup (ISO 3166-1 numeric Id; admin-managed
     /// CRUD; seeded with ~56 priority countries on first migration).</summary>
@@ -301,6 +305,12 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     // UserProfile carries a nullable BadgeBatchId back-reference (intra-App FK).
     public DbSet<BadgeBatch> BadgeBatches => Set<BadgeBatch>();
 
+    // What each order holds, one row per profile type. Replaced the rendered
+    // "VIP × 3 + Normal × 2" string on BadgeBatches, which could not be queried
+    // and froze the tier name at mint time; the label is composed on read from
+    // these rows joined to the live profile type.
+    public DbSet<BadgeBatchItem> BadgeBatchItems => Set<BadgeBatchItem>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -334,9 +344,11 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
         {
             foreach (var property in new[]
             {
-                nameof(SIMF.Domain.Profiles.UserProfile.NationalId),
-                nameof(SIMF.Domain.Profiles.UserProfile.IqamaNumber),
-                nameof(SIMF.Domain.Profiles.UserProfile.PassportNumber),
+                // The canonical number and the two columns it supersedes. All
+                // three are the same fact, so all three carry the same
+                // protection — leaving the new one in plaintext would have made
+                // the collapse a PII regression.
+                nameof(SIMF.Domain.Profiles.UserProfile.MobileNumber),
                 nameof(SIMF.Domain.Profiles.UserProfile.SaudiMobile),
                 nameof(SIMF.Domain.Profiles.UserProfile.InternationalMobile),
             })
@@ -344,5 +356,28 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
                 entity.Property(property).HasConversion(piiConverter).HasMaxLength(256);
             }
         });
+
+        // The identity-document numbers used to be three more names in the loop
+        // above. They are now one column on their own entity, so they need their
+        // own registration — the loop is keyed on UserProfile property NAMES, and
+        // a different entity is invisible to it. A missed registration is SILENT: a
+        // plaintext number reads back perfectly (Decrypt returns unmarked values
+        // unchanged), so nothing fails and the PII simply sits in the clear.
+        //
+        // NumberHash is deliberately NOT here. It is the deterministic digest the
+        // unique index keys off, and encrypting it under a random nonce would make
+        // it a different value on every write.
+        // Its own converter rather than the one above, because the column is
+        // REQUIRED: a document row exists only when there is a number to put in
+        // it. The nullable converter does not type-check against a non-nullable
+        // property, and papering over that with the stringly-typed Property
+        // overload would only hide the difference the column actually has.
+        var requiredPiiConverter = new ValueConverter<string, string?>(
+            value => _pii.Encrypt(value),
+            value => _pii.Decrypt(value) ?? string.Empty);
+        modelBuilder.Entity<SIMF.Domain.Profiles.ProfileIdentityDocument>()
+            .Property(document => document.Number)
+            .HasConversion(requiredPiiConverter)
+            .HasMaxLength(256);
     }
 }

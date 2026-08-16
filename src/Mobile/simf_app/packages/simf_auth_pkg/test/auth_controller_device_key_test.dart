@@ -82,7 +82,7 @@ void main() {
         () async {
       final repo = _MockAuthRepository();
       final secure = _InMemSecureStorage();
-      when(() => repo.getCurrentUser()).thenAnswer((_) async => _user());
+      when(repo.getCurrentUser).thenAnswer((_) async => _user());
       when(
         () => repo.signIn(
           email: any(named: 'email'),
@@ -143,7 +143,7 @@ void main() {
           signature: any(named: 'signature'),
         ),
       ).thenAnswer((_) async => _session());
-      when(() => repo.getCurrentUser()).thenAnswer((_) async => _user());
+      when(repo.getCurrentUser).thenAnswer((_) async => _user());
 
       final container = ProviderContainer(
         overrides: <Override>[
@@ -154,7 +154,9 @@ void main() {
       addTearDown(container.dispose);
 
       await _waitFor(container, (s) => s is AuthStateSignedOut);
-      await container.read(authControllerProvider.notifier).signInWithDeviceKey();
+      await container
+          .read(authControllerProvider.notifier)
+          .signInWithDeviceKey();
 
       expect(container.read(authControllerProvider), isA<AuthStateSignedIn>());
       final captured = verify(
@@ -198,8 +200,7 @@ void main() {
       final secure = _InMemSecureStorage();
       await secure.write(StorageKeys.deviceKeyId, 'dk-1');
       await secure.write(StorageKeys.deviceKeyPrivate, 'priv');
-      when(() => repo.revokeDeviceKey('dk-1'))
-          .thenThrow(Exception('offline'));
+      when(() => repo.revokeDeviceKey('dk-1')).thenThrow(Exception('offline'));
 
       final container = ProviderContainer(
         overrides: <Override>[

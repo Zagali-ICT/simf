@@ -1,4 +1,4 @@
-# Sessions — `/admin/sessions`
+﻿# Sessions — `/admin/sessions`
 
 | | |
 |--|--|
@@ -127,6 +127,16 @@ First / Prev / numbered / Next / Last; default `Top = 20`; summary
 | Description (Arabic) | textarea | no | 2048 | optional; `null` if blank |
 | Live stream URL | text | no | 1024 | `LiveStreamUrlPolicy.IsAllowed` (YouTube / HLS / MP4 https) |
 | Live sign-language URL | text | no | 1024 | same policy |
+
+> **Where the two feed URLs live.** The form is unchanged — an admin still types a
+> URL and the same policy still validates it — but the value is no longer a column
+> on the session. It is a row in `StoredFiles` of source type `ExternalLink`, and
+> the session holds `LiveStreamFileId` / `LiveSignLanguageFileId` keyed to it, so a
+> feed carries a media type, a service policy, a tier and an owner like every other
+> media reference. The URL is served back **verbatim**, never behind the
+> download-by-id redirect: both clients decide *how* to play a feed by reading the
+> string, so an indirected URL would be loadable and still wrong.
+
 | Live notice — shown with the stream (English) | textarea (2 rows) | no | 512 | optional; `null` if blank. Server caps at 512 → 400 `SESSION_INVALID` |
 | Live notice — shown with the stream (Arabic) | textarea (2 rows) | no | 512 | same; blank in **both** languages = no notice is shown anywhere |
 | Hall | select | yes | — | must parse to a Guid; loaded from `…/halls/list` (Top=500, active) |
@@ -308,7 +318,7 @@ deactivation also produces a `Session.Deactivated` row alongside the ordinary
 - **Delete is a soft-delete** — `IsActive=false`; the row stays visible with the
   grey "Inactive" pill in the CP, and disappears from the app + public agenda.
 - **Rescheduling re-arms the workers (A4)** — moving Start/End clears
-  `Session.ReminderSent` and `Session.RatingPromptSent`, because both workers
+  `Session.ReminderSentAt` and `Session.RatingPromptSentAt`, because both workers
   treat a non-null stamp as "already done" and a moved session would otherwise be
   permanently un-remindable. An edit that leaves the window alone does **not**
   clear them, so an already-delivered reminder is never re-sent.
@@ -388,6 +398,7 @@ deactivation also produces a `Session.Deactivated` row alongside the ordinary
 
 | Date | Decision | Change |
 |------|----------|--------|
+| 2026-08-14 | D-890 | **The two live-feed URLs become file-store keys.** `Session.LiveStreamUrl` and `LiveSignLanguageUrl` convert to `Guid? LiveStreamFileId` / `LiveSignLanguageFileId` with real foreign keys into `StoredFiles`; the feed is an external-link row. The CP form, its validation and the Excel columns are unchanged - only the storage moved - and the URL is emitted verbatim so the app's player can still classify it as YouTube or a direct stream. |
 | 2026-08-04 | D-842 | **The arrival-grace override now actually saves.** D-839 added the field to the contract DTO, the Control Panel and the service, but not to `UpdateSessionRequest` — the bespoke route DTO `UpdateSessionEndpoint` binds instead of the contract type. Every `PUT /admin/sessions/{id}` therefore bound it to `null` and the endpoint's hand-written mapping wrote that `null` over the stored value: the Control Panel reported *"Session … was updated"* while the column stayed `NULL`, and an override set at create time was wiped by the next edit to anything else on the session. Create was never affected (`CreateSessionEndpoint` binds `AdminCreateSessionRequest` directly), nor were halls, for the same reason. Fixed by carrying the property and mapping it; pinned by `UpdateSessionRequestParityTests`, a reflection ratchet over the whole DTO — this was the **fifth** field this one hand-copy has silently dropped (after the live URLs D-439, `Type`, `SeatSelectionModeOverride` D-485, and `Language`/`Outcomes`). Found by the live-DOM pass, not by the test suite. New E2E-SES-060. |
 | 2026-08-04 | D-839 | **Arrival grace (minutes)** on `SessionsAddEdit`, beside `CapacityOverride` — the other "blank inherits" knob. Additive nullable `Session.ArrivalGraceMinutesOverride` (0..240, `CK_Sessions_ArrivalGrace`); **blank = inherit the hall**, which may itself inherit the global `WalkInMode` value. Resolution is session → hall → global → 15. On edit the field's helper names the number currently being inherited, read off `AdminSessionDetail.InheritedArrivalGraceMinutes`, so an admin can see what blank means rather than guessing which layer is in force. Lets one keynote open its doors 40 minutes early without changing the hall the rest of that day's programme runs in. Round-trips through Excel as `ArrivalGraceMinutesOverride` (the **resolved** value is deliberately not exported — it is derived, and a round-trip would pin an inherited value on as an override). New resx quartet (EN + AR). New E2E-SES-057..059. |
 | 2026-07-31 | D-815 | **FR-702 re-scoped from a geographic restriction to an informational notice** (owner: *"No restriction, this is only notification and be added to session."*). `SessionsAddEdit` gained a bilingual "Live notice — shown with the stream" textarea pair (≤512 each) in the broadcast block; the value rides `AdminSessionDetail` + `PublicSessionDetail` (appended, D-219) to the app live screen and the Website session page, where it is displayed **with** the stream. No region check, no location lookup, no gate — the feed is unchanged. Blank in both languages shows nothing; clearing the boxes stores `null` and removes the banner. E2E SES-054..056; `SessionLiveNoticeTests.cs`. |

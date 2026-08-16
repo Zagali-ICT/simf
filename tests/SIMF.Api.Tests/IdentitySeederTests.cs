@@ -27,6 +27,61 @@ public sealed class IdentitySeederTests : IClassFixture<SimfApiFactory>
         _factory.EnsureDatabaseCreated();
     }
 
+    // The permission seed is ADD-ONLY, so deleting a code from PermissionCatalog
+    // leaves its row (and any custom grants) behind in every already-seeded
+    // database; only RetiredPermissionCodes clears it. Nothing pinned that
+    // before, so Editions.Close was removed from the catalogue and survived in
+    // the database until this was noticed by querying it.
+
+    [Fact]
+    public async Task SeedAsync_retires_a_permission_removed_from_the_catalogue()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var services = scope.ServiceProvider;
+        var identityDb = services.GetRequiredService<SimfIdentityDbContext>();
+
+        // Stand in for an older database that still carries the retired code.
+        const string retired = "Editions.Close";
+        if (!await identityDb.Permissions.AnyAsync(p => p.Code == retired))
+        {
+            identityDb.Permissions.Add(new Permission
+            {
+                Id = Guid.NewGuid(),
+                Code = retired,
+            });
+            await identityDb.SaveChangesAsync();
+        }
+
+        await services.GetRequiredService<IdentitySeeder>().SeedAsync();
+
+        Assert.False(
+            await identityDb.Permissions.AnyAsync(p => p.Code == retired),
+            $"{retired} was removed from PermissionCatalog, so the seeder must "
+            + "retire its row; add it to IdentitySeeder.RetiredPermissionCodes.");
+    }
+
+    [Fact]
+    public async Task SeedAsync_leaves_no_permission_row_the_catalogue_does_not_define()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var services = scope.ServiceProvider;
+        var identityDb = services.GetRequiredService<SimfIdentityDbContext>();
+
+        await services.GetRequiredService<IdentitySeeder>().SeedAsync();
+
+        var catalogue = PermissionCatalog.All
+            .Select(definition => definition.Code)
+            .ToHashSet(StringComparer.Ordinal);
+        var orphans = await identityDb.Permissions
+            .Select(permission => permission.Code)
+            .ToListAsync();
+
+        // A code in the database that the catalogue no longer defines gates
+        // nothing, yet still reads as a real authority to anyone querying the
+        // table directly.
+        Assert.DoesNotContain(orphans, code => !catalogue.Contains(code));
+    }
+
     [Fact]
     public async Task SeedAsync_creates_the_super_admin()
     {
@@ -279,11 +334,78 @@ public sealed class IdentitySeederTests : IClassFixture<SimfApiFactory>
         }
 
         // Idempotent — a second seed adds no duplicate demo profiles.
-        var demoProfileCount = database.UserProfiles.Count(p => p.NationalId!.StartsWith("100000000"));
+        //
+        // Counted over the demo accounts' own user ids. The predicate here used to
+        // be `p.NationalId.StartsWith("100000000")`, which asserted nothing at all:
+        // NationalId was encrypted at rest, so EF translated the StartsWith into a
+        // LIKE against ciphertext, matched no row either side of the re-seed, and
+        // compared 0 to 0.
+        var demoUserIds = await DemoProfileUserIdsAsync(users);
+        var demoProfileCount = await database.UserProfiles
+            .CountAsync(p => p.UserId != null && demoUserIds.Contains(p.UserId.Value));
+        Assert.Equal(8, demoProfileCount);
         await seeder.SeedAsync();
         Assert.Equal(
             demoProfileCount,
-            database.UserProfiles.Count(p => p.NationalId!.StartsWith("100000000")));
+            await database.UserProfiles
+                .CountAsync(p => p.UserId != null && demoUserIds.Contains(p.UserId.Value)));
+    }
+
+    [Fact]
+    public async Task SeedAsync_writes_each_demo_national_id_as_a_document_row_with_a_digest()
+    {
+        // The seeder used to write the demo national id straight onto
+        // UserProfile.NationalId, with no blind-index digest and no child row —
+        // which made every demo account invisible to the duplicate-identity guard,
+        // and would have silently dropped the number altogether once the column
+        // went. It now writes through ProfileIdentityStorage, the same helper the
+        // self-service upsert and the walk-in desk use.
+        using var scope = _factory.Services.CreateScope();
+        var seeder = scope.ServiceProvider.GetRequiredService<IdentitySeeder>();
+        var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+        var database = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+
+        await seeder.SeedAsync();
+
+        var demoUserIds = await DemoProfileUserIdsAsync(users);
+        var documents = await database.UserProfiles
+            .AsNoTracking()
+            .Where(p => p.UserId != null && demoUserIds.Contains(p.UserId.Value))
+            .SelectMany(p => p.IdentityDocuments)
+            .ToListAsync();
+
+        Assert.Equal(demoUserIds.Count, documents.Count);
+        Assert.All(documents, document =>
+        {
+            Assert.Equal(IdentityDocumentKind.NationalId, document.Kind);
+            // The digest the unique index and the guard both key off. A row
+            // without one is in the table and invisible to both.
+            Assert.Equal(64, document.NumberHash.Length);
+            // Read back through the value converter, so the seeded number is the
+            // plaintext the demo matrix declares.
+            Assert.StartsWith("100000000", document.Number, StringComparison.Ordinal);
+        });
+    }
+
+    /// <summary>The Identity user ids of the eight profile-carrying demo accounts
+    /// (everything but the CP-only admin). Resolved by email because the profile
+    /// row no longer carries a column a test can pattern-match on.</summary>
+    private static async Task<List<Guid>> DemoProfileUserIdsAsync(UserManager<SimfUser> users)
+    {
+        string[] emails =
+        [
+            "vvip@simf.local", "vip@simf.local", "visitor@simf.local", "staff@simf.local",
+            "moderator@simf.local", "exhibitor@simf.local", "media@simf.local",
+            "sponsor@simf.local",
+        ];
+        var ids = new List<Guid>(emails.Length);
+        foreach (var email in emails)
+        {
+            var user = await users.FindByEmailAsync(email);
+            Assert.NotNull(user);
+            ids.Add(user!.Id);
+        }
+        return ids;
     }
 
     [Fact]
@@ -334,13 +456,20 @@ public sealed class IdentitySeederTests : IClassFixture<SimfApiFactory>
         }
 
         // Idempotent — a re-seed uploads nothing new (the pointers stay put).
+        // Selected by demo user id for the same reason as above: the old
+        // NationalId LIKE predicate matched ciphertext and returned two empty
+        // lists, which are trivially equal.
+        var demoUserIds = await DemoProfileUserIdsAsync(users);
         var pointersBefore = await database.UserProfiles
-            .Where(p => p.NationalId!.StartsWith("100000000"))
+            .Where(p => p.UserId != null && demoUserIds.Contains(p.UserId.Value))
+            .OrderBy(p => p.Id)
             .Select(p => p.IdImageFileId)
             .ToListAsync();
+        Assert.Equal(demoUserIds.Count, pointersBefore.Count);
         await seeder.SeedAsync();
         var pointersAfter = await database.UserProfiles
-            .Where(p => p.NationalId!.StartsWith("100000000"))
+            .Where(p => p.UserId != null && demoUserIds.Contains(p.UserId.Value))
+            .OrderBy(p => p.Id)
             .Select(p => p.IdImageFileId)
             .ToListAsync();
         Assert.Equal(pointersBefore, pointersAfter);

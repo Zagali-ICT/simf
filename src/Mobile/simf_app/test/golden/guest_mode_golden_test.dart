@@ -13,13 +13,13 @@ import 'package:simf_app/features/guest/guest_mode_screen.dart';
 import 'golden_fonts.dart';
 
 /// Render-lock golden of the Guest-mode entry screen (وضع الضيف, Page 012,
-/// D-316). Regenerate:
-///   flutter test --update-goldens test/golden/guest_mode_golden_test.dart
+/// D-316). Regenerate: flutter test --update-goldens
+/// test/golden/guest_mode_golden_test.dart
 ///
 /// No KSA design frame is bound (it is styled to the Page 012 mockup, not a
-/// pinned node), so this is a **structural** render-lock: the navy AppBar shell,
-/// the accent explore ring, the headline, the accent "browsing as a guest"
-/// callout, and the Continue-as-guest / Sign-in actions. RTL.
+/// pinned node), so this is a **structural** render-lock: the navy AppBar
+/// shell, the accent explore ring, the headline, the accent "browsing as a
+/// guest" callout, and the Continue-as-guest / Sign-in actions. RTL.
 
 void main() {
   setUpAll(loadGoldenFonts);

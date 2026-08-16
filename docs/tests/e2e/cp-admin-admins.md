@@ -487,7 +487,7 @@ Scenario: a missing StoredFile falls back to the placeholder, not a broken glyph
 - Network: one `/account/api/admin/admins/{A}/avatar` (200) for A; none for B
 - Backend: `tests/SIMF.Api.Tests/AdminCreateUserTests.cs` →
   `Admins_list_row_reports_HasAvatar_once_a_photo_is_set` asserts the list row's
-  `HasAvatar` flips with the `AvatarRelativePath` sentinel (the same projection
+  `HasAvatar` flips with the `AvatarFileId` sentinel (the same projection
   backs the visitors/others lists)
 
 ---

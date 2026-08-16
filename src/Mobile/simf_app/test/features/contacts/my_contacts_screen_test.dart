@@ -76,7 +76,8 @@ void main() {
       expect(repo.listCalls, greaterThanOrEqualTo(2));
     });
 
-    testWidgets('opening a row then removing deletes + reloads', (tester) async {
+    testWidgets('opening a row then removing deletes + reloads',
+        (tester) async {
       final repo = FakeContactsRepo(saved: <SavedContactRow>[_row()]);
       await _pump(tester, repo);
 

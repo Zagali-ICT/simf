@@ -11,14 +11,15 @@ import 'package:simf_app/core/widgets/simf_field_style.dart';
 import 'package:simf_app/core/widgets/simf_picker_field.dart';
 
 /// C6 (D-371/D-459) — رقم اللوحة, optional. Three letter pickers over the 17
-/// official Saudi plate letters (shown "Arabic · Latin") plus a 1–4 digit field.
+/// official Saudi plate letters (shown "Arabic · Latin") plus a 1–4 digit
+/// field.
 ///
 /// The row is forced LTR because a plate reads left-to-right in both locales;
 /// the digit box is fixed-width so the three letter pickers (Expanded) absorb
 /// the remaining width and can show the picked letter.
 ///
-/// Presentation only: the screen owns the controllers and re-assembles the plate
-/// from the picks. Extracted from `sign_up_visitor_screen`.
+/// Presentation only: the screen owns the controllers and re-assembles the
+/// plate from the picks. Extracted from `sign_up_visitor_screen`.
 class PlateNumberField extends StatelessWidget {
   const PlateNumberField({
     required this.l10n,

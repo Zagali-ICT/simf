@@ -182,7 +182,8 @@ Future<void> _scrollTo(WidgetTester tester, Finder finder) async {
 
 void main() {
   group('MyAreaScreen (Page 014 — KSA frame 213:963)', () {
-    testWidgets('approved visitor sees the identity card, tiles and '
+    testWidgets(
+        'approved visitor sees the identity card, tiles and '
         'schedule', (tester) async {
       await _pump(
         tester,
@@ -233,7 +234,8 @@ void main() {
       expect(find.text('SHARE-MY-CONTACT'), findsOneWidget);
     });
 
-    testWidgets('the dashboard avatar shows the tap-to-change camera affordance',
+    testWidgets(
+        'the dashboard avatar shows the tap-to-change camera affordance',
         (tester) async {
       await _pump(
         tester,
@@ -332,7 +334,8 @@ void main() {
       expect(find.byIcon(Icons.photo_camera_outlined), findsNothing);
     });
 
-    testWidgets('BUG-013 — a TRUE guest gets the guest copy and a working '
+    testWidgets(
+        'BUG-013 — a TRUE guest gets the guest copy and a working '
         'sign-in CTA, never the under-review copy', (tester) async {
       final repo = _FakeMyAreaRepository(dashboard: _dashboard());
       await _pump(

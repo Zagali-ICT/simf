@@ -1,4 +1,4 @@
-// Build #13 — "Meet People Like You" partner directory
+﻿// Build #13 — "Meet People Like You" partner directory
 // (GET /api/v1/app/networking/partner-directory, policy RequireApprovedAccount).
 // Verifies the deduped union of curated Speakers / Sponsors / Booth companies +
 // the opted-in "Other"-type accounts, and the CP switch that empties it.
@@ -81,7 +81,7 @@ public sealed class PartnerDirectoryServiceTests : IClassFixture<SimfApiFactory>
             {
                 Id = Guid.NewGuid(),
                 Name = $"PD Sponsor {Guid.NewGuid().ToString("N")[..8]}",
-                NameArabic = "راعٍ",
+                NameArabic = $"راعٍ {Guid.NewGuid().ToString("N")[..8]}",
                 Tier = SponsorTier.Gold,
                 DisplayOrder = 0,
                 IsActive = true,
@@ -97,6 +97,53 @@ public sealed class PartnerDirectoryServiceTests : IClassFixture<SimfApiFactory>
 
         Assert.Contains(body.Entries,
             e => e.Id == sponsorId && e.Kind == PartnerDirectoryKind.Sponsor);
+    }
+
+    // LogoRelativePath on a directory entry is a PRESENCE SENTINEL: the app only
+    // tests it for null and then builds the asset URL from the id itself. It is
+    // pinned here because the field it used to be read from is now permanently
+    // null — nothing in the compiler or the rest of the suite would notice every
+    // sponsor quietly dropping to an initials tile.
+    [Fact]
+    public async Task Sponsor_entry_carries_a_logo_sentinel_only_once_a_logo_is_stored()
+    {
+        Guid sponsorId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            var sponsor = new Sponsor
+            {
+                Id = Guid.NewGuid(),
+                Name = $"PD Logo {Guid.NewGuid().ToString("N")[..8]}",
+                NameArabic = $"راعٍ بشعار {Guid.NewGuid().ToString("N")[..8]}",
+                Tier = SponsorTier.Gold,
+                DisplayOrder = 0,
+                IsActive = true,
+                CreatedAt = SimfClock.Now,
+            };
+            db.Sponsors.Add(sponsor);
+            await db.SaveChangesAsync();
+            sponsorId = sponsor.Id;
+        }
+
+        var token = await SeedApprovedCallerTokenAsync();
+
+        var before = await GetDirectoryAsync(token);
+        Assert.Null(before.Entries.Single(e => e.Id == sponsorId).LogoRelativePath);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var assets = scope.ServiceProvider
+                .GetRequiredService<SIMF.Application.Assets.Abstractions.IAssetService>();
+            await assets.SetExternalLinkAsync(
+                Guid.Empty, AssetCategory.SponsorLogo, sponsorId, AssetKind.Image,
+                "https://cdn.example.com/sponsor-logo.png");
+        }
+
+        var after = await GetDirectoryAsync(token);
+        Assert.Equal(
+            $"/app/assets/SponsorLogo/{sponsorId}/image",
+            after.Entries.Single(e => e.Id == sponsorId).LogoRelativePath);
     }
 
     [Fact]
@@ -161,7 +208,7 @@ public sealed class PartnerDirectoryServiceTests : IClassFixture<SimfApiFactory>
             {
                 Id = Guid.NewGuid(),
                 Name = companyName,
-                NameArabic = "راعٍ مزدوج",
+                NameArabic = $"راعٍ مزدوج {Guid.NewGuid().ToString("N")[..8]}",
                 Tier = SponsorTier.Gold,
                 DisplayOrder = 0,
                 IsActive = true,
@@ -223,7 +270,7 @@ public sealed class PartnerDirectoryServiceTests : IClassFixture<SimfApiFactory>
             {
                 Id = Guid.NewGuid(),
                 Name = companyName,
-                NameArabic = "راعٍ",
+                NameArabic = $"راعٍ {Guid.NewGuid().ToString("N")[..8]}",
                 Tier = SponsorTier.Gold,
                 DisplayOrder = 0,
                 IsActive = true,

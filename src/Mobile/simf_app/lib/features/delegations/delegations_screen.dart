@@ -16,6 +16,11 @@ import 'package:simf_app/features/delegations/widgets/delegations_body.dart';
 /// delegation (name + role), the date range and member count, topped by a
 /// stats strip (participating countries + total participants) and a search box.
 /// Public (anonymous `GET /app/delegations`).
+///
+/// Route: `RouteNames.delegations`.
+/// Data: [currentUserMeetingAccessProvider], [delegationsProvider].
+/// Perf: ListView builds every child up front — correct for a short static
+///       page, a defect on a data feed.
 class DelegationsScreen extends ConsumerStatefulWidget {
   const DelegationsScreen({super.key});
 
@@ -56,7 +61,8 @@ class _DelegationsScreenState extends ConsumerState<DelegationsScreen> {
         borderRadius:
             BorderRadius.vertical(top: Radius.circular(SimfTokens.radius)),
       ),
-      builder: (_) => DelegationMeetingRequestSheet(country: country, l10n: l10n),
+      builder: (_) =>
+          DelegationMeetingRequestSheet(country: country, l10n: l10n),
     );
   }
 
@@ -65,8 +71,8 @@ class _DelegationsScreenState extends ConsumerState<DelegationsScreen> {
     final l10n = AppL10n.of(context);
     final isArabic = Directionality.of(context) == TextDirection.rtl;
     final delegations = ref.watch(delegationsProvider);
-    // Bi-Meeting rework — a signed-in user holding AllowsDelegationMeeting can tap a
-    // country card to request a meeting; others see plain info cards.
+    // Bi-Meeting rework — a signed-in user holding AllowsDelegationMeeting can
+    // tap a country card to request a meeting; others see plain info cards.
     final canRequestDelegation =
         ref.watch(currentUserMeetingAccessProvider).value?.delegation ?? false;
 

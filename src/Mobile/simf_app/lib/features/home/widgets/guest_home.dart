@@ -14,7 +14,8 @@ import 'package:simf_app/features/home/widgets/pending_approval_card.dart';
 /// Guest / unapproved layout (frame 758:2910 — "الرئيسية • ضيف", 2×2 tiles):
 /// shown to a not-signed-in guest AND a signed-in but unapproved account.
 class GuestHome extends StatelessWidget {
-  const GuestHome({required this.l10n, this.pendingApproval = false, super.key});
+  const GuestHome(
+      {required this.l10n, this.pendingApproval = false, super.key,});
 
   final AppL10n l10n;
 
@@ -42,8 +43,8 @@ class GuestHome extends StatelessWidget {
         children: <Widget>[
           // The "browsing as guest, sign in" banner is for a NOT-signed-in
           // guest only. A signed-in but unapproved account is already logged in
-          // (D-666) — it gets the under-review card at the bottom instead, never
-          // a "please sign in" prompt.
+          // (D-666) — it gets the under-review card at the bottom instead,
+          // never a "please sign in" prompt.
           if (!pendingApproval) ...<Widget>[
             GuestBanner(l10n: l10n),
             const SizedBox(height: SimfTokens.space4),
@@ -52,7 +53,8 @@ class GuestHome extends StatelessWidget {
             children: <Widget>[
               SimfNavTile(
                 label: l10n.tileSessions,
-                // Same icon as the signed-in "Sessions" tile (owner 2026-07-22).
+                // Same icon as the signed-in "Sessions" tile (owner
+                // 2026-07-22).
                 iconAsset: HomeIcons.aboutSessions,
                 // Owner 2026-07-22: the "Sessions" tile opens the Sessions list
                 // (session_presentations, header "الجلسات") — the SAME page the
@@ -128,4 +130,3 @@ class GuestHome extends StatelessWidget {
     );
   }
 }
-

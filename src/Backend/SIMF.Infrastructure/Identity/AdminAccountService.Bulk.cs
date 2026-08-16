@@ -859,6 +859,22 @@ internal sealed partial class AdminAccountService
                 $"يمكن توليد {MaxPerRequest} شارة كحدّ أقصى في الطلب الواحد.");
         }
 
+        // The order's own name, validated in the same pre-write pass. Required:
+        // an order carrying only its counts is unrecognisable in a list once two
+        // are the same size, which is the whole reason it has a name.
+        const int MaxOrderNameLength = 200;
+        var orderName = (request.Name ?? string.Empty).Trim();
+        var orderNameArabic = (request.NameArabic ?? string.Empty).Trim();
+        if (orderName.Length == 0 || orderNameArabic.Length == 0
+            || orderName.Length > MaxOrderNameLength
+            || orderNameArabic.Length > MaxOrderNameLength)
+        {
+            throw new ApiException(
+                ErrorCodes.ValidationFailed, 400,
+                $"The order needs a name in both languages, at most {MaxOrderNameLength} characters.",
+                $"يحتاج الطلب إلى اسم باللغتين، بحدّ أقصى {MaxOrderNameLength} حرفًا.");
+        }
+
         // Validate the optional organiser recipient in the SAME
         // pre-write pass as the empty / cap / profile-type checks below, so an
         // invalid address is a clean 400 with zero accounts created (a 4xx must
@@ -882,55 +898,42 @@ internal sealed partial class AdminAccountService
         var now = timeProvider.SimfNow();
         var created = 0;
 
-        // Pre-validate EVERY batch's profile type BEFORE creating any account, so an
-        // invalid later batch is a clean 400 with nothing persisted (mirrors the
-        // up-front empty / cap checks above). Without this pass an invalid Nth batch
-        // would 400 while earlier batches' Approved badges were already committed —
-        // and a 4xx must have no side effects. There is no transaction spanning the
-        // two databases to roll that back, so this pass only READS the App DB up
-        // front; nothing is written until every batch has passed.
-        var plan = new List<(BulkBadgeBatch Batch, UserProfileType ProfileType)>(batches.Count);
-        foreach (var batch in batches)
-        {
-            var profileType = await appDbContext.ProfileTypes
-                .AsNoTracking()
-                .SingleOrDefaultAsync(p => p.Id == batch.ProfileTypeId && p.IsActive, cancellationToken)
-                ?? throw new ApiException(
-                    ErrorCodes.AdminProfileTypeInvalid, 400,
-                    "The selected profile type is not valid.",
-                    "نوع الملف الشخصي المحدّد غير صالح.");
-
-            // Bulk badges are audience tiers (VIP / Normal / …). Refuse partner /
-            // elevated-role types — a bulk Approved badge of an elevated MobileAppRole
-            // would hand out QR-accessible elevated authority (least-privilege).
-            if (!profileType.IsForVisitor)
-            {
-                throw new ApiException(
-                    ErrorCodes.AdminProfileTypeInvalid, 400,
-                    "Bulk-generate is only available for audience (visitor) profile types.",
-                    "توليد الشارات بالجملة متاح فقط لأنواع ملفات الجمهور (الزوار).");
-            }
-
-            plan.Add((batch, profileType));
-        }
+        var plan = await PlanBadgeOrderAsync(batches, cancellationToken);
 
         // Persist the batch so this generated set can be
         // re-emailed / revoked together later. Created + saved BEFORE the badge loop
-        // so each profile's BadgeBatchId FK resolves. CountsSummary is built
-        // invariant-culture (an ar-SA request culture would otherwise store
-        // Arabic-Indic digits). × is the multiplication sign, kept per the house
-        // doc rule. Same App DB only — no cross-DB write.
+        // so each profile's BadgeBatchId FK resolves. Same App DB only — no
+        // cross-DB write.
+        //
+        // What the order holds goes in as one CHILD ROW per profile type, taken
+        // from the same planned collection this method is already holding. It used
+        // to be rendered here into a single "VIP × 3 + Normal × 2" string, which
+        // could not be queried, was English whoever read it, and pinned the tier
+        // name as it stood at mint time. The readable breakdown is composed on
+        // read instead, from these rows joined to the live profile type.
         var badgeBatch = new BadgeBatch
         {
             Id = Guid.NewGuid(),
-            CountsSummary = string.Join(" + ", plan.Select(p =>
-                $"{p.ProfileType.Name} × {p.Batch.Count.ToString(CultureInfo.InvariantCulture)}")),
-            TotalCount = plan.Sum(p => p.Batch.Count),
+            Name = orderName,
+            NameArabic = orderNameArabic,
             IsDelegate = request.IsDelegate,
             RecipientEmail = recipient,
             CreatedAt = now,
             CreatedBy = actorUserId,
         };
+        for (var line = 0; line < plan.Count; line++)
+        {
+            badgeBatch.Items.Add(new BadgeBatchItem
+            {
+                Id = Guid.NewGuid(),
+                BadgeBatchId = badgeBatch.Id,
+                ProfileTypeId = plan[line].ProfileType.Id,
+                Count = plan[line].Batch.Count,
+                DisplayOrder = line,
+                CreatedAt = now,
+                CreatedBy = actorUserId,
+            });
+        }
         appDbContext.BadgeBatches.Add(badgeBatch);
         await appDbContext.SaveChangesAsync(cancellationToken);
 
@@ -941,75 +944,9 @@ internal sealed partial class AdminAccountService
             ? null
             : new List<(string ProfileTypeName, int Seq, string QrId)>(batches.Sum(b => b.Count));
 
-        foreach (var (batch, profileType) in plan)
-        {
-            // NOTE: each badge writes a SimfUser (Identity DB) then its UserProfile
-            // (App DB) with no distributed transaction — the two databases are
-            // physically separate. A mid-loop failure
-            // can leave the last user without a profile — the established walk-in
-            // trade-off; the already-created badges stay valid.
-            for (var i = 0; i < batch.Count; i++)
-            {
-                // Synthesized login (no real email / password) — the QR is the
-                // access key, exactly like the walk-in desk's no-email path.
-                var email = $"badge-{Guid.NewGuid():N}@simf.local";
-                var displayName = $"{profileType.Name} #{created + 1}";
-                var user = new SimfUser
-                {
-                    UserName = email,
-                    Email = email,
-                    EmailConfirmed = true,
-                    DisplayName = displayName,
-                    // A pre-generated badge is ready to hand out — Approved with a QR.
-                    AccountState = AccountState.Approved,
-                    UserType = kind,
-                    PasswordChangeRequired = false,
-                    CreatedAt = now,
-                    StateChangedAt = now,
-                    StateChangedByUserId = actorUserId,
-                };
-                var createResult = await accounts.CreateAsync(user);
-                if (!createResult.Succeeded)
-                {
-                    throw new ApiException(
-                        ErrorCodes.InternalError, 500,
-                        "A badge account could not be created.",
-                        "تعذّر إنشاء حساب الشارة.");
-                }
-
-                var profile = new UserProfile
-                {
-                    Id = Guid.NewGuid(),
-                    UserId = user.Id,
-                    ProfileTypeId = profileType.Id,
-                    Name = displayName,
-                    NameArabic = profileType.NameArabic,
-                    // Placeholder default data — filled in when the badge is assigned.
-                    NationalityId = 0,
-                    IsDelegate = request.IsDelegate,
-                    // A pre-generated badge is handed out ready to use, so the
-                    // PROFILE is approved here and not only the account above.
-                    // Admission moved onto the profile, and every badge path —
-                    // resolve, gate scan, activation — reads it there; a profile
-                    // left at the PendingApproval default made the minted QR
-                    // below contradict its own documented invariant ("minted the
-                    // moment AdmissionState reaches Approved") and the holder's
-                    // first scan answered "no such badge".
-                    AdmissionState = AccountState.Approved,
-                    StateChangedAt = now,
-                    StateChangedByUserId = actorUserId,
-                    // Back-reference to the persisted batch.
-                    BadgeBatchId = badgeBatch.Id,
-                    CreatedAt = now,
-                };
-                // Mint + save per badge so the QR-uniqueness check sees prior rows.
-                var qrId = await qrIdMinter.MintIfMissingAsync(profile, cancellationToken);
-                appDbContext.UserProfiles.Add(profile);
-                await appDbContext.SaveChangesAsync(cancellationToken);
-                badgeArtifacts?.Add((profileType.Name, created + 1, qrId));
-                created++;
-            }
-        }
+        created = await MintBadgesAsync(
+            plan, badgeBatch, request.IsDelegate, actorUserId, now,
+            startingSequence: 0, badgeArtifacts, cancellationToken);
 
         await auditLog.WriteSuccessAsync(
             AuditEvents.AdminBulkBadgesGenerated,
@@ -1034,6 +971,227 @@ internal sealed partial class AdminAccountService
         return new AdminBulkGenerateBadgesResponse(created, emailQueued);
     }
 
+    /// <summary>Resolves every requested profile type BEFORE anything is written,
+    /// so an invalid Nth entry is a clean 400 with nothing persisted.
+    ///
+    /// <para>Without this pass, an invalid later entry would 400 while earlier
+    /// approved badges were already committed — and a 4xx must have no side
+    /// effects. There is no transaction spanning the two databases to roll that
+    /// back, so this only READS.</para></summary>
+    private async Task<IReadOnlyList<(BulkBadgeBatch Batch, UserProfileType ProfileType)>>
+        PlanBadgeOrderAsync(
+            IEnumerable<BulkBadgeBatch> batches, CancellationToken cancellationToken)
+    {
+        var plan = new List<(BulkBadgeBatch Batch, UserProfileType ProfileType)>();
+        foreach (var batch in batches)
+        {
+            var profileType = await appDbContext.ProfileTypes
+                .AsNoTracking()
+                .SingleOrDefaultAsync(p => p.Id == batch.ProfileTypeId && p.IsActive, cancellationToken)
+                ?? throw new ApiException(
+                    ErrorCodes.AdminProfileTypeInvalid, 400,
+                    "The selected profile type is not valid.",
+                    "نوع الملف الشخصي المحدّد غير صالح.");
+
+            // Bulk badges are audience tiers (VIP / Normal / …). Refuse partner /
+            // elevated-role types — a bulk Approved badge of an elevated MobileAppRole
+            // would hand out QR-accessible elevated authority (least-privilege).
+            if (!profileType.IsForVisitor)
+            {
+                throw new ApiException(
+                    ErrorCodes.AdminProfileTypeInvalid, 400,
+                    "Bulk-generate is only available for audience (visitor) profile types.",
+                    "توليد الشارات بالجملة متاح فقط لأنواع ملفات الجمهور (الزوار).");
+            }
+
+            plan.Add((batch, profileType));
+        }
+        return plan;
+    }
+
+    /// <summary>Mints the planned badges into an order and returns how many
+    /// landed. One App-DB write per badge and nothing in Identity: a printed
+    /// badge is an ATTENDEE, not an account. It opens gates on the profile's own
+    /// admission state, and whoever ends up holding it creates their own account
+    /// from it later if they want the app.
+    ///
+    /// <para>This used to mint a <c>SimfUser</c> per badge with a synthesized
+    /// <c>badge-{guid}@simf.local</c> login and no password, purely because a
+    /// profile could not exist without one. Ordering a thousand badges therefore
+    /// created a thousand dormant passwordless accounts nobody ever signed into,
+    /// each carrying a real approved account state.</para></summary>
+    private async Task<int> MintBadgesAsync(
+        IReadOnlyList<(BulkBadgeBatch Batch, UserProfileType ProfileType)> plan,
+        BadgeBatch badgeBatch,
+        bool isDelegate,
+        Guid actorUserId,
+        DateTime now,
+        // Where the printed numbering continues from. Zero on a first order; the
+        // order's existing count on a top-up, so the second batch of badges reads
+        // #11 upward rather than starting again at #1 and printing two of each.
+        int startingSequence,
+        List<(string ProfileTypeName, int Seq, string QrId)>? badgeArtifacts,
+        CancellationToken cancellationToken)
+    {
+        var minted = 0;
+        foreach (var (batch, profileType) in plan)
+        {
+            for (var i = 0; i < batch.Count; i++)
+            {
+                var displayName = $"{profileType.Name} #{startingSequence + minted + 1}";
+                var profile = new UserProfile
+                {
+                    Id = Guid.NewGuid(),
+                    // No account. The holder creates one from the badge if they
+                    // want the app; until then there is nothing to sign into.
+                    UserId = null,
+                    ProfileTypeId = profileType.Id,
+                    Name = displayName,
+                    NameArabic = profileType.NameArabic,
+                    // Placeholder default data — filled in when the badge is assigned.
+                    NationalityId = 0,
+                    IsDelegate = isDelegate,
+                    BadgeBatchId = badgeBatch.Id,
+                    // The badge is printed ready to use, and every gate reads
+                    // admission HERE rather than on the account. Leaving it at
+                    // the pending default would print a box of badges that scan
+                    // correctly and are refused at every door.
+                    AdmissionState = AccountState.Approved,
+                    StateChangedAt = now,
+                    StateChangedByUserId = actorUserId,
+                    CreatedAt = now,
+                };
+                // Mint + save per badge so the QR-uniqueness check sees prior rows.
+                var qrId = await qrIdMinter.MintIfMissingAsync(profile, cancellationToken);
+                appDbContext.UserProfiles.Add(profile);
+                await appDbContext.SaveChangesAsync(cancellationToken);
+                badgeArtifacts?.Add((profileType.Name, minted + 1, qrId));
+                minted++;
+            }
+        }
+        return minted;
+    }
+
+    public async Task<AdminTopUpBadgeBatchResponse> TopUpBadgeBatchAsync(
+        Guid actorUserId, AdminTopUpBadgeBatchRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var badgeBatch = await appDbContext.BadgeBatches
+            .Include(b => b.Items)
+            .SingleOrDefaultAsync(b => b.Id == request.BatchId, cancellationToken)
+            ?? throw new ApiException(
+                ErrorCodes.AdminUserNotFound, 404,
+                "The badge order was not found.",
+                "لم يتم العثور على طلب الشارات.");
+
+        if (!badgeBatch.IsActive)
+        {
+            throw new ApiException(
+                ErrorCodes.ValidationFailed, 409,
+                "This order has been revoked and cannot be topped up.",
+                "تم إلغاء هذا الطلب ولا يمكن إضافة شارات إليه.");
+        }
+
+        // The direct-registration order is where everyone who arrived on their own
+        // is filed. It is not something an admin orders badges against, and
+        // minting into it would invent attendees nobody asked for.
+        if (badgeBatch.Id == BadgeBatch.DirectRegistrationId)
+        {
+            throw new ApiException(
+                ErrorCodes.ValidationFailed, 409,
+                "Direct registrations are not a badge order and cannot be topped up.",
+                "التسجيلات المباشرة ليست طلب شارات ولا يمكن إضافة شارات إليها.");
+        }
+
+        var plan = await PlanBadgeOrderAsync(request.Batches, cancellationToken);
+        var now = timeProvider.SimfNow();
+        // Where the printed numbering continues from: the badges the order already
+        // holds, which IS the sum of its lines. There is no separate stored total
+        // to read, and therefore none to drift from them.
+        var existingTotal = badgeBatch.Items.Sum(item => item.Count);
+        var minted = await MintBadgesAsync(
+            plan, badgeBatch, badgeBatch.IsDelegate, actorUserId, now,
+            startingSequence: existingTotal, badgeArtifacts: null, cancellationToken);
+
+        MergeIntoOrderLines(badgeBatch, plan, actorUserId, now);
+        badgeBatch.UpdatedAt = now;
+
+        badgeBatch.UpdatedBy = actorUserId;
+        await appDbContext.SaveChangesAsync(cancellationToken);
+
+        var newTotal = badgeBatch.Items.Sum(item => item.Count);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.AdminBulkBadgesGenerated,
+            actorUserId,
+            $"top-up; added={minted}; batchId={badgeBatch.Id}; total={newTotal}",
+            cancellationToken);
+        logger.LogInformation(
+            "Admin {ActorId} topped up badge order {BatchId} with {Added} badges.",
+            actorUserId, badgeBatch.Id, minted);
+
+        return new AdminTopUpBadgeBatchResponse(minted, newTotal);
+    }
+
+    /// <summary>Folds the added counts into the order's existing lines, so an order
+    /// topped up twice with the same tier holds one line reading 8 rather than two
+    /// reading 5 and 3. A tier the order does not hold yet is appended after the
+    /// last line, keeping entry order.
+    ///
+    /// <para>This replaced a string merge that split the stored
+    /// "VIP × 5 + Normal × 2" prose back apart on " + " and " × ", parsed the
+    /// numbers out invariant-culture, added to them and re-rendered — round-tripping
+    /// data through its own display format, and matching tiers by NAME so a rename
+    /// between two top-ups silently started a second line for the same tier.
+    /// Matching on the profile-type id cannot do that.</para></summary>
+    private void MergeIntoOrderLines(
+        BadgeBatch badgeBatch,
+        IReadOnlyList<(BulkBadgeBatch Batch, UserProfileType ProfileType)> added,
+        Guid actorUserId,
+        DateTime now)
+    {
+        // A profile type may appear on two lines of one original request, so fold
+        // into the FIRST line holding it — which is what the old name match did.
+        var nextDisplayOrder = badgeBatch.Items.Count == 0
+            ? 0
+            : badgeBatch.Items.Max(item => item.DisplayOrder) + 1;
+
+        foreach (var (batch, profileType) in added)
+        {
+            var existing = badgeBatch.Items
+                .Where(item => item.ProfileTypeId == profileType.Id)
+                .OrderBy(item => item.DisplayOrder)
+                .FirstOrDefault();
+            if (existing is not null)
+            {
+                existing.Count += batch.Count;
+                continue;
+            }
+
+            var line = new BadgeBatchItem
+            {
+                Id = Guid.NewGuid(),
+                BadgeBatchId = badgeBatch.Id,
+                ProfileTypeId = profileType.Id,
+                Count = batch.Count,
+                DisplayOrder = nextDisplayOrder++,
+                CreatedAt = now,
+                CreatedBy = actorUserId,
+            };
+            // Add to the SET, not only to the parent's collection. The order is
+            // already tracked, so a new child reached through its navigation is
+            // classified by EF's "is the key set?" rule — and this one's Guid key
+            // IS set, so it was staged as an UPDATE of a row that does not exist
+            // and the top-up threw DbUpdateConcurrencyException ("expected to
+            // affect 1 row(s), but actually affected 0"). Adding it explicitly
+            // states the intent instead of relying on that heuristic.
+            //
+            // Only to the set: tracking it fixes up the order's Items collection
+            // too, and adding it there as well put the same instance in the list
+            // twice, which double-counted it in the total.
+            appDbContext.BadgeBatchItems.Add(line);
+        }
+    }
+
     public async Task<GridPage<AdminBadgeBatchSummary>> ListBadgeBatchesAsync(
         Guid actorUserId, GridQuery query, CancellationToken cancellationToken = default)
     {
@@ -1045,11 +1203,93 @@ internal sealed partial class AdminAccountService
             .AsNoTracking()
             .OrderByDescending(batch => batch.CreatedAt)
             .Skip(skip).Take(top)
-            .Select(batch => new AdminBadgeBatchSummary(
-                batch.Id, batch.CountsSummary, batch.TotalCount, batch.IsDelegate,
-                batch.RecipientEmail, batch.CreatedAt, batch.IsActive))
+            .Select(batch => new
+            {
+                batch.Id,
+                batch.IsDelegate,
+                batch.RecipientEmail,
+                batch.CreatedAt,
+                batch.IsActive,
+                batch.Name,
+                batch.NameArabic,
+            })
             .ToListAsync(cancellationToken);
-        return GridPage<AdminBadgeBatchSummary>.Of(rows, total, skip, top);
+
+        // What each order holds, read from its own lines and joined to the LIVE
+        // profile type. Both the bilingual breakdown and the composed English
+        // summary come from here, so a renamed tier corrects every historical order
+        // rather than leaving it labelled with the name it carried at mint time —
+        // which is exactly what the stored string could not do.
+        //
+        // One query for the whole page, not one per row. The direct-registration
+        // order needs no special case: it is not a badge order, so it has no lines.
+        var batchIds = rows.Select(row => row.Id).ToList();
+        var lines = await appDbContext.BadgeBatchItems
+            .AsNoTracking()
+            .Where(item => batchIds.Contains(item.BadgeBatchId))
+            .OrderBy(item => item.DisplayOrder)
+            .Join(
+                appDbContext.ProfileTypes,
+                item => item.ProfileTypeId,
+                profileType => profileType.Id,
+                (item, profileType) => new
+                {
+                    item.BadgeBatchId,
+                    item.DisplayOrder,
+                    item.Count,
+                    profileType.Name,
+                    profileType.NameArabic,
+                })
+            .ToListAsync(cancellationToken);
+
+        var byBatch = lines
+            .GroupBy(line => line.BadgeBatchId)
+            .ToDictionary(g => g.Key, g => g.OrderBy(line => line.DisplayOrder).ToList());
+
+        var summaries = rows
+            .Select(row =>
+            {
+                byBatch.TryGetValue(row.Id, out var orderLines);
+                orderLines ??= [];
+
+                // Composed in ENTRY order and invariant culture, matching the
+                // string the column used to store — × is the multiplication sign,
+                // kept per the house doc rule. Readers that can render the
+                // bilingual breakdown should prefer Tiers; this stays for the ones
+                // that only have room for a line of text.
+                var countsSummary = string.Join(" + ", orderLines.Select(line =>
+                    $"{line.Name} × {line.Count.ToString(CultureInfo.InvariantCulture)}"));
+
+                // Ordered biggest-tier-first, unchanged from what the Control Panel
+                // already renders.
+                var tiers = orderLines.Count == 0
+                    ? null
+                    : (IReadOnlyList<AdminBadgeBatchTier>)orderLines
+                        .OrderByDescending(line => line.Count)
+                        .ThenBy(line => line.Name, StringComparer.Ordinal)
+                        .Select(line => new AdminBadgeBatchTier(
+                            line.Name ?? string.Empty, line.NameArabic ?? string.Empty, line.Count))
+                        .ToList();
+
+                return new AdminBadgeBatchSummary(
+                    row.Id,
+                    countsSummary,
+                    // Derived, not cached: the total was a second copy of what the
+                    // lines already say, and the two had to be updated in lockstep
+                    // or the list quietly disagreed with itself.
+                    orderLines.Sum(line => line.Count),
+                    row.IsDelegate,
+                    row.RecipientEmail,
+                    row.CreatedAt,
+                    row.IsActive,
+                    row.Name,
+                    row.NameArabic,
+                    tiers,
+                    row.Id == BadgeBatch.DirectRegistrationId);
+            })
+            .ToList();
+
+        return GridPage<AdminBadgeBatchSummary>.Of(summaries, total, skip, top);
     }
 
     public async Task<AdminReEmailBadgeBatchResponse> ReEmailBadgeBatchAsync(
@@ -1125,37 +1365,49 @@ internal sealed partial class AdminAccountService
                 "The badge batch was not found or is already revoked.",
                 "لم يتم العثور على دفعة الشارات أو أنها ملغاة بالفعل.");
 
-        // Disable every account the batch minted, reusing the type-scoped bulk-delete
-        // path (audience Visitors) so each account's disable + token-revoke + audit is
-        // identical to a manual bulk delete. This crosses databases: these SimfUsers
-        // live in the Identity DB — disabled first, THEN the App-DB batch is
-        // deactivated as a separate unit of work (no distributed transaction).
-        var memberIds = await appDbContext.UserProfiles
+        var now = timeProvider.SimfNow();
+
+        // Revoking an order has to stop its BADGES, and a badge is admitted on
+        // the attendee's own admission state — so that is what moves. Disabling
+        // only the accounts would have left every badge in the order still
+        // opening every gate, because most of them have no account at all.
+        var revoked = await appDbContext.UserProfiles
+            .Where(profile => profile.BadgeBatchId == batch.Id
+                && profile.AdmissionState != AccountState.Disabled)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(profile => profile.AdmissionState, AccountState.Disabled)
+                    .SetProperty(profile => profile.StateChangedAt, now)
+                    .SetProperty(profile => profile.StateChangedByUserId, (Guid?)actorUserId),
+                cancellationToken);
+
+        // Any member who went on to create an app account loses that too, reusing
+        // the type-scoped bulk-delete path so the disable + token-revoke + audit
+        // is identical to a manual bulk delete. Most members have none. This
+        // crosses databases and is deliberately a SEPARATE unit of work from the
+        // profile update above — there is no distributed transaction, and the
+        // profile side is the one that decides entry, so it goes first.
+        var memberAccountIds = await appDbContext.UserProfiles
             .AsNoTracking()
-            // Only members that HAVE an account, because what follows deletes
-            // accounts. A batch member without one has nothing to delete here;
-            // revoking its badge is a profile-side concern.
             .Where(profile => profile.BadgeBatchId == batch.Id
                 && profile.UserId != null)
             .Select(profile => profile.UserId!.Value)
             .ToListAsync(cancellationToken);
 
-        var revoked = 0;
-        if (memberIds.Count > 0)
+        if (memberAccountIds.Count > 0)
         {
-            var deleteResult = await BulkDeleteUsersByKindAsync(
+            await BulkDeleteUsersByKindAsync(
                 actorUserId, UserType.Visitor, requirePartnerScope: false,
                 new AdminBulkDeleteRequest
                 {
-                    Ids = memberIds,
+                    Ids = memberAccountIds,
                     Reason = $"Badge batch {batch.Id} revoked",
                 },
                 cancellationToken);
-            revoked = deleteResult.Deleted;
         }
 
         batch.Deactivate();
-        batch.UpdatedAt = timeProvider.SimfNow();
+        batch.UpdatedAt = now;
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteSuccessAsync(

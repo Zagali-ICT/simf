@@ -1,10 +1,15 @@
-// Tests: SIMF.Api.Tests/UserProfileTests.cs (upsert round-trip, ID image
+﻿// Tests: SIMF.Api.Tests/UserProfileTests.cs (upsert round-trip, ID image
 //        round-trip, get-empty-when-not-saved-yet, nationality-unknown,
 //        Me_profileComplete flip + male-without-photo,
 //        DisplayName-placeholder-replaced + admin-name-preserved,
 //        RegionId round-trip + optional + unknown/inactive → 400,
 //        DEF-PHN-003 mobile stored canonicalised [Saudi theory + international],
-//        DEF-PHN-004 mobile required / cannot be blanked / international-only OK)
+//        the mobile-number collapse [the canonical column is filled from either
+//        wire field, the Saudi local spelling folds, and both shipped wire keys
+//        still round-trip],
+//        DEF-PHN-004 mobile required / cannot be blanked / international-only OK,
+//        both an Iqama and a passport persist as two document rows, and every
+//        shipped identity wire key still round-trips from those rows)
 //        SIMF.Api.Tests/UserProfileRollbackTests.cs (H16 — transaction rollback)
 //        SIMF.Api.Tests/GateOperatorModelTests.cs (BUG-018 — an operational
 //        (IsForVisitor=false) profile type is exempt from the visitor
@@ -41,7 +46,6 @@ internal sealed class UserProfileService(
     IUserProfileRepository profiles,
     IPiiEncryptor pii,
     IFileService fileService,
-    IFileStorageProvider fileStorage,
     IAuditLog auditLog,
     TimeProvider timeProvider,
     INotificationDispatcher notifications,
@@ -267,40 +271,40 @@ internal sealed class UserProfileService(
         profile.DateOfBirth = request.DateOfBirth;
         profile.PlaceOfBirth = request.PlaceOfBirth;
         profile.IsSaudi = request.IsSaudi;
-        // H-1 — normalise + blind-index the identity columns exactly like the
-        // walk-in desk (AdminAccountService), so the self-service write path (the
-        // dominant one) also populates the hashes the filtered UNIQUE indexes and
-        // the duplicate-identity guard key off. Without the hashes these rows were
-        // invisible to both, defeating H-1 for the dominant registration path.
+        // H-1 — normalise the identity numbers exactly like the walk-in desk
+        // (AdminAccountService) before either the guard or the storage sees them,
+        // so the digest the unique index enforces and the digest the soft guard
+        // queries are computed from the same strings.
         var nationalId = request.IsSaudi ? NormaliseOptional(request.NationalId) : null;
         var iqamaNumber = request.IsSaudi ? null : NormaliseOptional(request.IqamaNumber);
         var passportNumber = request.IsSaudi ? null : NormaliseOptional(request.PassportNumber);
-        profile.NationalId = nationalId;
-        profile.NationalIdHash = pii.BlindIndex(nationalId);
-        profile.IqamaNumber = iqamaNumber;
-        profile.IqamaNumberHash = pii.BlindIndex(iqamaNumber);
-        profile.PassportNumber = passportNumber;
-        profile.PassportNumberHash = pii.BlindIndex(passportNumber);
+        // One row per document, behind one unique digest index over all of them,
+        // which is what makes a CROSS-KIND duplicate visible at all. This is the
+        // only storage: the three number columns and their three blind-index
+        // siblings are gone, and the response below is built from these rows.
+        ProfileIdentityStorage.SyncDocuments(
+            profile, pii, nationalId, iqamaNumber, passportNumber);
 
         // H-1 — reject an identifier already registered on ANOTHER user's profile
         // (409). Self-excluding (UserId != actorUserId) so a user re-saving their
         // OWN id is never a false conflict. A concurrent duplicate that slips this
-        // soft guard hits the filtered UNIQUE index and is translated below (FIX E).
+        // soft guard hits the unique digest index and is translated below (FIX E).
         if (await profiles.AnyOtherProfileWithIdentityHashAsync(
-                actorUserId, profile.NationalIdHash, profile.IqamaNumberHash,
-                profile.PassportNumberHash, cancellationToken))
+                actorUserId, pii.BlindIndex(nationalId), pii.BlindIndex(iqamaNumber),
+                pii.BlindIndex(passportNumber), cancellationToken))
         {
             throw ApiException.DuplicateIdentity();
         }
 
-        // DEF-PHN-003 — store the CANONICAL number (separators stripped, a
-        // leading `00` rewritten to `+`), not the raw text. A plain trim let the
-        // one column hold "+966501234567" from the app and "+966-555987654" from
-        // the Control-Panel / Website phone input — two spellings of one number.
-        // Same reasoning (and the same shared-normaliser shape) as the plate below.
-        profile.SaudiMobile = MobileNumber.NormalizeOptional(request.SaudiMobile);
-        profile.InternationalMobile =
-            MobileNumber.NormalizeOptional(request.InternationalMobile);
+        // The mobile number, written to the storage that supersedes the two
+        // columns: ONE canonical E.164 value, because a Saudi mobile is an
+        // international mobile with +966 and the pair only ever let a row hold two
+        // different numbers with nothing saying which to ring. Written in exact
+        // lockstep with the columns, because readers outside this change are still
+        // projecting them, and because both shipped wire keys are built from them
+        // below.
+        ProfileMobileStorage.Sync(
+            profile, request.SaudiMobile, request.InternationalMobile);
         // رقم اللوحة, stored normalized (validator-checked shape;
         // separators stripped so the column holds the canonical ≤7 chars).
         profile.PlateNumber = NormalisePlate(request.PlateNumber);
@@ -686,15 +690,16 @@ internal sealed class UserProfileService(
     public async Task<UserIdDocumentImage?> ReadIdImageAsync(
         Guid actorUserId, CancellationToken cancellationToken = default)
     {
-        // Owner-scoped raw decrypt read from the unified StoredFile
-        // store (App DB, owner = the user). Self-read: the sub-claim gate on the
-        // endpoint is the authorization; no PII audit (self-access, not a third-party
-        // disclosure). AES-GCM integrity is intrinsic (a tampered blob → null).
-        var locator = await profiles.GetOwnerScopedFileAsync(
+        // Owner-scoped read through the file service (App DB, owner = the user).
+        // Self-read: the sub-claim gate on the endpoint is the authorization, so this
+        // is the caller-authorized read, not DownloadAsync; no PII audit (self-access,
+        // not a third-party disclosure). Integrity is doubly covered — AES-GCM fails
+        // the auth tag on a tampered blob, and the service re-checks the SHA-256.
+        var file = await fileService.ReadOwnerContentAsync(
             FileService.IdDocument, actorUserId, cancellationToken);
-        if (locator is not { } file) { return null; }
-        var bytes = await fileStorage.ReadAsync(file.StorageKey, file.IsEncrypted, cancellationToken);
-        return bytes is null ? null : new UserIdDocumentImage(bytes, file.ContentType ?? "application/octet-stream");
+        return file is null
+            ? null
+            : new UserIdDocumentImage(file.Content, file.ContentType ?? "application/octet-stream");
     }
 
     public async Task UploadIdImageForSubjectAsync(
@@ -770,14 +775,14 @@ internal sealed class UserProfileService(
         var subject = await accounts.FindByIdAsync(subjectUserId, cancellationToken);
         if (subject is null || subject.UserType != expectedKind) { return null; }
 
-        // Owner-scoped raw decrypt read from the unified StoredFile store
-        // (App DB, owner = the subject). The UserType guard above + the route's
-        // Visitors.View gate are the authorization; AES-GCM integrity is intrinsic.
-        var locator = await profiles.GetOwnerScopedFileAsync(
+        // Owner-scoped read through the file service (App DB, owner = the subject).
+        // The UserType guard above + the route's Visitors.View gate are the
+        // authorization, which is why this is the caller-authorized read; the service
+        // still applies the fail-closed SHA-256 re-check on these Secret-tier bytes.
+        var file = await fileService.ReadOwnerContentAsync(
             FileService.IdDocument, subjectUserId, cancellationToken);
-        if (locator is not { } file) { return null; }
-        var bytes = await fileStorage.ReadAsync(file.StorageKey, file.IsEncrypted, cancellationToken);
-        if (bytes is null) { return null; }
+        if (file is null) { return null; }
+        var bytes = file.Content;
 
         // A9 (PII) — an admin READ of a visitor's national-ID image is a PII
         // disclosure and must leave an audit trail, mirroring the upload's audit
@@ -868,16 +873,15 @@ internal sealed class UserProfileService(
         var subject = await accounts.FindByIdAsync(subjectUserId, cancellationToken);
         if (subject is null || subject.UserType != expectedKind) { return null; }
 
-        // Resolve the VIP photo from the unified StoredFile store
-        // (App DB, owner-scoped). Raw decrypt read: the ExpectedKind guard above is
-        // the authorization; the admin fetch route also gates on Visitors.View. The
-        // bytes are AES-GCM encrypted at rest, so a tampered blob fails the auth tag
-        // on decrypt (ReadAsync → null) — the integrity guard is intrinsic.
-        var locator = await profiles.GetOwnerScopedFileAsync(
+        // Resolve the VIP photo through the file service (App DB, owner-scoped).
+        // Caller-authorized read: the ExpectedKind guard above is the authorization
+        // and the admin fetch route also gates on Visitors.View. Integrity is doubly
+        // covered — AES-GCM fails the auth tag on a tampered blob, and the service
+        // re-checks the SHA-256 for this Confidential tier.
+        var file = await fileService.ReadOwnerContentAsync(
             FileService.VipPhoto, subjectUserId, cancellationToken);
-        if (locator is not { } file) { return null; }
-        var bytes = await fileStorage.ReadAsync(file.StorageKey, file.IsEncrypted, cancellationToken);
-        if (bytes is null) { return null; }
+        if (file is null) { return null; }
+        var bytes = file.Content;
 
         // PII — an admin READ of a VIP welcome photo is a personal-data
         // disclosure and must leave an audit trail, mirroring the ID-image read
@@ -946,9 +950,17 @@ internal sealed class UserProfileService(
             DateOfBirth = profile.DateOfBirth,
             PlaceOfBirth = profile.PlaceOfBirth,
             IsSaudi = profile.IsSaudi,
-            NationalId = profile.NationalId,
-            IqamaNumber = profile.IqamaNumber,
-            PassportNumber = profile.PassportNumber,
+            // The three shipped wire keys, answered from the child rows that are
+            // now the only place holding them. There is no column left to fall back
+            // to, and no row that would need one: every write path — this one, the
+            // walk-in desk and the identity seeder — writes the child rows, and the
+            // two databases were regenerated with no data carried forward.
+            NationalId = ProfileIdentityStorage.DocumentNumber(
+                profile, IdentityDocumentKind.NationalId),
+            IqamaNumber = ProfileIdentityStorage.DocumentNumber(
+                profile, IdentityDocumentKind.Iqama),
+            PassportNumber = ProfileIdentityStorage.DocumentNumber(
+                profile, IdentityDocumentKind.Passport),
             SaudiMobile = profile.SaudiMobile,
             InternationalMobile = profile.InternationalMobile,
             PlateNumber = profile.PlateNumber,

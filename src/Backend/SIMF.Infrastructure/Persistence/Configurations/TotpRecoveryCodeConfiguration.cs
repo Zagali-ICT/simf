@@ -10,7 +10,10 @@ internal sealed class TotpRecoveryCodeConfiguration : IEntityTypeConfiguration<T
     {
         builder.HasKey(code => code.Id);
 
-        // SHA-256 hash, base64 (44 chars). Fixed length so the index is tight.
+        // RecoveryCode.Hash defers to OpaqueToken.Hash: a SHA-256 digest as
+        // LOWERCASE HEX, so every value is exactly 64 characters and the column
+        // is sized to that, not to headroom. (The comment here used to claim
+        // base64 / 44 chars, which no writer has ever produced.)
         builder.Property(code => code.CodeHash).HasMaxLength(64).IsRequired();
 
         // One row per (user, code-hash): the composite unique is

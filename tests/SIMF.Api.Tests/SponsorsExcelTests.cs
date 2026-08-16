@@ -121,6 +121,9 @@ public sealed class SponsorsExcelTests : IClassFixture<SimfApiFactory>
         Assert.Contains("TaglineArabic", headers);
         Assert.Contains("About", headers);
         Assert.Contains("AboutArabic", headers);
+        // A logo is a file in the store, not a cell — the workbook must not
+        // carry a logo column that could only ever export blank.
+        Assert.DoesNotContain("LogoRelativePath", headers);
 
         var nameCol = headers.IndexOf("NameEn") + 1;
         var tagCol = headers.IndexOf("Tagline") + 1;

@@ -1,7 +1,10 @@
 ﻿// Tests: SIMF.Api.Tests/AdminResetTwoFactorTests.cs,
 //        SIMF.Api.Tests/AdminCreateUserTests.cs,
 //        SIMF.Api.Tests/ControlPanelTwoFactorEnrolmentTests.cs (a created
-//        admin is TwoFactorEnabled AND can still complete a first sign-in)
+//        admin is TwoFactorEnabled AND can still complete a first sign-in),
+//        SIMF.Api.Tests/WalkInRegistrationTests.cs +
+//        SIMF.Api.Tests/AdminAccountMobileTests.cs (the desk-created profile's
+//        mobile lands in the one canonical column and the two lockstep ones)
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -346,7 +349,8 @@ internal sealed partial class AdminAccountService(
         AdminWalkInRegistrationRequest request,
         CancellationToken cancellationToken = default,
         bool? expectedIsVisitor = null,
-        string? presetQrId = null)
+        string? presetQrId = null,
+        Guid presetProfileId = default)
     {
         // Walk-in registration always creates a Visitor-typed
         // account. The `kind` argument stays on the signature for
@@ -631,28 +635,25 @@ internal sealed partial class AdminAccountService(
             // derived on read" invariant + the badge/gate/export key.
             PlateNumber = SaudiPlate.Normalize(request.PlateNumber),
             IsSaudi = request.IsSaudi,
-            // Store the same normalised values the duplicate-identity guard
-            // keyed on, plus their blind-index hashes, so the stored row and the
-            // guard/index agree (a trailing-space passport can no longer slip past).
-            NationalId = nationalId,
-            IqamaNumber = iqamaNumber,
-            PassportNumber = passportNumber,
-            NationalIdHash = nationalIdHash,
-            IqamaNumberHash = iqamaNumberHash,
-            PassportNumberHash = passportNumberHash,
-            // Store the canonical number, exactly like the plate
-            // above and the self-service path (UserProfileService): a desk-typed
-            // "+966-55 598 7654" must land in the column as the same string the
-            // app would have written for that number.
-            SaudiMobile = MobileNumber.NormalizeOptional(request.SaudiMobile),
-            InternationalMobile =
-                MobileNumber.NormalizeOptional(request.InternationalMobile),
+            // Neither the identity documents nor the mobile are set here. The
+            // documents live in ProfileIdentityDocuments, written by
+            // ProfileIdentityStorage.SyncDocuments; the mobile is written by
+            // ProfileMobileStorage.Sync, which fills the canonical column and the
+            // two it supersedes together. Setting either here as well would be a
+            // second copy of a split rule, and two copies are what drift.
             // The desk-required organisation pick (الجهة).
             OrganisationId = organisationId,
             // Delegation-member flag (a delegate is a normal visitor).
             IsDelegate = request.IsDelegate,
             CreatedAt = now,
         };
+        // The canonical number plus the two columns it supersedes, written
+        // together and by the SAME helper the self-service upsert uses, so a
+        // desk-typed "+966-55 598 7654" and an app-typed "0555987654" land as one
+        // string. Deliberately after the initializer rather than inside it: three
+        // columns from two inputs is a rule, not three assignments.
+        ProfileMobileStorage.Sync(
+            profile, request.SaudiMobile, request.InternationalMobile);
         // Visitor kind owns interests; Other kind ignores them per the prompt.
         if (kind == UserType.Visitor)
         {
@@ -672,6 +673,21 @@ internal sealed partial class AdminAccountService(
         {
             profile.QrId = presetQrId;
         }
+        // The same reasoning applies to the id itself. The badge the desk
+        // printed carries this Guid, so creating the record under any other one
+        // would leave a badge that decrypts perfectly and resolves to nobody.
+        if (presetProfileId != Guid.Empty)
+        {
+            profile.Id = presetProfileId;
+        }
+        // The three captured numbers, written to the only storage that holds
+        // them: one row per document, one unique digest index over all of them,
+        // which is what makes a CROSS-KIND duplicate visible at all. The
+        // already-normalised values are reused rather than re-derived, so the rows
+        // and the soft guard above key off the same strings — a trailing-space
+        // passport cannot slip past one and be stored by the other.
+        ProfileIdentityStorage.SyncDocuments(
+            profile, pii, nationalId, iqamaNumber, passportNumber);
         appDbContext.UserProfiles.Add(profile);
 
         // No QR at create — the account is PendingApproval; the approve
@@ -686,10 +702,16 @@ internal sealed partial class AdminAccountService(
         {
             await appDbContext.SaveChangesAsync(cancellationToken);
         }
+        // ONE index name now, where there used to be three per-kind ones beside
+        // it: the child table's single digest index is the whole duplicate-identity
+        // constraint, and it fires on a cross-kind duplicate the three could not
+        // see. Named from the constant, not a string, so removing the index cannot
+        // leave a filter that silently stops matching and turns this 409 into a
+        // 500. Deliberately NOT added to the QrId catch below, which answers a
+        // different conflict with a different code.
         catch (DbUpdateException ex) when (ex.ViolatesAnyIndex(
-            "IX_UserProfiles_NationalIdHash",
-            "IX_UserProfiles_IqamaNumberHash",
-            "IX_UserProfiles_PassportNumberHash"))
+            Persistence.Configurations.App.ProfileIdentityDocumentConfiguration
+                .NumberHashIndexName))
         {
             await AuditFailure(
                 AuditEvents.AdminWalkInRegisterFailed, actorUserId, email, null,

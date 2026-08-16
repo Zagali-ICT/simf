@@ -47,6 +47,18 @@
                             <SimfTextarea Label="@L["Admin.OrganizationProfile.Field.BioAr"]" Rows="3" MaxLength="4000"
                                           Value="@_model.BioArabic" ValueChanged="@(v => _model.BioArabic = v)" Disabled="_busy" />
                         </div>
+                        @* The forum's logo. The read path has served it by owner id
+                           all along, and the app and website render it, but nothing
+                           in the Control Panel could ever put one there - the only
+                           asset category with a serve route and no way in. The
+                           profile is a seeded singleton, so there is no save-first
+                           case: the row always exists. *@
+                        <div class="simf-form__grid-item--full">
+                            <span class="simf-field__label">@L["Admin.OrganizationProfile.Field.Logo"]</span>
+                            <SimfImageUpload Category="OrganizationLogo"
+                                             OwnerId="@OrganizationProfileIds.Singleton"
+                                             Alt="@_model.Name" />
+                        </div>
                     </div>
                 </SimfFormSection>
 

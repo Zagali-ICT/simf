@@ -75,7 +75,6 @@ public sealed record AdminMediaPartnerDetail(
 public sealed record AdminCreateMediaPartnerRequest(
     string Name,
     string NameArabic,
-    string? LogoRelativePath,
     string? Url,
     int DisplayOrder,
     // Inlined contact identity-card fields (all optional).
@@ -97,7 +96,6 @@ public sealed record AdminUpdateMediaPartnerRequest
 {
     public string Name { get; set; } = string.Empty;
     public string NameArabic { get; set; } = string.Empty;
-    public string? LogoRelativePath { get; set; }
     public string? Url { get; set; }
     public int DisplayOrder { get; set; }
 

@@ -1,0 +1,111 @@
+@* The yearly edition: which year the forum is running, and the one action that
+   moves it on.
+
+   Opening a year CLEARS every attendee's badge, which is why this page is
+   almost entirely about making that consequence impossible to miss. The button
+   does not open a year; it opens a confirmation that states the count. *@
+@page "/admin/editions"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.Editions.View)]
+
+<PageTitle>@L["Admin.Editions.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.Editions.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        <p class="simf-section-desc">@L["Admin.Editions.Desc"]</p>
+
+        @* Three distinct states, never two. A load that FAILED must not sit
+           reading "Loading…" for as long as an admin cares to wait. *@
+        @if (_loading)
+        {
+            <p>@L["Admin.Editions.Loading"]</p>
+        }
+        else if (_edition is null)
+        {
+            <SimfAlert Variant="error">@(_loadError ?? L["Admin.Editions.LoadFailed"].Value)</SimfAlert>
+            <div class="simf-form__actions">
+                <SimfButton Type="button" Variant="secondary" OnClick="LoadAsync">
+                    @L["Common.Retry"]
+                </SimfButton>
+            </div>
+        }
+        else
+        {
+            <dl class="simf-dl">
+                <dt>@L["Admin.Editions.CurrentYear"]</dt>
+                <dd>@_edition.Year.ToString(CultureInfo.InvariantCulture)</dd>
+
+                <dt>@L["Admin.Editions.OpenedAt"]</dt>
+                <dd>@_edition.OpenedAt.FormatSaudi("dd-MM-yyyy hh:mm tt")</dd>
+
+                <dt>@L["Admin.Editions.LastClosedAt"]</dt>
+                <dd>
+                    @if (_edition.LastClosedAt is { } closed)
+                    {
+                        @closed.FormatSaudi("dd-MM-yyyy hh:mm tt")
+                    }
+                    else
+                    {
+                        <span>@L["Admin.Editions.NeverClosed"]</span>
+                    }
+                </dd>
+
+                @* The re-issue count is the only evidence an operator has that
+                   the clear actually ran, and the first thing they will be asked
+                   when a returning attendee finds their badge dead. *@
+                <dt>@L["Admin.Editions.LastReissueCount"]</dt>
+                <dd>@_edition.LastReissueCount.ToString(CultureInfo.InvariantCulture)</dd>
+            </dl>
+
+            <hr class="simf-divider" />
+
+            <h2 class="simf-section-h2">@L["Admin.Editions.Open.Heading"]</h2>
+            <p class="simf-section-desc">@L["Admin.Editions.Open.Desc"]</p>
+
+            <SimfAlert Variant="warning">@L["Admin.Editions.Open.Warning"]</SimfAlert>
+
+            <div class="simf-form__fields">
+                <SimfTextField Label="@L["Admin.Editions.Open.Year"]"
+                               Helper="@L["Admin.Editions.Open.YearHint"]"
+                               Numeric="true" MaxLength="4"
+                               Value="@_yearInput"
+                               ValueChanged="@(v => _yearInput = v)"
+                               ValueExpression="@(() => _yearInput)"
+                               Disabled="_busy" />
+            </div>
+
+            @* The page gates on Editions.View; opening a year needs Editions.Open.
+               Without this split a view-only admin could clear every badge at the
+               event and learn of it from the 403 alone. *@
+            <AuthorizedAction Permission="@PermissionCatalog.Editions.Open">
+                <div class="simf-form__actions">
+                    <SimfButton Type="button" Variant="danger" OnClick="OpenConfirm"
+                                Disabled="_busy">
+                        @L["Admin.Editions.Open.Action"]
+                    </SimfButton>
+                </div>
+            </AuthorizedAction>
+        }
+    </div>
+</div>
+
+@* Danger + an explicit statement of what is about to happen. The count is not
+   known until the server has done it, so the dialog names the consequence
+   rather than a number it would have to guess. *@
+<SimfConfirm Open="_confirmOpen"
+             Title="@L["Admin.Editions.Open.Confirm.Title"]"
+             Message="@ConfirmMessage()"
+             ConfirmLabel="@L["Admin.Editions.Open.Confirm.Action"]"
+             CancelLabel="@L["Common.Cancel"]"
+             Danger="true"
+             Busy="_busy"
+             Permission="@PermissionCatalog.Editions.Open"
+             OnConfirm="OpenYearAsync"
+             OnCancel="CloseConfirm" />

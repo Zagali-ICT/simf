@@ -3,30 +3,23 @@ using SIMF.Common.Enums;
 namespace SIMF.Domain.Notifications;
 
 /// <summary>
-/// A manual announcement composed at the Control Panel's broadcast desk. The API
-/// inserts a single pending row and a background worker fans it out, writing one
-/// in-app notification and one queued email per recipient, then stamps the
-/// counters and status here.
-///
-/// <para>Recipients are resolved from the Identity database at send time and are
-/// never copied onto this row.</para>
+/// A manual announcement composed at the Control Panel's broadcast desk. The API inserts
+/// one pending row and a background worker fans it out, writing an in-app notification
+/// and a queued email per recipient, then stamps the counters and status here. Recipients
+/// are resolved from the Identity database at send time and never copied onto this row.
 /// </summary>
 public sealed class NotificationBroadcast
 {
     public Guid Id { get; set; }
 
-    /// <summary>The admin who composed it. A bare Guid: the user lives in the
-    /// Identity database.</summary>
     public Guid CreatedByUserId { get; set; }
 
     public BroadcastTargetMode TargetMode { get; set; }
 
-    /// <summary>Set for a session broadcast, null for an audience one. There is
-    /// no navigation, so the broadcast survives as history even after the session
-    /// is removed.</summary>
+    /// <summary>Set for a session broadcast. No navigation, so the broadcast survives the session's removal.</summary>
     public Guid? SessionId { get; set; }
 
-    /// <summary>Set for an audience broadcast, null for a session one.</summary>
+    /// <summary>Set for an audience broadcast.</summary>
     public BroadcastAudienceScope? AudienceScope { get; set; }
 
     public string Title { get; set; } = string.Empty;
@@ -39,14 +32,10 @@ public sealed class NotificationBroadcast
     public BroadcastStatus Status { get; set; } = BroadcastStatus.Pending;
 
     // Counters, all zero until the worker has processed the row.
-
-    /// <summary>Distinct recipients the worker resolved.</summary>
     public int TotalRecipients { get; set; }
-
-    /// <summary>In-app notifications successfully written.</summary>
     public int Dispatched { get; set; }
 
-    /// <summary>Emails enqueued, meaning recipients with an address on file.</summary>
+    /// <summary>Recipients with an address on file.</summary>
     public int EmailsEnqueued { get; set; }
 
     /// <summary>Recipients whose dispatch threw.</summary>
@@ -54,12 +43,9 @@ public sealed class NotificationBroadcast
 
     public DateTime CreatedAt { get; set; }
 
-    /// <summary>When the worker claimed the row.</summary>
     public DateTime? StartedAt { get; set; }
 
-    /// <summary>When the fan-out finished, whether it completed or failed.</summary>
     public DateTime? CompletedAt { get; set; }
 
-    /// <summary>Failure detail, set only when the broadcast failed.</summary>
     public string? Error { get; set; }
 }

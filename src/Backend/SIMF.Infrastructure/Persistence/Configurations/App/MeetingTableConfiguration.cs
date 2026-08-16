@@ -12,7 +12,16 @@ internal sealed class MeetingTableConfiguration : IEntityTypeConfiguration<Meeti
 {
     public void Configure(EntityTypeBuilder<MeetingTable> builder)
     {
-        builder.ToTable("MeetingTables");
+        // A table seats 2..100 — the range ValidateCapacity enforces on create,
+        // update and bulk-generate alike, so this is a true backstop.
+        // NOTE: ColumnNumber is documented 1-based but has NO check constraint on
+        // purpose. Bulk-generate derives it from an admin-typed CSV via
+        // SplitRowColumn, which happily parses "A0" to column 0, so a CK here
+        // would turn bad input into a 500 instead of a validation error. It needs
+        // the service-side guard first.
+        builder.ToTable("MeetingTables", table => table.HasCheckConstraint(
+            "CK_MeetingTables_Capacity",
+            "[Capacity] >= 2 AND [Capacity] <= 100"));
         builder.HasKey(t => t.Id);
 
         builder.Property(t => t.Code).HasMaxLength(16).IsRequired();

@@ -180,7 +180,7 @@ internal sealed class AdminGateService(
                 UserId = userId,
                 IsActive = true,
                 CreatedAt = now,
-                CreateBy = actorUserId,
+                CreatedBy = actorUserId,
             });
         }
 
@@ -303,7 +303,7 @@ internal sealed class AdminGateService(
             .Select(a => new AdminGateAssignmentRow(
                 a.Id, a.UserId,
                 operatorNames.TryGetValue(a.UserId, out var name) ? name : string.Empty,
-                a.CreatedAt, a.CreateBy,
+                a.CreatedAt, a.CreatedBy,
                 operatorEmails.TryGetValue(a.UserId, out var email) && email is not null
                     ? email : string.Empty))
             .ToList();
@@ -799,7 +799,7 @@ internal sealed class AdminGateService(
                     UserId = userId,
                     IsActive = true,
                     CreatedAt = now,
-                    CreateBy = actorUserId,
+                    CreatedBy = actorUserId,
                 });
             }
         }

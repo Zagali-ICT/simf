@@ -18,20 +18,20 @@ import 'package:simf_app/features/account/sign_up_visitor_screen.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the sign-up profile-data form against Figma frame
-/// **168:2972** (إنشاء ملف شخصي · Page 007). Regenerate:
-///   flutter test --update-goldens test/golden/sign_up_visitor_golden_test.dart
+/// **168:2972** (إنشاء ملف شخصي · Page 007). Regenerate: flutter test
+/// --update-goldens test/golden/sign_up_visitor_golden_test.dart
 ///
-/// Frame parity: the shared navy [SimfFormScaffold] (back chevron + globe toggle,
-/// logo + forum name) over the beige form card (the MaxWidthBody-capped Material).
-/// Card head = title (24/w600) + avatar badge; the complete-profile notice; the
-/// beige visitor/other tabs; then the login-style bordered fields, gender pills,
-/// document/nationality lookups, attach boxes, the underlined terms link and the
-/// gold التالي. Captured in the empty/default (visitor) state — the field values
-/// are runtime data; what this locks is the layout, typography, colour, spacing
-/// and RTL of the frozen page (D-368 parity; D-545 clean-code freeze). The frame
-/// is rendered tall because the API-required date-of-birth / place-of-birth /
-/// national-ID fields are kept (D-368 deviation) so the form is longer than the
-/// 1656px Figma art.
+/// Frame parity: the shared navy `SimfFormScaffold` (back chevron + globe
+/// toggle, logo + forum name) over the beige form card (the MaxWidthBody-capped
+/// Material). Card head = title (24/w600) + avatar badge; the complete-profile
+/// notice; the beige visitor/other tabs; then the login-style bordered fields,
+/// gender pills, document/nationality lookups, attach boxes, the underlined
+/// terms link and the gold التالي. Captured in the empty/default (visitor)
+/// state — the field values are runtime data; what this locks is the layout,
+/// typography, colour, spacing and RTL of the frozen page (D-368 parity; D-545
+/// clean-code freeze). The frame is rendered tall because the API-required
+/// date-of-birth / place-of-birth / national-ID fields are kept (D-368
+/// deviation) so the form is longer than the 1656px Figma art.
 class _FakeProfileRepository implements ProfileRepository {
   static const UserProfileResponse _emptyProfile = UserProfileResponse(
     interestIds: <String>[],

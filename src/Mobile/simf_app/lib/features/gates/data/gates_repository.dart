@@ -13,8 +13,8 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// Authority: the endpoints require the JWT **`Gates.Operate`** permission
 /// (Identity role `GateOperator`), which is **separate** from the mobile
 /// `AppRole.staff` — a staff app user without the GateOperator grant gets 403
-/// (`GATE_OPERATOR_NOT_ASSIGNED`). The screen renders that gracefully; the grant
-/// pipeline is flagged for the owner (D-406).
+/// (`GATE_OPERATOR_NOT_ASSIGNED`). The screen renders that gracefully; the
+/// grant pipeline is flagged for the owner (D-406).
 class GatesRepository {
   GatesRepository(this._client, this._queue, this._offlineConfig);
 
@@ -150,9 +150,10 @@ class GatesRepository {
     // D-821 review — abstain on anything the length says is an ordinary minted
     // serial, mirroring QrResolver's guard on the server. Without this a normal
     // 12-character badge whose first character's Crockford index happens to
-    // equal the loaded key version is fed to the decoder, fails the GCM tag, and
-    // is reported to the operator as FORGED. This device has no roster, so a
-    // minted serial is something it cannot judge — never something it can refuse.
+    // equal the loaded key version is fed to the decoder, fails the GCM tag,
+    // and is reported to the operator as FORGED. This device has no roster, so
+    // a minted serial is something it cannot judge — never something it can
+    // refuse.
     if (qr.length == OfflineBadge.mintedQrIdLength) {
       return null;
     }
@@ -198,9 +199,10 @@ class GatesRepository {
   /// Retries every queued scan oldest-first with its original idempotency key.
   /// A scan that lands (allowed OR denied — both are HTTP 200) or is rejected
   /// for good (any response the server returned, e.g. a 409 replay of one
-  /// already recorded, or a 404 for a deleted gate) is dropped; the first attempt
-  /// that still never reaches the server (or is 429-throttled) stops the drain
-  /// and leaves the rest for the next call. Returns the remaining backlog size.
+  /// already recorded, or a 404 for a deleted gate) is dropped; the first
+  /// attempt that still never reaches the server (or is 429-throttled) stops
+  /// the drain and leaves the rest for the next call. Returns the remaining
+  /// backlog size.
   Future<int> flushPending() async {
     for (final scan in _queue.all()) {
       try {

@@ -61,4 +61,3 @@ class AccessibilityFontSizeCard extends StatelessWidget {
     );
   }
 }
-

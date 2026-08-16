@@ -1,3 +1,7 @@
+// Tests: SIMF.Api.Tests/UserProfileIdentifierUniquenessTests.cs (the unique
+//        digest index catches a same-kind AND a cross-kind duplicate, and
+//        SaveProfileIdentityChangesAsync translates the violation into a 409
+//        rather than letting it escape as a 500)
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.IdentityAccess;
 using SIMF.Common;
@@ -18,7 +22,13 @@ internal sealed class UserProfileRepository(
     public Task<UserProfile?> GetWithInterestsAsync(
         Guid userId, bool tracked, CancellationToken cancellationToken = default)
     {
-        IQueryable<UserProfile> query = appDbContext.UserProfiles.Include(p => p.Interests);
+        // IdentityDocuments is Included and NOT optional. The upsert syncs the
+        // collection in place, and an unloaded navigation looks EMPTY — so a user
+        // re-saving their own profile would insert a second copy of every document
+        // and trip the unique digest index on their own number.
+        IQueryable<UserProfile> query = appDbContext.UserProfiles
+            .Include(p => p.Interests)
+            .Include(p => p.IdentityDocuments);
         if (!tracked)
         {
             query = query.AsNoTracking();
@@ -30,25 +40,39 @@ internal sealed class UserProfileRepository(
         Guid userId, CancellationToken cancellationToken = default) =>
         appDbContext.UserProfiles.SingleOrDefaultAsync(p => p.UserId == userId, cancellationToken);
 
+    public Task<UserProfile?> GetByProfileIdWithInterestsAsync(
+        Guid userProfileId, CancellationToken cancellationToken = default) =>
+        appDbContext.UserProfiles
+            .Include(p => p.Interests)
+            .SingleOrDefaultAsync(p => p.Id == userProfileId, cancellationToken);
+
     public void Add(UserProfile profile) => appDbContext.UserProfiles.Add(profile);
 
-    public Task<bool> AnyOtherProfileWithIdentityHashAsync(
+    public async Task<bool> AnyOtherProfileWithIdentityHashAsync(
         Guid excludeUserId, string? nationalIdHash, string? iqamaNumberHash,
         string? passportNumberHash, CancellationToken cancellationToken = default)
     {
-        // The validator forces IsSaudi to partition the identifiers, so at most
-        // one hash is non-null per request; a null hash never matches a stored
-        // NULL because the equality is on the non-null value only.
-        if (nationalIdHash is null && iqamaNumberHash is null && passportNumberHash is null)
+        // A caller who supplied no document at all cannot collide with anyone.
+        var candidateHashes = new[] { nationalIdHash, iqamaNumberHash, passportNumberHash }
+            .Where(hash => hash is not null)
+            .Select(hash => hash!)
+            .ToList();
+        if (candidateHashes.Count == 0)
         {
-            return Task.FromResult(false);
+            return false;
         }
-        return appDbContext.UserProfiles
+
+        // One question asked of the child table, where there used to be a second
+        // one asked of three per-kind hash columns first. This one is STRICTLY
+        // WIDER and subsumes it: every supplied digest is compared against every
+        // stored document whatever its kind, so somebody who registered on a
+        // passport and returns with an Iqama carrying the same number is caught.
+        // The three columns could only ever compare like with like.
+        return await appDbContext.UserProfiles
             .AsNoTracking()
-            .AnyAsync(p => p.UserId != excludeUserId
-                && ((nationalIdHash != null && p.NationalIdHash == nationalIdHash)
-                    || (iqamaNumberHash != null && p.IqamaNumberHash == iqamaNumberHash)
-                    || (passportNumberHash != null && p.PassportNumberHash == passportNumberHash)),
+            .Where(p => p.UserId != excludeUserId)
+            .SelectMany(p => p.IdentityDocuments)
+            .AnyAsync(document => candidateHashes.Contains(document.NumberHash),
                 cancellationToken);
     }
 
@@ -206,10 +230,15 @@ internal sealed class UserProfileRepository(
         {
             await appDbContext.SaveChangesAsync(cancellationToken);
         }
+        // ONE index name now, where there used to be three per-kind ones beside
+        // it. The child table's single digest index is the whole duplicate-identity
+        // constraint; without this filter matching it, a duplicate that slips the
+        // soft guard surfaces as an uncaught 500 instead of the 409 the same
+        // duplicate gets on every other path. Named from the constant rather than
+        // spelled out, because this filter matches index names as STRINGS and a
+        // renamed index would silently stop matching.
         catch (DbUpdateException ex) when (ex.ViolatesAnyIndex(
-            "IX_UserProfiles_NationalIdHash",
-            "IX_UserProfiles_IqamaNumberHash",
-            "IX_UserProfiles_PassportNumberHash"))
+            Configurations.App.ProfileIdentityDocumentConfiguration.NumberHashIndexName))
         {
             throw ApiException.DuplicateIdentity();
         }

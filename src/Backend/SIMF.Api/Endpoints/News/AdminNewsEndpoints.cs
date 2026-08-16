@@ -130,7 +130,6 @@ public sealed class CreateNewsValidator : Validator<CreateNewsRequest>
         RuleFor(x => x.BodyArabic).NotEmpty().MaximumLength(8000);
         RuleFor(x => x.Category).NotEmpty().MaximumLength(100);
         RuleFor(x => x.CategoryArabic).NotEmpty().MaximumLength(100);
-        RuleFor(x => x.ImageRelativePath).MaximumLength(512);
         RuleFor(x => x.DisplayOrder).GreaterThanOrEqualTo(0);
     }
 }
@@ -147,7 +146,6 @@ public sealed class UpdateNewsValidator : Validator<UpdateNewsRoute>
         RuleFor(x => x.BodyArabic).NotEmpty().MaximumLength(8000);
         RuleFor(x => x.Category).NotEmpty().MaximumLength(100);
         RuleFor(x => x.CategoryArabic).NotEmpty().MaximumLength(100);
-        RuleFor(x => x.ImageRelativePath).MaximumLength(512);
         RuleFor(x => x.DisplayOrder).GreaterThanOrEqualTo(0);
     }
 }

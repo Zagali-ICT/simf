@@ -10,13 +10,12 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 /// come from an independent oracle — each path is assigned an access tier by
 /// hand from the route spec (SIMF-MAA-001 section 8 auth gate + D-519 role gate
 /// + D-750 agenda public [reverses the D-576 session login-gate] + D-666
-/// pending=guest + D-694 identity verification), NOT read back from the router's
-/// own private
-/// `_authenticatedRoutes` / `_routeRoles` sets. So a change to those sets that
-/// diverges from the spec makes a row fail here instead of silently agreeing
-/// with itself. This is the test that would have caught the D-666 face-capture
-/// regression: route 103 flipped from reachable-by-pending to bounced-home, and
-/// no test noticed.
+///   pending=guest + D-694 identity verification), NOT read back from the
+///   router's own private `_authenticatedRoutes` / `_routeRoles` sets. So a
+///   change to those sets that diverges from the spec makes a row fail here
+///   instead of silently agreeing with itself. This is the test that would have
+///   caught the D-666 face-capture regression: route 103 flipped from
+///   reachable-by-pending to bounced-home, and no test noticed.
 ///
 /// Known limitation: the aux auth routes (`/auth/forgot-password`,
 /// `/auth/reset-password`, `/auth/verify-otp`, `/auth/badge*`,

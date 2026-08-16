@@ -68,6 +68,8 @@ public sealed class BusinessFlowGapTests : IClassFixture<SimfApiFactory>
             "/api/v1/admin/visitors/bulk-generate",
             new AdminBulkGenerateBadgesRequest
             {
+                Name = "Test order",
+                NameArabic = "طلب اختباري",
                 IsDelegate = true,
                 Batches = [new BulkBadgeBatch { ProfileTypeId = profileTypeId, Count = 1001 }],
             },
@@ -93,6 +95,8 @@ public sealed class BusinessFlowGapTests : IClassFixture<SimfApiFactory>
             "/api/v1/admin/visitors/bulk-generate",
             new AdminBulkGenerateBadgesRequest
             {
+                Name = "Test order",
+                NameArabic = "طلب اختباري",
                 IsDelegate = true,
                 Batches =
                 [
@@ -128,6 +132,8 @@ public sealed class BusinessFlowGapTests : IClassFixture<SimfApiFactory>
             "/api/v1/admin/visitors/bulk-generate",
             new AdminBulkGenerateBadgesRequest
             {
+                Name = "Test order",
+                NameArabic = "طلب اختباري",
                 IsDelegate = true,
                 Batches = [new BulkBadgeBatch { ProfileTypeId = partnerTypeId, Count = 1 }],
             },
@@ -367,6 +373,9 @@ public sealed class BusinessFlowGapTests : IClassFixture<SimfApiFactory>
             NationalityId = 682,
             PlaceOfBirth = "Riyadh",
             CreatedAt = SimfClock.Now,
+            // A badge exists only for an admitted attendee, and admission is
+            // read on the profile rather than the account.
+            AdmissionState = AccountState.Approved,
         });
         await appDb.SaveChangesAsync();
         return qrId;
@@ -393,9 +402,6 @@ public sealed class BusinessFlowGapTests : IClassFixture<SimfApiFactory>
                 {
                     Id = Guid.NewGuid(),
                     Code = def.Code,
-                    Page = def.Page,
-                    Action = def.Action,
-                    DisplayName = def.DisplayName,
                 };
                 db.Permissions.Add(permission);
                 await db.SaveChangesAsync();

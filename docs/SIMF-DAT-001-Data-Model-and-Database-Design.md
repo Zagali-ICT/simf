@@ -87,7 +87,7 @@ repeated in every list.
 |--------|----------------|---------------|
 | `User` | `Email`, `PasswordHash`, `DisplayName`, `AccountState` (enum), `UserTypeCategoryId` | has many `UserRole`; has one `AttendeeProfile` or `ExhibitorProfile` |
 | `Role` | `Name`, `IsBaseline` | has many `RolePermission`, `UserRole` |
-| `Permission` | `Page`, `Action`, `DisplayName`, `Code` | one action on one page; the fixed page-and-action catalogue in SIMF-RPM-001 §8; has many `RolePermission` |
+| `Permission` | `Code` | one action on one page, identified by its `Page.Action` code; the fixed page-and-action catalogue in SIMF-RPM-001 §8; the page, action and display name are presentation metadata held in the in-process `PermissionCatalog`, not columns; has many `RolePermission` |
 | `RolePermission` | — | links `Role` and `Permission` |
 | `UserRole` | — | links `User` and `Role` |
 | `RefreshToken` | `TokenHash`, `ExpiresAt`, `RevokedAt`, `RotatedFromId` | belongs to `User` |
@@ -442,7 +442,11 @@ Identity. This records how the §5.1 entities map onto the implementation.
   token store (the `AspNetUserTokens` table); there is no separate `TotpSecret`
   table.
 - `EmailVerificationCode` is realised as **`AccountCode`** with the `Purpose`
-  field (Amendment A.4) and an `AttemptCount` for the per-code attempt cap.
+  field (Amendment A.4) and an `AttemptCount` for the per-code attempt cap. Its
+  code column is `Code` and stores a keyed HMAC, never the code itself: the
+  code is emailed and never persisted, and nothing queries the column — the row
+  is found by `(UserId, Purpose, ConsumedAt)` and the submitted value is
+  re-hashed and compared in constant time.
 - The Identity tables keep their default ASP.NET Core Identity names
   (`AspNetUsers`, `AspNetRoles`, and so on); the SIMF-specific entities use the
   standard SIMF table names (`Permissions`, `RolePermissions`, `RefreshTokens`,

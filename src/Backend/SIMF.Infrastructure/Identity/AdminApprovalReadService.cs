@@ -29,6 +29,22 @@ internal sealed class AdminApprovalReadService(
     IQrResolver qrResolver)
     : IAdminApprovalReadService
 {
+    /// <summary>One projected identity document. A named type rather than an
+    /// anonymous one so the two projections below and the per-kind lookup they
+    /// share can all name it; EF projects straight into the constructor, and the
+    /// PII value converter decrypts <c>Number</c> on the way out exactly as it did
+    /// when the number lived on the profile row.</summary>
+    private sealed record IdentityDocumentRow(IdentityDocumentKind Kind, string Number);
+
+    /// <summary>The registrant's document of one kind, or null when they hold
+    /// none. This is what replaced the three <c>NationalId</c> /
+    /// <c>IqamaNumber</c> / <c>PassportNumber</c> columns these projections used
+    /// to read: the wire still carries all three keys, but they are now derived
+    /// from the child rows rather than from three columns of their own.</summary>
+    private static string? NumberOf(
+        IReadOnlyList<IdentityDocumentRow>? documents, IdentityDocumentKind kind) =>
+        documents?.FirstOrDefault(document => document.Kind == kind)?.Number;
+
     // Every non-admin account is UserType.Visitor. The
     // audience-vs-partner queue split routes on the linked
     // ProfileType.IsVisitor flag — true (or no profile yet) lands on
@@ -64,8 +80,10 @@ internal sealed class AdminApprovalReadService(
             .Where(p => p.QrId == normalised)
             .Select(p => new
             {
+                p.Id,
                 p.UserId,
                 p.QrId,
+                p.Name,
                 ProfileTypeName = p.ProfileType != null ? p.ProfileType.Name : null,
                 ProfileTypeNameArabic = p.ProfileType != null ? p.ProfileType.NameArabic : null,
                 ProfileTypeColor = p.ProfileType != null ? p.ProfileType.PageColor : null,
@@ -73,30 +91,29 @@ internal sealed class AdminApprovalReadService(
             .SingleOrDefaultAsync(cancellationToken);
         if (row is null) { return null; }
 
-        // Pair the profile row with the owner so we can return the
-        // badge-name + email the printable view renders.
-        // This response is read straight back by the desk that just registered
-        // someone, and its contract is keyed by account id, so it only answers
-        // for a registration that produced one. A desk registration that
-        // creates no account has nothing to look up here and reads as not
-        // found, exactly as an unknown id does.
-        if (row.UserId is not { } registeredUserId) { return null; }
-
-        var user = await dbContext.Users
-            .AsNoTracking()
-            .Where(u => u.Id == registeredUserId)
-            .Select(u => new { u.Email, u.DisplayName })
-            .SingleOrDefaultAsync(cancellationToken);
-        if (user is null) { return null; }
+        // The owner's email and self-chosen display name, when there IS an owner.
+        // Most badges have none: a bulk order prints them long before anyone
+        // claims one, so requiring an account here would have made the print-bag
+        // station answer "no badge found" for every badge in the box.
+        var user = row.UserId is { } registeredUserId
+            ? await dbContext.Users
+                .AsNoTracking()
+                .Where(u => u.Id == registeredUserId)
+                .Select(u => new { u.Email, u.DisplayName })
+                .SingleOrDefaultAsync(cancellationToken)
+            : null;
 
         return new AdminWalkInRegistrationResponse(
-            registeredUserId,
-            user.Email ?? string.Empty,
-            user.DisplayName,
+            row.UserId ?? Guid.Empty,
+            user?.Email ?? string.Empty,
+            // The account's display name when there is one; otherwise the name
+            // the badge was actually printed from.
+            user?.DisplayName ?? row.Name,
             row.QrId ?? string.Empty,
             row.ProfileTypeName ?? string.Empty,
             row.ProfileTypeNameArabic ?? string.Empty,
-            row.ProfileTypeColor ?? "#244A77");
+            row.ProfileTypeColor ?? "#244A77",
+            row.Id);
     }
 
     /// <summary>Any-state full profile read scoped to the
@@ -147,9 +164,9 @@ internal sealed class AdminApprovalReadService(
                 p.DateOfBirth,
                 p.PlaceOfBirth,
                 p.IsSaudi,
-                p.NationalId,
-                p.IqamaNumber,
-                p.PassportNumber,
+                Documents = p.IdentityDocuments
+                    .Select(document => new IdentityDocumentRow(document.Kind, document.Number))
+                    .ToList(),
                 p.SaudiMobile,
                 p.InternationalMobile,
                 HasIdImage = p.IdImageFileId != null,
@@ -186,9 +203,9 @@ internal sealed class AdminApprovalReadService(
             profile?.DateOfBirth,
             string.IsNullOrEmpty(profile?.PlaceOfBirth) ? null : profile.PlaceOfBirth,
             profile?.IsSaudi ?? false,
-            profile?.NationalId,
-            profile?.IqamaNumber,
-            profile?.PassportNumber,
+            NumberOf(profile?.Documents, IdentityDocumentKind.NationalId),
+            NumberOf(profile?.Documents, IdentityDocumentKind.Iqama),
+            NumberOf(profile?.Documents, IdentityDocumentKind.Passport),
             profile?.SaudiMobile,
             profile?.InternationalMobile,
             profile?.HasIdImage ?? false,
@@ -256,9 +273,9 @@ internal sealed class AdminApprovalReadService(
                 p.DateOfBirth,
                 p.PlaceOfBirth,
                 p.IsSaudi,
-                p.NationalId,
-                p.IqamaNumber,
-                p.PassportNumber,
+                Documents = p.IdentityDocuments
+                    .Select(document => new IdentityDocumentRow(document.Kind, document.Number))
+                    .ToList(),
                 p.SaudiMobile,
                 p.InternationalMobile,
                 p.Gender,
@@ -291,9 +308,9 @@ internal sealed class AdminApprovalReadService(
             profile?.DateOfBirth,
             string.IsNullOrEmpty(profile?.PlaceOfBirth) ? null : profile.PlaceOfBirth,
             profile?.IsSaudi ?? false,
-            profile?.NationalId,
-            profile?.IqamaNumber,
-            profile?.PassportNumber,
+            NumberOf(profile?.Documents, IdentityDocumentKind.NationalId),
+            NumberOf(profile?.Documents, IdentityDocumentKind.Iqama),
+            NumberOf(profile?.Documents, IdentityDocumentKind.Passport),
             profile?.SaudiMobile,
             profile?.InternationalMobile,
             profile?.HasIdImage ?? false,

@@ -37,7 +37,7 @@ public partial class HallsAddEdit
             _model.Name = Initial.Name;
             _model.NameArabic = Initial.NameArabic;
             _model.Floor = Initial.Floor ?? string.Empty;
-            _model.EquipmentNotes = Initial.EquipmentNotes ?? string.Empty;
+            _model.FacilityNotes = Initial.FacilityNotes ?? string.Empty;
             _model.IsActive = Initial.IsActive;
             _capacityInput = Initial.Capacity.ToString();
             _seatModeInput = Initial.SeatSelectionMode.ToString();
@@ -87,7 +87,7 @@ public partial class HallsAddEdit
                     NameArabic = _model.NameArabic.Trim(),
                     Capacity = capacity,
                     Floor = string.IsNullOrWhiteSpace(_model.Floor) ? null : _model.Floor.Trim(),
-                    EquipmentNotes = string.IsNullOrWhiteSpace(_model.EquipmentNotes) ? null : _model.EquipmentNotes.Trim(),
+                    FacilityNotes = string.IsNullOrWhiteSpace(_model.FacilityNotes) ? null : _model.FacilityNotes.Trim(),
                     GeofenceCenterLat = geoLat,
                     GeofenceCenterLon = geoLon,
                     GeofenceRadiusMeters = geoRadius,
@@ -101,7 +101,7 @@ public partial class HallsAddEdit
                     NameArabic = _model.NameArabic.Trim(),
                     Capacity = capacity,
                     Floor = string.IsNullOrWhiteSpace(_model.Floor) ? null : _model.Floor.Trim(),
-                    EquipmentNotes = string.IsNullOrWhiteSpace(_model.EquipmentNotes) ? null : _model.EquipmentNotes.Trim(),
+                    FacilityNotes = string.IsNullOrWhiteSpace(_model.FacilityNotes) ? null : _model.FacilityNotes.Trim(),
                     IsActive = _model.IsActive,
                     GeofenceCenterLat = geoLat,
                     GeofenceCenterLon = geoLon,
@@ -168,7 +168,7 @@ public partial class HallsAddEdit
         public string Name { get; set; } = string.Empty;
         public string NameArabic { get; set; } = string.Empty;
         public string Floor { get; set; } = string.Empty;
-        public string EquipmentNotes { get; set; } = string.Empty;
+        public string FacilityNotes { get; set; } = string.Empty;
         public bool IsActive { get; set; } = true;
     }
 }

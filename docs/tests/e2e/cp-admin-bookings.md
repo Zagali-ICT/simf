@@ -102,10 +102,10 @@ Feature: No-show seat release (#6/#17)
 
 Background:
   Given an approved visitor holds a confirmed seat A1 for a session, booked well ahead
-  And the reservation's Expires = the session's Start − 3 minutes
+  And the reservation's NoShowReleaseAt = the session's Start − 3 minutes
 
 Scenario: An un-checked-in hold past its deadline is released and the holder notified
-  Given the current time is at or after the reservation's Expires
+  Given the current time is at or after the reservation's NoShowReleaseAt
   And the holder has NO HallAttendance (check-in) for that session
   When ReservationNoShowReleaseWorker runs its minute tick
     (ISeatReservationService.ReleaseNoShowsAsync)

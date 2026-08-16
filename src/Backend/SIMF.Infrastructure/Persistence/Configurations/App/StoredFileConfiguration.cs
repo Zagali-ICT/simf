@@ -8,7 +8,14 @@ namespace SIMF.Infrastructure.Persistence.Configurations.App;
 /// The enums persist as <c>int</c> (the EF default for enum-backed properties);
 /// <see cref="StoredFile.OwnerEntityId"/> / <c>CreatedBy</c> are polymorphic bare
 /// Guids and carry NO FK. Bytes live out-of-row; only the metadata
-/// is stored here.</summary>
+/// is stored here.
+///
+/// <para>That owner pair still carries no key, but this table is now the
+/// <b>principal</b> of several: owning rows point at it by a typed
+/// <c>Guid? XFileId</c> with a real foreign key. The two links are
+/// not redundant — the owner pair is queried by <c>Service</c> as well as by
+/// owner, which a bare key cannot express, and the owner-or-admin download check
+/// reads it.</para></summary>
 internal sealed class StoredFileConfiguration : IEntityTypeConfiguration<StoredFile>
 {
     public void Configure(EntityTypeBuilder<StoredFile> builder)
@@ -29,7 +36,14 @@ internal sealed class StoredFileConfiguration : IEntityTypeConfiguration<StoredF
         builder.Property(file => file.ExternalUrl).HasMaxLength(1024);
         builder.Property(file => file.OriginalFileName).HasMaxLength(260);
         builder.Property(file => file.ContentType).HasMaxLength(128);
-        builder.Property(file => file.Sha256).HasMaxLength(64);
+        // char(64), not nvarchar(64): a SHA-256 rendered as hex is always exactly 64
+        // ASCII characters, so the variable-length Unicode column cost four bytes per
+        // stored byte for no gain. Every writer either stores that 64-char hex or
+        // null, so the fixed length never pads a short value into a failed compare.
+        builder.Property(file => file.Sha256)
+            .HasMaxLength(64)
+            .IsUnicode(false)
+            .IsFixedLength();
 
         // The polymorphic owner back-link the owning row resolves on read, and the
         // scope of the owner-or-admin download check. Filtered to live rows.
@@ -42,7 +56,10 @@ internal sealed class StoredFileConfiguration : IEntityTypeConfiguration<StoredF
         // "files I uploaded" + audit lookups.
         builder.HasIndex(file => file.CreatedBy);
 
-        // The retention secure-erase sweep enumerates live, time-limited rows.
+        // Enumerates live, time-limited rows for a retention review. No sweep
+        // reads it yet — the retention date is recorded, never acted on
+        // automatically — so this index is provisioned ahead of that worker
+        // rather than serving a query today.
         builder.HasIndex(file => file.RetainUntil)
             .HasFilter("[IsActive] = 1 AND [RetainUntil] IS NOT NULL");
     }

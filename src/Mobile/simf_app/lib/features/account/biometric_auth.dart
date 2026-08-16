@@ -11,6 +11,8 @@ import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_confirm_dialog.dart';
 import 'package:simf_app/core/motion/motion_durations.dart';
+import 'package:simf_app/features/account/biometric_step_up_screen.dart'
+    show BiometricStepUpScreen;
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 
 /// Maps a non-success [LocalAuthOutcome] to a localized message, so the sign-in
@@ -54,8 +56,8 @@ enum LocalAuthOutcome {
 /// One home for the device's biometric (Face-ID / fingerprint) sign-in: the OS
 /// capability check + prompt (`local_auth`) plus the device-key lifecycle
 /// (query / revoke) on [AuthController]. The sign-in button, the side-menu
-/// toggle, the post-sign-in nudge AND the enrolment step-up all go through this,
-/// so the `local_auth` + device-key wiring has a single owner (D-441).
+/// toggle, the post-sign-in nudge AND the enrolment step-up all go through
+/// this, so the `local_auth` + device-key wiring has a single owner (D-441).
 ///
 /// Enrolment (D-738, banking-standard): the toggle/nudge route to
 /// [BiometricStepUpScreen], which verifies an emailed step-up code AND then
@@ -75,7 +77,8 @@ class BiometricAuth {
   /// maps the result to a [LocalAuthOutcome]. `biometricOnly` is false so the
   /// sheet offers the device PIN/pattern/passcode as a fallback (the banking
   /// standard, and what un-bricks the post-lockout path). Used by BOTH the
-  /// enrolment confirm and the sign-in prompt so the mapping lives in one place.
+  /// enrolment confirm and the sign-in prompt so the mapping lives in one
+  /// place.
   Future<LocalAuthOutcome> confirmDeviceIdentity(String reason) async {
     try {
       final ok = await _localAuth.authenticate(
@@ -98,7 +101,7 @@ class BiometricAuth {
         default:
           return LocalAuthOutcome.unavailable;
       }
-    } catch (_) {
+    } on Object catch (_) {
       return LocalAuthOutcome.unavailable;
     }
   }
@@ -114,7 +117,7 @@ class BiometricAuth {
       }
       final available = await _localAuth.getAvailableBiometrics();
       return available.isNotEmpty;
-    } catch (_) {
+    } on Object catch (_) {
       return false;
     }
   }
@@ -124,7 +127,7 @@ class BiometricAuth {
   Future<bool> isEnabled() async {
     try {
       return await _auth.hasEnrolledDeviceKey();
-    } catch (_) {
+    } on Object catch (_) {
       return false;
     }
   }
@@ -133,8 +136,7 @@ class BiometricAuth {
   Future<void> disable() => _auth.disableDeviceKey();
 }
 
-final biometricAuthProvider =
-    Provider<BiometricAuth>((ref) => BiometricAuth(ref));
+final biometricAuthProvider = Provider<BiometricAuth>(BiometricAuth.new);
 
 /// The device biometric capability (auto-disposed; re-read after a toggle).
 final biometricAvailableProvider = FutureProvider.autoDispose<bool>(
@@ -188,7 +190,8 @@ Future<void> maybeOfferBiometricEnrolment(
   }
   final l10n = AppL10n.of(context);
   // The root MaterialApp messenger carries the SnackBar across the route change
-  // to the destination, so the nudge is visible on the screen the user lands on.
+  // to the destination, so the nudge is visible on the screen the user lands
+  // on.
   final messenger = ScaffoldMessenger.of(context);
   // The Enable action fires up to 8s later — after the route change that pops
   // the sign-in / OTP screen — so capture the lifetime-safe ProviderContainer +
@@ -256,7 +259,8 @@ class _FaceIdToggleTileState extends ConsumerState<FaceIdToggleTile> {
           activeThumbColor: SimfTokens.accent,
           // Ignore taps while a toggle is in flight, so a double-tap can't
           // register (or revoke) two device keys and desync local/server state.
-          onChanged: _busy ? null : (turnOn) => unawaited(_toggle(l10n, turnOn)),
+          onChanged:
+              _busy ? null : (turnOn) => unawaited(_toggle(l10n, turnOn)),
         ),
         // S10 — the way into My Devices. Shown whenever biometrics are
         // available rather than only when this device is enrolled, because the
@@ -268,8 +272,10 @@ class _FaceIdToggleTileState extends ConsumerState<FaceIdToggleTile> {
             l10n.myDevicesManage,
             style: const TextStyle(color: SimfTokens.surface),
           ),
-          trailing: const Icon(Icons.chevron_right,
-              color: SimfTokens.beigeBorder),
+          trailing: const Icon(
+            Icons.chevron_right,
+            color: SimfTokens.beigeBorder,
+          ),
           onTap: () => unawaited(
             context.pushNamed(RouteNames.myDevices).then((_) {
               if (mounted) {
@@ -341,9 +347,9 @@ class _FaceIdToggleTileState extends ConsumerState<FaceIdToggleTile> {
     );
   }
 
-  /// Confirms the destructive disable: revoking the device key deletes the local
-  /// biometric credential permanently (it can only be re-enrolled, not restored).
-  /// Returns true only when the user explicitly taps Delete.
+  /// Confirms the destructive disable: revoking the device key deletes the
+  /// local biometric credential permanently (it can only be re-enrolled, not
+  /// restored). Returns true only when the user explicitly taps Delete.
   Future<bool> _confirmDisable(AppL10n l10n) {
     return SimfConfirmDialog.show(
       context,

@@ -1,4 +1,4 @@
-@* Reusable Archive (Past Editions) Add/Edit form, hosted by CrudShell
+﻿@* Reusable Archive (Past Editions) Add/Edit form, hosted by CrudShell
    (as a popup or a full page) from ArchiveList.razor. Inherits
    CrudAddEditFormBase so it exposes the standard CRUD-form parameter surface
    (IsEdit / Initial / OnSuccess / OnCancel). IsEdit=false runs Create (POST);
@@ -63,8 +63,6 @@
                    @onchange="OnSpeakersChanged"
                    disabled="@_busy" />
         </label>
-        <SimfTextField Label="@L["Admin.Archive.Field.CoverImageRelativePath"]"
-                       @bind-Value="_model.CoverImageRelativePath" Disabled="_busy" />
         @* Place + date label for the edition detail.
            MaxLength mirrors EF HasMaxLength + FluentValidation (256/128). *@
         <SimfTextField Label="@L["Admin.Archive.Field.LocationEn"]"
@@ -79,20 +77,59 @@
         <SimfTextField Label="@L["Admin.Archive.Field.DateLabelAr"]"
                        MaxLength="128"
                        @bind-Value="_model.DateLabelAr" Disabled="_busy" />
-        @* The rich edition lists, one row per line. Gallery rows are
-           "url | image|video | caption"; session titles "arabic | english";
-           past speakers "arabic | english | photo-url | countryId" (the
-           optional 4th field is the ISO 3166-1 numeric country code, e.g. 682
-           for Saudi Arabia, driving the app's flag). The image /
-           photo URL must be a full https link the app can load directly. *@
-        <label class="simf-field">
-            <span class="simf-field__label">@L["Admin.Archive.Field.Gallery"]</span>
-            <textarea class="simf-field__input" rows="4"
-                      placeholder="https://cdn.example.sa/2024/opening.jpg | image | Opening"
-                      value="@_model.GalleryText"
-                      @onchange="@(e => _model.GalleryText = e.Value?.ToString() ?? string.Empty)"
-                      disabled="@_busy"></textarea>
-        </label>
+        @* Gallery and past speakers are per-row editors, not free text. Each row
+           owns its picture as an uploaded file, and a file needs a row id to
+           belong to - which a line of text cannot carry. Session titles carry no
+           media, so they remain line-delimited "arabic | english". *@
+        <SimfRepeater TItem="ArchiveMediaItemInput" Items="_model.Gallery"
+                      IndexLabel="@L["Admin.Archive.Gallery.IndexLabel"]"
+                      EmptyText="@L["Admin.Archive.Gallery.Empty"]"
+                      AddLabel="@L["Admin.Archive.Gallery.Add"]" Disabled="_busy"
+                      MoveUpLabel="@L["Grid.MoveUp"]"
+                      MoveDownLabel="@L["Grid.MoveDown"]"
+                      RemoveLabel="@L["Grid.Remove"]"
+                      OnAdd="AddGalleryRow" OnRemove="RemoveGalleryRow"
+                      OnMove="@(m => MoveGalleryRow(m.Item, m.Delta))">
+            <RowTemplate Context="row">
+                <div class="simf-form__grid">
+                    <label class="simf-field">
+                        <span class="simf-field__label">@L["Admin.Archive.Gallery.Kind"]</span>
+                        <select class="simf-field__input" disabled="@_busy"
+                                value="@row.Kind"
+                                @onchange="@(e => row.Kind = e.Value?.ToString() == "1" ? 1 : 0)">
+                            <option value="0">@L["Admin.Archive.Gallery.KindImage"]</option>
+                            <option value="1">@L["Admin.Archive.Gallery.KindVideo"]</option>
+                        </select>
+                    </label>
+                    <SimfTextField Label="@L["Admin.Archive.Gallery.Caption"]" MaxLength="256"
+                                   @bind-Value="row.CaptionAr" Disabled="_busy" />
+                    @if (row.Kind == 1)
+                    {
+                        @* A video is hosted elsewhere, so the admin supplies its
+                           link; the store validates it against the same rule the
+                           players apply. *@
+                        <div class="simf-form__grid-item--full">
+                            <SimfTextField Label="@L["Admin.Archive.Gallery.VideoUrl"]" MaxLength="1024"
+                                           @bind-Value="row.Url" Disabled="_busy" />
+                        </div>
+                    }
+                    else if (row.Id is { } galleryId)
+                    {
+                        <div class="simf-form__grid-item--full">
+                            <span class="simf-field__label">@L["Admin.Asset.Heading"]</span>
+                            <SimfImageUpload Category="ArchiveGalleryImage" OwnerId="@galleryId"
+                                             Alt="@row.CaptionAr" />
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="simf-form__grid-item--full">
+                            <p class="simf-field__hint">@L["Admin.Asset.SaveFirst"]</p>
+                        </div>
+                    }
+                </div>
+            </RowTemplate>
+        </SimfRepeater>
         <label class="simf-field">
             <span class="simf-field__label">@L["Admin.Archive.Field.SessionTitles"]</span>
             <textarea class="simf-field__input" rows="4"
@@ -101,14 +138,48 @@
                       @onchange="@(e => _model.SessionTitlesText = e.Value?.ToString() ?? string.Empty)"
                       disabled="@_busy"></textarea>
         </label>
-        <label class="simf-field">
-            <span class="simf-field__label">@L["Admin.Archive.Field.PastSpeakers"]</span>
-            <textarea class="simf-field__input" rows="4"
-                      placeholder="راشد السبيعي | Rashed Al-Subaie | https://cdn.example.sa/2024/s1.jpg | 682"
-                      value="@_model.PastSpeakersText"
-                      @onchange="@(e => _model.PastSpeakersText = e.Value?.ToString() ?? string.Empty)"
-                      disabled="@_busy"></textarea>
-        </label>
+        <SimfRepeater TItem="ArchivePastSpeakerInput" Items="_model.PastSpeakers"
+                      IndexLabel="@L["Admin.Archive.PastSpeaker.IndexLabel"]"
+                      EmptyText="@L["Admin.Archive.PastSpeaker.Empty"]"
+                      AddLabel="@L["Admin.Archive.PastSpeaker.Add"]" Disabled="_busy"
+                      MoveUpLabel="@L["Grid.MoveUp"]"
+                      MoveDownLabel="@L["Grid.MoveDown"]"
+                      RemoveLabel="@L["Grid.Remove"]"
+                      OnAdd="AddPastSpeakerRow" OnRemove="RemovePastSpeakerRow"
+                      OnMove="@(m => MovePastSpeakerRow(m.Item, m.Delta))">
+            <RowTemplate Context="row">
+                <div class="simf-form__grid">
+                    <SimfTextField Label="@L["Admin.Archive.PastSpeaker.NameAr"]" MaxLength="128"
+                                   @bind-Value="row.NameAr" Disabled="_busy" />
+                    <SimfTextField Label="@L["Admin.Archive.PastSpeaker.NameEn"]" MaxLength="128"
+                                   @bind-Value="row.NameEn" Disabled="_busy" />
+                    @* ISO 3166-1 numeric (682 = Saudi Arabia), driving the app's
+                       corner flag. An unknown code is dropped to null server-side
+                       rather than failing the save. *@
+                    <label class="simf-field">
+                        <span class="simf-field__label">@L["Admin.Archive.PastSpeaker.CountryId"]</span>
+                        <input class="simf-field__input" type="number" disabled="@_busy"
+                               value="@(row.CountryId?.ToString() ?? string.Empty)"
+                               @onchange="@(e => row.CountryId =
+                                   int.TryParse(e.Value?.ToString(), out var c) ? c : null)" />
+                    </label>
+                    @if (row.Id is { } speakerId)
+                    {
+                        <div class="simf-form__grid-item--full">
+                            <span class="simf-field__label">@L["Admin.Asset.Heading"]</span>
+                            <SimfImageUpload Category="ArchivePastSpeakerPhoto" OwnerId="@speakerId"
+                                             Alt="@row.NameEn" />
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="simf-form__grid-item--full">
+                            <p class="simf-field__hint">@L["Admin.Asset.SaveFirst"]</p>
+                        </div>
+                    }
+                </div>
+            </RowTemplate>
+        </SimfRepeater>
         @if (IsEdit)
         {
             <SimfCheckbox @bind-Value="_model.IsActive" Disabled="_busy">
@@ -122,6 +193,17 @@
             <div class="simf-field">
                 <span class="simf-field__label">@L["Admin.Asset.Heading"]</span>
                 <SimfImageUpload Category="ArchiveCover" OwnerId="@Initial.Id" Alt="@_model.TitleEn" />
+            </div>
+        }
+        else
+        {
+            @* Create mode: the row must exist before bytes can be attached, so
+               show the slot and say so rather than nothing at all. Matches
+               SpeakersAddEdit. *@
+            <div class="simf-photo-empty">
+                <span class="simf-field__label">@L["Admin.Asset.Heading"]</span>
+                <SimfImageThumb Class="simf-img-thumb--lg" Alt="@_model.TitleEn" />
+                <span class="simf-field__helper">@L["Admin.Asset.SaveFirst"]</span>
             </div>
         }
     </div>

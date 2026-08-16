@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
@@ -27,12 +28,94 @@ public partial class BadgeBatchesPage
     // Revoke confirm modal — the batch about to be disabled.
     private AdminBadgeBatchSummary? _revokeTarget;
 
-    protected override async Task OnInitializedAsync() => await LoadAsync();
+    // Top-up modal — the order being added to, plus the tier and how many.
+    // The type list is loaded once on init rather than per open: it is a small
+    // lookup, and fetching it inside the click would leave the picker empty for
+    // the first render of the modal.
+    private AdminBadgeBatchSummary? _topUpTarget;
+    private List<AdminProfileTypeSummary> _profileTypes = new();
+    private AdminProfileTypeSummary? _topUpType;
+    private string _topUpCount = string.Empty;
+    private string? _topUpError;
+    private string? _profileTypesError;
+
+    /// <summary>True when there is no tier to pick, so the dialog says why
+    /// instead of refusing every press of its own confirm button.</summary>
+    private bool NoTiersToPick => _profileTypes.Count == 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+        await LoadProfileTypesAsync();
+    }
+
+    /// <summary>Visitor tiers a badge can be minted for. Mirrors the bulk
+    /// generator's filter — a non-visitor type must never reach a bulk order,
+    /// because a bulk-approved badge of an elevated role would hand out
+    /// QR-accessible authority.</summary>
+    private async Task LoadProfileTypesAsync()
+    {
+        var envelope = await JS.InvokeAsync<ApiResult<IReadOnlyList<AdminProfileTypeSummary>>>(
+            "simfAccount.getJson", "/account/api/admin/profile-types?userType=Visitor");
+        if (envelope is { Success: true, Data: not null })
+        {
+            _profileTypes = envelope.Data.Where(p => p.IsActive && p.IsVisitor).ToList();
+            return;
+        }
+
+        // Kept rather than swallowed. This lookup is gated on ProfileTypes.View,
+        // which is NOT the permission that renders the top-up button, so a role
+        // holding one without the other would otherwise open a dialog whose
+        // picker is empty and whose only response is "choose a profile type".
+        _profileTypesError = envelope?.Error?.MessageForCurrentCulture()
+            ?? L["Admin.BadgeBatches.LoadFailed"];
+    }
+
+    private static string TypeLabel(AdminProfileTypeSummary profileType) =>
+        InReadingLanguage(profileType.Name, profileType.NameArabic);
 
     private async Task OnQueryChangedAsync(GridQuery next)
     {
         _query = next;
         await LoadAsync();
+    }
+
+    /// <summary>A bilingual pair shown in the reading language, falling back to
+    /// the other side so nothing renders blank while one is still
+    /// untranslated. Used for both the order name and the profile-type label,
+    /// which had the same four lines twice.</summary>
+    private static string InReadingLanguage(string name, string nameArabic) =>
+        CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar"
+            ? (string.IsNullOrWhiteSpace(nameArabic) ? name : nameArabic)
+            : (string.IsNullOrWhiteSpace(name) ? nameArabic : name);
+
+    private static string OrderName(AdminBadgeBatchSummary row) =>
+        InReadingLanguage(row.Name, row.NameArabic);
+
+    /// <summary>The order's contents in the reading language. The stored
+    /// CountsSummary is a single ENGLISH string, so rendering it left an otherwise
+    /// Arabic page showing "Normal × 4 + VIP × 3"; the server now derives the same
+    /// breakdown carrying both names.</summary>
+    private string Contents(AdminBadgeBatchSummary row)
+    {
+        // Not a badge order, so it carries no breakdown and its stored summary is
+        // English prose. Echoing that prose left one English cell in an otherwise
+        // Arabic table - the same defect, on the one row that cannot be fixed by
+        // deriving tiers.
+        if (row.IsDirectRegistration)
+        {
+            return L["Admin.BadgeBatches.DirectRegistration"];
+        }
+
+        // The stored string remains the fallback for an order whose members are
+        // gone, so a row is never blank.
+        return row.Tiers is { Count: > 0 } tiers
+            ? string.Join(
+                " + ",
+                tiers.Select(tier =>
+                    $"{InReadingLanguage(tier.Name, tier.NameArabic)} × "
+                    + tier.Count.ToString(CultureInfo.InvariantCulture)))
+            : row.CountsSummary;
     }
 
     private string FormatSummary(int skip, int taken, int total) =>
@@ -94,6 +177,74 @@ public partial class BadgeBatchesPage
             {
                 _toast = new Toast("error",
                     env?.Error?.MessageForCurrentCulture() ?? L["Admin.BadgeBatches.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private void OpenTopUp(AdminBadgeBatchSummary row)
+    {
+        _topUpTarget = row;
+        _topUpType = null;
+        _topUpCount = string.Empty;
+        _topUpError = null;
+        _toast = null;
+    }
+
+    private void CloseTopUp()
+    {
+        _topUpTarget = null;
+        _topUpError = null;
+    }
+
+    private async Task TopUpAsync()
+    {
+        if (_topUpTarget is null || _busy) return;
+
+        // Checked before posting, and reported INSIDE the dialog, so the
+        // correction is made while the fields are still in front of the operator.
+        if (_topUpType is null)
+        {
+            _topUpError = L["Admin.BadgeBatches.TopUp.TypeRequired"];
+            return;
+        }
+        if (!int.TryParse(_topUpCount?.Trim(), NumberStyles.None,
+                CultureInfo.InvariantCulture, out var count)
+            || count < 1)
+        {
+            _topUpError = L["Admin.BadgeBatches.TopUp.CountInvalid"];
+            return;
+        }
+
+        _busy = true;
+        _topUpError = null;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<AdminTopUpBadgeBatchResponse>>(
+                "simfAccount.postJson", "/account/api/admin/visitors/badge-batches/top-up",
+                new AdminTopUpBadgeBatchRequest
+                {
+                    BatchId = _topUpTarget.Id,
+                    Batches = new List<BulkBadgeBatch>
+                    {
+                        new() { ProfileTypeId = _topUpType.Id, Count = count },
+                    },
+                });
+            if (env is { Success: true, Data: not null })
+            {
+                _toast = new Toast("success",
+                    string.Format(L["Admin.BadgeBatches.TopUp.Done"],
+                        env.Data.Added, env.Data.TotalCount));
+                CloseTopUp();
+                await LoadAsync();
+            }
+            else
+            {
+                // The server refuses a revoked order and the direct-registration
+                // order. The dialog stays OPEN so the refusal is read where the
+                // request was made.
+                _topUpError = env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.BadgeBatches.LoadFailed"];
             }
         }
         finally { _busy = false; }

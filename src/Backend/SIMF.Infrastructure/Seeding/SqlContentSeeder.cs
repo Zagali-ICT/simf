@@ -34,7 +34,7 @@ namespace SIMF.Infrastructure.Seeding;
 /// copies that folder into <c>FileStorage:RootPath</c> by hand; nothing did so in
 /// Development / Testing, so every seeded row pointed at a storage key with no
 /// bytes and the image 404'd behind the UI's placeholder. <see cref="RunAsync"/>
-/// now materialises those bytes through <see cref="IFileStorageProvider"/> after
+/// now materialises those bytes through <see cref="IFileService"/> after
 /// the SQL is applied, and <b>deactivates</b> any seeded row whose bytes cannot be
 /// found — so a seeded asset reference either resolves to real bytes or is gone and
 /// the surface shows its proper empty state. Idempotent: a row whose bytes are
@@ -42,7 +42,7 @@ namespace SIMF.Infrastructure.Seeding;
 /// </summary>
 public sealed class SqlContentSeeder(
     SimfAppDbContext appDbContext,
-    IFileStorageProvider fileStorage,
+    IFileService fileService,
     ILogger<SqlContentSeeder> logger)
 {
     /// <summary>The seeder actor the content SQL stamps on every row it
@@ -157,9 +157,9 @@ public sealed class SqlContentSeeder(
     /// <summary>Copies the repo-shipped bytes of every seeded
     /// <paramref name="service"/> row into the file-storage root, so
     /// <c>AssetService.ResolveAsync</c> streams a real image instead of 404-ing
-    /// behind the UI placeholder. Writes through <see cref="IFileStorageProvider"/>,
-    /// which rebuilds the SAME <c>{service}/{id:N}{ext}</c> key the SQL recorded, so
-    /// the row and the blob cannot drift. A row whose bytes are already on disk is
+    /// behind the UI placeholder. Writes through <see cref="IFileService"/>, which
+    /// rebuilds the SAME <c>{service}/{id:N}{ext}</c> key the SQL recorded, so the row
+    /// and the blob cannot drift, and audits the write. A row whose bytes are already on disk is
     /// skipped (idempotent); a row with no source bytes is <b>deactivated</b> rather
     /// than left as a broken reference. Only rows stamped with
     /// <see cref="SeederActorUserId"/> are considered.</summary>
@@ -180,7 +180,10 @@ public sealed class SqlContentSeeder(
         foreach (var row in rows)
         {
             var storageKey = row.StorageKey!;
-            if (await fileStorage.ReadAsync(storageKey, row.IsEncrypted, cancellationToken) is not null)
+            // A full read, not a cheap existence probe: a blob that is present but
+            // unreadable (a corrupt or truncated cipher) must be rewritten, and an
+            // existence check would skip it.
+            if (await fileService.ReadContentAsync(row.Id, cancellationToken) is not null)
             {
                 continue; // bytes already in place — idempotent skip.
             }
@@ -197,9 +200,10 @@ public sealed class SqlContentSeeder(
             }
 
             var bytes = await File.ReadAllBytesAsync(sourcePath, cancellationToken);
-            await fileStorage.WriteAsync(
-                service, row.Id, Path.GetExtension(leaf), bytes, row.IsEncrypted, cancellationToken);
-            written++;
+            if (await fileService.RestoreBytesAsync(row.Id, bytes, SeederActorUserId, cancellationToken))
+            {
+                written++;
+            }
         }
 
         if (retired > 0)

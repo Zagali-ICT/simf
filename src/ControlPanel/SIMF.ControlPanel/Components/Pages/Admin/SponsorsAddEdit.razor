@@ -70,12 +70,6 @@
                        ValueExpression="@(() => _model.About)"
                        MaxLength="2048"
                        Disabled="_busy" />
-        <SimfTextField Label="@L["Admin.Sponsors.Field.Logo"]"
-                       Value="@_model.LogoRelativePath"
-                       ValueChanged="@(v => _model.LogoRelativePath = v)"
-                       ValueExpression="@(() => _model.LogoRelativePath)"
-                       MaxLength="256"
-                       Disabled="_busy" />
         <label class="simf-field">
             <span class="simf-field__label">@L["Admin.Sponsors.Field.DisplayOrder"]</span>
             <input class="simf-field__input" type="number" min="0" max="99999"
@@ -98,6 +92,17 @@
             <div class="simf-field">
                 <span class="simf-field__label">@L["Admin.Asset.Heading"]</span>
                 <SimfImageUpload Category="SponsorLogo" OwnerId="@Initial.Id" Alt="@_model.NameEn" />
+            </div>
+        }
+        else
+        {
+            @* Create mode: the row must exist before bytes can be attached, so
+               show the slot and say so rather than nothing at all. Matches
+               SpeakersAddEdit. *@
+            <div class="simf-photo-empty">
+                <span class="simf-field__label">@L["Admin.Asset.Heading"]</span>
+                <SimfImageThumb Class="simf-img-thumb--lg" Alt="@_model.NameEn" />
+                <span class="simf-field__helper">@L["Admin.Asset.SaveFirst"]</span>
             </div>
         }
     </div>

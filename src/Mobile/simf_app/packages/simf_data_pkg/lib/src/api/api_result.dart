@@ -4,7 +4,7 @@ import 'package:meta/meta.dart';
 ///
 /// Every response — success or failure, every endpoint — deserialises into
 /// exactly this shape. The repository layer pattern-matches on it and
-/// produces either a domain value or an [ApiFailure].
+/// produces either a domain value or an `ApiFailure`.
 @immutable
 class ApiResult<T> {
   const ApiResult({
@@ -82,7 +82,8 @@ class ApiResultError {
   /// envelope's `message` is not pre-localized by Accept-Language).
   final String message;
 
-  /// The Arabic message from the envelope; empty when the server didn't send one.
+  /// The Arabic message from the envelope; empty when the server didn't send
+  /// one.
   final String messageArabic;
 
   /// Field-level errors used mainly for validation responses.
@@ -90,7 +91,7 @@ class ApiResultError {
 
   /// The locale-appropriate message: the Arabic text when [isArabic] and a
   /// non-empty Arabic message is present, otherwise the English [message].
-  String localized(bool isArabic) =>
+  String localized({required bool isArabic}) =>
       isArabic && messageArabic.isNotEmpty ? messageArabic : message;
 }
 
@@ -116,6 +117,6 @@ class ApiResultErrorDetail {
   final String messageArabic;
 
   /// The locale-appropriate message (Arabic when [isArabic] + present).
-  String localized(bool isArabic) =>
+  String localized({required bool isArabic}) =>
       isArabic && messageArabic.isNotEmpty ? messageArabic : message;
 }

@@ -15,7 +15,20 @@ internal sealed class SpeakerConfiguration : IEntityTypeConfiguration<Speaker>
 {
     public void Configure(EntityTypeBuilder<Speaker> builder)
     {
-        builder.ToTable("Speakers");
+        // The contact card's coordinate is a pair or nothing, and when set it is a
+        // real coordinate. Mirrors the range + pairing rules AdminSpeakerService
+        // already enforces, and the same shape as CK_Halls_Geofence.
+        builder.ToTable("Speakers", table =>
+        {
+            table.HasCheckConstraint(
+                "CK_Speakers_Location",
+                "([Latitude] IS NULL AND [Longitude] IS NULL) OR ([Latitude] IS NOT NULL AND [Longitude] IS NOT NULL AND [Latitude] >= -90 AND [Latitude] <= 90 AND [Longitude] >= -180 AND [Longitude] <= 180)");
+            // Zero or positive, the same rule AdminSpeakerService already refuses a
+            // negative order with (400 SPEAKER_INVALID). Held here too so a seed or
+            // a repair script cannot store a speaker that sorts ahead of every
+            // hand-ordered one. Same shape as CK_Halls_Capacity.
+            table.HasCheckConstraint("CK_Speakers_DisplayOrder", "[DisplayOrder] >= 0");
+        });
         builder.HasKey(speaker => speaker.Id);
 
         builder.Property(speaker => speaker.Code).HasMaxLength(16).IsRequired();
@@ -51,7 +64,6 @@ internal sealed class SpeakerConfiguration : IEntityTypeConfiguration<Speaker>
         builder.Property(speaker => speaker.City).HasMaxLength(128);
         builder.Property(speaker => speaker.CityArabic).HasMaxLength(128);
 
-        builder.Property(speaker => speaker.PhotoRelativePath).HasMaxLength(256);
 
         builder.HasIndex(speaker => speaker.Code).IsUnique();
         // Real DB FK on the same-DB reference. OnDelete=Restrict
@@ -72,6 +84,17 @@ internal sealed class SpeakerConfiguration : IEntityTypeConfiguration<Speaker>
             .WithMany()
             .HasForeignKey(speaker => speaker.UserProfileId)
             .OnDelete(DeleteBehavior.Restrict);
+        // At most one speaker row per linked profile. The link is an identity
+        // mapping, not a tag: the approved-summary read resolves the caller's
+        // profile to a speaker to decide whether they host the session, so two
+        // speaker rows claiming one profile would be two records of one person and
+        // two answers to that authorization question. FILTERED, because the null
+        // is the ordinary case — most speakers are external guests with no SIMF
+        // account — and SQL Server treats nulls as equal in a unique index, so
+        // without the filter the table would admit exactly one unlinked speaker.
+        builder.HasIndex(speaker => speaker.UserProfileId)
+            .IsUnique()
+            .HasFilter("[UserProfileId] IS NOT NULL");
         builder.HasIndex(speaker => new { speaker.IsActive, speaker.DisplayOrder });
     }
 }

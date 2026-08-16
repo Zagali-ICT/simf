@@ -43,12 +43,12 @@ trigger:
 # --- Which environments this run deploys to (chosen in the Run pipeline dialog).
 #
 #     `deployPreProduction` DEFAULTS TO FALSE, and the reason is not caution
-#     (D-894): THERE IS ONLY ONE AGENT, AND IT IS ON THE PRODUCTION SERVER.
+#     (D-906): THERE IS ONLY ONE AGENT, AND IT IS ON THE PRODUCTION SERVER.
 #
 #     The `Default` pool contains a single agent - `server` on
 #     `WIN-MAP9VAMAU4Q`, which is the production box (SIMF APP 01). Both
 #     deployment jobs draw from that pool, and neither environment has a VM
-#     resource to bind it elsewhere (D-893), so BOTH jobs run on production.
+#     resource to bind it elsewhere (D-905), so BOTH jobs run on production.
 #     `DeployPreProduction` does not rehearse anything: it deploys the same four
 #     packages to the live production server a second time, stopping and
 #     restarting every site again for no gain.
@@ -77,12 +77,12 @@ parameters:
   type: boolean
   default: true
 
-# --- Whether this run executes the test gates. BACK ON BY DEFAULT (D-899),
+# --- Whether this run executes the test gates. BACK ON BY DEFAULT (D-915),
 #     because the reason they were switched off has been removed.
 #
 #     D-887 set this to FALSE on 2026-08-14: a deploy should be quick, and
 #     "SIMF.Api.Tests alone runs 38 minutes when it has the agent to itself".
-#     That suite now runs in about TEN minutes on the same work (D-895..D-898:
+#     That suite now runs in about TEN minutes on the same work (D-911..D-914:
 #     the fixture was re-provisioning its databases before every test rather
 #     than once per class, every host boot ate a 10-second SqlClient
 #     connect-retry against a database that did not exist yet, and fourteen
@@ -647,17 +647,23 @@ stages:
     # `// ignore:` that states why. A warning is a defect the analyzer is certain
     # about, and the previous flag let one sit unnoticed indefinitely.
     #
-    # `--no-fatal-infos` STAYS. The very_good_analysis ratchet is still open at
-    # ~2146 infos, most of them style preferences (avoid_positional_boolean_parameters,
-    # prefer_constructors_over_static_methods, comment_references). Making those
-    # fatal today would fail every build and the flag would come straight back
-    # off, which is what happened to the .NET test gate. The ratchet closes in
-    # its own increments; see analysis_options.yaml.
+    # INFOS ARE NOW FATAL TOO (2026-08-14). `--no-fatal-infos` was dropped on
+    # the same rule that dropped `--no-fatal-warnings`: only once the count was
+    # already zero. It stood at ~2146 when the note above it was written, which
+    # is why it stayed - making those fatal then would have failed every build
+    # and the flag would have come straight back off, exactly as happened to
+    # the .NET test gate. The clean-code programme closed the ratchet instead:
+    # 0 infos across lib, test, integration_test AND both local packages, which
+    # moved onto the app's own very_good_analysis ruleset in the same wave
+    # rather than staying on the weaker flutter_lints.
+    #
+    # Every rule the analyzer was wrong about carries a targeted `// ignore:`
+    # with its reason above it, so the zero is argued rather than swept.
     - powershell: |
         $ErrorActionPreference = 'Stop'
         Set-Location '$(flutterApp)'
-        flutter analyze --no-fatal-infos lib test integration_test packages
-        if ($LASTEXITCODE -ne 0) { throw "flutter analyze found errors or warnings in SIMF Dart sources (exit $LASTEXITCODE)." }
+        flutter analyze lib test integration_test packages
+        if ($LASTEXITCODE -ne 0) { throw "flutter analyze found errors, warnings or infos in SIMF Dart sources (exit $LASTEXITCODE)." }
       displayName: 'flutter analyze (lib + test + integration_test + packages)'
 
     # --- Convention gate (SIMF-CQP-001). Detects the code-quality classes that
@@ -877,7 +883,7 @@ stages:
 # deploys the whole time.
 #
 # DO NOT ADD `resourceType: virtualMachine` HERE. It has been tried twice and
-# broken deploys both times (D-891, D-893): it demands a registered VM resource,
+# broken deploys both times (D-903, D-905): it demands a registered VM resource,
 # and the run dies with "No resource were found in the environment with ID 3".
 # It is the correct construct for an estate whose servers are registered as VM
 # resources; this one is not. Register both servers first, confirm they appear

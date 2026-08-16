@@ -13,9 +13,16 @@ internal sealed class HallAvailabilityWindowConfiguration
 {
     public void Configure(EntityTypeBuilder<HallAvailabilityWindow> builder)
     {
-        // A window must end after it starts.
-        builder.ToTable("HallAvailabilityWindows", table => table.HasCheckConstraint(
-            "CK_HallAvailabilityWindows_TimeWindow", "[End] > [Start]"));
+        // A window must end after it starts, and divides into slots of the
+        // 5..480 minute length the service validates.
+        builder.ToTable("HallAvailabilityWindows", table =>
+        {
+            table.HasCheckConstraint(
+                "CK_HallAvailabilityWindows_TimeWindow", "[End] > [Start]");
+            table.HasCheckConstraint(
+                "CK_HallAvailabilityWindows_SlotMinutes",
+                "[SlotMinutes] >= 5 AND [SlotMinutes] <= 480");
+        });
         builder.HasKey(w => w.Id);
 
         builder.HasOne(w => w.Hall)

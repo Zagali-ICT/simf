@@ -11,7 +11,13 @@ internal sealed class GateConfiguration : IEntityTypeConfiguration<Gate>
 {
     public void Configure(EntityTypeBuilder<Gate> builder)
     {
-        builder.ToTable("Gates");
+        // DirectionMode is stored as int, so pin it to its declared range
+        // (In=0 .. Both=2) rather than letting the column accept any number:
+        // an out-of-range value would fall through the constraint engine's
+        // direction step. Literal bounds match the house style; appending a new
+        // DirectionMode member means widening this bound.
+        builder.ToTable("Gates", table => table.HasCheckConstraint(
+            "CK_Gates_DirectionModeRange", "[DirectionMode] BETWEEN 0 AND 2"));
         builder.HasKey(gate => gate.Id);
 
         builder.Property(gate => gate.Code).HasMaxLength(16).IsRequired();

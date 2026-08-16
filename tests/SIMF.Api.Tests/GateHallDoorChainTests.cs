@@ -235,7 +235,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
         // Exactly one: the attendee already held a reservation, so the walk-in
         // hold must not add a second.
         var hold = Assert.Single(holds);
-        Assert.Null(hold.Expires);
+        Assert.Null(hold.NoShowReleaseAt);
     }
 
     [Fact]

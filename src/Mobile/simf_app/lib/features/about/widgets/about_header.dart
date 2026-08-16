@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 
 import 'package:simf_app/app/theme/tokens.dart';
 
-/// The About anchor-mark header (frame 1116:16448): the gold anchor + forum name,
-/// the optional forum title beneath it, and the optional gold status badge
-/// (`{status} · {year}`, shown only when the edition config is loaded — D-495).
+/// The About anchor-mark header (frame 1116:16448): the gold anchor + forum
+/// name, the optional forum title beneath it, and the optional gold status
+/// badge (`{status} · {year}`, shown only when the edition config is loaded —
+/// D-495).
 class AboutHeader extends StatelessWidget {
   const AboutHeader({
     required this.forumName,
@@ -28,7 +29,8 @@ class AboutHeader extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            const Icon(Icons.anchor, color: SimfTokens.accent, size: SimfTokens.aboutHeaderSize),
+            const Icon(Icons.anchor,
+                color: SimfTokens.accent, size: SimfTokens.aboutHeaderSize,),
             const SizedBox(width: SimfTokens.space2),
             Flexible(
               child: Text(

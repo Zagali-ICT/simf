@@ -15,11 +15,12 @@ import 'golden_fonts.dart';
 /// Goldens for the identity-verification (التحقق من الهوية) screen, D-404 →
 /// clean-code D-610 → full-bleed Figma D-611 → live-only + liveness-prompt
 /// restored (owner 2026-07-06, D-662): the capture is live-camera-only with the
-/// liveness-step prompt overlaid; no manual shutter, no gallery. The live camera
-/// can't render in the test runtime (no camera plugin), so parity is locked on
-/// the deterministic states: the loading surface (a spinner), the ready surface
-/// with the liveness prompt, and the "camera required" retry.
-///   flutter test --update-goldens test/golden/identity_verification_golden_test.dart
+/// liveness-step prompt overlaid; no manual shutter, no gallery. The live
+/// camera can't render in the test runtime (no camera plugin), so parity is
+/// locked on the deterministic states: the loading surface (a spinner), the
+/// ready surface with the liveness prompt, and the "camera required" retry.
+/// flutter test --update-goldens
+/// test/golden/identity_verification_golden_test.dart
 
 Widget _host(Widget child) => MaterialApp(
       debugShowCheckedModeBanner: false,

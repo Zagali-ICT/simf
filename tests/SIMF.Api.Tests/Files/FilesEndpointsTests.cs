@@ -3,6 +3,11 @@
 // DELETE /api/v1/files/{id} (soft-delete). Exercises the full StoredFileService
 // pipeline: magic-byte detection, the per-service allow-list, encrypt-at-rest +
 // envelope round-trip, the upload permission gate, and soft-delete.
+//
+// The owner-scoped services (Avatar, IdDocument, VipPhoto) are refused on the
+// generic upload route — see SeedFileAsync — so the tests that need one of their
+// files in place seed it in process and keep asserting the real behaviour
+// (encryption, integrity, retention, erasure) through the endpoints.
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -66,14 +71,11 @@ public sealed class FilesEndpointsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task Upload_encrypted_avatar_round_trips_through_the_cipher()
+    public async Task An_encrypted_avatar_round_trips_through_the_cipher()
     {
         var token = await CreateAdministratorAndSignInAsync();
-        var owner = Guid.NewGuid();
 
-        var resp = await UploadAsync(FileService.Avatar, FileOwnerEntityType.UserProfile, owner, Png, "image/png", "a.png", token);
-        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
-        var file = (await resp.Content.ReadFromJsonAsync<ApiResult<UploadedFileResponse>>())!.Data!;
+        var file = await SeedFileAsync(FileService.Avatar, Guid.NewGuid(), Png, "image/png", "a.png");
         Assert.True(file.IsEncrypted);
 
         // The admin (wildcard) downloads — the bytes decrypt back to the original.
@@ -154,10 +156,7 @@ public sealed class FilesEndpointsTests : IClassFixture<SimfApiFactory>
         // uniform 404, never the unverified bytes. Simulated by mutating the
         // recorded hash so the on-read integrity check cannot match.
         var token = await CreateAdministratorAndSignInAsync();
-        var upload = await UploadAsync(
-            FileService.Avatar, FileOwnerEntityType.UserProfile, Guid.NewGuid(),
-            Png, "image/png", "a.png", token);
-        var file = (await upload.Content.ReadFromJsonAsync<ApiResult<UploadedFileResponse>>())!.Data!;
+        var file = await SeedFileAsync(FileService.Avatar, Guid.NewGuid(), Png, "image/png", "a.png");
 
         // A clean download works first (control).
         var ok = await GetAuthAsync(file.Url, token);
@@ -179,19 +178,30 @@ public sealed class FilesEndpointsTests : IClassFixture<SimfApiFactory>
     public async Task The_stored_owner_family_is_forced_from_the_policy_not_the_client()
     {
         // P2 (D-568 hardening) — the client cannot set the owner family; the
-        // service stamps it from the resolved policy (Avatar → UserProfile).
+        // service stamps it from the resolved policy (SpeakerPhoto → Speaker).
+        // Shown on a content service because the owner-scoped ones this used to use
+        // are refused on this route now; the rule is the same one, and the family it
+        // forces is the very thing an over-post would try to change.
         var token = await CreateAdministratorAndSignInAsync();
         var owner = Guid.NewGuid();
 
-        var resp = await UploadAsync(
-            FileService.Avatar, FileOwnerEntityType.UserProfile, owner, Png, "image/png", "a.png", token);
+        var form = BuildUpload(
+            FileService.SpeakerPhoto, FileOwnerEntityType.Speaker, owner, Png, "image/png", "p.png");
+        // Over-post the family a caller would rather the row carried. The request
+        // DTO has no such property, so it is not bound — and the row must still
+        // come out stamped Speaker, not UserProfile.
+        form.Add(new StringContent(nameof(FileOwnerEntityType.UserProfile)), "OwnerEntityType");
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/files") { Content = form };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var resp = await _client.SendAsync(request);
         Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
         var file = (await resp.Content.ReadFromJsonAsync<ApiResult<UploadedFileResponse>>())!.Data!;
 
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var row = await db.StoredFiles.FirstAsync(f => f.Id == file.Id);
-        Assert.Equal(FileOwnerEntityType.UserProfile, row.OwnerEntityType);
+        Assert.Equal(FileOwnerEntityType.Speaker, row.OwnerEntityType);
         Assert.Equal(owner, row.OwnerEntityId);
     }
 
@@ -216,17 +226,45 @@ public sealed class FilesEndpointsTests : IClassFixture<SimfApiFactory>
         Assert.Equal("عرض.docx", disposition.FileNameStar);
     }
 
+    [Theory]
+    [InlineData(FileService.Avatar)]
+    [InlineData(FileService.IdDocument)]
+    [InlineData(FileService.VipPhoto)]
+    public async Task An_owner_scoped_service_is_refused_on_the_generic_upload_route(FileService service)
+    {
+        // The owner of these three is a PERSON, and this endpoint reads the owner id
+        // from a form field — so holding any file-upload gate would have been enough
+        // to plant a file on somebody else's profile. They are refused here outright
+        // and written through their dedicated routes, which derive the owner from
+        // the authenticated subject instead.
+        var token = await CreateAdministratorAndSignInAsync();
+
+        var resp = await UploadAsync(
+            service, FileOwnerEntityType.UserProfile, Guid.NewGuid(),
+            Png, "image/png", "a.png", token);
+
+        Assert.Equal(HttpStatusCode.Forbidden, resp.StatusCode);
+    }
+
     [Fact]
     public async Task An_owner_required_service_without_an_owner_is_rejected_400()
     {
-        var token = await CreateAdministratorAndSignInAsync();
+        // Asserted against the upload pipeline rather than the endpoint, because
+        // OwnerRequired is set on exactly the three owner-scoped services and all
+        // three are now refused on the generic route (403 above) before this rule is
+        // reached. Their dedicated routes derive the owner from the authenticated
+        // subject, so no request can omit it either — the pipeline is the only place
+        // the rule can still fire, and it is where every internal writer enters.
+        using var scope = _factory.Services.CreateScope();
+        var files = scope.ServiceProvider.GetRequiredService<IFileService>();
 
-        // Avatar requires an owner id; omit it.
-        var resp = await UploadAsync(
-            FileService.Avatar, FileOwnerEntityType.UserProfile, ownerId: null,
-            Png, "image/png", "a.png", token);
+        var command = new UploadFileCommand(
+            FileService.Avatar, OwnerEntityId: null, Png, "a.png", "image/png",
+            SeedActorId, FailClosed: true);
 
-        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+        var error = await Assert.ThrowsAsync<ApiException>(() => files.UploadAsync(command));
+        Assert.Equal(400, error.StatusCode);
+        Assert.Equal(ErrorCodes.ValidationFailed, error.Code);
     }
 
     [Fact]
@@ -362,12 +400,9 @@ public sealed class FilesEndpointsTests : IClassFixture<SimfApiFactory>
     {
         // P7 — PDPL right-to-erasure: an IdDocument is retention-held
         // (IsDeletable=false) so the ordinary delete is 409, but ForceDelete
-        // securely destroys the bytes and stamps SecureDestroyed.
+        // securely destroys the bytes and stamps SecureDestroyedAt.
         var token = await CreateAdministratorAndSignInAsync();
-        var upload = await UploadAsync(
-            FileService.IdDocument, FileOwnerEntityType.UserProfile, Guid.NewGuid(),
-            Png, "image/png", "id.png", token);
-        var file = (await upload.Content.ReadFromJsonAsync<ApiResult<UploadedFileResponse>>())!.Data!;
+        var file = await SeedFileAsync(FileService.IdDocument, Guid.NewGuid(), Png, "image/png", "id.png");
 
         var softDelete = await DeleteAuthAsync($"/api/v1/files/{file.Id}", token);
         Assert.Equal(HttpStatusCode.Conflict, softDelete.StatusCode);
@@ -378,7 +413,7 @@ public sealed class FilesEndpointsTests : IClassFixture<SimfApiFactory>
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var row = await db.StoredFiles.FirstAsync(f => f.Id == file.Id);
-        Assert.NotNull(row.SecureDestroyed);
+        Assert.NotNull(row.SecureDestroyedAt);
         Assert.False(row.IsActive);
         var storage = scope.ServiceProvider.GetRequiredService<IFileStorageProvider>();
         Assert.Null(await storage.ReadAsync(row.StorageKey!, row.IsEncrypted));
@@ -419,6 +454,25 @@ public sealed class FilesEndpointsTests : IClassFixture<SimfApiFactory>
     }
 
     // -- Helpers --------------------------------------------------------------
+
+    // The owner-scoped services (Avatar, IdDocument, VipPhoto) are unreachable
+    // through the generic POST /files: it takes both the service and the owner id
+    // from the caller, so allowing them there let anyone holding Files.Upload plant
+    // an identity document on any profile. The tests below assert STORAGE, CRYPTO,
+    // INTEGRITY and RETENTION behaviour, and only ever used the upload to put a
+    // file in place, so they seed the same way every internal writer does —
+    // through IFileService, in process, where no endpoint gate applies because
+    // there is no request.
+    private async Task<StoredFileResult> SeedFileAsync(
+        FileService service, Guid? ownerId, byte[] bytes, string contentType, string fileName)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var files = scope.ServiceProvider.GetRequiredService<IFileService>();
+        return await files.UploadAsync(new UploadFileCommand(
+            service, ownerId, bytes, fileName, contentType, SeedActorId, FailClosed: true));
+    }
+
+    private static readonly Guid SeedActorId = Guid.Parse("00000000-0000-0000-0000-0000000000A2");
 
     private static MultipartFormDataContent BuildUpload(
         FileService service, FileOwnerEntityType ownerType, Guid? ownerId,

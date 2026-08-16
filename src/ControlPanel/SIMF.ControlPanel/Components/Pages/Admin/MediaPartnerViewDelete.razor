@@ -27,7 +27,11 @@
         <dt>@L["Admin.MediaPartners.Col.NameAr"]</dt>
         <dd>@Initial.NameArabic</dd>
         <dt>@L["Admin.MediaPartners.Col.Logo"]</dt>
-        <dd>@(string.IsNullOrWhiteSpace(Initial.LogoRelativePath) ? "—" : Initial.LogoRelativePath)</dd>
+        <dd>
+            <SimfImageThumb Class="simf-img-thumb--lg"
+                            Src="@CpAssetUrls.AdminImage(nameof(AssetCategory.MediaPartnerLogo), Initial.Id)"
+                            Alt="@Initial.Name" />
+        </dd>
         <dt>@L["Admin.MediaPartners.Col.Url"]</dt>
         <dd>@(string.IsNullOrWhiteSpace(Initial.Url) ? "—" : Initial.Url)</dd>
         <dt>@L["Admin.MediaPartners.Col.DisplayOrder"]</dt>

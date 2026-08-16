@@ -10,24 +10,22 @@ import 'package:simf_app/app/widgets/confirm_external_link.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/core/net/asset_urls.dart';
 import 'package:simf_app/core/utils/refresh.dart';
+import 'package:simf_app/features/booths/data/booths_repository.dart';
 import 'package:simf_app/features/exhibition/entity_detail_helpers.dart';
-import 'package:simf_app/features/exhibition/entity_detail_scaffold.dart';
-import 'package:simf_app/features/exhibition/entity_logo_image.dart';
+import 'package:simf_app/features/exhibition/widgets/entity_detail_scaffold.dart';
+import 'package:simf_app/features/exhibition/widgets/entity_logo_image.dart';
 import 'package:simf_app/features/venuemap/data/venue_map_models.dart';
-import 'package:simf_app/features/venuemap/data/venue_map_repository.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-/// `GET /app/booths/{id}` → the booth/exhibitor detail (Figma 1439:11881).
-final exhibitorDetailProvider =
-    FutureProvider.autoDispose.family<BoothDetail, String>((ref, id) async {
-  return ref.watch(venueMapRepositoryProvider).getBoothDetail(id);
-});
 
 /// **Exhibitor detail** — App "العارض" (Figma 1439:11881, Guest+), opened by
 /// tapping a booth in the exhibition list. The shared
 /// [EntityDetailScaffold]: the exhibitor's logo + name, the city·country line,
 /// the tier pill, the stand-code→map row, the "نبذة عن العارض" about, and the
 /// website row. Reads `GET /app/booths/{id}` (the detail extended in Wave 3).
+///
+/// Route: `RouteNames.exhibitorDetail`.
+/// Data: [exhibitorDetailProvider], [simfDataConfigProvider].
+/// Perf: no list — a single-screen layout.
 class ExhibitorDetailScreen extends ConsumerWidget {
   const ExhibitorDetailScreen({required this.boothId, super.key});
 
@@ -71,7 +69,8 @@ class ExhibitorDetailScreen extends ConsumerWidget {
   ) {
     final isArabic = l10n.isArabic;
     final baseUrl = ref.watch(simfDataConfigProvider).baseUrl;
-    final name = booth.localizedExhibitor(isArabic) ?? booth.localizedName(isArabic);
+    final name = booth.localizedExhibitor(isArabic: isArabic) ??
+        booth.localizedName(isArabic: isArabic);
 
     return EntityDetailScaffold(
       onRefresh: () =>
@@ -101,9 +100,9 @@ class ExhibitorDetailScreen extends ConsumerWidget {
       ),
       name: name,
       locationLine: entityLocationLine(
-        booth.localizedCity(isArabic),
-        booth.localizedCountry(isArabic),
-        isArabic,
+        booth.localizedCity(isArabic: isArabic),
+        booth.localizedCountry(isArabic: isArabic),
+        isArabic: isArabic,
       ),
       countryId: booth.countryId,
       tierPill: booth.tier == null || (booth.tierName ?? '').isEmpty
@@ -117,7 +116,7 @@ class ExhibitorDetailScreen extends ConsumerWidget {
                 RouteNames.boothMap,
                 pathParameters: <String, String>{RouteParams.boothId: booth.id},
               ),
-      about: booth.localizedDescription(isArabic),
+      about: booth.localizedDescription(isArabic: isArabic),
       website: booth.website,
       onWebsite: () => _openWebsite(context, booth.website),
     );

@@ -16,10 +16,10 @@ import 'package:simf_app/core/responsive/breakpoints.dart';
 /// | 800    | 261             | 392            |
 /// | 1024   | 336             | 504            |
 ///
-/// The gallery tile is designed at 164x104 and carries a fixed aspect ratio, so
-/// at 1024 it renders 504x319: a card at triple size, with its image stretched
-/// to match. Adding columns as the window grows keeps each tile near the size it
-/// was designed at, which is what CLAUDE.md section 13.7 asks for.
+/// The gallery tile is designed at 164x104 and carries a fixed aspect ratio,
+/// so at 1024 it renders 504x319: a card at triple size, with its image
+/// stretched to match. Adding columns as the window grows keeps each tile near
+/// the size it was designed at, which is what CLAUDE.md section 13.7 asks for.
 ///
 /// Gallery tile width, measured before and after (design width 164):
 ///

@@ -2,30 +2,20 @@ using SIMF.Domain.Common;
 
 namespace SIMF.Domain.Programme;
 
-/// <summary>
-/// One presentation file a <see cref="Speaker"/> presents in a
-/// <see cref="Session"/>. The bytes live outside the row, behind the
-/// presentation storage abstraction, as they do for media images and avatars;
-/// this row keeps the metadata and the storage key.
-/// </summary>
+/// <summary>One presentation file a <see cref="Speaker"/> presents in a
+/// <see cref="Session"/>; the bytes live in the <c>StoredFile</c> store.</summary>
 public sealed class SpeakerPresentation : BaseAuditEntity
 {
-    /// <summary>Cascade-deleted with the speaker.</summary>
     public Guid SpeakerId { get; set; }
     public Speaker? Speaker { get; set; }
 
-    /// <summary>Delete is restricted here rather than cascading, since sessions
-    /// soft-delete and a session in use should not be removable.</summary>
     public Guid SessionId { get; set; }
     public Session? Session { get; set; }
 
-    /// <summary>The original upload name, which doubles as the display
-    /// title.</summary>
+    /// <summary>The original upload name, which doubles as the display title.</summary>
     public string FileName { get; set; } = string.Empty;
 
-    /// <summary>The key the storage layer returned, being a file name under the
-    /// configured root.</summary>
-    public string StoredFileName { get; set; } = string.Empty;
+    public Guid StoredFileId { get; set; }
 
     public string ContentType { get; set; } = string.Empty;
 

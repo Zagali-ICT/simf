@@ -16,6 +16,16 @@ internal static class TestIdentity
 
     public static string MintIqama() => MintIdentity('2');
 
+    /// <summary>A unique passport number in the validator's shape (6-9 letters or
+    /// digits). Leads with letters so it can never collide with a minted national
+    /// id or Iqama, and carries no check digit — passports have no universal
+    /// checksum, and the validator only length-checks them.</summary>
+    public static string MintPassport()
+    {
+        var n = System.Threading.Interlocked.Increment(ref _identitySeq) % 900_000;
+        return "PP" + n.ToString("D6", CultureInfo.InvariantCulture);
+    }
+
     private static string MintIdentity(char prefix)
     {
         var n = System.Threading.Interlocked.Increment(ref _identitySeq) % 90_000_000;

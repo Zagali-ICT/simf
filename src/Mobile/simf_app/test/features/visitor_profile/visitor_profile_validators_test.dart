@@ -19,7 +19,8 @@ void main() {
 
     test('rejects the wrong script', () {
       expect(validateArabicName('John Smith', ar), ar.arabicNameLettersOnly);
-      expect(validateEnglishName('محمد عبدالله', en), en.englishNameLettersOnly);
+      expect(
+          validateEnglishName('محمد عبدالله', en), en.englishNameLettersOnly,);
     });
 
     test('requires more than one part', () {
@@ -60,8 +61,11 @@ void main() {
     // why docType is a parameter rather than screen state.
     test('is required whichever document it is', () {
       for (final kind in VisitorDocType.values) {
-        expect(validateDocumentNumber('', en, kind), en.documentRequired,
-            reason: kind.name,);
+        expect(
+          validateDocumentNumber('', en, kind),
+          en.documentRequired,
+          reason: kind.name,
+        );
       }
     });
 

@@ -510,7 +510,9 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
 
         var read = await GetAuthAsync(Path, token);
         var body = (await read.Content.ReadFromJsonAsync<ApiResult<UserProfileResponse>>())!;
-        Assert.Equal("0559876543", body.Data!.SaudiMobile);
+        // Stored folded onto the canonical +966 form (the mobile-number collapse);
+        // the app still reads it back under the shipped saudiMobile key.
+        Assert.Equal("+966559876543", body.Data!.SaudiMobile);
         Assert.Equal(request.ArabicName, body.Data.ArabicName);
         Assert.Equal(request.EnglishName, body.Data.EnglishName);
         Assert.Equal(request.OrganisationId, body.Data.OrganisationId);
@@ -573,10 +575,11 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
             HttpStatusCode.BadRequest,
             (await PostAuthAsync(Path, request, token)).StatusCode);
 
-        // …and the stored number survived the rejected save.
+        // …and the stored number survived the rejected save (in the canonical
+        // +966 form the first save folded it onto).
         var read = await GetAuthAsync(Path, token);
         var body = (await read.Content.ReadFromJsonAsync<ApiResult<UserProfileResponse>>())!;
-        Assert.Equal("0501234567", body.Data!.SaudiMobile);
+        Assert.Equal("+966501234567", body.Data!.SaudiMobile);
     }
 
     [Fact]
@@ -599,7 +602,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
     // "+dial-local"). Every write path now stores the canonical form.
     [Theory]
     [InlineData("+966-501234567", "+966501234567")]  // the CP / Website dash form
-    [InlineData("050 123-4567", "0501234567")]       // spaces + dash
+    [InlineData("050 123-4567", "+966501234567")]    // spaces + dash, then folded
     [InlineData("00966501234567", "+966501234567")]  // the 00 international prefix
     public async Task POST_stores_the_Saudi_mobile_canonicalised(
         string typed, string stored)
@@ -630,6 +633,123 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         var read = await GetAuthAsync(Path, token);
         var body = (await read.Content.ReadFromJsonAsync<ApiResult<UserProfileResponse>>())!;
         Assert.Equal("+447700900123", body.Data!.InternationalMobile);
+    }
+
+    // -- the mobile-number collapse -------------------------------------------
+    //
+    // SaudiMobile and InternationalMobile were one attribute in two columns: a
+    // Saudi mobile IS an international mobile with +966 on the front. The number
+    // now lives once, in canonical E.164, on UserProfile.MobileNumber; the two
+    // columns are still written in lockstep because every reader still projects
+    // them, and BOTH shipped wire keys must keep being emitted and accepted
+    // whatever the storage does.
+    //
+    // Each test below asserts the CANONICAL COLUMN as well as the wire. The wire
+    // assertions alone cannot tell the two sources apart while the pair is still
+    // written, so the column assertion is what ties the test to the new storage:
+    // drop the sync and it fails.
+
+    [Fact]
+    public async Task Upsert_of_a_Saudi_number_alone_fills_the_canonical_column_and_both_wire_keys()
+    {
+        var token = await CreateUserAndSignInAsync();
+        var actorId = await GetActorIdAsync(token);
+
+        var request = await ValidSaudiRequestAsync();
+        request.SaudiMobile = "+966501234567";
+        request.InternationalMobile = null;
+        Assert.Equal(
+            HttpStatusCode.OK,
+            (await PostAuthAsync(Path, request, token)).StatusCode);
+
+        Assert.Equal("+966501234567", await LoadCanonicalMobileAsync(actorId));
+
+        var read = await GetAuthAsync(Path, token);
+        var body = (await read.Content.ReadFromJsonAsync<ApiResult<UserProfileResponse>>())!;
+        Assert.Equal("+966501234567", body.Data!.SaudiMobile);
+        Assert.Null(body.Data.InternationalMobile);
+    }
+
+    [Fact]
+    public async Task Upsert_of_an_international_number_alone_fills_the_canonical_column_and_both_wire_keys()
+    {
+        var token = await CreateUserAndSignInAsync();
+        var actorId = await GetActorIdAsync(token);
+
+        var request = await ValidSaudiRequestAsync();
+        request.SaudiMobile = null;
+        request.InternationalMobile = "+447700900123";
+        Assert.Equal(
+            HttpStatusCode.OK,
+            (await PostAuthAsync(Path, request, token)).StatusCode);
+
+        Assert.Equal("+447700900123", await LoadCanonicalMobileAsync(actorId));
+
+        var read = await GetAuthAsync(Path, token);
+        var body = (await read.Content.ReadFromJsonAsync<ApiResult<UserProfileResponse>>())!;
+        Assert.Equal("+447700900123", body.Data!.InternationalMobile);
+        Assert.Null(body.Data.SaudiMobile);
+    }
+
+    [Fact]
+    public async Task Upsert_folds_the_Saudi_local_spelling_onto_the_canonical_international_form()
+    {
+        // The point of one column: "0501234567" and "+966501234567" are the same
+        // number, and stored two ways they de-duplicate against nothing. The fold
+        // lives on the STORAGE path only — the validator still matches against
+        // MobileNumber.Normalize, so a Saudi local number is still not accepted
+        // into the international field.
+        var token = await CreateUserAndSignInAsync();
+        var actorId = await GetActorIdAsync(token);
+
+        var request = await ValidSaudiRequestAsync();
+        request.SaudiMobile = "0501234567";
+        request.InternationalMobile = null;
+        Assert.Equal(
+            HttpStatusCode.OK,
+            (await PostAuthAsync(Path, request, token)).StatusCode);
+
+        Assert.Equal("+966501234567", await LoadCanonicalMobileAsync(actorId));
+
+        var read = await GetAuthAsync(Path, token);
+        var body = (await read.Content.ReadFromJsonAsync<ApiResult<UserProfileResponse>>())!;
+        Assert.Equal("+966501234567", body.Data!.SaudiMobile);
+    }
+
+    [Fact]
+    public async Task Both_mobile_wire_keys_are_still_emitted_over_the_real_HTTP_surface()
+    {
+        // Read the raw JSON, not the typed DTO: the shipped Flutter app decodes
+        // "saudiMobile" and "internationalMobile" BY NAME, and a deserialiser that
+        // silently ignores a missing key would hide exactly the break this guards.
+        var token = await CreateUserAndSignInAsync();
+
+        var request = await ValidSaudiRequestAsync();
+        request.SaudiMobile = "050 123-4567";
+        request.InternationalMobile = null;
+        Assert.Equal(
+            HttpStatusCode.OK,
+            (await PostAuthAsync(Path, request, token)).StatusCode);
+
+        var read = await GetAuthAsync(Path, token);
+        var json = await read.Content.ReadAsStringAsync();
+        Assert.Contains("\"saudiMobile\"", json, StringComparison.Ordinal);
+        Assert.Contains("\"internationalMobile\"", json, StringComparison.Ordinal);
+        Assert.Contains("\"saudiMobile\":\"+966501234567\"", json, StringComparison.Ordinal);
+        Assert.Contains("\"internationalMobile\":null", json, StringComparison.Ordinal);
+    }
+
+    /// <summary>The canonical E.164 column, read straight off the row so the test
+    /// asserts the STORAGE and not the wire the storage is projected onto.</summary>
+    private async Task<string?> LoadCanonicalMobileAsync(Guid actorId)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        return await appDb.UserProfiles
+            .AsNoTracking()
+            .Where(profile => profile.UserId == actorId)
+            .Select(profile => profile.MobileNumber)
+            .SingleAsync();
     }
 
     // C6 (D-371; relaxed 2026-07-06) — رقم اللوحة: optional, but when present it
@@ -773,7 +893,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
     }
 
     // H-1 (FIX A) — the self-service write path must populate the identity blind
-    // index (so the filtered UNIQUE indexes + the duplicate-identity guard see it)
+    // index (so the unique digest index + the duplicate-identity guard see it)
     // and reject a National ID / Iqama / passport already on ANOTHER user's row,
     // while never false-flagging a user re-saving their OWN id.
     [Fact]
@@ -787,9 +907,14 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
 
         using var scope = _factory.Services.CreateScope();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        // Read off the document row. The digest used to live in a
+        // UserProfile.NationalIdHash column of its own; it is now the child row's
+        // NumberHash, which is the column the one unique index keys off.
         var hash = await appDb.UserProfiles
             .Where(p => p.UserId == actorId)
-            .Select(p => p.NationalIdHash)
+            .SelectMany(p => p.IdentityDocuments)
+            .Where(document => document.Kind == IdentityDocumentKind.NationalId)
+            .Select(document => document.NumberHash)
             .SingleAsync();
         Assert.False(string.IsNullOrEmpty(hash));
     }
@@ -812,6 +937,112 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.Conflict, second.StatusCode);
         var body = (await second.Content.ReadFromJsonAsync<ApiResult<object>>())!;
         Assert.Equal(ErrorCodes.DuplicateIdentity, body.Error!.Code);
+    }
+
+    // The identity-document collapse — the three number columns are superseded by
+    // the ProfileIdentityDocuments child table (one row per document, one unique
+    // digest index over all of them). These lock the two properties that motivated
+    // the child table: it can hold MORE THAN ONE document, and the numbers reach it
+    // encrypted.
+
+    [Fact]
+    public async Task Upsert_by_a_non_Saudi_with_both_an_iqama_and_a_passport_persists_BOTH_documents()
+    {
+        // The upsert validator's rule is an OR, not an XOR — "either Iqama or
+        // Passport" accepts both — so a single number-plus-kind column would have
+        // had to discard one of the two, and with it the guard that catches this
+        // person re-registering under the other one.
+        var token = await CreateUserAndSignInAsync();
+        var actorId = await GetActorIdAsync(token);
+        var iqama = TestIdentity.MintIqama();
+        var passport = TestIdentity.MintPassport();
+
+        var request = await ValidSaudiRequestAsync();
+        request.IsSaudi = false;
+        request.NationalId = null;
+        request.IqamaNumber = iqama;
+        request.PassportNumber = passport;
+
+        var response = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var profile = await appDb.UserProfiles
+            .Include(p => p.IdentityDocuments)
+            .AsNoTracking()
+            .SingleAsync(p => p.UserId == actorId);
+
+        var documents = profile.IdentityDocuments
+            .ToDictionary(document => document.Kind, document => document.Number);
+        Assert.Equal(2, documents.Count);
+        Assert.Equal(iqama, documents[IdentityDocumentKind.Iqama]);
+        Assert.Equal(passport, documents[IdentityDocumentKind.Passport]);
+        Assert.DoesNotContain(IdentityDocumentKind.NationalId, documents.Keys);
+
+        // Both rows carry the deterministic digest the unique index keys off; a row
+        // without one is invisible to the duplicate guard.
+        Assert.All(profile.IdentityDocuments,
+            document => Assert.Equal(64, document.NumberHash.Length));
+
+        // And the number itself reaches the column ENCRYPTED. Read past EF, because
+        // the value converter decrypts on the way out and would report a plaintext
+        // column as perfectly fine — the failure mode of a missed registration is
+        // silence, not an error.
+        var stored = await appDb.Database
+            .SqlQuery<string>($@"
+                SELECT d.[Number] AS Value
+                FROM [ProfileIdentityDocuments] d
+                WHERE d.[ProfileId] = {profile.Id}")
+            .ToListAsync();
+        Assert.Equal(2, stored.Count);
+        Assert.All(stored, value => Assert.StartsWith("enc:1:", value, StringComparison.Ordinal));
+        Assert.DoesNotContain(iqama, stored);
+        Assert.DoesNotContain(passport, stored);
+    }
+
+    [Fact]
+    public async Task Upsert_round_trips_every_shipped_identity_wire_key_from_the_document_rows()
+    {
+        // The shipped Flutter app decodes isSaudi / nationalId / iqamaNumber /
+        // passportNumber / saudiMobile / internationalMobile. Storage moved to the
+        // child table; the wire may not move with it. The wire assertions alone
+        // cannot tell the two sources apart while both are written in lockstep, so
+        // the document-row assertion at the end is what ties this test to the new
+        // storage: drop the sync and it fails.
+        var token = await CreateUserAndSignInAsync();
+        var actorId = await GetActorIdAsync(token);
+        var iqama = TestIdentity.MintIqama();
+
+        var request = await ValidSaudiRequestAsync();
+        request.IsSaudi = false;
+        request.NationalId = null;
+        request.IqamaNumber = iqama;
+        request.PassportNumber = null;
+        request.SaudiMobile = null;
+        request.InternationalMobile = "+441234567890";
+
+        Assert.Equal(HttpStatusCode.OK, (await PostAuthAsync(Path, request, token)).StatusCode);
+
+        var read = await GetAuthAsync(Path, token);
+        Assert.Equal(HttpStatusCode.OK, read.StatusCode);
+        var body = (await read.Content.ReadFromJsonAsync<ApiResult<UserProfileResponse>>())!;
+
+        Assert.False(body.Data!.IsSaudi);
+        Assert.Null(body.Data.NationalId);
+        Assert.Equal(iqama, body.Data.IqamaNumber);
+        Assert.Null(body.Data.PassportNumber);
+        Assert.Null(body.Data.SaudiMobile);
+        Assert.Equal("+441234567890", body.Data.InternationalMobile);
+
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var kinds = await appDb.UserProfiles
+            .Where(p => p.UserId == actorId)
+            .SelectMany(p => p.IdentityDocuments)
+            .Select(document => document.Kind)
+            .ToListAsync();
+        Assert.Equal(new[] { IdentityDocumentKind.Iqama }, kinds);
     }
 
     [Fact]

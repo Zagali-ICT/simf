@@ -1,4 +1,4 @@
-# SIMF Centralized File Store — Developer Guide
+﻿# SIMF Centralized File Store — Developer Guide
 
 > **Status:** as-built reference for the D-568 centralized file subsystem (Wave C
 > cutover, D-620…D-628). Companion to the E2E catalogue
@@ -66,6 +66,28 @@ registry is also the file/PII classification register (SAMA A1-3 / NCA ECC 2-7-2
 | `ProgrammeDayImage` | Public | Public | no | Image | ProgrammeDay | no | yes |
 | `Banner` | Public | Public | no | Image | Banner | no | yes |
 | `BoothLogo` | Public | Public | no | Image | Booth | no | yes |
+| `OrganizationHeroVideo` | Public | Public | **no** ¹ | Video | OrganizationProfile | no | yes |
+| `SessionLiveStream` | Public | Public | n/a ² | Video | Session | no | yes |
+| `SessionSignLanguage` | Public | Public | n/a ² | Video | Session | no | yes |
+| `SessionSummaryVideo` | Public | Public | n/a ² | Video | Session | no | yes |
+| `MediaGalleryVideo` | Public | Public | n/a ² | Video | MediaItem | no | yes |
+| `OrganizationLiveStream` | Public | Public | n/a ² | Video | OrganizationProfile | no | yes |
+
+² **The five feed services store no bytes at all.** They are always
+`ExternalLink` rows: SIMF does not host a broadcast, it points at one. Encryption
+is therefore moot, and the URL is served to the client **verbatim rather than
+through the 302** every other external link uses. That is not an inconsistency, it
+is the requirement: both clients decide *how* to play a feed by inspecting the
+string - the player extracts a YouTube id and branches on it, the hero refuses to
+mount unless the last path segment is `.mp4`/`.m3u8` - so an indirected URL is
+loadable and still wrong. `IFeedLinkService` is the only way to write or read one.
+
+An external link for these services is validated against `LiveStreamUrlPolicy`;
+an external link for an **image** service deliberately is not, because an image
+URL is never read by the client (the endpoint 302s and the browser follows), and
+applying the video rule there would reject every CDN logo and the seeded
+placeholders. And no service outside Public tier + Public access may be linked at
+all - a private file must never become a pointer at somebody else's server.
 
 ¹ **`SessionRecording` is deliberately plaintext** (D-568 Wave C S7 / D-625): a
 conference recording is Internal-tier (not PII) and Range/seek streaming (HTTP 206)
@@ -105,8 +127,14 @@ keeps its **stable, per-surface public route**, which internally resolves to a
 The download-by-GUID endpoint is the **internal primitive**; the stable routes are
 thin front-doors over it. Wire JSON keys (`avatarUrl`, `imageUrl`/`thumbnailUrl`,
 `hasPhotoAsset`, presentation `fileName`/`contentType`/`sizeBytes`) are preserved.
-`ArchivePastSpeaker.photoRelativePath` is intentionally an external-URL datum the
-app renders directly — it is **kept**, not migrated.
+`ArchivePastSpeaker.photoRelativePath` **has been migrated** (D-891). It was
+kept out of the store on the grounds that it was an external-URL datum the app
+renders directly, but the real reason it could not move was the write path: the
+archive's children were replaced wholesale on every save, so a file owned by a
+child id was orphaned immediately. Those lists reconcile by id now, the photo is
+an uploaded file like every other, and the wire key keeps its name while carrying
+an absolute URL — which is what the app needs, since it tests the string with
+`isHttpUrl` before it will load anything.
 
 The Flutter app fetches bytes through its **authenticated Dio client** (bearer +
 self-signed-TLS handling), never a bare `Image.network` (D-422).
@@ -142,14 +170,22 @@ self-signed-TLS handling), never a bare `Image.network` (D-422).
 `StoredFile` rows live in `SIMF_App`. Deploying the squashed `main` **drops both
 databases** (the documented DEPLOY-CRITICAL step) → recreate from baselines +
 seeders. **Seeders restore only reference/demo data**, and seeded speaker/sponsor
-images are **placeholder external URLs**, not stored files. So after a fresh deploy
+images are mostly absent: only the media-partner seed writes URLs (three
+`placehold.co` links), while the sponsor, speaker, news and archive seeds pass
+`NULL` and expect an upload through the CP. The speaker-photo seed is the one
+that does it properly, inserting real `StoredFiles` rows whose bytes ship with it.
+
+So after a fresh deploy
 there are **no uploaded files** and every StoredFile-backed asset serve returns
 **404** until the event content is re-entered and files re-uploaded through the CP.
 This is expected (data is disposable), **not** a store bug — the store correctly
 404s missing files and 200s real ones. (Diagnosed 2026-07-07 against the live API;
-see the decision log.) Optional demo polish: seed `StoredFile` **ExternalLink**
-rows for placeholder logos instead of raw `*RelativePath` URLs (the Wave C P6/E2
-follow-up).
+see the decision log.) The Wave C P6/E2 follow-up this section used to list as
+optional polish — seed `StoredFile` **ExternalLink** rows for the placeholder
+logos instead of raw `*RelativePath` URLs — is **done** (2026-08-14). It stopped
+being optional once the pointer columns started becoming typed keys: a
+`uniqueidentifier` cannot hold a URL, so the media-partner seed would have failed
+on its first run.
 
 ---
 

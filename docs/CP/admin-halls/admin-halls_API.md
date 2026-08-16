@@ -71,7 +71,7 @@ Last updated: 2026-06-13 — CP config-page documentation (D-380).
   "nameArabic":           "string",
   "capacity":             0,
   "floor":                "string?",
-  "equipmentNotes":       "string?",
+  "facilityNotes":       "string?",
   "isActive":             true,
   "createdAt":            "DateTimeOffset",
   "updatedAt":            "DateTimeOffset?",
@@ -81,7 +81,7 @@ Last updated: 2026-06-13 — CP config-page documentation (D-380).
   "geofenceRadiusMeters": null    // double?
 }
 ```
-The detail carries `equipmentNotes` + the geofence triple that the grid summary
+The detail carries `facilityNotes` + the geofence triple that the grid summary
 (E1) omits — the CP Edit / Details / Deactivate forms fetch it per id.
 
 ## E3 — `POST /admin/halls` (create) — `Halls.Create`
@@ -100,7 +100,7 @@ The detail carries `equipmentNotes` + the geofence triple that the grid summary
   "nameArabic":           "string",   // 1–128
   "capacity":             0,          // int ≥ 0
   "floor":                "string?",  // ≤ 32
-  "equipmentNotes":       "string?",  // ≤ 1024
+  "facilityNotes":       "string?",  // ≤ 1024
   "geofenceCenterLat":    null,       // double? — all three together, or all null
   "geofenceCenterLon":    null,
   "geofenceRadiusMeters": null

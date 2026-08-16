@@ -4,7 +4,7 @@ import 'package:simf_app/features/moderation/data/moderation_models.dart';
 void main() {
   group('ModeratorQuestion.fromJson (D-405 wire contract)', () {
     test('parses the moderator row fields', () {
-      final q = ModeratorQuestion.fromJson(<String, dynamic>{
+      final q = ModeratorQuestion.fromJson(const <String, dynamic>{
         'id': 'q1',
         'sessionId': 's1',
         'submittedByDisplayName': 'Raed Al-Salem',
@@ -55,7 +55,7 @@ void main() {
     });
 
     test('DEF-MOD-001: an answered question is no longer on stage', () {
-      final q = ModeratorQuestion.fromJson(<String, dynamic>{
+      final q = ModeratorQuestion.fromJson(const <String, dynamic>{
         'id': 'q',
         'isPushed': true,
         'status': 3,
@@ -89,10 +89,14 @@ void main() {
     ];
 
     test('all returns the desk plus the rejected rows', () {
-      expect(filterModeratorQueue(desk, ModeratorQueueFilter.all), hasLength(3));
       expect(
-        filterModeratorQueue(desk, ModeratorQueueFilter.all,
-            rejected: <ModeratorQuestion>[q('r', status: 2)],).map((q) => q.id),
+          filterModeratorQueue(desk, ModeratorQueueFilter.all), hasLength(3),);
+      expect(
+        filterModeratorQueue(
+          desk,
+          ModeratorQueueFilter.all,
+          rejected: <ModeratorQuestion>[q('r', status: 2)],
+        ).map((q) => q.id),
         <String>['a', 'b', 'c', 'r'],
       );
     });
@@ -110,7 +114,8 @@ void main() {
 
     // DEF-MOD-001 — answered is read from the PERSISTED status, not a
     // session-local set, so the bucket survives a reload of the screen.
-    test('DEF-MOD-001: answered comes from the wire status and drops from fresh',
+    test(
+        'DEF-MOD-001: answered comes from the wire status and drops from fresh',
         () {
       final withAnswered = <ModeratorQuestion>[
         q('a', status: 3),
@@ -135,15 +140,64 @@ void main() {
     test('DEF-MOD-002: rejected lists the separately fetched hidden rows', () {
       final rejected = <ModeratorQuestion>[q('r', status: 2)];
       expect(
-        filterModeratorQueue(desk, ModeratorQueueFilter.rejected,
-            rejected: rejected,).map((q) => q.id),
+        filterModeratorQueue(
+          desk,
+          ModeratorQueueFilter.rejected,
+          rejected: rejected,
+        ).map((q) => q.id),
         <String>['r'],
       );
       expect(
-        filterModeratorQueue(desk, ModeratorQueueFilter.fresh,
-            rejected: rejected,).map((q) => q.id),
+        filterModeratorQueue(
+          desk,
+          ModeratorQueueFilter.fresh,
+          rejected: rejected,
+        ).map((q) => q.id),
         <String>['a', 'c'],
       );
+    });
+  });
+
+  group('moderatorQueueCounts', () {
+    ModeratorQuestion q(String id, {bool pushed = false, int status = 1}) =>
+        ModeratorQuestion.fromJson(<String, dynamic>{
+          'id': id,
+          'isPushed': pushed,
+          'status': status,
+        });
+
+    // The counts must agree with filterModeratorQueue exactly — they used to
+    // BE it, called five times. These assert the equivalence rather than
+    // re-deriving the expected numbers by hand.
+    test('every count equals the length filterModeratorQueue returns', () {
+      final desk = <ModeratorQuestion>[
+        q('a'),
+        q('b', pushed: true),
+        q('c', status: 2),
+      ];
+      final rejected = <ModeratorQuestion>[q('r', status: 3)];
+
+      final counts = moderatorQueueCounts(desk, rejected: rejected);
+
+      for (final filter in ModeratorQueueFilter.values) {
+        expect(
+          counts[filter],
+          filterModeratorQueue(desk, filter, rejected: rejected).length,
+          reason: 'count mismatch for $filter',
+        );
+      }
+    });
+
+    test('an empty desk counts zero everywhere', () {
+      final counts = moderatorQueueCounts(const <ModeratorQuestion>[]);
+      for (final filter in ModeratorQueueFilter.values) {
+        expect(counts[filter], 0, reason: '$filter');
+      }
+    });
+
+    test('answers for every filter, so the chip row never reads null', () {
+      final counts = moderatorQueueCounts(<ModeratorQuestion>[q('a')]);
+      expect(counts.keys, containsAll(ModeratorQueueFilter.values));
     });
   });
 }

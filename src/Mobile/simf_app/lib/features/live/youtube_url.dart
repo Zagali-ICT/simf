@@ -82,7 +82,8 @@ class YoutubeUrl {
       return null;
     }
     // https only — cleartext http is rejected so a feed cannot be downgraded /
-    // man-in-the-middled (D-349 security hardening; mirrors LiveStreamUrlPolicy).
+    // man-in-the-middled (D-349 security hardening; mirrors
+    // LiveStreamUrlPolicy).
     if (uri.scheme != 'https') {
       return null;
     }

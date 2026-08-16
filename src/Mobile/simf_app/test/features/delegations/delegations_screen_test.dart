@@ -54,8 +54,9 @@ Future<void> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: <Override>[
-        // Bi-Meeting rework — the public screen reads the meeting-access flags to
-        // decide card tappability; a guest (none) keeps the plain info cards.
+        // Bi-Meeting rework — the public screen reads the meeting-access flags
+        // to decide card tappability; a guest (none) keeps the plain info
+        // cards.
         currentUserMeetingAccessProvider
             .overrideWith((ref) => MeetingAccess.none),
         delegationsProvider.overrideWith((ref) async {
@@ -116,7 +117,8 @@ void main() {
       expect(find.text('Participating countries'), findsOneWidget);
       // The head-of-delegation box, the member/date bottom row, and the
       // total-participants stat are intentionally hidden in the current layout
-      // (owner 2026-07-24) — only the country identity row + countries stat show.
+      // (owner 2026-07-24) — only the country identity row + countries stat
+      // show.
       expect(find.text('James Mitchell'), findsNothing);
       expect(find.text('Ambassador'), findsNothing);
       expect(find.text('3 members'), findsNothing);

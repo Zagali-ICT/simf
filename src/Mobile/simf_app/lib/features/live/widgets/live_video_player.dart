@@ -17,7 +17,8 @@ import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 /// (D-721): landscape in fullscreen, back to the app-wide portrait lock out of
 /// it. A pure function so the portrait-lock exception is unit-testable without
 /// the platform channel.
-List<DeviceOrientation> liveFullScreenOrientations(bool isFullScreen) {
+List<DeviceOrientation> liveFullScreenOrientations(
+    {required bool isFullScreen,}) {
   return isFullScreen
       ? const <DeviceOrientation>[
           DeviceOrientation.landscapeLeft,
@@ -28,8 +29,8 @@ List<DeviceOrientation> liveFullScreenOrientations(bool isFullScreen) {
 
 /// The live video surface. Owns its own controller and picks the player by the
 /// URL (D-349): a YouTube link → the IFrame player; anything else (HLS/MP4) →
-/// `video_player`. The parent rebuilds this with a new `ValueKey(url)` to switch
-/// feeds, so this widget only ever binds one URL for its lifetime.
+/// `video_player`. The parent rebuilds this with a new `ValueKey(url)` to
+/// switch feeds, so this widget only ever binds one URL for its lifetime.
 ///
 /// The YouTube path shows a fullscreen button (D-721): entering fullscreen
 /// rotates to landscape and exiting restores portrait — a deliberate,
@@ -82,7 +83,7 @@ class _LiveVideoPlayerState extends ConsumerState<LiveVideoPlayer> {
           autoPlay: true,
           params: const YoutubePlayerParams(showFullscreenButton: true),
         )..setFullScreenListener(_onFullScreenChanged);
-      } catch (_) {
+      } on Object catch (_) {
         // A failure building the IFrame controller degrades to the error
         // surface rather than crashing the screen (Page_025 L-7).
         _error = true;
@@ -95,9 +96,9 @@ class _LiveVideoPlayerState extends ConsumerState<LiveVideoPlayer> {
   }
 
   void _retry() {
-    _youtube?.close();
+    unawaited(_youtube?.close());
     _youtube = null;
-    _video?.dispose();
+    unawaited(_video?.dispose());
     _video = null;
     setState(() {
       _error = false;
@@ -118,7 +119,7 @@ class _LiveVideoPlayerState extends ConsumerState<LiveVideoPlayer> {
         return;
       }
       setState(() => _videoReady = true);
-    } catch (_) {
+    } on Object catch (_) {
       if (!mounted) {
         return;
       }
@@ -136,7 +137,7 @@ class _LiveVideoPlayerState extends ConsumerState<LiveVideoPlayer> {
       }
       setState(() => _videoReady = true);
       unawaited(controller.play());
-    } catch (_) {
+    } on Object catch (_) {
       // ANY failure — a malformed URL (Uri.parse), an unreachable stream, or a
       // codec error — surfaces the error/retry state rather than spinning
       // forever or crashing the screen (Page_025 L-7).
@@ -164,18 +165,20 @@ class _LiveVideoPlayerState extends ConsumerState<LiveVideoPlayer> {
   /// portrait again on exit.
   void _onFullScreenChanged(bool isFullScreen) {
     unawaited(
-      SystemChrome.setPreferredOrientations(liveFullScreenOrientations(isFullScreen)),
+      SystemChrome.setPreferredOrientations(
+          liveFullScreenOrientations(isFullScreen: isFullScreen),),
     );
   }
 
   @override
   void dispose() {
     _keepAlive?.cancel();
-    _youtube?.close();
-    _video?.dispose();
+    unawaited(_youtube?.close());
+    unawaited(_video?.dispose());
     // Re-assert the portrait lock in case we're torn down mid-fullscreen.
     unawaited(
-      SystemChrome.setPreferredOrientations(liveFullScreenOrientations(false)),
+      SystemChrome.setPreferredOrientations(
+          liveFullScreenOrientations(isFullScreen: false),),
     );
     super.dispose();
   }
@@ -201,4 +204,3 @@ class _LiveVideoPlayerState extends ConsumerState<LiveVideoPlayer> {
     return const PlayerLoading();
   }
 }
-

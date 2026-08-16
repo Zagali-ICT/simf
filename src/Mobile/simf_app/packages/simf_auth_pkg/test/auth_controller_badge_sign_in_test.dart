@@ -63,14 +63,14 @@ void main() {
       final secure = _MockSecureStorage();
       when(() => secure.read(any())).thenAnswer((_) async => null);
       when(() => secure.write(any(), any())).thenAnswer((_) async {});
-      when(() => secure.clearAuthValues()).thenAnswer((_) async {});
+      when(secure.clearAuthValues).thenAnswer((_) async {});
       when(
         () => repo.signInWithBadge(
           qrId: any(named: 'qrId'),
           password: any(named: 'password'),
         ),
       ).thenAnswer((_) async => SignInSession(_session()));
-      when(() => repo.getCurrentUser()).thenAnswer(
+      when(repo.getCurrentUser).thenAnswer(
         (_) async => _user(AppRole.visitor, RegistrationStatus.approved),
       );
 

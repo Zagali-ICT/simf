@@ -14,10 +14,17 @@ internal sealed class DelegationMeetingRequestConfiguration
 {
     public void Configure(EntityTypeBuilder<DelegationMeetingRequest> builder)
     {
-        // The proposed slot must end after it starts (both nullable).
-        builder.ToTable("DelegationMeetingRequests", table => table.HasCheckConstraint(
-            "CK_DelegationMeetingRequests_Slot",
-            "[SlotStart] IS NULL OR [SlotEnd] IS NULL OR [SlotEnd] > [SlotStart]"));
+        // The proposed slot must end after it starts (both nullable), and the
+        // delegation size is the 1..100 the submit path validates.
+        builder.ToTable("DelegationMeetingRequests", table =>
+        {
+            table.HasCheckConstraint(
+                "CK_DelegationMeetingRequests_Slot",
+                "[SlotStart] IS NULL OR [SlotEnd] IS NULL OR [SlotEnd] > [SlotStart]");
+            table.HasCheckConstraint(
+                "CK_DelegationMeetingRequests_AttendeeCount",
+                "[AttendeeCount] >= 1 AND [AttendeeCount] <= 100");
+        });
         builder.HasKey(r => r.Id);
 
         builder.Property(r => r.Subject).HasMaxLength(1000).IsRequired();
@@ -33,13 +40,10 @@ internal sealed class DelegationMeetingRequestConfiguration
             .HasForeignKey(r => r.TargetCountryId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Bi-Meeting rework — the picked delegation-availability window (SetNull), the
-        // hall + optional table an Approve bound the meeting to (SetNull; a deleted
-        // hall/table clears the binding). Mirrors SpeakerMeetingRequestConfiguration.
-        builder.HasOne<DelegationAvailabilityWindow>()
-            .WithMany()
-            .HasForeignKey(r => r.AvailabilityWindowId)
-            .OnDelete(DeleteBehavior.SetNull);
+        // The hall + optional table an Approve bound the meeting to (SetNull; a deleted
+        // hall/table clears the binding). Mirrors SpeakerMeetingRequestConfiguration,
+        // except that a delegation request holds no availability-window reference:
+        // nothing ever picked one, so the column and its FK were removed.
         builder.HasOne(r => r.Hall)
             .WithMany()
             .HasForeignKey(r => r.HallId)

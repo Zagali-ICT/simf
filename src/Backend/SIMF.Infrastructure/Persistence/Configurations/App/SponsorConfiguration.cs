@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using SIMF.Domain.Files;
 using SIMF.Domain.Sponsors;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
@@ -14,7 +15,16 @@ internal sealed class SponsorConfiguration : IEntityTypeConfiguration<Sponsor>
 {
     public void Configure(EntityTypeBuilder<Sponsor> builder)
     {
-        builder.ToTable("Sponsors");
+        // Coordinates are a pair or nothing, and each half has a real range —
+        // the rule AdminSponsorService already enforces on write, now on the
+        // table too. Each branch anchors on IS NULL / IS NOT NULL because a bare
+        // comparison against a null column yields UNKNOWN, which a CHECK passes.
+        builder.ToTable("Sponsors", table => table.HasCheckConstraint(
+            "CK_Sponsors_Coordinates",
+            "([Latitude] IS NULL AND [Longitude] IS NULL) OR "
+            + "([Latitude] IS NOT NULL AND [Longitude] IS NOT NULL "
+            + "AND [Latitude] >= -90 AND [Latitude] <= 90 "
+            + "AND [Longitude] >= -180 AND [Longitude] <= 180)"));
         builder.HasKey(sponsor => sponsor.Id);
 
         builder.Property(sponsor => sponsor.Name).HasMaxLength(256).IsRequired();
@@ -25,7 +35,13 @@ internal sealed class SponsorConfiguration : IEntityTypeConfiguration<Sponsor>
         // HasConversion<int>() makes that explicit and migration-stable.
         builder.Property(sponsor => sponsor.Tier).HasConversion<int>().IsRequired();
 
-        builder.Property(sponsor => sponsor.LogoRelativePath).HasMaxLength(256);
+        // The sponsor logo, in the one file store. Restrict: deleting a file must never
+        // delete the row that shows it.
+        builder.HasIndex(sponsor => sponsor.LogoFileId);
+        builder.HasOne<StoredFile>()
+            .WithMany()
+            .HasForeignKey(sponsor => sponsor.LogoFileId)
+            .OnDelete(DeleteBehavior.Restrict);
         builder.Property(sponsor => sponsor.Url).HasMaxLength(512);
 
         // Optional bilingual tagline (<=256, mirrors the service-layer
@@ -68,5 +84,18 @@ internal sealed class SponsorConfiguration : IEntityTypeConfiguration<Sponsor>
             sponsor.Tier,
             sponsor.DisplayOrder,
         });
+
+        // At most one ACTIVE sponsor per (tier, Arabic name). AdminSponsorService
+        // already returns a 409 SponsorDuplicate on that clash, but its check is a
+        // read followed by a write, so two concurrent creates can both pass it and
+        // land a duplicate on the public page. This is the backstop that makes the
+        // rule true of the table, exactly as ExhibitorMembership.UserId does.
+        //
+        // Filtered on IsActive = 1 because the rule itself is scoped to active rows:
+        // the service deliberately lets an inactive row keep a name an active row is
+        // using, so an unfiltered index would reject a legitimate soft-deleted row.
+        builder.HasIndex(sponsor => new { sponsor.Tier, sponsor.NameArabic })
+            .IsUnique()
+            .HasFilter("[IsActive] = 1");
     }
 }

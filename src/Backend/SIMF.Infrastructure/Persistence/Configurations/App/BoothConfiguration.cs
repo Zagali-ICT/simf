@@ -22,7 +22,22 @@ internal sealed class BoothConfiguration : IEntityTypeConfiguration<Booth>
 {
     public void Configure(EntityTypeBuilder<Booth> builder)
     {
-        builder.ToTable("Booths");
+        // The booth officer's coordinates are a pair or nothing, and each half
+        // has a real range. AdminBoothService already rejects a half pair and
+        // anything outside -90..90 / -180..180; this puts the same rule on the
+        // table, so a row that never passed through that service cannot carry a
+        // broken pin.
+        //
+        // Every branch anchors on IS NULL / IS NOT NULL deliberately. A bare
+        // comparison against a nullable column evaluates to UNKNOWN when the
+        // column is null and SQL Server passes UNKNOWN on a CHECK, so the
+        // half-pair case would slip straight through an unanchored predicate.
+        builder.ToTable("Booths", table => table.HasCheckConstraint(
+            "CK_Booths_OfficerCoordinates",
+            "([OfficerLatitude] IS NULL AND [OfficerLongitude] IS NULL) OR "
+            + "([OfficerLatitude] IS NOT NULL AND [OfficerLongitude] IS NOT NULL "
+            + "AND [OfficerLatitude] >= -90 AND [OfficerLatitude] <= 90 "
+            + "AND [OfficerLongitude] >= -180 AND [OfficerLongitude] <= 180)"));
         builder.HasKey(booth => booth.Id);
 
         builder.Property(booth => booth.Code).HasMaxLength(16).IsRequired();

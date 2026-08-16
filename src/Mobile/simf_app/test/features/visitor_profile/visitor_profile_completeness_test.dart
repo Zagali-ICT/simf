@@ -115,7 +115,7 @@ void main() {
     // The two-photo split: optional for women, and for an unspecified gender,
     // so neither is blocked from registering.
     test('the face photo is optional for anyone not male', () {
-      for (final AppGender gender in <AppGender>[
+      for (final gender in <AppGender>[
         AppGender.female,
         AppGender.unspecified,
       ]) {

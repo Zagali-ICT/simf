@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
@@ -32,7 +32,6 @@ public partial class ArchiveAddEdit
             _model.Attendees = Initial.Attendees;
             _model.Sessions = Initial.Sessions;
             _model.Speakers = Initial.Speakers;
-            _model.CoverImageRelativePath = Initial.CoverImageRelativePath;
             _model.LocationEn = Initial.LocationEn;
             _model.LocationAr = Initial.LocationAr;
             _model.DateLabelEn = Initial.DateLabelEn;
@@ -72,9 +71,9 @@ public partial class ArchiveAddEdit
                 "simfAccount.getJson", $"/account/api/admin/archive/{Initial.Id}");
             if (env is { Success: true, Data: not null })
             {
-                _model.GalleryText = FormatGallery(env.Data.Gallery);
+                _model.Gallery = [.. env.Data.Gallery ?? []];
                 _model.SessionTitlesText = FormatSessionTitles(env.Data.SessionTitles);
-                _model.PastSpeakersText = FormatPastSpeakers(env.Data.PastSpeakers);
+                _model.PastSpeakers = [.. env.Data.PastSpeakers ?? []];
                 _listsLoaded = true;
             }
         }
@@ -137,14 +136,13 @@ public partial class ArchiveAddEdit
         Attendees = _model.Attendees,
         Sessions = _model.Sessions,
         Speakers = _model.Speakers,
-        CoverImageRelativePath = _model.CoverImageRelativePath,
         LocationEn = _model.LocationEn,
         LocationAr = _model.LocationAr,
         DateLabelEn = _model.DateLabelEn,
         DateLabelAr = _model.DateLabelAr,
-        Gallery = ParseGallery(_model.GalleryText),
+        Gallery = _model.Gallery,
         SessionTitles = ParseSessionTitles(_model.SessionTitlesText),
-        PastSpeakers = ParsePastSpeakers(_model.PastSpeakersText),
+        PastSpeakers = _model.PastSpeakers,
     };
 
     private UpdateArchiveEditionRequest BuildUpdateRequest() => new()
@@ -157,15 +155,14 @@ public partial class ArchiveAddEdit
         Attendees = _model.Attendees,
         Sessions = _model.Sessions,
         Speakers = _model.Speakers,
-        CoverImageRelativePath = _model.CoverImageRelativePath,
         LocationEn = _model.LocationEn,
         LocationAr = _model.LocationAr,
         DateLabelEn = _model.DateLabelEn,
         DateLabelAr = _model.DateLabelAr,
         // Null when the detail fetch failed → keep existing rows.
-        Gallery = _listsLoaded ? ParseGallery(_model.GalleryText) : null,
+        Gallery = _listsLoaded ? _model.Gallery : null,
         SessionTitles = _listsLoaded ? ParseSessionTitles(_model.SessionTitlesText) : null,
-        PastSpeakers = _listsLoaded ? ParsePastSpeakers(_model.PastSpeakersText) : null,
+        PastSpeakers = _listsLoaded ? _model.PastSpeakers : null,
         IsActive = _model.IsActive,
     };
 
@@ -173,7 +170,9 @@ public partial class ArchiveAddEdit
     // summary, so project the saved row back to a summary for OnSuccess.
     private static AdminArchiveEditionSummary ToSummary(AdminArchiveEditionDetail d) =>
         new(d.Id, d.Year, d.TitleEn, d.TitleAr, d.SummaryEn, d.SummaryAr,
-            d.Attendees, d.Sessions, d.Speakers, d.CoverImageRelativePath,
+            d.Attendees, d.Sessions, d.Speakers,
+            // The cover is a StoredFile; the wire field survives carrying null.
+            null,
             d.IsActive, d.CreatedAt,
             // HasCover — optimistic false; OnSavedAsync reloads the grid, which
             // recomputes it from the ArchiveCover asset presence.
@@ -222,16 +221,17 @@ public partial class ArchiveAddEdit
         public int Attendees { get; set; }
         public int Sessions { get; set; }
         public int Speakers { get; set; }
-        public string? CoverImageRelativePath { get; set; }
         // Place + date label.
         public string? LocationEn { get; set; }
         public string? LocationAr { get; set; }
         public string? DateLabelEn { get; set; }
         public string? DateLabelAr { get; set; }
-        // The rich lists as line-delimited text (parsed on save).
-        public string GalleryText { get; set; } = string.Empty;
+        // Gallery and past speakers are per-row now, because each row owns an
+        // uploaded file and a file needs a row id to belong to. Session titles
+        // carry no media, so they stay line-delimited text.
+        public List<ArchiveMediaItemInput> Gallery { get; set; } = [];
+        public List<ArchivePastSpeakerInput> PastSpeakers { get; set; } = [];
         public string SessionTitlesText { get; set; } = string.Empty;
-        public string PastSpeakersText { get; set; } = string.Empty;
         public bool IsActive { get; set; } = true;
     }
 
@@ -243,17 +243,6 @@ public partial class ArchiveAddEdit
             .Where(line => line.Length > 0)
             .Select(line => line.Split('|').Select(p => p.Trim()).ToArray());
 
-    private static List<ArchiveMediaItemInput> ParseGallery(string text) =>
-        Rows(text)
-            .Where(p => p.Length > 0 && p[0].Length > 0)
-            .Select(p => new ArchiveMediaItemInput
-            {
-                Url = p[0],
-                Kind = p.Length > 1 && p[1].Equals("video", StringComparison.OrdinalIgnoreCase) ? 1 : 0,
-                CaptionAr = p.Length > 2 && p[2].Length > 0 ? p[2] : null,
-            })
-            .ToList();
-
     private static List<ArchiveSessionTitleInput> ParseSessionTitles(string text) =>
         Rows(text)
             .Where(p => p.Length > 0 && p[0].Length > 0)
@@ -264,46 +253,41 @@ public partial class ArchiveAddEdit
             })
             .ToList();
 
-    private static List<ArchivePastSpeakerInput> ParsePastSpeakers(string text) =>
-        Rows(text)
-            .Where(p => p.Length > 0 && p[0].Length > 0)
-            .Select(p => new ArchivePastSpeakerInput
-            {
-                NameAr = p[0],
-                NameEn = p.Length > 1 && p[1].Length > 0 ? p[1] : p[0],
-                PhotoRelativePath = p.Length > 2 && p[2].Length > 0 ? p[2] : null,
-                // 4th field: the ISO 3166-1 numeric country code (e.g. 682).
-                CountryId = p.Length > 3 && int.TryParse(p[3], out var cid)
-                    ? cid
-                    : (int?)null,
-            })
-            .ToList();
-
-    private static string FormatGallery(IReadOnlyList<ArchiveMediaItemInput>? items) =>
-        items is null ? string.Empty : string.Join("\n", items.Select(i =>
-            $"{i.Url} | {(i.Kind == 1 ? "video" : "image")}{(string.IsNullOrWhiteSpace(i.CaptionAr) ? string.Empty : $" | {i.CaptionAr}")}"));
-
     private static string FormatSessionTitles(IReadOnlyList<ArchiveSessionTitleInput>? items) =>
         items is null ? string.Empty : string.Join("\n", items.Select(i => $"{i.TitleAr} | {i.TitleEn}"));
 
-    private static string FormatPastSpeakers(IReadOnlyList<ArchivePastSpeakerInput>? items) =>
-        items is null ? string.Empty : string.Join("\n", items.Select(FormatPastSpeaker));
+    // ---- repeater row commands ---------------------------------------------
+    //
+    // A new row has a null Id until the edition is saved; the server assigns one
+    // and returns it, and from then on that row keeps its identity across saves.
+    // That is what lets the row own an uploaded photo: before the lists were
+    // reconciled by id, every save replaced each child with a brand-new record
+    // and any file attached to the old one was orphaned on the spot.
 
-    // Grammar: "name-ar | name-en | photo-url | countryId". The photo
-    // slot is emitted (possibly empty) whenever a country follows it, so the
-    // country always lands in the 4th position on re-parse.
-    private static string FormatPastSpeaker(ArchivePastSpeakerInput i)
+    private void AddGalleryRow() => _model.Gallery.Add(new ArchiveMediaItemInput());
+
+    private void RemoveGalleryRow(ArchiveMediaItemInput row) => _model.Gallery.Remove(row);
+
+    private void MoveGalleryRow(ArchiveMediaItemInput row, int delta) =>
+        Move(_model.Gallery, row, delta);
+
+    private void AddPastSpeakerRow() => _model.PastSpeakers.Add(new ArchivePastSpeakerInput());
+
+    private void RemovePastSpeakerRow(ArchivePastSpeakerInput row) =>
+        _model.PastSpeakers.Remove(row);
+
+    private void MovePastSpeakerRow(ArchivePastSpeakerInput row, int delta) =>
+        Move(_model.PastSpeakers, row, delta);
+
+    private static void Move<T>(List<T> rows, T row, int delta)
     {
-        var line = $"{i.NameAr} | {i.NameEn}";
-        var hasPhoto = !string.IsNullOrWhiteSpace(i.PhotoRelativePath);
-        if (hasPhoto || i.CountryId.HasValue)
+        var from = rows.IndexOf(row);
+        var to = from + delta;
+        if (from < 0 || to < 0 || to >= rows.Count)
         {
-            line += $" | {(hasPhoto ? i.PhotoRelativePath : string.Empty)}";
+            return;
         }
-        if (i.CountryId.HasValue)
-        {
-            line += $" | {i.CountryId.Value}";
-        }
-        return line;
+        rows.RemoveAt(from);
+        rows.Insert(to, row);
     }
 }

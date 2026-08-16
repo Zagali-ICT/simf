@@ -218,7 +218,7 @@ public sealed class Journey05BookingToArrivalTests : IClassFixture<SimfApiFactor
             .SingleAsync(r => r.Id == booking.ReservationId);
         Assert.Equal(BookingStatus.Approved, stored.Status);
         Assert.Null(stored.ReleasedAt);
-        Assert.Null(stored.ReviewedByUserId);
+        Assert.Null(stored.ReleasedByUserId);
     }
 
     [Fact]
@@ -311,10 +311,9 @@ public sealed class Journey05BookingToArrivalTests : IClassFixture<SimfApiFactor
                 NameArabic = nameArabic,
                 NationalityId = 682,   // ISO 3166-1 numeric — SA
                 PlaceOfBirth = "Riyadh",
-                // Admission is owned by the PROFILE, not the account, and it
-                // defaults to PendingApproval. This journey books a seat and then
-                // arrives at a hall door, and both refuse an unapproved holder -
-                // the turnstile as a denied scan, the arrivals console as a 403.
+                // The hall door reads admission off the PROFILE; left at its
+                // PendingApproval default the holder is refused before the seat
+                // confirmation this journey exists to prove.
                 AdmissionState = AccountState.Approved,
                 CreatedAt = SimfClock.Now,
             });

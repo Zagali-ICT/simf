@@ -8,8 +8,11 @@ namespace SIMF.Infrastructure.Persistence.Configurations.App;
 /// <c>Date</c>, with a bilingual title, ordered by <c>DisplayOrder</c> then
 /// <c>Date</c>. The day's logo/banner lives in the unified Asset table
 /// (<c>ProgrammeDayImage</c>, owner = <c>Id</c>) — no image column here.
-/// One active day per date is enforced at the service layer (a soft-deleted day
-/// must not block re-creating the same date).</summary>
+/// One ACTIVE day per date is enforced in BOTH places: the filtered unique index
+/// below holds it in the database, and <c>AdminProgrammeDayService</c> pre-checks
+/// it so the admin gets a bilingual 400 rather than a constraint violation. The
+/// filter is what lets a soft-deleted day sit on a date that is being
+/// re-created.</summary>
 internal sealed class ProgrammeDayConfiguration
     : IEntityTypeConfiguration<ProgrammeDay>
 {

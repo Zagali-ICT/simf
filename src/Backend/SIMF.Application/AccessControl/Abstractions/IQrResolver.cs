@@ -46,6 +46,11 @@ public interface IQrResolver
 /// <param name="IsLockedOut">Identity lockout, which can only be true when
 /// <paramref name="UserId"/> is set: lockout is a sign-in control, so a holder
 /// with no account cannot be locked out of a gate they never sign in to.</param>
+/// <param name="BadgeBatchId">The bulk order this badge was minted into, or null
+/// when nobody ordered it in bulk - a walk-in registered at a desk. The gate
+/// does not read it; badge self-activation does, because it separates a badge
+/// handed out under a controlled order from one in open circulation, and only
+/// the first may be claimed as an app account by whoever is holding it.</param>
 public sealed record QrResolution(
     Guid UserProfileId,
     Guid? UserId,
@@ -57,4 +62,9 @@ public sealed record QrResolution(
     string? ProfileTypeNameArabic,
     string? ProfileTypePageColor,
     string DisplayName,
-    string DisplayNameArabic);
+    string DisplayNameArabic,
+    Guid? BadgeBatchId = null,
+    // The edition year this attendee was registered for. The gate refuses a
+    // badge whose year is not the open one — which is the only expiry a minted
+    // QR has ever had, the resolver having matched on value alone before.
+    int EditionYear = 0);

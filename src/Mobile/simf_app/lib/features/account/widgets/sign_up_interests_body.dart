@@ -52,8 +52,10 @@ class SignUpInterestsBody extends StatelessWidget {
   final SignUpProfileDraft? draft;
 
   final void Function(String id, AppL10n l10n) onToggleInterest;
+
   /// Saves and advances; async, so the submit control awaits it.
   final Future<void> Function() onSave;
+
   /// Both reload paths are async: the retry control awaits them.
   final Future<void> Function() onRetry;
   final Future<void> Function() onRetryEdit;
@@ -114,7 +116,8 @@ class SignUpInterestsBody extends StatelessWidget {
                   ),
                   const SizedBox(height: SimfTokens.space4),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space6),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: SimfTokens.space6,),
                     child: Text(
                       l10n.interestsHelper,
                       textAlign: TextAlign.center,
@@ -149,7 +152,8 @@ class SignUpInterestsBody extends StatelessWidget {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(SimfTokens.space4, 0, SimfTokens.space4, SimfTokens.space6),
+          padding: const EdgeInsets.fromLTRB(
+              SimfTokens.space4, 0, SimfTokens.space4, SimfTokens.space6,),
           child: MaxWidthBody(
             maxWidth: SimfTokens.signUpInterestsScreenMaxWidth,
             child: SizedBox(
@@ -168,7 +172,7 @@ class SignUpInterestsBody extends StatelessWidget {
     );
   }
 
-/// Only this branch is pull-to-refreshable — re-running the load on the
+  /// Only this branch is pull-to-refreshable — re-running the load on the
   /// populated grid would discard the chips the user has already picked.
   Widget loadErrorView(AppL10n l10n) {
     return SimfRefreshableMessage(

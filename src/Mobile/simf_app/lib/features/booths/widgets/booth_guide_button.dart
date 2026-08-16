@@ -6,9 +6,9 @@ import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_svg_icon.dart';
 
 /// The full-width gold guide-me CTA (frame node 922:2820): "أرشدني إلى الجناح ·
-/// A-12" with a trailing location glyph, white text on the gold fill. #9 — opens
-/// the venue map focused on this booth (the inner InkWell captures the tap so it
-/// does not also bubble to the card's open-detail onTap).
+/// A-12" with a trailing location glyph, white text on the gold fill. #9 —
+/// opens the venue map focused on this booth (the inner InkWell captures the
+/// tap so it does not also bubble to the card's open-detail onTap).
 class BoothGuideButton extends StatelessWidget {
   const BoothGuideButton({
     required this.code,

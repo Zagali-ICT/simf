@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/AssetEndpointsTests.cs
+﻿// Tests: SIMF.Api.Tests/AssetEndpointsTests.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Assets.Abstractions;
@@ -7,13 +7,14 @@ using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Assets;
 using SIMF.Domain.Files;
+using SIMF.Infrastructure.Files;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Assets;
 
 /// <summary>The unified media-asset service, now
 /// backed by the centralized <see cref="StoredFile"/> store instead of the legacy
-/// <c>Asset</c> table + <c>IImageAssetStorage</c>. The <see cref="IAssetService"/>
+/// <c>Asset</c> table and its own storage service. The <see cref="IAssetService"/>
 /// contract, every endpoint route and the <see cref="AdminAssetSummary"/> shape are
 /// unchanged, so the app / Website / CP see no difference — only the physical
 /// storage moved. Each <see cref="AssetCategory"/> maps 1:1 to a
@@ -25,7 +26,6 @@ namespace SIMF.Infrastructure.Assets;
 internal sealed class AssetService(
     SimfAppDbContext dbContext,
     IFileService fileService,
-    IFileStorageProvider storage,
     TimeProvider timeProvider,
     ILogger<AssetService> logger) : IAssetService
 {
@@ -40,6 +40,8 @@ internal sealed class AssetService(
             [AssetCategory.MediaPartnerLogo] = FileService.MediaPartnerLogo,
             [AssetCategory.SponsorLogo] = FileService.SponsorLogo,
             [AssetCategory.ArchiveCover] = FileService.ArchiveCover,
+            [AssetCategory.ArchivePastSpeakerPhoto] = FileService.ArchivePastSpeakerPhoto,
+            [AssetCategory.ArchiveGalleryImage] = FileService.ArchiveGalleryImage,
             [AssetCategory.NewsImage] = FileService.NewsImage,
             [AssetCategory.ProgrammeDayImage] = FileService.ProgrammeDayImage,
             [AssetCategory.OrganizationLogo] = FileService.OrganizationLogo,
@@ -127,11 +129,10 @@ internal sealed class AssetService(
                 AssetSourceType.ExternalLink, ToKind(file.FileType), null, null, file.ExternalUrl);
         }
 
-        if (string.IsNullOrEmpty(file.StorageKey)) { return null; }
-        var bytes = await storage.ReadAsync(file.StorageKey, file.IsEncrypted, cancellationToken);
-        if (bytes is null) { return null; }
+        var content = await fileService.ReadContentAsync(file.Id, cancellationToken);
+        if (content is null) { return null; }
         return new AssetResolution(
-            AssetSourceType.Upload, ToKind(file.FileType), bytes, file.ContentType, null);
+            AssetSourceType.Upload, ToKind(file.FileType), content.Content, content.ContentType, null);
     }
 
     public async Task<IReadOnlySet<Guid>> WhichOwnersHaveActiveAssetAsync(
@@ -168,6 +169,12 @@ internal sealed class AssetService(
                 .AnyAsync(x => x.Id == ownerId && x.IsActive, cancellationToken),
             AssetCategory.ArchiveCover => dbContext.ArchiveEditions
                 .AnyAsync(x => x.Id == ownerId && x.IsActive, cancellationToken),
+            // A past-edition child is public exactly while its edition is: the
+            // child carries no active flag of its own, the parent's governs.
+            AssetCategory.ArchivePastSpeakerPhoto => dbContext.ArchivePastSpeakers
+                .AnyAsync(x => x.Id == ownerId && x.Edition!.IsActive, cancellationToken),
+            AssetCategory.ArchiveGalleryImage => dbContext.ArchiveMediaItems
+                .AnyAsync(x => x.Id == ownerId && x.Edition!.IsActive, cancellationToken),
             AssetCategory.NewsImage => dbContext.News
                 .AnyAsync(x => x.Id == ownerId && x.IsActive && x.PublishedAt <= now, cancellationToken),
             AssetCategory.ProgrammeDayImage => dbContext.ProgrammeDays
@@ -261,6 +268,8 @@ internal sealed class AssetService(
         file.UpdatedBy = actorUserId;
         file.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
+        await OwnerPointerSync.ClearIfPointingAtAsync(
+            dbContext, file.Service, file.OwnerEntityId, file.Id, cancellationToken);
     }
 
     public async Task RestoreAsync(
@@ -286,6 +295,8 @@ internal sealed class AssetService(
         file.UpdatedBy = actorUserId;
         file.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
+        await OwnerPointerSync.PointAtAsync(
+            dbContext, file.Service, file.OwnerEntityId, file.Id, cancellationToken);
     }
 
     // Retire every OTHER active file of this (service, owner) so exactly one stays
@@ -371,6 +382,18 @@ internal sealed class AssetService(
                         .Where(x => ids.Contains(x.Id)).Select(x => new { x.Id, x.Name })
                         .ToListAsync(cancellationToken))
                         result[(AssetCategory.SponsorLogo, r.Id)] = r.Name;
+                    break;
+                case AssetCategory.ArchivePastSpeakerPhoto:
+                    foreach (var r in await dbContext.ArchivePastSpeakers.AsNoTracking()
+                        .Where(x => ids.Contains(x.Id)).Select(x => new { x.Id, x.NameEn })
+                        .ToListAsync(cancellationToken))
+                        result[(AssetCategory.ArchivePastSpeakerPhoto, r.Id)] = r.NameEn;
+                    break;
+                case AssetCategory.ArchiveGalleryImage:
+                    foreach (var r in await dbContext.ArchiveMediaItems.AsNoTracking()
+                        .Where(x => ids.Contains(x.Id)).Select(x => new { x.Id, x.CaptionEn })
+                        .ToListAsync(cancellationToken))
+                        result[(AssetCategory.ArchiveGalleryImage, r.Id)] = r.CaptionEn ?? "Gallery item";
                     break;
                 case AssetCategory.ArchiveCover:
                     foreach (var r in await dbContext.ArchiveEditions.AsNoTracking()

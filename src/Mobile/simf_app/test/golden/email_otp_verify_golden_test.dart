@@ -15,13 +15,13 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the email-OTP second-factor screen against Figma frame
-/// **758:2616** (التحقق بالبريد · Page 003 2FA). Regenerate:
-///   flutter test --update-goldens test/golden/email_otp_verify_golden_test.dart
+/// **758:2616** (التحقق بالبريد · Page 003 2FA). Regenerate: flutter test
+/// --update-goldens test/golden/email_otp_verify_golden_test.dart
 ///
 /// Frame parity: the navy scaffold + sweep, the back/title header, the gold
-/// mail mark, the أدخل رمز التحقق title, the "sent a code to <email>" lines, the
-/// six OTP boxes, the resend countdown, the gold تحقق CTA, and the resend row.
-/// Captured in the empty/default state (countdown at its 01:00 start — the
+/// mail mark, the أدخل رمز التحقق title, the "sent a code to `<email>`" lines,
+/// the six OTP boxes, the resend countdown, the gold تحقق CTA, and the resend
+/// row. Captured in the empty/default state (countdown at its 01:00 start — the
 /// periodic timer means we pump frames rather than settle). Locks the layout,
 /// typography, colour, spacing and RTL of the clean-code-frozen page (D-552).
 class _AwaitingOtpController extends AuthController {

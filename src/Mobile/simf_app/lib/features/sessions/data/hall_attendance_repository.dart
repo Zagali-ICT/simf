@@ -72,7 +72,7 @@ final hallAttendanceRepositoryProvider =
   return HallAttendanceRepository(ref.watch(simfApiClientProvider));
 });
 
-/// The caller's attendance state for [sessionId] as one cached async read.
+/// The caller's attendance state for `sessionId` as one cached async read.
 /// `autoDispose.family` so a fresh mount or an `ref.invalidate` re-fetches.
 final hallAttendanceStatusProvider =
     FutureProvider.autoDispose.family<HallAttendanceStatus, String>(

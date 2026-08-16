@@ -119,7 +119,8 @@ void main() {
       expect(find.text('Ask a question before it starts'), findsOneWidget);
     });
 
-    testWidgets('an in-window in-person session (no live URL) shows the ask '
+    testWidgets(
+        'an in-window in-person session (no live URL) shows the ask '
         'with the neutral live label', (tester) async {
       await _pumpBody(
         tester,
@@ -136,7 +137,8 @@ void main() {
       expect(find.text('Ask a question before it starts'), findsNothing);
     });
 
-    testWidgets('an in-window BROADCAST session (live URL) HIDES the ask on '
+    testWidgets(
+        'an in-window BROADCAST session (live URL) HIDES the ask on '
         'the detail (it lives on the live screen)', (tester) async {
       await _pumpBody(
         tester,
@@ -184,7 +186,8 @@ void main() {
     // DEF-MOD-003 — the send-question route (#26) is attendee-only, so a
     // Staff / Moderator must not be offered a card that silently bounces them
     // Home. canAsk=false is what the screen passes for those roles.
-    testWidgets('DEF-MOD-003: a role that cannot open send-question is not '
+    testWidgets(
+        'DEF-MOD-003: a role that cannot open send-question is not '
         'offered the ask card at all', (tester) async {
       await _pumpBody(
         tester,
@@ -203,7 +206,8 @@ void main() {
   // #18 — an approved attendee whose seat map fails to load must get a retry,
   // not a silently-absent Join button.
   group('SessionDetailBody #18 seat-map load failure', () {
-    testWidgets('a FAILED seat map (approved attendee) shows the error + retry '
+    testWidgets(
+        'a FAILED seat map (approved attendee) shows the error + retry '
         'instead of a Join button', (tester) async {
       var retried = false;
       await _pumpBody(
@@ -234,7 +238,8 @@ void main() {
       expect(retried, isTrue);
     });
 
-    testWidgets('an ENDED session with a failed seat map shows NO retry (it can '
+    testWidgets(
+        'an ENDED session with a failed seat map shows NO retry (it can '
         'no longer be joined)', (tester) async {
       await _pumpBody(
         tester,
@@ -310,7 +315,8 @@ void main() {
       expect(tapped, isTrue);
     });
 
-    testWidgets('a FUTURE session with a feed keeps the live button INACTIVE '
+    testWidgets(
+        'a FUTURE session with a feed keeps the live button INACTIVE '
         '(the feed is not live yet)', (tester) async {
       var tapped = false;
       await _pumpBody(
@@ -381,7 +387,8 @@ void main() {
       expect(find.text('Session summary'), findsOneWidget);
     });
 
-    testWidgets('an UNTYPED session (older API → null type) keeps the full '
+    testWidgets(
+        'an UNTYPED session (older API → null type) keeps the full '
         'detail', (tester) async {
       await _pumpBody(
         tester,

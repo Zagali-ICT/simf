@@ -24,6 +24,25 @@
 }
 else
 {
+    @* Who the order is for. Both languages are required: an order named only in
+       English reads as a gap on every Arabic screen, and one identified only by
+       its counts is unrecognisable once two are the same size. *@
+    <div class="simf-bulk-builder__name">
+        <SimfTextField Label="@L["Admin.Delegates.Bulk.Name"]"
+                       MaxLength="200"
+                       Helper="@L["Admin.Delegates.Bulk.NameHint"]"
+                       Value="@_bulkName"
+                       ValueChanged="@(v => _bulkName = v)"
+                       ValueExpression="@(() => _bulkName)"
+                       Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.Delegates.Bulk.NameArabic"]"
+                       MaxLength="200"
+                       Value="@_bulkNameArabic"
+                       ValueChanged="@(v => _bulkNameArabic = v)"
+                       ValueExpression="@(() => _bulkNameArabic)"
+                       Disabled="_busy" />
+    </div>
+
     @* Add row — profile-type picker + count + Add. *@
     <div class="simf-bulk-builder__add">
         <SimfSelect TValue="AdminProfileTypeSummary"

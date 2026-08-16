@@ -62,6 +62,37 @@ class OrgProfile {
     this.eventEndDate,
   });
 
+  factory OrgProfile.fromJson(Map<String, dynamic> json) => OrgProfile(
+        name: json['name'] as String? ?? '',
+        nameArabic: json['nameArabic'] as String? ?? '',
+        title: json['title'] as String? ?? '',
+        titleArabic: json['titleArabic'] as String? ?? '',
+        currentYear: (json['currentYear'] as num?)?.toInt() ?? 0,
+        status: json['status'] as String? ?? '',
+        slogan: json['slogan'] as String?,
+        sloganArabic: json['sloganArabic'] as String?,
+        bio: json['bio'] as String?,
+        bioArabic: json['bioArabic'] as String?,
+        locationText: json['locationText'] as String?,
+        locationTextArabic: json['locationTextArabic'] as String?,
+        contactPhone: json['contactPhone'] as String?,
+        contactEmail: json['contactEmail'] as String?,
+        contactWebsite: json['contactWebsite'] as String?,
+        liveStreamUrl: json['liveStreamUrl'] as String?,
+        backgroundVideoUrl: json['backgroundVideoUrl'] as String?,
+        logoUrl: json['logoUrl'] as String?,
+        version: json['version'] as String?,
+        eventStartDate: _asDate(json['eventStartDate']),
+        eventEndDate: _asDate(json['eventEndDate']),
+        social: OrgSocial.fromJson(_asStringMap(json['social'])),
+        aboutItems: ((json['aboutItems'] as List?) ?? const <dynamic>[])
+            .map((m) => OrgAboutItem.fromJson(_asStringMap(m)))
+            .toList(),
+        details: ((json['details'] as List?) ?? const <dynamic>[])
+            .map((m) => OrgDetail.fromJson(_asStringMap(m)))
+            .toList(),
+      );
+
   final String name;
   final String nameArabic;
   final String title;
@@ -97,16 +128,17 @@ class OrgProfile {
   final DateTime? eventStartDate;
   final DateTime? eventEndDate;
 
-  String nameFor(bool isArabic) => isArabic ? nameArabic : name;
-  String titleFor(bool isArabic) => isArabic ? titleArabic : title;
-  String? sloganFor(bool isArabic) => isArabic ? sloganArabic : slogan;
-  String? bioFor(bool isArabic) => isArabic ? bioArabic : bio;
-  String? locationFor(bool isArabic) =>
+  String nameFor({required bool isArabic}) => isArabic ? nameArabic : name;
+  String titleFor({required bool isArabic}) => isArabic ? titleArabic : title;
+  String? sloganFor({required bool isArabic}) =>
+      isArabic ? sloganArabic : slogan;
+  String? bioFor({required bool isArabic}) => isArabic ? bioArabic : bio;
+  String? locationFor({required bool isArabic}) =>
       isArabic ? locationTextArabic : locationText;
 
   /// The bilingual formatted event date range (e.g. "23-25 نوفمبر 2026"), or
   /// null when the edition's start / end dates are not both set.
-  String? eventDateRange(bool isArabic) {
+  String? eventDateRange({required bool isArabic}) {
     final start = eventStartDate;
     final end = eventEndDate;
     if (start == null || end == null) {
@@ -114,37 +146,6 @@ class OrgProfile {
     }
     return formatEventDateRange(start, end, isArabic: isArabic);
   }
-
-  static OrgProfile fromJson(Map<String, dynamic> json) => OrgProfile(
-        name: json['name'] as String? ?? '',
-        nameArabic: json['nameArabic'] as String? ?? '',
-        title: json['title'] as String? ?? '',
-        titleArabic: json['titleArabic'] as String? ?? '',
-        currentYear: (json['currentYear'] as num?)?.toInt() ?? 0,
-        status: json['status'] as String? ?? '',
-        slogan: json['slogan'] as String?,
-        sloganArabic: json['sloganArabic'] as String?,
-        bio: json['bio'] as String?,
-        bioArabic: json['bioArabic'] as String?,
-        locationText: json['locationText'] as String?,
-        locationTextArabic: json['locationTextArabic'] as String?,
-        contactPhone: json['contactPhone'] as String?,
-        contactEmail: json['contactEmail'] as String?,
-        contactWebsite: json['contactWebsite'] as String?,
-        liveStreamUrl: json['liveStreamUrl'] as String?,
-        backgroundVideoUrl: json['backgroundVideoUrl'] as String?,
-        logoUrl: json['logoUrl'] as String?,
-        version: json['version'] as String?,
-        eventStartDate: _asDate(json['eventStartDate']),
-        eventEndDate: _asDate(json['eventEndDate']),
-        social: OrgSocial.fromJson(_asStringMap(json['social'])),
-        aboutItems: ((json['aboutItems'] as List?) ?? const <dynamic>[])
-            .map((m) => OrgAboutItem.fromJson(_asStringMap(m)))
-            .toList(),
-        details: ((json['details'] as List?) ?? const <dynamic>[])
-            .map((m) => OrgDetail.fromJson(_asStringMap(m)))
-            .toList(),
-      );
 }
 
 /// The fixed set of social-media URLs (null = not set → the control stays
@@ -160,18 +161,10 @@ class OrgSocial {
     this.snapchat,
   });
 
-  final String? facebook;
-  final String? x;
-  final String? instagram;
-  final String? linkedin;
-  final String? youtube;
-  final String? tiktok;
-  final String? snapchat;
-
   // The API serialises with camelCase (System.Text.Json) → linkedIn/youTube/
   // tikTok. Read those exact keys, not all-lowercase, or CP-set LinkedIn/
   // YouTube/TikTok links silently drop (same fix as SiteSocialLinks).
-  static OrgSocial fromJson(Map<String, dynamic> json) => OrgSocial(
+  factory OrgSocial.fromJson(Map<String, dynamic> json) => OrgSocial(
         facebook: json['facebook'] as String?,
         x: json['x'] as String?,
         instagram: json['instagram'] as String?,
@@ -180,6 +173,14 @@ class OrgSocial {
         tiktok: json['tikTok'] as String?,
         snapchat: json['snapchat'] as String?,
       );
+
+  final String? facebook;
+  final String? x;
+  final String? instagram;
+  final String? linkedin;
+  final String? youtube;
+  final String? tiktok;
+  final String? snapchat;
 }
 
 /// One "about" item — a bilingual title + body (e.g. mission / vision).
@@ -191,20 +192,20 @@ class OrgAboutItem {
     required this.textArabic,
   });
 
-  final String title;
-  final String titleArabic;
-  final String text;
-  final String textArabic;
-
-  String titleFor(bool isArabic) => isArabic ? titleArabic : title;
-  String textFor(bool isArabic) => isArabic ? textArabic : text;
-
-  static OrgAboutItem fromJson(Map<String, dynamic> json) => OrgAboutItem(
+  factory OrgAboutItem.fromJson(Map<String, dynamic> json) => OrgAboutItem(
         title: json['title'] as String? ?? '',
         titleArabic: json['titleArabic'] as String? ?? '',
         text: json['text'] as String? ?? '',
         textArabic: json['textArabic'] as String? ?? '',
       );
+
+  final String title;
+  final String titleArabic;
+  final String text;
+  final String textArabic;
+
+  String titleFor({required bool isArabic}) => isArabic ? titleArabic : title;
+  String textFor({required bool isArabic}) => isArabic ? textArabic : text;
 }
 
 /// One "detail" row — a bilingual label + a value (e.g. year / date /
@@ -217,6 +218,13 @@ class OrgDetail {
     this.valueArabic,
   });
 
+  factory OrgDetail.fromJson(Map<String, dynamic> json) => OrgDetail(
+        name: json['name'] as String? ?? '',
+        nameArabic: json['nameArabic'] as String? ?? '',
+        value: json['value'] as String? ?? '',
+        valueArabic: json['valueArabic'] as String?,
+      );
+
   final String name;
   final String nameArabic;
   final String value;
@@ -225,19 +233,12 @@ class OrgDetail {
   /// in which case [valueFor] falls back to [value].
   final String? valueArabic;
 
-  String nameFor(bool isArabic) => isArabic ? nameArabic : name;
+  String nameFor({required bool isArabic}) => isArabic ? nameArabic : name;
 
-  String valueFor(bool isArabic) {
+  String valueFor({required bool isArabic}) {
     final ar = valueArabic;
     return isArabic && ar != null && ar.isNotEmpty ? ar : value;
   }
-
-  static OrgDetail fromJson(Map<String, dynamic> json) => OrgDetail(
-        name: json['name'] as String? ?? '',
-        nameArabic: json['nameArabic'] as String? ?? '',
-        value: json['value'] as String? ?? '',
-        valueArabic: json['valueArabic'] as String?,
-      );
 }
 
 /// App-local data layer for the public Organization profile — reads/writes the
@@ -323,5 +324,5 @@ class OrgProfileController extends Notifier<OrgProfile?> {
   }
 }
 
-final orgProfileProvider =
-    NotifierProvider<OrgProfileController, OrgProfile?>(OrgProfileController.new);
+final orgProfileProvider = NotifierProvider<OrgProfileController, OrgProfile?>(
+    OrgProfileController.new,);

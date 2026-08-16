@@ -3,7 +3,11 @@ import 'package:simf_app/app/theme/tokens.dart';
 
 /// The empty 56px bordered attach box: a centred label + trailing icon.
 class AttachBox extends StatelessWidget {
-  const AttachBox({required this.label, required this.icon, required this.onTap, super.key,
+  const AttachBox({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+    super.key,
   });
 
   final String label;
@@ -29,7 +33,8 @@ class AttachBox extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              Icon(icon, size: SimfTokens.attachBoxSize, color: SimfTokens.accent),
+              Icon(icon,
+                  size: SimfTokens.attachBoxSize, color: SimfTokens.accent,),
               const SizedBox(width: SimfTokens.space2),
               // BUG-019 — the box has a fixed height and sits in a half-width
               // tablet column, so a longer attach label must ellipsize instead

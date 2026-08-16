@@ -97,6 +97,9 @@ internal sealed class StoredFileService(
         dbContext.StoredFiles.Add(file);
         await dbContext.SaveChangesAsync(cancellationToken);
 
+        await OwnerPointerSync.PointAtAsync(
+            dbContext, command.Service, command.OwnerEntityId, fileId, cancellationToken);
+
         await auditLog.WriteSuccessAsync(
             AuditEvents.FileUploaded,
             command.ActorUserId,
@@ -165,6 +168,9 @@ internal sealed class StoredFileService(
         dbContext.StoredFiles.Add(file);
         await dbContext.SaveChangesAsync(cancellationToken);
 
+        await OwnerPointerSync.PointAtAsync(
+            dbContext, service, ownerEntityId, fileId, cancellationToken);
+
         await auditLog.WriteSuccessAsync(
             AuditEvents.FileUploaded,
             actorUserId,
@@ -194,7 +200,7 @@ internal sealed class StoredFileService(
         CreateExternalLinkCommand command, CancellationToken cancellationToken = default)
     {
         var policy = FileServicePolicies.Resolve(command.Service);
-        var url = ValidateExternalLink(command.Url);
+        var url = ValidateExternalLink(command.Url, policy);
         if (policy.OwnerRequired && (command.OwnerEntityId is null || command.OwnerEntityId == Guid.Empty))
         {
             throw new ApiException(ErrorCodes.ValidationFailed, 400,
@@ -245,7 +251,13 @@ internal sealed class StoredFileService(
 
         file.SourceType = FileSourceType.ExternalLink;
         file.ExternalUrl = url;
-        file.FileType = FileType.Image; // external links back the public image surfaces (logos / covers)
+        // Derived from the policy, not assumed. A hardcoded Image mistyped a video
+        // link, and the download endpoint serves inline only when the file is both
+        // public-tier AND typed Image — so a mistyped video would have been offered
+        // as an inline document rather than a stream.
+        file.FileType = policy.AllowedTypes.Contains(FileType.Image)
+            ? FileType.Image
+            : policy.AllowedTypes.First();
         file.StorageKey = null;
         file.ContentType = null;
         file.SizeBytes = null;
@@ -256,6 +268,9 @@ internal sealed class StoredFileService(
         file.IsDeletable = policy.DeletableDefault;
 
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        await OwnerPointerSync.PointAtAsync(
+            dbContext, command.Service, command.OwnerEntityId, file.Id, cancellationToken);
 
         // Free the swapped-out upload's bytes only after the row is safely persisted.
         if (previousUploadKey is not null)
@@ -304,26 +319,9 @@ internal sealed class StoredFileService(
         var bytes = await storage.ReadAsync(file.StorageKey, file.IsEncrypted, cancellationToken);
         if (bytes is null) { throw NotFound(); }
 
-        // Integrity verification on a private file (SAMA
-        // H-29/30). FAIL CLOSED: a stored-hash mismatch means the bytes on disk
-        // were tampered with (or a decrypt returned garbage) — audit it and refuse
-        // to serve, never hand the caller unverified bytes. Only Confidential+
-        // tiers carry the per-read hash check (public images are not hashed on read).
-        if (policy.Tier >= FileSensitivityTier.Confidential && !string.IsNullOrEmpty(file.Sha256))
+        if (!await IntegrityVerifiedAsync(file, policy.Tier, bytes, caller.UserId, cancellationToken))
         {
-            var actual = Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
-            if (!string.Equals(actual, file.Sha256, StringComparison.OrdinalIgnoreCase))
-            {
-                logger.LogError(
-                    "Integrity mismatch on file {Id} (service={Service}) — refusing to serve tampered bytes.",
-                    id, file.Service);
-                await auditLog.WriteFailureAsync(
-                    AuditEvents.FileIntegrityFailed,
-                    caller.UserId,
-                    detail: $"id={id}; service={file.Service}; expected={file.Sha256}; actual={actual}",
-                    cancellationToken: cancellationToken);
-                throw NotFound();
-            }
+            throw NotFound();
         }
 
         // Per-row audit only for non-public reads (public reads would flood the log).
@@ -341,6 +339,62 @@ internal sealed class StoredFileService(
             ContentType: file.ContentType ?? "application/octet-stream",
             FileName: file.OriginalFileName,
             file.Service, policy.Tier, policy.Access, file.FileType);
+    }
+
+    public async Task<StoredFileContent?> ReadContentAsync(
+        Guid id, CancellationToken cancellationToken = default)
+    {
+        var file = await dbContext.StoredFiles.AsNoTracking()
+            .FirstOrDefaultAsync(f => f.Id == id && f.IsActive, cancellationToken);
+        return file is null ? null : await ReadVerifiedAsync(file, cancellationToken);
+    }
+
+    public async Task<StoredFileContent?> ReadOwnerContentAsync(
+        FileService service, Guid ownerEntityId, CancellationToken cancellationToken = default)
+    {
+        var file = await dbContext.StoredFiles.AsNoTracking()
+            .Where(f => f.Service == service && f.OwnerEntityId == ownerEntityId && f.IsActive)
+            // Newest active wins; Id is a deterministic tiebreak for the rare
+            // same-tick case (a fake TimeProvider, or a brief replace window).
+            .OrderByDescending(f => f.CreatedAt)
+            .ThenByDescending(f => f.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+        return file is null ? null : await ReadVerifiedAsync(file, cancellationToken);
+    }
+
+    public async Task<bool> RestoreBytesAsync(
+        Guid id, byte[] content, Guid actorUserId, CancellationToken cancellationToken = default)
+    {
+        if (content is null || content.Length == 0)
+        {
+            throw new ApiException(ErrorCodes.ValidationFailed, 400,
+                "No file content was supplied.", "لم يتم تزويد محتوى الملف.");
+        }
+
+        var file = await dbContext.StoredFiles.AsNoTracking()
+            .FirstOrDefaultAsync(f => f.Id == id && f.IsActive, cancellationToken);
+        if (file is null
+            || file.SourceType != FileSourceType.Upload
+            || string.IsNullOrEmpty(file.StorageKey))
+        {
+            return false;
+        }
+
+        // The provider rebuilds the SAME {service}/{id:N}{ext} key the row records,
+        // so writing by (service, id, extension) cannot land the bytes anywhere the
+        // row does not already point at.
+        await storage.WriteAsync(
+            file.Service, file.Id, Path.GetExtension(file.StorageKey), content,
+            file.IsEncrypted, cancellationToken);
+
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.FileUploaded,
+            actorUserId,
+            $"id={file.Id}; service={file.Service}; bytes={content.LongLength}; "
+                + $"encrypted={file.IsEncrypted}; restored",
+            cancellationToken);
+
+        return true;
     }
 
     public async Task<bool> ContentExistsAsync(Guid id, CancellationToken cancellationToken = default)
@@ -378,6 +432,13 @@ internal sealed class StoredFileService(
         file.UpdatedAt = now;
         await dbContext.SaveChangesAsync(cancellationToken);
 
+        // The owning row must not keep pointing at a file that is no longer
+        // there. This path is reachable without the asset service — a direct
+        // DELETE /files/{id} — so the pointer is maintained here rather than
+        // only where assets are managed.
+        await OwnerPointerSync.ClearIfPointingAtAsync(
+            dbContext, file.Service, file.OwnerEntityId, file.Id, cancellationToken);
+
         // Deletion honesty: a soft-deleted file's bytes must
         // not linger on disk. Unlink the stored blob (Upload only; an ExternalLink
         // holds no bytes). Best-effort after the row commit — the row is the source
@@ -399,7 +460,7 @@ internal sealed class StoredFileService(
         var file = await dbContext.StoredFiles
             .FirstOrDefaultAsync(f => f.Id == id, cancellationToken)
             ?? throw NotFound();
-        if (file.SecureDestroyed is not null) { return; } // idempotent
+        if (file.SecureDestroyedAt is not null) { return; } // idempotent
 
         // PDPL right-to-erasure. Securely destroy the bytes (crypto-shred the
         // wrapped DEK for an encrypted file, overwrite the header for a plaintext
@@ -416,11 +477,69 @@ internal sealed class StoredFileService(
         file.UpdatedAt = now;
         await dbContext.SaveChangesAsync(cancellationToken);
 
+        // Erasure has to reach the pointer too, or the owning row would still
+        // name a file whose bytes are gone.
+        await OwnerPointerSync.ClearIfPointingAtAsync(
+            dbContext, file.Service, file.OwnerEntityId, file.Id, cancellationToken);
+
         await auditLog.WriteSuccessAsync(
             AuditEvents.FileSecurelyDestroyed,
             actorUserId,
             $"id={id}; service={file.Service}; force-delete",
             cancellationToken);
+    }
+
+    /// <summary>The read half shared by <see cref="ReadContentAsync"/> and
+    /// <see cref="ReadOwnerContentAsync"/>: decrypt per the row, then apply the same
+    /// fail-closed integrity re-check the download route applies. No policy check and
+    /// no success audit — those callers authorize and audit themselves.</summary>
+    private async Task<StoredFileContent?> ReadVerifiedAsync(
+        StoredFile file, CancellationToken cancellationToken)
+    {
+        // An external link owns no bytes here; the caller serves the URL itself.
+        if (file.SourceType == FileSourceType.ExternalLink) { return null; }
+        if (string.IsNullOrEmpty(file.StorageKey)) { return null; }
+
+        var bytes = await storage.ReadAsync(file.StorageKey, file.IsEncrypted, cancellationToken);
+        if (bytes is null) { return null; }
+
+        var tier = FileServicePolicies.Resolve(file.Service).Tier;
+        if (!await IntegrityVerifiedAsync(file, tier, bytes, actorUserId: null, cancellationToken))
+        {
+            return null;
+        }
+        return new StoredFileContent(bytes, file.ContentType);
+    }
+
+    /// <summary>Integrity verification on a private file (SAMA H-29/30). FAIL
+    /// CLOSED: a stored-hash mismatch means the bytes on disk were tampered with (or
+    /// a decrypt returned garbage) — audit it and refuse to serve, never hand the
+    /// caller unverified bytes. Only Confidential+ tiers carry the per-read hash
+    /// check (public images are not hashed on read).</summary>
+    private async Task<bool> IntegrityVerifiedAsync(
+        StoredFile file, FileSensitivityTier tier, byte[] bytes, Guid? actorUserId,
+        CancellationToken cancellationToken)
+    {
+        if (tier < FileSensitivityTier.Confidential || string.IsNullOrEmpty(file.Sha256))
+        {
+            return true;
+        }
+
+        var actual = Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
+        if (string.Equals(actual, file.Sha256, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        logger.LogError(
+            "Integrity mismatch on file {Id} (service={Service}) — refusing to serve tampered bytes.",
+            file.Id, file.Service);
+        await auditLog.WriteFailureAsync(
+            AuditEvents.FileIntegrityFailed,
+            actorUserId,
+            detail: $"id={file.Id}; service={file.Service}; expected={file.Sha256}; actual={actual}",
+            cancellationToken: cancellationToken);
+        return false;
     }
 
     private static bool IsAuthorized(FileServicePolicy policy, StoredFile file, FileAccessContext caller) =>
@@ -521,8 +640,30 @@ internal sealed class StoredFileService(
     // target must be a real, public https host. Ported from AssetService.ValidateLink:
     // require https (no cleartext) and reject literal IPs / localhost / internal TLDs
     // so the trusted SIMF domain can't become an open redirect to an internal service.
-    private static string ValidateExternalLink(string url)
+    //
+    // <para>The rule is layered per policy rather than applied uniformly, because
+    // the two kinds of external link are consumed differently. An image link is
+    // never read by the client: the download endpoint 302s and the browser or Dio
+    // follows it, so any public https URL will do — including the extensionless
+    // placeholder URLs the demo seeds use. A VIDEO link rides the wire verbatim and
+    // BOTH clients classify it by inspecting the string (YouTube id, else a
+    // .mp4/.m3u8 suffix), so one that fails that test is not a video they can play,
+    // and storing it would produce a silent empty hero or a player error rather
+    // than a 400 the admin can act on.</para>
+    private static string ValidateExternalLink(string url, FileServicePolicy policy)
     {
+        // A private file must never become a pointer at somebody else's server.
+        // Nothing else stopped POST /files/link naming a Secret or Confidential
+        // service (an ID document, an avatar), which would have created an
+        // unencrypted, unscanned row that bypasses the whole ingest pipeline while
+        // still being served under this system's name.
+        if (policy.Tier != FileSensitivityTier.Public || policy.Access != FileAccessClass.Public)
+        {
+            throw new ApiException(ErrorCodes.ValidationFailed, 400,
+                "Only public files may be recorded as an external link.",
+                "لا يمكن تسجيل رابط خارجي إلا للملفات العامة.");
+        }
+
         var trimmed = (url ?? string.Empty).Trim();
         if (trimmed.Length is 0 or > 1024
             || !Uri.TryCreate(trimmed, UriKind.Absolute, out var uri)
@@ -533,6 +674,21 @@ internal sealed class StoredFileService(
                 "Provide a valid public https URL (max 1024 characters).",
                 "يرجى إدخال رابط https عام صحيح لا يتجاوز 1024 حرفاً.");
         }
+
+        // A video link must additionally survive the clients' own classifier,
+        // which is the same rule LiveStreamUrlPolicy states for a live feed.
+        // Deliberately NOT applied to image services: it accepts only a YouTube
+        // id or a .m3u8/.mp4 suffix, so it would reject every CDN logo, every
+        // seeded placeholder, and the whole "External link" tab.
+        if (policy.AllowedTypes.Contains(FileType.Video)
+            && !policy.AllowedTypes.Contains(FileType.Image)
+            && !LiveStreamUrlPolicy.IsAllowed(trimmed))
+        {
+            throw new ApiException(ErrorCodes.ValidationFailed, 400,
+                "Provide a YouTube video link or a direct .mp4 / .m3u8 stream URL.",
+                "يرجى إدخال رابط فيديو يوتيوب أو رابط بث مباشر بصيغة mp4 أو m3u8.");
+        }
+
         return trimmed;
     }
 

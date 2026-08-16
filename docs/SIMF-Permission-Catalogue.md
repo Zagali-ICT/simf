@@ -11,8 +11,9 @@ and this document must be corrected in the same changeset.
 
 A **permission** is one *action* on one *page* — the unit of authorisation
 (SIMF-RPM-001 §8, SIMF-DAT-001 §5.1). It is stored as a `Permission` row
-(`Page`, `Action`, `Code`, `DisplayName`) and granted to a role through a
-`RolePermission` row. These two tables pre-exist in the D-110 frozen schema, so
+(`Code`, which is exactly `Page.Action`) and granted to a role through a
+`RolePermission` row. The page, action and display name are not columns: the
+assignment UI takes them from the in-process `PermissionCatalog`. These two tables pre-exist in the D-110 frozen schema, so
 the catalogue is seeded as **data only — no schema change and no migration**.
 
 - **Assignment is roles-only.** A user receives permissions by holding a role;
@@ -151,6 +152,8 @@ Administrator can grant any code to any custom role at runtime.
 | `Gates.Operate` † | GateOperator | `/admin/gates/operator`; operator scan submission |
 | `Gates.ViewOwnReports` † | GateOperator | operator's own daily report |
 | `Operations.View/Edit` | — | `/admin/operations`; registration + archive-visibility toggles |
+| `Editions.View` | — | `/admin/editions`; the open year, when it opened, the last re-issue count |
+| `Editions.Open` | — | opens a year — closes the current one into history and clears EVERY attendee's badge. Split from `View` because that is not an authority a viewer should hold |
 | `OperationLog.View` | — | `/admin/operation-log` |
 | `Logs.View` | — | `/admin/logs` |
 | `Invitations.View` | PublicRelations | `/admin/invitations` list/detail |

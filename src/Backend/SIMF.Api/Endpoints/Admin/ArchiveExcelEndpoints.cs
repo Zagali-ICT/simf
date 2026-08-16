@@ -34,13 +34,15 @@ public sealed class ExportArchiveEndpoint(IAdminArchiveService service, IGridExc
         new("Speakers", row => row.Speakers),
         new("IsActive", row => row.IsActive),
         // Round-trip the dropped edition fields (summary, location, date
-        // label, cover path; appended so the existing column order is unchanged;
-        // import binds by header name).
+        // label; appended so the existing column order is unchanged;
+        // import binds by header name). No cover column: a cover is a file in
+        // the store, not a cell, and exporting the retired path field would
+        // write a column that is always blank — which reads as data loss
+        // rather than as a design.
         new("SummaryEn", row => row.SummaryEn),
         new("SummaryAr", row => row.SummaryAr),
         new("LocationEn", row => row.LocationEn),
         new("LocationAr", row => row.LocationAr),
-        new("CoverImageRelativePath", row => row.CoverImageRelativePath),
         new("DateLabelEn", row => row.DateLabelEn),
         new("DateLabelAr", row => row.DateLabelAr),
     ];
@@ -116,8 +118,6 @@ public sealed class ImportArchiveEndpoint(IAdminArchiveService service, IGridExc
             // absent columns simply stay null).
             LocationEn = NullIfBlank(row.Cells.GetValueOrDefault("LocationEn", string.Empty)),
             LocationAr = NullIfBlank(row.Cells.GetValueOrDefault("LocationAr", string.Empty)),
-            CoverImageRelativePath = NullIfBlank(
-                row.Cells.GetValueOrDefault("CoverImageRelativePath", string.Empty)),
             DateLabelEn = NullIfBlank(row.Cells.GetValueOrDefault("DateLabelEn", string.Empty)),
             DateLabelAr = NullIfBlank(row.Cells.GetValueOrDefault("DateLabelAr", string.Empty)),
         }, ct);

@@ -1,4 +1,4 @@
-// Tests cover the 13-step constraint engine in GateOperatorService:
+﻿// Tests cover the 13-step constraint engine in GateOperatorService:
 // step 2 (operator not assigned → 403); step 3 (QR_UNKNOWN); step 6
 // (HOLDER_NOT_APPROVED); step 11 (PROFILE_TYPE_NOT_ALLOWED + L-15 empty-
 // filtered-list denies all); step 12 (5-second duplicate absorption + Both-
@@ -129,6 +129,53 @@ public sealed class GateScanTests : IClassFixture<SimfApiFactory>
         Assert.Equal(ScanOutcome.Allowed, body.Outcome);
         Assert.NotNull(body.UserProfile);
         Assert.Equal(ScanDirection.CheckIn, body.Direction);  // Both-mode cold start
+    }
+
+    [Fact]
+    public async Task A_disabled_account_is_denied_even_though_its_profile_is_approved()
+    {
+        // Admission lives on the profile, but blocking an account and the dormant
+        // sweep both write Disabled to the ACCOUNT. Until the resolver carried that
+        // across, the gate read an approved profile and let a blocked holder in,
+        // and DenialReasonCode.HolderDisabled was unreachable code.
+        var (token, _) = await CreateAdminAsync();
+        var gate = await CreateGateAsync(token, allowedProfileTypeIds: null,
+            ownAsOperator: true, mode: DirectionMode.Both);
+        var qrId = await CreateVisitorWithQrAsync(approved: true);
+
+        // The badge scans clean while the account is live.
+        var before = await PostScanAsync(gate.Id, qr: qrId, token, idempotencyKey: null);
+        var allowed = (await before.Content
+            .ReadFromJsonAsync<ApiResult<GateScanResponse>>())!.Data!;
+        Assert.Equal(ScanOutcome.Allowed, allowed.Outcome);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            var identityDb = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+            var userId = await appDb.UserProfiles.AsNoTracking()
+                .Where(profile => profile.QrId == qrId)
+                .Select(profile => profile.UserId)
+                .SingleAsync();
+            var user = await identityDb.Users.SingleAsync(u => u.Id == userId!.Value);
+            user.AccountState = AccountState.Disabled;
+            await identityDb.SaveChangesAsync();
+
+            // The profile is deliberately left Approved: that is the state the
+            // disable paths leave behind, and the point of the check.
+            var admission = await appDb.UserProfiles.AsNoTracking()
+                .Where(profile => profile.QrId == qrId)
+                .Select(profile => profile.AdmissionState)
+                .SingleAsync();
+            Assert.Equal(AccountState.Approved, admission);
+        }
+
+        var after = await PostScanAsync(gate.Id, qr: qrId, token, idempotencyKey: null);
+        Assert.Equal(HttpStatusCode.OK, after.StatusCode);
+        var denied = (await after.Content
+            .ReadFromJsonAsync<ApiResult<GateScanResponse>>())!.Data!;
+        Assert.Equal(ScanOutcome.Denied, denied.Outcome);
+        Assert.Equal(DenialReasonCode.HolderDisabled, denied.DenialReasonCode);
     }
 
     [Fact]
@@ -611,14 +658,11 @@ public sealed class GateScanTests : IClassFixture<SimfApiFactory>
             Name = "Test Visitor",
             NationalityId = 682, // ISO 3166-1 numeric — SA
             PlaceOfBirth = "Riyadh",
-            // Admission is owned by the PROFILE (D-877), so the caller's
-            // `approved` flag has to land HERE as well as on the account row -
-            // the gate reads this one. Mirrored rather than hardcoded because
-            // this helper deliberately mints unapproved holders too, and those
-            // cases assert the HolderNotApproved refusal.
-            AdmissionState = approved
-                ? AccountState.Approved
-                : AccountState.PendingApproval,
+            // The gate reads admission off the PROFILE, so `approved` has to drive
+            // this and not only the account above. Left at its PendingApproval
+            // default, every holder is refused HolderNotApproved before the gate
+            // ever reaches the allow-list or direction checks the test is about.
+            AdmissionState = approved ? AccountState.Approved : AccountState.PendingApproval,
             CreatedAt = SimfClock.Now,
         });
         await appDb.SaveChangesAsync();

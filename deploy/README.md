@@ -79,7 +79,7 @@ Build, Test & Publish ──▶ Deploy to IIS
   were meant to deploy simultaneously, but a self-hosted organisation typically
   has **one parallel job slot**: the second job took an agent, initialised, then
   sat waiting for a slot that only freed when the first finished. A run that
-  appears to hang after *Initialize job* with no step output is that (D-892).
+  appears to hang after *Initialize job* with no step output is that (D-904).
   Sequencing costs nothing that was really being had, and pre-production now
   genuinely rehearses first. The `dependsOn` is conditional — on a
   production-only run `DeployPreProduction` is never emitted, and naming a
@@ -92,11 +92,11 @@ Build, Test & Publish ──▶ Deploy to IIS
 | `deployPreProduction` | Deploy to Pre-production (NO agent yet — deploys to PRODUCTION) | **`false`** |
 | `deployProduction` | Deploy to Production | `true` |
 
-> ### ⚠️ There is only one agent, and it is on production (D-894)
+> ### ⚠️ There is only one agent, and it is on production (D-906)
 >
 > The `Default` pool holds a single agent — `server` on `WIN-MAP9VAMAU4Q`, the
 > **production** box (`SIMF APP 01`). Both deployment jobs draw from that pool,
-> and neither environment has a VM resource to bind it elsewhere (D-893), so
+> and neither environment has a VM resource to bind it elsewhere (D-905), so
 > **both jobs run on production**.
 >
 > `DeployPreProduction` therefore rehearses nothing. It deploys the same four
@@ -254,7 +254,7 @@ These are **placeholders** — set them to the real SIMF server values:
    > The one that reads like production is not. Anyone who "fixes" this mapping
    > on sight deploys straight to production believing they are rehearsing.
    > Trust the job names and `displayName`s in `azure-pipelines.yml`, not the
-   > environment string. Pinned by `PipelineTestGateTests` (D-891).
+   > environment string. Pinned by `PipelineTestGateTests` (D-896).
 
    **A missing environment cannot be created by the pipeline.** Azure DevOps
    auto-creates an environment named by a pipeline **only when the YAML was
@@ -275,7 +275,7 @@ These are **placeholders** — set them to the real SIMF server values:
 
    **The names must match the portal exactly**, including case. They are
    `SIMF-Prod` and `SIM-RNSF` — not `Pre-production`/`Production`, which were
-   assumed once and broke every deploy until corrected (D-891). If they ever
+   assumed once and broke every deploy until corrected (D-896). If they ever
    change, edit the two `environment:` values in `azure-pipelines.yml` **and**
    the `expected` array in that test together — the test pins the YAML to a
    reviewed list and cannot see the portal.
@@ -306,7 +306,7 @@ These are **placeholders** — set them to the real SIMF server values:
    has been running these deploys all along.
 
    **Do not add `resourceType: virtualMachine`.** It has been tried twice and
-   broke deploys both times (D-891, D-893). It demands a registered VM resource
+   broke deploys both times (D-903, D-905). It demands a registered VM resource
    and the run dies with *"No resource were found in the environment with ID 3"*.
    It is the right construct for an estate whose servers are registered as VM
    resources; this one is not.
@@ -342,8 +342,18 @@ Administrator**, then **restart the IIS app pool** so `w3wp` picks them up:
 | [set-env-webapp.ps1](set-env-webapp.ps1) | Flutter web bundle | Compiled in by `flutter build web`, not environment variables: `ApiBase` (the EDGE), `OutDir`, optional app key / support contacts / social links |
 | [clean-env.ps1](clean-env.ps1) | any (`-Target`) | Removes the Machine-scope `SIMF_*` secrets (keeps the shared non-secret config unless `-Full`) |
 
-All four carry `ASPNETCORE_ENVIRONMENT` and `SIMF_Storage__LogDirectory`, because
-every host reads both.
+All four carry `ASPNETCORE_ENVIRONMENT` and a log directory, because every host
+reads both — but the log key is per-host like the rest: `SIMF_API_`,
+`SIMF_CP_`, `SIMF_WEB_` and `SIMF_EDGE_` each prefix their own
+`Storage__LogDirectory`.
+
+**The prefix is per host, and a bare `SIMF_` one binds to nothing.** The names
+above were written before the split and are the actual keys, verbatim from the
+templates. Setting the pre-split form leaves the host reading its built-in
+default instead — for the API that means no connection string and a boot
+failure, which reads as a broken deployment rather than as a mistyped variable.
+`clear-env.ps1` is the one place a bare `SIMF_*` is still right: it sweeps the
+whole namespace on purpose, and knows all four prefixes.
 
 ### One script per server - read this before deploying
 

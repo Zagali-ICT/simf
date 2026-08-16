@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/SessionSummaryCommitteeTests.cs
+﻿// Tests: SIMF.Api.Tests/SessionSummaryCommitteeTests.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Ai.Abstractions;
@@ -10,6 +10,7 @@ using SIMF.Contracts.Admin;
 using SIMF.Domain.Programme;
 using SIMF.Infrastructure.Ai;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Application.Files.Abstractions;
 
 namespace SIMF.Infrastructure.Programme;
 
@@ -34,6 +35,7 @@ namespace SIMF.Infrastructure.Programme;
 /// </summary>
 internal sealed class AdminSessionSummaryService(
     SimfAppDbContext appDbContext,
+    IFeedLinkService feedLinks,
     IAiService aiService,
     IAuditLog auditLog,
     TimeProvider timeProvider,
@@ -126,7 +128,7 @@ internal sealed class AdminSessionSummaryService(
             .AsNoTracking()
             .SingleOrDefaultAsync(
                 s => s.SessionId == sessionId && s.IsActive, cancellationToken);
-        return summary is null ? null : ToDetail(session.Code, session.Title, session.TitleArabic, session.LiveCaptions, session.LiveCaptionsArabic, summary);
+        return summary is null ? null : ToDetail(await feedLinks.ResolveAsync(summary.SummaryVideoFileId, cancellationToken), session.Code, session.Title, session.TitleArabic, session.LiveCaptions, session.LiveCaptionsArabic, summary);
     }
 
     public async Task<AdminSessionSummaryDetail> GenerateAsync(
@@ -236,7 +238,7 @@ internal sealed class AdminSessionSummaryService(
             "Session summary {SummaryId} AI-drafted for session {SessionId} by {UserId} (model {Model}).",
             summary.Id, sessionId, actorUserId, result.Model);
 
-        return ToDetail(session.Code, session.Title, session.TitleArabic, session.LiveCaptions, session.LiveCaptionsArabic, summary);
+        return ToDetail(await feedLinks.ResolveAsync(summary.SummaryVideoFileId, cancellationToken), session.Code, session.Title, session.TitleArabic, session.LiveCaptions, session.LiveCaptionsArabic, summary);
     }
 
     public async Task<AdminSessionSummaryDetail> SaveAsync(
@@ -277,7 +279,9 @@ internal sealed class AdminSessionSummaryService(
         // Read the change BEFORE the assignments overwrite the stored values.
         var contentChanged = ChangesPersistedContent(
             summary, keyPoints, keyPointsAr, recommendations, recommendationsAr,
-            speakers, speakersAr, fullText, fullTextAr, summaryVideoUrl);
+            speakers, speakersAr, fullText, fullTextAr,
+            await feedLinks.ResolveAsync(summary.SummaryVideoFileId, cancellationToken),
+            summaryVideoUrl);
 
         summary.KeyPoints = keyPoints;
         summary.KeyPointsArabic = keyPointsAr;
@@ -287,7 +291,11 @@ internal sealed class AdminSessionSummaryService(
         summary.SpeakersArabic = speakersAr;
         summary.FullText = fullText;
         summary.FullTextArabic = fullTextAr;
-        summary.SummaryVideoUrl = summaryVideoUrl;
+        // The summary video becomes a file-store row owned by the SESSION, so
+        // the link can be set before the summary row is ever saved.
+        summary.SummaryVideoFileId = await feedLinks.SetAsync(
+            FileService.SessionSummaryVideo, summary.SessionId,
+            summaryVideoUrl, actorUserId, cancellationToken);
         summary.IsActive = true;
         summary.UpdatedAt = now;
         summary.UpdatedByUserId = actorUserId;
@@ -304,7 +312,7 @@ internal sealed class AdminSessionSummaryService(
             AuditEvents.SessionSummarySaved, actorUserId, sessionId,
             $"summaryId={summary.Id}", cancellationToken);
 
-        return ToDetail(session.Code, session.Title, session.TitleArabic, session.LiveCaptions, session.LiveCaptionsArabic, summary);
+        return ToDetail(await feedLinks.ResolveAsync(summary.SummaryVideoFileId, cancellationToken), session.Code, session.Title, session.TitleArabic, session.LiveCaptions, session.LiveCaptionsArabic, summary);
     }
 
     public Task<AdminSessionSummaryDetail> PublishAsync(
@@ -365,7 +373,7 @@ internal sealed class AdminSessionSummaryService(
             publish ? AuditEvents.SessionSummaryPublished : AuditEvents.SessionSummaryUnpublished,
             actorUserId, sessionId, $"summaryId={summary.Id}", cancellationToken);
 
-        return ToDetail(session.Code, session.Title, session.TitleArabic, session.LiveCaptions, session.LiveCaptionsArabic, summary);
+        return ToDetail(await feedLinks.ResolveAsync(summary.SummaryVideoFileId, cancellationToken), session.Code, session.Title, session.TitleArabic, session.LiveCaptions, session.LiveCaptionsArabic, summary);
     }
 
     public async Task<AdminSessionSummaryDetail> SubmitForReviewAsync(
@@ -393,7 +401,7 @@ internal sealed class AdminSessionSummaryService(
             AuditEvents.SessionSummarySubmittedForReview, actorUserId, sessionId,
             $"summaryId={summary.Id}", cancellationToken);
 
-        return ToDetail(session.Code, session.Title, session.TitleArabic, session.LiveCaptions, session.LiveCaptionsArabic, summary);
+        return ToDetail(await feedLinks.ResolveAsync(summary.SummaryVideoFileId, cancellationToken), session.Code, session.Title, session.TitleArabic, session.LiveCaptions, session.LiveCaptionsArabic, summary);
     }
 
     public async Task<AdminSessionSummaryDetail> ApproveAsync(
@@ -426,7 +434,7 @@ internal sealed class AdminSessionSummaryService(
             AuditEvents.SessionSummaryApproved, actorUserId, sessionId,
             $"summaryId={summary.Id}", cancellationToken);
 
-        return ToDetail(session.Code, session.Title, session.TitleArabic, session.LiveCaptions, session.LiveCaptionsArabic, summary);
+        return ToDetail(await feedLinks.ResolveAsync(summary.SummaryVideoFileId, cancellationToken), session.Code, session.Title, session.TitleArabic, session.LiveCaptions, session.LiveCaptionsArabic, summary);
     }
 
     public async Task<AdminSessionSummaryDetail> ReturnToDraftAsync(
@@ -445,7 +453,7 @@ internal sealed class AdminSessionSummaryService(
             AuditEvents.SessionSummaryReturnedToDraft, actorUserId, sessionId,
             $"summaryId={summary.Id}", cancellationToken);
 
-        return ToDetail(session.Code, session.Title, session.TitleArabic, session.LiveCaptions, session.LiveCaptionsArabic, summary);
+        return ToDetail(await feedLinks.ResolveAsync(summary.SummaryVideoFileId, cancellationToken), session.Code, session.Title, session.TitleArabic, session.LiveCaptions, session.LiveCaptionsArabic, summary);
     }
 
     private async Task<SessionSummary> LoadSummaryAsync(
@@ -521,6 +529,10 @@ internal sealed class AdminSessionSummaryService(
         string recommendations, string recommendationsAr,
         string speakers, string speakersAr,
         string fullText, string fullTextAr,
+        // Resolved by the caller: the video now lives in the file store, so the
+        // "did anything change" question needs the URL behind the pointer, not
+        // the pointer itself - two different ids can hold the same URL.
+        string? currentSummaryVideoUrl,
         string? summaryVideoUrl) =>
         !string.Equals(summary.KeyPoints, keyPoints, StringComparison.Ordinal)
         || !string.Equals(summary.KeyPointsArabic, keyPointsAr, StringComparison.Ordinal)
@@ -530,7 +542,7 @@ internal sealed class AdminSessionSummaryService(
         || !string.Equals(summary.SpeakersArabic, speakersAr, StringComparison.Ordinal)
         || !string.Equals(summary.FullText, fullText, StringComparison.Ordinal)
         || !string.Equals(summary.FullTextArabic, fullTextAr, StringComparison.Ordinal)
-        || !string.Equals(summary.SummaryVideoUrl, summaryVideoUrl, StringComparison.Ordinal);
+        || !string.Equals(currentSummaryVideoUrl, summaryVideoUrl, StringComparison.Ordinal);
 
     /// <summary>Clears the review + approval stamps (back to Draft) AND takes the
     /// summary offline. Called on every content edit and by the explicit
@@ -608,7 +620,10 @@ internal sealed class AdminSessionSummaryService(
         return trimmed;
     }
 
+    // summaryVideoUrl is resolved by the caller: the video is a file-store row
+    // now, and this mapper is static.
     private static AdminSessionSummaryDetail ToDetail(
+        string? summaryVideoUrl,
         string code, string title, string titleArabic,
         string? subtitle, string? subtitleArabic, SessionSummary s) =>
         new(
@@ -640,5 +655,5 @@ internal sealed class AdminSessionSummaryService(
             s.AiDraftFullTextArabic,
             s.AiDraftGeneratedAt,
             // Item #35 — the team summary-video URL round-trips to the editor.
-            s.SummaryVideoUrl);
+            summaryVideoUrl);
 }

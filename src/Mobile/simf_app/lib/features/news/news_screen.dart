@@ -11,11 +11,6 @@ import 'package:simf_app/features/news/data/news_repository.dart';
 import 'package:simf_app/features/news/widgets/news_card.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-// `newsListProvider` lives in `data/news_repository.dart`; re-exported so the
-// existing `show newsListProvider` imports (the Home highlights carousel + the
-// news tests) keep resolving off this screen.
-export 'data/news_repository.dart' show newsListProvider;
-
 /// Page 029 — الأخبار · News (#29, `/news`, Guest+), rebuilt to the KSA-Project
 /// frame **1049:12629 "Media coverage"** on the shared navy shell.
 ///
@@ -25,6 +20,10 @@ export 'data/news_repository.dart' show newsListProvider;
 /// the news list — each row the horizontal frame-1049:12736 card (thumbnail +
 /// gold date + title; no excerpt) — and tapping a row pushes the article screen
 /// (`GET /app/news/{id}`).
+///
+/// Route: `RouteNames.news`.
+/// Data: [newsListProvider], [simfDataConfigProvider].
+/// Perf: lazy — builds children on demand (ListView.separated).
 class NewsScreen extends ConsumerWidget {
   const NewsScreen({super.key});
 
@@ -68,25 +67,21 @@ class NewsScreen extends ConsumerWidget {
               // viewport-filling scroll view so the gesture fires on short
               // content. onRefresh invalidates [newsListProvider] and awaits
               // the re-fetch.
-              error: (_, __) => SimfPullToRefresh(
+              error: (_, __) => SimfRefreshableMessage(
                 onRefresh: () => _refresh(ref),
-                child: SimfPullableHost(
-                  child: SimfErrorState(
-                    message: l10n.newsError,
-                    retryLabel: l10n.retryLabel,
-                    onRetry: () => ref.invalidate(newsListProvider),
-                  ),
+                child: SimfErrorState(
+                  message: l10n.newsError,
+                  retryLabel: l10n.retryLabel,
+                  onRetry: () => ref.invalidate(newsListProvider),
                 ),
               ),
               data: (items) {
                 if (items.isEmpty) {
-                  return SimfPullToRefresh(
+                  return SimfRefreshableMessage(
                     onRefresh: () => _refresh(ref),
-                    child: SimfPullableHost(
-                      child: SimfEmptyState(
-                        icon: Icons.article_outlined,
-                        message: l10n.newsEmpty,
-                      ),
+                    child: SimfEmptyState(
+                      icon: Icons.article_outlined,
+                      message: l10n.newsEmpty,
                     ),
                   );
                 }

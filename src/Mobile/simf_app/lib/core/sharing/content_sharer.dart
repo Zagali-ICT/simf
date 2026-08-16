@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart' show BuildContext, RenderBox, Rect;
+import 'package:flutter/material.dart' show BuildContext, Rect, RenderBox;
 
 import 'package:simf_app/core/sharing/content_sharer_web.dart'
     if (dart.library.io) 'content_sharer_io.dart' as platform;
@@ -10,8 +10,8 @@ import 'package:simf_app/core/sharing/content_sharer_web.dart'
 /// so the OS offers add-to-contact / add-to-calendar rather than plain text. On
 /// web there is no `dart:io` filesystem, so it shares the raw text via the
 /// browser share API. This is the single share path for the app's vCard/ICS
-/// exports (My-Area + Contacts), so the three call sites stay `dart:io`-free and
-/// the project compiles for web.
+/// exports (My-Area + Contacts), so the three call sites stay `dart:io`-free
+/// and the project compiles for web.
 ///
 /// [sharePositionOrigin] is required on iPad / Mac Catalyst — a non-empty
 /// [Rect] within the app's view bounds that anchors the popover. On iPhone and
@@ -57,7 +57,7 @@ Future<void> shareBinaryContent({
 
 /// Returns a sensible [Rect] from [context] for anchoring the iPad / Mac
 /// Catalyst share-sheet popover. Returns null when [context] has no render
-/// object, in which case the caller may omit [sharePositionOrigin] (the share
+/// object, in which case the caller may omit `sharePositionOrigin` (the share
 /// sheet still works on iPhone + Android where a popover is not used).
 ///
 /// The returned rect sits at the bottom-centre of the widget so the popover

@@ -1,16 +1,9 @@
-using SIMF.Common.Enums;
+﻿using SIMF.Common.Enums;
 
 namespace SIMF.Domain.Archive;
 
-/// <summary>
-/// One gallery item, photo or video, belonging to an archive edition. A snapshot
-/// child of <see cref="ArchiveEdition"/>: it holds only the parent foreign key,
-/// is cascade-deleted with the edition, and has no active flag of its own, since
-/// the parent's visibility governs.
-///
-/// <para>These are historical media, so <see cref="Url"/> is stored as given and
-/// never resolved against live speakers or sessions.</para>
-/// </summary>
+/// <summary>A gallery item snapshot on an archive edition, never resolved against live
+/// rows. It has no active flag of its own: the parent edition's visibility governs.</summary>
 public sealed class ArchiveMediaItem
 {
     public Guid Id { get; set; } = Guid.NewGuid();
@@ -20,13 +13,12 @@ public sealed class ArchiveMediaItem
 
     public ArchiveMediaKind Kind { get; set; } = ArchiveMediaKind.Image;
 
-    /// <summary>A path under the media root for an image, or a URL for a
-    /// video.</summary>
-    public string Url { get; set; } = string.Empty;
+    /// <summary>Uploaded bytes for an image, an external link for a video;
+    /// <see cref="Kind"/> picks which file service the write path uses.</summary>
+    public Guid? MediaFileId { get; set; }
 
     public string? CaptionEn { get; set; }
     public string? CaptionAr { get; set; }
 
-    /// <summary>Ascending, within this edition's gallery.</summary>
     public int DisplayOrder { get; set; }
 }

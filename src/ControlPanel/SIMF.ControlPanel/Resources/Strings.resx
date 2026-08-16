@@ -853,8 +853,8 @@
   <data name="Admin.Halls.SeatMode.Open" xml:space="preserve"><value>Open seating (general admission)</value></data>
   <data name="Admin.Halls.Field.Floor" xml:space="preserve"><value>Floor</value></data>
   <data name="Admin.Halls.Field.FloorHint" xml:space="preserve"><value>Optional. Up to 32 characters (e.g. "Ground", "Level 2").</value></data>
-  <data name="Admin.Halls.Field.EquipmentNotes" xml:space="preserve"><value>Equipment + accessibility notes</value></data>
-  <data name="Admin.Halls.Field.EquipmentNotesHint" xml:space="preserve"><value>Optional. Up to 1024 characters.</value></data>
+  <data name="Admin.Halls.Field.FacilityNotes" xml:space="preserve"><value>Equipment + accessibility notes</value></data>
+  <data name="Admin.Halls.Field.FacilityNotesHint" xml:space="preserve"><value>Optional. Up to 1024 characters.</value></data>
   <data name="Admin.Halls.Field.GeofenceLat" xml:space="preserve"><value>Geofence centre latitude</value></data>
   <data name="Admin.Halls.Field.GeofenceLon" xml:space="preserve"><value>Geofence centre longitude</value></data>
   <data name="Admin.Halls.Field.GeofenceRadius" xml:space="preserve"><value>Geofence radius (metres)</value></data>
@@ -1093,6 +1093,7 @@
   <data name="Admin.OrganizationProfile.Field.BioEn" xml:space="preserve"><value>Bio (EN)</value></data>
   <data name="Admin.OrganizationProfile.Field.BioAr" xml:space="preserve"><value>Bio (AR)</value></data>
   <data name="Admin.OrganizationProfile.Field.CurrentYear" xml:space="preserve"><value>Current year</value></data>
+  <data name="Admin.OrganizationProfile.Field.Logo" xml:space="preserve"><value>Forum logo</value></data>
   <data name="Admin.OrganizationProfile.Field.Status" xml:space="preserve"><value>Status</value></data>
   <data name="Admin.OrganizationProfile.Status.Soon" xml:space="preserve"><value>Soon</value></data>
   <data name="Admin.OrganizationProfile.Status.Open" xml:space="preserve"><value>Open</value></data>
@@ -2366,6 +2367,28 @@
   <data name="Admin.RatingConfig.Groups.Delete.Confirm.Message" xml:space="preserve"><value>"{0}" and every question inside it will be deactivated.</value></data>
   <data name="Admin.RatingConfig.Questions.Delete.Confirm.Title" xml:space="preserve"><value>Delete this question?</value></data>
   <data name="Admin.RatingConfig.Questions.Delete.Confirm.Message" xml:space="preserve"><value>"{0}" will be deactivated.</value></data>
+  <data name="Module.EventEdition" xml:space="preserve"><value>Event edition</value></data>
+  <data name="Admin.Editions.Title" xml:space="preserve"><value>Event edition</value></data>
+  <data name="Admin.Editions.Desc" xml:space="preserve"><value>The year the forum is currently running. A badge only opens a gate in the year it was issued for.</value></data>
+  <data name="Admin.Editions.Loading" xml:space="preserve"><value>Loading the current edition…</value></data>
+  <data name="Admin.Editions.LoadFailed" xml:space="preserve"><value>The current edition could not be loaded.</value></data>
+  <data name="Admin.Editions.CurrentYear" xml:space="preserve"><value>Open year</value></data>
+  <data name="Admin.Editions.OpenedAt" xml:space="preserve"><value>Opened</value></data>
+  <data name="Admin.Editions.LastClosedAt" xml:space="preserve"><value>Previous year closed</value></data>
+  <data name="Admin.Editions.NeverClosed" xml:space="preserve"><value>No year has been closed yet</value></data>
+  <data name="Admin.Editions.LastReissueCount" xml:space="preserve"><value>Badges cleared by the last opening</value></data>
+  <data name="Admin.Editions.Open.Heading" xml:space="preserve"><value>Open a new year</value></data>
+  <data name="Admin.Editions.Open.Desc" xml:space="preserve"><value>Closes the current year into history and opens the one you enter. Attendees are not deleted — their records stay, labelled with the year they belong to.</value></data>
+  <data name="Admin.Editions.Open.Warning" xml:space="preserve"><value>This clears every attendee's badge. Everyone attending the new year must be issued a new one — plan the re-issue before you do this, not at the door.</value></data>
+  <data name="Admin.Editions.Open.Year" xml:space="preserve"><value>Year to open</value></data>
+  <data name="Admin.Editions.Open.YearHint" xml:space="preserve"><value>Four digits, later than the open year.</value></data>
+  <data name="Admin.Editions.Open.YearInvalid" xml:space="preserve"><value>Enter a four-digit year between 2000 and 2999.</value></data>
+  <data name="Admin.Editions.Open.Action" xml:space="preserve"><value>Open the year</value></data>
+  <data name="Admin.Editions.Open.Confirm.Title" xml:space="preserve"><value>Open a new year?</value></data>
+  <data name="Admin.Editions.Open.Confirm.Message" xml:space="preserve"><value>This closes {1} into history, opens {0}, and clears the badge of every attendee in the system. Each of them will need a new badge before they can pass a gate. This cannot be undone.</value></data>
+  <data name="Admin.Editions.Open.Confirm.Action" xml:space="preserve"><value>Open the year and clear every badge</value></data>
+  <data name="Admin.Editions.Open.Done" xml:space="preserve"><value>Year {0} is open. {1} badge(s) were cleared and need re-issuing.</value></data>
+  <data name="Admin.Editions.Open.Failed" xml:space="preserve"><value>The year could not be opened.</value></data>
   <data name="Common.Cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="Common.Retry" xml:space="preserve"><value>Try again</value></data>
   <data name="Admin.BusinessMeetings.Party.KindLabel" xml:space="preserve"><value>Participant type</value></data>
@@ -2435,7 +2458,6 @@
   <data name="Admin.Banners.Field.TitleAr" xml:space="preserve"><value>Title (Arabic)</value></data>
   <data name="Admin.Banners.Field.BodyEn" xml:space="preserve"><value>Body (English)</value></data>
   <data name="Admin.Banners.Field.BodyAr" xml:space="preserve"><value>Body (Arabic)</value></data>
-  <data name="Admin.Banners.Field.ImageUrl" xml:space="preserve"><value>Image URL</value></data>
   <data name="Admin.Banners.Field.LinkUrl" xml:space="preserve"><value>Click-through URL</value></data>
   <data name="Admin.Banners.Field.Start" xml:space="preserve"><value>Start (Saudi time)</value></data>
   <data name="Admin.Banners.Field.End" xml:space="preserve"><value>End (Saudi time)</value></data>
@@ -2821,7 +2843,6 @@
   <data name="Admin.News.Field.ExcerptAr" xml:space="preserve"><value>Excerpt (Arabic)</value></data>
   <data name="Admin.News.Field.BodyEn" xml:space="preserve"><value>Body (English)</value></data>
   <data name="Admin.News.Field.BodyAr" xml:space="preserve"><value>Body (Arabic)</value></data>
-  <data name="Admin.News.Field.ImageRelativePath" xml:space="preserve"><value>Image path</value></data>
   <data name="Admin.News.Field.PublishedAt" xml:space="preserve"><value>Publish date</value></data>
   <data name="Admin.News.Field.DisplayOrder" xml:space="preserve"><value>Display order</value></data>
   <data name="Admin.News.Field.IsActive" xml:space="preserve"><value>Active</value></data>
@@ -2895,7 +2916,6 @@
   <data name="Admin.MediaPartners.Edit.Title" xml:space="preserve"><value>Edit media partner</value></data>
   <data name="Admin.MediaPartners.Field.NameEn" xml:space="preserve"><value>Name (English)</value></data>
   <data name="Admin.MediaPartners.Field.NameAr" xml:space="preserve"><value>Name (Arabic)</value></data>
-  <data name="Admin.MediaPartners.Field.Logo" xml:space="preserve"><value>Logo path</value></data>
   <data name="Admin.MediaPartners.Field.Url" xml:space="preserve"><value>Link</value></data>
   <data name="Admin.MediaPartners.Field.DisplayOrder" xml:space="preserve"><value>Display order</value></data>
   <data name="Admin.MediaPartners.Field.IsActive" xml:space="preserve"><value>Active</value></data>
@@ -2932,7 +2952,6 @@
   <data name="Admin.Sponsors.Field.TaglineAr" xml:space="preserve"><value>Tagline (Arabic)</value></data>
   <data name="Admin.Sponsors.Field.About" xml:space="preserve"><value>About (English)</value></data>
   <data name="Admin.Sponsors.Field.AboutAr" xml:space="preserve"><value>About (Arabic)</value></data>
-  <data name="Admin.Sponsors.Field.Logo" xml:space="preserve"><value>Logo path</value></data>
   <data name="Admin.Sponsors.Field.DisplayOrder" xml:space="preserve"><value>Display order</value></data>
   <data name="Admin.Sponsors.Field.IsActive" xml:space="preserve"><value>Active</value></data>
   <data name="Admin.Sponsors.Cancel" xml:space="preserve"><value>Cancel</value></data>
@@ -3033,7 +3052,6 @@
   <data name="Admin.Archive.Field.Attendees" xml:space="preserve"><value>Attendees</value></data>
   <data name="Admin.Archive.Field.Sessions" xml:space="preserve"><value>Sessions</value></data>
   <data name="Admin.Archive.Field.Speakers" xml:space="preserve"><value>Speakers</value></data>
-  <data name="Admin.Archive.Field.CoverImageRelativePath" xml:space="preserve"><value>Cover image path</value></data>
   <data name="Admin.Archive.Field.LocationEn" xml:space="preserve"><value>Location (English)</value></data>
   <data name="Admin.Archive.Field.LocationAr" xml:space="preserve"><value>Location (Arabic)</value></data>
   <data name="Admin.Archive.Field.DateLabelEn" xml:space="preserve"><value>Date label (English)</value></data>
@@ -3041,6 +3059,20 @@
   <data name="Admin.Archive.Field.Gallery" xml:space="preserve"><value>Gallery — one per line: url | image|video | caption</value></data>
   <data name="Admin.Archive.Field.SessionTitles" xml:space="preserve"><value>Session titles — one per line: arabic | english</value></data>
   <data name="Admin.Archive.Field.PastSpeakers" xml:space="preserve"><value>Past speakers — one per line: arabic | english | photo path</value></data>
+  <data name="Admin.Archive.Gallery.IndexLabel" xml:space="preserve"><value>Gallery item</value></data>
+  <data name="Admin.Archive.Gallery.Empty" xml:space="preserve"><value>No gallery items yet.</value></data>
+  <data name="Admin.Archive.Gallery.Add" xml:space="preserve"><value>Add gallery item</value></data>
+  <data name="Admin.Archive.Gallery.Kind" xml:space="preserve"><value>Type</value></data>
+  <data name="Admin.Archive.Gallery.KindImage" xml:space="preserve"><value>Image</value></data>
+  <data name="Admin.Archive.Gallery.KindVideo" xml:space="preserve"><value>Video</value></data>
+  <data name="Admin.Archive.Gallery.Caption" xml:space="preserve"><value>Caption</value></data>
+  <data name="Admin.Archive.Gallery.VideoUrl" xml:space="preserve"><value>Video link</value></data>
+  <data name="Admin.Archive.PastSpeaker.IndexLabel" xml:space="preserve"><value>Past speaker</value></data>
+  <data name="Admin.Archive.PastSpeaker.Empty" xml:space="preserve"><value>No past speakers yet.</value></data>
+  <data name="Admin.Archive.PastSpeaker.Add" xml:space="preserve"><value>Add past speaker</value></data>
+  <data name="Admin.Archive.PastSpeaker.NameAr" xml:space="preserve"><value>Name (Arabic)</value></data>
+  <data name="Admin.Archive.PastSpeaker.NameEn" xml:space="preserve"><value>Name (English)</value></data>
+  <data name="Admin.Archive.PastSpeaker.CountryId" xml:space="preserve"><value>Country code (ISO 3166-1 numeric)</value></data>
   <data name="Admin.Archive.Field.IsActive" xml:space="preserve"><value>Active (visible in public archive)</value></data>
 
   <!-- D-199 — Ratings admin read-only view. -->
@@ -3745,6 +3777,7 @@
   <data name="Admin.BadgeBatches.Loading" xml:space="preserve"><value>Loading batches…</value></data>
   <data name="Admin.BadgeBatches.LoadFailed" xml:space="preserve"><value>Could not load the badge batches.</value></data>
   <data name="Admin.BadgeBatches.None" xml:space="preserve"><value>No badge batches yet — generate a set from the Delegates or Visitors desk.</value></data>
+  <data name="Admin.BadgeBatches.Col.Name" xml:space="preserve"><value>Order</value></data>
   <data name="Admin.BadgeBatches.Col.Summary" xml:space="preserve"><value>Contents</value></data>
   <data name="Admin.BadgeBatches.Col.Total" xml:space="preserve"><value>Total</value></data>
   <data name="Admin.BadgeBatches.Col.Delegate" xml:space="preserve"><value>Delegation</value></data>
@@ -3766,6 +3799,14 @@
   <data name="Admin.BadgeBatches.Revoke.Body" xml:space="preserve"><value>This disables all {0} account(s) in this batch ({1}). This cannot be undone.</value></data>
   <data name="Admin.BadgeBatches.Revoke.Confirm" xml:space="preserve"><value>Revoke</value></data>
   <data name="Admin.BadgeBatches.Revoke.Done" xml:space="preserve"><value>Revoked {0} account(s).</value></data>
+  <data name="Admin.BadgeBatches.TopUp" xml:space="preserve"><value>Add more badges</value></data>
+  <data name="Admin.BadgeBatches.DirectRegistration" xml:space="preserve"><value>Self-registrations</value></data>
+  <data name="Admin.BadgeBatches.TopUp.Title" xml:space="preserve"><value>Add more badges to this order</value></data>
+  <data name="Admin.BadgeBatches.TopUp.Count" xml:space="preserve"><value>How many to add</value></data>
+  <data name="Admin.BadgeBatches.TopUp.Confirm" xml:space="preserve"><value>Add and mint</value></data>
+  <data name="Admin.BadgeBatches.TopUp.Done" xml:space="preserve"><value>Minted {0} more badge(s); the order now holds {1}.</value></data>
+  <data name="Admin.BadgeBatches.TopUp.TypeRequired" xml:space="preserve"><value>Choose the profile type to add.</value></data>
+  <data name="Admin.BadgeBatches.TopUp.CountInvalid" xml:space="preserve"><value>Enter how many badges to add (1 or more).</value></data>
   <data name="Admin.Delegates.Title" xml:space="preserve"><value>Delegates</value></data>
   <data name="Admin.Delegates.Single.Title" xml:space="preserve"><value>Register a delegate</value></data>
   <data name="Admin.Delegates.Single.Hint" xml:space="preserve"><value>A delegate is a normal visitor flagged as a delegation member; their nationality must be a country invited to send a delegation.</value></data>
@@ -3794,6 +3835,10 @@
   <data name="Admin.Delegates.Bulk.Total" xml:space="preserve"><value>Total: {0} badge(s)</value></data>
   <data name="Admin.Delegates.Bulk.Remove" xml:space="preserve"><value>Remove {0}</value></data>
   <data name="Admin.Delegates.Bulk.PickType" xml:space="preserve"><value>Choose a profile type and a count above zero.</value></data>
+  <data name="Admin.Delegates.Bulk.NameRequired" xml:space="preserve"><value>Give the order a name in both English and Arabic.</value></data>
+  <data name="Admin.Delegates.Bulk.Name" xml:space="preserve"><value>Order name</value></data>
+  <data name="Admin.Delegates.Bulk.NameArabic" xml:space="preserve"><value>Order name (Arabic)</value></data>
+  <data name="Admin.Delegates.Bulk.NameHint" xml:space="preserve"><value>Who the badges are for, such as "Ministry of Interior Team".</value></data>
   <data name="Module.AdminVisitorsVipExport" xml:space="preserve"><value>VIP welcome export</value></data>
   <data name="Profile.Avatar.Remove.Confirm.Title" xml:space="preserve"><value>Remove profile photo</value></data>
   <data name="Profile.Avatar.Remove.Confirm.Message" xml:space="preserve"><value>Remove your profile photo? The stored image is deleted and cannot be restored.</value></data>

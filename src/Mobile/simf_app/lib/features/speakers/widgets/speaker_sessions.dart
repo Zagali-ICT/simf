@@ -39,7 +39,7 @@ class SpeakerSessionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hall = session.localizedHall(isArabic);
+    final hall = session.localizedHall(isArabic: isArabic);
     return SimfCard(
       onTap: () => context.pushNamed(
         RouteNames.sessionDetail,
@@ -57,7 +57,7 @@ class SpeakerSessionRow extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
                   Text(
-                    session.localizedTitle(isArabic),
+                    session.localizedTitle(isArabic: isArabic),
                     style: SimfTokens.labelWhiteSemiboldSm,
                   ),
                   if (hall != null) ...<Widget>[

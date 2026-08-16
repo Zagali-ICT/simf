@@ -46,7 +46,9 @@ class SimfRadioPill extends StatelessWidget {
               height: SimfTokens.simfRadioPillHeightMd,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: SimfTokens.accent, width: SimfTokens.simfRadioPillWidthSm),
+                border: Border.all(
+                    color: SimfTokens.accent,
+                    width: SimfTokens.simfRadioPillWidthSm,),
               ),
               alignment: Alignment.center,
               child: selected

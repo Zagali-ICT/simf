@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/OrganizationHeroVideoTests.cs
+﻿// Tests: SIMF.Api.Tests/OrganizationHeroVideoTests.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -41,14 +41,19 @@ internal sealed class OrganizationHeroVideoService(
             FileService.OrganizationHeroVideo, OrganizationProfile.SingletonId,
             content, fileName, contentType, extension, actorUserId, cancellationToken);
 
-        // "One active hero video per profile" — retire every other active one now
-        // that the replacement is safely stored (unlinks its bytes too), keeping the
-        // NEWEST so two concurrent replaces converge on one survivor (never zero).
-        await RetireActiveAsync(keepNewest: true, actorUserId, cancellationToken);
+        // "One active hero video per profile" — retire the others now that the
+        // replacement is safely stored (unlinks their bytes too), keeping this
+        // request's own file and anything newer, so two overlapping replaces can
+        // never leave zero.
+        await RetireActiveAsync(keepId: result.Id, actorUserId, cancellationToken);
 
+        // The pointer, not a URL. CreateStreamedAsync already set it through the
+        // store's own pointer sync; this assignment is what makes the profile row
+        // consistent in the same unit of work, and what covers the case where the
+        // profile row did not exist yet.
         var now = timeProvider.SimfNow();
         var profile = await LoadOrCreateProfileAsync(cancellationToken);
-        profile.BackgroundVideoUrl = servedUrl;
+        profile.BackgroundVideoFileId = result.Id;
         profile.UpdatedAt = now;
         profile.UpdatedBy = actorUserId;
         await db.SaveChangesAsync(cancellationToken);
@@ -68,18 +73,20 @@ internal sealed class OrganizationHeroVideoService(
     public async Task RemoveAsync(
         Guid actorUserId, string servedUrl, CancellationToken cancellationToken = default)
     {
-        await RetireActiveAsync(keepNewest: false, actorUserId, cancellationToken);
+        await RetireActiveAsync(keepId: null, actorUserId, cancellationToken);
 
         var now = timeProvider.SimfNow();
         var profile = await db.OrganizationProfile
             .SingleOrDefaultAsync(p => p.Id == OrganizationProfile.SingletonId, cancellationToken);
 
-        // Clear the URL only when it still points at OUR served route — never wipe a
-        // separately-pasted external / YouTube link the admin set by hand.
-        if (profile is not null
-            && string.Equals(profile.BackgroundVideoUrl, servedUrl, StringComparison.OrdinalIgnoreCase))
+        // Retiring the files above already cleared the pointer through the store,
+        // and only if it still named one of them - so a separately pasted external
+        // link the admin set by hand survives untouched. The full-string comparison
+        // against a recomputed served URL that used to answer this question is gone
+        // with the column it compared: it silently stopped matching whenever the
+        // configured base URL changed, and then quietly skipped the clear.
+        if (profile is not null)
         {
-            profile.BackgroundVideoUrl = null;
             profile.UpdatedAt = now;
             profile.UpdatedBy = actorUserId;
             await db.SaveChangesAsync(cancellationToken);
@@ -114,24 +121,46 @@ internal sealed class OrganizationHeroVideoService(
             string.IsNullOrEmpty(file.OriginalFileName) ? "hero-video.mp4" : file.OriginalFileName);
     }
 
-    // Retire active hero-video files: on an upload (keepNewest) keep the single
-    // NEWEST active and drop the rest; on a remove keep none. Keeping the newest
-    // *active* row (not the caller's just-created id) makes two concurrent replaces
-    // converge on one survivor instead of each deleting the other's file and leaving
-    // zero. Delegates to the file service so the on-disk bytes are unlinked, not just
-    // the row soft-deleted.
-    private async Task RetireActiveAsync(bool keepNewest, Guid actorUserId, CancellationToken ct)
+    /// <summary>Retire the active hero-video files: on an upload keep exactly the
+    /// one just stored, on a remove keep none. Delegates to the file service so the
+    /// on-disk bytes are unlinked rather than only the row soft-deleted.
+    ///
+    /// <para>It keeps the caller's own id rather than "the newest by timestamp",
+    /// which is what it used to do. That ordering fell back to comparing Guids
+    /// whenever two rows shared a <c>CreatedAt</c> - routine, since a request
+    /// stamps one instant - so the survivor was effectively decided by a coin
+    /// flip, and the file the caller had just written could be the one deleted.
+    /// Nothing noticed while the profile stored a constant served route: whichever
+    /// file survived, the URL read the same. It became visible the moment the
+    /// profile started pointing at a specific file, because the pointer named the
+    /// deleted one and the hero went blank. This also matches
+    /// <c>AssetService.RetirePriorActiveAsync</c>, which has always kept an
+    /// explicit id.</para></summary>
+    private async Task RetireActiveAsync(Guid? keepId, Guid actorUserId, CancellationToken ct)
     {
         var active = await db.StoredFiles.AsNoTracking()
             .Where(f => f.IsActive
                 && f.Service == FileService.OrganizationHeroVideo
                 && f.OwnerEntityId == OrganizationProfile.SingletonId)
-            .OrderByDescending(f => f.CreatedAt).ThenByDescending(f => f.Id)
-            .Select(f => f.Id)
+            .OrderBy(f => f.CreatedAt).ThenBy(f => f.Id)
+            .Select(f => new { f.Id, f.CreatedAt })
             .ToListAsync(ct);
-        foreach (var id in keepNewest ? active.Skip(1) : active)
+
+        // On a remove (no keepId) everything goes. On an upload, drop only what
+        // sorts BEFORE the file just stored: never this request's own file, and
+        // never one a concurrent request stored after it. Deleting "everything
+        // but mine" would have had two overlapping uploads delete each other and
+        // leave none, which is the property the old timestamp ordering had and
+        // the first correction lost.
+        var keep = keepId is { } id ? active.FirstOrDefault(f => f.Id == id) : null;
+        foreach (var file in active)
         {
-            await fileService.DeleteAsync(id, actorUserId, ct);
+            if (keep is not null
+                && (file.CreatedAt, file.Id).CompareTo((keep.CreatedAt, keep.Id)) >= 0)
+            {
+                continue;
+            }
+            await fileService.DeleteAsync(file.Id, actorUserId, ct);
         }
     }
 

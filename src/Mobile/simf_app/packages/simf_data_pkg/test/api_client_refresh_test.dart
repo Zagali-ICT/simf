@@ -28,7 +28,7 @@ class _AllUnauthorizedAdapter implements HttpClientAdapter {
   void close({bool force = false}) {}
 }
 
-/// Faithfully models the real [AuthController]: a single-flight refresh that
+/// Faithfully models the real `AuthController`: a single-flight refresh that
 /// itself calls the client's refresh endpoint. Before the fix, a 401 on that
 /// refresh call re-entered this same in-flight future → the refresh awaited
 /// itself → permanent deadlock.

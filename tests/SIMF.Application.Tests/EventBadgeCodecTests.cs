@@ -21,29 +21,61 @@ public class EventBadgeCodecTests
     }
 
     [Theory]
-    [InlineData(1, 1L)]
-    [InlineData(3, 3_000_042L)]
-    [InlineData(0, 0L)]
-    [InlineData(31, 9_999_999_999L)]
-    public void RoundTrips(int profileTypeCode, long sequence)
+    [InlineData(1, 2026)]
+    [InlineData(3, 2027)]
+    [InlineData(0, 2000)]
+    [InlineData(65535, 2999)]
+    public void RoundTrips(int profileTypeCode, int editionYear)
     {
         var key = NewKey();
+        var profileId = Guid.NewGuid();
         var encoded = EventBadgeCodec.Encode(
-            new EventBadgePayload(profileTypeCode, sequence), key, keyVersion: 0);
+            new EventBadgePayload(profileId, editionYear, profileTypeCode), key, keyVersion: 0);
 
         EventBadgeCodec.TryDecode(encoded, key, out var decoded).Should().BeTrue();
+        // The profile id is the one that matters: it is what the server seeks by
+        // primary key, so a byte-order slip here would resolve to nobody.
+        decoded.ProfileId.Should().Be(profileId);
+        decoded.EditionYear.Should().Be(editionYear);
         decoded.ProfileTypeCode.Should().Be(profileTypeCode);
-        decoded.Sequence.Should().Be(sequence);
+    }
+
+    [Fact]
+    public void APayloadThisSystemDidNotAuthorIsRefusedEvenUnderTheRightKey()
+    {
+        // The plaintext is a fixed 20 bytes now, so a decrypt that succeeds but
+        // yields any other width is something else encrypted under the same key.
+        // There is no ASCII check left to lean on: every byte is legitimately
+        // arbitrary once the payload is raw binary.
+        var key = NewKey();
+        var foreign = new byte[] { 1, 2, 3 };
+        var blob = new byte[EventBadgeCodec.NonceBytes + foreign.Length + EventBadgeCodec.TagBytes];
+        System.Security.Cryptography.RandomNumberGenerator.Fill(
+            blob.AsSpan(0, EventBadgeCodec.NonceBytes));
+        using (var aes = new System.Security.Cryptography.AesGcm(key, EventBadgeCodec.TagBytes))
+        {
+            aes.Encrypt(
+                blob.AsSpan(0, EventBadgeCodec.NonceBytes),
+                foreign,
+                blob.AsSpan(EventBadgeCodec.NonceBytes, foreign.Length),
+                blob.AsSpan(EventBadgeCodec.NonceBytes + foreign.Length, EventBadgeCodec.TagBytes));
+        }
+        var encoded = CrockfordBase32.EncodeSymbol(0) + CrockfordBase32.Encode(blob);
+
+        EventBadgeCodec.TryDecode(encoded, key, out _).Should().BeFalse();
     }
 
     [Fact]
     public void StaysShortEnoughToPrintAndStore()
     {
         var encoded = EventBadgeCodec.Encode(
-            new EventBadgePayload(3, 3_000_042L), NewKey(), keyVersion: 0);
+            new EventBadgePayload(Guid.NewGuid(), 2026, 3), NewKey(), keyVersion: 0);
 
-        // The GateScan.QrIdAtScan column is nvarchar(96) after D-820; a badge
-        // that does not fit would be truncated on insert.
+        // GateScans.QrIdAtScan is nvarchar(96), and the gate refuses anything
+        // over that ceiling as "not recognised" BEFORE decrypting — so a payload
+        // that outgrew it would be undiagnosable at a desk with a queue. The
+        // whole reason the fields are packed as raw bytes.
+        encoded.Length.Should().Be(78);
         encoded.Length.Should().BeLessThan(96);
     }
 
@@ -53,20 +85,20 @@ public class EventBadgeCodecTests
         // QrId.Normalise upper-cases every scanned value before it is resolved.
         // This is precisely why the payload is base32 and not base64.
         var key = NewKey();
-        var encoded = EventBadgeCodec.Encode(
-            new EventBadgePayload(7, 12_345L), key, keyVersion: 0);
+        var payload = new EventBadgePayload(Guid.NewGuid(), 2026, 7);
+        var encoded = EventBadgeCodec.Encode(payload, key, keyVersion: 0);
 
         var normalised = encoded.Trim().ToUpperInvariant();
 
         EventBadgeCodec.TryDecode(normalised, key, out var decoded).Should().BeTrue();
-        decoded.Should().Be(new EventBadgePayload(7, 12_345L));
+        decoded.Should().Be(payload);
     }
 
     [Fact]
     public void RejectsAnotherKeysBadge()
     {
         var encoded = EventBadgeCodec.Encode(
-            new EventBadgePayload(3, 42L), NewKey(), keyVersion: 0);
+            new EventBadgePayload(Guid.NewGuid(), 2026, 3), NewKey(), keyVersion: 0);
 
         EventBadgeCodec.TryDecode(encoded, NewKey(), out _).Should().BeFalse();
     }
@@ -76,7 +108,7 @@ public class EventBadgeCodecTests
     {
         var key = NewKey();
         var encoded = EventBadgeCodec.Encode(
-            new EventBadgePayload(3, 42L), key, keyVersion: 0);
+            new EventBadgePayload(Guid.NewGuid(), 2026, 3), key, keyVersion: 0);
 
         // Flip one character in the ciphertext body. A hand-made badge claiming
         // a different profile type must not authenticate.
@@ -114,7 +146,7 @@ public class EventBadgeCodecTests
     public void ExposesTheKeyVersionWithoutDecrypting(int keyVersion)
     {
         var encoded = EventBadgeCodec.Encode(
-            new EventBadgePayload(3, 42L), NewKey(), keyVersion);
+            new EventBadgePayload(Guid.NewGuid(), 2026, 3), NewKey(), keyVersion);
 
         EventBadgeCodec.TryReadKeyVersion(encoded, out var read).Should().BeTrue();
         read.Should().Be(keyVersion);
@@ -124,7 +156,7 @@ public class EventBadgeCodecTests
     public void EncodesDifferentlyEachTimeSoBadgesAreNotCorrelatable()
     {
         var key = NewKey();
-        var payload = new EventBadgePayload(3, 42L);
+        var payload = new EventBadgePayload(Guid.NewGuid(), 2026, 3);
 
         var first = EventBadgeCodec.Encode(payload, key, keyVersion: 0);
         var second = EventBadgeCodec.Encode(payload, key, keyVersion: 0);
@@ -138,7 +170,7 @@ public class EventBadgeCodecTests
     [Fact]
     public void RejectsAKeyThatIsNotAes256()
     {
-        var payload = new EventBadgePayload(3, 42L);
+        var payload = new EventBadgePayload(Guid.NewGuid(), 2026, 3);
         var shortKey = new byte[16];
 
         var encode = () => EventBadgeCodec.Encode(payload, shortKey, keyVersion: 0);
@@ -301,23 +333,30 @@ public sealed class EventBadgeCrossLanguageFixtureTests
         Enumerable.Range(0, EventBadgeCodec.KeyBytes).Select(i => (byte)i).ToArray();
 
     [Theory]
-    [InlineData("1514B39C8841QMMTQCSS7A85NJ8T678WZYZR4E4SE4XRC67CY1GH81VCDWAAG", 1, 3000042L)]
-    [InlineData("1KQ6Z2HH37PJBNQ202Z54CS9V5TWARA380RB0RJ73M5R6XMS1K8", 2, 1L)]
-    [InlineData("1P04044WDQG6Z6APZ3B15AJZ8SW7MRQEJ3EZGX2Z5H4ZSPYFCSYYPYE0598MG", 7, 4999999L)]
-    [InlineData("1ZMYK8EM39BX9SSHK6KEHYNH6EAVK0M914SAY5A8G364DM3K307XK9CEE6A029D7QB0", 30, 9999999999L)]
-    [InlineData("0DDZYS5R9HVKXNQP7KQHR7FDRMPNAZ1ZG2E976DKNF5GGR57Y1AHB3F73NF2G", 1, 3000043L)]
+    [InlineData("15F9NADHE9H94MTGBNK7WMMWB6Q3GTDED9NMBF161ZHXRFWS8KFRCYG8SWRCQ0NP1EJQ0SQXAS0NRA",
+        "11111111-2222-3333-4444-555555555555", 2026, 1)]
+    [InlineData("11Z0KE14GCKKEHCT1MYEYJ6QK1Q4S6WCG5694NS23BMPNBWXYB85TDTN3C3XKQA7JD92EFHFNMQN20",
+        "00000000-0000-0000-0000-000000000001", 2026, 2)]
+    [InlineData("1CVTC4V9WG32MWFARN461D6MK7EZ7A0B7SW1S7QZW4EJCXYSYSFBCZ3M69YD16B3TP591QT4GPXPRG",
+        "aabbccdd-eeff-0011-2233-445566778899", 2027, 7)]
+    [InlineData("Y62XPW76MG7BZRV8SKQRWBDFNJFV6QS1JXAYRGEA12GHP54CVBKWKS32QXD0VP5YM9MH7WHE9R71S8",
+        "ffffffff-ffff-ffff-ffff-ffffffffffff", 2999, 65535)]
+    [InlineData("00Y8GQ011PGAFNGMDY97JQSEVMD552KA0DZNFJ66RVPZ261AZ3NPYQFJPC3EC1KWNV0ETN7K5AQ9Y6",
+        "12345678-9abc-def0-1234-56789abcdef0", 2000, 0)]
     public void Decodes_the_fixtures_the_flutter_scanner_pins(
-        string encoded, int profileTypeCode, long sequence)
+        string encoded, string profileId, int editionYear, int profileTypeCode)
     {
         EventBadgeCodec.TryDecode(encoded, FixtureKey, out var payload)
             .Should().BeTrue();
+        payload.ProfileId.Should().Be(Guid.Parse(profileId));
+        payload.EditionYear.Should().Be(editionYear);
         payload.ProfileTypeCode.Should().Be(profileTypeCode);
-        payload.Sequence.Should().Be(sequence);
     }
 
     [Theory]
-    [InlineData("1514B39C8841QMMTQCSS7A85NJ8T678WZYZR4E4SE4XRC67CY1GH81VCDWAAG", 1)]
-    [InlineData("0DDZYS5R9HVKXNQP7KQHR7FDRMPNAZ1ZG2E976DKNF5GGR57Y1AHB3F73NF2G", 0)]
+    [InlineData("15F9NADHE9H94MTGBNK7WMMWB6Q3GTDED9NMBF161ZHXRFWS8KFRCYG8SWRCQ0NP1EJQ0SQXAS0NRA", 1)]
+    [InlineData("Y62XPW76MG7BZRV8SKQRWBDFNJFV6QS1JXAYRGEA12GHP54CVBKWKS32QXD0VP5YM9MH7WHE9R71S8", 30)]
+    [InlineData("00Y8GQ011PGAFNGMDY97JQSEVMD552KA0DZNFJ66RVPZ261AZ3NPYQFJPC3EC1KWNV0ETN7K5AQ9Y6", 0)]
     public void Reads_the_stamped_key_version_without_the_key(
         string encoded, int expectedVersion)
     {
@@ -326,13 +365,15 @@ public sealed class EventBadgeCrossLanguageFixtureTests
     }
 
     [Theory]
-    [InlineData("1514B39C8841QMMTQCSS7A85NJ8T678WZYZR4E4SE4XRC67CY1GH81VCDWAAG")]
-    [InlineData("1ZMYK8EM39BX9SSHK6KEHYNH6EAVK0M914SAY5A8G364DM3K307XK9CEE6A029D7QB0")]
+    [InlineData("15F9NADHE9H94MTGBNK7WMMWB6Q3GTDED9NMBF161ZHXRFWS8KFRCYG8SWRCQ0NP1EJQ0SQXAS0NRA")]
+    [InlineData("Y62XPW76MG7BZRV8SKQRWBDFNJFV6QS1JXAYRGEA12GHP54CVBKWKS32QXD0VP5YM9MH7WHE9R71S8")]
     public void A_real_badge_fits_the_widened_audit_column(string encoded)
     {
-        // GateScans.QrIdAtScan is nvarchar(96) after the D-820 widening, and the
-        // gate stores the whole blob so the server can decrypt it independently.
-        // A typical badge is 61 characters; the 10-digit-sequence extreme is 67.
+        // GateScans.QrIdAtScan is nvarchar(96), and the gate stores the whole
+        // blob so the server can decrypt it independently. Every badge is now
+        // exactly 78 characters - the payload is fixed-width, so there is no
+        // longer a "typical" and an "extreme" case to reason about.
+        encoded.Length.Should().Be(78);
         encoded.Length.Should().BeLessThanOrEqualTo(96);
     }
 }
