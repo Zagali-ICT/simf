@@ -150,9 +150,11 @@ dotnet test --filter "FullyQualifiedName~AdminInterestsCreate"
 
 ### 12.1.1 Selecting a slice of SIMF.Api.Tests
 
-`SIMF.Api.Tests` is ~2,470 tests over 299 classes and takes about 35 minutes,
-so nobody runs it whole while working on one feature. Every class carries two
-traits for that reason.
+`SIMF.Api.Tests` is ~2,490 tests over 303 classes, so nobody runs it whole while
+working on one feature. Every class carries two traits for that reason. How long
+the whole suite takes depends on the machine and what else is on it: about ten
+minutes on a build agent with the box to itself, and closer to forty on a
+developer machine that is doing anything else at the time.
 
 `Area` names the feature the class covers, from a closed vocabulary of thirteen
 values defined in `tests/SIMF.Api.Tests/TestAreas.cs`:
@@ -161,21 +163,21 @@ values defined in `tests/SIMF.Api.Tests/TestAreas.cs`:
 |------|--------:|--------|
 | `identity` | 42 | sign-in, tokens, second factor, passwords, roles, permissions, device keys |
 | `reporting` | 39 | Excel exports, admin exports, statistics, the reporting endpoints |
-| `programme` | 36 | sessions, speakers, questions, summaries, ratings, programme days, editions |
+| `programme` | 37 | sessions, speakers, questions, summaries, ratings, programme days, editions |
 | `profiles` | 35 | user profiles, registration, admission approval, attendee grids, lookups |
-| `ops` | 33 | workers, health, rate limits, notifications, email, audit, configuration, deployment |
+| `ops` | 35 | workers, health, rate limits, notifications, email, audit, configuration, deployment |
 | `meetings` | 26 | business / speaker / delegation meetings, networking, leads, requests |
 | `content` | 22 | CMS, news, media, sponsors, booths, exhibitors, FAQ, venue map, site settings |
 | `gates` | 16 | gate and hall scanning: arrival, attendance, movement, offline roster |
 | `ai` | 11 | AI providers, routing, prompts, the assistant, transcripts, AI filtering |
 | `security` | 10 | the anonymous surface, permission matrix, PII, secrets, TLS, hardening ratchets |
 | `badges` | 10 | badge issue, self-claim, badge sign-in, offline upload, the walk-in desk |
-| `files` | 10 | central file store, assets, storage providers, upload scanning, encryption at rest |
+| `files` | 11 | central file store, assets, storage providers, upload scanning, encryption at rest |
 | `seats` | 9 | seat reservations, seat changes, bookings, hall capacity and schedule |
 
 `Speed` says whether the class pays for a migrate-and-seed cycle through
-`SimfApiFactory` (`Seeded`, 263 classes) or asserts in process without booting
-the API (`Fast`, 36 classes).
+`SimfApiFactory` (`Seeded`, 265 classes) or asserts in process without booting
+the API (`Fast`, 38 classes).
 
 ```powershell
 # One feature area (the usual working loop)

@@ -21,7 +21,7 @@
 | 1.1 | 2026-05-21 | Engineering & Architecture Team | Architecture-review amendment (see Amendment A): one database with two DbContexts and separate migration histories; GpsPresence as batched append-only telemetry with a retention purge; peak-load indexes; Booking.Status Rejected, Hall geofence, the account-code generalisation; SQL Server Standard edition. |
 | 1.2 | 2026-05-21 | Engineering & Architecture Team | Increment-2 build amendment (see Amendment B): records how the §5.1 Identity & Access entities map onto ASP.NET Core Identity. |
 | 1.3 | 2026-07-19 | Apexium | Corrected the Booking lifecycle to match the built code (reservation-only, auto-confirm): attendee seat reservations are confirmed immediately (Status `Approved`) with no Control Panel approval, held provisionally until gate check-in (`CheckedIn`) and released by the pre-start sweep (`Released`) if not checked in; the `Pending` / `Rejected` approval queue is retained but dormant and always empty. Updated §5.4, §8 and Amendment A.4. |
-| 1.4 | 2026-08-16 | Apexium | Profile-owned admission amendment (see Amendment C): the attendee record, not the account, is the primary registration entity and owns admission; identity documents become a one-to-many child collection; the two mobile attributes collapse to one canonical number; the badge order gains a name and per-profile-type child lines; the yearly edition becomes an entity. Section 8 is rewritten around the constraint posture the schema actually carries (CHECK constraints, filtered unique indexes, blind indexes over encrypted columns). Corrected four claims that were never built or no longer true: the `GateScan` INSTEAD-OF trigger, the persisted statistics snapshot, the shared-database sentence in §5.3.1, and the `CheckedIn` / `Released` booking states, which are not members of the enum at all. A second verification pass over the generated migrations corrected five more: `GateScan` carries **five** indexes and not six (§5.3.2, §A.3); `Notification` is built in `SIMF_Identity`, not `SIMF_App`, and `NotificationDelivery` was never built (§3, §5.9, §A.1); `SubTopic` was never built and a session is tagged with **many** themes rather than belonging to one (§5.4, §7); `Session.IsLive` and `Session.BroadcastMode` do not exist (§5.4); and the bilingual pair convention this document writes as `XAr` / `XEn` is built as `X` / `XArabic` on every live table, that spelling surviving only on the `Archive*` tables and `EmailTemplates` (§C.0). Updated §4, §5.1–§5.5, §5.8, §5.9, §5.11, §5.12, §7, §8 and Amendments A.1, A.3, A.4 and B. §5.6, §5.7 and §5.10 were not re-verified — see Amendment C.7. |
+| 1.4 | 2026-08-16 | Apexium | Profile-owned admission amendment (see Amendment C): the attendee record, not the account, is the primary registration entity and owns admission; identity documents become a one-to-many child collection; the two mobile attributes collapse to one canonical number; the badge order gains a name and per-profile-type child lines; the yearly edition becomes an entity. Section 8 is rewritten around the constraint posture the schema actually carries (CHECK constraints, filtered unique indexes, blind indexes over encrypted columns). Corrected four claims that were never built or no longer true: the `GateScan` INSTEAD-OF trigger, the persisted statistics snapshot, the shared-database sentence in §5.3.1, and the `CheckedIn` / `Released` booking states, which are not members of the enum at all. A second verification pass over the generated migrations tested five more: `GateScan`'s sixth index was declared through the unnamed `HasIndex` overload and never built, which was a defect in the EF configuration and has been fixed rather than documented, so the schema now carries all six (§5.3.2, §A.3); `Notification` is built in `SIMF_Identity`, not `SIMF_App`, and `NotificationDelivery` was never built (§3, §5.9, §A.1); `SubTopic` was never built and a session is tagged with **many** themes rather than belonging to one (§5.4, §7); `Session.IsLive` and `Session.BroadcastMode` do not exist (§5.4); and the bilingual pair convention this document writes as `XAr` / `XEn` is built as `X` / `XArabic` on every live table, that spelling surviving only on the `Archive*` tables and `EmailTemplates` (§C.0). The §8 filtered-index and CHECK-constraint counts were re-counted against the regenerated migrations, and the three per-kind identity-number columns and their three digests, which §8.3 and §C.2 still described as a surviving backstop, have been dropped. Updated §4, §5.1–§5.5, §5.8, §5.9, §5.11, §5.12, §7, §8 and Amendments A.1, A.3, A.4 and B. §5.6, §5.7 and §5.10 were not re-verified — see Amendment C.7. |
 
 ---
 
@@ -224,29 +224,17 @@ the logical keys, and the real reason is the physical split.
 
 #### 5.3.2 Gate Module — `GateScan` indexes
 
-**Five** non-clustered indexes ride the clustered bigint PK. Three of them are
+**Six** non-clustered indexes ride the clustered bigint PK. Three of them are
 filtered, and are counted in the filtered-index total in §8:
 
 | Index | Columns | Filter | Purpose |
 |-------|---------|--------|---------|
 | `IX_GateScan_Gate_ScannedAt` | `(GateId, ScannedAt DESC)` | — | Per-gate firehose; powers admin reports filtered by gate + date range |
+| `IX_GateScan_UserProfile_ScannedAt` | `(UserProfileId, ScannedAt DESC)` | - | Per-visitor history. A full history read spans both outcomes, so it cannot use the filtered index below |
 | `IX_GateScan_UserProfile_LastAllowed` | `(UserProfileId, ScannedAt DESC)` | `WHERE Outcome = Allowed AND UserProfileId IS NOT NULL` | "Currently inside" derivation (design notes §3.3) — single-row seek per visitor |
 | `IX_GateScan_Gate_UserProfile_5sWindow` | `(GateId, UserProfileId, ScannedAt DESC)` | `WHERE UserProfileId IS NOT NULL` | 5-second duplicate absorption per design notes §3.2 |
 | `IX_GateScan_ScannedBy_ScannedAt` | `(ScannedByUserId, ScannedAt DESC)` | — | Operator daily report (`my-reports/today`) |
 | `UX_GateScan_Idempotency` | `(IdempotencyKey, GateId)` | `WHERE IdempotencyKey IS NOT NULL` | Unique filtered — replay enforcement |
-
-A sixth index, an **unfiltered** `IX_GateScan_UserProfile_ScannedAt` over
-`(UserProfileId, ScannedAt DESC)` for per-visitor history, is declared in the EF
-configuration but is **not in the generated schema**, and earlier revisions of
-this document listed it as though it were. It is declared on the same property
-pair as `IX_GateScan_UserProfile_LastAllowed`, and an unnamed `HasIndex` over a
-property set EF has already seen reconfigures that index rather than adding a
-second one — so the later declaration silently renames the earlier and applies
-its filter, leaving one index where two were intended. A full per-visitor history
-read spans both outcomes, so it cannot use the filtered index at all and has **no
-supporting index**: it scans. The count above is what the migration creates;
-correcting the configuration is a code change outside this document, and this
-note stays until the schema carries both indexes.
 
 ### 5.4 Forum Programme
 
@@ -542,9 +530,8 @@ how a filter gets dropped as redundant:
    production on the second one. `AttendeeProfile.UserId` is the load-bearing
    example: an attendee need not hold an account, so most rows at a walk-in desk
    are null, and without `WHERE [UserId] IS NOT NULL` the second walk-in of the
-   event is rejected with a duplicate-key error. The QR identifier, the
-   registration reference and the three document digests carry the same shape for
-   the same reason.
+   event is rejected with a duplicate-key error. The QR identifier and the
+   registration reference carry the same shape for the same reason.
 2. **The rule applies only to live rows.** Soft delete means a deactivated row
    still occupies the table, so uniqueness of a code or a name is scoped
    `WHERE [IsActive] = 1`; releasing a seat keeps the row, so a seat's uniqueness
@@ -556,7 +543,7 @@ how a filter gets dropped as redundant:
    hall only among requests in a state that actually holds the slot, so the filter
    names the statuses rather than the whole table.
 
-As of this revision `SIMF_App` carries 38 filtered indexes, 32 of them unique, and
+As of this revision `SIMF_App` carries 37 filtered indexes, 30 of them unique, and
 `SIMF_Identity` carries 5, 4 of them unique. Counts are given as a scale, not a
 contract; the migrations are the authority.
 
@@ -571,22 +558,24 @@ because encrypting a digest would destroy the determinism the index depends on.
 The duplicate-identity rule is enforced on the digest, never on the number.
 
 One consequence is worth stating because it is the reason documents became a child
-collection (§5.2). The attendee profile still carries three **per-kind** digest
+collection (§5.2). The attendee profile used to carry three **per-kind** digest
 columns, one per document kind, each with its own filtered unique index. A
 per-kind index can only ever catch a repeat of the **same** kind: somebody
-registering once on a passport and again on an iqama passes all three, because
-the two digests never land in the same column. The child table has **one** digest
+registering once on a passport and again on an iqama passed all three, because
+the two digests never landed in the same column. The child table has **one** digest
 column holding every document's digest, so a single unique index over it sees the
-cross-kind repeat as well. That index is the guard; the three on the profile are a
-backstop that remains only while their readers migrate.
+cross-kind repeat as well. The three per-kind number columns and their three
+digests have since been dropped, so the unique index over
+`ProfileIdentityDocuments.NumberHash` is now the only uniqueness guard on an
+identity number.
 
 The child index is referenced **by name** in the code that translates a
 duplicate-key violation into a `409 DUPLICATE_IDENTITY`, so its name is pinned
 rather than left to EF's convention: a conventional name would change silently
 under an index-shape edit and turn a clean 409 into an uncaught 500. It is
-deliberately **not** filtered, unlike its siblings, because the column is required
-on that table — a document row exists only when there is a number to put in it,
-so there are no nulls to exempt.
+deliberately **not** filtered, unlike the unique indexes of §8.2, because the
+column is required on that table — a document row exists only when there is a
+number to put in it, so there are no nulls to exempt.
 
 The digest index is global, not scoped to an edition. A returning attendee keeps
 one profile row across editions — the year on the row is re-stamped — so their
@@ -595,10 +584,13 @@ per-edition scope to permit.
 
 ### 8.4 CHECK constraints
 
-`SIMF_App` carries 46 CHECK constraints; `SIMF_Identity` carries none, its shape
-being ASP.NET Core Identity's. They exist because most enums on this schema are
-stored as a plain `int`, which the database on its own would let hold any 32-bit
-number. Three patterns account for nearly all of them:
+`SIMF_App` carries 63 CHECK constraints, and `SIMF_Identity` two:
+`CK_AccountCodes_OneOwner`, which pins an account code to exactly one of its two
+possible owners, and `CK_DeviceKeys_ChallengePin`, a co-presence pin over a
+challenge and its expiry. The rest of that database's shape is ASP.NET Core
+Identity's, which is why it carries so few. They exist because most enums on this
+schema are stored as a plain `int`, which the database on its own would let hold
+any 32-bit number. Three patterns account for nearly all of them:
 
 - **Range pins.** An enum column is constrained to its declared range
   (`[Direction] BETWEEN 0 AND 1`). Appending a new enum member means widening the
@@ -684,7 +676,7 @@ kept off the booking and authentication hot paths, and governed by an explicit
 In addition to the foreign-key indexes, the peak-load reads are served by:
 `HallAttendance` on `(SessionId, UserProfileId)` filtered to open rows, on
 `(HallId, Leave)` for the live per-hall count, and on `UserProfileId` for the
-per-attendee history; `GateScan` on the five shapes in §5.3.2 (the venue-entry
+per-attendee history; `GateScan` on the six shapes in §5.3.2 (the venue-entry
 record this amendment originally named is `GateScan`); `Notification` on
 `(UserId, CreatedAt)` for the bell and the paged grid, and on `(UserId, ReadAt)`
 for the polled unread count — both in `SIMF_Identity`, where that table is built;
@@ -753,7 +745,7 @@ position recorded in D-895) changes facts this model asserted, not only the name
 it used for them. The changes below are authoritative and amend §3, §4, §5.1–§5.5,
 §5.8, §5.9, §5.11, §5.12, §7, §8 and Amendments A.1, A.3, A.4 and B. §C.7 records
 which sections were **not** re-verified, and §C.8 the five further statements a
-second pass over the generated migrations refuted.
+second pass over the generated migrations tested against the built schema.
 
 ### C.0 Logical name to built name — extends Amendment B
 Amendment B recorded how §5.1 is *realised*; this document keeps logical names
@@ -828,10 +820,12 @@ a single unique index over one digest column catches a cross-kind duplicate that
 no arrangement of per-kind indexes can see, and the child rows cascade with the
 profile so an orphan digest cannot occupy the index for ever.
 
-Like the mobile pair in C.3, the profile's three per-kind number columns and their
-three digests remain in the schema and are written in lockstep with the child
-rows, so the two can never disagree while both exist. They are superseded, not
-alternatives; nothing should be added that reads them, and the three shipped JSON
+Unlike the mobile pair in C.3, the profile's three per-kind number columns and
+their three digests are **gone**. They were kept for a time and written in
+lockstep with the child rows, so the two could not disagree while both existed,
+and they were dropped once nothing read them. The unique index over
+`ProfileIdentityDocuments.NumberHash` is now the only uniqueness guard on an
+identity number; there is no per-kind backstop behind it. The three shipped JSON
 field names stay on the wire whatever the storage does.
 
 ### C.3 One mobile number — amends §5.2
@@ -887,15 +881,23 @@ is openly out of date in a named place.
 ### C.8 Second verification pass against the regenerated migrations
 The corrections in C.1 to C.6 were written against the schema as specified. A
 second pass read the two generated `InitialCreate` migrations column by column and
-found five further statements this document was still making that the built
-schema does not support. They are recorded here rather than folded silently into
-the sections above, because four of them predate this programme entirely and a
-reader tracing an old design note needs to know they were checked and refuted.
+found five further statements this document was making that the built schema did
+not support. They are recorded here rather than folded silently into the sections
+above, because four of them predate this programme entirely and a reader tracing
+an old design note needs to know they were checked. The first of the five turned
+out not to be a documentation error at all: the schema was wrong, and it has been
+corrected rather than described.
 
-- **`GateScan` has five indexes, not six** (§5.3.2, §A.3). The sixth is declared
-  in the EF configuration and never reaches the schema, for the reason set out in
-  §5.3.2. This is a defect in the configuration, not in the model, and the
-  document now states what the migration creates.
+- **`GateScan`'s sixth index was declared and never built, and has been fixed**
+  (§5.3.2, §A.3). `IX_GateScan_UserProfile_ScannedAt` and
+  `IX_GateScan_UserProfile_LastAllowed` cover the same property pair, and both
+  were declared through the **unnamed** `HasIndex` overload. That overload is
+  keyed on the property set, so the second call reconfigured the first rather
+  than adding an index: the later declaration renamed the earlier one and applied
+  its filter. One index reached the schema where two were intended, and a full
+  per-visitor history read, which spans both outcomes and so cannot use the
+  filtered index, had nothing to seek. Both now use the named overload, the
+  regenerated migration builds both, and §5.3.2 lists six.
 - **`Notification` is built in `SIMF_Identity`** (§3, §5.9, §A.1), the sole
   departure from "`SIMF_App` holds all other tables", and
   **`NotificationDelivery` was never built** — so neither was the
@@ -911,8 +913,13 @@ reader tracing an old design note needs to know they were checked and refuted.
   `EmailTemplates`.
 
 Nothing in C.1 to C.6 was contradicted by this pass: the profile, document,
-mobile, badge-order, edition and §8 statements all held, including the §8 counts,
-which were re-counted against the migrations rather than carried forward.
+mobile, badge-order and edition statements all held. The §8 **counts** mostly did
+not. They were carried forward rather than re-counted: a later pass over the
+regenerated migrations corrected the App filtered-index and CHECK-constraint
+totals and recorded the two CHECK constraints `SIMF_Identity` carries. Only the
+Identity filtered-index figures survived that re-count. C.2 was overtaken
+separately: the per-kind identity-number and digest columns it described as
+surviving have since been dropped, and it now says so.
 
 ### C.9 Freeze status at this revision
 The D-110 schema freeze is **re-instated** and every lift taken during this

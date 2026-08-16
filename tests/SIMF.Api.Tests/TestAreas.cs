@@ -83,4 +83,14 @@ public static class TestAreas
         Seats,
         Security,
     };
+
+    /// <summary>Every legal Speed value. Guarded on the same terms as
+    /// <see cref="All"/>: a class carrying an Area but no Speed is invisible to
+    /// BOTH `Speed=Fast` and `Speed=Seeded`, so it disappears from every filtered
+    /// run while still looking correctly labelled.</summary>
+    public static readonly IReadOnlySet<string> AllSpeeds = new HashSet<string>(StringComparer.Ordinal)
+    {
+        Fast,
+        Seeded,
+    };
 }
