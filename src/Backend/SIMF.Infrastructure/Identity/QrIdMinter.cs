@@ -20,9 +20,6 @@ namespace SIMF.Infrastructure.Identity;
 /// </summary>
 internal sealed class QrIdMinter(SimfAppDbContext dbContext) : IQrIdMinter
 {
-    /// <summary>Crockford base32 alphabet — excludes I, L, O, U and 0/1.</summary>
-    private const string Alphabet = "23456789ABCDEFGHJKMNPQRSTVWXYZ";
-    private const int Length = 12;
     private const int MaxAttempts = 8;
 
     public async Task<string> MintIfMissingAsync(
@@ -35,7 +32,7 @@ internal sealed class QrIdMinter(SimfAppDbContext dbContext) : IQrIdMinter
 
         for (var attempt = 0; attempt < MaxAttempts; attempt++)
         {
-            var candidate = Generate();
+            var candidate = QrIdCandidate.Generate();
             var clash = await dbContext.UserProfiles
                 .AsNoTracking()
                 .AnyAsync(p => p.QrId == candidate, cancellationToken);
@@ -49,15 +46,4 @@ internal sealed class QrIdMinter(SimfAppDbContext dbContext) : IQrIdMinter
             "Could not mint a unique QR id after several attempts — exhaustion is implausible at this scale.");
     }
 
-    private static string Generate()
-    {
-        Span<char> buffer = stackalloc char[Length];
-        Span<byte> entropy = stackalloc byte[Length];
-        System.Security.Cryptography.RandomNumberGenerator.Fill(entropy);
-        for (var i = 0; i < Length; i++)
-        {
-            buffer[i] = Alphabet[entropy[i] % Alphabet.Length];
-        }
-        return new string(buffer);
-    }
 }
