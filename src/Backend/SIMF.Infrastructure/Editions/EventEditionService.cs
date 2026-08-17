@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/EventEditionTests.cs
+﻿// Tests: SIMF.Api.Tests/EventEditionTests.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -7,6 +7,7 @@ using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.Editions;
+using SIMF.Infrastructure.Identity;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Editions;
@@ -90,6 +91,15 @@ internal sealed class EventEditionService(
         // A set-based UPDATE, not a load-and-loop: this is the whole attendee
         // table, and materialising it to write two columns would be the slowest
         // possible way to do it at exactly the moment an operator is waiting.
+        // Who is carried forward has to be captured BEFORE the clear: afterwards a
+        // profile that never held a badge is indistinguishable from one that just
+        // lost it, and re-minting for the first group would hand a badge to someone
+        // who was never issued one.
+        var carriedForward = await appDbContext.UserProfiles
+            .Where(profile => profile.QrId != null)
+            .Select(profile => profile.Id)
+            .ToListAsync(cancellationToken);
+
         var cleared = await appDbContext.UserProfiles
             .Where(profile => profile.QrId != null)
             .ExecuteUpdateAsync(
@@ -97,6 +107,40 @@ internal sealed class EventEditionService(
                     .SetProperty(profile => profile.QrId, (string?)null)
                     .SetProperty(profile => profile.EditionYear, year),
                 cancellationToken);
+
+        // Then issue the new badges here, rather than leaving the column null for
+        // something later to fill. Badges reach attendees by email and by being
+        // printed at the desk, and both read the QR off the row: a null column is a
+        // badge that cannot be sent or printed, and an already-approved attendee has
+        // no route back to one - ApproveAsync refuses anything not PendingApproval,
+        // and the bulk mint only creates new rows. Clearing without re-issuing left
+        // exactly that hole, which is why LastReissueCount counts re-issues.
+        //
+        // Minted in one pass in memory. The candidate space is 30^12, every prior
+        // value was just cleared, so nothing in the table can collide and only
+        // in-batch uniqueness needs enforcing - the UNIQUE index is the backstop.
+        // This does materialise the carried-forward rows, which the set-based clear
+        // above deliberately avoids; a per-row unique value cannot be written any
+        // other way, and it buys the operator a table of usable badges instead of a
+        // table of blanks.
+        if (carriedForward.Count > 0)
+        {
+            var minted = new HashSet<string>(StringComparer.Ordinal);
+            var profiles = await appDbContext.UserProfiles
+                .Where(profile => carriedForward.Contains(profile.Id))
+                .ToListAsync(cancellationToken);
+
+            foreach (var profile in profiles)
+            {
+                string candidate;
+                do
+                {
+                    candidate = QrIdCandidate.Generate();
+                }
+                while (!minted.Add(candidate));
+                profile.QrId = candidate;
+            }
+        }
 
         row.Year = year;
         row.OpenedAt = now;
