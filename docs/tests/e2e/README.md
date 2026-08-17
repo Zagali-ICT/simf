@@ -165,6 +165,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/attendance` | [`cp-admin-attendance.md`](cp-admin-attendance.md) | E2E-ATND-001..014 |
 | `/admin/sessions/live-hall` | [`cp-admin-session-live-hall.md`](cp-admin-session-live-hall.md) | E2E-SLH-001..015 |
 | _system-wide_ — Saudi local-time display (CP + app) | [`cp-timezone-display.md`](cp-timezone-display.md) | E2E-TZ-001..006 |
+| _system-wide_ - the Control Panel grid contract every server-paged list page must satisfy (sort / filter / search / page / count / tiebreak, and the bilingual 400 that replaces a silently widened result set); representative route `/admin/themes` over `POST /admin/themes/list` | [`cp-grid-contract.md`](cp-grid-contract.md) | E2E-GRID-001..020 |
 
 ### Control Panel — Account & auth (not in main nav)
 
@@ -339,13 +340,21 @@ again without failing the build. They had been left at the 2026-06-02 figures �
 "74 pages / ~1044 scenarios" — while the catalogue more than doubled, and were
 being quoted in planning as if current.
 
-- **Pages catalogued:** 197 (97 Control Panel + 69 mobile + 19 Website + 10
-  API-only surfaces + 1 system-wide). One of them — `cp-admin-companies.md` —
-  is **retired**: its route was renamed away and it now carries no live scenarios.
-- **Total scenarios:** 3133 Coverage-matrix rows, every id distinct. That
+- **Pages catalogued:** 198, now broken down by filename prefix so the parts add
+  up to the whole: 98 `cp-*` + 70 `mobile-*` + 19 `web-*` + 10 `api-*` API-only
+  surfaces + 1 `bi-*` cross-surface flow. Two of the `cp-*` files are
+  cross-cutting rather than per-page and carry no route of their own
+  (`cp-timezone-display.md`, `cp-grid-contract.md`). One of them,
+  `cp-admin-companies.md`, is **retired**: its route was renamed away and it now
+  carries no live scenarios. (The previous breakdown read "97 Control Panel + 69
+  mobile + 19 Website + 10 API-only surfaces + 1 system-wide", which summed to
+  196 against a pinned total of 197. Only the two bold totals are
+  machine-checked, so the parts had drifted unnoticed; counting by prefix is
+  reproducible with one `ls`.)
+- **Total scenarios:** 3153 Coverage-matrix rows, every id distinct. That
   includes the **360** generated element-sweep rows (`E2E-{NS}-ELS-001/002`, two
   per live page — see `tools/qa/generate_els_rows.py`); the hand-authored
-  functional total is 2773.
+  functional total is 2793.
 - **Authored:** all pages. The D-133 "pending" stubs are fully authored, and
   every event-module and P2–P5 page added since has its own file.
 - **Execution:** the canonical run today is a Chrome DevTools MCP browser pass
