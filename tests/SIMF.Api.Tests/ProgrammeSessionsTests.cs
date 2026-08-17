@@ -98,6 +98,9 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
                 ReviewSubmittedAt = published ? SimfClock.Now : null,
                 ApprovedAt = published ? SimfClock.Now : null,
                 PublishedAt = published ? SimfClock.Now : null,
+                // CK_SessionSummaries_PublishPin: a published row names its publisher,
+                // as the service always does.
+                PublishedByUserId = published ? Guid.NewGuid() : null,
                 CreatedAt = SimfClock.Now,
             };
             db.SessionSummaries.AddRange(
