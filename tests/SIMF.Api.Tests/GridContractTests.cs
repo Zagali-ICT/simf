@@ -54,19 +54,17 @@ public sealed partial class GridContractTests
     [Fact]
     public void The_number_of_hand_written_sort_switches_only_goes_down()
     {
-        // The seam replaced 45 of these. The ones left are deliberate: they resolve
-        // across BOTH DbContexts, so the id list has to be built before the paged
-        // query can be composed and there is no single IQueryable to hand over
-        // (D-157 forbids the join). InterestRepository is a repository, not a list
-        // service. Any NEW entry here is a regression: it means someone hand-rolled
-        // a filter/sort block instead of declaring columns.
+        // One left, and it is not a list service: InterestRepository backs the app's
+        // interest picker, not a Control Panel grid, so it has no GridQuery to honour
+        // and nothing to declare. Everything that serves a grid now declares columns.
+        //
+        // This list only ever shrinks. A NEW entry means someone hand-rolled a
+        // filter/sort block instead of declaring columns, which is how a sort key the
+        // page never sends, and a filter box that quietly returns every row, both got
+        // into production.
         string[] allowed =
         [
-            "AdminAccountService.cs",
-            "AdminAttendeeService.cs",
-            "AdminInvitationService.cs",
             "InterestRepository.cs",
-            "SeatReservationService.cs",
         ];
 
         var infrastructure = Path.Combine(RepoRoot(), "src", "Backend", "SIMF.Infrastructure");

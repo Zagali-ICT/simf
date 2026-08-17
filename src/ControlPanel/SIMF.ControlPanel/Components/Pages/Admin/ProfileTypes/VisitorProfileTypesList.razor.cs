@@ -19,6 +19,7 @@ public partial class VisitorProfileTypesList
         Top = 20,
         Filters = new Dictionary<string, string>
         {
+            ["userType"] = "Visitor",
             ["isVisitor"] = "true",
         },
     };
@@ -36,8 +37,10 @@ public partial class VisitorProfileTypesList
 
     private async Task OnQueryChangedAsync(GridQuery next)
     {
-        // Always re-apply the filter — the grid drops filter keys on
-        // sort/page change, but this pin is structural to the page.
+        // Both pins are structural to this page: the grid drops filter keys on a
+        // sort or page change, and dropping either one would surface partner rows on
+        // the audience queue or audience rows on the partner queue.
+        next.Filters["userType"] = "Visitor";
         next.Filters["isVisitor"] = "true";
         _query = next;
         await LoadAsync();
