@@ -380,24 +380,23 @@ internal sealed class AdminHallService(
     }
 
     /// <summary>Guards a hall Capacity reduction. The new capacity must be
-    /// ≥ the hall's seat-layout total (rows × seats) AND ≥ the largest active
+    /// ≥ the hall's seat-layout total AND ≥ the largest active
     /// (held, not-released) reservation count on any single session held in this
     /// hall. Throws <see cref="ErrorCodes.HallCapacityBelowUsage"/> otherwise.
-    /// RowLabels is a comma-separated CSV (same format ParseRowLabels reads) so the
-    /// layout total is computed in memory after projecting both columns; all
-    /// queries stay within SimfAppDbContext (no cross-DB access).</summary>
+    /// RowLabels and SeatCounts are comma-separated CSVs (the same format
+    /// ParseRowLabels / ExpandSeatCounts read) so the layout total is computed in
+    /// memory after projecting the columns; all queries stay within
+    /// SimfAppDbContext (no cross-DB access).</summary>
     private async Task EnsureCapacityNotBelowUsageAsync(
         Guid hallId, int newCapacity, CancellationToken cancellationToken)
     {
         var layout = await dbContext.HallSeatLayouts.AsNoTracking()
             .Where(l => l.HallId == hallId)
-            .Select(l => new { l.RowLabels, l.SeatsPerRow })
+            .Select(l => new { l.RowLabels, l.SeatsPerRow, l.SeatCounts })
             .SingleOrDefaultAsync(cancellationToken);
         var layoutTotal = layout is null
             ? 0
-            : (layout.RowLabels ?? string.Empty)
-                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .Length * layout.SeatsPerRow;
+            : SeatLayoutTotal(layout.RowLabels, layout.SeatsPerRow, layout.SeatCounts);
 
         var maxActivePerSession = await dbContext.SeatReservations.AsNoTracking()
             .Where(r => r.ReleasedAt == null)
@@ -415,5 +414,47 @@ internal sealed class AdminHallService(
                 $"Capacity cannot drop below what this hall already commits ({committed}).",
                 $"لا يمكن خفض السعة دون ما تلتزم به هذه القاعة بالفعل ({committed}).");
         }
+    }
+
+    /// <summary>The seat total a layout actually commits. SeatsPerRow is only the
+    /// uniform row width while SeatCounts is null; once the grid is ragged it holds
+    /// max(SeatCounts), so rows × SeatsPerRow overstates the total and rejected
+    /// capacity reductions that were legitimate: rows of 20, 5, 5 really commit 30
+    /// seats, not 60.
+    /// <para>A SeatCounts CSV that does not parse, or whose length no longer matches
+    /// the row set, falls back to the uniform product. That is the LARGER of the two
+    /// figures, so corrupt layout state can only ever make this guard stricter,
+    /// never let a reduction through that the seat grid cannot honour. Reporting the
+    /// corruption belongs to the seat paths that own the column
+    /// (SeatReservationService.ExpandSeatCounts raises a deterministic 500 there);
+    /// a hall rename is the wrong place to surface it.</para></summary>
+    private static int SeatLayoutTotal(string? rowLabels, int seatsPerRow, string? seatCounts)
+    {
+        var rowCount = (rowLabels ?? string.Empty)
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Length;
+        var uniformTotal = rowCount * seatsPerRow;
+        if (string.IsNullOrWhiteSpace(seatCounts))
+        {
+            return uniformTotal;
+        }
+
+        var parts = seatCounts.Split(
+            ',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (parts.Length != rowCount)
+        {
+            return uniformTotal;
+        }
+
+        var raggedTotal = 0;
+        foreach (var part in parts)
+        {
+            if (!int.TryParse(part, out var seatsInRow))
+            {
+                return uniformTotal;
+            }
+            raggedTotal += seatsInRow;
+        }
+        return raggedTotal;
     }
 }

@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using ClosedXML.Excel;
@@ -45,7 +45,7 @@ public sealed class MediaExcelTests : IClassFixture<SimfApiFactory>
         var adminToken = await CreateAdministratorAndSignInAsync();
         await CreateMediaAsync(adminToken, MediaKind.Image, $"Export A {Guid.NewGuid():N}", null);
         await CreateMediaAsync(adminToken, MediaKind.Video, $"Export B {Guid.NewGuid():N}",
-            "https://example.test/video");
+            "https://cdn.example.com/stream/hero.mp4");
 
         var response = await PostAuthAsync(
             "/api/v1/admin/media/export",
@@ -70,7 +70,7 @@ public sealed class MediaExcelTests : IClassFixture<SimfApiFactory>
         var videoTitle = $"Imported Video {Guid.NewGuid():N}";
         var workbook = BuildMediaWorkbook("Media",
             ("Image", imageTitle, string.Empty, 3),
-            ("Video", videoTitle, "https://example.test/clip", 4));
+            ("Video", videoTitle, "https://cdn.example.com/stream/clip.mp4", 4));
 
         var response = await PostFileAuthAsync(
             "/api/v1/admin/media/import", workbook, adminToken);

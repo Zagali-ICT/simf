@@ -12,7 +12,7 @@ namespace SIMF.Infrastructure.Media;
 /// Public (anonymous) read of the active media gallery.
 /// Paged + optional album / kind filter. Image / thumbnail bytes now resolve from
 /// the unified <c>StoredFile</c> store via the pointer columns
-/// <c>MediaItem.ImageFileId</c> / <c>ThumbnailFileId</c>; the two serve routes,
+/// <c>MediaItem.ImageFileId</c>; the serve route,
 /// the presence-only <c>imageUrl</c>/<c>thumbnailUrl</c> wire keys and the
 /// content-type all stay byte-identical.
 /// </summary>
@@ -61,7 +61,10 @@ internal sealed class PublicMediaService(
                 item.Album,
                 item.AlbumArabic,
                 HasImage = item.ImageFileId != null,
-                HasThumbnail = item.ThumbnailFileId != null,
+                // Always false: no FileService value covers a media thumbnail, so
+                // nothing could ever write the pointer this used to read. The wire
+                // key stays (append-only) and the app already treats it as optional.
+                HasThumbnail = false,
                 VideoUrl = dbContext.StoredFiles
                     .Where(f => f.Id == item.VideoFileId && f.IsActive)
                     .Select(f => f.ExternalUrl)
@@ -100,7 +103,9 @@ internal sealed class PublicMediaService(
         ResolveBytesAsync(
             dbContext.MediaItems.AsNoTracking()
                 .Where(item => item.Id == id && item.IsActive)
-                .Select(item => item.ThumbnailFileId),
+                // The column is gone; a thumbnail was never storable, so this
+                // resolves nothing and the endpoint keeps returning its 404.
+                .Select(item => (Guid?)null),
             cancellationToken);
 
     // Resolve the pointed-at StoredFile's bytes + content-type. Returns null when

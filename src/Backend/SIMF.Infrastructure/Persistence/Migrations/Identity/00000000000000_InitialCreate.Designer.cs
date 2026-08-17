@@ -673,7 +673,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
 
                     b.HasIndex("UserId", "ReadAt");
 
-                    b.ToTable("Notifications");
+                    b.ToTable("Notifications", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Notifications_GroupCode", "[GroupCode] IN ('Account', 'Vip', 'Bookings', 'Sessions', 'Meetings', 'Ratings')");
+                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>

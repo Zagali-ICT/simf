@@ -1,4 +1,5 @@
-using SIMF.Domain.Common;
+﻿using SIMF.Domain.Common;
+using SIMF.Domain.Files;
 
 namespace SIMF.Domain.PublicRelations;
 
@@ -12,6 +13,7 @@ public sealed class MediaPartner : BaseAuditEntity
     /// <summary>A card without a logo falls back to the name.</summary>
     public Guid? LogoFileId { get; set; }
 
+    public StoredFile? LogoFile { get; set; }
     /// <summary>Outbound link to the partner's site; also the website slot of the contact card.</summary>
     public string? Url { get; set; }
 

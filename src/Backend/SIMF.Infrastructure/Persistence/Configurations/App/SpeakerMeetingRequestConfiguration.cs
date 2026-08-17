@@ -55,6 +55,16 @@ internal sealed class SpeakerMeetingRequestConfiguration
         builder.HasIndex(r => new { r.SpeakerId, r.Status, r.CreatedAt });
         builder.HasIndex(r => r.RequestedByUserId);
 
+        // At most one OPEN request per (requester, speaker). SubmitAsync reads that rule
+        // and then moves the existing Pending row, which two concurrent submits can both
+        // pass, leaving a duplicate pair that makes every later submit throw on its
+        // SingleOrDefault. This is the database backstop behind that read-then-write.
+        // Filtered to Pending (= 0) alone, so a rejected, cancelled or completed request
+        // never blocks a fresh one. Twin of the delegation index.
+        builder.HasIndex(r => new { r.RequestedByUserId, r.SpeakerId })
+            .IsUnique()
+            .HasFilter("[Status] = 0");
+
         // At most one LIVE request per (speaker, slot). This was
         // widened from Accepted-only to the slot-holding set
         // (`MeetingRequestStatuses.SlotHolding` = Accepted + AwaitingSpeaker + Done): a

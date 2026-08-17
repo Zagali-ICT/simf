@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SIMF.Domain.Files;
 using SIMF.Domain.PublicRelations;
@@ -37,7 +37,7 @@ internal sealed class NewsConfiguration : IEntityTypeConfiguration<News>
         // The hero image, in the one file store. Restrict: deleting a file must never
         // delete the row that shows it.
         builder.HasIndex(news => news.ImageFileId);
-        builder.HasOne<StoredFile>()
+        builder.HasOne(news => news.ImageFile)
             .WithMany()
             .HasForeignKey(news => news.ImageFileId)
             .OnDelete(DeleteBehavior.Restrict);

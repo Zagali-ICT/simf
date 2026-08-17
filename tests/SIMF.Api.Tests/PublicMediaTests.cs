@@ -1,4 +1,4 @@
-// D-199 (Mockup page 30) — anonymous public media gallery: active only,
+﻿// D-199 (Mockup page 30) — anonymous public media gallery: active only,
 // paged, by album, plus the out-of-row image stream.
 using System.Net;
 using System.Net.Http.Headers;
@@ -96,7 +96,7 @@ public sealed class PublicMediaTests : IClassFixture<SimfApiFactory>
             new AdminCreateMediaRequest
             {
                 Kind = MediaKind.Video, Title = "a-video", Album = album,
-                Url = "https://youtu.be/abc123", DisplayOrder = 2,
+                Url = "https://youtu.be/abc123XYZ_-", DisplayOrder = 2,
             }, token);
         Assert.Equal(HttpStatusCode.OK, videoCreate.StatusCode);
 

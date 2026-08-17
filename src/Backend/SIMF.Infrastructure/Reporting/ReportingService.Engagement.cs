@@ -17,6 +17,12 @@ namespace SIMF.Infrastructure.Reporting;
 /// exactly the part a public-facing query filters out. The Hidden column makes
 /// the state explicit rather than silently omitting the row.</para>
 ///
+/// <para>Hidden is read off Status, the single source of truth for visibility,
+/// and not off the stored IsHidden column, which no writer has set since the
+/// moderation desk moved visibility onto Status: counting the column reported
+/// zero hidden questions on every run and marked genuinely hidden rows false in
+/// the export.</para>
+///
 /// <para>The asker is not reported. Attaching a name to a question would turn
 /// an audience channel into an attributed one; the moderation decision is about
 /// the question, not the person.</para>
@@ -42,11 +48,12 @@ internal sealed partial class ReportingService
                 q.Recipient,
                 q.Status,
                 q.Phase,
-                q.IsHidden,
+                q.Status == QuestionStatus.Hidden,
                 q.CreatedAt))
             .ToListAsync(cancellationToken);
 
-        var hidden = await filtered.CountAsync(q => q.IsHidden, cancellationToken);
+        var hidden = await filtered.CountAsync(
+            q => q.Status == QuestionStatus.Hidden, cancellationToken);
         var pushed = await filtered.CountAsync(q => q.IsPushed, cancellationToken);
 
         return new ReportPage<EngagementReportRow>(
@@ -74,7 +81,7 @@ internal sealed partial class ReportingService
                 q.Recipient,
                 q.Status,
                 q.Phase,
-                q.IsHidden,
+                q.Status == QuestionStatus.Hidden,
                 q.CreatedAt))
             .ToListAsync(cancellationToken);
 

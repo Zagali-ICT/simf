@@ -16,6 +16,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Files;
 using SIMF.Contracts.Assets;
 using SIMF.Domain.Archive;
 using SIMF.Domain.Cms;
@@ -198,12 +199,11 @@ public sealed class AssetOwnerPointerTests : IClassFixture<SimfApiFactory>
         Assert.Equal(fileId, pointer);
     }
 
-    // The six categories whose owning row carries no pointer column reach the
-    // same code path and must simply fall through it. A speaker photo is the
-    // one to pin: its pointer column was dropped by this same programme, so a
-    // regression here would look like a NullReferenceException on upload.
+    // A speaker photo used to be the case with no pointer column at all, and this
+    // test asserted only that the upload survived the fall-through. It has a
+    // column now, so it asserts what the others do.
     [Fact]
-    public async Task Uploading_a_speaker_photo_succeeds_though_it_has_no_pointer_column()
+    public async Task Uploading_a_speaker_photo_points_the_speaker_at_it()
     {
         var token = await CreateAdministratorAndSignInAsync();
         var speakerId = Guid.NewGuid();
@@ -211,7 +211,94 @@ public sealed class AssetOwnerPointerTests : IClassFixture<SimfApiFactory>
 
         var resp = await UploadAsync("SpeakerPhoto", speakerId, token);
         Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
-        Assert.NotNull(await ActiveAssetIdAsync(speakerId, token));
+
+        var fileId = await ActiveAssetIdAsync(speakerId, token);
+        Assert.NotNull(fileId);
+
+        var pointer = await ReadAsync(db => db.Speakers
+            .Where(x => x.Id == speakerId).Select(x => x.PhotoFileId).FirstAsync());
+        Assert.Equal(fileId, pointer);
+    }
+
+    /// <summary>The rule, rather than another example of it.
+    ///
+    /// <para>Every test above pins one service by hand, which is how three of them
+    /// (BoothLogo, ExhibitorLogo, ProgrammeDayImage) had no test at all while their
+    /// owners had no pointer column either - the gap in the tests and the gap in the
+    /// schema were the same gap, and neither was visible from the other.</para>
+    ///
+    /// <para>This asserts the invariant instead: a service whose files belong to a
+    /// real entity must have a column for that entity to point back with, and a case
+    /// in OwnerPointerSync to keep it in step. A new service that skips either fails
+    /// here rather than silently joining the reverse-linked minority.</para></summary>
+    [Fact]
+    public void Every_file_service_with_an_owner_has_a_pointer_column_and_a_sync_case()
+    {
+        var syncSource = File.ReadAllText(Path.Combine(
+            RepoRoot(), "src", "Backend", "SIMF.Infrastructure", "Files", "OwnerPointerSync.cs"));
+
+        var missing = FileServicePolicies.All
+            .Where(policy => policy.OwnerEntityType != FileOwnerEntityType.None)
+            .Select(policy => policy.Service)
+            .Distinct()
+            .Where(service => !syncSource.Contains(
+                $"case FileService.{service}:", StringComparison.Ordinal))
+            .Select(service => service.ToString())
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToList();
+
+        // Exemptions. Each one is a service whose owning row DOES carry a pointer
+        // column - the column is simply written by the service that owns the
+        // workflow rather than by OwnerPointerSync, because these files are created
+        // through their own endpoints and never through the generic asset pipeline.
+        // Listed individually with where the write happens, so "not in the switch"
+        // stays a deliberate statement rather than an oversight:
+        //
+        //   Avatar              SimfUser.AvatarFileId        AccountService
+        //   IdDocument          UserProfile.IdImageFileId    UserProfileService
+        //   VipPhoto            UserProfile.VipPhotoFileId   UserProfileService
+        //   MediaGalleryImage   MediaItem.ImageFileId        AdminMediaService
+        //   SessionRecording    Session.RecordingFileId      AdminSessionService
+        //   SpeakerPresentation SpeakerPresentation.StoredFileId
+        //                                                    AdminSpeakerPresentationService
+        //
+        // CompanyLogo is the only entry that is NOT a pointer maintained elsewhere:
+        // there is no Company or Contact entity for it to point at, AssetService
+        // .OwnerIsActiveAsync has no arm for it, and a public resolve always returns
+        // null. It is a dead service pending removal, not a table awaiting a column.
+        string[] maintainedByTheirOwnService =
+        [
+            nameof(FileService.Avatar),
+            nameof(FileService.IdDocument),
+            nameof(FileService.VipPhoto),
+            nameof(FileService.MediaGalleryImage),
+            nameof(FileService.SessionRecording),
+            nameof(FileService.SpeakerPresentation),
+            nameof(FileService.CompanyLogo),
+        ];
+        missing.RemoveAll(maintainedByTheirOwnService.Contains);
+
+        Assert.True(
+            missing.Count == 0,
+            "These file services own files on behalf of a real entity but have no "
+            + "case in OwnerPointerSync, so the owning row is never pointed at its "
+            + "file and the link survives only as the store's polymorphic "
+            + "OwnerEntityType/OwnerEntityId pair - which no foreign key constrains. "
+            + "Add a Guid? XFileId column to the owning entity, an FK in its EF "
+            + "configuration, and a case here. Offenders: "
+            + string.Join(", ", missing));
+    }
+
+    private static string RepoRoot()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null
+               && !File.Exists(Path.Combine(directory.FullName, "SIMF.slnx")))
+        {
+            directory = directory.Parent;
+        }
+        Assert.NotNull(directory);
+        return directory!.FullName;
     }
 
     // -- Helpers --------------------------------------------------------------

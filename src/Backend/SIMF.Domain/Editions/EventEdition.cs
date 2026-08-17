@@ -35,8 +35,11 @@ public class EventEdition
     /// with the edition they belong to.</summary>
     public DateTime? LastClosedAt { get; set; }
 
-    /// <summary>The admin who last opened a year.</summary>
-    public Guid? OpenedByUserId { get; set; }
+    // Who opened the year is NOT kept here. It was written on every open and
+    // read by nothing, while the EventEditionOpened audit row already carries the
+    // actor beside the year it closed, the year it opened and the badge count —
+    // and that row is the one an auditor is entitled to, because it cannot be
+    // overwritten by the next open.
 
     /// <summary>How many attendee badges the last year-open cleared for re-issue.
     /// Kept because the number is the only evidence an operator has that the

@@ -39,6 +39,16 @@ internal sealed class SessionConfiguration : IEntityTypeConfiguration<Session>
                 "CK_Sessions_PublishedAtPin",
                 $"([Status] = {(int)SessionStatus.Published} AND [PublishedAt] IS NOT NULL) OR "
                 + $"([Status] <> {(int)SessionStatus.Published} AND [PublishedAt] IS NULL)");
+            // Recorded and Published both mean "there is a recording", which is
+            // what ValidateStatusGuards demands on the way in and what
+            // DeleteRecordingAsync now refuses to undo from underneath. One
+            // direction only, unlike the PublishedAt pin above: the recording is
+            // uploaded while the session is still Scheduled or Held, so a file on
+            // a pre-Recorded row is the normal path to Recorded, not a defect.
+            table.HasCheckConstraint(
+                "CK_Sessions_RecordedHasRecording",
+                $"[Status] NOT IN ({(int)SessionStatus.Recorded}, {(int)SessionStatus.Published}) "
+                + "OR [RecordingFileId] IS NOT NULL");
         });
         builder.HasKey(s => s.Id);
 
@@ -72,12 +82,12 @@ internal sealed class SessionConfiguration : IEntityTypeConfiguration<Session>
         // Cascade, for the reason the other file keys carry it - deleting a file
         // must never silently delete the session.
         builder.HasIndex(s => s.LiveStreamFileId);
-        builder.HasOne<StoredFile>()
+        builder.HasOne(s => s.LiveStreamFile)
             .WithMany()
             .HasForeignKey(s => s.LiveStreamFileId)
             .OnDelete(DeleteBehavior.Restrict);
         builder.HasIndex(s => s.LiveSignLanguageFileId);
-        builder.HasOne<StoredFile>()
+        builder.HasOne(s => s.LiveSignLanguageFile)
             .WithMany()
             .HasForeignKey(s => s.LiveSignLanguageFileId)
             .OnDelete(DeleteBehavior.Restrict);
@@ -143,9 +153,26 @@ internal sealed class SessionSummaryConfiguration
     public void Configure(EntityTypeBuilder<SessionSummary> builder)
     {
         // Approval cannot precede review submission.
-        builder.ToTable("SessionSummaries", table => table.HasCheckConstraint(
-            "CK_SessionSummaries_ReviewOrder",
-            "[ApprovedAt] IS NULL OR ([ReviewSubmittedAt] IS NOT NULL AND [ApprovedAt] >= [ReviewSubmittedAt])"));
+        // Publishing is one act with two stamps and a precondition: the desk sets
+        // PublishedAt with its publisher and clears both together on un-publish or
+        // on the edit that invalidates an approval, and it refuses to publish an
+        // unapproved summary because the app must never serve unreviewed minutes.
+        // No ordering clause between the two timestamps, unlike ReviewOrder above:
+        // approving is reachable again on an already-published summary, which
+        // legitimately stamps an ApprovedAt later than the PublishedAt standing.
+        // ReviewSubmittedAt needs no clause here either - requiring ApprovedAt
+        // pulls it in through ReviewOrder.
+        builder.ToTable("SessionSummaries", table =>
+        {
+            table.HasCheckConstraint(
+                "CK_SessionSummaries_ReviewOrder",
+                "[ApprovedAt] IS NULL OR ([ReviewSubmittedAt] IS NOT NULL AND [ApprovedAt] >= [ReviewSubmittedAt])");
+            table.HasCheckConstraint(
+                "CK_SessionSummaries_PublishPin",
+                "([PublishedAt] IS NULL AND [PublishedByUserId] IS NULL) "
+                + "OR ([PublishedAt] IS NOT NULL AND [PublishedByUserId] IS NOT NULL "
+                + "AND [ApprovedAt] IS NOT NULL)");
+        });
         builder.HasKey(s => s.Id);
 
         builder.Property(s => s.KeyPoints).HasMaxLength(4000).IsRequired();
@@ -164,7 +191,7 @@ internal sealed class SessionSummaryConfiguration
         // StoredFile.ExternalUrl. Restrict for the same reason the session's file
         // keys carry it: deleting a file must never delete the summary.
         builder.HasIndex(s => s.SummaryVideoFileId);
-        builder.HasOne<StoredFile>()
+        builder.HasOne(s => s.SummaryVideoFile)
             .WithMany()
             .HasForeignKey(s => s.SummaryVideoFileId)
             .OnDelete(DeleteBehavior.Restrict);

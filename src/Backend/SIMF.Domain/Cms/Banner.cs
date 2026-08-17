@@ -1,4 +1,5 @@
-using SIMF.Domain.Common;
+﻿using SIMF.Domain.Common;
+using SIMF.Domain.Files;
 
 namespace SIMF.Domain.Cms;
 
@@ -13,6 +14,7 @@ public sealed class Banner : BaseAuditEntity
 
     public Guid? ImageFileId { get; set; }
 
+    public StoredFile? ImageFile { get; set; }
     /// <summary>Navigation rather than media, so it stays a plain URL instead of a file-store row.</summary>
     public string? LinkUrl { get; set; }
 

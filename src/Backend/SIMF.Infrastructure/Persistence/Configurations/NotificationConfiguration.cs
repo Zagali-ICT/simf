@@ -17,6 +17,21 @@ internal sealed class NotificationConfiguration : IEntityTypeConfiguration<Notif
 {
     public void Configure(EntityTypeBuilder<Notification> builder)
     {
+        // GroupCode is a closed vocabulary held as text: every value comes from
+        // NotificationKindCatalog.Groups, and the one site that overrides the catalog
+        // default (the session-scoped broadcast) picks Groups.Sessions from the same
+        // constants. Nothing but the CHECK stopped a typo'd group from reaching the
+        // column, where it would silently drop the tile out of every app filter chip
+        // instead of failing — the same reason Role and CallerKind carry one.
+        //
+        // NULL passes deliberately: a CHECK admits a row whose predicate is UNKNOWN,
+        // and null is the legitimate "no group" case for a kind the catalog does not
+        // map, which the app shows in the "all" bucket only. Do not anchor this on
+        // IS NULL the way CK_AccountCodes_OneOwner has to.
+        builder.ToTable("Notifications", table => table.HasCheckConstraint(
+            "CK_Notifications_GroupCode",
+            "[GroupCode] IN ('Account', 'Vip', 'Bookings', 'Sessions', 'Meetings', 'Ratings')"));
+
         builder.HasKey(notification => notification.Id);
 
         // NotificationKind persisted as its name string, so appending a value can

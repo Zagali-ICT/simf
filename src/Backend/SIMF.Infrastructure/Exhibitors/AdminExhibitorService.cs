@@ -211,7 +211,19 @@ internal sealed class AdminExhibitorService(
         exhibitor.CityArabic = NormaliseOptional(request.CityArabic);
         exhibitor.Latitude = request.Latitude;
         exhibitor.Longitude = request.Longitude;
-        exhibitor.IsActive = request.IsActive;
+        // The edit form's toggle moves the row both ways, so the soft-delete stamp has
+        // to move with it: DeactivateAsync now records WHEN a row went away, and a
+        // restore that left the old stamp behind would read as deleted-yet-active.
+        if (request.IsActive)
+        {
+            exhibitor.IsActive = true;
+            exhibitor.DeletedAt = null;
+        }
+        else
+        {
+            exhibitor.Deactivate();
+        }
+
         exhibitor.UpdatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
@@ -235,7 +247,7 @@ internal sealed class AdminExhibitorService(
                 "Exhibitor not found.",
                 "لم يتم العثور على العارض.");
         if (!exhibitor.IsActive) { return; }
-        exhibitor.IsActive = false;
+        exhibitor.Deactivate();
         exhibitor.UpdatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
@@ -281,22 +293,28 @@ internal sealed class AdminExhibitorService(
             return Array.Empty<ExhibitorAccountSummary>();
         }
 
-        // Resolve the account emails cross-context (UserId is a logical FK to
-        // SimfUser on the Identity DB — no DB-level JOIN is possible, so read
-        // the small id set back AsNoTracking).
+        // Resolve the account emails and display names cross-context (UserId is a
+        // logical FK to SimfUser on the Identity DB — no DB-level JOIN is possible,
+        // so read the small id set back AsNoTracking). The display name comes back
+        // in the same round trip because the membership stores only an override.
         var userIds = memberships.Select(m => m.UserId).ToList();
-        var emailsById = await identityDbContext.Users
+        var accounts = await identityDbContext.Users
             .AsNoTracking()
             .Where(u => userIds.Contains(u.Id))
-            .Select(u => new { u.Id, u.Email })
-            .ToDictionaryAsync(u => u.Id, u => u.Email, cancellationToken);
+            .Select(u => new { u.Id, u.Email, u.DisplayName })
+            .ToListAsync(cancellationToken);
+        var emailsById = accounts.ToDictionary(u => u.Id, u => u.Email ?? string.Empty);
+        var displayNamesById = accounts.ToDictionary(u => u.Id, u => u.DisplayName);
 
         return memberships
             .Select(m => new ExhibitorAccountSummary(
                 m.Id,
                 m.UserId,
-                m.ContactName,
-                emailsById.TryGetValue(m.UserId, out var email) ? email ?? string.Empty : string.Empty,
+                ResolveContactName(
+                    m.ContactName,
+                    displayNamesById.GetValueOrDefault(m.UserId) ?? string.Empty,
+                    emailsById.GetValueOrDefault(m.UserId) ?? string.Empty),
+                emailsById.GetValueOrDefault(m.UserId) ?? string.Empty,
                 m.RoleLabel,
                 m.IsActive,
                 m.CreatedAt))
@@ -351,7 +369,11 @@ internal sealed class AdminExhibitorService(
             Id = Guid.NewGuid(),
             ExhibitorId = exhibitor.Id,
             UserId = created.UserId,
-            ContactName = contactName,
+            // The name was just written to the account as its DisplayName, which is
+            // where it belongs; repeating it here would be a second copy of one fact
+            // across the two databases, and it would go stale the moment the account
+            // is renamed. Blank means "no override" and reads back off the account.
+            ContactName = string.Empty,
             RoleLabel = roleLabel,
             IsActive = true,
             CreatedAt = now,
@@ -372,7 +394,7 @@ internal sealed class AdminExhibitorService(
         return new ExhibitorAccountSummary(
             membership.Id,
             membership.UserId,
-            membership.ContactName,
+            contactName,
             created.Email,
             membership.RoleLabel,
             membership.IsActive,
@@ -484,15 +506,18 @@ internal sealed class AdminExhibitorService(
         }
 
         var accountEmail = account.Email ?? email;
-        var contactName = contactNameOverride
-            ?? DefaultContactName(account.DisplayName, accountEmail);
+        var contactName = ResolveContactName(
+            contactNameOverride ?? string.Empty, account.DisplayName, accountEmail);
 
         var link = new ExhibitorMembership
         {
             Id = Guid.NewGuid(),
             ExhibitorId = exhibitor.Id,
             UserId = account.Id,
-            ContactName = contactName,
+            // Only what the admin actually overrode is persisted. Defaulting a blank
+            // field to the account's display name would copy it into this database,
+            // where nothing would keep it in step with the account it came from.
+            ContactName = contactNameOverride ?? string.Empty,
             RoleLabel = roleLabel,
             IsActive = true,
             CreatedAt = timeProvider.SimfNow(),
@@ -513,19 +538,28 @@ internal sealed class AdminExhibitorService(
         return new ExhibitorAccountSummary(
             link.Id,
             link.UserId,
-            link.ContactName,
+            contactName,
             accountEmail,
             link.RoleLabel,
             link.IsActive,
             link.CreatedAt);
     }
 
-    /// <summary>The membership contact name when the admin leaves the field
-    /// blank: the account's display name, else its login email. Capped at the
-    /// column's 256 characters so a pathological address cannot fail the insert
-    /// (an email may be up to 320).</summary>
-    private static string DefaultContactName(string displayName, string email)
+    /// <summary>The contact name to show for a membership: the per-booth override
+    /// when the admin set one, else the account's own display name, else its login
+    /// email. Resolved on every read rather than frozen into the membership row, so
+    /// renaming an account updates the booth's officer list with it.
+    ///
+    /// <para>Capped at the membership column's 256 characters so an overridden name
+    /// stays comparable with what could have been stored there (an email may run to
+    /// 320).</para></summary>
+    private static string ResolveContactName(string overrideName, string displayName, string email)
     {
+        if (!string.IsNullOrWhiteSpace(overrideName))
+        {
+            return overrideName.Trim();
+        }
+
         var value = string.IsNullOrWhiteSpace(displayName) ? email : displayName.Trim();
         return value.Length <= 256 ? value : value[..256];
     }

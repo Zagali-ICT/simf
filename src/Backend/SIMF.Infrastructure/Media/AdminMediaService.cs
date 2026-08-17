@@ -150,6 +150,14 @@ internal sealed class AdminMediaService(
         dbContext.MediaItems.Add(item);
         await dbContext.SaveChangesAsync(cancellationToken);
 
+        // Phase two, same as UpdateAsync. Skipping it here is what left every
+        // created video pointing at nothing, so the gallery served a null
+        // playback URL until an admin happened to re-save the item.
+        item.VideoFileId = await feedLinks.SetAsync(
+            FileService.MediaGalleryVideo, item.Id,
+            request.Url, actorUserId, cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
         await auditLog.WriteSuccessAsync(
             AuditEvents.MediaCreated,
             actorUserId,
@@ -328,7 +336,7 @@ internal sealed class AdminMediaService(
             item.Album,
             item.AlbumArabic,
             item.ImageFileId != null,
-            item.ThumbnailFileId != null,
+            false, // no FileService covers a media thumbnail; see MediaItem
             videoUrl,
             item.DisplayOrder,
             item.IsActive,

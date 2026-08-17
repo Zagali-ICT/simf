@@ -1,4 +1,5 @@
-﻿namespace SIMF.Domain.Programme;
+﻿using SIMF.Domain.Files;
+namespace SIMF.Domain.Programme;
 
 /// <summary>The Scientific Committee's minutes (محضر) for one <see cref="Session"/>.
 /// Publishing is the Committee's own editorial act, orthogonal to the session's
@@ -44,6 +45,7 @@ public sealed class SessionSummary
     /// A <c>StoredFiles</c> row like the session's own feed.</summary>
     public Guid? SummaryVideoFileId { get; set; }
 
+    public StoredFile? SummaryVideoFile { get; set; }
     /// <summary>The untouched generate output, captured once and never overwritten by an edit,
     /// so the Control Panel can show it beside the working copy. Only the Arabic full text is
     /// drafted by the model. Never projected onto a public or app contract.</summary>

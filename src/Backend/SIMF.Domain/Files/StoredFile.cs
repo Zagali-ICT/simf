@@ -61,6 +61,10 @@ public sealed class StoredFile : BaseAuditEntity
     // is aspirational today: it is computed from the service's FileServicePolicy.Retention,
     // and no policy in the registry sets one, so the column stays null on every row. No
     // sweep reads it either — disposal is always deliberate, through the force-delete path.
+    // The column and its filtered index are kept rather than dropped: what is missing is
+    // the retention DURATION per service, which is a compliance input to be given rather
+    // than invented here, and the writer that would apply it already exists. An all-null
+    // column under a filtered index stores nothing, so keeping it costs nothing.
     // SecureDestroyedAt means the bytes are gone for good (crypto-shredded or overwritten),
     // stamped only by the right-to-erasure path.
     public bool IsDeletable { get; set; } = true;

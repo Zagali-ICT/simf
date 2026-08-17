@@ -223,6 +223,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Notifications", x => x.Id);
+                    table.CheckConstraint("CK_Notifications_GroupCode", "[GroupCode] IN ('Account', 'Vip', 'Bookings', 'Sessions', 'Meetings', 'Ratings')");
                     table.ForeignKey(
                         name: "FK_Notifications_Users_UserId",
                         column: x => x.UserId,

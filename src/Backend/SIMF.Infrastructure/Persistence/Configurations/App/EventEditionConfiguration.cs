@@ -11,7 +11,13 @@ internal sealed class EventEditionConfiguration : IEntityTypeConfiguration<Event
 {
     public void Configure(EntityTypeBuilder<EventEdition> builder)
     {
-        builder.ToTable("EventEdition");
+        // The year has to FIT: it is encoded into the badge as two bytes and read
+        // by a scanner with no other way to ask, so a typo of "202" or "20265"
+        // must never reach the column. EventEditionService refuses the same range
+        // on write; the literals here and there must stay in step.
+        builder.ToTable("EventEdition", table => table.HasCheckConstraint(
+            "CK_EventEdition_Year",
+            "[Year] BETWEEN 2000 AND 2999"));
         builder.HasKey(edition => edition.Id);
 
         // A fixed year and date, not "now": HasData is compared into the
@@ -23,7 +29,6 @@ internal sealed class EventEditionConfiguration : IEntityTypeConfiguration<Event
             Year = 2026,
             OpenedAt = new DateTime(2026, 1, 1, 0, 0, 0),
             LastClosedAt = null,
-            OpenedByUserId = null,
             LastReissueCount = 0,
         });
     }

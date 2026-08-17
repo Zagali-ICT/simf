@@ -39,6 +39,14 @@ internal sealed class SessionQuestionConfiguration : IEntityTypeConfiguration<Se
 
         builder.Property(q => q.QuestionText).HasMaxLength(1000).IsRequired();
 
+        // Visibility lives on Status alone, so the IsHidden column is dropped
+        // from the model: nothing had written it since the moderation desk moved
+        // over, and every reader that still quoted it read false on a genuinely
+        // hidden row. Unmapped rather than deleted outright only because the last
+        // remaining assignment sits in a file another lane owns; the property and
+        // this call go together once that line is gone.
+        builder.Ignore(q => q.IsHidden);
+
         // Q&A pipeline columns. No HasDefaultValue on Status — the service
         // always writes an explicit value on every create path.
         // Phase/Status stored as int by convention.

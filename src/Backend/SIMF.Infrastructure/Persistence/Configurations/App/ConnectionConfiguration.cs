@@ -26,15 +26,12 @@ internal sealed class ConnectionConfiguration : IEntityTypeConfiguration<Connect
         builder.HasIndex(connection => connection.TargetUserId);
 
         // At most one ACTIVE connection per unordered pair. The service's
-        // check-then-insert stays as the friendly 409 path; this is meant to be
-        // the backstop two concurrent requests cannot race past. Filtered on
-        // IsActive so a removed or declined connection can be requested again.
-        //
-        // NOT YET LIVE: no writer populates PairLowUserId / PairHighUserId, so
-        // the IS NOT NULL leg of the filter excludes every row and the index
-        // enforces nothing. It bites the moment NetworkingService.RequestAsync
-        // sorts the two ids and fills the pair on insert. Keeping the filter is
-        // what makes that a one-line service change rather than a schema one.
+        // check-then-insert stays as the friendly 409 path; this is the backstop two
+        // concurrent requests cannot race past, because sorting the ids collapses both
+        // directions of the same relationship onto one key. Filtered on IsActive so a
+        // removed or declined connection can be requested again, and on the sorted pair
+        // being present so rows written before RequestAsync began filling it are ignored
+        // rather than colliding on NULL.
         builder.HasIndex(connection => new
         {
             connection.PairLowUserId,

@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SIMF.Domain.Files;
 using SIMF.Domain.PublicRelations;
@@ -31,7 +31,7 @@ internal sealed class MediaPartnerConfiguration : IEntityTypeConfiguration<Media
         // The partner logo, in the one file store. Restrict: deleting a file must never
         // delete the row that shows it.
         builder.HasIndex(m => m.LogoFileId);
-        builder.HasOne<StoredFile>()
+        builder.HasOne(m => m.LogoFile)
             .WithMany()
             .HasForeignKey(m => m.LogoFileId)
             .OnDelete(DeleteBehavior.Restrict);
@@ -60,5 +60,18 @@ internal sealed class MediaPartnerConfiguration : IEntityTypeConfiguration<Media
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(m => new { m.IsActive, m.DisplayOrder });
+
+        // At most one partner per English name. AdminMediaPartnerService already
+        // returns a 409 MediaPartnerNameDuplicate on that clash, but its check is
+        // a read followed by a write, so two concurrent creates can both pass it
+        // and land a duplicate on the public grid. This is the backstop that makes
+        // the rule true of the table.
+        //
+        // Unfiltered, unlike the Sponsor index: that rule is scoped to active rows
+        // because its service deliberately lets an inactive row keep an active
+        // row's name, whereas the partner clash check queries the whole table with
+        // no IsActive predicate. Filtering here would admit a pair the service
+        // itself refuses.
+        builder.HasIndex(m => m.Name).IsUnique();
     }
 }

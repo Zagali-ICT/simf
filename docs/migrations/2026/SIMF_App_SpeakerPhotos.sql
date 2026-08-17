@@ -315,9 +315,170 @@ IF EXISTS (SELECT 1 FROM dbo.Speakers WHERE Code = N'SIMF4-SPK-32')
         483216, N'7f9967019affdf3df70d745de7820be6c8aae50054ef7be1209817f300369360', 1, 2, (SELECT Id FROM dbo.Speakers WHERE Code = N'SIMF4-SPK-32'),
         @now, @sys, 1);
 
+
+/* The speaker row points AT its photo. The StoredFile's owner columns are the
+   other half of the link and are set above; this is the half a foreign key
+   constrains, and the half a caller already holding the speaker row can follow
+   without a second query.
+
+   Without this the seed would be the one place in the system where the two
+   halves disagree: every seeded speaker would carry a photo the store knows
+   about and the speaker row does not, so Speakers.PhotoFileId would be NULL for
+   all 23 and the portraits would vanish from every surface that reads the
+   pointer. Mirrors SIMF_App_MediaPartners.sql.
+
+   Guarded on IS NULL so a re-run is a no-op and an admin's later upload is
+   never overwritten. */
+
+UPDATE dbo.Speakers
+   SET PhotoFileId = '0f837c7c-4f16-55f1-b930-dcd924eecb89'
+ WHERE Code = N'SIMF4-SPK-01'
+   AND PhotoFileId IS NULL
+   AND EXISTS (SELECT 1 FROM dbo.StoredFiles WHERE Id = '0f837c7c-4f16-55f1-b930-dcd924eecb89' AND IsActive = 1);
+
+UPDATE dbo.Speakers
+   SET PhotoFileId = '7296dd95-227f-52de-8929-3bb551c4fd77'
+ WHERE Code = N'SIMF4-SPK-02'
+   AND PhotoFileId IS NULL
+   AND EXISTS (SELECT 1 FROM dbo.StoredFiles WHERE Id = '7296dd95-227f-52de-8929-3bb551c4fd77' AND IsActive = 1);
+
+UPDATE dbo.Speakers
+   SET PhotoFileId = '6d81f275-3f49-54f9-82e8-9f22413f7552'
+ WHERE Code = N'SIMF4-SPK-03'
+   AND PhotoFileId IS NULL
+   AND EXISTS (SELECT 1 FROM dbo.StoredFiles WHERE Id = '6d81f275-3f49-54f9-82e8-9f22413f7552' AND IsActive = 1);
+
+UPDATE dbo.Speakers
+   SET PhotoFileId = 'a6bcb906-acb2-5d96-9af0-3a3cae22301b'
+ WHERE Code = N'SIMF4-SPK-04'
+   AND PhotoFileId IS NULL
+   AND EXISTS (SELECT 1 FROM dbo.StoredFiles WHERE Id = 'a6bcb906-acb2-5d96-9af0-3a3cae22301b' AND IsActive = 1);
+
+UPDATE dbo.Speakers
+   SET PhotoFileId = 'ad30f57d-f3e5-56e6-9c33-2a3c73a81b78'
+ WHERE Code = N'SIMF4-SPK-05'
+   AND PhotoFileId IS NULL
+   AND EXISTS (SELECT 1 FROM dbo.StoredFiles WHERE Id = 'ad30f57d-f3e5-56e6-9c33-2a3c73a81b78' AND IsActive = 1);
+
+UPDATE dbo.Speakers
+   SET PhotoFileId = 'b069ba68-a6d8-568a-a3ae-c66d8614fc09'
+ WHERE Code = N'SIMF4-SPK-06'
+   AND PhotoFileId IS NULL
+   AND EXISTS (SELECT 1 FROM dbo.StoredFiles WHERE Id = 'b069ba68-a6d8-568a-a3ae-c66d8614fc09' AND IsActive = 1);
+
+UPDATE dbo.Speakers
+   SET PhotoFileId = '60469802-bd9c-5cca-985b-7018ae20b885'
+ WHERE Code = N'SIMF4-SPK-07'
+   AND PhotoFileId IS NULL
+   AND EXISTS (SELECT 1 FROM dbo.StoredFiles WHERE Id = '60469802-bd9c-5cca-985b-7018ae20b885' AND IsActive = 1);
+
+UPDATE dbo.Speakers
+   SET PhotoFileId = '96197390-a43c-59b5-aa83-bc7e7fe845f0'
+ WHERE Code = N'SIMF4-SPK-08'
+   AND PhotoFileId IS NULL
+   AND EXISTS (SELECT 1 FROM dbo.StoredFiles WHERE Id = '96197390-a43c-59b5-aa83-bc7e7fe845f0' AND IsActive = 1);
+
+UPDATE dbo.Speakers
+   SET PhotoFileId = '00447272-2b04-5b4e-a633-b6b5ba286555'
+ WHERE Code = N'SIMF4-SPK-10'
+   AND PhotoFileId IS NULL
+   AND EXISTS (SELECT 1 FROM dbo.StoredFiles WHERE Id = '00447272-2b04-5b4e-a633-b6b5ba286555' AND IsActive = 1);
+
+UPDATE dbo.Speakers
+   SET PhotoFileId = '2e15d328-c30d-554c-abd1-f87c486b38a2'
+ WHERE Code = N'SIMF4-SPK-12'
+   AND PhotoFileId IS NULL
+   AND EXISTS (SELECT 1 FROM dbo.StoredFiles WHERE Id = '2e15d328-c30d-554c-abd1-f87c486b38a2' AND IsActive = 1);
+
+UPDATE dbo.Speakers
+   SET PhotoFileId = '6ab0d8a5-4e3f-507f-8d5c-cb0778759386'
+ WHERE Code = N'SIMF4-SPK-13'
+   AND PhotoFileId IS NULL
+   AND EXISTS (SELECT 1 FROM dbo.StoredFiles WHERE Id = '6ab0d8a5-4e3f-507f-8d5c-cb0778759386' AND IsActive = 1);
+
+UPDATE dbo.Speakers
+   SET PhotoFileId = '442d3535-cbb3-590c-b1ed-b4584eef4dc4'
+ WHERE Code = N'SIMF4-SPK-14'
+   AND PhotoFileId IS NULL
+   AND EXISTS (SELECT 1 FROM dbo.StoredFiles WHERE Id = '442d3535-cbb3-590c-b1ed-b4584eef4dc4' AND IsActive = 1);
+
+UPDATE dbo.Speakers
+   SET PhotoFileId = '74970c03-28f5-5698-b20f-7dcc2fc6ce88'
+ WHERE Code = N'SIMF4-SPK-15'
+   AND PhotoFileId IS NULL
+   AND EXISTS (SELECT 1 FROM dbo.StoredFiles WHERE Id = '74970c03-28f5-5698-b20f-7dcc2fc6ce88' AND IsActive = 1);
+
+UPDATE dbo.Speakers
+   SET PhotoFileId = '670cb782-2886-53dc-8296-46c4549ff62f'
+ WHERE Code = N'SIMF4-SPK-17'
+   AND PhotoFileId IS NULL
+   AND EXISTS (SELECT 1 FROM dbo.StoredFiles WHERE Id = '670cb782-2886-53dc-8296-46c4549ff62f' AND IsActive = 1);
+
+UPDATE dbo.Speakers
+   SET PhotoFileId = '28d8e65b-094f-521a-80c1-bb7ddd5b644a'
+ WHERE Code = N'SIMF4-SPK-18'
+   AND PhotoFileId IS NULL
+   AND EXISTS (SELECT 1 FROM dbo.StoredFiles WHERE Id = '28d8e65b-094f-521a-80c1-bb7ddd5b644a' AND IsActive = 1);
+
+UPDATE dbo.Speakers
+   SET PhotoFileId = '462648c9-cf99-5527-aedf-ac01dff99f73'
+ WHERE Code = N'SIMF4-SPK-20'
+   AND PhotoFileId IS NULL
+   AND EXISTS (SELECT 1 FROM dbo.StoredFiles WHERE Id = '462648c9-cf99-5527-aedf-ac01dff99f73' AND IsActive = 1);
+
+UPDATE dbo.Speakers
+   SET PhotoFileId = '08b23213-a713-5170-8eeb-2e4af46150ca'
+ WHERE Code = N'SIMF4-SPK-23'
+   AND PhotoFileId IS NULL
+   AND EXISTS (SELECT 1 FROM dbo.StoredFiles WHERE Id = '08b23213-a713-5170-8eeb-2e4af46150ca' AND IsActive = 1);
+
+UPDATE dbo.Speakers
+   SET PhotoFileId = '95ff57c7-97e2-5ee3-a66a-f09bfb050ed9'
+ WHERE Code = N'SIMF4-SPK-27'
+   AND PhotoFileId IS NULL
+   AND EXISTS (SELECT 1 FROM dbo.StoredFiles WHERE Id = '95ff57c7-97e2-5ee3-a66a-f09bfb050ed9' AND IsActive = 1);
+
+UPDATE dbo.Speakers
+   SET PhotoFileId = '8eaed198-1763-5e96-8a33-c37b3064db04'
+ WHERE Code = N'SIMF4-SPK-28'
+   AND PhotoFileId IS NULL
+   AND EXISTS (SELECT 1 FROM dbo.StoredFiles WHERE Id = '8eaed198-1763-5e96-8a33-c37b3064db04' AND IsActive = 1);
+
+UPDATE dbo.Speakers
+   SET PhotoFileId = '5e007954-d7bb-54c2-9dfa-fb840d7d965f'
+ WHERE Code = N'SIMF4-SPK-29'
+   AND PhotoFileId IS NULL
+   AND EXISTS (SELECT 1 FROM dbo.StoredFiles WHERE Id = '5e007954-d7bb-54c2-9dfa-fb840d7d965f' AND IsActive = 1);
+
+UPDATE dbo.Speakers
+   SET PhotoFileId = 'e0cd3802-f9ca-53e6-9d8e-8806632ff043'
+ WHERE Code = N'SIMF4-SPK-30'
+   AND PhotoFileId IS NULL
+   AND EXISTS (SELECT 1 FROM dbo.StoredFiles WHERE Id = 'e0cd3802-f9ca-53e6-9d8e-8806632ff043' AND IsActive = 1);
+
+UPDATE dbo.Speakers
+   SET PhotoFileId = '60e6b9ad-90de-5b1a-8d55-9de6ae48bb4b'
+ WHERE Code = N'SIMF4-SPK-31'
+   AND PhotoFileId IS NULL
+   AND EXISTS (SELECT 1 FROM dbo.StoredFiles WHERE Id = '60e6b9ad-90de-5b1a-8d55-9de6ae48bb4b' AND IsActive = 1);
+
+UPDATE dbo.Speakers
+   SET PhotoFileId = '88cd8505-f25f-5e94-bd83-d316c72ef0ed'
+ WHERE Code = N'SIMF4-SPK-32'
+   AND PhotoFileId IS NULL
+   AND EXISTS (SELECT 1 FROM dbo.StoredFiles WHERE Id = '88cd8505-f25f-5e94-bd83-d316c72ef0ed' AND IsActive = 1);
+
 COMMIT TRANSACTION;
 
-/* Verification — expect 23 active SpeakerPhoto rows owned by SIMF-4 speakers. */
+/* Verification — both halves of the link. The first count is the store's side,
+   the second is the speaker row's pointer. They must agree: a difference means
+   files landed without their pointer, which is the exact half-state this seed
+   was corrected to stop producing. */
+SELECT COUNT(*) AS Simf4SpeakersPointingAtAPhoto
+FROM dbo.Speakers
+WHERE Code LIKE 'SIMF4-SPK-%' AND PhotoFileId IS NOT NULL;
+
+/* Expect 23 active SpeakerPhoto rows owned by SIMF-4 speakers. */
 SELECT COUNT(*) AS Simf4SpeakerPhotos
 FROM dbo.StoredFiles sf
 JOIN dbo.Speakers s ON s.Id = sf.OwnerEntityId

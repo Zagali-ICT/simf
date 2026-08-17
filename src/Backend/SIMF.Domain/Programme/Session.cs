@@ -76,9 +76,11 @@ public class Session : BaseAuditEntity
     /// choose a YouTube player over a direct one, so a redirect would break that branch.</summary>
     public Guid? LiveStreamFileId { get; set; }
 
+    public StoredFile? LiveStreamFile { get; set; }
     /// <summary>Optional parallel sign-language feed, stored like <see cref="LiveStreamFileId"/>.</summary>
     public Guid? LiveSignLanguageFileId { get; set; }
 
+    public StoredFile? LiveSignLanguageFile { get; set; }
     /// <summary>Typed by an admin, not generated: there is no speech-to-text integration.</summary>
     public string? LiveCaptions { get; set; }
     public string? LiveCaptionsArabic { get; set; }

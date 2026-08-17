@@ -19,7 +19,17 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
 {
     public void Configure(EntityTypeBuilder<UserProfile> builder)
     {
-        builder.ToTable("UserProfiles");
+        // AccessibilityTextSize is a closed four-value vocabulary stored as text.
+        // The names are the app's AppTextSize cases and are matched byte for
+        // byte, so a value outside the set is not a near-miss the client rounds
+        // off: it decodes as the fallback and silently loses the user's choice.
+        // AccountPreferencesService is the only writer and rejects anything
+        // outside AccountPreferences.AllowedTextSizes; every other path leaves
+        // the column at its default. Bounded here so a second writer cannot get
+        // it wrong, and taken from those writers rather than from a comment.
+        builder.ToTable("UserProfiles", table => table.HasCheckConstraint(
+            "CK_UserProfiles_AccessibilityTextSize",
+            "[AccessibilityTextSize] IN ('small', 'normal', 'large', 'extraLarge')"));
         builder.HasKey(profile => profile.Id);
 
         // UserId is a logical FK to SimfUser.Id (Identity DB) —
@@ -115,13 +125,13 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
         // is exactly why the key is worth having: it turns "should never" into
         // "cannot".
         builder.HasIndex(profile => profile.IdImageFileId);
-        builder.HasOne<StoredFile>()
+        builder.HasOne(profile => profile.IdImageFile)
             .WithMany()
             .HasForeignKey(profile => profile.IdImageFileId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(profile => profile.VipPhotoFileId);
-        builder.HasOne<StoredFile>()
+        builder.HasOne(profile => profile.VipPhotoFile)
             .WithMany()
             .HasForeignKey(profile => profile.VipPhotoFileId)
             .OnDelete(DeleteBehavior.Restrict);

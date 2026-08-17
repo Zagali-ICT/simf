@@ -1,10 +1,11 @@
-// Tests: SIMF.Api.Tests/UserProfileTests.cs (the collapsed MobileNumber column
+﻿// Tests: SIMF.Api.Tests/UserProfileTests.cs (the collapsed MobileNumber column
 //        is filled from either shipped wire field, and both keys still
 //        round-trip over the real HTTP surface)
 //        SIMF.Api.Tests/AdminAccountMobileTests.cs (the desk edit writes it too)
 using SIMF.Common.Enums;
 using SIMF.Domain.Common;
 using SIMF.Domain.Organisations;
+using SIMF.Domain.Files;
 
 namespace SIMF.Domain.Profiles;
 
@@ -74,8 +75,22 @@ public class UserProfile : BaseAuditEntity
     /// 0, and the offline badge upload sends an empty country code — so deriving
     /// it would mis-classify exactly the desk-captured rows that have the least
     /// data to spare. It is also on the shipped app wire as
-    /// <c>isSaudi</c>.</para></summary>
+    /// <c>isSaudi</c>.</para>
+    ///
+    /// <para>Not derived, but not free to contradict either: where a nationality
+    /// WAS captured, the two must agree (see
+    /// <see cref="SaudiNationalityId"/>).</para></summary>
     public bool IsSaudi { get; set; }
+
+    /// <summary>ISO 3166-1 numeric for Saudi Arabia, the <c>SA</c> row of the
+    /// Country lookup, and the only <see cref="NationalityId"/> that may sit
+    /// beside <see cref="IsSaudi"/> = true.
+    ///
+    /// <para>The pairing is checked where a nationality is captured, and cannot
+    /// be a database CHECK: the two desk paths that legitimately write
+    /// <see cref="IsSaudi"/> with <see cref="NationalityId"/> 0 would fail
+    /// it.</para></summary>
+    public const int SaudiNationalityId = 682;
 
     /// <summary>
     /// Every identity document this attendee holds — one row per document,
@@ -136,14 +151,18 @@ public class UserProfile : BaseAuditEntity
 
     public SIMF.Domain.Badges.BadgeBatch? BadgeBatch { get; set; }
 
-    /// <summary>The edition year this attendee was registered for, and the year
-    /// their badge is valid in. Stamped from the open edition at creation.
+    /// <summary>The edition year this attendee's badge is valid in. Stamped from
+    /// the open edition at creation, and re-stamped to the new year for anyone
+    /// carried forward when the next one opens.
     ///
     /// <para>Closing a year does not delete its attendees — their records stay,
     /// labelled with the year they belong to, which is what makes an edition a
-    /// queryable dimension rather than a date range. Opening the next year
-    /// clears their QR, so a returning attendee is re-issued rather than left
-    /// holding a badge that every door refuses.</para></summary>
+    /// queryable dimension rather than a date range. Opening the next year clears
+    /// the QR of everyone holding one and moves this column with it, so a
+    /// returning attendee is re-issued rather than left holding a badge that
+    /// every door refuses. The two have to move together: the gate refuses a
+    /// badge whose year is not the open one, so re-issuing against a stale year
+    /// would hand out badges that are dead on arrival.</para></summary>
     public int EditionYear { get; set; }
 
     /// <summary>Whether this profile appears in the "Meet People Like You"
@@ -236,6 +255,7 @@ public class UserProfile : BaseAuditEntity
     /// Null for everyone who is not VVIP or VIP.</summary>
     public Guid? VipPhotoFileId { get; set; }
 
+    public StoredFile? VipPhotoFile { get; set; }
     /// <summary>Marks the profile as a delegation member (وفد); a delegate is
     /// otherwise an ordinary visitor. The create path refuses the flag unless the
     /// nationality is an invited country (<see cref="Common.Country.IsInvited"/>).
@@ -343,6 +363,7 @@ public class UserProfile : BaseAuditEntity
     /// holding anything of the sort.</para></summary>
     public Guid? IdImageFileId { get; set; }
 
+    public StoredFile? IdImageFile { get; set; }
     // The five accessibility choices the app used to keep in device preferences
     // ONLY, so they never followed the user to a second device and did not
     // survive a reinstall. They are per-account settings, so they live on the

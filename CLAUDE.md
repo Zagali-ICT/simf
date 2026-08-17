@@ -367,10 +367,15 @@ tables/columns and was explicitly slated to land *before* the freeze-seal;
 strings to `*FileId` FKs — which **drops columns** and re-minted the App
 migration id in the table above.
 
-Two pointers are knowingly unconverted — `ArchivePastSpeaker.PhotoRelativePath`
-and `ArchiveMediaItem.Url` — and that work is in flight. **The carve-out stays
-open for exactly those two**, because closing it mid-conversion would put a
-half-finished pipeline behind an owner lift for no benefit.
+**SPENT as of 2026-08-16.** The two pointers this paragraph used to hold open —
+`ArchivePastSpeaker.PhotoRelativePath` and `ArchiveMediaItem.Url` — are converted
+to `PhotoFileId` and `MediaFileId`, and `MediaPointerRatchetTests.KnownRemaining`
+is empty, which is the closing condition the next paragraph names.
+
+That sentence outlived the work by weeks and cost real time: it is the reason a
+reader of this file kept finding those two entities and concluding the conversion
+was unfinished, while the code had already done it. If a carve-out's closing
+condition is met, close it here in the same changeset.
 
 It closes on evidence rather than on a date: the remaining pointers are counted
 down by `tests/SIMF.Domain.Tests/MediaPointerRatchetTests.cs`, whose list only

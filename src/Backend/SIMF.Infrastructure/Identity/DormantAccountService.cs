@@ -26,6 +26,7 @@ namespace SIMF.Infrastructure.Identity;
 /// </remarks>
 internal sealed class DormantAccountService(
     SimfIdentityDbContext dbContext,
+    SimfAppDbContext appDbContext,
     IRefreshTokenRepository refreshTokens,
     IAuditLog auditLog,
     IOptions<IdentityLifecycleOptions> options,
@@ -55,6 +56,27 @@ internal sealed class DormantAccountService(
         {
             return 0;
         }
+
+        // Admission is decided on the attendee's profile, not on the account, so
+        // the sweep has to withdraw it there as well; disabling the account alone
+        // left the gate and the offline hall roster still admitting the holder.
+        //
+        // Deliberately BEFORE the Identity save. A failure here leaves every one
+        // of these users still Approved, so the next sweep re-selects them and
+        // retries the pair; the reverse order would leave them disabled, out of
+        // the query for ever, and admitted at the door with nothing to notice it.
+        var dormantUserIds = dormant.Select(user => user.Id).ToList();
+        await appDbContext.UserProfiles
+            .Where(profile => profile.UserId != null
+                && dormantUserIds.Contains(profile.UserId.Value)
+                && profile.AdmissionState != AccountState.Disabled)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(profile => profile.AdmissionState, AccountState.Disabled)
+                    .SetProperty(profile => profile.StateChangedAt, now)
+                    // No actor, exactly as the account-side stamp below records it.
+                    .SetProperty(profile => profile.StateChangedByUserId, (Guid?)null),
+                cancellationToken);
 
         foreach (var user in dormant)
         {

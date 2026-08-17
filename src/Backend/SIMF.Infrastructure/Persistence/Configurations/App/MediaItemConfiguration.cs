@@ -10,7 +10,7 @@ namespace SIMF.Infrastructure.Persistence.Configurations.App;
 /// <c>SimfAppDbContext.OnModelCreating</c>'s
 /// <c>ApplyConfigurationsFromAssembly</c> namespace filter. Binary bytes are
 /// out-of-row in the unified StoredFile store, referenced by the
-/// <c>ImageFileId</c> / <c>ThumbnailFileId</c> pointers. Max lengths below are
+/// <c>ImageFileId</c> pointer. Max lengths below are
 /// the single source of truth the FluentValidation rules and the service
 /// validation mirror.</summary>
 internal sealed class MediaItemConfiguration : IEntityTypeConfiguration<MediaItem>
@@ -40,32 +40,27 @@ internal sealed class MediaItemConfiguration : IEntityTypeConfiguration<MediaIte
         // The active gallery read path filtered by media kind.
         builder.HasIndex(item => new { item.IsActive, item.Kind, item.DisplayOrder });
 
-        // Real foreign keys into the one file store. Both columns were already
-        // typed Guids, so this adds the constraint the entity's own doc comment
-        // said it did not have.
+        // Real foreign keys into the one file store. All three columns were
+        // already typed Guids, so this adds the constraint the entity's own doc
+        // comment said it did not have.
         //
-        // No navigation property, matching UserProfile's file keys: nothing walks
-        // from a media item to its file, because the bytes are always fetched
-        // through IFileService by id.
+        // Each key carries a navigation property, so an eager load can bring the
+        // StoredFile row with the item; the byte-serving paths still go through
+        // IFileService by id rather than walking it.
         //
         // Restrict, not Cascade: deleting a file must never delete the gallery
         // item that shows it. It should never fire, because StoredFileService
         // deactivates rows rather than removing them, which is precisely what
         // makes the key worth having.
         builder.HasIndex(item => item.ImageFileId);
-        builder.HasOne<StoredFile>()
+        builder.HasOne(item => item.ImageFile)
             .WithMany()
             .HasForeignKey(item => item.ImageFileId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasIndex(item => item.ThumbnailFileId);
-        builder.HasOne<StoredFile>()
-            .WithMany()
-            .HasForeignKey(item => item.ThumbnailFileId)
-            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(item => item.VideoFileId);
-        builder.HasOne<StoredFile>()
+        builder.HasOne(item => item.VideoFile)
             .WithMany()
             .HasForeignKey(item => item.VideoFileId)
             .OnDelete(DeleteBehavior.Restrict);
