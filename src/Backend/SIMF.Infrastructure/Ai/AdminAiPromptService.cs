@@ -1,12 +1,15 @@
 // Tests: SIMF.Api.Tests/AiAdminTests.cs
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Ai.Abstractions;
 using SIMF.Application.Auditing;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Grids;
 using SIMF.Contracts.Ai;
 using SIMF.Domain.Ai;
+using SIMF.Infrastructure.Common.Grids;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Ai;
@@ -21,71 +24,35 @@ internal sealed class AdminAiPromptService(
     TimeProvider timeProvider,
     ILogger<AdminAiPromptService> logger) : IAdminAiPromptService
 {
-    public async Task<GridPage<AdminAiPromptSummary>> ListAsync(
-        GridQuery query, CancellationToken cancellationToken = default)
-    {
-        var (skip, top) = query.ClampPage(25, 200);
+    /// <summary>
+    /// The grid contract for /admin/ai/prompts: one entry per key
+    /// AiPromptsList.razor can send, plus the columns the page shows but does not
+    /// yet sort on. The Arabic display name is declared so the free-text search
+    /// still spans both languages the way the hand-written search did.
+    /// </summary>
+    private static readonly GridColumns<AiPrompt> PromptColumns = new GridColumns<AiPrompt>()
+        .Add("key", prompt => prompt.Key, searchable: true)
+        .Add("feature", prompt => prompt.Feature)
+        .Add("displayName", prompt => prompt.DisplayName, searchable: true)
+        .Add("displayNameArabic", prompt => prompt.DisplayNameArabic, searchable: true)
+        .Add("provider", prompt => prompt.Provider)
+        .Add("model", prompt => prompt.Model)
+        .Add("version", prompt => prompt.Version)
+        .Add("isActive", prompt => prompt.IsActive)
+        .DefaultOrder("feature")
+        .DefaultOrder("key")
+        .PageSize(fallback: 25, max: 200);
 
-        var rows = appDbContext.AiPrompts.AsNoTracking().AsQueryable();
+    private static readonly Expression<Func<AiPrompt, AdminAiPromptSummary>> ToPromptSummary =
+        prompt => new AdminAiPromptSummary(
+            prompt.Id, prompt.Key, prompt.Feature, prompt.DisplayName, prompt.DisplayNameArabic,
+            prompt.Provider, prompt.Model, prompt.Temperature, prompt.MaxOutputTokens,
+            prompt.IsActive, prompt.Version, prompt.CreatedAt, prompt.UpdatedAt);
 
-        // CP grid per-column filters. Unknown columns are ignored.
-        foreach (var (column, raw) in query.Filters)
-        {
-            if (string.IsNullOrWhiteSpace(raw)) { continue; }
-            var v = raw.Trim();
-            switch (column.ToLowerInvariant())
-            {
-                case "key":
-                    rows = rows.Where(p => p.Key.Contains(v));
-                    break;
-                case "displayname":
-                    rows = rows.Where(p => p.DisplayName.Contains(v) || p.DisplayNameArabic.Contains(v));
-                    break;
-                case "feature":
-                    if (Enum.TryParse<AiFeature>(v, ignoreCase: true, out var feature))
-                    {
-                        rows = rows.Where(p => p.Feature == feature);
-                    }
-                    break;
-            }
-        }
-
-        if (!string.IsNullOrWhiteSpace(query.Search))
-        {
-            var s = query.Search;
-            rows = rows.Where(p => p.Key.Contains(s)
-                || p.DisplayName.Contains(s) || p.DisplayNameArabic.Contains(s));
-        }
-
-        // CP grid sortable columns. Default: Feature, then Key.
-        rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
-        {
-            ("key", false) => rows.OrderBy(p => p.Key),
-            ("key", true) => rows.OrderByDescending(p => p.Key),
-            ("displayname", false) => rows.OrderBy(p => p.DisplayName),
-            ("displayname", true) => rows.OrderByDescending(p => p.DisplayName),
-            ("provider", false) => rows.OrderBy(p => p.Provider),
-            ("provider", true) => rows.OrderByDescending(p => p.Provider),
-            ("model", false) => rows.OrderBy(p => p.Model),
-            ("model", true) => rows.OrderByDescending(p => p.Model),
-            ("version", false) => rows.OrderBy(p => p.Version),
-            ("version", true) => rows.OrderByDescending(p => p.Version),
-            ("isactive", false) => rows.OrderBy(p => p.IsActive),
-            ("isactive", true) => rows.OrderByDescending(p => p.IsActive),
-            ("feature", true) => rows.OrderByDescending(p => p.Feature).ThenByDescending(p => p.Key),
-            _ => rows.OrderBy(p => p.Feature).ThenBy(p => p.Key),
-        };
-
-        var total = await rows.CountAsync(cancellationToken);
-        var items = await rows.Skip(skip).Take(top)
-            .Select(p => new AdminAiPromptSummary(
-                p.Id, p.Key, p.Feature, p.DisplayName, p.DisplayNameArabic,
-                p.Provider, p.Model, p.Temperature, p.MaxOutputTokens,
-                p.IsActive, p.Version, p.CreatedAt, p.UpdatedAt))
-            .ToListAsync(cancellationToken);
-        return GridPage<AdminAiPromptSummary>.Of(items, total,
-            skip, top);
-    }
+    public Task<GridPage<AdminAiPromptSummary>> ListAsync(
+        GridQuery query, CancellationToken cancellationToken = default) =>
+        appDbContext.AiPrompts.ToGridPageAsync(
+            query, PromptColumns, prompt => prompt.Id, ToPromptSummary, cancellationToken);
 
     public async Task<AdminAiPromptDetail?> GetAsync(
         Guid id, CancellationToken cancellationToken = default)
@@ -307,71 +274,48 @@ internal sealed class AdminAiPromptService(
             .SingleOrDefaultAsync(cancellationToken);
     }
 
-    public async Task<GridPage<AdminAiInvocationRow>> ListInvocationsAsync(
-        GridQuery query, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// The grid contract for /admin/ai/invocations. <c>errorOnly</c> is the
+    /// page-level toggle rather than a column, so it is hand-written: it reads a
+    /// nullable error code as a boolean, which no column declaration can infer.
+    /// </summary>
+    private static readonly GridColumns<AiInvocation> InvocationColumns = new GridColumns<AiInvocation>()
+        .Add("createdAt", invocation => invocation.CreatedAt)
+        .Add("promptKey", invocation => invocation.PromptKey)
+        .Add("feature", invocation => invocation.Feature)
+        .Add("provider", invocation => invocation.Provider)
+        .Add("callerKind", invocation => invocation.CallerKind)
+        .Add("latencyMs", invocation => invocation.LatencyMs)
+        .AddFilter("errorOnly", ErrorOnly)
+        .DefaultOrder("createdAt", descending: true)
+        .PageSize(fallback: 50, max: 500);
+
+    private static readonly Expression<Func<AiInvocation, AdminAiInvocationRow>> ToInvocationRow =
+        invocation => new AdminAiInvocationRow(
+            invocation.Id, invocation.PromptKey, invocation.Feature, invocation.Provider,
+            invocation.Model, invocation.CallerKind, invocation.CallerUserId,
+            invocation.TokensInput, invocation.TokensOutput, invocation.LatencyMs,
+            invocation.ErrorCode, invocation.CreatedAt);
+
+    public Task<GridPage<AdminAiInvocationRow>> ListInvocationsAsync(
+        GridQuery query, CancellationToken cancellationToken = default) =>
+        appDbContext.AiInvocations.ToGridPageAsync(
+            query, InvocationColumns, invocation => invocation.Id, ToInvocationRow,
+            cancellationToken);
+
+    private static Expression<Func<AiInvocation, bool>> ErrorOnly(string raw)
     {
-        var (skip, top) = query.ClampPage(50, 500);
-
-        var rows = appDbContext.AiInvocations.AsNoTracking().AsQueryable();
-
-        // CP grid per-column filters. Unknown columns are ignored.
-        // Feature filters by enum name; the rest are substring matches. The
-        // page-level "Errors only" toggle reaches us as the errorOnly filter.
-        foreach (var (column, raw) in query.Filters)
+        if (!bool.TryParse(raw, out var errorsOnly))
         {
-            if (string.IsNullOrWhiteSpace(raw)) { continue; }
-            var v = raw.Trim();
-            switch (column.ToLowerInvariant())
-            {
-                case "promptkey":
-                    rows = rows.Where(i => i.PromptKey.Contains(v));
-                    break;
-                case "callerkind":
-                    rows = rows.Where(i => i.CallerKind.Contains(v));
-                    break;
-                case "feature":
-                    if (Enum.TryParse<AiFeature>(v, ignoreCase: true, out var feature))
-                    {
-                        rows = rows.Where(i => i.Feature == feature);
-                    }
-                    break;
-                case "erroronly":
-                    if (string.Equals(v, "true", StringComparison.OrdinalIgnoreCase))
-                    {
-                        rows = rows.Where(i => i.ErrorCode != null);
-                    }
-                    break;
-            }
+            throw GridFilters.ValueInvalid("errorOnly", raw, "true or false");
         }
 
-        // CP grid sortable columns. Default: newest first.
-        rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
+        if (errorsOnly)
         {
-            ("createdat", false) => rows.OrderBy(i => i.CreatedAt),
-            ("createdat", true) => rows.OrderByDescending(i => i.CreatedAt),
-            ("promptkey", false) => rows.OrderBy(i => i.PromptKey),
-            ("promptkey", true) => rows.OrderByDescending(i => i.PromptKey),
-            ("feature", false) => rows.OrderBy(i => i.Feature),
-            ("feature", true) => rows.OrderByDescending(i => i.Feature),
-            ("provider", false) => rows.OrderBy(i => i.Provider),
-            ("provider", true) => rows.OrderByDescending(i => i.Provider),
-            ("callerkind", false) => rows.OrderBy(i => i.CallerKind),
-            ("callerkind", true) => rows.OrderByDescending(i => i.CallerKind),
-            ("latencyms", false) => rows.OrderBy(i => i.LatencyMs),
-            ("latencyms", true) => rows.OrderByDescending(i => i.LatencyMs),
-            _ => rows.OrderByDescending(i => i.CreatedAt),
-        };
+            return invocation => invocation.ErrorCode != null;
+        }
 
-        var total = await rows.CountAsync(cancellationToken);
-        var items = await rows.Skip(skip).Take(top)
-            .Select(i => new AdminAiInvocationRow(
-                i.Id, i.PromptKey, i.Feature, i.Provider, i.Model,
-                i.CallerKind, i.CallerUserId,
-                i.TokensInput, i.TokensOutput, i.LatencyMs,
-                i.ErrorCode, i.CreatedAt))
-            .ToListAsync(cancellationToken);
-        return GridPage<AdminAiInvocationRow>.Of(items, total,
-            skip, top);
+        return invocation => invocation.ErrorCode == null;
     }
 
     public async Task<AdminAiDashboard> GetDashboardAsync(

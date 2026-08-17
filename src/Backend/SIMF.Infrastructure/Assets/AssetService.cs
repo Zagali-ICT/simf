@@ -5,8 +5,10 @@ using SIMF.Application.Assets.Abstractions;
 using SIMF.Application.Files.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Grids;
 using SIMF.Contracts.Assets;
 using SIMF.Domain.Files;
+using SIMF.Infrastructure.Common.Grids;
 using SIMF.Infrastructure.Files;
 using SIMF.Infrastructure.Persistence;
 
@@ -52,6 +54,59 @@ internal sealed class AssetService(
 
     private static readonly IReadOnlyDictionary<FileService, AssetCategory> ServiceToCategory =
         CategoryToService.ToDictionary(kv => kv.Value, kv => kv.Key);
+
+    /// <summary>
+    /// The grid contract for /admin/assets. Every filter here is hand-written,
+    /// because the Media Library speaks the ASSET vocabulary (category, kind,
+    /// source type) while the rows are <see cref="StoredFile"/>s that store the
+    /// file vocabulary (service, file type, source type) — so each key is a
+    /// translation, not a comparison. A key not declared here is a 400, and a value
+    /// that names no known category / kind / source is a 400 rather than a filter
+    /// that quietly does nothing.
+    /// Kept beside the two dictionaries it translates through.
+    /// </summary>
+    private static readonly GridColumns<StoredFile> Columns = new GridColumns<StoredFile>()
+        .Add("isActive", file => file.IsActive)
+        .Add("createdAt", file => file.CreatedAt)
+        .AddFilter("category", raw =>
+        {
+            if (!Enum.TryParse<AssetCategory>(raw, ignoreCase: true, out var category)
+                || !CategoryToService.TryGetValue(category, out var service))
+            {
+                throw GridFilters.ValueInvalid(
+                    "category", raw,
+                    $"one of: {string.Join(", ", CategoryToService.Keys)}");
+            }
+            return file => file.Service == service;
+        })
+        .AddFilter("kind", raw =>
+        {
+            if (!Enum.TryParse<AssetKind>(raw, ignoreCase: true, out var kind)
+                || !Enum.IsDefined(kind))
+            {
+                throw GridFilters.ValueInvalid(
+                    "kind", raw,
+                    $"one of: {string.Join(", ", Enum.GetNames<AssetKind>())}");
+            }
+            var fileTypes = FileTypesFor(kind);
+            return file => fileTypes.Contains(file.FileType);
+        })
+        .AddFilter("sourceType", raw =>
+        {
+            if (!Enum.TryParse<AssetSourceType>(raw, ignoreCase: true, out var sourceType)
+                || !Enum.IsDefined(sourceType))
+            {
+                throw GridFilters.ValueInvalid(
+                    "sourceType", raw,
+                    $"one of: {string.Join(", ", Enum.GetNames<AssetSourceType>())}");
+            }
+            var source = sourceType == AssetSourceType.ExternalLink
+                ? FileSourceType.ExternalLink
+                : FileSourceType.Upload;
+            return file => file.SourceType == source;
+        })
+        .DefaultOrder("createdAt", descending: true)
+        .PageSize(fallback: 25, max: 200);
 
     /// <summary>Every <see cref="AssetCategory"/> mapped to a <see cref="FileService"/>
     /// here — for the guard test that fails the build if a category is added without a
@@ -204,45 +259,19 @@ internal sealed class AssetService(
     public async Task<GridPage<AdminAssetSummary>> ListAsync(
         GridQuery query, CancellationToken cancellationToken = default)
     {
-        var (skip, top) = query.ClampPage(25, 200);
-
+        // Scope: only the StoredFile services the Media Library owns. It stays
+        // outside the grid so no filter can widen it to avatars or ID documents.
         var assetServices = CategoryToService.Values.ToList();
-        var rows = dbContext.StoredFiles.AsNoTracking()
-            .Where(f => assetServices.Contains(f.Service));
 
-        if (query.Filters.TryGetValue("category", out var cat)
-            && Enum.TryParse<AssetCategory>(cat, true, out var c) && Enum.IsDefined(c)
-            && CategoryToService.TryGetValue(c, out var svc))
-        {
-            rows = rows.Where(f => f.Service == svc);
-        }
-        if (query.Filters.TryGetValue("kind", out var k)
-            && Enum.TryParse<AssetKind>(k, true, out var kk) && Enum.IsDefined(kk))
-        {
-            var fileTypes = FileTypesFor(kk);
-            rows = rows.Where(f => fileTypes.Contains(f.FileType));
-        }
-        if (query.Filters.TryGetValue("sourceType", out var st)
-            && Enum.TryParse<AssetSourceType>(st, true, out var s) && Enum.IsDefined(s))
-        {
-            var source = s == AssetSourceType.ExternalLink
-                ? FileSourceType.ExternalLink : FileSourceType.Upload;
-            rows = rows.Where(f => f.SourceType == source);
-        }
-        if (query.Filters.TryGetValue("isActive", out var ia) && bool.TryParse(ia, out var active))
-        {
-            rows = rows.Where(f => f.IsActive == active);
-        }
+        // Paged as entities rather than projected: the row's category and owner name
+        // are resolved in C# from a polymorphic owner table, which no SELECT carries.
+        var page = await dbContext.StoredFiles
+            .Where(file => assetServices.Contains(file.Service))
+            .ToGridPageAsync(query, Columns, file => file.Id, file => file, cancellationToken);
 
-        var total = await rows.CountAsync(cancellationToken);
-        var page = await rows
-            .OrderByDescending(f => f.CreatedAt)
-            .Skip(skip).Take(top)
-            .ToListAsync(cancellationToken);
-
-        var names = await ResolveOwnerNamesAsync(page, cancellationToken);
-        var items = page.Select(f => ToSummary(f, names)).ToList();
-        return GridPage<AdminAssetSummary>.Of(items, total, skip, top);
+        var names = await ResolveOwnerNamesAsync(page.Items, cancellationToken);
+        var items = page.Items.Select(file => ToSummary(file, names)).ToList();
+        return GridPage<AdminAssetSummary>.Of(items, page.Total, page.Skip, page.Top);
     }
 
     public async Task<AdminAssetSummary?> GetByIdAsync(

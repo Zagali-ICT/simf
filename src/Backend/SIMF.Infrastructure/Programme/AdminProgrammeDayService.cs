@@ -5,9 +5,11 @@ using SIMF.Application.Auditing;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Grids;
 using SIMF.Contracts.Admin;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.Programme;
+using SIMF.Infrastructure.Common.Grids;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Programme;
@@ -27,84 +29,38 @@ internal sealed class AdminProgrammeDayService(
     TimeProvider timeProvider,
     ILogger<AdminProgrammeDayService> logger) : IAdminProgrammeDayService
 {
-    public async Task<GridPage<AdminProgrammeDaySummary>> ListAsync(
-        GridQuery query, CancellationToken cancellationToken = default)
-    {
-        var (skip, top) = query.ClampPage(25, 200);
+    /// <summary>
+    /// The grid contract for /admin/programme-days: one entry per key
+    /// ProgrammeDaysList.razor can send, as both its filter and its sort. The
+    /// display-order key is "order", not "displayOrder" — that is the column key the
+    /// page sends, and a key not declared here is a 400.
+    /// </summary>
+    private static readonly GridColumns<ProgrammeDay> Columns =
+        new GridColumns<ProgrammeDay>()
+            .Add("date", day => day.Date)
+            .Add("title", day => day.Title, searchable: true)
+            .Add("titleArabic", day => day.TitleArabic, searchable: true)
+            .Add("order", day => day.DisplayOrder)
+            .Add("isActive", day => day.IsActive)
+            .DefaultOrder("order")
+            .DefaultOrder("date")
+            .PageSize(fallback: 25, max: 200);
 
-        var rows = db.ProgrammeDays.AsNoTracking().AsQueryable();
-
-        if (!string.IsNullOrWhiteSpace(query.Search))
-        {
-            var term = query.Search.Trim();
-            rows = rows.Where(day =>
-                EF.Functions.Like(day.Title, $"%{term}%")
-                || EF.Functions.Like(day.TitleArabic, $"%{term}%"));
-        }
-
-        // CP grid per-column filters. Unknown columns are ignored.
-        foreach (var (column, raw) in query.Filters)
-        {
-            if (string.IsNullOrWhiteSpace(raw)) { continue; }
-            var v = raw.Trim();
-            switch (column.ToLowerInvariant())
-            {
-                case "title":
-                    rows = rows.Where(day => day.Title.Contains(v));
-                    break;
-                case "titlearabic":
-                    rows = rows.Where(day => day.TitleArabic.Contains(v));
-                    break;
-                case "isactive":
-                    if (bool.TryParse(v, out var isActive))
-                    {
-                        rows = rows.Where(day => day.IsActive == isActive);
-                    }
-                    break;
-            }
-        }
-
-        // CP grid sortable columns. Default: DisplayOrder, then Date.
-        rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
-        {
-            ("title", true) => rows.OrderByDescending(day => day.Title),
-            ("title", false) => rows.OrderBy(day => day.Title),
-            ("date", true) => rows.OrderByDescending(day => day.Date),
-            ("date", false) => rows.OrderBy(day => day.Date),
-            ("order", true) => rows.OrderByDescending(day => day.DisplayOrder),
-            ("order", false) => rows.OrderBy(day => day.DisplayOrder),
-            ("isactive", true) => rows.OrderByDescending(day => day.IsActive),
-            ("isactive", false) => rows.OrderBy(day => day.IsActive),
-            _ => rows.OrderBy(day => day.DisplayOrder).ThenBy(day => day.Date),
-        };
-
-        var total = await rows.CountAsync(cancellationToken);
-        var page = await rows
-            .Skip(skip)
-            .Take(top)
-            .Select(day => new
-            {
-                day.Id,
-                day.Date,
-                day.Title,
-                day.TitleArabic,
-                day.DisplayOrder,
-                day.IsActive,
-            })
-            .ToListAsync(cancellationToken);
-
-        var withImage = await DaysWithImageAsync(
-            page.Select(d => d.Id).ToList(), cancellationToken);
-
-        var summaries = page
-            .Select(d => new AdminProgrammeDaySummary(
-                d.Id, d.Date, d.Title, d.TitleArabic, d.DisplayOrder,
-                withImage.Contains(d.Id), d.IsActive))
-            .ToList();
-
-        return GridPage<AdminProgrammeDaySummary>.Of(summaries, total,
-            skip, top);
-    }
+    /// <summary>The image flag is resolved inside the projection rather than by a
+    /// second pass over the page's ids: the day image is a row in the same
+    /// <see cref="SimfAppDbContext"/>, so an EXISTS beside the SELECT answers it in
+    /// the round trip that already reads the page.</summary>
+    public Task<GridPage<AdminProgrammeDaySummary>> ListAsync(
+        GridQuery query, CancellationToken cancellationToken = default) =>
+        db.ProgrammeDays.ToGridPageAsync(
+            query, Columns, day => day.Id,
+            day => new AdminProgrammeDaySummary(
+                day.Id, day.Date, day.Title, day.TitleArabic, day.DisplayOrder,
+                db.StoredFiles.Any(file => file.IsActive
+                    && file.Service == FileService.ProgrammeDayImage
+                    && file.OwnerEntityId == day.Id),
+                day.IsActive),
+            cancellationToken);
 
     public async Task<AdminProgrammeDayDetail?> GetAsync(
         Guid id, CancellationToken cancellationToken = default)
@@ -257,26 +213,6 @@ internal sealed class AdminProgrammeDayService(
                 && f.Service == FileService.ProgrammeDayImage
                 && f.OwnerEntityId == dayId,
             cancellationToken);
-
-    private async Task<HashSet<Guid>> DaysWithImageAsync(
-        IReadOnlyCollection<Guid> dayIds, CancellationToken cancellationToken)
-    {
-        if (dayIds.Count == 0)
-        {
-            return new HashSet<Guid>();
-        }
-        // The day image now lives in the unified StoredFile store.
-        return (await db.StoredFiles
-                .AsNoTracking()
-                .Where(f => f.IsActive
-                    && f.Service == FileService.ProgrammeDayImage
-                    && f.OwnerEntityId != null
-                    && dayIds.Contains(f.OwnerEntityId.Value))
-                .Select(f => f.OwnerEntityId!.Value)
-                .Distinct()
-                .ToListAsync(cancellationToken))
-            .ToHashSet();
-    }
 
     private static (string Title, string TitleArabic) ValidateAndNormalise(
         string titleRaw, string titleArabicRaw)

@@ -2,6 +2,7 @@
 //        SIMF.Api.Tests/GateOperatorModelTests.cs (operator candidates,
 //        operator eligibility validation, gate-form lookups, assignment email)
 using System.Globalization;
+using System.Linq.Expressions;
 using ClosedXML.Excel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -10,8 +11,10 @@ using SIMF.Application.Auditing;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Grids;
 using SIMF.Contracts.Admin;
 using SIMF.Domain.AccessControl;
+using SIMF.Infrastructure.Common.Grids;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.AccessControl;
@@ -47,79 +50,40 @@ internal sealed class AdminGateService(
                 .Contains(PermissionCatalog.Gates.Operate))
             .ToArray();
 
-    public async Task<GridPage<AdminGateSummary>> ListAllAsync(
-        GridQuery query, CancellationToken cancellationToken = default)
-    {
-        var (skip, top) = query.ClampPage(25, 200);
+    /// <summary>
+    /// The grid contract for /admin/gates: one entry per key GatesList.razor can
+    /// send, as both its filter and its sort. A key not declared here is a 400, not
+    /// a silently ignored request. isActive is declared because the list has always
+    /// honoured an isActive filter, even though the page renders that column
+    /// without a filter box.
+    /// </summary>
+    private static readonly GridColumns<Gate> Columns = new GridColumns<Gate>()
+        .Add("code", gate => gate.Code, searchable: true)
+        .Add("name", gate => gate.Name, searchable: true)
+        .Add("nameArabic", gate => gate.NameArabic, searchable: true)
+        .Add("directionMode", gate => gate.DirectionMode)
+        .Add("isActive", gate => gate.IsActive)
+        .DefaultOrder("code")
+        .PageSize(fallback: 25, max: 200);
 
-        var rows = appDbContext.Gates.AsNoTracking().AsQueryable();
+    /// <summary>The two counts are correlated sub-queries, not declared columns:
+    /// the grid renders them but offers no sort or filter on either, so putting
+    /// them here keeps them one SELECT and out of the ORDER BY.</summary>
+    private static readonly Expression<Func<Gate, AdminGateSummary>> ToSummary =
+        gate => new AdminGateSummary(
+            gate.Id, gate.Code, gate.Name, gate.NameArabic,
+            gate.DirectionMode,
+            gate.AllowedProfileTypes.Count,
+            gate.Assignments.Count(assignment => assignment.IsActive),
+            gate.IsActive, gate.CreatedAt,
+            // Carried so the grid Excel export round-trips the
+            // bilingual description (positional order matches the record).
+            gate.Description, gate.DescriptionArabic);
 
-        // CP grid per-column filters. Unknown columns are ignored;
-        // isActive is a status filter handled below. Code/Name/NameArabic
-        // are server-side substring matches on App-owned columns.
-        foreach (var (column, raw) in query.Filters)
-        {
-            if (string.IsNullOrWhiteSpace(raw)) { continue; }
-            var v = raw.Trim();
-            switch (column.ToLowerInvariant())
-            {
-                case "code":
-                    rows = rows.Where(gate => gate.Code.Contains(v));
-                    break;
-                case "name":
-                    rows = rows.Where(gate => gate.Name.Contains(v));
-                    break;
-                case "namearabic":
-                    rows = rows.Where(gate => gate.NameArabic.Contains(v));
-                    break;
-            }
-        }
-
-        if (!string.IsNullOrWhiteSpace(query.Search))
-        {
-            var term = query.Search.Trim();
-            rows = rows.Where(gate =>
-                EF.Functions.Like(gate.Code, $"%{term}%")
-                || EF.Functions.Like(gate.Name, $"%{term}%")
-                || EF.Functions.Like(gate.NameArabic, $"%{term}%"));
-        }
-        if (query.Filters.TryGetValue("isActive", out var activeFilter)
-            && bool.TryParse(activeFilter, out var isActive))
-        {
-            rows = rows.Where(gate => gate.IsActive == isActive);
-        }
-
-        rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
-        {
-            ("code", true) => rows.OrderByDescending(gate => gate.Code),
-            ("code", false) => rows.OrderBy(gate => gate.Code),
-            ("name", true) => rows.OrderByDescending(gate => gate.Name),
-            ("name", false) => rows.OrderBy(gate => gate.Name),
-            ("namearabic", true) => rows.OrderByDescending(gate => gate.NameArabic),
-            ("namearabic", false) => rows.OrderBy(gate => gate.NameArabic),
-            ("directionmode", true) => rows.OrderByDescending(gate => gate.DirectionMode),
-            ("directionmode", false) => rows.OrderBy(gate => gate.DirectionMode),
-            ("createdat", true) => rows.OrderByDescending(gate => gate.CreatedAt),
-            ("createdat", false) => rows.OrderBy(gate => gate.CreatedAt),
-            _ => rows.OrderBy(gate => gate.Code),
-        };
-
-        var total = await rows.CountAsync(cancellationToken);
-        var page = await rows.Skip(skip).Take(top)
-            .Select(gate => new AdminGateSummary(
-                gate.Id, gate.Code, gate.Name, gate.NameArabic,
-                gate.DirectionMode,
-                gate.AllowedProfileTypes.Count,
-                gate.Assignments.Count(assignment => assignment.IsActive),
-                gate.IsActive, gate.CreatedAt,
-                // Carried so the grid Excel export round-trips the
-                // bilingual description (positional order matches the record).
-                gate.Description, gate.DescriptionArabic))
-            .ToListAsync(cancellationToken);
-
-        return GridPage<AdminGateSummary>.Of(page, total,
-            skip, top);
-    }
+    public Task<GridPage<AdminGateSummary>> ListAllAsync(
+        GridQuery query, CancellationToken cancellationToken = default) =>
+        appDbContext.Gates.ToGridPageAsync(
+            query, Columns, gate => gate.Id, ToSummary, cancellationToken);
 
     public async Task<AdminGateDetail?> GetAsync(
         Guid id, CancellationToken cancellationToken = default)

@@ -1,12 +1,15 @@
 // Tests: SIMF.Api.Tests/SponsorsTests.cs
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.Assets.Abstractions;
 using SIMF.Application.Auditing;
 using SIMF.Application.Sponsors.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Grids;
 using SIMF.Contracts.Admin;
 using SIMF.Domain.Sponsors;
+using SIMF.Infrastructure.Common.Grids;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Sponsors;
@@ -20,101 +23,56 @@ internal sealed class AdminSponsorService(
     IAuditLog auditLog,
     TimeProvider timeProvider) : IAdminSponsorService
 {
+    /// <summary>
+    /// The grid contract for /admin/sponsors: one entry per key SponsorsList.razor
+    /// can send, as both its filter and its sort. A key not declared here is a 400,
+    /// not a silently ignored request.
+    /// </summary>
+    private static readonly GridColumns<Sponsor> Columns = new GridColumns<Sponsor>()
+        .Add("nameEn", sponsor => sponsor.Name, searchable: true)
+        .Add("nameAr", sponsor => sponsor.NameArabic, searchable: true)
+        .Add("tier", sponsor => sponsor.Tier)
+        .Add("displayOrder", sponsor => sponsor.DisplayOrder)
+        .Add("isActive", sponsor => sponsor.IsActive)
+        // Tier, then DisplayOrder, then NameAr — the public ordering.
+        .DefaultOrder("tier")
+        .DefaultOrder("displayOrder")
+        .DefaultOrder("nameAr")
+        .PageSize(fallback: 25, max: 200);
+
+    private static readonly Expression<Func<Sponsor, AdminSponsorSummary>> ToSummary =
+        sponsor => new AdminSponsorSummary(
+            sponsor.Id,
+            sponsor.Name,
+            sponsor.NameArabic,
+            (int)sponsor.Tier,
+            sponsor.Tier.ToString(),
+            null,
+            sponsor.Url,
+            sponsor.DisplayOrder,
+            sponsor.IsActive,
+            sponsor.CreatedAt,
+            sponsor.Tagline,
+            sponsor.TaglineArabic,
+            sponsor.About,
+            sponsor.AboutArabic);
+
     public async Task<GridPage<AdminSponsorSummary>> ListAllAsync(
         GridQuery query, CancellationToken cancellationToken = default)
     {
-        var (skip, top) = query.ClampPage(25, 200);
-
-        var rows = appDbContext.Sponsors.AsNoTracking().AsQueryable();
-
-        if (!string.IsNullOrWhiteSpace(query.Search))
-        {
-            var term = query.Search.Trim();
-            rows = rows.Where(sponsor =>
-                EF.Functions.Like(sponsor.Name, $"%{term}%")
-                || EF.Functions.Like(sponsor.NameArabic, $"%{term}%"));
-        }
-
-        if (query.Filters.TryGetValue("isActive", out var activeFilter)
-            && bool.TryParse(activeFilter, out var isActive))
-        {
-            rows = rows.Where(sponsor => sponsor.IsActive == isActive);
-        }
-
-        if (query.Filters.TryGetValue("tier", out var tierFilter)
-            && int.TryParse(tierFilter, out var tierValue)
-            && Enum.IsDefined(typeof(SponsorTier), tierValue))
-        {
-            var tier = (SponsorTier)tierValue;
-            rows = rows.Where(sponsor => sponsor.Tier == tier);
-        }
-
-        // CP grid per-column text filters. The grid sends the column
-        // Key as the filter key; unknown columns are ignored. The isActive /
-        // tier filters above stay for API callers that pass the structured keys.
-        foreach (var (column, raw) in query.Filters)
-        {
-            if (string.IsNullOrWhiteSpace(raw)) { continue; }
-            var v = raw.Trim();
-            switch (column.ToLowerInvariant())
-            {
-                case "nameen":
-                    rows = rows.Where(sponsor => sponsor.Name.Contains(v));
-                    break;
-                case "namear":
-                    rows = rows.Where(sponsor => sponsor.NameArabic.Contains(v));
-                    break;
-            }
-        }
-
-        // CP grid sortable columns. Default (and any unknown sort):
-        // Tier, then DisplayOrder, then NameAr — the public ordering.
-        rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
-        {
-            ("nameen", false) => rows.OrderBy(sponsor => sponsor.Name),
-            ("nameen", true) => rows.OrderByDescending(sponsor => sponsor.Name),
-            ("namear", false) => rows.OrderBy(sponsor => sponsor.NameArabic),
-            ("namear", true) => rows.OrderByDescending(sponsor => sponsor.NameArabic),
-            ("tier", false) => rows.OrderBy(sponsor => sponsor.Tier),
-            ("tier", true) => rows.OrderByDescending(sponsor => sponsor.Tier),
-            ("displayorder", false) => rows.OrderBy(sponsor => sponsor.DisplayOrder),
-            ("displayorder", true) => rows.OrderByDescending(sponsor => sponsor.DisplayOrder),
-            ("isactive", false) => rows.OrderBy(sponsor => sponsor.IsActive),
-            ("isactive", true) => rows.OrderByDescending(sponsor => sponsor.IsActive),
-            _ => rows
-                .OrderBy(sponsor => sponsor.Tier)
-                .ThenBy(sponsor => sponsor.DisplayOrder)
-                .ThenBy(sponsor => sponsor.NameArabic),
-        };
-
-        var total = await rows.CountAsync(cancellationToken);
-        var page = await rows
-            .Skip(skip).Take(top)
-            .Select(sponsor => new AdminSponsorSummary(
-                sponsor.Id,
-                sponsor.Name,
-                sponsor.NameArabic,
-                (int)sponsor.Tier,
-                sponsor.Tier.ToString(),
-                null,
-                sponsor.Url,
-                sponsor.DisplayOrder,
-                sponsor.IsActive,
-                sponsor.CreatedAt,
-                sponsor.Tagline,
-                sponsor.TaglineArabic,
-                sponsor.About,
-                sponsor.AboutArabic))
-            .ToListAsync(cancellationToken);
+        var page = await appDbContext.Sponsors.ToGridPageAsync(
+            query, Columns, sponsor => sponsor.Id, ToSummary, cancellationToken);
 
         // The grid renders the real logo thumbnail only for rows with an active
         // SponsorLogo asset (else an initials tile) — one batched query, no N+1.
         var logoOwners = await assetService.WhichOwnersHaveActiveAssetAsync(
-            AssetCategory.SponsorLogo, page.Select(row => row.Id).ToList(), cancellationToken);
-        page = page.Select(row => row with { HasLogo = logoOwners.Contains(row.Id) }).ToList();
+            AssetCategory.SponsorLogo,
+            page.Items.Select(row => row.Id).ToList(),
+            cancellationToken);
 
-        return GridPage<AdminSponsorSummary>.Of(page, total,
-            skip, top);
+        return GridPage<AdminSponsorSummary>.Of(
+            page.Items.Select(row => row with { HasLogo = logoOwners.Contains(row.Id) }).ToList(),
+            page.Total, page.Skip, page.Top);
     }
 
     public async Task<AdminSponsorDetail?> GetAsync(

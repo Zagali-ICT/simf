@@ -1,12 +1,15 @@
 // Tests: SIMF.Api.Tests/CmsTests.cs, SIMF.Api.Tests/GridDateSortKeyTests.cs
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
 using SIMF.Application.Cms.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Grids;
 using SIMF.Contracts.Admin;
 using SIMF.Domain.Cms;
+using SIMF.Infrastructure.Common.Grids;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Cms;
@@ -22,66 +25,32 @@ internal sealed class AdminCmsService(
     TimeProvider timeProvider,
     ILogger<AdminCmsService> logger) : IAdminCmsService
 {
-    public async Task<GridPage<AdminContentBlockSummary>> ListContentBlocksAsync(
-        GridQuery query, CancellationToken cancellationToken = default)
-    {
-        var (skip, top) = query.ClampPage(25, 200);
+    /// <summary>
+    /// The grid contract for /admin/content-blocks: one entry per key
+    /// ContentBlocksList.razor can send, as both its filter and its sort. A key not
+    /// declared here is a 400, not a silently ignored request.
+    /// </summary>
+    private static readonly GridColumns<ContentBlock> ContentBlockColumns =
+        new GridColumns<ContentBlock>()
+            .Add("key", block => block.Key, searchable: true)
+            .Add("content", block => block.Content, searchable: true)
+            .Add("contentArabic", block => block.ContentArabic, searchable: true)
+            .Add("lastUpdatedAt", block => block.LastUpdatedAt)
+            .Add("isActive", block => block.IsActive)
+            .DefaultOrder("key")
+            .PageSize(fallback: 25, max: 200);
 
-        var rows = appDbContext.ContentBlocks.AsNoTracking().AsQueryable();
-        if (!string.IsNullOrWhiteSpace(query.Search))
-        {
-            var term = query.Search.Trim();
-            rows = rows.Where(b =>
-                EF.Functions.Like(b.Key, $"%{term}%")
-                || EF.Functions.Like(b.Content, $"%{term}%")
-                || EF.Functions.Like(b.ContentArabic, $"%{term}%"));
-        }
+    private static readonly Expression<Func<ContentBlock, AdminContentBlockSummary>>
+        ToContentBlockSummary =
+            block => new AdminContentBlockSummary(
+                block.Id, block.Key, block.Content, block.ContentArabic, block.IsActive,
+                block.LastUpdatedAt, block.LastUpdatedByUserId);
 
-        // CP grid per-column filters. Unknown columns are ignored.
-        foreach (var (column, raw) in query.Filters)
-        {
-            if (string.IsNullOrWhiteSpace(raw)) { continue; }
-            var v = raw.Trim();
-            switch (column.ToLowerInvariant())
-            {
-                case "key":
-                    rows = rows.Where(b => b.Key.Contains(v));
-                    break;
-                case "content":
-                    rows = rows.Where(b => b.Content.Contains(v));
-                    break;
-                case "isactive":
-                    if (bool.TryParse(v, out var isActive))
-                    {
-                        rows = rows.Where(b => b.IsActive == isActive);
-                    }
-                    break;
-            }
-        }
-
-        // CP grid sortable columns. Default: Key ascending.
-        rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
-        {
-            ("key", true) => rows.OrderByDescending(b => b.Key),
-            ("key", false) => rows.OrderBy(b => b.Key),
-            ("content", true) => rows.OrderByDescending(b => b.Content),
-            ("content", false) => rows.OrderBy(b => b.Content),
-            ("lastupdatedat", true) => rows.OrderByDescending(b => b.LastUpdatedAt),
-            ("lastupdatedat", false) => rows.OrderBy(b => b.LastUpdatedAt),
-            _ => rows.OrderBy(b => b.Key),
-        };
-
-        var total = await rows.CountAsync(cancellationToken);
-        var page = await rows
-            .Skip(skip).Take(top)
-            .Select(b => new AdminContentBlockSummary(
-                b.Id, b.Key, b.Content, b.ContentArabic, b.IsActive,
-                b.LastUpdatedAt, b.LastUpdatedByUserId))
-            .ToListAsync(cancellationToken);
-
-        return GridPage<AdminContentBlockSummary>.Of(page, total,
-            skip, top);
-    }
+    public Task<GridPage<AdminContentBlockSummary>> ListContentBlocksAsync(
+        GridQuery query, CancellationToken cancellationToken = default) =>
+        appDbContext.ContentBlocks.ToGridPageAsync(
+            query, ContentBlockColumns, block => block.Id,
+            ToContentBlockSummary, cancellationToken);
 
     public async Task<AdminContentBlockSummary?> GetContentBlockAsync(
         string key, CancellationToken cancellationToken = default)
@@ -188,72 +157,37 @@ internal sealed class AdminCmsService(
             cancellationToken);
     }
 
-    public async Task<GridPage<AdminBannerSummary>> ListBannersAsync(
-        GridQuery query, CancellationToken cancellationToken = default)
-    {
-        var (skip, top) = query.ClampPage(25, 200);
+    /// <summary>
+    /// The grid contract for /admin/banners: one entry per key BannersList.razor can
+    /// send. "start" / "end" are the grid's own column keys — they once read
+    /// "startutc" / "endutc", left behind when the persisted columns were renamed,
+    /// and the switch's catch-all swallowed the mismatch so neither date column
+    /// sorted at all. GridDateSortKeyTests pins them.
+    /// </summary>
+    private static readonly GridColumns<Banner> BannerColumns = new GridColumns<Banner>()
+        .Add("title", banner => banner.Title, searchable: true)
+        .Add("titleArabic", banner => banner.TitleArabic, searchable: true)
+        .Add("start", banner => banner.Start)
+        .Add("end", banner => banner.End)
+        .Add("displayOrder", banner => banner.DisplayOrder)
+        .Add("isActive", banner => banner.IsActive)
+        .DefaultOrder("displayOrder")
+        .DefaultOrder("start")
+        .PageSize(fallback: 25, max: 200);
 
-        var rows = appDbContext.Banners.AsNoTracking().AsQueryable();
-        if (!string.IsNullOrWhiteSpace(query.Search))
-        {
-            var term = query.Search.Trim();
-            rows = rows.Where(b =>
-                EF.Functions.Like(b.Title, $"%{term}%")
-                || EF.Functions.Like(b.TitleArabic, $"%{term}%"));
-        }
-        // CP grid per-column filters. Unknown columns are ignored.
-        foreach (var (column, raw) in query.Filters)
-        {
-            if (string.IsNullOrWhiteSpace(raw)) { continue; }
-            var v = raw.Trim();
-            switch (column.ToLowerInvariant())
-            {
-                case "title":
-                    rows = rows.Where(b => b.Title.Contains(v) || b.TitleArabic.Contains(v));
-                    break;
-                case "isactive":
-                    if (bool.TryParse(v, out var isActive))
-                    {
-                        rows = rows.Where(b => b.IsActive == isActive);
-                    }
-                    break;
-            }
-        }
+    private static readonly Expression<Func<Banner, AdminBannerSummary>> ToBannerSummary =
+        banner => new AdminBannerSummary(
+            banner.Id, banner.Title, banner.TitleArabic,
+            banner.Start, banner.End, banner.DisplayOrder, banner.IsActive, banner.CreatedAt,
+            // Round-trip body + link through the grid Excel export. The image is not
+            // a column any more: it is uploaded, so there is nothing for a
+            // spreadsheet to carry.
+            banner.Body, banner.BodyArabic, banner.LinkUrl);
 
-        // CP grid sortable columns. Default: DisplayOrder, then Start.
-        rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
-        {
-            ("title", false) => rows.OrderBy(b => b.Title),
-            ("title", true) => rows.OrderByDescending(b => b.Title),
-            // "start" / "end" match the grid column Keys in BannersList.razor. They
-            // used to read "startutc" / "endutc", left behind when the persisted
-            // columns were renamed, so neither date column sorted at all: both
-            // fell through to the catch-all and the grid stayed on DisplayOrder.
-            ("start", false) => rows.OrderBy(b => b.Start),
-            ("start", true) => rows.OrderByDescending(b => b.Start),
-            ("end", false) => rows.OrderBy(b => b.End),
-            ("end", true) => rows.OrderByDescending(b => b.End),
-            ("displayorder", false) => rows.OrderBy(b => b.DisplayOrder).ThenBy(b => b.Start),
-            ("displayorder", true) => rows.OrderByDescending(b => b.DisplayOrder).ThenBy(b => b.Start),
-            ("isactive", false) => rows.OrderBy(b => b.IsActive),
-            ("isactive", true) => rows.OrderByDescending(b => b.IsActive),
-            _ => rows.OrderBy(b => b.DisplayOrder).ThenBy(b => b.Start),
-        };
-        var total = await rows.CountAsync(cancellationToken);
-        var page = await rows
-            .Skip(skip).Take(top)
-            .Select(b => new AdminBannerSummary(
-                b.Id, b.Title, b.TitleArabic,
-                b.Start, b.End, b.DisplayOrder, b.IsActive, b.CreatedAt,
-                // Round-trip body + link through the grid Excel export. The
-                // image is not a column any more: it is uploaded, so there is
-                // nothing for a spreadsheet to carry.
-                b.Body, b.BodyArabic, b.LinkUrl))
-            .ToListAsync(cancellationToken);
-
-        return GridPage<AdminBannerSummary>.Of(page, total,
-            skip, top);
-    }
+    public Task<GridPage<AdminBannerSummary>> ListBannersAsync(
+        GridQuery query, CancellationToken cancellationToken = default) =>
+        appDbContext.Banners.ToGridPageAsync(
+            query, BannerColumns, banner => banner.Id, ToBannerSummary, cancellationToken);
 
     public async Task<AdminBannerDetail?> GetBannerAsync(
         Guid id, CancellationToken cancellationToken = default)

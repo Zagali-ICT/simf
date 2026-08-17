@@ -1,4 +1,5 @@
 // Tests: SIMF.Api.Tests/AdminRolesTests.cs
+using System.Linq.Expressions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -6,8 +7,10 @@ using SIMF.Application.Auditing;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Grids;
 using SIMF.Contracts.Admin;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Infrastructure.Common.Grids;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Identity;
@@ -27,49 +30,37 @@ internal sealed class AdminRoleService(
     IAuditLog auditLog,
     ILogger<AdminRoleService> logger) : IAdminRoleService
 {
-    public async Task<GridPage<AdminRoleSummary>> ListAllAsync(
-        GridQuery query, CancellationToken cancellationToken = default)
-    {
-        var (skip, top) = query.ClampPage(25, 200);
+    /// <summary>
+    /// The grid contract for /admin/roles: one entry per key RolesList.razor can
+    /// send. The page marks the name column Filterable, which did nothing before —
+    /// this method never read <c>query.Filters</c> at all — so declaring it here is
+    /// what makes that filter box work.
+    /// </summary>
+    private static readonly GridColumns<SimfRole> Columns = new GridColumns<SimfRole>()
+        .Add("name", role => role.Name, searchable: true)
+        .Add("baseline", role => role.IsBaseline)
+        .DefaultOrder("baseline", descending: true)
+        .DefaultOrder("name")
+        .PageSize(fallback: 25, max: 200);
 
-        var roles = dbContext.Roles.AsNoTracking().AsQueryable();
+    /// <summary>
+    /// The per-role UserCount + PermissionCount are counted inline so the page
+    /// costs one round trip. That reads the injected context, so unlike every other
+    /// converted list this projection cannot be a static field; a fresh tree per
+    /// call is what the filter and search trees already do.
+    /// </summary>
+    private Expression<Func<SimfRole, AdminRoleSummary>> ToSummary =>
+        role => new AdminRoleSummary(
+            role.Id,
+            role.Name ?? string.Empty,
+            role.IsBaseline,
+            dbContext.UserRoles.Count(userRole => userRole.RoleId == role.Id),
+            dbContext.RolePermissions.Count(rp => rp.RoleId == role.Id));
 
-        if (!string.IsNullOrWhiteSpace(query.Search))
-        {
-            var term = query.Search.Trim();
-            roles = roles.Where(role => EF.Functions.Like(role.Name!, $"%{term}%"));
-        }
-
-        roles = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
-        {
-            ("name", true) => roles.OrderByDescending(role => role.Name),
-            ("name", false) => roles.OrderBy(role => role.Name),
-            ("baseline", true) => roles.OrderByDescending(role => role.IsBaseline)
-                                       .ThenBy(role => role.Name),
-            ("baseline", false) => roles.OrderBy(role => role.IsBaseline)
-                                        .ThenBy(role => role.Name),
-            _ => roles.OrderByDescending(role => role.IsBaseline)
-                      .ThenBy(role => role.Name),
-        };
-
-        var total = await roles.CountAsync(cancellationToken);
-
-        // Project to summary; the per-role UserCount + PermissionCount
-        // are computed inline so the round-trip is a single query.
-        var page = await roles
-            .Skip(skip)
-            .Take(top)
-            .Select(role => new AdminRoleSummary(
-                role.Id,
-                role.Name ?? string.Empty,
-                role.IsBaseline,
-                dbContext.UserRoles.Count(userRole => userRole.RoleId == role.Id),
-                dbContext.RolePermissions.Count(rp => rp.RoleId == role.Id)))
-            .ToListAsync(cancellationToken);
-
-        return GridPage<AdminRoleSummary>.Of(page, total,
-            skip, top);
-    }
+    public Task<GridPage<AdminRoleSummary>> ListAllAsync(
+        GridQuery query, CancellationToken cancellationToken = default) =>
+        dbContext.Roles.ToGridPageAsync(
+            query, Columns, role => role.Id, ToSummary, cancellationToken);
 
     public async Task<AdminRoleSummary?> GetAsync(
         Guid id, CancellationToken cancellationToken = default)

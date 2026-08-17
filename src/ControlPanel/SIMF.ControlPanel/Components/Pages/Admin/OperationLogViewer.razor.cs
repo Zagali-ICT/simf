@@ -60,16 +60,21 @@ public partial class OperationLogViewer
 
     private GridQuery ApplyFilterValues(GridQuery source)
     {
-        var filters = new Dictionary<string, string>(source.Filters,
-            StringComparer.OrdinalIgnoreCase);
+        // A plain copy. This used to be rebuilt with StringComparer.OrdinalIgnoreCase
+        // to reconcile the page's keys with the grid's, which never worked — the
+        // dictionary is rehydrated from JSON on the server through GridQuery's own
+        // ordinal setter, so the comparer never survived the round trip. The server
+        // now matches column keys case-insensitively, which is where the two forms
+        // can actually be reconciled.
+        var filters = new Dictionary<string, string>(source.Filters);
         SetOrRemove(filters, "eventType", _eventTypeFilter);
         SetOrRemove(filters, "subjectEmail", _subjectEmailFilter);
         SetOrRemove(filters, "outcome", _outcomeFilter);
-        // The "to" bound is made inclusive of the whole picked day; "from"
-        // is start-of-day as the date input already gives it.
+        // Both bounds are sent as the bare picked day. The server reads each as a
+        // calendar day and makes the upper bound half-open, so the whole of the "to"
+        // day is included without this end having to fake a 23:59:59 time on it.
         SetOrRemove(filters, "from", _fromFilter);
-        SetOrRemove(filters, "to",
-            string.IsNullOrWhiteSpace(_toFilter) ? string.Empty : _toFilter + "T23:59:59");
+        SetOrRemove(filters, "to", _toFilter);
         source.Filters = filters;
         return source;
     }
@@ -101,7 +106,7 @@ public partial class OperationLogViewer
         _fromFilter = string.Empty;
         _toFilter = string.Empty;
         _query.Skip = 0;
-        _query.Filters = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        _query.Filters = new Dictionary<string, string>();
         await LoadAsync();
     }
 

@@ -1,14 +1,17 @@
 // Tests: SIMF.Api.Tests/VenueMapTests.cs
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
 using SIMF.Application.Venue.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Grids;
 using SIMF.Contracts.Admin;
 using SIMF.Contracts.Programme;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.Venue;
+using SIMF.Infrastructure.Common.Grids;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Venue;
@@ -22,54 +25,31 @@ internal sealed class VenueMapService(
     TimeProvider timeProvider,
     ILogger<VenueMapService> logger) : IVenueMapService
 {
-    public async Task<GridPage<AdminVenueMapNodeSummary>> ListAsync(
-        GridQuery query, CancellationToken cancellationToken = default)
-    {
-        var (skip, top) = query.ClampPage(50, 500);
+    /// <summary>The grid contract for /admin/venue-map: one entry per key
+    /// VenueMapList.razor can send, as both its filter and its sort.
+    ///
+    /// <para><c>label</c> is the key the grid's filter box sends AND the key its
+    /// sort button sends, so it has to be one declared column over one property.
+    /// It is the English label — the column the grid actually renders. The Arabic
+    /// label keeps its own key, and both are searched by the free-text term.</para>
+    /// </summary>
+    private static readonly GridColumns<VenueMapNode> Columns = new GridColumns<VenueMapNode>()
+        .Add("label", node => node.Label, searchable: true)
+        .Add("labelArabic", node => node.LabelArabic, searchable: true)
+        .Add("kind", node => node.Kind)
+        .Add("isActive", node => node.IsActive)
+        .DefaultOrder("label")
+        .PageSize(fallback: 50, max: 500);
 
-        var rows = db.VenueMapNodes.AsNoTracking().AsQueryable();
+    private static readonly Expression<Func<VenueMapNode, AdminVenueMapNodeSummary>> ToSummary =
+        node => new AdminVenueMapNodeSummary(
+            node.Id, node.Label, node.LabelArabic, node.Kind, node.X, node.Y,
+            node.HallId, node.BoothId, node.IsActive);
 
-        // CP grid per-column filters. Unknown columns are ignored.
-        foreach (var (column, raw) in query.Filters)
-        {
-            if (string.IsNullOrWhiteSpace(raw)) { continue; }
-            var v = raw.Trim();
-            switch (column.ToLowerInvariant())
-            {
-                case "label":
-                    rows = rows.Where(n => n.Label.Contains(v) || n.LabelArabic.Contains(v));
-                    break;
-            }
-        }
-
-        if (!string.IsNullOrWhiteSpace(query.Search))
-        {
-            var term = query.Search.Trim();
-            rows = rows.Where(n =>
-                EF.Functions.Like(n.Label, $"%{term}%")
-                || EF.Functions.Like(n.LabelArabic, $"%{term}%"));
-        }
-
-        // CP grid sortable columns. Default: Label ascending.
-        rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
-        {
-            ("label", true) => rows.OrderByDescending(n => n.Label),
-            ("kind", false) => rows.OrderBy(n => n.Kind),
-            ("kind", true) => rows.OrderByDescending(n => n.Kind),
-            _ => rows.OrderBy(n => n.Label),
-        };
-
-        var total = await rows.CountAsync(cancellationToken);
-        var page = await rows
-            .Skip(skip).Take(top)
-            .Select(n => new AdminVenueMapNodeSummary(
-                n.Id, n.Label, n.LabelArabic, n.Kind, n.X, n.Y,
-                n.HallId, n.BoothId, n.IsActive))
-            .ToListAsync(cancellationToken);
-
-        return GridPage<AdminVenueMapNodeSummary>.Of(page, total,
-            skip, top);
-    }
+    public Task<GridPage<AdminVenueMapNodeSummary>> ListAsync(
+        GridQuery query, CancellationToken cancellationToken = default) =>
+        db.VenueMapNodes.ToGridPageAsync(
+            query, Columns, node => node.Id, ToSummary, cancellationToken);
 
     public async Task<AdminVenueMapNodeDetail?> GetAsync(
         Guid id, CancellationToken cancellationToken = default)

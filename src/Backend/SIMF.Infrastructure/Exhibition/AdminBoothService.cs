@@ -1,4 +1,5 @@
 // Tests: SIMF.Api.Tests/AdminBoothsTests.cs
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Assets.Abstractions;
@@ -6,8 +7,10 @@ using SIMF.Application.Auditing;
 using SIMF.Application.Exhibition.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Grids;
 using SIMF.Contracts.Exhibition;
 using SIMF.Domain.Exhibition;
+using SIMF.Infrastructure.Common.Grids;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Exhibition;
@@ -27,106 +30,57 @@ internal sealed class AdminBoothService(
     IAssetService assetService,
     ILogger<AdminBoothService> logger) : IAdminBoothService
 {
+    /// <summary>
+    /// The grid contract for /admin/booths: one entry per key BoothsList.razor can
+    /// send, as both its filter and its sort. A key not declared here is a 400, not
+    /// a silently ignored request. The Exhibitor + Hall columns are resolved
+    /// client-side from cached lookups (the summary carries only the ids), so they
+    /// are deliberately absent — the page marks neither sortable nor filterable.
+    /// </summary>
+    private static readonly GridColumns<Booth> Columns = new GridColumns<Booth>()
+        .Add("code", booth => booth.Code, searchable: true)
+        .Add("name", booth => booth.Name, searchable: true)
+        .Add("nameArabic", booth => booth.NameArabic, searchable: true)
+        .Add("sector", booth => booth.Sector)
+        .Add("isActive", booth => booth.IsActive)
+        .DefaultOrder("code")
+        .PageSize(fallback: 25, max: 200);
+
+    private static readonly Expression<Func<Booth, AdminBoothSummary>> ToSummary =
+        booth => new AdminBoothSummary
+        {
+            Id = booth.Id,
+            Code = booth.Code,
+            Name = booth.Name,
+            NameArabic = booth.NameArabic,
+            ExhibitorId = booth.ExhibitorId,
+            Sector = booth.Sector,
+            HallId = booth.HallId,
+            IsActive = booth.IsActive,
+            // Append-only frozen wire field; the shared Contact directory was
+            // removed, so it now always emits null (and no CompanyLogo lookup).
+            ExhibitorContactId = null,
+            HasLogo = false,
+        };
+
     public async Task<GridPage<AdminBoothSummary>> ListAllAsync(
         GridQuery query, CancellationToken cancellationToken = default)
     {
-        var (skip, top) = query.ClampPage(25, 200);
-
-        var rows = dbContext.Booths.AsNoTracking().AsQueryable();
-
-        if (!string.IsNullOrWhiteSpace(query.Search))
-        {
-            var term = query.Search.Trim();
-            rows = rows.Where(booth =>
-                EF.Functions.Like(booth.Code, $"%{term}%")
-                || EF.Functions.Like(booth.Name, $"%{term}%")
-                || EF.Functions.Like(booth.NameArabic, $"%{term}%"));
-        }
-
-        // CP grid per-column filters. Unknown columns are ignored.
-        // The Exhibitor + Hall columns are resolved client-side from cached
-        // lookups (the summary carries only the ids), so they are NOT
-        // server-filterable and are intentionally absent here.
-        foreach (var (column, raw) in query.Filters)
-        {
-            if (string.IsNullOrWhiteSpace(raw)) { continue; }
-            var v = raw.Trim();
-            switch (column.ToLowerInvariant())
-            {
-                case "code":
-                    rows = rows.Where(booth => booth.Code.Contains(v));
-                    break;
-                case "name":
-                    rows = rows.Where(booth => booth.Name.Contains(v));
-                    break;
-                case "namearabic":
-                    rows = rows.Where(booth => booth.NameArabic.Contains(v));
-                    break;
-                case "sector":
-                    rows = rows.Where(booth => booth.Sector != null && booth.Sector.Contains(v));
-                    break;
-            }
-        }
-
-        // CP grid sortable columns. Default: Code. The Exhibitor + Hall
-        // columns sort on a client-resolved value, so they are not server-
-        // sortable and are absent here.
-        rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
-        {
-            ("code", true) => rows.OrderByDescending(booth => booth.Code),
-            ("code", false) => rows.OrderBy(booth => booth.Code),
-            ("name", true) => rows.OrderByDescending(booth => booth.Name),
-            ("name", false) => rows.OrderBy(booth => booth.Name),
-            ("sector", true) => rows.OrderByDescending(booth => booth.Sector),
-            ("sector", false) => rows.OrderBy(booth => booth.Sector),
-            ("isactive", true) => rows.OrderByDescending(booth => booth.IsActive),
-            ("isactive", false) => rows.OrderBy(booth => booth.IsActive),
-            _ => rows.OrderBy(booth => booth.Code),
-        };
-
-        var total = await rows.CountAsync(cancellationToken);
-        var pageRows = await rows
-            .Skip(skip)
-            .Take(top)
-            .Select(booth => new
-            {
-                booth.Id,
-                booth.Code,
-                booth.Name,
-                booth.NameArabic,
-                booth.ExhibitorId,
-                booth.Sector,
-                booth.HallId,
-                booth.IsActive,
-            })
-            .ToListAsync(cancellationToken);
+        var page = await dbContext.Booths.ToGridPageAsync(
+            query, Columns, booth => booth.Id, ToSummary, cancellationToken);
 
         // The booth owns its own BoothLogo (the app renders this) — one batched
         // query over the page's booth ids, no N+1.
         var boothLogoOwners = await assetService.WhichOwnersHaveActiveAssetAsync(
-            AssetCategory.BoothLogo, pageRows.Select(row => row.Id).ToList(), cancellationToken);
+            AssetCategory.BoothLogo,
+            page.Items.Select(row => row.Id).ToList(),
+            cancellationToken);
+        foreach (var row in page.Items)
+        {
+            row.HasBoothLogo = boothLogoOwners.Contains(row.Id);
+        }
 
-        var page = pageRows
-            .Select(booth => new AdminBoothSummary
-            {
-                Id = booth.Id,
-                Code = booth.Code,
-                Name = booth.Name,
-                NameArabic = booth.NameArabic,
-                ExhibitorId = booth.ExhibitorId,
-                Sector = booth.Sector,
-                HallId = booth.HallId,
-                IsActive = booth.IsActive,
-                // Append-only frozen wire field; the shared Contact directory was
-                // removed, so it now always emits null (and no CompanyLogo lookup).
-                ExhibitorContactId = null,
-                HasLogo = false,
-                HasBoothLogo = boothLogoOwners.Contains(booth.Id),
-            })
-            .ToList();
-
-        return GridPage<AdminBoothSummary>.Of(page, total,
-            skip, top);
+        return page;
     }
 
     public async Task<AdminBoothDetail?> GetAsync(

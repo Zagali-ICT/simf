@@ -1,6 +1,7 @@
 // Tests: SIMF.Api.Tests/DelegationMeetingRequestsTests.cs
 // Tests: SIMF.Api.Tests/DelegationMeetingQaFixesTests.cs
 // Tests: SIMF.Api.Tests/MeetingNoAvailabilityTests.cs
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -10,9 +11,11 @@ using SIMF.Application.MeetingRequests.Abstractions;
 using SIMF.Application.Notifications;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Grids;
 using SIMF.Contracts.Programme;
 using SIMF.Domain.BusinessMeetings;
 using SIMF.Domain.Notifications;
+using SIMF.Infrastructure.Common.Grids;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.MeetingRequests;
@@ -194,80 +197,100 @@ internal sealed class DelegationMeetingRequestService(
         return new DelegationMeetingRequestSubmitted(req.Id, req.Status, req.CreatedAt);
     }
 
+    /// <summary>The grid contract for /admin/delegation-meetings: one entry per key
+    /// DelegationMeetingsList.razor can send. A key not declared here is a 400, not
+    /// a silently ignored request.</summary>
+    private static readonly GridColumns<DelegationMeetingRequest> Columns =
+        new GridColumns<DelegationMeetingRequest>()
+            .Add("status", request => request.Status)
+            .Add("createdAt", request => request.CreatedAt)
+            // Newest first — the review desk works the pending queue top-down.
+            .DefaultOrder("createdAt", descending: true)
+            .PageSize(fallback: 25, max: 200);
+
+    /// <summary>The page as the database returns it. It carries
+    /// <c>CheckedInByUserId</c>, which the row DTO does not, because the operator's
+    /// display name lives in the Identity database and is resolved only after this
+    /// page has materialised.</summary>
+    private sealed record DelegationMeetingListRow(
+        Guid Id,
+        int RequestingCountryId,
+        string RequestingCountry,
+        int TargetCountryId,
+        string TargetCountry,
+        Guid RequestedByUserId,
+        int AttendeeCount,
+        string Subject,
+        MeetingRequestStatus Status,
+        DateTime? SlotStart,
+        string? ResponseNote,
+        DateTime CreatedAt,
+        DateTime? RespondedAt,
+        DateTime? CheckedInAt,
+        Guid? CheckedInByUserId);
+
+    private static readonly Expression<Func<DelegationMeetingRequest, DelegationMeetingListRow>>
+        ToListRow = request => new DelegationMeetingListRow(
+            request.Id,
+            request.RequestingCountryId,
+            request.RequestingCountry!.Name,
+            request.TargetCountryId,
+            request.TargetCountry!.Name,
+            request.RequestedByUserId,
+            request.AttendeeCount,
+            request.Subject,
+            request.Status,
+            request.SlotStart,
+            request.ResponseNote,
+            request.CreatedAt,
+            request.RespondedAt,
+            // The hall check-in stamps, so the desk and its export
+            // report who actually turned up, not only the decision.
+            request.CheckedInAt,
+            request.CheckedInByUserId);
+
     public async Task<GridPage<AdminDelegationMeetingRequestRow>> ListAllAsync(
         Guid actorUserId, GridQuery query, CancellationToken cancellationToken = default)
     {
-        var (skip, top) = query.ClampPage(25, 200);
-
-        var rows = appDbContext.DelegationMeetingRequests.AsNoTracking().AsQueryable();
-        if (query.Filters.TryGetValue("status", out var statusRaw)
-            && Enum.TryParse<MeetingRequestStatus>(statusRaw, ignoreCase: true, out var status))
-        {
-            rows = rows.Where(r => r.Status == status);
-        }
-        // Newest first — the review desk works the pending queue top-down.
-        rows = rows.OrderByDescending(r => r.CreatedAt);
-
-        var total = await rows.CountAsync(cancellationToken);
-        var pageRows = await rows.Skip(skip).Take(top)
-            .Select(r => new
-            {
-                r.Id,
-                r.RequestingCountryId,
-                RequestingCountry = r.RequestingCountry!.Name,
-                r.TargetCountryId,
-                TargetCountry = r.TargetCountry!.Name,
-                r.RequestedByUserId,
-                r.AttendeeCount,
-                r.Subject,
-                r.Status,
-                r.SlotStart,
-                r.ResponseNote,
-                r.CreatedAt,
-                r.RespondedAt,
-                // The hall check-in stamps, so the desk and its export
-                // report who actually turned up, not only the decision.
-                r.CheckedInAt,
-                r.CheckedInByUserId,
-            })
-            .ToListAsync(cancellationToken);
+        var rows = await appDbContext.DelegationMeetingRequests.ToGridPageAsync(
+            query, Columns, request => request.Id, ToListRow, cancellationToken);
 
         // Resolve the check-in operators' display names in ONE Identity-DB
         // query for the whole page. CheckedInByUserId is a bare logical FK,
         // so this is a second query merged in memory — never a cross-database JOIN.
         var operatorNames = await userDirectory.GetDisplayNamesAsync(
-            pageRows.Where(r => r.CheckedInByUserId.HasValue)
-                .Select(r => r.CheckedInByUserId!.Value)
+            rows.Items.Where(row => row.CheckedInByUserId.HasValue)
+                .Select(row => row.CheckedInByUserId!.Value)
                 .Distinct()
                 .ToList(),
             cancellationToken);
 
-        var page = pageRows.Select(r => new AdminDelegationMeetingRequestRow(
-            r.Id,
-            r.RequestingCountryId,
-            r.RequestingCountry,
-            r.TargetCountryId,
-            r.TargetCountry,
-            r.RequestedByUserId,
-            r.AttendeeCount,
-            r.Subject,
-            r.Status,
-            r.SlotStart,
-            r.ResponseNote,
-            r.CreatedAt,
-            r.RespondedAt,
-            r.CheckedInAt,
-            ResolveOperatorName(operatorNames, r.CheckedInByUserId)))
+        var page = rows.Items.Select(row => new AdminDelegationMeetingRequestRow(
+            row.Id,
+            row.RequestingCountryId,
+            row.RequestingCountry,
+            row.TargetCountryId,
+            row.TargetCountry,
+            row.RequestedByUserId,
+            row.AttendeeCount,
+            row.Subject,
+            row.Status,
+            row.SlotStart,
+            row.ResponseNote,
+            row.CreatedAt,
+            row.RespondedAt,
+            row.CheckedInAt,
+            ResolveOperatorName(operatorNames, row.CheckedInByUserId)))
             .ToList();
 
         await auditLog.WriteSuccessAsync(
             AuditEvents.AdminDelegationMeetingRequestsListed,
             actorUserId,
-            $"count={page.Count}; total={total}",
+            $"count={page.Count}; total={rows.Total}",
             cancellationToken);
 
         return GridPage<AdminDelegationMeetingRequestRow>.Of(
-            page, total, skip, top);
+            page, rows.Total, rows.Skip, rows.Top);
     }
 
     public async Task<AdminDelegationMeetingRequestDetail> GetAsync(

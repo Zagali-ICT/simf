@@ -1,6 +1,9 @@
 // Tests: SIMF.Api.Tests/SeatReservationsTests.cs
 // Tests: SIMF.Api.Tests/SeatTierEligibilityTests.cs
 // Tests: SIMF.Api.Tests/SeatChangeTests.cs (the atomic seat move)
+// Tests: SIMF.Api.Tests/GridContractTests.cs (the booking monitor's grid keys)
+// Tests: SIMF.Api.Tests/BookingsExcelTests.cs (the export off the same list)
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.AccessControl.Abstractions;
@@ -9,8 +12,10 @@ using SIMF.Application.Notifications;
 using SIMF.Application.SeatReservations.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Grids;
 using SIMF.Contracts.Sessions;
 using SIMF.Domain.SeatReservations;
+using SIMF.Infrastructure.Common.Grids;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.SeatReservations;
@@ -1110,98 +1115,75 @@ internal sealed class SeatReservationService(
 
     // -- Booking monitor + no-show release --
 
-    public async Task<GridPage<ActiveBookingRow>> ListActiveBookingsAsync(
-        GridQuery query, CancellationToken cancellationToken = default)
-    {
-        var (skip, top) = query.ClampPage(50, 500);
+    /// <summary>
+    /// The grid contract for /admin/bookings: one entry per key BookingsList.razor
+    /// can send, as both its filter and its sort. A key not declared here is a 400,
+    /// not a silently ignored request.
+    /// </summary>
+    private static readonly GridColumns<SeatReservation> ActiveBookingColumns =
+        new GridColumns<SeatReservation>()
+            // One page column carries both languages, and one key has to serve both
+            // the sort and a filter that still matches an Arabic title. Add and
+            // AddFilter cannot share a key, so the selector concatenates instead:
+            // the contains then matches EITHER language, exactly as the OR it
+            // replaces, and the sort is still by English title, that being the
+            // prefix. Dropping the Arabic half would have left an Arabic operator a
+            // filter box that silently returns the unfiltered set.
+            .Add("session", reservation =>
+                reservation.Session!.Title + " " + reservation.Session!.TitleArabic)
+            .Add("start", reservation => reservation.Session!.Start)
+            // Row label only. The hand-written switch this replaces also broke ties
+            // on SeatNumber; a REQUESTED sort is one level plus the tiebreak here,
+            // so seats within one row now fall to the id rather than to seat order.
+            .Add("seat", reservation => reservation.RowLabel)
+            // The page renders this column but marks it neither sortable nor
+            // filterable, so nothing sends it today. Declared anyway, because the
+            // name is a plain (unencrypted) profile column reached by an App-DB
+            // navigation: the key works the day the page marks it, instead of 400ing.
+            .Add("attendee", reservation => reservation.ReservedForProfile!.Name)
+            .Add("bookedAt", reservation => reservation.CreatedAt)
+            .DefaultOrder("bookedAt", descending: true)
+            .PageSize(fallback: 50, max: 500);
 
-        // The read-only Control Panel monitor of ACTIVE (confirmed, still-held)
-        // visitor reservations across all sessions. There is no approval step —
-        // bookings auto-confirm — so this is a monitor, not a queue. Admin
-        // row-blocks are created Approved with a null ReservedForProfileId, so they
-        // never appear here. The session is joined up-front (before paging) so the
-        // session and seat columns are server-filterable/sortable. The
-        // attendee name is resolved in a second App-DB query afterwards, so that
-        // column stays non-filterable/non-sortable.
-        var joined = appDbContext.SeatReservations.AsNoTracking()
-            .Where(r => r.Status == BookingStatus.Approved
-                && r.ReleasedAt == null
-                && r.ReservedForProfileId != null)
-            .Join(appDbContext.Sessions.AsNoTracking(),
-                r => r.SessionId, s => s.Id,
-                (r, s) => new
-                {
-                    r.Id, r.SessionId, s.Title, s.TitleArabic, s.Start,
-                    r.RowLabel, r.SeatNumber, r.Kind, r.ReservedForProfileId, r.CreatedAt,
-                });
+    private static readonly Expression<Func<SeatReservation, ActiveBookingRow>> ToActiveBooking =
+        reservation => new ActiveBookingRow(
+            reservation.Id,
+            reservation.SessionId,
+            reservation.Session!.Title,
+            reservation.Session!.TitleArabic,
+            reservation.Session!.Start,
+            reservation.RowLabel,
+            reservation.SeatNumber,
+            reservation.Kind,
+            reservation.ReservedForProfileId,
+            // The scope predicate already excludes a null holder, but the guard
+            // keeps the empty string — not a null — on the wire and in the Excel
+            // export, which is what the second round-trip this replaced produced.
+            reservation.ReservedForProfile == null
+                ? string.Empty
+                : reservation.ReservedForProfile.Name,
+            reservation.CreatedAt);
 
-        // CP grid per-column filters. Unknown columns are ignored.
-        foreach (var (column, raw) in query.Filters)
-        {
-            if (string.IsNullOrWhiteSpace(raw)) { continue; }
-            var v = raw.Trim();
-            switch (column.ToLowerInvariant())
-            {
-                case "session":
-                    joined = joined.Where(x => x.Title.Contains(v) || x.TitleArabic.Contains(v));
-                    break;
-                case "seat":
-                    joined = joined.Where(x => x.RowLabel != null && x.RowLabel.Contains(v));
-                    break;
-            }
-        }
-
-        // CP grid sortable columns. Default: newest booking first.
-        joined = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
-        {
-            ("session", false) => joined.OrderBy(x => x.Title),
-            ("session", true) => joined.OrderByDescending(x => x.Title),
-            ("start", false) => joined.OrderBy(x => x.Start),
-            ("start", true) => joined.OrderByDescending(x => x.Start),
-            ("seat", false) => joined.OrderBy(x => x.RowLabel).ThenBy(x => x.SeatNumber),
-            ("seat", true) => joined.OrderByDescending(x => x.RowLabel).ThenByDescending(x => x.SeatNumber),
-            ("bookedat", false) => joined.OrderBy(x => x.CreatedAt),
-            ("bookedat", true) => joined.OrderByDescending(x => x.CreatedAt),
-            _ => joined.OrderByDescending(x => x.CreatedAt),
-        };
-
-        var total = await joined.CountAsync(cancellationToken);
-        var rows = await joined
-            .Skip(skip).Take(top)
-            .ToListAsync(cancellationToken);
-
-        // Resolve attendee display names from the PROFILE — the row the booking is
-        // keyed by, and the one every attendee has. It used to read the Identity
-        // display name, which left a walk-in's booking listed with a blank attendee
-        // column; this is also one database instead of two.
-        var attendeeIds = rows
-            .Where(r => r.ReservedForProfileId is not null)
-            .Select(r => r.ReservedForProfileId!.Value)
-            .Distinct()
-            .ToList();
-        var names = attendeeIds.Count == 0
-            ? new Dictionary<Guid, string?>()
-            : await appDbContext.UserProfiles.AsNoTracking()
-                .Where(p => attendeeIds.Contains(p.Id))
-                .Select(p => new { p.Id, p.Name })
-                .ToDictionaryAsync(p => p.Id, p => (string?)p.Name, cancellationToken);
-
-        var items = rows.Select(r =>
-        {
-            string attendeeName = string.Empty;
-            if (r.ReservedForProfileId is { } pid && names.TryGetValue(pid, out var dn))
-            {
-                attendeeName = dn ?? string.Empty;
-            }
-            return new ActiveBookingRow(
-                r.Id, r.SessionId, r.Title, r.TitleArabic, r.Start,
-                r.RowLabel, r.SeatNumber, r.Kind, r.ReservedForProfileId,
-                attendeeName, r.CreatedAt);
-        }).ToList();
-
-        return GridPage<ActiveBookingRow>.Of(items, total,
-            skip, top);
-    }
+    /// <summary>The read-only Control Panel monitor of ACTIVE (confirmed,
+    /// still-held) visitor reservations across all sessions. There is no approval
+    /// step — bookings auto-confirm — so this is a monitor, not a queue. Admin
+    /// row-blocks are created Approved with a null <c>ReservedForProfileId</c>, so
+    /// they never appear here.
+    ///
+    /// <para>The session title and the attendee name are both reached by App-DB
+    /// navigations inside the projection, so every column is filtered, sorted and
+    /// paged on the server — the attendee name used to come from a second
+    /// round-trip after paging, which is why that column could not be sorted.</para>
+    /// </summary>
+    public Task<GridPage<ActiveBookingRow>> ListActiveBookingsAsync(
+        GridQuery query, CancellationToken cancellationToken = default) =>
+        appDbContext.SeatReservations
+            .Where(reservation => reservation.Status == BookingStatus.Approved
+                && reservation.ReleasedAt == null
+                && reservation.ReservedForProfileId != null)
+            .ToGridPageAsync(
+                query, ActiveBookingColumns, reservation => reservation.Id,
+                ToActiveBooking, cancellationToken);
 
     /// <summary>The no-show release: free
     /// every ACTIVE (Approved, still-held) visitor seat reservation whose no-show

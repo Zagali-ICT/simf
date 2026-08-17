@@ -2,7 +2,10 @@
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.Attendance.Abstractions;
 using SIMF.Common;
+using SIMF.Common.Grids;
 using SIMF.Contracts.Attendance;
+using SIMF.Domain.Programme;
+using SIMF.Infrastructure.Common.Grids;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Attendance;
@@ -24,6 +27,22 @@ namespace SIMF.Infrastructure.Attendance;
 internal sealed class SessionAttendanceService(
     SimfAppDbContext appDbContext) : ISessionAttendanceService
 {
+    /// <summary>
+    /// The grid contract for /admin/attendance: every key AttendanceDashboard can
+    /// send. The two counter columns (total, live) are computed per page after the
+    /// rows are chosen, so they are neither sortable nor filterable — the grid does
+    /// not offer them as either.
+    /// </summary>
+    private static readonly GridColumns<Session> Columns = new GridColumns<Session>()
+        .Add("code", session => session.Code, searchable: true)
+        .Add("title", session => session.Title, searchable: true)
+        // Not a column on the page. Declared because the free-text search covered
+        // the Arabic title before this list moved onto the shared grid.
+        .Add("titleArabic", session => session.TitleArabic, searchable: true)
+        .Add("start", session => session.Start)
+        .DefaultOrder("start")
+        .PageSize(fallback: 20, max: 200);
+
     public async Task<SessionAttendanceSummary> GetSummaryAsync(
         CancellationToken cancellationToken = default)
     {
@@ -57,68 +76,27 @@ internal sealed class SessionAttendanceService(
     public async Task<GridPage<SessionAttendanceRow>> ListSessionAttendanceAsync(
         GridQuery query, CancellationToken cancellationToken = default)
     {
-        var (skip, top) = query.ClampPage(20, 200);
+        // The dashboard covers the active sessions only. That is the resource's own
+        // scope, not one of the grid's filters, so it composes ahead of them and no
+        // request can widen it.
+        var page = await appDbContext.Sessions
+            .Where(session => session.IsActive)
+            .ToGridPageAsync(
+                query, Columns, session => session.Id,
+                session => new
+                {
+                    session.Id,
+                    session.Code,
+                    session.Title,
+                    session.TitleArabic,
+                    HallName = session.Hall!.Name,
+                    HallNameArabic = session.Hall!.NameArabic,
+                    session.Start,
+                    session.End,
+                },
+                cancellationToken);
 
-        var sessions = appDbContext.Sessions.AsNoTracking()
-            .Where(session => session.IsActive);
-
-        if (!string.IsNullOrWhiteSpace(query.Search))
-        {
-            var term = query.Search.Trim();
-            sessions = sessions.Where(session =>
-                EF.Functions.Like(session.Title, $"%{term}%")
-                || EF.Functions.Like(session.TitleArabic, $"%{term}%")
-                || EF.Functions.Like(session.Code, $"%{term}%"));
-        }
-
-        // Per-column grid filters (SimfDataGrid) — Contains() per mapped column.
-        foreach (var filter in query.Filters)
-        {
-            var value = filter.Value;
-            if (string.IsNullOrWhiteSpace(value)) { continue; }
-
-            sessions = filter.Key.ToLowerInvariant() switch
-            {
-                "title" => sessions.Where(session => session.Title.Contains(value)),
-                "code" => sessions.Where(session => session.Code.Contains(value)),
-                _ => sessions,
-            };
-        }
-
-        sessions = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
-        {
-            ("code", true) => sessions.OrderByDescending(session => session.Code),
-            ("code", false) => sessions.OrderBy(session => session.Code),
-            ("title", true) => sessions.OrderByDescending(session => session.Title),
-            ("title", false) => sessions.OrderBy(session => session.Title),
-            // The key is "start", matching the grid column's Key (AttendanceDashboard
-            // .razor) and the column itself. It read "startutc" until 2026-08-01, a
-            // leftover from before the persisted columns were renamed: nothing ever sent
-            // that key, so clicking Start a second time silently fell through to the
-            // ascending catch-all and the column could not be sorted newest-first at
-            // all. The ascending arm is written out rather than left to `_` so the
-            // pair is visible and the next rename cannot break only one half of it.
-            ("start", true) => sessions.OrderByDescending(session => session.Start),
-            ("start", false) => sessions.OrderBy(session => session.Start),
-            _ => sessions.OrderBy(session => session.Start),
-        };
-
-        var total = await sessions.CountAsync(cancellationToken);
-
-        var pageSessions = await sessions.Skip(skip).Take(top)
-            .Select(session => new
-            {
-                session.Id,
-                session.Code,
-                session.Title,
-                session.TitleArabic,
-                HallName = session.Hall!.Name,
-                HallNameArabic = session.Hall!.NameArabic,
-                session.Start,
-                session.End,
-            })
-            .ToListAsync(cancellationToken);
-
+        var pageSessions = page.Items;
         var ids = pageSessions.Select(session => session.Id).ToList();
 
         // Distinct attendees per session for the page: one DB row per distinct
@@ -154,8 +132,9 @@ internal sealed class SessionAttendanceService(
             totalBySession.GetValueOrDefault(session.Id),
             liveBySession.GetValueOrDefault(session.Id))).ToList();
 
-        return GridPage<SessionAttendanceRow>.Of(rows, total,
-            skip, top);
+        // The counts are per-page aggregates, so the finished rows are rebuilt onto
+        // the window the grid already resolved rather than a second guess at it.
+        return GridPage<SessionAttendanceRow>.Of(rows, page.Total, page.Skip, page.Top);
     }
 
     public async Task<IReadOnlyList<SessionPresentAttendee>> GetPresentAttendeesAsync(

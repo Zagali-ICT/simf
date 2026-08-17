@@ -1,8 +1,12 @@
 // Tests: SIMF.Api.Tests/FeedbackRatingsTests.cs
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.Feedback.Abstractions;
 using SIMF.Common;
+using SIMF.Common.Grids;
 using SIMF.Contracts.Feedback;
+using SIMF.Domain.Feedback;
+using SIMF.Infrastructure.Common.Grids;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Feedback;
@@ -14,72 +18,55 @@ namespace SIMF.Infrastructure.Feedback;
 internal sealed class AdminRatingResponseService(
     SimfAppDbContext dbContext) : IAdminRatingResponseService
 {
+    /// <summary>The grid contract for /admin/ratings: one entry per key
+    /// RatingsList.razor can send, as both its filter and its sort.</summary>
+    private static readonly GridColumns<RatingResponse> Columns = new GridColumns<RatingResponse>()
+        .Add("ratingTypeId", response => response.RatingTypeId)
+        .Add("overall", response => response.OverallStars)
+        .Add("comment", response => response.Comment, searchable: true)
+        .Add("createdAt", response => response.CreatedAt)
+        .DefaultOrder("createdAt", descending: true)
+        .PageSize(fallback: 25, max: 200);
+
+    private static readonly Expression<Func<RatingResponse, AdminRatingResponseSummary>> ToSummary =
+        response => new AdminRatingResponseSummary(
+            response.Id,
+            response.RatingTypeId,
+            response.Type!.Name,
+            response.Type!.Code,
+            response.UserId,
+            response.TargetId,
+            response.OverallStars,
+            response.Comment,
+            response.Answers.Count,
+            response.Answers.Count == 0 ? null : response.Answers.Average(answer => (double)answer.Stars),
+            response.IsActive,
+            response.CreatedAt,
+            response.UpdatedAt);
+
     public async Task<AdminRatingResponsesPage> ListResponsesAsync(
         GridQuery query, CancellationToken cancellationToken = default)
     {
-        var (skip, top) = query.ClampPage(25, 200);
+        // Soft-deleted responses are out of this view entirely, headline average
+        // included, so the predicate composes ahead of the grid's own filters.
+        var responses = await dbContext.RatingResponses
+            .Where(response => response.IsActive)
+            .ToGridPageAsync(query, Columns, response => response.Id, ToSummary, cancellationToken);
 
-        var rows = dbContext.RatingResponses.AsNoTracking()
-            .Where(r => r.IsActive);
+        // The headline is the average over the whole FILTERED set, not over the
+        // page, so it re-composes the same query with no Skip/Take — the split
+        // between ApplyGrid and ToGridPageAsync exists for exactly this.
+        var scored = dbContext.RatingResponses
+            .Where(response => response.IsActive && response.OverallStars != null)
+            .ApplyGrid(query, Columns, response => response.Id);
 
-        if (query.Filters.TryGetValue("ratingTypeId", out var typeFilter)
-            && Guid.TryParse(typeFilter, out var ratingTypeId))
-        {
-            rows = rows.Where(r => r.RatingTypeId == ratingTypeId);
-        }
-        if (query.Filters.TryGetValue("comment", out var commentFilter)
-            && !string.IsNullOrWhiteSpace(commentFilter))
-        {
-            var v = commentFilter.Trim();
-            rows = rows.Where(r => r.Comment != null && r.Comment.Contains(v));
-        }
-
-        if (!string.IsNullOrWhiteSpace(query.Search))
-        {
-            var term = query.Search.Trim();
-            rows = rows.Where(r =>
-                r.Comment != null && EF.Functions.Like(r.Comment, $"%{term}%"));
-        }
-
-        rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
-        {
-            ("overall", true) => rows.OrderByDescending(r => r.OverallStars),
-            ("overall", false) => rows.OrderBy(r => r.OverallStars),
-            ("createdat", false) => rows.OrderBy(r => r.CreatedAt),
-            _ => rows.OrderByDescending(r => r.CreatedAt),
-        };
-
-        var total = await rows.CountAsync(cancellationToken);
-
-        // Average over the responses that carry an overall score; 0 when none.
-        var overallCount = await rows.CountAsync(r => r.OverallStars != null, cancellationToken);
-        var averageOverall = overallCount == 0
+        var scoredCount = await scored.CountAsync(cancellationToken);
+        var averageOverall = scoredCount == 0
             ? 0d
-            : await rows.Where(r => r.OverallStars != null)
-                .AverageAsync(r => (double)r.OverallStars!.Value, cancellationToken);
+            : await scored.AverageAsync(
+                response => (double)response.OverallStars!.Value, cancellationToken);
 
-        var page = await rows
-            .Skip(skip)
-            .Take(top)
-            .Select(r => new AdminRatingResponseSummary(
-                r.Id,
-                r.RatingTypeId,
-                r.Type!.Name,
-                r.Type!.Code,
-                r.UserId,
-                r.TargetId,
-                r.OverallStars,
-                r.Comment,
-                r.Answers.Count,
-                r.Answers.Count == 0 ? null : r.Answers.Average(a => (double)a.Stars),
-                r.IsActive,
-                r.CreatedAt,
-                r.UpdatedAt))
-            .ToListAsync(cancellationToken);
-
-        var grid = GridPage<AdminRatingResponseSummary>.Of(page, total,
-            skip, top);
-        return new AdminRatingResponsesPage(grid, averageOverall, total);
+        return new AdminRatingResponsesPage(responses, averageOverall, responses.Total);
     }
 
     public async Task<AdminRatingKpiView> GetKpiAsync(CancellationToken cancellationToken = default)

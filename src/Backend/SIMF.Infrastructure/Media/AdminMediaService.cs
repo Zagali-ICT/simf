@@ -6,8 +6,10 @@ using SIMF.Application.Files.Abstractions;
 using SIMF.Application.Media.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Grids;
 using SIMF.Contracts.Media;
 using SIMF.Domain.Media;
+using SIMF.Infrastructure.Common.Grids;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Media;
@@ -30,71 +32,34 @@ internal sealed class AdminMediaService(
     TimeProvider timeProvider,
     ILogger<AdminMediaService> logger) : IAdminMediaService
 {
-    public async Task<GridPage<AdminMediaSummary>> ListAllAsync(
-        GridQuery query, CancellationToken cancellationToken = default)
-    {
-        var (skip, top) = query.ClampPage(25, 200);
+    /// <summary>
+    /// The grid contract for /admin/media: one entry per key MediaList.razor can
+    /// send, as both its filter and its sort. A key not declared here is a 400, not
+    /// a silently ignored request. "createdAt" is declared so the natural order can
+    /// name it — the grid does not render the column.
+    /// </summary>
+    private static readonly GridColumns<MediaItem> Columns = new GridColumns<MediaItem>()
+        .Add("kind", item => item.Kind)
+        .Add("title", item => item.Title, searchable: true)
+        .Add("titleArabic", item => item.TitleArabic, searchable: true)
+        .Add("album", item => item.Album, searchable: true)
+        .Add("albumArabic", item => item.AlbumArabic, searchable: true)
+        .Add("displayOrder", item => item.DisplayOrder)
+        .Add("isActive", item => item.IsActive)
+        .Add("createdAt", item => item.CreatedAt)
+        .DefaultOrder("displayOrder")
+        .DefaultOrder("createdAt", descending: true)
+        .PageSize(fallback: 25, max: 200);
 
-        var rows = dbContext.MediaItems.AsNoTracking().AsQueryable();
-
-        if (!string.IsNullOrWhiteSpace(query.Search))
-        {
-            var term = query.Search.Trim();
-            rows = rows.Where(item =>
-                (item.Title != null && EF.Functions.Like(item.Title, $"%{term}%"))
-                || (item.TitleArabic != null && EF.Functions.Like(item.TitleArabic, $"%{term}%"))
-                || (item.Album != null && EF.Functions.Like(item.Album, $"%{term}%"))
-                || (item.AlbumArabic != null && EF.Functions.Like(item.AlbumArabic, $"%{term}%")));
-        }
-        // CP grid per-column filters. Keys match the SimfDataGrid
-        // column Key values on MediaList.razor; unknown columns are ignored.
-        foreach (var (column, raw) in query.Filters)
-        {
-            if (string.IsNullOrWhiteSpace(raw)) { continue; }
-            var v = raw.Trim();
-            switch (column.ToLowerInvariant())
-            {
-                case "title":
-                    rows = rows.Where(item => item.Title != null && item.Title.Contains(v));
-                    break;
-                case "titlearabic":
-                    rows = rows.Where(item => item.TitleArabic != null && item.TitleArabic.Contains(v));
-                    break;
-                case "album":
-                    rows = rows.Where(item => item.Album != null && item.Album.Contains(v));
-                    break;
-                case "albumarabic":
-                    rows = rows.Where(item => item.AlbumArabic != null && item.AlbumArabic.Contains(v));
-                    break;
-                case "isactive":
-                    if (bool.TryParse(v, out var isActive))
-                    {
-                        rows = rows.Where(item => item.IsActive == isActive);
-                    }
-                    break;
-            }
-        }
-
-        // CP grid sortable columns. Default preserves DisplayOrder,
-        // then newest-first by CreatedAt.
-        rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
-        {
-            ("kind", true) => rows.OrderByDescending(item => item.Kind),
-            ("kind", false) => rows.OrderBy(item => item.Kind),
-            ("title", true) => rows.OrderByDescending(item => item.Title),
-            ("title", false) => rows.OrderBy(item => item.Title),
-            ("isactive", true) => rows.OrderByDescending(item => item.IsActive),
-            ("isactive", false) => rows.OrderBy(item => item.IsActive),
-            ("displayorder", true) => rows.OrderByDescending(item => item.DisplayOrder),
-            _ => rows.OrderBy(item => item.DisplayOrder)
-                     .ThenByDescending(item => item.CreatedAt),
-        };
-
-        var total = await rows.CountAsync(cancellationToken);
-        var page = await rows
-            .Skip(skip)
-            .Take(top)
-            .Select(item => new AdminMediaSummary(
+    // The projection is inline rather than a static field because the playback URL
+    // is a correlated read of the file store, so it needs the injected context.
+    public Task<GridPage<AdminMediaSummary>> ListAllAsync(
+        GridQuery query, CancellationToken cancellationToken = default) =>
+        dbContext.MediaItems.ToGridPageAsync(
+            query,
+            Columns,
+            item => item.Id,
+            item => new AdminMediaSummary(
                 item.Id,
                 item.Kind,
                 item.Title,
@@ -103,17 +68,13 @@ internal sealed class AdminMediaService(
                 item.AlbumArabic,
                 item.ImageFileId != null,
                 dbContext.StoredFiles
-                    .Where(f => f.Id == item.VideoFileId && f.IsActive)
-                    .Select(f => f.ExternalUrl)
+                    .Where(file => file.Id == item.VideoFileId && file.IsActive)
+                    .Select(file => file.ExternalUrl)
                     .FirstOrDefault(),
                 item.DisplayOrder,
                 item.IsActive,
-                item.CreatedAt))
-            .ToListAsync(cancellationToken);
-
-        return GridPage<AdminMediaSummary>.Of(page, total,
-            skip, top);
-    }
+                item.CreatedAt),
+            cancellationToken);
 
     public async Task<AdminMediaDetail?> GetAsync(
         Guid id, CancellationToken cancellationToken = default)

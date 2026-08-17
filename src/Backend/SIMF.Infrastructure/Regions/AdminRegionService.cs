@@ -1,12 +1,15 @@
 // Tests: SIMF.Api.Tests/RegionTests.cs
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
 using SIMF.Application.Regions.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Grids;
 using SIMF.Contracts.Regions;
 using SIMF.Domain.Regions;
+using SIMF.Infrastructure.Common.Grids;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Regions;
@@ -24,74 +27,35 @@ internal sealed class AdminRegionService(
     TimeProvider timeProvider,
     ILogger<AdminRegionService> logger) : IAdminRegionService
 {
-    public async Task<GridPage<AdminRegionSummary>> ListAsync(
-        GridQuery query, CancellationToken ct = default)
-    {
-        var (skip, top) = query.ClampPage(25, 200);
+    /// <summary>
+    /// The grid contract for /admin/regions: one entry per key a caller can send.
+    /// <c>name</c> is the ARABIC name and <c>nameEn</c> the English one, which is
+    /// how RegionsList labels its two name columns. <c>sortOrder</c> is not a grid
+    /// column; it is declared because it is the first level of the natural order.
+    /// <c>isActive</c> is the active-rows filter the walk-in registration form
+    /// sends when it loads its birth-region picker.
+    /// </summary>
+    private static readonly GridColumns<Region> Columns = new GridColumns<Region>()
+        .Add("code", region => region.Code, searchable: true)
+        .Add("name", region => region.NameArabic, searchable: true)
+        .Add("nameEn", region => region.Name, searchable: true)
+        .Add("sortOrder", region => region.SortOrder)
+        .Add("isActive", region => region.IsActive)
+        .DefaultOrder("sortOrder")
+        .DefaultOrder("name")
+        .PageSize(fallback: 25, max: 200);
 
-        var rows = db.Regions.AsNoTracking().AsQueryable();
+    private static readonly Expression<Func<Region, AdminRegionSummary>> ToSummary =
+        region => new AdminRegionSummary(
+            region.Id,
+            region.Code,
+            region.Name,
+            region.NameArabic,
+            region.IsActive);
 
-        if (!string.IsNullOrWhiteSpace(query.Search))
-        {
-            var term = query.Search.Trim();
-            rows = rows.Where(region =>
-                EF.Functions.Like(region.NameArabic, $"%{term}%")
-                || EF.Functions.Like(region.Name, $"%{term}%")
-                || EF.Functions.Like(region.Code, $"%{term}%"));
-        }
-
-        // CP grid per-column filters. Unknown columns are ignored; the
-        // boolean isActive filter is parsed from its text value.
-        foreach (var (column, raw) in query.Filters)
-        {
-            if (string.IsNullOrWhiteSpace(raw)) { continue; }
-            var v = raw.Trim();
-            switch (column.ToLowerInvariant())
-            {
-                case "code":
-                    rows = rows.Where(region => region.Code.Contains(v));
-                    break;
-                case "name":
-                    rows = rows.Where(region => region.NameArabic.Contains(v));
-                    break;
-                case "nameen":
-                    rows = rows.Where(region => region.Name != null && region.Name.Contains(v));
-                    break;
-                case "isactive":
-                    if (bool.TryParse(v, out var isActive))
-                    {
-                        rows = rows.Where(region => region.IsActive == isActive);
-                    }
-                    break;
-            }
-        }
-
-        rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
-        {
-            ("code", true) => rows.OrderByDescending(region => region.Code),
-            ("code", false) => rows.OrderBy(region => region.Code),
-            ("name", true) => rows.OrderByDescending(region => region.NameArabic),
-            ("name", false) => rows.OrderBy(region => region.NameArabic),
-            ("isactive", true) => rows.OrderByDescending(region => region.IsActive),
-            ("isactive", false) => rows.OrderBy(region => region.IsActive),
-            _ => rows.OrderBy(region => region.SortOrder).ThenBy(region => region.NameArabic),
-        };
-
-        var total = await rows.CountAsync(ct);
-        var page = await rows
-            .Skip(skip)
-            .Take(top)
-            .Select(region => new AdminRegionSummary(
-                region.Id,
-                region.Code,
-                region.Name,
-                region.NameArabic,
-                region.IsActive))
-            .ToListAsync(ct);
-
-        return GridPage<AdminRegionSummary>.Of(page, total,
-            skip, top);
-    }
+    public Task<GridPage<AdminRegionSummary>> ListAsync(
+        GridQuery query, CancellationToken ct = default) =>
+        db.Regions.ToGridPageAsync(query, Columns, region => region.Id, ToSummary, ct);
 
     public async Task<AdminRegionDetail?> GetAsync(
         Guid id, CancellationToken ct = default)

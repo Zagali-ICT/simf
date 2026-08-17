@@ -1,4 +1,5 @@
 // Tests: SIMF.Api.Tests/AdminMediaPartnersTests.cs
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Assets.Abstractions;
@@ -6,9 +7,11 @@ using SIMF.Application.Auditing;
 using SIMF.Application.PublicRelations.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Grids;
 using SIMF.Contracts.Admin;
 using SIMF.Contracts.PublicRelations;
 using SIMF.Domain.PublicRelations;
+using SIMF.Infrastructure.Common.Grids;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.PublicRelations;
@@ -26,69 +29,49 @@ internal sealed class AdminMediaPartnerService(
     TimeProvider timeProvider,
     ILogger<AdminMediaPartnerService> logger) : IAdminMediaPartnerService
 {
-    public async Task<GridPage<AdminMediaPartnerSummary>> ListAllAsync(GridQuery query, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// The grid contract for /admin/media-partners: one entry per key
+    /// MediaPartnersList.razor can send, as both its filter and its sort. A key not
+    /// declared here is a 400, not a silently ignored request.
+    /// </summary>
+    private static readonly GridColumns<MediaPartner> Columns = new GridColumns<MediaPartner>()
+        .Add("name", partner => partner.Name, searchable: true)
+        .Add("nameArabic", partner => partner.NameArabic, searchable: true)
+        .Add("displayOrder", partner => partner.DisplayOrder)
+        .Add("isActive", partner => partner.IsActive)
+        .DefaultOrder("displayOrder")
+        .DefaultOrder("nameArabic")
+        .PageSize(fallback: 50, max: 500);
+
+    // HasLogo is projected false and filled in below: "an active MediaPartnerLogo
+    // asset exists" is a file-store fact, not a column on MediaPartner, so it
+    // cannot be part of the SELECT.
+    private static readonly Expression<Func<MediaPartner, AdminMediaPartnerSummary>> ToSummary =
+        partner => new AdminMediaPartnerSummary(
+            partner.Id, partner.Name, partner.NameArabic,
+            null, partner.Url, partner.DisplayOrder,
+            partner.IsActive, partner.CreatedAt, false);
+
+    public async Task<GridPage<AdminMediaPartnerSummary>> ListAllAsync(
+        GridQuery query, CancellationToken cancellationToken = default)
     {
-        var (skip, top) = query.ClampPage(50, 500);
-
-        var rows = appDbContext.MediaPartners.AsNoTracking().AsQueryable();
-
-        if (!string.IsNullOrWhiteSpace(query.Search))
-        {
-            var term = query.Search.Trim();
-            rows = rows.Where(partner =>
-                EF.Functions.Like(partner.Name, $"%{term}%")
-                || EF.Functions.Like(partner.NameArabic, $"%{term}%"));
-        }
-
-        // CP grid per-column filters. Unknown columns are ignored.
-        foreach (var (column, raw) in query.Filters)
-        {
-            if (string.IsNullOrWhiteSpace(raw)) { continue; }
-            var v = raw.Trim();
-            switch (column.ToLowerInvariant())
-            {
-                case "name":
-                    rows = rows.Where(partner => partner.Name.Contains(v));
-                    break;
-                case "namearabic":
-                    rows = rows.Where(partner => partner.NameArabic.Contains(v));
-                    break;
-                case "isactive":
-                    if (bool.TryParse(v, out var isActive))
-                    {
-                        rows = rows.Where(partner => partner.IsActive == isActive);
-                    }
-                    break;
-            }
-        }
-
-        rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
-        {
-            ("name", true) => rows.OrderByDescending(partner => partner.Name),
-            ("name", false) => rows.OrderBy(partner => partner.Name),
-            ("namearabic", true) => rows.OrderByDescending(partner => partner.NameArabic),
-            ("namearabic", false) => rows.OrderBy(partner => partner.NameArabic),
-            ("displayorder", true) => rows.OrderByDescending(partner => partner.DisplayOrder),
-            _ => rows.OrderBy(partner => partner.DisplayOrder)
-                     .ThenBy(partner => partner.NameArabic),
-        };
-
-        var total = await rows.CountAsync(cancellationToken);
-        var page = await rows.Skip(skip).Take(top)
-            .Select(partner => new AdminMediaPartnerSummary(
-                partner.Id, partner.Name, partner.NameArabic,
-                null, partner.Url, partner.DisplayOrder,
-                partner.IsActive, partner.CreatedAt))
-            .ToListAsync(cancellationToken);
+        var page = await appDbContext.MediaPartners.ToGridPageAsync(
+            query, Columns, partner => partner.Id, ToSummary, cancellationToken);
 
         // The grid renders the real logo thumbnail only for rows with an active
         // MediaPartnerLogo asset (else an initials tile) — one batched query.
         var logoOwners = await assetService.WhichOwnersHaveActiveAssetAsync(
-            AssetCategory.MediaPartnerLogo, page.Select(row => row.Id).ToList(), cancellationToken);
-        page = page.Select(row => row with { HasLogo = logoOwners.Contains(row.Id) }).ToList();
+            AssetCategory.MediaPartnerLogo,
+            page.Items.Select(row => row.Id).ToList(),
+            cancellationToken);
 
-        return GridPage<AdminMediaPartnerSummary>.Of(page, total,
-            skip, top);
+        return GridPage<AdminMediaPartnerSummary>.Of(
+            page.Items
+                .Select(row => row with { HasLogo = logoOwners.Contains(row.Id) })
+                .ToList(),
+            page.Total,
+            page.Skip,
+            page.Top);
     }
 
     public async Task<AdminMediaPartnerDetail?> GetAsync(Guid id, CancellationToken cancellationToken = default)

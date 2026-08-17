@@ -2,6 +2,7 @@
 //        SIMF.Api.Tests/SpeakerMeetingQaTests.cs
 //        SIMF.Api.Tests/SpeakerMeetingLinksUnsetTests.cs
 //        SIMF.Api.Tests/MeetingNoAvailabilityTests.cs
+using System.Linq.Expressions;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -12,9 +13,11 @@ using SIMF.Application.MeetingRequests.Abstractions;
 using SIMF.Application.Notifications;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Grids;
 using SIMF.Contracts.Programme;
 using SIMF.Domain.BusinessMeetings;
 using SIMF.Domain.Notifications;
+using SIMF.Infrastructure.Common.Grids;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.MeetingRequests;
@@ -219,104 +222,106 @@ internal sealed class SpeakerMeetingRequestService(
             req.Id, speakerId, req.Status, req.CreatedAt);
     }
 
+    /// <summary>The grid contract for /admin/speaker-meetings: one entry per key
+    /// SpeakerMeetingRequestsList.razor can send, plus the <c>speakerId</c> scope a
+    /// deep link carries. A key not declared here is a 400, not a silently ignored
+    /// request.</summary>
+    private static readonly GridColumns<SpeakerMeetingRequest> Columns =
+        new GridColumns<SpeakerMeetingRequest>()
+            .Add("requesterName", request => request.RequesterName)
+            .Add("subject", request => request.Subject)
+            .Add("status", request => request.Status)
+            .Add("speakerId", request => request.SpeakerId)
+            .Add("createdAt", request => request.CreatedAt)
+            .Add("respondedAt", request => request.RespondedAt)
+            // Newest first — the review desk works the pending queue top-down.
+            .DefaultOrder("createdAt", descending: true)
+            .PageSize(fallback: 25, max: 200);
+
+    /// <summary>The page as the database returns it. It carries
+    /// <c>CheckedInByUserId</c>, which the row DTO does not, because the operator's
+    /// display name lives in the Identity database and is resolved after this page
+    /// has materialised.</summary>
+    private sealed record SpeakerMeetingListRow(
+        Guid Id,
+        Guid SpeakerId,
+        string SpeakerName,
+        string SpeakerNameArabic,
+        Guid RequestedByUserId,
+        string RequesterName,
+        string Subject,
+        MeetingRequestStatus Status,
+        string? ResponseNote,
+        DateTime CreatedAt,
+        DateTime? RespondedAt,
+        DateTime? CheckedInAt,
+        Guid? CheckedInByUserId);
+
+    private static readonly Expression<Func<SpeakerMeetingRequest, SpeakerMeetingListRow>> ToListRow =
+        request => new SpeakerMeetingListRow(
+            request.Id,
+            request.SpeakerId,
+            request.Speaker!.Name,
+            request.Speaker!.NameArabic,
+            request.RequestedByUserId,
+            request.RequesterName,
+            request.Subject,
+            request.Status,
+            request.ResponseNote,
+            request.CreatedAt,
+            request.RespondedAt,
+            // The hall check-in stamps, so the grid and its export
+            // report who actually turned up, not only the decision.
+            request.CheckedInAt,
+            request.CheckedInByUserId);
+
     public async Task<GridPage<AdminSpeakerMeetingRequestRow>> ListAllAsync(
         Guid actorUserId, GridQuery query,
         CancellationToken cancellationToken = default)
     {
-        var (skip, top) = query.ClampPage(25, 200);
-
-        var rows = appDbContext.SpeakerMeetingRequests.AsNoTracking().AsQueryable();
-        var statusFilter = string.Empty;
-        if (query.Filters.TryGetValue("status", out var statusRaw)
-            && Enum.TryParse<MeetingRequestStatus>(statusRaw, ignoreCase: true,
-                out var status))
-        {
-            rows = rows.Where(r => r.Status == status);
-            statusFilter = status.ToString();
-        }
-        var speakerFilter = string.Empty;
-        if (query.Filters.TryGetValue("speakerId", out var sidRaw)
-            && Guid.TryParse(sidRaw, out var speakerIdFilter))
-        {
-            rows = rows.Where(r => r.SpeakerId == speakerIdFilter);
-            speakerFilter = speakerIdFilter.ToString();
-        }
-        if (query.Filters.TryGetValue("requesterName", out var nameRaw)
-            && !string.IsNullOrWhiteSpace(nameRaw))
-        {
-            var v = nameRaw.Trim();
-            rows = rows.Where(r => r.RequesterName.Contains(v));
-        }
-        if (query.Filters.TryGetValue("subject", out var subjectRaw)
-            && !string.IsNullOrWhiteSpace(subjectRaw))
-        {
-            var v = subjectRaw.Trim();
-            rows = rows.Where(r => r.Subject.Contains(v));
-        }
-
-        rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
-        {
-            ("requestername", false) => rows.OrderBy(r => r.RequesterName),
-            ("requestername", true) => rows.OrderByDescending(r => r.RequesterName),
-            ("subject", false) => rows.OrderBy(r => r.Subject),
-            ("subject", true) => rows.OrderByDescending(r => r.Subject),
-            ("status", false) => rows.OrderBy(r => r.Status),
-            ("status", true) => rows.OrderByDescending(r => r.Status),
-            ("createdat", false) => rows.OrderBy(r => r.CreatedAt),
-            ("respondedat", false) => rows.OrderBy(r => r.RespondedAt),
-            ("respondedat", true) => rows.OrderByDescending(r => r.RespondedAt),
-            _ => rows.OrderByDescending(r => r.CreatedAt),
-        };
-
-        var total = await rows.CountAsync(cancellationToken);
-        var pageRows = await rows
-            .Skip(skip).Take(top)
-            .Join(appDbContext.Speakers,
-                r => r.SpeakerId, s => s.Id,
-                (r, s) => new
-                {
-                    r.Id, r.SpeakerId, SpeakerName = s.Name, SpeakerNameArabic = s.NameArabic,
-                    r.RequestedByUserId, r.RequesterName, r.Subject,
-                    r.Status, r.ResponseNote, r.CreatedAt, r.RespondedAt,
-                    // The hall check-in stamps, so the grid and its export
-                    // report who actually turned up, not only the decision.
-                    r.CheckedInAt, r.CheckedInByUserId,
-                })
-            .ToListAsync(cancellationToken);
+        var page = await appDbContext.SpeakerMeetingRequests.ToGridPageAsync(
+            query, Columns, request => request.Id, ToListRow, cancellationToken);
 
         // Resolve the check-in operators' display names in ONE Identity-DB
         // query for the whole page. CheckedInByUserId is a bare logical FK,
         // so this is a second query merged in memory — never a cross-database JOIN.
         // Rows with no check-in contribute no id.
         var operatorNames = await userDirectory.GetDisplayNamesAsync(
-            pageRows.Where(r => r.CheckedInByUserId.HasValue)
-                .Select(r => r.CheckedInByUserId!.Value)
+            page.Items.Where(row => row.CheckedInByUserId.HasValue)
+                .Select(row => row.CheckedInByUserId!.Value)
                 .Distinct()
                 .ToList(),
             cancellationToken);
 
+        // The audit records the filters AS SENT. It used to record the parsed enum
+        // name instead, which meant a value the old code could not parse — and so
+        // silently ignored — was audited as no filter at all.
+        var statusFilter = query.Filters.TryGetValue("status", out var statusRaw)
+            ? statusRaw : string.Empty;
+        var speakerFilter = query.Filters.TryGetValue("speakerId", out var speakerRaw)
+            ? speakerRaw : string.Empty;
         await auditLog.WriteSuccessAsync(
             AuditEvents.AdminSpeakerMeetingRequestsListed,
             actorUserId,
             DetailJson(new
             {
-                count = pageRows.Count,
-                total,
-                top,
-                skip,
+                count = page.Items.Count,
+                total = page.Total,
+                top = page.Top,
+                skip = page.Skip,
                 statusFilter,
                 speakerFilter,
             }),
             cancellationToken);
 
-        var items = pageRows.Select(r => new AdminSpeakerMeetingRequestRow(
-            r.Id, r.SpeakerId, r.SpeakerName, r.SpeakerNameArabic,
-            r.RequestedByUserId, r.RequesterName,
-            r.Subject, r.Status, r.ResponseNote, r.CreatedAt, r.RespondedAt,
-            r.CheckedInAt, ResolveOperatorName(operatorNames, r.CheckedInByUserId)))
+        var items = page.Items.Select(row => new AdminSpeakerMeetingRequestRow(
+            row.Id, row.SpeakerId, row.SpeakerName, row.SpeakerNameArabic,
+            row.RequestedByUserId, row.RequesterName,
+            row.Subject, row.Status, row.ResponseNote, row.CreatedAt, row.RespondedAt,
+            row.CheckedInAt, ResolveOperatorName(operatorNames, row.CheckedInByUserId)))
             .ToList();
-        return GridPage<AdminSpeakerMeetingRequestRow>.Of(items, total,
-            skip, top);
+        return GridPage<AdminSpeakerMeetingRequestRow>.Of(
+            items, page.Total, page.Skip, page.Top);
     }
 
     public async Task<AdminSpeakerMeetingRequestDetail> GetAsync(

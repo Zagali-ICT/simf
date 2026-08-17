@@ -1,12 +1,15 @@
 // Tests: SIMF.Api.Tests/OrganisationTests.cs
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
 using SIMF.Application.Organisations.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Grids;
 using SIMF.Contracts.Organisations;
 using SIMF.Domain.Organisations;
+using SIMF.Infrastructure.Common.Grids;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Organisations;
@@ -34,84 +37,36 @@ internal sealed class AdminOrganisationService(
     /// <summary>The most per-row error messages the result carries back.</summary>
     private const int ImportErrorCap = 50;
 
-    public async Task<GridPage<AdminOrganisationSummary>> ListAsync(
-        GridQuery query, CancellationToken ct = default)
-    {
-        var (skip, top) = query.ClampPage(25, 200);
+    /// <summary>
+    /// The grid contract for /admin/organisations: one entry per key
+    /// OrganisationsList can send. <c>name</c> is the ARABIC name and
+    /// <c>nameEn</c> the English one, which is how the page labels its two name
+    /// columns. <c>sector</c> is filterable but not searchable, matching the
+    /// four-column search box the page describes.
+    /// </summary>
+    private static readonly GridColumns<Organisation> Columns = new GridColumns<Organisation>()
+        .Add("name", org => org.NameArabic, searchable: true)
+        .Add("nameEn", org => org.Name, searchable: true)
+        .Add("commercialRegistration", org => org.CommercialRegistration, searchable: true)
+        .Add("sector", org => org.Sector)
+        .Add("city", org => org.City, searchable: true)
+        .Add("isActive", org => org.IsActive)
+        .DefaultOrder("name")
+        .PageSize(fallback: 25, max: 200);
 
-        var rows = db.Organisations.AsNoTracking().AsQueryable();
+    private static readonly Expression<Func<Organisation, AdminOrganisationSummary>> ToSummary =
+        org => new AdminOrganisationSummary(
+            org.Id,
+            org.NameArabic,
+            org.Name,
+            org.CommercialRegistration,
+            org.Sector,
+            org.City,
+            org.IsActive);
 
-        if (!string.IsNullOrWhiteSpace(query.Search))
-        {
-            var term = query.Search.Trim();
-            rows = rows.Where(org =>
-                EF.Functions.Like(org.NameArabic, $"%{term}%")
-                || EF.Functions.Like(org.Name, $"%{term}%")
-                || EF.Functions.Like(org.CommercialRegistration, $"%{term}%")
-                || EF.Functions.Like(org.City, $"%{term}%"));
-        }
-
-        // CP grid per-column filters. Unknown columns are ignored; the
-        // boolean isActive filter is parsed from its text value.
-        foreach (var (column, raw) in query.Filters)
-        {
-            if (string.IsNullOrWhiteSpace(raw)) { continue; }
-            var v = raw.Trim();
-            switch (column.ToLowerInvariant())
-            {
-                case "name":
-                    rows = rows.Where(org => org.NameArabic.Contains(v));
-                    break;
-                case "nameen":
-                    rows = rows.Where(org => org.Name != null && org.Name.Contains(v));
-                    break;
-                case "commercialregistration":
-                    rows = rows.Where(org =>
-                        org.CommercialRegistration != null && org.CommercialRegistration.Contains(v));
-                    break;
-                case "sector":
-                    rows = rows.Where(org => org.Sector != null && org.Sector.Contains(v));
-                    break;
-                case "city":
-                    rows = rows.Where(org => org.City != null && org.City.Contains(v));
-                    break;
-                case "isactive":
-                    if (bool.TryParse(v, out var isActive))
-                    {
-                        rows = rows.Where(org => org.IsActive == isActive);
-                    }
-                    break;
-            }
-        }
-
-        rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
-        {
-            ("name", true) => rows.OrderByDescending(org => org.NameArabic),
-            ("name", false) => rows.OrderBy(org => org.NameArabic),
-            ("city", true) => rows.OrderByDescending(org => org.City),
-            ("city", false) => rows.OrderBy(org => org.City),
-            ("isactive", true) => rows.OrderByDescending(org => org.IsActive),
-            ("isactive", false) => rows.OrderBy(org => org.IsActive),
-            _ => rows.OrderBy(org => org.NameArabic),
-        };
-
-        var total = await rows.CountAsync(ct);
-        var page = await rows
-            .Skip(skip)
-            .Take(top)
-            .Select(org => new AdminOrganisationSummary(
-                org.Id,
-                org.NameArabic,
-                org.Name,
-                org.CommercialRegistration,
-                org.Sector,
-                org.City,
-                org.IsActive))
-            .ToListAsync(ct);
-
-        return GridPage<AdminOrganisationSummary>.Of(page, total,
-            skip, top);
-    }
+    public Task<GridPage<AdminOrganisationSummary>> ListAsync(
+        GridQuery query, CancellationToken ct = default) =>
+        db.Organisations.ToGridPageAsync(query, Columns, org => org.Id, ToSummary, ct);
 
     public async Task<AdminOrganisationDetail?> GetAsync(
         Guid id, CancellationToken ct = default)
