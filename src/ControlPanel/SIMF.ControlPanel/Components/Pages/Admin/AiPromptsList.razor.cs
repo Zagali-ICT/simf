@@ -235,37 +235,91 @@ public partial class AiPromptsList
     private void OnTestInputsChanged(ChangeEventArgs e) =>
         _testInputsRaw = e.Value?.ToString() ?? string.Empty;
 
-    // Append-only version history for one prompt, reusing the existing
-    // GET /admin/ai/prompts/{id}/history endpoint (gated on AiPrompts.View).
+    // Append-only version history for one prompt, one page at a time
+    // (POST /admin/ai/prompts/{id}/history/list, gated on AiPrompts.View). The
+    // history gains a row on every edit and is never pruned, so the modal pages
+    // through it rather than rendering the whole set. The request carries only
+    // Skip/Top: the order is the server's default (newest version first), and the
+    // modal offers no sort or filter, so it can never send an undeclared key.
     private bool _historyOpen;
     private string _historyKey = string.Empty;
-    private IReadOnlyList<AdminAiPromptHistoryEntry> _history =
-        Array.Empty<AdminAiPromptHistoryEntry>();
+    private Guid _historyPromptId;
+    private GridQuery _historyQuery = new() { Top = HistoryPageSize };
+    private GridPage<AdminAiPromptHistoryEntry> _historyPage = new();
+
+    private const int HistoryPageSize = 20;
+
+    private bool HistoryHasPrev => _historyPage.Skip > 0;
+
+    private bool HistoryHasNext =>
+        _historyPage.Skip + _historyPage.Items.Count < _historyPage.Total;
+
+    private string HistoryPageLabel
+    {
+        get
+        {
+            var size = _historyPage.Top > 0 ? _historyPage.Top : HistoryPageSize;
+            var current = (_historyPage.Skip / size) + 1;
+            var total = Math.Max(1, (int)Math.Ceiling(_historyPage.Total / (double)size));
+            return string.Format(L["Grid.Page"], current, total);
+        }
+    }
 
     private async Task OnHistoryAsync(AdminAiPromptSummary row)
     {
         _toast = null;
         _historyKey = row.Key;
-        _history = Array.Empty<AdminAiPromptHistoryEntry>();
-        var env = await JS.InvokeAsync<ApiResult<IReadOnlyList<AdminAiPromptHistoryEntry>>>(
-            "simfAccount.getJson", $"/account/api/admin/ai/prompts/{row.Id}/history");
+        _historyPromptId = row.Id;
+        _historyQuery = new GridQuery { Top = HistoryPageSize };
+        _historyPage = new();
+        await LoadHistoryAsync(openOnSuccess: true);
+    }
+
+    private async Task HistoryPrevAsync()
+    {
+        if (!HistoryHasPrev) return;
+        _historyQuery = new GridQuery
+        {
+            Skip = Math.Max(0, _historyPage.Skip - HistoryPageSize),
+            Top = HistoryPageSize,
+        };
+        await LoadHistoryAsync(openOnSuccess: false);
+    }
+
+    private async Task HistoryNextAsync()
+    {
+        if (!HistoryHasNext) return;
+        _historyQuery = new GridQuery
+        {
+            Skip = _historyPage.Skip + HistoryPageSize,
+            Top = HistoryPageSize,
+        };
+        await LoadHistoryAsync(openOnSuccess: false);
+    }
+
+    private async Task LoadHistoryAsync(bool openOnSuccess)
+    {
+        var env = await JS.InvokeAsync<ApiResult<GridPage<AdminAiPromptHistoryEntry>>>(
+            "simfAccount.postJson",
+            $"/account/api/admin/ai/prompts/{_historyPromptId}/history/list",
+            _historyQuery);
         if (env is { Success: true, Data: not null })
         {
-            _history = env.Data;
-            _historyOpen = true;
+            _historyPage = env.Data;
+            if (openOnSuccess) _historyOpen = true;
+            return;
         }
-        else
-        {
-            _toast = new Toast("error",
-                env?.Error?.MessageForCurrentCulture() ?? L["Admin.AiPrompts.LoadFailed"]);
-        }
+        _toast = new Toast("error",
+            env?.Error?.MessageForCurrentCulture() ?? L["Admin.AiPrompts.LoadFailed"]);
     }
 
     private void CloseHistory()
     {
         _historyOpen = false;
         _historyKey = string.Empty;
-        _history = Array.Empty<AdminAiPromptHistoryEntry>();
+        _historyPromptId = Guid.Empty;
+        _historyQuery = new GridQuery { Top = HistoryPageSize };
+        _historyPage = new();
     }
 
     // Show a readable prefix of the (long) content-hash in the history table.

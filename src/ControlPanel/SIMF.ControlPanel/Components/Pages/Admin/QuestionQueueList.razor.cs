@@ -14,10 +14,6 @@ public partial class QuestionQueueList
 
     private record Toast(string Variant, string Message);
 
-    // The full Pending queue as returned by the backend (oldest-first, capped at
-    // 200). The grid pages / filters / sorts this in memory — the backend read
-    // is a plain non-paged list, so there is no server GridQuery to extend.
-    private List<SessionQuestionQueueRow> _rows = new();
     private GridQuery _query = new() { Top = 20 };
     private GridPage<SessionQuestionQueueRow> _page = new();
     private bool _loading;
@@ -31,11 +27,10 @@ public partial class QuestionQueueList
 
     private async Task OnQueryChangedAsync(GridQuery next)
     {
-        // A sort / filter / page change re-projects the already-fetched list; no
-        // round-trip — the queue was loaded whole in LoadAsync.
+        // The queue is server-paged now, so a sort / filter / page change is a
+        // round-trip rather than a re-projection of an in-memory list.
         _query = next;
-        _page = BuildPage();
-        await Task.CompletedTask;
+        await LoadAsync();
     }
 
     private async Task LoadAsync()
@@ -43,12 +38,11 @@ public partial class QuestionQueueList
         _loading = true;
         try
         {
-            var envelope = await JS.InvokeAsync<ApiResult<IReadOnlyList<SessionQuestionQueueRow>>>(
-                "simfAccount.getJson", "/account/api/admin/questions/queue");
+            var envelope = await JS.InvokeAsync<ApiResult<GridPage<SessionQuestionQueueRow>>>(
+                "simfAccount.postJson", "/account/api/admin/questions/list", _query);
             if (envelope is { Success: true, Data: not null })
             {
-                _rows = envelope.Data.ToList();
-                _page = BuildPage();
+                _page = envelope.Data;
             }
             else
             {
@@ -59,53 +53,6 @@ public partial class QuestionQueueList
         }
         finally { _loading = false; }
     }
-
-    // Client-side projection of the in-memory queue onto the current GridQuery
-    // (filters → sort → page). Filters are case-insensitive Contains, mirroring
-    // the server-side grids; the default order preserves the backend's
-    // oldest-first (CreatedAt) ordering.
-    private GridPage<SessionQuestionQueueRow> BuildPage()
-    {
-        IEnumerable<SessionQuestionQueueRow> rows = _rows;
-
-        foreach (var (column, raw) in _query.Filters)
-        {
-            if (string.IsNullOrWhiteSpace(raw)) { continue; }
-            var v = raw.Trim();
-            rows = column.ToLowerInvariant() switch
-            {
-                "session" => rows.Where(r => Contains(r.SessionTitle, v)),
-                "question" => rows.Where(r => Contains(r.QuestionText, v)),
-                "submitter" => rows.Where(r => Contains(r.SubmittedByDisplayName, v)),
-                "ai" => rows.Where(r => Contains(r.AiFilterVerdict, v)),
-                _ => rows,
-            };
-        }
-
-        rows = (_query.Sort?.ToLowerInvariant(), _query.SortDescending) switch
-        {
-            ("session", false) => rows.OrderBy(r => r.SessionTitle),
-            ("session", true) => rows.OrderByDescending(r => r.SessionTitle),
-            ("question", false) => rows.OrderBy(r => r.QuestionText),
-            ("question", true) => rows.OrderByDescending(r => r.QuestionText),
-            ("submitter", false) => rows.OrderBy(r => r.SubmittedByDisplayName),
-            ("submitter", true) => rows.OrderByDescending(r => r.SubmittedByDisplayName),
-            ("phase", false) => rows.OrderBy(r => r.Phase),
-            ("phase", true) => rows.OrderByDescending(r => r.Phase),
-            _ => rows.OrderBy(r => r.CreatedAt),
-        };
-
-        var materialised = rows.ToList();
-        var total = materialised.Count;
-        var skip = Math.Max(0, _query.Skip);
-        var top = _query.Top is > 0 ? _query.Top : 20;
-        var items = materialised.Skip(skip).Take(top).ToList();
-        return GridPage<SessionQuestionQueueRow>.Of(items, total, _query);
-    }
-
-    private static bool Contains(string? value, string needle) =>
-        value is not null
-        && value.Contains(needle, StringComparison.OrdinalIgnoreCase);
 
     // Excel export (selected rows, or the whole Pending queue). Direct
     // download via the generic /export proxy. Export only — questions are

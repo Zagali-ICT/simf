@@ -1,4 +1,4 @@
-// Tests cover: GET /api/v1/admin/gates/reports/currently-inside — the report
+// Tests cover: POST /api/v1/admin/gates/reports/currently-inside/list — the report
 // behind the Control Panel's Gates Operations dashboard (/admin/gates/dashboard).
 //
 // WHY THIS FILE EXISTS. The endpoint returned 500 on EVERY request, including
@@ -67,12 +67,12 @@ public sealed class AdminGateCurrentlyInsideTests : IClassFixture<SimfApiFactory
     {
         var token = await CreateAdministratorAndSignInAsync();
 
-        var response = await GetAuthAsync(
-            "/api/v1/admin/gates/reports/currently-inside", token);
+        var response = await PostAuthAsync(
+            "/api/v1/admin/gates/reports/currently-inside/list", new GridQuery(), token);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = await response.Content
-            .ReadFromJsonAsync<ApiResult<IReadOnlyList<AdminCurrentlyInsideRow>>>();
+            .ReadFromJsonAsync<ApiResult<GridPage<AdminCurrentlyInsideRow>>>();
         Assert.True(body!.Success);
         Assert.NotNull(body.Data);
     }
@@ -193,11 +193,14 @@ public sealed class AdminGateCurrentlyInsideTests : IClassFixture<SimfApiFactory
     private async Task<IReadOnlyList<AdminCurrentlyInsideRow>> GetCurrentlyInsideAsync(
         string token)
     {
-        var response = await GetAuthAsync(
-            "/api/v1/admin/gates/reports/currently-inside", token);
+        // Top is raised past the seam's default page so the assertions below still
+        // see the whole occupancy set they were written against.
+        var response = await PostAuthAsync(
+            "/api/v1/admin/gates/reports/currently-inside/list",
+            new GridQuery { Top = 200 }, token);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         return (await response.Content
-            .ReadFromJsonAsync<ApiResult<IReadOnlyList<AdminCurrentlyInsideRow>>>())!.Data!;
+            .ReadFromJsonAsync<ApiResult<GridPage<AdminCurrentlyInsideRow>>>())!.Data!.Items;
     }
 
     private async Task<AdminGateDetail> CreateGateAsync(string adminToken)

@@ -50,15 +50,31 @@ public sealed class GetAiPromptEndpoint(IAdminAiPromptService service)
     }
 }
 
-/// <summary><c>GET /admin/ai/prompts/{id}/history</c> returns
-/// the append-only snapshot list (newest first) for the given prompt.
-/// Empty list when the prompt has never been updated.</summary>
-public sealed class GetAiPromptHistoryEndpoint(IAdminAiPromptService service)
-    : Endpoint<GetAiPromptRoute, ApiResult<IReadOnlyList<AdminAiPromptHistoryEntry>>>
+/// <summary>The owning prompt id from the route, plus the grid query in the body.
+/// The two are flattened onto one request type because FastEndpoints binds a single
+/// DTO from both sources (mirrors <c>ListSessionSeatReservationsRoute</c>).</summary>
+public sealed class ListAiPromptHistoryRoute
+{
+    public Guid Id { get; set; }
+    public int Skip { get; set; }
+    public int Top { get; set; }
+    public string? Search { get; set; }
+    public string? Sort { get; set; }
+    public bool SortDescending { get; set; }
+    public Dictionary<string, string> Filters { get; set; } = new();
+}
+
+/// <summary><c>POST /admin/ai/prompts/{id}/history/list</c> returns one page of
+/// the append-only snapshot history (newest version first) for the given prompt.
+/// Empty page when the prompt has never been updated.
+/// <para>Server-paged rather than returned whole: the history gains a row on every
+/// edit and is never pruned, and each row carries the full prompt text.</para></summary>
+public sealed class ListAiPromptHistoryEndpoint(IAdminAiPromptService service)
+    : Endpoint<ListAiPromptHistoryRoute, ApiResult<GridPage<AdminAiPromptHistoryEntry>>>
 {
     public override void Configure()
     {
-        Get("/admin/ai/prompts/{id:guid}/history");
+        Post("/admin/ai/prompts/{id:guid}/history/list");
         Policies(PermissionCatalog.PolicyFor(PermissionCatalog.AiPrompts.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         // Per-record drill-down on the prompt-edit history is
@@ -69,10 +85,21 @@ public sealed class GetAiPromptHistoryEndpoint(IAdminAiPromptService service)
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
     }
-    public override async Task HandleAsync(GetAiPromptRoute req, CancellationToken ct)
+    public override async Task HandleAsync(ListAiPromptHistoryRoute req, CancellationToken ct)
     {
-        var history = await service.GetHistoryAsync(req.Id, ct);
-        await Send.OkAsync(ApiResult<IReadOnlyList<AdminAiPromptHistoryEntry>>.Ok(history), ct);
+        var history = await service.GetHistoryAsync(
+            req.Id,
+            new GridQuery
+            {
+                Skip = req.Skip,
+                Top = req.Top,
+                Search = req.Search,
+                Sort = req.Sort,
+                SortDescending = req.SortDescending,
+                Filters = req.Filters,
+            },
+            ct);
+        await Send.OkAsync(ApiResult<GridPage<AdminAiPromptHistoryEntry>>.Ok(history), ct);
     }
 }
 

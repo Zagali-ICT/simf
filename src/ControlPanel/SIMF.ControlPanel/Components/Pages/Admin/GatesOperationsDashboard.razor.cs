@@ -14,8 +14,17 @@ public partial class GatesOperationsDashboard
 
     private record Toast(string Variant, string Message);
 
+    /// <summary>The page window both tables ask for. The dashboard is a read-only
+    /// overview with no pager, so it shows the most recent page and reports the true
+    /// size of each set from the server's Total — which is what the stat cards and the
+    /// summary lines read. Before the reports were paged, "currently inside" fetched
+    /// every visitor in the venue on every refresh.</summary>
+    private const int PageSize = 200;
+
     private IReadOnlyList<AdminCurrentlyInsideRow> _inside = Array.Empty<AdminCurrentlyInsideRow>();
+    private int _insideTotal;
     private IReadOnlyList<AdminGateSummary> _gates = Array.Empty<AdminGateSummary>();
+    private int _gatesTotal;
     private bool _loading;
     private Toast? _toast;
 
@@ -36,12 +45,14 @@ public partial class GatesOperationsDashboard
         _toast = null;
         try
         {
-            var insideEnv = await JS.InvokeAsync<ApiResult<IReadOnlyList<AdminCurrentlyInsideRow>>>(
-                "simfAccount.getJson",
-                "/account/api/admin/gates/reports/currently-inside");
+            var insideEnv = await JS.InvokeAsync<ApiResult<GridPage<AdminCurrentlyInsideRow>>>(
+                "simfAccount.postJson",
+                "/account/api/admin/gates/reports/currently-inside/list",
+                new GridQuery { Top = PageSize });
             if (insideEnv is { Success: true, Data: not null })
             {
-                _inside = insideEnv.Data;
+                _inside = insideEnv.Data.Items;
+                _insideTotal = insideEnv.Data.Total;
             }
             else
             {
@@ -52,10 +63,11 @@ public partial class GatesOperationsDashboard
 
             var gatesEnv = await JS.InvokeAsync<ApiResult<GridPage<AdminGateSummary>>>(
                 "simfAccount.postJson",
-                "/account/api/admin/gates/list", new GridQuery { Top = 200 });
+                "/account/api/admin/gates/list", new GridQuery { Top = PageSize });
             if (gatesEnv is { Success: true, Data: not null })
             {
                 _gates = gatesEnv.Data.Items;
+                _gatesTotal = gatesEnv.Data.Total;
             }
             else
             {

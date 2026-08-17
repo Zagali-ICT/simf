@@ -24,11 +24,16 @@ public interface ISessionAttendanceService
     Task<GridPage<SessionAttendanceRow>> ListSessionAttendanceAsync(
         GridQuery query, CancellationToken cancellationToken = default);
 
-    /// <summary>2026-07-18 — the attendees currently present in a session's hall
-    /// (open attendance rows), each with their App-DB profile data (name, org,
-    /// profile type, job title) and seat, for the live per-session hall view.
-    /// Ordered by arrival time. All reads are App-DB only — the profile is
-    /// resolved from <c>UserProfile</c>, never from the Identity database.</summary>
-    Task<IReadOnlyList<SessionPresentAttendee>> GetPresentAttendeesAsync(
-        Guid sessionId, CancellationToken cancellationToken = default);
+    /// <summary>2026-07-18 — one server-paged page of the attendees currently
+    /// present in a session's hall (open attendance rows), each with their App-DB
+    /// profile data (name, org, profile type, job title) and seat, for the live
+    /// per-session hall view. Ordered by arrival time by default. All reads are
+    /// App-DB only — the profile is resolved from <c>UserProfile</c>, never from
+    /// the Identity database.
+    /// <para>Paged rather than whole: an open attendance row stays open until a
+    /// departure closes it, and geofence departure is a deferred feature, so the
+    /// roster for one hall has no structural ceiling. The page bound is the
+    /// server's, not the caller's.</para></summary>
+    Task<GridPage<SessionPresentAttendee>> GetPresentAttendeesAsync(
+        Guid sessionId, GridQuery query, CancellationToken cancellationToken = default);
 }

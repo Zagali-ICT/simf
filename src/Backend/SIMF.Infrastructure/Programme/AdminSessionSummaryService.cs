@@ -6,9 +6,11 @@ using SIMF.Application.Auditing;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Grids;
 using SIMF.Contracts.Admin;
 using SIMF.Domain.Programme;
 using SIMF.Infrastructure.Ai;
+using SIMF.Infrastructure.Common.Grids;
 using SIMF.Infrastructure.Persistence;
 using SIMF.Application.Files.Abstractions;
 
@@ -65,37 +67,62 @@ internal sealed class AdminSessionSummaryService(
         + "ليست مخرجات ذكاء اصطناعي حقيقية — من المزوّد التجريبي غير المتصل؛ "
         + "لا تراجعها أو توافق عليها أو تنشرها.\n";
 
-    public async Task<IReadOnlyList<AdminSessionSummaryRow>> ListAsync(
-        CancellationToken cancellationToken = default)
-    {
-        // One row per active session with its summary state (correlated
-        // sub-select — no separate round-trip, summary is 1:1).
-        var rows = await appDbContext.Sessions
-            .AsNoTracking()
-            .Where(session => session.IsActive)
-            .OrderByDescending(session => session.Start)
-            .Select(session => new
-            {
-                session.Id,
-                session.Code,
-                session.Title,
-                session.TitleArabic,
-                session.Start,
-                Summary = appDbContext.SessionSummaries
-                    .Where(s => s.SessionId == session.Id && s.IsActive)
-                    .Select(s => new
-                    {
-                        s.AiModel,
-                        s.PublishedAt,
-                        s.UpdatedAt,
-                        s.ReviewSubmittedAt,
-                        s.ApprovedAt,
-                    })
-                    .FirstOrDefault(),
-            })
-            .ToListAsync(cancellationToken);
+    /// <summary>
+    /// The grid contract for /admin/session-summaries: one entry per key
+    /// SessionSummariesList.razor can send, as both its filter and its sort. A key
+    /// not declared here is a 400, not a silently ignored request.
+    ///
+    /// <para>The desk's Status and Source columns are neither sortable nor
+    /// filterable on the page, and they are not declared here: both are computed
+    /// from the summary's timestamps in memory, not stored as a column anything
+    /// could order by.</para>
+    /// </summary>
+    private static readonly GridColumns<Session> Columns =
+        new GridColumns<Session>()
+            .Add("session", session => session.Title, searchable: true)
+            // Not a column the page filters on: it is the natural order, and
+            // DefaultOrder can only name a declared column.
+            .Add("start", session => session.Start)
+            .DefaultOrder("start", descending: true)
+            .PageSize(fallback: 25, max: 200);
 
-        return rows.Select(row => new AdminSessionSummaryRow(
+    public async Task<GridPage<AdminSessionSummaryRow>> ListAsync(
+        GridQuery query, CancellationToken cancellationToken = default)
+    {
+        // One row per ACTIVE session with its summary state. IsActive is the
+        // resource's scope, so it composes onto the source ahead of the grid's own
+        // predicates. The summary is 1:1, so its state comes from a correlated
+        // sub-select rather than a second round-trip.
+        //
+        // The state flags are derived with null-conditionals, which an expression
+        // tree cannot carry, so the page is projected to the raw shape server-side
+        // and mapped to the row afterwards. Only the chosen page is mapped.
+        var page = await appDbContext.Sessions
+            .Where(session => session.IsActive)
+            .ToGridPageAsync(
+                query, Columns, session => session.Id,
+                session => new
+                {
+                    session.Id,
+                    session.Code,
+                    session.Title,
+                    session.TitleArabic,
+                    session.Start,
+                    Summary = appDbContext.SessionSummaries
+                        .Where(s => s.SessionId == session.Id && s.IsActive)
+                        .Select(s => new
+                        {
+                            s.AiModel,
+                            s.PublishedAt,
+                            s.UpdatedAt,
+                            s.ReviewSubmittedAt,
+                            s.ApprovedAt,
+                        })
+                        .FirstOrDefault(),
+                },
+                cancellationToken);
+
+        var items = page.Items.Select(row => new AdminSessionSummaryRow(
             row.Id,
             row.Code,
             row.Title,
@@ -109,6 +136,9 @@ internal sealed class AdminSessionSummaryService(
             IsInReview: row.Summary?.ReviewSubmittedAt is not null && row.Summary?.ApprovedAt is null,
             IsApproved: row.Summary?.ApprovedAt is not null,
             ApprovedAt: row.Summary?.ApprovedAt)).ToList();
+
+        return GridPage<AdminSessionSummaryRow>.Of(
+            items, page.Total, page.Skip, page.Top);
     }
 
     public async Task<AdminSessionSummaryDetail?> GetAsync(

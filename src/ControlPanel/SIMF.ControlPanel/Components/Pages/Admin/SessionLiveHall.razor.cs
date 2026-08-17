@@ -34,10 +34,17 @@ public partial class SessionLiveHall : IDisposable
     /// monitor (<c>ServicesMonitor</c>) so the two behave the same.</summary>
     private static readonly TimeSpan RefreshInterval = TimeSpan.FromSeconds(15);
 
+    /// <summary>How many roster rows one pull asks for. The server caps the page
+    /// at this figure too, so it is the ceiling either way; <see cref="_presentTotal"/>
+    /// is rendered beside the table so a hall holding more than this reads as a
+    /// truncated view rather than as the whole room.</summary>
+    private const int PresentPageSize = 200;
+
     private List<AdminSessionSummary> _sessions = new();
     private AdminSessionSummary? _selected;
     private SessionSeatMap? _map;
     private IReadOnlyList<SessionPresentAttendee> _present = Array.Empty<SessionPresentAttendee>();
+    private int _presentTotal;
     private bool _loading;
     private bool _busy;
     private Toast? _toast;
@@ -87,6 +94,7 @@ public partial class SessionLiveHall : IDisposable
         _selected = session;
         _map = null;
         _present = Array.Empty<SessionPresentAttendee>();
+        _presentTotal = 0;
         // QA B17 — always tear the old loop down first: switching sessions must
         // not leave the previous session's timer running.
         StopAutoRefresh();
@@ -170,9 +178,10 @@ public partial class SessionLiveHall : IDisposable
             var mapEnv = await JS.InvokeAsync<ApiResult<SessionSeatMap>>(
                 "simfAccount.getJson",
                 $"/account/api/admin/sessions/{session.Id}/seat-map");
-            var presentEnv = await JS.InvokeAsync<ApiResult<List<SessionPresentAttendee>>>(
-                "simfAccount.getJson",
-                $"/account/api/admin/sessions/{session.Id}/present");
+            var presentEnv = await JS.InvokeAsync<ApiResult<GridPage<SessionPresentAttendee>>>(
+                "simfAccount.postJson",
+                $"/account/api/admin/sessions/{session.Id}/present/list",
+                new GridQuery { Top = PresentPageSize });
 
             // The admin may have switched sessions while these were in flight —
             // dropping the stale response keeps session A's hall off session B.
@@ -191,14 +200,19 @@ public partial class SessionLiveHall : IDisposable
 
             if (presentEnv is { Success: true, Data: not null })
             {
-                _present = presentEnv.Data;
+                _present = presentEnv.Data.Items;
+                // The server's count over the whole roster, not this page's row
+                // count: the two differ exactly when the hall holds more than one
+                // page, which is the case the summary line has to make visible.
+                _presentTotal = presentEnv.Data.Total;
             }
             else
             {
-                // /present and /seat-map fail independently. Surface the failure
-                // (don't silently show an empty hall) and clear the list so a
-                // failed Refresh can't leave a stale, misleading roster on screen.
+                // The roster and the seat map fail independently. Surface the
+                // failure (don't silently show an empty hall) and clear the list so
+                // a failed Refresh can't leave a stale, misleading roster on screen.
                 _present = Array.Empty<SessionPresentAttendee>();
+                _presentTotal = 0;
                 _toast = new Toast("error",
                     presentEnv?.Error?.MessageForCurrentCulture()
                     ?? L["Admin.SessionLiveHall.LoadFailed"]);

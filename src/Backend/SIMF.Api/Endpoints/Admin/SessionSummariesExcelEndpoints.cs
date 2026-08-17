@@ -53,11 +53,12 @@ public sealed class ExportSessionSummariesEndpoint(
         : row.GeneratedByAi ? "AI"
         : "Manual";
 
-    // The desk list endpoint reads every active session in one query (no grid
-    // query); the export base still caps + applies the selected-ids filter.
+    // The same server-paged read the desk does, so the export keeps filter /
+    // search / sort parity with the grid it came from; the base walks the pages
+    // up to its own cap and applies the selected-ids filter.
     protected override async Task<IReadOnlyList<AdminSessionSummaryRow>> ListAsync(
         GridQuery query, CancellationToken ct) =>
-        await service.ListAsync(ct);
+        (await service.ListAsync(query, ct)).Items;
 
     protected override Guid IdOf(AdminSessionSummaryRow row) => row.SessionId;
 }

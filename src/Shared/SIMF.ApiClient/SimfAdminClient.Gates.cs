@@ -101,19 +101,26 @@ public sealed partial class SimfAdminClient
             HttpMethod.Get, "gates/form-options", content: null,
             accessToken, cancellationToken);
 
-    public Task<ApiCallResult<IReadOnlyList<AdminGateScanRow>>> ListGateScansAsync(
-        AdminGateScanReportFilter filter, string accessToken,
+    /// <summary>One page of the gate scan report. The bespoke
+    /// FromUtc/ToUtc/GateId/Outcome filter it replaces is now the shared GridQuery;
+    /// the date range is carried by the <c>scannedFrom</c> / <c>scannedTo</c> filter
+    /// keys.</summary>
+    public Task<ApiCallResult<GridPage<AdminGateScanRow>>> ListGateScansAsync(
+        GridQuery query, string accessToken,
         CancellationToken cancellationToken = default) =>
-        SendAsync<IReadOnlyList<AdminGateScanRow>>(
-            HttpMethod.Post, "gates/reports/scans",
-            JsonContent.Create(filter, options: JsonOptions),
+        SendAsync<GridPage<AdminGateScanRow>>(
+            HttpMethod.Post, "gates/reports/scans/list",
+            JsonContent.Create(query, options: JsonOptions),
             accessToken, cancellationToken);
 
-    public Task<ApiCallResult<IReadOnlyList<AdminCurrentlyInsideRow>>> ListCurrentlyInsideAsync(
-        string accessToken,
+    /// <summary>One page of the "currently inside" occupancy report. Read
+    /// <c>Total</c>, not <c>Items.Count</c>, for the occupancy figure.</summary>
+    public Task<ApiCallResult<GridPage<AdminCurrentlyInsideRow>>> ListCurrentlyInsideAsync(
+        GridQuery query, string accessToken,
         CancellationToken cancellationToken = default) =>
-        SendAsync<IReadOnlyList<AdminCurrentlyInsideRow>>(
-            HttpMethod.Get, "gates/reports/currently-inside", content: null,
+        SendAsync<GridPage<AdminCurrentlyInsideRow>>(
+            HttpMethod.Post, "gates/reports/currently-inside/list",
+            JsonContent.Create(query, options: JsonOptions),
             accessToken, cancellationToken);
 
     // -- Gate Module operator surface ----------------------------------------

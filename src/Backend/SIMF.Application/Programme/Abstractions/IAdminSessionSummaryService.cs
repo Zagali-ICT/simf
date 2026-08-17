@@ -1,3 +1,4 @@
+using SIMF.Common;
 using SIMF.Contracts.Admin;
 
 namespace SIMF.Application.Programme.Abstractions;
@@ -12,10 +13,11 @@ namespace SIMF.Application.Programme.Abstractions;
 /// (the Committee can un-publish to take it offline while editing).</summary>
 public interface IAdminSessionSummaryService
 {
-    /// <summary>Every active session with its summary state — newest session
-    /// first. Sessions with no summary appear with <c>HasSummary = false</c>.</summary>
-    Task<IReadOnlyList<AdminSessionSummaryRow>> ListAsync(
-        CancellationToken cancellationToken = default);
+    /// <summary>One server-paged page of the active sessions with their summary
+    /// state — newest session first. Sessions with no summary appear with
+    /// <c>HasSummary = false</c>.</summary>
+    Task<GridPage<AdminSessionSummaryRow>> ListAsync(
+        GridQuery query, CancellationToken cancellationToken = default);
 
     /// <summary>The summary detail for one session's editor, or null when the
     /// session is missing / soft-deleted or has no summary yet.</summary>

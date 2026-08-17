@@ -52,14 +52,15 @@ public sealed partial class SimfAdminClient
             HttpMethod.Get, $"ai/prompts/{id}", content: null,
             accessToken, cancellationToken);
 
-    /// <summary>Append-only edit history for one prompt.
-    /// Newest first. Empty list when the prompt has never been
+    /// <summary>One page of the append-only edit history for one prompt.
+    /// Newest version first. Empty page when the prompt has never been
     /// updated past v1.</summary>
-    public Task<ApiCallResult<IReadOnlyList<AdminAiPromptHistoryEntry>>> GetAiPromptHistoryAsync(
-        Guid id, string accessToken,
+    public Task<ApiCallResult<GridPage<AdminAiPromptHistoryEntry>>> ListAiPromptHistoryAsync(
+        Guid id, GridQuery query, string accessToken,
         CancellationToken cancellationToken = default) =>
-        SendAsync<IReadOnlyList<AdminAiPromptHistoryEntry>>(
-            HttpMethod.Get, $"ai/prompts/{id}/history", content: null,
+        SendAsync<GridPage<AdminAiPromptHistoryEntry>>(
+            HttpMethod.Post, $"ai/prompts/{id}/history/list",
+            JsonContent.Create(query, options: JsonOptions),
             accessToken, cancellationToken);
 
     public Task<ApiCallResult<AdminAiPromptDetail>> CreateAiPromptAsync(

@@ -43,6 +43,20 @@ internal sealed class SessionAttendanceService(
         .DefaultOrder("start")
         .PageSize(fallback: 20, max: 200);
 
+    /// <summary>
+    /// The grid contract for the live hall roster
+    /// (/admin/sessions/{id}/present/list). SessionLiveHall renders a plain live
+    /// table with no sort or filter controls, so arrival time — the order the
+    /// roster has always been shown in — is the only key declared. The attendee's
+    /// name, organisation and seat are resolved AFTER paging, from other tables,
+    /// so they are not sortable here and are not offered as if they were.
+    /// </summary>
+    private static readonly GridColumns<HallAttendance> PresentColumns =
+        new GridColumns<HallAttendance>()
+            .Add("enter", attendance => attendance.Enter)
+            .DefaultOrder("enter")
+            .PageSize(fallback: 50, max: 200);
+
     public async Task<SessionAttendanceSummary> GetSummaryAsync(
         CancellationToken cancellationToken = default)
     {
@@ -137,17 +151,25 @@ internal sealed class SessionAttendanceService(
         return GridPage<SessionAttendanceRow>.Of(rows, page.Total, page.Skip, page.Top);
     }
 
-    public async Task<IReadOnlyList<SessionPresentAttendee>> GetPresentAttendeesAsync(
-        Guid sessionId, CancellationToken cancellationToken = default)
+    public async Task<GridPage<SessionPresentAttendee>> GetPresentAttendeesAsync(
+        Guid sessionId, GridQuery query, CancellationToken cancellationToken = default)
     {
         // Everyone currently inside this session's hall — the open attendance rows.
-        var present = await appDbContext.HallAttendances.AsNoTracking()
+        // The session and the still-inside test are the resource's own scope, not
+        // grid filters, so they compose ahead of the grid and no request can widen
+        // either one to another session or to people who have already left.
+        var page = await appDbContext.HallAttendances
             .Where(a => a.SessionId == sessionId && a.Leave == null)
-            .Select(a => new { a.UserProfileId, a.Enter, a.Method })
-            .ToListAsync(cancellationToken);
+            .ToGridPageAsync(
+                query, PresentColumns, a => a.Id,
+                a => new { a.UserProfileId, a.Enter, a.Method },
+                cancellationToken);
+
+        var present = page.Items;
         if (present.Count == 0)
         {
-            return Array.Empty<SessionPresentAttendee>();
+            return GridPage<SessionPresentAttendee>.Of(
+                Array.Empty<SessionPresentAttendee>(), page.Total, page.Skip, page.Top);
         }
 
         var profileIds = present.Select(a => a.UserProfileId).Distinct().ToList();
@@ -185,8 +207,9 @@ internal sealed class SessionAttendanceService(
             .GroupBy(s => s.ProfileId)
             .ToDictionary(g => g.Key, g => g.First());
 
-        return present
-            .OrderBy(a => a.Enter)
+        // Rebuilt onto the window the grid already ordered and paged, so the rows
+        // keep the requested direction rather than a second, in-memory guess at it.
+        var rows = present
             .Select(a =>
             {
                 var profile = profileById.GetValueOrDefault(a.UserProfileId);
@@ -204,5 +227,7 @@ internal sealed class SessionAttendanceService(
                     a.Method);
             })
             .ToList();
+
+        return GridPage<SessionPresentAttendee>.Of(rows, page.Total, page.Skip, page.Top);
     }
 }

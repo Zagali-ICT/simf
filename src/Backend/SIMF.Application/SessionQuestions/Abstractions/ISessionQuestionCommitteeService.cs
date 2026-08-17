@@ -1,4 +1,4 @@
-using SIMF.Common.Enums;
+using SIMF.Common;
 using SIMF.Contracts.Sessions;
 
 namespace SIMF.Application.SessionQuestions.Abstractions;
@@ -11,12 +11,14 @@ namespace SIMF.Application.SessionQuestions.Abstractions;
 /// that role to action.</summary>
 public interface ISessionQuestionCommitteeService
 {
-    /// <summary>The queue, newest-question-first. <paramref name="status"/> null
-    /// = the default Pending queue; <paramref name="sessionId"/> null = across
-    /// all sessions.</summary>
-    Task<IReadOnlyList<SessionQuestionQueueRow>> ListQueueAsync(
-        QuestionStatus? status, Guid? sessionId,
-        CancellationToken cancellationToken = default);
+    /// <summary>One server-paged page of the queue, oldest question first.
+    /// The <c>status</c> and <c>sessionId</c> the queue used to take as
+    /// parameters are now declared grid filter keys, so the Control Panel sends
+    /// them the same way it sends every other column. A request that names no
+    /// <c>status</c> gets the default Pending bucket, which is what the
+    /// parameterless call returned.</summary>
+    Task<GridPage<SessionQuestionQueueRow>> ListQueueAsync(
+        GridQuery query, CancellationToken cancellationToken = default);
 
     /// <summary>Approve a question — it joins the per-session moderator desk's
     /// set. Idempotent when already Approved.</summary>

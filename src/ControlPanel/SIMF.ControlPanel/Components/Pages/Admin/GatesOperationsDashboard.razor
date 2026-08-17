@@ -1,8 +1,9 @@
 @* Read-only Gates operations dashboard. A live overview of who is
    currently checked-in inside the venue plus the gate roster. Consumes the
-   existing gate BFF passthroughs only: GET .../gates/reports/currently-inside
-   and POST .../gates/list. No create / edit / delete — operations happen in the
-   operator console (/admin/gates/operator) and gate CRUD (/admin/gates). *@
+   existing gate BFF passthroughs only: POST .../gates/reports/currently-inside/list
+   and POST .../gates/list, both server-paged on the shared GridQuery seam. No
+   create / edit / delete — operations happen in the operator console
+   (/admin/gates/operator) and gate CRUD (/admin/gates). *@
 @page "/admin/gates/dashboard"
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.Gates.Manage)]
@@ -33,10 +34,12 @@
         else
         {
             <div class="simf-form__actions">
+                @* Both reports are server-paged, so the figure is the server's Total
+                   for the whole set, never the length of the page on screen. *@
                 <SimfStatCard Title="@L["Admin.GatesDashboard.Stat.Inside"]"
-                              Value="@_inside.Count.ToString(CultureInfo.InvariantCulture)" />
+                              Value="@_insideTotal.ToString(CultureInfo.InvariantCulture)" />
                 <SimfStatCard Title="@L["Admin.GatesDashboard.Stat.Gates"]"
-                              Value="@_gates.Count.ToString(CultureInfo.InvariantCulture)" />
+                              Value="@_gatesTotal.ToString(CultureInfo.InvariantCulture)" />
             </div>
 
             <h3>@L["Admin.GatesDashboard.Inside.Title"]</h3>
@@ -68,7 +71,7 @@
                     </tbody>
                 </table>
                 <p class="simf-table__summary">
-                    @(string.Format(L["Admin.GatesDashboard.Inside.Summary"], _inside.Count))
+                    @(string.Format(L["Admin.GatesDashboard.Inside.Summary"], _insideTotal))
                 </p>
             }
 
@@ -108,7 +111,7 @@
                     </tbody>
                 </table>
                 <p class="simf-table__summary">
-                    @(string.Format(L["Admin.GatesDashboard.Gates.Summary"], _gates.Count))
+                    @(string.Format(L["Admin.GatesDashboard.Gates.Summary"], _gatesTotal))
                 </p>
             }
         }

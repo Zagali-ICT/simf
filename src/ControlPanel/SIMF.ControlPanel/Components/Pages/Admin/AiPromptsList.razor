@@ -212,7 +212,7 @@
     <SimfModal Open="true" Title="@L["Admin.AiPrompts.History.Title"]" OnClose="CloseHistory" CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <p><code>@_historyKey</code></p>
-            @if (_history.Count == 0)
+            @if (_historyPage.Total == 0)
             {
                 <SimfEmptyState Title="@L["Admin.AiPrompts.History.Empty"]" />
             }
@@ -230,7 +230,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var h in _history)
+                        @foreach (var h in _historyPage.Items)
                         {
                             <tr>
                                 <td>v@(h.Version)</td>
@@ -243,6 +243,17 @@
                         }
                     </tbody>
                 </table>
+                <div class="simf-grid__pager">
+                    <SimfButton Type="button" Variant="secondary"
+                                Disabled="@(!HistoryHasPrev)" OnClick="HistoryPrevAsync">
+                        @L["Grid.Prev"]
+                    </SimfButton>
+                    <span>@HistoryPageLabel</span>
+                    <SimfButton Type="button" Variant="secondary"
+                                Disabled="@(!HistoryHasNext)" OnClick="HistoryNextAsync">
+                        @L["Grid.Next"]
+                    </SimfButton>
+                </div>
             }
         </ChildContent>
         <Footer>

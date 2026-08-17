@@ -42,11 +42,11 @@ public sealed class ExportQuestionQueueEndpoint(ISessionQuestionCommitteeService
 
     protected override async Task<IReadOnlyList<SessionQuestionQueueRow>> ListAsync(
         GridQuery query, CancellationToken ct) =>
-        // Mirror the CP queue's load: the default Pending queue across all
-        // sessions (the page passes no status / session filter). The grid pages /
-        // filters / sorts this list client-side, so there is no server GridQuery
-        // to forward.
-        await service.ListQueueAsync(status: null, sessionId: null, ct);
+        // The same server-paged read the CP queue does, so the export keeps
+        // filter / search / sort parity with the grid it came from. The base
+        // walks the pages up to its own cap; an empty query means the default
+        // Pending bucket across all sessions, which is what the page opens on.
+        (await service.ListQueueAsync(query, ct)).Items;
 
     protected override Guid IdOf(SessionQuestionQueueRow row) => row.Id;
 

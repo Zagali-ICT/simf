@@ -482,33 +482,49 @@ internal sealed class AdminAiPromptService(
         p.SystemPrompt, p.UserPromptTemplate, p.Temperature, p.MaxOutputTokens,
         p.IsActive, p.Version, p.CreatedAt, p.UpdatedAt);
 
-    /// <summary>Read the append-only edit history for one
-    /// prompt. Newest first. Capped at the natural ceiling of how
-    /// many edits a single prompt accumulates over an event
-    /// lifetime (single-digit hundreds at most); no paging needed
-    /// today.</summary>
-    public async Task<IReadOnlyList<AdminAiPromptHistoryEntry>> GetHistoryAsync(
-        Guid promptId, CancellationToken cancellationToken = default)
-    {
-        return await appDbContext.AiPromptHistory
-            .AsNoTracking()
-            .Where(h => h.AiPromptId == promptId)
-            .OrderByDescending(h => h.Version)
-            .Select(h => new AdminAiPromptHistoryEntry(
-                h.Id,
-                h.AiPromptId,
-                h.Version,
-                h.Provider,
-                h.Model,
-                h.SystemPrompt,
-                h.UserPromptTemplate,
-                h.Temperature,
-                h.MaxOutputTokens,
-                h.IsActive,
-                h.ContentHash,
-                h.CapturedFromUpdatedAt,
-                h.UpdatedByUserId,
-                h.CapturedAt))
-            .ToListAsync(cancellationToken);
-    }
+    /// <summary>
+    /// The grid contract for one prompt's append-only edit history. Exactly one
+    /// key, because the history modal renders a fixed table and moves through it
+    /// with prev/next: it sends no sort and no filter, so a wider declaration
+    /// would be a surface nothing asks for.
+    /// <para>
+    /// The page size is deliberately small. A history row carries the whole system
+    /// prompt and user template — up to 8000 characters each — so the default
+    /// 25/200 policy would put megabytes of prompt text on the wire for a table
+    /// that renders none of it.
+    /// </para>
+    /// </summary>
+    private static readonly GridColumns<AiPromptHistory> HistoryColumns =
+        new GridColumns<AiPromptHistory>()
+            .Add("version", history => history.Version)
+            .DefaultOrder("version", descending: true)
+            .PageSize(fallback: 20, max: 50);
+
+    private static readonly Expression<Func<AiPromptHistory, AdminAiPromptHistoryEntry>> ToHistoryEntry =
+        history => new AdminAiPromptHistoryEntry(
+            history.Id,
+            history.AiPromptId,
+            history.Version,
+            history.Provider,
+            history.Model,
+            history.SystemPrompt,
+            history.UserPromptTemplate,
+            history.Temperature,
+            history.MaxOutputTokens,
+            history.IsActive,
+            history.ContentHash,
+            history.CapturedFromUpdatedAt,
+            history.UpdatedByUserId,
+            history.CapturedAt);
+
+    /// <summary>Read one page of the append-only edit history for one prompt,
+    /// newest version first. The history grows by a row on every edit and is never
+    /// pruned, so it is server-paged rather than returned whole. The owning prompt
+    /// is a scope predicate composed onto the source ahead of the grid.</summary>
+    public Task<GridPage<AdminAiPromptHistoryEntry>> GetHistoryAsync(
+        Guid promptId, GridQuery query, CancellationToken cancellationToken = default) =>
+        appDbContext.AiPromptHistory
+            .Where(history => history.AiPromptId == promptId)
+            .ToGridPageAsync(
+                query, HistoryColumns, history => history.Id, ToHistoryEntry, cancellationToken);
 }

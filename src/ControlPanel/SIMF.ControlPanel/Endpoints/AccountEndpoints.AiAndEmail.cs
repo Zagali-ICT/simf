@@ -92,13 +92,14 @@ internal static partial class AccountEndpoints
             return Forward(await api.ListAiInvocationsAsync(body, token));
         });
 
-        // Append-only prompt version history (CP Phase-0 history modal).
-        group.MapGet("/admin/ai/prompts/{id:guid}/history",
-            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        // Append-only prompt version history (CP Phase-0 history modal), one
+        // page at a time: the history grows by a row on every edit.
+        group.MapPost("/admin/ai/prompts/{id:guid}/history/list",
+            async (Guid id, GridQuery body, HttpContext http, SimfAdminClient api) =>
         {
             var token = await http.GetTokenAsync("access_token");
             if (token is null) return Results.Unauthorized();
-            return Forward(await api.GetAiPromptHistoryAsync(id, token));
+            return Forward(await api.ListAiPromptHistoryAsync(id, body, token));
         });
 
         // Full redacted invocation payload (CP Phase-0 detail modal).
