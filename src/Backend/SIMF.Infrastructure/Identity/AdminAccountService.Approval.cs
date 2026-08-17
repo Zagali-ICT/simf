@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using SIMF.Application.Auditing;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Application.Notifications;
@@ -60,6 +60,12 @@ internal sealed partial class AdminAccountService
         profile.StateChangedAt = now;
         profile.StateChangedByUserId = actorUserId;
 
+        // Stamp the badge's edition BEFORE minting it. EditionYear is filled by the
+        // interceptor on insert only, so a registrant who signed up under the
+        // previous edition and is approved after a year-open would otherwise get a
+        // fresh QR carrying the old year - which the gate refuses as outside its
+        // window. The year travels with the badge, not with the registration.
+        profile.EditionYear = await editions.GetOpenYearAsync(cancellationToken);
         await qrIdMinter.MintIfMissingAsync(profile, cancellationToken);
 
         // Optional tier assignment on approve. Only the

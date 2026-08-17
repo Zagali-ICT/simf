@@ -13,6 +13,7 @@ using SIMF.Application.Abstractions;
 using SIMF.Application.Auditing;
 using SIMF.Application.Email;
 using SIMF.Application.Excel;
+using SIMF.Application.Editions.Abstractions;
 using SIMF.Application.IdentityAccess;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Application.Notifications;
@@ -68,6 +69,11 @@ internal sealed partial class AdminAccountService(
     // Read to decide whether forcing TwoFactorEnabled at creation is safe;
     // see CreateAccountAsync.
     IOptions<IdentityLifecycleOptions> lifecycleOptions,
+    // The open edition's year, stamped onto a profile when the approve path mints
+    // its badge. The interceptor only fills EditionYear on INSERT, so a registrant
+    // who signed up before a year-open and is approved after it would otherwise
+    // carry the previous year and be refused at the gate as outside its window.
+    IEventEditionService editions,
     ILogger<AdminAccountService> logger)
     : IAdminTwoFactorService,
       IAdminUserApprovalService,

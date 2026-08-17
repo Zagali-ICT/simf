@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/AdminApprovalTests.cs (this file).
+﻿// Tests: SIMF.Api.Tests/AdminApprovalTests.cs (this file).
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -14,6 +14,7 @@ using SIMF.Domain.Profiles;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
 
+using SIMF.Application.Editions.Abstractions;
 using SIMF.Common.Enums;
 
 namespace SIMF.Api.Tests;
@@ -89,6 +90,20 @@ public sealed class AdminApprovalTests : IClassFixture<SimfApiFactory>
             .SingleAsync();
         Assert.False(string.IsNullOrEmpty(qr));
         Assert.True(AuditEntryExists(subject.Email!, AuditEvents.AdminStaffApproved));
+
+        // The badge carries the OPEN edition's year, not the year the account was
+        // registered in. EditionYear is filled by the interceptor on insert only,
+        // so a registrant who signed up before a year-open and is approved after it
+        // used to get a fresh QR stamped with the previous year - and the gate
+        // refuses a badge whose year is not the open one, so the attendee would have
+        // been turned away at the door holding a badge issued minutes earlier.
+        var editions = scope.ServiceProvider.GetRequiredService<IEventEditionService>();
+        var openYear = await editions.GetOpenYearAsync();
+        var stampedYear = await appDb.UserProfiles
+            .Where(p => p.UserId == subjectId)
+            .Select(p => p.EditionYear)
+            .SingleAsync();
+        Assert.Equal(openYear, stampedYear);
     }
 
     [Fact]
