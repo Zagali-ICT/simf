@@ -1,4 +1,4 @@
-// The yearly lifecycle: an admin opens a year, content and registrations
+﻿// The yearly lifecycle: an admin opens a year, content and registrations
 // accumulate against it, then the year is closed into history and the next opens.
 //
 // Two halves that are easy to confuse, and the confusion is the point of these
@@ -35,7 +35,7 @@ public sealed class EventEditionTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task Opening_a_year_clears_every_badge_and_reports_how_many()
+    public async Task Opening_a_year_reissues_every_badge_and_reports_how_many()
     {
         var token = await CreateAdministratorAndSignInAsync();
         var openYear = await OpenYearAsync();
@@ -43,6 +43,10 @@ public sealed class EventEditionTests : IClassFixture<SimfApiFactory>
         // Two attendees holding badges in the open year.
         var first = await SeedAttendeeWithBadgeAsync(openYear);
         var second = await SeedAttendeeWithBadgeAsync(openYear);
+
+        // The badges they hold BEFORE the year opens, so the assertion below can
+        // tell a re-issue from a row that simply kept what it had.
+        var oldBadges = await BadgesOfAsync(first, second);
 
         var response = await PostAuthAsync(
             "/api/v1/admin/editions/open",
@@ -59,10 +63,17 @@ public sealed class EventEditionTests : IClassFixture<SimfApiFactory>
         foreach (var profileId in new[] { first, second })
         {
             var profile = await db.UserProfiles.AsNoTracking().SingleAsync(p => p.Id == profileId);
-            // Cleared, not deleted: the attendee stays, labelled with the year
-            // they belong to, and collects a fresh badge.
-            Assert.Null(profile.QrId);
-            Assert.Equal(openYear, profile.EditionYear);
+            // Re-issued, not just cleared. Badges reach attendees by email and by
+            // being printed at the desk, and both read the QR off this row: leaving
+            // it null hands the operator a table of blanks, and an already-approved
+            // attendee has no route back to a badge - ApproveAsync refuses anything
+            // not PendingApproval and the bulk mint only creates new rows.
+            Assert.False(string.IsNullOrEmpty(profile.QrId));
+            Assert.NotEqual(oldBadges[profileId], profile.QrId);
+            // The year moves WITH the badge. It used to stay behind - EditionYear
+            // was written once at insert - and the gate then refused the new badge
+            // as outside its year.
+            Assert.Equal(openYear + 1, profile.EditionYear);
             Assert.Equal(AccountState.Approved, profile.AdmissionState);
         }
     }
@@ -149,6 +160,15 @@ public sealed class EventEditionTests : IClassFixture<SimfApiFactory>
 
     /// <summary>An approved attendee holding a badge. Pass 0 to leave the edition
     /// year unset so the stamping interceptor fills it.</summary>
+    private async Task<Dictionary<Guid, string?>> BadgesOfAsync(params Guid[] profileIds)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        return await db.UserProfiles.AsNoTracking()
+            .Where(p => profileIds.Contains(p.Id))
+            .ToDictionaryAsync(p => p.Id, p => p.QrId);
+    }
+
     private async Task<Guid> SeedAttendeeWithBadgeAsync(int editionYear)
     {
         using var scope = _factory.Services.CreateScope();

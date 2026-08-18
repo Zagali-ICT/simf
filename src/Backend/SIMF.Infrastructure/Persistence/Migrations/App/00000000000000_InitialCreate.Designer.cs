@@ -3470,7 +3470,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("Service", "IsActive");
 
-                    b.ToTable("StoredFiles", (string)null);
+                    b.ToTable("StoredFiles", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_StoredFiles_SizeBytes", "[SizeBytes] IS NULL OR [SizeBytes] > 0");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.Media.MediaItem", b =>
@@ -4669,9 +4672,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<DateTime>("Enter")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("HallId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<DateTime?>("Leave")
                         .HasColumnType("datetime2");
 
@@ -4690,8 +4690,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.HasKey("Id");
 
                     b.HasIndex("UserProfileId");
-
-                    b.HasIndex("HallId", "Leave");
 
                     b.HasIndex("SessionId", "UserProfileId")
                         .IsUnique()
@@ -5153,8 +5151,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .IsUnique();
 
                     b.HasIndex("SummaryVideoFileId");
-
-                    b.HasIndex("IsActive", "PublishedAt");
 
                     b.ToTable("SessionSummaries", null, t =>
                         {
@@ -5949,7 +5945,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             t.HasCheckConstraint("CK_SeatReservations_AdminBlockHasNoHolder", "([Kind] = 1 AND [ReservedForProfileId] IS NULL) OR ([Kind] <> 1 AND [ReservedForProfileId] IS NOT NULL)");
 
-                            t.HasCheckConstraint("CK_SeatReservations_ReleasePin", "([ReleasedAt] IS NULL AND [Status] = 1) OR ([ReleasedAt] IS NOT NULL AND [Status] = 3)");
+                            t.HasCheckConstraint("CK_SeatReservations_ReleasePin", "[ReleasedAt] IS NULL OR [Status] = 3");
 
                             t.HasCheckConstraint("CK_SeatReservations_SeatNumber", "[SeatNumber] >= 1");
 
@@ -6908,12 +6904,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
             modelBuilder.Entity("SIMF.Domain.Programme.HallAttendance", b =>
                 {
-                    b.HasOne("SIMF.Domain.Programme.Hall", "Hall")
-                        .WithMany()
-                        .HasForeignKey("HallId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("SIMF.Domain.Programme.Session", "Session")
                         .WithMany()
                         .HasForeignKey("SessionId")
@@ -6925,8 +6915,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasForeignKey("UserProfileId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.Navigation("Hall");
 
                     b.Navigation("Session");
 

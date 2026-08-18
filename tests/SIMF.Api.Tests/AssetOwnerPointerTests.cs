@@ -262,10 +262,10 @@ public sealed class AssetOwnerPointerTests : IClassFixture<SimfApiFactory>
         //   SpeakerPresentation SpeakerPresentation.StoredFileId
         //                                                    AdminSpeakerPresentationService
         //
-        // CompanyLogo is the only entry that is NOT a pointer maintained elsewhere:
-        // there is no Company or Contact entity for it to point at, AssetService
-        // .OwnerIsActiveAsync has no arm for it, and a public resolve always returns
-        // null. It is a dead service pending removal, not a table awaiting a column.
+        // CompanyLogo used to need an exemption here for the opposite reason to the
+        // rest - not a pointer kept elsewhere, but a service with nothing to point
+        // at. It has since been removed and its value reserved, so the exemption
+        // went with it: this list is now only "maintained by its own service".
         string[] maintainedByTheirOwnService =
         [
             nameof(FileService.Avatar),
@@ -274,7 +274,6 @@ public sealed class AssetOwnerPointerTests : IClassFixture<SimfApiFactory>
             nameof(FileService.MediaGalleryImage),
             nameof(FileService.SessionRecording),
             nameof(FileService.SpeakerPresentation),
-            nameof(FileService.CompanyLogo),
         ];
         missing.RemoveAll(maintainedByTheirOwnService.Contains);
 

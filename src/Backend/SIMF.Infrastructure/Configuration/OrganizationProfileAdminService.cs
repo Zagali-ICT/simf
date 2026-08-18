@@ -60,13 +60,13 @@ internal sealed class OrganizationProfileAdminService(
         // Neither of these is stored on the row any more, so fill them before the
         // mapper reads them. The year belongs to the edition singleton, and the
         // status is the event window's answer rather than the stale dropdown's.
-        profile.CurrentYear = await editions.GetOpenYearAsync(cancellationToken);
         profile.Status = profile.EffectiveStatus(timeProvider.SimfNow());
 
         return OrganizationProfileMapper.ToResponse(
             profile, about, details, logoUrl,
             await feedLinks.ResolveAsync(profile.LiveStreamFileId, cancellationToken),
-            await heroVideo.ResolveAsync(profile.BackgroundVideoFileId, cancellationToken));
+            await heroVideo.ResolveAsync(profile.BackgroundVideoFileId, cancellationToken),
+            await editions.GetOpenYearAsync(cancellationToken));
     }
 
     public async Task UpdateAsync(

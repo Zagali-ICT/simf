@@ -5,6 +5,7 @@ using SIMF.Application.Configuration.Abstractions;
 using SIMF.Application.Files.Abstractions;
 using SIMF.Common.Enums;
 using SIMF.Domain.Organization;
+using SIMF.Application.Editions.Abstractions;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Configuration;
@@ -18,7 +19,10 @@ internal sealed class OrganizationProfileReadService(
     IMemoryCache cache,
     SimfAppDbContext db,
     IFeedLinkService feedLinks,
-    HeroVideoUrlResolver heroVideo) : IOrganizationProfileReadService
+    HeroVideoUrlResolver heroVideo,
+    // The running year comes from EventEdition, which owns it. The profile used to
+    // carry a second copy that nothing kept in step.
+    IEventEditionService editions) : IOrganizationProfileReadService
 {
     private static readonly TimeSpan Ttl = TimeSpan.FromMinutes(5);
     private const string CacheKey = "org-profile:v1";
@@ -52,7 +56,8 @@ internal sealed class OrganizationProfileReadService(
             // The singleton is seeded, so this only happens on an un-migrated DB —
             // answer 200 with an empty profile rather than fail the public read.
             var empty = OrganizationProfileMapper.ToResponse(
-                new OrganizationProfile(), [], [], null, null, null);
+                new OrganizationProfile(), [], [], null, null, null,
+                await editions.GetOpenYearAsync(ct));
             return new OrganizationProfileSnapshot(empty, DateTime.UnixEpoch);
         }
 
@@ -80,7 +85,8 @@ internal sealed class OrganizationProfileReadService(
         var response = OrganizationProfileMapper.ToResponse(
             profile, about, details, logoUrl,
             await feedLinks.ResolveAsync(profile.LiveStreamFileId, ct),
-            await heroVideo.ResolveAsync(profile.BackgroundVideoFileId, ct));
+            await heroVideo.ResolveAsync(profile.BackgroundVideoFileId, ct),
+            await editions.GetOpenYearAsync(ct));
         var lastModified = profile.UpdatedAt ?? profile.CreatedAt;
         return new OrganizationProfileSnapshot(response, lastModified);
     }

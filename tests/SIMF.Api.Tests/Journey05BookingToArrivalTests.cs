@@ -129,11 +129,14 @@ public sealed class Journey05BookingToArrivalTests : IClassFixture<SimfApiFactor
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            // Include: the hall is read through the session now that the
+            // attendance row no longer keeps its own copy of the hall id.
             var attendance = Assert.Single(await db.HallAttendances.AsNoTracking()
+                .Include(a => a.Session)
                 .Where(a => a.SessionId == session.Id)
                 .ToListAsync());
             Assert.Equal(holder.ProfileId, attendance.UserProfileId); // == ReservedForProfileId
-            Assert.Equal(hall.Id, attendance.HallId);
+            Assert.Equal(hall.Id, attendance.Session!.HallId);
             Assert.Equal(AttendanceMethod.QrScan, attendance.Method);
             Assert.Null(attendance.Leave);
 

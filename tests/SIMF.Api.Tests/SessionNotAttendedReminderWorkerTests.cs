@@ -1,4 +1,4 @@
-// FR-903 (register defect `FR-903-not-attended-reminder`) — the "session started
+﻿// FR-903 (register defect `FR-903-not-attended-reminder`) — the "session started
 // but you have not attended" half never shipped: NotificationKind had no
 // not-attended value across 0-58, and ReservationNoShowReleaseWorker (the only
 // worker reasoning about no-shows) frees the seat and notifies nobody.
@@ -205,7 +205,10 @@ public sealed class SessionNotAttendedReminderWorkerTests : IClassFixture<SimfAp
             Kind = SeatReservationKind.UserBooking,
             ReservedForProfileId = attendeeProfileId,
             CreatedByUserId = visitorId,
+            // Released and cancelled together, as every production release path
+            // does and CK_SeatReservations_ReleasePin requires.
             ReleasedAt = releasedAt,
+            Status = releasedAt is null ? BookingStatus.Approved : BookingStatus.Cancelled,
             CreatedAt = SimfClock.Now,
         });
         await db.SaveChangesAsync();
@@ -226,7 +229,6 @@ public sealed class SessionNotAttendedReminderWorkerTests : IClassFixture<SimfAp
         {
             Id = Guid.NewGuid(),
             SessionId = sessionId,
-            HallId = hallId,
             UserProfileId = attendeeProfileId,
             Method = AttendanceMethod.QrScan,
             Enter = enter,

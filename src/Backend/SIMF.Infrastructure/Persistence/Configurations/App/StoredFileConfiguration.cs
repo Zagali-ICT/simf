@@ -20,7 +20,18 @@ internal sealed class StoredFileConfiguration : IEntityTypeConfiguration<StoredF
 {
     public void Configure(EntityTypeBuilder<StoredFile> builder)
     {
-        builder.ToTable("StoredFiles");
+        // A stored file is never zero bytes. SpeakerPresentations carried this
+        // guard as CK_SpeakerPresentations_SizeBytes and lost it with the
+        // duplicated column it constrained; it could not follow the data here
+        // as written, because it demanded a positive count while this column is
+        // NULL for every ExternalLink row, and is nulled again when an upload
+        // is converted into one. Tolerating NULL puts the guard back for every
+        // file service at once rather than for presentations alone - the
+        // creation paths already refuse an empty upload with a 400, so what
+        // this closes is a seed or a repair script writing straight to the table.
+        builder.ToTable("StoredFiles", table => table.HasCheckConstraint(
+            "CK_StoredFiles_SizeBytes",
+            "[SizeBytes] IS NULL OR [SizeBytes] > 0"));
         builder.HasKey(file => file.Id);
 
         builder.Property(file => file.Service).IsRequired();

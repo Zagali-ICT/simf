@@ -91,7 +91,7 @@ Background:
 
 Scenario: reserve -> approve -> speaker confirms by email link -> check-in -> Done
   When Sara opens the speaker profile and picks the 10:00 slot with subject "Cooperation" and sends
-  Then a SpeakerMeetingRequest is created Pending with SlotStartUtc = today 10:00
+  Then a SpeakerMeetingRequest is created Pending with SlotStart = today 10:00
   And Sara receives an in-app notification AND an email "request received" (R3)
   And the speaker receives an email "you have a new meeting request" (R3)
   When an admin opens /admin/speaker-meeting-requests, Responds, binds a Meeting hall + the 10:00 free slot, and clicks Approve
@@ -148,7 +148,7 @@ Scenario: Decline requires a note and notifies both
 Scenario: concurrent same-slot reservations both succeed
   Given the 10:00 slot is free (no slot-holding meeting yet)
   When requester A reserves 10:00 AND requester B reserves 10:00
-  Then BOTH requests are created Pending with SlotStartUtc = 10:00
+  Then BOTH requests are created Pending with SlotStart = 10:00
   And neither requester receives any error (no 409 at submit — speaker submit-time slot re-check removed)
   And the 10:00 slot still appears in available-slots (Pending does not hold a slot)
 ```
@@ -270,9 +270,9 @@ Scenario: a network failure loading the slots offers a retry, not a false no-ava
 
 ```gherkin
 Scenario: reminder fires once for a confirmed meeting
-  Given an Accepted meeting with SlotStartUtc 15 minutes from now and ReminderSentUtc null
+  Given an Accepted meeting with SlotStart 15 minutes from now and ReminderSentAt null
   When MeetingReminderWorker.RunReminderScanAsync runs
-  Then ReminderSentUtc is stamped and a MeetingReminder (in-app + email) is dispatched to BOTH parties exactly once
+  Then ReminderSentAt is stamped and a MeetingReminder (in-app + email) is dispatched to BOTH parties exactly once
   And a subsequent run does NOT re-send
   And a meeting Cancelled after the batch load is NOT reminded (conditional claim)
 ```

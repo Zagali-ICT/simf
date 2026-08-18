@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
@@ -961,6 +961,10 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
 
         var request = await ValidSaudiRequestAsync();
         request.IsSaudi = false;
+        // The nationality has to move with the flag: the upsert refuses a request
+        // that says "not Saudi" while still carrying the Saudi nationality, which
+        // is the contradiction this fixture used to ship.
+        request.NationalityCode = "AE";
         request.NationalId = null;
         request.IqamaNumber = iqama;
         request.PassportNumber = passport;
@@ -1018,6 +1022,8 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
 
         var request = await ValidSaudiRequestAsync();
         request.IsSaudi = false;
+        // Nationality moves with the flag - see the both-documents test above.
+        request.NationalityCode = "AE";
         request.NationalId = null;
         request.IqamaNumber = iqama;
         request.PassportNumber = null;

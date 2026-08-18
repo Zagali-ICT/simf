@@ -229,7 +229,7 @@ references its FDS for full requirements.
 #### 3.2.5 Halls — `/m/halls` (FDS-004 §5.2)
 
 - **New entity:** `Hall { Id, Code, Name, NameArabic, Capacity,
-  Floor, EquipmentNotes, IsActive }`.
+  Floor, FacilityNotes, IsActive }`.
 - **Endpoints:** canonical CRUD.
 
 #### 3.2.6 Speakers — `/m/speakers` (FDS-004 §5.3)

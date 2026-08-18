@@ -10,6 +10,7 @@ using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
@@ -134,12 +135,19 @@ public sealed class GateScanTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task A_disabled_account_is_denied_even_though_its_profile_is_approved()
+    public async Task Blocking_an_account_withdraws_profile_admission_and_the_gate_denies()
     {
-        // Admission lives on the profile, but blocking an account and the dormant
-        // sweep both write Disabled to the ACCOUNT. Until the resolver carried that
-        // across, the gate read an approved profile and let a blocked holder in,
-        // and DenialReasonCode.HolderDisabled was unreachable code.
+        // Admission is decided on the PROFILE, and the account is not a second
+        // input to that decision. The disable path withdraws admission on the
+        // profile inside the same transaction as the account state, so the gate
+        // reads one row and cannot be handed a holder who is blocked and admitted
+        // at the same time.
+        //
+        // This drives the real BulkDeleteUsersAsync rather than writing the two
+        // rows by hand, because the property under test IS that the production
+        // writer leaves both consistent. Hand-setting only SimfUser.AccountState
+        // builds a state no code path produces, and a gate that denies it proves
+        // nothing about a gate in front of a real blocked attendee.
         var (token, _) = await CreateAdminAsync();
         var gate = await CreateGateAsync(token, allowedProfileTypeIds: null,
             ownAsOperator: true, mode: DirectionMode.Both);
@@ -159,17 +167,34 @@ public sealed class GateScanTests : IClassFixture<SimfApiFactory>
                 .Where(profile => profile.QrId == qrId)
                 .Select(profile => profile.UserId)
                 .SingleAsync();
-            var user = await identityDb.Users.SingleAsync(u => u.Id == userId!.Value);
-            user.AccountState = AccountState.Disabled;
+
+            // A second admin as the actor: BulkDeleteUsersAsync skips a target who
+            // is an Administrator, and the operator above owns the gate.
+            var actor = new SimfUser
+            {
+                UserName = $"gate-block-actor-{Guid.NewGuid():N}@simf.test",
+                Email = $"gate-block-actor-{Guid.NewGuid():N}@simf.test",
+                EmailConfirmed = true,
+                DisplayName = "Block Actor",
+                AccountState = AccountState.Approved,
+                UserType = UserType.Admin,
+            };
+            identityDb.Users.Add(actor);
             await identityDb.SaveChangesAsync();
 
-            // The profile is deliberately left Approved: that is the state the
-            // disable paths leave behind, and the point of the check.
+            var bulk = scope.ServiceProvider.GetRequiredService<IAdminUserBulkService>();
+            var result = await bulk.BulkDeleteUsersAsync(actor.Id, new AdminBulkDeleteRequest
+            {
+                Ids = [userId!.Value],
+                Reason = "Blocked by the gate-denial regression test.",
+            });
+            Assert.Equal(1, result.Deleted);
+
             var admission = await appDb.UserProfiles.AsNoTracking()
                 .Where(profile => profile.QrId == qrId)
                 .Select(profile => profile.AdmissionState)
                 .SingleAsync();
-            Assert.Equal(AccountState.Approved, admission);
+            Assert.Equal(AccountState.Disabled, admission);
         }
 
         var after = await PostScanAsync(gate.Id, qr: qrId, token, idempotencyKey: null);

@@ -7,7 +7,11 @@
 public enum AssetCategory
 {
     SpeakerPhoto = 0,
-    CompanyLogo = 1,
+
+    // 1 is reserved - used to be `CompanyLogo`. Its Contact owner table was
+    // removed, so the category could never resolve; the integer stays empty so a
+    // persisted value never changes meaning.
+
     MediaPartnerLogo = 2,
     SponsorLogo = 3,
     ArchiveCover = 4,
@@ -29,8 +33,7 @@ public enum AssetCategory
     BoothLogo = 9,
 
     /// <summary>An <c>Exhibitor</c>'s own logo (owner = <c>Exhibitor.Id</c>),
-    /// independent of the linked <c>Contact</c>'s <see cref="CompanyLogo"/> — shown
-    /// on the app exhibitor-detail screen. Public read.</summary>
+    /// shown on the app exhibitor-detail screen. Public read.</summary>
     ExhibitorLogo = 10,
 
     /// <summary>A past edition's speaker photo

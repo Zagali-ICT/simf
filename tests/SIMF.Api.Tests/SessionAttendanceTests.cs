@@ -269,7 +269,6 @@ public sealed class SessionAttendanceTests : IClassFixture<SimfApiFactory>
         {
             Id = Guid.NewGuid(),
             SessionId = sessionId,
-            HallId = hallId,
             UserProfileId = attendeeProfileId,
             Method = AttendanceMethod.Geofence,
             Enter = enter,

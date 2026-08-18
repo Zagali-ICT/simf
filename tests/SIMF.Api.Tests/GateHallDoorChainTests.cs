@@ -1,4 +1,4 @@
-// X-1 / CHAIN-4 — a hall-door gate (Gate.HallId set) feeds HallAttendance: an
+﻿// X-1 / CHAIN-4 — a hall-door gate (Gate.HallId set) feeds HallAttendance: an
 // allowed CheckIn opens the attendee's attendance row for the session live in
 // that hall (Method=QrScan), a CheckOut closes it, a perimeter gate (HallId null)
 // records only a GateScan, and a scan when no session is live records nothing.
@@ -132,7 +132,8 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
 
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        Assert.Equal(0, await db.HallAttendances.CountAsync(a => a.HallId == hallId));
+        // The hall comes from the session now, not a copy on the attendance row.
+        Assert.Equal(0, await db.HallAttendances.CountAsync(a => a.Session!.HallId == hallId));
     }
 
     [Fact]
@@ -278,7 +279,10 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
             var reservation = await releaseDb.SeatReservations
                 .SingleAsync(r => r.SessionId == sessionId
                     && r.ReservedForProfileId == attendeeProfileId);
+            // Released and cancelled together, as every production release path
+            // does and CK_SeatReservations_ReleasePin now requires.
             reservation.ReleasedAt = SimfClock.Now;
+            reservation.Status = BookingStatus.Cancelled;
             await releaseDb.SaveChangesAsync();
         }
 

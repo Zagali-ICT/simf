@@ -893,7 +893,7 @@ Scenario: A second hall reusing an existing code is rejected
 Scenario: The Add/Edit form cannot set Purpose; the purpose endpoint can
   Given the administrator opens /admin/halls and edits "SES-A"
   Then the Add/Edit form exposes Code, Name, NameArabic, Capacity, SeatMode,
-       Floor, EquipmentNotes and the geofence — but NO Purpose field
+       Floor, FacilityNotes and the geofence — but NO Purpose field
   And AdminCreateHallRequest / AdminUpdateHallRequest carry no Purpose,
       so a hall created or edited through this form stays Purpose=General (0)
 

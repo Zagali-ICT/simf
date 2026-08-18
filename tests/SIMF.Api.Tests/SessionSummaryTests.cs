@@ -10,6 +10,7 @@ using SIMF.Common;
 using SIMF.Contracts.Programme;
 using SIMF.Domain.Programme;
 using SIMF.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 using Xunit;
 using SIMF.Common.Enums;
 
@@ -77,18 +78,17 @@ public sealed class SessionSummaryTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
-    // Owner 2026-07-19 — the public read also requires team APPROVAL, so a summary
-    // published by the OLD code (PublishedAt set, ApprovedAt null) is NOT served to the
-    // app; this guards legacy data the write-side gate cannot retroactively fix.
+    // Owner 2026-07-19 — the public read requires team APPROVAL, so a summary
+    // published without it was never served to the app. That guard stays in the read
+    // path, but the row it defended against can no longer exist: CK_SessionSummaries
+    // _PublishPin refuses the shape outright, so this asserts the database rejects it
+    // rather than asserting the reader tolerates it. Unrepresentable beats unserved.
     [Fact]
-    public async Task Published_but_unapproved_summary_is_404()
+    public async Task A_summary_cannot_be_published_without_approval()
     {
-        var sessionId = await SeedSummaryAsync(
+        await Assert.ThrowsAsync<DbUpdateException>(() => SeedSummaryAsync(
             published: true, approved: false, sessionActive: true, summaryActive: true,
-            aiModel: "echo");
-
-        var response = await _client.GetAsync($"/api/v1/app/programme/sessions/{sessionId}/summary");
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+            aiModel: "echo"));
     }
 
     [Fact]
@@ -200,6 +200,9 @@ public sealed class SessionSummaryTests : IClassFixture<SimfApiFactory>
             ReviewSubmittedAt = now,
             ApprovedAt = now,
             PublishedAt = now,
+            // CK_SessionSummaries_PublishPin: a published row names its publisher.
+            // The service always writes the pair together; the fixture must too.
+            PublishedByUserId = Guid.NewGuid(),
             CreatedAt = now,
         });
         await db.SaveChangesAsync();
@@ -233,6 +236,7 @@ public sealed class SessionSummaryTests : IClassFixture<SimfApiFactory>
             ReviewSubmittedAt = reviewedAt,
             ApprovedAt = reviewedAt,
             PublishedAt = published ? SimfClock.Now : null,
+            PublishedByUserId = published ? Guid.NewGuid() : null,
             CreatedAt = SimfClock.Now,
         });
         await db.SaveChangesAsync();

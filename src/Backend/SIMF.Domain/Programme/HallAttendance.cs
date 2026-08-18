@@ -14,9 +14,11 @@ public sealed class HallAttendance
     public Guid SessionId { get; set; }
     public Session? Session { get; set; }
 
-    /// <summary>Denormalised from the session, so live per-hall counts need no join.</summary>
-    public Guid HallId { get; set; }
-    public Hall? Hall { get; set; }
+    // No HallId. It was denormalised from the session so live per-hall counts
+    // needed no join, but no query ever grouped or filtered on it - every
+    // attendance read goes through SessionId - and nothing kept the copy in step
+    // when AdminSessionService moved a session to another hall. The hall is
+    // Session.HallId, one join away, and correct by construction.
 
     /// <summary>Keyed by profile, not account: a walk-in carries no account.</summary>
     public Guid UserProfileId { get; set; }

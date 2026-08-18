@@ -44,8 +44,11 @@ public enum FileService
     /// <summary>Media-partner logo (owner = MediaPartner.Id). Public read.</summary>
     MediaPartnerLogo = 9,
 
-    /// <summary>Company / contact-directory logo (owner = Contact.Id). Public read.</summary>
-    CompanyLogo = 10,
+    // 10 is reserved - used to be `CompanyLogo`. The Contact owner table it named
+    // was removed, so nothing could own such a file and every public resolve
+    // returned null. The integer stays empty rather than being reused, so a
+    // persisted Service value can never change meaning (the same reservation
+    // UserType made when `Other` was dropped).
 
     /// <summary>Organization-profile logo (owner = OrganizationProfile.SingletonId). Public read.</summary>
     OrganizationLogo = 11,

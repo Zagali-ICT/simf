@@ -694,7 +694,6 @@ public sealed class ReportingTests : IClassFixture<SimfApiFactory>
         {
             Id = Guid.NewGuid(),
             SessionId = sessionId,
-            HallId = hallId,
             UserProfileId = attendeeProfileId,
             Method = AttendanceMethod.QrScan,
             Enter = enterUtc,

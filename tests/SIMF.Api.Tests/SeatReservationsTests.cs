@@ -1248,7 +1248,6 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
             {
                 Id = Guid.NewGuid(),
                 SessionId = session.Id,
-                HallId = hall.Id,
                 UserProfileId = holderId,
                 Method = AttendanceMethod.QrScan,
                 Enter = SimfClock.Now,
