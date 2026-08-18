@@ -27,7 +27,7 @@ public interface IQrResolver
     /// <para>For the surfaces that query <c>QrId</c> directly rather than going
     /// through <see cref="ResolveAsync"/> — the staff seating desk, the exhibitor
     /// lead scan and the Control Panel badge lookup. Without it those three see a
-    /// ~61-character encrypted badge as an unknown code, and a walk-in standing
+    /// 78-character encrypted badge as an unknown code, and a walk-in standing
     /// at the seating desk cannot be found even though the walk-in seat hold was
     /// written for exactly that moment.</para>
     /// </summary>
