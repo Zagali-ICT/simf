@@ -229,7 +229,6 @@ public sealed class SessionNotAttendedReminderWorkerTests : IClassFixture<SimfAp
         {
             Id = Guid.NewGuid(),
             SessionId = sessionId,
-            HallId = hallId,
             UserProfileId = attendeeProfileId,
             Method = AttendanceMethod.QrScan,
             Enter = enter,

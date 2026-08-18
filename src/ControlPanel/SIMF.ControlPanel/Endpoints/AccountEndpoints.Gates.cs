@@ -93,19 +93,21 @@ internal static partial class AccountEndpoints
             if (token is null) return Results.Unauthorized();
             return Forward(await api.GetGateFormOptionsAsync(token));
         });
-        group.MapPost("/admin/gates/reports/scans",
-            async (AdminGateScanReportFilter body, HttpContext http, SimfAdminClient api) =>
+        // Both gate reports are server-paged lists on the shared GridQuery seam, so
+        // both are POST {resource}/list like every other converted list.
+        group.MapPost("/admin/gates/reports/scans/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
         {
             var token = await http.GetTokenAsync("access_token");
             if (token is null) return Results.Unauthorized();
             return Forward(await api.ListGateScansAsync(body, token));
         });
-        group.MapGet("/admin/gates/reports/currently-inside",
-            async (HttpContext http, SimfAdminClient api) =>
+        group.MapPost("/admin/gates/reports/currently-inside/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
         {
             var token = await http.GetTokenAsync("access_token");
             if (token is null) return Results.Unauthorized();
-            return Forward(await api.ListCurrentlyInsideAsync(token));
+            return Forward(await api.ListCurrentlyInsideAsync(body, token));
         });
         group.MapGet("/gates/my-assignments",
             async (HttpContext http, SimfAdminClient api) =>

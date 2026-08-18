@@ -5,10 +5,8 @@ using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
-using SIMF.Common.Enums;
 using SIMF.Common.Grids;
 using SIMF.Contracts.Admin;
-using SIMF.Domain.Auditing;
 using SIMF.Domain.Programme;
 using SIMF.Infrastructure.Common.Grids;
 using SIMF.Infrastructure.Persistence;
@@ -215,12 +213,12 @@ internal sealed class AdminSessionCategoryService(
             "The session category was not found.",
             "لم يتم العثور على تصنيف الجلسة.");
 
-    private static AdminSessionCategoryDetail ToDetail(SessionCategory c) => new(
-        c.Id,
-        c.Name,
-        c.NameArabic,
-        c.DisplayOrder,
-        c.IsActive,
-        c.CreatedAt,
-        c.UpdatedAt);
+    private static AdminSessionCategoryDetail ToDetail(SessionCategory category) => new(
+        category.Id,
+        category.Name,
+        category.NameArabic,
+        category.DisplayOrder,
+        category.IsActive,
+        category.CreatedAt,
+        category.UpdatedAt);
 }

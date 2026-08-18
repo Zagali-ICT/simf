@@ -1,8 +1,8 @@
-// Tests: SIMF.Api.Tests/SeatReservationsTests.cs
-// Tests: SIMF.Api.Tests/SeatTierEligibilityTests.cs
-// Tests: SIMF.Api.Tests/SeatChangeTests.cs (the atomic seat move)
-// Tests: SIMF.Api.Tests/GridContractTests.cs (the booking monitor's grid keys)
-// Tests: SIMF.Api.Tests/BookingsExcelTests.cs (the export off the same list)
+// Tests: SIMF.Api.Tests/SeatReservationsTests.cs,
+//        SIMF.Api.Tests/SeatTierEligibilityTests.cs,
+//        SIMF.Api.Tests/SeatChangeTests.cs,
+//        SIMF.Api.Tests/GridContractTests.cs,
+//        SIMF.Api.Tests/BookingsExcelTests.cs
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -127,7 +127,8 @@ internal sealed class SeatReservationService(
                 mine = new SessionSeatCell(
                     ownRow.Id, ownRow.RowLabel, ownRow.SeatNumber, ownRow.Kind,
                     ownRow.Status,
-                    ownRow.ReservedForProfileId is { } m && checkedInProfileIds.Contains(m),
+                    ownRow.ReservedForProfileId is { } ownHolder
+                        && checkedInProfileIds.Contains(ownHolder),
                     ownRow.GuestHint, ownRow.GuestHintArabic);
             }
         }
@@ -681,7 +682,7 @@ internal sealed class SeatReservationService(
                     $"Seat counts ({requestedCounts.Count}) must match the number of rows ({rows.Count}).",
                     $"يجب أن يساوي عدد قيم المقاعد ({requestedCounts.Count}) عدد الصفوف ({rows.Count}).");
             }
-            if (requestedCounts.Any(c => c is < 1 or > 80))
+            if (requestedCounts.Any(count => count is < 1 or > 80))
             {
                 throw new ApiException(
                     ErrorCodes.SeatLayoutInvalid, 400,
@@ -736,7 +737,7 @@ internal sealed class SeatReservationService(
                     $"Seat tiers ({requestedTiers.Count}) must match the number of rows ({rows.Count}).",
                     $"يجب أن يساوي عدد فئات المقاعد ({requestedTiers.Count}) عدد الصفوف ({rows.Count}).");
             }
-            if (requestedTiers.Any(t => !Enum.IsDefined(typeof(SeatTier), t)))
+            if (requestedTiers.Any(tier => !Enum.IsDefined(typeof(SeatTier), tier)))
             {
                 throw new ApiException(
                     ErrorCodes.SeatLayoutInvalid, 400,
@@ -755,10 +756,11 @@ internal sealed class SeatReservationService(
             // row added at the end inherits the owner's VVIP default).
             var stored = ExpandSeatTiers(layout, ParseRowLabels(layout.RowLabels));
             seatTiers = Enumerable.Range(0, rows.Count)
-                .Select(i => i < stored.Count ? stored[i] : SeatTier.Vvip)
+                .Select(rowIndex =>
+                    rowIndex < stored.Count ? stored[rowIndex] : SeatTier.Vvip)
                 .ToList();
         }
-        var tiersCsv = string.Join(',', seatTiers.Select(t => (int)t));
+        var tiersCsv = string.Join(',', seatTiers.Select(tier => (int)tier));
 
         // An existing layout may already back active reservations; a change
         // that drops a row or shrinks a row's seat count would strand any seat that
@@ -890,7 +892,9 @@ internal sealed class SeatReservationService(
             .Select(r => r.SeatNumber)
             .ToListAsync(cancellationToken);
         var taken = new HashSet<int>(
-            occupiedInRow.Where(s => s.HasValue).Select(s => s!.Value));
+            occupiedInRow
+                .Where(seatNumber => seatNumber.HasValue)
+                .Select(seatNumber => seatNumber!.Value));
 
         var now = timeProvider.SimfNow();
         var inserted = 0;
@@ -1199,12 +1203,12 @@ internal sealed class SeatReservationService(
         DateTime now, CancellationToken cancellationToken = default)
     {
         var due = await appDbContext.SeatReservations
-            .Where(r => r.Status == BookingStatus.Approved
-                && r.ReleasedAt == null
-                && r.ReservedForProfileId != null
-                && r.NoShowReleaseAt != null
-                && r.NoShowReleaseAt <= now
-                && r.CreatedAt < r.NoShowReleaseAt)
+            .Where(reservation => reservation.Status == BookingStatus.Approved
+                && reservation.ReleasedAt == null
+                && reservation.ReservedForProfileId != null
+                && reservation.NoShowReleaseAt != null
+                && reservation.NoShowReleaseAt <= now
+                && reservation.CreatedAt < reservation.NoShowReleaseAt)
             .ToListAsync(cancellationToken);
         if (due.Count == 0)
         {
@@ -1214,47 +1218,55 @@ internal sealed class SeatReservationService(
         // One round-trip: every (session, holder) that has ANY check-in row for the
         // sessions in play. The owner rule is "عدم تسجيل الدخول للجلسة" (never checked
         // in), so a holder with any HallAttendance is kept; everyone else is released.
-        var sessionIds = due.Select(r => r.SessionId).Distinct().ToList();
+        var sessionIds = due.Select(reservation => reservation.SessionId)
+            .Distinct()
+            .ToList();
         var checkedIn = (await appDbContext.HallAttendances.AsNoTracking()
-            .Where(a => sessionIds.Contains(a.SessionId))
-            .Select(a => new { a.SessionId, a.UserProfileId })
+            .Where(attendance => sessionIds.Contains(attendance.SessionId))
+            .Select(attendance => new { attendance.SessionId, attendance.UserProfileId })
             .ToListAsync(cancellationToken))
-            .Select(a => (a.SessionId, a.UserProfileId))
+            .Select(attendance => (attendance.SessionId, attendance.UserProfileId))
             .ToHashSet();
 
         var released = due
-            .Where(r => !checkedIn.Contains((r.SessionId, r.ReservedForProfileId!.Value)))
+            .Where(reservation => !checkedIn.Contains(
+                (reservation.SessionId, reservation.ReservedForProfileId!.Value)))
             .ToList();
         if (released.Count == 0)
         {
             return 0;
         }
-        foreach (var r in released)
+        foreach (var reservation in released)
         {
-            r.ReleasedAt = now;
-            r.Status = BookingStatus.Cancelled;
+            reservation.ReleasedAt = now;
+            reservation.Status = BookingStatus.Cancelled;
         }
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         // Audit + notify each freed no-show. Titles resolved once per session.
         var titles = await appDbContext.Sessions.AsNoTracking()
-            .Where(s => sessionIds.Contains(s.Id))
-            .Select(s => new { s.Id, s.Title, s.TitleArabic })
+            .Where(session => sessionIds.Contains(session.Id))
+            .Select(session => new { session.Id, session.Title, session.TitleArabic })
             .ToDictionaryAsync(
-                s => s.Id, s => (s.Title, s.TitleArabic), cancellationToken);
-        foreach (var r in released)
+                session => session.Id,
+                session => (session.Title, session.TitleArabic),
+                cancellationToken);
+        foreach (var reservation in released)
         {
             await auditLog.WriteAsync(new AuditEntry
             {
                 EventType = AuditEvents.SeatReservationReleased,
                 Outcome = AuditOutcome.Success,
                 ActorUserId = null, // system-initiated (the pre-start sweep)
-                Detail = $"reservationId={r.Id}; sessionId={r.SessionId}; "
-                    + $"row={r.RowLabel}; seat={r.SeatNumber}; reason=no-show",
+                Detail = $"reservationId={reservation.Id}; "
+                    + $"sessionId={reservation.SessionId}; "
+                    + $"row={reservation.RowLabel}; seat={reservation.SeatNumber}; "
+                    + "reason=no-show",
             }, cancellationToken);
-            if (titles.TryGetValue(r.SessionId, out var t))
+            if (titles.TryGetValue(reservation.SessionId, out var title))
             {
-                await TryNotifyBookingReleasedAsync(r, t, cancellationToken, noShow: true);
+                await TryNotifyBookingReleasedAsync(
+                    reservation, title, cancellationToken, noShow: true);
             }
         }
 
@@ -1366,7 +1378,7 @@ internal sealed class SeatReservationService(
         Guid sessionId, string qrId, CancellationToken cancellationToken = default)
     {
         // Canonicalise first. An offline badge arrives as a
-        // ~61-character encrypted blob, not a QrId, so the direct lookup below
+        // 78-character encrypted blob, not a QrId, so the direct lookup below
         // would miss it and report an unknown badge. A minted serial passes
         // through unchanged.
         var code = qrResolver.ToStoredQrId(qrId ?? string.Empty);
@@ -1502,12 +1514,14 @@ internal sealed class SeatReservationService(
         // Held = ReleasedAt IS NULL, so released/rejected/cancelled rows don't
         // block.
         var overlaps = await appDbContext.SeatReservations.AsNoTracking()
-            .Where(r => r.ReservedForProfileId == actorProfileId
-                && r.ReleasedAt == null
-                && r.SessionId != sessionId)
+            .Where(reservation => reservation.ReservedForProfileId == actorProfileId
+                && reservation.ReleasedAt == null
+                && reservation.SessionId != sessionId)
             .Join(appDbContext.Sessions.AsNoTracking(),
-                r => r.SessionId, s => s.Id, (r, s) => new { s.Start, s.End })
-            .AnyAsync(x => x.Start < end && start < x.End,
+                reservation => reservation.SessionId,
+                session => session.Id,
+                (reservation, session) => new { session.Start, session.End })
+            .AnyAsync(window => window.Start < end && start < window.End,
                 cancellationToken);
         if (overlaps)
         {
@@ -1534,9 +1548,8 @@ internal sealed class SeatReservationService(
         var effectiveMode = session.SeatSelectionModeOverride ?? hall.SeatSelectionMode;
         var rowLabels = ParseRowLabels(layout.RowLabels);
         return new SessionContext(
-            session.Id, session.HallId, session.CapacityOverride,
-            hall.Capacity, layout, rowLabels,
-            session.Title, session.TitleArabic, session.Start, session.End,
+            session.Id, session.CapacityOverride, hall.Capacity, rowLabels,
+            session.Start, session.End,
             effectiveMode, ExpandSeatCounts(layout, rowLabels),
             ExpandSeatTiers(layout, rowLabels));
     }
@@ -1586,10 +1599,10 @@ internal sealed class SeatReservationService(
             .Select(r => new { r.RowLabel, r.SeatNumber })
             .ToListAsync(cancellationToken);
 
-        var orphaned = activeSeats.Any(s =>
+        var orphaned = activeSeats.Any(seat =>
         {
-            var idx = RowIndex(newRows, s.RowLabel!);
-            return idx < 0 || (s.SeatNumber ?? 0) > newSeatCounts[idx];
+            var rowIndex = RowIndex(newRows, seat.RowLabel!);
+            return rowIndex < 0 || (seat.SeatNumber ?? 0) > newSeatCounts[rowIndex];
         });
         if (orphaned)
         {
@@ -1769,9 +1782,12 @@ internal sealed class SeatReservationService(
     private async Task<bool> IsVipVisitorAsync(
         Guid actorUserId, CancellationToken cancellationToken) =>
         await appDbContext.UserProfiles.AsNoTracking()
-            .Where(p => p.UserId == actorUserId && p.ProfileTypeId != null)
+            .Where(profile => profile.UserId == actorUserId
+                && profile.ProfileTypeId != null)
             .Join(appDbContext.ProfileTypes.AsNoTracking(),
-                p => p.ProfileTypeId, t => (Guid?)t.Id, (p, t) => t.IsVipTier)
+                profile => profile.ProfileTypeId,
+                profileType => (Guid?)profileType.Id,
+                (profile, profileType) => profileType.IsVipTier)
             .FirstOrDefaultAsync(cancellationToken);
 
     /// <summary>Index of <paramref name="label"/> within
@@ -1983,7 +1999,7 @@ internal sealed class SeatReservationService(
             .Select(r => new { r.RowLabel, r.SeatNumber })
             .ToListAsync(cancellationToken);
         return occupied
-            .Select(o => (Row: o.RowLabel!, Seat: o.SeatNumber!.Value))
+            .Select(cell => (Row: cell.RowLabel!, Seat: cell.SeatNumber!.Value))
             .ToHashSet();
     }
 
@@ -2128,17 +2144,18 @@ internal sealed class SeatReservationService(
         }
     }
 
-    private static MySeatReservation ToMine(SeatReservation r) =>
-        new(r.Id, r.SessionId, r.RowLabel, r.SeatNumber, r.Kind, r.CreatedAt, r.Status);
+    private static MySeatReservation ToMine(SeatReservation reservation) =>
+        new(reservation.Id, reservation.SessionId, reservation.RowLabel,
+            reservation.SeatNumber, reservation.Kind, reservation.CreatedAt,
+            reservation.Status);
 
     private sealed record SessionSnapshot(
         Guid Id, Guid HallId, int? CapacityOverride, string Title, string TitleArabic,
         DateTime Start, DateTime End,
         SeatSelectionMode? SeatSelectionModeOverride);
     private sealed record SessionContext(
-        Guid SessionId, Guid HallId, int? CapacityOverride, int HallCapacity,
-        HallSeatLayout Layout, IReadOnlyList<string> RowLabels,
-        string SessionTitle, string SessionTitleArabic,
+        Guid SessionId, int? CapacityOverride, int HallCapacity,
+        IReadOnlyList<string> RowLabels,
         DateTime Start, DateTime End,
         SeatSelectionMode EffectiveMode,
         // The expanded per-row seat counts (one per RowLabels entry; a repeat of

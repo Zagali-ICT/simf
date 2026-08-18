@@ -205,11 +205,6 @@ public static class FileServicePolicies
                 FileService.SponsorLogo, FileOwnerEntityType.Sponsor, PermissionCatalog.Sponsors.Edit),
             [FileService.MediaPartnerLogo] = PublicImage(
                 FileService.MediaPartnerLogo, FileOwnerEntityType.MediaPartner, PermissionCatalog.MediaPartners.Edit),
-            // The Contact owner table was retired; the category stays mapped for the
-            // append-only enum freeze and keeps the MediaLibrary gate it has in
-            // AssetPermissionRegistry.
-            [FileService.CompanyLogo] = PublicImage(
-                FileService.CompanyLogo, FileOwnerEntityType.Contact, PermissionCatalog.MediaLibrary.Manage),
             [FileService.OrganizationLogo] = PublicImage(
                 FileService.OrganizationLogo, FileOwnerEntityType.OrganizationProfile,
                 PermissionCatalog.OrganizationProfile.Manage),

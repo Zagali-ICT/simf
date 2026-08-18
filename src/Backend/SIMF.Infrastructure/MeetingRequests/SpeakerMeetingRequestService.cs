@@ -24,9 +24,12 @@ namespace SIMF.Infrastructure.MeetingRequests;
 
 /// <summary>Speaker meeting-request
 /// service. Submission validates the speaker is active and opted in
-/// (<c>AllowsMeetingRequests</c>); admin response sets RespondedAt +
-/// RespondedByUserId. Audit-only, no notification (consistent with the
-/// now-removed session-scoped flow).</summary>
+/// (<c>AllowsMeetingRequests</c>) and that the requester carries the per-user
+/// <c>UserProfile.AllowsSpeakerMeeting</c> flag; admin response sets RespondedAt +
+/// RespondedByUserId. Every terminal outcome notifies the requester in-app and by
+/// email, and an accept-with-hall emails the speaker their double-opt-in
+/// Approve/Reject links — all best-effort, never rolling back the committed
+/// decision.</summary>
 internal sealed class SpeakerMeetingRequestService(
     SimfAppDbContext appDbContext,
     IIdentityUserDirectory userDirectory,
@@ -723,7 +726,7 @@ internal sealed class SpeakerMeetingRequestService(
     // Email the speaker the Approve/Reject links (the tokens
     // are already committed). Best-effort (swallow-and-log): an email failure leaves
     // the request AwaitingSpeaker with valid tokens; it never rolls back the accept.
-    // A re-send admin action is a future follow-up.
+    // The admin's recovery from that is ResendSpeakerConfirmationAsync.
     private async Task EmailSpeakerConfirmationLinksAsync(
         SpeakerMeetingRequest req, MeetingActionLinks links, CancellationToken cancellationToken)
     {

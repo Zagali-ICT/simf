@@ -387,12 +387,15 @@ treatment.
 
 - **D-880's `QrId` widening never happened.** `UserProfile.QrId` is still
   `nvarchar(16)`. Widening it for an encrypted badge needs a new lift.
-- **D-877's admission relocation is incomplete.** Both `SimfUser.AccountState`
-  and `UserProfile.AdmissionState` are live and written today. D-877 called it
-  "a relocation, not a copy", and as built it is a dual-write. Finishing it means
-  **dropping an Identity column**, so it needs a new lift — and until then the
-  D-157 "no duplicated data" rule is being bent on this one fact, which is worth
-  knowing before anyone reads a value from either.
+- **D-877's admission relocation is half done.** The READ path is single-source
+  as of D-929: `QrResolver` reads `UserProfile.AdmissionState` alone, every
+  production disable path having been made to withdraw profile admission in the
+  same transaction. The WRITE path is still a dual-write — approve and reject
+  set `SimfUser.AccountState` as well. Finishing it means **dropping an Identity
+  column**, so it needs a new lift, and it is not obvious it should be dropped:
+  an account can be disabled for reasons unrelated to attending, and a walk-in
+  is admitted with no `SimfUser` row at all. Until then the D-157 "no duplicated
+  data" rule is bent on this one fact — read admission from the PROFILE.
 - **D-199's "statistics snapshots" were never built** — statistics are computed
   live. If D6 lands wanting persisted snapshots, that is a new lift.
 - **G-OI-2** (geofence → arrival → attendance chain, FR-305/506/1103, and
@@ -450,9 +453,33 @@ any non-canonical upload — and the copy was what the admin grid displayed.
 entity carries a `*FileId` alongside a fact the store already records.
 
 One loss, recorded rather than glossed: `CK_SpeakerPresentations_SizeBytes` went
-with its column and has no home on the store, whose `SizeBytes` is nullable for
-external links.
+with its column and had no home on the store, whose `SizeBytes` is nullable for
+external links. **Closed by D-929** as `CK_StoredFiles_SizeBytes`
+(`[SizeBytes] IS NULL OR [SizeBytes] > 0`), which tolerates NULL and so guards
+every file service rather than presentations alone.
 
+### D-929 named lift — the deferred audit findings, worked to the end
+
+The audit programme parked what it could not fix in its own lane in
+`docs/planning/domain-audit-follow-ups-2026-08-16.md`. That file is now the
+record of what closed and what is still open, and it says which is which.
+
+Three schema changes: `HallAttendances.HallId` dropped with its FK and
+`IX_HallAttendances_HallId_Leave`; `IX_SessionSummaries_IsActive_PublishedAt`
+dropped; `CK_StoredFiles_SizeBytes` added. One enum change:
+`FileService.CompanyLogo` removed, its integer slot **reserved** on the D-186
+precedent because a persisted integer that changes meaning is the failure the
+enum freeze exists to prevent.
+
+Dropping a column and dropping its EF configuration are one change, not two.
+Remove `HasOne(...)`/`HasForeignKey(...)` while the property and navigation
+remain and EF rebuilds the relationship by convention — with **Cascade** where
+the configuration said **Restrict**. It compiles, and the migration is where you
+would find out.
+
+**Still open, deliberately:** D-877's admission WRITE path (above), and D-880's
+`QrId` widening, which nothing writes an encrypted badge into yet — widening it
+now buys a wider column and no behaviour.
 ### D-925 — the migration id is PINNED, and you regenerate with the script
 
 `00000000000000_InitialCreate`, on both contexts. Regenerate with

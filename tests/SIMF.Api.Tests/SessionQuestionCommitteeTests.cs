@@ -179,7 +179,8 @@ public sealed class SessionQuestionCommitteeTests : IClassFixture<SimfApiFactory
     public async Task Non_committee_caller_is_forbidden_on_the_queue()
     {
         var tokens = await AuthFlow.SignInVisitorWithoutTwoFactorAsync(_client, _factory);
-        var response = await GetAuthAsync("/api/v1/admin/questions/queue", tokens.AccessToken);
+        var response = await PostAuthAsync(
+            "/api/v1/admin/questions/list", new GridQuery(), tokens.AccessToken);
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
@@ -262,12 +263,17 @@ public sealed class SessionQuestionCommitteeTests : IClassFixture<SimfApiFactory
     private async Task<IReadOnlyList<SessionQuestionQueueRow>> ListQueueAsync(
         string token, Guid sessionId, QuestionStatus? status = null)
     {
-        var url = $"/api/v1/admin/questions/queue?sessionId={sessionId}";
-        if (status is { } s) { url += $"&status={s}"; }
-        var response = await GetAuthAsync(url, token);
+        // The queue is a server-paged grid now: what were query-string arguments are
+        // declared filter columns, and Top is raised past the default page so these
+        // assertions still see the whole queue they were written against.
+        var query = new GridQuery { Top = 200 };
+        query.Filters["sessionId"] = sessionId.ToString();
+        if (status is { } s) { query.Filters["status"] = s.ToString(); }
+
+        var response = await PostAuthAsync("/api/v1/admin/questions/list", query, token);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         return (await response.Content
-            .ReadFromJsonAsync<ApiResult<IReadOnlyList<SessionQuestionQueueRow>>>())!.Data!;
+            .ReadFromJsonAsync<ApiResult<GridPage<SessionQuestionQueueRow>>>())!.Data!.Items;
     }
 
     private async Task<Guid> SubmitQuestionAsync(Guid sessionId)

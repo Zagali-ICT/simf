@@ -228,7 +228,6 @@ public sealed class MyAreaDashboardTests : IClassFixture<SimfApiFactory>
             {
                 Id = Guid.NewGuid(),
                 SessionId = session.Id,
-                HallId = hall.Id,
                 UserProfileId = attendeeProfileId,
                 Method = AttendanceMethod.QrScan,
                 Enter = now,

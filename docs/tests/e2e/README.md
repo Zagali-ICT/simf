@@ -351,10 +351,10 @@ being quoted in planning as if current.
   196 against a pinned total of 197. Only the two bold totals are
   machine-checked, so the parts had drifted unnoticed; counting by prefix is
   reproducible with one `ls`.)
-- **Total scenarios:** 3153 Coverage-matrix rows, every id distinct. That
+- **Total scenarios:** 3179 Coverage-matrix rows, every id distinct. That
   includes the **360** generated element-sweep rows (`E2E-{NS}-ELS-001/002`, two
   per live page — see `tools/qa/generate_els_rows.py`); the hand-authored
-  functional total is 2793.
+  functional total is 2819.
 - **Authored:** all pages. The D-133 "pending" stubs are fully authored, and
   every event-module and P2–P5 page added since has its own file.
 - **Execution:** the canonical run today is a Chrome DevTools MCP browser pass

@@ -7,7 +7,7 @@
 | **Auth** | `@attribute [RequirePermission(PermissionCatalog.SessionSummaries.View)]` (page). API: list/read on `SessionSummaries.View`, generate/save on `SessionSummaries.Edit`, publish/unpublish on `SessionSummaries.Publish`, export on `SessionSummaries.Export` — all on top of `RequireApprovedAccount`. Generate/save/publish/unpublish + export also carry the `"auth"` rate limiter. |
 | **Pattern** | P4.1 / D-238 (Completion Programme §6.4.1, Mockup screen 34). **Not** a CRUD-add page — a session-driven editorial desk: one row per active session, summary created lazily by AI draft or Save. |
 | **Status** | ✅ Real (D-238); Excel export added D-356 |
-| **Backend endpoints** | BFF `/account/api/admin/session-summaries/*` → API: `GET /admin/session-summaries` (list), `GET /admin/session-summaries/{sessionId}` (detail), `POST /admin/session-summaries/{sessionId}/generate` (AI draft), `PUT /admin/session-summaries/{sessionId}` (save), `PUT /admin/session-summaries/{sessionId}/publish`, `PUT /admin/session-summaries/{sessionId}/unpublish`, `POST /admin/session-summaries/export` (D-356, export only) |
+| **Backend endpoints** | BFF `/account/api/admin/session-summaries/*` → API: `POST /admin/session-summaries/list` (list, body is a `GridQuery`), `GET /admin/session-summaries/{sessionId}` (detail), `POST /admin/session-summaries/{sessionId}/generate` (AI draft), `PUT /admin/session-summaries/{sessionId}` (save), `PUT /admin/session-summaries/{sessionId}/publish`, `PUT /admin/session-summaries/{sessionId}/unpublish`, `POST /admin/session-summaries/export` (D-356, export only) |
 | **Source** | [`SessionSummariesList.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SessionSummariesList.razor), [`SessionSummaryEndpoints.cs`](../../../src/Backend/SIMF.Api/Endpoints/Admin/SessionSummaryEndpoints.cs), [`SessionSummariesExcelEndpoints.cs`](../../../src/Backend/SIMF.Api/Endpoints/Admin/SessionSummariesExcelEndpoints.cs), [`AdminSessionSummaryService.cs`](../../../src/Backend/SIMF.Infrastructure/Programme/AdminSessionSummaryService.cs), [`SessionSummary.cs`](../../../src/Backend/SIMF.Domain/Programme/SessionSummary.cs), [`SessionSummaries.cs`](../../../src/Shared/SIMF.Contracts/Admin/SessionSummaries.cs) |
 | **Backed by** | `dbo.SessionSummaries` (1:1 with `Session`, migration `D237_AddSessionSummary`, 2026-06-02; Slice-D read-only columns `AiDraftFullTextArabic` + `AiDraftGeneratedAt` added by migration `AddSessionSummaryAiDraftSnapshot`, 2026-07-19, both additive/nullable). |
 | **Tests** | [`docs/tests/e2e/cp-admin-session-summaries.md`](../../tests/e2e/cp-admin-session-summaries.md) |
@@ -75,9 +75,9 @@ per-row Deactivate.
 - `SimfBanner` titled `Admin.SessionSummaries.Title`, inside `simf-page-wide`
   → `simf-surface`. A `SimfAlert` (variant from the toast) shows transient
   success / error feedback above the grid.
-- Grid via `SimfDataGrid` over the in-memory rows. One read loads every active
-  session, then **filter / sort / page run client-side** in `BuildPage()`; page
-  size `Top = 20`, rows keyed by `SessionId`.
+- Grid via `SimfDataGrid` over one `GridPage`. **Filter / sort / page run
+  server-side** on the shared grid seam: each gesture re-issues the list POST with
+  the new `GridQuery`. Page size `Top = 20`, rows keyed by `SessionId`.
 - Columns:
   - **Session** (`Key="session"`) — `Sortable` + `Filterable`; renders
     `SessionTitle`.
@@ -151,14 +151,17 @@ screen 34).
 
 ## 5. Data flow + endpoints
 
-- **List** — page `OnInitializedAsync` → `LoadAsync()` → `simfAccount.getJson`
-  `/account/api/admin/session-summaries` → BFF passthrough
-  `api.ListSessionSummariesAsync` → API `GET /admin/session-summaries`
-  (`ListSessionSummariesEndpoint`) → `service.ListAsync`. The service projects one
-  `AdminSessionSummaryRow` per active session with a correlated sub-select on the
-  1:1 summary (`HasSummary` / `GeneratedByAi` / `IsPublished` derived from
-  `AiModel` / `PublishedAt`). Returns the whole set in one read; the grid pages
-  it client-side.
+- **List** — page `OnInitializedAsync` → `LoadAsync()` → `simfAccount.postJson`
+  `/account/api/admin/session-summaries/list` carrying the current `GridQuery` →
+  BFF passthrough `api.ListSessionSummariesAsync` → API
+  `POST /admin/session-summaries/list` (`ListSessionSummariesEndpoint`) →
+  `service.ListAsync(query, ct)`. `IsActive` is the resource scope and composes
+  onto the source ahead of the grid's own predicates; the 1:1 summary state comes
+  from a correlated sub-select rather than a second round-trip, and only the chosen
+  page is mapped to `AdminSessionSummaryRow` (`HasSummary` / `GeneratedByAi` /
+  `IsPublished` derived from `AiModel` / `PublishedAt`). Declared column keys:
+  `session` (searchable) and `start`. Default order is `start` descending; page
+  size falls back to 25 and is capped at 200.
 - **Detail** — Edit → `getJson` `/{sessionId}` → `GetSessionSummaryAdminEndpoint`
   → `service.GetAsync`. Returns `AdminSessionSummaryDetail` (all eight sections +
   `AiModel` + publish state + timestamps + the Slice-D read-only sources
@@ -322,7 +325,7 @@ fills Arabic full-text, 004 edit existing, 005 publish an approved summary, 006
 unpublish, 007 editor cancel discards, 008 empty state, 009 page auth gate, 010
 action gate, 011 section over max length (400), 012 publish without a summary
 (404), 013 missing / deleted session (404), 014 server 500 on list, 015 RTL
-render, 016 per-column filter (client-side), 017 column sort, 018 Excel export
+render, 016 per-column filter (server round-trip), 017 column sort, 018 Excel export
 (export only), 019-022 team review/approval workflow + المحاور read, **023 publish
 requires approval (400)**, **024 edit-after-publish takes it offline (owner
 2026-07-19)**, 025 publish clock-gate (S-6), **026 raw subtitle visible read-only in

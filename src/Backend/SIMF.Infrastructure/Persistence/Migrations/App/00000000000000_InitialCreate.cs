@@ -640,6 +640,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_StoredFiles", x => x.Id);
+                    table.CheckConstraint("CK_StoredFiles_SizeBytes", "[SizeBytes] IS NULL OR [SizeBytes] > 0");
                 });
 
             migrationBuilder.CreateTable(
@@ -1882,7 +1883,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     SessionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    HallId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UserProfileId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Method = table.Column<int>(type: "int", nullable: false),
                     Enter = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -1894,12 +1894,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 {
                     table.PrimaryKey("PK_HallAttendances", x => x.Id);
                     table.CheckConstraint("CK_HallAttendances_LeaveOrder", "[Leave] IS NULL OR [Leave] >= [Enter]");
-                    table.ForeignKey(
-                        name: "FK_HallAttendances_Halls_HallId",
-                        column: x => x.HallId,
-                        principalTable: "Halls",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_HallAttendances_Sessions_SessionId",
                         column: x => x.SessionId,
@@ -3329,11 +3323,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 columns: new[] { "HallId", "Purpose", "ReleasedAt" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_HallAttendances_HallId_Leave",
-                table: "HallAttendances",
-                columns: new[] { "HallId", "Leave" });
-
-            migrationBuilder.CreateIndex(
                 name: "IX_HallAttendances_SessionId_UserProfileId",
                 table: "HallAttendances",
                 columns: new[] { "SessionId", "UserProfileId" },
@@ -3817,11 +3806,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 name: "IX_SessionSpeakers_SpeakerId",
                 table: "SessionSpeakers",
                 column: "SpeakerId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_SessionSummaries_IsActive_PublishedAt",
-                table: "SessionSummaries",
-                columns: new[] { "IsActive", "PublishedAt" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_SessionSummaries_SessionId",

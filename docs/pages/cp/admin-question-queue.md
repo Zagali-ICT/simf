@@ -5,10 +5,10 @@
 | **Route** | `/admin/question-queue` |
 | **Audience** | Administrator / Scientific-Committee member |
 | **Auth** | `[RequirePermission(PermissionCatalog.Questions.View)]` (page); API actions add `RequireApprovedAccount` + `RequireRateLimiting("auth")` on the mutating endpoints |
-| **Pattern** | P3.3 / D-234 — read-only **moderation/triage queue** (Approve / Hide / Escalate), **not** CRUD. Canonical `SimfDataGrid` since D-261, but **client-side projection**. |
+| **Pattern** | P3.3 / D-234 — read-only **moderation/triage queue** (Approve / Hide / Escalate), **not** CRUD. Canonical `SimfDataGrid` since D-261, **server-paged** on the shared grid seam. |
 | **Status** | ✅ Real (P3.3 / D-234) |
 | **Permissions** | `Questions.View` (page + queue read), `Questions.Moderate` (Approve + Hide), `Questions.Escalate` (Escalate), `Questions.Export` (Excel export) |
-| **Backend endpoints (BFF → API)** | `GET /account/api/admin/questions/queue` → `GET /api/v1/admin/questions/queue`; `PUT /account/api/admin/questions/{id}/approve` → `…/approve`; `PUT …/{id}/hide` → `…/hide`; `PUT …/{id}/escalate` → `…/escalate`; `POST /account/api/admin/questions/export` → `POST /api/v1/admin/questions/export` |
+| **Backend endpoints (BFF → API)** | `POST /account/api/admin/questions/list` → `POST /api/v1/admin/questions/list` (server-paged on the shared grid seam, body is a `GridQuery`); `PUT /account/api/admin/questions/{id}/approve` → `…/approve`; `PUT …/{id}/hide` → `…/hide`; `PUT …/{id}/escalate` → `…/escalate`; `POST /account/api/admin/questions/export` → `POST /api/v1/admin/questions/export` |
 | **Source** | [`QuestionQueueList.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/QuestionQueueList.razor), [`AccountEndpoints.cs`](../../../src/ControlPanel/SIMF.ControlPanel/Endpoints/AccountEndpoints.cs) (BFF passthroughs), [`SessionQuestionCommitteeEndpoints.cs`](../../../src/Backend/SIMF.Api/Endpoints/Sessions/SessionQuestionCommitteeEndpoints.cs) (API), [`QuestionQueueExcelEndpoints.cs`](../../../src/Backend/SIMF.Api/Endpoints/Admin/QuestionQueueExcelEndpoints.cs) (export) |
 | **Tests** | [`docs/tests/e2e/cp-admin-question-queue.md`](../../tests/e2e/cp-admin-question-queue.md) |
 | **Last reviewed** | 2026-06-11 |
@@ -89,23 +89,29 @@ with an **empty** `RowActions` cell — each action group is wrapped in
 
 ## 5. Data flow + endpoints
 
-- **Load.** `OnInitializedAsync` → `LoadAsync` calls `simfAccount.getJson`
-  `/account/api/admin/questions/queue`. The BFF passthrough in `AccountEndpoints.cs`
-  forwards to `SimfAdminClient.ListQuestionQueueAsync` → API
-  `GET /api/v1/admin/questions/queue` (`SessionQuestionCommitteeEndpoints`, gated by
-  `Questions.View` + `RequireApprovedAccount`). The read is **non-paged**: it returns
-  the whole Pending queue once, **oldest-first, capped at 200**.
-- **Client-side projection (D-261).** `OnQueryChanged` does **not** round-trip.
-  `BuildPage()` filters (case-insensitive `Contains`), sorts and pages the
-  in-memory `_rows` list. Filter keys honoured: `session`, `question`, `submitter`,
-  `ai`. Sort keys: `session`, `question`, `submitter`, `phase`. Default order =
-  the backend's oldest-first `CreatedAt`. So a filter / sort / page gesture
-  re-projects the already-fetched list with **no** extra network call.
+- **Load.** `OnInitializedAsync` → `LoadAsync` calls `simfAccount.postJson`
+  `/account/api/admin/questions/list` with the current `GridQuery`. The BFF
+  passthrough in `AccountEndpoints.Moderation.cs` forwards to
+  `SimfAdminClient.ListQuestionQueueAsync` → API
+  `POST /api/v1/admin/questions/list` (`SessionQuestionCommitteeEndpoints`, gated by
+  `Questions.View` + `RequireApprovedAccount`), which returns one
+  `GridPage<SessionQuestionQueueRow>`.
+- **Server-side paging (grid seam).** `OnQueryChangedAsync` **does** round-trip:
+  every filter, search, sort and page gesture re-issues the POST with the new
+  `GridQuery`, so the work happens in SQL over the whole queue rather than over a
+  fetched prefix. Declared column keys: `session` and `question` (both searchable),
+  `phase`, `ai` (searchable), `status`, `sessionId`, `createdAt`. The submitter is
+  deliberately neither sortable nor filterable: that name lives in the Identity
+  database and is resolved after the page is chosen, so no cross-database JOIN
+  exists that could sort on it. Default order is oldest-first `createdAt`; page
+  size falls back to 25 and is capped at 200. `status` and `sessionId` were the
+  two parameters the old endpoint took by hand and are now ordinary filter keys:
+  a request naming no `status` **value** gets the default Pending scope.
 - **Actions.** Approve / Hide go through `ActAsync` (`simfAccount.putJson`, empty
   body); Escalate through `EscalateAsync` (`putJson` with `EscalateQuestionRequest`).
   Each BFF passthrough forwards to the API committee endpoint, which is gated by
   the respective permission + `RequireApprovedAccount` + `RequireRateLimiting("auth")`.
-  On success the page shows a green toast and re-issues the `/queue` GET.
+  On success the page shows a green toast and re-issues the `/questions/list` POST.
 
 ## 6. Validation + error handling
 
@@ -130,8 +136,10 @@ with an **empty** `RowActions` cell — each action group is wrapped in
 - **Checkboxes are not a bulk action.** `Multiselect` is on, but no bulk handler is
   wired; the only consumer of the selection is the Excel export (selected rows →
   exported rows). There is no bulk Approve/Hide.
-- **Queue cap.** The backend returns at most the 200 oldest Pending rows. The grid
-  pages that set in memory; there is no server-side paging contract to extend.
+- **Page cap.** The backend serves one page per request: the page size falls back
+  to 25 and is capped at 200, so a request asking for more is clamped rather than
+  handed the whole queue. Filtering, sorting and paging all run in SQL over every
+  Pending row, not over a fetched prefix.
 - **Two-stage pipeline.** Approve here only flips `Status`; the live-session
   push / reorder / hide happen later on the per-session moderator desk (stage 3).
 
@@ -156,7 +164,8 @@ See [`docs/tests/e2e/cp-admin-question-queue.md`](../../tests/e2e/cp-admin-quest
 E2E-QQU-001 approve golden, 002 hide, 003 escalate, 004 escalate cancel, 005 empty
 state, 006 auth gate (View), 007 action gate (Moderate / Escalate), 008 escalate
 validation, 009 stale-row 404, 010 server-500 on load, 011 RTL, 012 AI-verdict +
-Phase rendering, 013 in-memory column filter, 014 in-memory column sort,
+Phase rendering, 013 per-column filter (server round-trip), 014 column sort
+(server round-trip),
 015 Excel export (D-356).
 
 ## 12. Excel export (D-356) — export only
@@ -173,8 +182,9 @@ proxy, not the `CrudGridExcel` helper) and downloads
   exported. With rows ticked it sends those `Ids` and a null `Query`, so only those
   rows are exported.
 - **Session scoping.** The export `ListAsync` mirrors the CP queue's load —
-  `service.ListQueueAsync(status: null, sessionId: null)` — i.e. the default
-  Pending queue across **all** sessions; the page passes no status / session filter.
+  `service.ListQueueAsync(query, ct)` over the same grid seam, walking the pages up
+  to the export cap. An empty query means the default Pending bucket across **all**
+  sessions, which is what the page opens on.
 - **Sheet + columns.** Sheet name `Questions`; header row:
   `Session | Question | Submitter | Email | Phase | Status | AiVerdict | AssignedToRole | Created`
   (mapping `SessionTitle`, `QuestionText`, `SubmittedByDisplayName`,

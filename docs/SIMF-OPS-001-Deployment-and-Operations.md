@@ -407,6 +407,11 @@ populate every row marked **Required**.
 | Storage | `UserIdDocumentBase` | **Required** | Absolute path for encrypted ID-image storage (D-046 b; renamed P8) | ID-image upload throws |
 | Storage | `UserIdDocumentEncryptionKey` | **Required** | Base64-encoded 32-byte AES-GCM key — generate with `openssl rand -base64 32` | ID-image upload throws on every call (rejected at write time) |
 | Storage | `LogDirectory` | Optional (default `logs`) | Serilog file-sink directory | Default OK |
+| FileStorage | `RootPath` | Optional (see failure mode) | Root directory every stored file's bytes live under, one sub-folder per `FileService` beneath it | Empty falls back to `%ProgramData%\SIMF\files` (`FilesystemFileStorageProvider.DefaultRoot`). Nothing throws, which is the risk: the store lands in a location no operator chose and may not be backing up (§C.2 artefact 3). Deliberately never a relative path - that resolved against the process working directory and put uploads in the source tree |
+| FileStorage | `EncryptionKey` | **Required** | Base64-encoded 32-byte AES-256 active KEK, wrapping the per-file data key of every `EncryptAtRest` service (Avatar, IdDocument, VipPhoto, SpeakerPresentation) - generate with `openssl rand -base64 32` | `AesGcmEnvelopeCipher` refuses to construct: startup throws on the first resolve, with the key name in the message. Boot-fail-fast, the same gate the JWT and ID-document keys use |
+| FileStorage | `KekVersion` | Optional (default `1`) | Version stamp of the active KEK, written into every encrypted blob's header and mirrored onto the `StoredFile` row | Default OK on a first deploy. **On a restore it is not trivia**: a correct key restored under the wrong version number fails every encrypted read with `No KEK available for version N`. Escrow it with the key (§C.1) |
+| FileStorage | `PreviousEncryptionKey` | Optional; set **only** during a rotation window | The superseded KEK, kept loadable so blobs not yet re-wrapped still decrypt | Empty is correct outside a rotation. Empty *during* one means every blob still on the old key fails to read |
+| FileStorage | `PreviousKekVersion` | Optional; set with `PreviousEncryptionKey` | Version stamp of the previous KEK | Ignored when `PreviousEncryptionKey` is empty. Set to the wrong number and the previous key is registered under a version no blob header claims, so it never matches |
 | Ai | `DefaultProvider` | Optional (default `Echo`) | Provider override when a prompt has Echo | Default OK; production should set to `OpenAi` |
 | Ai | `OpenAi:ApiKey` | **Required if any prompt uses OpenAi** | OpenAI / Anthropic / Echo provider API key | First OpenAi-prompt invocation throws 502 |
 | Ai | `OpenAi:BaseUrl` | Optional (default `https://api.openai.com/v1`) | Provider base URL — point at an internal proxy if needed | Default OK |
@@ -415,6 +420,23 @@ populate every row marked **Required**.
 | Swagger | `AllowSwagger` | Optional (default `false`) | Serve the OpenAPI UI in Production too (non-prod always serves it) — D-355 | Default OK; UI stays off in production |
 | Swagger | `Username` / `Password` | **Required if `AllowSwagger=true` in prod** | HTTP Basic-auth gate for the `/swagger` surface so the App+CP contract isn't anonymously enumerable (D-355) | Startup throws if `AllowSwagger=true` without both |
 | Serilog | `MinimumLevel` etc. | Optional | Log levels per source | Defaults OK |
+
+**On the two `FileStorage` key families.** `FileStorage` is the centralised file
+store (D-568); the older `Storage:*` rows above it are the pre-cutover bespoke
+stores and the Serilog directory. The two are separate sections and both are
+read, so do not merge them or drop one.
+
+**Key rotation is NOT operational.** `PreviousEncryptionKey` and
+`PreviousKekVersion` exist, the blob format has always carried a KEK-version
+byte, and `StoredFile.KekVersion` makes rotation progress a SQL `GROUP BY` - but
+**the re-wrap pass that finishes a rotation does not exist**. It is designed in
+§C.7 and deliberately not built, pending an owner decision on when it runs; the
+owner has deferred rotation. A rotation started today can therefore be begun and
+never finished, which means the previous key could never be retired. Until the
+pass ships, **treat both data keys as set-once for the life of the store**: ship
+the two `Previous*` rows empty and leave them empty. A key believed to be
+compromised is an incident to escalate, not a value to edit here. §C.6 states
+the same caveat from the backup side.
 
 ### B.2 Migration order — App before Identity
 
@@ -841,7 +863,7 @@ Two of the three missing operational pieces are now in place.
 ```sql
 SELECT KekVersion, COUNT(*) AS Files
 FROM   dbo.StoredFiles
-WHERE  IsEncrypted = 1 AND IsActive = 1
+WHERE  IsEncrypted = 1 AND SecureDestroyedAt IS NULL
 GROUP  BY KekVersion;
 ```
 
@@ -849,6 +871,19 @@ A `NULL` in that result means the row predates the column, **not** that it is
 current: the blob is wrapped under some KEK nobody recorded, so it is due for
 re-wrapping like any out-of-date row. A plaintext or external-link row is
 excluded by `IsEncrypted = 1` and carries `NULL` legitimately.
+
+The second predicate is `SecureDestroyedAt IS NULL` and **not** `IsActive = 1`,
+which is what it read until 2026-08-18. The two differ exactly over soft-deleted
+rows, and those must be counted: their bytes are still on disk, still needed by a
+restore or an audit, and still wrapped under whichever key sealed them - C.7's
+selection deliberately includes them for that reason. Filtering on `IsActive`
+hid them from the inventory while the re-wrap pass was still going to process
+them, so the completion criterion below could report a clean store while
+soft-deleted blobs sat on the old key, and retiring that key would have stranded
+them permanently. Secure-destroyed rows are excluded instead, because their
+headers were shredded on purpose and can never be re-wrapped; leaving them in
+would keep the inventory dirty forever and the rotation could never be declared
+finished.
 
 The third piece is still missing: **there is no re-wrap job**, so nothing walks
 the store re-sealing per-file keys under a new KEK. It is designed in C.7 and

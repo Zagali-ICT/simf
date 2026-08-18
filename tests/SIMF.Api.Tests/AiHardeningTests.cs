@@ -528,8 +528,8 @@ public sealed class AiHardeningTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Get_history_endpoint_returns_snapshots_newest_first()
     {
-        // D-188: GET /admin/ai/prompts/{id}/history returns the
-        // append-only snapshot list ordered by Version descending.
+        // D-188: POST /admin/ai/prompts/{id}/history/list returns the
+        // append-only snapshot page ordered by Version descending.
         var admin = await CreateAdministratorAndSignInAsync();
         var (id, originalSystem, originalUser) =
             await GetSeededPromptAsync("faq-answer");
@@ -554,13 +554,13 @@ public sealed class AiHardeningTests : IClassFixture<SimfApiFactory>
                 }, admin);
         }
 
-        var response = await GetAuthAsync(
-            $"/api/v1/admin/ai/prompts/{id}/history", admin);
+        var response = await PostAuthAsync(
+            $"/api/v1/admin/ai/prompts/{id}/history/list", new GridQuery(), admin);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var history = (await response.Content
-            .ReadFromJsonAsync<ApiResult<List<AdminAiPromptHistoryEntry>>>())!.Data!;
-        Assert.Equal(2, history.Count);
-        Assert.Equal(2, history[0].Version);  // newest first
-        Assert.Equal(1, history[1].Version);
+            .ReadFromJsonAsync<ApiResult<GridPage<AdminAiPromptHistoryEntry>>>())!.Data!;
+        Assert.Equal(2, history.Total);
+        Assert.Equal(2, history.Items[0].Version);  // newest first
+        Assert.Equal(1, history.Items[1].Version);
     }
 }

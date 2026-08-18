@@ -3,11 +3,12 @@
    escalate-to-a-role. Gated by Questions.* — the approved set then flows to the
    per-session moderator desk (stage 3).
 
-   Migrated from the raw <table> to the canonical SimfDataGrid. The
-   backend list endpoint (GET /admin/questions/queue) is a non-paged read that
-   returns the full Pending queue (capped at 200 oldest-first), so the grid is
-   paged / filtered / sorted client-side over the already-fetched list — the
-   data-source contract and the three moderation actions are unchanged. *@
+   Server-paged on the shared grid seam: POST /admin/questions/list takes a
+   GridQuery and returns one GridPage, so filtering, sorting and paging all
+   happen in SQL over the whole queue rather than over a 200-row prefix. Every
+   Key below is declared server-side; the submitter is deliberately neither
+   sortable nor filterable because that name lives in the Identity database and
+   is resolved after the page is chosen. *@
 @page "/admin/question-queue"
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.Questions.View)]
@@ -61,9 +62,11 @@
                                     Sortable="true" Filterable="true">
                     <CellTemplate>@context.QuestionText</CellTemplate>
                 </SimfDataGridColumn>
+                @* Display only. The submitter's name comes from the Identity
+                   database, which the App-side grid query cannot join to, so
+                   sorting or filtering on it would be a 400 on a live page. *@
                 <SimfDataGridColumn TItem="SessionQuestionQueueRow" Key="submitter"
-                                    Header="@L["Admin.QuestionQueue.Col.Submitter"]"
-                                    Sortable="true" Filterable="true">
+                                    Header="@L["Admin.QuestionQueue.Col.Submitter"]">
                     <CellTemplate>@context.SubmittedByDisplayName</CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="SessionQuestionQueueRow" Key="phase"

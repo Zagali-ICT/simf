@@ -114,10 +114,12 @@ public partial class AttendeesList
         if (error is not null) _toast = new Toast("error", error);
     }
 
+    // Visitor is the only UserType a roster row can carry: the enum holds
+    // (Visitor, Admin) and the server excludes admins outright. The passthrough
+    // arm is the safety net for a value this page was never told about.
     private string LocaliseUserType(string raw) => raw switch
     {
         "Visitor" => L["Admin.Attendees.UserType.Visitor"],
-        "Other" => L["Admin.Attendees.UserType.Other"],
         _ => raw,
     };
 

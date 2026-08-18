@@ -38,7 +38,6 @@ internal sealed class AssetService(
         new Dictionary<AssetCategory, FileService>
         {
             [AssetCategory.SpeakerPhoto] = FileService.SpeakerPhoto,
-            [AssetCategory.CompanyLogo] = FileService.CompanyLogo,
             [AssetCategory.MediaPartnerLogo] = FileService.MediaPartnerLogo,
             [AssetCategory.SponsorLogo] = FileService.SponsorLogo,
             [AssetCategory.ArchiveCover] = FileService.ArchiveCover,
@@ -54,6 +53,11 @@ internal sealed class AssetService(
 
     private static readonly IReadOnlyDictionary<FileService, AssetCategory> ServiceToCategory =
         CategoryToService.ToDictionary(kv => kv.Value, kv => kv.Key);
+
+    // The scope every /admin/assets read is confined to: only the StoredFile
+    // services the Media Library owns, so no filter and no id can reach an avatar
+    // or an ID document. Declared after CategoryToService because it reads it.
+    private static readonly List<FileService> AssetServices = CategoryToService.Values.ToList();
 
     /// <summary>
     /// The grid contract for /admin/assets. Every filter here is hand-written,
@@ -259,14 +263,10 @@ internal sealed class AssetService(
     public async Task<GridPage<AdminAssetSummary>> ListAsync(
         GridQuery query, CancellationToken cancellationToken = default)
     {
-        // Scope: only the StoredFile services the Media Library owns. It stays
-        // outside the grid so no filter can widen it to avatars or ID documents.
-        var assetServices = CategoryToService.Values.ToList();
-
         // Paged as entities rather than projected: the row's category and owner name
         // are resolved in C# from a polymorphic owner table, which no SELECT carries.
         var page = await dbContext.StoredFiles
-            .Where(file => assetServices.Contains(file.Service))
+            .Where(file => AssetServices.Contains(file.Service))
             .ToGridPageAsync(query, Columns, file => file.Id, file => file, cancellationToken);
 
         var names = await ResolveOwnerNamesAsync(page.Items, cancellationToken);
@@ -277,9 +277,8 @@ internal sealed class AssetService(
     public async Task<AdminAssetSummary?> GetByIdAsync(
         Guid id, CancellationToken cancellationToken = default)
     {
-        var assetServices = CategoryToService.Values.ToList();
         var file = await dbContext.StoredFiles.AsNoTracking()
-            .FirstOrDefaultAsync(f => f.Id == id && assetServices.Contains(f.Service), cancellationToken);
+            .FirstOrDefaultAsync(f => f.Id == id && AssetServices.Contains(f.Service), cancellationToken);
         if (file is null) { return null; }
         var names = await ResolveOwnerNamesAsync([file], cancellationToken);
         return ToSummary(file, names);
@@ -288,9 +287,8 @@ internal sealed class AssetService(
     public async Task DeactivateAsync(
         Guid actorUserId, Guid id, CancellationToken cancellationToken = default)
     {
-        var assetServices = CategoryToService.Values.ToList();
         var file = await dbContext.StoredFiles
-            .FirstOrDefaultAsync(f => f.Id == id && assetServices.Contains(f.Service), cancellationToken)
+            .FirstOrDefaultAsync(f => f.Id == id && AssetServices.Contains(f.Service), cancellationToken)
             ?? throw NotFound();
         if (!file.IsActive) { return; }
         file.Deactivate();
@@ -304,9 +302,8 @@ internal sealed class AssetService(
     public async Task RestoreAsync(
         Guid actorUserId, Guid id, CancellationToken cancellationToken = default)
     {
-        var assetServices = CategoryToService.Values.ToList();
         var file = await dbContext.StoredFiles
-            .FirstOrDefaultAsync(f => f.Id == id && assetServices.Contains(f.Service), cancellationToken)
+            .FirstOrDefaultAsync(f => f.Id == id && AssetServices.Contains(f.Service), cancellationToken)
             ?? throw NotFound();
         if (file.IsActive) { return; }
         var conflict = await dbContext.StoredFiles.AnyAsync(
@@ -370,17 +367,19 @@ internal sealed class AssetService(
     };
 
     private AdminAssetSummary ToSummary(
-        StoredFile f, IReadOnlyDictionary<(AssetCategory, Guid), string> names)
+        StoredFile file, IReadOnlyDictionary<(AssetCategory, Guid), string> names)
     {
-        var category = ServiceToCategory[f.Service];
-        var ownerId = f.OwnerEntityId ?? Guid.Empty;
+        var category = ServiceToCategory[file.Service];
+        var ownerId = file.OwnerEntityId ?? Guid.Empty;
         return new AdminAssetSummary(
-            f.Id, category, ownerId,
+            file.Id, category, ownerId,
             names.GetValueOrDefault((category, ownerId)),
-            ToKind(f.FileType),
-            f.SourceType == FileSourceType.ExternalLink ? AssetSourceType.ExternalLink : AssetSourceType.Upload,
-            f.ExternalUrl, f.ContentType, f.SizeBytes,
-            f.OriginalFileName, f.IsActive, f.CreatedAt, f.UpdatedAt);
+            ToKind(file.FileType),
+            file.SourceType == FileSourceType.ExternalLink
+                ? AssetSourceType.ExternalLink
+                : AssetSourceType.Upload,
+            file.ExternalUrl, file.ContentType, file.SizeBytes,
+            file.OriginalFileName, file.IsActive, file.CreatedAt, file.UpdatedAt);
     }
 
     // Resolve each asset's owner display name from its category's own table

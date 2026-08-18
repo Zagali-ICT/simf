@@ -5,7 +5,6 @@ using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
 using SIMF.Application.Common.Abstractions;
 using SIMF.Common;
-using SIMF.Common.Enums;
 using SIMF.Common.Grids;
 using SIMF.Contracts.Admin;
 using SIMF.Domain.Common;
@@ -147,8 +146,6 @@ internal sealed class AdminCountryService(
             }
         }
 
-        // Normalize the delegation data (head + dates cleared when the
-        // country is not invited) and validate the head before persisting.
         var (headId, arrival, departure) = NormalizeDelegation(request.IsInvited,
             request.HeadOfDelegationUserProfileId,
             request.DelegationArrivalDate, request.DelegationDepartureDate);
@@ -198,6 +195,18 @@ internal sealed class AdminCountryService(
             cancellationToken);
     }
 
+    public async Task<IReadOnlyList<AdminCountryDelegateOption>> ListDelegatesAsync(
+        int countryId, CancellationToken cancellationToken = default) =>
+        await appDbContext.UserProfiles.AsNoTracking()
+            .Where(profile => profile.IsActive
+                && profile.IsDelegate
+                && profile.NationalityId == countryId)
+            .OrderBy(profile => profile.NameArabic)
+            .ThenBy(profile => profile.Name)
+            .Select(profile => new AdminCountryDelegateOption(
+                profile.Id, profile.Name, profile.NameArabic, profile.JobTitle))
+            .ToListAsync(cancellationToken);
+
     private static (int id, string code, string name, string nameArabic, string? phonePrefix, int displayOrder) Validate(int idRaw, string codeRaw, string nameRaw, string nameArabicRaw, string? phonePrefixRaw, int displayOrderRaw)
     {
         if (idRaw <= 0)
@@ -243,18 +252,6 @@ internal sealed class AdminCountryService(
         }
         return (idRaw, code, name, nameArabic, phonePrefix, displayOrderRaw);
     }
-
-    public async Task<IReadOnlyList<AdminCountryDelegateOption>> ListDelegatesAsync(
-        int countryId, CancellationToken cancellationToken = default) =>
-        await appDbContext.UserProfiles.AsNoTracking()
-            .Where(profile => profile.IsActive
-                && profile.IsDelegate
-                && profile.NationalityId == countryId)
-            .OrderBy(profile => profile.NameArabic)
-            .ThenBy(profile => profile.Name)
-            .Select(profile => new AdminCountryDelegateOption(
-                profile.Id, profile.Name, profile.NameArabic, profile.JobTitle))
-            .ToListAsync(cancellationToken);
 
     /// <summary>Delegation data (head + arrival/departure dates) is only
     /// meaningful for an invited country; this clears all three when the country

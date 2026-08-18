@@ -51,7 +51,7 @@ class OfflineBadge {
   static const int _plaintextBytes = 20;
 
   /// Upper bound on an accepted scan, so a hostile or garbled input cannot push
-  /// work into the decoder. A real badge is about 61 characters.
+  /// work into the decoder. A real badge is exactly 78 characters.
   static const int maxEncodedLength = 128;
 
   /// Length of an ordinary server-minted QR serial. A scanner cannot judge one

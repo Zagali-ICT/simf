@@ -1,6 +1,6 @@
 @* Attendees roster. Read-only view over SimfUser +
    UserProfile + ProfileType — no schema change. Admins are excluded.
-   Filters: UserType (Visitor / Other / All), AccountState. *@
+   Filters: UserType (Visitor / All), AccountState. *@
 @page "/admin/attendees"
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.Attendees.View)]
@@ -26,7 +26,6 @@
                                 @onchange="@(e => _userTypeFilter = e.Value?.ToString() ?? string.Empty)">
                             <option value="">@L["Admin.Attendees.Filter.UserTypeAll"]</option>
                             <option value="Visitor">@L["Admin.Attendees.Filter.UserTypeVisitor"]</option>
-                            <option value="Other">@L["Admin.Attendees.Filter.UserTypeOther"]</option>
                         </select>
                     </div>
                 </div>

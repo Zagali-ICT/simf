@@ -1,4 +1,7 @@
-// Tests: SIMF.Api.Tests/AdminHallsTests.cs
+// Tests: SIMF.Api.Tests/AdminHallCapacityTests.cs,
+//        SIMF.Api.Tests/AdminHallGeofenceTests.cs,
+//        SIMF.Api.Tests/ArrivalGraceResolutionTests.cs,
+//        SIMF.Api.Tests/HallsExcelTests.cs
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -350,19 +353,26 @@ internal sealed class AdminHallService(
         Guid hallId, int newCapacity, CancellationToken cancellationToken)
     {
         var layout = await dbContext.HallSeatLayouts.AsNoTracking()
-            .Where(l => l.HallId == hallId)
-            .Select(l => new { l.RowLabels, l.SeatsPerRow, l.SeatCounts })
+            .Where(seatLayout => seatLayout.HallId == hallId)
+            .Select(seatLayout => new
+            {
+                seatLayout.RowLabels, seatLayout.SeatsPerRow, seatLayout.SeatCounts,
+            })
             .SingleOrDefaultAsync(cancellationToken);
         var layoutTotal = layout is null
             ? 0
             : SeatLayoutTotal(layout.RowLabels, layout.SeatsPerRow, layout.SeatCounts);
 
         var maxActivePerSession = await dbContext.SeatReservations.AsNoTracking()
-            .Where(r => r.ReleasedAt == null)
-            .Join(dbContext.Sessions.AsNoTracking().Where(s => s.HallId == hallId),
-                r => r.SessionId, s => s.Id, (r, s) => r.SessionId)
+            .Where(reservation => reservation.ReleasedAt == null)
+            .Join(
+                dbContext.Sessions.AsNoTracking()
+                    .Where(session => session.HallId == hallId),
+                reservation => reservation.SessionId,
+                session => session.Id,
+                (reservation, session) => reservation.SessionId)
             .GroupBy(sessionId => sessionId)
-            .Select(g => g.Count())
+            .Select(perSession => perSession.Count())
             .OrderByDescending(count => count)
             .FirstOrDefaultAsync(cancellationToken);
 

@@ -563,7 +563,6 @@
   <data name="Admin.Attendees.Column.CreatedAt" xml:space="preserve"><value>Registered</value></data>
   <data name="Admin.Attendees.Column.Actions" xml:space="preserve"><value>Actions</value></data>
   <data name="Admin.Attendees.UserType.Visitor" xml:space="preserve"><value>Visitor</value></data>
-  <data name="Admin.Attendees.UserType.Other" xml:space="preserve"><value>Other</value></data>
   <data name="Admin.Attendees.AccountState.Approved" xml:space="preserve"><value>Approved</value></data>
   <data name="Admin.Attendees.AccountState.Pending" xml:space="preserve"><value>Pending</value></data>
   <data name="Admin.Attendees.AccountState.Rejected" xml:space="preserve"><value>Rejected</value></data>
@@ -573,7 +572,6 @@
   <data name="Admin.Attendees.Filter.UserType" xml:space="preserve"><value>Kind</value></data>
   <data name="Admin.Attendees.Filter.UserTypeAll" xml:space="preserve"><value>All</value></data>
   <data name="Admin.Attendees.Filter.UserTypeVisitor" xml:space="preserve"><value>Visitors only</value></data>
-  <data name="Admin.Attendees.Filter.UserTypeOther" xml:space="preserve"><value>Others only</value></data>
   <data name="Admin.Attendees.Filter.AccountState" xml:space="preserve"><value>State</value></data>
   <data name="Admin.Attendees.Filter.AccountStateAll" xml:space="preserve"><value>Any</value></data>
   <data name="Admin.Attendees.Filter.AccountStateApproved" xml:space="preserve"><value>Approved</value></data>

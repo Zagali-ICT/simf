@@ -1,4 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿// Tests: SIMF.Api.Tests/AdminApprovalTests.cs,
+//        SIMF.Api.Tests/GateRevokedBadgeTests.cs (admission is written on the
+//        profile, so a refused or withdrawn holder is denied at a gate)
+using Microsoft.EntityFrameworkCore;
 using SIMF.Application.Auditing;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Application.Notifications;
@@ -176,9 +179,16 @@ internal sealed partial class AdminAccountService
         profile.StateChangedAt = now;
         profile.StateChangedByUserId = actorUserId;
 
-        await accounts.UpdateAsync(subject).EnsureSuccessAsync();
-        // UserProfile lives on App DB.
+        // Same cross-DB ordering as the approve path, for the same reason: no
+        // transaction spans the two databases, so the App-DB unit of work is
+        // persisted FIRST. A failure there leaves the account PendingApproval and
+        // the whole rejection retryable. The reverse order could leave a Rejected
+        // account whose profile still reads Approved, and the profile is the row a
+        // gate reads, so that window would admit someone who had just been
+        // refused. Written the safe way round rather than leaning on the
+        // pending-only guard in LoadPendingSubjectAsync to keep it shut.
         await appDbContext.SaveChangesAsync(cancellationToken);
+        await accounts.UpdateAsync(subject).EnsureSuccessAsync();
         await dbContext.SaveChangesAsync(cancellationToken);
 
         // Revoke every refresh token so the subject's next API

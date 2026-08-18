@@ -50,25 +50,53 @@ public sealed class ListSessionAttendanceEndpoint(ISessionAttendanceService serv
             await service.ListSessionAttendanceAsync(req, ct)), ct);
 }
 
-public sealed class GetSessionPresentAttendeesRoute { public Guid SessionId { get; set; } }
+/// <summary>The session id from the route plus the grid window from the body.
+/// Flattened rather than a nested <c>GridQuery</c> because FastEndpoints binds a
+/// route value and body fields onto one request model — the same shape
+/// <c>ListSessionSeatReservationsRoute</c> uses for the seat plan.</summary>
+public sealed class ListSessionPresentAttendeesRoute
+{
+    public Guid SessionId { get; set; }
+    public int Skip { get; set; }
+    public int Top { get; set; }
+    public string? Search { get; set; }
+    public string? Sort { get; set; }
+    public bool SortDescending { get; set; }
+    public Dictionary<string, string> Filters { get; set; } = new();
+}
 
 /// <summary>2026-07-18 (live per-session hall view, CP page 2e) — everyone
 /// currently present in the session's hall (open attendance rows) with their
-/// App-DB profile data + seat. Same <c>Attendance.View</c> gate as the dashboard.</summary>
-public sealed class GetSessionPresentAttendeesEndpoint(ISessionAttendanceService service)
-    : Endpoint<GetSessionPresentAttendeesRoute, ApiResult<IReadOnlyList<SessionPresentAttendee>>>
+/// App-DB profile data + seat, server-paged. Same <c>Attendance.View</c> gate as
+/// the dashboard.
+/// <para>Paged, and POSTed, for the same reason every other admin list is: an
+/// open attendance row stays open until a departure closes it, so an unbounded
+/// read of one hall's roster had no ceiling to grow against.</para></summary>
+public sealed class ListSessionPresentAttendeesEndpoint(ISessionAttendanceService service)
+    : Endpoint<ListSessionPresentAttendeesRoute, ApiResult<GridPage<SessionPresentAttendee>>>
 {
     public override void Configure()
     {
-        Get("/admin/sessions/{sessionId:guid}/present");
+        Post("/admin/sessions/{sessionId:guid}/present/list");
         Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Attendance.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
 
-    public override async Task HandleAsync(GetSessionPresentAttendeesRoute req, CancellationToken ct) =>
-        await Send.OkAsync(ApiResult<IReadOnlyList<SessionPresentAttendee>>.Ok(
-            await service.GetPresentAttendeesAsync(req.SessionId, ct)), ct);
+    public override async Task HandleAsync(
+        ListSessionPresentAttendeesRoute req, CancellationToken ct) =>
+        await Send.OkAsync(ApiResult<GridPage<SessionPresentAttendee>>.Ok(
+            await service.GetPresentAttendeesAsync(
+                req.SessionId,
+                new GridQuery
+                {
+                    Skip = req.Skip,
+                    Top = req.Top,
+                    Search = req.Search,
+                    Sort = req.Sort,
+                    SortDescending = req.SortDescending,
+                    Filters = req.Filters,
+                }, ct)), ct);
 }
 
 public sealed class GetAdminSessionSeatMapRoute { public Guid SessionId { get; set; } }

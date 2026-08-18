@@ -1,4 +1,4 @@
-﻿// Tests: SIMF.Api.Tests/VipRosterTests.cs
+﻿// Tests: SIMF.Api.Tests/VipRosterTests.cs, SIMF.Api.Tests/GridContractTests.cs
 using System.Linq.Expressions;
 using System.Text;
 using ClosedXML.Excel;
@@ -31,7 +31,8 @@ internal sealed class VipRosterService(
     private static readonly string[] TierNames = { "VVIP", "VIP" };
 
     /// <summary>
-    /// The grid contract for the on-screen roster at /admin/visitors/vip/export.
+    /// The grid contract for the on-screen roster at
+    /// /admin/visitors/vip/roster/list.
     ///
     /// <para>The email is NOT here, and cannot be: it lives on the Identity
     /// database, which this list is forbidden to join. It is resolved per page
@@ -128,9 +129,9 @@ internal sealed class VipRosterService(
 
         return profiles
             // VVIP before VIP, then alphabetical by English name.
-            .OrderBy(p => p.TierName == "VVIP" ? 0 : 1)
-            .ThenBy(p => p.Name)
-            .Select(p => ToRow(p, emails))
+            .OrderBy(profile => profile.TierName == "VVIP" ? 0 : 1)
+            .ThenBy(profile => profile.Name)
+            .Select(profile => ToRow(profile, emails))
             .ToList();
     }
 
@@ -147,7 +148,7 @@ internal sealed class VipRosterService(
 
         var emails = await EmailsAsync(page.Items, cancellationToken);
 
-        var rows = page.Items.Select(p => ToRow(p, emails)).ToList();
+        var rows = page.Items.Select(profile => ToRow(profile, emails)).ToList();
         return GridPage<VipRosterRow>.Of(rows, page.Total, page.Skip, page.Top);
     }
 
@@ -156,9 +157,9 @@ internal sealed class VipRosterService(
     private IQueryable<UserProfile> Roster() =>
         appDbContext.UserProfiles
             .AsNoTracking()
-            .Where(p => p.ProfileType != null
-                && p.ProfileType.IsForVisitor
-                && TierNames.Contains(p.ProfileType.Name));
+            .Where(profile => profile.ProfileType != null
+                && profile.ProfileType.IsForVisitor
+                && TierNames.Contains(profile.ProfileType.Name));
 
     /// <summary>The one Identity-side field the roster shows, for the guests who
     /// hold an account at all — the roster no longer excludes the ones who do not.
@@ -167,53 +168,58 @@ internal sealed class VipRosterService(
     private async Task<Dictionary<Guid, string?>> EmailsAsync(
         IReadOnlyList<RosterProfile> profiles, CancellationToken cancellationToken)
     {
-        var ids = profiles.Where(p => p.UserId != null).Select(p => p.UserId!.Value).ToList();
-        if (ids.Count == 0)
+        var accountIds = profiles
+            .Where(profile => profile.UserId != null)
+            .Select(profile => profile.UserId!.Value)
+            .ToList();
+        if (accountIds.Count == 0)
         {
             return new Dictionary<Guid, string?>();
         }
 
         return await dbContext.Users
             .AsNoTracking()
-            .Where(u => ids.Contains(u.Id))
-            .ToDictionaryAsync(u => u.Id, u => u.Email, cancellationToken);
+            .Where(user => accountIds.Contains(user.Id))
+            .ToDictionaryAsync(user => user.Id, user => user.Email, cancellationToken);
     }
 
-    private static VipRosterRow ToRow(RosterProfile p, Dictionary<Guid, string?> emails)
+    private static VipRosterRow ToRow(RosterProfile profile, Dictionary<Guid, string?> emails)
     {
         string? email = null;
-        if (p.UserId is { } accountId)
+        if (profile.UserId is { } accountId)
         {
             emails.TryGetValue(accountId, out email);
         }
 
         return new VipRosterRow(
-            p.ProfileId,
-            p.UserId,
+            profile.ProfileId,
+            profile.UserId,
             // The profile name, which is what the desk registered the
             // guest as and all there is for one who never signed up.
             // Same order the gate resolver uses: the attendee record
             // wins, because DisplayName is the greeting field only.
-            p.Name,
-            p.Name,
-            p.NameArabic,
-            p.Honorific,
-            p.JobTitle,
-            p.JobTitleArabic,
-            p.MawjId,
-            p.PreferredLanguage,
-            p.TierName,
-            p.TierNameArabic,
+            profile.Name,
+            profile.Name,
+            profile.NameArabic,
+            profile.Honorific,
+            profile.JobTitle,
+            profile.JobTitleArabic,
+            profile.MawjId,
+            profile.PreferredLanguage,
+            profile.TierName,
+            profile.TierNameArabic,
             email ?? string.Empty,
-            string.IsNullOrWhiteSpace(p.SaudiMobile) ? p.InternationalMobile : p.SaudiMobile,
-            p.ReferenceNumber,
+            string.IsNullOrWhiteSpace(profile.SaudiMobile)
+                ? profile.InternationalMobile
+                : profile.SaudiMobile,
+            profile.ReferenceNumber,
             // Admission is the profile's own state. Reading it off the
             // account used to render an approved accountless guest as
             // "PendingApproval", telling the PR desk a VVIP who was
             // cleared to attend had not been.
-            p.AdmissionState.ToString(),
-            p.HasVipPhoto,
-            p.CreatedAt);
+            profile.AdmissionState.ToString(),
+            profile.HasVipPhoto,
+            profile.CreatedAt);
     }
 
     public async Task<VipRosterFile> ExportAsync(
@@ -236,9 +242,9 @@ internal sealed class VipRosterService(
     {
         var builder = new StringBuilder();
         builder.AppendLine(string.Join(",", Headers.Select(CsvField)));
-        foreach (var r in rows)
+        foreach (var row in rows)
         {
-            builder.AppendLine(string.Join(",", Cells(r).Select(CsvField)));
+            builder.AppendLine(string.Join(",", Cells(row).Select(CsvField)));
         }
         // UTF-8 BOM so Excel opens the Arabic columns in the right encoding.
         return Encoding.UTF8.GetPreamble()
@@ -250,20 +256,20 @@ internal sealed class VipRosterService(
     {
         using var workbook = new XLWorkbook();
         var sheet = workbook.Worksheets.Add("VIP welcome roster");
-        for (var c = 0; c < Headers.Length; c++)
+        for (var column = 0; column < Headers.Length; column++)
         {
-            sheet.Cell(1, c + 1).Value = Headers[c];
-            sheet.Cell(1, c + 1).Style.Font.Bold = true;
+            sheet.Cell(1, column + 1).Value = Headers[column];
+            sheet.Cell(1, column + 1).Style.Font.Bold = true;
         }
-        var row = 2;
-        foreach (var r in rows)
+        var rowNumber = 2;
+        foreach (var row in rows)
         {
-            var cells = Cells(r);
-            for (var c = 0; c < cells.Length; c++)
+            var cells = Cells(row);
+            for (var column = 0; column < cells.Length; column++)
             {
-                sheet.Cell(row, c + 1).Value = cells[c];
+                sheet.Cell(rowNumber, column + 1).Value = cells[column];
             }
-            row++;
+            rowNumber++;
         }
         sheet.Columns().AdjustToContents();
         using var stream = new MemoryStream();
@@ -277,23 +283,23 @@ internal sealed class VipRosterService(
     /// VIP whose name / job-title / email starts with <c>= + - @</c> can't inject
     /// a formula into the file the technical teams open — the same guard the
     /// generic grid exporter applies.</summary>
-    private static string[] Cells(VipRosterRow r) =>
+    private static string[] Cells(VipRosterRow row) =>
     [
-        ClosedXmlUserExcelService.SanitiseForExcel(r.MawjId),
-        ClosedXmlUserExcelService.SanitiseForExcel(r.Honorific),
-        ClosedXmlUserExcelService.SanitiseForExcel(r.TierName),
-        ClosedXmlUserExcelService.SanitiseForExcel(r.EnglishName),
-        ClosedXmlUserExcelService.SanitiseForExcel(r.ArabicName),
-        ClosedXmlUserExcelService.SanitiseForExcel(r.DisplayName),
-        ClosedXmlUserExcelService.SanitiseForExcel(r.JobTitle),
-        ClosedXmlUserExcelService.SanitiseForExcel(r.JobTitleArabic),
-        ClosedXmlUserExcelService.SanitiseForExcel(r.PreferredLanguage),
-        ClosedXmlUserExcelService.SanitiseForExcel(r.Email),
-        ClosedXmlUserExcelService.SanitiseForExcel(r.Mobile),
-        ClosedXmlUserExcelService.SanitiseForExcel(r.ReferenceNumber),
-        ClosedXmlUserExcelService.SanitiseForExcel(r.AccountState),
-        r.HasVipPhoto ? "Yes" : "No",
-        r.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
+        ClosedXmlUserExcelService.SanitiseForExcel(row.MawjId),
+        ClosedXmlUserExcelService.SanitiseForExcel(row.Honorific),
+        ClosedXmlUserExcelService.SanitiseForExcel(row.TierName),
+        ClosedXmlUserExcelService.SanitiseForExcel(row.EnglishName),
+        ClosedXmlUserExcelService.SanitiseForExcel(row.ArabicName),
+        ClosedXmlUserExcelService.SanitiseForExcel(row.DisplayName),
+        ClosedXmlUserExcelService.SanitiseForExcel(row.JobTitle),
+        ClosedXmlUserExcelService.SanitiseForExcel(row.JobTitleArabic),
+        ClosedXmlUserExcelService.SanitiseForExcel(row.PreferredLanguage),
+        ClosedXmlUserExcelService.SanitiseForExcel(row.Email),
+        ClosedXmlUserExcelService.SanitiseForExcel(row.Mobile),
+        ClosedXmlUserExcelService.SanitiseForExcel(row.ReferenceNumber),
+        ClosedXmlUserExcelService.SanitiseForExcel(row.AccountState),
+        row.HasVipPhoto ? "Yes" : "No",
+        row.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
     ];
 
     /// <summary>RFC-4180 CSV field quoting — wrap in quotes and double any

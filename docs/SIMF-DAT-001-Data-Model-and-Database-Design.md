@@ -4,7 +4,7 @@
 |-------|-------|
 | Document ID | SIMF-DAT-001 |
 | Title | Data Model and Database Design |
-| Version | 1.4 |
+| Version | 1.5 |
 | Status | Approved |
 | Classification | Confidential — to be confirmed by the owner |
 | Prepared by | Engineering & Architecture Team, STARTIME |
@@ -22,6 +22,7 @@
 | 1.2 | 2026-05-21 | Engineering & Architecture Team | Increment-2 build amendment (see Amendment B): records how the §5.1 Identity & Access entities map onto ASP.NET Core Identity. |
 | 1.3 | 2026-07-19 | Apexium | Corrected the Booking lifecycle to match the built code (reservation-only, auto-confirm): attendee seat reservations are confirmed immediately (Status `Approved`) with no Control Panel approval, held provisionally until gate check-in (`CheckedIn`) and released by the pre-start sweep (`Released`) if not checked in; the `Pending` / `Rejected` approval queue is retained but dormant and always empty. Updated §5.4, §8 and Amendment A.4. |
 | 1.4 | 2026-08-16 | Apexium | Profile-owned admission amendment (see Amendment C): the attendee record, not the account, is the primary registration entity and owns admission; identity documents become a one-to-many child collection; the two mobile attributes collapse to one canonical number; the badge order gains a name and per-profile-type child lines; the yearly edition becomes an entity. Section 8 is rewritten around the constraint posture the schema actually carries (CHECK constraints, filtered unique indexes, blind indexes over encrypted columns). Corrected four claims that were never built or no longer true: the `GateScan` INSTEAD-OF trigger, the persisted statistics snapshot, the shared-database sentence in §5.3.1, and the `CheckedIn` / `Released` booking states, which are not members of the enum at all. A second verification pass over the generated migrations tested five more: `GateScan`'s sixth index was declared through the unnamed `HasIndex` overload and never built, which was a defect in the EF configuration and has been fixed rather than documented, so the schema now carries all six (§5.3.2, §A.3); `Notification` is built in `SIMF_Identity`, not `SIMF_App`, and `NotificationDelivery` was never built (§3, §5.9, §A.1); `SubTopic` was never built and a session is tagged with **many** themes rather than belonging to one (§5.4, §7); `Session.IsLive` and `Session.BroadcastMode` do not exist (§5.4); and the bilingual pair convention this document writes as `XAr` / `XEn` is built as `X` / `XArabic` on every live table, that spelling surviving only on the `Archive*` tables and `EmailTemplates` (§C.0). The §8 filtered-index and CHECK-constraint counts were re-counted against the regenerated migrations, and the three per-kind identity-number columns and their three digests, which §8.3 and §C.2 still described as a surviving backstop, have been dropped. Updated §4, §5.1–§5.5, §5.8, §5.9, §5.11, §5.12, §7, §8 and Amendments A.1, A.3, A.4 and B. §5.6, §5.7 and §5.10 were not re-verified — see Amendment C.7. |
+| 1.5 | 2026-08-18 | Apexium | Verified §5.6, §5.7 and §5.10 against the built schema, the three sections Amendment C.7 had excluded (see Amendment C.10). Four entities they described were never built: `LiveSessionState` (the live state is columns on `Session`), `Comment` and with it the two-stage comment moderation, `MatchSuggestion` (suggestions are ranked per request and never stored, which closes OI-2), and `AiSetting` (AI configuration is `AiPrompt` plus `AiPromptHistory`). `MeetingRequest` is built as two entities, a speaker request against a `Speaker` and a delegation request against a `Country`, neither linking a requester user to a target user, and the attendee-to-attendee `Connection` was missing from §5.7 entirely. Corrected six attribute names, among them `SessionQuestion.Text` to `QuestionText`, the non-existent `ModeratedByUserId`, `FaqGroup.TitleAr` / `TitleEn` to `Name` / `NameArabic`, and the non-existent `SessionSummary.GeneratedAt`; corrected `Interest` and `UserInterest` to their own lookup table and the profile-keyed join; and restated the §5.6 question gate, which applies only once a session is live and only where the hall carries a geofence. §7 was redrawn to stop showing the unbuilt entities. What held is recorded too: `SessionQuestion`, `Interest`, `FaqGroup` / `FaqEntry` and `SessionSummary` are built as described, the FAQ half of §5.10 being accurate as written. Updated §5.6, §5.7, §5.10, §7, §9 and Amendments C.0 and C.7. Also corrected §5.12's `Asset` row, whose four attributes named no built column: it is `StoredFiles`, there is no `StoragePath` (the one physical path is `StorageKey`, resolved against `FileStorage:RootPath`), and the three crypto stamps including `KekVersion` are documented for the first time. |
 
 ---
 
@@ -309,25 +310,83 @@ additive boolean columns, no new entity.
 
 | Entity | Key attributes | Relationships |
 |--------|----------------|---------------|
-| `LiveSessionState` | `IsBroadcasting`, `StartedAt`, `EndedAt`, `Language` | belongs to `Session` |
-| `SessionQuestion` | `Recipient` (Speaker / Host), `Text`, `Status` (Pending / Approved / Hidden), `Phase` (Pre / Live), `IsPushed`, `CreatedAt`, `ModeratedByUserId` | belongs to `Session`, asked-by `User` |
-| `Comment` | `Text`, `AiResult` (Passed / Flagged), `AiCheckedAt`, `AdminDecision` (Pending / Approved / Discarded), `DecidedByUserId`, `CreatedAt` | belongs to `Session`, author `User` |
+| `SessionQuestion` | `QuestionText`, `Recipient` (Speaker / Host), `Phase` (Pre / Live), `Status` (Pending / Approved / Hidden / Answered), `StatusBeforeHidden`, `Order`, `IsPushed` + `PushedAt`, `AiFilterVerdict`, the escalation trio `AssignedToRole` / `EscalatedByUserId` / `EscalatedAt`, `CreatedAt` | belongs to `Session`; holds a **logical** `SubmittedByUserId` into `SIMF_Identity`. Built as `SessionQuestions` |
+| `SessionModerator` | `AssignedByUserId`, `AssignedAt` | grants one account moderator authority over one `Session`'s question queue, keyed on the `(SessionId, UserId)` pair. Built as `SessionModerators` |
+| `LiveSessionState` | `IsBroadcasting`, `StartedAt`, `EndedAt`, `Language` | **PROPOSED, NOT BUILT** - no such table exists |
+| `Comment` | `Text`, `AiResult` (Passed / Flagged), `AiCheckedAt`, `AdminDecision` (Pending / Approved / Discarded), `DecidedByUserId`, `CreatedAt` | **PROPOSED, NOT BUILT** - no such table exists |
 
-A `Comment` always carries both an AI result and an admin decision — the
-two-stage moderation from decision D5. A session's questions open only after the
-asking user has a `HallAttendance` enter record for that session.
+**`LiveSessionState` was never built.** A session carries no separate broadcast
+row: what a live screen needs is columns on `Session` itself - `LiveStreamFileId`
+and `LiveSignLanguageFileId` for the two feeds, and `LiveCaptions` / `LiveNotice`
+with their Arabic twins for what it shows. There is no `IsBroadcasting` flag, no
+broadcast start and end pair, and **no status value meaning live either**:
+`SessionStatus` runs Scheduled, Held, Recorded, Published, so whether a session is
+live right now is derived from its own `Start` and `End` against the clock and is
+stored nowhere. `Language` is likewise a `Session` column rather than a property
+of a broadcast. The entity is kept in the table above, marked, because a reader
+tracing the design note needs to know it was checked.
+
+**`Comment` was never built either**, and neither was the two-stage moderation
+that depended on it: no table, entity or column anywhere pairs an AI result with
+an admin decision over a session comment. The only comment the schema holds is the
+free-text `Comment` on a feedback rating response, which carries neither. The
+two-stage shape does exist, but on the question queue rather than on a comment -
+`SessionQuestion.AiFilterVerdict` records the AI pass and `Status` records the
+Scientific Committee's decision. The AI verdict is advisory: it is a free-text
+bucket, it is written only on a `Pre` question, and it hides nothing by itself.
+
+Question submission is gated on hall arrival, but narrowly, and the earlier
+unqualified rule here was wrong. Before the session starts any approved account
+may ask. From `Start` the gate applies **only when the session's hall carries a
+geofence**, and it is then a `HallAttendance` row for that session - arrived at
+any point, not currently inside, so a visitor who stepped out keeps the right to
+ask. A hall with no arrival mechanism cannot verify presence, so a remote question
+is accepted rather than refused. The window shuts a short grace after `End`.
+Attendance is keyed by the attendee profile, so the signed-in account is
+translated to its profile before the check.
 
 ### 5.7 Networking
 
 | Entity | Key attributes | Relationships |
 |--------|----------------|---------------|
-| `Interest` | backed by `Category` of kind Interest | linked to users via `UserInterest` |
-| `UserInterest` | — | links `User` and an interest `Category` |
-| `MeetingRequest` | `Topic`, `Status` (Pending / Approved / Declined), `ApprovedByUserId` | links a requester `User` and a target `User` |
-| `MatchSuggestion` | `Score`, `Reason` | links a `User` to a suggested `User` |
+| `Interest` | `Name`, `NameArabic`, `DisplayOrder` | its own lookup table (§5.12) and not a `Category` row; unique on `Name`; linked to attendees through `UserProfileInterest`. Built as `Interests` |
+| `UserProfileInterest` | — | links `AttendeeProfile` (§5.2) and `Interest`, keyed on the pair, cascading from both sides. Built as `UserProfileInterests` |
+| `Connection` | `State` (Pending / Accepted / Declined), `RespondedAt`, the ordered pair `PairLowUserId` / `PairHighUserId` | the attendee-to-attendee link: holds **logical** `RequesterUserId` and `TargetUserId` into `SIMF_Identity`, a not-self CHECK, and a filtered unique index over the ordered pair. Built as `Connections` |
+| `SpeakerMeetingRequest` | `Subject`, `Status`, the slot / hall / meeting-table assignment, `SpeakerDecisionAt`, `RespondedByUserId`, `CheckedInAt` | a visitor asking a `Speaker` (§5.4) for a meeting. Built as `SpeakerMeetingRequests` |
+| `DelegationMeetingRequest` | `Subject`, `AttendeeCount`, `Status`, the slot / hall / meeting-table assignment, `ConfirmedByUserId`, `RespondedByUserId`, `CheckedInAt` | one `Country` delegation asking another, with a not-self CHECK on the pair. Built as `DelegationMeetingRequests` |
+| `MeetingRequest` | `Topic`, `Status` (Pending / Approved / Declined), `ApprovedByUserId` | **not built as one entity** - see below |
+| `MatchSuggestion` | `Score`, `Reason` | **PROPOSED, NOT BUILT** - no such table exists |
 
-A `MatchSuggestion` with a score of 80 or more triggers a session
-recommendation and a push notification (SIMF-CON-001 section 7.6).
+**There is no single `MeetingRequest` table**, and the concept survives as two
+because the two ask for different things: a speaker request targets a `Speaker`
+row, a delegation request targets a `Country`, and neither links a requester
+`User` to a target `User` as this section had it. Both carry `Subject` rather than
+`Topic`, and both record the decision as `RespondedByUserId`, the delegation side
+adding `ConfirmedByUserId` for the second half of its double opt-in, rather than
+as `ApprovedByUserId`. `MeetingRequestStatus` has six values, not three - Pending,
+Accepted, Rejected, Cancelled, AwaitingSpeaker and Done - and the accepted value
+is `Accepted`, not `Approved`. The scheduled meeting itself is a third entity,
+`BusinessMeeting`, held at a `MeetingTable` in a hall.
+
+The attendee-to-attendee request this section was reaching for is `Connection`,
+which **was** built: one attendee asks, the other accepts or declines, and the
+ordered low/high pair carries the uniqueness so the two directions cannot both go
+live at once.
+
+**`MatchSuggestion` was never built, and OI-2 is answered by that**: suggestions
+are ranked on demand and never stored. The "Meet People Like You" ranker scores
+candidates by the overlap of their interest sets, with a small same-profile-type
+bonus to break ties between equal overlaps, and returns them per request. No
+`Score` or `Reason` column exists and nothing persists a suggestion.
+
+The 80 per cent rule **is** built, on that computed score rather than on a stored
+row, and it is a fraction: a match is strong at 0.80 or more once the score is
+clamped to the range 0 to 1. What it triggers is a push notification of kind
+`MatchRecommended`, sent once per pair by a batched background worker. It does not
+trigger a session recommendation - recommendations are over people only, and no
+session surface reads the match score. SIMF-CON-001 section 7.6 names the session
+recommendation as well; this document no longer asserts that any built row or
+column backs it.
 
 ### 5.8 Content & Media
 
@@ -391,13 +450,33 @@ because the design argument for a delivery ledger stands.
 
 | Entity | Key attributes | Relationships |
 |--------|----------------|---------------|
-| `FaqGroup` | `TitleAr`, `TitleEn`, `Order` | has many `FaqEntry` |
-| `FaqEntry` | `QuestionAr`, `QuestionEn`, `AnswerAr`, `AnswerEn` | belongs to `FaqGroup` |
-| `AiSetting` | `Key`, `Value` | — |
-| `SessionSummary` | `KeyPoints`, `Recommendations`, `GeneratedAt` | belongs to `Session` |
+| `FaqGroup` | `Name`, `NameArabic`, `DisplayOrder` | has many `FaqEntry`. Built as `FaqGroups` |
+| `FaqEntry` | `Question`, `QuestionArabic`, `Answer`, `AnswerArabic`, `DisplayOrder` | belongs to `FaqGroup` and cascades with it. Built as `FaqEntries` |
+| `AiPrompt` | `Key`, `Feature`, `Provider`, `Model`, `SystemPrompt`, `UserPromptTemplate`, `Temperature`, `MaxOutputTokens`, `Version` | the editable per-feature prompt; has many `AiPromptHistory`. Built as `AiPrompts` |
+| `AiPromptHistory` | `Version`, the captured prompt body and generation settings, `ContentHash`, `CapturedAt` | one immutable snapshot per edit of an `AiPrompt`. Built as `AiPromptHistory` |
+| `AiInvocation` | `PromptKey`, `Feature`, `Provider`, `Model`, `InputJson`, `OutputText`, `TokensInput` / `TokensOutput`, `LatencyMs`, `ErrorCode`, `CallerKind` | the call ledger; holds a **logical** `CallerUserId` into `SIMF_Identity`. Built as `AiInvocations` |
+| `AiChatMessage` | `Role` (user / assistant), `Content`, `CreatedAt` | one turn of the assistant transcript; holds a **logical** `UserId`. Built as `AiChatMessages` |
+| `SessionSummary` | `KeyPoints`, `Recommendations`, `Speakers`, `FullText` (each with an Arabic twin), `AiModel`, `AiDraftGeneratedAt`, and the review chain `ReviewSubmittedAt` / `ApprovedAt` / `PublishedAt` | one row per `Session`, enforced by a unique index; references `Asset` (summary video). Built as `SessionSummaries` |
+| `AiSetting` | `Key`, `Value` | **PROPOSED, NOT BUILT** - no such table exists |
 
 `FaqGroup` and `FaqEntry` are the two levels of the cognitive-AI knowledge from
-decision D5 — the group is level one, the entry is level two.
+decision D5 - the group is level one, the entry is level two - and that pair is
+built as described, the entry carrying the group key and cascading with it. Their
+attributes are a name and a question/answer pair with Arabic twins; the group
+holds a **name**, not a title.
+
+**`AiSetting` was never built.** AI configuration is not a key/value bag: it is
+`AiPrompt`, one editable row per feature carrying its own provider, model, system
+prompt, user-prompt template and generation limits, snapshotted into
+`AiPromptHistory` on every edit and CHECK-constrained on temperature and output
+size. The generic key/value table this entity was reaching for is `SystemSettings`
+(§5.12), which is platform configuration and holds no AI-specific meaning.
+
+`SessionSummary` has **no** `GeneratedAt`. The AI draft's timestamp is
+`AiDraftGeneratedAt`, and it is one step in a review chain the schema enforces
+itself: a summary is submitted for review, approved, then published, with a CHECK
+that approval cannot precede submission and another that a published row carries
+both its approver and its publisher.
 
 ### 5.11 Analytics & Statistics
 
@@ -429,7 +508,7 @@ attendance-view permission, the coordinates being sensitive personal data.
 | `ProfileType` | `Name`, `NameArabic`, `PageColor`, `IsForVisitor`, `IsVipTier`, `IsAppRegisterable`, `ShowInPartnerDirectory`, `MobileAppRole`, `Code` (small stable number the offline badge carries in place of the id, assigned once and never reused) | the audience-tier / partner-kind lookup; referenced by `AttendeeProfile` (§5.2), `BadgeBatchItem` (§5.3) and the gate allow-list (§5.3). Display and business-rule metadata only, **never** a source of permissions |
 | `ContentBlock` | `Key`, `ValueAr`, `ValueEn` | the dynamic content — titles, texts, the welcome message, banners |
 | `RegistrationControl` | `IsOpen`, `AutoCloseAt` | a single configuration row |
-| `Asset` | `FileName`, `ContentType`, `StoragePath`, `UploadedAt` | referenced wherever a file is stored — photos, logos, attachments, media |
+| `Asset` | `Service`, `SensitivityTier`, `FileType`, `SourceType`, `StorageKey` or `ExternalUrl`, `OriginalFileName`, `ContentType`, `SizeBytes`, `Sha256`, the crypto stamps `IsEncrypted` / `CipherFormatVersion` / `KekVersion`, the retention pair `RetainUntil` / `SecureDestroyedAt`, and the owner pair `OwnerEntityType` / `OwnerEntityId` | the one file table - referenced wherever a file is stored, by photos, logos, attachments and media. Built as `StoredFiles`; see below |
 | `OperationLog` | `Action`, `EntityType`, `EntityId`, `Timestamp`, `Details` | belongs to the acting `User` |
 
 Every dynamic, client-maintained list is **data rather than an enum**, which is
@@ -441,6 +520,25 @@ table. Each carries the bilingual name, colour and ordering the shared table wou
 have carried, and each can carry the columns only its own list needs, which a
 single shared table cannot. A reader looking for a `Category` table will not find
 one; the concept survives, the single table does not.
+
+`Asset` is built as **`StoredFiles`**, and its attributes are not the four this
+table originally listed. There is no `StoragePath`: the only physical path in
+either database is `StorageKey`, a service-relative key resolved against the
+`FileStorage:RootPath` setting, so moving the file tree to another server is a
+configuration change and not a data migration. `UploadedAt` is the inherited
+`CreatedAt`. A row describes **either** an upload or an external link, which is
+what `SourceType` selects between, so `StorageKey`, `ContentType`, `SizeBytes`
+and `Sha256` are all nullable and are all null for a link.
+
+Three columns carry the encryption state, and they are not interchangeable.
+`IsEncrypted` says whether the bytes on disk are sealed at all;
+`CipherFormatVersion` says which envelope format seals them; and **`KekVersion`
+says which key-encryption key wrapped that envelope's data key**, stamped from
+the cipher at write time rather than read back from configuration. Only the
+third makes a key rotation inventoriable - it is indexed with the filter
+`[IsEncrypted] = 1`, so "which files are still on the old key" is a `GROUP BY`
+rather than a scan of every blob header. A restore re-seals the bytes under
+whatever key is active at the time and moves the stamp with them.
 
 ## 6. Bilingual content storage
 
@@ -485,23 +583,21 @@ erDiagram
     Speaker ||--o{ SessionSpeaker : appears
     Session ||--o{ Booking : booked
     Hall ||--o| HallSeatLayout : "seated by"
-    Session ||--o| LiveSessionState : has
     Session ||--o{ SessionQuestion : receives
-    Session ||--o{ Comment : receives
     Session ||--o| SessionSummary : summarised
 
     Exhibitor ||--o{ Booth : runs
     Exhibitor ||--o{ ExhibitorMembership : staffed_by
     User ||--o{ ExhibitorMembership : staffs
     Hall ||--o{ Booth : holds
-    User ||--o{ MeetingRequest : requests
-    User ||--o{ UserInterest : picks
+    Speaker ||--o{ SpeakerMeetingRequest : "asked for a meeting"
+    AttendeeProfile ||--o{ UserProfileInterest : picks
 
     Edition ||--o{ EditionStat : reports
     Edition ||--o{ EditionSpeaker : lists
     User ||--o{ Notification : receives
     FaqGroup ||--o{ FaqEntry : contains
-    Interest ||--o{ UserInterest : typed
+    Interest ||--o{ UserProfileInterest : typed
 ```
 
 ## 8. Indexing and integrity
@@ -628,7 +724,7 @@ where its siblings restrict.
 | ID | Item | Needed for |
 |----|------|-----------|
 | OI-1 | Confirm the `MediaItem` and `NewsItem` field sets, and the statistics metric list, with the client (decision D6) | Sections 5.8, 5.11 |
-| OI-2 | Confirm whether `MatchSuggestion` is stored or computed on demand | Section 5.7 |
+| OI-2 | **Closed 2026-08-18 (§C.10).** Computed on demand: `MatchSuggestion` was never built as a table and the ranker scores candidates per request | Section 5.7 |
 | OI-3 | Confirm the retention rule for `GpsPresence` data and any privacy constraint on it | Section 5.11 |
 | OI-4 | Confirm whether SQL Server 2022 Enterprise features (partitioning) are available, once D8 closes | Section 8 |
 | OI-5 | Confirm document classification with the owner | Control block |
@@ -742,10 +838,11 @@ Identity. This records how the §5.1 entities map onto the implementation.
 
 The profile / edition / badge programme (D-877 through D-881, with the as-built
 position recorded in D-895) changes facts this model asserted, not only the names
-it used for them. The changes below are authoritative and amend §3, §4, §5.1–§5.5,
-§5.8, §5.9, §5.11, §5.12, §7, §8 and Amendments A.1, A.3, A.4 and B. §C.7 records
-which sections were **not** re-verified, and §C.8 the five further statements a
-second pass over the generated migrations tested against the built schema.
+it used for them. The changes below are authoritative and amend §3, §4, §5.1 to
+§5.12, §7, §8, §9 and Amendments A.1, A.3, A.4 and B. §C.7 records which sections were
+**not** re-verified, §C.8 the five further statements a second pass over the
+generated migrations tested against the built schema, and §C.10 a third pass
+(2026-08-18) that verified §5.6, §5.7 and §5.10 - the three §C.7 had excluded.
 
 ### C.0 Logical name to built name — extends Amendment B
 Amendment B recorded how §5.1 is *realised*; this document keeps logical names
@@ -775,7 +872,8 @@ The convention in §6 — paired columns, not a translations table — is unchan
 and correct either way; only the spelling varies. So an `XAr` / `XEn` name in a
 section below is a **logical** attribute name and not evidence of a built column
 unless the entity is one of those six. Sections corrected against the migrations
-(§5.2, §5.3, §5.4, §5.9) use the built spelling directly.
+(§5.2, §5.3, §5.4, §5.6, §5.7, §5.9, §5.10) use the built spelling directly - the
+last three of those were corrected on 2026-08-18, see §C.10.
 
 ### C.1 The attendee record is primary and owns admission — amends §5.1, §5.2, §7
 The registration entity is the **attendee profile**, and the sign-in account is an
@@ -864,17 +962,20 @@ has **no** INSTEAD-OF trigger and never had one, and `StatisticSnapshot` was nev
 built.
 
 ### C.7 Sections not re-verified in this revision
-This pass verified §4, §5.1, §5.2, §5.3, §5.4, §5.8, §5.9, §5.11, §7, §8 and
-Amendments A and B against the as-built EF configuration and the generated
+The 2026-08-16 pass verified §4, §5.1, §5.2, §5.3, §5.4, §5.8, §5.9, §5.11, §7, §8
+and Amendments A and B against the as-built EF configuration and the generated
 migrations. §5.5 and §5.12 were corrected only where the sections above depend on
 them — the exhibitor and booth rows, the shape of the dynamic-category lookups,
 and the `ProfileType` row — and were not otherwise re-verified. §5.6, §5.7 and
-§5.10 were **not** re-verified at all.
+§5.10 were not re-verified at all in that pass; **they have since been verified
+against the built schema on 2026-08-18 and are no longer on this list - see
+§C.10.**
 
-Those sections are still the approved logical model and remain in force as design
-intent, but a reader should not treat an entity or attribute name in them as proof
-of a built column. This limit is recorded rather than left implicit, so the
-document says which of its parts have been checked recently and which have not; a
+**§5.5 and §5.12 remain the only sections that have not been fully re-verified.**
+They are still the approved logical model and remain in force as design intent,
+but a reader should not treat an entity or attribute name in them as proof of a
+built column. This limit is recorded rather than left implicit, so the document
+says which of its parts have been checked recently and which have not; a
 controlled document that hides which half is authoritative is worse than one that
 is openly out of date in a named place.
 
@@ -929,6 +1030,82 @@ change needs a new, named lift argued on its own; existing enums stay closed
 against rename and reorder, with additive values still permitted — subject to the
 CHECK-constraint consequence noted in §8.4.
 
----
+### C.10 Third verification pass: the three sections C.7 excluded (2026-08-18)
+§C.7 recorded that §5.6, §5.7 and §5.10 had never been checked against the built
+schema. They have now been read column by column against the two generated
+`InitialCreate` migrations, and then against the domain entities for intent. This
+entry closes that gap: those three sections come off §C.7's list, and what follows
+is what the pass changed and what it confirmed. It amends §5.6, §5.7, §5.10, §7
+and §9, and extends §C.0.
 
-End of document.
+**Four entities in those sections were never built.** Each is kept in its table,
+marked, on the §5.9 `NotificationDelivery` precedent, because a reader tracing an
+old design note needs to know it was checked rather than overlooked.
+
+- **`LiveSessionState`** (§5.6). No table, no entity, and no `IsBroadcasting`
+  anywhere in the solution. What a live screen needs is columns on `Session` -
+  `LiveStreamFileId`, `LiveSignLanguageFileId`, and `LiveCaptions` / `LiveNotice`
+  with their Arabic twins. There is no broadcast start and end pair, and no
+  `SessionStatus` value means live: the four are Scheduled, Held, Recorded and
+  Published, so liveness is derived from `Start` and `End` and never stored.
+  `Language` is a `Session` column.
+- **`Comment`** (§5.6), and with it the two-stage AI-then-admin moderation this
+  document asserted for it. Nothing pairs an `AiResult` with an `AdminDecision`
+  over a session comment; the only comment in the schema is the free-text one on
+  a feedback rating response. The two-stage shape exists on `SessionQuestion`
+  instead, where `AiFilterVerdict` is advisory and `Status` is the decision.
+- **`MatchSuggestion`** (§5.7). No `Score` and no `Reason` column exists.
+  Suggestions are ranked in memory per request and never persisted, which
+  **closes OI-2**: computed on demand, not stored. The 80 per cent rule is real
+  but sits on that computed score as a fraction (0.80 after clamping), and what
+  it fires is a push notification, not a session recommendation.
+- **`AiSetting`** (§5.10). AI configuration is not a key/value bag. It is
+  `AiPrompt` plus `AiPromptHistory`, with `AiInvocation` as the call ledger and
+  `AiChatMessage` as the assistant transcript; the generic key/value table is
+  `SystemSettings` in §5.12, which carries no AI meaning.
+
+**`MeetingRequest` is built as two entities, not one** (§5.7), on the §5.12
+"the concept survives, the single table does not" pattern. A speaker request
+targets a `Speaker` row and a delegation request targets a `Country`; neither
+links a requester `User` to a target `User`. `Topic` is `Subject`,
+`ApprovedByUserId` is `RespondedByUserId`, and the status enum has six values with
+`Accepted` where this document wrote `Approved`. The attendee-to-attendee link the
+section was reaching for is `Connection`, which was built and was missing from the
+section entirely.
+
+**The attribute-level errors were these.** `SessionQuestion.Text` is `QuestionText` and
+its `ModeratedByUserId` does not exist at all (moderation is `Status`,
+`StatusBeforeHidden`, `AiFilterVerdict` and the escalation trio);
+`QuestionStatus` has a fourth value, `Answered`; `FaqGroup.TitleAr` / `TitleEn`
+are `Name` / `NameArabic`; and `SessionSummary.GeneratedAt` does not exist, the
+draft timestamp being `AiDraftGeneratedAt` inside a review chain the schema
+CHECK-constrains.
+
+**Two relationship claims were wrong.** `Interest` is its own lookup table, not a
+`Category` of kind Interest, and `UserInterest` is `UserProfileInterests`, which
+links the **attendee profile** to it rather than the account to a `Category`. The
+submitter of a question is likewise a logical `SubmittedByUserId` into
+`SIMF_Identity`, not a relationship - §A.1 forbids the FK.
+
+**The §5.6 arrival gate was over-stated.** "A session's questions open only after
+the asking user has a `HallAttendance` enter record" is true of neither end of the
+window: before the session starts any approved account may ask, and from the start
+the gate applies only when the hall carries a geofence, a hall without one
+accepting remote questions because presence cannot be verified there. §5.6 now
+states the built rule.
+
+**§7 follows.** The ERD drew `LiveSessionState`, `Comment` and `MeetingRequest`,
+so those three lines are removed or relabelled and the interest join is redrawn
+from `AttendeeProfile` to `UserProfileInterest`. Leaving the diagram asserting
+entities the section beside it calls unbuilt would have been the same defect in a
+second place.
+
+**What held, which is a result and not a non-event.** `SessionQuestion` itself is
+built, and its `Recipient` (Speaker / Host), `Phase` (Pre / Live), `IsPushed` and
+`CreatedAt` are exactly as described - `IsPushed` even carrying a CHECK that pairs
+it with `PushedAt`. `Interest` and the interest join exist. `FaqGroup` and
+`FaqEntry` are built as the two-level structure decision D5 described, the entry
+cascading with its group. `SessionSummary` is built, belongs to `Session`, and its
+`KeyPoints` and `Recommendations` are real columns; the unique index on its
+`SessionId` makes the ERD's one-to-one correct. Of the three sections, §5.10's
+FAQ half was accurate as written; nothing else in the three passed unchanged.

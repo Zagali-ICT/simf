@@ -203,14 +203,19 @@ internal sealed class SessionSummaryConfiguration
         builder.Property(s => s.AiDraftFullTextArabic).HasMaxLength(8000);
 
         // 1:1 — exactly one summary per session, cascade with the session.
+        // This unique index is the only one the reads need: every reader
+        // (the app read, the host read, the admin desk and its correlated
+        // per-session subquery) names SessionId first, so the planner seeks
+        // here and stops. An (IsActive, PublishedAt) index used to sit below
+        // and could never be reached - IsActive leads it and is constant true,
+        // nothing writing false, so it was a scan-width copy of the table that
+        // only cost writes. Do not re-add it without a reader that filters on
+        // the publish stamp WITHOUT a session id.
         builder.HasIndex(s => s.SessionId).IsUnique();
         builder.HasOne(s => s.Session)
             .WithMany()
             .HasForeignKey(s => s.SessionId)
             .OnDelete(DeleteBehavior.Cascade);
-
-        // The app reads published summaries; the Committee desk lists drafts.
-        builder.HasIndex(s => new { s.IsActive, s.PublishedAt });
     }
 }
 

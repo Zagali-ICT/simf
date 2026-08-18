@@ -252,20 +252,20 @@ internal sealed class DelegationMeetingRequestService(
     public async Task<GridPage<AdminDelegationMeetingRequestRow>> ListAllAsync(
         Guid actorUserId, GridQuery query, CancellationToken cancellationToken = default)
     {
-        var rows = await appDbContext.DelegationMeetingRequests.ToGridPageAsync(
+        var page = await appDbContext.DelegationMeetingRequests.ToGridPageAsync(
             query, Columns, request => request.Id, ToListRow, cancellationToken);
 
         // Resolve the check-in operators' display names in ONE Identity-DB
         // query for the whole page. CheckedInByUserId is a bare logical FK,
         // so this is a second query merged in memory — never a cross-database JOIN.
         var operatorNames = await userDirectory.GetDisplayNamesAsync(
-            rows.Items.Where(row => row.CheckedInByUserId.HasValue)
+            page.Items.Where(row => row.CheckedInByUserId.HasValue)
                 .Select(row => row.CheckedInByUserId!.Value)
                 .Distinct()
                 .ToList(),
             cancellationToken);
 
-        var page = rows.Items.Select(row => new AdminDelegationMeetingRequestRow(
+        var items = page.Items.Select(row => new AdminDelegationMeetingRequestRow(
             row.Id,
             row.RequestingCountryId,
             row.RequestingCountry,
@@ -286,11 +286,11 @@ internal sealed class DelegationMeetingRequestService(
         await auditLog.WriteSuccessAsync(
             AuditEvents.AdminDelegationMeetingRequestsListed,
             actorUserId,
-            $"count={page.Count}; total={rows.Total}",
+            $"count={items.Count}; total={page.Total}",
             cancellationToken);
 
         return GridPage<AdminDelegationMeetingRequestRow>.Of(
-            page, rows.Total, rows.Skip, rows.Top);
+            items, page.Total, page.Skip, page.Top);
     }
 
     public async Task<AdminDelegationMeetingRequestDetail> GetAsync(
@@ -961,14 +961,15 @@ internal sealed class DelegationMeetingRequestService(
     private async Task<AdminDelegationMeetingRequestDetail> LoadDetailAsync(
         Guid id, CancellationToken cancellationToken)
     {
-        var r = await appDbContext.DelegationMeetingRequests.AsNoTracking()
-            .Where(x => x.Id == id)
-            .Select(x => new
+        var detail = await appDbContext.DelegationMeetingRequests.AsNoTracking()
+            .Where(request => request.Id == id)
+            .Select(request => new
             {
-                x.Id, x.RequestedByUserId, x.AttendeeCount, x.Subject, x.Status,
-                x.SlotStart, x.SlotEnd, x.ResponseNote, x.CreatedAt, x.RespondedAt,
-                RequestingCountry = x.RequestingCountry!.Name,
-                TargetCountry = x.TargetCountry!.Name,
+                request.Id, request.RequestedByUserId, request.AttendeeCount,
+                request.Subject, request.Status, request.SlotStart, request.SlotEnd,
+                request.ResponseNote, request.CreatedAt, request.RespondedAt,
+                RequestingCountry = request.RequestingCountry!.Name,
+                TargetCountry = request.TargetCountry!.Name,
             })
             .SingleOrDefaultAsync(cancellationToken)
             ?? throw new ApiException(ErrorCodes.DelegationMeetingRequestNotFound, 404,
@@ -976,11 +977,13 @@ internal sealed class DelegationMeetingRequestService(
                 "لم يتم العثور على طلب اجتماع الوفد.");
 
         var email = await userDirectory.GetEmailAsync(
-            r.RequestedByUserId, cancellationToken);
+            detail.RequestedByUserId, cancellationToken);
 
         return new AdminDelegationMeetingRequestDetail(
-            r.Id, r.RequestingCountry, r.TargetCountry, r.RequestedByUserId, email,
-            r.AttendeeCount, r.Subject, r.Status, r.SlotStart, r.SlotEnd,
-            r.ResponseNote, r.CreatedAt, r.RespondedAt);
+            detail.Id, detail.RequestingCountry, detail.TargetCountry,
+            detail.RequestedByUserId, email,
+            detail.AttendeeCount, detail.Subject, detail.Status,
+            detail.SlotStart, detail.SlotEnd,
+            detail.ResponseNote, detail.CreatedAt, detail.RespondedAt);
     }
 }

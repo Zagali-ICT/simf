@@ -71,7 +71,7 @@ internal sealed class ContactInquiryService(
         CancellationToken cancellationToken = default)
     {
         var inquiry = await dbContext.ContactInquiries
-            .SingleOrDefaultAsync(c => c.Id == id, cancellationToken)
+            .SingleOrDefaultAsync(row => row.Id == id, cancellationToken)
             ?? throw new ApiException(ErrorCodes.NotFound, 404,
                 "The contact inquiry was not found.",
                 "لم يتم العثور على الرسالة.");

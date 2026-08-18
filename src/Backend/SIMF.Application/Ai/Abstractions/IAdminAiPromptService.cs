@@ -38,13 +38,13 @@ public interface IAdminAiPromptService
     Task<AdminAiInvocationDetail?> GetInvocationAsync(
         Guid id, CancellationToken cancellationToken = default);
 
-    /// <summary>Append-only snapshot history for the given
-    /// AiPrompt id. Newest-first. Empty list when the prompt has
-    /// never been updated past v1. Returns an empty list for an
-    /// unknown id (no 404 — the caller already does the existence
-    /// check via <see cref="GetAsync"/> when needed).</summary>
-    Task<IReadOnlyList<AdminAiPromptHistoryEntry>> GetHistoryAsync(
-        Guid promptId, CancellationToken cancellationToken = default);
+    /// <summary>One page of the append-only snapshot history for
+    /// the given AiPrompt id. Newest-first. Empty page when the
+    /// prompt has never been updated past v1. Returns an empty page
+    /// for an unknown id (no 404 — the caller already does the
+    /// existence check via <see cref="GetAsync"/> when needed).</summary>
+    Task<GridPage<AdminAiPromptHistoryEntry>> GetHistoryAsync(
+        Guid promptId, GridQuery query, CancellationToken cancellationToken = default);
 
     /// <summary>CP Phase-1 — the AI dashboard: rolled-up invocation health over
     /// the last <paramref name="windowHours"/> hours (calls / errors / latency /

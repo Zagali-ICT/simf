@@ -4,7 +4,7 @@
 |-------|-------|
 | Document ID | SIMF-FDS-011 |
 | Title | Feature Design Specification — Statistics and Dashboards |
-| Version | 1.1 |
+| Version | 1.2 |
 | Status | Approved |
 | Classification | Confidential — to be confirmed by the owner |
 | Prepared by | Engineering & Architecture Team, STARTIME |
@@ -19,6 +19,7 @@
 |---------|------|--------|-------------------|
 | 1.0 | 2026-05-20 | Engineering & Architecture Team | First issue. The statistics and dashboards feature, build-ready. |
 | 1.1 | 2026-05-21 | Engineering & Architecture Team | Architecture-review amendment (see Amendment A): aggregated live counts instead of hot-row counters; the snapshot cadence (closes OI-4). |
+| 1.2 | 2026-08-18 | Engineering & Architecture Team | As-built correction (see Amendment B): `StatisticSnapshot` was never built and every statistic is computed on read, so the stored-aggregate half of this document is design intent rather than build. Amendment A's snapshot cadence is superseded as design-only. The entity is marked PROPOSED, NOT BUILT rather than deleted. Sections 4, 5.6, 6, 8, 9, 11 and 12 carry the marker. |
 
 ---
 
@@ -64,6 +65,10 @@ Registration · Badge & Access · Engagement · Programme  (the owning features)
         ▼
   Control Panel dashboard ── per-day · overall · live attendance · GPS presence
 ```
+
+> **`StatisticSnapshot` is PROPOSED, NOT BUILT.** No stored-aggregate table
+> exists; every figure the dashboard shows is computed on read from the owning
+> contexts. See Amendment B. The middle box above is the design, not the build.
 
 ## 5. Detailed behaviour
 
@@ -123,6 +128,8 @@ Across the forum the dashboard shows (FR-1102):
 - A figure that is heavy to compute is calculated on a cycle and stored as a
   `StatisticSnapshot`, so the dashboard reads a snapshot rather than
   recomputing on every view. Live figures are computed close to real time.
+  (**PROPOSED, NOT BUILT** - Amendment B. As built there is no snapshot table
+  and no cycle: every figure, heavy or light, is computed on read.)
 - The figures are derived, never hand-entered; the only exception the source
   material notes is student badges printed outside the Control Panel, which is
   recorded as a figure to confirm (OI-1).
@@ -134,6 +141,11 @@ The feature uses `StatisticSnapshot` and `GpsPresence` from SIMF-DAT-001 section
 `HallAttendance`, `Session`, `SessionQuestion`, `Theme`, `Speaker` and the
 `Category` data — through each owning context's application service, not by
 cross-context queries.
+
+**As built:** only `GpsPresence` exists. `StatisticSnapshot` is **PROPOSED, NOT
+BUILT** (SIMF-DAT-001 section 5.11), so this context owns **no** stored
+aggregate at all: it reads from the other contexts and computes every figure at
+request time. See Amendment B.
 
 ## 7. User interface
 
@@ -150,7 +162,7 @@ English; numbers follow the locale formatting in SIMF-MAA-001 (dates
 | Item | Rule |
 |------|------|
 | Figures | Derived from the owning contexts; not hand-entered (except where OI-1 confirms an exception) |
-| Snapshot | Each `StatisticSnapshot` records its scope, day, metric and value |
+| Snapshot | Each `StatisticSnapshot` records its scope, day, metric and value (**PROPOSED, NOT BUILT** - Amendment B) |
 | Live panels | Reflect the live records; a stale panel shows its last-updated time |
 
 ## 9. Acceptance criteria
@@ -161,7 +173,8 @@ English; numbers follow the locale formatting in SIMF-MAA-001 (dates
    events arrive.
 4. GPS-presence movement and dwell-time views are shown.
 5. Heavy figures are read from a snapshot, not recomputed on every view; live
-   figures are close to real time.
+   figures are close to real time. (**PROPOSED, NOT BUILT** - Amendment B. As
+   built, every figure is recomputed on view.)
 6. Figures are derived from the owning contexts and are consistent with them.
 7. The dashboard is permission-controlled and shown only to roles with the
    Dashboard page.
@@ -190,7 +203,7 @@ English; numbers follow the locale formatting in SIMF-MAA-001 (dates
 | T-04 | View the per-day figures across the three forum days | each day's figures shown |
 | T-05 | View the overall figures | themes, speakers, countries, attendance, broadcast hours, questions |
 | T-06 | View GPS-presence movement and dwell views | movement and dwell time shown |
-| T-07 | A heavy figure is requested twice | the second read uses the snapshot |
+| T-07 | A heavy figure is requested twice | the second read uses the snapshot (**PROPOSED, NOT BUILT** - not executable today) |
 | T-08 | A non-Dashboard role opens the dashboard route | access is refused |
 | T-09 | Location permission denied for an attendee | their device contributes no GPS-presence data |
 | T-10 | Render the dashboard in Arabic and English | correct layout, direction and number formatting |
@@ -202,7 +215,7 @@ English; numbers follow the locale formatting in SIMF-MAA-001 (dates
 | OI-1 | Client confirmation of the exact statistics list and which figures appear on which dashboard (decision D6, FR-1104) | Sections 5.2, 5.3 |
 | OI-2 | Confirm the source of "student badges printed outside the Control Panel" — derived or entered | Section 5.6 |
 | OI-3 | Confirm the GPS-presence retention rule with the owner (SIMF-DAT-001 OI-3) | Section 10 |
-| OI-4 | Confirm the refresh cycle for non-live snapshot figures | Section 5.6 |
+| OI-4 | Confirm the refresh cycle for non-live snapshot figures - **re-opened by Amendment B**; Amendment A closed it against a snapshot mechanism that was never built | Section 5.6 |
 | OI-5 | Confirm document classification with the owner | Control block |
 
 ---
@@ -221,6 +234,51 @@ burst.
 `StatisticSnapshot` on a fixed cycle of a few minutes, so the dashboard never
 triggers a heavy live recompute during the event. The dashboard never queries
 raw `GpsPresence` live — it reads rollups.
+
+*(Superseded as design-only by Amendment B: no snapshot table was built, so no
+cadence runs. OI-4 is re-opened by that amendment.)*
+
+---
+
+## Amendment B - As-built correction: `StatisticSnapshot` (2026-08-18)
+
+A verification pass over the generated migrations and the domain model found
+that **`StatisticSnapshot` was never built**. There is no such entity in
+`src/Backend/SIMF.Domain` and no such table in either database's
+`InitialCreate`. This document, and Amendment A above it, described it in the
+present tense.
+
+**What exists instead.** Every statistic the Control Panel shows is **computed
+on read** from the owning contexts through the statistics service. Nothing is
+persisted, nothing is pre-aggregated, and there is no background job writing
+rollups. The only entity this context uses that does exist is `GpsPresence`.
+SIMF-DAT-001 section 5.11 is the authority and states the same: this context
+owns no stored aggregate.
+
+**What that means for the behaviour above.**
+
+- Section 5.6's split between "heavy figures on a cycle" and "live figures close
+  to real time" does not exist as built; there is one path, and it recomputes.
+- Amendment A's snapshot cadence never runs, so **OI-4 is re-opened**. It was
+  closed against a mechanism that was not built, and a refresh cycle cannot be
+  confirmed for something that does not refresh.
+- Amendment A's other half is unaffected. Live attendance is still computed by
+  aggregating `VenueEntry` / `HallAttendance` rather than by an incrementing
+  counter row, which was the point of that paragraph.
+- Acceptance criterion 5 and scenario T-07 are not executable and are marked in
+  place rather than removed.
+
+**The design intent stands and is deliberately not deleted.** The reason for a
+snapshot has not gone away: recomputing a heavy dashboard figure on every view
+is the wrong shape for event days, when the dashboard is watched continuously
+and the underlying tables are taking the scan burst. The entity is retained
+here, and in SIMF-DAT-001 section 5.11, marked **PROPOSED, NOT BUILT**.
+
+**What blocks building it is not the table.** It is **OI-1 / decision D6**, the
+exact metric list. A snapshot row is scope, day, metric and value, so the metric
+set is the schema; building the table before the client confirms the figures
+would fix the wrong ones in place. Compute-on-read is the correct interim
+posture precisely because it costs nothing to change when D6 closes.
 
 ---
 

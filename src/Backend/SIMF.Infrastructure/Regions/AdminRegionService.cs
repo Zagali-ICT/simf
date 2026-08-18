@@ -5,7 +5,6 @@ using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
 using SIMF.Application.Regions.Abstractions;
 using SIMF.Common;
-using SIMF.Common.Enums;
 using SIMF.Common.Grids;
 using SIMF.Contracts.Regions;
 using SIMF.Domain.Regions;
@@ -71,25 +70,25 @@ internal sealed class AdminRegionService(
         CreateRegionRequest request,
         CancellationToken ct = default)
     {
-        var v = ValidateAndNormalise(
+        var draft = ValidateAndNormalise(
             request.Code, request.NameArabic, request.Name, request.SortOrder);
 
         var clash = await db.Regions
             .AsNoTracking()
-            .AnyAsync(row => row.Code == v.Code, ct);
+            .AnyAsync(row => row.Code == draft.Code, ct);
         if (clash)
         {
-            throw DuplicateCode(v.Code);
+            throw DuplicateCode(draft.Code);
         }
 
         var now = timeProvider.SimfNow();
         var region = new Region
         {
             Id = Guid.NewGuid(),
-            Code = v.Code,
-            NameArabic = v.NameAr,
-            Name = v.NameEn,
-            SortOrder = v.SortOrder,
+            Code = draft.Code,
+            NameArabic = draft.NameAr,
+            Name = draft.NameEn,
+            SortOrder = draft.SortOrder,
             IsActive = true,
             CreatedAt = now,
         };
@@ -99,12 +98,12 @@ internal sealed class AdminRegionService(
         await auditLog.WriteSuccessAsync(
             AuditEvents.RegionCreated,
             actorUserId,
-            $"id={region.Id}; code={v.Code}; nameAr={v.NameAr}",
+            $"id={region.Id}; code={draft.Code}; nameAr={draft.NameAr}",
             ct);
 
         logger.LogInformation(
             "Admin {ActorId} created Region {Code} ({Id})",
-            actorUserId, v.Code, region.Id);
+            actorUserId, draft.Code, region.Id);
 
         return ToDetail(region);
     }
@@ -119,24 +118,24 @@ internal sealed class AdminRegionService(
             .SingleOrDefaultAsync(row => row.Id == id, ct)
             ?? throw NotFound();
 
-        var v = ValidateAndNormalise(
+        var draft = ValidateAndNormalise(
             request.Code, request.NameArabic, request.Name, request.SortOrder);
 
-        if (!string.Equals(region.Code, v.Code, StringComparison.OrdinalIgnoreCase))
+        if (!string.Equals(region.Code, draft.Code, StringComparison.OrdinalIgnoreCase))
         {
             var clash = await db.Regions
                 .AsNoTracking()
-                .AnyAsync(row => row.Id != id && row.Code == v.Code, ct);
+                .AnyAsync(row => row.Id != id && row.Code == draft.Code, ct);
             if (clash)
             {
-                throw DuplicateCode(v.Code);
+                throw DuplicateCode(draft.Code);
             }
         }
 
-        region.Code = v.Code;
-        region.NameArabic = v.NameAr;
-        region.Name = v.NameEn;
-        region.SortOrder = v.SortOrder;
+        region.Code = draft.Code;
+        region.NameArabic = draft.NameAr;
+        region.Name = draft.NameEn;
+        region.SortOrder = draft.SortOrder;
         region.IsActive = request.IsActive;
         region.UpdatedAt = timeProvider.SimfNow();
         await db.SaveChangesAsync(ct);
@@ -144,7 +143,7 @@ internal sealed class AdminRegionService(
         await auditLog.WriteSuccessAsync(
             AuditEvents.RegionUpdated,
             actorUserId,
-            $"id={region.Id}; code={v.Code}; active={region.IsActive}",
+            $"id={region.Id}; code={draft.Code}; active={region.IsActive}",
             ct);
 
         return ToDetail(region);

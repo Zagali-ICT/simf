@@ -224,7 +224,6 @@ public sealed class ReservationNoShowReleaseWorkerTests : IClassFixture<SimfApiF
         {
             Id = Guid.NewGuid(),
             SessionId = sessionId,
-            HallId = hallId,
             UserProfileId = attendeeProfileId,
             Method = AttendanceMethod.QrScan,
             Enter = enter,

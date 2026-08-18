@@ -122,11 +122,13 @@ public sealed class SessionAttendanceTests : IClassFixture<SimfApiFactory>
         await SeedOpenAttendanceAsync(sessionId, hallId, profileId);
         await SeedSeatAsync(sessionId, userId, "A", 3);
 
-        var response = await GetAuthAsync($"/api/v1/admin/sessions/{sessionId}/present", admin);
+        var response = await PostAuthAsync($"/api/v1/admin/sessions/{sessionId}/present/list",
+            new GridQuery { Top = 200 }, admin);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var present = (await response.Content
-            .ReadFromJsonAsync<ApiResult<IReadOnlyList<SessionPresentAttendee>>>())!.Data!;
-        var attendee = Assert.Single(present);
+            .ReadFromJsonAsync<ApiResult<GridPage<SessionPresentAttendee>>>())!.Data!;
+        Assert.Equal(1, present.Total);
+        var attendee = Assert.Single(present.Items);
         Assert.Equal(profileId, attendee.UserProfileId);
         Assert.Equal("Faisal Al-Harbi", attendee.Name);
         Assert.Equal("فيصل الحربي", attendee.NameArabic);
@@ -147,11 +149,12 @@ public sealed class SessionAttendanceTests : IClassFixture<SimfApiFactory>
         await SeedOpenAttendanceAsync(sessionId, hallId, hereProfileId);
         await SeedClosedAttendanceAsync(sessionId, hallId, goneProfileId);
 
-        var response = await GetAuthAsync($"/api/v1/admin/sessions/{sessionId}/present", admin);
+        var response = await PostAuthAsync($"/api/v1/admin/sessions/{sessionId}/present/list",
+            new GridQuery { Top = 200 }, admin);
         var list = (await response.Content
-            .ReadFromJsonAsync<ApiResult<IReadOnlyList<SessionPresentAttendee>>>())!.Data!;
-        Assert.Single(list);
-        Assert.Equal(hereProfileId, list[0].UserProfileId);
+            .ReadFromJsonAsync<ApiResult<GridPage<SessionPresentAttendee>>>())!.Data!;
+        Assert.Single(list.Items);
+        Assert.Equal(hereProfileId, list.Items[0].UserProfileId);
     }
 
     [Fact]
@@ -159,8 +162,9 @@ public sealed class SessionAttendanceTests : IClassFixture<SimfApiFactory>
     {
         var visitor = await AuthFlow.SignInVisitorWithoutTwoFactorAsync(_client, _factory);
         var (sessionId, _) = await SeedSessionWithLayoutAsync();
-        var response = await GetAuthAsync(
-            $"/api/v1/admin/sessions/{sessionId}/present", visitor.AccessToken);
+        var response = await PostAuthAsync(
+            $"/api/v1/admin/sessions/{sessionId}/present/list",
+            new GridQuery { Top = 200 }, visitor.AccessToken);
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
@@ -265,7 +269,6 @@ public sealed class SessionAttendanceTests : IClassFixture<SimfApiFactory>
         {
             Id = Guid.NewGuid(),
             SessionId = sessionId,
-            HallId = hallId,
             UserProfileId = attendeeProfileId,
             Method = AttendanceMethod.Geofence,
             Enter = enter,

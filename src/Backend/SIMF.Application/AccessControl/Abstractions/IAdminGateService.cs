@@ -26,6 +26,10 @@ public interface IAdminGateService
         Guid actorUserId, Guid id,
         CancellationToken cancellationToken = default);
 
+    /// <summary>The active operators on ONE gate. Deliberately not a grid: the set is
+    /// bounded by the gate, and the same set round-trips whole as
+    /// <c>AssignedOperatorUserIds</c> on the create / update body, so a gate whose
+    /// roster needed paging could not be edited in the first place.</summary>
     Task<IReadOnlyList<AdminGateAssignmentRow>> ListAssignmentsAsync(
         Guid gateId, CancellationToken cancellationToken = default);
 
@@ -44,12 +48,23 @@ public interface IAdminGateService
     Task<AdminGateFormOptions> GetFormOptionsAsync(
         CancellationToken cancellationToken = default);
 
-    Task<IReadOnlyList<AdminGateScanRow>> ListScansAsync(
-        AdminGateScanReportFilter filter, CancellationToken cancellationToken = default);
+    /// <summary>One page of the scan report over <c>GateScans</c>, the highest-write
+    /// table in the system. Filter, search, sort and page window are all validated
+    /// against the service's declared columns, so an unknown key is a 400 rather than
+    /// a silently unfiltered read of the whole log.</summary>
+    Task<GridPage<AdminGateScanRow>> ListScansAsync(
+        GridQuery query, CancellationToken cancellationToken = default);
 
-    Task<IReadOnlyList<AdminCurrentlyInsideRow>> ListCurrentlyInsideAsync(
-        CancellationToken cancellationToken = default);
+    /// <summary>One page of the occupancy report — one row per visitor whose latest
+    /// allowed scan is a check-in inside the presence window. <c>Total</c> is the true
+    /// occupancy, so the dashboard's stat card stays correct while the table shows
+    /// one page of it.</summary>
+    Task<GridPage<AdminCurrentlyInsideRow>> ListCurrentlyInsideAsync(
+        GridQuery query, CancellationToken cancellationToken = default);
 
+    /// <summary>The scan report as XLSX. Takes the same <see cref="GridQuery"/> as
+    /// <see cref="ListScansAsync"/> so the workbook can never drift out of filter
+    /// parity with the grid it was exported from; only the row bound differs.</summary>
     Task<byte[]> ExportScansXlsxAsync(
-        AdminGateScanReportFilter filter, CancellationToken cancellationToken = default);
+        GridQuery query, CancellationToken cancellationToken = default);
 }
