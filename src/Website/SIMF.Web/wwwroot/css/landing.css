@@ -43,7 +43,18 @@
    server ever changed. This comment exists to guarantee the bytes differ from
    that stale copy: the fingerprinted asset name is content-derived, so a
    changed file must produce a changed hash. If the live site still serves
-   landing.52jt1tmv2u.css after this ships, the agent is not building main. */
+   landing.52jt1tmv2u.css after this ships, the agent is not building main.
+
+   Revision 2, same day, after PR 378 merged and the live site was re-checked:
+   still landing.52jt1tmv2u.css, still Last-Modified 2026-08-08 21:29:45, and
+   every brand token still self-referencing. The first marker did not reach the
+   server either.
+   The fingerprint is a pure function of these bytes, and these bytes have now
+   changed twice; 52jt1tmv2u is not derivable from either revision. A build of
+   THIS commit therefore cannot emit that name. If it still appears live, the
+   fault is not in this file, not in the palette, and not in the deploy script:
+   the agent is building a tree that does not contain this comment. Check what
+   commit the run actually checked out before editing anything here again. */
 .landing {
   /* THIS BLOCK IS THE PALETTE. Every value below must be a literal.
      Never define a token here as a reference to its own name. A custom property
