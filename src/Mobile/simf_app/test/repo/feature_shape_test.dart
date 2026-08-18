@@ -73,14 +73,13 @@ const List<String> _featuresImportingTransport = <String>[];
 /// Paths only, no per-file line counts: pinning the counts would turn every
 /// ordinary edit — including one that SHRINKS the file — into a failure.
 const List<String> _oversizedFiles = <String>[
+  // Each is one flat table - bilingual strings, design values, the route list -
+  // so splitting it serves the number and costs the reader. The five entries
+  // that stood here (both registration screens and the three model files) came
+  // off on 2026-08-18 when the work landed.
   'app/localization/app_l10n.dart',
   'app/router.dart',
   'app/theme/tokens.dart',
-  'features/account/data/profile_models.dart',
-  'features/account/sign_up_visitor_screen.dart',
-  'features/sessions/data/seat_map_models.dart',
-  'features/sessions/data/session_models.dart',
-  'features/staff/register_visitor_screen.dart',
 ];
 
 /// A top-level `final` at column 0 whose initializer starts with an
