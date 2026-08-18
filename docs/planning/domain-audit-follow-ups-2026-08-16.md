@@ -1,111 +1,138 @@
 # Domain-model audit — findings deferred to a later wave
 
 Date: 2026-08-16
+Closed out: 2026-08-18
 Source: the domain-model audit programme (PRs 352-361, decisions D-917..D-925)
 
 Everything here was **found and verified** during the programme and deliberately
-**not acted on**, either because it sat outside the lane that found it or because
-it needs a decision that is not an engineer's to take. Each entry says which.
+**not acted on** at the time, either because it sat outside the lane that found it
+or because it needed a decision that was not an engineer's to take. On 2026-08-18
+the owner asked for the list to be worked; what closed is marked **DONE**, and what
+is still open says plainly what it is waiting for.
 
 Nothing in this list is a guess. Where a claim names a file, a line or a count, it
 was read during the wave that recorded it.
 
 ---
 
-## 1. Schema — needs a named lift (D-895)
+## 1. Schema
 
-### 1.1 `SessionSummaries` carries an index nothing can use
-`SessionSummaryConfiguration` declares `HasIndex(s => new { s.IsActive, s.PublishedAt })`.
+### 1.1 `SessionSummaries` carries an index nothing can use — **DONE**
+`SessionSummaryConfiguration` declared `HasIndex(s => new { s.IsActive, s.PublishedAt })`.
 Every query against the table filters `SessionId` first (the admin list's
 correlated sub-select, the admin get, generate, save, `LoadSummaryAsync`, the app
 read, the host read, `OwnerPointerSync`), and `SessionId` carries a **unique**
-index, so the planner seeks that one and never reaches this. Its leading column is
+index, so the planner seeks that one and never reaches this. Its leading column was
 constant-true besides: nothing in the backend writes `SessionSummary.IsActive =
 false`.
 
-Same class of finding as the `SessionOutcomes` leg dropped in D-919. Dropping it
-is a schema change, so it needs the lift.
+Dropped, with the reasoning left on the surviving unique index so it is not
+re-added without a reader that filters on the publish stamp *without* a session id.
 
-### 1.2 The admission relocation is still a dual-write
+### 1.2 The admission relocation — the READ path is now single-source
 D-877 specified moving admission from `SimfUser.AccountState` onto
-`UserProfile.AdmissionState` as a **relocation, not a copy**. As built, both are
-live: `AdminAccountService.Approval` writes `subject.AccountState` *and*
-`profile.AdmissionState` on approve and on reject. The read path is already
-correct - `QrResolver` resolves a `Disabled` account onto admission rather than
-mirroring it - but the write path bends D-157's "no duplicated data" rule on this
-one fact, with no transaction spanning the two databases to keep them honest.
+`UserProfile.AdmissionState` as a **relocation, not a copy**.
 
-Finishing it means **dropping an Identity column**, which is a frozen surface, so
-it needs its own lift and its own argument. CLAUDE.md's D-895 section already
-names this as not-built; this entry records what specifically remains.
+**Closed on the read path.** `QrResolver` used to resolve a `Disabled` account onto
+admission (`userRow?.AccountState == Disabled ? Disabled : profileRow.AdmissionState`),
+which made the account a second input to a profile-owned decision. That fallback
+existed because, when it was written, nothing withdrew admission on the profile.
+That is no longer true: every production path that disables an account now
+withdraws profile admission in the same transaction —
+`AdminAccountService.Bulk` calls `RevokeProfileAdmissionAsync` on both disable
+paths, and `DormantAccountService` clears the profile **before** the Identity save
+so a failure re-selects the user rather than stranding them admitted. The gate
+therefore reads the profile alone, and the Identity round-trip is down to the one
+thing it alone knows, the lockout flag.
 
-### 1.3 `UserProfile.QrId` was never widened
+**Still open on the write path.** Approve and reject still write both
+`subject.AccountState` and `profile.AdmissionState`. Finishing it means **dropping
+an Identity column**, which is a frozen surface, so it needs its own lift and its
+own argument — and the two states are not obviously the same fact: an account can
+be disabled for reasons that have nothing to do with attending, and a walk-in with
+no account is admitted with no `SimfUser` row at all.
+
+### 1.3 `UserProfile.QrId` was never widened — **open, deliberately**
 D-880 designed an encrypted event badge in `QrId`; the column is still
-`nvarchar(16)` holding the 12-character Crockford serial. The widening that *did*
-land is `GateScan.QrIdAtScan` at 96, which is the audit column recording what was
-physically presented at the gate. Already named in CLAUDE.md as not-built; repeated
-here so the two `QrId`-shaped columns are not confused again.
+`nvarchar(16)` holding the 12-character Crockford serial. Nothing writes an
+encrypted badge into it, so widening it now would buy a wider column and no
+behaviour. The widening that *did* land is `GateScan.QrIdAtScan` at 96, which is
+the audit column recording what was physically presented at the gate. Do it when
+D-880's encrypted badge is actually built, not before.
+
+### 1.4 A zero-byte file has a DB-level guard again — **DONE**
+D-926 dropped `CK_SpeakerPresentations_SizeBytes` (`[SizeBytes] > 0`) along with
+the duplicated column it constrained. It could not follow the data to
+`StoredFile.SizeBytes` as written, that column being NULL for every `ExternalLink`
+row and nulled again when an upload is converted into one. Re-added as
+`CK_StoredFiles_SizeBytes` (`[SizeBytes] IS NULL OR [SizeBytes] > 0`), which
+tolerates NULL and so covers every file service at once rather than presentations
+alone. The creation paths already refuse an empty upload with a 400; what this
+closes is a seed or a repair script writing straight to the table.
 
 ---
 
-## 2. Tests — no decision needed, just not this lane's file
+## 2. Tests — **DONE**
 
-- `tests/SIMF.Api.Tests/Files/FilesystemFileStorageProviderTests.cs` already
-  asserts `CipherFormatVersion` 0 and 1 at lines 49 and 63, and is the natural
-  home for a one-line `KekVersion` assertion on each.
-- No test covers `StoredFileService.RestoreBytesAsync` refreshing a stale
-  `KekVersion` stamp - the bug D-922 fixed. The safety property is that the save
-  fires only when the stamps differ, which is exactly what a test should pin.
+- `tests/SIMF.Api.Tests/Files/FilesystemFileStorageProviderTests.cs` now asserts
+  `KekVersion` beside each `CipherFormatVersion` case: null on the plaintext write,
+  the active version on the encrypted one.
+- `tests/SIMF.Api.Tests/Files/StoredFileRestoreStampTests.cs` pins the bug D-922
+  fixed — `RestoreBytesAsync` refreshing a stale `KekVersion`, in both directions.
+  A stale stamp is corrected; a current one is left alone, proved with a sentinel
+  `UpdatedAt` that survives the call, because a guard that always fires is a
+  different bug from one that never does.
 - `tests/SIMF.Api.Tests/SessionSummaryCommitteeTests.cs` lines 960-983 assign the
-  three summary actor columns directly. If 1.1's sibling question - whether those
-  columns survive - is ever reopened, this is the file that has to move with them.
+  three summary actor columns directly. If 1.1's sibling question — whether those
+  columns survive — is ever reopened, this is the file that has to move with them.
 
 ---
 
-## 3. Documentation — describes things that were never built
+## 3. Documentation — **DONE**
 
-Found while verifying SIMF-DAT-001 against the generated migrations. Each is a
-controlled document naming an entity with **no table and no domain class**:
+Found while verifying SIMF-DAT-001 against the generated migrations. Each was a
+controlled document naming an entity with **no table and no domain class**; each
+now says so rather than describing it as built:
 
-| Document | Names | Reality |
+| Document | Named | Reality |
 |---|---|---|
 | `SIMF-FDS-009-Notifications.md` | `NotificationDelivery` | Exists in no database |
 | `SIMF-FDS-011-Statistics-and-Dashboards.md` | `StatisticSnapshot` | Never built; statistics are computed live |
 | `SIMF-FDS-004-Forum-Programme.md` | `SubTopic` | No table, no entity |
 
-Stale column names surviving in prose after the PR 356 renames:
-`EquipmentNotes` in `SIMF-D134-Module-Build-Plan.md`, `docs/tests/SIMF-Business-Flows.md`
-and `DECISIONS_LOG.md`; `ReminderSentUtc` in `docs/tests/e2e/bi-meeting-lifecycle.md`.
-`DECISIONS_LOG.md` D-895 is doubly stale on the second one: it corrects
-`ReminderSentUtc` to `ReminderSent`, and the built column is `ReminderSentAt`.
+Stale column names surviving in prose after the PR 356 renames, now corrected:
+`EquipmentNotes` → `FacilityNotes` in `SIMF-D134-Module-Build-Plan.md` and
+`docs/tests/SIMF-Business-Flows.md`; `ReminderSentUtc` → `ReminderSentAt` and
+`SlotStartUtc` → `SlotStart` in `docs/tests/e2e/bi-meeting-lifecycle.md`.
 
-- **A zero-byte presentation has no DB-level guard any more.** D-926 dropped
-  `CK_SpeakerPresentations_SizeBytes` (`[SizeBytes] > 0`) with the column it
-  constrained. It cannot move to `StoredFile.SizeBytes`, which is nullable so an
-  `ExternalLink` row can have no byte count. `AdminSpeakerPresentationService`
-  still returns 400 `SPEAKER_PRESENTATION_INVALID` on an empty upload, so every
-  real creation path is covered; a seed or repair script writing straight to the
-  table is not. A filtered CHECK on the store (`SizeBytes > 0 WHERE SourceType
-  <> ExternalLink`) would close it for every file at once, and is worth
-  considering the next time the file schema is open.
+`DECISIONS_LOG.md` is **deliberately not edited**. Its `EquipmentNotes` and
+`ReminderSent` mentions are inside decision rows that were accurate on the day they
+were written — D-895 predates the PR 356 renames by two days — and D-924 records
+the renames as the current state. Correcting a historical row to match today's
+schema would make the log lie about what was decided when, which is the one thing
+it is for.
 
-Gaps rather than errors:
+The configuration gaps are closed:
 
-- **The two rotation keys have no declared home.** D-922 added
-  `SIMF_API_FileStorage__PreviousEncryptionKey` and `__PreviousKekVersion` to
-  `deploy/set-env-api.template.ps1`; PR 362 deleted every template in favour of
-  five `set-env-*.ps1` that are tracked on no branch, so this merge dropped both
-  declarations rather than re-homing them. Add them to `deploy/set-env-api.ps1`
-  when that file lands. Until then the rotation window the column measures cannot
-  be configured, which is consistent with the re-wrap job not existing either.
-- `SIMF-OPS-001` section B.1's configuration matrix has **no `FileStorage` rows at
-  all** - not `EncryptionKey`, not `RootPath`, not the new `KekVersion` pair. It
-  predates the centralised file store.
-- `docs/manuals/SIMF-File-Store-Dev-Guide.md` describes the cipher and the provider
-  and does not mention `KekVersion`.
-- `SIMF-DAT-001` does not document `StoredFile.KekVersion`, and its sections 5.6,
-  5.7 and 5.10 remain **unverified** against the built schema, shielded by its own
-  Amendment C.7. Every other section of 5 has now been checked.
+- `SIMF-OPS-001` section B.1's configuration matrix had **no `FileStorage` rows at
+  all**. It now carries `RootPath`, `EncryptionKey`, `KekVersion`,
+  `PreviousEncryptionKey` and `PreviousKekVersion`, each with its failure mode, and
+  says in the same section that key rotation is **not operational** — the two
+  previous-key settings and `StoredFile.KekVersion` exist, but the re-wrap job does
+  not. That is where the two rotation settings D-922 added are now declared: the
+  `deploy/set-env-*.ps1` scripts are tracked on no branch and hold live values, so
+  they are not a documentation surface and were left untouched.
+- `docs/manuals/SIMF-File-Store-Dev-Guide.md` now documents `KekVersion` alongside
+  the cipher and the provider.
+- `SIMF-DAT-001` now documents `StoredFile.KekVersion`, in a corrected §5.12
+  `Asset` row - the four attributes it listed named no built column, and the
+  `StoragePath` among them was the last place a document still implied a second
+  physical path. Its sections 5.6, 5.7 and 5.10, the three Amendment C.7 had
+  shielded as **unverified**, were read column by column against the generated
+  migrations in the same pass (Amendment C.10) and corrected: four entities in them
+  were never built, `MeetingRequest` is two entities and not one, and OI-2 closes
+  because match suggestions are ranked per request and never stored. Every section
+  of §5 has now been checked.
 
 ---
 
@@ -118,27 +145,3 @@ Gaps rather than errors:
   divergence is documented on the class.
 - **`SessionSummary`'s three actor columns and its `IsActive`.** Redundant as
   history against `RowAudit`, unique as current state. See D-919.
-- **The superseded mobile pair.** `SaudiMobile` and `InternationalMobile` are
-  still written in lockstep with `MobileNumber`, because the shipped app decodes
-  those JSON keys by name. They retire when the app does, not before. The three
-  per-kind identity columns were the same case until PR 355 dropped them, so the
-  child table's `NumberHash` index is now the only uniqueness guard.
-
----
-
-## 5. Closed by this programme, recorded because it cost real time
-
-**The regenerated migration used to break `main` every time two branches landed.**
-It happened twice on 2026-08-16, three `InitialCreate` classes in one namespace
-each time. Not a merge failure - a merge *success*: a timestamped migration id
-gives every branch its own filename, so git had nothing to conflict on and both
-files survived, with `mergeStatus: succeeded` on both pull requests.
-
-**Fixed by D-925** - the id is pinned to `00000000000000_InitialCreate`,
-regeneration goes through `tools/migrations/Regenerate-Migration.ps1`, and
-`SchemaFreezeTests` fails the build on any other id. Two branches that regenerate
-now write the same path and collide loudly.
-
-The standing procedural rule survives the fix and is worth keeping: **land one
-migration-bearing PR at a time, and re-sync the next branch onto `main` before
-completing it.** The pin makes a missed re-sync noisy; it does not make it free.

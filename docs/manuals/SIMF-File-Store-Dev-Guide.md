@@ -26,9 +26,11 @@ off a bare `Guid` (the `SimfUser.Id`), resolved on read — no cross-DB FK.
 A `StoredFile` row carries: `Id` (the public GUID), `Service` (`FileService`),
 `Tier` (`FileSensitivityTier`, persisted so classification is auditable, not
 inferred), `OwnerEntityType` + `OwnerEntityId` (the polymorphic owner), `FileType`,
-`ContentType`, `SizeBytes`, `Sha256`, `StorageKey`, `IsEncrypted`, `IsDeletable`,
-`RetainUntil`, plus the audit columns. External-link files carry a validated
-`https` URL instead of stored bytes (the download endpoint 302-redirects to it).
+`ContentType`, `SizeBytes`, `Sha256`, `StorageKey`, `IsEncrypted`,
+`CipherFormatVersion` + `KekVersion` (the crypto stamps, see §6.1),
+`IsDeletable`, `RetainUntil`, plus the audit columns. External-link files carry a
+validated `https` URL instead of stored bytes (the download endpoint
+302-redirects to it).
 
 Three enums drive everything (all `int`, **append-only** — never rename/reorder;
 the D-110 enum-stability rule survives the D-568 freeze-lift):
@@ -153,6 +155,51 @@ self-signed-TLS handling), never a bare `Image.network` (D-422).
   bytes are never served.
 - **Arabic filenames** (P1): `Content-Disposition` carries an RFC 5987
   `filename*=UTF-8''…` plus an ASCII fallback.
+
+### 6.1 `KekVersion` - which key sealed this file
+
+Every encrypted blob's header carries two bytes before the crypto: the format
+version and the **KEK version** that wrapped that file's data key. `StoredFile`
+mirrors both, as `CipherFormatVersion` and `KekVersion`.
+
+**What the column records.** The KEK version copied **from the cipher at write
+time** (`IFileCipher.ActiveKekVersion`), not from configuration. That
+distinction is the point of the property: configuration can be reloaded, so a
+value re-read later might not be the one that actually did the wrapping. The
+number in the column and the number in the blob header are the same number, by
+construction.
+
+**Why mirror it at all**, given the header already has it: a header is readable
+only one file at a time. Without the column, "how much of the store is still on
+key 1" can only be answered by walking every blob on disk. With it, that is one
+query.
+
+**What `NULL` means.** Either **no KEK applies** (the row is plaintext or an
+external link, and the `NULL` is correct and permanent) or the row **predates
+the column**, in which case its blob is wrapped under a key nobody recorded. The
+two are told apart by `IsEncrypted`. The second case must be treated as
+**unknown and therefore due for re-wrapping**, never as "probably current":
+assuming current is exactly how a file gets skipped and then stranded when the
+old key is retired.
+
+**The filtered index makes the inventory a `GROUP BY`.** `StoredFileConfiguration`
+indexes `KekVersion` with `HasFilter("[IsEncrypted] = 1")`. The filter keeps
+plaintext rows out, since they have no KEK and would only dilute the count, and
+it deliberately does **not** exclude nulls, because an encrypted row with no
+recorded version is precisely what a re-wrap has to find. The index is
+provisioned ahead of that worker, on the same reasoning as the `RetainUntil`
+one.
+
+**Designed, not operational.** Nothing rotates today. The blob format has always
+supported it and `FileStorageOptions` will hold a `PreviousEncryptionKey` /
+`PreviousKekVersion` pair through a rotation window, but **the re-wrap pass that
+finishes a rotation does not exist**; the owner has deferred rotation. So a
+rotation can be started and never completed, and the previous key can never be
+retired. Treat both data keys as set-once for the life of the store. The
+inventory query, the re-wrap design, and the completion criterion are in
+`SIMF-OPS-001` §C.6 and §C.7. Read those before touching anything key-related,
+and note that the one irreversible mistake available is clearing the previous
+key too early.
 
 ## 7. Adding a new file-backed surface
 

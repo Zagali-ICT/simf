@@ -38,7 +38,6 @@ internal sealed class AssetService(
         new Dictionary<AssetCategory, FileService>
         {
             [AssetCategory.SpeakerPhoto] = FileService.SpeakerPhoto,
-            [AssetCategory.CompanyLogo] = FileService.CompanyLogo,
             [AssetCategory.MediaPartnerLogo] = FileService.MediaPartnerLogo,
             [AssetCategory.SponsorLogo] = FileService.SponsorLogo,
             [AssetCategory.ArchiveCover] = FileService.ArchiveCover,

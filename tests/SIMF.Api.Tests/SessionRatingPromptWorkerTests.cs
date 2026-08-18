@@ -271,7 +271,6 @@ public sealed class SessionRatingPromptWorkerTests : IClassFixture<SimfApiFactor
         {
             Id = Guid.NewGuid(),
             SessionId = session.Id,
-            HallId = hall.Id,
             UserProfileId = attendeeProfileId,
             Method = AttendanceMethod.QrScan,
             Enter = session.Start,
