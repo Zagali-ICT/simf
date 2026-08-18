@@ -1,5 +1,6 @@
-// Tests: SIMF.Api.Tests/AdminOperationLogTests.cs, SIMF.Api.Tests/AdminOperationLogExportTests.cs,
-//        SIMF.Api.Tests/GridDateSortKeyTests.cs
+// Tests: SIMF.Api.Tests/AdminOperationLogExportTests.cs,
+//        SIMF.Api.Tests/GridDateSortKeyTests.cs (pages /admin/operation-log/list
+//        and pins the "timestamp" sort key), SIMF.Api.Tests/GridContractTests.cs
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.Auditing;

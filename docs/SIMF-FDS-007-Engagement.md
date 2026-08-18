@@ -344,7 +344,7 @@ Moderator desk` (D-212):
 |-------|-------------------|-------|
 | **Phase (Pre vs Live)** — the "two modes" | `QuestionPhase{Pre=0,Live=1}` (`QuestionPhase.cs`); `SessionQuestion.Phase` (`SessionQuestion.cs:69`) **set by the backend at submit from the session's start** — one app screen, not two | **Built** (D-233). |
 | **Stage 1 — AI (advisory)** | `IQuestionAiFilter`/`StubQuestionAiFilter` → `SessionQuestion.AiFilterVerdict` (`SessionQuestionService.cs:152`); advisory only, never auto-hides | **Built but a STUB** (D-236/D-239) — returns `stub-clean`; a real model is a **DI/config swap**, no code (GAP-1). |
-| **Stage 2 — Scientific Committee ("team")** | `QuestionStatus{Pending,Approved,Hidden}` (`QuestionStatus.cs`); CP `/admin/questions/queue` + approve/hide/**escalate-to-role** (`SessionQuestionCommitteeEndpoints.cs:20/36/61/86`); CP page `QuestionQueueList.razor` | **Built** (D-212). The "team" = the الفريق العلمي **role** (a permission bundle, D-207/D-208), not new infra. |
+| **Stage 2 — Scientific Committee ("team")** | `QuestionStatus{Pending,Approved,Hidden}` (`QuestionStatus.cs`); CP page `/admin/question-queue` (`QuestionQueueList.razor`) over `POST /admin/questions/list` + approve/hide/**escalate-to-role** (`SessionQuestionCommitteeEndpoints.cs:26/42/63/84`) | **Built** (D-212). The "team" = the الفريق العلمي **role** (a permission bundle, D-207/D-208), not new infra. |
 | **Stage 3 — per-session Moderator desk** | app desk `GET /app/sessions/{id}/questions/moderate` + hide/push/reorder (`SessionQuestionEndpoints.cs:100/132/164/196`), gated by `SessionModeratorAuth` = Administrator **or** a `SessionModerator` grant | **Built** (D-169). Distinct from `MobileAppRole.Moderator` (per `SessionQuestion.cs:19-23`). |
 | **Moderator-only home** (mode A entry) | `home_screen.dart:66` → `AppRole.moderator` gets `ModeratorHome` (`operational_homes.dart:52-70`, → sessions list → detail → Q&A desk); route #104 = `{moderator}` **exclusive** | **Built** (D-519) — the "home menu filtered by moderator only" is already satisfied. |
 | **Attendee ask screen** | `send_question_screen.dart` / `send_question_content.dart`; the session-detail `ask_host_card.dart` (Speaker vs Host recipient, `SessionQuestionRecipient`) | **Built.** Serves both phases (the phase is backend-derived). |
@@ -389,7 +389,7 @@ Moderator desk` (D-212):
 
 | # | Item | Default taken |
 |---|------|---------------|
-| **OI-B3** | "team" = the الفريق العلمي Scientific-Committee role + CP `/admin/questions/queue` | Confirmed as built stage 2. |
+| **OI-B3** | "team" = the الفريق العلمي Scientific-Committee role + CP `/admin/question-queue` | Confirmed as built stage 2. |
 | **OI-B4** | Arrival-gate + 5-min/close-at-end window are intended (not the "not working" bug) | Keep as built (D-271); **reproduce the "not working" report on the current build first** — do not "fix" a working gate. |
 
 ### B.6 Definition of Done (only if a delta is approved — same changeset)

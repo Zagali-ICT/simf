@@ -45,7 +45,7 @@ internal sealed class AdminFaqService(
         .DefaultOrder("nameEn")
         .PageSize(fallback: 25, max: 200);
 
-    private static readonly Expression<Func<FaqGroup, AdminFaqGroupSummary>> ToGroupSummaryRow =
+    private static readonly Expression<Func<FaqGroup, AdminFaqGroupSummary>> ToGroupRow =
         group => new AdminFaqGroupSummary(
             group.Id,
             group.Name,
@@ -58,16 +58,14 @@ internal sealed class AdminFaqService(
     public Task<GridPage<AdminFaqGroupSummary>> ListGroupsAsync(
         GridQuery query, CancellationToken cancellationToken = default) =>
         dbContext.FaqGroups.ToGridPageAsync(
-            query, GroupColumns, group => group.Id, ToGroupSummaryRow, cancellationToken);
+            query, GroupColumns, group => group.Id, ToGroupRow, cancellationToken);
 
     public async Task<AdminFaqGroupSummary?> GetGroupAsync(
         Guid id, CancellationToken cancellationToken = default) =>
         await dbContext.FaqGroups
             .AsNoTracking()
-            .Where(g => g.Id == id)
-            .Select(g => new AdminFaqGroupSummary(
-                g.Id, g.Name, g.NameArabic, g.DisplayOrder, g.IsActive,
-                g.Entries.Count(e => e.IsActive), g.CreatedAt))
+            .Where(group => group.Id == id)
+            .Select(ToGroupRow)
             .SingleOrDefaultAsync(cancellationToken);
 
     public async Task<AdminFaqGroupSummary> CreateGroupAsync(
@@ -102,7 +100,7 @@ internal sealed class AdminFaqService(
         Guid actorUserId, Guid id, UpdateFaqGroupRequest request, CancellationToken cancellationToken = default)
     {
         var group = await dbContext.FaqGroups
-            .SingleOrDefaultAsync(g => g.Id == id, cancellationToken)
+            .SingleOrDefaultAsync(row => row.Id == id, cancellationToken)
             ?? throw GroupNotFound();
 
         group.Name = RequireText(request.NameEn, NameMaxLength, "English name", "الاسم الإنجليزي");
@@ -117,7 +115,7 @@ internal sealed class AdminFaqService(
             $"id={group.Id}; nameEn={group.Name}; active={group.IsActive}", cancellationToken);
 
         var entryCount = await dbContext.FaqEntries
-            .CountAsync(e => e.FaqGroupId == id && e.IsActive, cancellationToken);
+            .CountAsync(entry => entry.FaqGroupId == id && entry.IsActive, cancellationToken);
         return ToGroupSummary(group, entryCount);
     }
 
@@ -125,7 +123,7 @@ internal sealed class AdminFaqService(
         Guid actorUserId, Guid id, CancellationToken cancellationToken = default)
     {
         var group = await dbContext.FaqGroups
-            .SingleOrDefaultAsync(g => g.Id == id, cancellationToken)
+            .SingleOrDefaultAsync(row => row.Id == id, cancellationToken)
             ?? throw GroupNotFound();
         if (!group.IsActive) { return; } // idempotent
 
@@ -153,26 +151,32 @@ internal sealed class AdminFaqService(
         .DefaultOrder("question")
         .PageSize(fallback: 50, max: 200);
 
+    private static readonly Expression<Func<FaqEntry, AdminFaqEntrySummary>> ToEntryRow =
+        entry => new AdminFaqEntrySummary(
+            entry.Id, entry.FaqGroupId, entry.Question, entry.QuestionArabic,
+            entry.Answer, entry.AnswerArabic,
+            entry.DisplayOrder, entry.IsActive, entry.CreatedAt);
+
     public Task<GridPage<AdminFaqEntrySummary>> ListEntriesAsync(
         Guid groupId, GridQuery query, CancellationToken cancellationToken = default) =>
         dbContext.FaqEntries
             .Where(entry => entry.FaqGroupId == groupId)
             .ToGridPageAsync(
-                query, EntryColumns, entry => entry.Id, ToEntrySummaryExpr, cancellationToken);
+                query, EntryColumns, entry => entry.Id, ToEntryRow, cancellationToken);
 
     public async Task<AdminFaqEntrySummary?> GetEntryAsync(
         Guid id, CancellationToken cancellationToken = default) =>
         await dbContext.FaqEntries
             .AsNoTracking()
-            .Where(e => e.Id == id)
-            .Select(ToEntrySummaryExpr)
+            .Where(entry => entry.Id == id)
+            .Select(ToEntryRow)
             .SingleOrDefaultAsync(cancellationToken);
 
     public async Task<AdminFaqEntrySummary> CreateEntryAsync(
         Guid actorUserId, CreateFaqEntryRequest request, CancellationToken cancellationToken = default)
     {
         var groupExists = await dbContext.FaqGroups
-            .AnyAsync(g => g.Id == request.FaqGroupId, cancellationToken);
+            .AnyAsync(group => group.Id == request.FaqGroupId, cancellationToken);
         if (!groupExists) { throw GroupNotFound(); }
 
         var entry = new FaqEntry
@@ -201,7 +205,7 @@ internal sealed class AdminFaqService(
         Guid actorUserId, Guid id, UpdateFaqEntryRequest request, CancellationToken cancellationToken = default)
     {
         var entry = await dbContext.FaqEntries
-            .SingleOrDefaultAsync(e => e.Id == id, cancellationToken)
+            .SingleOrDefaultAsync(row => row.Id == id, cancellationToken)
             ?? throw EntryNotFound();
 
         entry.Question = RequireText(request.Question, QuestionMaxLength, "English question", "السؤال الإنجليزي");
@@ -224,7 +228,7 @@ internal sealed class AdminFaqService(
         Guid actorUserId, Guid id, CancellationToken cancellationToken = default)
     {
         var entry = await dbContext.FaqEntries
-            .SingleOrDefaultAsync(e => e.Id == id, cancellationToken)
+            .SingleOrDefaultAsync(row => row.Id == id, cancellationToken)
             ?? throw EntryNotFound();
         if (!entry.IsActive) { return; } // idempotent
 
@@ -238,16 +242,12 @@ internal sealed class AdminFaqService(
 
     // -- internals ------------------------------------------------------------
 
-    private static AdminFaqGroupSummary ToGroupSummary(FaqGroup g, int entryCount) =>
-        new(g.Id, g.Name, g.NameArabic, g.DisplayOrder, g.IsActive, entryCount, g.CreatedAt);
+    private static AdminFaqGroupSummary ToGroupSummary(FaqGroup group, int entryCount) =>
+        new(group.Id, group.Name, group.NameArabic, group.DisplayOrder, group.IsActive,
+            entryCount, group.CreatedAt);
 
-    private static AdminFaqEntrySummary ToEntrySummary(FaqEntry e) =>
-        new(e.Id, e.FaqGroupId, e.Question, e.QuestionArabic, e.Answer, e.AnswerArabic,
-            e.DisplayOrder, e.IsActive, e.CreatedAt);
-
-    private static readonly Expression<Func<FaqEntry, AdminFaqEntrySummary>> ToEntrySummaryExpr =
-        entry => new AdminFaqEntrySummary(
-            entry.Id, entry.FaqGroupId, entry.Question, entry.QuestionArabic,
+    private static AdminFaqEntrySummary ToEntrySummary(FaqEntry entry) =>
+        new(entry.Id, entry.FaqGroupId, entry.Question, entry.QuestionArabic,
             entry.Answer, entry.AnswerArabic,
             entry.DisplayOrder, entry.IsActive, entry.CreatedAt);
 

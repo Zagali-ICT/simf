@@ -7,7 +7,7 @@
 | **Auth** | `[RequirePermission(PermissionCatalog.AiPrompts.View)]` (page) + per-action permission at the API (`AiPrompts.Create` / `.Edit` / `.Delete` / `.Test` / `.Export` / `.Import`) + `RequireApprovedAccount`. Create/Update/Delete sit behind the per-IP `auth` rate-limit; Test sits behind the per-admin `ai-test` limiter (D-179). |
 | **Pattern** | D-176 (gap doc G12) AI-prompt catalogue + D-353 centralized CRUD framing (`CrudShell` + Add/Edit/View-Delete forms) + D-356 grid Excel export/import. `SimfDataGrid`-based list. |
 | **Status** | ✅ Real (D-176; D-353 framing; D-356 Excel) |
-| **Backend endpoints** | BFF `/account/api/admin/ai/prompts/*` → API `/api/v1/admin/ai/prompts/*`: `POST .../list`, `GET .../{id}`, `GET .../{id}/history`, `POST ...` (create), `PUT .../{id}`, `DELETE .../{id}`, `POST .../{id}/test`, `POST .../export`, `POST .../import` |
+| **Backend endpoints** | BFF `/account/api/admin/ai/prompts/*` → API `/api/v1/admin/ai/prompts/*`: `POST .../list`, `GET .../{id}`, `POST .../{id}/history/list`, `POST ...` (create), `PUT .../{id}`, `DELETE .../{id}`, `POST .../{id}/test`, `POST .../export`, `POST .../import` |
 | **Source** | [`AiPromptsList.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/AiPromptsList.razor), [`AiPromptsAddEdit.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/AiPromptsAddEdit.razor), [`AiPromptsViewDelete.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/AiPromptsViewDelete.razor), [`AiPromptAdminEndpoints.cs`](../../../src/Backend/SIMF.Api/Endpoints/Admin/AiPromptAdminEndpoints.cs), [`AiPromptsExcelEndpoints.cs`](../../../src/Backend/SIMF.Api/Endpoints/Admin/AiPromptsExcelEndpoints.cs), [`AdminAiPromptService.cs`](../../../src/Backend/SIMF.Infrastructure/Ai/AdminAiPromptService.cs) |
 | **Tests** | [`docs/tests/e2e/cp-admin-ai-prompts.md`](../../tests/e2e/cp-admin-ai-prompts.md) |
 | **Last reviewed** | 2026-06-11 |
@@ -26,8 +26,8 @@ by dev + tests; in this build only `OpenAi` has a working outbound implementatio
 
 The page also exposes a per-row **Test** (dry-run) action that renders the prompt
 against ad-hoc inputs and shows the output, latency and token counts, and a
-**history** read (`GET .../{id}/history`, D-188) that returns the append-only
-pre-mutation snapshots used for drift detection / SOC reconstruction.
+**history** read (`POST .../{id}/history/list`, D-188) that returns one
+`GridPage` of the append-only pre-mutation snapshots used for drift detection / SOC reconstruction.
 
 ## 4. UI
 
@@ -97,7 +97,7 @@ the API at `/api/v1/admin/ai/prompts/*`. Each returns the `ApiResult<T>` envelop
 |--------|-----------|--------------|------------|
 | List grid | `POST /account/api/admin/ai/prompts/list` | `POST /api/v1/admin/ai/prompts/list` | `AiPrompts.View` |
 | Get detail | `GET .../{id}` | `GET .../{id}` | `AiPrompts.View` |
-| Edit history | `GET .../{id}/history` | `GET .../{id}/history` | `AiPrompts.View` (+ `auth` limit, D-188) |
+| Edit history | `POST .../{id}/history/list` | `POST .../{id}/history/list` | `AiPrompts.View` (+ `auth` limit, D-188) |
 | Create | `POST .../` | `POST .../` | `AiPrompts.Create` (+ `auth` limit) |
 | Update | `PUT .../{id}` | `PUT .../{id}` | `AiPrompts.Edit` (+ `auth` limit) |
 | Deactivate | `DELETE .../{id}` | `DELETE .../{id}` | `AiPrompts.Delete` (+ `auth` limit) |
@@ -161,8 +161,10 @@ API failures surface `ApiResult.Error.MessageForCurrentCulture()`, falling back 
 - **Light vs full payload** — the grid summary omits the long prompt text, so every
   Edit/Details/Delete pays one extra `GET .../{id}`; a failed load surfaces a toast
   and aborts opening the form.
-- **History** is append-only and unpaged (expected single-digit-hundreds per prompt
-  over its lifetime).
+- **History** is append-only and **server-paged** on the shared grid seam. Its one
+  declared column key is `version`; default order is `version` descending (newest
+  snapshot first), page size falls back to 20 and is capped at 50, so the modal
+  pages a long-lived prompt's snapshots rather than fetching all of them.
 
 ## 8. i18n + RTL
 

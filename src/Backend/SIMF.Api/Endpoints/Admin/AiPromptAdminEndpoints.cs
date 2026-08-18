@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/AiAdminTests.cs, SIMF.Api.Tests/AiHardeningTests.cs
+// Tests: SIMF.Api.Tests/AiModuleTests.cs, SIMF.Api.Tests/AiHardeningTests.cs
 using System.Text.Json;
 using FastEndpoints;
 using SIMF.Api.RequestContext;

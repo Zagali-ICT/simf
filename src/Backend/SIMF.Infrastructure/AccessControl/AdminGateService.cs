@@ -1,6 +1,8 @@
-// Tests: SIMF.Api.Tests/Gates/AdminGatesTests.cs
+// Tests: SIMF.Api.Tests/AdminGatesTests.cs
 //        SIMF.Api.Tests/GateOperatorModelTests.cs (operator candidates,
 //        operator eligibility validation, gate-form lookups, assignment email)
+//        SIMF.Api.Tests/AdminGateCurrentlyInsideTests.cs (occupancy report)
+//        SIMF.Api.Tests/GatesExcelTests.cs (gate grid export / import)
 using System.Globalization;
 using System.Linq.Expressions;
 using ClosedXML.Excel;
@@ -50,13 +52,6 @@ internal sealed class AdminGateService(
                 .Contains(PermissionCatalog.Gates.Operate))
             .ToArray();
 
-    /// <summary>
-    /// The grid contract for /admin/gates: one entry per key GatesList.razor can
-    /// send, as both its filter and its sort. A key not declared here is a 400, not
-    /// a silently ignored request. isActive is declared because the list has always
-    /// honoured an isActive filter, even though the page renders that column
-    /// without a filter box.
-    /// </summary>
     /// <summary>The row ceiling on the scan-report Excel export. The export runs the
     /// same column declaration as the grid but with no Skip/Take, so it needs its own
     /// bound; the bespoke filter it replaces let a caller ask for 100,000 scan rows
@@ -65,6 +60,13 @@ internal sealed class AdminGateService(
     /// unchanged.</summary>
     private const int ScanExportRowCap = 10_000;
 
+    /// <summary>
+    /// The grid contract for /admin/gates: one entry per key GatesList.razor can
+    /// send, as both its filter and its sort. A key not declared here is a 400, not
+    /// a silently ignored request. isActive is declared because the list has always
+    /// honoured an isActive filter, even though the page renders that column
+    /// without a filter box.
+    /// </summary>
     private static readonly GridColumns<Gate> Columns = new GridColumns<Gate>()
         .Add("code", gate => gate.Code, searchable: true)
         .Add("name", gate => gate.Name, searchable: true)
@@ -485,18 +487,18 @@ internal sealed class AdminGateService(
     private async Task<IReadOnlyList<AdminGateScanRow>> BuildScanRowsAsync(
         IQueryable<GateScan> scans, CancellationToken cancellationToken)
     {
-        var raw = await scans
+        var scansWithGateCode = await scans
             .Join(appDbContext.Gates.AsNoTracking(),
                 scan => scan.GateId, gate => gate.Id,
-                (scan, gate) => new { scan, gateCode = gate.Code })
+                (scan, gate) => new { Scan = scan, GateCode = gate.Code })
             .ToListAsync(cancellationToken);
 
         // UserProfile + SimfUser live in different DbContexts, so
         // resolving the display name is two round-trips — profile rows
         // first (App), then matching user rows (Identity), merge by id.
-        var profileIds = raw
-            .Where(r => r.scan.UserProfileId != null)
-            .Select(r => r.scan.UserProfileId!.Value)
+        var profileIds = scansWithGateCode
+            .Where(entry => entry.Scan.UserProfileId != null)
+            .Select(entry => entry.Scan.UserProfileId!.Value)
             .Distinct()
             .ToList();
         Dictionary<Guid, string> displayNames;
@@ -514,27 +516,28 @@ internal sealed class AdminGateService(
             // map: an attendee with no account has no name to fetch, and dropping
             // them here would erase their scans from this report and its export.
             var userIds = profileUsers
-                .Where(pu => pu.UserId != null)
-                .Select(pu => pu.UserId!.Value)
+                .Where(profileUser => profileUser.UserId != null)
+                .Select(profileUser => profileUser.UserId!.Value)
                 .Distinct()
                 .ToList();
             var userNamesByUserId = await userDirectory.GetDisplayNamesAsync(
                 userIds, cancellationToken);
             displayNames = profileUsers.ToDictionary(
-                pu => pu.Id,
-                pu => pu.UserId is { } userId
+                profileUser => profileUser.Id,
+                profileUser => profileUser.UserId is { } userId
                     && userNamesByUserId.TryGetValue(userId, out var name)
                         ? name : string.Empty);
         }
 
-        return raw.Select(r => new AdminGateScanRow(
-                r.scan.Id, r.scan.GateId, r.gateCode,
-                r.scan.UserProfileId,
-                r.scan.UserProfileId is { } pid && displayNames.TryGetValue(pid, out var name)
-                    ? name : null,
-                r.scan.QrIdAtScan, r.scan.Direction, r.scan.Outcome,
-                r.scan.DenialReasonCode, r.scan.ScannedAt,
-                r.scan.ScannedByUserId, r.scan.Source))
+        return scansWithGateCode.Select(entry => new AdminGateScanRow(
+                entry.Scan.Id, entry.Scan.GateId, entry.GateCode,
+                entry.Scan.UserProfileId,
+                entry.Scan.UserProfileId is { } profileId
+                    && displayNames.TryGetValue(profileId, out var name)
+                        ? name : null,
+                entry.Scan.QrIdAtScan, entry.Scan.Direction, entry.Scan.Outcome,
+                entry.Scan.DenialReasonCode, entry.Scan.ScannedAt,
+                entry.Scan.ScannedByUserId, entry.Scan.Source))
             .ToList();
     }
 
@@ -610,16 +613,16 @@ internal sealed class AdminGateService(
                 Array.Empty<AdminCurrentlyInsideRow>(), total, skip, top);
         }
 
-        var gateIds = latest.Select(x => x.GateId).Distinct().ToList();
+        var gateIds = latest.Select(scan => scan.GateId).Distinct().ToList();
         var gateCodes = await appDbContext.Gates.AsNoTracking()
-            .Where(g => gateIds.Contains(g.Id))
-            .Select(g => new { g.Id, g.Code })
-            .ToDictionaryAsync(x => x.Id, x => x.Code, cancellationToken);
+            .Where(gate => gateIds.Contains(gate.Id))
+            .Select(gate => new { gate.Id, gate.Code })
+            .ToDictionaryAsync(gate => gate.Id, gate => gate.Code, cancellationToken);
 
         // Split cross-context join into App-then-Identity round-trips.
         // The Include is gone, not lost: it is inert under the projection below, which
         // pulls the profile-type fields the row needs without materialising the entity.
-        var profileIds = latest.Select(x => x.UserProfileId).Distinct().ToList();
+        var profileIds = latest.Select(scan => scan.UserProfileId).Distinct().ToList();
         var profileRows = await appDbContext.UserProfiles.AsNoTracking()
             .Where(profile => profileIds.Contains(profile.Id))
             .Select(profile => new
@@ -628,29 +631,29 @@ internal sealed class AdminGateService(
                 profile.UserId,
                 profile.NameArabic,
                 profile.ProfileTypeId,
-                ProfileType = profile.ProfileType,
+                profile.ProfileType,
             })
             .ToListAsync(cancellationToken);
         // Only the accounts are looked up, but EVERY profile stays in the map: an
         // attendee with no account has no display name to fetch, and dropping them
         // would take them off the occupancy roster while they are still inside. Their
         // Arabic name and profile type come from the profile row either way.
-        var inProfileUserIds = profileRows
-            .Where(pr => pr.UserId != null)
-            .Select(pr => pr.UserId!.Value)
+        var profileAccountUserIds = profileRows
+            .Where(profileRow => profileRow.UserId != null)
+            .Select(profileRow => profileRow.UserId!.Value)
             .Distinct()
             .ToList();
         var profileUserDisplayNames = await userDirectory.GetDisplayNamesAsync(
-            inProfileUserIds, cancellationToken);
+            profileAccountUserIds, cancellationToken);
         var profiles = profileRows.ToDictionary(row => row.Id);
 
         var items = latest
-            .Where(x => profiles.ContainsKey(x.UserProfileId))
-            .Select(x =>
+            .Where(scan => profiles.ContainsKey(scan.UserProfileId))
+            .Select(scan =>
             {
-                var profile = profiles[x.UserProfileId];
+                var profile = profiles[scan.UserProfileId];
                 return new AdminCurrentlyInsideRow(
-                    x.UserProfileId,
+                    scan.UserProfileId,
                     profile.UserId is { } userId
                         && profileUserDisplayNames.TryGetValue(userId, out var name)
                             ? name : string.Empty,
@@ -658,9 +661,9 @@ internal sealed class AdminGateService(
                     profile.ProfileTypeId,
                     profile.ProfileType?.Name,
                     profile.ProfileType?.PageColor,
-                    x.ScannedAt,
-                    x.GateId,
-                    gateCodes.TryGetValue(x.GateId, out var code) ? code : string.Empty);
+                    scan.ScannedAt,
+                    scan.GateId,
+                    gateCodes.TryGetValue(scan.GateId, out var code) ? code : string.Empty);
             })
             .ToList();
 
@@ -695,17 +698,18 @@ internal sealed class AdminGateService(
         for (var rowIndex = 0; rowIndex < rows.Count; rowIndex++)
         {
             var row = rows[rowIndex];
-            var rIdx = rowIndex + 2;
-            sheet.Cell(rIdx, 1).Value = row.ScanId;
-            sheet.Cell(rIdx, 2).Value = row.ScannedAt.ToString("u",
+            // Row 1 is the header, so the first data row is 2.
+            var excelRow = rowIndex + 2;
+            sheet.Cell(excelRow, 1).Value = row.ScanId;
+            sheet.Cell(excelRow, 2).Value = row.ScannedAt.ToString("u",
                 CultureInfo.InvariantCulture);
-            sheet.Cell(rIdx, 3).Value = row.GateCode;
-            sheet.Cell(rIdx, 4).Value = row.VisitorDisplayName ?? string.Empty;
-            sheet.Cell(rIdx, 5).Value = row.QrIdAtScan;
-            sheet.Cell(rIdx, 6).Value = row.Direction.ToString();
-            sheet.Cell(rIdx, 7).Value = row.Outcome.ToString();
-            sheet.Cell(rIdx, 8).Value = row.DenialReasonCode?.ToString() ?? string.Empty;
-            sheet.Cell(rIdx, 9).Value = row.Source.ToString();
+            sheet.Cell(excelRow, 3).Value = row.GateCode;
+            sheet.Cell(excelRow, 4).Value = row.VisitorDisplayName ?? string.Empty;
+            sheet.Cell(excelRow, 5).Value = row.QrIdAtScan;
+            sheet.Cell(excelRow, 6).Value = row.Direction.ToString();
+            sheet.Cell(excelRow, 7).Value = row.Outcome.ToString();
+            sheet.Cell(excelRow, 8).Value = row.DenialReasonCode?.ToString() ?? string.Empty;
+            sheet.Cell(excelRow, 9).Value = row.Source.ToString();
         }
         sheet.Columns().AdjustToContents();
 

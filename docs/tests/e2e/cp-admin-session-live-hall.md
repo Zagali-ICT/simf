@@ -41,8 +41,22 @@
 >
 > **Data sources (read-only).** `GET /api/v1/admin/sessions/{id}/seat-map`
 > (`GetSessionSeatMapAsync` with a null actor — no "my seat" cell) and
-> `GET /api/v1/admin/sessions/{id}/present` (`GetPresentAttendeesAsync`). The
-> present list is resolved **App-DB only** — name/org/type/job-title come from
+> `POST /api/v1/admin/sessions/{id}/present/list` (`GetPresentAttendeesAsync`).
+>
+> **The roster is server-paged on the shared grid seam.** It was an unpaged `GET`
+> that returned every open attendance row for the hall in one array; an open row
+> stays open until a departure closes it, so the read had no ceiling to grow
+> against. It is now `POST {resource}/list` binding a `GridQuery`: the page asks
+> for a 200-row window and reads the present figure from `data.total`, so the
+> summary line states the whole room even when the table shows the first page of
+> it. The declared column set is exactly one key, `enter`, ordered ascending
+> (arrival order, which is the only order this roster has ever been shown in),
+> page size falling back to 50 and capped at 200, and no searchable column. The
+> page renders a plain live table with no sort, filter or pager controls, so it can
+> never send an undeclared key; the name, organisation, type, job title and seat
+> are all resolved after the page is chosen and are therefore not keys.
+>
+> The present list is resolved **App-DB only**: name/org/type/job-title come from
 > `UserProfile`, never a cross-DB Identity join (D-157). An admin-typed present
 > user (no profile) resolves to blank profile fields, never an error.
 >
@@ -59,7 +73,7 @@
 | E2E-SLH-001 | Golden path — pick a session → seat map + present list render for its hall | happy | P0 | _to author_ |
 | E2E-SLH-002 | Seat map shows all four states with the right colour + tooltip (available / unavailable / reserved / confirmed) | happy | P0 | _to author_ |
 | E2E-SLH-003 | "In the hall now" table lists every open-attendance row with name / org / type / job / seat / entered / method, ordered by entry | happy | P0 | _to author_ |
-| E2E-SLH-004 | Refresh re-pulls both `/seat-map` and `/present` (a new gate scan appears as confirmed) | happy | P1 | _to author_ |
+| E2E-SLH-004 | Refresh re-pulls both `/seat-map` and `/present/list` (a new gate scan appears as confirmed) | happy | P1 | _to author_ |
 | E2E-SLH-005 | Hall with no seat layout → seat-map `SimfEmptyState` ("no seat map"); present table still renders | edge | P1 | _to author_ |
 | E2E-SLH-006 | Nobody inside → present `SimfEmptyState` ("No one is inside the hall yet.") | happy | P1 | _to author_ |
 | E2E-SLH-007 | No active sessions → page-level `SimfEmptyState` ("No sessions available."), no picker | happy | P1 | _to author_ |
@@ -71,6 +85,10 @@
 | E2E-SLH-013 | Cross-DB safety — an admin-typed present user with no `UserProfile` → blank profile cells, no error, no Identity join | data | P1 | authored ✓ (API `Present_attendees_are_resolved_from_app_profiles_only`) |
 | E2E-SLH-014 | QA B17 — a door scan appears within one 15 s auto-refresh tick, with no manual Refresh click | happy | P0 | _to author_ |
 | E2E-SLH-015 | QA B17 — the poll starts on selection, stops on clear/switch and is disposed with the page (no leaked timer) | resilience | P0 | authored ✓ (`SessionLiveHallAutoRefreshTests`) |
+| E2E-SLH-016 | The roster returns one server page and the hall's true present total: 260 inside, the page shows 200 rows and the summary states 260 | happy | P0 | authored |
+| E2E-SLH-017 | An undeclared sort key is a 400 `GRID_SORT_KEY_INVALID` naming the one declared key, `enter`; a search term is a 400 `GRID_SEARCH_NOT_SUPPORTED` | validation | P0 | authored |
+| E2E-SLH-018 | The roster window advances: the second window returns the next 50 arrivals, repeating none and dropping none across an `enter` tie | correctness | P0 | authored |
+| E2E-SLH-019 | The total counts THIS session's open rows only: a second session's hall and closed (departed) rows are outside the scope, in the page and in the total | happy | P0 | authored |
 | E2E-SLH-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-SLH-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
@@ -96,7 +114,7 @@ Background:
 Scenario: Pick a session and see its hall live
   Given the page has loaded and the session dropdown is populated with active sessions only
   When the administrator selects "SES-OPEN01 — Opening Plenary"
-  Then the BFF forwards GET /account/api/admin/sessions/{id}/seat-map and GET /account/api/admin/sessions/{id}/present
+  Then the BFF forwards GET /account/api/admin/sessions/{id}/seat-map and POST /account/api/admin/sessions/{id}/present/list with body {"Top":200}
   And both return HTTP 200 with ApiResult.Success = true
   And the "Seat map" panel renders rows A–C with 10 seats each
   And seat B3 is coloured "confirmed" (تم التأكيد) and its tooltip reads "Seat B3 — Confirmed (checked in)"
@@ -109,7 +127,7 @@ Scenario: Pick a session and see its hall live
 - Screenshot before: `docs/screenshots/cp-admin-session-live-hall-golden-before.png` (session picked, panels loading)
 - Screenshot after: `docs/screenshots/cp-admin-session-live-hall-golden-after.png` (seat map + present table)
 - Console errors: 0 expected
-- Network: `/account/api/admin/sessions/list` 200 on load; `/seat-map` + `/present` 200 on select
+- Network: `/account/api/admin/sessions/list` 200 on load; `/seat-map` + `/present/list` 200 on select
 - DOM: `scrollWidth == clientWidth` (no horizontal overflow); the seat grid scrolls inside `.seatmap` (`overflow-x: auto`), never the page body
 
 ### E2E-SLH-002 — Four seat states
@@ -148,7 +166,7 @@ Scenario: Refresh reflects a new gate scan
   Given a session is selected and one attendee is shown "reserved" on seat C7
   When that attendee scans in at the hall gate (a new open HallAttendance row)
   And the administrator clicks "Refresh"
-  Then GET /seat-map and GET /present are re-issued
+  Then GET /seat-map and POST /present/list are re-issued
   And seat C7 flips from "reserved" to "confirmed"
   And the attendee now appears in the "In the hall now" table
 ```
@@ -193,7 +211,7 @@ Scenario: Admin lacking Attendance.View is denied the page
   When they navigate to /admin/sessions/live-hall
   Then they land on /not-permitted with HTTP 200
   And the "Module.SessionLiveHall" nav item is hidden for them
-  And if GET /api/v1/admin/sessions/{id}/present or /seat-map is forged directly, the API returns HTTP 403
+  And if POST /api/v1/admin/sessions/{id}/present/list or GET /seat-map is forged directly, the API returns HTTP 403
 ```
 
 ### E2E-SLH-009 — Server 500 on the seat map
@@ -239,7 +257,7 @@ Scenario: Switching sessions never bleeds data
   When the administrator selects session B from the dropdown
   Then A's seat map and present list are cleared before B's data arrives
   And any stale error toast from A is cleared
-  And only B's hall is shown once its /seat-map and /present return
+  And only B's hall is shown once its /seat-map and /present/list return
 ```
 
 ### E2E-SLH-013 — Cross-DB safety (App-DB-only resolution)
@@ -264,7 +282,7 @@ Scenario: The live monitor refreshes itself while a session is selected
   And attendee "Sara Al-Otaibi" is shown "reserved" on seat B4
   When she scans in at the hall door and the administrator touches nothing
   Then within 15 seconds a GET /account/api/admin/sessions/{id}/seat-map and a
-      GET /account/api/admin/sessions/{id}/present fire on their own
+      POST /account/api/admin/sessions/{id}/present/list fire on their own
   And seat B4 flips from "reserved" to "confirmed"
   And she appears in the "In the hall now" table
   And the session picker was never disabled and the Refresh button never showed a
@@ -298,6 +316,141 @@ Scenario: The poll exists only while a session is selected and never outlives th
 `B17_selecting_a_session_starts_the_poll_and_disposing_stops_it`,
 `B17_clearing_the_selection_stops_the_poll`.
 
+### E2E-SLH-016 - The roster is one page, and the summary states the whole room
+
+```gherkin
+Feature: One page of the live hall roster
+  As an administrator with Attendance.View
+  I want the roster to return a bounded window and the true number present
+  So that a full hall does not turn one poll tick into an unbounded read
+
+Background:
+  Given the API is reachable and backed by a REAL SQL Server database
+  And an administrator holding Attendance.View has signed in
+  And session "SES-OPEN01" runs in hall "Majlis A"
+  And 260 attendees have open HallAttendance rows for that session
+
+Scenario: The page window is bounded and the total is not
+   When "POST /admin/sessions/{SES-OPEN01 id}/present/list" is called with
+        """
+        { "skip": 0, "top": 200 }
+        """
+   Then the response is 200 with "success": true
+    And "data.items" holds 200 rows, the declared maximum
+    And "data.total" is 260, counted on the server BEFORE Skip and Take
+    And the rows come back in arrival order, the natural order enter ascending
+    And each row carries the attendee's name, organisation, profile type, job title,
+        seat and entry time, all resolved from the App database only
+
+Scenario: The page states the room, not the window
+  Given the administrator has selected "SES-OPEN01" on /admin/sessions/live-hall
+   When the roster renders
+   Then the summary line reads "260 present"
+    And the table holds 200 rows
+    And a hint beside the summary reads "Showing 1-200 of 260", so the view reads as
+        truncated rather than as the whole room
+    # A roster that printed its own row count would have said "200 present" to an
+    # administrator watching a hall that holds 260 people. Before the read was paged
+    # the two numbers could not differ, so nothing on screen had to distinguish them.
+
+Scenario: Omitting top falls back to the resource's own page size
+   When the call sends no top at all
+   Then "data.items" holds 50 rows, the declared fallback
+    And "data.total" is still 260
+    # This endpoint binds the session id from the route and the window from the
+    # body onto one request model whose Top has no default of its own, so an
+    # omitted top arrives as 0 and the seam applies the declared fallback. On the
+    # endpoints that bind a bare GridQuery instead, an omitted top arrives as
+    # GridQuery's own default of 20 and the declared fallback is reached only by
+    # sending top 0. Send top 0 if the assertion has to hold on both shapes.
+
+Scenario: A top above the cap is clamped, not honoured
+   When the call sends "top": 10000
+   Then "data.items" holds at most 200 rows
+    And "data.total" is still 260
+```
+
+### E2E-SLH-017 - The roster refuses keys it does not declare
+
+```gherkin
+Scenario: A sort on a resolved column is a 400, not a quiet no-op
+   When "POST /admin/sessions/{SES-OPEN01 id}/present/list" is called with
+        """
+        { "sort": "displayName" }
+        """
+   Then the response is 400
+    And "error.code" is "GRID_SORT_KEY_INVALID"
+    And the message names displayName and then names the one column that IS
+        sortable, enter
+    # Name, organisation, type, job title and seat are all resolved AFTER the page is
+    # chosen, from other tables, so none of them can be an ORDER BY. The page offers
+    # no sort controls at all, which is why only a hand-written request reaches this.
+
+Scenario: A search term is refused because the roster declares no searchable column
+   When the call sends "search": "Faisal"
+   Then the response is 400
+    And "error.code" is "GRID_SEARCH_NOT_SUPPORTED"
+    And the caller is told this list has no searchable column, rather than being
+        handed the unfiltered roster
+
+Scenario: An undeclared filter key is a 400
+   When the call sends "filters": { "seat": "B3" }
+   Then the response is 400 with "error.code" "GRID_FILTER_KEY_INVALID"
+    And no rows are returned
+
+Scenario: An unknown session id returns an empty page, not a 500
+   When the call names a session id that does not exist
+   Then the response is 200 with "data.items" empty and "data.total" 0
+```
+
+### E2E-SLH-018 - The roster window advances without repeating an attendee
+
+```gherkin
+Scenario: The second window carries the next 50 arrivals
+  Given the 260 present attendees include nine who entered within the same second,
+        so the enter sort column ties
+   When "POST /admin/sessions/{SES-OPEN01 id}/present/list" is called with
+        skip 0 and top 50
+    And the call is repeated with skip 50, then 100, then 150, then 200,
+        then 250
+   Then the six pages hold 50, 50, 50, 50, 50 and 10 rows
+    And "data.total" is 260 on all six
+    And the union of the six pages is exactly the 260 attendees inside,
+        each appearing exactly once
+    And no attendee appears on two pages and none is skipped between them
+    # The Id tiebreak carries this. Nine rows sharing an Enter have no defined order
+    # without it, so an attendee can be returned twice while another is never
+    # returned at all, and on a hall roster that is a person the room says is absent.
+```
+
+### E2E-SLH-019 - The total counts this session's open rows only
+
+```gherkin
+Scenario: A second session's hall is outside the scope
+  Given session "SES-OPEN01" has 260 attendees inside
+    And session "SES-PANEL02" runs at the same time with 90 attendees inside
+   When "POST /admin/sessions/{SES-OPEN01 id}/present/list" is called
+   Then "data.total" is 260, not 350
+    And no attendee of "SES-PANEL02" appears in "data.items"
+    # The session id is the resource's SCOPE, composed onto the source ahead of the
+    # grid, so it constrains the count as well as the window. The two halls bleeding
+    # into one total is the failure this asserts against.
+
+Scenario: A departed attendee leaves the total as well as the table
+  Given one of the 260 is checked out at the hall door, closing their attendance row
+   When the roster is re-read
+   Then "data.total" is 259
+    And that attendee no longer appears in "data.items"
+    # Present means an OPEN row. A closed row counted in the total would make the
+    # summary line drift upward all day while the table stayed correct.
+
+Scenario: An empty hall is an empty page, not an error
+  Given the session has no open attendance rows at all
+   When the roster is read
+   Then the response is 200 with "data.items" empty and "data.total" 0
+    And the page renders its "No one is inside the hall yet." SimfEmptyState
+```
+
 ---
 
 ## Implementation notes
@@ -319,13 +472,17 @@ Scenario: The poll exists only while a session is selected and never outlives th
   staff check-out (`POST .../departures`) closes.
 - **No grid / no CRUD.** Like `/admin/attendance` and `/admin/hall-arrivals`, this is a
   read-only monitor over loaded data. There is no Add/Edit/Details/Deactivate surface;
-  the present list is a live snapshot table (not a `SimfDataGrid` — it is unpaged and
-  refreshes atomically with the seat map).
+  the present list is a live snapshot table, not a `SimfDataGrid`, and it refreshes
+  atomically with the seat map. It is **server-paged all the same**: the table has no
+  pager, sort or filter control, but the read behind it is a `GridQuery` asking for a
+  200-row window, and the summary line reads `Total`. That is why E2E-SLH-016 to -019
+  are written at the wire level rather than as button clicks: there are no buttons to
+  click, and inventing some would test a page that does not exist.
 - **Permission gate** (HARD RULE, CLAUDE.md §Access control): page
   `RequirePermission(Attendance.View)`; nav `Module.SessionLiveHall` →
   `RequiredPermission = Attendance.View`; API `Policies(PolicyFor(Attendance.View),
   RequireApprovedAccount)` on both `GET /admin/sessions/{id}/seat-map` and
-  `GET /admin/sessions/{id}/present`. No new permission code is introduced — the view
+  `POST /admin/sessions/{id}/present/list`. No new permission code is introduced: the view
   reuses the existing `Attendance.View`.
 - **Convert to Playwright** when adopted: copy each Gherkin scenario into a `.feature`
   file under `tests/SIMF.E2E.Tests/` + step-definition class. The Gherkin shape is
@@ -333,4 +490,8 @@ Scenario: The poll exists only while a session is selected and never outlives th
 
 ---
 
-_Last reviewed:_ 2026-07-26 by Claude (QA B17 — 15 s auto-refresh + disposal; E2E-SLH-014/015). Prior: 2026-07-18 by Claude (page created — live per-session hall view, CP page 2e).
+_Last reviewed:_ 2026-08-18 by Claude (the present roster moved onto the shared grid
+seam: `GET /admin/sessions/{id}/present` became
+`POST /admin/sessions/{id}/present/list` binding a `GridQuery`, the summary line
+now reads `Total` rather than the rendered row count, and E2E-SLH-016 to -019 were
+added for the paged contract). Prior: 2026-07-26 by Claude (QA B17: 15 s auto-refresh + disposal; E2E-SLH-014/015). Prior: 2026-07-18 by Claude (page created: live per-session hall view, CP page 2e).

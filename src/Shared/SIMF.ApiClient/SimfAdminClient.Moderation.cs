@@ -29,7 +29,6 @@ using SIMF.Contracts.Statistics;
 using SIMF.Contracts.Configuration;
 using SIMF.Contracts.Ops;
 using SIMF.Contracts.Support;
-using SIMF.Common.Enums;
 
 namespace SIMF.ApiClient;
 

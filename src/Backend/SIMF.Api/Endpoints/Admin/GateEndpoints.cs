@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/Gates/AdminGatesTests.cs
+// Tests: SIMF.Api.Tests/AdminGatesTests.cs
 //        SIMF.Api.Tests/GateOperatorModelTests.cs
 using FastEndpoints;
 using SIMF.Api.RequestContext;

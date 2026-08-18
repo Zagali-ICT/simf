@@ -27,8 +27,6 @@ public partial class QuestionQueueList
 
     private async Task OnQueryChangedAsync(GridQuery next)
     {
-        // The queue is server-paged now, so a sort / filter / page change is a
-        // round-trip rather than a re-projection of an in-memory list.
         _query = next;
         await LoadAsync();
     }

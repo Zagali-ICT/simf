@@ -1,11 +1,11 @@
-// Tests: SIMF.Api.Tests/AdminThemesTests.cs
+// Tests: SIMF.Api.Tests/AdminThemeUpdateTests.cs,
+//        SIMF.Api.Tests/ThemesExcelTests.cs
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
-using SIMF.Common.Enums;
 using SIMF.Common.Grids;
 using SIMF.Contracts.Admin;
 using SIMF.Domain.Programme;

@@ -1,6 +1,8 @@
 // Tests: SIMF.Api.Tests/DelegatesAndBulkBadgesTests.cs
 // Tests: SIMF.Api.Tests/Journey01DelegationToSignInTests.cs (a minted badge
 //        resolves, activates and signs in — the end-to-end holder journey)
+// Tests: SIMF.Api.Tests/GateRevokedBadgeTests.cs (both delete loops and a batch
+//        revoke withdraw admission on the profile, so the badge stops at a gate)
 using System.Globalization;
 using System.IO.Compression;
 using Microsoft.EntityFrameworkCore;

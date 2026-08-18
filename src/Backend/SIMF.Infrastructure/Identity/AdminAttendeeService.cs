@@ -97,8 +97,7 @@ internal sealed class AdminAttendeeService(
         var total = await users.CountAsync(cancellationToken);
         var page = await MaterialiseAsync(users, skip, top, cancellationToken);
 
-        return GridPage<AdminAttendeeSummary>.Of(page, total,
-            skip, top);
+        return GridPage<AdminAttendeeSummary>.Of(page, total, skip, top);
     }
 
     public async Task<byte[]> ExportAsync(
@@ -212,7 +211,7 @@ internal sealed class AdminAttendeeService(
             })
             .ToListAsync(cancellationToken);
 
-        var userIds = pageUsers.Select(u => u.Id).ToList();
+        var userIds = pageUsers.Select(user => user.Id).ToList();
         var profilesByUserId = await appDbContext.UserProfiles
             .AsNoTracking()
             // Keyed by account id because the page is a list of accounts; a
@@ -247,23 +246,23 @@ internal sealed class AdminAttendeeService(
         {
             profilesByUserId.TryGetValue(user.Id, out var profile);
             string? profileTypeName = null;
-            string? profileTypeNameAr = null;
-            Guid? profileTypeIdValue = null;
-            if (profile?.ProfileTypeId is { } ptId
-                && profileTypesById.TryGetValue(ptId, out var profileType))
+            string? profileTypeNameArabic = null;
+            Guid? resolvedProfileTypeId = null;
+            if (profile?.ProfileTypeId is { } profileTypeId
+                && profileTypesById.TryGetValue(profileTypeId, out var profileType))
             {
                 profileTypeName = profileType.Name;
-                profileTypeNameAr = profileType.NameArabic;
-                profileTypeIdValue = ptId;
+                profileTypeNameArabic = profileType.NameArabic;
+                resolvedProfileTypeId = profileTypeId;
             }
             return new AdminAttendeeSummary(
                 user.Id,
                 user.Email ?? string.Empty,
                 user.DisplayName,
                 user.UserType.ToString(),
-                profileTypeIdValue,
+                resolvedProfileTypeId,
                 profileTypeName,
-                profileTypeNameAr,
+                profileTypeNameArabic,
                 user.AccountState.ToString(),
                 profile?.QrId,
                 user.CreatedAt);

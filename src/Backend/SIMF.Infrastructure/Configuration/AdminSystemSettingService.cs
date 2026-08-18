@@ -5,10 +5,8 @@ using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
 using SIMF.Application.Configuration.Abstractions;
 using SIMF.Common;
-using SIMF.Common.Enums;
 using SIMF.Common.Grids;
 using SIMF.Contracts.Admin;
-using SIMF.Domain.Auditing;
 using SIMF.Domain.Configuration;
 using SIMF.Domain.Organization;
 using SIMF.Infrastructure.Common.Grids;
@@ -167,8 +165,8 @@ internal sealed class AdminSystemSettingService(
         void SetMessage(string? value, Action<string?> set)
         {
             if (value is null) { return; }
-            var v = value.Trim();
-            set(v.Length == 0 ? null : v.Length > 1024 ? v[..1024] : v);
+            var trimmed = value.Trim();
+            set(trimmed.Length == 0 ? null : trimmed.Length > 1024 ? trimmed[..1024] : trimmed);
             changed = true;
         }
         void SetSocial(string? value, Action<string?> set)
@@ -186,16 +184,16 @@ internal sealed class AdminSystemSettingService(
             changed = true;
         }
 
-        SetMessage(request.RegistrationMessageAr, v => profile.RegistrationSuccessMessageArabic = v);
-        SetMessage(request.RegistrationMessageEn, v => profile.RegistrationSuccessMessage = v);
-        SetSocial(request.Facebook, v => profile.FacebookUrl = v);
-        SetSocial(request.X, v => profile.XUrl = v);
-        SetSocial(request.Instagram, v => profile.InstagramUrl = v);
-        SetSocial(request.LinkedIn, v => profile.LinkedInUrl = v);
-        SetSocial(request.YouTube, v => profile.YouTubeUrl = v);
-        SetSocial(request.TikTok, v => profile.TikTokUrl = v);
-        SetSocial(request.Snapchat, v => profile.SnapchatUrl = v);
-        SetBool(request.PartnerDirectoryEnabled, v => profile.PartnerDirectoryEnabled = v);
+        SetMessage(request.RegistrationMessageAr, value => profile.RegistrationSuccessMessageArabic = value);
+        SetMessage(request.RegistrationMessageEn, value => profile.RegistrationSuccessMessage = value);
+        SetSocial(request.Facebook, value => profile.FacebookUrl = value);
+        SetSocial(request.X, value => profile.XUrl = value);
+        SetSocial(request.Instagram, value => profile.InstagramUrl = value);
+        SetSocial(request.LinkedIn, value => profile.LinkedInUrl = value);
+        SetSocial(request.YouTube, value => profile.YouTubeUrl = value);
+        SetSocial(request.TikTok, value => profile.TikTokUrl = value);
+        SetSocial(request.Snapchat, value => profile.SnapchatUrl = value);
+        SetBool(request.PartnerDirectoryEnabled, value => profile.PartnerDirectoryEnabled = value);
 
         if (!changed) { return; }
 
@@ -218,9 +216,9 @@ internal sealed class AdminSystemSettingService(
     // target on the app + website). A blank value clears the link.
     private static string? CleanSocialUrl(string? value)
     {
-        var v = (value ?? string.Empty).Trim();
-        if (v.Length == 0) { return null; }
-        if (!Uri.TryCreate(v, UriKind.Absolute, out var uri)
+        var url = (value ?? string.Empty).Trim();
+        if (url.Length == 0) { return null; }
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)
             || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
         {
             throw new ApiException(
@@ -228,7 +226,7 @@ internal sealed class AdminSystemSettingService(
                 "A social link must be an absolute http(s) URL.",
                 "يجب أن يكون رابط التواصل رابط http(s) مطلقاً.");
         }
-        return v.Length > 1024 ? v[..1024] : v;
+        return url.Length > 1024 ? url[..1024] : url;
     }
 
     private static string ValidateKey(string raw)
@@ -273,6 +271,7 @@ internal sealed class AdminSystemSettingService(
             "The system setting was not found.",
             "لم يتم العثور على الإعداد.");
 
-    private static AdminSystemSettingDetail ToDetail(SystemSetting s) => new(
-        s.Id, s.Key, s.Value, s.Description, s.IsActive, s.CreatedAt, s.UpdatedAt);
+    private static AdminSystemSettingDetail ToDetail(SystemSetting setting) => new(
+        setting.Id, setting.Key, setting.Value, setting.Description, setting.IsActive,
+        setting.CreatedAt, setting.UpdatedAt);
 }

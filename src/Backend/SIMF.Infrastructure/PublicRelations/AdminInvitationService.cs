@@ -98,8 +98,8 @@ internal sealed class AdminInvitationService(
         // A recipient with no Identity account has no user row to read an email
         // from; the invitation row itself is still listed below.
         var recipientUserIds = profiles
-            .Where(p => p.UserId != null)
-            .Select(p => p.UserId!.Value)
+            .Where(profile => profile.UserId != null)
+            .Select(profile => profile.UserId!.Value)
             .ToList();
         var senderUserIds = pageRows.Select(row => row.SentByUserId).Distinct().ToList();
         var allUserIds = recipientUserIds.Union(senderUserIds).ToList();
@@ -109,8 +109,8 @@ internal sealed class AdminInvitationService(
             .Select(user => new { user.Id, user.Email, user.DisplayName })
             .ToListAsync(cancellationToken);
 
-        var profileById = profiles.ToDictionary(p => p.Id);
-        var userById = users.ToDictionary(u => u.Id);
+        var profileById = profiles.ToDictionary(profile => profile.Id);
+        var userById = users.ToDictionary(user => user.Id);
 
         var items = pageRows.Select(row =>
         {
@@ -164,14 +164,16 @@ internal sealed class AdminInvitationService(
 
         var profile = await appDbContext.UserProfiles
             .AsNoTracking()
-            .Where(p => p.Id == row.SentToUserProfileId)
-            .Select(p => new
+            .Where(userProfile => userProfile.Id == row.SentToUserProfileId)
+            .Select(userProfile => new
             {
-                p.UserId,
-                p.Name,
-                p.NameArabic,
-                p.JobTitle,
-                ProfileTypeName = p.ProfileType != null ? p.ProfileType.Name : null,
+                userProfile.UserId,
+                userProfile.Name,
+                userProfile.NameArabic,
+                userProfile.JobTitle,
+                ProfileTypeName = userProfile.ProfileType != null
+                    ? userProfile.ProfileType.Name
+                    : null,
             })
             .SingleOrDefaultAsync(cancellationToken);
 
@@ -185,10 +187,10 @@ internal sealed class AdminInvitationService(
             .Select(user => new { user.Id, user.Email, user.DisplayName })
             .ToListAsync(cancellationToken);
 
-        var sender = users.FirstOrDefault(u => u.Id == row.SentByUserId);
+        var sender = users.FirstOrDefault(user => user.Id == row.SentByUserId);
         var recipientUser = profile is null
             ? null
-            : users.FirstOrDefault(u => u.Id == profile.UserId);
+            : users.FirstOrDefault(user => user.Id == profile.UserId);
 
         return new AdminInvitationDetail(
             row.Id,
@@ -485,10 +487,10 @@ internal sealed class AdminInvitationService(
             .ToListAsync(cancellationToken);
 
         var validUserIds = vipProfiles
-            .Where(p => p.UserId != null)
-            .Select(p => p.UserId!.Value)
+            .Where(vip => vip.UserId != null)
+            .Select(vip => vip.UserId!.Value)
             .ToList();
-        var skipped = requestedIds.Except(vipProfiles.Select(p => p.Id)).ToList();
+        var skipped = requestedIds.Except(vipProfiles.Select(vip => vip.Id)).ToList();
 
         var emailsByUser = await userDirectory.GetEmailsAsync(
             validUserIds, cancellationToken);

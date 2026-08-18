@@ -106,7 +106,7 @@ internal sealed class AdminBoothService(
         AdminCreateBoothRequest request,
         CancellationToken cancellationToken = default)
     {
-        var v = ValidateAndNormalise(
+        var draft = ValidateAndNormalise(
             request.Code, request.Name, request.NameArabic,
             request.OfficerName, request.OfficerPhone, request.OfficerEmail,
             request.Sector, request.SectorArabic,
@@ -123,26 +123,26 @@ internal sealed class AdminBoothService(
 
         var clash = await dbContext.Booths
             .AsNoTracking()
-            .AnyAsync(row => row.Code == v.Code, cancellationToken);
+            .AnyAsync(row => row.Code == draft.Code, cancellationToken);
         if (clash)
         {
             throw new ApiException(
                 ErrorCodes.BoothCodeDuplicate, 409,
-                $"A booth with code '{v.Code}' already exists.",
-                $"يوجد جناح بالرمز '{v.Code}' بالفعل.");
+                $"A booth with code '{draft.Code}' already exists.",
+                $"يوجد جناح بالرمز '{draft.Code}' بالفعل.");
         }
 
         var now = timeProvider.SimfNow();
         var booth = new Booth
         {
             Id = Guid.NewGuid(),
-            Code = v.Code,
-            Name = v.Name,
-            NameArabic = v.NameArabic,
+            Code = draft.Code,
+            Name = draft.Name,
+            NameArabic = draft.NameArabic,
             ExhibitorId = request.ExhibitorId,
-            OfficerName = v.OfficerName,
-            OfficerPhone = v.OfficerPhone,
-            OfficerEmail = v.OfficerEmail,
+            OfficerName = draft.OfficerName,
+            OfficerPhone = draft.OfficerPhone,
+            OfficerEmail = draft.OfficerEmail,
             OfficerNameArabic = NullIfBlank(request.OfficerNameArabic),
             OfficerPhoneSecondary = NullIfBlank(request.OfficerPhoneSecondary),
             OfficerWebsite = NullIfBlank(request.OfficerWebsite),
@@ -155,10 +155,10 @@ internal sealed class AdminBoothService(
             OfficerLatitude = request.OfficerLatitude,
             OfficerLongitude = request.OfficerLongitude,
             OfficerCountryId = request.OfficerCountryId,
-            Sector = v.Sector,
-            SectorArabic = v.SectorArabic,
-            Description = v.Description,
-            DescriptionArabic = v.DescriptionArabic,
+            Sector = draft.Sector,
+            SectorArabic = draft.SectorArabic,
+            Description = draft.Description,
+            DescriptionArabic = draft.DescriptionArabic,
             HallId = request.HallId,
             MapX = request.MapX,
             MapY = request.MapY,
@@ -171,12 +171,12 @@ internal sealed class AdminBoothService(
         await auditLog.WriteSuccessAsync(
             AuditEvents.BoothCreated,
             actorUserId,
-            $"id={booth.Id}; code={v.Code}; name={v.Name}",
+            $"id={booth.Id}; code={draft.Code}; name={draft.Name}",
             cancellationToken);
 
         logger.LogInformation(
             "Admin {ActorId} created Booth {Code} ({Id})",
-            actorUserId, v.Code, booth.Id);
+            actorUserId, draft.Code, booth.Id);
 
         var (officerCountryEn, officerCountryAr) =
             await ResolveOfficerCountryAsync(booth.OfficerCountryId, cancellationToken);
@@ -196,7 +196,7 @@ internal sealed class AdminBoothService(
                 "The booth was not found.",
                 "لم يتم العثور على الجناح.");
 
-        var v = ValidateAndNormalise(
+        var draft = ValidateAndNormalise(
             request.Code, request.Name, request.NameArabic,
             request.OfficerName, request.OfficerPhone, request.OfficerEmail,
             request.Sector, request.SectorArabic,
@@ -211,27 +211,27 @@ internal sealed class AdminBoothService(
         await EnsureExhibitorIsValidAsync(request.ExhibitorId, cancellationToken);
         await EnsureOfficerCountryIsValidAsync(request.OfficerCountryId, cancellationToken);
 
-        if (!string.Equals(booth.Code, v.Code, StringComparison.OrdinalIgnoreCase))
+        if (!string.Equals(booth.Code, draft.Code, StringComparison.OrdinalIgnoreCase))
         {
             var clash = await dbContext.Booths
                 .AsNoTracking()
-                .AnyAsync(row => row.Id != id && row.Code == v.Code, cancellationToken);
+                .AnyAsync(row => row.Id != id && row.Code == draft.Code, cancellationToken);
             if (clash)
             {
                 throw new ApiException(
                     ErrorCodes.BoothCodeDuplicate, 409,
-                    $"A booth with code '{v.Code}' already exists.",
-                    $"يوجد جناح بالرمز '{v.Code}' بالفعل.");
+                    $"A booth with code '{draft.Code}' already exists.",
+                    $"يوجد جناح بالرمز '{draft.Code}' بالفعل.");
             }
         }
 
-        booth.Code = v.Code;
-        booth.Name = v.Name;
-        booth.NameArabic = v.NameArabic;
+        booth.Code = draft.Code;
+        booth.Name = draft.Name;
+        booth.NameArabic = draft.NameArabic;
         booth.ExhibitorId = request.ExhibitorId;
-        booth.OfficerName = v.OfficerName;
-        booth.OfficerPhone = v.OfficerPhone;
-        booth.OfficerEmail = v.OfficerEmail;
+        booth.OfficerName = draft.OfficerName;
+        booth.OfficerPhone = draft.OfficerPhone;
+        booth.OfficerEmail = draft.OfficerEmail;
         booth.OfficerNameArabic = NullIfBlank(request.OfficerNameArabic);
         booth.OfficerPhoneSecondary = NullIfBlank(request.OfficerPhoneSecondary);
         booth.OfficerWebsite = NullIfBlank(request.OfficerWebsite);
@@ -244,10 +244,10 @@ internal sealed class AdminBoothService(
         booth.OfficerLatitude = request.OfficerLatitude;
         booth.OfficerLongitude = request.OfficerLongitude;
         booth.OfficerCountryId = request.OfficerCountryId;
-        booth.Sector = v.Sector;
-        booth.SectorArabic = v.SectorArabic;
-        booth.Description = v.Description;
-        booth.DescriptionArabic = v.DescriptionArabic;
+        booth.Sector = draft.Sector;
+        booth.SectorArabic = draft.SectorArabic;
+        booth.Description = draft.Description;
+        booth.DescriptionArabic = draft.DescriptionArabic;
         booth.HallId = request.HallId;
         booth.MapX = request.MapX;
         booth.MapY = request.MapY;
@@ -258,7 +258,7 @@ internal sealed class AdminBoothService(
         await auditLog.WriteSuccessAsync(
             AuditEvents.BoothUpdated,
             actorUserId,
-            $"id={booth.Id}; code={v.Code}; active={booth.IsActive}",
+            $"id={booth.Id}; code={draft.Code}; active={booth.IsActive}",
             cancellationToken);
 
         var (officerCountryEn, officerCountryAr) =
@@ -398,7 +398,7 @@ internal sealed class AdminBoothService(
     // ValidateAndNormalise above and are not re-checked here.
     private static void ValidateContactFields(
         string? nameArabic, string? phoneSecondary,
-        string? website, string? facebook, string? x, string? linkedIn,
+        string? website, string? facebook, string? xUrl, string? linkedIn,
         string? instagram, string? city, string? cityArabic,
         double? latitude, double? longitude)
     {
@@ -417,7 +417,7 @@ internal sealed class AdminBoothService(
             throw Invalid("Website URL must be 512 characters or fewer.",
                 "يجب ألا يتجاوز رابط الموقع الإلكتروني 512 حرفاً.");
         }
-        foreach (var url in new[] { facebook, x, linkedIn, instagram })
+        foreach (var url in new[] { facebook, xUrl, linkedIn, instagram })
         {
             if (!string.IsNullOrWhiteSpace(url) && url.Length > 256)
             {
@@ -507,7 +507,7 @@ internal sealed class AdminBoothService(
         }
     }
 
-    private async Task<(string? en, string? ar)> ResolveOfficerCountryAsync(
+    private async Task<(string? NameEn, string? NameAr)> ResolveOfficerCountryAsync(
         int? countryId, CancellationToken cancellationToken)
     {
         if (countryId is null) { return (null, null); }
@@ -523,49 +523,49 @@ internal sealed class AdminBoothService(
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
     private static AdminBoothDetail ToDetail(
-        Booth b, string? officerCountryNameEn, string? officerCountryNameAr) => new()
+        Booth booth, string? officerCountryNameEn, string? officerCountryNameAr) => new()
     {
-        Id = b.Id,
-        Code = b.Code,
-        Name = b.Name,
-        NameArabic = b.NameArabic,
-        ExhibitorId = b.ExhibitorId,
-        OfficerName = b.OfficerName,
-        OfficerPhone = b.OfficerPhone,
-        OfficerEmail = b.OfficerEmail,
-        OfficerNameArabic = b.OfficerNameArabic,
-        OfficerPhoneSecondary = b.OfficerPhoneSecondary,
-        OfficerWebsite = b.OfficerWebsite,
-        OfficerFacebookUrl = b.OfficerFacebookUrl,
-        OfficerXUrl = b.OfficerXUrl,
-        OfficerLinkedInUrl = b.OfficerLinkedInUrl,
-        OfficerInstagramUrl = b.OfficerInstagramUrl,
-        OfficerCity = b.OfficerCity,
-        OfficerCityArabic = b.OfficerCityArabic,
-        OfficerLatitude = b.OfficerLatitude,
-        OfficerLongitude = b.OfficerLongitude,
-        OfficerCountryId = b.OfficerCountryId,
+        Id = booth.Id,
+        Code = booth.Code,
+        Name = booth.Name,
+        NameArabic = booth.NameArabic,
+        ExhibitorId = booth.ExhibitorId,
+        OfficerName = booth.OfficerName,
+        OfficerPhone = booth.OfficerPhone,
+        OfficerEmail = booth.OfficerEmail,
+        OfficerNameArabic = booth.OfficerNameArabic,
+        OfficerPhoneSecondary = booth.OfficerPhoneSecondary,
+        OfficerWebsite = booth.OfficerWebsite,
+        OfficerFacebookUrl = booth.OfficerFacebookUrl,
+        OfficerXUrl = booth.OfficerXUrl,
+        OfficerLinkedInUrl = booth.OfficerLinkedInUrl,
+        OfficerInstagramUrl = booth.OfficerInstagramUrl,
+        OfficerCity = booth.OfficerCity,
+        OfficerCityArabic = booth.OfficerCityArabic,
+        OfficerLatitude = booth.OfficerLatitude,
+        OfficerLongitude = booth.OfficerLongitude,
+        OfficerCountryId = booth.OfficerCountryId,
         OfficerCountryNameEn = officerCountryNameEn,
         OfficerCountryNameAr = officerCountryNameAr,
-        Sector = b.Sector,
-        SectorArabic = b.SectorArabic,
-        Description = b.Description,
-        DescriptionArabic = b.DescriptionArabic,
-        HallId = b.HallId,
-        MapX = b.MapX,
-        MapY = b.MapY,
-        IsActive = b.IsActive,
+        Sector = booth.Sector,
+        SectorArabic = booth.SectorArabic,
+        Description = booth.Description,
+        DescriptionArabic = booth.DescriptionArabic,
+        HallId = booth.HallId,
+        MapX = booth.MapX,
+        MapY = booth.MapY,
+        IsActive = booth.IsActive,
         // Read-only exhibitor-resolved fields (mirrors PublicBoothService):
         // Website + Tier from the linked Exhibitor, City/CityArabic now inlined on
         // the Exhibitor. Null when the Exhibitor navigation was not loaded (create /
         // update paths) or the booth has no linked exhibitor. ExhibitorContactId is
         // an append-only frozen wire field that now always emits null (the shared
         // Contact directory was removed).
-        Website = b.Exhibitor?.Website,
-        City = b.Exhibitor?.City,
-        CityArabic = b.Exhibitor?.CityArabic,
-        Tier = (int?)b.Exhibitor?.Tier,
-        TierName = b.Exhibitor?.Tier?.ToString(),
+        Website = booth.Exhibitor?.Website,
+        City = booth.Exhibitor?.City,
+        CityArabic = booth.Exhibitor?.CityArabic,
+        Tier = (int?)booth.Exhibitor?.Tier,
+        TierName = booth.Exhibitor?.Tier?.ToString(),
         ExhibitorContactId = null,
     };
 }

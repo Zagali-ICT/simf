@@ -20,6 +20,7 @@
 | 1.0 | 2026-05-29 | SIMF Engineering Team | First issue. Build-ready contract for the Gate Management and Scan API increment. |
 | 1.1 | 2026-05-29 | SIMF Engineering Team | D-160 — added §7.4 `POST /gates/{gateId}/visitors/list`: cursor-paged staff-app view of scans at a single gate, backed by the D-158 snapshot columns. |
 | 1.2 | 2026-07-26 | SIMF Engineering Team | BUG-018 — corrected §4 to the owner's app-first operator model (a gate operator is an approved app account on an operational ProfileType carrying Staff/Moderator, not a CP RBAC-role holder); tightened the §6.3 `assignedOperatorUserIds` rule to that eligibility with a named-id 400; added §6.7a operator-candidates and §6.7b gate-form lookups; appended `userEmail` to the §6.7 assignment row. |
+| 1.3 | 2026-08-18 | SIMF Engineering Team | Grid-seam alignment. Rewrote §6.8 Reports to the shipped contract: the scan report and the occupancy report are now POSTs binding a `GridQuery` (`.../reports/scans/list`, `.../reports/currently-inside/list`) and return `GridPage<T>`; `.../reports/scans.xlsx` keeps its route but binds the same `GridQuery` so the workbook holds filter parity with the grid. Listed the real filter, search and sort keys and the page-size fallback/cap for both reports, and replaced the removed `directionMode` report filter with the scan-level `direction`. §13 OI-1 is closed: the occupancy report is server-paged by contract, so it no longer waits on the load test. |
 
 ---
 
@@ -316,23 +317,38 @@ its own permission holder without widening the ProfileTypes / Halls surface.
 
 ### 6.8 Reports
 
+Both reports run on the shared grid seam, so each is a **POST** whose body is a
+`GridQuery` (`Skip` / `Top` / `Sort` / `Desc` / `Search` / `Filters`) and whose
+payload is one `GridPage<T>`:
+
 ```
-GET /api/v1/admin/gates/reports/scans?from=&to=&gateId=&outcome=&directionMode=&skip=&top=&sort=&desc=
-GET /api/v1/admin/gates/reports/scans.xlsx?from=&to=&gateId=&outcome=  (XLSX download)
-GET /api/v1/admin/gates/reports/currently-inside
+POST /api/v1/admin/gates/reports/scans/list             body: GridQuery
+POST /api/v1/admin/gates/reports/scans.xlsx             body: GridQuery  (XLSX download)
+POST /api/v1/admin/gates/reports/currently-inside/list  body: GridQuery
 ```
 
-Filters: `from` / `to` ISO 8601 UTC; `gateId` Guid; `outcome` `Allowed` /
-`Denied`; `directionMode` filters scans on gates with the given mode (cross-
-reference only).
+Scan-report filter keys: `gateId` Guid; `userProfileId` Guid; `direction`;
+`outcome` `Allowed` / `Denied`; `denialReasonCode`; `source`; `scannedAt`; plus the
+two hand-written day-range keys `scannedFrom` (inclusive) and `scannedTo`
+(inclusive of the whole day). `qrIdAtScan` and `scannedDisplayName` are the
+searchable keys. Default order is `scannedAt` descending; page size falls back to
+50 and is capped at 200. Unknown or unparseable filter keys are now rejected rather
+than silently ignored.
 
-The XLSX endpoint returns `200` with
+The XLSX endpoint keeps its route but binds the **same** `GridQuery` as the list,
+so the workbook can never drift out of filter parity with the grid it came from. It
+returns `200` with
 `Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`
-and a filename header — the body is **not** an `ApiResult` envelope (it
-is a binary download). All other reports return `ApiResult<T>`.
+and a filename header. The body is **not** an `ApiResult` envelope (it is a binary
+download). All other reports return `ApiResult<GridPage<T>>`.
 
-`currently-inside` returns `AdminCurrentlyInsideRow[]` — derived per design
-notes §3.3 from the most-recent-allowed scan across all gates per visitor.
+`currently-inside/list` returns `GridPage<AdminCurrentlyInsideRow>`, derived per
+design notes §3.3 from the most-recent-allowed scan across all gates per visitor.
+Its columns are declared over `GateScan` because that is what the query pages:
+`gateId` and `scannedAt`, default order `scannedAt` descending, page size fallback
+25 and cap 200. The display name, Arabic name and profile type the Control Panel
+renders are resolved **after** the page is chosen, some of it out of the Identity
+database, so they are neither sortable nor filterable.
 
 ## 7. Operator surface — `/api/v1/gates/*`
 
@@ -719,7 +735,7 @@ existing API without server-side change.
 
 | ID | Item | Resolution target |
 |----|------|-------------------|
-| OI-1 | Confirm whether `currently-inside` returns a paged or unbounded list once event volumes are real. Default plan = unbounded JSON; falls back to a paged contract under load. | Pre-event load test |
+| OI-1 | ~~Confirm whether `currently-inside` returns a paged or unbounded list once event volumes are real.~~ **Resolved:** the report moved onto the shared grid seam as `POST .../currently-inside/list`, so it is server-paged by contract (fallback 25, cap 200) and no longer depends on the load test to decide. | Resolved |
 | OI-2 | Whether the XLSX export should also emit `Content-Disposition` charset hints for Arabic filenames. | Pre-event smoke |
 
 ---

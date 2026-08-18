@@ -1,4 +1,6 @@
-// Tests: SIMF.Api.Tests/AdminRolesTests.cs
+// Tests: SIMF.Api.Tests/AdminRoleUpdateTests.cs, SIMF.Api.Tests/RolesExcelTests.cs
+//        (both page /admin/roles/list), SIMF.Api.Tests/RolePermissionsEndpointsTests.cs,
+//        SIMF.Api.Tests/GridContractTests.cs
 using System.Linq.Expressions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -6,7 +8,6 @@ using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
-using SIMF.Common.Enums;
 using SIMF.Common.Grids;
 using SIMF.Contracts.Admin;
 using SIMF.Domain.IdentityAccess;
@@ -33,7 +34,7 @@ internal sealed class AdminRoleService(
     /// <summary>
     /// The grid contract for /admin/roles: one entry per key RolesList.razor can
     /// send. The page marks the name column Filterable, which did nothing before —
-    /// this method never read <c>query.Filters</c> at all — so declaring it here is
+    /// the service never read <c>query.Filters</c> at all — so declaring it here is
     /// what makes that filter box work.
     /// </summary>
     private static readonly GridColumns<SimfRole> Columns = new GridColumns<SimfRole>()
@@ -44,10 +45,11 @@ internal sealed class AdminRoleService(
         .PageSize(fallback: 25, max: 200);
 
     /// <summary>
-    /// The per-role UserCount + PermissionCount are counted inline so the page
-    /// costs one round trip. That reads the injected context, so unlike every other
-    /// converted list this projection cannot be a static field; a fresh tree per
-    /// call is what the filter and search trees already do.
+    /// The row shape shared by the list and the single-role read. The per-role
+    /// UserCount + PermissionCount are counted inline so either costs one round
+    /// trip. That reads the injected context, so unlike every other converted list
+    /// this projection cannot be a static field; a fresh tree per call is what the
+    /// filter and search trees already do.
     /// </summary>
     private Expression<Func<SimfRole, AdminRoleSummary>> ToSummary =>
         role => new AdminRoleSummary(
@@ -55,7 +57,7 @@ internal sealed class AdminRoleService(
             role.Name ?? string.Empty,
             role.IsBaseline,
             dbContext.UserRoles.Count(userRole => userRole.RoleId == role.Id),
-            dbContext.RolePermissions.Count(rp => rp.RoleId == role.Id));
+            dbContext.RolePermissions.Count(rolePermission => rolePermission.RoleId == role.Id));
 
     public Task<GridPage<AdminRoleSummary>> ListAllAsync(
         GridQuery query, CancellationToken cancellationToken = default) =>
@@ -65,17 +67,11 @@ internal sealed class AdminRoleService(
     public async Task<AdminRoleSummary?> GetAsync(
         Guid id, CancellationToken cancellationToken = default)
     {
-        var summary = await dbContext.Roles
+        return await dbContext.Roles
             .AsNoTracking()
             .Where(role => role.Id == id)
-            .Select(role => new AdminRoleSummary(
-                role.Id,
-                role.Name ?? string.Empty,
-                role.IsBaseline,
-                dbContext.UserRoles.Count(userRole => userRole.RoleId == role.Id),
-                dbContext.RolePermissions.Count(rp => rp.RoleId == role.Id)))
+            .Select(ToSummary)
             .SingleOrDefaultAsync(cancellationToken);
-        return summary;
     }
 
     public async Task<AdminRoleSummary> CreateAsync(

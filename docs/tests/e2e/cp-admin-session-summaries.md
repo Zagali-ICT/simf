@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@simrsnf.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-07-20 (Item #35 — Summary video URL field; E2E-SUM-028) |
+| **Last reviewed** | 2026-08-18 (the desk moved onto the shared grid seam) |
 
 > **What this page does (grounded in `SessionSummariesList.razor`).** This is the
 > Scientific-Committee AI session-summary / محضر desk (P4.1 / D-238, Mockup screen
@@ -45,10 +45,18 @@
 > `Module.SessionSummaries` carries the same `RequiredPermission`.
 >
 > **Grid affordances (D-256 — `SimfDataGrid`).** The desk renders through
-> `SimfDataGrid` over the in-memory rows (one read loads every active session, then
-> filter / sort / page run **client-side** in `BuildPage()`). The page size is
-> `Top = 20`. Only the **Session** column (`Key="session"`) is `Filterable` and
-> `Sortable`; **Status** and **Source** are display-only. The three row actions are
+> `SimfDataGrid` and is **server-paged on the shared grid seam**: every filter,
+> sort and page gesture is a fresh `POST /admin/session-summaries/list` carrying a
+> `GridQuery` and returning one `GridPage`. It replaced a `GET
+> /admin/session-summaries` that read every active session in one array. The page
+> size is `Top = 20`. Only the **Session** column (`Key="session"`) is `Filterable`
+> and `Sortable`; **Status** and **Source** are display-only, and are display-only
+> at the server too: they are derived from a correlated sub-select after the page
+> is chosen, so naming either as a sort or filter key is a 400. The declared keys
+> are `session` (searchable) and `start`; the natural order is `start` descending
+> (newest session first) and the page size falls back to 25 and is capped at 200.
+> The scope is `IsActive`, composed onto the source ahead of the grid, so the total
+> counts active sessions only. The three row actions are
 > **quiet icon buttons** in `<RowActions>` (tooltip on hover), not filled text
 > buttons: Generate = sparkle icon, Edit = pencil icon (only when `HasSummary`),
 > Publish/Unpublish = power icon (only when `HasSummary`). There is **no bulk
@@ -73,7 +81,7 @@
 | E2E-SUM-013 | Missing session — generate against a deleted/unknown session → 404 `SESSION_NOT_FOUND` | error | P2 | _to author_ |
 | E2E-SUM-014 | Server 500 on list → bilingual fallback toast, no rows | resilience | P2 | _to author_ |
 | E2E-SUM-015 | RTL / Arabic render — page + editor modal mirror | i18n | P1 | _to author_ |
-| E2E-SUM-016 | Per-column filter on Session narrows the grid (client-side, Skip→0) | happy | P1 | _to author_ |
+| E2E-SUM-016 | Per-column filter on Session narrows the grid (a server round-trip carrying `filters.session`, Skip→0) | happy | P1 | _to author_ |
 | E2E-SUM-017 | Column sort on Session toggles ascending / descending | happy | P2 | _to author_ |
 | E2E-SUM-018 | Excel export — toolbar Export downloads an .xlsx of the active-session set (D-356) | happy | P1 | _to author_ |
 | E2E-SUM-019 | **Submit for review (D-472)** — a Draft summary → "Submit for review" (`.Edit`) → Status "In review"; the Submit action hides | happy | P0 | authored ✓ (SessionSummaryCommitteeTests) |
@@ -93,6 +101,10 @@
 | E2E-SUM-033 | **A18 — a legacy `[echo]` draft that was already approved cannot be published.** A summary carrying the pre-sentinel prefix whose `ApprovedAt` was stamped before this guard existed (so the approve gate never saw it) → Publish returns 400 `SESSION_SUMMARY_INVALID` and the public read stays 404. Unpublish of an already-live one is still allowed, so an operator can retract | error | P0 | authored ✓ (`SessionSummaryCommitteeTests.A18_PublishAsync_WithLegacyEchoPrefixedDraftAlreadyApproved_ReturnsBadRequest`) |
 | E2E-SUM-034 | **A18 — real minutes that merely mention `[echo]` still publish.** The legacy sweep is LEADING-prefix only: minutes reading "ناقش المتحدثون تقنية [echo] للسونار…" approve and publish normally and the app serves them (no false positive) | happy | P1 | authored ✓ (`SessionSummaryCommitteeTests.A18_real_minutes_that_merely_mention_echo_still_publish`) |
 | E2E-SUM-035 | **D-837 — a denied holder gets no empty toolbar.** With `SessionSummaries.View` but not `.Export` (Export is this grid's only toolbar control) the toolbar bar is absent entirely, not rendered empty; granting `.Export` brings it back | auth | P1 | authored ✓ (`ActionPermissionRenderTests.A_denied_holder_gets_no_toolbar_bar_rather_than_an_empty_one`) |
+| E2E-SUM-036 | The desk returns one server page and the true active-session total: 60 active sessions, `top` 20 gives 20 rows and `total` 60 | happy | P0 | authored |
+| E2E-SUM-037 | A Session filter narrows the desk and `total` reports the filtered count, not the page and not every active session | happy | P0 | authored |
+| E2E-SUM-038 | An undeclared sort key is a 400 `GRID_SORT_KEY_INVALID`; sorting on the derived Status or Source column is the same 400 | validation | P0 | authored |
+| E2E-SUM-039 | The pager walks the desk newest-session-first: Next carries `skip` 20, no session repeats or is dropped across a `start` tie | correctness | P0 | authored |
 | E2E-SUM-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-SUM-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
@@ -116,7 +128,7 @@ Background:
 
 Scenario: AI-draft → edit → publish → unpublish one session summary
   Given the row for "Naval Propulsion Futures" shows Status="No summary" and Source="—"
-  And GET /account/api/admin/session-summaries returned 200 with that row
+  And POST /account/api/admin/session-summaries/list returned 200 with that row
 
   When the administrator clicks the row's AI-draft (sparkle) action
   Then POST /account/api/admin/session-summaries/{sessionId}/generate returns 200
@@ -172,7 +184,8 @@ Scenario: AI-draft → edit → publish → unpublish one session summary
 Scenario: The desk lists every active session with its summary state
   Given there are 3 active sessions, one published, one AI-draft, one with no summary
   When the administrator opens /admin/session-summaries
-  Then GET /account/api/admin/session-summaries returns 200 with 3 rows
+  Then POST /account/api/admin/session-summaries/list returns 200 with data.items
+      holding 3 rows and data.total 3
   And the rows are ordered newest session first (by Start descending)
   And the grid shows columns "Session", "Status", "Source", and a row-actions column
   And the published row shows Status="Published"
@@ -256,7 +269,8 @@ Scenario: Cancel closes the editor without saving
 Scenario: No active sessions renders SimfEmptyState
   Given the database has no active Session rows
   When the administrator opens /admin/session-summaries
-  Then GET /account/api/admin/session-summaries returns 200 with an empty list
+  Then POST /account/api/admin/session-summaries/list returns 200 with an empty
+      data.items and data.total 0
   And the surface renders the SimfEmptyState component
   And it shows the bilingual title "No sessions to summarise yet." / "لا توجد جلسات لتلخيصها بعد."
   And no table renders
@@ -272,7 +286,7 @@ Scenario: Signed-in admin lacking SessionSummaries.View is denied
   When they navigate to /admin/session-summaries
   Then the [RequirePermission(PermissionCatalog.SessionSummaries.View)] attribute denies them
   And they land on /not-permitted with HTTP 200
-  And no GET /account/api/admin/session-summaries request fires
+  And no POST /account/api/admin/session-summaries/list request fires
   And the Module.SessionSummaries nav item is hidden for this user
 ```
 
@@ -335,7 +349,7 @@ Scenario: Generating against an unknown or soft-deleted session returns 404
 
 ```gherkin
 Scenario: API 500 on list shows the fallback bilingual toast
-  Given the API is configured to return 500 on GET /admin/session-summaries (e.g. DB down)
+  Given the API is configured to return 500 on POST /admin/session-summaries/list (e.g. DB down)
   When the administrator opens /admin/session-summaries
   Then the page shows the loading text "Loading summaries…" / "جارٍ تحميل الملخصات…"
   And then a red SimfAlert error appears reading
@@ -366,35 +380,36 @@ Scenario: Arabic toggle mirrors the page and the editor modal
 ### E2E-SUM-016 — Per-column filter on Session narrows the grid
 
 ```gherkin
-Scenario: Typing into the Session column filter narrows the grid client-side
+Scenario: Typing into the Session column filter narrows the grid server-side
   Given at least 3 active sessions are listed, including "Naval Propulsion Futures"
-  And GET /account/api/admin/session-summaries returned 200 with every row loaded once
+  And POST /account/api/admin/session-summaries/list returned 200 with the first page
   When the administrator types "Naval" into the per-column filter for "Session"
   Then the grid query carries GridQuery.Filters["session"]="Naval"
   And Skip resets to 0 (the grid returns to the first page)
-  And only rows whose title contains "Naval" (case-insensitive) remain visible
-  And no new GET /account/api/admin/session-summaries request fires
-  # The desk loads every session in one read; BuildPage() filters in memory,
-  # so the per-column filter is purely client-side. Only the Session column is
-  # Filterable — Status and Source have no filter input.
+  And a fresh POST /account/api/admin/session-summaries/list fires carrying that query
+  And only rows whose title contains "Naval" (case-insensitive) come back
+  # The list is server-paged on the shared grid seam, so the filter is applied in
+  # SQL over every active session, not over a fetched prefix. Only the Session
+  # column is Filterable: Status and Source have no filter input.
   When the administrator clears the "Session" filter
   Then GridQuery.Filters["session"] is empty
-  And all active-session rows are visible again
+  And a further POST returns all active-session rows again
 ```
 
 ### E2E-SUM-017 — Column sort on Session toggles ascending / descending
 
 ```gherkin
 Scenario: Sorting the Session column toggles ascending then descending
-  Given the grid lists every active session (default order newest-session-first)
+  Given the grid lists active sessions (default order "start" descending, newest first)
   When the administrator clicks the "Session" column sort
   Then the grid query carries Sort="session" with SortDescending=false
-  And the rows reorder by SessionTitle ascending (A→Z), in memory
+  And a fresh POST /account/api/admin/session-summaries/list fires
+  And the rows come back ordered by SessionTitle ascending (A→Z)
   When the administrator clicks the "Session" column sort again
   Then SortDescending=true
-  And the rows reorder by SessionTitle descending (Z→A)
+  And a further POST returns the rows ordered by SessionTitle descending (Z→A)
   # Only the Session column is Sortable; Status and Source are display-only.
-  And no new GET /account/api/admin/session-summaries request fires
+  # The ORDER BY runs in SQL, so the sort spans every active session, not a page.
 ```
 
 ### E2E-SUM-018 — Excel export (D-356)
@@ -556,6 +571,159 @@ Scenario: The right-click menu does not open empty on a fully denied row
   # swallowed the next click.
 ```
 
+### E2E-SUM-036 - The desk returns one server page and the true total
+
+```gherkin
+Feature: One page of the summary desk
+  As a Scientific-Committee member with SessionSummaries.View
+  I want the desk to return the window I asked for and the true number of sessions
+  So that the pager is honest and the read does not grow with the programme
+
+Background:
+  Given the API is reachable and backed by a REAL SQL Server database
+  And an administrator holding SessionSummaries.View has signed in
+  And there are 60 ACTIVE sessions and 8 inactive ones
+  And 12 of the active sessions already carry a summary
+
+Scenario: The first page carries 20 rows and a total of 60
+   When "POST /admin/session-summaries/list" is called with
+        """
+        { "skip": 0, "top": 20 }
+        """
+   Then the response is 200 with "success": true
+    And "data.items" holds 20 rows
+    And "data.total" is 60, counted on the server BEFORE Skip and Take
+    And "data.skip" is 0 and "data.top" is 20
+    And the rows come back newest session first, the natural order start descending
+    And no inactive session appears, in the page or in the total
+    # 60 not 68: IsActive is the resource's SCOPE, composed onto the source ahead of
+    # the grid, so it constrains the count as well as the window. A total of 68 would
+    # mean the scope was applied only after the page was taken.
+
+Scenario: Each row still carries its summary state
+   Then every returned row carries HasSummary, IsPublished, IsInReview, IsApproved
+        and GeneratedByAi
+    And a session with no summary comes back with HasSummary false, not omitted
+    # The state flags are derived with null-conditionals that an expression tree
+    # cannot carry, so only the CHOSEN page is mapped to them. The assertion is that
+    # paging did not cost the desk its state column.
+
+Scenario: A top above the cap is clamped to the resource's maximum
+   When the call sends "top": 5000
+   Then "data.items" holds at most 200 rows, the declared maximum
+    And "data.total" is still 60
+```
+
+### E2E-SUM-037 - A Session filter narrows the desk and the total follows
+
+```gherkin
+Scenario: Filtering by session title reports the filtered count
+  Given 4 of the 60 active sessions have "Propulsion" in their title
+   When "POST /admin/session-summaries/list" is called with
+        """
+        { "skip": 0, "top": 20, "filters": { "session": "Propulsion" } }
+        """
+   Then the response is 200
+    And "data.items" holds 4 rows, every title containing "Propulsion"
+    And "data.total" is 4, the size of the FILTERED set
+    And "data.total" is not 60 (every active session) and not 20 (the page window)
+
+Scenario: The free-text search covers the same column
+   When "POST /admin/session-summaries/list" is called with
+        """
+        { "search": "Propulsion" }
+        """
+   Then the same 4 rows come back and "data.total" is 4
+    # session is the desk's only searchable column, which is why a search and a
+    # session filter agree here. On a list with several searchable columns they
+    # would not, and that is the point of declaring them.
+
+Scenario: A filter that matches nothing is an empty page, not an error
+   When the session filter names a title no session carries
+   Then the response is 200 with "success": true
+    And "data.items" is empty and "data.total" is 0
+    And the page renders its SimfEmptyState, not an error toast
+
+Scenario: A search term containing a percent sign matches literally
+   When the search term is "50%"
+   Then it is matched as the literal text "50%", not as a wildcard
+```
+
+### E2E-SUM-038 - The desk refuses keys it does not declare
+
+```gherkin
+Scenario: An undeclared sort key is a 400 that lists the real ones
+   When "POST /admin/session-summaries/list" is called with
+        """
+        { "sort": "notAColumn" }
+        """
+   Then the response is 400
+    And "error.code" is "GRID_SORT_KEY_INVALID"
+    And the message names notAColumn and then lists the sortable columns:
+        session and start
+
+Scenario: Sorting on the derived Status column is the same 400
+   When "POST /admin/session-summaries/list" is called with
+        """
+        { "sort": "status" }
+        """
+   Then the response is 400 with "error.code" "GRID_SORT_KEY_INVALID"
+    # Status is not a column on Session. It is derived from a correlated sub-select
+    # over SessionSummaries and mapped after the page is chosen, so it cannot be an
+    # ORDER BY. The page therefore renders Status and Source with no sort button:
+    # a user cannot provoke this, only a hand-written request can.
+
+Scenario: An undeclared filter key is a 400, never a widened result set
+   When "POST /admin/session-summaries/list" is called with
+        """
+        { "filters": { "isPublished": "true" } }
+        """
+   Then the response is 400
+    And "error.code" is "GRID_FILTER_KEY_INVALID"
+    And no rows are returned
+    # An ignored filter would return every active session to a caller who asked for
+    # the published ones, which on this desk reads as "everything is published".
+
+Scenario: A filter key in the wrong case still binds and still filters
+   When the call sends "SESSION" instead of "session"
+   Then the response is 200 and the filter is applied
+```
+
+### E2E-SUM-039 - The pager walks the desk without repeating a session
+
+```gherkin
+Scenario: Next carries the following 20 sessions
+  Given the 60 active sessions include five that start at the same instant,
+        so the start sort column ties
+   When "POST /admin/session-summaries/list" is called with skip 0 and top 20
+    And the call is repeated with skip 20 and top 20
+    And once more with skip 40 and top 20
+   Then the three pages hold 20, 20 and 20 rows
+    And "data.total" is 60 on all three
+    And the union of the three pages is exactly the 60 active sessions,
+        each appearing exactly once
+    And no session appears on two pages and none is skipped between them
+    # Five sessions sharing a Start have no defined order without the Id tiebreak,
+    # so one can be returned on both page one and page two while another is never
+    # returned at all: a session that silently never gets its minutes written.
+
+Scenario: The page controls drive the same windows
+  Given the administrator is on /admin/session-summaries showing "Showing 1-20 of 60"
+   When they click Next
+   Then a POST /account/api/admin/session-summaries/list fires with skip 20 and top 20
+    And the summary reads "Showing 21-40 of 60"
+    And the page label reads "Page 2 of 3"
+   When they click First
+   Then the request carries skip 0 and the summary reads "Showing 1-20 of 60"
+
+Scenario: The export reads the same paged call, so it cannot disagree
+   When the administrator exports with no rows selected and a Session filter applied
+   Then the workbook holds the rows that filter selected, in the same order
+    And it does not hold every active session
+    # The export walks this same list call page by page up to its own cap, so filter,
+    # search and sort parity with the grid is by construction, not by a second query.
+```
+
 ## Implementation notes
 
 - **API integration tests** at
@@ -595,4 +763,8 @@ Scenario: The right-click menu does not open empty on a fully denied row
 
 ---
 
-_Last reviewed:_ 2026-07-27 by Claude (A18 follow-up — the `[AI-STUB-DO-NOT-PUBLISH]` banner is stamped by the summary desk instead of the shared `EchoAiProvider`, so the visitor chatbot / FAQ / translate never render reviewer instructions, and the approve/publish guard also refuses drafts that merely open with the legacy `[echo:…]` / `[echo]` prefix; E2E-SUM-032..034). Earlier: 2026-07-26 by Claude (A18 — the shipped Echo stub now marks its output `[AI-STUB-DO-NOT-PUBLISH]` and Approve/Publish refuse marked text, so an echo stub can no longer be approved and published verbatim; A19 — a save/regenerate that changes nothing no longer clears the review + publish stamps, and the CP warns before a save that would withdraw a live محضر; E2E-SUM-029..031). Earlier: 2026-07-20 by Claude (Item #35 — the editor gains a "Summary video URL" field (the app's second player on screen 34, beside the full recording); the URL is LiveStreamUrlPolicy-validated and round-trips through Save; E2E-SUM-028). Earlier: 2026-07-19 by Claude (Slice D — the raw subtitle + a pristine AI-draft snapshot are surfaced read-only in the CP editor; Generate captures the snapshot and Save never overwrites it; E2E-SUM-026/027, authored at the API layer; CP-internal, no public-contract change). Earlier the same day: owner approval hard-gate — Publish requires `ApprovedAt`, and editing a published summary clears `PublishedAt` so the app never sees unreviewed minutes; the public read + `HasPublishedSummary` also require `ApprovedAt`; E2E-SUM-023/024. Earlier: 2026-07-11 by Claude (S-6 owner — publish gated on the session having STARTED (clock: now >= Start), not the manual Held flag; E2E-SUM-025). Earlier: 2026-06-20 by SIMF Team (D-472 #9 — added the team review/approval workflow Submit→Approve→Return + the moderator/host "ready for المحاور" approved read; E2E-SUM-019..022, authored at the API layer). Earlier: 2026-06-10 (D-356 Phase 5 — Excel + toggle; E2E-SUM-018); 2026-06-03 (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).
+_Last reviewed:_ 2026-08-18 by Claude (the desk moved onto the shared grid seam:
+`GET /admin/session-summaries` became `POST /admin/session-summaries/list` binding
+a `GridQuery`, filter and sort stopped being an in-memory re-projection, and
+E2E-SUM-036 to -039 were added for the paged contract). Earlier: 2026-07-27 by
+Claude (A18 follow-up: the `[AI-STUB-DO-NOT-PUBLISH]` banner is stamped by the summary desk instead of the shared `EchoAiProvider`, so the visitor chatbot / FAQ / translate never render reviewer instructions, and the approve/publish guard also refuses drafts that merely open with the legacy `[echo:...]` / `[echo]` prefix; E2E-SUM-032..034). Earlier: 2026-07-26 by Claude (A18: the shipped Echo stub now marks its output `[AI-STUB-DO-NOT-PUBLISH]` and Approve/Publish refuse marked text, so an echo stub can no longer be approved and published verbatim; A19: a save/regenerate that changes nothing no longer clears the review + publish stamps, and the CP warns before a save that would withdraw a live محضر; E2E-SUM-029..031). Earlier: 2026-07-20 by Claude (Item #35: the editor gains a "Summary video URL" field (the app's second player on screen 34, beside the full recording); the URL is LiveStreamUrlPolicy-validated and round-trips through Save; E2E-SUM-028). Earlier: 2026-07-19 by Claude (Slice D: the raw subtitle + a pristine AI-draft snapshot are surfaced read-only in the CP editor; Generate captures the snapshot and Save never overwrites it; E2E-SUM-026/027, authored at the API layer; CP-internal, no public-contract change). Earlier the same day: owner approval hard-gate: Publish requires `ApprovedAt`, and editing a published summary clears `PublishedAt` so the app never sees unreviewed minutes; the public read + `HasPublishedSummary` also require `ApprovedAt`; E2E-SUM-023/024. Earlier: 2026-07-11 by Claude (S-6 owner: publish gated on the session having STARTED (clock: now >= Start), not the manual Held flag; E2E-SUM-025). Earlier: 2026-06-20 by SIMF Team (D-472 #9: added the team review/approval workflow Submit→Approve→Return + the moderator/host "ready for المحاور" approved read; E2E-SUM-019..022, authored at the API layer). Earlier: 2026-06-10 (D-356 Phase 5: Excel + toggle; E2E-SUM-018); 2026-06-03 (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).

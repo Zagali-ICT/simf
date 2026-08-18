@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Ai.Abstractions;
 using SIMF.Application.Auditing;
+using SIMF.Application.Files.Abstractions;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
@@ -12,7 +13,6 @@ using SIMF.Domain.Programme;
 using SIMF.Infrastructure.Ai;
 using SIMF.Infrastructure.Common.Grids;
 using SIMF.Infrastructure.Persistence;
-using SIMF.Application.Files.Abstractions;
 
 namespace SIMF.Infrastructure.Programme;
 
@@ -109,14 +109,15 @@ internal sealed class AdminSessionSummaryService(
                     session.TitleArabic,
                     session.Start,
                     Summary = appDbContext.SessionSummaries
-                        .Where(s => s.SessionId == session.Id && s.IsActive)
-                        .Select(s => new
+                        .Where(summary =>
+                            summary.SessionId == session.Id && summary.IsActive)
+                        .Select(summary => new
                         {
-                            s.AiModel,
-                            s.PublishedAt,
-                            s.UpdatedAt,
-                            s.ReviewSubmittedAt,
-                            s.ApprovedAt,
+                            summary.AiModel,
+                            summary.PublishedAt,
+                            summary.UpdatedAt,
+                            summary.ReviewSubmittedAt,
+                            summary.ApprovedAt,
                         })
                         .FirstOrDefault(),
                 },
@@ -146,8 +147,12 @@ internal sealed class AdminSessionSummaryService(
     {
         var session = await appDbContext.Sessions
             .AsNoTracking()
-            .Where(s => s.Id == sessionId && s.IsActive)
-            .Select(s => new { s.Id, s.Code, s.Title, s.TitleArabic, s.LiveCaptions, s.LiveCaptionsArabic })
+            .Where(row => row.Id == sessionId && row.IsActive)
+            .Select(row => new
+            {
+                row.Id, row.Code, row.Title, row.TitleArabic,
+                row.LiveCaptions, row.LiveCaptionsArabic,
+            })
             .SingleOrDefaultAsync(cancellationToken);
         if (session is null)
         {
@@ -157,8 +162,15 @@ internal sealed class AdminSessionSummaryService(
         var summary = await appDbContext.SessionSummaries
             .AsNoTracking()
             .SingleOrDefaultAsync(
-                s => s.SessionId == sessionId && s.IsActive, cancellationToken);
-        return summary is null ? null : ToDetail(await feedLinks.ResolveAsync(summary.SummaryVideoFileId, cancellationToken), session.Code, session.Title, session.TitleArabic, session.LiveCaptions, session.LiveCaptionsArabic, summary);
+                row => row.SessionId == sessionId && row.IsActive, cancellationToken);
+        if (summary is null)
+        {
+            return null;
+        }
+        return ToDetail(
+            await feedLinks.ResolveAsync(summary.SummaryVideoFileId, cancellationToken),
+            session.Code, session.Title, session.TitleArabic,
+            session.LiveCaptions, session.LiveCaptionsArabic, summary);
     }
 
     public async Task<AdminSessionSummaryDetail> GenerateAsync(
@@ -193,7 +205,8 @@ internal sealed class AdminSessionSummaryService(
             SummaryPromptKey, inputs, new AiCallerContext(actorUserId, "Admin"), cancellationToken);
 
         var summary = await appDbContext.SessionSummaries
-            .SingleOrDefaultAsync(s => s.SessionId == sessionId && s.IsActive, cancellationToken);
+            .SingleOrDefaultAsync(
+                row => row.SessionId == sessionId && row.IsActive, cancellationToken);
         var now = timeProvider.SimfNow();
         // A re-draft that lands the same Arabic text as the stored one has
         // not changed what the app serves, so it must not unpublish the محضر.
@@ -268,7 +281,7 @@ internal sealed class AdminSessionSummaryService(
             "Session summary {SummaryId} AI-drafted for session {SessionId} by {UserId} (model {Model}).",
             summary.Id, sessionId, actorUserId, result.Model);
 
-        return ToDetail(await feedLinks.ResolveAsync(summary.SummaryVideoFileId, cancellationToken), session.Code, session.Title, session.TitleArabic, session.LiveCaptions, session.LiveCaptionsArabic, summary);
+        return await ToDetailAsync(session, summary, cancellationToken);
     }
 
     public async Task<AdminSessionSummaryDetail> SaveAsync(
@@ -290,7 +303,8 @@ internal sealed class AdminSessionSummaryService(
         var summaryVideoUrl = CleanSummaryVideoUrl(request.SummaryVideoUrl);
 
         var summary = await appDbContext.SessionSummaries
-            .SingleOrDefaultAsync(s => s.SessionId == sessionId && s.IsActive, cancellationToken);
+            .SingleOrDefaultAsync(
+                row => row.SessionId == sessionId && row.IsActive, cancellationToken);
         var now = timeProvider.SimfNow();
 
         if (summary is null)
@@ -342,7 +356,7 @@ internal sealed class AdminSessionSummaryService(
             AuditEvents.SessionSummarySaved, actorUserId, sessionId,
             $"summaryId={summary.Id}", cancellationToken);
 
-        return ToDetail(await feedLinks.ResolveAsync(summary.SummaryVideoFileId, cancellationToken), session.Code, session.Title, session.TitleArabic, session.LiveCaptions, session.LiveCaptionsArabic, summary);
+        return await ToDetailAsync(session, summary, cancellationToken);
     }
 
     public Task<AdminSessionSummaryDetail> PublishAsync(
@@ -403,7 +417,7 @@ internal sealed class AdminSessionSummaryService(
             publish ? AuditEvents.SessionSummaryPublished : AuditEvents.SessionSummaryUnpublished,
             actorUserId, sessionId, $"summaryId={summary.Id}", cancellationToken);
 
-        return ToDetail(await feedLinks.ResolveAsync(summary.SummaryVideoFileId, cancellationToken), session.Code, session.Title, session.TitleArabic, session.LiveCaptions, session.LiveCaptionsArabic, summary);
+        return await ToDetailAsync(session, summary, cancellationToken);
     }
 
     public async Task<AdminSessionSummaryDetail> SubmitForReviewAsync(
@@ -431,7 +445,7 @@ internal sealed class AdminSessionSummaryService(
             AuditEvents.SessionSummarySubmittedForReview, actorUserId, sessionId,
             $"summaryId={summary.Id}", cancellationToken);
 
-        return ToDetail(await feedLinks.ResolveAsync(summary.SummaryVideoFileId, cancellationToken), session.Code, session.Title, session.TitleArabic, session.LiveCaptions, session.LiveCaptionsArabic, summary);
+        return await ToDetailAsync(session, summary, cancellationToken);
     }
 
     public async Task<AdminSessionSummaryDetail> ApproveAsync(
@@ -464,7 +478,7 @@ internal sealed class AdminSessionSummaryService(
             AuditEvents.SessionSummaryApproved, actorUserId, sessionId,
             $"summaryId={summary.Id}", cancellationToken);
 
-        return ToDetail(await feedLinks.ResolveAsync(summary.SummaryVideoFileId, cancellationToken), session.Code, session.Title, session.TitleArabic, session.LiveCaptions, session.LiveCaptionsArabic, summary);
+        return await ToDetailAsync(session, summary, cancellationToken);
     }
 
     public async Task<AdminSessionSummaryDetail> ReturnToDraftAsync(
@@ -483,14 +497,14 @@ internal sealed class AdminSessionSummaryService(
             AuditEvents.SessionSummaryReturnedToDraft, actorUserId, sessionId,
             $"summaryId={summary.Id}", cancellationToken);
 
-        return ToDetail(await feedLinks.ResolveAsync(summary.SummaryVideoFileId, cancellationToken), session.Code, session.Title, session.TitleArabic, session.LiveCaptions, session.LiveCaptionsArabic, summary);
+        return await ToDetailAsync(session, summary, cancellationToken);
     }
 
     private async Task<SessionSummary> LoadSummaryAsync(
         Guid sessionId, CancellationToken cancellationToken) =>
         await appDbContext.SessionSummaries
             .SingleOrDefaultAsync(
-                s => s.SessionId == sessionId && s.IsActive, cancellationToken)
+                row => row.SessionId == sessionId && row.IsActive, cancellationToken)
         ?? throw new ApiException(
             ErrorCodes.SessionSummaryNotFound, 404,
             "No summary exists for this session yet.",
@@ -600,7 +614,8 @@ internal sealed class AdminSessionSummaryService(
         Guid sessionId, CancellationToken cancellationToken) =>
         await appDbContext.Sessions
             .AsNoTracking()
-            .SingleOrDefaultAsync(s => s.Id == sessionId && s.IsActive, cancellationToken)
+            .SingleOrDefaultAsync(
+                row => row.Id == sessionId && row.IsActive, cancellationToken)
         ?? throw new ApiException(
             ErrorCodes.SessionNotFound, 404,
             "The session was not found.",
@@ -650,40 +665,52 @@ internal sealed class AdminSessionSummaryService(
         return trimmed;
     }
 
+    /// <summary>The detail every write path returns, for a session already loaded
+    /// as an entity. The summary video is a file-store row, so its URL is resolved
+    /// here — behind the pointer the summary stores — before the static mapper runs.
+    /// </summary>
+    private async Task<AdminSessionSummaryDetail> ToDetailAsync(
+        Session session, SessionSummary summary, CancellationToken cancellationToken) =>
+        ToDetail(
+            await feedLinks.ResolveAsync(summary.SummaryVideoFileId, cancellationToken),
+            session.Code, session.Title, session.TitleArabic,
+            session.LiveCaptions, session.LiveCaptionsArabic, summary);
+
     // summaryVideoUrl is resolved by the caller: the video is a file-store row
     // now, and this mapper is static.
     private static AdminSessionSummaryDetail ToDetail(
         string? summaryVideoUrl,
         string code, string title, string titleArabic,
-        string? subtitle, string? subtitleArabic, SessionSummary s) =>
+        string? subtitle, string? subtitleArabic, SessionSummary summary) =>
         new(
-            s.SessionId,
+            summary.SessionId,
             code,
             title,
             titleArabic,
-            s.KeyPoints,
-            s.KeyPointsArabic,
-            s.Recommendations,
-            s.RecommendationsArabic,
-            s.Speakers,
-            s.SpeakersArabic,
-            s.FullText,
-            s.FullTextArabic,
-            s.AiModel,
-            IsPublished: s.PublishedAt is not null,
-            s.PublishedAt,
-            s.CreatedAt,
-            s.UpdatedAt,
-            IsInReview: s.ReviewSubmittedAt is not null && s.ApprovedAt is null,
-            IsApproved: s.ApprovedAt is not null,
-            s.ApprovedAt,
+            summary.KeyPoints,
+            summary.KeyPointsArabic,
+            summary.Recommendations,
+            summary.RecommendationsArabic,
+            summary.Speakers,
+            summary.SpeakersArabic,
+            summary.FullText,
+            summary.FullTextArabic,
+            summary.AiModel,
+            IsPublished: summary.PublishedAt is not null,
+            summary.PublishedAt,
+            summary.CreatedAt,
+            summary.UpdatedAt,
+            IsInReview:
+                summary.ReviewSubmittedAt is not null && summary.ApprovedAt is null,
+            IsApproved: summary.ApprovedAt is not null,
+            summary.ApprovedAt,
             // Slice D — the read-only AI-transparency sources: the raw subtitle
             // the AI drafted from (Session.LiveCaptions*) and the pristine AI
             // draft snapshot captured at generation.
             Subtitle: subtitle,
             SubtitleArabic: subtitleArabic,
-            s.AiDraftFullTextArabic,
-            s.AiDraftGeneratedAt,
+            summary.AiDraftFullTextArabic,
+            summary.AiDraftGeneratedAt,
             // Item #35 — the team summary-video URL round-trips to the editor.
             summaryVideoUrl);
 }

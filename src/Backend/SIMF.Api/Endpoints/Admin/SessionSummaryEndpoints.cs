@@ -10,11 +10,11 @@ namespace SIMF.Api.Endpoints.Admin;
 /// <summary>The Scientific-Committee session-summary / محضر desk.
 /// List + read are gated by
 /// <c>SessionSummaries.View</c>, generate + save by <c>.Edit</c>, publish +
-/// un-publish by <c>.Publish</c> — all on top of RequireApprovedAccount.</summary>
-/// <summary>Server-paged on the shared grid seam, so the desk list is a POST
-/// carrying a <see cref="GridQuery"/> like every other Control Panel list.
-/// The literal <c>list</c> segment cannot collide with the sibling
-/// <c>{sessionId:guid}</c> routes.</summary>
+/// un-publish by <c>.Publish</c> — all on top of RequireApprovedAccount.
+/// <para>The desk list is server-paged on the shared grid seam, so it is a POST
+/// carrying a <see cref="GridQuery"/> like every other Control Panel list. The
+/// literal <c>list</c> segment cannot collide with the sibling
+/// <c>{sessionId:guid}</c> routes.</para></summary>
 public sealed class ListSessionSummariesEndpoint(IAdminSessionSummaryService service)
     : Endpoint<GridQuery, ApiResult<GridPage<AdminSessionSummaryRow>>>
 {

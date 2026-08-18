@@ -25,7 +25,6 @@ using SIMF.Contracts.PublicRelations;
 using SIMF.Contracts.Regions;
 using SIMF.Contracts.Reporting;
 using SIMF.Contracts.Sessions;
-using SIMF.Common.Enums;
 
 namespace SIMF.ControlPanel.Endpoints;
 

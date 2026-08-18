@@ -1,12 +1,12 @@
 // Tests: SIMF.Api.Tests/AdminSpeakersTests.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using SIMF.Application.Assets.Abstractions;
 using SIMF.Application.Auditing;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Common.Grids;
-using SIMF.Application.Assets.Abstractions;
 using SIMF.Contracts.Admin;
 using SIMF.Domain.Programme;
 using SIMF.Infrastructure.Common.Grids;
@@ -16,14 +16,10 @@ namespace SIMF.Infrastructure.Programme;
 
 /// <summary>
 /// Admin CRUD over <see cref="Speaker"/>. Built on
-/// <see cref="SimfAppDbContext"/>. <c>CountryId</c> is validated against
-/// the live <c>Country</c> table (same context), and so is
-/// <c>UserProfileId</c>. NOTE: this comment previously said UserProfileId was
-/// cross-context and deliberately unchecked because "a stale FK degrades
-/// gracefully to no linked account". That has not been true since
-/// <c>UserProfile</c> moved onto <see cref="SimfAppDbContext"/> — it is a real
-/// same-database FK with <c>OnDelete.Restrict</c>, so an unknown id threw at
-/// SaveChanges and surfaced as a 500. Both ids are now validated up front.
+/// <see cref="SimfAppDbContext"/>. <c>CountryId</c> and <c>UserProfileId</c> are
+/// both validated up front against the live tables on the same context: each is a
+/// real same-database FK with <c>OnDelete.Restrict</c>, so an unknown id that
+/// reached SaveChanges would violate the constraint and surface as a 500.
 /// </summary>
 internal sealed class AdminSpeakerService(
     SimfAppDbContext dbContext,
@@ -431,17 +427,11 @@ internal sealed class AdminSpeakerService(
     }
 
     /// <summary>Validates the linked-account id BEFORE SaveChanges.
-    ///
-    /// <para>This class's summary used to say existence was deliberately not
-    /// pre-checked because the link is cross-context and "a stale FK degrades
-    /// gracefully to no linked account". That stopped being true when
-    /// <c>UserProfile</c> moved onto <see cref="SimfAppDbContext"/>:
-    /// <c>Speaker.UserProfileId</c> is now a real same-database FK with
-    /// <c>OnDelete.Restrict</c>, so an unknown id no longer degrades — it violates
-    /// the constraint at SaveChanges and reaches the admin as an unhandled
-    /// <b>500</b>. Checking it here turns that into a 400 the caller can act on,
-    /// exactly as <see cref="EnsureCountryIsValidAsync"/> does for the country.
-    /// Found while executing BF-13's over-posting scenario.</para></summary>
+    /// <c>Speaker.UserProfileId</c> is a real same-database FK with
+    /// <c>OnDelete.Restrict</c>, so an unknown id violates the constraint at
+    /// SaveChanges and reaches the admin as an unhandled <b>500</b>. Checking it
+    /// here turns that into a 400 the caller can act on, exactly as
+    /// <see cref="EnsureCountryIsValidAsync"/> does for the country.</summary>
     private async Task EnsureUserProfileIsValidAsync(
         Guid? userProfileId, CancellationToken cancellationToken)
     {

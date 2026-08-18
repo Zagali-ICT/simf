@@ -1,16 +1,16 @@
 ﻿// Tests: SIMF.Api.Tests/AdminSessionsTests.cs,
-//        SIMF.Api.Tests/GridDateSortKeyTests.cs
-// Tests: SIMF.Api.Tests/SessionLifecycleTests.cs
-// Tests: SIMF.Api.Tests/SessionRecordingTests.cs
-// Tests: SIMF.Api.Tests/SessionLiveNoticeTests.cs (informational live notice)
+//        SIMF.Api.Tests/GridDateSortKeyTests.cs,
+//        SIMF.Api.Tests/SessionLifecycleTests.cs,
+//        SIMF.Api.Tests/SessionRecordingTests.cs,
+//        SIMF.Api.Tests/SessionLiveNoticeTests.cs
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using SIMF.Application.Auditing;
 using SIMF.Application.Files.Abstractions;
 using SIMF.Application.Notifications;
 using SIMF.Application.Programme.Abstractions;
-using Microsoft.Extensions.Options;
 using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Common.Grids;
@@ -115,12 +115,13 @@ internal sealed class AdminSessionService(
                 // The feeds are file-store rows; the wire keeps carrying the URL
                 // itself because both clients classify a feed by reading it.
                 dbContext.StoredFiles
-                    .Where(f => f.Id == session.LiveStreamFileId && f.IsActive)
-                    .Select(f => f.ExternalUrl)
+                    .Where(file => file.Id == session.LiveStreamFileId && file.IsActive)
+                    .Select(file => file.ExternalUrl)
                     .FirstOrDefault(),
                 dbContext.StoredFiles
-                    .Where(f => f.Id == session.LiveSignLanguageFileId && f.IsActive)
-                    .Select(f => f.ExternalUrl)
+                    .Where(file =>
+                        file.Id == session.LiveSignLanguageFileId && file.IsActive)
+                    .Select(file => file.ExternalUrl)
                     .FirstOrDefault(),
                 session.LiveCaptions,
                 session.LiveCaptionsArabic,
@@ -214,7 +215,6 @@ internal sealed class AdminSessionService(
         await EnsureThemesExistAsync(request.ThemeIds, cancellationToken);
         await EnsureCategoryIsValidAsync(request.CategoryId, cancellationToken);
 
-        // A new session must declare its type (Workshop / Session / Event).
         if (request.Type is null)
         {
             throw new ApiException(
@@ -222,7 +222,6 @@ internal sealed class AdminSessionService(
                 "A session type is required (Workshop, Session or Event).",
                 "نوع الجلسة مطلوب (ورشة عمل أو جلسة أو حدث).");
         }
-        // A new non-Event session must have at least one speaker.
         if (!SatisfiesSpeakerRule(request.Type, request.Speakers.Count))
         {
             throw new ApiException(
@@ -231,7 +230,6 @@ internal sealed class AdminSessionService(
                 "يجب أن يكون للجلسة (غير الحدث) متحدّث واحد على الأقل.");
         }
 
-        // Reject a new session that overlaps another in the same hall.
         await EnsureNoHallTimeOverlapAsync(
             hall.Id, request.Start, request.End, Guid.Empty, cancellationToken);
 
@@ -465,10 +463,9 @@ internal sealed class AdminSessionService(
             }
         }
 
-        // Reject the update if the new hall/time overlaps another session.
-        // Only checked when the slot actually moves: a
-        // title-only edit of a session with a pre-existing overlapping sibling
-        // (legacy data) must stay saveable, and deactivation must not be blocked.
+        // Only checked when the slot actually moves: a title-only edit of a session
+        // with a pre-existing overlapping sibling (legacy data) must stay saveable,
+        // and deactivation must not be blocked.
         if (hallChanged || timeChanged)
         {
             await EnsureNoHallTimeOverlapAsync(
@@ -560,11 +557,11 @@ internal sealed class AdminSessionService(
             $"id={session.Id}; code={code}; active={session.IsActive}",
             cancellationToken);
 
-        // The cascade release used to leave no trace anywhere: the admin saw
-        // only the generic "was updated" toast and the admin row-blocks vanished
-        // silently (they have no attendee, so even the notify path early-returns).
-        // Record WHAT was destroyed as its own audit row, and hand the counts back on
-        // the response so the Control Panel can say so.
+        // The cascade release needs a trace of its own: the generic "was updated"
+        // toast says nothing, and admin row-blocks have no attendee, so even the
+        // notify path early-returns on them. Record WHAT was destroyed as its own
+        // audit row, and hand the counts back on the response so the Control Panel
+        // can say so.
         var releasedForVisitors = releasedReservations
             .Count(reservation => reservation.ReservedForProfileId is not null);
         var releasedAdminBlocks = releasedReservations.Count - releasedForVisitors;
@@ -638,9 +635,9 @@ internal sealed class AdminSessionService(
                 $"لهذه الجلسة {activeBookings} حجز نشط — يجب تحريرها من {SeatPlanPageArabic} قبل حذفها.");
         }
 
-        // Resolve the audience BEFORE the row is hidden. Cancelling a session
-        // used to write an audit row and nothing else: the card just disappeared from
-        // the app's "my sessions" list and the public agenda with no message at all.
+        // Resolve the audience BEFORE the row is hidden. Without the notice the card
+        // simply disappears from the app's "my sessions" list and the public agenda
+        // with no message at all.
         var audience = await ResolveCancellationAudienceAsync(id, cancellationToken);
 
         session.IsActive = false;

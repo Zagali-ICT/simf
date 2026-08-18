@@ -1281,7 +1281,7 @@ internal sealed partial class AdminAccountService(
         // none — and the users export pages through this very method.
         var ordered = users
             .AsNoTracking()
-            .ApplyGrid(WithoutSearch(query), AccountColumns, u => u.Id);
+            .ApplyGrid(WithoutSearch(query), AccountColumns, user => user.Id);
 
         var total = await ordered.CountAsync(cancellationToken);
 
@@ -1302,8 +1302,8 @@ internal sealed partial class AdminAccountService(
                 // grid photo thumbnail.
                 user.AvatarFileId,
                 IsAdmin = adminRoleId != null
-                    && dbContext.UserRoles.Any(ur =>
-                        ur.UserId == user.Id && ur.RoleId == adminRoleId),
+                    && dbContext.UserRoles.Any(userRole =>
+                        userRole.UserId == user.Id && userRole.RoleId == adminRoleId),
             })
             .ToListAsync(cancellationToken);
 
@@ -1319,8 +1319,7 @@ internal sealed partial class AdminAccountService(
                 HasAvatar: row.AvatarFileId is not null))
             .ToList();
 
-        return GridPage<AdminUserSummary>.Of(summaries, total,
-            skip, top);
+        return GridPage<AdminUserSummary>.Of(summaries, total, skip, top);
     }
 
     /// <summary>The request as the seam may see it: everything the caller sent
@@ -1547,9 +1546,8 @@ internal sealed partial class AdminAccountService(
         }
 
         return await users.ToGridPageAsync(
-            query, PendingColumns, u => u.Id, ToPendingSummary, cancellationToken);
+            query, PendingColumns, user => user.Id, ToPendingSummary, cancellationToken);
     }
-
 
     private Task AuditFailure(
         Guid actorUserId, string email, Guid? targetUserId, string errorCode,

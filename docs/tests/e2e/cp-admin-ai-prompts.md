@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@simrsnf.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
+| **Last reviewed** | 2026-08-18 (the version-history modal moved onto the shared grid seam) |
 
 > **Page permission:** `@attribute [RequirePermission(PermissionCatalog.AiPrompts.View)]`.
 > Each row action is gated by its own permission at the API:
@@ -45,6 +45,10 @@
 | E2E-AIP-020 | Excel export: toolbar Export downloads an .xlsx of the filtered grid (D-356) | happy | P1 | _to author_ |
 | E2E-AIP-021 | Excel import: upload a workbook → rows created/updated + result modal with per-row outcome (D-356) | happy | P1 | _to author_ |
 | E2E-AIP-022 | Excel import: a non-workbook / wrong-sheet upload → bilingual rejection, nothing created (D-356) | error | P1 | _to author_ |
+| E2E-AIP-023 | Version-history modal opens on a server page: newest version first, `total` counts every snapshot, not the 20 shown | happy | P0 | authored |
+| E2E-AIP-024 | History pager: Next carries `skip` 20 and Prev returns, the page label tracks, and no version repeats or is dropped | correctness | P0 | authored |
+| E2E-AIP-025 | History refuses an undeclared sort key with 400 `GRID_SORT_KEY_INVALID` naming the one declared key, `version`, and a search with 400 `GRID_SEARCH_NOT_SUPPORTED` | validation | P0 | authored |
+| E2E-AIP-026 | History page-size policy: `top` 500 clamps to 50, `total` is unchanged; a prompt never edited opens the empty state with `total` 0 | resilience | P1 | authored |
 | E2E-AIP-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-AIP-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
@@ -506,6 +510,185 @@ Scenario: A bad upload is rejected without creating anything
   And again nothing is created
 ```
 
+### E2E-AIP-023 - The version-history modal opens on a server page
+
+> **What this covers.** The row's history action opens a modal over
+> `POST /account/api/admin/ai/prompts/{id}/history/list`, gated on
+> `AiPrompts.View`. The history is append-only and is never pruned: it gains a row
+> on every edit, and each row carries the full prompt text of that version. It used
+> to be a `GET .../history` returning the whole snapshot list in one array, which
+> grew without bound for exactly the prompts that get edited most. It is now
+> server-paged, with one declared key, `version`, ordered descending, page size
+> falling back to 20 and capped at 50, and no searchable column.
+
+```gherkin
+Feature: One page of a prompt's version history
+  As an Administrator with AiPrompts.View
+  I want the history modal to page through the snapshots
+  So that opening it on a heavily edited prompt does not fetch every version at once
+
+Background:
+  Given the API is reachable and backed by a REAL SQL Server database
+  And an administrator holding AiPrompts.View has signed in
+  And the prompt "welcome-greeting" has been edited 52 times, so it holds
+      52 AiPromptHistory snapshots, versions v1 to v52
+
+Scenario: The modal's first read is one page, newest version first
+  Given the administrator is on /admin/ai/prompts
+   When they click the row's history action for "welcome-greeting"
+   Then a POST /account/api/admin/ai/prompts/{id}/history/list fires with
+        """
+        { "skip": 0, "top": 20 }
+        """
+    And it returns 200 with "success": true
+    And "data.items" holds 20 rows
+    And "data.total" is 52, counted on the server BEFORE Skip and Take
+    And the first row is v52 and the twentieth is v33, the natural order
+        version descending
+    And the modal opens showing the key "welcome-greeting" in a <code> element
+    And the table columns read Version, Provider, Model, Active, Authored, Hash
+    And each row's Version cell reads "v52", "v51" and so on
+    And the pager label reads "Page 1 of 3"
+
+Scenario: The history is scoped to the prompt whose row was clicked
+  Given a second prompt "faq-answer" holds 9 snapshots of its own
+   When the history modal is opened for "welcome-greeting"
+   Then "data.total" is 52, not 61
+    And no snapshot belonging to "faq-answer" appears
+    # The owning prompt id comes from the route and the window from the body, bound
+    # onto one request model. A total that summed both prompts would mean the id
+    # scoped the page but not the count.
+
+Scenario: The read is gated like the rest of the catalogue
+  Given a signed-in admin who does NOT hold AiPrompts.View
+   When they call POST /admin/ai/prompts/{id}/history/list directly
+   Then the response is 403 and no snapshot is returned
+```
+
+**Evidence captured:**
+- `data.total` is compared against a separate count of `AiPromptHistory` rows for
+  that prompt id. A total of 20 on a prompt with 52 snapshots is the defect this
+  asserts against: it means the count was taken after paging.
+- Console errors: 0 expected. Network failures: 0 expected.
+
+### E2E-AIP-024 - The history pager walks the snapshots
+
+```gherkin
+Scenario: Next and Prev move one page at a time
+  Given the history modal is open on "welcome-greeting" showing v52 down to v33
+    And the Prev button is disabled because skip is 0
+   When the administrator clicks "Next"
+   Then a POST .../history/list fires with skip 20 and top 20
+    And the modal shows v32 down to v13
+    And the pager label reads "Page 2 of 3"
+    And Prev is now enabled
+
+   When they click "Next" again
+   Then the request carries skip 40
+    And the modal shows v12 down to v1, twelve rows
+    And the pager label reads "Page 3 of 3"
+    And "Next" is disabled, because skip + items reaches total
+
+   When they click "Prev"
+   Then the request carries skip 20 and the modal shows v32 down to v13 again
+
+Scenario: The three pages hold every version exactly once
+   When the three windows are read in turn
+   Then they hold 20, 20 and 12 rows
+    And "data.total" is 52 on all three
+    And the union is exactly v52 down to v1, each version appearing once
+    And no version appears on two pages and none is skipped between them
+    # Version is unique per prompt so it cannot tie, but the Id tiebreak is applied
+    # all the same: the seam requires one, and a list without it is a list whose
+    # paging is correct only by accident of its data.
+
+Scenario: Re-opening the modal starts at page one
+   When the administrator closes the modal on page 3 and re-opens it from any row
+   Then the request carries skip 0 and top 20 again
+    And the modal shows the newest page, not the window it was left on
+```
+
+### E2E-AIP-025 - The history refuses keys it does not declare
+
+```gherkin
+Scenario: An undeclared sort key is a 400 that names the real one
+   When "POST /admin/ai/prompts/{id}/history/list" is called with
+        """
+        { "sort": "capturedFromUpdatedAt" }
+        """
+   Then the response is 400
+    And "error.code" is "GRID_SORT_KEY_INVALID"
+    And the message names capturedFromUpdatedAt and then names the one column that
+        IS sortable, version
+    # The Authored column is rendered but not declared, which is the same trap the
+    # other converted lists carry: the key a caller reaches for first is the one on
+    # screen. Version orders the history identically anyway, since a snapshot's
+    # version and its capture time move together.
+
+Scenario: An undeclared filter key is a 400
+   When the call sends "filters": { "provider": "OpenAi" }
+   Then the response is 400 with "error.code" "GRID_FILTER_KEY_INVALID"
+    And no rows are returned
+
+Scenario: A search term is refused because the history declares no searchable column
+   When the call sends "search": "concierge"
+   Then the response is 400
+    And "error.code" is "GRID_SEARCH_NOT_SUPPORTED"
+    # Searching the stored prompt TEXT would mean declaring a large nvarchar column
+    # searchable, which is a table scan per keystroke over an append-only log. The
+    # modal offers no search box, so only a hand-written request reaches this.
+
+Scenario: The modal itself can never send a bad key
+   When the administrator drives the modal through open, Next, Prev and close
+   Then every request body carries only skip and top
+    And none carries sort, sortDescending, search or filters
+    # The modal exposes no sort header and no filter row, so the surface that could
+    # produce a 400 is not reachable from the page. The three scenarios above are
+    # the API contract, not a page defect waiting to happen.
+```
+
+### E2E-AIP-026 - The history applies its own page-size policy
+
+```gherkin
+Scenario: A top above the cap is clamped, not honoured
+   When "POST /admin/ai/prompts/{id}/history/list" is called with
+        """
+        { "skip": 0, "top": 500 }
+        """
+   Then the response is 200
+    And "data.items" holds at most 50 rows, the declared maximum
+    And "data.total" is still 52
+    # 50 is deliberately low for this list: every row carries the full system prompt
+    # and user-prompt template of its version, so a page of history is far heavier
+    # per row than a page of the catalogue it belongs to.
+
+Scenario: Omitting top falls back to the resource's own page size
+   When the call sends only "skip": 0
+   Then "data.items" holds 20 rows, the declared fallback
+    And "data.total" is still 52
+    # The prompt id comes from the route, so this endpoint binds its own request
+    # model whose Top has no default: an omitted top arrives as 0 and the seam
+    # applies the declared fallback. The endpoints that bind a bare GridQuery
+    # instead carry GridQuery's own default of 20, where an omitted top never
+    # reaches the declared fallback and only a top of 0 does. Here the two numbers
+    # coincide at 20, which is exactly why the mechanism is worth writing down.
+
+Scenario: A negative skip is treated as the first page, not an error
+   When the call sends "skip": -5
+   Then the response is 200 and the first page comes back
+    And "data.skip" is 0
+
+Scenario: A prompt that was never edited opens the empty state
+  Given the prompt "never-touched" has been created but never updated,
+        so it holds no AiPromptHistory rows
+   When the administrator opens its history modal
+   Then the response is 200 with "success": true
+    And "data.items" is empty and "data.total" is 0
+    And the modal renders its SimfEmptyState instead of the table
+    And no pager is rendered
+    And no error toast appears
+```
+
 ---
 
 ## Implementation notes
@@ -534,4 +717,9 @@ Scenario: A bad upload is rejected without creating anything
 
 ---
 
-_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle): added E2E-AIP-017..022 for the CrudPresentationToggle, full-page CrudShell round-trip, the SimfConfirm delete gate, and Excel export/import (+ rejection). Prior review 2026-06-03 (E2E catalogue rebuild, D-256/D-257 grid affordances reconciled).
+_Last reviewed:_ 2026-08-18 by Claude (the version-history modal moved onto the
+shared grid seam: `GET /admin/ai/prompts/{id}/history` became
+`POST /admin/ai/prompts/{id}/history/list` binding a `GridQuery`, and the modal
+gained a pager; E2E-AIP-023 to -026 added for the paged contract. The history had
+no catalogue coverage at all before this, so nothing existing needed amending).
+Prior: 2026-06-10 by Claude (D-356 Phase 5, Excel + toggle): added E2E-AIP-017..022 for the CrudPresentationToggle, full-page CrudShell round-trip, the SimfConfirm delete gate, and Excel export/import (+ rejection). Prior review 2026-06-03 (E2E catalogue rebuild, D-256/D-257 grid affordances reconciled).
