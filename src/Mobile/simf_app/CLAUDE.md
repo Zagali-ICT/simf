@@ -8,8 +8,8 @@
 > overrides an approval gate, a freeze, or a security rule.
 
 The coding constitution for this repo. Claude Code reads this every session.
-Read it fully before editing. This is a mature codebase (696 Dart files,
-68,360 lines under `lib/`, measured 2026-08-18). Refine it; do not
+Read it fully before editing. This is a mature codebase (718 Dart files,
+68,927 lines under `lib/`, measured 2026-08-18). Refine it; do not
 re-architect it. When in doubt, match the existing pattern in the file you're
 editing, and FLAG instead of guessing.
 
@@ -25,14 +25,15 @@ editing, and FLAG instead of guessing.
 > not `test/`, not `integration_test/`, not the two local packages under
 > `packages/`.
 >
-> Measured 2026-08-18: Dart files **696** · lines **68,360** · raw
+> Measured 2026-08-18 (re-measured after the 400-line round): Dart files
+> **718** · lines **68,927** · raw
 > `Color(0x)` outside `tokens.dart` **0** · relative imports **0** · inline
 > `TextStyle(` outside `app/theme/` **116**, **none** of which still carries a
 > raw numeric size · `ListView(` sites **43** (most are static content pages
-> and correct as written) · `catch` sites **73** · files over 400 lines **8**
+> and correct as written) · `catch` sites **73** · files over 400 lines **3**
 > · `// ignore:` sites **9** · private widget classes **0** ·
 > `flutter analyze` **0 errors, 0 warnings, 0 infos** ("No issues found!") ·
-> `tool/conventions` **1**, a single SIMF-C3.
+> `tool/conventions` **0** ("No violations found").
 >
 > Reproduce, from `src/Mobile/simf_app`:
 > `find lib -name '*.dart' | wc -l` ·
@@ -43,8 +44,10 @@ editing, and FLAG instead of guessing.
 > `grep -rn 'ListView(' lib | wc -l` · `grep -rnw catch lib | wc -l` ·
 > `grep -rn '// ignore:' lib | wc -l` ·
 > `grep -rn "^import '\.\./\|^import '\./" lib | wc -l` (relative imports) ·
-> `grep -rnE '^class _\w+ .*extends (Stateless|Stateful|Consumer)' lib | wc -l`
-> (private widget classes) · `flutter analyze` · and, from `tool/conventions`,
+> `grep -rnE "^class _\w+ +extends +(StatelessWidget|StatefulWidget|ConsumerWidget|ConsumerStatefulWidget|HookWidget|HookConsumerWidget)" lib | wc -l`
+> (private widget classes — the loose form of this grep counted the 53
+> framework-required `_FooState extends ConsumerState` classes the rule
+> exempts, and read as 53 violations against a checker reporting none) · `flutter analyze` · and, from `tool/conventions`,
 > `dart run bin/simf_conventions.dart`. Files over 400 lines are enumerated by
 > `test/repo/feature_shape_test.dart`.
 
@@ -118,14 +121,13 @@ you read WHY, not a second copy to keep in step:
 4. no file under `lib/` over 400 lines.
 
 The first three known-offender lists are **empty** on 2026-08-18, so those
-rules hold outright and a first offender reddens the build. The fourth pins the
-8 files still over the limit: `app/localization/app_l10n.dart` 2730 ·
-`app/theme/tokens.dart` 1437 · `app/router.dart` 1236 ·
-`features/account/sign_up_visitor_screen.dart` 875 ·
-`features/staff/register_visitor_screen.dart` 808 ·
-`features/sessions/data/session_models.dart` 700 ·
-`features/account/data/profile_models.dart` 470 ·
-`features/sessions/data/seat_map_models.dart` 457.
+rules hold outright and a first offender reddens the build. The fourth now pins
+just **3** files, none of them a screen or a model:
+`app/localization/app_l10n.dart` 2730 · `app/theme/tokens.dart` 1437 ·
+`app/router.dart` 1236. Each is a single flat table — bilingual strings, design
+values, the route list — and splitting one serves the number while making the
+code worse, which is what the "don't shred a cohesive file" half of the rule
+exists to protect.
 
 **Entries come off those lists as the work lands and are NEVER added.**
 
@@ -156,12 +158,15 @@ Rules:
   prefixes (`Ksa*`, `Page_NNN`, generic `temp`/`demo`).
 - No file over ~400 lines. No `build()` over ~50 lines. Don't shred a cohesive
   file to hit a number — but this one is gated, not advisory (the ratchet
-  above). 8 files are over on 2026-08-18, and the only two that are screens are
-  `sign_up_visitor_screen` 875 (was 1213) and `register_visitor_screen` 808
-  (was 1068). Both stopped there deliberately: what is left in each is the form
-  coupled to its controllers and to the face-capture path, and D-666 is this
-  repo's banked case of a green golden failing to catch a face-capture
-  regression, so finishing them needs a sign-up run verified on a device.
+  above). **3** files are over on 2026-08-18 and none is a screen:
+  `sign_up_visitor_screen` finished at **398** (from 2245 at the start of the
+  programme) and `register_visitor_screen` at **397** (from 1268). Both got
+  there by moving the NON-widget half out — load, apply-profile, submit
+  assembly, validators, pickers, upload — rather than by fighting the parameter
+  count of the one `_build*` method left, which is what two earlier attempts
+  tried and abandoned. Neither has been verified on a device: D-666 is this
+  repo's banked case of a green golden missing a face-capture regression, so
+  the sign-up and walk-in flows still owe a real device run.
 - **A feature-local pure helper lives at the feature root**, as a small
   purpose-named file: `home_greeting.dart`, `youtube_url.dart`,
   `speaker_initials.dart`, `entity_detail_helpers.dart`. It holds functions and
