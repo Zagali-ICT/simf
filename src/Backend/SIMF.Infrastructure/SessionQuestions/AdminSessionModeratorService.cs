@@ -6,9 +6,11 @@ using SIMF.Application.Auditing;
 using SIMF.Application.SessionQuestions.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Grids;
 using SIMF.Contracts.Admin;
 using SIMF.Domain.Profiles;
 using SIMF.Domain.SessionQuestions;
+using SIMF.Infrastructure.Common.Grids;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.SessionQuestions;
@@ -25,68 +27,61 @@ internal sealed class AdminSessionModeratorService(
     TimeProvider timeProvider,
     ILogger<AdminSessionModeratorService> logger) : IAdminSessionModeratorService
 {
+    /// <summary>
+    /// The grid contract for /admin/session-moderators. The moderator + assigner
+    /// names live in the Identity database and are resolved after the page is
+    /// chosen, so they are neither sortable nor filterable — no cross-database JOIN
+    /// exists to make them either.
+    /// </summary>
+    private static readonly GridColumns<SessionModerator> Columns =
+        new GridColumns<SessionModerator>()
+            // One key that the page sends BOTH as a sort and as a filter, over three
+            // columns, so it has to be one declaration rather than a hand-written
+            // filter (which could not be sorted). Ordering by the concatenation is
+            // the code-then-title order the page had; matching against it is the
+            // same three-way OR, since a term inside any part is inside the whole.
+            .Add("session", grant =>
+                grant.Session!.Code + " " + grant.Session.Title + " " + grant.Session.TitleArabic,
+                searchable: true)
+            .Add("assignedAt", grant => grant.AssignedAt)
+            // Not a column on the page: the single-session filter the endpoint
+            // accepted before this list moved onto the shared grid.
+            .Add("sessionId", grant => grant.SessionId)
+            .DefaultOrder("assignedAt", descending: true)
+            .PageSize(fallback: 25, max: 200);
+
     public async Task<GridPage<AdminSessionModeratorRow>> ListAllAsync(
         GridQuery query, CancellationToken cancellationToken = default)
     {
-        var (skip, top) = query.ClampPage(25, 200);
-
-        // Join the session up front so the grid can filter / sort on the
-        // session code/title. The moderator + assigner names live in
-        // the Identity DB and are resolved on read below (no cross-database
-        // JOIN is possible), so those columns are not server-filterable.
-        var joined = appDbContext.SessionModerators.AsNoTracking()
-            .Join(appDbContext.Sessions,
-                g => g.SessionId, s => s.Id,
-                (g, s) => new
+        // The session is reached through the grant's required navigation, which is
+        // the same INNER JOIN the hand-written query spelled out, so the grid can
+        // filter and sort on the session's own columns.
+        // The tiebreak is the moderator, not the whole (SessionId, UserId) key: a
+        // composite cannot be expressed as one ordering key without converting both
+        // GUIDs to text per row, and the moderator alone already separates every tie
+        // either order can produce — same session, or the same person assigned twice
+        // in the same tick.
+        var page = await appDbContext.SessionModerators
+            .ToGridPageAsync(
+                query, Columns, grant => grant.UserId,
+                grant => new
                 {
-                    g.SessionId, g.UserId, g.AssignedByUserId, g.AssignedAt,
-                    s.Code, s.Title, s.TitleArabic,
-                });
+                    grant.SessionId,
+                    grant.UserId,
+                    grant.AssignedByUserId,
+                    grant.AssignedAt,
+                    Code = grant.Session!.Code,
+                    Title = grant.Session.Title,
+                    TitleArabic = grant.Session.TitleArabic,
+                },
+                cancellationToken);
 
-        // Legacy single-session filter (kept for back-compat callers).
-        if (query.Filters.TryGetValue("sessionId", out var sidRaw)
-            && Guid.TryParse(sidRaw, out var sessionFilter))
-        {
-            joined = joined.Where(r => r.SessionId == sessionFilter);
-        }
-
-        // CP grid per-column filters. Unknown columns are ignored.
-        foreach (var (column, raw) in query.Filters)
-        {
-            if (string.IsNullOrWhiteSpace(raw)) { continue; }
-            var v = raw.Trim();
-            switch (column.ToLowerInvariant())
-            {
-                case "session":
-                    joined = joined.Where(r =>
-                        r.Code.Contains(v)
-                        || r.Title.Contains(v)
-                        || r.TitleArabic.Contains(v));
-                    break;
-            }
-        }
-
-        // CP grid sortable columns. Default: most-recently assigned.
-        joined = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
-        {
-            ("session", false) => joined.OrderBy(r => r.Code).ThenBy(r => r.Title),
-            ("session", true) => joined.OrderByDescending(r => r.Code).ThenByDescending(r => r.Title),
-            ("assignedat", false) => joined.OrderBy(r => r.AssignedAt),
-            ("assignedat", true) => joined.OrderByDescending(r => r.AssignedAt),
-            _ => joined.OrderByDescending(r => r.AssignedAt),
-        };
-
-        var total = await joined.CountAsync(cancellationToken);
-        var pageRows = await joined
-            .Skip(skip)
-            .Take(top)
-            .ToListAsync(cancellationToken);
-
+        var pageRows = page.Items;
         if (pageRows.Count == 0)
         {
             return GridPage<AdminSessionModeratorRow>.Of(
-                Array.Empty<AdminSessionModeratorRow>(), total,
-                skip, top);
+                Array.Empty<AdminSessionModeratorRow>(), page.Total,
+                page.Skip, page.Top);
         }
 
         var userIds = pageRows.Select(r => r.UserId)
@@ -115,8 +110,8 @@ internal sealed class AdminSessionModeratorService(
                 r.AssignedAt);
         }).ToList();
 
-        return GridPage<AdminSessionModeratorRow>.Of(items, total,
-            skip, top);
+        return GridPage<AdminSessionModeratorRow>.Of(
+            items, page.Total, page.Skip, page.Top);
     }
 
     public async Task<SessionModeratorAssignOptions> ListAssignOptionsAsync(

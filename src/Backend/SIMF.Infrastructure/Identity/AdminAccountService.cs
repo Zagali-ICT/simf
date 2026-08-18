@@ -4,7 +4,11 @@
 //        admin is TwoFactorEnabled AND can still complete a first sign-in),
 //        SIMF.Api.Tests/WalkInRegistrationTests.cs +
 //        SIMF.Api.Tests/AdminAccountMobileTests.cs (the desk-created profile's
-//        mobile lands in the one canonical column and the two lockstep ones)
+//        mobile lands in the one canonical column and the two lockstep ones),
+//        SIMF.Api.Tests/GridContractTests.cs (the account + pending-queue column
+//        keys the Control Panel sends are joined against the two declarations
+//        below, so a page/service disagreement fails the build)
+using System.Linq.Expressions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -19,11 +23,13 @@ using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Application.Notifications;
 using SIMF.Domain.Notifications;
 using SIMF.Common;
+using SIMF.Common.Grids;
 using SIMF.Common.Options;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Profiles;
+using SIMF.Infrastructure.Common.Grids;
 using SIMF.Infrastructure.Persistence;
 
 using SIMF.Common.Enums;
@@ -1131,6 +1137,37 @@ internal sealed partial class AdminAccountService(
             user.Id, user.Email!, (int)inviteLifetime.TotalSeconds);
     }
 
+    /// <summary>
+    /// The grid contract for /admin/admins, /admin/others and /admin/visitors:
+    /// one entry per key those three pages (and the users export, which pages
+    /// through the same list) can send, as both its filter and its sort. A key
+    /// not declared here is a 400, not a silently ignored request.
+    ///
+    /// <para>
+    /// Nothing is <c>searchable</c>, deliberately. The free-text search on this
+    /// list is not a match over these columns alone: it also matches
+    /// <c>UserProfile.ReferenceNumber</c>, which lives on the OTHER database, and
+    /// the three branches are ORed. The seam's search is a closed OR over the
+    /// columns declared here, so that branch cannot be expressed as a declaration
+    /// and is composed by hand in <see cref="ListAccountsAsync"/> instead.
+    /// </para>
+    ///
+    /// <para>
+    /// <c>MaxTop</c> stays at 200 because <c>ExportUsersByKindAsync</c> walks this
+    /// list one clamped page at a time; widening the cap would change how the
+    /// export pages.
+    /// </para>
+    /// </summary>
+    private static readonly GridColumns<SimfUser> AccountColumns = new GridColumns<SimfUser>()
+        .Add("email", user => user.Email)
+        .Add("displayName", user => user.DisplayName)
+        .Add("state", user => user.AccountState)
+        .Add("twoFactor", user => user.TwoFactorEnabled)
+        .Add("createdAt", user => user.CreatedAt)
+        // Natural order: newest first, as the hand-written switch had it.
+        .DefaultOrder("createdAt", descending: true)
+        .PageSize(fallback: 20, max: 200);
+
     public Task<GridPage<AdminUserSummary>> ListAdminsAsync(
         GridQuery query, CancellationToken cancellationToken = default) =>
         ListAccountsAsync(query, UserType.Admin, profileScope: null, cancellationToken);
@@ -1188,9 +1225,8 @@ internal sealed partial class AdminAccountService(
         GridQuery query, UserType userType, bool? profileScope,
         CancellationToken cancellationToken)
     {
-        // Normalise: clamp Top to [1..200], clamp Skip to [0..). The grid
-        // contract (SIMF.Common.GridQuery) says the endpoint owns the clamp.
-        var (skip, top) = query.ClampPage(20, 200);
+        // The page-size policy is declared once, beside the columns.
+        var (skip, top) = query.ClampPage(AccountColumns.FallbackTop, AccountColumns.MaxTop);
 
         // Resolve the Administrator role id once for the per-row "is admin"
         // flag. Only Admin-typed users carry RBAC roles.
@@ -1216,13 +1252,21 @@ internal sealed partial class AdminAccountService(
         }
 
         // -- Search ---------------------------------------------------------
+        // Hand-composed, and it has to be. The registration reference
+        // (SIMF-YYYY-NNNNNNNN) lives on the App-DB profile row, and the two
+        // contexts are physically separate databases, so matching it means
+        // resolving the user ids first — never a join — and that branch is ORed
+        // with the two Identity columns, not ANDed. The seam's
+        // search is a closed OR over the columns a resource declares searchable,
+        // which cannot carry a third branch resolved on the other database, and
+        // pre-composing the id set onto the source would AND it and quietly shrink
+        // every search. So the whole OR is built here, ahead of the seam's
+        // predicates, exactly like the profile-scope guard above; the seam is then
+        // handed a query with no Search left to apply.
         if (!string.IsNullOrWhiteSpace(query.Search))
         {
             var term = query.Search.Trim();
-            // The registration reference (SIMF-YYYY-NNNNNNNN) lives
-            // on the App-DB profile row; cross-DB means resolve the matching
-            // user ids first (never a JOIN). Capped: a reference
-            // search is effectively exact, so the set is tiny.
+            // Capped: a reference search is effectively exact, so the set is tiny.
             var referenceUserIds = await appDbContext.UserProfiles
                 .AsNoTracking()
                 .Where(p => p.ReferenceNumber != null
@@ -1236,48 +1280,19 @@ internal sealed partial class AdminAccountService(
                 || referenceUserIds.Contains(u.Id));
         }
 
-        // -- Per-column filters --------------------------------------------
-        if (query.Filters.TryGetValue("email", out var emailFilter)
-            && !string.IsNullOrWhiteSpace(emailFilter))
-        {
-            users = users.Where(u =>
-                u.Email != null && EF.Functions.Like(u.Email, $"%{emailFilter}%"));
-        }
-        if (query.Filters.TryGetValue("displayName", out var nameFilter)
-            && !string.IsNullOrWhiteSpace(nameFilter))
-        {
-            users = users.Where(u => EF.Functions.Like(u.DisplayName, $"%{nameFilter}%"));
-        }
-        if (query.Filters.TryGetValue("state", out var stateFilter)
-            && !string.IsNullOrWhiteSpace(stateFilter)
-            && Enum.TryParse<AccountState>(stateFilter, ignoreCase: true, out var parsedState))
-        {
-            users = users.Where(u => u.AccountState == parsedState);
-        }
-        if (query.Filters.TryGetValue("twoFactor", out var twoFactorFilter)
-            && bool.TryParse(twoFactorFilter, out var twoFactorOn))
-        {
-            users = users.Where(u => u.TwoFactorEnabled == twoFactorOn);
-        }
+        // -- Filters, order and the mandatory tiebreak ------------------------
+        // From the seam. The tiebreak is the fix for a real defect: with no
+        // per-row unique key in the ORDER BY, SQL Server may return tied rows in
+        // any order, so a row could appear on two pages while another appeared on
+        // none — and the users export pages through this very method.
+        var ordered = users
+            .AsNoTracking()
+            .ApplyGrid(WithoutSearch(query), AccountColumns, u => u.Id);
 
-        // -- Sort -----------------------------------------------------------
-        users = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
-        {
-            ("email", true) => users.OrderByDescending(u => u.Email),
-            ("email", false) => users.OrderBy(u => u.Email),
-            ("displayname", true) => users.OrderByDescending(u => u.DisplayName),
-            ("displayname", false) => users.OrderBy(u => u.DisplayName),
-            ("state", true) => users.OrderByDescending(u => u.AccountState),
-            ("state", false) => users.OrderBy(u => u.AccountState),
-            ("createdat", false) => users.OrderBy(u => u.CreatedAt),
-            // Natural order: newest first.
-            _ => users.OrderByDescending(u => u.CreatedAt),
-        };
-
-        var total = await users.CountAsync(cancellationToken);
+        var total = await ordered.CountAsync(cancellationToken);
 
         // Per-row role flag — projected inside the EF query.
-        var rows = await users
+        var rows = await ordered
             .Skip(skip)
             .Take(top)
             .Select(user => new
@@ -1313,6 +1328,23 @@ internal sealed partial class AdminAccountService(
         return GridPage<AdminUserSummary>.Of(summaries, total,
             skip, top);
     }
+
+    /// <summary>The request as the seam may see it: everything the caller sent
+    /// except the free-text search, which the account list has already applied by
+    /// hand. Leaving it on would be a second, narrower search ANDed onto the
+    /// first — and would 400, because no account column is declared searchable.
+    /// A fresh instance, so the caller's own query is never mutated; the filter
+    /// dictionary is shared by reference because nothing here writes to it.</summary>
+    private static GridQuery WithoutSearch(GridQuery query) =>
+        new()
+        {
+            Skip = query.Skip,
+            Top = query.Top,
+            Search = null,
+            Sort = query.Sort,
+            SortDescending = query.SortDescending,
+            Filters = query.Filters,
+        };
 
     private async Task<Guid?> GetAdministratorRoleIdAsync(CancellationToken cancellationToken)
     {
@@ -1456,6 +1488,33 @@ internal sealed partial class AdminAccountService(
         return audienceSet;
     }
 
+    /// <summary>
+    /// The grid contract for the three pending-approval queues. The queues send
+    /// only <c>email</c> and <c>displayName</c> (their <c>created</c> column is
+    /// neither sortable nor filterable); <c>createdAt</c> is declared so the
+    /// newest-first natural order can name a real column, and comes for free as a
+    /// sort and a day filter.
+    ///
+    /// <para>
+    /// Unlike the account list above, these two ARE searchable: a pending queue
+    /// has no registration-reference branch, so the whole search is an OR over
+    /// these two Identity columns and the seam can own all of it.
+    /// </para>
+    /// </summary>
+    private static readonly GridColumns<SimfUser> PendingColumns = new GridColumns<SimfUser>()
+        .Add("email", user => user.Email, searchable: true)
+        .Add("displayName", user => user.DisplayName, searchable: true)
+        .Add("createdAt", user => user.CreatedAt)
+        .DefaultOrder("createdAt", descending: true)
+        .PageSize(fallback: 20, max: 200);
+
+    private static readonly Expression<Func<SimfUser, AdminPendingUserSummary>> ToPendingSummary =
+        user => new AdminPendingUserSummary(
+            user.Id, user.Email!, user.DisplayName, user.CreatedAt,
+            // != null, not "is not null": this is translated to SQL, and an
+            // expression tree cannot carry a pattern match.
+            user.AvatarFileId != null);
+
     public Task<GridPage<AdminPendingUserSummary>> ListPendingAdminsAsync(
         GridQuery query, CancellationToken cancellationToken = default) =>
         ListPendingAsync(query, UserType.Admin, profileScope: null, cancellationToken);
@@ -1476,8 +1535,12 @@ internal sealed partial class AdminAccountService(
         GridQuery query, UserType userType, bool? profileScope,
         CancellationToken cancellationToken)
     {
-        var (skip, top) = query.ClampPage(20, 200);
-
+        // The cross-database part of this list is a SCOPE: the App DB resolves
+        // which accounts belong to the audience or the partner queue, and the
+        // answer is an id set. That composes onto the source ahead of everything
+        // the seam builds, so the paged query stays one Identity IQueryable and
+        // the seam can own the whole rest of the pipeline — including the
+        // per-row tiebreak the hand-written sort never had.
         var scopedUserIds = await ResolveProfileScopedUserIdsAsync(
             profileScope, cancellationToken);
 
@@ -1489,50 +1552,8 @@ internal sealed partial class AdminAccountService(
             users = users.Where(u => scopedUserIds.Contains(u.Id));
         }
 
-        if (!string.IsNullOrWhiteSpace(query.Search))
-        {
-            var term = query.Search.Trim();
-            users = users.Where(u =>
-                (u.Email != null && EF.Functions.Like(u.Email, $"%{term}%"))
-                || EF.Functions.Like(u.DisplayName, $"%{term}%"));
-        }
-
-        // -- Per-column filters (CP grid Filterable columns: email, displayName) --
-        if (query.Filters.TryGetValue("email", out var emailFilter)
-            && !string.IsNullOrWhiteSpace(emailFilter))
-        {
-            users = users.Where(u =>
-                u.Email != null && EF.Functions.Like(u.Email, $"%{emailFilter}%"));
-        }
-        if (query.Filters.TryGetValue("displayName", out var nameFilter)
-            && !string.IsNullOrWhiteSpace(nameFilter))
-        {
-            users = users.Where(u => EF.Functions.Like(u.DisplayName, $"%{nameFilter}%"));
-        }
-
-        // -- Sort (Sortable columns: email, displayName; default newest-first) --
-        users = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
-        {
-            ("email", true) => users.OrderByDescending(u => u.Email),
-            ("email", false) => users.OrderBy(u => u.Email),
-            ("displayname", true) => users.OrderByDescending(u => u.DisplayName),
-            ("displayname", false) => users.OrderBy(u => u.DisplayName),
-            // Natural order: newest first (the `created` column is not sortable).
-            _ => users.OrderByDescending(u => u.CreatedAt),
-        };
-
-        var total = await users.CountAsync(cancellationToken);
-        var page = await users
-            .Skip(skip).Take(top)
-            .Select(u => new AdminPendingUserSummary(
-                u.Id, u.Email!, u.DisplayName, u.CreatedAt,
-                // != null, not "is not null": this is translated to SQL, and an
-                // expression tree cannot carry a pattern match.
-                u.AvatarFileId != null))
-            .ToListAsync(cancellationToken);
-
-        return GridPage<AdminPendingUserSummary>.Of(page, total,
-            skip, top);
+        return await users.ToGridPageAsync(
+            query, PendingColumns, u => u.Id, ToPendingSummary, cancellationToken);
     }
 
 

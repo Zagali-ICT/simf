@@ -1,10 +1,15 @@
-// Tests: SIMF.Api.Tests/AdminAttendeesTests.cs, SIMF.Api.Tests/AdminAttendeesExportTests.cs
+// Tests: SIMF.Api.Tests/AdminAttendeesExportTests.cs,
+//        SIMF.Api.Tests/GridContractTests.cs (the roster page's column keys are
+//        joined against the declaration below, so a page/service disagreement
+//        fails the build instead of 400ing a live grid)
+using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.Auditing;
 using SIMF.Application.Excel;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Grids;
 using SIMF.Contracts.Admin;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Infrastructure.Persistence;
@@ -20,6 +25,16 @@ namespace SIMF.Infrastructure.Identity;
 /// in memory. Total = the Identity count; the App round-trip only fetches
 /// the visible page's worth of rows. The XLSX export and the CreatedAt
 /// date-range filter share that one filter/merge path with the list.
+///
+/// <para>
+/// The filter / search / sort half of that path is the shared grid seam
+/// (<c>ApplyGrid</c>) rather than a hand-written block: the paged query IS a
+/// single Identity <c>IQueryable</c>, so the seam can own everything up to the
+/// ordering. It stops there. <c>ToGridPageAsync</c> is deliberately NOT used,
+/// because it also owns the paging and the projection, and neither fits here —
+/// the row merges two databases so the projection cannot be one expression, and
+/// the export deliberately pages past <c>MaxTop</c> to <see cref="ExportRowCap"/>.
+/// </para>
 /// </summary>
 internal sealed class AdminAttendeeService(
     SimfIdentityDbContext dbContext,
@@ -32,10 +47,50 @@ internal sealed class AdminAttendeeService(
     /// accidental "export everything" can't load the whole roster into RAM.</summary>
     private const int ExportRowCap = 5_000;
 
+    /// <summary>
+    /// The grid contract for /admin/attendees: one entry per key the roster page
+    /// and its export can send, as both its filter and its sort. A key that is
+    /// neither declared here nor resolved in <see cref="BuildFilteredUsersAsync"/>
+    /// is a 400, not a silently ignored request.
+    ///
+    /// <para>
+    /// Every column is a <c>SimfUser</c> (Identity DB) column. Nothing here
+    /// touches the App-DB profile, which is what keeps the whole grid one
+    /// <c>IQueryable</c> — and it is also why none of the AES-GCM encrypted
+    /// columns (<c>UserProfile.MobileNumber</c> / <c>SaudiMobile</c> /
+    /// <c>InternationalMobile</c>) can be reached from here at all.
+    /// </para>
+    /// </summary>
+    private static readonly GridColumns<SimfUser> Columns = new GridColumns<SimfUser>()
+        .Add("email", user => user.Email, searchable: true)
+        .Add("displayName", user => user.DisplayName, searchable: true)
+        .Add("userType", user => user.UserType)
+        .Add("accountState", user => user.AccountState)
+        .Add("createdAt", user => user.CreatedAt)
+        // The registration range is a pair of half-open BOUNDS, not the calendar
+        // day a DateTime column would otherwise infer. The page sends "to" as
+        // "<date>T23:59:59" so the picked day is inclusive; reading that as a day
+        // would truncate it back to midnight and silently drop the last day.
+        .AddFilter("from", raw =>
+        {
+            var earliest = ParseMoment("from", raw);
+            return user => user.CreatedAt >= earliest;
+        })
+        .AddFilter("to", raw =>
+        {
+            var latest = ParseMoment("to", raw);
+            return user => user.CreatedAt <= latest;
+        })
+        // Newest first, matching the hand-written natural order this replaces.
+        .DefaultOrder("createdAt", descending: true)
+        .PageSize(fallback: 25, max: 200);
+
     public async Task<GridPage<AdminAttendeeSummary>> ListAsync(
         GridQuery query, CancellationToken cancellationToken = default)
     {
-        var (skip, top) = query.ClampPage(25, 200);
+        // The page-size policy is declared once, beside the columns; this reads
+        // it back rather than repeating the two numbers.
+        var (skip, top) = query.ClampPage(Columns.FallbackTop, Columns.MaxTop);
 
         var users = await BuildFilteredUsersAsync(query, cancellationToken);
 
@@ -63,63 +118,26 @@ internal sealed class AdminAttendeeService(
         return bytes;
     }
 
-    // Identity-side filtered + sorted query (admins excluded). The
-    // profileTypeId filter needs a cross-DB lookup, so this is async.
+    // Identity-side filtered + sorted query (admins excluded). The two keys the
+    // seam cannot own are resolved here first; everything else is the seam's.
     private async Task<IQueryable<SimfUser>> BuildFilteredUsersAsync(
         GridQuery query, CancellationToken cancellationToken)
     {
         var users = dbContext.Users.AsNoTracking()
             .Where(user => user.UserType != UserType.Admin);
 
-        if (!string.IsNullOrWhiteSpace(query.Search))
-        {
-            var term = query.Search.Trim();
-            users = users.Where(user =>
-                EF.Functions.Like(user.Email!, $"%{term}%")
-                || EF.Functions.Like(user.DisplayName, $"%{term}%"));
-        }
-        if (query.Filters.TryGetValue("userType", out var userTypeFilter)
-            && !string.IsNullOrWhiteSpace(userTypeFilter)
-            && !string.Equals(userTypeFilter, "All", StringComparison.OrdinalIgnoreCase)
-            && Enum.TryParse<UserType>(userTypeFilter, ignoreCase: true, out var userTypeValue)
-            && userTypeValue != UserType.Admin)
-        {
-            users = users.Where(user => user.UserType == userTypeValue);
-        }
-        if (query.Filters.TryGetValue("accountState", out var stateFilter)
-            && !string.IsNullOrWhiteSpace(stateFilter)
-            && Enum.TryParse<AccountState>(stateFilter, ignoreCase: true, out var state))
-        {
-            users = users.Where(user => user.AccountState == state);
-        }
-        // Registration date-range filter (CreatedAt).
-        if (query.Filters.TryGetValue("from", out var fromRaw)
-            && DateTime.TryParse(fromRaw, out var from))
-        {
-            users = users.Where(user => user.CreatedAt >= from);
-        }
-        if (query.Filters.TryGetValue("to", out var toRaw)
-            && DateTime.TryParse(toRaw, out var to))
-        {
-            users = users.Where(user => user.CreatedAt <= to);
-        }
+        // A COPY of the caller's filters. Both ListAsync and ExportAsync are
+        // handed the request's own GridQuery, so the keys consumed below are
+        // removed from the copy and never from the request itself.
+        var filters = new Dictionary<string, string>(
+            query.Filters, StringComparer.OrdinalIgnoreCase);
 
-        users = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
-        {
-            ("email", true) => users.OrderByDescending(user => user.Email),
-            ("email", false) => users.OrderBy(user => user.Email),
-            ("displayname", true) => users.OrderByDescending(user => user.DisplayName),
-            ("displayname", false) => users.OrderBy(user => user.DisplayName),
-            ("usertype", true) => users.OrderByDescending(user => user.UserType),
-            ("usertype", false) => users.OrderBy(user => user.UserType),
-            ("createdat", false) => users.OrderBy(user => user.CreatedAt),
-            _ => users.OrderByDescending(user => user.CreatedAt),
-        };
-
-        // If the caller filters by profile type, evaluate it across the two
-        // contexts: fetch matching UserProfile.UserId values from App DB first
-        // and restrict the Identity query.
-        if (query.Filters.TryGetValue("profileTypeId", out var profileTypeFilter)
+        // profileTypeId lives on the OTHER database (UserProfile, App DB), so it
+        // is resolved into an id set first and composed onto the source as a
+        // scope predicate, ahead of every predicate the seam builds. The two
+        // contexts are physically separate databases, so the join that would let
+        // the seam own this key does not exist to be written.
+        if (filters.Remove("profileTypeId", out var profileTypeFilter)
             && Guid.TryParse(profileTypeFilter, out var profileTypeId))
         {
             var matchingUserIds = await appDbContext.UserProfiles
@@ -130,8 +148,50 @@ internal sealed class AdminAttendeeService(
             users = users.Where(user => matchingUserIds.Contains(user.Id));
         }
 
-        return users;
+        // The roster page's UserType dropdown offers "Other", which stopped being
+        // a UserType member when the enum collapsed to (Visitor, Admin), and an
+        // empty "All". Neither has narrowed anything since, and handing either to
+        // the seam would turn a shipped dropdown into a 400 on a live page. Admin
+        // is dropped for the reason it was always ignored: the roster excludes
+        // admins outright, so filtering to them can only return nothing.
+        if (filters.TryGetValue("userType", out var userTypeFilter)
+            && !NarrowsTheRoster(userTypeFilter))
+        {
+            filters.Remove("userType");
+        }
+
+        return users.ApplyGrid(WithFilters(query, filters), Columns, user => user.Id);
     }
+
+    // True only when the value names a UserType the roster can actually narrow
+    // to. The NAME is checked first, deliberately: the seam parses enum filters
+    // by name only, so a numeric form kept here would be rejected there.
+    private static bool NarrowsTheRoster(string raw) =>
+        Enum.GetNames<UserType>().Any(name =>
+            string.Equals(name, raw, StringComparison.OrdinalIgnoreCase))
+        && !string.Equals(raw, nameof(UserType.Admin), StringComparison.OrdinalIgnoreCase);
+
+    // The request as the seam may see it: everything the caller sent, over the
+    // pruned filter set.
+    private static GridQuery WithFilters(
+        GridQuery query, Dictionary<string, string> filters) =>
+        new()
+        {
+            Skip = query.Skip,
+            Top = query.Top,
+            Search = query.Search,
+            Sort = query.Sort,
+            SortDescending = query.SortDescending,
+            Filters = filters,
+        };
+
+    // A registration-range bound. Invariant culture and the FULL value, not the
+    // calendar day: see the "from" / "to" declarations above.
+    private static DateTime ParseMoment(string key, string raw) =>
+        DateTime.TryParse(
+            raw, CultureInfo.InvariantCulture, DateTimeStyles.None, out var moment)
+            ? moment
+            : throw GridFilters.ValueInvalid(key, raw, "a date such as 2026-08-16");
 
     // Page the Identity rows, then load + merge the App-side profile +
     // profile-type rows for just that page.

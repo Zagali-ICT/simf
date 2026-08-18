@@ -1,12 +1,15 @@
 // Tests: SIMF.Api.Tests/AdminThemesTests.cs
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Grids;
 using SIMF.Contracts.Admin;
 using SIMF.Domain.Programme;
+using SIMF.Infrastructure.Common.Grids;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Programme;
@@ -23,53 +26,33 @@ internal sealed class AdminThemeService(
     TimeProvider timeProvider,
     ILogger<AdminThemeService> logger) : IAdminThemeService
 {
-    public async Task<GridPage<AdminThemeSummary>> ListAllAsync(
-        GridQuery query, CancellationToken cancellationToken = default)
-    {
-        var (skip, top) = query.ClampPage(25, 200);
+    /// <summary>
+    /// The grid contract for /admin/themes: one entry per key ThemesList.razor can
+    /// send, as both its filter and its sort. A key not declared here is a 400, not
+    /// a silently ignored request.
+    /// </summary>
+    private static readonly GridColumns<Theme> Columns = new GridColumns<Theme>()
+        .Add("code", theme => theme.Code, searchable: true)
+        .Add("name", theme => theme.Name, searchable: true)
+        .Add("nameArabic", theme => theme.NameArabic, searchable: true)
+        .Add("displayOrder", theme => theme.DisplayOrder)
+        .Add("isActive", theme => theme.IsActive)
+        .DefaultOrder("displayOrder")
+        .DefaultOrder("name")
+        .PageSize(fallback: 25, max: 200);
 
-        var rows = dbContext.Themes.AsNoTracking().AsQueryable();
+    private static readonly Expression<Func<Theme, AdminThemeSummary>> ToSummary =
+        theme => new AdminThemeSummary(
+            theme.Id, theme.Code, theme.Name, theme.NameArabic,
+            theme.DisplayOrder, theme.PageColor, theme.IsActive,
+            theme.CreatedAt,
+            // Round-trip the bilingual descriptions through export.
+            theme.Description, theme.DescriptionArabic);
 
-        if (!string.IsNullOrWhiteSpace(query.Search))
-        {
-            var term = query.Search.Trim();
-            rows = rows.Where(theme =>
-                EF.Functions.Like(theme.Code, $"%{term}%")
-                || EF.Functions.Like(theme.Name, $"%{term}%")
-                || EF.Functions.Like(theme.NameArabic, $"%{term}%"));
-        }
-        if (query.Filters.TryGetValue("isActive", out var activeFilter)
-            && bool.TryParse(activeFilter, out var isActive))
-        {
-            rows = rows.Where(theme => theme.IsActive == isActive);
-        }
-
-        rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
-        {
-            ("code", true) => rows.OrderByDescending(theme => theme.Code),
-            ("code", false) => rows.OrderBy(theme => theme.Code),
-            ("name", true) => rows.OrderByDescending(theme => theme.Name),
-            ("name", false) => rows.OrderBy(theme => theme.Name),
-            ("displayorder", true) => rows.OrderByDescending(theme => theme.DisplayOrder),
-            _ => rows.OrderBy(theme => theme.DisplayOrder)
-                     .ThenBy(theme => theme.Name),
-        };
-
-        var total = await rows.CountAsync(cancellationToken);
-        var page = await rows
-            .Skip(skip)
-            .Take(top)
-            .Select(theme => new AdminThemeSummary(
-                theme.Id, theme.Code, theme.Name, theme.NameArabic,
-                theme.DisplayOrder, theme.PageColor, theme.IsActive,
-                theme.CreatedAt,
-                // Round-trip the bilingual descriptions through export.
-                theme.Description, theme.DescriptionArabic))
-            .ToListAsync(cancellationToken);
-
-        return GridPage<AdminThemeSummary>.Of(page, total,
-            skip, top);
-    }
+    public Task<GridPage<AdminThemeSummary>> ListAllAsync(
+        GridQuery query, CancellationToken cancellationToken = default) =>
+        dbContext.Themes.ToGridPageAsync(
+            query, Columns, theme => theme.Id, ToSummary, cancellationToken);
 
     public async Task<AdminThemeDetail?> GetAsync(
         Guid id, CancellationToken cancellationToken = default)

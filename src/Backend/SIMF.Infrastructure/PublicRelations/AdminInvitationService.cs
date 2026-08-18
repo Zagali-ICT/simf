@@ -7,8 +7,11 @@ using SIMF.Application.Notifications;
 using SIMF.Application.PublicRelations.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Grids;
 using SIMF.Contracts.Admin;
+using SIMF.Domain.Profiles;
 using SIMF.Domain.PublicRelations;
+using SIMF.Infrastructure.Common.Grids;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.PublicRelations;
@@ -29,55 +32,53 @@ internal sealed class AdminInvitationService(
     TimeProvider timeProvider,
     ILogger<AdminInvitationService> logger) : IAdminInvitationService
 {
+    /// <summary>
+    /// The grid contract for /admin/invitations: one entry per key
+    /// InvitationsList.razor can send, as a sort and as a filter. A key not declared
+    /// here is a 400, not a silently ignored request. Only App-DB columns appear —
+    /// the sender's display name and the recipient's email are Identity-DB reads
+    /// resolved AFTER paging, so they are display-only and neither sortable nor
+    /// filterable (they never were).
+    /// </summary>
+    private static readonly GridColumns<Invitation> InvitationColumns =
+        new GridColumns<Invitation>()
+            .Add("state", invitation => invitation.State)
+            .Add("createdAt", invitation => invitation.CreatedAt)
+            // Declared because the hand-written filter block accepted it, even
+            // though no page sends it today: dropping a key a client may still hold
+            // turns a stale request into a 400 on a live page.
+            .Add("isActive", invitation => invitation.IsActive)
+            .DefaultOrder("createdAt", descending: true)
+            .PageSize(fallback: 25, max: 200);
+
     public async Task<GridPage<AdminInvitationSummary>> ListAllAsync(
         GridQuery query, CancellationToken cancellationToken = default)
     {
-        var (skip, top) = query.ClampPage(25, 200);
-
-        var invitations = appDbContext.Invitations.AsNoTracking().AsQueryable();
-
-        if (query.Filters.TryGetValue("state", out var stateRaw)
-            && Enum.TryParse<InvitationState>(stateRaw, ignoreCase: true, out var stateValue))
-        {
-            invitations = invitations.Where(row => row.State == stateValue);
-        }
-        if (query.Filters.TryGetValue("isActive", out var activeFilter)
-            && bool.TryParse(activeFilter, out var isActive))
-        {
-            invitations = invitations.Where(row => row.IsActive == isActive);
-        }
-
-        invitations = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
-        {
-            ("createdat", true) => invitations.OrderByDescending(row => row.CreatedAt),
-            ("createdat", false) => invitations.OrderBy(row => row.CreatedAt),
-            ("state", true) => invitations.OrderByDescending(row => row.State),
-            ("state", false) => invitations.OrderBy(row => row.State),
-            _ => invitations.OrderByDescending(row => row.CreatedAt),
-        };
-
-        var total = await invitations.CountAsync(cancellationToken);
-        var pageRows = await invitations
-            .Skip(skip)
-            .Take(top)
-            .Select(row => new
+        // Paged as the App-DB row rather than straight to the summary, because the
+        // recipient's names are a second App-DB read and the sender's display name +
+        // the recipient's email live on the other database, which cannot be joined,
+        // so the SELECT cannot carry them.
+        var page = await appDbContext.Invitations.ToGridPageAsync(
+            query, InvitationColumns, invitation => invitation.Id,
+            invitation => new
             {
-                row.Id,
-                row.SentByUserId,
-                row.SentToUserProfileId,
-                row.State,
-                row.Notes,
-                row.CreatedAt,
-                row.RespondedAt,
-                row.IsActive,
-            })
-            .ToListAsync(cancellationToken);
+                invitation.Id,
+                invitation.SentByUserId,
+                invitation.SentToUserProfileId,
+                invitation.State,
+                invitation.Notes,
+                invitation.CreatedAt,
+                invitation.RespondedAt,
+                invitation.IsActive,
+            },
+            cancellationToken);
 
+        var pageRows = page.Items;
         if (pageRows.Count == 0)
         {
             return GridPage<AdminInvitationSummary>.Of(
-                Array.Empty<AdminInvitationSummary>(), total,
-                skip, top);
+                Array.Empty<AdminInvitationSummary>(), page.Total,
+                page.Skip, page.Top);
         }
 
         var profileIds = pageRows.Select(row => row.SentToUserProfileId).Distinct().ToList();
@@ -146,8 +147,8 @@ internal sealed class AdminInvitationService(
                 row.IsActive);
         }).ToList();
 
-        return GridPage<AdminInvitationSummary>.Of(items, total,
-            skip, top);
+        return GridPage<AdminInvitationSummary>.Of(items, page.Total,
+            page.Skip, page.Top);
     }
 
     public async Task<AdminInvitationDetail?> GetAsync(
@@ -357,38 +358,33 @@ internal sealed class AdminInvitationService(
             cancellationToken);
     }
 
+    /// <summary>
+    /// The grid contract for /admin/vips. VipsList.razor marks no column sortable or
+    /// filterable today, so these are the keys the hand-written block already
+    /// accepted, kept so a client still holding one is not met with a 400. The email
+    /// column is deliberately absent: it lives in the Identity DB and is resolved
+    /// after paging, so it can be neither sorted nor filtered here.
+    /// </summary>
+    private static readonly GridColumns<UserProfile> VipColumns =
+        new GridColumns<UserProfile>()
+            .Add("name", profile => profile.Name, searchable: true)
+            .Add("nameArabic", profile => profile.NameArabic, searchable: true)
+            .Add("profileType", profile => profile.ProfileType!.Name)
+            .DefaultOrder("name")
+            .PageSize(fallback: 25, max: 200);
+
     public async Task<GridPage<AdminVipSummary>> ListVipsAsync(
         GridQuery query, CancellationToken cancellationToken = default)
     {
-        var (skip, top) = query.ClampPage(25, 200);
-
+        // The VIP discriminator is scope, not a grid filter, so it composes onto the
+        // source before the grid's own predicates.
         var vips = appDbContext.UserProfiles
-            .AsNoTracking()
             .Where(profile => profile.ProfileType != null
                 && VipProfileTypes.All.Contains(profile.ProfileType.Name));
 
-        if (!string.IsNullOrWhiteSpace(query.Search))
-        {
-            var term = query.Search.Trim();
-            vips = vips.Where(profile =>
-                EF.Functions.Like(profile.Name, $"%{term}%")
-                || EF.Functions.Like(profile.NameArabic, $"%{term}%"));
-        }
-
-        vips = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
-        {
-            ("name", true) => vips.OrderByDescending(profile => profile.Name),
-            ("name", false) => vips.OrderBy(profile => profile.Name),
-            ("profiletype", true) => vips.OrderByDescending(profile => profile.ProfileType!.Name),
-            ("profiletype", false) => vips.OrderBy(profile => profile.ProfileType!.Name),
-            _ => vips.OrderBy(profile => profile.Name),
-        };
-
-        var total = await vips.CountAsync(cancellationToken);
-        var pageRows = await vips
-            .Skip(skip)
-            .Take(top)
-            .Select(profile => new
+        var page = await vips.ToGridPageAsync(
+            query, VipColumns, profile => profile.Id,
+            profile => new
             {
                 profile.Id,
                 profile.UserId,
@@ -398,14 +394,15 @@ internal sealed class AdminInvitationService(
                 profile.JobTitleArabic,
                 ProfileTypeName = profile.ProfileType!.Name,
                 ProfileTypeNameArabic = profile.ProfileType!.NameArabic,
-            })
-            .ToListAsync(cancellationToken);
+            },
+            cancellationToken);
 
+        var pageRows = page.Items;
         if (pageRows.Count == 0)
         {
             return GridPage<AdminVipSummary>.Of(
-                Array.Empty<AdminVipSummary>(), total,
-                skip, top);
+                Array.Empty<AdminVipSummary>(), page.Total,
+                page.Skip, page.Top);
         }
 
         // Only the guests holding an account have an email to resolve; the rest
@@ -431,8 +428,8 @@ internal sealed class AdminInvitationService(
                 && emailsByUser.TryGetValue(accountId, out var email) ? email : null))
             .ToList();
 
-        return GridPage<AdminVipSummary>.Of(items, total,
-            skip, top);
+        return GridPage<AdminVipSummary>.Of(items, page.Total,
+            page.Skip, page.Top);
     }
 
     public async Task<AdminNotifyVipsResult> NotifyVipsAsync(

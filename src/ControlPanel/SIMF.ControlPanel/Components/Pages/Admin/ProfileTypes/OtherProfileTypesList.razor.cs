@@ -11,9 +11,9 @@ public partial class OtherProfileTypesList
     [Inject] private IStringLocalizer<Strings> L { get; set; } = default!;
     [Inject] private IJSRuntime JS { get; set; } = default!;
 
-    // This page is the partner-side queue. Server-side
-    // contract collapsed UserType into Visitor; the partner/audience
-    // split now lives on ProfileType.IsVisitor — we filter on that.
+    // This page is the partner-side queue. The server-side contract collapsed
+    // UserType into Visitor, leaving no user-type column to filter on; the
+    // partner/audience split now lives on ProfileType.IsVisitor alone.
     private GridQuery _query = new()
     {
         Top = 20,
@@ -37,7 +37,9 @@ public partial class OtherProfileTypesList
 
     private async Task OnQueryChangedAsync(GridQuery next)
     {
-        // Keep both filters pinned across grid-state changes.
+        // Both pins are structural to this page: the grid drops filter keys on a
+        // sort or page change, and dropping either one would surface audience rows on
+        // the partner queue or partner rows on the audience queue.
         next.Filters["userType"] = "Visitor";
         next.Filters["isVisitor"] = "false";
         _query = next;

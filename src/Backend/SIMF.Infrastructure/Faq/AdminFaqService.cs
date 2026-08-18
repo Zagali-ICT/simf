@@ -1,12 +1,15 @@
 // Tests: SIMF.Api.Tests/FaqTests.cs
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
 using SIMF.Application.Faq.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Grids;
 using SIMF.Contracts.Faq;
 using SIMF.Domain.Faq;
+using SIMF.Infrastructure.Common.Grids;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Faq;
@@ -28,51 +31,34 @@ internal sealed class AdminFaqService(
 
     // -- Groups ---------------------------------------------------------------
 
-    public async Task<GridPage<AdminFaqGroupSummary>> ListGroupsAsync(
-        GridQuery query, CancellationToken cancellationToken = default)
-    {
-        var (skip, top) = query.ClampPage(25, 200);
+    /// <summary>
+    /// The grid contract for the FAQ group list: one entry per key the groups grid
+    /// on FaqManager.razor can send, as both its filter and its sort. A key not
+    /// declared here is a 400, not a silently ignored request.
+    /// </summary>
+    private static readonly GridColumns<FaqGroup> GroupColumns = new GridColumns<FaqGroup>()
+        .Add("nameEn", group => group.Name, searchable: true)
+        .Add("nameAr", group => group.NameArabic, searchable: true)
+        .Add("displayOrder", group => group.DisplayOrder)
+        .Add("isActive", group => group.IsActive)
+        .DefaultOrder("displayOrder")
+        .DefaultOrder("nameEn")
+        .PageSize(fallback: 25, max: 200);
 
-        var rows = dbContext.FaqGroups.AsNoTracking().AsQueryable();
+    private static readonly Expression<Func<FaqGroup, AdminFaqGroupSummary>> ToGroupSummaryRow =
+        group => new AdminFaqGroupSummary(
+            group.Id,
+            group.Name,
+            group.NameArabic,
+            group.DisplayOrder,
+            group.IsActive,
+            group.Entries.Count(entry => entry.IsActive),
+            group.CreatedAt);
 
-        if (!string.IsNullOrWhiteSpace(query.Search))
-        {
-            var term = query.Search.Trim();
-            rows = rows.Where(g =>
-                EF.Functions.Like(g.Name, $"%{term}%")
-                || EF.Functions.Like(g.NameArabic, $"%{term}%"));
-        }
-        if (query.Filters.TryGetValue("isActive", out var activeFilter)
-            && bool.TryParse(activeFilter, out var isActive))
-        {
-            rows = rows.Where(g => g.IsActive == isActive);
-        }
-
-        rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
-        {
-            ("nameen", true) => rows.OrderByDescending(g => g.Name),
-            ("nameen", false) => rows.OrderBy(g => g.Name),
-            ("displayorder", true) => rows.OrderByDescending(g => g.DisplayOrder),
-            _ => rows.OrderBy(g => g.DisplayOrder).ThenBy(g => g.Name),
-        };
-
-        var total = await rows.CountAsync(cancellationToken);
-        var page = await rows
-            .Skip(skip)
-            .Take(top)
-            .Select(g => new AdminFaqGroupSummary(
-                g.Id,
-                g.Name,
-                g.NameArabic,
-                g.DisplayOrder,
-                g.IsActive,
-                g.Entries.Count(e => e.IsActive),
-                g.CreatedAt))
-            .ToListAsync(cancellationToken);
-
-        return GridPage<AdminFaqGroupSummary>.Of(page, total,
-            skip, top);
-    }
+    public Task<GridPage<AdminFaqGroupSummary>> ListGroupsAsync(
+        GridQuery query, CancellationToken cancellationToken = default) =>
+        dbContext.FaqGroups.ToGridPageAsync(
+            query, GroupColumns, group => group.Id, ToGroupSummaryRow, cancellationToken);
 
     public async Task<AdminFaqGroupSummary?> GetGroupAsync(
         Guid id, CancellationToken cancellationToken = default) =>
@@ -153,45 +139,26 @@ internal sealed class AdminFaqService(
 
     // -- Entries --------------------------------------------------------------
 
-    public async Task<GridPage<AdminFaqEntrySummary>> ListEntriesAsync(
-        Guid groupId, GridQuery query, CancellationToken cancellationToken = default)
-    {
-        var (skip, top) = query.ClampPage(50, 200);
+    /// <summary>
+    /// The grid contract for the FAQ entry list: one entry per key the entries grid
+    /// on FaqManager.razor can send. The owning group is a scope predicate applied
+    /// before the grid composes, not a declared filter.
+    /// </summary>
+    private static readonly GridColumns<FaqEntry> EntryColumns = new GridColumns<FaqEntry>()
+        .Add("question", entry => entry.Question, searchable: true)
+        .Add("questionAr", entry => entry.QuestionArabic, searchable: true)
+        .Add("displayOrder", entry => entry.DisplayOrder)
+        .Add("isActive", entry => entry.IsActive)
+        .DefaultOrder("displayOrder")
+        .DefaultOrder("question")
+        .PageSize(fallback: 50, max: 200);
 
-        var rows = dbContext.FaqEntries.AsNoTracking()
-            .Where(e => e.FaqGroupId == groupId);
-
-        if (!string.IsNullOrWhiteSpace(query.Search))
-        {
-            var term = query.Search.Trim();
-            rows = rows.Where(e =>
-                EF.Functions.Like(e.Question, $"%{term}%")
-                || EF.Functions.Like(e.QuestionArabic, $"%{term}%"));
-        }
-        if (query.Filters.TryGetValue("isActive", out var activeFilter)
-            && bool.TryParse(activeFilter, out var isActive))
-        {
-            rows = rows.Where(e => e.IsActive == isActive);
-        }
-
-        rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
-        {
-            ("question", true) => rows.OrderByDescending(e => e.Question),
-            ("question", false) => rows.OrderBy(e => e.Question),
-            ("displayorder", true) => rows.OrderByDescending(e => e.DisplayOrder),
-            _ => rows.OrderBy(e => e.DisplayOrder).ThenBy(e => e.Question),
-        };
-
-        var total = await rows.CountAsync(cancellationToken);
-        var page = await rows
-            .Skip(skip)
-            .Take(top)
-            .Select(ToEntrySummaryExpr)
-            .ToListAsync(cancellationToken);
-
-        return GridPage<AdminFaqEntrySummary>.Of(page, total,
-            skip, top);
-    }
+    public Task<GridPage<AdminFaqEntrySummary>> ListEntriesAsync(
+        Guid groupId, GridQuery query, CancellationToken cancellationToken = default) =>
+        dbContext.FaqEntries
+            .Where(entry => entry.FaqGroupId == groupId)
+            .ToGridPageAsync(
+                query, EntryColumns, entry => entry.Id, ToEntrySummaryExpr, cancellationToken);
 
     public async Task<AdminFaqEntrySummary?> GetEntryAsync(
         Guid id, CancellationToken cancellationToken = default) =>
@@ -278,10 +245,11 @@ internal sealed class AdminFaqService(
         new(e.Id, e.FaqGroupId, e.Question, e.QuestionArabic, e.Answer, e.AnswerArabic,
             e.DisplayOrder, e.IsActive, e.CreatedAt);
 
-    private static System.Linq.Expressions.Expression<Func<FaqEntry, AdminFaqEntrySummary>> ToEntrySummaryExpr =>
-        e => new AdminFaqEntrySummary(
-            e.Id, e.FaqGroupId, e.Question, e.QuestionArabic, e.Answer, e.AnswerArabic,
-            e.DisplayOrder, e.IsActive, e.CreatedAt);
+    private static readonly Expression<Func<FaqEntry, AdminFaqEntrySummary>> ToEntrySummaryExpr =
+        entry => new AdminFaqEntrySummary(
+            entry.Id, entry.FaqGroupId, entry.Question, entry.QuestionArabic,
+            entry.Answer, entry.AnswerArabic,
+            entry.DisplayOrder, entry.IsActive, entry.CreatedAt);
 
     private static ApiException GroupNotFound() => new(
         ErrorCodes.FaqGroupNotFound, 404,

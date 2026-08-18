@@ -6,9 +6,10 @@ using SIMF.Application.Auditing;
 using SIMF.Application.Excel;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
-using SIMF.Common.Enums;
+using SIMF.Common.Grids;
 using SIMF.Contracts.Admin;
 using SIMF.Domain.Auditing;
+using SIMF.Infrastructure.Common.Grids;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Identity;
@@ -30,6 +31,39 @@ internal sealed class AdminOperationLogService(
     /// admins narrow with the filters (incl. the date range) then export.</summary>
     private const int ExportRowCap = 5_000;
 
+    /// <summary>
+    /// The grid contract for /admin/operation-log: every key OperationLogViewer can
+    /// send, as its filter and as its sort. <c>actorUserId</c> is not a column on
+    /// the page; it is kept because the endpoint accepted it before this list moved
+    /// onto the shared grid and an API caller may still send it.
+    /// </summary>
+    private static readonly GridColumns<OperationLogEntry> Columns =
+        new GridColumns<OperationLogEntry>()
+            .Add("timestamp", row => row.Timestamp)
+            .Add("eventType", row => row.EventType)
+            .Add("outcome", row => row.Outcome)
+            .Add("subjectEmail", row => row.SubjectEmail)
+            .Add("sourceIp", row => row.SourceIp)
+            .Add("actorUserId", row => row.ActorUserId)
+            // The page's date range is two half-ranges over ONE column, which no
+            // per-column operator can express, so both are hand-written.
+            .AddFilter("from", raw =>
+            {
+                var start = GridFilters.ParseDay("from", raw);
+                return row => row.Timestamp >= start;
+            })
+            // Half-open, deliberately. The bound used to be `Timestamp <= to`, and
+            // the picker hands over a bare date, so asking for "up to the 16th"
+            // dropped every entry after midnight on the 16th — the whole last day of
+            // the range, which is usually the day the incident being traced happened.
+            .AddFilter("to", raw =>
+            {
+                var end = GridFilters.ParseDay("to", raw).AddDays(1);
+                return row => row.Timestamp < end;
+            })
+            .DefaultOrder("timestamp", descending: true)
+            .PageSize(fallback: 25, max: 200);
+
     private static readonly Expression<Func<OperationLogEntry, AdminOperationLogSummary>> ToSummary =
         row => new AdminOperationLogSummary(
             row.Id,
@@ -42,29 +76,21 @@ internal sealed class AdminOperationLogService(
             row.CorrelationId,
             row.ErrorCode);
 
-    public async Task<GridPage<AdminOperationLogSummary>> ListAsync(
-        GridQuery query, CancellationToken cancellationToken = default)
-    {
-        var (skip, top) = query.ClampPage(25, 200);
-
-        var rows = ApplySort(ApplyFilters(dbContext.OperationLog.AsNoTracking(), query), query);
-
-        var total = await rows.CountAsync(cancellationToken);
-        var page = await rows
-            .Skip(skip)
-            .Take(top)
-            .Select(ToSummary)
-            .ToListAsync(cancellationToken);
-
-        return GridPage<AdminOperationLogSummary>.Of(page, total,
-            skip, top);
-    }
+    public Task<GridPage<AdminOperationLogSummary>> ListAsync(
+        GridQuery query, CancellationToken cancellationToken = default) =>
+        dbContext.OperationLog.ToGridPageAsync(
+            query, Columns, row => row.Id, ToSummary, cancellationToken);
 
     public async Task<byte[]> ExportAsync(
         Guid actorUserId, GridQuery query, CancellationToken cancellationToken = default)
     {
-        // Honour the active filters (incl. from/to) but bound the row count.
-        var rows = await ApplySort(ApplyFilters(dbContext.OperationLog.AsNoTracking(), query), query)
+        // The same filters, search and order as the list, over the whole result set
+        // rather than one page, bounded by the export cap. Composed through the same
+        // declaration so the workbook can never drift out of parity with the grid it
+        // was taken from.
+        var rows = await dbContext.OperationLog
+            .AsNoTracking()
+            .ApplyGrid(query, Columns, row => row.Id)
             .Take(ExportRowCap)
             .Select(ToSummary)
             .ToListAsync(cancellationToken);
@@ -101,84 +127,4 @@ internal sealed class AdminOperationLogService(
                 row.Detail))
             .SingleOrDefaultAsync(cancellationToken);
     }
-
-    private static IQueryable<OperationLogEntry> ApplyFilters(
-        IQueryable<OperationLogEntry> rows, GridQuery query)
-    {
-        if (query.Filters.TryGetValue("eventType", out var eventType)
-            && !string.IsNullOrWhiteSpace(eventType))
-        {
-            var term = eventType.Trim();
-            rows = rows.Where(row => EF.Functions.Like(row.EventType, $"%{term}%"));
-        }
-        if (query.Filters.TryGetValue("outcome", out var outcomeFilter)
-            && !string.IsNullOrWhiteSpace(outcomeFilter)
-            && Enum.TryParse<AuditOutcome>(outcomeFilter, ignoreCase: true, out var outcome))
-        {
-            rows = rows.Where(row => row.Outcome == outcome);
-        }
-        if (query.Filters.TryGetValue("actorUserId", out var actorRaw)
-            && Guid.TryParse(actorRaw, out var actorId))
-        {
-            rows = rows.Where(row => row.ActorUserId == actorId);
-        }
-        if (query.Filters.TryGetValue("subjectEmail", out var email)
-            && !string.IsNullOrWhiteSpace(email))
-        {
-            var term = email.Trim();
-            rows = rows.Where(row =>
-                row.SubjectEmail != null
-                && EF.Functions.Like(row.SubjectEmail, $"%{term}%"));
-        }
-        // Per-column grid filter on the source IP (the `sourceIp` column the
-        // viewer exposes as Filterable). SourceIp is a plain stored column on
-        // the entry, so it is server-filterable with a Like.
-        if (query.Filters.TryGetValue("sourceIp", out var sourceIp)
-            && !string.IsNullOrWhiteSpace(sourceIp))
-        {
-            var term = sourceIp.Trim();
-            rows = rows.Where(row =>
-                row.SourceIp != null
-                && EF.Functions.Like(row.SourceIp, $"%{term}%"));
-        }
-        if (query.Filters.TryGetValue("from", out var fromRaw)
-            && DateTime.TryParse(fromRaw, out var from))
-        {
-            rows = rows.Where(row => row.Timestamp >= from);
-        }
-        if (query.Filters.TryGetValue("to", out var toRaw)
-            && DateTime.TryParse(toRaw, out var to))
-        {
-            rows = rows.Where(row => row.Timestamp <= to);
-        }
-        return rows;
-    }
-
-    // Default sort: newest first. Other sorts cover the column headers the
-    // page exposes.
-    private static IQueryable<OperationLogEntry> ApplySort(
-        IQueryable<OperationLogEntry> rows, GridQuery query) =>
-        (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
-        {
-            ("eventtype", true) => rows.OrderByDescending(row => row.EventType)
-                                       .ThenByDescending(row => row.Timestamp),
-            ("eventtype", false) => rows.OrderBy(row => row.EventType)
-                                        .ThenByDescending(row => row.Timestamp),
-            ("outcome", true) => rows.OrderByDescending(row => row.Outcome)
-                                     .ThenByDescending(row => row.Timestamp),
-            ("outcome", false) => rows.OrderBy(row => row.Outcome)
-                                      .ThenByDescending(row => row.Timestamp),
-            ("sourceip", true) => rows.OrderByDescending(row => row.SourceIp)
-                                      .ThenByDescending(row => row.Timestamp),
-            ("sourceip", false) => rows.OrderBy(row => row.SourceIp)
-                                       .ThenByDescending(row => row.Timestamp),
-            // "timestamp" matches the grid column Key in OperationLogViewer.razor. It
-            // read "timestamputc" until 2026-08-01, left behind when the persisted
-            // columns were renamed, so the ascending arm was unreachable: every click fell
-            // through to the newest-first catch-all and an operator tracing an
-            // incident forward from its start could not get an oldest-first view.
-            ("timestamp", false) => rows.OrderBy(row => row.Timestamp),
-            ("timestamp", true) => rows.OrderByDescending(row => row.Timestamp),
-            _ => rows.OrderByDescending(row => row.Timestamp),
-        };
 }

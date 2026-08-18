@@ -566,4 +566,13 @@ public static class ErrorCodes
     // Programme days (date + title + logo) admin CRUD.
     public const string ProgrammeDayInvalid = "PROGRAMME_DAY_INVALID";
     public const string ProgrammeDayNotFound = "PROGRAMME_DAY_NOT_FOUND";
+
+    // Server-paged list (grid) requests. An unknown key or an unparseable value is
+    // a 400 naming the offender, never a silently dropped predicate: dropping one
+    // widens the result set, which is how several admin columns shipped looking
+    // sortable and were not.
+    public const string GridSortKeyInvalid = "GRID_SORT_KEY_INVALID";
+    public const string GridFilterKeyInvalid = "GRID_FILTER_KEY_INVALID";
+    public const string GridFilterValueInvalid = "GRID_FILTER_VALUE_INVALID";
+    public const string GridSearchNotSupported = "GRID_SEARCH_NOT_SUPPORTED";
 }

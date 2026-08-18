@@ -1,12 +1,15 @@
 // Tests: SIMF.Api.Tests/RatingConfigTests.cs
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
 using SIMF.Application.Feedback.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Grids;
 using SIMF.Contracts.Feedback;
 using SIMF.Domain.Feedback;
+using SIMF.Infrastructure.Common.Grids;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Feedback;
@@ -29,68 +32,48 @@ internal sealed class AdminRatingConfigService(
 
     // -- Types ----------------------------------------------------------------
 
+    /// <summary>The grid contract for the rating-types grid on RatingConfig.razor:
+    /// one entry per key the page can send, as both its filter and its sort.</summary>
+    private static readonly GridColumns<RatingType> TypeColumns = new GridColumns<RatingType>()
+        .Add("code", type => type.Code, searchable: true)
+        .Add("name", type => type.Name, searchable: true)
+        .Add("nameArabic", type => type.NameArabic, searchable: true)
+        .Add("displayOrder", type => type.DisplayOrder)
+        .Add("isActive", type => type.IsActive)
+        .DefaultOrder("displayOrder")
+        .DefaultOrder("name")
+        .PageSize(fallback: 25, max: 200);
+
+    private static readonly Expression<Func<RatingType, AdminRatingTypeSummary>> ToTypeRow =
+        type => new AdminRatingTypeSummary(
+            type.Id, type.Code, type.Name, type.NameArabic, type.Scope, type.HasOverallStars,
+            type.AllowComment, type.CommentLabel, type.CommentLabelArabic, type.IsSystem,
+            type.DisplayOrder, type.IsActive,
+            type.Groups.Count(entry => entry.IsActive),
+            type.Questions.Count(entry => entry.IsActive),
+            // Filled in below. RatingResponse has no navigation back to RatingType,
+            // so the response count cannot ride this projection.
+            0,
+            type.CreatedAt);
+
     public async Task<GridPage<AdminRatingTypeSummary>> ListTypesAsync(
         GridQuery query, CancellationToken cancellationToken = default)
     {
-        var (skip, top) = query.ClampPage(25, 200);
+        var page = await dbContext.RatingTypes.ToGridPageAsync(
+            query, TypeColumns, type => type.Id, ToTypeRow, cancellationToken);
 
-        var rows = dbContext.RatingTypes.AsNoTracking().AsQueryable();
-
-        if (!string.IsNullOrWhiteSpace(query.Search))
-        {
-            var term = query.Search.Trim();
-            rows = rows.Where(t =>
-                EF.Functions.Like(t.Name, $"%{term}%")
-                || EF.Functions.Like(t.NameArabic, $"%{term}%")
-                || EF.Functions.Like(t.Code, $"%{term}%"));
-        }
-        if (query.Filters.TryGetValue("isActive", out var activeFilter)
-            && bool.TryParse(activeFilter, out var isActive))
-        {
-            rows = rows.Where(t => t.IsActive == isActive);
-        }
-
-        rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
-        {
-            ("name", true) => rows.OrderByDescending(t => t.Name),
-            ("name", false) => rows.OrderBy(t => t.Name),
-            ("code", true) => rows.OrderByDescending(t => t.Code),
-            ("code", false) => rows.OrderBy(t => t.Code),
-            _ => rows.OrderBy(t => t.DisplayOrder).ThenBy(t => t.Name),
-        };
-
-        var total = await rows.CountAsync(cancellationToken);
-        var page = await rows
-            .Skip(skip)
-            .Take(top)
-            .Select(t => new
-            {
-                t.Id, t.Code, t.Name, t.NameArabic, t.Scope, t.HasOverallStars,
-                t.AllowComment, t.CommentLabel, t.CommentLabelArabic, t.IsSystem,
-                t.DisplayOrder, t.IsActive,
-                GroupCount = t.Groups.Count(g => g.IsActive),
-                QuestionCount = t.Questions.Count(q => q.IsActive),
-                t.CreatedAt,
-            })
-            .ToListAsync(cancellationToken);
-
-        // Response counts per type (separate grouped query — RatingResponse has no
-        // navigation on RatingType so the counts can't ride the projection above).
-        var typeIds = page.Select(t => t.Id).ToList();
+        var typeIds = page.Items.Select(row => row.Id).ToList();
         var responseCounts = await dbContext.RatingResponses.AsNoTracking()
-            .Where(r => r.IsActive && typeIds.Contains(r.RatingTypeId))
-            .GroupBy(r => r.RatingTypeId)
-            .Select(g => new { TypeId = g.Key, Count = g.Count() })
-            .ToDictionaryAsync(g => g.TypeId, g => g.Count, cancellationToken);
+            .Where(response => response.IsActive && typeIds.Contains(response.RatingTypeId))
+            .GroupBy(response => response.RatingTypeId)
+            .Select(bucket => new { TypeId = bucket.Key, Count = bucket.Count() })
+            .ToDictionaryAsync(entry => entry.TypeId, entry => entry.Count, cancellationToken);
 
-        var items = page.Select(t => new AdminRatingTypeSummary(
-            t.Id, t.Code, t.Name, t.NameArabic, t.Scope, t.HasOverallStars,
-            t.AllowComment, t.CommentLabel, t.CommentLabelArabic, t.IsSystem,
-            t.DisplayOrder, t.IsActive, t.GroupCount, t.QuestionCount,
-            responseCounts.GetValueOrDefault(t.Id), t.CreatedAt)).ToList();
+        var items = page.Items
+            .Select(row => row with { ResponseCount = responseCounts.GetValueOrDefault(row.Id) })
+            .ToList();
 
-        return GridPage<AdminRatingTypeSummary>.Of(items, total,
-            skip, top);
+        return GridPage<AdminRatingTypeSummary>.Of(items, page.Total, page.Skip, page.Top);
     }
 
     public async Task<AdminRatingTypeSummary?> GetTypeAsync(
@@ -209,46 +192,32 @@ internal sealed class AdminRatingConfigService(
 
     // -- Question groups ------------------------------------------------------
 
-    public async Task<GridPage<AdminRatingQuestionGroupSummary>> ListGroupsAsync(
-        Guid ratingTypeId, GridQuery query, CancellationToken cancellationToken = default)
-    {
-        var (skip, top) = query.ClampPage(50, 200);
+    /// <summary>The grid contract for the question-groups grid on
+    /// RatingConfig.razor. The owning type is a scope predicate, not a filter key,
+    /// so it stays outside the grid.</summary>
+    private static readonly GridColumns<RatingQuestionGroup> GroupColumns =
+        new GridColumns<RatingQuestionGroup>()
+            .Add("name", questionGroup => questionGroup.Name, searchable: true)
+            .Add("nameArabic", questionGroup => questionGroup.NameArabic, searchable: true)
+            .Add("displayOrder", questionGroup => questionGroup.DisplayOrder)
+            .Add("isActive", questionGroup => questionGroup.IsActive)
+            .DefaultOrder("displayOrder")
+            .DefaultOrder("name")
+            .PageSize(fallback: 50, max: 200);
 
-        var rows = dbContext.RatingQuestionGroups.AsNoTracking()
-            .Where(g => g.RatingTypeId == ratingTypeId);
+    private static readonly Expression<Func<RatingQuestionGroup, AdminRatingQuestionGroupSummary>>
+        ToGroupRow = questionGroup => new AdminRatingQuestionGroupSummary(
+            questionGroup.Id, questionGroup.RatingTypeId, questionGroup.Name,
+            questionGroup.NameArabic, questionGroup.DisplayOrder, questionGroup.IsActive,
+            questionGroup.Questions.Count(question => question.IsActive), questionGroup.CreatedAt);
 
-        if (!string.IsNullOrWhiteSpace(query.Search))
-        {
-            var term = query.Search.Trim();
-            rows = rows.Where(g =>
-                EF.Functions.Like(g.Name, $"%{term}%")
-                || EF.Functions.Like(g.NameArabic, $"%{term}%"));
-        }
-        if (query.Filters.TryGetValue("isActive", out var activeFilter)
-            && bool.TryParse(activeFilter, out var isActive))
-        {
-            rows = rows.Where(g => g.IsActive == isActive);
-        }
-
-        rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
-        {
-            ("name", true) => rows.OrderByDescending(g => g.Name),
-            ("name", false) => rows.OrderBy(g => g.Name),
-            _ => rows.OrderBy(g => g.DisplayOrder).ThenBy(g => g.Name),
-        };
-
-        var total = await rows.CountAsync(cancellationToken);
-        var page = await rows
-            .Skip(skip)
-            .Take(top)
-            .Select(g => new AdminRatingQuestionGroupSummary(
-                g.Id, g.RatingTypeId, g.Name, g.NameArabic, g.DisplayOrder, g.IsActive,
-                g.Questions.Count(q => q.IsActive), g.CreatedAt))
-            .ToListAsync(cancellationToken);
-
-        return GridPage<AdminRatingQuestionGroupSummary>.Of(page, total,
-            skip, top);
-    }
+    public Task<GridPage<AdminRatingQuestionGroupSummary>> ListGroupsAsync(
+        Guid ratingTypeId, GridQuery query, CancellationToken cancellationToken = default) =>
+        dbContext.RatingQuestionGroups
+            .Where(questionGroup => questionGroup.RatingTypeId == ratingTypeId)
+            .ToGridPageAsync(
+                query, GroupColumns, questionGroup => questionGroup.Id, ToGroupRow,
+                cancellationToken);
 
     public async Task<AdminRatingQuestionGroupSummary?> GetGroupAsync(
         Guid id, CancellationToken cancellationToken = default) =>
@@ -326,55 +295,34 @@ internal sealed class AdminRatingConfigService(
 
     // -- Questions ------------------------------------------------------------
 
-    public async Task<GridPage<AdminRatingQuestionSummary>> ListQuestionsAsync(
-        Guid ratingTypeId, GridQuery query, CancellationToken cancellationToken = default)
-    {
-        var (skip, top) = query.ClampPage(50, 200);
+    /// <summary>The grid contract for the questions grid on RatingConfig.razor.
+    /// <c>groupId</c> is filter-only in practice (the grid renders the group name
+    /// through a client-side lookup), but it is a real column here so an unparseable
+    /// value is a 400 rather than a silently unfiltered grid.</summary>
+    private static readonly GridColumns<RatingQuestion> QuestionColumns =
+        new GridColumns<RatingQuestion>()
+            .Add("text", question => question.Text, searchable: true)
+            .Add("textArabic", question => question.TextArabic, searchable: true)
+            .Add("groupId", question => question.RatingQuestionGroupId)
+            .Add("displayOrder", question => question.DisplayOrder)
+            .Add("isActive", question => question.IsActive)
+            .DefaultOrder("displayOrder")
+            .DefaultOrder("text")
+            .PageSize(fallback: 50, max: 200);
 
-        var rows = dbContext.RatingQuestions.AsNoTracking()
-            .Where(q => q.RatingTypeId == ratingTypeId);
-
-        if (!string.IsNullOrWhiteSpace(query.Search))
-        {
-            var term = query.Search.Trim();
-            rows = rows.Where(q =>
-                EF.Functions.Like(q.Text, $"%{term}%")
-                || EF.Functions.Like(q.TextArabic, $"%{term}%"));
-        }
-        if (query.Filters.TryGetValue("isActive", out var activeFilter)
-            && bool.TryParse(activeFilter, out var isActive))
-        {
-            rows = rows.Where(q => q.IsActive == isActive);
-        }
-        if (query.Filters.TryGetValue("groupId", out var groupFilter)
-            && Guid.TryParse(groupFilter, out var groupId))
-        {
-            rows = rows.Where(q => q.RatingQuestionGroupId == groupId);
-        }
-
-        rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
-        {
-            ("text", true) => rows.OrderByDescending(q => q.Text),
-            ("text", false) => rows.OrderBy(q => q.Text),
-            _ => rows.OrderBy(q => q.DisplayOrder).ThenBy(q => q.Text),
-        };
-
-        var total = await rows.CountAsync(cancellationToken);
-        var page = await rows
-            .Skip(skip)
-            .Take(top)
-            .Select(ToQuestionSummaryExpr)
-            .ToListAsync(cancellationToken);
-
-        return GridPage<AdminRatingQuestionSummary>.Of(page, total,
-            skip, top);
-    }
+    public Task<GridPage<AdminRatingQuestionSummary>> ListQuestionsAsync(
+        Guid ratingTypeId, GridQuery query, CancellationToken cancellationToken = default) =>
+        dbContext.RatingQuestions
+            .Where(question => question.RatingTypeId == ratingTypeId)
+            .ToGridPageAsync(
+                query, QuestionColumns, question => question.Id, ToQuestionRow,
+                cancellationToken);
 
     public async Task<AdminRatingQuestionSummary?> GetQuestionAsync(
         Guid id, CancellationToken cancellationToken = default) =>
         await dbContext.RatingQuestions.AsNoTracking()
             .Where(q => q.Id == id)
-            .Select(ToQuestionSummaryExpr)
+            .Select(ToQuestionRow)
             .SingleOrDefaultAsync(cancellationToken);
 
     public async Task<AdminRatingQuestionSummary> CreateQuestionAsync(
@@ -470,10 +418,11 @@ internal sealed class AdminRatingConfigService(
         new(q.Id, q.RatingTypeId, q.RatingQuestionGroupId, q.Text, q.TextArabic,
             q.IsRequired, q.DisplayOrder, q.IsActive, q.CreatedAt);
 
-    private static System.Linq.Expressions.Expression<Func<RatingQuestion, AdminRatingQuestionSummary>> ToQuestionSummaryExpr =>
-        q => new AdminRatingQuestionSummary(
-            q.Id, q.RatingTypeId, q.RatingQuestionGroupId, q.Text, q.TextArabic,
-            q.IsRequired, q.DisplayOrder, q.IsActive, q.CreatedAt);
+    private static readonly Expression<Func<RatingQuestion, AdminRatingQuestionSummary>>
+        ToQuestionRow = question => new AdminRatingQuestionSummary(
+            question.Id, question.RatingTypeId, question.RatingQuestionGroupId,
+            question.Text, question.TextArabic, question.IsRequired,
+            question.DisplayOrder, question.IsActive, question.CreatedAt);
 
     private static ApiException TypeNotFound() => new(
         ErrorCodes.RatingTypeNotFound, 404,

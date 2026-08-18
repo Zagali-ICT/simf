@@ -1,4 +1,5 @@
 // Tests: SIMF.Api.Tests/NewsTests.cs
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Assets.Abstractions;
@@ -6,8 +7,10 @@ using SIMF.Application.Auditing;
 using SIMF.Application.PublicRelations.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Grids;
 using SIMF.Contracts.PublicRelations;
 using SIMF.Domain.PublicRelations;
+using SIMF.Infrastructure.Common.Grids;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.PublicRelations;
@@ -30,109 +33,64 @@ internal sealed class AdminNewsService(
     private const int BodyMaxLength = 8000;
     private const int CategoryMaxLength = 100;
 
+    /// <summary>
+    /// The grid contract for /admin/news: one entry per key NewsList.razor can send,
+    /// as both its filter and its sort. A key not declared here is a 400, not a
+    /// silently ignored request.
+    /// </summary>
+    private static readonly GridColumns<News> Columns = new GridColumns<News>()
+        .Add("title", news => news.Title, searchable: true)
+        .Add("titleArabic", news => news.TitleArabic, searchable: true)
+        .Add("category", news => news.Category, searchable: true)
+        .Add("categoryArabic", news => news.CategoryArabic, searchable: true)
+        .Add("publishedAt", news => news.PublishedAt)
+        .Add("displayOrder", news => news.DisplayOrder)
+        .Add("isActive", news => news.IsActive)
+        .DefaultOrder("publishedAt", descending: true)
+        .DefaultOrder("displayOrder")
+        .PageSize(fallback: 25, max: 200);
+
+    // HasImage is projected false and filled in below: "an active NewsImage asset
+    // exists" is a file-store fact, not a column on News, so it cannot be part of
+    // the SELECT.
+    private static readonly Expression<Func<News, AdminNewsSummary>> ToSummary =
+        news => new AdminNewsSummary(
+            news.Id,
+            news.Title,
+            news.TitleArabic,
+            news.Category,
+            news.CategoryArabic,
+            news.PublishedAt,
+            news.DisplayOrder,
+            news.IsActive,
+            false,
+            news.CreatedAt,
+            // Append in the same positional order as the record so the
+            // Excel export round-trips the bilingual body + excerpt.
+            news.BodyArabic,
+            news.ExcerptArabic);
+
     public async Task<GridPage<AdminNewsSummary>> ListAllAsync(
         GridQuery query, CancellationToken cancellationToken = default)
     {
-        var (skip, top) = query.ClampPage(25, 200);
-
-        var rows = dbContext.News.AsNoTracking().AsQueryable();
-
-        if (!string.IsNullOrWhiteSpace(query.Search))
-        {
-            var term = query.Search.Trim();
-            rows = rows.Where(news =>
-                EF.Functions.Like(news.Title, $"%{term}%")
-                || EF.Functions.Like(news.TitleArabic, $"%{term}%")
-                || EF.Functions.Like(news.Category, $"%{term}%")
-                || EF.Functions.Like(news.CategoryArabic, $"%{term}%"));
-        }
-
-        // CP grid per-column filters. Unknown columns are ignored.
-        // The column keys match the SimfDataGridColumn `Key` values on the page.
-        foreach (var (column, raw) in query.Filters)
-        {
-            if (string.IsNullOrWhiteSpace(raw)) { continue; }
-            var v = raw.Trim();
-            switch (column.ToLowerInvariant())
-            {
-                case "title":
-                    rows = rows.Where(news => news.Title.Contains(v));
-                    break;
-                case "titlearabic":
-                    rows = rows.Where(news => news.TitleArabic.Contains(v));
-                    break;
-                case "category":
-                    rows = rows.Where(news => news.Category.Contains(v));
-                    break;
-                case "categoryarabic":
-                    rows = rows.Where(news => news.CategoryArabic.Contains(v));
-                    break;
-                case "isactive":
-                    if (bool.TryParse(v, out var isActive))
-                    {
-                        rows = rows.Where(news => news.IsActive == isActive);
-                    }
-                    break;
-            }
-        }
-
-        rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
-        {
-            ("title", true) => rows.OrderByDescending(news => news.Title),
-            ("title", false) => rows.OrderBy(news => news.Title),
-            ("displayorder", true) => rows.OrderByDescending(news => news.DisplayOrder),
-            ("displayorder", false) => rows.OrderBy(news => news.DisplayOrder),
-            ("publishedat", false) => rows.OrderBy(news => news.PublishedAt),
-            _ => rows.OrderByDescending(news => news.PublishedAt)
-                     .ThenBy(news => news.DisplayOrder),
-        };
-
-        var total = await rows.CountAsync(cancellationToken);
-        var pageRows = await rows
-            .Skip(skip)
-            .Take(top)
-            .Select(news => new
-            {
-                news.Id,
-                news.Title,
-                news.TitleArabic,
-                news.Category,
-                news.CategoryArabic,
-                news.PublishedAt,
-                news.DisplayOrder,
-                news.IsActive,
-                news.CreatedAt,
-                news.BodyArabic,
-                news.ExcerptArabic,
-            })
-            .ToListAsync(cancellationToken);
+        var page = await dbContext.News.ToGridPageAsync(
+            query, Columns, news => news.Id, ToSummary, cancellationToken);
 
         // The grid renders the news image thumbnail only when an active NewsImage
         // asset exists (StoredFile store via the /assets proxy, not the legacy
         // ImageRelativePath) — one batched query for the page, no N+1.
         var imageOwners = await assetService.WhichOwnersHaveActiveAssetAsync(
-            AssetCategory.NewsImage, pageRows.Select(news => news.Id).ToList(), cancellationToken);
+            AssetCategory.NewsImage,
+            page.Items.Select(news => news.Id).ToList(),
+            cancellationToken);
 
-        var page = pageRows
-            .Select(news => new AdminNewsSummary(
-                news.Id,
-                news.Title,
-                news.TitleArabic,
-                news.Category,
-                news.CategoryArabic,
-                news.PublishedAt,
-                news.DisplayOrder,
-                news.IsActive,
-                imageOwners.Contains(news.Id),
-                news.CreatedAt,
-                // Append in the same positional order as the record so the
-                // Excel export round-trips the bilingual body + excerpt.
-                news.BodyArabic,
-                news.ExcerptArabic))
-            .ToList();
-
-        return GridPage<AdminNewsSummary>.Of(page, total,
-            skip, top);
+        return GridPage<AdminNewsSummary>.Of(
+            page.Items
+                .Select(news => news with { HasImage = imageOwners.Contains(news.Id) })
+                .ToList(),
+            page.Total,
+            page.Skip,
+            page.Top);
     }
 
     public async Task<AdminNewsDetail?> GetAsync(

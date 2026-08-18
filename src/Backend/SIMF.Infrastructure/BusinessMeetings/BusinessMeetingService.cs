@@ -1,4 +1,5 @@
 // Tests: SIMF.Api.Tests/BusinessMeetingsTests.cs
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -7,8 +8,10 @@ using SIMF.Application.Notifications;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Grids;
 using SIMF.Contracts.BusinessMeetings;
 using SIMF.Domain.BusinessMeetings;
+using SIMF.Infrastructure.Common.Grids;
 using SIMF.Infrastructure.MeetingRequests;
 using SIMF.Infrastructure.Persistence;
 
@@ -68,21 +71,31 @@ internal sealed class BusinessMeetingService(
 
     // ── Meeting tables ───────────────────────────────────────────────────────
 
-    public async Task<GridPage<MeetingTableRow>> ListTablesAsync(
-        Guid hallId, GridQuery query, CancellationToken cancellationToken = default)
-    {
-        var (skip, top) = Page(query);
-        var baseQuery = appDbContext.MeetingTables.AsNoTracking()
-            .Where(t => t.HallId == hallId && t.IsActive);
-        var total = await baseQuery.CountAsync(cancellationToken);
-        var rows = await baseQuery
-            .OrderBy(t => t.Code)
-            .Skip(skip).Take(top)
-            .Select(t => new MeetingTableRow(
-                t.Id, t.HallId, t.Code, t.RowLabel, t.ColumnNumber, t.Capacity, t.IsActive))
-            .ToListAsync(cancellationToken);
-        return GridPage<MeetingTableRow>.Of(rows, total, skip, top);
-    }
+    /// <summary>The grid contract for the meeting-tables half of
+    /// /admin/meeting-tables. The page declares no sortable or filterable column, so
+    /// the only key that reaches here is the <c>hallId</c> the Excel export carries
+    /// to name the hall (see <c>ExportMeetingTablesEndpoint</c>). It repeats the
+    /// scope predicate below and so cannot widen the set — but undeclared it would
+    /// 400 every export.</summary>
+    private static readonly GridColumns<MeetingTable> TableColumns = new GridColumns<MeetingTable>()
+        .Add("code", table => table.Code)
+        .Add("hallId", table => table.HallId)
+        .DefaultOrder("code")
+        .PageSize(fallback: 50, max: 500);
+
+    private static readonly Expression<Func<MeetingTable, MeetingTableRow>> ToTableGridRow =
+        table => new MeetingTableRow(
+            table.Id, table.HallId, table.Code, table.RowLabel,
+            table.ColumnNumber, table.Capacity, table.IsActive);
+
+    public Task<GridPage<MeetingTableRow>> ListTablesAsync(
+        Guid hallId, GridQuery query, CancellationToken cancellationToken = default) =>
+        // The hall scope and the soft-delete rule are the resource, not the request,
+        // so they compose ahead of the grid and no filter can override them.
+        appDbContext.MeetingTables
+            .Where(table => table.HallId == hallId && table.IsActive)
+            .ToGridPageAsync(
+                query, TableColumns, table => table.Id, ToTableGridRow, cancellationToken);
 
     public async Task<MeetingTableRow> CreateTableAsync(
         Guid actorUserId, Guid hallId, CreateMeetingTableRequest request,
@@ -281,22 +294,31 @@ internal sealed class BusinessMeetingService(
 
     // ── Hall allocations ─────────────────────────────────────────────────────
 
-    public async Task<GridPage<HallAllocationRow>> ListAllocationsAsync(
-        Guid hallId, GridQuery query, CancellationToken cancellationToken = default)
-    {
-        var (skip, top) = Page(query);
-        var baseQuery = appDbContext.HallAllocations.AsNoTracking()
-            .Where(a => a.HallId == hallId && a.ReleasedAt == null);
-        var total = await baseQuery.CountAsync(cancellationToken);
-        var rows = await baseQuery
-            .OrderByDescending(a => a.Start)
-            .Skip(skip).Take(top)
-            .Select(a => new HallAllocationRow(
-                a.Id, a.HallId, a.Purpose, a.Mode, a.UnitCount, a.RowColumnSpec,
-                a.Start, a.End, a.Notes))
-            .ToListAsync(cancellationToken);
-        return GridPage<HallAllocationRow>.Of(rows, total, skip, top);
-    }
+    /// <summary>The grid contract for the allocations half of
+    /// /admin/meeting-tables. The page declares no sortable or filterable column and
+    /// there is no allocations export, so no key reaches here today; <c>start</c> is
+    /// declared because the natural order names it.</summary>
+    private static readonly GridColumns<HallAllocation> AllocationColumns =
+        new GridColumns<HallAllocation>()
+            .Add("start", allocation => allocation.Start)
+            .DefaultOrder("start", descending: true)
+            .PageSize(fallback: 50, max: 500);
+
+    private static readonly Expression<Func<HallAllocation, HallAllocationRow>> ToAllocationRow =
+        allocation => new HallAllocationRow(
+            allocation.Id, allocation.HallId, allocation.Purpose, allocation.Mode,
+            allocation.UnitCount, allocation.RowColumnSpec,
+            allocation.Start, allocation.End, allocation.Notes);
+
+    public Task<GridPage<HallAllocationRow>> ListAllocationsAsync(
+        Guid hallId, GridQuery query, CancellationToken cancellationToken = default) =>
+        // The hall scope and the released-rows rule are the resource, not the
+        // request, so they compose ahead of the grid.
+        appDbContext.HallAllocations
+            .Where(allocation => allocation.HallId == hallId && allocation.ReleasedAt == null)
+            .ToGridPageAsync(
+                query, AllocationColumns, allocation => allocation.Id,
+                ToAllocationRow, cancellationToken);
 
     public async Task<HallAllocationRow> CreateAllocationAsync(
         Guid actorUserId, Guid hallId, CreateHallAllocationRequest request,
@@ -385,70 +407,41 @@ internal sealed class BusinessMeetingService(
 
     // ── Business meetings ────────────────────────────────────────────────────
 
-    public async Task<GridPage<BusinessMeetingRow>> ListMeetingsAsync(
-        GridQuery query, CancellationToken cancellationToken = default)
-    {
-        var (skip, top) = Page(query);
+    /// <summary>
+    /// The grid contract for /admin/business-meetings: one entry per key
+    /// BusinessMeetingsList.razor can send, as both its filter and its sort. A key
+    /// not declared here is a 400, not a silently ignored request.
+    ///
+    /// <para>
+    /// The hall and table keys read through the meeting's navigations, which are all
+    /// App-DB columns and so translate. Nothing here names
+    /// <c>Participants.Count</c>: that is a correlated subquery EF Core cannot put
+    /// in an ORDER BY, and it stays where it is legal, in the projection.
+    /// </para>
+    /// </summary>
+    private static readonly GridColumns<BusinessMeeting> MeetingColumns =
+        new GridColumns<BusinessMeeting>()
+            .Add("hall", meeting => meeting.MeetingTable!.Hall!.NameArabic)
+            .Add("table", meeting => meeting.MeetingTable!.Code)
+            .Add("type", meeting => meeting.MeetingType)
+            .Add("start", meeting => meeting.Start)
+            .Add("end", meeting => meeting.End)
+            .Add("status", meeting => meeting.Status)
+            // Most recent start first.
+            .DefaultOrder("start", descending: true)
+            .PageSize(fallback: 50, max: 500);
 
-        // Filter + sort on the entity navigations first (all App-DB columns, so
-        // EF-translatable), and project into BusinessMeetingRow LAST — after
-        // Skip/Take. Ordering before projecting keeps the Participants.Count
-        // correlated subquery out of the ORDER BY: EF Core cannot translate an
-        // OrderBy whose key is a projection that embeds a subquery (both the old
-        // manual double-Join and a post-projection sort 500'd at execution).
-        var q = appDbContext.BusinessMeetings.AsNoTracking();
+    private static readonly Expression<Func<BusinessMeeting, BusinessMeetingRow>> ToMeetingRow =
+        meeting => new BusinessMeetingRow(
+            meeting.Id, meeting.MeetingTableId, meeting.MeetingTable!.Code,
+            meeting.MeetingTable.HallId, meeting.MeetingTable.Hall!.NameArabic,
+            meeting.MeetingType, meeting.Start, meeting.End, meeting.Status,
+            meeting.Participants.Count);
 
-        // CP grid per-column filters. Unknown columns are ignored. The
-        // legacy "status" filter (the old dropdown) still parses the enum name.
-        foreach (var (column, raw) in query.Filters)
-        {
-            if (string.IsNullOrWhiteSpace(raw)) { continue; }
-            var v = raw.Trim();
-            switch (column.ToLowerInvariant())
-            {
-                case "hall":
-                    q = q.Where(m => m.MeetingTable!.Hall!.NameArabic.Contains(v));
-                    break;
-                case "table":
-                    q = q.Where(m => m.MeetingTable!.Code.Contains(v));
-                    break;
-                case "status":
-                    if (Enum.TryParse<BusinessMeetingStatus>(v, ignoreCase: true, out var status))
-                    {
-                        q = q.Where(m => m.Status == status);
-                    }
-                    break;
-            }
-        }
-
-        // CP grid sortable columns. Default: most recent start first.
-        q = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
-        {
-            ("hall", false) => q.OrderBy(m => m.MeetingTable!.Hall!.NameArabic).ThenByDescending(m => m.Start),
-            ("hall", true) => q.OrderByDescending(m => m.MeetingTable!.Hall!.NameArabic).ThenByDescending(m => m.Start),
-            ("table", false) => q.OrderBy(m => m.MeetingTable!.Code).ThenByDescending(m => m.Start),
-            ("table", true) => q.OrderByDescending(m => m.MeetingTable!.Code).ThenByDescending(m => m.Start),
-            ("type", false) => q.OrderBy(m => m.MeetingType).ThenByDescending(m => m.Start),
-            ("type", true) => q.OrderByDescending(m => m.MeetingType).ThenByDescending(m => m.Start),
-            ("start", false) => q.OrderBy(m => m.Start),
-            ("end", false) => q.OrderBy(m => m.End),
-            ("end", true) => q.OrderByDescending(m => m.End),
-            ("status", false) => q.OrderBy(m => m.Status).ThenByDescending(m => m.Start),
-            ("status", true) => q.OrderByDescending(m => m.Status).ThenByDescending(m => m.Start),
-            _ => q.OrderByDescending(m => m.Start),
-        };
-
-        var total = await q.CountAsync(cancellationToken);
-        var items = await q.Skip(skip).Take(top)
-            .Select(m => new BusinessMeetingRow(
-                m.Id, m.MeetingTableId, m.MeetingTable!.Code,
-                m.MeetingTable.HallId, m.MeetingTable.Hall!.NameArabic,
-                m.MeetingType, m.Start, m.End, m.Status,
-                m.Participants.Count))
-            .ToListAsync(cancellationToken);
-
-        return GridPage<BusinessMeetingRow>.Of(items, total, skip, top);
-    }
+    public Task<GridPage<BusinessMeetingRow>> ListMeetingsAsync(
+        GridQuery query, CancellationToken cancellationToken = default) =>
+        appDbContext.BusinessMeetings.ToGridPageAsync(
+            query, MeetingColumns, meeting => meeting.Id, ToMeetingRow, cancellationToken);
 
     public async Task<BusinessMeetingDetail> GetMeetingAsync(
         Guid id, CancellationToken cancellationToken = default)
@@ -850,9 +843,6 @@ internal sealed class BusinessMeetingService(
 
     private static MeetingTableRow ToTableRow(MeetingTable t) =>
         new(t.Id, t.HallId, t.Code, t.RowLabel, t.ColumnNumber, t.Capacity, t.IsActive);
-
-    private static (int Skip, int Top) Page(GridQuery query) =>
-        query.ClampPage(50, 500);
 
     private async Task ValidateSlotAsync(
         DateTime start, DateTime end, CancellationToken cancellationToken)

@@ -388,7 +388,7 @@ treatment.
 - **D-880's `QrId` widening never happened.** `UserProfile.QrId` is still
   `nvarchar(16)`. Widening it for an encrypted badge needs a new lift.
 - **D-877's admission relocation is half done.** The READ path is single-source
-  as of D-928: `QrResolver` reads `UserProfile.AdmissionState` alone, every
+  as of D-929: `QrResolver` reads `UserProfile.AdmissionState` alone, every
   production disable path having been made to withdraw profile admission in the
   same transaction. The WRITE path is still a dual-write — approve and reject
   set `SimfUser.AccountState` as well. Finishing it means **dropping an Identity
@@ -454,11 +454,11 @@ entity carries a `*FileId` alongside a fact the store already records.
 
 One loss, recorded rather than glossed: `CK_SpeakerPresentations_SizeBytes` went
 with its column and had no home on the store, whose `SizeBytes` is nullable for
-external links. **Closed by D-928** as `CK_StoredFiles_SizeBytes`
+external links. **Closed by D-929** as `CK_StoredFiles_SizeBytes`
 (`[SizeBytes] IS NULL OR [SizeBytes] > 0`), which tolerates NULL and so guards
 every file service rather than presentations alone.
 
-### D-928 named lift — the deferred audit findings, worked to the end
+### D-929 named lift — the deferred audit findings, worked to the end
 
 The audit programme parked what it could not fix in its own lane in
 `docs/planning/domain-audit-follow-ups-2026-08-16.md`. That file is now the

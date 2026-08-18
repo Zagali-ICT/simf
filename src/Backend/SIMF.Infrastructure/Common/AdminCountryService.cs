@@ -1,13 +1,16 @@
 // Tests: SIMF.Api.Tests/AdminCountriesTests.cs, SIMF.Api.Tests/DelegationsTests.cs
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
 using SIMF.Application.Common.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Grids;
 using SIMF.Contracts.Admin;
 using SIMF.Domain.Common;
 using SIMF.Domain.Profiles;
+using SIMF.Infrastructure.Common.Grids;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Common;
@@ -22,51 +25,34 @@ internal sealed class AdminCountryService(
     TimeProvider timeProvider,
     ILogger<AdminCountryService> logger) : IAdminCountryService
 {
-    public async Task<GridPage<AdminCountrySummary>> ListAllAsync(GridQuery query, CancellationToken cancellationToken = default)
-    {
-        var (skip, top) = query.ClampPage(50, 500);
+    /// <summary>
+    /// The grid contract for /admin/countries: one entry per key a caller can
+    /// send. <c>isActive</c> is not a filter box on CountriesList — it is the
+    /// active-rows filter the Booths / Exhibitors / MediaPartner / Speakers /
+    /// Sponsors pickers all send when they load their country list.
+    /// </summary>
+    private static readonly GridColumns<Country> Columns = new GridColumns<Country>()
+        .Add("id", country => country.Id)
+        .Add("code", country => country.Code, searchable: true)
+        .Add("name", country => country.Name, searchable: true)
+        .Add("nameArabic", country => country.NameArabic, searchable: true)
+        .Add("displayOrder", country => country.DisplayOrder)
+        .Add("isActive", country => country.IsActive)
+        .DefaultOrder("displayOrder")
+        .DefaultOrder("name")
+        .PageSize(fallback: 50, max: 500);
 
-        var rows = appDbContext.Countries.AsNoTracking().AsQueryable();
+    private static readonly Expression<Func<Country, AdminCountrySummary>> ToSummary =
+        country => new AdminCountrySummary(
+            country.Id, country.Code, country.Name, country.NameArabic,
+            country.PhonePrefix, country.DisplayOrder,
+            country.IsActive, country.CreatedAt, country.IsInvited,
+            country.DelegationArrivalDate, country.DelegationDepartureDate);
 
-        if (!string.IsNullOrWhiteSpace(query.Search))
-        {
-            var term = query.Search.Trim();
-            rows = rows.Where(country =>
-                EF.Functions.Like(country.Code, $"%{term}%")
-                || EF.Functions.Like(country.Name, $"%{term}%")
-                || EF.Functions.Like(country.NameArabic, $"%{term}%"));
-        }
-
-        if (query.Filters.TryGetValue("isActive", out var activeFilter) && bool.TryParse(activeFilter, out var isActive))
-        {
-            rows = rows.Where(country => country.IsActive == isActive);
-        }
-
-        rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
-        {
-            ("id", true) => rows.OrderByDescending(country => country.Id),
-            ("id", false) => rows.OrderBy(country => country.Id),
-            ("code", true) => rows.OrderByDescending(country => country.Code),
-            ("code", false) => rows.OrderBy(country => country.Code),
-            ("name", true) => rows.OrderByDescending(country => country.Name),
-            ("name", false) => rows.OrderBy(country => country.Name),
-            ("displayorder", true) => rows.OrderByDescending(country => country.DisplayOrder),
-            _ => rows.OrderBy(country => country.DisplayOrder)
-                     .ThenBy(country => country.Name),
-        };
-
-        var total = await rows.CountAsync(cancellationToken);
-        var page = await rows.Skip(skip).Take(top)
-            .Select(country => new AdminCountrySummary(
-                country.Id, country.Code, country.Name, country.NameArabic,
-                country.PhonePrefix, country.DisplayOrder,
-                country.IsActive, country.CreatedAt, country.IsInvited,
-                country.DelegationArrivalDate, country.DelegationDepartureDate))
-            .ToListAsync(cancellationToken);
-
-        return GridPage<AdminCountrySummary>.Of(page, total,
-            skip, top);
-    }
+    public Task<GridPage<AdminCountrySummary>> ListAllAsync(
+        GridQuery query, CancellationToken cancellationToken = default) =>
+        appDbContext.Countries.ToGridPageAsync(
+            query, Columns, country => country.Id, ToSummary, cancellationToken);
 
     public async Task<AdminCountryDetail?> GetAsync(int id, CancellationToken cancellationToken = default) =>
         await appDbContext.Countries.AsNoTracking()
