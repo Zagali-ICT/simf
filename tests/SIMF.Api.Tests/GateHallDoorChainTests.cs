@@ -132,7 +132,8 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
 
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        Assert.Equal(0, await db.HallAttendances.CountAsync(a => a.HallId == hallId));
+        // The hall comes from the session now, not a copy on the attendance row.
+        Assert.Equal(0, await db.HallAttendances.CountAsync(a => a.Session!.HallId == hallId));
     }
 
     [Fact]

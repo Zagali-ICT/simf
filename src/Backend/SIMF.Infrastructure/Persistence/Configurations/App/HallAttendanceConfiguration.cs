@@ -35,11 +35,6 @@ internal sealed class HallAttendanceConfiguration : IEntityTypeConfiguration<Hal
             .HasForeignKey(a => a.SessionId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne(a => a.Hall)
-            .WithMany()
-            .HasForeignKey(a => a.HallId)
-            .OnDelete(DeleteBehavior.Restrict);
-
         builder.HasOne(a => a.UserProfile)
             .WithMany()
             .HasForeignKey(a => a.UserProfileId)
@@ -49,9 +44,6 @@ internal sealed class HallAttendanceConfiguration : IEntityTypeConfiguration<Hal
         builder.HasIndex(a => new { a.SessionId, a.UserProfileId })
             .IsUnique()
             .HasFilter("[Leave] IS NULL");
-
-        // Live per-hall presence count rides this (open rows in a hall).
-        builder.HasIndex(a => new { a.HallId, a.Leave });
 
         // The per-SESSION reads, none of which the filtered unique index above can
         // serve: that index only contains the OPEN rows, so a query without a

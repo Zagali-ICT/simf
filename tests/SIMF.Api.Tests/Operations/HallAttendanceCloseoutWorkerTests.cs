@@ -111,7 +111,6 @@ public sealed class HallAttendanceCloseoutWorkerTests : IClassFixture<SimfApiFac
         {
             Id = Guid.NewGuid(),
             SessionId = session.Id,
-            HallId = hall.Id,
             UserProfileId = await TestAttendeeProfiles.CreateAccountlessAsync(db),
             Method = AttendanceMethod.QrScan,
             Enter = session.Start,

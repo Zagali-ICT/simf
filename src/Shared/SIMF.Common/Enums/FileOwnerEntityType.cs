@@ -22,7 +22,10 @@ public enum FileOwnerEntityType
     News = 6,
     Sponsor = 7,
     MediaPartner = 8,
-    Contact = 9,
+
+    // 9 is reserved - used to be `Contact`, the owner family of the removed
+    // CompanyLogo service. Left empty so a persisted value never changes meaning.
+
     ArchiveEdition = 10,
     ProgrammeDay = 11,
     OrganizationProfile = 12,

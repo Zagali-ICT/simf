@@ -47,6 +47,7 @@ public sealed class FilesystemFileStorageProviderTests : IDisposable
 
         Assert.Equal($"speakerphoto/{id:N}.png", write.StorageKey);
         Assert.Equal((byte)0, write.CipherFormatVersion); // no cipher used
+        Assert.Null(write.KekVersion);                    // and so no KEK wrapped anything
         Assert.Equal(bytes, await provider.ReadAsync(write.StorageKey, encrypted: false));
         Assert.Equal(bytes, await File.ReadAllBytesAsync(DiskPath(root, write.StorageKey))); // bytes are raw on disk
     }
@@ -61,6 +62,12 @@ public sealed class FilesystemFileStorageProviderTests : IDisposable
         var write = await provider.WriteAsync(FileService.Avatar, id, ".png", bytes, encrypt: true);
 
         Assert.Equal((byte)1, write.CipherFormatVersion);
+
+        // The row must record WHICH key wrapped the blob, not just that one did:
+        // a rotation re-wraps by KekVersion, so a wrong or missing stamp orphans
+        // the file. FileStorageOptions.KekVersion defaults to 1 and the test
+        // provider takes that default.
+        Assert.Equal((byte?)1, write.KekVersion);
 
         var onDisk = await File.ReadAllBytesAsync(DiskPath(root, write.StorageKey));
         Assert.NotEqual(bytes, onDisk);                 // not the plaintext

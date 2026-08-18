@@ -6,7 +6,6 @@ using SIMF.Common.Badges;
 using SIMF.Common.Options;
 using SIMF.Infrastructure.Persistence;
 using SIMF.Common;
-using SIMF.Common.Enums;
 
 namespace SIMF.Infrastructure.AccessControl;
 
@@ -68,11 +67,11 @@ internal sealed class QrResolver(
             .SingleOrDefaultAsync(cancellationToken);
         if (profileRow is null) { return null; }
 
-        // The Identity row is OPTIONAL and is read only for the two things it
-        // alone knows: the lockout flag and the account's display name. Most
-        // holders at a gate have no account — a walk-in registration and a
-        // pre-generated badge both produce a profile without one — so a missing
-        // user is the ordinary case, NOT a failed resolution.
+        // The Identity row is OPTIONAL and is read for the one thing it alone
+        // knows: the lockout flag. Most holders at a gate have no account - a
+        // walk-in registration and a pre-generated badge both produce a profile
+        // without one - so a missing user is the ordinary case, NOT a failed
+        // resolution.
         //
         // This used to query unconditionally and return null when it found
         // nothing, which turned a valid approved badge into a QR_UNKNOWN denial
@@ -85,27 +84,13 @@ internal sealed class QrResolver(
             : await identityDbContext.Users
                 .AsNoTracking()
                 .Where(user => user.Id == profileRow.UserId)
-                .Select(user => new
-                {
-                    user.LockoutEnd,
-                    user.DisplayName,
-                    // Carried so a disabled ACCOUNT denies at the gate. Admission
-                    // lives on the profile, but nothing ever writes Disabled
-                    // there — blocking and the dormant sweep both write it to the
-                    // account — so without this the gate never saw it and the
-                    // HolderDisabled denial was unreachable. A read added to a
-                    // query this method already ran, not a second writable copy:
-                    // the profile stays the one place admission is decided.
-                    user.AccountState,
-                })
+                .Select(user => new { user.LockoutEnd })
                 .SingleOrDefaultAsync(cancellationToken);
 
         return new QrResolution(
             profileRow.Id,
             profileRow.UserId,
-            userRow?.AccountState == AccountState.Disabled
-                ? AccountState.Disabled
-                : profileRow.AdmissionState,
+            profileRow.AdmissionState,
             userRow?.LockoutEnd != null && userRow.LockoutEnd > now,
             profileRow.ProfileTypeId,
             profileRow.profileTypeActive,

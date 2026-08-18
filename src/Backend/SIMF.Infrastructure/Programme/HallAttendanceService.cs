@@ -574,7 +574,7 @@ internal sealed class HallAttendanceService(
         Guid attendeeProfileId, Guid sessionId, Guid hallId, AttendanceMethod method,
         CancellationToken cancellationToken)
     {
-        var row = NewArrivalRow(attendeeProfileId, sessionId, hallId, method);
+        var row = NewArrivalRow(attendeeProfileId, sessionId, method);
         appDbContext.HallAttendances.Add(row);
         try
         {
@@ -636,7 +636,7 @@ internal sealed class HallAttendanceService(
                 return; // full — the transaction rolls back on dispose
             }
 
-            var row = NewArrivalRow(attendeeProfileId, sessionId, hallId, method);
+            var row = NewArrivalRow(attendeeProfileId, sessionId, method);
             appDbContext.HallAttendances.Add(row);
             added = row;
             try
@@ -683,14 +683,13 @@ internal sealed class HallAttendanceService(
         exception.InnerException is SqlException { Number: 2601 or 2627 };
 
     private HallAttendance NewArrivalRow(
-        Guid attendeeProfileId, Guid sessionId, Guid hallId, AttendanceMethod method)
+        Guid attendeeProfileId, Guid sessionId, AttendanceMethod method)
     {
         var now = timeProvider.SimfNow();
         return new HallAttendance
         {
             Id = Guid.NewGuid(),
             SessionId = sessionId,
-            HallId = hallId,
             UserProfileId = attendeeProfileId,
             Method = method,
             Enter = now,
@@ -799,7 +798,7 @@ internal sealed class HallAttendanceService(
         await auditLog.WriteSuccessAsync(
             AuditEvents.HallDepartureRecorded,
             attendeeAccountId,
-            $"sessionId={sessionId}; hallId={open.HallId}; attendeeProfileId={attendeeProfileId}",
+            $"sessionId={sessionId}; attendeeProfileId={attendeeProfileId}",
             cancellationToken);
 
         // Leaving the hall closes the attendee's session

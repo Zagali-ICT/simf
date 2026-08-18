@@ -4,7 +4,7 @@
 |-------|-------|
 | Document ID | SIMF-FDS-004 |
 | Title | Feature Design Specification — Forum Programme |
-| Version | 1.0 |
+| Version | 1.1 |
 | Status | Approved |
 | Classification | Confidential — to be confirmed by the owner |
 | Prepared by | Engineering & Architecture Team, STARTIME |
@@ -18,6 +18,7 @@
 | Version | Date | Author | Summary of change |
 |---------|------|--------|-------------------|
 | 1.0 | 2026-05-20 | Engineering & Architecture Team | First issue. The forum programme feature, build-ready. |
+| 1.1 | 2026-08-18 | Engineering & Architecture Team | As-built correction (see Amendment A): `SubTopic` was never built, so the two-level theme tree this document describes is design intent rather than build. The entity is marked PROPOSED, NOT BUILT rather than deleted. Sections 2, 3, 5.1, 7, 9, 11 and 12 carry the marker. |
 
 ---
 
@@ -32,7 +33,8 @@ engagement and statistics features all build on.
 
 The feature covers:
 
-- themes and pillars, with their sub-topics,
+- themes and pillars, with their sub-topics (the sub-topic level is
+  **PROPOSED, NOT BUILT** - Amendment A),
 - halls and their seating,
 - speakers, their profiles and their presentations,
 - sessions — creating and managing them, linking a theme, a hall and speakers,
@@ -49,7 +51,7 @@ the others act on it.
 
 | From SIMF-SRS-001 | From SIMF-UCS-001 |
 |-------------------|-------------------|
-| FR-401 themes and sub-topics | UC-23 Manage sessions |
+| FR-401 themes and sub-topics (themes only as built - Amendment A) | UC-23 Manage sessions |
 | FR-402 sessions | UC-23 |
 | FR-403 live / non-live sessions | UC-23 |
 | FR-404 halls with seating capacity | UC-24 Manage halls and seating |
@@ -82,6 +84,11 @@ The agenda is the attendee-facing view of all sessions.
   and their **sub-topics**.
 - A theme has a title in Arabic and English and a display order. A sub-topic
   belongs to a theme and has a title in both languages.
+
+> **The sub-topic level is PROPOSED, NOT BUILT** (Amendment A). As built the
+> Themes & Pillars page manages a single flat list of themes; there is no
+> second level beneath one, and a session is **tagged with many themes** rather
+> than owned by one. SIMF-DAT-001 section 5.4 is the authority.
 - A theme is soft-deleted; a theme in use by a session is not removed while it
   is referenced.
 
@@ -155,6 +162,12 @@ The feature uses these entities from SIMF-DAT-001 section 5.4: `Theme`,
 (speaker photos and presentation files). The `Hall` geofence addition is
 SIMF-FDS-003 OI-2.
 
+**As built:** `SubTopic` is **PROPOSED, NOT BUILT** - Amendment A. A session is
+linked to a `Theme` through the `SessionTheme` join, which this list omits.
+Several other names in this section and elsewhere in this document were also
+never built or no longer describe the schema; SIMF-DAT-001 section 5.4 records
+each one and is the authority for the as-built model.
+
 ## 8. User interface
 
 | Surface | Screens |
@@ -172,7 +185,7 @@ loading and error states are present on every data screen.
 | Field | Rule |
 |-------|------|
 | Theme title (Ar / En) | Required in both languages |
-| Sub-topic title (Ar / En) | Required in both languages; belongs to a theme |
+| Sub-topic title (Ar / En) | Required in both languages; belongs to a theme (**PROPOSED, NOT BUILT** - Amendment A) |
 | Hall name (Ar / En) | Required in both languages |
 | Hall capacity | Required; row and column counts are positive integers |
 | Speaker name (Ar / En) | Required in both languages |
@@ -195,7 +208,8 @@ loading and error states are present on every data screen.
 ## 11. Acceptance criteria
 
 1. The Scientific team can create and manage themes and their sub-topics in
-   Arabic and English.
+   Arabic and English. (The sub-topic half is **PROPOSED, NOT BUILT** -
+   Amendment A; themes alone are the built criterion.)
 2. A hall can be created with a seating capacity; saving generates the seat
    grid; the capacity can be changed and the grid adjusts safely.
 3. A speaker profile can be created with all its fields, a photo and a country.
@@ -215,7 +229,7 @@ loading and error states are present on every data screen.
 
 | # | Scenario | Expected |
 |---|----------|----------|
-| T-01 | Create a theme with sub-topics | theme and sub-topics saved in both languages |
+| T-01 | Create a theme with sub-topics | theme and sub-topics saved in both languages (the sub-topic half is **PROPOSED, NOT BUILT** - not executable today) |
 | T-02 | Create a hall with a capacity | hall saved; seat grid generated |
 | T-03 | Reduce a hall's capacity with seats assigned | unallocated seats removed; assigned seats kept with a warning |
 | T-04 | Create a speaker profile | profile saved with photo and country |
@@ -237,6 +251,50 @@ loading and error states are present on every data screen.
 | OI-2 | Confirm the session categories list with the client | Section 5.4 |
 | OI-3 | Confirm whether speakers may belong to past editions as well (link to `EditionSpeaker`) | Section 5.3 |
 | OI-4 | Confirm document classification with the owner | Control block |
+
+---
+
+## Amendment A - As-built correction: `SubTopic` (2026-08-18)
+
+A verification pass over the generated migrations and the domain model found
+that **`SubTopic` was never built**. There is no such entity in
+`src/Backend/SIMF.Domain/Programme` and no such table in either database's
+`InitialCreate`. This document described the two-level theme tree in the present
+tense throughout.
+
+**What exists instead.** The programme ships a single flat `Theme` list, and a
+session is **tagged with many themes** through the `SessionTheme` join rather
+than owned by one. There is no `Session.ThemeId` and no level beneath a theme,
+so a session that spans two pillars is listed under both. SIMF-DAT-001 section
+5.4 carries the full as-built table and is the authority.
+
+**What that means for the behaviour above.**
+
+- Section 5.1's second level does not exist; the Themes & Pillars page manages
+  themes only.
+- The section 9 validation rule for a sub-topic title has nothing to validate.
+- Acceptance criterion 1 and scenario T-01 are half-executable: the theme half
+  runs, the sub-topic half does not.
+- FR-401 is met for themes and open for sub-topics.
+
+**Other names in this document that SIMF-DAT-001 records as never built.** This
+amendment marks `SubTopic` only, because that is what it was raised for, but the
+same verification pass found further drift in section 7's entity list and in the
+scope and test sections: `Seat` (a hall carries one `HallSeatLayout` row, not one
+row per seat), `Session.IsLive` and `Session.BroadcastMode` (a session's state is
+`Status` and its kind is `Type`; scenario T-08 names `BroadcastMode` and section
+2 and FR-403 speak of marking a session live or non-live). Rather than restate
+them here, read **SIMF-DAT-001 section 5.4** as the authority for the as-built
+programme model wherever this document names an entity or a column.
+
+**The design intent stands and is deliberately not deleted.** A pillar with
+sub-topics beneath it is how the scientific committee describes the programme,
+and the requirement it came from (FR-401) has not been withdrawn. The entity is
+retained here, and in SIMF-DAT-001 section 5.4, marked **PROPOSED, NOT BUILT**,
+so that a later build starts from the settled design. Note that adding it now is
+no longer a simple insertion: with sessions tagged many-to-many against themes,
+a sub-topic level has to decide whether it tags sessions too or only groups
+themes, and that is a content decision for the client alongside OI-2.
 
 ---
 
