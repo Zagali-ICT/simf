@@ -1,6 +1,8 @@
-// Tests: SIMF.Api.Tests/Gates/AdminGatesTests.cs
+// Tests: SIMF.Api.Tests/AdminGatesTests.cs
 //        SIMF.Api.Tests/GateOperatorModelTests.cs (operator candidates,
 //        operator eligibility validation, gate-form lookups, assignment email)
+//        SIMF.Api.Tests/AdminGateCurrentlyInsideTests.cs (occupancy report)
+//        SIMF.Api.Tests/GatesExcelTests.cs (gate grid export / import)
 using System.Globalization;
 using System.Linq.Expressions;
 using ClosedXML.Excel;
@@ -50,6 +52,14 @@ internal sealed class AdminGateService(
                 .Contains(PermissionCatalog.Gates.Operate))
             .ToArray();
 
+    /// <summary>The row ceiling on the scan-report Excel export. The export runs the
+    /// same column declaration as the grid but with no Skip/Take, so it needs its own
+    /// bound; the bespoke filter it replaces let a caller ask for 100,000 scan rows
+    /// and build the whole workbook in memory in one request. 10,000 was that
+    /// filter's own default, so the export callers actually asked for is
+    /// unchanged.</summary>
+    private const int ScanExportRowCap = 10_000;
+
     /// <summary>
     /// The grid contract for /admin/gates: one entry per key GatesList.razor can
     /// send, as both its filter and its sort. A key not declared here is a 400, not
@@ -79,6 +89,70 @@ internal sealed class AdminGateService(
             // Carried so the grid Excel export round-trips the
             // bilingual description (positional order matches the record).
             gate.Description, gate.DescriptionArabic);
+
+    /// <summary>
+    /// The grid contract for the scan report. It replaces a bespoke filter object
+    /// whose four fields were applied with no validation at all: an unknown field was
+    /// ignored, an unparseable one never arrived, and the sort was hard-coded.
+    ///
+    /// <para>
+    /// The old FromUtc / ToUtc pair survives as the two hand-written range keys rather
+    /// than as the inferred <c>scannedAt</c> filter, because an inferred DateTime
+    /// filter names ONE calendar day and a scan report is read over a window. Both
+    /// ends are Saudi wall-clock days (<c>GridFilters.ParseDay</c>), and
+    /// <c>scannedTo</c> is half-open on the following midnight so the day it names is
+    /// included whole — the old <c>&lt;= ToUtc</c> silently excluded everything after
+    /// midnight on the last day whenever a caller passed a bare date.
+    /// </para>
+    ///
+    /// <para>
+    /// The two searchable columns are the scan's own snapshot fields, not the live
+    /// names the rows render: the log is append-only and those are the only
+    /// person-identifying values that live on the scanned row itself, so a search can
+    /// be a server-side WHERE instead of a second-database round trip per page.
+    /// </para>
+    /// </summary>
+    private static readonly GridColumns<GateScan> ScanColumns = new GridColumns<GateScan>()
+        .Add("gateId", scan => scan.GateId)
+        .Add("userProfileId", scan => scan.UserProfileId)
+        .Add("direction", scan => scan.Direction)
+        .Add("outcome", scan => scan.Outcome)
+        .Add("denialReasonCode", scan => scan.DenialReasonCode)
+        .Add("source", scan => scan.Source)
+        .Add("scannedAt", scan => scan.ScannedAt)
+        .Add("qrIdAtScan", scan => scan.QrIdAtScan, searchable: true)
+        .Add("scannedDisplayName", scan => scan.ScannedDisplayName, searchable: true)
+        .AddFilter("scannedFrom", raw => ScannedOnOrAfter(GridFilters.ParseDay("scannedFrom", raw)))
+        .AddFilter("scannedTo", raw => ScannedBefore(GridFilters.ParseDay("scannedTo", raw).AddDays(1)))
+        .DefaultOrder("scannedAt", descending: true)
+        .PageSize(fallback: 50, max: 200);
+
+    // The two range predicates behind scannedFrom / scannedTo. Each closes over a
+    // method parameter, which is the shape EF Core turns into a SQL parameter rather
+    // than inlining the date as a literal and taking a plan-cache slot per day asked
+    // for.
+    private static Expression<Func<GateScan, bool>> ScannedOnOrAfter(DateTime from) =>
+        scan => scan.ScannedAt >= from;
+
+    private static Expression<Func<GateScan, bool>> ScannedBefore(DateTime exclusiveTo) =>
+        scan => scan.ScannedAt < exclusiveTo;
+
+    /// <summary>
+    /// The grid contract for the occupancy report. The columns are declared over
+    /// <see cref="GateScan"/> because that is what the query pages: the report is one
+    /// row per visitor's latest allowed check-in, and everything the CP renders beyond
+    /// the gate and the timestamp — the display name, the Arabic name, the profile
+    /// type — is resolved AFTER the page, some of it out of the other database. So the
+    /// sortable and filterable surface is deliberately the scan's own columns, and a
+    /// key naming a resolved field is a 400 rather than a sort that quietly does
+    /// nothing.
+    /// </summary>
+    private static readonly GridColumns<GateScan> CurrentlyInsideColumns =
+        new GridColumns<GateScan>()
+            .Add("gateId", scan => scan.GateId)
+            .Add("scannedAt", scan => scan.ScannedAt)
+            .DefaultOrder("scannedAt", descending: true)
+            .PageSize(fallback: 25, max: 200);
 
     public Task<GridPage<AdminGateSummary>> ListAllAsync(
         GridQuery query, CancellationToken cancellationToken = default) =>
@@ -390,33 +464,41 @@ internal sealed class AdminGateService(
         return new AdminGateFormOptions(profileTypes, halls);
     }
 
-    public async Task<IReadOnlyList<AdminGateScanRow>> ListScansAsync(
-        AdminGateScanReportFilter filter, CancellationToken cancellationToken = default)
+    public async Task<GridPage<AdminGateScanRow>> ListScansAsync(
+        GridQuery query, CancellationToken cancellationToken = default)
     {
-        var top = Math.Clamp(filter.Top is > 0 ? filter.Top : 50, 1, 1000);
-        var skip = Math.Max(0, filter.Skip);
+        var scans = appDbContext.GateScans.AsNoTracking()
+            .ApplyGrid(query, ScanColumns, scan => scan.Id);
 
-        var query = appDbContext.GateScans.AsNoTracking().AsQueryable();
+        var (skip, top) = query.ClampPage(ScanColumns.FallbackTop, ScanColumns.MaxTop);
+        var total = await scans.CountAsync(cancellationToken);
 
-        if (filter.FromUtc is { } from) { query = query.Where(s => s.ScannedAt >= from); }
-        if (filter.ToUtc is { } to) { query = query.Where(s => s.ScannedAt <= to); }
-        if (filter.GateId is { } gateId) { query = query.Where(s => s.GateId == gateId); }
-        if (filter.Outcome is { } outcome) { query = query.Where(s => s.Outcome == outcome); }
+        var rows = await BuildScanRowsAsync(
+            scans.Skip(skip).Take(top), cancellationToken);
 
-        var raw = await query
-            .OrderByDescending(s => s.ScannedAt)
-            .Skip(skip).Take(top)
+        return GridPage<AdminGateScanRow>.Of(rows, total, skip, top);
+    }
+
+    /// <summary>Turns an already-filtered, already-ordered, already-bounded scan
+    /// query into report rows. Shared by the grid and the Excel export so the two
+    /// cannot render the same scan differently; each caller decides its own bound
+    /// first (a page window, or <see cref="ScanExportRowCap"/>), because neither the
+    /// join nor the name resolution may run over an unbounded set.</summary>
+    private async Task<IReadOnlyList<AdminGateScanRow>> BuildScanRowsAsync(
+        IQueryable<GateScan> scans, CancellationToken cancellationToken)
+    {
+        var scansWithGateCode = await scans
             .Join(appDbContext.Gates.AsNoTracking(),
                 scan => scan.GateId, gate => gate.Id,
-                (scan, gate) => new { scan, gateCode = gate.Code })
+                (scan, gate) => new { Scan = scan, GateCode = gate.Code })
             .ToListAsync(cancellationToken);
 
         // UserProfile + SimfUser live in different DbContexts, so
         // resolving the display name is two round-trips — profile rows
         // first (App), then matching user rows (Identity), merge by id.
-        var profileIds = raw
-            .Where(r => r.scan.UserProfileId != null)
-            .Select(r => r.scan.UserProfileId!.Value)
+        var profileIds = scansWithGateCode
+            .Where(entry => entry.Scan.UserProfileId != null)
+            .Select(entry => entry.Scan.UserProfileId!.Value)
             .Distinct()
             .ToList();
         Dictionary<Guid, string> displayNames;
@@ -434,32 +516,33 @@ internal sealed class AdminGateService(
             // map: an attendee with no account has no name to fetch, and dropping
             // them here would erase their scans from this report and its export.
             var userIds = profileUsers
-                .Where(pu => pu.UserId != null)
-                .Select(pu => pu.UserId!.Value)
+                .Where(profileUser => profileUser.UserId != null)
+                .Select(profileUser => profileUser.UserId!.Value)
                 .Distinct()
                 .ToList();
             var userNamesByUserId = await userDirectory.GetDisplayNamesAsync(
                 userIds, cancellationToken);
             displayNames = profileUsers.ToDictionary(
-                pu => pu.Id,
-                pu => pu.UserId is { } userId
+                profileUser => profileUser.Id,
+                profileUser => profileUser.UserId is { } userId
                     && userNamesByUserId.TryGetValue(userId, out var name)
                         ? name : string.Empty);
         }
 
-        return raw.Select(r => new AdminGateScanRow(
-                r.scan.Id, r.scan.GateId, r.gateCode,
-                r.scan.UserProfileId,
-                r.scan.UserProfileId is { } pid && displayNames.TryGetValue(pid, out var name)
-                    ? name : null,
-                r.scan.QrIdAtScan, r.scan.Direction, r.scan.Outcome,
-                r.scan.DenialReasonCode, r.scan.ScannedAt,
-                r.scan.ScannedByUserId, r.scan.Source))
+        return scansWithGateCode.Select(entry => new AdminGateScanRow(
+                entry.Scan.Id, entry.Scan.GateId, entry.GateCode,
+                entry.Scan.UserProfileId,
+                entry.Scan.UserProfileId is { } profileId
+                    && displayNames.TryGetValue(profileId, out var name)
+                        ? name : null,
+                entry.Scan.QrIdAtScan, entry.Scan.Direction, entry.Scan.Outcome,
+                entry.Scan.DenialReasonCode, entry.Scan.ScannedAt,
+                entry.Scan.ScannedByUserId, entry.Scan.Source))
             .ToList();
     }
 
-    public async Task<IReadOnlyList<AdminCurrentlyInsideRow>> ListCurrentlyInsideAsync(
-        CancellationToken cancellationToken = default)
+    public async Task<GridPage<AdminCurrentlyInsideRow>> ListCurrentlyInsideAsync(
+        GridQuery query, CancellationToken cancellationToken = default)
     {
         // Per design notes §3.3 — most-recent allowed scan across all gates
         // per visitor; inside if CheckIn, outside if CheckOut or absent.
@@ -488,7 +571,14 @@ internal sealed class AdminGateService(
         //
         // The Id tiebreak keeps exactly one row per visitor when two scans share a
         // ScannedAt — the guarantee OrderByDescending(...).First() gave for free.
-        var latest = await appDbContext.GateScans.AsNoTracking()
+        //
+        // "Latest allowed check-in still inside the window" is the report's SCOPE, so
+        // it is composed onto the source BEFORE the grid: the grid's own filters,
+        // ordering and page window then apply to the occupancy set rather than to the
+        // raw scan log. The report used to page nothing at all and sort in C# after
+        // materialising every matching GateScan entity — 19 properties per row off the
+        // highest-write table in the system, to render three of them.
+        var insideScans = appDbContext.GateScans.AsNoTracking()
             .Where(s => s.Outcome == ScanOutcome.Allowed
                 && s.UserProfileId != null
                 && s.Direction == ScanDirection.CheckIn
@@ -498,21 +588,42 @@ internal sealed class AdminGateService(
                     && later.Outcome == ScanOutcome.Allowed
                     && (later.ScannedAt > s.ScannedAt
                         || (later.ScannedAt == s.ScannedAt && later.Id > s.Id))))
-            .Select(s => new { UserProfileId = s.UserProfileId!.Value, Last = s })
+            .ApplyGrid(query, CurrentlyInsideColumns, scan => scan.Id);
+
+        var (skip, top) = query.ClampPage(
+            CurrentlyInsideColumns.FallbackTop, CurrentlyInsideColumns.MaxTop);
+
+        // The stat card on the dashboard reads Total, so occupancy stays the true
+        // count of everyone inside even when the page shows the first 25 of them.
+        var total = await insideScans.CountAsync(cancellationToken);
+
+        var latest = await insideScans
+            .Skip(skip).Take(top)
+            .Select(s => new
+            {
+                UserProfileId = s.UserProfileId!.Value,
+                s.GateId,
+                s.ScannedAt,
+            })
             .ToListAsync(cancellationToken);
 
-        if (latest.Count == 0) { return Array.Empty<AdminCurrentlyInsideRow>(); }
+        if (latest.Count == 0)
+        {
+            return GridPage<AdminCurrentlyInsideRow>.Of(
+                Array.Empty<AdminCurrentlyInsideRow>(), total, skip, top);
+        }
 
-        var gateIds = latest.Select(x => x.Last.GateId).Distinct().ToList();
+        var gateIds = latest.Select(scan => scan.GateId).Distinct().ToList();
         var gateCodes = await appDbContext.Gates.AsNoTracking()
-            .Where(g => gateIds.Contains(g.Id))
-            .Select(g => new { g.Id, g.Code })
-            .ToDictionaryAsync(x => x.Id, x => x.Code, cancellationToken);
+            .Where(gate => gateIds.Contains(gate.Id))
+            .Select(gate => new { gate.Id, gate.Code })
+            .ToDictionaryAsync(gate => gate.Id, gate => gate.Code, cancellationToken);
 
         // Split cross-context join into App-then-Identity round-trips.
-        var profileIds = latest.Select(x => x.UserProfileId).Distinct().ToList();
+        // The Include is gone, not lost: it is inert under the projection below, which
+        // pulls the profile-type fields the row needs without materialising the entity.
+        var profileIds = latest.Select(scan => scan.UserProfileId).Distinct().ToList();
         var profileRows = await appDbContext.UserProfiles.AsNoTracking()
-            .Include(profile => profile.ProfileType)
             .Where(profile => profileIds.Contains(profile.Id))
             .Select(profile => new
             {
@@ -520,58 +631,57 @@ internal sealed class AdminGateService(
                 profile.UserId,
                 profile.NameArabic,
                 profile.ProfileTypeId,
-                ProfileType = profile.ProfileType,
+                profile.ProfileType,
             })
             .ToListAsync(cancellationToken);
         // Only the accounts are looked up, but EVERY profile stays in the map: an
         // attendee with no account has no display name to fetch, and dropping them
         // would take them off the occupancy roster while they are still inside. Their
         // Arabic name and profile type come from the profile row either way.
-        var inProfileUserIds = profileRows
-            .Where(pr => pr.UserId != null)
-            .Select(pr => pr.UserId!.Value)
+        var profileAccountUserIds = profileRows
+            .Where(profileRow => profileRow.UserId != null)
+            .Select(profileRow => profileRow.UserId!.Value)
             .Distinct()
             .ToList();
         var profileUserDisplayNames = await userDirectory.GetDisplayNamesAsync(
-            inProfileUserIds, cancellationToken);
-        var profiles = profileRows.ToDictionary(
-            row => row.Id,
-            row => new
-            {
-                row.Id,
-                DisplayName = row.UserId is { } userId
-                    && profileUserDisplayNames.TryGetValue(userId, out var name)
-                        ? name : string.Empty,
-                row.NameArabic,
-                row.ProfileTypeId,
-                ProfileType = row.ProfileType,
-            });
+            profileAccountUserIds, cancellationToken);
+        var profiles = profileRows.ToDictionary(row => row.Id);
 
-        return latest
-            .Where(x => profiles.ContainsKey(x.UserProfileId))
-            .Select(x =>
+        var items = latest
+            .Where(scan => profiles.ContainsKey(scan.UserProfileId))
+            .Select(scan =>
             {
-                var profile = profiles[x.UserProfileId];
+                var profile = profiles[scan.UserProfileId];
                 return new AdminCurrentlyInsideRow(
-                    x.UserProfileId,
-                    profile.DisplayName,
+                    scan.UserProfileId,
+                    profile.UserId is { } userId
+                        && profileUserDisplayNames.TryGetValue(userId, out var name)
+                            ? name : string.Empty,
                     profile.NameArabic,
                     profile.ProfileTypeId,
                     profile.ProfileType?.Name,
                     profile.ProfileType?.PageColor,
-                    x.Last.ScannedAt,
-                    x.Last.GateId,
-                    gateCodes.TryGetValue(x.Last.GateId, out var code) ? code : string.Empty);
+                    scan.ScannedAt,
+                    scan.GateId,
+                    gateCodes.TryGetValue(scan.GateId, out var code) ? code : string.Empty);
             })
-            .OrderByDescending(row => row.LastCheckInAt)
             .ToList();
+
+        // No C#-side re-sort: the order is the SQL ORDER BY the grid composed, and
+        // re-sorting a page in memory would only ever contradict it.
+        return GridPage<AdminCurrentlyInsideRow>.Of(items, total, skip, top);
     }
 
     public async Task<byte[]> ExportScansXlsxAsync(
-        AdminGateScanReportFilter filter, CancellationToken cancellationToken = default)
+        GridQuery query, CancellationToken cancellationToken = default)
     {
-        filter.Top = Math.Clamp(filter.Top is > 0 ? filter.Top : 10_000, 1, 100_000);
-        var rows = await ListScansAsync(filter, cancellationToken);
+        // Same declaration, same filters, same order as the grid — and deliberately no
+        // Skip/Take, which is the whole reason composition and paging are separate
+        // calls. The export's bound is its own row cap, not the grid's page size.
+        var scans = appDbContext.GateScans.AsNoTracking()
+            .ApplyGrid(query, ScanColumns, scan => scan.Id)
+            .Take(ScanExportRowCap);
+        var rows = await BuildScanRowsAsync(scans, cancellationToken);
 
         using var workbook = new XLWorkbook();
         var sheet = workbook.Worksheets.Add("Scans");
@@ -588,17 +698,18 @@ internal sealed class AdminGateService(
         for (var rowIndex = 0; rowIndex < rows.Count; rowIndex++)
         {
             var row = rows[rowIndex];
-            var rIdx = rowIndex + 2;
-            sheet.Cell(rIdx, 1).Value = row.ScanId;
-            sheet.Cell(rIdx, 2).Value = row.ScannedAt.ToString("u",
+            // Row 1 is the header, so the first data row is 2.
+            var excelRow = rowIndex + 2;
+            sheet.Cell(excelRow, 1).Value = row.ScanId;
+            sheet.Cell(excelRow, 2).Value = row.ScannedAt.ToString("u",
                 CultureInfo.InvariantCulture);
-            sheet.Cell(rIdx, 3).Value = row.GateCode;
-            sheet.Cell(rIdx, 4).Value = row.VisitorDisplayName ?? string.Empty;
-            sheet.Cell(rIdx, 5).Value = row.QrIdAtScan;
-            sheet.Cell(rIdx, 6).Value = row.Direction.ToString();
-            sheet.Cell(rIdx, 7).Value = row.Outcome.ToString();
-            sheet.Cell(rIdx, 8).Value = row.DenialReasonCode?.ToString() ?? string.Empty;
-            sheet.Cell(rIdx, 9).Value = row.Source.ToString();
+            sheet.Cell(excelRow, 3).Value = row.GateCode;
+            sheet.Cell(excelRow, 4).Value = row.VisitorDisplayName ?? string.Empty;
+            sheet.Cell(excelRow, 5).Value = row.QrIdAtScan;
+            sheet.Cell(excelRow, 6).Value = row.Direction.ToString();
+            sheet.Cell(excelRow, 7).Value = row.Outcome.ToString();
+            sheet.Cell(excelRow, 8).Value = row.DenialReasonCode?.ToString() ?? string.Empty;
+            sheet.Cell(excelRow, 9).Value = row.Source.ToString();
         }
         sheet.Columns().AdjustToContents();
 

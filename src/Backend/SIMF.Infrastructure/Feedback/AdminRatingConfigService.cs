@@ -79,35 +79,35 @@ internal sealed class AdminRatingConfigService(
     public async Task<AdminRatingTypeSummary?> GetTypeAsync(
         Guid id, CancellationToken cancellationToken = default)
     {
-        var t = await dbContext.RatingTypes.AsNoTracking()
-            .Where(t => t.Id == id)
-            .Select(t => new
+        var type = await dbContext.RatingTypes.AsNoTracking()
+            .Where(row => row.Id == id)
+            .Select(row => new
             {
-                t.Id, t.Code, t.Name, t.NameArabic, t.Scope, t.HasOverallStars,
-                t.AllowComment, t.CommentLabel, t.CommentLabelArabic, t.IsSystem,
-                t.DisplayOrder, t.IsActive,
-                GroupCount = t.Groups.Count(g => g.IsActive),
-                QuestionCount = t.Questions.Count(q => q.IsActive),
-                t.CreatedAt,
+                row.Id, row.Code, row.Name, row.NameArabic, row.Scope, row.HasOverallStars,
+                row.AllowComment, row.CommentLabel, row.CommentLabelArabic, row.IsSystem,
+                row.DisplayOrder, row.IsActive,
+                GroupCount = row.Groups.Count(group => group.IsActive),
+                QuestionCount = row.Questions.Count(question => question.IsActive),
+                row.CreatedAt,
             })
             .SingleOrDefaultAsync(cancellationToken);
-        if (t is null) { return null; }
+        if (type is null) { return null; }
 
         var responseCount = await dbContext.RatingResponses
-            .CountAsync(r => r.RatingTypeId == id && r.IsActive, cancellationToken);
+            .CountAsync(response => response.RatingTypeId == id && response.IsActive, cancellationToken);
 
         return new AdminRatingTypeSummary(
-            t.Id, t.Code, t.Name, t.NameArabic, t.Scope, t.HasOverallStars,
-            t.AllowComment, t.CommentLabel, t.CommentLabelArabic, t.IsSystem,
-            t.DisplayOrder, t.IsActive, t.GroupCount, t.QuestionCount,
-            responseCount, t.CreatedAt);
+            type.Id, type.Code, type.Name, type.NameArabic, type.Scope, type.HasOverallStars,
+            type.AllowComment, type.CommentLabel, type.CommentLabelArabic, type.IsSystem,
+            type.DisplayOrder, type.IsActive, type.GroupCount, type.QuestionCount,
+            responseCount, type.CreatedAt);
     }
 
     public async Task<AdminRatingTypeSummary> CreateTypeAsync(
         Guid actorUserId, CreateRatingTypeRequest request, CancellationToken cancellationToken = default)
     {
         var code = RequireText(request.Code, CodeMaxLength, "code", "الرمز");
-        if (await dbContext.RatingTypes.AnyAsync(t => t.Code == code, cancellationToken))
+        if (await dbContext.RatingTypes.AnyAsync(row => row.Code == code, cancellationToken))
         {
             throw new ApiException(ErrorCodes.RatingTypeCodeTaken, 409,
                 "A rating type with this code already exists.",
@@ -146,7 +146,7 @@ internal sealed class AdminRatingConfigService(
         Guid actorUserId, Guid id, UpdateRatingTypeRequest request, CancellationToken cancellationToken = default)
     {
         var type = await dbContext.RatingTypes
-            .SingleOrDefaultAsync(t => t.Id == id, cancellationToken)
+            .SingleOrDefaultAsync(row => row.Id == id, cancellationToken)
             ?? throw TypeNotFound();
 
         // Code + Scope are immutable after create; only the editable surface moves.
@@ -172,7 +172,7 @@ internal sealed class AdminRatingConfigService(
         Guid actorUserId, Guid id, CancellationToken cancellationToken = default)
     {
         var type = await dbContext.RatingTypes
-            .SingleOrDefaultAsync(t => t.Id == id, cancellationToken)
+            .SingleOrDefaultAsync(row => row.Id == id, cancellationToken)
             ?? throw TypeNotFound();
         if (type.IsSystem)
         {
@@ -222,16 +222,15 @@ internal sealed class AdminRatingConfigService(
     public async Task<AdminRatingQuestionGroupSummary?> GetGroupAsync(
         Guid id, CancellationToken cancellationToken = default) =>
         await dbContext.RatingQuestionGroups.AsNoTracking()
-            .Where(g => g.Id == id)
-            .Select(g => new AdminRatingQuestionGroupSummary(
-                g.Id, g.RatingTypeId, g.Name, g.NameArabic, g.DisplayOrder, g.IsActive,
-                g.Questions.Count(q => q.IsActive), g.CreatedAt))
+            .Where(questionGroup => questionGroup.Id == id)
+            .Select(ToGroupRow)
             .SingleOrDefaultAsync(cancellationToken);
 
     public async Task<AdminRatingQuestionGroupSummary> CreateGroupAsync(
         Guid actorUserId, CreateRatingQuestionGroupRequest request, CancellationToken cancellationToken = default)
     {
-        if (!await dbContext.RatingTypes.AnyAsync(t => t.Id == request.RatingTypeId, cancellationToken))
+        if (!await dbContext.RatingTypes.AnyAsync(
+            type => type.Id == request.RatingTypeId, cancellationToken))
         {
             throw TypeNotFound();
         }
@@ -259,7 +258,7 @@ internal sealed class AdminRatingConfigService(
         Guid actorUserId, Guid id, UpdateRatingQuestionGroupRequest request, CancellationToken cancellationToken = default)
     {
         var group = await dbContext.RatingQuestionGroups
-            .SingleOrDefaultAsync(g => g.Id == id, cancellationToken)
+            .SingleOrDefaultAsync(row => row.Id == id, cancellationToken)
             ?? throw GroupNotFound();
 
         group.Name = RequireText(request.Name, NameMaxLength, "English name", "الاسم الإنجليزي");
@@ -273,7 +272,9 @@ internal sealed class AdminRatingConfigService(
             $"id={group.Id}; typeId={group.RatingTypeId}; active={group.IsActive}", cancellationToken);
 
         var questionCount = await dbContext.RatingQuestions
-            .CountAsync(q => q.RatingQuestionGroupId == id && q.IsActive, cancellationToken);
+            .CountAsync(
+                question => question.RatingQuestionGroupId == id && question.IsActive,
+                cancellationToken);
         return ToGroupSummary(group, questionCount);
     }
 
@@ -281,7 +282,7 @@ internal sealed class AdminRatingConfigService(
         Guid actorUserId, Guid id, CancellationToken cancellationToken = default)
     {
         var group = await dbContext.RatingQuestionGroups
-            .SingleOrDefaultAsync(g => g.Id == id, cancellationToken)
+            .SingleOrDefaultAsync(row => row.Id == id, cancellationToken)
             ?? throw GroupNotFound();
         if (!group.IsActive) { return; } // idempotent
 
@@ -310,6 +311,12 @@ internal sealed class AdminRatingConfigService(
             .DefaultOrder("text")
             .PageSize(fallback: 50, max: 200);
 
+    private static readonly Expression<Func<RatingQuestion, AdminRatingQuestionSummary>>
+        ToQuestionRow = question => new AdminRatingQuestionSummary(
+            question.Id, question.RatingTypeId, question.RatingQuestionGroupId,
+            question.Text, question.TextArabic, question.IsRequired,
+            question.DisplayOrder, question.IsActive, question.CreatedAt);
+
     public Task<GridPage<AdminRatingQuestionSummary>> ListQuestionsAsync(
         Guid ratingTypeId, GridQuery query, CancellationToken cancellationToken = default) =>
         dbContext.RatingQuestions
@@ -321,14 +328,15 @@ internal sealed class AdminRatingConfigService(
     public async Task<AdminRatingQuestionSummary?> GetQuestionAsync(
         Guid id, CancellationToken cancellationToken = default) =>
         await dbContext.RatingQuestions.AsNoTracking()
-            .Where(q => q.Id == id)
+            .Where(question => question.Id == id)
             .Select(ToQuestionRow)
             .SingleOrDefaultAsync(cancellationToken);
 
     public async Task<AdminRatingQuestionSummary> CreateQuestionAsync(
         Guid actorUserId, CreateRatingQuestionRequest request, CancellationToken cancellationToken = default)
     {
-        if (!await dbContext.RatingTypes.AnyAsync(t => t.Id == request.RatingTypeId, cancellationToken))
+        if (!await dbContext.RatingTypes.AnyAsync(
+            type => type.Id == request.RatingTypeId, cancellationToken))
         {
             throw TypeNotFound();
         }
@@ -359,7 +367,7 @@ internal sealed class AdminRatingConfigService(
         Guid actorUserId, Guid id, UpdateRatingQuestionRequest request, CancellationToken cancellationToken = default)
     {
         var question = await dbContext.RatingQuestions
-            .SingleOrDefaultAsync(q => q.Id == id, cancellationToken)
+            .SingleOrDefaultAsync(row => row.Id == id, cancellationToken)
             ?? throw QuestionNotFound();
         await EnsureGroupBelongsAsync(request.RatingQuestionGroupId, question.RatingTypeId, cancellationToken);
 
@@ -382,7 +390,7 @@ internal sealed class AdminRatingConfigService(
         Guid actorUserId, Guid id, CancellationToken cancellationToken = default)
     {
         var question = await dbContext.RatingQuestions
-            .SingleOrDefaultAsync(q => q.Id == id, cancellationToken)
+            .SingleOrDefaultAsync(row => row.Id == id, cancellationToken)
             ?? throw QuestionNotFound();
         if (!question.IsActive) { return; } // idempotent
 
@@ -399,30 +407,30 @@ internal sealed class AdminRatingConfigService(
     private async Task EnsureGroupBelongsAsync(
         Guid? groupId, Guid ratingTypeId, CancellationToken cancellationToken)
     {
-        if (groupId is not { } gid) { return; }
-        var ok = await dbContext.RatingQuestionGroups
-            .AnyAsync(g => g.Id == gid && g.RatingTypeId == ratingTypeId, cancellationToken);
-        if (!ok) { throw GroupNotFound(); }
+        if (groupId is not { } requiredGroupId) { return; }
+        var belongs = await dbContext.RatingQuestionGroups
+            .AnyAsync(
+                group => group.Id == requiredGroupId && group.RatingTypeId == ratingTypeId,
+                cancellationToken);
+        if (!belongs) { throw GroupNotFound(); }
     }
 
     private static AdminRatingTypeSummary ToTypeSummary(
-        RatingType t, int groupCount, int questionCount, int responseCount) =>
-        new(t.Id, t.Code, t.Name, t.NameArabic, t.Scope, t.HasOverallStars, t.AllowComment,
-            t.CommentLabel, t.CommentLabelArabic, t.IsSystem, t.DisplayOrder, t.IsActive,
-            groupCount, questionCount, responseCount, t.CreatedAt);
+        RatingType type, int groupCount, int questionCount, int responseCount) =>
+        new(type.Id, type.Code, type.Name, type.NameArabic, type.Scope, type.HasOverallStars,
+            type.AllowComment, type.CommentLabel, type.CommentLabelArabic, type.IsSystem,
+            type.DisplayOrder, type.IsActive,
+            groupCount, questionCount, responseCount, type.CreatedAt);
 
-    private static AdminRatingQuestionGroupSummary ToGroupSummary(RatingQuestionGroup g, int questionCount) =>
-        new(g.Id, g.RatingTypeId, g.Name, g.NameArabic, g.DisplayOrder, g.IsActive, questionCount, g.CreatedAt);
+    private static AdminRatingQuestionGroupSummary ToGroupSummary(
+        RatingQuestionGroup group, int questionCount) =>
+        new(group.Id, group.RatingTypeId, group.Name, group.NameArabic, group.DisplayOrder,
+            group.IsActive, questionCount, group.CreatedAt);
 
-    private static AdminRatingQuestionSummary ToQuestionSummary(RatingQuestion q) =>
-        new(q.Id, q.RatingTypeId, q.RatingQuestionGroupId, q.Text, q.TextArabic,
-            q.IsRequired, q.DisplayOrder, q.IsActive, q.CreatedAt);
-
-    private static readonly Expression<Func<RatingQuestion, AdminRatingQuestionSummary>>
-        ToQuestionRow = question => new AdminRatingQuestionSummary(
-            question.Id, question.RatingTypeId, question.RatingQuestionGroupId,
-            question.Text, question.TextArabic, question.IsRequired,
-            question.DisplayOrder, question.IsActive, question.CreatedAt);
+    private static AdminRatingQuestionSummary ToQuestionSummary(RatingQuestion question) =>
+        new(question.Id, question.RatingTypeId, question.RatingQuestionGroupId,
+            question.Text, question.TextArabic,
+            question.IsRequired, question.DisplayOrder, question.IsActive, question.CreatedAt);
 
     private static ApiException TypeNotFound() => new(
         ErrorCodes.RatingTypeNotFound, 404,

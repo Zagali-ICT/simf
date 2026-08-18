@@ -7,11 +7,13 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@simrsnf.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-02 |
+| **Last reviewed** | 2026-08-18 |
 
 > **Page nature.** This is a **read-only** roster grid (D-134 Sprint A): a
 > combined view over `SimfUser` + `UserProfile` + `ProfileType` of every
-> non-admin attendee (Visitors + Others). There is **no Add / Edit / Delete /
+> non-admin attendee, audience and partner accounts alike. Both carry
+> `UserType.Visitor`; the audience-vs-partner split lives on
+> `ProfileType.IsVisitor`, not on the user type. There is **no Add / Edit / Delete /
 > Details modal** here — creation/editing lives on `/admin/visitors` and
 > `/admin/others`. The "golden path" is therefore the **filter → page → sort →
 > export** round-trip, not a CRUD cycle. Multiselect checkboxes render (D-132
@@ -29,7 +31,7 @@
 | ID | Scenario | Type | Priority | Status |
 |----|----------|------|----------|--------|
 | E2E-ATT-001 | Golden path — load roster → filter → search → sort → page → export XLSX | happy | P0 | _to author_ |
-| E2E-ATT-002 | UserType (Kind) filter — Visitors only / Others only / All | function | P1 | _to author_ |
+| E2E-ATT-002 | UserType (Kind) filter: Visitors only / All | function | P1 | _to author_ |
 | E2E-ATT-003 | AccountState filter — Approved / Pending / Rejected / Any | function | P1 | _to author_ |
 | E2E-ATT-004 | Search by email or display name (`Like %term%`) | function | P1 | _to author_ |
 | E2E-ATT-005 | Registration date-range filter (From / To, inclusive of the To day) | function | P1 | _to author_ |
@@ -64,7 +66,8 @@ Background:
       has signed in via /login + /login/totp using the Get-Totp helper
   And they have navigated to /admin/attendees
   And the database contains at least 30 non-admin attendees
-      (a mix of Visitor + Other, Approved + PendingApproval + Rejected)
+      (a mix of audience and partner profile types, Approved +
+      PendingApproval + Rejected)
 
 Scenario: Filter, search, sort, page, then export the filtered roster
   When the administrator opens /admin/attendees
@@ -111,21 +114,29 @@ Scenario: Filter, search, sort, page, then export the filtered roster
 ### E2E-ATT-002 — UserType (Kind) filter
 
 ```gherkin
-Scenario: Kind filter narrows to Visitors / Others / All
-  Given the roster contains both Visitor and Other attendees
-  When the administrator selects Kind = "Visitors only" and clicks "Apply filters"
+Scenario: Kind filter offers exactly All and Visitors only
+  Given the roster contains audience and partner attendees, all of them
+      UserType.Visitor
+  When the administrator opens the Kind select
+  Then it offers exactly two options, "All" (value "") and
+      "Visitors only" (value "Visitor"), and no third option
+
+  When they select Kind = "Visitors only" and click "Apply filters"
   Then the list request body carries Filters["userType"]="Visitor"
   And every visible row's Kind column reads "Visitor"
 
-  When they select Kind = "Others only" and click "Apply filters"
-  Then the list request body carries Filters["userType"]="Other"
-  And every visible row's Kind column reads "Other"
-
   When they select Kind = "All" (the empty option) and click "Apply filters"
   Then the list request body carries NO userType filter key
-  And both Visitor and Other rows appear
+  And the same rows appear, because Admin is the only other UserType and the
+      server excludes it outright
   And no admin row ever appears (UserType.Admin is always excluded server-side)
 ```
+
+> **Known redundancy, not a defect.** `UserType` holds only `(Visitor, Admin)`
+> and the roster excludes admins server-side, so "Visitors only" and "All"
+> return the identical set and the Kind column is constantly "Visitor". The
+> dead third option ("Other") was removed when this scenario was rewritten.
+> Whether the control and the column stay at all is an open owner decision.
 
 ### E2E-ATT-003 — AccountState filter
 
@@ -344,14 +355,14 @@ Scenario: Arabic toggle mirrors page, filter row and grid
   When they switch the language to "العربية" in the header
   Then the page reloads with <html dir="rtl" lang="ar">
   And the SimfBanner title reads "الحضور"
-  And the Kind filter label reads "النوع" with options "الكل" / "الزوار فقط" / "أخرى فقط"
+  And the Kind filter label reads "النوع" with exactly two options, "الكل" / "الزوار فقط"
   And the State filter label reads "الحالة" with options "الكل" / "مُعتمد" / "معلّق" / "مرفوض"
   And the search label reads "البريد أو الاسم الظاهر يحتوي"
   And the date labels read "من تاريخ" / "إلى تاريخ"
   And the Apply / Clear / Export buttons read "تطبيق التصفية" / "مسح" / "تصدير"
   And the grid headers read "البريد الإلكتروني" / "الاسم الظاهر" / "النوع" /
       "نوع الملف الشخصي" / "الحالة" / "معرف QR" / "تاريخ التسجيل"
-  And Visitor rows' Kind reads "زائر" and Other rows read "أخرى"
+  And every row's Kind reads "زائر"
   And the profile-type cell shows the Arabic profile-type name (ProfileTypeNameArabic)
   And the toolbar and pager arrows reverse direction
 ```
@@ -387,4 +398,4 @@ Scenario: Arabic toggle mirrors page, filter row and grid
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-08-18 by Claude (dead UserType option removed).

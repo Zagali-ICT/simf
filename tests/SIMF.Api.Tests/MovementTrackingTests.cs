@@ -36,6 +36,20 @@ public sealed class MovementTrackingTests : IClassFixture<SimfApiFactory>
     private const double AwayLat = 24.7236;
     private const double AwayLon = 46.6753;
 
+    // Five widely separated points, so a dwell test can seed several DISTINCT
+    // geofenced halls without stacking boundaries on the coordinates the
+    // capture tests ping. Dammam, Abha, Tabuk, Hail and Jubail.
+    private const double DammamLat = 26.4207;
+    private const double DammamLon = 50.0888;
+    private const double AbhaLat = 18.2465;
+    private const double AbhaLon = 42.5117;
+    private const double TabukLat = 28.3835;
+    private const double TabukLon = 36.5662;
+    private const double HailLat = 27.5114;
+    private const double HailLon = 41.7208;
+    private const double JubailLat = 27.0046;
+    private const double JubailLon = 49.6460;
+
     private readonly SimfApiFactory _factory;
     private readonly HttpClient _client;
 
@@ -257,9 +271,114 @@ public sealed class MovementTrackingTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.Unauthorized, anonymous.StatusCode);
     }
 
+    // The rollup runs in the database now, over
+    // LAG(CapturedAt) OVER (PARTITION BY UserId ORDER BY CapturedAt). The three
+    // cases below pin the parts of that shape a future rewrite would get wrong,
+    // and they are the only proof available while no hall carries a real
+    // geofence boundary.
+
+    [Fact]
+    public async Task Dwell_does_not_pair_two_visits_separated_by_another_hall()
+    {
+        // A, then B, then A again. The whole A-to-A span is 8 minutes, INSIDE the
+        // 10-minute leg limit, so a rollup that grouped an attendee's pings per
+        // hall before pairing them would make the two A visits adjacent and credit
+        // hall A with the time the attendee spent in hall B. Pairing along the
+        // attendee's own track, which is what PARTITION BY UserId alone does,
+        // drops both pairs: neither has the same hall on both sides.
+        var hallA = await SeedHallWithGeofenceAtAsync(DammamLat, DammamLon);
+        var hallB = await SeedHallWithGeofenceAtAsync(AbhaLat, AbhaLon);
+        var userId = Guid.NewGuid();
+        var start = SimfClock.Now.AddHours(-9);
+
+        await SeedPingsAsync(userId, hallA, [start]);
+        await SeedPingsAsync(userId, hallB, [start.AddMinutes(4)]);
+        await SeedPingsAsync(userId, hallA, [start.AddMinutes(8)]);
+
+        using var scope = _factory.Services.CreateScope();
+        var service = scope.ServiceProvider.GetRequiredService<IMovementTrackingService>();
+        var dwell = await service.DwellByHallAsync(start.AddMinutes(-1), start.AddHours(1));
+
+        var first = Assert.Single(dwell, d => d.HallId == hallA);
+        var second = Assert.Single(dwell, d => d.HallId == hallB);
+        // Both halls are still reported: an isolated ping evidences presence.
+        Assert.Equal(1, first.DistinctAttendees);
+        Assert.Equal(1, second.DistinctAttendees);
+        Assert.Equal(0d, first.TotalDwellMinutes);
+        Assert.Equal(0d, second.TotalDwellMinutes);
+        Assert.Equal(0d, first.AverageDwellMinutes);
+        Assert.Equal(0d, second.AverageDwellMinutes);
+    }
+
+    [Fact]
+    public async Task Dwell_sums_each_attendee_along_their_own_track()
+    {
+        // Two attendees in one hall whose tracks interleave in time: 0, 2, 5, 7.
+        // Each one dwells five minutes, so the hall totals ten. A rollup that
+        // paired consecutive rows by capture time WITHOUT partitioning by
+        // attendee would chain 0 -> 2 -> 5 -> 7 and report seven.
+        var hallId = await SeedHallWithGeofenceAtAsync(TabukLat, TabukLon);
+        var firstAttendee = Guid.NewGuid();
+        var secondAttendee = Guid.NewGuid();
+        var start = SimfClock.Now.AddHours(-11);
+
+        await SeedPingsAsync(firstAttendee, hallId, [start, start.AddMinutes(5)]);
+        await SeedPingsAsync(
+            secondAttendee, hallId, [start.AddMinutes(2), start.AddMinutes(7)]);
+
+        using var scope = _factory.Services.CreateScope();
+        var service = scope.ServiceProvider.GetRequiredService<IMovementTrackingService>();
+        var dwell = await service.DwellByHallAsync(start.AddMinutes(-1), start.AddHours(1));
+
+        var hall = Assert.Single(dwell, d => d.HallId == hallId);
+        Assert.Equal(2, hall.DistinctAttendees);
+        Assert.Equal(10d, hall.TotalDwellMinutes, 1);
+        Assert.Equal(5d, hall.AverageDwellMinutes, 1);
+    }
+
+    [Fact]
+    public async Task Dwell_counts_a_gap_of_exactly_the_leg_limit_but_nothing_past_it()
+    {
+        // The leg limit is inclusive. A gap of exactly ten minutes is one leg; a
+        // gap one second longer is a silence and contributes nothing. Both tracks
+        // belong to the SAME attendee, so this also pins that changing hall
+        // between them does not leak the walk into either total.
+        const int legLimitMinutes = 10;
+        var atLimit = await SeedHallWithGeofenceAtAsync(HailLat, HailLon);
+        var pastLimit = await SeedHallWithGeofenceAtAsync(JubailLat, JubailLon);
+        var userId = Guid.NewGuid();
+        var start = SimfClock.Now.AddHours(-13);
+        var later = start.AddHours(1);
+
+        await SeedPingsAsync(
+            userId, atLimit, [start, start.AddMinutes(legLimitMinutes)]);
+        await SeedPingsAsync(
+            userId, pastLimit,
+            [later, later.AddMinutes(legLimitMinutes).AddSeconds(1)]);
+
+        using var scope = _factory.Services.CreateScope();
+        var service = scope.ServiceProvider.GetRequiredService<IMovementTrackingService>();
+        var dwell = await service.DwellByHallAsync(start.AddMinutes(-1), start.AddHours(3));
+
+        var counted = Assert.Single(dwell, d => d.HallId == atLimit);
+        Assert.Equal(1, counted.DistinctAttendees);
+        Assert.Equal(10d, counted.TotalDwellMinutes, 1);
+
+        var dropped = Assert.Single(dwell, d => d.HallId == pastLimit);
+        Assert.Equal(1, dropped.DistinctAttendees);
+        Assert.Equal(0d, dropped.TotalDwellMinutes);
+    }
+
     // -- Helpers --------------------------------------------------------------
 
-    private async Task<Guid> SeedHallWithGeofenceAsync()
+    private Task<Guid> SeedHallWithGeofenceAsync() =>
+        SeedHallWithGeofenceAtAsync(HallLat, HallLon);
+
+    /// <summary>A geofenced hall centred on a coordinate of its own. The dwell
+    /// tests need several DISTINCT halls, and seeding them all over the point the
+    /// capture tests ping would put overlapping boundaries on one spot, where
+    /// "nearest containing boundary wins" has nothing left to break the tie.</summary>
+    private async Task<Guid> SeedHallWithGeofenceAtAsync(double lat, double lon)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -271,8 +390,8 @@ public sealed class MovementTrackingTests : IClassFixture<SimfApiFactory>
             Name = "Movement Test Hall",
             NameArabic = "قاعة اختبار الحركة",
             Capacity = 100,
-            GeofenceCenterLat = HallLat,
-            GeofenceCenterLon = HallLon,
+            GeofenceCenterLat = lat,
+            GeofenceCenterLon = lon,
             GeofenceRadiusMeters = 150,
             CreatedAt = SimfClock.Now,
         };

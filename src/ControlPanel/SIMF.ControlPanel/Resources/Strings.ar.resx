@@ -561,7 +561,6 @@
   <data name="Admin.Attendees.Column.CreatedAt" xml:space="preserve"><value>تاريخ التسجيل</value></data>
   <data name="Admin.Attendees.Column.Actions" xml:space="preserve"><value>إجراءات</value></data>
   <data name="Admin.Attendees.UserType.Visitor" xml:space="preserve"><value>زائر</value></data>
-  <data name="Admin.Attendees.UserType.Other" xml:space="preserve"><value>أخرى</value></data>
   <data name="Admin.Attendees.AccountState.Approved" xml:space="preserve"><value>مُعتمد</value></data>
   <data name="Admin.Attendees.AccountState.Pending" xml:space="preserve"><value>معلّق</value></data>
   <data name="Admin.Attendees.AccountState.Rejected" xml:space="preserve"><value>مرفوض</value></data>
@@ -571,7 +570,6 @@
   <data name="Admin.Attendees.Filter.UserType" xml:space="preserve"><value>النوع</value></data>
   <data name="Admin.Attendees.Filter.UserTypeAll" xml:space="preserve"><value>الكل</value></data>
   <data name="Admin.Attendees.Filter.UserTypeVisitor" xml:space="preserve"><value>الزوار فقط</value></data>
-  <data name="Admin.Attendees.Filter.UserTypeOther" xml:space="preserve"><value>أخرى فقط</value></data>
   <data name="Admin.Attendees.Filter.AccountState" xml:space="preserve"><value>الحالة</value></data>
   <data name="Admin.Attendees.Filter.AccountStateAll" xml:space="preserve"><value>الكل</value></data>
   <data name="Admin.Attendees.Filter.AccountStateApproved" xml:space="preserve"><value>مُعتمد</value></data>

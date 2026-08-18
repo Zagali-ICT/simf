@@ -79,10 +79,11 @@ internal sealed class AdminSponsorService(
         Guid id, CancellationToken cancellationToken = default)
     {
         var sponsor = await appDbContext.Sponsors.AsNoTracking()
-            .SingleOrDefaultAsync(s => s.Id == id, cancellationToken);
+            .SingleOrDefaultAsync(row => row.Id == id, cancellationToken);
         if (sponsor is null) { return null; }
-        var (en, ar) = await ResolveCountryAsync(sponsor.CountryId, cancellationToken);
-        return ToDetail(sponsor, en, ar);
+        var (countryNameEn, countryNameAr) =
+            await ResolveCountryAsync(sponsor.CountryId, cancellationToken);
+        return ToDetail(sponsor, countryNameEn, countryNameAr);
     }
 
     public async Task<AdminSponsorDetail> CreateAsync(
@@ -152,8 +153,9 @@ internal sealed class AdminSponsorService(
             $"sponsorId={sponsor.Id}; tier={tier}; nameAr={nameAr}",
             cancellationToken);
 
-        var (en, ar) = await ResolveCountryAsync(sponsor.CountryId, cancellationToken);
-        return ToDetail(sponsor, en, ar);
+        var (countryNameEn, countryNameAr) =
+            await ResolveCountryAsync(sponsor.CountryId, cancellationToken);
+        return ToDetail(sponsor, countryNameEn, countryNameAr);
     }
 
     public async Task<AdminSponsorDetail> UpdateAsync(
@@ -171,7 +173,7 @@ internal sealed class AdminSponsorService(
         await EnsureCountryIsValidAsync(request.CountryId, cancellationToken);
 
         var sponsor = await appDbContext.Sponsors
-            .SingleOrDefaultAsync(s => s.Id == id, cancellationToken)
+            .SingleOrDefaultAsync(row => row.Id == id, cancellationToken)
             ?? throw new ApiException(ErrorCodes.SponsorNotFound, 404,
                 "The sponsor was not found.",
                 "لم يتم العثور على الراعي.");
@@ -187,10 +189,10 @@ internal sealed class AdminSponsorService(
         if (request.IsActive && (renamedOrRetiered || !sponsor.IsActive))
         {
             var clash = await appDbContext.Sponsors.AsNoTracking().AnyAsync(
-                s => s.Id != id
-                    && s.IsActive
-                    && s.Tier == tier
-                    && s.NameArabic == nameAr,
+                other => other.Id != id
+                    && other.IsActive
+                    && other.Tier == tier
+                    && other.NameArabic == nameAr,
                 cancellationToken);
             if (clash)
             {
@@ -232,8 +234,9 @@ internal sealed class AdminSponsorService(
             $"sponsorId={sponsor.Id}; tier={tier}; active={sponsor.IsActive}",
             cancellationToken);
 
-        var (en, ar) = await ResolveCountryAsync(sponsor.CountryId, cancellationToken);
-        return ToDetail(sponsor, en, ar);
+        var (countryNameEn, countryNameAr) =
+            await ResolveCountryAsync(sponsor.CountryId, cancellationToken);
+        return ToDetail(sponsor, countryNameEn, countryNameAr);
     }
 
     public async Task DeactivateAsync(
@@ -241,7 +244,7 @@ internal sealed class AdminSponsorService(
         CancellationToken cancellationToken = default)
     {
         var sponsor = await appDbContext.Sponsors
-            .SingleOrDefaultAsync(s => s.Id == id, cancellationToken)
+            .SingleOrDefaultAsync(row => row.Id == id, cancellationToken)
             ?? throw new ApiException(ErrorCodes.SponsorNotFound, 404,
                 "The sponsor was not found.",
                 "لم يتم العثور على الراعي.");
@@ -259,8 +262,8 @@ internal sealed class AdminSponsorService(
             cancellationToken);
     }
 
-    private static (string nameEn, string nameAr, SponsorTier tier,
-        string? url, int displayOrder) Validate(
+    private static (string NameEn, string NameAr, SponsorTier Tier,
+        string? Url, int DisplayOrder) Validate(
             string nameEnRaw, string nameArRaw, int tierRaw,
             string? urlRaw, int displayOrderRaw)
     {
@@ -311,7 +314,7 @@ internal sealed class AdminSponsorService(
     // and longitude are an all-or-nothing pair with real-world ranges.
     private static void ValidateContactFields(
         string? email, string? phonePrimary, string? phoneSecondary,
-        string? facebook, string? x, string? linkedIn, string? instagram,
+        string? facebook, string? xUrl, string? linkedIn, string? instagram,
         string? city, string? cityArabic,
         double? latitude, double? longitude)
     {
@@ -328,9 +331,9 @@ internal sealed class AdminSponsorService(
                     "يجب ألا يتجاوز رقم الهاتف 32 حرفاً.");
             }
         }
-        foreach (var social in new[] { facebook, x, linkedIn, instagram })
+        foreach (var url in new[] { facebook, xUrl, linkedIn, instagram })
         {
-            if (!string.IsNullOrWhiteSpace(social) && social.Length > 256)
+            if (!string.IsNullOrWhiteSpace(url) && url.Length > 256)
             {
                 throw Invalid("Social URLs must be 256 characters or less.",
                     "يجب ألا يتجاوز رابط الشبكات الاجتماعية 256 حرفاً.");
@@ -379,7 +382,7 @@ internal sealed class AdminSponsorService(
         }
     }
 
-    private async Task<(string? en, string? ar)> ResolveCountryAsync(
+    private async Task<(string? NameEn, string? NameAr)> ResolveCountryAsync(
         int? countryId, CancellationToken cancellationToken)
     {
         if (countryId is null) { return (null, null); }

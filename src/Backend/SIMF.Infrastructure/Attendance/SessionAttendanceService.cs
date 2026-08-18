@@ -43,20 +43,35 @@ internal sealed class SessionAttendanceService(
         .DefaultOrder("start")
         .PageSize(fallback: 20, max: 200);
 
+    /// <summary>
+    /// The grid contract for the live hall roster
+    /// (/admin/sessions/{id}/present/list). SessionLiveHall renders a plain live
+    /// table with no sort or filter controls, so arrival time — the order the
+    /// roster has always been shown in — is the only key declared. The attendee's
+    /// name, organisation and seat are resolved AFTER paging, from other tables,
+    /// so they are not sortable here and are not offered as if they were.
+    /// </summary>
+    private static readonly GridColumns<HallAttendance> PresentColumns =
+        new GridColumns<HallAttendance>()
+            .Add("enter", attendance => attendance.Enter)
+            .DefaultOrder("enter")
+            .PageSize(fallback: 50, max: 200);
+
     public async Task<SessionAttendanceSummary> GetSummaryAsync(
         CancellationToken cancellationToken = default)
     {
         // Live now = distinct people currently inside a hall (an OPEN row).
         var liveAttendeesNow = await appDbContext.HallAttendances.AsNoTracking()
-            .Where(a => a.Leave == null)
-            .Select(a => a.UserProfileId)
+            .Where(attendance => attendance.Leave == null)
+            .Select(attendance => attendance.UserProfileId)
             .Distinct()
             .CountAsync(cancellationToken);
 
         // Active sessions that have at least one arrival.
         var sessionsWithAttendance = await appDbContext.HallAttendances.AsNoTracking()
-            .Where(a => appDbContext.Sessions.Any(s => s.Id == a.SessionId && s.IsActive))
-            .Select(a => a.SessionId)
+            .Where(attendance => appDbContext.Sessions.Any(
+                session => session.Id == attendance.SessionId && session.IsActive))
+            .Select(attendance => attendance.SessionId)
             .Distinct()
             .CountAsync(cancellationToken);
 
@@ -64,8 +79,9 @@ internal sealed class SessionAttendanceService(
         // sessions (i.e. the sum of every active session's distinct-attendee
         // count).
         var totalArrivals = await appDbContext.HallAttendances.AsNoTracking()
-            .Where(a => appDbContext.Sessions.Any(s => s.Id == a.SessionId && s.IsActive))
-            .Select(a => new { a.SessionId, a.UserProfileId })
+            .Where(attendance => appDbContext.Sessions.Any(
+                session => session.Id == attendance.SessionId && session.IsActive))
+            .Select(attendance => new { attendance.SessionId, attendance.UserProfileId })
             .Distinct()
             .CountAsync(cancellationToken);
 
@@ -104,19 +120,20 @@ internal sealed class SessionAttendanceService(
         // per session in memory. Kept to the page's ids so it never scans the whole
         // table. (COUNT(DISTINCT) is intentionally avoided for portable EF SQL.)
         var distinctPairs = await appDbContext.HallAttendances.AsNoTracking()
-            .Where(a => ids.Contains(a.SessionId))
-            .GroupBy(a => new { a.SessionId, a.UserProfileId })
-            .Select(g => g.Key.SessionId)
+            .Where(attendance => ids.Contains(attendance.SessionId))
+            .GroupBy(attendance => new { attendance.SessionId, attendance.UserProfileId })
+            .Select(pair => pair.Key.SessionId)
             .ToListAsync(cancellationToken);
         var totalBySession = distinctPairs
             .GroupBy(sessionId => sessionId)
-            .ToDictionary(g => g.Key, g => g.Count());
+            .ToDictionary(group => group.Key, group => group.Count());
 
         // Live-now per session for the page (open rows only).
         var liveRows = await appDbContext.HallAttendances.AsNoTracking()
-            .Where(a => ids.Contains(a.SessionId) && a.Leave == null)
-            .GroupBy(a => a.SessionId)
-            .Select(g => new { SessionId = g.Key, Count = g.Count() })
+            .Where(attendance => ids.Contains(attendance.SessionId)
+                && attendance.Leave == null)
+            .GroupBy(attendance => attendance.SessionId)
+            .Select(group => new { SessionId = group.Key, Count = group.Count() })
             .ToListAsync(cancellationToken);
         var liveBySession = liveRows.ToDictionary(row => row.SessionId, row => row.Count);
 
@@ -137,62 +154,83 @@ internal sealed class SessionAttendanceService(
         return GridPage<SessionAttendanceRow>.Of(rows, page.Total, page.Skip, page.Top);
     }
 
-    public async Task<IReadOnlyList<SessionPresentAttendee>> GetPresentAttendeesAsync(
-        Guid sessionId, CancellationToken cancellationToken = default)
+    public async Task<GridPage<SessionPresentAttendee>> GetPresentAttendeesAsync(
+        Guid sessionId, GridQuery query, CancellationToken cancellationToken = default)
     {
         // Everyone currently inside this session's hall — the open attendance rows.
-        var present = await appDbContext.HallAttendances.AsNoTracking()
-            .Where(a => a.SessionId == sessionId && a.Leave == null)
-            .Select(a => new { a.UserProfileId, a.Enter, a.Method })
-            .ToListAsync(cancellationToken);
+        // The session and the still-inside test are the resource's own scope, not
+        // grid filters, so they compose ahead of the grid and no request can widen
+        // either one to another session or to people who have already left.
+        var page = await appDbContext.HallAttendances
+            .Where(attendance => attendance.SessionId == sessionId
+                && attendance.Leave == null)
+            .ToGridPageAsync(
+                query, PresentColumns, attendance => attendance.Id,
+                attendance => new
+                {
+                    attendance.UserProfileId, attendance.Enter, attendance.Method,
+                },
+                cancellationToken);
+
+        var present = page.Items;
         if (present.Count == 0)
         {
-            return Array.Empty<SessionPresentAttendee>();
+            return GridPage<SessionPresentAttendee>.Of(
+                Array.Empty<SessionPresentAttendee>(), page.Total, page.Skip, page.Top);
         }
 
-        var profileIds = present.Select(a => a.UserProfileId).Distinct().ToList();
+        var profileIds = present
+            .Select(attendance => attendance.UserProfileId)
+            .Distinct()
+            .ToList();
 
         // Profile data — App DB only: resolved from UserProfile, never from the
         // Identity database. Matched by PROFILE id, which is what the attendance row
         // carries, so a walk-in in the hall appears on this roster with their real
         // name rather than as a blank line.
         var profiles = await appDbContext.UserProfiles.AsNoTracking()
-            .Where(p => profileIds.Contains(p.Id))
-            .Select(p => new
+            .Where(profile => profileIds.Contains(profile.Id))
+            .Select(profile => new
             {
-                p.Id,
-                p.Name,
-                p.NameArabic,
-                p.JobTitle,
-                OrganisationName = p.Organisation != null ? p.Organisation.Name : null,
-                ProfileTypeName = p.ProfileType != null ? p.ProfileType.Name : null,
+                profile.Id,
+                profile.Name,
+                profile.NameArabic,
+                profile.JobTitle,
+                OrganisationName =
+                    profile.Organisation != null ? profile.Organisation.Name : null,
+                ProfileTypeName =
+                    profile.ProfileType != null ? profile.ProfileType.Name : null,
             })
             .ToListAsync(cancellationToken);
-        var profileById = profiles.ToDictionary(p => p.Id);
+        var profileById = profiles.ToDictionary(profile => profile.Id);
 
         // Their still-held seat for this session (if any) — open-seating attendees
         // and admin blocks resolve to no row/seat.
         var seats = await appDbContext.SeatReservations.AsNoTracking()
-            .Where(r => r.SessionId == sessionId && r.ReleasedAt == null
-                && r.ReservedForProfileId != null
-                && profileIds.Contains(r.ReservedForProfileId!.Value))
-            .Select(r => new
+            .Where(reservation => reservation.SessionId == sessionId
+                && reservation.ReleasedAt == null
+                && reservation.ReservedForProfileId != null
+                && profileIds.Contains(reservation.ReservedForProfileId!.Value))
+            .Select(reservation => new
             {
-                ProfileId = r.ReservedForProfileId!.Value, r.RowLabel, r.SeatNumber,
+                ProfileId = reservation.ReservedForProfileId!.Value,
+                reservation.RowLabel,
+                reservation.SeatNumber,
             })
             .ToListAsync(cancellationToken);
         var seatByProfile = seats
-            .GroupBy(s => s.ProfileId)
-            .ToDictionary(g => g.Key, g => g.First());
+            .GroupBy(seat => seat.ProfileId)
+            .ToDictionary(group => group.Key, group => group.First());
 
-        return present
-            .OrderBy(a => a.Enter)
-            .Select(a =>
+        // Rebuilt onto the window the grid already ordered and paged, so the rows
+        // keep the requested direction rather than a second, in-memory guess at it.
+        var rows = present
+            .Select(attendance =>
             {
-                var profile = profileById.GetValueOrDefault(a.UserProfileId);
-                var seat = seatByProfile.GetValueOrDefault(a.UserProfileId);
+                var profile = profileById.GetValueOrDefault(attendance.UserProfileId);
+                var seat = seatByProfile.GetValueOrDefault(attendance.UserProfileId);
                 return new SessionPresentAttendee(
-                    a.UserProfileId,
+                    attendance.UserProfileId,
                     profile?.Name ?? string.Empty,
                     profile?.NameArabic ?? string.Empty,
                     profile?.OrganisationName,
@@ -200,9 +238,11 @@ internal sealed class SessionAttendanceService(
                     profile?.JobTitle,
                     seat?.RowLabel,
                     seat?.SeatNumber,
-                    a.Enter,
-                    a.Method);
+                    attendance.Enter,
+                    attendance.Method);
             })
             .ToList();
+
+        return GridPage<SessionPresentAttendee>.Of(rows, page.Total, page.Skip, page.Top);
     }
 }

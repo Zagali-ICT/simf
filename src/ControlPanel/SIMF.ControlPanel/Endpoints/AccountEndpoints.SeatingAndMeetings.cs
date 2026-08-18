@@ -111,12 +111,14 @@ internal static partial class AccountEndpoints
             return Forward(await api.GetAdminSessionSeatMapAsync(sessionId, token));
         });
 
-        group.MapGet("/admin/sessions/{sessionId:guid}/present",
-            async (Guid sessionId, HttpContext http, SimfAdminClient api) =>
+        group.MapPost("/admin/sessions/{sessionId:guid}/present/list",
+            async (Guid sessionId, GridQuery body,
+                   HttpContext http, SimfAdminClient api) =>
         {
             var token = await http.GetTokenAsync("access_token");
             if (token is null) return Results.Unauthorized();
-            return Forward(await api.GetSessionPresentAttendeesAsync(sessionId, token));
+            return Forward(await api.ListSessionPresentAttendeesAsync(
+                sessionId, body, token));
         });
 
         // Speaker meeting requests BFF passthroughs.

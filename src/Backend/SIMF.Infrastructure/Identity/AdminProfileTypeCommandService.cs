@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/AdminProfileTypeTests.cs
+// Tests: SIMF.Api.Tests/AdminProfileTypeTests.cs, SIMF.Api.Tests/GridContractTests.cs
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -61,7 +61,8 @@ internal sealed class AdminProfileTypeCommandService(
         .DefaultOrder("name")
         .PageSize(fallback: 25, max: 200);
 
-    private static readonly Expression<Func<UserProfileType, AdminProfileTypeSummary>> ToSummaryRow =
+    /// <summary>The row shape, as SQL: what the list projects.</summary>
+    private static readonly Expression<Func<UserProfileType, AdminProfileTypeSummary>> ToSummary =
         profileType => new AdminProfileTypeSummary(
             profileType.Id,
             profileType.Name,
@@ -75,10 +76,17 @@ internal sealed class AdminProfileTypeCommandService(
             profileType.ShowInPartnerDirectory,
             profileType.IsVipTier);
 
+    /// <summary>The same row shape over an already-materialised entity, for the
+    /// single-row read and for the two writers that return the row they just
+    /// saved. Compiled from the expression above rather than written out a second
+    /// time, so the two forms cannot drift apart.</summary>
+    private static readonly Func<UserProfileType, AdminProfileTypeSummary> Summarise =
+        ToSummary.Compile();
+
     public Task<GridPage<AdminProfileTypeSummary>> ListAllAsync(
         GridQuery query, CancellationToken cancellationToken = default) =>
         dbContext.ProfileTypes.ToGridPageAsync(
-            query, Columns, profileType => profileType.Id, ToSummaryRow, cancellationToken);
+            query, Columns, profileType => profileType.Id, ToSummary, cancellationToken);
 
     public async Task<AdminProfileTypeSummary?> GetAsync(
         Guid id, CancellationToken cancellationToken = default)
@@ -88,7 +96,7 @@ internal sealed class AdminProfileTypeCommandService(
             .SingleOrDefaultAsync(row => row.Id == id, cancellationToken);
         return profileType is null
             ? null
-            : ToSummary(profileType);
+            : Summarise(profileType);
     }
 
     public async Task<AdminProfileTypeSummary> CreateAsync(
@@ -176,7 +184,7 @@ internal sealed class AdminProfileTypeCommandService(
             throw new ApiException(
                 ErrorCodes.ProfileTypeCodeRace, 409,
                 "Another profile type was created at the same moment. Try again.",
-                "\u062a\u0645 \u0625\u0646\u0634\u0627\u0621 \u0646\u0648\u0639 \u0645\u0644\u0641 \u0622\u062e\u0631 \u0641\u064a \u0646\u0641\u0633 \u0627\u0644\u0644\u062d\u0638\u0629. \u062d\u0627\u0648\u0644 \u0645\u0631\u0629 \u0623\u062e\u0631\u0649.");
+                "تم إنشاء نوع ملف آخر في نفس اللحظة. حاول مرة أخرى.");
         }
 
         await auditLog.WriteSuccessAsync(
@@ -189,7 +197,7 @@ internal sealed class AdminProfileTypeCommandService(
             "Admin {ActorId} created ProfileType {Name} ({Id}) for {UserType}",
             actorUserId, name, profileType.Id, userType);
 
-        return ToSummary(profileType);
+        return Summarise(profileType);
     }
 
     public async Task<AdminProfileTypeSummary> UpdateAsync(
@@ -273,7 +281,7 @@ internal sealed class AdminProfileTypeCommandService(
                     + $"active={profileType.IsActive}; isVisitorChanged=false",
             cancellationToken);
 
-        return ToSummary(profileType);
+        return Summarise(profileType);
     }
 
     public async Task DeactivateAsync(
@@ -317,19 +325,6 @@ internal sealed class AdminProfileTypeCommandService(
             $"id={profileType.Id}; name={profileType.Name}",
             cancellationToken);
     }
-
-    private static AdminProfileTypeSummary ToSummary(UserProfileType profileType) =>
-        new(profileType.Id,
-            profileType.Name,
-            profileType.NameArabic,
-            profileType.PageColor,
-            nameof(UserType.Visitor),
-            profileType.MobileAppRole.ToString(),
-            profileType.IsActive,
-            profileType.IsForVisitor,
-            profileType.IsAppRegisterable,
-            profileType.ShowInPartnerDirectory,
-            profileType.IsVipTier);
 
     /// <summary>Parses the wire-side stringly mobile-app-role,
     /// rejecting unknown values with a typed 400. Null / empty defaults

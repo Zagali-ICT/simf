@@ -70,7 +70,7 @@ internal sealed class BadgeUpdateRequestService(
         }
 
         var now = timeProvider.SimfNow();
-        var req = new BadgeUpdateRequest
+        var badgeRequest = new BadgeUpdateRequest
         {
             Id = Guid.NewGuid(),
             RequestedByUserId = requesterUserId,
@@ -80,19 +80,20 @@ internal sealed class BadgeUpdateRequestService(
             Status = MeetingRequestStatus.Pending,
             CreatedAt = now,
         };
-        appDbContext.BadgeUpdateRequests.Add(req);
+        appDbContext.BadgeUpdateRequests.Add(badgeRequest);
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteSuccessAsync(
             AuditEvents.BadgeUpdateRequestSubmitted,
             requesterUserId,
-            JsonSerializer.Serialize(new { badgeUpdateRequestId = req.Id }),
+            JsonSerializer.Serialize(new { badgeUpdateRequestId = badgeRequest.Id }),
             cancellationToken);
 
         logger.LogInformation(
-            "Badge update request {Id} submitted by {Actor}", req.Id, requesterUserId);
+            "Badge update request {Id} submitted by {Actor}", badgeRequest.Id, requesterUserId);
 
-        return new BadgeUpdateRequestSubmitted(req.Id, req.Status, req.CreatedAt);
+        return new BadgeUpdateRequestSubmitted(
+            badgeRequest.Id, badgeRequest.Status, badgeRequest.CreatedAt);
     }
 
     /// <summary>
@@ -177,7 +178,7 @@ internal sealed class BadgeUpdateRequestService(
                 "Response status must be Accepted or Rejected.",
                 "يجب أن تكون حالة الردّ مقبولة أو مرفوضة.");
         }
-        var req = await appDbContext.BadgeUpdateRequests
+        var badgeRequest = await appDbContext.BadgeUpdateRequests
             .SingleOrDefaultAsync(r => r.Id == id, cancellationToken)
             ?? throw new ApiException(
                 ErrorCodes.BadgeUpdateRequestNotFound, 404,
@@ -187,7 +188,7 @@ internal sealed class BadgeUpdateRequestService(
         // A1 — only a Pending request may be decided. Without this guard an Accept
         // on an already-Cancelled/decided request would replay the JobTitle side
         // effect below and overwrite the profile.
-        if (req.Status != MeetingRequestStatus.Pending)
+        if (badgeRequest.Status != MeetingRequestStatus.Pending)
         {
             throw new ApiException(
                 ErrorCodes.AppRequestAlreadyResponded, 409,
@@ -205,20 +206,20 @@ internal sealed class BadgeUpdateRequestService(
                 "يجب ألا يتجاوز طول ملاحظة الردّ 2000 حرف.");
         }
 
-        req.Status = request.Status;
-        req.ResponseNote = responseNote;
-        req.RespondedAt = timeProvider.SimfNow();
-        req.RespondedByUserId = actorUserId;
+        badgeRequest.Status = request.Status;
+        badgeRequest.ResponseNote = responseNote;
+        badgeRequest.RespondedAt = timeProvider.SimfNow();
+        badgeRequest.RespondedByUserId = actorUserId;
 
         // On Accept apply the requested title to the requester's profile (same App
         // DB — resolve the row and update JobTitle in the same unit of work).
-        if (req.Status == MeetingRequestStatus.Accepted)
+        if (badgeRequest.Status == MeetingRequestStatus.Accepted)
         {
             var profile = await appDbContext.UserProfiles
-                .SingleOrDefaultAsync(p => p.UserId == req.RequestedByUserId, cancellationToken);
+                .SingleOrDefaultAsync(p => p.UserId == badgeRequest.RequestedByUserId, cancellationToken);
             if (profile is not null)
             {
-                profile.JobTitle = req.RequestedJobTitle;
+                profile.JobTitle = badgeRequest.RequestedJobTitle;
             }
         }
 
@@ -227,33 +228,37 @@ internal sealed class BadgeUpdateRequestService(
         await auditLog.WriteSuccessAsync(
             AuditEvents.BadgeUpdateRequestResponded,
             actorUserId,
-            JsonSerializer.Serialize(new { badgeUpdateRequestId = req.Id, status = req.Status.ToString() }),
+            JsonSerializer.Serialize(new
+            {
+                badgeUpdateRequestId = badgeRequest.Id,
+                status = badgeRequest.Status.ToString(),
+            }),
             cancellationToken);
         await auditLog.WriteSuccessAsync(
             AuditEvents.AdminBadgeUpdateRequestViewed,
             actorUserId,
-            JsonSerializer.Serialize(new { badgeUpdateRequestId = req.Id }),
+            JsonSerializer.Serialize(new { badgeUpdateRequestId = badgeRequest.Id }),
             cancellationToken);
 
         // Notify the requester of the decision. On Accept the badge job title was
         // applied above; this makes that side effect visible instead of silent.
         // Best-effort: a dispatch failure never undoes the committed response.
-        var accepted = req.Status == MeetingRequestStatus.Accepted;
+        var accepted = badgeRequest.Status == MeetingRequestStatus.Accepted;
         await notifications.TryDispatchAsync(new NotificationRequest
         {
-            UserId = req.RequestedByUserId,
+            UserId = badgeRequest.RequestedByUserId,
             Kind = NotificationKind.BadgeUpdateDecided,
             Title = accepted ? "Badge update accepted" : "Badge update rejected",
             TitleArabic = accepted ? "تم قبول تحديث البادج" : "تم رفض تحديث البادج",
             Body = accepted
-                ? $"Your badge job title was updated to \"{req.RequestedJobTitle}\"."
+                ? $"Your badge job title was updated to \"{badgeRequest.RequestedJobTitle}\"."
                 : "Your badge update request was rejected.",
             BodyArabic = accepted
-                ? $"تم تحديث المسمى الوظيفي في بادجك إلى \"{req.RequestedJobTitle}\"."
+                ? $"تم تحديث المسمى الوظيفي في بادجك إلى \"{badgeRequest.RequestedJobTitle}\"."
                 : "تم رفض طلب تحديث البادج الخاص بك.",
             Severity = NotificationSeverity.Info,
             RelatedEntityType = nameof(BadgeUpdateRequest),
-            RelatedEntityId = req.Id,
+            RelatedEntityId = badgeRequest.Id,
             SendEmail = false,
         }, logger, cancellationToken);
 
@@ -263,7 +268,7 @@ internal sealed class BadgeUpdateRequestService(
     private async Task<AdminBadgeUpdateRequestDetail> LoadDetailAsync(
         Guid id, CancellationToken cancellationToken)
     {
-        var req = await appDbContext.BadgeUpdateRequests.AsNoTracking()
+        var badgeRequest = await appDbContext.BadgeUpdateRequests.AsNoTracking()
             .SingleOrDefaultAsync(r => r.Id == id, cancellationToken)
             ?? throw new ApiException(
                 ErrorCodes.BadgeUpdateRequestNotFound, 404,
@@ -271,16 +276,17 @@ internal sealed class BadgeUpdateRequestService(
                 "لم يتم العثور على طلب تحديث البادج.");
 
         var name = await appDbContext.UserProfiles.AsNoTracking()
-            .Where(p => p.UserId == req.RequestedByUserId)
+            .Where(p => p.UserId == badgeRequest.RequestedByUserId)
             .Select(p => p.Name)
             .SingleOrDefaultAsync(cancellationToken);
         var email = await userDirectory.GetEmailAsync(
-            req.RequestedByUserId, cancellationToken);
+            badgeRequest.RequestedByUserId, cancellationToken);
 
         return new AdminBadgeUpdateRequestDetail(
-            req.Id, req.RequestedByUserId, name, email,
-            req.RequestedJobTitle, req.CurrentJobTitle, req.Note,
-            req.Status, req.ResponseNote, req.CreatedAt, req.RespondedAt);
+            badgeRequest.Id, badgeRequest.RequestedByUserId, name, email,
+            badgeRequest.RequestedJobTitle, badgeRequest.CurrentJobTitle, badgeRequest.Note,
+            badgeRequest.Status, badgeRequest.ResponseNote,
+            badgeRequest.CreatedAt, badgeRequest.RespondedAt);
     }
 
     private async Task<Dictionary<Guid, string>> ResolveRequesterNamesAsync(

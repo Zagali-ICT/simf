@@ -25,7 +25,6 @@ using SIMF.Contracts.PublicRelations;
 using SIMF.Contracts.Regions;
 using SIMF.Contracts.Reporting;
 using SIMF.Contracts.Sessions;
-using SIMF.Common.Enums;
 
 namespace SIMF.ControlPanel.Endpoints;
 
@@ -63,13 +62,15 @@ internal static partial class AccountEndpoints
             if (token is null) return Results.Unauthorized();
             return Forward(await api.RevokeSessionModeratorAsync(sessionId, userId, token));
         });
-        // Scientific-Committee Q&A queue passthroughs.
-        group.MapGet("/admin/questions/queue",
-            async (QuestionStatus? status, Guid? sessionId, HttpContext http, SimfAdminClient api) =>
+        // Scientific-Committee Q&A queue passthroughs. The queue is server-paged
+        // on the shared grid seam, so the list is a POST carrying a GridQuery;
+        // status / sessionId travel as filter keys inside it.
+        group.MapPost("/admin/questions/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
         {
             var token = await http.GetTokenAsync("access_token");
             if (token is null) return Results.Unauthorized();
-            return Forward(await api.ListQuestionQueueAsync(status, sessionId, token));
+            return Forward(await api.ListQuestionQueueAsync(body, token));
         });
         group.MapPut("/admin/questions/{questionId:guid}/approve",
             async (Guid questionId, HttpContext http, SimfAdminClient api) =>
@@ -127,13 +128,15 @@ internal static partial class AccountEndpoints
                 sessionId, body.OrderedQuestionIds.ToList(), token));
         });
 
-        // AI session-summary / محضر committee desk passthroughs.
-        group.MapGet("/admin/session-summaries",
-            async (HttpContext http, SimfAdminClient api) =>
+        // AI session-summary / محضر committee desk passthroughs. The desk list is
+        // server-paged on the shared grid seam, so it is a POST carrying a
+        // GridQuery.
+        group.MapPost("/admin/session-summaries/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
         {
             var token = await http.GetTokenAsync("access_token");
             if (token is null) return Results.Unauthorized();
-            return Forward(await api.ListSessionSummariesAsync(token));
+            return Forward(await api.ListSessionSummariesAsync(body, token));
         });
         group.MapGet("/admin/session-summaries/{sessionId:guid}",
             async (Guid sessionId, HttpContext http, SimfAdminClient api) =>

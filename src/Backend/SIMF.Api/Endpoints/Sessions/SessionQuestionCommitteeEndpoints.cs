@@ -11,21 +11,27 @@ namespace SIMF.Api.Endpoints.Sessions;
 /// <summary>The Scientific-Committee
 /// central Q&amp;A queue (stage 2). Cross-session, gated by the Questions.*
 /// permissions — View to read, Moderate to approve/hide, Escalate to route to a
-/// role. Distinct from the per-session moderator desk (stage 3).</summary>
+/// role. Distinct from the per-session moderator desk (stage 3).
+///
+/// <para>Server-paged on the shared grid seam, so it is a POST carrying a
+/// <see cref="GridQuery"/> like every other Control Panel list. The status and
+/// session that used to be query-string parameters are now grid filter keys
+/// (<c>status</c>, <c>sessionId</c>); a request naming no status gets the
+/// default Pending bucket.</para></summary>
 public sealed class ListQuestionQueueEndpoint(ISessionQuestionCommitteeService service)
-    : Endpoint<ListQuestionQueueRequest, ApiResult<IReadOnlyList<SessionQuestionQueueRow>>>
+    : Endpoint<GridQuery, ApiResult<GridPage<SessionQuestionQueueRow>>>
 {
     public override void Configure()
     {
-        Get("/admin/questions/queue");
+        Post("/admin/questions/list");
         Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Questions.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
 
-    public override async Task HandleAsync(ListQuestionQueueRequest req, CancellationToken ct) =>
-        await Send.OkAsync(ApiResult<IReadOnlyList<SessionQuestionQueueRow>>.Ok(
-            await service.ListQueueAsync(req.Status, req.SessionId, ct)), ct);
+    public override async Task HandleAsync(GridQuery req, CancellationToken ct) =>
+        await Send.OkAsync(ApiResult<GridPage<SessionQuestionQueueRow>>.Ok(
+            await service.ListQueueAsync(req, ct)), ct);
 }
 
 public sealed class ApproveQuestionEndpoint(ISessionQuestionCommitteeService service)

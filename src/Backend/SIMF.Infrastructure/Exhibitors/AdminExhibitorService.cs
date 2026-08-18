@@ -1,5 +1,4 @@
-// Tests: SIMF.Api.Tests/ExhibitorsTests.cs
-// Tests: SIMF.Api.Tests/ExhibitorVisitorScanTests.cs
+// Tests: SIMF.Api.Tests/ExhibitorsTests.cs, SIMF.Api.Tests/ExhibitorVisitorScanTests.cs
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.Assets.Abstractions;
@@ -89,17 +88,18 @@ internal sealed class AdminExhibitorService(
         Guid id, CancellationToken cancellationToken = default)
     {
         return await appDbContext.Exhibitors.AsNoTracking()
-            .Where(c => c.Id == id)
-            .Select(c => new AdminExhibitorDetail(
-                c.Id, c.Name, c.NameArabic,
-                c.ContactEmail, c.ContactPhone, c.Website,
-                c.IsActive, c.CreatedAt, c.UpdatedAt, c.Tier,
-                c.CountryId,
-                c.Country != null ? c.Country.Name : null,
-                c.Country != null ? c.Country.NameArabic : null,
-                c.PhoneSecondary, c.FacebookUrl, c.XUrl, c.LinkedInUrl,
-                c.InstagramUrl, c.City, c.CityArabic,
-                c.Latitude, c.Longitude))
+            .Where(exhibitor => exhibitor.Id == id)
+            .Select(exhibitor => new AdminExhibitorDetail(
+                exhibitor.Id, exhibitor.Name, exhibitor.NameArabic,
+                exhibitor.ContactEmail, exhibitor.ContactPhone, exhibitor.Website,
+                exhibitor.IsActive, exhibitor.CreatedAt, exhibitor.UpdatedAt, exhibitor.Tier,
+                exhibitor.CountryId,
+                exhibitor.Country != null ? exhibitor.Country.Name : null,
+                exhibitor.Country != null ? exhibitor.Country.NameArabic : null,
+                exhibitor.PhoneSecondary, exhibitor.FacebookUrl, exhibitor.XUrl,
+                exhibitor.LinkedInUrl, exhibitor.InstagramUrl,
+                exhibitor.City, exhibitor.CityArabic,
+                exhibitor.Latitude, exhibitor.Longitude))
             .SingleOrDefaultAsync(cancellationToken);
     }
 
@@ -161,7 +161,7 @@ internal sealed class AdminExhibitorService(
             request.CityArabic, request.Latitude, request.Longitude);
         await EnsureCountryIsValidAsync(request.CountryId, cancellationToken);
         var exhibitor = await appDbContext.Exhibitors
-            .SingleOrDefaultAsync(c => c.Id == id, cancellationToken)
+            .SingleOrDefaultAsync(row => row.Id == id, cancellationToken)
             ?? throw new ApiException(
                 ErrorCodes.ExhibitorNotFound, 404,
                 "Exhibitor not found.",
@@ -213,7 +213,7 @@ internal sealed class AdminExhibitorService(
         CancellationToken cancellationToken = default)
     {
         var exhibitor = await appDbContext.Exhibitors
-            .SingleOrDefaultAsync(c => c.Id == id, cancellationToken)
+            .SingleOrDefaultAsync(row => row.Id == id, cancellationToken)
             ?? throw new ApiException(
                 ErrorCodes.ExhibitorNotFound, 404,
                 "Exhibitor not found.",
@@ -237,7 +237,7 @@ internal sealed class AdminExhibitorService(
         // silently returning an empty list.
         var exists = await appDbContext.Exhibitors
             .AsNoTracking()
-            .AnyAsync(c => c.Id == exhibitorId, cancellationToken);
+            .AnyAsync(exhibitor => exhibitor.Id == exhibitorId, cancellationToken);
         if (!exists)
         {
             throw new ApiException(
@@ -248,16 +248,16 @@ internal sealed class AdminExhibitorService(
 
         var memberships = await appDbContext.Set<ExhibitorMembership>()
             .AsNoTracking()
-            .Where(m => m.ExhibitorId == exhibitorId && m.IsActive)
-            .OrderBy(m => m.CreatedAt)
-            .Select(m => new
+            .Where(membership => membership.ExhibitorId == exhibitorId && membership.IsActive)
+            .OrderBy(membership => membership.CreatedAt)
+            .Select(membership => new
             {
-                m.Id,
-                m.UserId,
-                m.ContactName,
-                m.RoleLabel,
-                m.IsActive,
-                m.CreatedAt,
+                membership.Id,
+                membership.UserId,
+                membership.ContactName,
+                membership.RoleLabel,
+                membership.IsActive,
+                membership.CreatedAt,
             })
             .ToListAsync(cancellationToken);
         if (memberships.Count == 0)
@@ -269,27 +269,29 @@ internal sealed class AdminExhibitorService(
         // logical FK to SimfUser on the Identity DB — no DB-level JOIN is possible,
         // so read the small id set back AsNoTracking). The display name comes back
         // in the same round trip because the membership stores only an override.
-        var userIds = memberships.Select(m => m.UserId).ToList();
+        var userIds = memberships.Select(membership => membership.UserId).ToList();
         var accounts = await identityDbContext.Users
             .AsNoTracking()
-            .Where(u => userIds.Contains(u.Id))
-            .Select(u => new { u.Id, u.Email, u.DisplayName })
+            .Where(user => userIds.Contains(user.Id))
+            .Select(user => new { user.Id, user.Email, user.DisplayName })
             .ToListAsync(cancellationToken);
-        var emailsById = accounts.ToDictionary(u => u.Id, u => u.Email ?? string.Empty);
-        var displayNamesById = accounts.ToDictionary(u => u.Id, u => u.DisplayName);
+        var emailsById = accounts.ToDictionary(
+            account => account.Id, account => account.Email ?? string.Empty);
+        var displayNamesById = accounts.ToDictionary(
+            account => account.Id, account => account.DisplayName);
 
         return memberships
-            .Select(m => new ExhibitorAccountSummary(
-                m.Id,
-                m.UserId,
+            .Select(membership => new ExhibitorAccountSummary(
+                membership.Id,
+                membership.UserId,
                 ResolveContactName(
-                    m.ContactName,
-                    displayNamesById.GetValueOrDefault(m.UserId) ?? string.Empty,
-                    emailsById.GetValueOrDefault(m.UserId) ?? string.Empty),
-                emailsById.GetValueOrDefault(m.UserId) ?? string.Empty,
-                m.RoleLabel,
-                m.IsActive,
-                m.CreatedAt))
+                    membership.ContactName,
+                    displayNamesById.GetValueOrDefault(membership.UserId) ?? string.Empty,
+                    emailsById.GetValueOrDefault(membership.UserId) ?? string.Empty),
+                emailsById.GetValueOrDefault(membership.UserId) ?? string.Empty,
+                membership.RoleLabel,
+                membership.IsActive,
+                membership.CreatedAt))
             .ToList();
     }
 
@@ -543,7 +545,7 @@ internal sealed class AdminExhibitorService(
         Guid exhibitorId, CancellationToken cancellationToken)
     {
         var exhibitor = await appDbContext.Exhibitors
-            .SingleOrDefaultAsync(c => c.Id == exhibitorId, cancellationToken)
+            .SingleOrDefaultAsync(row => row.Id == exhibitorId, cancellationToken)
             ?? throw new ApiException(
                 ErrorCodes.ExhibitorNotFound, 404,
                 "Exhibitor not found.",
@@ -637,7 +639,7 @@ internal sealed class AdminExhibitorService(
     // mirror the EF configuration; latitude and longitude are an all-or-nothing
     // pair with real-world ranges.
     private static void ValidateContactFields(
-        string? phoneSecondary, string? facebook, string? x,
+        string? phoneSecondary, string? facebook, string? xUrl,
         string? linkedIn, string? instagram, string? city, string? cityArabic,
         double? latitude, double? longitude)
     {
@@ -646,7 +648,7 @@ internal sealed class AdminExhibitorService(
             throw Invalid("Phone numbers must be 32 characters or less.",
                 "يجب ألا يتجاوز رقم الهاتف 32 حرفاً.");
         }
-        foreach (var url in new[] { facebook, x, linkedIn, instagram })
+        foreach (var url in new[] { facebook, xUrl, linkedIn, instagram })
         {
             if (!string.IsNullOrWhiteSpace(url) && url.Length > 256)
             {

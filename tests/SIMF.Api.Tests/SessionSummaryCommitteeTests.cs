@@ -212,10 +212,11 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
         await SubmitForReviewAndApproveAsync(sessionId, admin);
         await PutAuthAsync($"/api/v1/admin/session-summaries/{sessionId}/publish", new { }, admin);
 
-        var response = await GetAuthAsync("/api/v1/admin/session-summaries", admin);
+        var response = await PostAuthAsync(
+            "/api/v1/admin/session-summaries/list", new GridQuery { Top = 200 }, admin);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var rows = (await response.Content
-            .ReadFromJsonAsync<ApiResult<IReadOnlyList<AdminSessionSummaryRow>>>())!.Data!;
+            .ReadFromJsonAsync<ApiResult<GridPage<AdminSessionSummaryRow>>>())!.Data!.Items;
         var row = Assert.Single(rows, r => r.SessionId == sessionId);
         Assert.True(row.HasSummary);
         Assert.True(row.GeneratedByAi);
@@ -385,8 +386,9 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
         await SaveAsync(sessionId,
             new SaveSessionSummaryRequest { FullTextArabic = "محضر مُحدَّث." }, admin);
 
-        var rows = (await (await GetAuthAsync("/api/v1/admin/session-summaries", admin)).Content
-            .ReadFromJsonAsync<ApiResult<IReadOnlyList<AdminSessionSummaryRow>>>())!.Data!;
+        var rows = (await (await PostAuthAsync(
+                "/api/v1/admin/session-summaries/list", new GridQuery { Top = 200 }, admin)).Content
+            .ReadFromJsonAsync<ApiResult<GridPage<AdminSessionSummaryRow>>>())!.Data!.Items;
         var row = Assert.Single(rows, r => r.SessionId == sessionId);
         Assert.False(row.IsPublished);
         Assert.False(row.IsApproved);
@@ -632,7 +634,8 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
     {
         var visitor = await SeedApprovedVisitorAsync();
 
-        var response = await GetAuthAsync("/api/v1/admin/session-summaries", visitor);
+        var response = await PostAuthAsync(
+            "/api/v1/admin/session-summaries/list", new GridQuery(), visitor);
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
@@ -786,10 +789,13 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
 
     private async Task<IReadOnlyList<AdminSessionSummaryRow>> ListAsync(string token)
     {
-        var response = await GetAuthAsync("/api/v1/admin/session-summaries", token);
+        // Top is raised past the seam's default page so the callers below still see
+        // the whole desk they were written against.
+        var response = await PostAuthAsync(
+            "/api/v1/admin/session-summaries/list", new GridQuery { Top = 200 }, token);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         return (await response.Content
-            .ReadFromJsonAsync<ApiResult<IReadOnlyList<AdminSessionSummaryRow>>>())!.Data!;
+            .ReadFromJsonAsync<ApiResult<GridPage<AdminSessionSummaryRow>>>())!.Data!.Items;
     }
 
     private async Task<(string Token, Guid UserId)> CreateApprovedVisitorAsync()

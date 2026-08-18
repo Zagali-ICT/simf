@@ -29,7 +29,6 @@ using SIMF.Contracts.Statistics;
 using SIMF.Contracts.Configuration;
 using SIMF.Contracts.Ops;
 using SIMF.Contracts.Support;
-using SIMF.Common.Enums;
 
 namespace SIMF.ApiClient;
 
@@ -67,20 +66,17 @@ public sealed partial class SimfAdminClient
             HttpMethod.Delete, $"session-moderators/{sessionId}/{userId}", content: null,
             accessToken, cancellationToken);
 
-    // Scientific-Committee Q&A queue (admin base, /admin/questions/*).
-    public Task<ApiCallResult<IReadOnlyList<SIMF.Contracts.Sessions.SessionQuestionQueueRow>>>
+    // Scientific-Committee Q&A queue (admin base, /admin/questions/*). Server-paged
+    // on the shared grid seam: the status and session that used to be query-string
+    // parameters are grid filter keys on the GridQuery body now.
+    public Task<ApiCallResult<GridPage<SIMF.Contracts.Sessions.SessionQuestionQueueRow>>>
         ListQuestionQueueAsync(
-            SIMF.Common.Enums.QuestionStatus? status, Guid? sessionId,
-            string accessToken, CancellationToken cancellationToken = default)
-    {
-        var parts = new List<string>();
-        if (status is { } s) { parts.Add($"status={s}"); }
-        if (sessionId is { } sid) { parts.Add($"sessionId={sid}"); }
-        var qs = parts.Count > 0 ? "?" + string.Join("&", parts) : string.Empty;
-        return SendAsync<IReadOnlyList<SIMF.Contracts.Sessions.SessionQuestionQueueRow>>(
-            HttpMethod.Get, $"questions/queue{qs}", content: null,
+            GridQuery query, string accessToken,
+            CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<SIMF.Contracts.Sessions.SessionQuestionQueueRow>>(
+            HttpMethod.Post, "questions/list",
+            JsonContent.Create(query, options: JsonOptions),
             accessToken, cancellationToken);
-    }
 
     public Task<ApiCallResult<SIMF.Contracts.Sessions.SessionQuestionQueueRow>>
         ApproveQuestionAsync(Guid questionId, string accessToken,
@@ -105,10 +101,15 @@ public sealed partial class SimfAdminClient
             accessToken, cancellationToken);
 
     // AI session-summary / محضر committee desk (/admin/session-summaries/*).
-    public Task<ApiCallResult<IReadOnlyList<AdminSessionSummaryRow>>>
-        ListSessionSummariesAsync(string accessToken, CancellationToken cancellationToken = default) =>
-        SendAsync<IReadOnlyList<AdminSessionSummaryRow>>(
-            HttpMethod.Get, "session-summaries", content: null, accessToken, cancellationToken);
+    // Server-paged on the shared grid seam.
+    public Task<ApiCallResult<GridPage<AdminSessionSummaryRow>>>
+        ListSessionSummariesAsync(
+            GridQuery query, string accessToken,
+            CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminSessionSummaryRow>>(
+            HttpMethod.Post, "session-summaries/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
 
     public Task<ApiCallResult<AdminSessionSummaryDetail>>
         GetSessionSummaryAsync(Guid sessionId, string accessToken,

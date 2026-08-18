@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/Gates/AdminGatesTests.cs
+// Tests: SIMF.Api.Tests/AdminGatesTests.cs
 //        SIMF.Api.Tests/GateOperatorModelTests.cs
 using FastEndpoints;
 using SIMF.Api.RequestContext;
@@ -175,38 +175,50 @@ public sealed class GetGateFormOptionsEndpoint(IAdminGateService service)
             await service.GetFormOptionsAsync(ct)), ct);
 }
 
+/// <summary>The scan report. It used to take a bespoke filter object
+/// (FromUtc/ToUtc/GateId/Outcome/Skip/Top with its own 1..1000 clamp) whose keys were
+/// applied without validation and whose sort was hard-coded; it now takes the shared
+/// <see cref="GridQuery"/> like every other list, so the route follows the
+/// <c>POST {resource}/list</c> convention with it. The date range survives as the
+/// <c>scannedFrom</c> / <c>scannedTo</c> filter keys.</summary>
 public sealed class GateScansReportEndpoint(IAdminGateService service)
-    : Endpoint<AdminGateScanReportFilter, ApiResult<IReadOnlyList<AdminGateScanRow>>>
+    : Endpoint<GridQuery, ApiResult<GridPage<AdminGateScanRow>>>
 {
     public override void Configure()
     {
-        Post("/admin/gates/reports/scans");
+        Post("/admin/gates/reports/scans/list");
         Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Gates.Manage),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
-    public override async Task HandleAsync(AdminGateScanReportFilter req, CancellationToken ct) =>
-        await Send.OkAsync(ApiResult<IReadOnlyList<AdminGateScanRow>>.Ok(
+    public override async Task HandleAsync(GridQuery req, CancellationToken ct) =>
+        await Send.OkAsync(ApiResult<GridPage<AdminGateScanRow>>.Ok(
             await service.ListScansAsync(req, ct)), ct);
 }
 
+/// <summary>The occupancy report behind the Control Panel's Gates operations
+/// dashboard. It was an unpaged GET over <c>GateScans</c> — the highest-write table in
+/// the system — and returned every visitor inside the venue in one array. It now takes
+/// a <see cref="GridQuery"/>, so the route moves to the <c>POST {resource}/list</c>
+/// convention; the dashboard's occupancy figure comes from the page's <c>Total</c>
+/// rather than from the array's length.</summary>
 public sealed class GateCurrentlyInsideEndpoint(IAdminGateService service)
-    : EndpointWithoutRequest<ApiResult<IReadOnlyList<AdminCurrentlyInsideRow>>>
+    : Endpoint<GridQuery, ApiResult<GridPage<AdminCurrentlyInsideRow>>>
 {
     public override void Configure()
     {
-        Get("/admin/gates/reports/currently-inside");
+        Post("/admin/gates/reports/currently-inside/list");
         Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Gates.Manage),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
-    public override async Task HandleAsync(CancellationToken ct) =>
-        await Send.OkAsync(ApiResult<IReadOnlyList<AdminCurrentlyInsideRow>>.Ok(
-            await service.ListCurrentlyInsideAsync(ct)), ct);
+    public override async Task HandleAsync(GridQuery req, CancellationToken ct) =>
+        await Send.OkAsync(ApiResult<GridPage<AdminCurrentlyInsideRow>>.Ok(
+            await service.ListCurrentlyInsideAsync(req, ct)), ct);
 }
 
 public sealed class GateScansXlsxEndpoint(IAdminGateService service)
-    : Endpoint<AdminGateScanReportFilter>
+    : Endpoint<GridQuery>
 {
     public override void Configure()
     {
@@ -215,7 +227,7 @@ public sealed class GateScansXlsxEndpoint(IAdminGateService service)
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
-    public override async Task HandleAsync(AdminGateScanReportFilter req, CancellationToken ct)
+    public override async Task HandleAsync(GridQuery req, CancellationToken ct)
     {
         var bytes = await service.ExportScansXlsxAsync(req, ct);
         HttpContext.Response.Headers.ContentDisposition =

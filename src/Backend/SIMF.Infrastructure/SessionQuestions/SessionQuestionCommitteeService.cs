@@ -7,8 +7,10 @@ using SIMF.Application.Auditing;
 using SIMF.Application.SessionQuestions.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Grids;
 using SIMF.Contracts.Sessions;
 using SIMF.Domain.SessionQuestions;
+using SIMF.Infrastructure.Common.Grids;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.SessionQuestions;
@@ -26,55 +28,100 @@ internal sealed class SessionQuestionCommitteeService(
     TimeProvider timeProvider,
     ILogger<SessionQuestionCommitteeService> logger) : ISessionQuestionCommitteeService
 {
-    public async Task<IReadOnlyList<SessionQuestionQueueRow>> ListQueueAsync(
-        QuestionStatus? status, Guid? sessionId,
-        CancellationToken cancellationToken = default)
+    /// <summary>The filter key that carries the queue's bucket. Named as a
+    /// constant because the default-scope guard below has to ask whether the
+    /// request supplied it, and a literal in two places is a rename away from a
+    /// silent behaviour change.</summary>
+    private const string StatusFilterKey = "status";
+
+    /// <summary>
+    /// The grid contract for /admin/questions: one entry per key
+    /// QuestionQueueList.razor can send, as both its filter and its sort. A key
+    /// not declared here is a 400, not a silently ignored request.
+    ///
+    /// <para>The submitter's display name and email live in the Identity database
+    /// and are resolved only after the page has been chosen, so the submitter is
+    /// neither sortable nor filterable — the two databases are separate by design
+    /// and no cross-database JOIN exists that could make it either.</para>
+    ///
+    /// <para><c>status</c> and <c>sessionId</c> are declared columns rather than
+    /// method parameters: they were the two filters the old endpoint took by
+    /// hand, and the grid already has one way of expressing a filter.</para>
+    /// </summary>
+    private static readonly GridColumns<SessionQuestion> Columns =
+        new GridColumns<SessionQuestion>()
+            // The session is reached through the question's REQUIRED navigation
+            // (SessionId is a non-nullable real FK), so this is the same inner
+            // join the hand-written projection already emitted.
+            .Add("session", question => question.Session!.Title, searchable: true)
+            .Add("question", question => question.QuestionText, searchable: true)
+            .Add("phase", question => question.Phase)
+            .Add("ai", question => question.AiFilterVerdict, searchable: true)
+            .Add("status", question => question.Status)
+            .Add("sessionId", question => question.SessionId)
+            .Add("createdAt", question => question.CreatedAt)
+            // Oldest first: the Committee works the head of the queue. Paired with
+            // the default Pending scope this is exactly the (Status, CreatedAt)
+            // index on SessionQuestions.
+            .DefaultOrder("createdAt")
+            .PageSize(fallback: 25, max: 200);
+
+    public async Task<GridPage<SessionQuestionQueueRow>> ListQueueAsync(
+        GridQuery query, CancellationToken cancellationToken = default)
     {
-        var wanted = status ?? QuestionStatus.Pending;
-        var query = appDbContext.SessionQuestions
-            .AsNoTracking()
-            .Where(q => q.Status == wanted);
-        if (sessionId is { } sid)
+        // The queue's default bucket is Pending — what the CP page reads and what
+        // the old status-less call returned. It is a SCOPE, so it composes onto
+        // the source before the grid, and only when the request names no status of
+        // its own; an explicit status filter still selects exactly that bucket.
+        // Without this guard an empty GridQuery would mean "no constraint" and the
+        // page would silently start listing every already-actioned question.
+        //
+        // The test is a status with a VALUE, not merely a status key: the grid
+        // validates a blank-valued key and then builds no predicate for it, so
+        // keying on presence alone would let `status=""` fall through both the
+        // default scope and the filter and return every bucket at once — a shape
+        // the old `status ?? Pending` parameter could not produce.
+        IQueryable<SessionQuestion> source = appDbContext.SessionQuestions;
+        if (!query.Filters.Any(HasStatusValue))
         {
-            query = query.Where(q => q.SessionId == sid);
+            source = source.Where(question => question.Status == QuestionStatus.Pending);
         }
 
-        var rows = await query
-            .OrderBy(q => q.CreatedAt)
-            // Bounded triage view (oldest-first). The full queue can grow large on
-            // a busy event; the Committee works the head of the queue and rows
-            // re-appear as they are actioned. (A GridPage page-through is a
-            // deferred enhancement if the team wants it.)
-            .Take(200)
-            .Select(q => new
+        var page = await source.ToGridPageAsync(
+            query, Columns, question => question.Id,
+            question => new
             {
-                q.Id,
-                q.SessionId,
-                SessionTitle = q.Session!.Title,
-                q.SubmittedByUserId,
-                q.QuestionText,
-                q.Recipient,
-                q.Phase,
-                q.Status,
-                q.AiFilterVerdict,
-                q.AssignedToRole,
-                q.CreatedAt,
-            })
-            .ToListAsync(cancellationToken);
+                question.Id,
+                question.SessionId,
+                SessionTitle = question.Session!.Title,
+                question.SubmittedByUserId,
+                question.QuestionText,
+                question.Recipient,
+                question.Phase,
+                question.Status,
+                question.AiFilterVerdict,
+                question.AssignedToRole,
+                question.CreatedAt,
+            },
+            cancellationToken);
 
-        if (rows.Count == 0)
+        var pageRows = page.Items;
+        if (pageRows.Count == 0)
         {
-            return Array.Empty<SessionQuestionQueueRow>();
+            return GridPage<SessionQuestionQueueRow>.Of(
+                Array.Empty<SessionQuestionQueueRow>(), page.Total, page.Skip, page.Top);
         }
 
-        var userIds = rows.Select(r => r.SubmittedByUserId).Distinct().ToList();
+        // Cross-DB submitter resolution, for the CHOSEN PAGE only — one Identity
+        // read of at most a page's worth of ids instead of the whole queue's.
+        var userIds = pageRows.Select(r => r.SubmittedByUserId).Distinct().ToList();
         var users = await identityDbContext.Users
             .AsNoTracking()
             .Where(u => userIds.Contains(u.Id))
             .Select(u => new { u.Id, u.Email, u.DisplayName })
             .ToDictionaryAsync(u => u.Id, cancellationToken);
 
-        return rows.Select(r =>
+        var items = pageRows.Select(r =>
         {
             users.TryGetValue(r.SubmittedByUserId, out var user);
             return new SessionQuestionQueueRow(
@@ -92,6 +139,9 @@ internal sealed class SessionQuestionCommitteeService(
                 r.AssignedToRole,
                 r.CreatedAt);
         }).ToList();
+
+        return GridPage<SessionQuestionQueueRow>.Of(
+            items, page.Total, page.Skip, page.Top);
     }
 
     public async Task<SessionQuestionQueueRow> ApproveAsync(
@@ -176,6 +226,14 @@ internal sealed class SessionQuestionCommitteeService(
     }
 
     // -- helpers ---------------------------------------------------------------
+
+    // True when the request actually constrains the status. Grid keys are matched
+    // case-insensitively, so the default-scope guard has to match the same way the
+    // column lookup will; a blank value is no constraint, exactly as the grid
+    // itself treats it.
+    private static bool HasStatusValue(KeyValuePair<string, string> filter) =>
+        string.Equals(filter.Key, StatusFilterKey, StringComparison.OrdinalIgnoreCase)
+        && !string.IsNullOrWhiteSpace(filter.Value);
 
     // No Include(q => q.Session): we mutate only the question and read just the
     // title — fetched as a scalar in ToRowAsync — so the wide Session row

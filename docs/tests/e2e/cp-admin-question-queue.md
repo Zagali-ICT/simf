@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@simrsnf.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
+| **Last reviewed** | 2026-08-18 (the queue moved onto the shared grid seam) |
 
 > **What this page is.** P3.3 / D-234 — the Scientific-Committee central Q&A
 > queue (stage 2). It lists `Pending` questions across **all** sessions and lets
@@ -24,17 +24,28 @@
 > Page permission is `Questions.View`; Approve + Hide are gated by
 > `Questions.Moderate`; Escalate by `Questions.Escalate`.
 >
-> **Grid note (D-261).** The page was migrated from the raw `<table>` to the
-> canonical `SimfDataGrid` (`Top = 20`, page-size options 10/20/50/100). The
-> backend read (`GET /account/api/admin/questions/queue`) is **non-paged** — it
-> returns the whole Pending queue once (oldest-first, capped at 200) and the grid
-> **pages / filters / sorts that in memory**. So a filter or sort gesture
-> **re-projects the already-fetched list with no extra round-trip** (unlike the
-> server-paged CP grids). Filterable columns: Session, Question, Submitter, AI
-> verdict. Sortable columns: Session, Question, Submitter, Phase. `Multiselect`
-> renders select-all + per-row checkboxes, but there is **no bulk toolbar
-> action** on this page — the checkboxes are cosmetic, so there is no bulk
-> scenario.
+> **Grid note.** The page renders the canonical `SimfDataGrid` (`Top = 20`,
+> page-size options 10/20/50/100). The backend read is **server-paged on the
+> shared grid seam**: `POST /account/api/admin/questions/list` binds a `GridQuery`
+> and returns one `GridPage`, so filtering, sorting and paging all happen in SQL
+> over the whole queue rather than over a fetched prefix, and every gesture is a
+> round-trip. It replaced a `GET /admin/questions/queue` that returned the whole
+> Pending queue in one array with `status` and `sessionId` as query-string
+> parameters; those two are now grid **filter keys**.
+>
+> **The declared contract**, quoted so the scenarios read without opening the
+> service: sortable and filterable keys `session` (searchable), `question`
+> (searchable), `phase`, `ai` (searchable), `status`, `sessionId`, `createdAt`;
+> natural order `createdAt` ascending, because the committee works the head of the
+> queue; tiebreak `Id`; page size falls back to 25 and is capped at 200. The page
+> exposes a subset of those as controls: filter inputs on Session, Question and AI
+> verdict, sort on Session, Question and Phase. **Submitter is display-only** and
+> is deliberately neither sortable nor filterable, because that name lives in the
+> Identity database and is resolved after the page is chosen (D-157 forbids the
+> cross-database join that would make it a key). A request naming no status gets
+> the default Pending bucket. `Multiselect` renders select-all + per-row
+> checkboxes, but there is **no bulk toolbar action** on this page: the
+> checkboxes are cosmetic, so there is no bulk scenario.
 
 ## Coverage matrix
 
@@ -52,10 +63,15 @@
 | E2E-QQU-010 | Server 500 on `/queue` load → bilingual fallback toast, no rows render | resilience | P2 | _to author_ |
 | E2E-QQU-011 | RTL / Arabic render — page + columns + escalate modal mirror | i18n | P1 | _to author_ |
 | E2E-QQU-012 | AI-verdict + Phase rendering — verdict shows or em-dash; Phase localised Pre/Live | happy | P2 | _to author_ |
-| E2E-QQU-013 | Per-column filter narrows the grid — type into the Question / Submitter filter input → in-memory re-projection, Skip → 0, no round-trip | happy | P1 | _to author_ |
-| E2E-QQU-014 | Column sort toggles — click the Session header → asc → desc → in-memory re-order, Skip → 0 | happy | P2 | _to author_ |
+| E2E-QQU-013 | Per-column filter narrows the grid: type into the Question filter input → a server round-trip carrying `filters.question`, Skip → 0 | happy | P1 | _to author_ |
+| E2E-QQU-014 | Column sort toggles: click the Session header → asc → desc → a server round-trip carrying `sort`, Skip → 0 | happy | P2 | _to author_ |
 | E2E-QQU-015 | Excel export — toolbar Export downloads an .xlsx of the Pending queue; selected rows export just those (D-356) | happy | P1 | _to author_ |
 | E2E-QQU-016 | **Moderator-desk guards (S-8)** — a question that is Pending (still in this queue) or Hidden cannot be pushed on stage (400 `SESSION_QUESTION_INVALID`); rejecting a pushed question clears its on-stage marker. Cross-ref: `docs/tests/e2e/mobile-session-moderate.md` MOBMOD-005 | error | P1 | authored ✓ (`SessionQuestionCommitteeTests.Pushing_a_pending_question_is_400` + `.Pushing_a_hidden_question_is_400` + `SessionQuestionsTests.Hiding_a_pushed_question_clears_the_pushed_marker`) |
+| E2E-QQU-017 | The queue returns one server page and the true Pending total: 60 pending, `top` 20 gives 20 rows and `total` 60 | happy | P0 | authored |
+| E2E-QQU-018 | The default bucket is Pending: no status filter returns Pending only, and `"status": ""` still returns Pending only, never every bucket at once | security | P0 | authored |
+| E2E-QQU-019 | An undeclared sort key is a 400 `GRID_SORT_KEY_INVALID`; sorting on the display-only Submitter column is the same 400 | validation | P0 | authored |
+| E2E-QQU-020 | The pager walks the queue oldest-first: Next carries `skip` 20, no question repeats or is dropped across a `createdAt` tie | correctness | P0 | authored |
+| E2E-QQU-021 | An explicit `status` filter parses by enum NAME and a `sessionId` filter narrows to one session; `total` reports the filtered count, not the whole queue | happy | P1 | authored |
 | E2E-QQU-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-QQU-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
@@ -77,7 +93,7 @@ Background:
   And they have landed on /admin/question-queue
 
 Scenario: Approve one pending question
-  Given the page issued GET /account/api/admin/questions/queue and it returned 200
+  Given the page issued POST /account/api/admin/questions/list with {"Top":20} and it returned 200
   And the grid shows columns: Session, Question, Submitter, Phase, AI verdict
   And a row exists with Question text "When will the naval drone demo run?"
     and Submitter "Visitor One" and Phase "Pre"
@@ -86,7 +102,7 @@ Scenario: Approve one pending question
   Then a PUT /account/api/admin/questions/{id}/approve fires with an empty body
   And it returns ApiResult.Success = true
   And a green SimfAlert reads "Question approved." (toast variant=success)
-  And the page re-issues GET /account/api/admin/questions/queue
+  And the page re-issues POST /account/api/admin/questions/list
   And the approved row no longer appears (its Status moved Pending → Approved, off the Pending queue)
 ```
 
@@ -95,7 +111,7 @@ Scenario: Approve one pending question
 - Screenshot after: `docs/screenshots/cp-admin-question-queue-golden-after.png`
 - Console errors: 0 expected
 - Network: every `/account/api/admin/questions/...` call returns 200; the
-  approve PUT and the follow-up `/queue` GET both 200
+  approve PUT and the follow-up `/list` POST both 200
 - Audit row: `OperationLog` / `RowAudit` row with `EventType = 'SessionQuestion.Approved'`,
   `ActorUserId` = the signed-in admin, `SubjectUserId` = the submitter, and
   `Detail` containing `questionId=...; sessionId=...`
@@ -156,7 +172,7 @@ Scenario: Cancel the escalate modal without submitting
 Scenario: No pending questions renders SimfEmptyState
   Given the database has no questions in Status = Pending
   When the administrator opens /admin/question-queue
-  Then GET /account/api/admin/questions/queue returns 200 with an empty Data array
+  Then POST /account/api/admin/questions/list returns 200 with an empty data.items and data.total 0
   And the page renders the SimfEmptyState component
   And the empty title reads "No questions awaiting review." / "لا توجد أسئلة بانتظار المراجعة."
   And no table renders and no error toast appears
@@ -170,7 +186,7 @@ Scenario: Signed-in admin without Questions.View is denied
   When they navigate to /admin/question-queue
   Then the [RequirePermission(PermissionCatalog.Questions.View)] attribute denies access
   And they land on /not-permitted with HTTP 200
-  And no GET /account/api/admin/questions/queue request fires
+  And no POST /account/api/admin/questions/list request fires
 ```
 
 ### E2E-QQU-007 — Action gate (Moderate / Escalate)
@@ -221,8 +237,8 @@ Scenario: Approving an already-actioned question returns 404
 ### E2E-QQU-010 — Server 500 on load
 
 ```gherkin
-Scenario: API 500 on /queue shows the fallback bilingual toast
-  Given the API is configured to return 500 on /admin/questions/queue (e.g. DB down)
+Scenario: API 500 on /list shows the fallback bilingual toast
+  Given the API is configured to return 500 on /admin/questions/list (e.g. DB down)
   When the administrator opens /admin/question-queue
   Then the "Loading…" / "جارٍ التحميل…" text shows briefly
   And then a red SimfAlert appears reading
@@ -264,70 +280,74 @@ Scenario: AI verdict and Phase columns render the projected values
 ### E2E-QQU-013 — Per-column filter narrows the grid
 
 ```gherkin
-Scenario: Typing into a column filter narrows the in-memory queue
-  Given the queue loaded 12 Pending rows via GET /account/api/admin/questions/queue
+Scenario: Typing into a column filter re-queries the server
+  Given the queue holds 12 Pending rows, loaded via POST /account/api/admin/questions/list
   And the grid shows the per-column filter row under the headers
-    (a <input type="search"> under Session, Question, Submitter and AI verdict —
-     Phase has no filter input)
+    (an <input type="search"> under Session, Question and AI verdict; Phase and
+     Submitter have no filter input)
   When the administrator types "drone" into the Question filter input
     (aria-label "Filter column Question", placeholder "Search")
-  Then after the 300 ms debounce the grid re-projects the already-fetched list
-    in memory — GridQuery.Filters["question"] = "drone" and GridQuery.Skip resets to 0
-  And NO new network request fires (the whole queue was fetched once in LoadAsync;
-    BuildPage filters/sorts/pages the in-memory _rows — there is no server /list call)
-  And only rows whose Question contains "drone" (case-insensitive Contains) remain
-  And the pager summary updates to the narrowed total (e.g. "Showing 1–2 of 2")
+  Then after the 300 ms debounce a NEW POST /account/api/admin/questions/list fires
+    carrying filters.question = "drone" and skip reset to 0
+  And it returns 200
+  And only rows whose Question contains "drone" come back, matched in SQL
+  And data.total is the narrowed count, so the pager summary reads "Showing 1-2 of 2"
 
-  When they additionally type "Visitor One" into the Submitter filter input
-    (aria-label "Filter column Submitter")
-  Then GridQuery.Filters now carries both ["question"]="drone" and ["submitter"]="Visitor One"
+  When they additionally type "Al-Bahr" into the Session filter input
+    (aria-label "Filter column Session")
+  Then the next request carries both filters.question = "drone" and
+    filters.session = "Al-Bahr"
   And the grid shows only rows matching BOTH filters (filters are AND-combined)
 
   When they clear the Question filter input
-  Then GridQuery.Filters["question"] is removed and the grid widens back to the
-    Submitter-only match
+  Then filters.question is dropped from the request and the grid widens back to the
+    Session-only match
 ```
 
 **Evidence captured:**
-- The filter row only renders inputs for Filterable columns — Session, Question,
-  Submitter, AI verdict carry a search box; **Phase does not** (Phase is sortable
-  but not filterable).
-- No `/account/api/admin/questions/...` request is logged during filtering — assert
-  the network panel stays quiet (this is the client-side-projection contract, the
-  key difference from the server-paged CP grids).
+- The filter row only renders inputs for Filterable columns: Session, Question and
+  AI verdict carry a search box; **Phase and Submitter do not**. Phase is sortable
+  but not filterable on the page; Submitter is display-only in both directions,
+  because its value is resolved from the Identity database after the page is chosen.
+- One `/account/api/admin/questions/list` POST per settled gesture is logged, and
+  its body is captured. Zero requests during filtering was the old client-side
+  contract and is now the failure: it would mean the grid narrowed a fetched prefix
+  and called it the queue.
 
 ### E2E-QQU-014 — Column sort toggles
 
 ```gherkin
-Scenario: Clicking a sortable header toggles ascending / descending in memory
+Scenario: Clicking a sortable header re-queries the server
   Given the queue loaded with its default order (oldest-first by CreatedAt)
   When the administrator clicks the "Session" column header (a sortable header button)
-  Then GridQuery.Sort = "session", GridQuery.SortDescending = false, GridQuery.Skip = 0
-  And the grid re-orders the in-memory rows by SessionTitle ascending (no round-trip)
+  Then a POST /account/api/admin/questions/list fires with
+    sort = "session", sortDescending = false, skip = 0
+  And the rows come back ordered by session title ascending, sorted in SQL
   And the header's sort arrow shows ▲ (aria-sort="ascending")
 
   When they click the "Session" header again
-  Then GridQuery.SortDescending flips to true
-  And the rows re-order by SessionTitle descending and the arrow shows ▼ (aria-sort="descending")
+  Then the next request carries sortDescending = true
+  And the rows come back by session title descending and the arrow shows ▼ (aria-sort="descending")
 
-  When they click the "Submitter" header
-  Then GridQuery.Sort moves to "submitter", SortDescending resets to false, Skip = 0
-  And the rows re-order by SubmittedByDisplayName ascending
+  When they click the "Phase" header
+  Then the next request carries sort = "phase", sortDescending = false, skip = 0
   And the previous "Session" header returns to the neutral ↕ arrow (aria-sort="none")
 ```
 
 **Evidence captured:**
-- Sortable headers: Session, Question, Submitter, Phase. **AI verdict is NOT
-  sortable** — it renders as a plain header span with no sort button.
-- As with the filter, sorting re-projects `_rows` in memory via `BuildPage()`; no
-  GET /queue is re-issued.
+- Sortable headers on the page: Session, Question, Phase. **AI verdict renders a
+  filter box but no sort button, and Submitter renders neither** (a sort on
+  `submitter` would be a 400, so the page must not offer it: see E2E-QQU-019).
+- Each settled gesture logs exactly one `/list` POST, and the rows change order
+  because the server re-ordered them, not because the page re-projected a list it
+  already had.
 
 ### E2E-QQU-015 — Excel export (D-356)
 
 ```gherkin
 Scenario: Export the Pending question queue to an XLSX workbook
   Given the administrator is on /admin/question-queue with at least three Pending
-    rows loaded via GET /account/api/admin/questions/queue
+    rows loaded via POST /account/api/admin/questions/list
   And the grid toolbar shows the "Export" action (OnExport wired, label "Export")
   When they click "Export" with no rows selected
   Then the browser issues POST /account/api/admin/questions/export (via simfAccount.downloadXlsx)
@@ -347,8 +367,10 @@ Scenario: Export the Pending question queue to an XLSX workbook
   Note: this page is export-only — questions are audience-submitted and moderated
   in place (approve / hide / escalate), so there is NO Import action and no import
   file picker on the toolbar. The export uses the direct simfAccount.downloadXlsx
-  proxy, not the CrudGridExcel @ref helper. The server caps an export at 5000 rows,
-  though the queue list itself is already capped at 200 oldest-first Pending rows.
+  proxy, not the CrudGridExcel @ref helper. The server caps an export at 5000 rows.
+  Since the queue moved onto the grid seam the export reads through the SAME paged
+  list call, walking the pages up to that cap, so it keeps filter, search and sort
+  parity with the grid by construction rather than by a second implementation.
 ```
 
 **Evidence captured:**
@@ -359,22 +381,224 @@ Scenario: Export the Pending question queue to an XLSX workbook
   import affordance is absent (this is not a full CrudShell conversion).
 - Console errors: 0 expected.
 
+### E2E-QQU-017 - The queue returns one server page and the true Pending total
+
+```gherkin
+Feature: One page of the committee queue
+  As a Scientific-Committee member with Questions.View
+  I want the queue to return the window I asked for and the true size of the bucket
+  So that the pager is honest about how much triage is left
+
+Background:
+  Given the API is reachable and backed by a REAL SQL Server database
+  And an administrator holding Questions.View has signed in
+  And 60 questions across four sessions are in Status = Pending
+  And a further 15 questions are Approved and 5 are Hidden
+
+Scenario: The first page carries 20 rows and a total of 60
+   When "POST /admin/questions/list" is called with
+        """
+        { "skip": 0, "top": 20 }
+        """
+   Then the response is 200 with "success": true
+    And "data.items" holds 20 rows
+    And "data.total" is 60, counted on the server BEFORE Skip and Take
+    And "data.skip" is 0 and "data.top" is 20
+    And the rows come back oldest first, the natural order createdAt ascending,
+        so the committee works the head of the queue
+    And no Approved and no Hidden question appears
+    # 60 not 80: the total counts the DEFAULT Pending scope, which is composed onto
+    # the source before the grid's own predicates. A total of 80 would mean the
+    # count was taken over the whole table and the scope applied only to the page.
+
+Scenario: A top above the cap is clamped to the resource's maximum
+   When the call sends "top": 5000
+   Then "data.items" holds at most 200 rows, the declared maximum
+    And "data.total" is still 60
+```
+
+**Evidence captured:**
+- `data.total` is compared against a separate `SELECT COUNT(*) FROM SessionQuestions
+  WHERE Status = Pending`. A total equal to the number of rows returned, on a set of
+  60, is the defect this asserts against.
+
+### E2E-QQU-018 - The default bucket is Pending, and a blank status does not widen it
+
+```gherkin
+Feature: A queue that cannot silently list every bucket
+  As a Scientific-Committee member
+  I want a request that names no status to mean Pending
+  So that the desk never quietly starts showing already-actioned questions
+
+Background:
+  Given 60 questions are Pending, 15 Approved and 5 Hidden
+
+Scenario: No status filter means the Pending bucket
+   When "POST /admin/questions/list" is called with
+        """
+        { "skip": 0, "top": 20 }
+        """
+   Then "data.total" is 60
+    And every row returned has Status = Pending
+
+Scenario: A status key with a BLANK value still means the Pending bucket
+   When "POST /admin/questions/list" is called with
+        """
+        { "filters": { "status": "" } }
+        """
+   Then the response is 200
+    And "data.total" is 60, not 80
+    And every row returned has Status = Pending
+    # This is the trap the guard exists for. The seam validates a blank-valued key
+    # and then builds no predicate from it, so keying the default scope on the
+    # PRESENCE of a status key would let status="" fall through both the scope and
+    # the filter and return every bucket at once. The guard tests for a status with
+    # a VALUE. The query-string parameter this replaced could not express the shape
+    # at all, so nothing before now had to answer the question.
+
+Scenario: An explicit status still selects exactly that bucket
+   When "POST /admin/questions/list" is called with
+        """
+        { "filters": { "status": "Hidden" } }
+        """
+   Then "data.total" is 5
+    And every row returned has Status = Hidden
+```
+
+### E2E-QQU-019 - The queue refuses keys it does not declare
+
+```gherkin
+Scenario: An undeclared sort key is a 400 that lists the real ones
+   When "POST /admin/questions/list" is called with
+        """
+        { "sort": "notAColumn" }
+        """
+   Then the response is 400
+    And "error.code" is "GRID_SORT_KEY_INVALID"
+    And the message names notAColumn and then lists the sortable columns:
+        session, question, phase, ai, status, sessionId, createdAt
+
+Scenario: Sorting on the display-only Submitter column is the same 400
+   When "POST /admin/questions/list" is called with
+        """
+        { "sort": "submitter" }
+        """
+   Then the response is 400 with "error.code" "GRID_SORT_KEY_INVALID"
+    # The submitter's name lives in the Identity database and is resolved after the
+    # page is chosen, because D-157 forbids the cross-database join that would make
+    # it sortable. A 400 is the honest answer; the page therefore renders that
+    # column with no sort button, so a user can never provoke this from the UI.
+
+Scenario: An undeclared filter key is a 400, never a widened result set
+   When "POST /admin/questions/list" is called with
+        """
+        { "filters": { "submitter": "Visitor One" } }
+        """
+   Then the response is 400
+    And "error.code" is "GRID_FILTER_KEY_INVALID"
+    And no rows are returned
+    # An ignored filter would hand back the whole cross-session queue to a caller
+    # who asked for one person's questions.
+
+Scenario: An unparseable status value is a 400
+   When "POST /admin/questions/list" is called with
+        """
+        { "filters": { "status": "2" } }
+        """
+   Then the response is 400 with "error.code" "GRID_FILTER_VALUE_INVALID"
+    And the message says the value must be one of the QuestionStatus names
+    # Enum filters parse by NAME only: an ordinal silently re-points at a different
+    # member the day a value is appended to the enum.
+```
+
+### E2E-QQU-020 - The pager walks the queue without repeating a question
+
+```gherkin
+Scenario: Next carries the following 20 questions
+  Given the 60 Pending questions include seven submitted within the same second,
+        so the createdAt sort column ties
+   When "POST /admin/questions/list" is called with skip 0 and top 20
+    And the call is repeated with skip 20 and top 20
+    And once more with skip 40 and top 20
+   Then the three pages hold 20, 20 and 20 rows
+    And "data.total" is 60 on all three
+    And the union of the three pages is exactly the 60 Pending questions,
+        each appearing exactly once
+    And no question appears on two pages and none is skipped between them
+    # The Id tiebreak is what makes this hold. Seven questions sharing a createdAt
+    # have no defined order without it, so one can be returned on both page one and
+    # page two while another is never returned at all, and a committee that works
+    # the queue page by page would simply never see it.
+
+Scenario: The page controls drive the same windows
+  Given the administrator is on /admin/question-queue showing "Showing 1-20 of 60"
+   When they click Next
+   Then a POST /account/api/admin/questions/list fires with skip 20 and top 20
+    And the summary reads "Showing 21-40 of 60"
+    And the page label reads "Page 2 of 3"
+   When they change the page size to 50
+   Then the next request carries top 50 and skip 0
+    And the summary reads "Showing 1-50 of 60"
+   When they click Last
+   Then the request carries skip 50 and the summary reads "Showing 51-60 of 60"
+```
+
+### E2E-QQU-021 - Filtering by status and by session narrows the total
+
+```gherkin
+Scenario: A sessionId filter scopes the queue to one session
+  Given session "Autonomous Naval Systems" holds 18 of the 60 Pending questions
+   When "POST /admin/questions/list" is called with
+        """
+        { "skip": 0, "top": 20, "filters": { "sessionId": "{that session id}" } }
+        """
+   Then the response is 200
+    And "data.items" holds 18 rows, all from that session
+    And "data.total" is 18, the size of the FILTERED set
+    And "data.total" is not 60 (the whole Pending queue) and not 20 (the window)
+
+Scenario: Status and session combine
+   When the filters carry both "status": "Approved" and that same sessionId
+   Then only Approved questions of that session come back
+    And "data.total" is their count
+    # Filters are AND-combined, and naming a status with a value suppresses the
+    # default Pending scope, so this really does read the Approved bucket.
+
+Scenario: A free-text search covers the session title, the question and the verdict
+   When "POST /admin/questions/list" is called with
+        """
+        { "search": "drone" }
+        """
+   Then only Pending questions whose session title, question text or AI verdict
+        contain "drone" come back
+    And "data.total" is their count
+    And the submitter's name is NOT searched, because it is not a searchable column
+
+Scenario: A search term containing a percent sign matches literally
+   When the search term is "100%"
+   Then it is matched as the literal text "100%", not as a wildcard
+    And a question reading "the 100% figure" matches while an unrelated one does not
+```
+
 ---
 
 ## Implementation notes
 
 - **Read-only triage page.** Unlike the CRUD pages (e.g. `/admin/interests`),
   this page has **no Add / Edit / Details / inline grid edit**. Every action is a
-  single PUT against a question id (`approve`, `hide`, `escalate`) plus the GET
-  `/queue` load. Scenarios are scoped to exactly those actions — do not invent
-  create/delete UI.
-- **SimfDataGrid, but client-side projection (D-261).** The page renders the
-  canonical `SimfDataGrid` (`Top = 20`), yet — unlike the server-paged CP grids —
-  its `OnQueryChanged` handler does NOT round-trip. `LoadAsync` fetches the whole
-  Pending queue once (oldest-first, capped at 200); `BuildPage()` then filters
-  (case-insensitive `Contains`), sorts and pages that in-memory `_rows` list.
-  Filter keys honoured: `session`, `question`, `submitter`, `ai`. Sort keys:
-  `session`, `question`, `submitter`, `phase`. **No bulk toolbar action** — the
+  single PUT against a question id (`approve`, `hide`, `escalate`) plus the
+  `/list` POST that loads the page. Scenarios are scoped to exactly those actions,
+  do not invent create/delete UI.
+- **SimfDataGrid, server-paged.** The page renders the canonical `SimfDataGrid`
+  (`Top = 20`) and its `OnQueryChanged` handler round-trips: every filter, sort and
+  page gesture is a fresh `POST /admin/questions/list` carrying the `GridQuery`.
+  Declared keys, all sortable and filterable: `session` (searchable), `question`
+  (searchable), `phase`, `ai` (searchable), `status`, `sessionId`, `createdAt`.
+  `submitter` is NOT a key in either direction: it is resolved from the Identity
+  database after the page is chosen, so the page renders it as a plain column with
+  no sort button and no filter box, and a request naming it is a 400. The old
+  `status` / `sessionId` query-string parameters are now filter keys, and a request
+  naming no status still gets the Pending bucket. **No bulk toolbar action**: the
   grid sets `Multiselect="true"` (select-all + checkboxes) but wires no
   `OnApproveSelected`/`OnDeleteSelected`/`CustomToolbar`, so the checkboxes are
   cosmetic; do not author a bulk scenario.
@@ -390,7 +614,7 @@ Scenario: Export the Pending question queue to an XLSX workbook
   The committee `Api.Tests` seed a future (pre) session so submissions land Pending
   here (`SessionQuestionCommitteeTests.SeedPreSessionAsync`).
 - **BFF passthroughs** live in `src/ControlPanel/SIMF.ControlPanel/Endpoints/AccountEndpoints.cs`
-  (`/account/api/admin/questions/queue|{id}/approve|{id}/hide|{id}/escalate`) →
+  (`/account/api/admin/questions/list|{id}/approve|{id}/hide|{id}/escalate`) →
   `SimfAdminClient` → API `/api/v1/admin/questions/*`. The approve/hide/escalate
   API endpoints also carry the `auth` rate-limit policy.
 - **API integration tests** at `tests/SIMF.Api.Tests/SessionQuestionCommitteeTests.cs`
@@ -405,7 +629,13 @@ Scenario: Export the Pending question queue to an XLSX workbook
 
 ---
 
-_Last reviewed:_ 2026-07-19 by Claude — **Two-path Q&A (owner): this queue now
+_Last reviewed:_ 2026-08-18 by Claude: **the queue moved onto the shared grid
+seam**: `GET /admin/questions/queue` became `POST /admin/questions/list` binding a
+`GridQuery`, the `status` and `sessionId` query-string parameters became filter
+keys, filtering and sorting stopped being an in-memory re-projection, and
+E2E-QQU-017 to -021 were added for the paged contract. E2E-QQU-013 and -014 were
+rewritten: they asserted that no request fires, which is now exactly backwards.
+Prior: 2026-07-19 by Claude. **Two-path Q&A (owner): this queue now
 receives PRE questions only; LIVE questions auto-approve straight to the moderator
 desk, skipping the AI filter + this committee stage (golden example row is now
 Phase "Pre").** Prior: 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle); export-only (no import, no presentation toggle, no delete-confirm on this read-only triage grid). Prior: 2026-06-03 (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).

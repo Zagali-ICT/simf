@@ -7,7 +7,6 @@ using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Common.Grids;
 using SIMF.Contracts.Admin;
-using SIMF.Domain.Auditing;
 using SIMF.Domain.Programme;
 using SIMF.Infrastructure.Common.Grids;
 using SIMF.Infrastructure.Persistence;
@@ -172,9 +171,9 @@ internal sealed class AdminProgrammeDayService(
     }
 
     /// <summary>DisplayOrder is the CP grid's sort key and its default ordering, so
-    /// a negative value silently pins the row ahead of every legitimate day. The
-    /// siblings over this shape (AdminThemeService, AdminSponsorService) reject it
-    /// on both write paths; this one accepted it.</summary>
+    /// a negative value silently pins the row ahead of every legitimate day. Rejected
+    /// on both write paths, as the siblings over this shape (AdminThemeService,
+    /// AdminSponsorService) do.</summary>
     private static void EnsureDisplayOrderIsValid(int displayOrder)
     {
         if (displayOrder < 0)
@@ -195,8 +194,8 @@ internal sealed class AdminProgrammeDayService(
         var clash = await db.ProgrammeDays
             .AsNoTracking()
             .AnyAsync(
-                d => d.IsActive && d.Date == date
-                    && (excludeId == null || d.Id != excludeId),
+                day => day.IsActive && day.Date == date
+                    && (excludeId == null || day.Id != excludeId),
                 cancellationToken);
         if (clash)
         {
@@ -209,9 +208,9 @@ internal sealed class AdminProgrammeDayService(
 
     private Task<bool> HasImageAsync(Guid dayId, CancellationToken cancellationToken) =>
         db.StoredFiles.AsNoTracking().AnyAsync(
-            f => f.IsActive
-                && f.Service == FileService.ProgrammeDayImage
-                && f.OwnerEntityId == dayId,
+            file => file.IsActive
+                && file.Service == FileService.ProgrammeDayImage
+                && file.OwnerEntityId == dayId,
             cancellationToken);
 
     private static (string Title, string TitleArabic) ValidateAndNormalise(
@@ -242,15 +241,15 @@ internal sealed class AdminProgrammeDayService(
             "The programme day was not found.",
             "لم يتم العثور على يوم البرنامج.");
 
-    private static AdminProgrammeDayDetail ToDetail(ProgrammeDay d, bool hasImage) =>
+    private static AdminProgrammeDayDetail ToDetail(ProgrammeDay day, bool hasImage) =>
         new(
-            d.Id,
-            d.Date,
-            d.Title,
-            d.TitleArabic,
-            d.DisplayOrder,
+            day.Id,
+            day.Date,
+            day.Title,
+            day.TitleArabic,
+            day.DisplayOrder,
             hasImage,
-            d.IsActive,
-            d.CreatedAt,
-            d.UpdatedAt);
+            day.IsActive,
+            day.CreatedAt,
+            day.UpdatedAt);
 }

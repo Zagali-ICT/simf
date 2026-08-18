@@ -72,62 +72,72 @@ internal sealed class AdminRatingResponseService(
     public async Task<AdminRatingKpiView> GetKpiAsync(CancellationToken cancellationToken = default)
     {
         var types = await dbContext.RatingTypes.AsNoTracking()
-            .Where(t => t.IsActive)
-            .OrderBy(t => t.DisplayOrder).ThenBy(t => t.Name)
-            .Select(t => new { t.Id, t.Code, t.Name, t.NameArabic })
+            .Where(type => type.IsActive)
+            .OrderBy(type => type.DisplayOrder).ThenBy(type => type.Name)
+            .Select(type => new { type.Id, type.Code, type.Name, type.NameArabic })
             .ToListAsync(cancellationToken);
 
-        var responseAgg = (await dbContext.RatingResponses.AsNoTracking()
-            .Where(r => r.IsActive)
-            .GroupBy(r => r.RatingTypeId)
-            .Select(g => new
+        var responseTotalsByType = (await dbContext.RatingResponses.AsNoTracking()
+            .Where(response => response.IsActive)
+            .GroupBy(response => response.RatingTypeId)
+            .Select(bucket => new
             {
-                TypeId = g.Key,
-                Count = g.Count(),
-                OverallCount = g.Count(r => r.OverallStars != null),
-                OverallSum = g.Sum(r => r.OverallStars ?? 0),
+                TypeId = bucket.Key,
+                Count = bucket.Count(),
+                OverallCount = bucket.Count(response => response.OverallStars != null),
+                OverallSum = bucket.Sum(response => response.OverallStars ?? 0),
             })
             .ToListAsync(cancellationToken))
-            .ToDictionary(x => x.TypeId);
+            .ToDictionary(totals => totals.TypeId);
 
         var questions = await dbContext.RatingQuestions.AsNoTracking()
-            .Where(q => q.IsActive)
-            .OrderBy(q => q.DisplayOrder).ThenBy(q => q.Text)
-            .Select(q => new { q.Id, q.RatingTypeId, q.Text, q.TextArabic })
+            .Where(question => question.IsActive)
+            .OrderBy(question => question.DisplayOrder).ThenBy(question => question.Text)
+            .Select(question => new
+            {
+                question.Id, question.RatingTypeId, question.Text, question.TextArabic,
+            })
             .ToListAsync(cancellationToken);
 
-        var answerAgg = (await dbContext.RatingAnswers.AsNoTracking()
-            .Where(a => a.Response!.IsActive)
-            .GroupBy(a => a.RatingQuestionId)
-            .Select(g => new { QuestionId = g.Key, Count = g.Count(), Sum = g.Sum(a => a.Stars) })
+        var answerTotalsByQuestion = (await dbContext.RatingAnswers.AsNoTracking()
+            .Where(answer => answer.Response!.IsActive)
+            .GroupBy(answer => answer.RatingQuestionId)
+            .Select(bucket => new
+            {
+                QuestionId = bucket.Key,
+                Count = bucket.Count(),
+                Sum = bucket.Sum(answer => answer.Stars),
+            })
             .ToListAsync(cancellationToken))
-            .ToDictionary(x => x.QuestionId);
+            .ToDictionary(totals => totals.QuestionId);
 
-        var typeKpis = types.Select(t =>
+        var typeKpis = types.Select(type =>
         {
-            var agg = responseAgg.GetValueOrDefault(t.Id);
-            var responseCount = agg?.Count ?? 0;
-            var averageOverall = agg is { OverallCount: > 0 }
-                ? (double)agg.OverallSum / agg.OverallCount
+            var responseTotals = responseTotalsByType.GetValueOrDefault(type.Id);
+            var responseCount = responseTotals?.Count ?? 0;
+            var averageOverall = responseTotals is { OverallCount: > 0 }
+                ? (double)responseTotals.OverallSum / responseTotals.OverallCount
                 : 0d;
 
             var questionKpis = questions
-                .Where(q => q.RatingTypeId == t.Id)
-                .Select(q =>
+                .Where(question => question.RatingTypeId == type.Id)
+                .Select(question =>
                 {
-                    var qAgg = answerAgg.GetValueOrDefault(q.Id);
-                    var count = qAgg?.Count ?? 0;
-                    var average = count > 0 ? (double)qAgg!.Sum / count : 0d;
-                    return new RatingQuestionKpi(q.Id, q.Text, q.TextArabic, count, average);
+                    var answerTotals = answerTotalsByQuestion.GetValueOrDefault(question.Id);
+                    var count = answerTotals?.Count ?? 0;
+                    var average = count > 0 ? (double)answerTotals!.Sum / count : 0d;
+                    return new RatingQuestionKpi(
+                        question.Id, question.Text, question.TextArabic, count, average);
                 })
                 .ToList();
 
             return new RatingTypeKpi(
-                t.Id, t.Code, t.Name, t.NameArabic, responseCount, averageOverall, questionKpis);
+                type.Id, type.Code, type.Name, type.NameArabic,
+                responseCount, averageOverall, questionKpis);
         }).ToList();
 
         var totalResponses = await dbContext.RatingResponses
-            .CountAsync(r => r.IsActive, cancellationToken);
+            .CountAsync(response => response.IsActive, cancellationToken);
 
         return new AdminRatingKpiView(totalResponses, typeKpis);
     }

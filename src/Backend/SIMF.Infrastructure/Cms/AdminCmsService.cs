@@ -15,9 +15,8 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Cms;
 
 /// <summary>
-/// Admin CRUD over content blocks
-/// and banners. Both entities live on the App DB; logical FK on
-/// <c>LastUpdatedByUserId</c> to <c>SimfUser</c> on the Identity DB.
+/// Admin CRUD over content blocks and banners. Both entities live on the App DB;
+/// logical FK on <c>LastUpdatedByUserId</c> to <c>SimfUser</c> on the Identity DB.
 /// </summary>
 internal sealed class AdminCmsService(
     SimfAppDbContext appDbContext,
@@ -58,7 +57,7 @@ internal sealed class AdminCmsService(
         var normalised = NormaliseKey(key);
         var row = await appDbContext.ContentBlocks
             .AsNoTracking()
-            .SingleOrDefaultAsync(b => b.Key == normalised, cancellationToken);
+            .SingleOrDefaultAsync(block => block.Key == normalised, cancellationToken);
         return row is null
             ? null
             : new AdminContentBlockSummary(
@@ -72,8 +71,8 @@ internal sealed class AdminCmsService(
         CancellationToken cancellationToken = default)
     {
         var key = NormaliseKey(request.Key);
-        var content = (request.Content ?? string.Empty);
-        var contentArabic = (request.ContentArabic ?? string.Empty);
+        var content = request.Content ?? string.Empty;
+        var contentArabic = request.ContentArabic ?? string.Empty;
 
         if (key.Length is < 2 or > 128)
         {
@@ -92,7 +91,7 @@ internal sealed class AdminCmsService(
 
         var now = timeProvider.SimfNow();
         var existing = await appDbContext.ContentBlocks
-            .SingleOrDefaultAsync(b => b.Key == key, cancellationToken);
+            .SingleOrDefaultAsync(block => block.Key == key, cancellationToken);
 
         if (existing is null)
         {
@@ -135,7 +134,7 @@ internal sealed class AdminCmsService(
     {
         var normalised = NormaliseKey(key);
         var existing = await appDbContext.ContentBlocks
-            .SingleOrDefaultAsync(b => b.Key == normalised, cancellationToken)
+            .SingleOrDefaultAsync(block => block.Key == normalised, cancellationToken)
             ?? throw new ApiException(
                 ErrorCodes.ContentBlockNotFound, 404,
                 "Content block not found.",
@@ -194,7 +193,7 @@ internal sealed class AdminCmsService(
     {
         var row = await appDbContext.Banners
             .AsNoTracking()
-            .SingleOrDefaultAsync(b => b.Id == id, cancellationToken);
+            .SingleOrDefaultAsync(banner => banner.Id == id, cancellationToken);
         return row is null ? null : ToBannerDetail(row);
     }
 
@@ -240,7 +239,7 @@ internal sealed class AdminCmsService(
             request.DisplayOrder);
 
         var banner = await appDbContext.Banners
-            .SingleOrDefaultAsync(b => b.Id == id, cancellationToken)
+            .SingleOrDefaultAsync(row => row.Id == id, cancellationToken)
             ?? throw new ApiException(
                 ErrorCodes.BannerNotFound, 404,
                 "Banner not found.",
@@ -271,7 +270,7 @@ internal sealed class AdminCmsService(
         Guid actorUserId, Guid id, CancellationToken cancellationToken = default)
     {
         var banner = await appDbContext.Banners
-            .SingleOrDefaultAsync(b => b.Id == id, cancellationToken)
+            .SingleOrDefaultAsync(row => row.Id == id, cancellationToken)
             ?? throw new ApiException(
                 ErrorCodes.BannerNotFound, 404,
                 "Banner not found.",

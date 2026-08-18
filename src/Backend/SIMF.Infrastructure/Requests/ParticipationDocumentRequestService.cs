@@ -66,7 +66,7 @@ internal sealed class ParticipationDocumentRequestService(
         }
 
         var now = timeProvider.SimfNow();
-        var req = new ParticipationDocumentRequest
+        var documentRequest = new ParticipationDocumentRequest
         {
             Id = Guid.NewGuid(),
             RequestedByUserId = requesterUserId,
@@ -75,7 +75,7 @@ internal sealed class ParticipationDocumentRequestService(
             Status = MeetingRequestStatus.Pending,
             CreatedAt = now,
         };
-        appDbContext.ParticipationDocumentRequests.Add(req);
+        appDbContext.ParticipationDocumentRequests.Add(documentRequest);
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteSuccessAsync(
@@ -83,17 +83,18 @@ internal sealed class ParticipationDocumentRequestService(
             requesterUserId,
             JsonSerializer.Serialize(new
             {
-                participationDocumentRequestId = req.Id,
-                documentType = req.DocumentType.ToString(),
+                participationDocumentRequestId = documentRequest.Id,
+                documentType = documentRequest.DocumentType.ToString(),
             }),
             cancellationToken);
 
         logger.LogInformation(
             "Participation document request {Id} ({Type}) submitted by {Actor}",
-            req.Id, req.DocumentType, requesterUserId);
+            documentRequest.Id, documentRequest.DocumentType, requesterUserId);
 
         return new ParticipationDocumentRequestSubmitted(
-            req.Id, req.DocumentType, req.Status, req.CreatedAt);
+            documentRequest.Id, documentRequest.DocumentType,
+            documentRequest.Status, documentRequest.CreatedAt);
     }
 
     /// <summary>
@@ -179,7 +180,7 @@ internal sealed class ParticipationDocumentRequestService(
                 "Response status must be Accepted or Rejected.",
                 "يجب أن تكون حالة الردّ مقبولة أو مرفوضة.");
         }
-        var req = await appDbContext.ParticipationDocumentRequests
+        var documentRequest = await appDbContext.ParticipationDocumentRequests
             .SingleOrDefaultAsync(r => r.Id == id, cancellationToken)
             ?? throw new ApiException(
                 ErrorCodes.ParticipationDocumentRequestNotFound, 404,
@@ -188,7 +189,7 @@ internal sealed class ParticipationDocumentRequestService(
 
         // A1 — only a Pending request may be decided (guards double-response and
         // re-deciding a Cancelled request).
-        if (req.Status != MeetingRequestStatus.Pending)
+        if (documentRequest.Status != MeetingRequestStatus.Pending)
         {
             throw new ApiException(
                 ErrorCodes.AppRequestAlreadyResponded, 409,
@@ -206,30 +207,34 @@ internal sealed class ParticipationDocumentRequestService(
                 "يجب ألا يتجاوز طول ملاحظة الردّ 2000 حرف.");
         }
 
-        req.Status = request.Status;
-        req.ResponseNote = responseNote;
-        req.RespondedAt = timeProvider.SimfNow();
-        req.RespondedByUserId = actorUserId;
+        documentRequest.Status = request.Status;
+        documentRequest.ResponseNote = responseNote;
+        documentRequest.RespondedAt = timeProvider.SimfNow();
+        documentRequest.RespondedByUserId = actorUserId;
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteSuccessAsync(
             AuditEvents.ParticipationDocumentRequestResponded,
             actorUserId,
-            JsonSerializer.Serialize(new { participationDocumentRequestId = req.Id, status = req.Status.ToString() }),
+            JsonSerializer.Serialize(new
+            {
+                participationDocumentRequestId = documentRequest.Id,
+                status = documentRequest.Status.ToString(),
+            }),
             cancellationToken);
         // One Viewed event for the email disclosure the respond detail returns.
         await auditLog.WriteSuccessAsync(
             AuditEvents.AdminParticipationDocumentRequestViewed,
             actorUserId,
-            JsonSerializer.Serialize(new { participationDocumentRequestId = req.Id }),
+            JsonSerializer.Serialize(new { participationDocumentRequestId = documentRequest.Id }),
             cancellationToken);
 
         // Notify the requester of the decision (mirrors the speaker/booking flows).
         // Best-effort: a dispatch failure never undoes the committed response.
-        var accepted = req.Status == MeetingRequestStatus.Accepted;
+        var accepted = documentRequest.Status == MeetingRequestStatus.Accepted;
         await notifications.TryDispatchAsync(new NotificationRequest
         {
-            UserId = req.RequestedByUserId,
+            UserId = documentRequest.RequestedByUserId,
             Kind = NotificationKind.ParticipationDocumentDecided,
             Title = accepted ? "Document request accepted" : "Document request rejected",
             TitleArabic = accepted ? "تم قبول طلب الوثيقة" : "تم رفض طلب الوثيقة",
@@ -241,7 +246,7 @@ internal sealed class ParticipationDocumentRequestService(
                 : "تم رفض طلب وثيقة المشاركة الخاص بك.",
             Severity = NotificationSeverity.Info,
             RelatedEntityType = nameof(ParticipationDocumentRequest),
-            RelatedEntityId = req.Id,
+            RelatedEntityId = documentRequest.Id,
             SendEmail = false,
         }, logger, cancellationToken);
 
@@ -251,7 +256,7 @@ internal sealed class ParticipationDocumentRequestService(
     private async Task<AdminParticipationDocumentRequestDetail> LoadDetailAsync(
         Guid id, CancellationToken cancellationToken)
     {
-        var req = await appDbContext.ParticipationDocumentRequests.AsNoTracking()
+        var documentRequest = await appDbContext.ParticipationDocumentRequests.AsNoTracking()
             .SingleOrDefaultAsync(r => r.Id == id, cancellationToken)
             ?? throw new ApiException(
                 ErrorCodes.ParticipationDocumentRequestNotFound, 404,
@@ -259,16 +264,17 @@ internal sealed class ParticipationDocumentRequestService(
                 "لم يتم العثور على طلب وثيقة المشاركة.");
 
         var name = await appDbContext.UserProfiles.AsNoTracking()
-            .Where(p => p.UserId == req.RequestedByUserId)
+            .Where(p => p.UserId == documentRequest.RequestedByUserId)
             .Select(p => p.Name)
             .SingleOrDefaultAsync(cancellationToken);
         var email = await userDirectory.GetEmailAsync(
-            req.RequestedByUserId, cancellationToken);
+            documentRequest.RequestedByUserId, cancellationToken);
 
         return new AdminParticipationDocumentRequestDetail(
-            req.Id, req.RequestedByUserId, name, email,
-            req.DocumentType, req.Note, req.Status, req.ResponseNote,
-            req.CreatedAt, req.RespondedAt);
+            documentRequest.Id, documentRequest.RequestedByUserId, name, email,
+            documentRequest.DocumentType, documentRequest.Note,
+            documentRequest.Status, documentRequest.ResponseNote,
+            documentRequest.CreatedAt, documentRequest.RespondedAt);
     }
 
     // Batch-resolve display names for a page of requesters from the App-DB

@@ -13,7 +13,6 @@ public partial class SessionSummariesList
 
     private record Toast(string Variant, string Message);
 
-    private List<AdminSessionSummaryRow> _rows = new();
     private GridQuery _query = new() { Top = 20 };
     private GridPage<AdminSessionSummaryRow> _page = new();
     private bool _loading;
@@ -40,31 +39,10 @@ public partial class SessionSummariesList
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 
-    private Task OnQueryChangedAsync(GridQuery next)
+    private async Task OnQueryChangedAsync(GridQuery next)
     {
         _query = next;
-        BuildPage();
-        return Task.CompletedTask;
-    }
-
-    // The desk loads every active session in one read, so filter / sort / page
-    // happen client-side over the in-memory rows.
-    private void BuildPage()
-    {
-        IEnumerable<AdminSessionSummaryRow> q = _rows;
-        if (_query.Filters.TryGetValue("session", out var f) && !string.IsNullOrWhiteSpace(f))
-        {
-            q = q.Where(r => r.SessionTitle.Contains(f, StringComparison.OrdinalIgnoreCase));
-        }
-        if (string.Equals(_query.Sort, "session", StringComparison.OrdinalIgnoreCase))
-        {
-            q = _query.SortDescending
-                ? q.OrderByDescending(r => r.SessionTitle)
-                : q.OrderBy(r => r.SessionTitle);
-        }
-        var filtered = q.ToList();
-        var items = filtered.Skip(_query.Skip).Take(_query.Top).ToList();
-        _page = GridPage<AdminSessionSummaryRow>.Of(items, filtered.Count, _query);
+        await LoadAsync();
     }
 
     private string FormatSummary(int skip, int taken, int total) =>
@@ -96,12 +74,11 @@ public partial class SessionSummariesList
         _loading = true;
         try
         {
-            var envelope = await JS.InvokeAsync<ApiResult<IReadOnlyList<AdminSessionSummaryRow>>>(
-                "simfAccount.getJson", "/account/api/admin/session-summaries");
+            var envelope = await JS.InvokeAsync<ApiResult<GridPage<AdminSessionSummaryRow>>>(
+                "simfAccount.postJson", "/account/api/admin/session-summaries/list", _query);
             if (envelope is { Success: true, Data: not null })
             {
-                _rows = envelope.Data.ToList();
-                BuildPage();
+                _page = envelope.Data;
             }
             else
             {

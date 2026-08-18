@@ -6,6 +6,7 @@ using SIMF.Application.Archive.Abstractions;
 using SIMF.Application.Assets.Abstractions;
 using SIMF.Application.Auditing;
 using SIMF.Application.Editions.Abstractions;
+using SIMF.Application.Files.Abstractions;
 using SIMF.Application.Operations.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
@@ -15,7 +16,6 @@ using SIMF.Contracts.Archive;
 using SIMF.Domain.Archive;
 using SIMF.Infrastructure.Common.Grids;
 using SIMF.Infrastructure.Persistence;
-using SIMF.Application.Files.Abstractions;
 
 namespace SIMF.Infrastructure.Archive;
 
@@ -99,11 +99,11 @@ internal sealed class AdminArchiveService(
         // (Id == id, no Skip/Take) and ToDetail re-sorts every child list in
         // memory by DisplayOrder, so the wire order is unchanged.
         var edition = await appDbContext.ArchiveEditions.AsNoTracking()
-            .Include(e => e.Media)
-            .Include(e => e.SessionTitles)
-            .Include(e => e.PastSpeakers)
+            .Include(row => row.Media)
+            .Include(row => row.SessionTitles)
+            .Include(row => row.PastSpeakers)
             .AsSplitQuery()
-            .SingleOrDefaultAsync(e => e.Id == id, cancellationToken);
+            .SingleOrDefaultAsync(row => row.Id == id, cancellationToken);
         return edition is null ? null : ToDetail(edition, await ResolveMediaUrlsAsync(edition, cancellationToken));
     }
 
@@ -111,19 +111,19 @@ internal sealed class AdminArchiveService(
         Guid actorUserId, CreateArchiveEditionRequest request,
         CancellationToken cancellationToken = default)
     {
-        var v = Validate(request.Year, request.TitleEn, request.TitleAr,
+        var draft = Validate(request.Year, request.TitleEn, request.TitleAr,
             request.SummaryEn, request.SummaryAr,
             request.Attendees, request.Sessions, request.Speakers,
             request.LocationEn, request.LocationAr,
             request.DateLabelEn, request.DateLabelAr);
 
         var yearClash = await appDbContext.ArchiveEditions.AsNoTracking()
-            .AnyAsync(e => e.Year == v.Year, cancellationToken);
+            .AnyAsync(edition => edition.Year == draft.Year, cancellationToken);
         if (yearClash)
         {
             throw new ApiException(ErrorCodes.ArchiveEditionYearDuplicate, 409,
-                $"An archive edition for year {v.Year} already exists.",
-                $"توجد نسخة أرشيف للعام {v.Year} بالفعل.");
+                $"An archive edition for year {draft.Year} already exists.",
+                $"توجد نسخة أرشيف للعام {draft.Year} بالفعل.");
         }
 
         var now = timeProvider.SimfNow();
@@ -131,19 +131,18 @@ internal sealed class AdminArchiveService(
         var edition = new ArchiveEdition
         {
             Id = Guid.NewGuid(),
-            Year = v.Year,
-            TitleEn = v.TitleEn,
-            TitleAr = v.TitleAr,
-            SummaryEn = v.SummaryEn,
-            SummaryAr = v.SummaryAr,
-            Attendees = v.Attendees,
-            Sessions = v.Sessions,
-            Speakers = v.Speakers,
-            // Optional place + date label.
-            LocationEn = v.LocationEn,
-            LocationAr = v.LocationAr,
-            DateLabelEn = v.DateLabelEn,
-            DateLabelAr = v.DateLabelAr,
+            Year = draft.Year,
+            TitleEn = draft.TitleEn,
+            TitleAr = draft.TitleAr,
+            SummaryEn = draft.SummaryEn,
+            SummaryAr = draft.SummaryAr,
+            Attendees = draft.Attendees,
+            Sessions = draft.Sessions,
+            Speakers = draft.Speakers,
+            LocationEn = draft.LocationEn,
+            LocationAr = draft.LocationAr,
+            DateLabelEn = draft.DateLabelEn,
+            DateLabelAr = draft.DateLabelAr,
             IsActive = true,
             CreatedAt = now,
         };
@@ -186,12 +185,12 @@ internal sealed class AdminArchiveService(
         await auditLog.WriteSuccessAsync(
             AuditEvents.ArchiveEditionCreated,
             actorUserId,
-            $"id={edition.Id}; year={v.Year}; titleEn={v.TitleEn}",
+            $"id={edition.Id}; year={draft.Year}; titleEn={draft.TitleEn}",
             cancellationToken);
 
         logger.LogInformation(
             "Admin {ActorId} created ArchiveEdition {Year} (id {Id})",
-            actorUserId, v.Year, edition.Id);
+            actorUserId, draft.Year, edition.Id);
 
         return ToDetail(edition, await ResolveMediaUrlsAsync(edition, cancellationToken));
     }
@@ -202,45 +201,44 @@ internal sealed class AdminArchiveService(
     {
         var edition = await appDbContext.ArchiveEditions
             // Load the children so replace-all can clear the orphans.
-            .Include(e => e.Media)
-            .Include(e => e.SessionTitles)
-            .Include(e => e.PastSpeakers)
-            .SingleOrDefaultAsync(e => e.Id == id, cancellationToken)
+            .Include(row => row.Media)
+            .Include(row => row.SessionTitles)
+            .Include(row => row.PastSpeakers)
+            .SingleOrDefaultAsync(row => row.Id == id, cancellationToken)
             ?? throw new ApiException(ErrorCodes.ArchiveEditionNotFound, 404,
                 "The archive edition was not found.",
                 "لم يتم العثور على نسخة الأرشيف.");
 
-        var v = Validate(request.Year, request.TitleEn, request.TitleAr,
+        var draft = Validate(request.Year, request.TitleEn, request.TitleAr,
             request.SummaryEn, request.SummaryAr,
             request.Attendees, request.Sessions, request.Speakers,
             request.LocationEn, request.LocationAr,
             request.DateLabelEn, request.DateLabelAr);
 
-        if (edition.Year != v.Year)
+        if (edition.Year != draft.Year)
         {
             var clash = await appDbContext.ArchiveEditions.AsNoTracking()
-                .AnyAsync(e => e.Id != id && e.Year == v.Year, cancellationToken);
+                .AnyAsync(row => row.Id != id && row.Year == draft.Year, cancellationToken);
             if (clash)
             {
                 throw new ApiException(ErrorCodes.ArchiveEditionYearDuplicate, 409,
-                    $"An archive edition for year {v.Year} already exists.",
-                    $"توجد نسخة أرشيف للعام {v.Year} بالفعل.");
+                    $"An archive edition for year {draft.Year} already exists.",
+                    $"توجد نسخة أرشيف للعام {draft.Year} بالفعل.");
             }
         }
 
-        edition.Year = v.Year;
-        edition.TitleEn = v.TitleEn;
-        edition.TitleAr = v.TitleAr;
-        edition.SummaryEn = v.SummaryEn;
-        edition.SummaryAr = v.SummaryAr;
-        edition.Attendees = v.Attendees;
-        edition.Sessions = v.Sessions;
-        edition.Speakers = v.Speakers;
-        // Optional place + date label.
-        edition.LocationEn = v.LocationEn;
-        edition.LocationAr = v.LocationAr;
-        edition.DateLabelEn = v.DateLabelEn;
-        edition.DateLabelAr = v.DateLabelAr;
+        edition.Year = draft.Year;
+        edition.TitleEn = draft.TitleEn;
+        edition.TitleAr = draft.TitleAr;
+        edition.SummaryEn = draft.SummaryEn;
+        edition.SummaryAr = draft.SummaryAr;
+        edition.Attendees = draft.Attendees;
+        edition.Sessions = draft.Sessions;
+        edition.Speakers = draft.Speakers;
+        edition.LocationEn = draft.LocationEn;
+        edition.LocationAr = draft.LocationAr;
+        edition.DateLabelEn = draft.DateLabelEn;
+        edition.DateLabelAr = draft.DateLabelAr;
         edition.IsActive = request.IsActive;
         edition.UpdatedAt = timeProvider.SimfNow();
 
@@ -295,7 +293,7 @@ internal sealed class AdminArchiveService(
         await auditLog.WriteSuccessAsync(
             AuditEvents.ArchiveEditionUpdated,
             actorUserId,
-            $"id={id}; year={v.Year}; active={edition.IsActive}",
+            $"id={id}; year={draft.Year}; active={edition.IsActive}",
             cancellationToken);
 
         return ToDetail(edition, await ResolveMediaUrlsAsync(edition, cancellationToken));
@@ -305,7 +303,7 @@ internal sealed class AdminArchiveService(
         Guid actorUserId, Guid id, CancellationToken cancellationToken = default)
     {
         var edition = await appDbContext.ArchiveEditions
-            .SingleOrDefaultAsync(e => e.Id == id, cancellationToken)
+            .SingleOrDefaultAsync(row => row.Id == id, cancellationToken)
             ?? throw new ApiException(ErrorCodes.ArchiveEditionNotFound, 404,
                 "The archive edition was not found.",
                 "لم يتم العثور على نسخة الأرشيف.");
@@ -479,38 +477,41 @@ internal sealed class AdminArchiveService(
             // collections — Create/Update set them, GetAsync Includes them).
             // Id rides back so the editor can return a row to the same record on
             // the next save, which is what lets that row own an uploaded file.
-            edition.Media.OrderBy(m => m.DisplayOrder).Select(m => new ArchiveMediaItemInput
-            {
-                Id = m.Id, Kind = (int)m.Kind,
-                Url = mediaUrls.GetValueOrDefault(m.Id) ?? string.Empty,
-                CaptionEn = m.CaptionEn, CaptionAr = m.CaptionAr,
-                DisplayOrder = m.DisplayOrder,
-            }).ToList(),
-            edition.SessionTitles.OrderBy(s => s.DisplayOrder).Select(s => new ArchiveSessionTitleInput
-            {
-                TitleEn = s.TitleEn, TitleAr = s.TitleAr, DisplayOrder = s.DisplayOrder,
-            }).ToList(),
-            edition.PastSpeakers.OrderBy(p => p.DisplayOrder).Select(p => new ArchivePastSpeakerInput
-            {
-                Id = p.Id, NameEn = p.NameEn, NameAr = p.NameAr,
-                HasPhoto = p.PhotoFileId is not null, CountryId = p.CountryId,
-                DisplayOrder = p.DisplayOrder,
-            }).ToList());
+            edition.Media
+                .OrderBy(item => item.DisplayOrder)
+                .Select(item => new ArchiveMediaItemInput
+                {
+                    Id = item.Id, Kind = (int)item.Kind,
+                    Url = mediaUrls.GetValueOrDefault(item.Id) ?? string.Empty,
+                    CaptionEn = item.CaptionEn, CaptionAr = item.CaptionAr,
+                    DisplayOrder = item.DisplayOrder,
+                }).ToList(),
+            edition.SessionTitles
+                .OrderBy(title => title.DisplayOrder)
+                .Select(title => new ArchiveSessionTitleInput
+                {
+                    TitleEn = title.TitleEn, TitleAr = title.TitleAr,
+                    DisplayOrder = title.DisplayOrder,
+                }).ToList(),
+            edition.PastSpeakers
+                .OrderBy(speaker => speaker.DisplayOrder)
+                .Select(speaker => new ArchivePastSpeakerInput
+                {
+                    Id = speaker.Id, NameEn = speaker.NameEn, NameAr = speaker.NameAr,
+                    HasPhoto = speaker.PhotoFileId is not null, CountryId = speaker.CountryId,
+                    DisplayOrder = speaker.DisplayOrder,
+                }).ToList());
 
-    // Build the child entities from the editable inputs, skipping blank
-    // rows and re-deriving DisplayOrder from the submitted order. Child string
-    // lengths are enforced server-side by RequireChildLength/ChildLengthOrNull
-    // below (the CP MaxLength is only a client-side hint; the admin API can be
-    // POSTed directly).
     private static string? NullIfBlank(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
-    // The gallery / session-title / past-speaker columns carry
-    // EF HasMaxLength limits (ArchiveDetailConfigurations) that neither Validate()
-    // nor the FluentValidation validators covered, so an over-length child string
-    // reached SQL Server as a truncation 500. Guard them here — the one point both
-    // Create and Update materialise the child rows — throwing the same clean
-    // bilingual 400 (archive_edition_invalid) the top-level Validate() uses.
+    // The gallery / session-title / past-speaker columns carry EF HasMaxLength
+    // limits (ArchiveDetailConfigurations) that neither Validate() nor the
+    // FluentValidation validators covered, so an over-length child string reached
+    // SQL Server as a truncation 500. Guard them here — the one point both Create
+    // and Update materialise the child rows — throwing the same clean bilingual 400
+    // (archive_edition_invalid) the top-level Validate() uses. The CP MaxLength is
+    // only a client-side hint; the admin API can be POSTed directly.
     private static string RequireChildLength(
         string value, int maxLength, string fieldEn, string fieldAr)
     {
@@ -595,13 +596,13 @@ internal sealed class AdminArchiveService(
     {
         var order = 0;
         return (inputs ?? Enumerable.Empty<ArchiveSessionTitleInput>())
-            .Where(i => !string.IsNullOrWhiteSpace(i.TitleAr)
-                     || !string.IsNullOrWhiteSpace(i.TitleEn))
-            .Select(i => new ArchiveSessionTitle
+            .Where(input => !string.IsNullOrWhiteSpace(input.TitleAr)
+                         || !string.IsNullOrWhiteSpace(input.TitleEn))
+            .Select(input => new ArchiveSessionTitle
             {
-                TitleEn = RequireChildLength((i.TitleEn ?? string.Empty).Trim(), 200,
+                TitleEn = RequireChildLength((input.TitleEn ?? string.Empty).Trim(), 200,
                     "Session title", "عنوان الجلسة"),
-                TitleAr = RequireChildLength((i.TitleAr ?? string.Empty).Trim(), 200,
+                TitleAr = RequireChildLength((input.TitleAr ?? string.Empty).Trim(), 200,
                     "Session title", "عنوان الجلسة"),
                 DisplayOrder = order++,
             })
@@ -616,8 +617,8 @@ internal sealed class AdminArchiveService(
         IReadOnlySet<int> knownCountryIds)
     {
         var supplied = (inputs ?? Enumerable.Empty<ArchivePastSpeakerInput>())
-            .Where(i => !string.IsNullOrWhiteSpace(i.NameAr)
-                     || !string.IsNullOrWhiteSpace(i.NameEn))
+            .Where(input => !string.IsNullOrWhiteSpace(input.NameAr)
+                         || !string.IsNullOrWhiteSpace(input.NameEn))
             .ToList();
         var existing = edition.PastSpeakers.ToDictionary(speaker => speaker.Id);
         var kept = new HashSet<Guid>();
@@ -786,9 +787,9 @@ internal sealed class AdminArchiveService(
 
     /// <summary>The valid Country lookup ids, used to reject a typo'd
     /// country code in the free-text past-speakers editor (drop to null).</summary>
-    private async Task<HashSet<int>> LoadCountryIdsAsync(CancellationToken ct) =>
+    private async Task<HashSet<int>> LoadCountryIdsAsync(CancellationToken cancellationToken) =>
         (await appDbContext.Countries.AsNoTracking()
             .Select(country => country.Id)
-            .ToListAsync(ct))
+            .ToListAsync(cancellationToken))
             .ToHashSet();
 }

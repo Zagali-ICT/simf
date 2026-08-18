@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/GridColumnsTests.cs, SIMF.Api.Tests/GridColumnConverterTests.cs
+// Tests: SIMF.Api.Tests/GridColumnsTests.cs, SIMF.Api.Tests/GridContractTests.cs
 using System.Globalization;
 using System.Linq.Expressions;
 using System.Reflection;

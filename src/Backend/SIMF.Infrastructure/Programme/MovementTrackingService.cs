@@ -1,4 +1,6 @@
 // Tests: SIMF.Api.Tests/MovementTrackingTests.cs
+using System.Data;
+using System.Data.Common;
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
@@ -168,58 +170,29 @@ internal sealed class MovementTrackingService(
         DateTime to,
         CancellationToken cancellationToken = default)
     {
-        var pings = await dbContext.DevicePositionPings
-            .AsNoTracking()
-            .Where(p => p.HallId != null && p.CapturedAt >= from && p.CapturedAt <= to)
-            .OrderBy(p => p.UserId).ThenBy(p => p.CapturedAt)
-            .Select(p => new { p.UserId, HallId = p.HallId!.Value, p.CapturedAt })
-            .ToListAsync(cancellationToken);
-        if (pings.Count == 0)
+        var rows = await ReadHallDwellAsync(from, to, cancellationToken);
+        if (rows.Count == 0)
         {
             return [];
         }
 
-        // Sum each attendee's per-hall dwell, then roll up per hall. Dwell is the
-        // time BETWEEN consecutive pings in the same hall, so a single isolated
-        // ping contributes zero — it evidences presence, not duration.
-        var dwellByHall = new Dictionary<Guid, double>();
-        var attendeesByHall = new Dictionary<Guid, HashSet<Guid>>();
+        var hallNames = await ResolveHallNamesAsync(
+            rows.Select(row => row.HallId), cancellationToken);
 
-        for (var i = 0; i < pings.Count; i++)
-        {
-            var current = pings[i];
-            if (!attendeesByHall.TryGetValue(current.HallId, out var attendees))
+        return rows
+            .Select(row =>
             {
-                attendees = [];
-                attendeesByHall[current.HallId] = attendees;
-            }
-            attendees.Add(current.UserId);
-
-            if (i + 1 >= pings.Count) { continue; }
-            var next = pings[i + 1];
-            if (next.UserId != current.UserId || next.HallId != current.HallId) { continue; }
-
-            var gap = next.CapturedAt - current.CapturedAt;
-            if (gap <= TimeSpan.Zero || gap > MaxLegGap) { continue; }
-            dwellByHall[current.HallId] =
-                dwellByHall.GetValueOrDefault(current.HallId) + gap.TotalMinutes;
-        }
-
-        var hallNames = await ResolveHallNamesAsync(attendeesByHall.Keys, cancellationToken);
-
-        return attendeesByHall
-            .Select(entry =>
-            {
-                var total = dwellByHall.GetValueOrDefault(entry.Key);
-                var attendeeCount = entry.Value.Count;
-                hallNames.TryGetValue(entry.Key, out var names);
+                var total = TimeSpan.FromMicroseconds(row.DwellMicroseconds).TotalMinutes;
+                hallNames.TryGetValue(row.HallId, out var names);
                 return new HallDwellSummary(
-                    entry.Key,
+                    row.HallId,
                     names.Name,
                     names.NameArabic,
-                    attendeeCount,
+                    row.DistinctAttendees,
                     Math.Round(total, 2),
-                    attendeeCount == 0 ? 0 : Math.Round(total / attendeeCount, 2));
+                    row.DistinctAttendees == 0
+                        ? 0
+                        : Math.Round(total / row.DistinctAttendees, 2));
             })
             .OrderByDescending(summary => summary.TotalDwellMinutes)
             .ThenBy(summary => summary.HallName)
@@ -290,6 +263,120 @@ internal sealed class MovementTrackingService(
 
         return new AttendeeRoute(userId, projected);
     }
+
+    /// <summary>Per-hall headcount and dwell, rolled up BY THE DATABASE.
+    ///
+    /// <para>This read used to materialise every matched ping in the window — a
+    /// week of the whole venue's device cadence — and pair them in memory. The
+    /// rollup is now one GROUP BY over a windowed pairing, so a single row per
+    /// hall crosses the wire. It is raw SQL because LINQ cannot express
+    /// <c>LAG</c>, and it is parameterised (never concatenated) because two of the
+    /// three inputs arrive from a query string.</para>
+    ///
+    /// <para><b>PARTITION BY UserId alone.</b> Adding HallId to the partition
+    /// looks equivalent and is not: an attendee who walks hall A, hall B, then
+    /// hall A again would have their two A visits made adjacent inside the A
+    /// partition, and the time spent in B counted as dwell in A. A pair is kept
+    /// only when the previous ping in the attendee's OWN track was in the same
+    /// hall, which is exactly what the in-memory version tested.</para>
+    ///
+    /// <para>The window filter sits inside the CTE so it runs BEFORE the pairing,
+    /// which is where the in-memory version applied it too: a ping taken outside
+    /// every boundary does not break a leg, it is simply not there.</para></summary>
+    private async Task<List<HallDwellRow>> ReadHallDwellAsync(
+        DateTime from, DateTime to, CancellationToken cancellationToken)
+    {
+        var connection = dbContext.Database.GetDbConnection();
+        if (connection.State != ConnectionState.Open)
+        {
+            await connection.OpenAsync(cancellationToken);
+        }
+
+        await using var command = connection.CreateCommand();
+        command.CommandText = HallDwellSql;
+        var transaction = dbContext.Database.CurrentTransaction;
+        if (transaction is not null)
+        {
+            command.Transaction =
+                Microsoft.EntityFrameworkCore.Storage.DbContextTransactionExtensions
+                    .GetDbTransaction(transaction);
+        }
+        AddParameter(command, "@from", DbType.DateTime2, from);
+        AddParameter(command, "@to", DbType.DateTime2, to);
+        AddParameter(command, "@maxLegGapMicroseconds", DbType.Int64,
+            MaxLegGap.Ticks / TimeSpan.TicksPerMicrosecond);
+
+        var rows = new List<HallDwellRow>();
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            rows.Add(new HallDwellRow(
+                reader.GetGuid(0), reader.GetInt32(1), reader.GetInt64(2)));
+        }
+        return rows;
+    }
+
+    private static void AddParameter(
+        DbCommand command, string name, DbType type, object value)
+    {
+        var parameter = command.CreateParameter();
+        parameter.ParameterName = name;
+        parameter.DbType = type;
+        parameter.Value = value;
+        command.Parameters.Add(parameter);
+    }
+
+    /// <summary>One hall's row from <see cref="HallDwellSql"/>. Dwell comes back in
+    /// microseconds — an exact integer the database can SUM — and is turned into
+    /// minutes once, in one place, on the way out.</summary>
+    private sealed record HallDwellRow(
+        Guid HallId, int DistinctAttendees, long DwellMicroseconds);
+
+    /// <summary>The dwell rollup. Held beside the method that runs it rather than
+    /// inline, so the shape of the query is readable on its own.
+    ///
+    /// <para>A ping's dwell is the time to the NEXT ping of the same attendee in
+    /// the same hall, so an isolated ping contributes no dwell yet still counts its
+    /// attendee as present — which is why the headcount is taken over every
+    /// qualifying row and the sum only over the paired ones. A gap of zero (two
+    /// samples at one instant) and a gap past <see cref="MaxLegGap"/> (the device
+    /// went dark) both contribute nothing.</para>
+    ///
+    /// <para><c>DATEDIFF_BIG</c>, not <c>DATEDIFF</c>: the difference is evaluated
+    /// for every adjacent pair before the CASE discards the long ones, and a
+    /// multi-day gap expressed in microseconds overflows a 32-bit result.</para>
+    /// </summary>
+    private const string HallDwellSql = """
+        WITH [paired] AS (
+            SELECT
+                [p].[UserId] AS [UserId],
+                [p].[HallId] AS [HallId],
+                LAG([p].[HallId]) OVER (
+                    PARTITION BY [p].[UserId] ORDER BY [p].[CapturedAt])
+                    AS [PreviousHallId],
+                DATEDIFF_BIG(
+                    microsecond,
+                    LAG([p].[CapturedAt]) OVER (
+                        PARTITION BY [p].[UserId] ORDER BY [p].[CapturedAt]),
+                    [p].[CapturedAt]) AS [GapMicroseconds]
+            FROM [dbo].[DevicePositionPings] AS [p]
+            WHERE [p].[HallId] IS NOT NULL
+              AND [p].[CapturedAt] >= @from
+              AND [p].[CapturedAt] <= @to
+        )
+        SELECT
+            [x].[HallId] AS [HallId],
+            COUNT(DISTINCT [x].[UserId]) AS [DistinctAttendees],
+            SUM(CASE
+                    WHEN [x].[PreviousHallId] = [x].[HallId]
+                     AND [x].[GapMicroseconds] > 0
+                     AND [x].[GapMicroseconds] <= @maxLegGapMicroseconds
+                    THEN [x].[GapMicroseconds]
+                    ELSE CAST(0 AS bigint)
+                END) AS [DwellMicroseconds]
+        FROM [paired] AS [x]
+        GROUP BY [x].[HallId];
+        """;
 
     /// <summary>Bilingual names for the halls a projection touched. The pings carry
     /// no FK by design, so an id that no longer resolves is simply absent and the

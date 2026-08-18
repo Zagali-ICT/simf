@@ -128,8 +128,17 @@
                             </tbody>
                         </table>
                     </div>
+                    @* The roster is one server page. It falls short of the total
+                       only in a hall holding more than a page, and that has to read
+                       as a truncated view rather than as the whole room. *@
                     <p class="simf-table__summary">
-                        @(string.Format(L["Admin.SessionLiveHall.Present.Count"], _present.Count))
+                        @(string.Format(L["Admin.SessionLiveHall.Present.Count"], _presentTotal))
+                        @if (_present.Count < _presentTotal)
+                        {
+                            <span class="simf-hint">
+                                @(string.Format(L["Grid.Summary"], 1, _present.Count, _presentTotal))
+                            </span>
+                        }
                     </p>
                 }
             }

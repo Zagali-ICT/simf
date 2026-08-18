@@ -10,21 +10,25 @@ namespace SIMF.Api.Endpoints.Admin;
 /// <summary>The Scientific-Committee session-summary / محضر desk.
 /// List + read are gated by
 /// <c>SessionSummaries.View</c>, generate + save by <c>.Edit</c>, publish +
-/// un-publish by <c>.Publish</c> — all on top of RequireApprovedAccount.</summary>
+/// un-publish by <c>.Publish</c> — all on top of RequireApprovedAccount.
+/// <para>The desk list is server-paged on the shared grid seam, so it is a POST
+/// carrying a <see cref="GridQuery"/> like every other Control Panel list. The
+/// literal <c>list</c> segment cannot collide with the sibling
+/// <c>{sessionId:guid}</c> routes.</para></summary>
 public sealed class ListSessionSummariesEndpoint(IAdminSessionSummaryService service)
-    : EndpointWithoutRequest<ApiResult<IReadOnlyList<AdminSessionSummaryRow>>>
+    : Endpoint<GridQuery, ApiResult<GridPage<AdminSessionSummaryRow>>>
 {
     public override void Configure()
     {
-        Get("/admin/session-summaries");
+        Post("/admin/session-summaries/list");
         Policies(PermissionCatalog.PolicyFor(PermissionCatalog.SessionSummaries.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
 
-    public override async Task HandleAsync(CancellationToken ct) =>
-        await Send.OkAsync(ApiResult<IReadOnlyList<AdminSessionSummaryRow>>.Ok(
-            await service.ListAsync(ct)), ct);
+    public override async Task HandleAsync(GridQuery req, CancellationToken ct) =>
+        await Send.OkAsync(ApiResult<GridPage<AdminSessionSummaryRow>>.Ok(
+            await service.ListAsync(req, ct)), ct);
 }
 
 public sealed class GetSessionSummaryAdminEndpoint(IAdminSessionSummaryService service)

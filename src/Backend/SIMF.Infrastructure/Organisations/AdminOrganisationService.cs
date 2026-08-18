@@ -5,7 +5,6 @@ using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
 using SIMF.Application.Organisations.Abstractions;
 using SIMF.Common;
-using SIMF.Common.Enums;
 using SIMF.Common.Grids;
 using SIMF.Contracts.Organisations;
 using SIMF.Domain.Organisations;
@@ -82,18 +81,18 @@ internal sealed class AdminOrganisationService(
         CreateOrganisationRequest request,
         CancellationToken ct = default)
     {
-        var v = ValidateAndNormalise(
+        var draft = ValidateAndNormalise(
             request.NameAr, request.NameEn, request.CommercialRegistration,
             request.Sector, request.City, request.Phone, request.Email, request.Website);
 
-        if (v.CommercialRegistration is not null)
+        if (draft.CommercialRegistration is not null)
         {
             var clash = await db.Organisations
                 .AsNoTracking()
-                .AnyAsync(row => row.CommercialRegistration == v.CommercialRegistration, ct);
+                .AnyAsync(row => row.CommercialRegistration == draft.CommercialRegistration, ct);
             if (clash)
             {
-                throw DuplicateCommercialRegistration(v.CommercialRegistration);
+                throw DuplicateCommercialRegistration(draft.CommercialRegistration);
             }
         }
 
@@ -101,14 +100,14 @@ internal sealed class AdminOrganisationService(
         var org = new Organisation
         {
             Id = Guid.NewGuid(),
-            NameArabic = v.NameAr,
-            Name = v.NameEn,
-            CommercialRegistration = v.CommercialRegistration,
-            Sector = v.Sector,
-            City = v.City,
-            Phone = v.Phone,
-            Email = v.Email,
-            Website = v.Website,
+            NameArabic = draft.NameAr,
+            Name = draft.NameEn,
+            CommercialRegistration = draft.CommercialRegistration,
+            Sector = draft.Sector,
+            City = draft.City,
+            Phone = draft.Phone,
+            Email = draft.Email,
+            Website = draft.Website,
             IsActive = true,
             CreatedAt = now,
         };
@@ -118,12 +117,12 @@ internal sealed class AdminOrganisationService(
         await auditLog.WriteSuccessAsync(
             AuditEvents.OrganisationCreated,
             actorUserId,
-            $"id={org.Id}; nameAr={v.NameAr}; cr={v.CommercialRegistration}",
+            $"id={org.Id}; nameAr={draft.NameAr}; cr={draft.CommercialRegistration}",
             ct);
 
         logger.LogInformation(
             "Admin {ActorId} created Organisation {NameAr} ({Id})",
-            actorUserId, v.NameAr, org.Id);
+            actorUserId, draft.NameAr, org.Id);
 
         return ToDetail(org);
     }
@@ -138,30 +137,30 @@ internal sealed class AdminOrganisationService(
             .SingleOrDefaultAsync(row => row.Id == id, ct)
             ?? throw NotFound();
 
-        var v = ValidateAndNormalise(
+        var draft = ValidateAndNormalise(
             request.NameAr, request.NameEn, request.CommercialRegistration,
             request.Sector, request.City, request.Phone, request.Email, request.Website);
 
-        if (v.CommercialRegistration is not null
-            && !string.Equals(org.CommercialRegistration, v.CommercialRegistration, StringComparison.OrdinalIgnoreCase))
+        if (draft.CommercialRegistration is not null
+            && !string.Equals(org.CommercialRegistration, draft.CommercialRegistration, StringComparison.OrdinalIgnoreCase))
         {
             var clash = await db.Organisations
                 .AsNoTracking()
-                .AnyAsync(row => row.Id != id && row.CommercialRegistration == v.CommercialRegistration, ct);
+                .AnyAsync(row => row.Id != id && row.CommercialRegistration == draft.CommercialRegistration, ct);
             if (clash)
             {
-                throw DuplicateCommercialRegistration(v.CommercialRegistration);
+                throw DuplicateCommercialRegistration(draft.CommercialRegistration);
             }
         }
 
-        org.NameArabic = v.NameAr;
-        org.Name = v.NameEn;
-        org.CommercialRegistration = v.CommercialRegistration;
-        org.Sector = v.Sector;
-        org.City = v.City;
-        org.Phone = v.Phone;
-        org.Email = v.Email;
-        org.Website = v.Website;
+        org.NameArabic = draft.NameAr;
+        org.Name = draft.NameEn;
+        org.CommercialRegistration = draft.CommercialRegistration;
+        org.Sector = draft.Sector;
+        org.City = draft.City;
+        org.Phone = draft.Phone;
+        org.Email = draft.Email;
+        org.Website = draft.Website;
         org.IsActive = request.IsActive;
         org.UpdatedAt = timeProvider.SimfNow();
         await db.SaveChangesAsync(ct);
@@ -169,7 +168,7 @@ internal sealed class AdminOrganisationService(
         await auditLog.WriteSuccessAsync(
             AuditEvents.OrganisationUpdated,
             actorUserId,
-            $"id={org.Id}; nameAr={v.NameAr}; active={org.IsActive}",
+            $"id={org.Id}; nameAr={draft.NameAr}; active={org.IsActive}",
             ct);
 
         return ToDetail(org);
@@ -388,17 +387,17 @@ internal sealed class AdminOrganisationService(
     private static string? Clamp(string? value, int maxLength) =>
         value is not null && value.Length > maxLength ? value[..maxLength] : value;
 
-    private static AdminOrganisationDetail ToDetail(Organisation o) => new(
-        o.Id,
-        o.NameArabic,
-        o.Name,
-        o.CommercialRegistration,
-        o.Sector,
-        o.City,
-        o.Phone,
-        o.Email,
-        o.Website,
-        o.IsActive,
-        o.CreatedAt,
-        o.UpdatedAt);
+    private static AdminOrganisationDetail ToDetail(Organisation organisation) => new(
+        organisation.Id,
+        organisation.NameArabic,
+        organisation.Name,
+        organisation.CommercialRegistration,
+        organisation.Sector,
+        organisation.City,
+        organisation.Phone,
+        organisation.Email,
+        organisation.Website,
+        organisation.IsActive,
+        organisation.CreatedAt,
+        organisation.UpdatedAt);
 }

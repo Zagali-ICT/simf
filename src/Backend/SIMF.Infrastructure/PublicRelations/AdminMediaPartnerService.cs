@@ -77,10 +77,11 @@ internal sealed class AdminMediaPartnerService(
     public async Task<AdminMediaPartnerDetail?> GetAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var partner = await appDbContext.MediaPartners.AsNoTracking()
-            .SingleOrDefaultAsync(p => p.Id == id, cancellationToken);
+            .SingleOrDefaultAsync(row => row.Id == id, cancellationToken);
         if (partner is null) { return null; }
-        var (en, ar) = await ResolveCountryAsync(partner.CountryId, cancellationToken);
-        return ToDetail(partner, en, ar);
+        var (countryNameEn, countryNameAr) =
+            await ResolveCountryAsync(partner.CountryId, cancellationToken);
+        return ToDetail(partner, countryNameEn, countryNameAr);
     }
 
     public async Task<AdminMediaPartnerDetail> CreateAsync(Guid actorUserId, AdminCreateMediaPartnerRequest request, CancellationToken cancellationToken = default)
@@ -96,7 +97,7 @@ internal sealed class AdminMediaPartnerService(
         await EnsureCountryIsValidAsync(request.CountryId, cancellationToken);
 
         var nameClash = await appDbContext.MediaPartners.AsNoTracking()
-            .AnyAsync(p => p.Name == name, cancellationToken);
+            .AnyAsync(row => row.Name == name, cancellationToken);
         if (nameClash)
         {
             throw new ApiException(ErrorCodes.MediaPartnerNameDuplicate, 409,
@@ -140,14 +141,15 @@ internal sealed class AdminMediaPartnerService(
             "Admin {ActorId} created MediaPartner {Name} (id {Id})",
             actorUserId, name, partner.Id);
 
-        var (en, ar) = await ResolveCountryAsync(partner.CountryId, cancellationToken);
-        return ToDetail(partner, en, ar);
+        var (countryNameEn, countryNameAr) =
+            await ResolveCountryAsync(partner.CountryId, cancellationToken);
+        return ToDetail(partner, countryNameEn, countryNameAr);
     }
 
     public async Task<AdminMediaPartnerDetail> UpdateAsync(Guid actorUserId, Guid id, AdminUpdateMediaPartnerRequest request, CancellationToken cancellationToken = default)
     {
         var partner = await appDbContext.MediaPartners
-            .SingleOrDefaultAsync(p => p.Id == id, cancellationToken)
+            .SingleOrDefaultAsync(row => row.Id == id, cancellationToken)
             ?? throw new ApiException(ErrorCodes.NotFound, 404,
                 "The media partner was not found.",
                 "لم يتم العثور على الشريك الإعلامي.");
@@ -165,7 +167,7 @@ internal sealed class AdminMediaPartnerService(
         if (!string.Equals(partner.Name, name, StringComparison.OrdinalIgnoreCase))
         {
             var clash = await appDbContext.MediaPartners.AsNoTracking()
-                .AnyAsync(p => p.Id != id && p.Name == name, cancellationToken);
+                .AnyAsync(other => other.Id != id && other.Name == name, cancellationToken);
             if (clash)
             {
                 throw new ApiException(ErrorCodes.MediaPartnerNameDuplicate, 409,
@@ -201,14 +203,15 @@ internal sealed class AdminMediaPartnerService(
             $"id={id}; name={name}; active={partner.IsActive}",
             cancellationToken);
 
-        var (en, ar) = await ResolveCountryAsync(partner.CountryId, cancellationToken);
-        return ToDetail(partner, en, ar);
+        var (countryNameEn, countryNameAr) =
+            await ResolveCountryAsync(partner.CountryId, cancellationToken);
+        return ToDetail(partner, countryNameEn, countryNameAr);
     }
 
     public async Task DeactivateAsync(Guid actorUserId, Guid id, CancellationToken cancellationToken = default)
     {
         var partner = await appDbContext.MediaPartners
-            .SingleOrDefaultAsync(p => p.Id == id, cancellationToken)
+            .SingleOrDefaultAsync(row => row.Id == id, cancellationToken)
             ?? throw new ApiException(ErrorCodes.NotFound, 404,
                 "The media partner was not found.",
                 "لم يتم العثور على الشريك الإعلامي.");
@@ -226,7 +229,7 @@ internal sealed class AdminMediaPartnerService(
             cancellationToken);
     }
 
-    private static (string name, string nameArabic, string? url, int displayOrder) Validate(
+    private static (string Name, string NameArabic, string? Url, int DisplayOrder) Validate(
         string nameRaw, string nameArabicRaw, string? urlRaw, int displayOrderRaw)
     {
         var name = (nameRaw ?? string.Empty).Trim();
@@ -264,7 +267,7 @@ internal sealed class AdminMediaPartnerService(
     // longitude are an all-or-nothing pair with real-world ranges.
     private static void ValidateContactFields(
         string? email, string? phonePrimary, string? phoneSecondary,
-        string? facebook, string? x, string? linkedIn, string? instagram,
+        string? facebook, string? xUrl, string? linkedIn, string? instagram,
         string? city, string? cityArabic,
         double? latitude, double? longitude)
     {
@@ -281,7 +284,7 @@ internal sealed class AdminMediaPartnerService(
                     "يجب ألا يتجاوز رقم الهاتف 32 حرفاً.");
             }
         }
-        foreach (var url in new[] { facebook, x, linkedIn, instagram })
+        foreach (var url in new[] { facebook, xUrl, linkedIn, instagram })
         {
             if (!string.IsNullOrWhiteSpace(url) && url.Length > 256)
             {
@@ -332,7 +335,7 @@ internal sealed class AdminMediaPartnerService(
         }
     }
 
-    private async Task<(string? en, string? ar)> ResolveCountryAsync(
+    private async Task<(string? NameEn, string? NameAr)> ResolveCountryAsync(
         int? countryId, CancellationToken cancellationToken)
     {
         if (countryId is null) { return (null, null); }

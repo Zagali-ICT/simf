@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/AiAdminTests.cs
+// Tests: SIMF.Api.Tests/AiModuleTests.cs, SIMF.Api.Tests/AiHardeningTests.cs
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -225,7 +225,7 @@ internal sealed class AdminAiPromptService(
                 ErrorCodes.AiPromptNotFound, 404,
                 "AI prompt not found.",
                 "لم يتم العثور على محفّز الذكاء الاصطناعي.");
-        if (!prompt.IsActive) return;
+        if (!prompt.IsActive) { return; }
         prompt.IsActive = false;
         prompt.UpdatedAt = timeProvider.SimfNow();
         prompt.UpdatedByUserId = actorUserId;
@@ -385,9 +385,9 @@ internal sealed class AdminAiPromptService(
         string SystemPrompt, string UserPromptTemplate,
         double Temperature, int MaxOutputTokens);
 
-    private static ValidatedCreate ValidateCreate(CreateAiPromptRequest r)
+    private static ValidatedCreate ValidateCreate(CreateAiPromptRequest request)
     {
-        var key = (r.Key ?? string.Empty).Trim().ToLowerInvariant();
+        var key = (request.Key ?? string.Empty).Trim().ToLowerInvariant();
         if (key.Length is < 2 or > 64 || !IsKebab(key))
         {
             throw new ApiException(
@@ -396,37 +396,37 @@ internal sealed class AdminAiPromptService(
                 "يجب أن يكون المفتاح بين 2 و 64 محرفاً، بصيغة kebab.");
         }
         return new ValidatedCreate(
-            key, r.Feature,
-            ValidateText(r.DisplayName, 1, 128, "DisplayName"),
-            ValidateText(r.DisplayNameArabic, 1, 128, "DisplayNameArabic"),
-            string.IsNullOrWhiteSpace(r.Description) ? null
-                : ValidateText(r.Description, 1, 512, "Description"),
-            string.IsNullOrWhiteSpace(r.DescriptionArabic) ? null
-                : ValidateText(r.DescriptionArabic, 1, 512, "DescriptionArabic"),
-            r.Provider,
-            ValidateText(r.Model, 1, 64, "Model"),
-            ValidateText(r.SystemPrompt, 1, 8000, "SystemPrompt"),
-            ValidateText(r.UserPromptTemplate, 1, 8000, "UserPromptTemplate"),
-            ClampTemperature(r.Temperature),
-            ClampMaxTokens(r.MaxOutputTokens));
+            key, request.Feature,
+            ValidateText(request.DisplayName, 1, 128, "DisplayName"),
+            ValidateText(request.DisplayNameArabic, 1, 128, "DisplayNameArabic"),
+            string.IsNullOrWhiteSpace(request.Description) ? null
+                : ValidateText(request.Description, 1, 512, "Description"),
+            string.IsNullOrWhiteSpace(request.DescriptionArabic) ? null
+                : ValidateText(request.DescriptionArabic, 1, 512, "DescriptionArabic"),
+            request.Provider,
+            ValidateText(request.Model, 1, 64, "Model"),
+            ValidateText(request.SystemPrompt, 1, 8000, "SystemPrompt"),
+            ValidateText(request.UserPromptTemplate, 1, 8000, "UserPromptTemplate"),
+            ClampTemperature(request.Temperature),
+            ClampMaxTokens(request.MaxOutputTokens));
     }
 
-    private static ValidatedCreate ValidateUpdate(UpdateAiPromptRequest r)
+    private static ValidatedCreate ValidateUpdate(UpdateAiPromptRequest request)
     {
         return new ValidatedCreate(
-            string.Empty, r.Feature,
-            ValidateText(r.DisplayName, 1, 128, "DisplayName"),
-            ValidateText(r.DisplayNameArabic, 1, 128, "DisplayNameArabic"),
-            string.IsNullOrWhiteSpace(r.Description) ? null
-                : ValidateText(r.Description, 1, 512, "Description"),
-            string.IsNullOrWhiteSpace(r.DescriptionArabic) ? null
-                : ValidateText(r.DescriptionArabic, 1, 512, "DescriptionArabic"),
-            r.Provider,
-            ValidateText(r.Model, 1, 64, "Model"),
-            ValidateText(r.SystemPrompt, 1, 8000, "SystemPrompt"),
-            ValidateText(r.UserPromptTemplate, 1, 8000, "UserPromptTemplate"),
-            ClampTemperature(r.Temperature),
-            ClampMaxTokens(r.MaxOutputTokens));
+            string.Empty, request.Feature,
+            ValidateText(request.DisplayName, 1, 128, "DisplayName"),
+            ValidateText(request.DisplayNameArabic, 1, 128, "DisplayNameArabic"),
+            string.IsNullOrWhiteSpace(request.Description) ? null
+                : ValidateText(request.Description, 1, 512, "Description"),
+            string.IsNullOrWhiteSpace(request.DescriptionArabic) ? null
+                : ValidateText(request.DescriptionArabic, 1, 512, "DescriptionArabic"),
+            request.Provider,
+            ValidateText(request.Model, 1, 64, "Model"),
+            ValidateText(request.SystemPrompt, 1, 8000, "SystemPrompt"),
+            ValidateText(request.UserPromptTemplate, 1, 8000, "UserPromptTemplate"),
+            ClampTemperature(request.Temperature),
+            ClampMaxTokens(request.MaxOutputTokens));
     }
 
     private static string ValidateText(string? value, int min, int max, string field)
@@ -466,49 +466,67 @@ internal sealed class AdminAiPromptService(
         return value;
     }
 
-    private static bool IsKebab(string s)
+    private static bool IsKebab(string key)
     {
-        foreach (var c in s)
+        foreach (var character in key)
         {
-            if (!(c is (>= 'a' and <= 'z') or (>= '0' and <= '9') or '-'))
+            if (!(character is (>= 'a' and <= 'z') or (>= '0' and <= '9') or '-'))
+            {
                 return false;
+            }
         }
-        return s[0] != '-' && s[^1] != '-';
+        return key[0] != '-' && key[^1] != '-';
     }
 
-    private static AdminAiPromptDetail ToDetail(AiPrompt p) => new(
-        p.Id, p.Key, p.Feature, p.DisplayName, p.DisplayNameArabic,
-        p.Description, p.DescriptionArabic, p.Provider, p.Model,
-        p.SystemPrompt, p.UserPromptTemplate, p.Temperature, p.MaxOutputTokens,
-        p.IsActive, p.Version, p.CreatedAt, p.UpdatedAt);
+    private static AdminAiPromptDetail ToDetail(AiPrompt prompt) => new(
+        prompt.Id, prompt.Key, prompt.Feature, prompt.DisplayName, prompt.DisplayNameArabic,
+        prompt.Description, prompt.DescriptionArabic, prompt.Provider, prompt.Model,
+        prompt.SystemPrompt, prompt.UserPromptTemplate, prompt.Temperature, prompt.MaxOutputTokens,
+        prompt.IsActive, prompt.Version, prompt.CreatedAt, prompt.UpdatedAt);
 
-    /// <summary>Read the append-only edit history for one
-    /// prompt. Newest first. Capped at the natural ceiling of how
-    /// many edits a single prompt accumulates over an event
-    /// lifetime (single-digit hundreds at most); no paging needed
-    /// today.</summary>
-    public async Task<IReadOnlyList<AdminAiPromptHistoryEntry>> GetHistoryAsync(
-        Guid promptId, CancellationToken cancellationToken = default)
-    {
-        return await appDbContext.AiPromptHistory
-            .AsNoTracking()
-            .Where(h => h.AiPromptId == promptId)
-            .OrderByDescending(h => h.Version)
-            .Select(h => new AdminAiPromptHistoryEntry(
-                h.Id,
-                h.AiPromptId,
-                h.Version,
-                h.Provider,
-                h.Model,
-                h.SystemPrompt,
-                h.UserPromptTemplate,
-                h.Temperature,
-                h.MaxOutputTokens,
-                h.IsActive,
-                h.ContentHash,
-                h.CapturedFromUpdatedAt,
-                h.UpdatedByUserId,
-                h.CapturedAt))
-            .ToListAsync(cancellationToken);
-    }
+    /// <summary>
+    /// The grid contract for one prompt's append-only edit history. Exactly one
+    /// key, because the history modal renders a fixed table and moves through it
+    /// with prev/next: it sends no sort and no filter, so a wider declaration
+    /// would be a surface nothing asks for.
+    /// <para>
+    /// The page size is deliberately small. A history row carries the whole system
+    /// prompt and user template — up to 8000 characters each — so the default
+    /// 25/200 policy would put megabytes of prompt text on the wire for a table
+    /// that renders none of it.
+    /// </para>
+    /// </summary>
+    private static readonly GridColumns<AiPromptHistory> HistoryColumns =
+        new GridColumns<AiPromptHistory>()
+            .Add("version", history => history.Version)
+            .DefaultOrder("version", descending: true)
+            .PageSize(fallback: 20, max: 50);
+
+    private static readonly Expression<Func<AiPromptHistory, AdminAiPromptHistoryEntry>> ToHistoryEntry =
+        history => new AdminAiPromptHistoryEntry(
+            history.Id,
+            history.AiPromptId,
+            history.Version,
+            history.Provider,
+            history.Model,
+            history.SystemPrompt,
+            history.UserPromptTemplate,
+            history.Temperature,
+            history.MaxOutputTokens,
+            history.IsActive,
+            history.ContentHash,
+            history.CapturedFromUpdatedAt,
+            history.UpdatedByUserId,
+            history.CapturedAt);
+
+    /// <summary>Read one page of the append-only edit history for one prompt,
+    /// newest version first. The history grows by a row on every edit and is never
+    /// pruned, so it is server-paged rather than returned whole. The owning prompt
+    /// is a scope predicate composed onto the source ahead of the grid.</summary>
+    public Task<GridPage<AdminAiPromptHistoryEntry>> GetHistoryAsync(
+        Guid promptId, GridQuery query, CancellationToken cancellationToken = default) =>
+        appDbContext.AiPromptHistory
+            .Where(history => history.AiPromptId == promptId)
+            .ToGridPageAsync(
+                query, HistoryColumns, history => history.Id, ToHistoryEntry, cancellationToken);
 }

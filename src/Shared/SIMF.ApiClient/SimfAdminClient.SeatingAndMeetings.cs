@@ -104,11 +104,15 @@ public sealed partial class SimfAdminClient
             HttpMethod.Get, $"sessions/{sessionId}/seat-map", content: null,
             accessToken, cancellationToken);
 
-    public Task<ApiCallResult<IReadOnlyList<SessionPresentAttendee>>> GetSessionPresentAttendeesAsync(
-        Guid sessionId, string accessToken,
+    /// <summary>One server-paged page of the hall's current roster. The window is
+    /// the server's to bound: an attendance row stays open until a departure
+    /// closes it, so the roster is not capped by the hall's seat count.</summary>
+    public Task<ApiCallResult<GridPage<SessionPresentAttendee>>> ListSessionPresentAttendeesAsync(
+        Guid sessionId, GridQuery query, string accessToken,
         CancellationToken cancellationToken = default) =>
-        SendAsync<IReadOnlyList<SessionPresentAttendee>>(
-            HttpMethod.Get, $"sessions/{sessionId}/present", content: null,
+        SendAsync<GridPage<SessionPresentAttendee>>(
+            HttpMethod.Post, $"sessions/{sessionId}/present/list",
+            JsonContent.Create(query, options: JsonOptions),
             accessToken, cancellationToken);
 
     // -- Speaker meeting requests (SIMF.Contracts.Programme) -----------------

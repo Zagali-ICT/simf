@@ -9,7 +9,6 @@ using SIMF.Common.Enums;
 using SIMF.Common.Grids;
 using SIMF.Contracts.Admin;
 using SIMF.Contracts.Programme;
-using SIMF.Domain.Auditing;
 using SIMF.Domain.Venue;
 using SIMF.Infrastructure.Common.Grids;
 using SIMF.Infrastructure.Persistence;
@@ -55,7 +54,7 @@ internal sealed class VenueMapService(
         Guid id, CancellationToken cancellationToken = default)
     {
         var node = await db.VenueMapNodes.AsNoTracking()
-            .SingleOrDefaultAsync(n => n.Id == id, cancellationToken);
+            .SingleOrDefaultAsync(row => row.Id == id, cancellationToken);
         return node is null ? null : ToDetail(node);
     }
 
@@ -101,7 +100,7 @@ internal sealed class VenueMapService(
         CancellationToken cancellationToken = default)
     {
         var node = await db.VenueMapNodes
-            .SingleOrDefaultAsync(n => n.Id == id, cancellationToken)
+            .SingleOrDefaultAsync(row => row.Id == id, cancellationToken)
             ?? throw NotFound();
 
         var (label, labelAr) = ValidateLabels(request.Label, request.LabelArabic);
@@ -132,7 +131,7 @@ internal sealed class VenueMapService(
         Guid actorUserId, Guid id, CancellationToken cancellationToken = default)
     {
         var node = await db.VenueMapNodes
-            .SingleOrDefaultAsync(n => n.Id == id, cancellationToken)
+            .SingleOrDefaultAsync(row => row.Id == id, cancellationToken)
             ?? throw NotFound();
         if (!node.IsActive)
         {
@@ -154,10 +153,11 @@ internal sealed class VenueMapService(
         CancellationToken cancellationToken = default)
     {
         return await db.VenueMapNodes.AsNoTracking()
-            .Where(n => n.IsActive)
-            .OrderBy(n => n.Label)
-            .Select(n => new PublicVenueMapNode(
-                n.Id, n.Label, n.LabelArabic, n.Kind, n.X, n.Y, n.HallId, n.BoothId))
+            .Where(node => node.IsActive)
+            .OrderBy(node => node.Label)
+            .Select(node => new PublicVenueMapNode(
+                node.Id, node.Label, node.LabelArabic, node.Kind, node.X, node.Y,
+                node.HallId, node.BoothId))
             .ToListAsync(cancellationToken);
     }
 
@@ -182,7 +182,7 @@ internal sealed class VenueMapService(
         if (hallId is { } hid)
         {
             var exists = await db.Halls.AsNoTracking()
-                .AnyAsync(h => h.Id == hid && h.IsActive, cancellationToken);
+                .AnyAsync(hall => hall.Id == hid && hall.IsActive, cancellationToken);
             if (!exists)
             {
                 throw new ApiException(
@@ -194,7 +194,7 @@ internal sealed class VenueMapService(
         if (boothId is { } bid)
         {
             var exists = await db.Booths.AsNoTracking()
-                .AnyAsync(b => b.Id == bid && b.IsActive, cancellationToken);
+                .AnyAsync(booth => booth.Id == bid && booth.IsActive, cancellationToken);
             if (!exists)
             {
                 throw new ApiException(
@@ -242,7 +242,7 @@ internal sealed class VenueMapService(
             "The venue-map node was not found.",
             "لم يتم العثور على عقدة الخريطة.");
 
-    private static AdminVenueMapNodeDetail ToDetail(VenueMapNode n) => new(
-        n.Id, n.Label, n.LabelArabic, n.Kind, n.X, n.Y,
-        n.HallId, n.BoothId, n.IsActive, n.CreatedAt, n.UpdatedAt);
+    private static AdminVenueMapNodeDetail ToDetail(VenueMapNode node) => new(
+        node.Id, node.Label, node.LabelArabic, node.Kind, node.X, node.Y,
+        node.HallId, node.BoothId, node.IsActive, node.CreatedAt, node.UpdatedAt);
 }

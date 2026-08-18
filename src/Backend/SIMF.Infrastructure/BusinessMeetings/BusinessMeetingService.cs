@@ -35,13 +35,6 @@ internal sealed class BusinessMeetingService(
 {
     private const int MaxParticipants = 50;
 
-    /// <summary>The event's local-day boundary (KSA, +03:00) — the same convention
-    /// the programme uses to bucket a session to a Riyadh calendar day. A meeting's
-    /// start/end are already in this zone, so the forum-day bound is a
-    /// plain comparison and a late-evening slot files under the correct event
-    /// day without any shift.</summary>
-    private static readonly TimeSpan EventOffset = TimeSpan.FromHours(3);
-
     /// <summary>Hard ceiling on the number of active meeting tables a single hall
     /// may hold — bounds a generate call regardless of the hall's configured
     /// capacity (which may be 0), so a huge or unbounded request can never
@@ -841,8 +834,13 @@ internal sealed class BusinessMeetingService(
             CreatedAt = now,
         };
 
-    private static MeetingTableRow ToTableRow(MeetingTable t) =>
-        new(t.Id, t.HallId, t.Code, t.RowLabel, t.ColumnNumber, t.Capacity, t.IsActive);
+    /// <summary>The in-memory twin of <see cref="ToTableGridRow"/>, for the create /
+    /// update paths that already hold the entity. The grid's copy has to stay an
+    /// <c>Expression</c> so EF can translate it, which is why the mapping is written
+    /// out twice; keep the two field orders identical.</summary>
+    private static MeetingTableRow ToTableRow(MeetingTable table) =>
+        new(table.Id, table.HallId, table.Code, table.RowLabel,
+            table.ColumnNumber, table.Capacity, table.IsActive);
 
     private async Task ValidateSlotAsync(
         DateTime start, DateTime end, CancellationToken cancellationToken)
@@ -864,12 +862,14 @@ internal sealed class BusinessMeetingService(
 
         // Forum-day bound: a meeting / allocation may only be scheduled on
         // the authored event days. The window is MIN/MAX over the active
-        // ProgrammeDay.Date rows (NOT the stale OrganizationProfile placeholder). The
-        // slot's start and end are converted to the event-local (+03:00) calendar
-        // date — the same convention the programme uses to bucket a session to a day
-        // — and both must fall inside [MinDate, MaxDate]. When no programme days are
-        // seeded yet the window is null and no bound is applied (scheduling is never
-        // hard-blocked just because content is not seeded).
+        // ProgrammeDay.Date rows (NOT the stale OrganizationProfile placeholder), and
+        // both ends of the slot must fall inside [MinDate, MaxDate]. No time-zone
+        // shift is applied on the way to a date: the slot is already event-local
+        // (KSA, +03:00), the same convention the programme uses to bucket a session
+        // to a Riyadh calendar day, so a late-evening slot files under the correct
+        // event day without one. When no programme days are seeded yet the window is
+        // null and no bound is applied (scheduling is never hard-blocked just
+        // because content is not seeded).
         var forum = await forumWindow.GetForumDaysAsync(cancellationToken);
         if (forum is { } window)
         {
