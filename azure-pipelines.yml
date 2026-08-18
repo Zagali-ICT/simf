@@ -77,57 +77,65 @@ parameters:
   type: boolean
   default: true
 
-# --- Whether this run executes the test gates. BACK ON BY DEFAULT (D-915),
-#     because the reason they were switched off has been removed.
+# --- Whether this run executes the test gates. OFF, AND IT STAYS OFF.
 #
-#     D-887 set this to FALSE on 2026-08-14: a deploy should be quick, and
-#     "SIMF.Api.Tests alone runs 38 minutes when it has the agent to itself".
-#     That suite now runs in about TEN minutes on the same work (D-911..D-914:
-#     the fixture was re-provisioning its databases before every test rather
-#     than once per class, every host boot ate a 10-second SqlClient
-#     connect-retry against a database that did not exist yet, and fourteen
-#     background workers started per host). Measured full runs after the fix:
-#     9m12s and 9m56s over 2,398 tests.
+#     STANDING OWNER DIRECTIVE, 2026-08-18: do not turn this back on, and do not
+#     propose turning it back on. Previous flips are recorded in D-887 (off),
+#     D-899 (integration suite added to PRs) and D-915 (back on); this entry ends
+#     that sequence. An agent reading the history will find three reversals and a
+#     comment block that used to argue FOR the gates - that argument is spent, and
+#     is preserved below only so nobody re-derives it and mistakes it for a
+#     mandate to act.
 #
-#     Ten minutes buys the whole behavioural surface on a run that gates a
-#     merge, which SIMF-OPS-001 section 5 and the NCA Secure App-Dev Standard
-#     section 3-20 both require. Turn it off for a hotfix deploy if you must —
-#     but a run with it off proves only that the code COMPILES and the packages
-#     publish, and nothing about behaviour, permissions or the security surface.
+#     The tick box survives so a run CAN opt in. What changed is the default and
+#     the standing instruction: nobody re-enables it as a side effect of other
+#     work, and an agent asked to "fix CI" leaves this alone.
 #
-#     WHAT SWITCHING IT OFF COSTS. Read this before assuming a green run means
-#     anything about correctness:
+#     WHAT A GREEN RUN NOW MEANS. Only that the code COMPILES and the packages
+#     publish. Nothing about behaviour, permissions, or the security surface.
+#     Specifically, none of this is checked on an ordinary run:
 #       * the fast suites - Domain, Application, ApiClient, ControlPanel, Web,
-#         E2E. About a minute between them. These include the Control Panel
-#         permission and navigation gates, which are the checks that stop an
-#         admin page shipping ungated, and the E2E-catalogue integrity ratchet.
-#         (No test count is quoted here on purpose: nothing pins one, so a
-#         number written into a comment is wrong by the next sprint.)
+#         E2E. Among them the Control Panel permission and navigation gates,
+#         which are what stop an admin page shipping ungated, and the
+#         E2E-catalogue integrity ratchet.
 #       * SIMF.Api.Tests - the whole admin + app API surface, including the
-#         anonymous-endpoint allow-list that fails the build when an 18th
-#         unauthenticated entry point appears. (2,398 tests at the time of
-#         writing; the count is quoted here only to size the ~10 minutes, and
-#         nothing pins it, so treat it as indicative.)
+#         anonymous-endpoint allow-list that fails the build when a new
+#         unauthenticated entry point appears.
 #       * the LocalDB provisioning that exists only to serve those.
-#       * the Flutter and BadgeDesk stages.
 #
-#     A run with this OFF proves the code COMPILES and the packages publish.
-#     It proves nothing about behaviour, permissions or the security surface.
+#     THE COMPLIANCE POSITION, STATED PLAINLY RATHER THAN BURIED. SIMF-OPS-001
+#     section 5 and the NCA Secure App-Dev Standard section 3-20 both require a
+#     failing test to stop the pipeline. With this off, neither is satisfied.
+#     That is an accepted owner risk, not an oversight, and it is written here so
+#     an auditor reads it in the pipeline rather than inferring it from a skipped
+#     step. Testing moves to the developer's machine before the push; the
+#     pipeline no longer catches what the developer does not.
 #
-#     THIS IS A `condition:`, NOT `enabled: false`, DELIBERATELY. A disabled step
-#     vanishes from the run summary; a condition leaves it listed as skipped, so
-#     the run says out loud that it did not test. That rule is enforced by
-#     PipelineTestGateTests.No_pipeline_step_is_disabled, which exists because
-#     the last silent switch-off went unnoticed for five weeks.
+#     THE KNOWN FAILURE MODE, because it has already happened once. The last
+#     period with these gates off ended with 42 red tests discovered at once,
+#     none of them reported when they broke. Nothing here prevents that
+#     recurring; run the suites locally before a merge.
 #
-#     Untick it only deliberately, and know what the resulting green tick does
-#     not mean. SIMF-OPS-001 section 5 and the NCA Secure App-Dev Standard
-#     section 3-20 both require a failing test to stop the pipeline, and neither
-#     is satisfied while this is off.
+#     THIS IS A `condition:`, NOT `enabled: false`, DELIBERATELY - unchanged, and
+#     it matters more now than it did. A disabled step vanishes from the run
+#     summary; a condition leaves it listed as SKIPPED, so every run says out
+#     loud that it did not test. That is the whole audit trail for this decision.
+#     Enforced by PipelineTestGateTests.No_pipeline_step_is_disabled, which
+#     exists because the last silent switch-off went unnoticed for five weeks.
+#
+#     --- SPENT ARGUMENT, KEPT AS HISTORY. NOT AN INSTRUCTION. ---
+#     D-915 turned these back on because D-887's reason had been removed: the
+#     integration suite went from 38 minutes to about ten (D-911..D-914 - the
+#     fixture re-provisioned its databases per test rather than per class, every
+#     host boot ate a 10-second SqlClient connect-retry, and fourteen background
+#     workers started per host). Measured full runs after that fix: 9m12s and
+#     9m56s over 2,398 tests. So the ten minutes is real and the argument was
+#     sound. The owner has decided the trade differently, which is the owner's
+#     call to make. Do not re-open it from this paragraph.
 - name: runTests
-  displayName: 'Run the test gates'
+  displayName: 'Run the test gates (OFF by owner directive - see the comment above)'
   type: boolean
-  default: true
+  default: false
 
 # --- The two non-.NET stages. BOTH DEFAULT FALSE (owner decision, D-889), and
 #     both are INDEPENDENT of `runTests` above: ticking the test gates on for a
@@ -465,11 +473,12 @@ stages:
 
     - task: DotNetCoreCLI@2
       displayName: 'Run tests (fast suites)'
-      # OFF BY DEFAULT (D-887). These suites cost about a minute, so they are not
-      # what makes a run slow - they are here because the owner asked for the
-      # test gates off for quick deploys, and leaving them on would give a green
-      # tick that looks like the full gate ran. They come back on with the
-      # `runTests` tick box.
+      # SKIPPED on an ordinary run: `runTests` is OFF by standing owner directive
+      # (see the parameter comment at the top - do not re-enable). These suites
+      # cost about a minute between them, so speed was never the reason; they sit
+      # behind the same tick box as the slow one so that a green run cannot look
+      # like a partial gate ran. Among them are the Control Panel permission and
+      # navigation gates, which are what stop an admin page shipping ungated.
       condition: and(succeeded(), eq('${{ parameters.runTests }}', 'true'))
       inputs:
         command: 'test'
@@ -504,12 +513,19 @@ stages:
     #        it in its own step is what stops it running alongside anything else.
     #     2. It needs LocalDB, provisioned by the step above.
     #
-    #     IT NOW RUNS ON PULL REQUESTS TOO (D-899). The exclusion existed because
-    #     "nobody should wait ~38 minutes per push"; the suite runs in about ten
-    #     minutes since D-895..D-898, and a merge gate that skips the one suite
-    #     covering the whole API surface is a gate in name only. Change the
-    #     condition rather than adding `enabled: false`: a disabled step is
-    #     invisible, a condition states its own rule.
+    #     SKIPPED on an ordinary run, INCLUDING pull requests, because `runTests`
+    #     is OFF by standing owner directive (see the parameter comment at the top
+    #     - do not re-enable). D-899 had added this suite to PR runs on the
+    #     argument that a merge gate skipping the one suite covering the whole API
+    #     surface is a gate in name only. That argument still holds on its own
+    #     terms; the owner has decided the trade differently, so nothing gates a
+    #     merge here now and the suite has to be run locally before a push.
+    #
+    #     If it is ever ticked on for a run: keep it in its OWN step. It is
+    #     LOAD-SENSITIVE, as recorded above, and sharing a step is what made it
+    #     fail at random. Change the condition rather than adding
+    #     `enabled: false`: a disabled step is invisible, a condition states its
+    #     own rule and shows as skipped.
     - task: DotNetCoreCLI@2
       displayName: 'Run tests (SIMF.Api.Tests, integration)'
       condition: >-
