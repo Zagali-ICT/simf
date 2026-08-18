@@ -224,6 +224,43 @@ stages:
     - checkout: self
       clean: true
 
+    # --- Empty the artifact staging directory before anything publishes into it.
+    #
+    #     THIS IS WHY THE WEBSITE SERVED AUGUST-8 CSS FOR TEN DAYS. `checkout:
+    #     self / clean: true` cleans the SOURCES directory; it does not touch
+    #     $(Build.ArtifactStagingDirectory), and on a self-hosted agent that
+    #     folder survives between runs. `dotnet publish --output` writes INTO a
+    #     directory without emptying it first, and `zipAfterPublish` then zips
+    #     whatever is sitting there - so a file that a later commit CHANGED gets
+    #     the new copy, but the stale one is only overwritten if the publish
+    #     happens to emit the same path. The fingerprinted static-asset names
+    #     (landing.<hash>.css) are content-derived, so a changed file arrives
+    #     under a NEW name and the old one is never overwritten, never removed,
+    #     and ships in the zip forever.
+    #
+    #     The tell is in the deploy log, and it is easy to misread as success:
+    #     robocopy reported "Files: 264  Copied: 0  Skipped: 264" against the
+    #     live site. Nothing was wrong with the deploy - it faithfully mirrored
+    #     an artifact that genuinely had not changed since 2026-08-08.
+    #
+    #     Deleting the folder is safe: every publish step below recreates it,
+    #     and the artifact is rebuilt from source on every run.
+    - powershell: |
+        $ErrorActionPreference = 'Stop'
+        $staging = '$(Build.ArtifactStagingDirectory)'
+        if (Test-Path $staging) {
+            $before = @(Get-ChildItem -Path $staging -Recurse -File -ErrorAction SilentlyContinue).Count
+            Write-Host "Clearing artifact staging directory: $staging ($before stale file(s))"
+            Remove-Item -Path (Join-Path $staging '*') -Recurse -Force -ErrorAction Stop
+        } else {
+            Write-Host "Artifact staging directory does not exist yet: $staging"
+            New-Item -ItemType Directory -Force -Path $staging | Out-Null
+        }
+        $after = @(Get-ChildItem -Path $staging -Recurse -File -ErrorAction SilentlyContinue).Count
+        if ($after -ne 0) { throw "Artifact staging directory is not empty after cleaning ($after file(s) remain)." }
+        Write-Host "Artifact staging directory is empty."
+      displayName: 'Clear artifact staging directory (stale-artifact guard)'
+
     - task: UseDotNet@2
       displayName: 'Use .NET 10 SDK'
       inputs:
