@@ -16,7 +16,6 @@ class ExhibitorRepository {
 
   final SimfApiClient _client;
 
-  /// Scan a visitor badge by its QR id → the captured visitor's full card.
   Future<VisitorCard> scanByBadge(String qrId, {String? note}) {
     return _client.post<VisitorCard>(
       ExhibitorEndpoints.scanVisitor,

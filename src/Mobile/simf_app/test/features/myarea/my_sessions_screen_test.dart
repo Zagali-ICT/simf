@@ -11,6 +11,8 @@ import 'package:simf_app/features/myarea/my_sessions_screen.dart';
 import 'package:simf_app/features/sessions/data/session_favourites.dart';
 import 'package:simf_app/features/sessions/data/session_models.dart';
 
+import '../../support/simf_test_scope.dart';
+
 class _FixedFavourites extends SessionFavouritesController {
   _FixedFavourites(this._ids);
 
@@ -67,7 +69,7 @@ Future<void> _pump(WidgetTester tester, List<MyAreaSessionItem> items) async {
     ],
   );
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         mySessionsProvider.overrideWith((ref) async => MyAreaSessions(items)),
         sessionFavouritesProvider

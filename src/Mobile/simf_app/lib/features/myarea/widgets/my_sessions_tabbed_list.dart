@@ -68,8 +68,6 @@ class MySessionsTabbedList extends StatelessWidget {
   }
 }
 
-/// One my-session card: the heart on the trailing edge, the title over a
-/// clock·time line with the category chip, and the primary speaker + hall.
 class MySessionCard extends StatelessWidget {
   const MySessionCard({required this.item, required this.isArabic, super.key});
 
@@ -105,8 +103,6 @@ class MySessionCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            // Title + time·category on the right, the favourite heart on the
-            // left.
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
@@ -132,7 +128,6 @@ class MySessionCard extends StatelessWidget {
                 FavouriteHeartButton(sessionId: item.id),
               ],
             ),
-            // Speaker (right) + hall (left), each in a beige icon-box group.
             if (hasMeta) ...<Widget>[
               const SizedBox(height: SimfTokens.space4),
               Row(

@@ -9,6 +9,8 @@ import 'package:simf_app/app/widgets/simf_image_viewer.dart';
 import 'package:simf_app/features/media_partners/media_partners_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../../support/simf_test_scope.dart';
+
 const _partners = <MediaPartner>[
   MediaPartner(id: 'p1', name: 'Al Arabiya', nameArabic: 'العربية'),
   MediaPartner(id: 'p2', name: 'SPA', nameArabic: 'واس'),
@@ -58,7 +60,7 @@ Future<void> _pump(
   );
 
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         simfDataConfigProvider.overrideWithValue(_testConfig),
         mediaPartnersProvider.overrideWith((ref) async => partners()),

@@ -14,6 +14,7 @@ import 'package:simf_app/features/speakers/data/speakers_repository.dart';
 import 'package:simf_app/features/speakers/speakers_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../support/simf_test_scope.dart';
 import 'golden_fonts.dart';
 
 /// Golden-render harness (owner 2026-06-28, verification option 2): renders a
@@ -108,7 +109,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      ProviderScope(
+      simfTestScope(
         overrides: <Override>[
           simfDataConfigProvider.overrideWithValue(_config),
           speakersRepositoryProvider.overrideWithValue(_FakeSpeakersRepo()),

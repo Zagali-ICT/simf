@@ -18,6 +18,8 @@ import 'package:simf_app/features/exhibitor/my_visitors_screen.dart';
 import 'package:simf_app/features/exhibitor/widgets/captured_visitor_sheet.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../../support/simf_test_scope.dart';
+
 class _FakeExhibitorRepo implements ExhibitorRepository {
   _FakeExhibitorRepo(
       {List<ExhibitorVisitor> visitors = const <ExhibitorVisitor>[],
@@ -79,7 +81,7 @@ Future<void> _pump(WidgetTester tester, _FakeExhibitorRepo repo) async {
     ],
   );
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         exhibitorRepositoryProvider.overrideWithValue(repo),
       ],

@@ -105,7 +105,6 @@ class RatingExistingSubmission {
   }
 }
 
-/// The full dynamic rating form for a type (+ optional target).
 @immutable
 class RatingFormView {
   const RatingFormView({

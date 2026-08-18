@@ -45,7 +45,6 @@ final sessionDetailRepositoryProvider =
   return SessionDetailRepository(ref.watch(simfApiClientProvider));
 });
 
-/// The detail plus the attendee's seat map, loaded together.
 @immutable
 class SessionDetailView {
   const SessionDetailView({

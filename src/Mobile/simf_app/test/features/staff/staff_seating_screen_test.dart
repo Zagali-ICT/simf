@@ -15,6 +15,8 @@ import 'package:simf_app/features/staff/data/staff_seating_models.dart';
 import 'package:simf_app/features/staff/data/staff_seating_repository.dart';
 import 'package:simf_app/features/staff/staff_seating_screen.dart';
 
+import '../../support/simf_test_scope.dart';
+
 // Row A = VVIP (protocol), row B = Normal.
 SessionSeatMap _map() => const SessionSeatMap(
       rowLabels: <String>['A', 'B'],
@@ -109,7 +111,7 @@ Future<_FakeSeatingRepo> _pump(
   addTearDown(tester.view.resetDevicePixelRatio);
   final seating = _FakeSeatingRepo(occupant);
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         seatMapRepositoryProvider.overrideWithValue(_FakeSeatMapRepo()),
         staffSeatingRepositoryProvider.overrideWithValue(seating),

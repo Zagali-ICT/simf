@@ -13,6 +13,7 @@ import 'package:simf_app/features/sessions/data/seat_map_models.dart';
 import 'package:simf_app/features/sessions/data/seat_map_repository.dart';
 import 'package:simf_app/features/sessions/my_seat_screen.dart';
 
+import '../support/simf_test_scope.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the My-Seat screen against Figma frame **898:2873** ("Your
@@ -152,7 +153,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      ProviderScope(
+      simfTestScope(
         overrides: <Override>[
           seatMapRepositoryProvider.overrideWithValue(_FakeSeatRepo()),
         ],

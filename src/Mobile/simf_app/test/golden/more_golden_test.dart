@@ -15,6 +15,7 @@ import 'package:simf_app/features/myarea/data/myarea_repository.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../support/simf_test_scope.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the More screen against Figma frame **1129:17224**
@@ -109,7 +110,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      ProviderScope(
+      simfTestScope(
         overrides: <Override>[
           simfDataConfigProvider.overrideWithValue(_testConfig),
           authControllerProvider.overrideWith(_SignedInAuth.new),

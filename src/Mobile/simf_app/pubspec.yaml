@@ -121,7 +121,8 @@ dependency_overrides:
 
 dev_dependencies:
   # D-372 regression test only — drives the real SimfApiClient over a
-  # header-recording adapter (same major as simf_data_pkg's pin).
+  # header-recording adapter. simf_data_pkg pins ^5.10.0 for
+  # DioExceptionType.transformTimeout; this caret already admits it.
   dio: ^5.7.0
   # D-373 — generates the SIMF launcher icon into the scaffolded native
   # folders. Run AFTER `flutter create --platforms=android .` (the folders

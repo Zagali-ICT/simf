@@ -28,14 +28,24 @@ Home greeting header, because the header toggle was on every screen except Home
 
 | File | Holds |
 |------|-------|
-| `more_screen.dart` (181) | `MoreScreen` (`ConsumerWidget`) — the `_moreProfileProvider` (a tiny best-effort dashboard wrapper, kept private in the screen), and the `build` that lays out the profile card + the three sections (with role-filtered rows) + sign-out + version. |
+| `more_screen.dart` (96) | `MoreScreen` (`ConsumerWidget`) — the `_moreProfileProvider` (a tiny best-effort dashboard wrapper, kept private in the screen) and the `build` that stacks the profile card, the three sections, sign-out and the footer. |
+| `more_menu_items.dart` (`MoreMenuEntry` + `moreMenuEntries(l10n)`) | A feature-local pure helper — the destination list the shell's slide-in `MoreDrawer` renders. It lives here because the entries are this feature's, but **this screen does not read it**: the drawer is a flat list of every destination, this page is three curated groups (see the BUG-017 note above). |
 | `widgets/more_profile_card.dart` (`MoreProfileCard`) | The منطقتي header card — avatar, "منطقتي" title + `{name} · {tier}` sub-line, gold caret. |
 | `widgets/more_list.dart` (`MoreSection` + `MoreRow`) | A titled group of nav rows + one nav row (title / optional trailing value / gold caret). |
+| `widgets/more_forum_info_section.dart` · `widgets/more_settings_section.dart` · `widgets/more_legal_section.dart` | One widget per group — معلومات الملتقى, الإعدادات, قانوني. The forum-info and legal sections take the effective `AppRole` and apply the D-519 row filter themselves; the settings section takes the account email instead (its rows are role-independent) and is the `ConsumerWidget` that owns the language row. |
+| `widgets/more_footer.dart` (`MoreFooter`) | The sign-out link + the version line off `installedAppVersionProvider` (D-736). |
 
 `_moreProfileProvider` is a 7-line private best-effort wrapper (kept in the screen
-— moving a trivial private provider to its own file would be over-engineering; the
-test drives it via the `myAreaRepositoryProvider` override). Screen was already
-fully tokenised (no raw `Color(0x..)`). Every file ≤400 lines.
+— a private provider used by one screen is the documented exception to
+"providers live in `data/`", and the test drives it via the
+`myAreaRepositoryProvider` override). Screen was already fully tokenised (no raw
+`Color(0x..)`). Every file ≤400 lines.
+
+**2026-08-18 (delivery clean-code programme, structure only):** the three groups
+and the footer came out of the screen's `build`, taking `more_screen.dart` from
+181 to **96** lines; the table above is updated to match. Behaviour-preserving —
+the `more_1129-17224` golden held **without** `--update-goldens` and the screen
+tests passed unchanged.
 
 ## L4 Figma parity (frame 1129:17224)
 

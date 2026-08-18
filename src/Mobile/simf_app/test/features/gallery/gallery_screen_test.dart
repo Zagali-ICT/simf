@@ -8,6 +8,8 @@ import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/features/gallery/gallery_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../../support/simf_test_scope.dart';
+
 const _items = <MediaItem>[
   MediaItem(
     id: 'm1',
@@ -61,7 +63,7 @@ Future<void> _pump(
   );
 
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         simfDataConfigProvider.overrideWithValue(_testConfig),
         mediaItemsProvider.overrideWith((ref) async => items()),

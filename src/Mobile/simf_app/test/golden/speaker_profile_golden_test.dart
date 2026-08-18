@@ -14,6 +14,7 @@ import 'package:simf_app/features/speakers/data/speakers_repository.dart';
 import 'package:simf_app/features/speakers/speaker_profile_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../support/simf_test_scope.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the Speaker-profile screen against Figma frame **908:2110**
@@ -110,7 +111,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      ProviderScope(
+      simfTestScope(
         overrides: <Override>[
           simfDataConfigProvider.overrideWithValue(_config),
           speakersRepositoryProvider.overrideWithValue(_FakeSpeakersRepo()),

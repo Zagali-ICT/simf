@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/core/validation/plate_validation.dart';
 import 'package:simf_app/features/account/widgets/lookup_search_sheet.dart';
-import 'package:simf_app/features/account/widgets/lookup_search_sheet_launcher.dart';
 import 'package:simf_app/features/account/widgets/plate_number_field.dart';
 import 'package:simf_app/features/visitor_profile/data/visitor_profile_validators.dart';
 

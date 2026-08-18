@@ -12,6 +12,8 @@ import 'package:simf_app/features/speakers/data/speakers_repository.dart';
 import 'package:simf_app/features/speakers/speakers_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../../support/simf_test_scope.dart';
+
 const _speakers = <SpeakerSummary>[
   SpeakerSummary(
     id: 'sp1',
@@ -105,7 +107,7 @@ Future<void> _pump(
     ],
   );
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         simfDataConfigProvider.overrideWithValue(_testConfig),
         speakersRepositoryProvider.overrideWithValue(repo),

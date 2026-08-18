@@ -47,7 +47,7 @@ import '../../tool/comment_census.dart';
 /// signal block genuinely had to go (a decision that was reversed, a node that
 /// no longer exists), say which one and why in the same changeset, then move
 /// the number by exactly that many.
-const int _signalBlockBaseline = 1789;
+const int _signalBlockBaseline = 1845;
 
 void main() {
   group('comment signal ratchet', () {

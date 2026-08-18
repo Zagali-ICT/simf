@@ -12,6 +12,7 @@ import 'package:simf_app/features/contacts/data/contacts_repository.dart';
 import 'package:simf_app/features/contacts/my_contacts_screen.dart';
 
 import '../features/contacts/_fake_contacts_repo.dart';
+import '../support/simf_test_scope.dart';
 import 'golden_fonts.dart';
 
 /// Render-lock golden of the "My Contacts" screen (جهات الاتصال, FDS-014,
@@ -51,7 +52,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      ProviderScope(
+      simfTestScope(
         overrides: <Override>[
           contactsRepositoryProvider.overrideWithValue(repo),
         ],

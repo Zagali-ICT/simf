@@ -11,6 +11,7 @@ import 'package:simf_app/core/organization_profile/organization_profile.dart';
 import 'package:simf_app/features/splash/data/splash_controller.dart';
 import 'package:simf_app/features/splash/splash_screen.dart';
 
+import '../support/simf_test_scope.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the Splash / bootstrap screen against Figma frame
@@ -50,7 +51,7 @@ void main() {
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(
-      ProviderScope(
+      simfTestScope(
         overrides: <Override>[
           splashControllerProvider
               .overrideWith(() => _StubSplashController(const SplashLoading())),

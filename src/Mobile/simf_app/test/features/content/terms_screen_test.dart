@@ -8,6 +8,8 @@ import 'package:simf_app/features/content/data/content_repository.dart';
 import 'package:simf_app/features/content/terms_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../../support/simf_test_scope.dart';
+
 /// A fake content repo returning a canned block or throwing — so the Terms
 /// screen's load → state glue (loaded / empty / error / gate) is testable.
 class _FakeContentRepository implements ContentRepository {
@@ -34,7 +36,7 @@ Future<void> _pump(
   bool requireConsent = false,
 }) async {
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         contentRepositoryProvider.overrideWithValue(repo),
       ],

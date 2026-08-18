@@ -10,7 +10,6 @@ const Set<String> sessionsChipGroups = <String>{
 };
 const Set<String> vipChipGroups = <String>{'Vip'};
 
-/// Which chip the inbox is currently filtered by.
 enum NotificationFilter { all, sessions, vip }
 
 /// The group for [item]: the server `group`, or a client fallback derived from

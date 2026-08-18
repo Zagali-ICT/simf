@@ -11,6 +11,8 @@ import 'package:simf_app/features/delegations/data/delegations_repository.dart';
 import 'package:simf_app/features/delegations/delegations_screen.dart';
 import 'package:simf_app/features/delegations/widgets/delegations_stats_strip.dart';
 
+import '../../support/simf_test_scope.dart';
+
 DelegationItem _item({
   required int id,
   required String code,
@@ -52,7 +54,7 @@ Future<void> _pump(
     ],
   );
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         // Bi-Meeting rework — the public screen reads the meeting-access flags
         // to decide card tappability; a guest (none) keeps the plain info

@@ -11,6 +11,8 @@ import 'package:simf_app/features/sessions/data/sessions_repository.dart';
 import 'package:simf_app/features/sessions/sessions_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../../support/simf_test_scope.dart';
+
 // The day banner builds {base}/app/assets/ProgrammeDayImage/{id}/image; the test
 // network-image loads fail, so the banner shows its fallback.
 const _testConfig = SimfDataConfig(
@@ -126,7 +128,7 @@ Future<void> _pump(
   );
 
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         sessionsRepositoryProvider.overrideWithValue(repo),
         simfDataConfigProvider.overrideWithValue(_testConfig),

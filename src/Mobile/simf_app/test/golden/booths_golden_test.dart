@@ -14,6 +14,7 @@ import 'package:simf_app/features/venuemap/data/venue_map_models.dart';
 import 'package:simf_app/features/venuemap/data/venue_map_repository.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../support/simf_test_scope.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the Booths/Exhibition screen against Figma frame
@@ -116,7 +117,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      ProviderScope(
+      simfTestScope(
         overrides: <Override>[
           simfDataConfigProvider.overrideWithValue(_config),
           venueMapRepositoryProvider.overrideWithValue(_FakeVenueRepo()),

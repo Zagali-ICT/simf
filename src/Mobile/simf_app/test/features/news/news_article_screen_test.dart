@@ -8,6 +8,8 @@ import 'package:simf_app/features/news/data/news_repository.dart';
 import 'package:simf_app/features/news/news_article_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../../support/simf_test_scope.dart';
+
 NewsArticle _article() => NewsArticle(
       id: 'n1',
       title: 'Forum opens',
@@ -42,7 +44,7 @@ class _FakeNewsRepo implements NewsRepository {
 
 Future<void> _pump(WidgetTester tester, NewsRepository repo) async {
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[newsRepositoryProvider.overrideWithValue(repo)],
       child: const MaterialApp(
         locale: Locale('en'),

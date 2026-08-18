@@ -8,6 +8,8 @@ import 'package:simf_app/features/sponsors/data/sponsors_repository.dart';
 import 'package:simf_app/features/sponsors/sponsor_detail_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../../support/simf_test_scope.dart';
+
 const _config = SimfDataConfig(
   baseUrl: 'http://test.local/api/v1',
   appKey: 'test',
@@ -37,7 +39,7 @@ Future<void> _pump(
   Locale locale = const Locale('en'),
 }) async {
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         simfDataConfigProvider.overrideWithValue(_config),
         sponsorDetailProvider.overrideWith((ref, id) async {

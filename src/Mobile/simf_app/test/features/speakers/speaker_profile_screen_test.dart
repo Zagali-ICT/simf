@@ -12,6 +12,8 @@ import 'package:simf_app/features/speakers/speaker_profile_screen.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../../support/simf_test_scope.dart';
+
 // The avatar builds the photo URL from the base; the must-override config
 // provider throws otherwise. The test HTTP client fails the load → initials.
 const _testConfig = SimfDataConfig(
@@ -176,7 +178,7 @@ Future<void> _pump(
     ],
   );
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         simfDataConfigProvider.overrideWithValue(_testConfig),
         speakersRepositoryProvider.overrideWithValue(repo),

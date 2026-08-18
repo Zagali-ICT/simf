@@ -78,8 +78,6 @@ class ProgrammeBody extends ConsumerWidget {
         ? AssetUrls.image(baseUrl, AssetKind.programmeDayImage, selected.id)
         : null;
 
-    // The selected day's sessions, filtered by the active type tab + the
-    // search.
     final sessions = sessionsForDay(
       selected,
       type: typeFilter,

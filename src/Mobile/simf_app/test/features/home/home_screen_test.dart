@@ -27,6 +27,8 @@ import 'package:simf_app/features/notifications/data/notifications_repository.da
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../../support/simf_test_scope.dart';
+
 // The post card builds `{base}/app/assets/NewsImage/{id}/image`; the test
 // network-image loads fail, so the image's errorBuilder shows the fallback.
 const _testConfig = SimfDataConfig(
@@ -299,7 +301,7 @@ Future<void> _pump(
       );
 
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         authControllerProvider.overrideWith(() => controller),
         if (localePrefs != null)

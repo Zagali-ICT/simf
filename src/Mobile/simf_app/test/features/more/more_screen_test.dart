@@ -12,6 +12,8 @@ import 'package:simf_app/features/myarea/data/myarea_repository.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../../support/simf_test_scope.dart';
+
 const _testConfig = SimfDataConfig(
   baseUrl: 'http://test.local/api/v1',
   appKey: 'test',
@@ -123,7 +125,7 @@ Future<void> _pump(
   addTearDown(tester.view.resetDevicePixelRatio);
 
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         simfDataConfigProvider.overrideWithValue(_testConfig),
         authControllerProvider

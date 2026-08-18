@@ -12,6 +12,7 @@ import 'package:simf_app/features/myarea/data/myarea_repository.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 
 import '../../features/accessibility/_fake_prefs.dart';
+import '../../support/simf_test_scope.dart';
 
 Session _session({
   AppRole role = AppRole.visitor,
@@ -126,7 +127,7 @@ Future<void> _pump(
   );
 
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         authControllerProvider.overrideWith(() => auth),
         myAreaRepositoryProvider.overrideWithValue(_FakeMyAreaRepository()),

@@ -7,6 +7,8 @@ import 'package:simf_app/features/account/data/profile_repository.dart';
 import 'package:simf_app/features/home/widgets/greeting_header.dart';
 import 'package:simf_app/features/notifications/data/notifications_repository.dart';
 
+import '../../../support/simf_test_scope.dart';
+
 /// OA-D1 — the Home greeting used to render `name.trim().split(' ').first`,
 /// which amputated every Arabic compound given name (عبد الله → عبد) and
 /// greeted the wrong token whenever the family name came first. The greeting
@@ -17,7 +19,7 @@ Future<void> _pumpGreeting(
   Locale locale = const Locale('ar'),
 }) async {
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         // The bell watches the unread count and the avatar watches the photo
         // bytes — both auth-scoped. Stub them so a header test does not have to

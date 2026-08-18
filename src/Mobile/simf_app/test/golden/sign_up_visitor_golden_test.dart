@@ -15,6 +15,7 @@ import 'package:simf_app/features/account/data/region_models.dart';
 import 'package:simf_app/features/account/data/region_repository.dart';
 import 'package:simf_app/features/account/sign_up_visitor_screen.dart';
 
+import '../support/simf_test_scope.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the sign-up profile-data form against Figma frame
@@ -127,7 +128,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      ProviderScope(
+      simfTestScope(
         overrides: <Override>[
           profileRepositoryProvider.overrideWithValue(_FakeProfileRepository()),
           // D-547 — the place-of-birth picker reads regionsProvider; resolve it

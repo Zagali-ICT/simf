@@ -8,6 +8,8 @@ import 'package:simf_app/features/sessions/data/seat_map_repository.dart';
 import 'package:simf_app/features/sessions/seat_picker_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../../support/simf_test_scope.dart';
+
 SessionSeatMap _map() => const SessionSeatMap(
       rowLabels: <String>['A', 'B'],
       seatsPerRow: 3,
@@ -166,7 +168,7 @@ Future<_FakePickerRepo> _pump(WidgetTester tester,
   addTearDown(tester.view.resetDevicePixelRatio);
   final pickerRepo = repo ?? _FakePickerRepo(_map());
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         seatMapRepositoryProvider.overrideWithValue(pickerRepo),
       ],

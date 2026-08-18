@@ -83,8 +83,6 @@ class _AiSummaryScreenState extends ConsumerState<AiSummaryScreen> {
     });
   }
 
-  /// That day's sessions (the agenda timeline) — the cached programme filtered
-  /// to the selected session's local calendar day, time-ordered.
   List<SessionListItem> _dayAgenda(List<SessionListItem> all) {
     final selected = _selectedSession;
     if (selected == null) {
@@ -216,7 +214,6 @@ class _AiSummaryScreenState extends ConsumerState<AiSummaryScreen> {
         _SummaryTab.speakers => l10n.aiSummarySpeakersHeading,
       };
 
-  /// The active tab's content — bullets, the empty note, a loader, or retry.
   Widget _tabBody(AppL10n l10n, bool isArabic) {
     if (_summaryAsync.isLoading) {
       return const Padding(
@@ -267,8 +264,6 @@ class _AiSummaryScreenState extends ConsumerState<AiSummaryScreen> {
     );
   }
 
-  /// The published full-text paragraph (or the empty note) under the generate
-  /// button.
   String _summaryParagraph(AppL10n l10n, bool isArabic) {
     final text = _summary?.localizedFullText(isArabic: isArabic).trim() ?? '';
     return text.isEmpty ? l10n.aiSummaryNone : text;

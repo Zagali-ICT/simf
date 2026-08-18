@@ -10,6 +10,8 @@ import 'package:simf_app/features/requests/data/request_models.dart';
 import 'package:simf_app/features/requests/data/requests_repository.dart';
 import 'package:simf_app/features/requests/requests_screen.dart';
 
+import '../../support/simf_test_scope.dart';
+
 AppRequestItem _item({
   required AppRequestKind kind,
   required String id,
@@ -44,7 +46,7 @@ Future<void> _pump(
     ],
   );
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         myRequestsProvider.overrideWith((ref) async {
           if (fail) {

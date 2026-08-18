@@ -75,7 +75,7 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
     }
     try {
       await repo.uploadAvatar(bytes: selfie.bytes, filename: selfie.filename);
-      bust.state++;
+      bust.bump();
       ref.invalidate(myAreaDashboardProvider);
     } on ApiFailure catch (e) {
       // Surface the server's actual (user-safe, bilingual) reason instead of a

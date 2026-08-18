@@ -4,8 +4,8 @@
 |---|---|
 | Route | `/speakers/:speakerId` (`RouteNames.speakerProfile`, page #20) · Guest+ (meeting request: Visitor) |
 | Surface | Mobile (Flutter) |
-| Screen | `lib/features/speakers/speaker_profile_screen.dart` (`SpeakerProfileScreen`, 272 lines — state + composition) |
-| Widgets | `lib/features/speakers/widgets/` — `speaker_profile_header` · `speaker_avatar` · `speaker_cv` (`SpeakerCvSection`/`SpeakerCvTabs`/`SpeakerCvCard`) · `speaker_sessions` (`SpeakerSectionHeading`/`SpeakerSessionRow`) · `meeting_request_sheet` · `meeting_slot_pickers` (`MeetingDayCard`/`MeetingTimeChip`) |
+| Screen | `lib/features/speakers/speaker_profile_screen.dart` (`SpeakerProfileScreen`, 243 lines — state + composition) |
+| Widgets | `lib/features/speakers/widgets/` — `speaker_profile_header` · `speaker_avatar` · `speaker_cv` (`SpeakerCvSection`/`SpeakerCvTabs`/`SpeakerCvCard`) + `cv_tab` · `speaker_sessions` (`SpeakerSectionHeading`/`SpeakerSessionRow`) · `meeting_request_sheet` (`MeetingRequestSheet` — the speaker-side wrapper: it supplies the speaker options, the submit call and its own `_failureText`, then hands the rest to the shared form) · `meeting_request_form` (`MeetingRequestForm<T>` — the parameterised body **shared with the delegation sheet**) and its pieces `meeting_target_picker` (`MeetingTargetPicker<T>`) · `meeting_sheet_fields` (label / hint / spinner / search / subject) · `meeting_slot_section` · `meeting_send_button` · `meeting_slot_pickers` (`MeetingDayCard`/`MeetingTimeChip`) · `speaker_option_tile` |
 | Figma node | `908:2110` (meeting sheet 1776:4958, day/time pickers 1776:4975/5036) |
 | Shell | `SimfPageShell` with a custom `SpeakerProfileHeader` (two-line name/rank + circled back) |
 | API | `GET /app/speakers/{id}` · `GET …/meeting-requests/slots` · `POST …/meeting-requests` (D-269/D-474/D-475) · photo `GET /app/assets/SpeakerPhoto/{id}/image` |
@@ -63,3 +63,17 @@ in [`SimfImageViewer`](../../../../src/Mobile/simf_app/lib/app/widgets/simf_imag
 (pinch-zoom, named for a screen reader, close / back to dismiss). The rules and
 their scenarios live once in [`e2e/mobile-logo-viewer.md`](../../../tests/e2e/mobile-logo-viewer.md)
 (E2E-LOGO-001..008).
+
+## Changelog
+- **2026-08-18 (delivery clean-code programme, structure only):** the speaker
+  meeting-request sheet and the delegation one were **79% identical** — same
+  target picker, same subject field, same slot section, same send button, same
+  submit/failure choreography, differing only in what is being requested. They are
+  now one parameterised `MeetingRequestForm<T>` (in `speakers/widgets/`), and each
+  sheet keeps its own thin wrapper: `MeetingRequestSheet` here (132 lines) and
+  `DelegationMeetingRequestSheet` in `delegations/widgets/` (146 lines), each still
+  owning its own options, its own submit and its own `_failureText` — so the A35
+  rule that a delegation rejection shows the SERVER's reason and never the speaker
+  copy is unchanged and still covered by its own scenarios
+  (`E2E-DELREQ-011/012`). The screen itself went 272 → **243** lines. Both sheets'
+  widget tests and the `speaker_profile_908-2110` golden passed unchanged.

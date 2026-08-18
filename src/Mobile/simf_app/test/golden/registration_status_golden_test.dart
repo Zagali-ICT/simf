@@ -12,6 +12,7 @@ import 'package:simf_app/app/theme/app_theme.dart';
 import 'package:simf_app/features/registration/registration_status_screen.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 
+import '../support/simf_test_scope.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the Registration-status screen against Figma frame
@@ -79,7 +80,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      ProviderScope(
+      simfTestScope(
         overrides: <Override>[
           authControllerProvider.overrideWith(_ApprovedAuthController.new),
         ],

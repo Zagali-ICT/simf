@@ -17,6 +17,8 @@ import 'package:simf_app/features/staff/data/staff_repository.dart';
 import 'package:simf_app/features/staff/register_visitor_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../../support/simf_test_scope.dart';
+
 /// Fake lookups — only the three the screen reads; the rest throw.
 class _FakeProfileRepo implements ProfileRepository {
   _FakeProfileRepo({this.fail = false, this.profileTypes});
@@ -139,7 +141,7 @@ Future<void> _pump(
   String language = 'en',
 }) async {
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         profileRepositoryProvider.overrideWithValue(profile),
         staffRepositoryProvider.overrideWithValue(staff),

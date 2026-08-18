@@ -206,7 +206,6 @@ class _IdentityVerificationScreenState
         bytes = await shot.readAsBytes();
         _forwardName = shot.name;
       } on Object catch (_) {
-        // Fall through to the camera-required state below.
       }
     }
     await _stop();

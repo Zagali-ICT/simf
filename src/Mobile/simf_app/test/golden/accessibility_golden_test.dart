@@ -11,6 +11,7 @@ import 'package:simf_app/features/accessibility/accessibility_screen.dart';
 import 'package:simf_app/features/accessibility/data/accessibility_controller.dart';
 
 import '../features/accessibility/_fake_prefs.dart';
+import '../support/simf_test_scope.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the Accessibility screen against Figma frame **1116:16630**
@@ -32,7 +33,7 @@ void main() {
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(
-      ProviderScope(
+      simfTestScope(
         overrides: <Override>[
           accessibilityControllerProvider
               .overrideWith(() => AccessibilityController(prefs: FakePrefs())),

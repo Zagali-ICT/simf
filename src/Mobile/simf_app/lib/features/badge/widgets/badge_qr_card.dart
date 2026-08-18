@@ -24,7 +24,6 @@ class BadgeQrCard extends StatelessWidget {
   final AppL10n l10n;
   final MyAreaIdentity identity;
 
-  /// The opaque value the QR encodes.
   final String qrId;
 
   /// The pre-masked human reference shown on the ID line (`•••• 1234`).

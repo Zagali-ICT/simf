@@ -10,6 +10,8 @@ import 'package:simf_app/features/feedback/data/rating_models.dart';
 import 'package:simf_app/features/feedback/rate_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../../support/simf_test_scope.dart';
+
 /// A fake repository that returns a configured form and captures the
 /// submission.
 class _FakeFeedbackRepo implements FeedbackRepository {
@@ -130,7 +132,7 @@ Future<void> _pump(
   );
 
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[feedbackRepositoryProvider.overrideWithValue(repo)],
       child: MaterialApp.router(
         routerConfig: router,

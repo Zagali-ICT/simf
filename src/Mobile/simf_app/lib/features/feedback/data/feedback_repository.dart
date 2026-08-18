@@ -69,7 +69,6 @@ typedef RatingFormKey = ({
   String? targetId,
 });
 
-/// The rating form for [RatingFormKey], with any existing submission on it.
 final ratingFormProvider = FutureProvider.autoDispose
     .family<RatingFormView, RatingFormKey>(
   (ref, key) => ref.watch(feedbackRepositoryProvider).getForm(

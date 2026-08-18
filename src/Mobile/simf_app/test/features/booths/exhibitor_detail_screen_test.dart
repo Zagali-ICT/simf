@@ -8,6 +8,8 @@ import 'package:simf_app/features/venuemap/data/venue_map_models.dart';
 import 'package:simf_app/features/venuemap/data/venue_map_repository.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../../support/simf_test_scope.dart';
+
 // The HTTP client never resolves network-image loads in tests, so the logo tile
 // stays in its (stable) loading state — the NetworkImage stays in the tree with
 // its URL, which is exactly what these tests assert.
@@ -61,7 +63,7 @@ Set<String> _networkImageUrls(WidgetTester tester) => tester
 
 Future<void> _pump(WidgetTester tester, BoothDetail detail) async {
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         simfDataConfigProvider.overrideWithValue(_testConfig),
         venueMapRepositoryProvider.overrideWithValue(_FakeRepo(detail)),

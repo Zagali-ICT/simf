@@ -7,11 +7,12 @@ import 'package:simf_app/features/accessibility/accessibility_screen.dart';
 import 'package:simf_app/features/accessibility/data/accessibility_controller.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../../support/simf_test_scope.dart';
 import '_fake_prefs.dart';
 
 Future<void> _pump(WidgetTester tester, FakePrefs prefs) async {
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         accessibilityControllerProvider
             .overrideWith(() => AccessibilityController(prefs: prefs)),

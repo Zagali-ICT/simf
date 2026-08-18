@@ -23,7 +23,6 @@ class _SessionPresentationsScreenState
   // 0 = الكل (all); 1..n = the nth distinct event day.
   int _dayTab = 0;
 
-  /// Pull-to-refresh — re-fetch the presentations (invalidate + await next).
   Future<void> _refresh() => refreshAsync(ref, presentationsProvider.future);
 
   @override

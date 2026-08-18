@@ -58,7 +58,6 @@ class _VenueMapScreenState extends ConsumerState<VenueMapScreen> {
     final scale =
         (_transform.value.getMaxScaleOnAxis() * factor).clamp(0.3, 4.0);
     final centre = _viewport.center(Offset.zero);
-    // Re-anchor the zoom on the viewport centre.
     final scenePoint = _transform.toScene(centre);
     _transform.value = Matrix4.identity()
       ..translateByDouble(

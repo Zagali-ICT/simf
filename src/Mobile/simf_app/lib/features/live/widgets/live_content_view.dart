@@ -29,7 +29,6 @@ class LiveContentView extends StatelessWidget {
   final LiveSession session;
   final List<UpcomingSession> upcoming;
 
-  /// Whether the sign-language feed is the one being played.
   final bool showSignLanguage;
 
   /// False for the forum-wide synthetic session, which has no id and therefore

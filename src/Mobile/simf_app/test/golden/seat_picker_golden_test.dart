@@ -13,6 +13,7 @@ import 'package:simf_app/features/sessions/data/seat_map_models.dart';
 import 'package:simf_app/features/sessions/data/seat_map_repository.dart';
 import 'package:simf_app/features/sessions/seat_picker_screen.dart';
 
+import '../support/simf_test_scope.dart';
 import 'golden_fonts.dart';
 
 /// Render-lock golden of the Seat-Picker screen (D-485 — it has no Figma frame
@@ -113,7 +114,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      ProviderScope(
+      simfTestScope(
         overrides: <Override>[
           seatMapRepositoryProvider.overrideWithValue(_FakeSeatRepo()),
         ],

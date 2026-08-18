@@ -10,6 +10,8 @@ import 'package:simf_app/features/gates/data/offline_badge.dart';
 import 'package:simf_app/features/gates/gate_scan_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../../support/simf_test_scope.dart';
+
 OperatorGate _gate({
   String id = 'g1',
   int directionMode = 2,
@@ -163,7 +165,7 @@ class _FakeGates implements GatesRepository {
 
 Future<void> _pump(WidgetTester tester, _FakeGates repo) async {
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         gatesRepositoryProvider.overrideWithValue(repo),
       ],

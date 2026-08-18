@@ -28,7 +28,6 @@ class NationalitySection extends StatelessWidget {
   final List<CountryItem> countries;
   final String? selectedCode;
 
-  /// True once submit has been pressed and no country is chosen.
   final bool showError;
 
   final VoidCallback onTap;

@@ -85,8 +85,6 @@ class MeetingCard extends StatelessWidget {
     );
   }
 
-  // Row 1 — the kind headline over the rank line, with the flag badge at the
-  // end.
   Widget _headlineRow() {
     final flag = countryFlagEmoji(item.countryId);
     final rank = item.localizedRank(isArabic: isArabic)?.trim() ?? '';
@@ -136,7 +134,6 @@ class MeetingCard extends StatelessWidget {
     );
   }
 
-  // Row 2 — the speaker photo + name (gold), with a chevron when tappable.
   Widget _speakerRow() {
     final photoUrl = item.speakerId != null
         ? AssetUrls.image(baseUrl, AssetKind.speakerPhoto, item.speakerId!)
@@ -180,7 +177,6 @@ class MeetingCard extends StatelessWidget {
     );
   }
 
-  // Row 3 — the meeting date/time with a clock glyph, pinned to the inline start.
   Widget _timeRow() {
     return Align(
       alignment: AlignmentDirectional.centerStart,

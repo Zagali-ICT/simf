@@ -9,6 +9,8 @@ import 'package:simf_app/features/account/email_otp_verify_screen.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../../support/simf_test_scope.dart';
+
 /// Widget tests for the email-OTP second-factor screen (Page 003 2FA, frame
 /// 758:2616). The screen runs a 1s periodic resend timer, so these pump frames
 /// rather than `pumpAndSettle` (which would never settle); the timer is
@@ -64,7 +66,7 @@ Future<void> _pump(WidgetTester tester, _FakeAuthController controller) async {
   );
 
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         authControllerProvider.overrideWith(() => controller),
       ],

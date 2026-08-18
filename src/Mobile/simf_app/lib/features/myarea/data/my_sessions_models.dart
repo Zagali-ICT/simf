@@ -75,10 +75,8 @@ class MyAreaSessionItem {
     return minutes < 0 ? 0 : minutes;
   }
 
-  /// True once the session has finished (its end is in the past).
   bool hasEnded(DateTime nowUtc) => end.isBefore(nowUtc);
 
-  /// True while the session is still to come (its start is in the future).
   bool isUpcoming(DateTime nowUtc) => start.isAfter(nowUtc);
 
   /// True when the session has a replayable recording on the archive tab

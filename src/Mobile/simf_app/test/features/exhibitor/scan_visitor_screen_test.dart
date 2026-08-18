@@ -13,6 +13,8 @@ import 'package:simf_app/features/exhibitor/data/exhibitor_repository.dart';
 import 'package:simf_app/features/exhibitor/scan_visitor_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../../support/simf_test_scope.dart';
+
 /// Records the scanned code and either returns a captured card or throws the
 /// configured `ApiFailure` — so the screen's `_onCode` branches are testable.
 class _FakeExhibitorRepo implements ExhibitorRepository {
@@ -72,7 +74,7 @@ Future<void> _pump(WidgetTester tester, _FakeExhibitorRepo repo) async {
     ],
   );
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         exhibitorRepositoryProvider.overrideWithValue(repo),
       ],

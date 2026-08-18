@@ -48,8 +48,6 @@ class _HighlightsCarouselState extends State<HighlightsCarousel> {
     _startAutoAdvance();
   }
 
-  // Auto-advance to the next slide every [_interval], wrapping at the end. Only
-  // runs when there is more than one slide.
   void _startAutoAdvance() {
     if (widget.items.length <= 1) {
       return;

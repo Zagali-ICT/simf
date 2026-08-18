@@ -13,6 +13,8 @@ import 'package:simf_app/features/sessions/data/sessions_repository.dart'
     show programmeSessionsProvider;
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../../support/simf_test_scope.dart';
+
 SessionSummary _summary() => SessionSummary.fromJson(const <String, dynamic>{
       'keyPoints': 'Coral cover rising\nNew survey method',
       'keyPointsArabic': 'تحسن الغطاء المرجاني\nأسلوب مسح جديد',
@@ -108,7 +110,7 @@ Future<void> _pump(
   );
 
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         simfDataConfigProvider.overrideWithValue(_testConfig),
         sessionSummaryRepositoryProvider.overrideWithValue(repo),

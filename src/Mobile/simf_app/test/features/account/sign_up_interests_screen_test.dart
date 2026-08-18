@@ -11,6 +11,8 @@ import 'package:simf_app/features/account/data/profile_repository.dart';
 import 'package:simf_app/features/account/sign_up_interests_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../../support/simf_test_scope.dart';
+
 /// A fake profile repository for the interests screen (Page 007‑01) — returns
 /// canned interests and records the single upsert + image upload, so the
 /// pick → save → navigate glue is testable without HTTP. Only the three methods
@@ -178,7 +180,7 @@ Future<void> _pump(
   );
 
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         profileRepositoryProvider.overrideWithValue(repo),
       ],
@@ -234,7 +236,7 @@ Future<void> _pumpEdit(
   );
 
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         profileRepositoryProvider.overrideWithValue(repo),
       ],

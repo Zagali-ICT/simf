@@ -11,6 +11,8 @@ import 'package:simf_app/features/requests/data/request_models.dart';
 import 'package:simf_app/features/requests/data/requests_repository.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../../support/simf_test_scope.dart';
+
 const _config = SimfDataConfig(
   baseUrl: 'http://test.local/api/v1',
   appKey: 'test',
@@ -74,7 +76,7 @@ Future<void> _pump(
     ],
   );
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         myRequestsProvider.overrideWith((ref) async {
           if (fail) {

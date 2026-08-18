@@ -14,6 +14,7 @@ import 'package:simf_app/features/home/widgets/visitor_home.dart';
 import 'package:simf_app/features/news/data/news_models.dart';
 import 'package:simf_app/features/notifications/data/notifications_repository.dart';
 
+import '../support/simf_test_scope.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the signed-in Home (`VisitorHome`, Figma frame
@@ -69,7 +70,7 @@ final _highlights = <NewsListItem>[
   _post('n2', 'جلسات حوارية حول مستقبل الأمن البحري'),
 ];
 
-Widget _wrap(Widget home) => ProviderScope(
+Widget _wrap(Widget home) => simfTestScope(
       overrides: <Override>[
         // A fixed unread count so the bell badge renders deterministically.
         unreadNotificationCountProvider.overrideWith((ref) async => 3),
@@ -139,7 +140,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      ProviderScope(
+      simfTestScope(
         overrides: <Override>[
           unreadNotificationCountProvider.overrideWith((ref) async => 0),
           orgProfileProvider.overrideWith(_FakeOrgProfile.new),

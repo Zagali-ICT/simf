@@ -31,7 +31,6 @@ class LiveBroadcastDetails extends StatelessWidget {
   final LiveSession session;
   final List<UpcomingSession> upcoming;
 
-  /// Whether the sign-language feed is the one being played.
   final bool showSignLanguage;
 
   /// Both a main and a sign-language feed exist, so the toggle has something
@@ -109,8 +108,6 @@ class LiveBroadcastDetails extends StatelessWidget {
             ),
           ],
 
-          // Sign-language-only note (a sign feed announced with no main
-          // feed → nothing to toggle, just the note).
           if (signLanguageOnly) ...<Widget>[
             const SizedBox(height: SimfTokens.space4),
             SignLanguageNote(label: l10n.liveSignLanguageAvailable),

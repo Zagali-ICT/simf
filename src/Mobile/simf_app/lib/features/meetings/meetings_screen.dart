@@ -89,7 +89,6 @@ class _MeetingsScreenState extends ConsumerState<MeetingsScreen> {
     }
   }
 
-  /// Pull-to-refresh — re-fetch the shared feed the meetings view derives from.
   Future<void> _refresh() {
     ref.invalidate(myRequestsProvider);
     return refreshAsync(ref, myMeetingRequestsProvider.future);

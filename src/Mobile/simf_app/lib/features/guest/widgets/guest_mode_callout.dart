@@ -3,9 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 
-/// The accent "you are browsing as a guest" callout: what a guest can browse,
-/// and what needs an account (the smart badge, personal notifications and
-/// booking).
 class GuestModeCallout extends StatelessWidget {
   const GuestModeCallout({super.key});
 

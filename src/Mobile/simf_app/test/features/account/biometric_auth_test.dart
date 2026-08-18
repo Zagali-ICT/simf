@@ -8,6 +8,8 @@ import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/features/account/biometric_auth.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 
+import '../../support/simf_test_scope.dart';
+
 /// A controllable [BiometricAuth] — `implements` ignores the real constructor
 /// (which needs a Ref + local_auth), so the nudge and the toggle can be driven
 /// without the device plugin. #7a — enrolment is no longer one-tap here; the
@@ -97,7 +99,7 @@ Future<void> _pump(
   );
 
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         biometricAuthProvider.overrideWithValue(biometric),
         // The nudge guard (D-666) reads the auth state; default to an approved

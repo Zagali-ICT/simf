@@ -9,6 +9,8 @@ import 'package:simf_app/features/sessions/data/session_detail_repository.dart';
 import 'package:simf_app/features/sessions/data/session_models.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../../support/simf_test_scope.dart';
+
 class _FakeQuestionsRepo implements QuestionsRepository {
   _FakeQuestionsRepo({this.failStatus, this.failCode});
 
@@ -86,7 +88,7 @@ Future<void> _pump(
   Locale locale = const Locale('en'),
 }) async {
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         questionsRepositoryProvider.overrideWithValue(repo),
         // Default: a detail with no description → the data block stays hidden,

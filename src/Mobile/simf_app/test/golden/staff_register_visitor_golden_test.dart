@@ -13,6 +13,7 @@ import 'package:simf_app/features/staff/data/staff_models.dart';
 import 'package:simf_app/features/staff/data/staff_repository.dart';
 import 'package:simf_app/features/staff/register_visitor_screen.dart';
 
+import '../support/simf_test_scope.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the staff walk-in registration (إنشاء ملف زائر · iPad Pro
@@ -97,7 +98,7 @@ void main() {
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(
-      ProviderScope(
+      simfTestScope(
         overrides: <Override>[
           profileRepositoryProvider.overrideWithValue(_FakeProfileRepo()),
           staffRepositoryProvider.overrideWithValue(_FakeStaffRepo()),

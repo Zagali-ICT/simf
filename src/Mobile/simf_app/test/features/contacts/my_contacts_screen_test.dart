@@ -7,6 +7,7 @@ import 'package:simf_app/features/contacts/data/contact_models.dart';
 import 'package:simf_app/features/contacts/data/contacts_repository.dart';
 import 'package:simf_app/features/contacts/my_contacts_screen.dart';
 
+import '../../support/simf_test_scope.dart';
 import '_fake_contacts_repo.dart';
 
 SavedContactRow _row({
@@ -27,7 +28,7 @@ SavedContactRow _row({
 
 Future<void> _pump(WidgetTester tester, FakeContactsRepo repo) async {
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         contactsRepositoryProvider.overrideWithValue(repo),
       ],

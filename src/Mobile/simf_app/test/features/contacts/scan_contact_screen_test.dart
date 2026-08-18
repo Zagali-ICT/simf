@@ -8,11 +8,12 @@ import 'package:simf_app/features/contacts/data/contacts_repository.dart';
 import 'package:simf_app/features/contacts/scan_contact_screen.dart';
 import 'package:simf_app/features/contacts/widgets/contact_card.dart';
 
+import '../../support/simf_test_scope.dart';
 import '_fake_contacts_repo.dart';
 
 Future<void> _pump(WidgetTester tester, FakeContactsRepo repo) async {
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         contactsRepositoryProvider.overrideWithValue(repo),
       ],

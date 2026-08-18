@@ -9,6 +9,8 @@ import 'package:simf_app/features/meet/data/partner_directory_models.dart';
 import 'package:simf_app/features/meet/meet_people_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../../support/simf_test_scope.dart';
+
 // Build #13 — the meet screen is now the partner directory. One row per kind.
 const _entries = <PartnerDirectoryEntry>[
   PartnerDirectoryEntry(
@@ -106,7 +108,7 @@ Future<void> _pump(
   );
 
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         simfDataConfigProvider.overrideWithValue(_testConfig),
         ...overrides,

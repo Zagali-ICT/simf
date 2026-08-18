@@ -8,6 +8,8 @@ import 'package:simf_app/features/sessions/data/session_models.dart';
 import 'package:simf_app/features/sessions/widgets/session_arrival_action.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../../../support/simf_test_scope.dart';
+
 /// `gate-check-in-status` — owner 2026-07-31: a session arrival is established
 /// by the GATE SCAN at the hall door, so the session detail only REPORTS the
 /// `HallAttendance` row the door opened. These cover the three render states
@@ -68,7 +70,7 @@ Future<void> _pumpCard(
   bool hasEnded = false,
 }) async {
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         hallAttendanceRepositoryProvider.overrideWithValue(repository),
       ],

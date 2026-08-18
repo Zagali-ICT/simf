@@ -20,7 +20,6 @@ import 'package:simf_app/features/account/saudi_regions.dart';
 import 'package:simf_app/features/account/widgets/beige_tabs.dart';
 import 'package:simf_app/features/account/widgets/date_of_birth_field.dart';
 import 'package:simf_app/features/account/widgets/lookup_search_sheet.dart';
-import 'package:simf_app/features/account/widgets/lookup_search_sheet_launcher.dart';
 import 'package:simf_app/features/account/widgets/sign_up_visitor_face_photo_field.dart';
 import 'package:simf_app/features/account/widgets/sign_up_visitor_header_avatar.dart';
 import 'package:simf_app/features/account/widgets/sign_up_visitor_id_image_field.dart';
@@ -514,7 +513,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       if (faceBytes != null && faceName != null) {
         try {
           await repo.uploadAvatar(bytes: faceBytes, filename: faceName);
-          ref.read(avatarBustProvider.notifier).state++;
+          ref.read(avatarBustProvider.notifier).bump();
         } on ApiFailure {
           if (!mounted) return;
           if (_form.gender == AppGender.male) {

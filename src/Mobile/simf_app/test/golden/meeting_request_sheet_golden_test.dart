@@ -12,6 +12,7 @@ import 'package:simf_app/features/speakers/data/speaker_models.dart';
 import 'package:simf_app/features/speakers/data/speakers_repository.dart';
 import 'package:simf_app/features/speakers/widgets/meeting_request_sheet.dart';
 
+import '../support/simf_test_scope.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the "طلب مقابلة" meeting-request sheet against Figma frame
@@ -76,7 +77,7 @@ void main() {
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(
-      ProviderScope(
+      simfTestScope(
         overrides: <Override>[
           speakersRepositoryProvider.overrideWithValue(_FakeRepo()),
         ],

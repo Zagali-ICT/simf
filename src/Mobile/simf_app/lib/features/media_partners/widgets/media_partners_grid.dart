@@ -6,8 +6,6 @@ import 'package:simf_app/core/responsive/grid_columns.dart';
 import 'package:simf_app/features/media_partners/data/media_partner_models.dart';
 import 'package:simf_app/features/media_partners/widgets/partner_card.dart';
 
-/// The media-partners page body: the grid of partner cards, or the empty state
-/// when the feed carries none.
 class MediaPartnersGrid extends StatelessWidget {
   const MediaPartnersGrid({
     required this.partners,

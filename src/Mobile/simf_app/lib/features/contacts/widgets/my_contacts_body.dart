@@ -13,8 +13,6 @@ import 'package:simf_app/features/contacts/widgets/error_state.dart';
 import 'package:simf_app/features/contacts/widgets/saved_contact_sheet.dart';
 import 'package:simf_app/features/contacts/widgets/saved_contact_tile.dart';
 
-/// The My-Contacts list body: loading / error / empty / rows, each branch
-/// refreshable. A row opens the detail sheet (export vCard, remove).
 class MyContactsBody extends ConsumerWidget {
   const MyContactsBody({required this.onScan, super.key});
 

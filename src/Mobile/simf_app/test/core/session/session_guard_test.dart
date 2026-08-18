@@ -13,6 +13,8 @@ import 'package:simf_app/core/session/session_guard.dart';
 import 'package:simf_app/core/session/session_timeout_overlay.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 
+import '../../support/simf_test_scope.dart';
+
 final _t0 = DateTime.utc(2026, 1, 1, 12);
 
 CurrentUser _visitor() => CurrentUser(
@@ -72,7 +74,7 @@ void main() {
 
   setUp(() => nowValue = _t0);
 
-  Widget host(_FakeAuth auth, SessionActivity activity) => ProviderScope(
+  Widget host(_FakeAuth auth, SessionActivity activity) => simfTestScope(
         overrides: <Override>[
           authControllerProvider.overrideWith(() => auth),
           sessionActivityProvider.overrideWithValue(activity),

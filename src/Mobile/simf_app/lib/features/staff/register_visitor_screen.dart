@@ -643,7 +643,8 @@ class _StaffRegisterVisitorScreenState
 
   Future<void> _pickProfileType() async {
     final l10n = AppL10n.of(context);
-    final picked = await _openLookupSheet(
+    final picked = await showLookupSearchSheet(
+      context: context,
       options: <PickerOption>[
         for (final ProfileTypeItem t in _profileTypes)
           PickerOption(
@@ -663,7 +664,8 @@ class _StaffRegisterVisitorScreenState
 
   Future<void> _pickNationality() async {
     final l10n = AppL10n.of(context);
-    final picked = await _openLookupSheet(
+    final picked = await showLookupSearchSheet(
+      context: context,
       options: <PickerOption>[
         for (final CountryItem c in _countries)
           PickerOption(
@@ -690,7 +692,8 @@ class _StaffRegisterVisitorScreenState
 
   Future<void> _pickOrganisation() async {
     final l10n = AppL10n.of(context);
-    final picked = await _openLookupSheet(
+    final picked = await showLookupSearchSheet(
+      context: context,
       options: <PickerOption>[
         for (final OrganisationItem o in _organisations)
           PickerOption(
@@ -706,30 +709,6 @@ class _StaffRegisterVisitorScreenState
       return;
     }
     setState(() => _organisationId = picked);
-  }
-
-  /// Opens the shared searchable picker sheet and returns the picked value —
-  /// the same sheet the Create-profile lookups use (19j).
-  Future<String?> _openLookupSheet({
-    required List<PickerOption> options,
-    required String searchHint,
-    Key? searchFieldKey,
-  }) {
-    return showModalBottomSheet<String>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: SimfTokens.cardBeige,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(SimfTokens.radiusLarge),
-        ),
-      ),
-      builder: (_) => LookupSearchSheet(
-        options: options,
-        searchHint: searchHint,
-        searchFieldKey: searchFieldKey,
-      ),
-    );
   }
 
   String? _required(String? value) =>

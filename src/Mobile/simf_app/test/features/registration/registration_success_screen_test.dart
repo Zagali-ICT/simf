@@ -8,6 +8,8 @@ import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/core/site_settings/site_settings.dart';
 import 'package:simf_app/features/registration/registration_success_screen.dart';
 
+import '../../support/simf_test_scope.dart';
+
 Future<void> _pump(
   WidgetTester tester, {
   String messageEn = 'Congratulations, welcome',
@@ -34,7 +36,7 @@ Future<void> _pump(
   );
 
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         // D-461 — fixed site-settings so the screen never fires a real fetch.
         siteSettingsProvider.overrideWith(

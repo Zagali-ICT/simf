@@ -34,7 +34,6 @@ class FaqEntry {
       pickLocalized(answerArabic, answer, isArabic: isArabic);
 }
 
-/// One FAQ group with its ordered active entries.
 @immutable
 class FaqGroup {
   const FaqGroup({

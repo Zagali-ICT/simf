@@ -10,6 +10,8 @@ import 'package:simf_app/features/chatbot/data/ai_chat_history_repository.dart';
 import 'package:simf_app/features/chatbot/data/chat_message.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../../support/simf_test_scope.dart';
+
 class _FakeResponder implements ChatbotResponder {
   _FakeResponder(this.answer);
 
@@ -84,7 +86,7 @@ Future<void> _pump(
   );
 
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         simfDataConfigProvider.overrideWithValue(_testConfig),
         if (responder != null)

@@ -15,6 +15,8 @@ import 'package:simf_app/features/home/widgets/greeting_header.dart';
 import 'package:simf_app/features/notifications/data/notifications_repository.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../support/simf_test_scope.dart';
+
 /// Minimal in-memory prefs so a real [LocaleController] can back the
 /// language-toggle test without touching the platform store.
 class _FakePrefs implements SimfPrefsStorage {
@@ -89,7 +91,7 @@ Future<void> _pump(
   await tester.pumpWidget(
     // The shared header carries [SimfHeaderActions] (a ConsumerWidget), so the
     // shell needs a ProviderScope just like the running app (main.dart).
-    ProviderScope(
+    simfTestScope(
       overrides: overrides,
       child: MaterialApp.router(
         routerConfig: router,

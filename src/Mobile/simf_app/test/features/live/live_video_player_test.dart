@@ -6,6 +6,8 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/core/session/session_activity.dart';
 import 'package:simf_app/features/live/widgets/live_video_player.dart';
 
+import '../../support/simf_test_scope.dart';
+
 /// D-721 — the live player is the one surface allowed to break the app-wide
 /// portrait lock: landscape while the YouTube feed is fullscreen, portrait
 /// again on exit (and on dispose, in case we're torn down mid-fullscreen). The
@@ -52,7 +54,7 @@ void main() {
     // whose platform call is unimplemented in a headless test and degrades to
     // the error surface. That is irrelevant here — the keep-alive runs in
     // initState / a periodic Timer regardless of whether the feed ever plays.
-    Widget host(SessionActivity activity) => ProviderScope(
+    Widget host(SessionActivity activity) => simfTestScope(
           overrides: <Override>[
             sessionActivityProvider.overrideWithValue(activity),
           ],

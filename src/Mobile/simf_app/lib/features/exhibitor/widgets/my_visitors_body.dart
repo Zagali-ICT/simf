@@ -8,7 +8,6 @@ import 'package:simf_app/features/exhibitor/widgets/exhibitor_centered.dart';
 import 'package:simf_app/features/exhibitor/widgets/my_visitors_list.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// The My-Visitors body: loading / forbidden / error / empty / rows.
 class MyVisitorsBody extends ConsumerWidget {
   const MyVisitorsBody({super.key});
 

@@ -9,7 +9,135 @@ integration tests can run). Worktree **D:/SIMF/wt-app**. Toolchain: run flutter 
 Full plan: `C:\Users\LOQ\.claude\plans\based-on-app-clean-prancy-pudding.md` (owner-approved
 2026-07-03). Program docs: `~/.claude/skills/clean-code-skills/resources/`.
 
-## 2026-08-14 — remainder-closure run (supersedes everything below)
+## 2026-08-18 — clean-code round on `feat/profile-owned-admission-editions-badge` (supersedes everything below)
+
+Worktree **D:/swtclean**, driven by an orchestrator dispatching per-file agents;
+two commits landed, `28eb7292` and `5f8ad1ea`. The per-increment gate is
+unchanged from the runs below: `flutter analyze` clean, the suites green, and
+**every golden holding WITHOUT `--update-goldens`**.
+
+### The headline
+
+| Metric | Before | Now (2026-08-18) |
+|---|---|---|
+| `tool/conventions` findings | 11 | **1** — a single SIMF-C3 |
+| files over 400 lines under `lib/` | 13 | **8** |
+| `account/sign_up_visitor_screen.dart` | 1213 | **875** |
+| `staff/register_visitor_screen.dart` | 1068 | **808** |
+| top-level providers declared in a `*_screen.dart` | 24 | **0** |
+| widget classes at a feature root | 1 | **0** |
+| private widget classes under `lib/` | — | **0** |
+| ratchets added to `test/repo/` this round | — | **3** (joining the pre-existing `design_token_ratchet_test.dart`) |
+| Dart files / lines under `lib/` | 587 / ~65.2k | **696 / 68,360** |
+| `flutter analyze` | 0 | **0** — "No issues found!" |
+
+**Provenance, because a headline table is exactly where an unsourced number gets
+laundered into a fact.** Every "Now" cell was measured in this worktree today.
+The "Before" cells come from two places and neither is a memory: the
+orchestrator's brief for the two screen line counts and the conventions count,
+and `test/repo/feature_shape_test.dart`'s own header for the 24 providers, the 1
+root widget and the 13 oversized files.
+
+### Tests
+
+`46/46` in `packages/simf_auth_pkg` and `15/15` in `packages/simf_data_pkg`,
+both run here. The app suite is **1538** green **as reported by the
+orchestrator's run** — this agent was told not to re-run the full suite and did
+not, so that one number is theirs, not verified here. `test/golden/goldens/`
+holds **63** committed PNGs (the 4 further PNGs under `test/golden/failures/`
+are run artefacts, not goldens).
+
+### What landed
+
+* **Comments cut block-wise, not line-wise, and the surface then pinned.**
+  `dart run tool/comment_census.dart` reads
+  `{"commentLines":10616,"commentBlocks":3388,"signalBlocks":1815}` and
+  `test/repo/comment_signal_ratchet_test.dart` ratchets the SIGNAL count alone.
+  Total lines and total blocks are deliberately left unpinned: making those fall
+  is what a comment sweep is FOR, so a gate on them would fail the programme it
+  is meant to protect.
+* **Providers out of screens into `data/`**, finishing what the 2026-08-14 run
+  started. The ratchet's allow-list is now empty, so the rule holds outright and
+  the next screen to declare one reddens the build.
+* **67+ widgets extracted** from oversized `build()` methods (the orchestrator's
+  figure; not recounted here), every one PUBLIC and taking `super.key`.
+* **The two meeting sheets merged.** `speakers/meeting_request_sheet.dart` and
+  `delegations/delegation_meeting_request_sheet.dart` were 79% identical. The
+  shared half is now `speakers/widgets/meeting_request_form.dart` (378 lines);
+  the two callers are 132 and 146 lines and keep only what genuinely differs —
+  their repository calls, their copy, their failure mapping, and the delegation
+  side's عدد الحضور field.
+* **The two >1,000-line screens split** — `sign_up_visitor` 1213 -> 875,
+  `register_visitor` 1068 -> 808 — as far as a golden can prove and no further;
+  see "Still open" below.
+* **Three ratchets added** to `test/repo/`: `feature_shape_test.dart`,
+  `wire_keys_ratchet_test.dart` (pins **407** JSON key names in
+  `wire_keys.snapshot`) and `comment_signal_ratchet_test.dart`. They join the
+  pre-existing `design_token_ratchet_test.dart` — and, note,
+  `pull_to_refresh_coverage_test.dart` and `platform_projects_tracked_test.dart`,
+  which also redden the build, so the folder holds **six**. Do not quote "four
+  ratchets": that is a count of this round's involvement, not of the folder.
+* **`simf_data_pkg`'s `dio` constraint** `^5.7.0` -> `^5.10.0`.
+* **The governing counters re-measured** — this file, `CLAUDE.md`'s dated block
+  and `tool/conventions/README.md`, all dated 2026-08-18 with the commands that
+  produced them.
+
+### Reusable lessons banked this round
+
+* **A clean-code round breaks the DOCS more reliably than the code, and nothing
+  gates them.** The `test/repo/` ratchets and `tool/conventions` read code; the
+  63 goldens read pixels. The counters in `CLAUDE.md`, in
+  `tool/conventions/README.md` and in this file are the one artefact of a
+  refactor that no gate can see — so they rot silently and are then quoted as
+  current. `CLAUDE.md`'s own header said "date every count and re-measure before
+  trusting one", and it still carried 2026-08-13 figures after a round that moved
+  every one of them. Re-measure in the SAME changeset, and write the command
+  beside the number.
+* **Prune a ratchet list by MEASUREMENT, never by reading the previous list.**
+  `feature_shape_test.dart` records why: three of its four lists had gone empty
+  without anything saying so, and the fourth had lost five of thirteen entries. A
+  prune driven by which entries somebody remembered moving would have kept most
+  of them. Empty the list, run the test, and let its failure output re-derive it.
+* **A piped gate hides its exit code.** `dart run bin/simf_conventions.dart
+  --check --strict | tail -12; echo $?` reports `tail`'s status, not the
+  checker's. Reading `FAIL` in the output and `exit=0` in the same breath is how
+  you "find" a checker bug that is not there. Re-run unpiped before writing a
+  sentence about a gate's behaviour — `--check` really does exit 0 and
+  `--check --strict` really does exit 1.
+* **A documented allowance the gate rejects is worse than no allowance.**
+  `CLAUDE.md` section 1 carried "a `_Private` helper widget may share the screen
+  file only if it is <60 lines and used once". `tool/conventions` SIMF-C3 fires
+  on ANY private widget class, whatever its length — the two had been
+  contradicting each other in writing. The allowance is struck: an extracted
+  widget is public, takes `super.key`, and lives in its own file under
+  `widgets/`; only NON-widget helpers may be privatized. A framework-required
+  `_FooState extends State<Foo>` is not a widget class and the checker exempts
+  it explicitly.
+* **Leaving one finding in the baseline beats forcing it.** The last SIMF-C3 is
+  `_buildBody()` in the 875-line `sign_up_visitor_screen`, and its rule only
+  fires above 400 lines, so it is the FILE. Clearing it means moving the form's
+  controllers and the face-capture path, which D-666 says a green golden does not
+  cover. It stays, with the reason written at the baseline in
+  `tool/conventions/README.md` rather than in a commit message nobody will find.
+
+### Still open after this round
+
+1. **The one SIMF-C3**, above. `--check --strict` and deleting `baseline.json`
+   stay blocked on an on-device sign-up verification. **Nothing on this branch
+   performed one** — do not read the 1213 -> 875 split as evidence that it did.
+2. **8 files over 400 lines**, pinned in `feature_shape_test.dart`. Three are
+   generated-shaped app-level files (`app_l10n.dart` 2730, `tokens.dart` 1437,
+   `router.dart` 1236) and three are model files; those are a different problem
+   from an oversized screen and should not be shredded to hit the number.
+3. **116 inline `TextStyle(`** outside `app/theme/`. The raw-numeric form is
+   gone (`fontSize: <digit>` reads 0); what is left assembles token atoms and
+   still wants a named token.
+4. The device list carried forward from 2026-08-14 is unchanged: the 11 real
+   `Image.network` sizings and the 4 `EdgeInsets.only(left:)` sites.
+
+---
+
+## 2026-08-14 — remainder-closure run (superseded by the section above)
 
 **Branch `refactor/app-clean-code-3`**, worktree **D:/swtcc**, base `c88e771b`
 (`origin/main`). Verified before starting: `git diff origin/main HEAD -- .../lib`
@@ -474,9 +602,16 @@ per-screen with docs (PAGE-INDEX + `mobile/<slug>/` + DECISIONS_LOG) and pushed.
 - **Flagged pre-existing gaps** (NOT introduced by the sweep): `my_visitors` +
   `scan_visitor` (D-426) have no E2E catalogue file under `docs/tests/e2e/`;
   `scan_visitor` also has no widget test. Authoring these is a DoD gap tracked here.
-- **De-dup report:** because every screen is now frozen, any remaining cross-screen
+- ~~**De-dup report:** because every screen is now frozen, any remaining cross-screen
   duplication can only be REPORTED, not fixed (fixing would re-open a freeze) —
-  surface to the owner rather than retro-DRY.
+  surface to the owner rather than retro-DRY.~~
+  **WRONG SINCE 2026-07-08; struck 2026-08-18.** The owner directive of that date
+  replaced freeze-after-done with what is now `CLAUDE.md` 13.3: a page that passes
+  the per-page DoD is the **reference render**, NOT frozen. Cross-screen
+  duplication is FIXED, not reported — the 2026-08-18 round did exactly that,
+  merging the two 79%-identical meeting sheets into a shared
+  `MeetingRequestForm`. The real constraint is the one 13.3 states: re-lock the
+  page's goldens, tests and docs in the SAME changeset.
 
 ## Gotchas carried forward
 
@@ -485,11 +620,23 @@ per-screen with docs (PAGE-INDEX + `mobile/<slug>/` + DECISIONS_LOG) and pushed.
 - Golden MUST set `theme: SimfTheme.dark()` + FontLoader harness (`golden_fonts.dart`)
   or Arabic renders tofu; frame size = exact Figma node size.
 - Figma metadata-x RTL-inverts — trust the RENDER overlay, never metadata side-claims.
-- New widget files keep **relative imports** (codebase convention).
-- Frozen siblings keep local widget copies — extract shared for NEW screens, don't
-  unfreeze to retro-DRY (unless the L4 overlay finds a real Figma mismatch).
+- ~~New widget files keep **relative imports** (codebase convention).~~
+  **Struck 2026-08-18.** `lib/` holds **0** relative imports and
+  `analysis_options.yaml` puts `always_use_package_imports` at **error**, so an
+  agent following this gotcha fails the build on its first import. New files use
+  `package:simf_app/` imports.
+- ~~Frozen siblings keep local widget copies — extract shared for NEW screens, don't
+  unfreeze to retro-DRY (unless the L4 overlay finds a real Figma mismatch).~~
+  **Struck 2026-08-18, same reason as the de-dup entry above:** there are no frozen
+  siblings, so retro-DRY across screens is allowed and expected, with the goldens
+  re-locked in the same changeset.
 - FastEndpoints: RoutePrefix is `api/v1` — use RELATIVE routes (D-568 double-prefix 404).
-- simf_auth_pkg signUp test failure = pre-existing baseline (NOT a regression).
+- ~~simf_auth_pkg signUp test failure = pre-existing baseline (NOT a regression).~~
+  **DEAD — struck 2026-08-18.** `flutter test` in `packages/simf_auth_pkg` ends
+  `00:04 +46: All tests passed!`. There is no baseline failure left to subtract,
+  so a red test in that package is a regression like any other. The app's own
+  `CLAUDE.md` section 10 repeated the same carve-out and is corrected in this
+  changeset.
 
 ## Backend hand-off (owner routes backend items here; a separate session owns the backend)
 

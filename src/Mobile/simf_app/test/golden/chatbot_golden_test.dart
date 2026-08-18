@@ -12,6 +12,7 @@ import 'package:simf_app/app/theme/app_theme.dart';
 import 'package:simf_app/features/chatbot/chatbot_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../support/simf_test_scope.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the AI-assistant screen against Figma frame **1064:13066**
@@ -63,7 +64,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      ProviderScope(
+      simfTestScope(
         overrides: <Override>[
           simfDataConfigProvider.overrideWithValue(_testConfig),
         ],

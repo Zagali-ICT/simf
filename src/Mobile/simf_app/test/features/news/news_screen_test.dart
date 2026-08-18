@@ -10,6 +10,8 @@ import 'package:simf_app/features/news/data/news_repository.dart';
 import 'package:simf_app/features/news/news_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../../support/simf_test_scope.dart';
+
 final _items = <NewsListItem>[
   NewsListItem(
     id: 'n1',
@@ -66,7 +68,7 @@ Future<void> _pump(
   );
 
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         simfDataConfigProvider.overrideWithValue(_testConfig),
         ...overrides,

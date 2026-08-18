@@ -4,8 +4,8 @@
 |---|---|
 | Route | `/live?sessionId=` (`RouteNames.liveBroadcast`, page #25) · **login-only** (in-screen gate, D-577) |
 | Surface | Mobile (Flutter) |
-| Screen | `lib/features/live/live_broadcast_screen.dart` (`LiveBroadcastScreen`, 348 lines — state + `_content` composition) |
-| Widgets | `lib/features/live/widgets/` — `live_player_surface` (badge row + player + caption strip) · `live_video_player` (the YouTube/`video_player` controller engine) · `live_badges` (LiveBadge + LanguageChip) · `live_message_surfaces` (recording / not-live black bands) · `live_content` (need-login, feed toggle, gold bullets, ask-question, sign-language note, upcoming cards, **`LiveNoticeBanner`** — the FR-702 informational notice) |
+| Screen | `lib/features/live/live_broadcast_screen.dart` (`LiveBroadcastScreen`, 199 lines — load + branch state only; the composition it used to hold inline now lives in `LiveBroadcastBody`) |
+| Widgets | `lib/features/live/widgets/` — `live_broadcast_body` (`LiveBroadcastBody`, the branch composition) · `live_broadcast_details` (the info column under the player) · `live_player_surface` (badge row + player + caption strip) · `live_video_player` (the YouTube/`video_player` controller engine) · `live_badges` (LiveBadge + LanguageChip) · `live_message_surfaces` (recording / not-live black bands) · `live_content_view` · `need_login_state` · `feed_toggle` + `toggle_pill` · `gold_bullet` · `ask_question_button` · `sign_language_note` · `upcoming_card` · **`live_notice_banner`** (`LiveNoticeBanner` — the FR-702 informational notice) |
 | Figma node | `934:3450` |
 | Shell | `SimfPageShell` (`SimfTab.sessions`) |
 | API | `GET /app/programme/sessions/{id}` (broadcast slice, `AllowAnonymous`) + the agenda list for the upcoming strip |
@@ -50,7 +50,7 @@ router redirect); the reads themselves stay `AllowAnonymous`.
   is no geo-fence, no location read and no gate — instead the session carries
   optional bilingual free text (`liveNotice` / `liveNoticeArabic`, ≤512 each)
   written per session at `/admin/sessions`, and `LiveNoticeBanner`
-  (`widgets/live_content.dart`) renders it as a calm informational banner
+  (`widgets/live_notice_banner.dart`) renders it as a calm informational banner
   **above** the player: `SimfPageNote` on a plain `SimfCard`, deliberately not an
   alert register. `LiveSession.localizedNotice(isArabic)` picks the active
   locale, falls back to the other side when one is blank, and returns null when
@@ -94,3 +94,18 @@ label `Text` so it inherits the theme font. Golden captured at frame 934:3450;
 the player box is env-limited (no headless video platform → error surface) so
 the parity claim is the chrome + info column, which overlay-match the frame.
 Behaviour byte-identical (34 tests green).
+
+## 6. Changelog
+- **2026-08-18 (delivery clean-code programme, structure only):** the screen gave
+  up the last of its inline composition — `_content` is now `LiveBroadcastBody`,
+  with the info column beneath the player in `LiveBroadcastDetails`, taking the
+  screen 348 → 199 lines. The widget row above is also corrected while it was
+  being read: it still named `widgets/live_content.dart`, a file that no longer
+  exists — the heterogeneous grab-bag (a login prompt, a feed toggle, a bullet
+  glyph, a banner, a button and a card sharing nothing but a feature) had already
+  been split one-idea-per-file, so the row now names `live_content_view`,
+  `need_login_state`, `feed_toggle`, `gold_bullet`, `ask_question_button`,
+  `sign_language_note`, `upcoming_card` and `live_notice_banner` in its place, and
+  the FR-702 paragraph in §3 points at the banner's real file. Nothing rendered changed:
+  the `live_broadcast_934-3450` golden held **without** `--update-goldens` and the
+  widget suite passed unchanged.

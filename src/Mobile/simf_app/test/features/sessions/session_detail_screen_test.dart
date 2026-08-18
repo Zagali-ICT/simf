@@ -20,6 +20,7 @@ import 'package:simf_app/features/sessions/session_detail_screen.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../../support/simf_test_scope.dart';
 import '../accessibility/_fake_prefs.dart';
 
 SessionDetail _detail({
@@ -405,7 +406,7 @@ Future<void> _pump(
   );
 
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         simfDataConfigProvider.overrideWithValue(_testConfig),
         // The check-in strip mounts on any session at or past its arrival
@@ -512,7 +513,7 @@ Future<GoRouter> _pumpRatePrompt(
   );
 
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         simfDataConfigProvider.overrideWithValue(_testConfig),
         simfPrefsStorageProvider.overrideWithValue(prefs),
@@ -1094,7 +1095,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
       await tester.pumpWidget(
-        ProviderScope(
+        simfTestScope(
           overrides: <Override>[
             simfDataConfigProvider.overrideWithValue(_testConfig),
             sessionDetailRepositoryProvider

@@ -89,7 +89,6 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
         answer = reply;
       }
     } on Object catch (_) {
-      // Keep the error bubble for any failure.
     }
     if (!mounted) {
       return;

@@ -7,6 +7,8 @@ import 'package:simf_app/app/widgets/simf_logo.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/features/account/data/profile_repository.dart';
 
+import '../../support/simf_test_scope.dart';
+
 /// A minimal valid 1×1 PNG so the `currentUser` bytes path decodes without
 /// tripping the error builder.
 final Uint8List _onePixelPng = Uint8List.fromList(<int>[
@@ -80,7 +82,7 @@ final Uint8List _onePixelPng = Uint8List.fromList(<int>[
 ]);
 
 Widget _host(Widget child, {List<Override> overrides = const <Override>[]}) {
-  return ProviderScope(
+  return simfTestScope(
     overrides: overrides,
     child: MaterialApp(home: Scaffold(body: child)),
   );

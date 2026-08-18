@@ -9,6 +9,8 @@ import 'package:simf_app/features/registration/registration_status_screen.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../../support/simf_test_scope.dart';
+
 CurrentUser _user(RegistrationStatus status) => CurrentUser(
       id: 'u1',
       email: 'visitor@example.sa',
@@ -82,7 +84,7 @@ Future<void> _pump(WidgetTester tester, _FakeAuthController controller) async {
   );
 
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         authControllerProvider.overrideWith(() => controller),
       ],

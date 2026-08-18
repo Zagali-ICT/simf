@@ -14,7 +14,6 @@ final savedContactsProvider =
   (ref) => ref.watch(contactsRepositoryProvider).listSaved(),
 );
 
-/// The share token plus the vCard body the QR encodes.
 @immutable
 class ShareCard {
   const ShareCard({required this.token, required this.vcard});

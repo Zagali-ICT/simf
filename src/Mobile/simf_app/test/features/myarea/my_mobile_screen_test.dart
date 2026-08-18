@@ -13,6 +13,8 @@ import 'package:simf_app/features/myarea/my_mobile_screen.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../../support/simf_test_scope.dart';
+
 /// The screen now reads the SHARED `myProfileProvider`, which reads the auth
 /// state and the data config — so the harness has to supply both. It used to
 /// read the repository directly and needed neither.
@@ -155,7 +157,7 @@ Future<void> _pump(WidgetTester tester, _FakeProfileRepository repo) async {
   );
 
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         simfDataConfigProvider.overrideWithValue(_config),
         authControllerProvider.overrideWith(_SignedIn.new),

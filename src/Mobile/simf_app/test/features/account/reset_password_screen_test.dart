@@ -9,6 +9,8 @@ import 'package:simf_app/features/account/reset_password_screen.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../../support/simf_test_scope.dart';
+
 /// Widget tests for the reset-password form (Page 003 — L-6). They prove the
 /// per-field validation gate added with the form conversion: a blank/short code,
 /// a policy-failing new password, and a non-matching confirm each show the
@@ -128,7 +130,7 @@ Future<void> _pump(
   );
 
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         authRepositoryProvider.overrideWithValue(repo),
         simfPrefsStorageProvider.overrideWithValue(prefs),

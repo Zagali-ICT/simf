@@ -8,6 +8,8 @@ import 'package:simf_app/features/sponsors/data/sponsors_repository.dart';
 import 'package:simf_app/features/sponsors/sponsors_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../../support/simf_test_scope.dart';
+
 // The HTTP client fails network-image loads in tests, so each sponsor logo's
 // errorBuilder falls back to its initials — no real bytes are needed.
 const _testConfig = SimfDataConfig(
@@ -61,7 +63,7 @@ Future<void> _pump(
   Locale locale = const Locale('en'),
 }) async {
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         simfDataConfigProvider.overrideWithValue(_testConfig),
         ...overrides,

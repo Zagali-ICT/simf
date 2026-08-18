@@ -12,6 +12,7 @@ import 'package:simf_app/features/gates/data/gate_offline_config.dart';
 import 'package:simf_app/features/gates/data/gates_repository.dart';
 import 'package:simf_app/features/gates/gate_scan_screen.dart';
 
+import '../support/simf_test_scope.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the gate-operator **setup** stage against Figma frame
@@ -90,7 +91,7 @@ void main() {
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(
-      ProviderScope(
+      simfTestScope(
         overrides: <Override>[
           gatesRepositoryProvider.overrideWithValue(_FakeGates()),
         ],

@@ -14,6 +14,7 @@ import 'package:simf_app/features/questions/send_question_screen.dart';
 import 'package:simf_app/features/sessions/data/session_detail_repository.dart';
 import 'package:simf_app/features/sessions/data/session_models.dart';
 
+import '../support/simf_test_scope.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the About-session / send-a-question screen against Figma
@@ -81,7 +82,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      ProviderScope(
+      simfTestScope(
         overrides: <Override>[
           sessionDetailRepositoryProvider.overrideWithValue(_FakeDetailRepo()),
           questionsRepositoryProvider.overrideWithValue(_FakeQuestionsRepo()),

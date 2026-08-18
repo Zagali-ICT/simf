@@ -12,6 +12,7 @@ import 'package:simf_app/app/theme/app_theme.dart';
 import 'package:simf_app/features/account/email_otp_verify_screen.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 
+import '../support/simf_test_scope.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the email-OTP second-factor screen against Figma frame
@@ -55,7 +56,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      ProviderScope(
+      simfTestScope(
         overrides: <Override>[
           authControllerProvider.overrideWith(_AwaitingOtpController.new),
         ],

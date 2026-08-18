@@ -14,6 +14,7 @@ import 'package:simf_app/features/news/data/news_repository.dart';
 import 'package:simf_app/features/news/news_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../support/simf_test_scope.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the News screen against Figma frame **1049:12629** (المركز
@@ -89,7 +90,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      ProviderScope(
+      simfTestScope(
         overrides: <Override>[
           simfDataConfigProvider.overrideWithValue(_testConfig),
           newsListProvider.overrideWith((ref) async => _items),

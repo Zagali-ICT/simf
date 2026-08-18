@@ -13,6 +13,8 @@ import 'package:simf_app/features/account/data/device_label.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../../support/simf_test_scope.dart';
+
 /// D-738 — a controllable [BiometricAuth] so the OS device-credential confirm
 /// step at enrolment can be scripted without the device plugin.
 class _FakeBiometric implements BiometricAuth {
@@ -108,7 +110,7 @@ Future<void> _pump(
   );
 
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         authControllerProvider.overrideWith(() => controller),
         biometricAuthProvider.overrideWithValue(

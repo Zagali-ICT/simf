@@ -11,6 +11,8 @@ import 'package:simf_app/core/startup/app_update_checker.dart';
 import 'package:simf_app/features/splash/data/splash_controller.dart';
 import 'package:simf_app/features/splash/splash_screen.dart';
 
+import '../../support/simf_test_scope.dart';
+
 /// Replaces the real boot sequence with a fixed state so the screen's render
 /// + one-shot route-out glue is tested in isolation (the sequence itself is
 /// covered by splash_controller_test.dart).
@@ -99,7 +101,7 @@ Future<void> _pump(
   );
 
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         splashControllerProvider.overrideWith(
           () => _StubSplashController(state),

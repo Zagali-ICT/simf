@@ -12,6 +12,8 @@ import 'package:simf_app/features/delegations/data/delegations_repository.dart';
 import 'package:simf_app/features/meetings/meeting_confirm_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../../support/simf_test_scope.dart';
+
 /// Records which endpoint the screen called and returns a canned summary, or
 /// throws the configured [ApiFailure]. Extends the concrete repository (its
 /// client field is library-private, so it cannot be `implements`-ed) and never
@@ -70,7 +72,7 @@ Future<_FakeDelegationsRepository> _pump(
   final repository =
       _FakeDelegationsRepository(_dummyClient(), failure: failure);
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         delegationsRepositoryProvider.overrideWithValue(repository),
       ],

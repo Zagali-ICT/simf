@@ -60,7 +60,6 @@ class SessionSummaryCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            // Title + time on the right, the favourite heart on the left.
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
@@ -87,7 +86,6 @@ class SessionSummaryCard extends StatelessWidget {
                 FavouriteHeartButton(sessionId: item.id),
               ],
             ),
-            // Speaker (right) + hall (left), each in a beige icon-box group.
             if (hasMeta) ...<Widget>[
               const SizedBox(height: SimfTokens.space4),
               Row(

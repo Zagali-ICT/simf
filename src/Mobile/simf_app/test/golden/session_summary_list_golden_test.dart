@@ -18,6 +18,7 @@ import 'package:simf_app/features/sessions/data/sessions_repository.dart'
     show programmeSessionsProvider;
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../support/simf_test_scope.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the Session-summaries list against Figma frame
@@ -166,7 +167,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      ProviderScope(
+      simfTestScope(
         overrides: <Override>[
           simfDataConfigProvider.overrideWithValue(_config),
           programmeSessionsProvider.overrideWith((ref) async => _sessions),

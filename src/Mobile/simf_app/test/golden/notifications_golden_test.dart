@@ -14,6 +14,7 @@ import 'package:simf_app/features/notifications/data/notifications_repository.da
 import 'package:simf_app/features/notifications/notifications_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../support/simf_test_scope.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the Notifications screen against Figma frame **758:2491**
@@ -143,7 +144,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      ProviderScope(
+      simfTestScope(
         overrides: <Override>[
           simfDataConfigProvider.overrideWithValue(_config),
           notificationsRepositoryProvider

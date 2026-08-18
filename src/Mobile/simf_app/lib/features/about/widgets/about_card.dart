@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 
-/// The shared navy-deep card chrome for the About sections.
 class AboutCard extends StatelessWidget {
   const AboutCard({required this.child, super.key});
 

@@ -9,6 +9,8 @@ import 'package:simf_app/features/account/badge_activation_screen.dart';
 import 'package:simf_app/features/account/badge_sign_in_screen.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 
+import '../../support/simf_test_scope.dart';
+
 /// Part B (D-430) — widget tests for the badge-QR sign-in / activation screens:
 /// the resolve branch (has-password → sign-in; needs-email → activation) and
 /// the activation email-step render. The camera is off so the manual-entry path
@@ -84,7 +86,7 @@ Widget _activationHost({
       ),
     ],
   );
-  return ProviderScope(
+  return simfTestScope(
     overrides: <Override>[authRepositoryProvider.overrideWithValue(repo)],
     child: MaterialApp.router(
       routerConfig: router,
@@ -130,7 +132,7 @@ Widget _host(
       ),
     ],
   );
-  return ProviderScope(
+  return simfTestScope(
     overrides: <Override>[authRepositoryProvider.overrideWithValue(repo)],
     child: MaterialApp.router(
       routerConfig: router,

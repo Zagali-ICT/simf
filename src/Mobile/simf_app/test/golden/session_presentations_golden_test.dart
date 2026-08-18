@@ -13,6 +13,7 @@ import 'package:simf_app/features/sessions/data/session_models.dart';
 import 'package:simf_app/features/sessions/data/sessions_repository.dart';
 import 'package:simf_app/features/sessions/session_presentations_screen.dart';
 
+import '../support/simf_test_scope.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the Session-presentations screen against Figma frame
@@ -96,7 +97,7 @@ void main() {
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(
-      ProviderScope(
+      simfTestScope(
         overrides: <Override>[
           presentationsProvider
               .overrideWith((ref) async => PresentationsPage(_items)),

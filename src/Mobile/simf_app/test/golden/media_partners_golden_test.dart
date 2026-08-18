@@ -12,6 +12,7 @@ import 'package:simf_app/app/theme/app_theme.dart';
 import 'package:simf_app/features/media_partners/media_partners_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../support/simf_test_scope.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the Media-partners screen against Figma frame **958:2246**
@@ -73,7 +74,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      ProviderScope(
+      simfTestScope(
         overrides: <Override>[
           simfDataConfigProvider.overrideWithValue(_testConfig),
           mediaPartnersProvider.overrideWith((ref) async => _partners),

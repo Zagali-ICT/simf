@@ -11,6 +11,7 @@ import 'package:simf_app/features/feedback/data/feedback_repository.dart';
 import 'package:simf_app/features/feedback/data/rating_models.dart';
 import 'package:simf_app/features/feedback/rate_screen.dart';
 
+import '../support/simf_test_scope.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the Rate screen against Figma frame **1116:16894** (تقييم
@@ -82,7 +83,7 @@ void main() {
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(
-      ProviderScope(
+      simfTestScope(
         overrides: <Override>[
           feedbackRepositoryProvider.overrideWithValue(_FormRepo()),
         ],

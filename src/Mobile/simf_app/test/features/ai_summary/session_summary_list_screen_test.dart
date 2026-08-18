@@ -13,6 +13,8 @@ import 'package:simf_app/features/sessions/data/session_models.dart';
 import 'package:simf_app/features/sessions/data/sessions_repository.dart'
     show programmeSessionsProvider;
 
+import '../../support/simf_test_scope.dart';
+
 /// A favourites controller seeded with a fixed set (no API).
 class _FixedFavourites extends SessionFavouritesController {
   _FixedFavourites(this._ids);
@@ -74,7 +76,7 @@ Future<void> _pump(
     ],
   );
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         programmeSessionsProvider.overrideWith((ref) async => items),
         sessionFavouritesProvider

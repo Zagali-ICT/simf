@@ -13,6 +13,8 @@ import 'package:simf_app/features/sessions/data/session_models.dart';
 import 'package:simf_app/features/sessions/data/sessions_repository.dart';
 import 'package:simf_app/features/sessions/session_presentations_screen.dart';
 
+import '../../support/simf_test_scope.dart';
+
 PresentationItem _item(String id, String title) => PresentationItem(
       id: id,
       sessionId: 's-$id',
@@ -79,7 +81,7 @@ Future<void> _pump(
 }) async {
   final config = router ?? _router();
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         presentationsProvider
             .overrideWith((ref) async => PresentationsPage(items)),

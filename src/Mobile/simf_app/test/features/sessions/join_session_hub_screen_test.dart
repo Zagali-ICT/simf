@@ -10,6 +10,8 @@ import 'package:simf_app/features/sessions/data/sessions_repository.dart'
     show programmeSessionsProvider;
 import 'package:simf_app/features/sessions/join_session_hub_screen.dart';
 
+import '../../support/simf_test_scope.dart';
+
 SessionListItem _item(String id, String title) => SessionListItem(
       id: id,
       code: 'C-$id',
@@ -42,7 +44,7 @@ Future<void> _pump(WidgetTester tester, List<SessionListItem> items) async {
     ],
   );
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         programmeSessionsProvider.overrideWith((ref) async => items),
       ],

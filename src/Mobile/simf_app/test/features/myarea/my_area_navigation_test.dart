@@ -15,6 +15,8 @@ import 'package:simf_app/features/myarea/my_area_screen.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../../support/simf_test_scope.dart';
+
 /// Regression guard for the My-Area blank/frozen bug (owner-reported
 /// 2026-07-11): My Area IS the Profile bottom-nav tab, so opening it from the
 /// More card must **switch to that tab** (go), not **push a second copy** on
@@ -121,7 +123,7 @@ Future<void> _pump(WidgetTester tester, GoRouter router) async {
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.reset);
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         simfDataConfigProvider.overrideWithValue(_config),
         authControllerProvider.overrideWith(_FakeAuth.new),

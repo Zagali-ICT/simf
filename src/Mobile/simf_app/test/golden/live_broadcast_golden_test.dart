@@ -16,6 +16,7 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../features/accessibility/_fake_prefs.dart';
+import '../support/simf_test_scope.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the Live-broadcast screen against Figma frame **934:3450**.
@@ -134,7 +135,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      ProviderScope(
+      simfTestScope(
         overrides: <Override>[
           authControllerProvider.overrideWith(_SignedIn.new),
           liveRepositoryProvider.overrideWithValue(_FakeLiveRepo()),

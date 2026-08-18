@@ -15,6 +15,7 @@ import 'package:simf_app/features/requests/data/request_models.dart';
 import 'package:simf_app/features/requests/data/requests_repository.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../support/simf_test_scope.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the VIP bilateral-meetings page (اللقاءات الثنائية) against
@@ -94,7 +95,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      ProviderScope(
+      simfTestScope(
         overrides: <Override>[
           simfDataConfigProvider.overrideWithValue(_config),
           currentUserMeetingAccessProvider.overrideWith(

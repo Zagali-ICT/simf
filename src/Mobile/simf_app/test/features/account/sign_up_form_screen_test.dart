@@ -10,6 +10,8 @@ import 'package:simf_app/features/account/sign_up_form_screen.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../../support/simf_test_scope.dart';
+
 /// A fake controller whose `signUp` records the call and optionally throws,
 /// so the screen's validation → submit → navigation/error glue is testable
 /// in isolation. `build()` returns SignedOut so no cold-start restore runs.
@@ -125,7 +127,7 @@ Future<void> _pump(
   );
 
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         simfPrefsStorageProvider.overrideWithValue(fakePrefs),
         authControllerProvider.overrideWith(() => fakeController),

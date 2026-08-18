@@ -102,7 +102,6 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
     }
   }
 
-  /// Pull-to-refresh — re-fetch the requests feed (invalidate + await next).
   Future<void> _refresh() => refreshAsync(ref, myRequestsProvider.future);
 
   @override

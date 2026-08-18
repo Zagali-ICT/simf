@@ -9,6 +9,8 @@ import 'package:simf_app/features/account/sign_up_email_verify_screen.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../../support/simf_test_scope.dart';
+
 /// A fake controller for the sign-up email-verify glue. `build()` returns
 /// SignedOut so no cold-start restore runs; `verifyEmail` optionally throws and
 /// `resendCode` returns the code lifetime (which the screen intentionally does
@@ -104,7 +106,7 @@ Future<void> _pump(
   );
 
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         authControllerProvider.overrideWith(() => controller),
         simfPrefsStorageProvider.overrideWithValue(prefs ?? _FakePrefs()),

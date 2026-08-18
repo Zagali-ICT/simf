@@ -54,7 +54,7 @@ class CommentCensus {
 final RegExp _decisionId = RegExp(r'\bD-\d+\b');
 
 /// A bug id, in the three forms this programme has used.
-final RegExp _bugId = RegExp(r'\b(?:BUG|DEF|BF)-\d+\b');
+final RegExp _bugId = RegExp(r'\b(?:BUG|DEF|BF)-(?:[A-Z]{2,4}-)?\d+\b');
 
 /// A Figma node id — `758:1134`, `922-2824`, `1426-10771`.
 ///

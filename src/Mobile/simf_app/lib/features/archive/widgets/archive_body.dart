@@ -15,8 +15,6 @@ import 'package:simf_app/features/archive/widgets/archive_place_time_row.dart';
 import 'package:simf_app/features/archive/widgets/archive_session_title_card.dart';
 import 'package:simf_app/features/archive/widgets/archive_stat_row.dart';
 
-/// The scrolling content: notice banner → edition selector → selected-edition
-/// detail (title / summary / place·time / stats).
 class ArchiveBody extends ConsumerWidget {
   const ArchiveBody({
     required this.l10n,

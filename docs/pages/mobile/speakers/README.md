@@ -4,8 +4,8 @@
 |---|---|
 | Route | `/speakers` (`RouteNames.speakers`, page #19) · Guest+ |
 | Surface | Mobile (Flutter) |
-| Screen | `lib/features/speakers/speakers_screen.dart` (`SpeakersScreen`, 229 lines) |
-| Widgets | `lib/features/speakers/widgets/` — `speaker_sort_control` (`SpeakerSortControl`) · `speaker_list_card` (`SpeakerListCard` + avatar) |
+| Screen | `lib/features/speakers/speakers_screen.dart` (`SpeakersScreen`, 177 lines) |
+| Widgets | `lib/features/speakers/widgets/` — `speaker_sort_control` (`SpeakerSortControl`) · `speaker_list_card` (`SpeakerListCard`) · `speaker_avatar` · `speaker_name_with_flag` (`SpeakerNameWithFlag` — the name + country-flag line, shared with the meeting-request target tile) |
 | Figma node | `908:1744` |
 | Shell | `SimfPageShell` (centred title المتحدثون) |
 | API | `GET /app/speakers` (one read; client-side search + A→Z sort) · avatar `GET /app/assets/SpeakerPhoto/{id}/image` |
@@ -39,3 +39,10 @@ All data repo-backed; filter/sort are client-side over the one read.
 without `--update`** (the P4 parity holds); 10 module tests green. The card is
 kept local to speakers (not merged with the frozen session-detail speaker card
 — different frame/shape; extract-on-genuine-duplicate).
+
+## 5. Changelog
+- **2026-08-18 (delivery clean-code programme, structure only):** 229 → **177**
+  lines — the doc header collapsed to a one-line pointer at this folder, and the
+  card's name + country-flag line became the public `SpeakerNameWithFlag`, now
+  reused by the meeting-request target tile instead of being copied into it. The
+  `speakers_908-1744` golden held **without** `--update-goldens`.

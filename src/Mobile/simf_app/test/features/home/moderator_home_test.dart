@@ -18,6 +18,8 @@ import 'package:simf_app/features/moderation/data/moderation_repository.dart';
 import 'package:simf_app/features/moderation/widgets/moderated_session_tile.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../../support/simf_test_scope.dart';
+
 ModeratedSession _session(String id, {String title = 'Opening Panel'}) =>
     ModeratedSession(
       sessionId: id,
@@ -67,7 +69,7 @@ Future<List<String>> _pump(
   );
 
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         myModeratedSessionsProvider.overrideWith((ref) async {
           if (fails) {

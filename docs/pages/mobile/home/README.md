@@ -4,9 +4,9 @@
 |---|---|
 | Route | `/` (`RouteNames.home`, page #13) — the landing screen · Guest+ |
 | Surface | Mobile (Flutter) |
-| Screen | `lib/features/home/home_screen.dart` (`HomeScreen`, 111 lines — role router only) |
+| Screen | `lib/features/home/home_screen.dart` (`HomeScreen`, 165 lines — role router only) |
 | Helpers | `lib/features/home/home_greeting.dart` (`homeGreeting` / `homePostTime`, re-exported from the screen) |
-| Widgets | `lib/features/home/widgets/` — `guest_home` · `operational_homes` (staff/moderator) · `visitor_home` · `greeting_header` · `home_banners` (live banner) · `home_hero_banner` (rotating edition hero, #43) · `hero_background_video` (D-756 CP-configured hero video) · `highlights_carousel` · `carousel_dots` (shared) · `follow_us_section` · `discover_saudi_row` · `home_icons` |
+| Widgets | `lib/features/home/widgets/` — `guest_home` (+ `guest_banner` · `pending_approval_card`) · `operational_homes` (staff/moderator) · `visitor_home`, which composes `home_about_section` · `home_smart_features_section` · `home_highlights_section` · `home_live_banner_link` · `exhibitor_tools_section` (the lead-capture block, exhibitor only) · `greeting_header` · `home_banners` (live banner) · `home_hero_banner` (rotating edition hero, #43) + `hero_image` / `hero_overlay` / `meta_line` · `hero_background_video` (D-756 CP-configured hero video) · `highlights_carousel` + `highlight_slide` · `carousel_dots` (shared) · `follow_us_section` + `social_button` · `discover_saudi_row` · `website_link` · `home_icons` |
 | Figma nodes | signed-in **758:1134** · guest **758:2910** · highlights carousel 758:1239 (documented multi-slide deviation) |
 | Shell | `SimfPageShell` (`SimfTab.home`); signed-in uses the `GreetingHeader`, guest/staff/moderator use the standard header |
 | API | `GET /app/notifications/unread-count` (bell badge, signed-in) · `GET /app/news` (highlights, reused) · `GET /app/banners` (hero images, #43) · `GET /app/organization-profile` (hero edition overlay) · `GET /app/me/dashboard` (best-effort greeting name); all best-effort — Home never blocks on them |
@@ -88,3 +88,17 @@ was removed on 2026-07-21 when the greeting became the static "مرحبًا".) G
 captured for **both** states
 and overlay-verified against 758:1134 / 758:2910. Behaviour byte-identical (29
 tests green).
+
+## 6. Changelog
+- **2026-08-18 (delivery clean-code programme, structure only):** `visitor_home`
+  gave up the five inline blocks it was still assembling itself — the عن الملتقى
+  bar + about tiles, the الميزات الذكية tiles, the highlights carousel section, the
+  LIVE banner link and the exhibitor lead-capture block are now
+  `HomeAboutSection`, `HomeSmartFeaturesSection`, `HomeHighlightsSection`,
+  `HomeLiveBannerLink` and `ExhibitorToolsSection` under `home/widgets/`, and the
+  widget row above lists the full folder rather than a subset. Nothing rendered
+  changed: **both** home goldens (`home_signed_in_758-1134` +
+  `home_guest_758-2910`) held **without** `--update-goldens`, and the screen +
+  greeting-header tests passed unchanged. The role-router screen reads 165 lines
+  today, not the 111 the D-602 freeze recorded; §5 below is left as the record of
+  that freeze rather than rewritten.

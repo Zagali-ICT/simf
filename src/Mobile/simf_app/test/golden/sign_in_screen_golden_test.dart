@@ -15,6 +15,7 @@ import 'package:simf_app/features/account/sign_in_screen.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../support/simf_test_scope.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the sign-in screen against Figma frame **168:2800**
@@ -94,7 +95,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      ProviderScope(
+      simfTestScope(
         overrides: <Override>[
           simfPrefsStorageProvider.overrideWithValue(prefs),
           authControllerProvider.overrideWith(_StaticAuthController.new),

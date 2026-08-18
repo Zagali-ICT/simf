@@ -20,6 +20,8 @@ import 'package:simf_app/features/delegations/widgets/delegation_meeting_request
 import 'package:simf_app/features/speakers/widgets/meeting_slot_pickers.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../../support/simf_test_scope.dart';
+
 // One local day of real slots (2026-07-10, 09:00 + 10:00) built as local times
 // →
 // A fixed zone, so the sheet's Saudi-time conversion round-trips on any test
@@ -111,7 +113,7 @@ Future<void> _pump(
   _FakeDelegationsRepository repository,
 ) async {
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         delegationsRepositoryProvider.overrideWithValue(repository),
       ],

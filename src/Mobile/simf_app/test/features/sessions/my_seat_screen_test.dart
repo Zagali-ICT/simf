@@ -11,6 +11,8 @@ import 'package:simf_app/features/sessions/data/seat_map_repository.dart';
 import 'package:simf_app/features/sessions/my_seat_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../../support/simf_test_scope.dart';
+
 SessionSeatMap _map() => const SessionSeatMap(
       rowLabels: <String>['A', 'B'],
       seatsPerRow: 3,
@@ -155,7 +157,7 @@ Future<void> _pump(
   );
 
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         seatMapRepositoryProvider.overrideWithValue(repo),
         seatShareProvider.overrideWithValue(share ?? _FakeSeatShare()),

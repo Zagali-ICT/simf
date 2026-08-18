@@ -13,6 +13,8 @@ import 'package:simf_app/features/account/sign_up_visitor_screen.dart';
 import 'package:simf_app/features/account/widgets/mobile_field.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../../support/simf_test_scope.dart';
+
 /// A fake profile repository — returns canned lookups + a configurable profile,
 /// and records the profile-types filter, so the data screen's load → validate →
 /// Next glue is testable without a real HTTP client. (Reworked D-332: this
@@ -199,7 +201,7 @@ Future<void> _pump(
   );
 
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         profileRepositoryProvider.overrideWithValue(repo),
         // D-547 — the place-of-birth picker reads regionsProvider; default to

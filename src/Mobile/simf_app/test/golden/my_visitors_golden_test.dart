@@ -12,6 +12,7 @@ import 'package:simf_app/features/exhibitor/data/exhibitor_models.dart';
 import 'package:simf_app/features/exhibitor/data/exhibitor_repository.dart';
 import 'package:simf_app/features/exhibitor/my_visitors_screen.dart';
 
+import '../support/simf_test_scope.dart';
 import 'golden_fonts.dart';
 
 /// Render-lock golden of the exhibitor "My Booth Visitors" screen (زوار جناحي,
@@ -92,7 +93,7 @@ void main() {
     ]);
 
     await tester.pumpWidget(
-      ProviderScope(
+      simfTestScope(
         overrides: <Override>[
           exhibitorRepositoryProvider.overrideWithValue(repo),
         ],

@@ -13,6 +13,7 @@ import 'package:simf_app/features/faq/data/faq_models.dart';
 import 'package:simf_app/features/faq/data/faq_repository.dart';
 import 'package:simf_app/features/faq/faq_screen.dart';
 
+import '../support/simf_test_scope.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the FAQ accordion against Figma frame **1388:7567**
@@ -81,7 +82,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      ProviderScope(
+      simfTestScope(
         overrides: <Override>[
           faqProvider.overrideWith((ref) => _groups),
         ],

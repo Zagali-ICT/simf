@@ -12,6 +12,7 @@ import 'package:simf_app/app/theme/app_theme.dart';
 import 'package:simf_app/features/gallery/gallery_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../support/simf_test_scope.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the Media-gallery screen against Figma frame **947:3764**
@@ -75,7 +76,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      ProviderScope(
+      simfTestScope(
         overrides: <Override>[
           simfDataConfigProvider.overrideWithValue(_testConfig),
           mediaItemsProvider.overrideWith((ref) async => _items),

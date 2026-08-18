@@ -15,6 +15,7 @@ import 'package:simf_app/features/content/data/content_models.dart';
 import 'package:simf_app/features/content/data/content_repository.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../support/simf_test_scope.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the About screen against Figma frame **1116:16448** (عن
@@ -84,7 +85,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      ProviderScope(
+      simfTestScope(
         overrides: <Override>[
           simfDataConfigProvider.overrideWithValue(_testConfig),
           contentRepositoryProvider.overrideWithValue(_FailContentRepo()),

@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 
 import 'package:simf_app/app/theme/tokens.dart';
 
-/// The accent explore mark at the top of the guest-mode entry screen: the
-/// compass glyph inside a gold-bordered, faintly gold-filled circle.
 class GuestExploreMark extends StatelessWidget {
   const GuestExploreMark({super.key});
 

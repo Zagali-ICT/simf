@@ -8,6 +8,8 @@ import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/features/account/forgot_password_screen.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 
+import '../../support/simf_test_scope.dart';
+
 /// A fake repository that records the [forgotPassword] call so the test can
 /// prove client-side validation gates (or proceeds past) the request. Every
 /// other [AuthRepository] member is unused on this screen and throws via
@@ -52,7 +54,7 @@ Future<void> _pump(
   );
 
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         authRepositoryProvider.overrideWithValue(repo),
       ],

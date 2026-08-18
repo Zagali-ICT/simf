@@ -19,6 +19,7 @@ import 'package:simf_app/features/sessions/session_detail_screen.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../support/simf_test_scope.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the Session-detail screen against Figma frame **889:2450**
@@ -267,7 +268,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      ProviderScope(
+      simfTestScope(
         overrides: <Override>[
           simfDataConfigProvider.overrideWithValue(_config),
           // Keeps the golden off the network. The fixture session is upcoming,

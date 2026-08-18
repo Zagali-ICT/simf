@@ -7,6 +7,8 @@ import 'package:simf_app/features/faq/data/faq_models.dart';
 import 'package:simf_app/features/faq/data/faq_repository.dart';
 import 'package:simf_app/features/faq/faq_screen.dart';
 
+import '../../support/simf_test_scope.dart';
+
 List<FaqGroup> _sample() => <FaqGroup>[
       const FaqGroup(
         id: 'g1',
@@ -42,7 +44,7 @@ Future<void> _pump(
   addTearDown(tester.view.resetDevicePixelRatio);
 
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[faqOverride],
       child: MaterialApp(
         locale: locale,

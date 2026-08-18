@@ -3,8 +3,6 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 
-/// The Share-my-contact card: the framed QR over the hint, the OS-share button
-/// and the rotate button (disabled + spinner while [rotating]).
 class ShareContactCard extends StatelessWidget {
   const ShareContactCard({
     required this.qrData,

@@ -11,6 +11,8 @@ import 'package:simf_app/features/notifications/data/notifications_repository.da
 import 'package:simf_app/features/notifications/notifications_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../../support/simf_test_scope.dart';
+
 NotificationItem _item({
   String id = 'n1',
   String title = 'Session starts soon',
@@ -91,7 +93,7 @@ Future<void> _pump(
   required NotificationsRepository repo,
 }) async {
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         notificationsRepositoryProvider.overrideWithValue(repo),
       ],
@@ -267,7 +269,7 @@ void main() {
         ],
       );
       await tester.pumpWidget(
-        ProviderScope(
+        simfTestScope(
           overrides: <Override>[
             notificationsRepositoryProvider.overrideWithValue(repo),
           ],
@@ -326,7 +328,7 @@ void main() {
         ],
       );
       await tester.pumpWidget(
-        ProviderScope(
+        simfTestScope(
           overrides: <Override>[
             notificationsRepositoryProvider.overrideWithValue(repo),
           ],
@@ -386,7 +388,7 @@ void main() {
         ],
       );
       await tester.pumpWidget(
-        ProviderScope(
+        simfTestScope(
           overrides: <Override>[
             notificationsRepositoryProvider.overrideWithValue(repo),
           ],

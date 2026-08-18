@@ -11,6 +11,8 @@ import 'package:simf_app/features/content/data/content_models.dart';
 import 'package:simf_app/features/content/data/content_repository.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../../support/simf_test_scope.dart';
+
 class _FakeContentRepo implements ContentRepository {
   _FakeContentRepo({this.block, this.status});
 
@@ -119,7 +121,7 @@ Future<void> _pump(
   );
 
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         simfDataConfigProvider.overrideWithValue(_testConfig),
         contentRepositoryProvider.overrideWithValue(repo),

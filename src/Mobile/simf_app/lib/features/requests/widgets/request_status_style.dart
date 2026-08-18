@@ -30,7 +30,6 @@ String requestStatusLabel(
   }
 }
 
-/// The theme colour for a request [status].
 Color requestStatusColor(AppRequestStatus status) {
   switch (status) {
     case AppRequestStatus.accepted:

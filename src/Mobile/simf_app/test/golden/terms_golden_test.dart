@@ -11,6 +11,7 @@ import 'package:simf_app/features/content/data/content_models.dart';
 import 'package:simf_app/features/content/data/content_repository.dart';
 import 'package:simf_app/features/content/terms_screen.dart';
 
+import '../support/simf_test_scope.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the Terms screen against Figma frame **505:1553**
@@ -46,7 +47,7 @@ void main() {
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(
-      ProviderScope(
+      simfTestScope(
         overrides: <Override>[
           contentRepositoryProvider.overrideWithValue(_FakeContentRepository()),
         ],

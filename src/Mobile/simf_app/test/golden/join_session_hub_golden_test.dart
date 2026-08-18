@@ -14,6 +14,7 @@ import 'package:simf_app/features/sessions/data/sessions_repository.dart'
     show programmeSessionsProvider;
 import 'package:simf_app/features/sessions/join_session_hub_screen.dart';
 
+import '../support/simf_test_scope.dart';
 import 'golden_fonts.dart';
 
 /// Render-lock golden of the Join-a-session hub (D-485 — no Figma frame of its
@@ -76,7 +77,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      ProviderScope(
+      simfTestScope(
         overrides: <Override>[
           programmeSessionsProvider.overrideWith((ref) async => _sessions),
         ],

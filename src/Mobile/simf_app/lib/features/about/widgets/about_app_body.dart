@@ -10,8 +10,6 @@ import 'package:simf_app/features/about/widgets/about_cards.dart';
 import 'package:simf_app/features/about/widgets/check_for_updates_row.dart';
 import 'package:simf_app/features/more/widgets/more_list.dart';
 
-/// The scrolling body of About-the-app: version / release date / organizer, the
-/// manual update check, the edition's support contacts and the quick links.
 class AboutAppBody extends ConsumerWidget {
   const AboutAppBody({super.key});
 

@@ -9,6 +9,8 @@ import 'package:simf_app/features/speakers/widgets/meeting_request_sheet.dart';
 import 'package:simf_app/features/speakers/widgets/meeting_slot_pickers.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../../support/simf_test_scope.dart';
+
 // Two local days of real slots: 2026-07-10 (09:00 + 10:00) and 2026-07-11
 // (09:00). Built as local times → a zoned value so the sheet's toLocal()
 // round-trips to
@@ -131,7 +133,7 @@ Future<void> _pump(
   SpeakersRepository? repo,
 }) async {
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         speakersRepositoryProvider.overrideWithValue(repo ?? _FakeRepo()),
       ],

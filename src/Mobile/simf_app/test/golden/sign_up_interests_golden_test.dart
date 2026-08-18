@@ -13,6 +13,7 @@ import 'package:simf_app/features/account/data/profile_models.dart';
 import 'package:simf_app/features/account/data/profile_repository.dart';
 import 'package:simf_app/features/account/sign_up_interests_screen.dart';
 
+import '../support/simf_test_scope.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the sign-up interests screen against Figma frame
@@ -171,7 +172,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      ProviderScope(
+      simfTestScope(
         overrides: <Override>[
           profileRepositoryProvider.overrideWithValue(_FakeProfileRepository()),
         ],
