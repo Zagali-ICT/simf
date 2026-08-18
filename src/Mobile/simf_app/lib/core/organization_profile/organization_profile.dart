@@ -5,8 +5,6 @@ import 'package:simf_app/core/net/core_endpoints.dart';
 import 'package:simf_app/core/utils/event_date_range.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// Coerce a decoded JSON value into a `Map<String, dynamic>` (empty when
-/// absent).
 Map<String, dynamic> _asStringMap(dynamic value) =>
     (value as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
 

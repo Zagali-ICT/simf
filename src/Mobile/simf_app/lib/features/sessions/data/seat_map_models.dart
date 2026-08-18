@@ -187,7 +187,6 @@ class MyReservation {
   final SeatReservationKind kind;
   final BookingStatus status;
 
-  /// True for a general-admission join (no specific seat).
   bool get isOpenSeating => kind == SeatReservationKind.openSeating;
 }
 
@@ -353,7 +352,6 @@ class SessionSeatMap {
   // Hall default). The session page branches its Join CTA on this.
   final SeatSelectionMode mode;
 
-  /// The locale-appropriate session title (null when neither is present).
   String? localizedSessionTitle({required bool isArabic}) {
     final ar = (sessionTitleArabic ?? '').trim();
     final en = (sessionTitle ?? '').trim();
@@ -428,7 +426,6 @@ class SessionSeatMap {
   /// zero-column grid.
   bool get hasLayout => rowLabels.isNotEmpty && maxSeatsPerRow > 0;
 
-  /// The effective capacity readout (session override, else hall).
   int get capacity => sessionCapacity ?? hallCapacity;
 
   /// The `row:seat` keys of every occupied seat — built once for O(1) lookup.

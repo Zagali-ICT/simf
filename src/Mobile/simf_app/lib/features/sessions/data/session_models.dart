@@ -261,7 +261,6 @@ class SessionListItem {
   /// wire).
   DateTime get startLocal => saudiOf(start);
 
-  /// The session's time-phase (upcoming / live / ended) against [nowUtc].
   SessionPhase phase(DateTime nowUtc) => sessionPhase(start, end, nowUtc);
 
   /// The session's end on the Saudi event-local wall clock — drives the agenda
@@ -457,8 +456,6 @@ class SessionDetail {
   /// الجلسة** button: shown only when non-null, opening the live screen (25).
   final String? liveStreamUrl;
 
-  /// FR-702 (owner 2026-07-31) — the free-text notice the Control Panel authors
-
   /// True when the session has a live feed the app can open (the رابط الجلسة
   /// button's visibility gate).
   bool get hasLiveStream =>
@@ -489,7 +486,6 @@ class SessionDetail {
   /// older API implies by omitting the field.
   static const int defaultArrivalGraceMinutes = 15;
 
-  /// [arrivalGraceMinutes] as a Duration, for comparing against a start time.
   Duration get arrivalGrace => Duration(minutes: arrivalGraceMinutes);
 
   DateTime get startLocal => saudiOf(start);

@@ -30,16 +30,13 @@ String formatEventDateRange(
   if (s.isAtSameMomentAs(e)) {
     return full(s);
   }
-  // Same month and year → one month + year, day range only.
   if (s.year == e.year && s.month == e.month) {
     return '${s.day}-${e.day} '
         '${gregorianMonthName(s.month, isArabic: isArabic)} ${s.year}';
   }
-  // Same year, different month → the year is shown once, at the end.
   if (s.year == e.year) {
     return '${s.day} ${gregorianMonthName(s.month, isArabic: isArabic)} '
         '- ${full(e)}';
   }
-  // Different year → both endpoints carry their own year.
   return '${full(s)} - ${full(e)}';
 }

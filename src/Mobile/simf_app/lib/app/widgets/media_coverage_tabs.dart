@@ -6,7 +6,6 @@ import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/media_tab.dart';
 
-/// Which media-coverage tab is active on the current screen.
 enum MediaCoverageTab { partners, latestUpdates }
 
 /// The two media-center tabs (Figma 1049:12629): الشركاء الإعلاميون · احدث

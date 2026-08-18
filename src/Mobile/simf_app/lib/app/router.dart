@@ -78,9 +78,6 @@ import 'package:simf_app/features/staff/staff_seating_screen.dart';
 import 'package:simf_app/features/venuemap/venue_map_screen.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 
-/// Holds the route metadata for one screen: the path, the route name, the
-/// mockup screen number, and the Arabic + English label used by the
-/// placeholder UI.
 class _Route {
   const _Route({
     required this.number,
@@ -188,7 +185,6 @@ const List<_Route> _routes = <_Route>[
       labelAr: 'وضع الضيف',
       labelEn: 'Guest mode',),
 
-  // Section 2 — Core screens (8 screens)
   _Route(
       number: 13,
       name: RouteNames.home,
@@ -293,7 +289,6 @@ const List<_Route> _routes = <_Route>[
       labelAr: 'إرسال سؤال',
       labelEn: 'Send question',),
 
-  // Section 5 — Media coverage (3 screens)
   _Route(
       number: 29,
       name: RouteNames.news,
@@ -319,7 +314,6 @@ const List<_Route> _routes = <_Route>[
       labelAr: 'الشركاء الإعلاميون',
       labelEn: 'Media partners',),
 
-  // Section 6 — Badge & notifications (2 screens)
   _Route(
       number: 32,
       name: RouteNames.badge,
@@ -333,7 +327,6 @@ const List<_Route> _routes = <_Route>[
       labelAr: 'الإشعارات',
       labelEn: 'Notifications',),
 
-  // Section 7 — Smart features (4 screens)
   _Route(
       number: 34,
       name: RouteNames.aiSummary,
@@ -605,10 +598,6 @@ const List<_Route> _auxRoutes = <_Route>[
       path: '/auth/biometric-step-up',
       labelAr: 'تأكيد بصمة الوجه',
       labelEn: 'Confirm Face ID',),
-  // #7b — the owner's enrolled-device list, added on main. Wrapped to match
-  // this branch's 80-column rule rather than carried over as the single long
-  // line it arrived as; the whole point of the branch is that the analyzer
-  // reaches zero.
   _Route(
       number: 0,
       name: RouteNames.myDevices,
@@ -992,7 +981,6 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
   );
 }
 
-/// The screen for an auxiliary auth route (forgot / reset / verify-OTP).
 Widget _auxScreenFor(BuildContext context, GoRouterState state, _Route r) {
   if (r.name == RouteNames.forgotPassword) {
     // The email is pre-filled when a signed-in user opens this from their

@@ -20,65 +20,55 @@ import 'package:flutter_test/flutter_test.dart';
 ///   4. No file over ~400 lines (section 1).
 ///
 /// **THE RULE FOR THE LISTS BELOW: entries are removed as the work lands and
-/// are NEVER added.** Each list was measured against the tree on 2026-08-18
-/// and holds exactly the offenders that existed then, so the suite is green
-/// today and a NEW offender fails the build. Shrinking a list is the work;
-/// growing one is the defect this file exists to catch. Nothing enforces the
-/// pruning — a stale entry is inert, whereas a stale-entry check would redden
-/// the build for somebody else's improvement, which is how a ratchet gets
-/// deleted instead of obeyed.
+/// are NEVER added.** Every list was re-derived against the tree on
+/// 2026-08-18, once the clean-code round had landed, by emptying it and
+/// reading this file's own failure output — so each holds exactly the
+/// offenders that exist now, the suite is green today, and a NEW offender
+/// fails the build. Shrinking a list is the work; growing one is the defect
+/// this file exists to catch. Nothing enforces the pruning — a stale entry is
+/// inert, whereas a stale-entry check would redden the build for somebody
+/// else's improvement, which is how a ratchet gets deleted instead of obeyed.
+///
+/// That inertness is why pruning is a MEASUREMENT and never a reading of the
+/// previous list. Three of the four lists had gone empty without anything
+/// saying so, and the fourth had lost five of its thirteen entries; a prune
+/// driven by which entries somebody remembered moving would have kept most of
+/// them.
 ///
 /// The working directory for `flutter test` is the package root
 /// (`src/Mobile/simf_app`), so every path below is relative to that.
 
 /// Screens that still declare a top-level public provider, keyed
-/// `<path under lib/features/> :: <symbol>`. 24 of them on 2026-08-18.
+/// `<path under lib/features/> :: <symbol>`. **Empty on 2026-08-18** — all 24
+/// moved into their feature's `data/` folder, so the rule now holds outright
+/// and the first screen to re-declare one fails the build.
+///
+/// The list stays, empty, rather than being deleted with its last entry: it is
+/// what makes the failure message name a KNOWN-offender allowance rather than
+/// read as an unconditional ban somebody has to go and re-litigate.
 ///
 /// Symbol-level, not file-level, deliberately: `live_broadcast_screen.dart`
-/// holds two, so a file-level entry would keep guarding nothing once the first
-/// one moved, and a SECOND provider added to an already-listed screen would
-/// slip in free.
-const List<String> _providersInScreens = <String>[
-  'account/my_devices_screen.dart :: deviceKeysProvider',
-  'account/sign_up_interests_screen.dart :: interestsSetupProvider',
-  'ai_summary/session_summary_screen.dart :: sessionSummaryProvider',
-  'badge/badge_screen.dart :: badgeIdentityProvider',
-  'booths/booths_screen.dart :: boothsListProvider',
-  'contacts/my_contacts_screen.dart :: savedContactsProvider',
-  'contacts/share_my_contact_screen.dart :: shareCardProvider',
-  'content/terms_screen.dart :: termsBlockProvider',
-  'exhibitor/my_visitors_screen.dart :: myVisitorsProvider',
-  'feedback/rate_screen.dart :: ratingFormProvider',
-  'gates/gate_scan_screen.dart :: operatorGatesProvider',
-  'live/live_broadcast_screen.dart :: liveSessionProvider',
-  'live/live_broadcast_screen.dart :: upcomingSessionsProvider',
-  'moderation/session_moderate_screen.dart :: moderatorQueuesProvider',
-  'myarea/my_area_screen.dart :: myAreaDashboardProvider',
-  'myarea/my_mobile_screen.dart :: myMobileProfileProvider',
-  'news/news_article_screen.dart :: newsArticleProvider',
-  'notifications/notifications_screen.dart :: notificationsListProvider',
-  'registration/registration_status_screen.dart :: registrationStatusProvider',
-  'sessions/session_detail_screen.dart :: sessionDetailViewProvider',
-  'sessions/sessions_screen.dart :: programmeDaysProvider',
-  'speakers/speaker_profile_screen.dart :: speakerDetailProvider',
-  'speakers/speakers_screen.dart :: speakersListProvider',
-  'venuemap/venue_map_screen.dart :: venueMapDataProvider',
-];
+/// held two, so a file-level entry would have kept guarding nothing once the
+/// first one moved, and a SECOND provider added to an already-listed screen
+/// would have slipped in free.
+const List<String> _providersInScreens = <String>[];
 
 /// Widget classes still declared at a feature root instead of in `widgets/`,
-/// keyed `<path under lib/features/> :: <class>`. One of them on 2026-08-18 —
-/// the convention is all but held, which is exactly when it is worth pinning.
-const List<String> _widgetsAtFeatureRoot = <String>[
-  'account/biometric_auth.dart :: FaceIdToggleTile',
-];
+/// keyed `<path under lib/features/> :: <class>`. **Empty on 2026-08-18** —
+/// the one holdout, `account/biometric_auth.dart :: FaceIdToggleTile`, is now
+/// `account/widgets/face_id_toggle_tile.dart`, leaving that root file the pure
+/// helper section 1 describes.
+const List<String> _widgetsAtFeatureRoot = <String>[];
 
 /// Feature files still importing the transport directly, keyed by path under
 /// `lib/features/`. Empty on 2026-08-18 — the boundary is clean, and the list
 /// exists so a first offender fails with the same message shape as the rest.
 const List<String> _featuresImportingTransport = <String>[];
 
-/// Files over 400 lines, keyed by path under `lib/`. 13 of them on 2026-08-18,
-/// running from 408 to 2769 lines.
+/// Files over 400 lines, keyed by path under `lib/`. 8 of them on 2026-08-18,
+/// running from 457 to 2730 lines — down from 13 at 408 to 2769, the five
+/// prunes being the two request sheets, `gate_scan_screen.dart`,
+/// `identity_verification_screen.dart` and `session_detail_screen.dart`.
 ///
 /// Paths only, no per-file line counts: pinning the counts would turn every
 /// ordinary edit — including one that SHRINKS the file — into a failure.
@@ -88,13 +78,8 @@ const List<String> _oversizedFiles = <String>[
   'app/theme/tokens.dart',
   'features/account/data/profile_models.dart',
   'features/account/sign_up_visitor_screen.dart',
-  'features/delegations/widgets/delegation_meeting_request_sheet.dart',
-  'features/gates/gate_scan_screen.dart',
-  'features/myarea/identity_verification_screen.dart',
   'features/sessions/data/seat_map_models.dart',
   'features/sessions/data/session_models.dart',
-  'features/sessions/session_detail_screen.dart',
-  'features/speakers/widgets/meeting_request_sheet.dart',
   'features/staff/register_visitor_screen.dart',
 ];
 

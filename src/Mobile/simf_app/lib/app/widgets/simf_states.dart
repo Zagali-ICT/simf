@@ -44,7 +44,6 @@ class SimfErrorState extends StatelessWidget {
   }
 }
 
-/// The standard empty / pending surface: a muted icon over the message.
 class SimfEmptyState extends StatelessWidget {
   const SimfEmptyState({
     required this.icon,

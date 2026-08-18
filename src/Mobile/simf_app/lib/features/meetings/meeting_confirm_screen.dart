@@ -190,9 +190,7 @@ class _MeetingConfirmScreenState extends ConsumerState<MeetingConfirmScreen> {
 
   // "2026-11-24 · 10:00 ص" — a compact local date + 12-hour time.
   String _formatSlot(DateTime local, bool isArabic) {
-    final date = '${local.year.toString().padLeft(4, '0')}-'
-        '${local.month.toString().padLeft(2, '0')}-'
-        '${local.day.toString().padLeft(2, '0')}';
+    final date = formatDateIso(local);
     final time = formatDateTime12h(local, isArabic: isArabic);
     return '$date · $time';
   }

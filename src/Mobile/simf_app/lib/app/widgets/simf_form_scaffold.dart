@@ -43,7 +43,6 @@ class SimfFormScaffold extends ConsumerWidget {
   /// Fixed header + scrolling [child] (profile) vs centred-scroll-all (auth).
   final bool pinnedHeader;
 
-  /// The decorative diagonal sweep behind the header.
   final Widget sweep;
 
   void _toggleLanguage(WidgetRef ref) {

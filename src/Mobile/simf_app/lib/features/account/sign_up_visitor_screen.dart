@@ -9,27 +9,26 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_form_scaffold.dart';
-import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/core/errors/api_error_l10n.dart';
-import 'package:simf_app/core/motion/motion_durations.dart';
 import 'package:simf_app/core/responsive/max_width_body.dart';
 import 'package:simf_app/core/validation/phone_validation.dart';
-import 'package:simf_app/core/validation/plate_validation.dart';
 import 'package:simf_app/core/widgets/simf_auth_sweep.dart';
 import 'package:simf_app/features/account/data/profile_models.dart';
 import 'package:simf_app/features/account/data/profile_repository.dart';
-import 'package:simf_app/features/account/data/region_models.dart';
 import 'package:simf_app/features/account/data/region_repository.dart';
 import 'package:simf_app/features/account/saudi_regions.dart';
-import 'package:simf_app/features/account/widgets/attachment_field.dart';
 import 'package:simf_app/features/account/widgets/beige_tabs.dart';
 import 'package:simf_app/features/account/widgets/date_of_birth_field.dart';
 import 'package:simf_app/features/account/widgets/lookup_search_sheet.dart';
-import 'package:simf_app/features/account/widgets/organisation_typeahead_field.dart';
-import 'package:simf_app/features/account/widgets/place_of_birth_field.dart';
-import 'package:simf_app/features/account/widgets/plate_number_field.dart';
-import 'package:simf_app/features/account/widgets/profile_type_field.dart';
+import 'package:simf_app/features/account/widgets/lookup_search_sheet_launcher.dart';
+import 'package:simf_app/features/account/widgets/sign_up_visitor_face_photo_field.dart';
 import 'package:simf_app/features/account/widgets/sign_up_visitor_header_avatar.dart';
+import 'package:simf_app/features/account/widgets/sign_up_visitor_id_image_field.dart';
+import 'package:simf_app/features/account/widgets/sign_up_visitor_load_error.dart';
+import 'package:simf_app/features/account/widgets/sign_up_visitor_organisation_field.dart';
+import 'package:simf_app/features/account/widgets/sign_up_visitor_place_of_birth_field.dart';
+import 'package:simf_app/features/account/widgets/sign_up_visitor_plate_field.dart';
+import 'package:simf_app/features/account/widgets/sign_up_visitor_profile_type_field.dart';
 import 'package:simf_app/features/account/widgets/terms_and_next_buttons.dart';
 import 'package:simf_app/features/myarea/data/liveness.dart'
     show CapturedSelfie;
@@ -79,20 +78,9 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   final TextEditingController _documentNumber = TextEditingController();
   final TextEditingController _saudiMobile = TextEditingController();
   final TextEditingController _internationalMobile = TextEditingController();
-  final TextEditingController _plate = TextEditingController();
-  // C6 (D-459) — the plate letter picks (Latin codes) + the digits field. The
-  // assembled value is mirrored into [_plate] so the submit/prefill path that
-  // reads `_plate.text` is unchanged.
-  String? _plateLetter1;
-  String? _plateLetter2;
-  String? _plateLetter3;
-  // D-471 fix — a plate is valid in either order (letters-then-digits or
-  // digits-then-letters) and the canonical code PRESERVES that order. Remember
-  // a digits-first stored plate so prefill→re-sync doesn't silently reorder it
-  // (e.g. "1234ABJ" must not be rewritten to "ABJ1234").
-  bool _plateDigitsFirst = false;
-  final TextEditingController _plateDigits = TextEditingController();
-  final TextEditingController _organisationSearch = TextEditingController();
+  // C6 (D-459) — the three letter picks, the digits and the assembled plate
+  // code, which are only ever useful together.
+  final SignUpVisitorPlateState _plate = SignUpVisitorPlateState();
 
   /// نوع التسجيل: Visitor (true) / Other (false) — the `ProfileType.IsForVisitor`
   /// filter (D-332). Client-only; not persisted.
@@ -107,17 +95,16 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   /// draft so the interests screen (Page 007‑01) pre-selects them on re-entry.
   List<String> _existingInterestIds = const <String>[];
 
-  List<OrganisationItem> _organisationResults = const <OrganisationItem>[];
+  /// The organisations fetched with the opening load, handed to the type-ahead
+  /// so its list is populated before the first keystroke. The field owns the
+  /// searching from there.
+  List<OrganisationItem> _initialOrganisations = const <OrganisationItem>[];
 
   // D-375 — API-fed pickers always surface their fetch state (owner rule:
   // every dropdown loaded from the API shows loading, and a failure is a
   // visible retry — never a silently missing/empty control).
   bool _profileTypesLoading = false;
   bool _profileTypesFailed = false;
-  bool _organisationSearching = false;
-  bool _organisationSearchFailed = false;
-
-  Timer? _organisationDebounce;
 
   // The ID DOCUMENT image (picked from the gallery) — mandatory for all.
   Uint8List? _idImageBytes;
@@ -175,8 +162,8 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     if (!_isSaudi || _birthRegionCode == null) {
       return;
     }
-    final name =
-        _birthRegionByCode(_birthRegionCode)?.name(isArabic: isArabic) ?? '';
+    final region = birthRegionByCode(ref, _birthRegionCode);
+    final name = region?.name(isArabic: isArabic) ?? '';
     if (_placeOfBirth.text != name) {
       _placeOfBirth.text = name;
     }
@@ -184,7 +171,6 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
 
   @override
   void dispose() {
-    _organisationDebounce?.cancel();
     _arabicName.dispose();
     _englishName.dispose();
     _jobTitle.dispose();
@@ -195,8 +181,6 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     _saudiMobile.dispose();
     _internationalMobile.dispose();
     _plate.dispose();
-    _plateDigits.dispose();
-    _organisationSearch.dispose();
     _form.dispose();
     super.dispose();
   }
@@ -224,7 +208,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
           countries: results[1] as List<CountryItem>,
           profileTypes: results[2] as List<ProfileTypeItem>,
         );
-        _organisationResults = results[3] as List<OrganisationItem>;
+        _initialOrganisations = results[3] as List<OrganisationItem>;
         _applyProfile(results[0] as UserProfileResponse);
         _lockVisitorProfileType();
         _loading = false;
@@ -261,7 +245,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     }
     _saudiMobile.text = profile.saudiMobile ?? '';
     _internationalMobile.text = profile.internationalMobile ?? '';
-    _setPlateFromCode(profile.plateNumber);
+    _plate.setFromCode(profile.plateNumber);
     // D-373 defaults — Male and Saudi Arabia pre-selected on a first-time
     // (empty) profile; a saved profile keeps its own values.
     _form.gender = profile.gender == AppGender.unspecified
@@ -360,50 +344,12 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
 
   // ---- Organisation typeahead ---------------------------------------------
 
-  void _onOrganisationSearchChanged(String value) {
-    _organisationDebounce?.cancel();
-    _organisationDebounce = Timer(
-      MotionDurations.searchDebounce,
-      () => unawaited(_runOrganisationSearch(value)),
-    );
-  }
-
-  Future<void> _runOrganisationSearch(String value) async {
-    // D-375 — the typeahead surfaces its fetch state: a spinner while in
-    // flight and a visible retry on failure (a failed search previously
-    // read as "no matches", which is misleading).
-    setState(() {
-      _organisationSearching = true;
-      _organisationSearchFailed = false;
-    });
-    final repo = ref.read(profileRepositoryProvider);
-    try {
-      final results = await repo.searchOrganisations(search: value);
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _organisationResults = results;
-        _organisationSearching = false;
-      });
-    } on ApiFailure {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _organisationSearching = false;
-        _organisationSearchFailed = true;
-      });
-    }
-  }
-
   void _selectOrganisation(OrganisationItem organisation, AppL10n l10n) {
     setState(() {
       _form.organisationId = organisation.id;
       _organisationLabel = l10n.isArabic
           ? organisation.nameAr
           : (organisation.nameEn ?? organisation.nameAr);
-      _organisationResults = const <OrganisationItem>[];
     });
   }
 
@@ -411,7 +357,6 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     setState(() {
       _form.organisationId = null;
       _organisationLabel = null;
-      _organisationSearch.clear();
     });
   }
 
@@ -630,7 +575,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       internationalMobile: !isSaudi
           ? _emptyToNull(normalizePhone(_internationalMobile.text))
           : null,
-      plateNumber: _emptyToNull(_plate.text),
+      plateNumber: _emptyToNull(_plate.value),
       organisationId: _form.organisationId,
       gender: _form.gender,
       showInMeetLikeYou: _showInMeetLikeYou,
@@ -673,7 +618,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       );
     }
     if (_loadError != null) {
-      return _buildLoadError(l10n);
+      return SignUpVisitorLoadError(l10n: l10n, onRefresh: _load);
     }
     // The beige form card (Figma 168:2977) holding the whole form.
     return Form(
@@ -728,7 +673,16 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                     onChanged: (index) => unawaited(_onTypeChanged(index == 0)),
                   ),
                   const SizedBox(height: SimfTokens.space6),
-                  _buildProfileTypeField(l10n),
+                  SignUpVisitorProfileTypeField(
+                    l10n: l10n,
+                    form: _form,
+                    isVisitorType: _isVisitorType,
+                    loading: _profileTypesLoading,
+                    failed: _profileTypesFailed,
+                    onRetry: () => unawaited(_fetchProfileTypes()),
+                    onChanged: (id) =>
+                        setState(() => _form.profileTypeId = id),
+                  ),
                   const SizedBox(height: SimfTokens.space4),
                   IdentitySection(
                     l10n: l10n,
@@ -739,7 +693,17 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                     gender: _form.gender,
                     onGenderChanged: (value) =>
                         setState(() => _form.gender = value),
-                    organisationField: _buildOrganisationField(l10n),
+                    organisationField: SignUpVisitorOrganisationField(
+                      l10n: l10n,
+                      initialResults: _initialOrganisations,
+                      selectedId: _form.organisationId,
+                      selectedLabel: _organisationLabel,
+                      showError:
+                          _form.triedSubmit && _form.organisationId == null,
+                      onSelected: (organisation) =>
+                          _selectOrganisation(organisation, l10n),
+                      onCleared: _clearOrganisation,
+                    ),
                   ),
                   const SizedBox(height: SimfTokens.space4),
                   NationalitySection(
@@ -780,14 +744,40 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                     onTap: () => unawaited(_pickDateOfBirth()),
                   ),
                   const SizedBox(height: SimfTokens.space4),
-                  _buildPlaceOfBirthField(l10n),
+                  SignUpVisitorPlaceOfBirthField(
+                    l10n: l10n,
+                    isSaudi: _isSaudi,
+                    controller: _placeOfBirth,
+                    regionCode: _birthRegionCode,
+                    showError: _form.triedSubmit && _birthRegionCode == null,
+                    onRegionPicked: _onBirthRegionPicked,
+                  ),
                   const SizedBox(height: SimfTokens.space4),
                   // D-373 — the plate is the last input before the attach.
-                  _buildPlateField(l10n),
+                  SignUpVisitorPlateField(
+                    l10n: l10n,
+                    state: _plate,
+                    onChanged: () => setState(() {}),
+                  ),
                   const SizedBox(height: SimfTokens.space4),
-                  _buildIdImageField(l10n),
+                  SignUpVisitorIdImageField(
+                    l10n: l10n,
+                    bytes: _idImageBytes,
+                    filename: _idImageName,
+                    hasStoredImage: _hasExistingIdImage,
+                    triedSubmit: _form.triedSubmit,
+                    onAttach: () => unawaited(_pickIdImage()),
+                    onRemove: _removeIdImage,
+                  ),
                   const SizedBox(height: SimfTokens.space4),
-                  _buildFacePhotoField(l10n),
+                  SignUpVisitorFacePhotoField(
+                    l10n: l10n,
+                    bytes: _faceImageBytes,
+                    gender: _form.gender,
+                    hasStoredAvatar: _hasExistingAvatar,
+                    triedSubmit: _form.triedSubmit,
+                    onCapture: () => unawaited(_pickFacePhoto()),
+                  ),
                   if (_saveError != null) ...<Widget>[
                     Text(
                       _saveError!,
@@ -810,85 +800,12 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     );
   }
 
-  /// Kept local rather than swapped for the shared [SimfErrorState]: that one
-  /// draws white text, which is invisible on this screen's beige form card.
-  ///
-  /// Only this branch is pull-to-refreshable. The loaded form must NOT be —
-  /// `_load()` runs `_applyProfile`, which overwrites every text controller, so
-  /// a stray pull on a half-filled form would silently discard the input.
-  /// The rule exists so nobody is stranded with no way to re-fetch, and
-  /// that can only happen here.
-  Widget _buildLoadError(AppL10n l10n) {
-    return SimfRefreshableMessage(
-      onRefresh: _load,
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(SimfTokens.space6),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Text(
-                l10n.profileLoadError,
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: SimfTokens.txtSecondary),
-              ),
-              const SizedBox(height: SimfTokens.space4),
-              FilledButton(
-                onPressed: () => unawaited(_load()),
-                child: Text(l10n.retryLabel),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildProfileTypeField(AppL10n l10n) {
-    // C5 (D-371) — Visitor is locked to "Normal": no picker rendered, the id is
-    // auto-assigned by _lockVisitorProfileType.
-    if (_isVisitorType) {
-      return const SizedBox.shrink();
-    }
-    return ProfileTypeField(
-      l10n: l10n,
-      loading: _profileTypesLoading,
-      failed: _profileTypesFailed,
-      items: _form.profileTypes,
-      selectedId: _form.profileTypeId,
-      showError: _form.triedSubmit && _form.profileTypeId == null,
-      onRetry: () => unawaited(_fetchProfileTypes()),
-      onChanged: (id) => setState(() => _form.profileTypeId = id),
-    );
-  }
-
-  /// Opens the shared searchable picker sheet and returns the picked value.
-  Future<String?> _openLookupSheet({
-    required List<PickerOption> options,
-    required String searchHint,
-    Key? searchFieldKey,
-  }) {
-    return showModalBottomSheet<String>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: SimfTokens.cardBeige,
-      shape: const RoundedRectangleBorder(
-        borderRadius:
-            BorderRadius.vertical(top: Radius.circular(SimfTokens.radiusLarge)),
-      ),
-      builder: (_) => LookupSearchSheet(
-        options: options,
-        searchHint: searchHint,
-        searchFieldKey: searchFieldKey,
-      ),
-    );
-  }
-
   /// Opens the searchable country sheet and applies the pick. Clearing the
   /// stale national-id/iqama input when the Saudi-ness flips keeps the
   /// derived document section consistent (D-373).
   Future<void> _pickNationality(AppL10n l10n) async {
-    final pickedCode = await _openLookupSheet(
+    final pickedCode = await showLookupSearchSheet(
+      context: context,
       options: <PickerOption>[
         for (final CountryItem c in _form.countries)
           PickerOption(
@@ -922,250 +839,14 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     });
   }
 
-  /// D-547 — the active regions for the birth-location picker. Owner decision:
-  /// the data SOURCE is now `GET /app/regions` (the seeded 13 regions), with the
-  /// const [saudiRegions] kept as an OFFLINE FALLBACK. On [AsyncData] with a
-  /// non-empty list, the API regions win; on loading / error / empty, the const
-  /// list is used so the picker never throws on build. Each entry maps to the
-  /// shared display shape (code + ar/en names) so the picker + display label
-  /// stay identical regardless of source.
-  List<_BirthRegionOption> _activeBirthRegions() {
-    // ref.read (not watch): this runs from both build helpers and the picker's
-    // async handler. build() owns the watch so the field still rebuilds on
-    // data.
-    final api = ref.read(regionsProvider).asData?.value;
-    if (api != null && api.isNotEmpty) {
-      return <_BirthRegionOption>[
-        for (final RegionItem r in api)
-          _BirthRegionOption(
-            code: r.code,
-            // English uses name ?? nameArabic, mirroring SaudiRegion.name.
-            english: r.name ?? r.nameArabic,
-            arabic: r.nameArabic,
-          ),
-      ];
-    }
-    return <_BirthRegionOption>[
-      for (final SaudiRegion r in saudiRegions)
-        _BirthRegionOption(code: r.code, english: r.english, arabic: r.arabic),
-    ];
-  }
-
-  /// The active region matching [code] (API or fallback), or null.
-  _BirthRegionOption? _birthRegionByCode(String? code) {
-    if (code == null) {
-      return null;
-    }
-    for (final r in _activeBirthRegions()) {
-      if (r.code == code) {
-        return r;
-      }
-    }
-    return null;
-  }
-
-  /// D-469/D-470 — opens the shared searchable sheet over the active regions
-  /// (D-547: API with const fallback) and stores the picked region's localized
-  /// name in [_placeOfBirth].
-  Future<void> _pickBirthRegion(AppL10n l10n, bool isArabic) async {
-    final regions = _activeBirthRegions();
-    final pickedCode = await _openLookupSheet(
-      options: <PickerOption>[
-        for (final _BirthRegionOption r in regions)
-          PickerOption(
-            value: r.code,
-            label: r.name(isArabic: isArabic),
-            search: '${r.arabic} ${r.english}',
-          ),
-      ],
-      searchHint: l10n.placeOfBirthRegionHint,
-      searchFieldKey: const ValueKey<String>('birthRegionSearchField'),
-    );
-    if (pickedCode == null || !mounted) {
-      return;
-    }
+  /// Stores the birth-region pick. The code is kept as well as the name so the
+  /// field can be re-read in the other language when the user toggles it
+  /// (D-469/D-470).
+  void _onBirthRegionPicked(String code, String name) {
     setState(() {
-      _birthRegionCode = pickedCode;
-      _placeOfBirth.text =
-          _birthRegionByCode(pickedCode)?.name(isArabic: isArabic) ?? '';
+      _birthRegionCode = code;
+      _placeOfBirth.text = name;
     });
-  }
-
-  Widget _buildPlaceOfBirthField(AppL10n l10n) {
-    final isArabic = l10n.isArabic;
-    final regionName = _birthRegionCode == null
-        ? null
-        : _birthRegionByCode(_birthRegionCode)?.name(isArabic: isArabic);
-    return PlaceOfBirthField(
-      l10n: l10n,
-      isSaudi: _isSaudi,
-      controller: _placeOfBirth,
-      regionDisplayName: regionName,
-      hasRegion: _birthRegionCode != null,
-      showRegionError: _form.triedSubmit && _birthRegionCode == null,
-      onPickRegion: () => unawaited(_pickBirthRegion(l10n, isArabic)),
-    );
-  }
-
-  Widget _buildPlateField(AppL10n l10n) {
-    return PlateNumberField(
-      l10n: l10n,
-      letter1: _plateLetter1,
-      letter2: _plateLetter2,
-      letter3: _plateLetter3,
-      digits: _plateDigits,
-      onPickLetter: (position) => unawaited(
-        _pickPlateLetter(l10n, position, _plateLetterSetter(position)),
-      ),
-      onDigitsChanged: () => setState(_syncPlate),
-      validateDigits: (_) => validatePlate(_plate.text, l10n),
-    );
-  }
-
-  /// Routes a picked letter to the right slot — the three pickers differ only
-  /// by position, so the field takes the position and the screen owns the
-  /// storage.
-  ValueChanged<String?> _plateLetterSetter(int position) {
-    switch (position) {
-      case 1:
-        return (String? v) => _plateLetter1 = v;
-      case 2:
-        return (String? v) => _plateLetter2 = v;
-      default:
-        return (String? v) => _plateLetter3 = v;
-    }
-  }
-
-  /// Opens the shared searchable sheet over the 17 official plate letters
-  /// (shown "Arabic · Latin") and stores the picked Latin code, then
-  /// re-assembles the plate.
-  Future<void> _pickPlateLetter(
-    AppL10n l10n,
-    int position,
-    ValueChanged<String?> onPicked,
-  ) async {
-    final pickedCode = await _openLookupSheet(
-      options: <PickerOption>[
-        for (final SaudiPlateLetter letter in saudiPlateLetters)
-          PickerOption(
-            value: letter.code,
-            label: '${letter.arabic} · ${letter.english}',
-            search: '${letter.arabic} ${letter.english} ${letter.code}',
-          ),
-      ],
-      searchHint: l10n.plateLetterHint,
-      searchFieldKey: ValueKey<String>('plateLetterSearch$position'),
-    );
-    if (pickedCode == null || !mounted) {
-      return;
-    }
-    setState(() {
-      onPicked(pickedCode);
-      _syncPlate();
-    });
-  }
-
-  /// Re-assembles [_plate] from the dropdown picks + digits, preserving the
-  /// stored order ([_plateDigitsFirst]) so a digits-first plate round-trips
-  /// unchanged (D-471 fix). Letters-then-digits is the default for fresh entry.
-  /// Empty when nothing is picked — the plate is optional.
-  void _syncPlate() {
-    _plate.text = assemblePlate(
-      letter1: _plateLetter1,
-      letter2: _plateLetter2,
-      letter3: _plateLetter3,
-      digits: _plateDigits.text,
-      digitsFirst: _plateDigitsFirst,
-    );
-  }
-
-  /// Splits a stored plate code into the three letter dropdowns + the digits
-  /// field, then refreshes [_plate]. The stored value is first normalised to
-  /// the canonical Latin code (so an Arabic-script or pre-D-459 plate still
-  /// parses); a value the 17-letter dropdowns can't represent is kept verbatim
-  /// in [_plate] so an unrelated profile edit never silently erases it (D-468
-  /// review).
-  void _setPlateFromCode(String? code) {
-    final parts = parsePlate(code);
-    _plateLetter1 = parts.letter1;
-    _plateLetter2 = parts.letter2;
-    _plateLetter3 = parts.letter3;
-    _plateDigits.text = parts.digits;
-    _plateDigitsFirst = parts.digitsFirst;
-    final override = parts.rawOverride;
-    if (override != null) {
-      _plate.text = override;
-    } else {
-      _syncPlate();
-    }
-  }
-
-  /// "Upload ID" — the mandatory ID-document attachment. The "required" hint
-  /// stays hidden until a blocked Next, then shows in danger red — like the
-  /// text-field validators, not surfaced up-front in grey (D-674).
-  Widget _buildIdImageField(AppL10n l10n) {
-    final needsImage = _idImageBytes == null && !_hasExistingIdImage;
-    return AttachmentField(
-      label: l10n.attachmentsLabel,
-      hintText: (_form.triedSubmit && needsImage) ? l10n.idImageRequired : null,
-      hintDanger: true,
-      bytes: _idImageBytes,
-      round: false,
-      attachLabel: l10n.attachFileLabel,
-      attachIcon: Icons.add_circle_outline,
-      onAttach: () => unawaited(_pickIdImage()),
-      attachedName: _idImageName ?? l10n.idImageAttachedLabel,
-      actionLabel: l10n.removeLabel,
-      onAction: _removeIdImage,
-    );
-  }
-
-  /// "Face photo" — the live face capture (→ profile avatar). Mandatory for
-  /// men, optional for women. Once captured the face shows at the top of the
-  /// card and this row confirms it with a Retake. The male-**required** hint
-  /// stays hidden until a blocked Next (then danger red, D-674); the
-  /// women-**optional** hint is informational, so it stays visible in grey.
-  Widget _buildFacePhotoField(AppL10n l10n) {
-    final bytes = _faceImageBytes;
-    final maleNeedsFace =
-        _form.gender == AppGender.male && bytes == null && !_hasExistingAvatar;
-    final showOptionalHint =
-        bytes == null && !_hasExistingAvatar && !maleNeedsFace;
-    final showRequiredHint = _form.triedSubmit && maleNeedsFace;
-    return AttachmentField(
-      label: l10n.facePhotoLabel,
-      hintText: showRequiredHint
-          ? l10n.facePhotoRequiredForMen
-          : (showOptionalHint ? l10n.facePhotoOptionalForWomen : null),
-      hintDanger: showRequiredHint,
-      bytes: bytes,
-      round: true,
-      attachLabel: l10n.facePhotoCaptureLabel,
-      attachIcon: Icons.photo_camera_outlined,
-      onAttach: () => unawaited(_pickFacePhoto()),
-      attachedName: l10n.facePhotoCaptured,
-      actionLabel: l10n.retakeLabel,
-      onAction: () => unawaited(_pickFacePhoto()),
-    );
-  }
-
-  Widget _buildOrganisationField(AppL10n l10n) {
-    return OrganisationTypeaheadField(
-      l10n: l10n,
-      controller: _organisationSearch,
-      selectedId: _form.organisationId,
-      selectedLabel: _organisationLabel,
-      searching: _organisationSearching,
-      searchFailed: _organisationSearchFailed,
-      results: _organisationResults,
-      showError: _form.triedSubmit && _form.organisationId == null,
-      onSearchChanged: _onOrganisationSearchChanged,
-      onRetry: () => unawaited(
-        _runOrganisationSearch(_organisationSearch.text.trim()),
-      ),
-      onSelected: (organisation) => _selectOrganisation(organisation, l10n),
-      onCleared: _clearOrganisation,
-    );
   }
 
   // ---- Pure helpers --------------------------------------------------------
@@ -1191,23 +872,4 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     final day = date.day.toString().padLeft(2, '0');
     return '$day-$month-$year';
   }
-}
-
-/// A single birth-location region for the picker, unifying the API [RegionItem]
-/// (D-547) and the const [SaudiRegion] fallback behind one display shape so the
-/// picker + label rendering is identical whatever the source. Mirrors
-/// `SaudiRegion.name(isArabic:)`.
-@immutable
-class _BirthRegionOption {
-  const _BirthRegionOption({
-    required this.code,
-    required this.english,
-    required this.arabic,
-  });
-
-  final String code;
-  final String english;
-  final String arabic;
-
-  String name({required bool isArabic}) => isArabic ? arabic : english;
 }

@@ -38,7 +38,6 @@ class SimfLogoImage extends StatelessWidget {
   /// The image URL. Null / blank goes straight to [onError] without a fetch.
   final String? url;
 
-  /// Shown while the image loads.
   final Widget placeholder;
 
   /// Built when [url] is blank or the fetch fails. Defaults to [placeholder].

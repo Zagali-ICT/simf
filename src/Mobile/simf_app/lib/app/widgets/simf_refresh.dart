@@ -19,10 +19,8 @@ class SimfPullToRefresh extends StatelessWidget {
   const SimfPullToRefresh(
       {required this.onRefresh, required this.child, super.key,});
 
-  /// Called when the user pulls to refresh; should re-fetch the page's data.
   final Future<void> Function() onRefresh;
 
-  /// The scrollable body to refresh.
   final Widget child;
 
   @override
@@ -44,7 +42,6 @@ class SimfPullToRefresh extends StatelessWidget {
 class SimfPullableHost extends StatelessWidget {
   const SimfPullableHost({required this.child, super.key});
 
-  /// The non-scrolling state widget to host (centred, viewport-tall).
   final Widget child;
 
   @override

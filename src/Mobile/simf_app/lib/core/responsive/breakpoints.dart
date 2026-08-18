@@ -15,7 +15,6 @@ enum WindowSize {
   expanded,
   large;
 
-  /// The bucket for a raw [width] in logical pixels.
   static WindowSize fromWidth(double width) {
     if (width < 600) {
       return WindowSize.compact;
@@ -29,7 +28,6 @@ enum WindowSize {
     return WindowSize.large;
   }
 
-  /// The bucket for the current [context]'s width.
   static WindowSize of(BuildContext context) =>
       fromWidth(MediaQuery.sizeOf(context).width);
 

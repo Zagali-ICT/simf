@@ -22,6 +22,5 @@ const List<String> _weekdaysEn = <String>[
   'Sunday',
 ];
 
-/// The weekday name for [date] in the active locale.
 String gregorianWeekdayName(DateTime date, {required bool isArabic}) =>
     (isArabic ? _weekdaysAr : _weekdaysEn)[date.weekday - 1];

@@ -7,7 +7,6 @@ import 'package:simf_app/features/myarea/my_area_screen.dart';
 import 'package:simf_app/features/sessions/sessions_screen.dart';
 import 'package:simf_app/features/venuemap/venue_map_screen.dart';
 
-/// Maps a [SimfTab] to its index in the shell's tab list.
 int tabIndex(SimfTab tab) => SimfTab.values.indexOf(tab);
 
 /// Inherited scope that lets child widgets (bottom nav, greeting header, etc.)

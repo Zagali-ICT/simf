@@ -30,11 +30,9 @@ enum AssetKind {
 
   const AssetKind(this.wireName);
 
-  /// The path segment the API expects, e.g. `SpeakerPhoto`.
   final String wireName;
 }
 
-/// Builds the URLs for uploaded media assets.
 abstract final class AssetUrls {
   /// `{baseUrl}/app/assets/{kind}/{id}/image`.
   ///

@@ -40,7 +40,6 @@ Future<void> main() async {
         // update-policy comparison).
         installedAppVersionProvider.overrideWithValue(installedVersion),
 
-        // The locale controller — wires the prefs-backed implementation.
         localeControllerProvider.overrideWith(
           () => LocaleController(prefs: prefs),
         ),

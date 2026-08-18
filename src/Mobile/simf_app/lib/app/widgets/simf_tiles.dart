@@ -50,7 +50,6 @@ class SimfNavTile extends StatelessWidget {
 
   final String label;
 
-  /// A Material glyph (the default tile icon source).
   final IconData? icon;
 
   /// An optional bundled SVG asset path (e.g. the KSA frame's exact iconify

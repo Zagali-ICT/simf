@@ -23,7 +23,6 @@ class SessionRatePromptTracker {
 
   static const String _separator = ',';
 
-  /// Whether the rate prompt has already been shown for [sessionId].
   bool hasShown(String sessionId) => _shownIds().contains(sessionId);
 
   /// Records that the rate prompt has now been shown for [sessionId], so it is
@@ -50,7 +49,6 @@ class SessionRatePromptTracker {
   }
 }
 
-/// The app-wide [SessionRatePromptTracker], backed by the shared prefs store.
 final sessionRatePromptTrackerProvider =
     Provider<SessionRatePromptTracker>((ref) {
   return SessionRatePromptTracker(ref.watch(simfPrefsStorageProvider));
