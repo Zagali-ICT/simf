@@ -224,6 +224,47 @@ stages:
     - checkout: self
       clean: true
 
+    # --- Delete every bin/ and obj/ under src/ before restoring.
+    #
+    #     THIS IS THE ONE THAT KEPT THE AUGUST-8 STYLESHEET LIVE, and it is not
+    #     the staging directory below - that guard is real but it was not the
+    #     cause. `clean: true` maps to the agent's "source" clean, which runs
+    #     `git clean -ffdx` on the SOURCES directory. bin/ and obj/ are matched
+    #     by that, so in principle they go - but the evidence from the runs says
+    #     they did not: 'Build Website' completed in 3.61 seconds having compiled
+    #     nothing, which is only possible against a warm obj/.
+    #
+    #     Why a warm obj/ is fatal HERE specifically. Blazor fingerprints static
+    #     assets - landing.css ships as landing.<hash>.css, and the hash-to-file
+    #     map is CACHED in obj/<config>/<tfm>/staticwebassets.build.json plus the
+    #     .dswa.cache.json files beside it. MSBuild treats that cache as up to
+    #     date on an incremental build, so an EDITED wwwroot file keeps its OLD
+    #     fingerprint: the publish emits landing.52jt1tmv2u.css - the August-8
+    #     name - from an August-18 source file, and the rendered <link> points at
+    #     it. The bytes on the server therefore never change.
+    #
+    #     That is exactly what the deploy log showed. After the CSS was edited
+    #     twice on main, robocopy reported "Files: 264  Copied: 136": the 136 are
+    #     the recompiled DLLs, and not one static asset is among them, because
+    #     the stale manifest reproduced them byte-for-byte.
+    #
+    #     `dotnet clean` is NOT sufficient - it removes build OUTPUT and leaves
+    #     the caches that hold the fingerprint map. The directories have to go.
+    - powershell: |
+        $ErrorActionPreference = 'Stop'
+        $root = '$(Build.SourcesDirectory)/src'
+        $stale = Get-ChildItem -Path $root -Directory -Recurse -Force -ErrorAction SilentlyContinue |
+                 Where-Object { $_.Name -eq 'bin' -or $_.Name -eq 'obj' }
+        Write-Host "Removing $($stale.Count) bin/obj directory(ies) under $root"
+        foreach ($dir in $stale) {
+            Remove-Item -LiteralPath $dir.FullName -Recurse -Force -ErrorAction SilentlyContinue
+        }
+        $left = @(Get-ChildItem -Path $root -Directory -Recurse -Force -ErrorAction SilentlyContinue |
+                  Where-Object { $_.Name -eq 'bin' -or $_.Name -eq 'obj' }).Count
+        if ($left -ne 0) { throw "$left bin/obj directory(ies) survived the clean - a locked file is the usual cause (a w3wp or MSBuild node holding a DLL). The build would reuse a stale static-asset fingerprint cache, so this fails rather than shipping August-8 CSS again." }
+        Write-Host "No bin/obj directories remain under src."
+      displayName: 'Delete bin/obj (stale static-asset fingerprint guard)'
+
     # --- Empty the artifact staging directory before anything publishes into it.
     #
     #     THIS IS WHY THE WEBSITE SERVED AUGUST-8 CSS FOR TEN DAYS. `checkout:
