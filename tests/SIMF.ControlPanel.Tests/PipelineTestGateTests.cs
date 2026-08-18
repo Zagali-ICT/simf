@@ -72,17 +72,49 @@ public class PipelineTestGateTests
             .Where(m => m.Success)
             .Select(m => m.Groups["path"].Value);
 
+    /// The test gates are OFF by standing owner directive (2026-08-18), and this
+    /// pins that default so it cannot drift back silently.
+    ///
+    /// <para>It reads as an inverted test, so here is why it exists. The default
+    /// has flipped three times - D-887 off, D-899 widening the integration suite
+    /// to pull requests, D-915 back on - and each flip was argued from a comment
+    /// block rather than from anything executable. A comment cannot detect its own
+    /// contradiction: the file spent that whole period carrying prose that argued
+    /// FOR the gates directly above a parameter that turned them off.</para>
+    ///
+    /// <para>This is NOT a claim that testing in CI is wrong. It is a claim that
+    /// the owner decides it and an agent does not, and that flipping it should
+    /// take a deliberate edit to a named test rather than a plausible-looking
+    /// one-word change to a YAML default. If the owner reverses the directive,
+    /// change this test in the same commit - that is the point of it.</para>
+    [Fact]
+    public void The_test_gates_stay_off_until_the_owner_says_otherwise()
+    {
+        var declaration = Regex.Match(
+            PipelineYaml,
+            @"-\s*name:\s*runTests\b.*?default:\s*(?<default>true|false)",
+            RegexOptions.Singleline);
+
+        Assert.True(
+            declaration.Success,
+            "The `runTests` parameter is gone from azure-pipelines.yml. The test "
+                + "steps are gated on it, so removing the parameter either breaks the "
+                + "pipeline outright or silently changes what an ordinary run does.");
+
+        Assert.Equal("false", declaration.Groups["default"].Value);
+    }
+
     /// Every test project under tests/ must be run by SOME stage. A new project
     /// that nothing references is a suite that only ever passes locally.
     ///
-    /// <para>READ THIS BEFORE TRUSTING IT. Since D-887 the test steps carry
+    /// <para>READ THIS BEFORE TRUSTING IT. The test steps carry
     /// `condition: eq(parameters.runTests, 'true')` and that parameter DEFAULTS
-    /// TO FALSE, so an ordinary run references every suite and executes none of
-    /// them. This test therefore proves a project is WIRED UP, not that CI ever
-    /// runs it - which is a materially weaker claim than the one it was written
-    /// to make. It is kept because the wiring still has to be right for the
-    /// `runTests` runs that gate a merge, and because a project dropped from
-    /// the list would otherwise never come back when the gates go on.</para>
+    /// TO FALSE by standing owner directive, so an ordinary run references every
+    /// suite and executes none of them. This test therefore proves a project is
+    /// WIRED UP, not that CI ever runs it - a materially weaker claim than the
+    /// one it was written to make. It is kept because the wiring still has to be
+    /// right for a run that opts in, and because a project dropped from the list
+    /// would otherwise never come back if the gates are ever ticked on.</para>
     [Fact]
     public void Every_test_project_is_referenced_by_the_pipeline()
     {
