@@ -186,7 +186,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   /// Whatever the provider currently holds, for the mark-all button. Empty
   /// while loading or on failure, where the button is not reachable anyway.
   List<NotificationItem> get _currentItems =>
-      ref.read(notificationsListProvider).valueOrNull ??
+      ref.read(notificationsListProvider).value ??
       const <NotificationItem>[];
 
   /// Items after the active chip + search filter, newest-first order preserved.

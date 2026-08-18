@@ -181,7 +181,7 @@ class _SeatPickerScreenState extends ConsumerState<SeatPickerScreen> {
     final value = ref.watch(seatMapProvider(widget.sessionId));
     // The shell's title is built before the body, so read the already-resolved
     // map (null while loading) to decide between "pick" and "change".
-    final held = _heldSeat(value.valueOrNull);
+    final held = _heldSeat(value.value);
     return SimfPageShell(
       title: held == null ? l10n.seatPickerTitle : l10n.seatChangeTitle,
       onBack: () => backOrHome(context),

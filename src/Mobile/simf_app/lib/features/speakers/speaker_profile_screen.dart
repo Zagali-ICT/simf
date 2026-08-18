@@ -80,7 +80,7 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
     // placeholder before that, so it reads the value directly rather than
     // branching — the three-state handling belongs in the body.
     final speaker =
-        ref.watch(speakerDetailProvider(widget.speakerId)).valueOrNull;
+        ref.watch(speakerDetailProvider(widget.speakerId)).value;
     final isArabic = l10n.isArabic;
     final rank = speaker?.localizedRank(isArabic: isArabic)?.trim();
     return SimfPageShell(

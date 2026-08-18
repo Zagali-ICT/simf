@@ -170,10 +170,10 @@ class _SessionSummaryListScreenState
 
   List<SessionListItem> _filter(List<SessionListItem> items) {
     final favouriteIds =
-        ref.read(sessionFavouritesProvider).valueOrNull ?? const <String>{};
+        ref.read(sessionFavouritesProvider).value ?? const <String>{};
     final mineIds = ref
             .read(mySessionsProvider)
-            .valueOrNull
+            .value
             ?.items
             .map((s) => s.id)
             .toSet() ??

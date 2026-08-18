@@ -10,7 +10,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  flutter_riverpod: ^2.6.1
+  flutter_riverpod: ^3.4.2
   meta: ^1.16.0
   # ES256 (ECDSA P-256) device-key crypto for biometric sign-in (D-172).
   pointycastle: ^3.9.1

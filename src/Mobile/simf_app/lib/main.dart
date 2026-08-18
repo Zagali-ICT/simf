@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:simf_app/app/app.dart';
 import 'package:simf_app/app/localization/locale_controller.dart';
@@ -65,6 +66,16 @@ Future<void> main() async {
         // without their bearer token (caught by the Wave-1 live E2E).
         authTokenSourceProvider.overrideWith((ref) => AuthTokenBridge()),
       ],
+      // Automatic provider retry stays OFF. Riverpod 3 would re-run a failed
+      // fetch up to ten times behind an exponential backoff, but this app's
+      // failures are largely deterministic — the visitor, moderation and seat
+      // screens branch on 403/404, a state a second call will not change — so
+      // a backoff loop is a client-side retry storm against the live API.
+      // Every data screen renders an explicit error state whose button is the
+      // retry, and pull-to-refresh is the other manual path; returning null
+      // keeps a failure settling into AsyncError where both expect it.
+      // Nested scopes inherit this from the root container.
+      retry: (retryCount, error) => null,
       child: const SimfApp(),
     ),
   );

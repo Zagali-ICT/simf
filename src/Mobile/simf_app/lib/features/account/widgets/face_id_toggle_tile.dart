@@ -29,11 +29,11 @@ class _FaceIdToggleTileState extends ConsumerState<FaceIdToggleTile> {
   @override
   Widget build(BuildContext context) {
     final available =
-        ref.watch(biometricAvailableProvider).valueOrNull ?? false;
+        ref.watch(biometricAvailableProvider).value ?? false;
     if (!available) {
       return const SizedBox.shrink();
     }
-    final enabled = ref.watch(biometricEnabledProvider).valueOrNull ?? false;
+    final enabled = ref.watch(biometricEnabledProvider).value ?? false;
     final l10n = AppL10n.of(context);
     return Column(
       mainAxisSize: MainAxisSize.min,

@@ -1,12 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/features/accessibility/data/accessibility_controller.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../../support/simf_test_scope.dart';
 import '_fake_prefs.dart';
 
 ProviderContainer _containerWith(FakePrefs prefs) {
   final container = ProviderContainer(
+    retry: simfTestNoRetry,
     overrides: <Override>[
       accessibilityControllerProvider
           .overrideWith(() => AccessibilityController(prefs: prefs)),

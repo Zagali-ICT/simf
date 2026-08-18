@@ -39,7 +39,7 @@ class FavouriteHeartButton extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final favourites = ref.watch(sessionFavouritesProvider);
-    final isFavourite = favourites.valueOrNull?.contains(sessionId) ?? false;
+    final isFavourite = favourites.value?.contains(sessionId) ?? false;
 
     return Material(
       color: isFavourite

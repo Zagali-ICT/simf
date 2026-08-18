@@ -32,7 +32,7 @@ class _MyDevicesScreenState extends ConsumerState<MyDevicesScreen> {
   Future<void> _revoke(DeviceKeyEntryDto device) async {
     final l10n = AppL10n.of(context);
     final isThisDevice =
-        device.id == ref.read(deviceKeysProvider).valueOrNull?.localDeviceKeyId;
+        device.id == ref.read(deviceKeysProvider).value?.localDeviceKeyId;
     final confirmed = await SimfConfirmDialog.show(
       context,
       title: l10n.myDevicesRevokeTitle,

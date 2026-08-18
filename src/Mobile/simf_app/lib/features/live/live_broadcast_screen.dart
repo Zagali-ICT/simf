@@ -144,7 +144,7 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
     // settings load / on error, matching the server, which also suppresses
     // the notification when the type is off.
     final sessionRatingEnabled =
-        ref.read(siteSettingsProvider).valueOrNull?.sessionRatingEnabled ??
+        ref.read(siteSettingsProvider).value?.sessionRatingEnabled ??
             true;
     _rateTracker = isApprovedAttendee &&
             session.liveStreamUrl != null &&

@@ -2,9 +2,11 @@ import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
+import '../support/simf_test_scope.dart';
 
 /// D-372 regression — the Wave-1 live E2E found the post-sign-in
 /// `GET /app/users/me` going out WITHOUT the Authorization header: the old
@@ -149,6 +151,7 @@ void main() {
     );
 
     final container = ProviderContainer(
+      retry: simfTestNoRetry,
       overrides: <Override>[
         // The exact main.dart override pattern.
         simfDataConfigProvider.overrideWithValue(config),

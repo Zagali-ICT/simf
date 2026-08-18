@@ -27,7 +27,7 @@ DateTime? _asDate(dynamic value) {
 /// +
 /// status, location, contact, live-stream link, social links, logo) plus the
 /// about-items + details lists. Loaded once and cached for the app lifetime;
-/// consumers read `.valueOrNull` and fall back to bundled l10n while loading /
+/// consumers read `.value` and fall back to bundled l10n while loading /
 /// on
 /// error (offline-safe). Editable in the Control Panel — the same build
 /// re-skins to

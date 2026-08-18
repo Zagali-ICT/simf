@@ -115,7 +115,7 @@ class LiveBroadcastBody extends ConsumerWidget {
       LiveContentView(
         l10n: l10n,
         session: session,
-        upcoming: ref.watch(upcomingSessionsProvider(sessionId)).valueOrNull ??
+        upcoming: ref.watch(upcomingSessionsProvider(sessionId)).value ??
             const <UpcomingSession>[],
         showSignLanguage: showSignLanguage,
         hasId: sessionId != null,

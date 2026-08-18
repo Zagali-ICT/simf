@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -22,6 +23,8 @@ import 'package:simf_app/features/notifications/data/notifications_repository.da
 import 'package:simf_app/features/splash/data/splash_controller.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
+
+import '../test/support/simf_test_scope.dart';
 
 /// End-to-end flow tests over the **assembled app** (real `SimfApp` → real
 /// `routerProvider` → real screens). Only the leaf I/O is faked (auth state,
@@ -172,7 +175,10 @@ List<Override> _overrides(AuthState auth) {
 }
 
 Future<ProviderContainer> _boot(WidgetTester tester, AuthState auth) async {
-  final container = ProviderContainer(overrides: _overrides(auth));
+  final container = ProviderContainer(
+    overrides: _overrides(auth),
+    retry: simfTestNoRetry,
+  );
   addTearDown(container.dispose);
   await tester.pumpWidget(
     UncontrolledProviderScope(container: container, child: const SimfApp()),

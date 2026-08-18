@@ -73,7 +73,7 @@ class _MyMobileScreenState extends ConsumerState<MyMobileScreen> {
           '';
 
   Future<void> _save() async {
-    final profile = ref.read(myMobileProfileProvider).valueOrNull;
+    final profile = ref.read(myMobileProfileProvider).value;
     if (profile == null || _formKey.currentState?.validate() != true) {
       return;
     }

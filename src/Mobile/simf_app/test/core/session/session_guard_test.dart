@@ -5,7 +5,7 @@
 // keep-alive cannot extend the session. A mutable `clock` drives the token
 // expiry / idle maths; the widget timers are advanced with tester.pump.
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/core/session/session_activity.dart';

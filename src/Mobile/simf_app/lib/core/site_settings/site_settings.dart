@@ -105,7 +105,7 @@ final siteSettingsRepositoryProvider = Provider<SiteSettingsRepository>((ref) {
 });
 
 /// The public site-settings, fetched once and cached for the app lifetime
-/// (branding rarely changes). Consumers read `.valueOrNull` and fall back to
+/// (branding rarely changes). Consumers read `.value` and fall back to
 /// their local defaults while loading / on error.
 final siteSettingsProvider = FutureProvider<SiteSettings>((ref) {
   return ref.watch(siteSettingsRepositoryProvider).get();

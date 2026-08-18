@@ -1,10 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/core/startup/app_update_checker.dart';
 import 'package:simf_app/core/startup/app_version_policy.dart';
 import 'package:simf_app/core/startup/server_app_update_checker.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
+import '../../support/simf_test_scope.dart';
 
 class _FakePolicyRepository implements AppVersionPolicyRepository {
   _FakePolicyRepository({this.policy});
@@ -121,6 +123,7 @@ AppVersionPolicy _policy({
     (ref) => ServerAppUpdateChecker(ref, now: now),
   );
   final container = ProviderContainer(
+    retry: simfTestNoRetry,
     overrides: <Override>[
       appVersionPolicyRepositoryProvider
           .overrideWithValue(_FakePolicyRepository(policy: policy)),
@@ -151,6 +154,7 @@ void main() {
       // override — the repository provider throws at construction. The
       // checker must swallow even that.
       final container = ProviderContainer(
+        retry: simfTestNoRetry,
         overrides: <Override>[
           installedAppVersionProvider.overrideWithValue('1.0.0'),
         ],

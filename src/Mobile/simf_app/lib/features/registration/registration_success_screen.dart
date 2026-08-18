@@ -39,7 +39,7 @@ class RegistrationSuccessScreen extends ConsumerWidget {
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     final configuredWelcome = ref
         .watch(siteSettingsProvider)
-        .valueOrNull
+        .value
         ?.messageFor(isArabic ? 'ar' : 'en');
     final welcomeMessage =
         (configuredWelcome != null && configuredWelcome.isNotEmpty)

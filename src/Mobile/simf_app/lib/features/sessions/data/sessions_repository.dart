@@ -66,7 +66,7 @@ final programmeDaysProvider = FutureProvider.autoDispose<List<ProgrammeDay>>(
 final programmeSessionsByIdProvider =
     Provider.autoDispose<Map<String, SessionListItem>>((ref) {
   final sessions =
-      ref.watch(programmeSessionsProvider).valueOrNull ??
+      ref.watch(programmeSessionsProvider).value ??
       const <SessionListItem>[];
   return <String, SessionListItem>{
     for (final session in sessions) session.id: session,

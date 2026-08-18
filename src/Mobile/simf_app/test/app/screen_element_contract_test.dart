@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/app.dart';
@@ -13,6 +14,8 @@ import 'package:simf_app/features/notifications/data/notifications_repository.da
 import 'package:simf_app/features/splash/data/splash_controller.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
+
+import '../support/simf_test_scope.dart';
 
 /// The App **element-contract sweep** — the mobile analog of the CP/Web live
 /// element sweeps (2026-07-26 QA program, WS1). The role x route matrix
@@ -206,7 +209,10 @@ Future<void> _pumpUntil(
 }
 
 Future<ProviderContainer> _boot(WidgetTester tester, AuthState auth) async {
-  final container = ProviderContainer(overrides: _overrides(auth));
+  final container = ProviderContainer(
+    overrides: _overrides(auth),
+    retry: simfTestNoRetry,
+  );
   addTearDown(container.dispose);
   await tester.pumpWidget(
     UncontrolledProviderScope(container: container, child: const SimfApp()),

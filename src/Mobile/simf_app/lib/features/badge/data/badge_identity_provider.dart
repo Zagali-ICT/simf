@@ -22,7 +22,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 ///
 /// A signed-OUT visitor is NOT handled here: the screen answers that before
 /// watching, because a guest has no account rather than an unapproved one.
-class BadgeIdentityNotifier extends AutoDisposeAsyncNotifier<MyAreaIdentity?> {
+class BadgeIdentityNotifier extends AsyncNotifier<MyAreaIdentity?> {
   @override
   Future<MyAreaIdentity?> build() async {
     final auth = ref.watch(authControllerProvider);

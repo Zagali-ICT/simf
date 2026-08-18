@@ -117,10 +117,15 @@ final myModeratedSessionsProvider =
 /// action would defeat the point of the optimism. [apply] is the seam: it
 /// publishes a new value without a request, which is exactly what `setState`
 /// used to do on the two lists.
-class ModeratorQueuesNotifier
-    extends AutoDisposeFamilyAsyncNotifier<ModeratorQueues, String> {
+class ModeratorQueuesNotifier extends AsyncNotifier<ModeratorQueues> {
+  ModeratorQueuesNotifier(this.sessionId);
+
+  /// The desk's session. A family hands its argument to the notifier's
+  /// constructor, not to `build`.
+  final String sessionId;
+
   @override
-  Future<ModeratorQueues> build(String sessionId) async {
+  Future<ModeratorQueues> build() async {
     final repo = ref.watch(moderationRepositoryProvider);
     final desk = await repo.getQueue(sessionId);
     final rejected = await repo.getQueue(

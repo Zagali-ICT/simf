@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 
 /// Re-reads [future] for a pull-to-refresh gesture and swallows a failure.
 ///

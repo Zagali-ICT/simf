@@ -55,7 +55,7 @@ class _AiSummaryScreenState extends ConsumerState<AiSummaryScreen> {
   /// The loaded summary, or null while none is selected, still loading, or
   /// none is published. A getter over the provider, so the three call sites
   /// that read it did not have to change.
-  SessionSummary? get _summary => _summaryAsync.valueOrNull;
+  SessionSummary? get _summary => _summaryAsync.value;
 
   /// Resolve the selected session (the passed id or the first) + its metadata,
   /// firing the summary load once. Runs after the programme list resolves.

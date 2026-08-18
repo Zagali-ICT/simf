@@ -43,7 +43,7 @@ dependencies:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
-  flutter_riverpod: ^2.6.1
+  flutter_riverpod: ^3.4.2
   # Renders the home tiles' exact iconify glyphs (KSA frame 758:1134) as bundled
   # SVGs tinted to the tile colour — the design uses iconify sets (solar/ph/
   # streamline/…) that have no 1:1 Material equivalent. Pure-Dart, no native config.

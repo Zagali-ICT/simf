@@ -53,7 +53,7 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
       ref.watch(sessionDetailViewProvider(widget.sessionId));
 
   SessionDetailView? get _view =>
-      ref.read(sessionDetailViewProvider(widget.sessionId)).valueOrNull;
+      ref.read(sessionDetailViewProvider(widget.sessionId)).value;
 
   Future<void> _refresh() =>
       refreshAsync(ref, sessionDetailViewProvider(widget.sessionId).future);
@@ -233,7 +233,7 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
     final async = _async;
-    final view = async.valueOrNull;
+    final view = async.value;
     // Watched (not read) so the affordances rebuild when the session resolves.
     // DEF-MOD-008 — the ROUTER gates on effectiveAppRole (D-666: an unapproved
     // account presents as guest). Reading the raw `appRole` here showed the

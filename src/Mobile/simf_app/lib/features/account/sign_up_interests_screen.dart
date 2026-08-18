@@ -135,7 +135,7 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
 
     return SignUpInterestsBody(
       l10n: l10n,
-      interests: async.valueOrNull?.interests ?? const <InterestItem>[],
+      interests: async.value?.interests ?? const <InterestItem>[],
       selected: _selected,
       loading: async.isLoading,
       loadError: error == null

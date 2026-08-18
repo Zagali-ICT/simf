@@ -34,7 +34,7 @@ class _SessionModerateScreenState extends ConsumerState<SessionModerateScreen> {
   /// The current buckets, or empty while loading / on failure — where no
   /// action is reachable anyway.
   ModeratorQueues get _queues =>
-      ref.read(moderatorQueuesProvider(widget.sessionId)).valueOrNull ??
+      ref.read(moderatorQueuesProvider(widget.sessionId)).value ??
       const ModeratorQueues.empty();
 
   List<ModeratorQuestion> get _desk => _queues.desk;

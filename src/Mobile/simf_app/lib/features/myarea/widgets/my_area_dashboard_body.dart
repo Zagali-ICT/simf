@@ -87,7 +87,7 @@ class MyAreaDashboardBody extends ConsumerWidget {
             ),
             SimfStatTile(
               value:
-                  ref.watch(sessionFavouritesProvider).valueOrNull?.length ?? 0,
+                  ref.watch(sessionFavouritesProvider).value?.length ?? 0,
               label: l10n.statBookedSessions,
             ),
           ],

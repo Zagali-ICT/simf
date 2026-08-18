@@ -1,9 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
 import 'package:simf_app/features/live/data/current_live_session.dart';
 import 'package:simf_app/features/sessions/data/session_models.dart';
 import 'package:simf_app/features/sessions/data/sessions_repository.dart';
+import '../../support/simf_test_scope.dart';
 
 SessionListItem _session(
   String id, {
@@ -26,6 +28,7 @@ SessionListItem _session(
 
 ProviderContainer _containerWith(List<SessionListItem> sessions) {
   return ProviderContainer(
+    retry: simfTestNoRetry,
     overrides: <Override>[
       programmeSessionsProvider.overrideWith((ref) async => sessions),
     ],

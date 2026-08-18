@@ -31,7 +31,7 @@ class ShareCard {
 /// only needs the new token: re-fetching the vCard body, which did not change,
 /// would be a wasted round trip. That is what the old `setState(() => _token =
 /// token)` did, and [rotate] is where it lives now.
-class ShareCardNotifier extends AutoDisposeAsyncNotifier<ShareCard> {
+class ShareCardNotifier extends AsyncNotifier<ShareCard> {
   @override
   Future<ShareCard> build() async {
     final token = await ref.watch(contactsRepositoryProvider).getMyShareToken();
@@ -41,7 +41,7 @@ class ShareCardNotifier extends AutoDisposeAsyncNotifier<ShareCard> {
 
   Future<void> rotate() async {
     final token = await ref.read(contactsRepositoryProvider).rotateShareToken();
-    final current = state.valueOrNull;
+    final current = state.value;
     if (current != null) {
       state = AsyncValue<ShareCard>.data(current.withToken(token));
     }
