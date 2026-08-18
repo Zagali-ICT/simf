@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using SIMF.Application.AccessControl.Abstractions;
 using SIMF.Common.Badges;
+using SIMF.Common.Enums;
 using SIMF.Common.Options;
 using SIMF.Infrastructure.Persistence;
 using SIMF.Common;
@@ -84,13 +85,23 @@ internal sealed class QrResolver(
             : await identityDbContext.Users
                 .AsNoTracking()
                 .Where(user => user.Id == profileRow.UserId)
-                .Select(user => new { user.LockoutEnd })
+                .Select(user => new { user.LockoutEnd, user.AccountState })
                 .SingleOrDefaultAsync(cancellationToken);
+
+        // Admission is the profile's fact and the profile is the row every holder
+        // has, so it is the answer. The account can still VETO it: a disabled
+        // account whose profile was left reading Approved is the shape a missed
+        // writer produces, and this is a door. Deny on either, and let a holder in
+        // only when nothing says otherwise. An accountless badge has no account to
+        // disagree, so it is unaffected.
+        var admission = userRow is not null && userRow.AccountState == AccountState.Disabled
+            ? AccountState.Disabled
+            : profileRow.AdmissionState;
 
         return new QrResolution(
             profileRow.Id,
             profileRow.UserId,
-            profileRow.AdmissionState,
+            admission,
             userRow?.LockoutEnd != null && userRow.LockoutEnd > now,
             profileRow.ProfileTypeId,
             profileRow.profileTypeActive,
