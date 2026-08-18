@@ -9,6 +9,8 @@ import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/app_theme.dart';
+import 'package:simf_app/features/sessions/data/my_reservation.dart';
+import 'package:simf_app/features/sessions/data/seat_enums.dart';
 import 'package:simf_app/features/sessions/data/seat_map_models.dart';
 import 'package:simf_app/features/sessions/data/seat_map_repository.dart';
 import 'package:simf_app/features/sessions/my_seat_screen.dart';

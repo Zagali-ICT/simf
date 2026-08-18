@@ -1,4 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:simf_app/features/sessions/data/my_seat.dart';
+import 'package:simf_app/features/sessions/data/session_enums.dart';
 import 'package:simf_app/features/sessions/data/session_models.dart';
 
 void main() {

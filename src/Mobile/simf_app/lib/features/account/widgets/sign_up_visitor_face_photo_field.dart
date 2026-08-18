@@ -3,7 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 
 import 'package:simf_app/app/localization/app_l10n.dart';
-import 'package:simf_app/features/account/data/profile_models.dart';
+import 'package:simf_app/features/account/data/app_gender.dart';
 import 'package:simf_app/features/account/widgets/attachment_field.dart';
 
 /// "Face photo" — the live face capture (→ the profile avatar) on the sign-up

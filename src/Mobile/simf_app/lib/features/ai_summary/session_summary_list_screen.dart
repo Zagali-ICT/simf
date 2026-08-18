@@ -8,6 +8,7 @@ import 'package:simf_app/core/utils/refresh.dart';
 import 'package:simf_app/features/ai_summary/widgets/session_summary_list_card.dart';
 import 'package:simf_app/features/myarea/data/my_sessions_repository.dart';
 import 'package:simf_app/features/sessions/data/session_favourites.dart';
+import 'package:simf_app/features/sessions/data/session_filters.dart';
 import 'package:simf_app/features/sessions/data/session_models.dart';
 import 'package:simf_app/features/sessions/data/sessions_repository.dart'
     show programmeSessionsProvider;

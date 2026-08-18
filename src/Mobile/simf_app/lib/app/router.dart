@@ -11,7 +11,7 @@ import 'package:simf_app/features/account/badge_activation_screen.dart';
 import 'package:simf_app/features/account/badge_password_screen.dart';
 import 'package:simf_app/features/account/badge_sign_in_screen.dart';
 import 'package:simf_app/features/account/biometric_step_up_screen.dart';
-import 'package:simf_app/features/account/data/profile_models.dart';
+import 'package:simf_app/features/account/data/sign_up_profile_draft.dart';
 import 'package:simf_app/features/account/email_otp_verify_screen.dart';
 import 'package:simf_app/features/account/forgot_password_screen.dart';
 import 'package:simf_app/features/account/my_devices_screen.dart';

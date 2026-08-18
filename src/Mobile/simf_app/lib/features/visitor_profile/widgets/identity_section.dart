@@ -6,7 +6,7 @@ import 'package:simf_app/core/validation/field_limits.dart';
 import 'package:simf_app/core/validation/name_validation.dart';
 import 'package:simf_app/core/widgets/simf_field_label.dart';
 import 'package:simf_app/core/widgets/simf_labeled_text_field.dart';
-import 'package:simf_app/features/account/data/profile_models.dart';
+import 'package:simf_app/features/account/data/app_gender.dart';
 import 'package:simf_app/features/account/widgets/gender_pills_field.dart';
 import 'package:simf_app/features/visitor_profile/data/visitor_profile_validators.dart';
 

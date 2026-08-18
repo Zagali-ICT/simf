@@ -3,7 +3,7 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/core/widgets/simf_field_label.dart';
 import 'package:simf_app/core/widgets/simf_picker_field.dart';
-import 'package:simf_app/features/account/data/profile_models.dart';
+import 'package:simf_app/features/account/data/profile_lookups.dart';
 
 /// The nationality picker.
 ///

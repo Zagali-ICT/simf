@@ -11,8 +11,10 @@ import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/app_theme.dart';
 import 'package:simf_app/features/questions/data/questions_repository.dart';
 import 'package:simf_app/features/questions/send_question_screen.dart';
+import 'package:simf_app/features/sessions/data/my_seat.dart';
 import 'package:simf_app/features/sessions/data/session_detail_repository.dart';
 import 'package:simf_app/features/sessions/data/session_models.dart';
+import 'package:simf_app/features/sessions/data/session_speaker.dart';
 
 import '../support/simf_test_scope.dart';
 import 'golden_fonts.dart';

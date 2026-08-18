@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/core/motion/motion_durations.dart';
-import 'package:simf_app/features/account/data/profile_models.dart';
+import 'package:simf_app/features/account/data/profile_lookups.dart';
 import 'package:simf_app/features/account/data/profile_repository.dart';
 import 'package:simf_app/features/account/widgets/organisation_typeahead_field.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';

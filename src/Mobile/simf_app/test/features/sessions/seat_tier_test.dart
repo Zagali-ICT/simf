@@ -1,6 +1,7 @@
 // D-771 (owner 2026-07-26) — seat TIERS on the app side: the wire decode, the
 // per-row lookup, and the client-side mirror of the server's eligibility rule.
 import 'package:flutter_test/flutter_test.dart';
+import 'package:simf_app/features/sessions/data/seat_enums.dart';
 import 'package:simf_app/features/sessions/data/seat_map_models.dart';
 
 void main() {

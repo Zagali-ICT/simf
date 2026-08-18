@@ -11,6 +11,7 @@ import 'package:simf_app/app/widgets/simf_scanner_body.dart';
 import 'package:simf_app/core/responsive/breakpoints.dart';
 import 'package:simf_app/core/responsive/max_width_body.dart';
 import 'package:simf_app/core/utils/refresh.dart';
+import 'package:simf_app/features/sessions/data/seat_enums.dart';
 import 'package:simf_app/features/sessions/data/seat_map_models.dart';
 import 'package:simf_app/features/sessions/data/seat_map_repository.dart';
 import 'package:simf_app/features/sessions/widgets/hall_seat_map.dart';

@@ -12,8 +12,8 @@ import 'package:simf_app/app/theme/app_theme.dart';
 import 'package:simf_app/features/myarea/data/my_sessions_models.dart';
 import 'package:simf_app/features/myarea/data/my_sessions_repository.dart';
 import 'package:simf_app/features/myarea/my_sessions_screen.dart';
+import 'package:simf_app/features/sessions/data/session_enums.dart';
 import 'package:simf_app/features/sessions/data/session_favourites.dart';
-import 'package:simf_app/features/sessions/data/session_models.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../support/simf_test_scope.dart';

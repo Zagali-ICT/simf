@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:simf_app/features/sessions/data/my_reservation.dart';
 import 'package:simf_app/features/sessions/data/seat_map_models.dart';
 import 'package:simf_app/features/sessions/data/sessions_endpoints.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';

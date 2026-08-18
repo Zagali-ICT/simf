@@ -10,7 +10,7 @@ import 'package:simf_app/app/widgets/simf_language_toggle.dart';
 import 'package:simf_app/core/widgets/simf_field_style.dart';
 import 'package:simf_app/core/widgets/simf_image_source_sheet.dart';
 import 'package:simf_app/core/widgets/simf_picker_field.dart';
-import 'package:simf_app/features/account/data/profile_models.dart';
+import 'package:simf_app/features/account/data/profile_lookups.dart';
 import 'package:simf_app/features/account/data/profile_repository.dart';
 import 'package:simf_app/features/staff/data/staff_models.dart';
 import 'package:simf_app/features/staff/data/staff_repository.dart';

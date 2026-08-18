@@ -9,7 +9,9 @@ import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/features/sessions/data/presentation_models.dart';
 import 'package:simf_app/features/sessions/data/presentation_repository.dart';
 import 'package:simf_app/features/sessions/data/presentation_summary_gate.dart';
+import 'package:simf_app/features/sessions/data/session_enums.dart';
 import 'package:simf_app/features/sessions/data/session_models.dart';
+import 'package:simf_app/features/sessions/data/session_speaker.dart';
 import 'package:simf_app/features/sessions/data/sessions_repository.dart';
 import 'package:simf_app/features/sessions/session_presentations_screen.dart';
 

@@ -9,7 +9,7 @@ import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/widgets/simf_bottom_nav.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/core/utils/refresh.dart';
-import 'package:simf_app/features/sessions/data/seat_map_models.dart';
+import 'package:simf_app/features/sessions/data/seat_enums.dart';
 import 'package:simf_app/features/sessions/data/seat_map_repository.dart';
 import 'package:simf_app/features/sessions/widgets/seat_map_async_view.dart';
 import 'package:simf_app/features/sessions/widgets/seat_map_view.dart';

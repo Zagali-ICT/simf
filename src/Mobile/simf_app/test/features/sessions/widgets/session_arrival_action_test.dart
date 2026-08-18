@@ -3,8 +3,8 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/features/sessions/data/hall_attendance_models.dart';
 import 'package:simf_app/features/sessions/data/hall_attendance_repository.dart';
-import 'package:simf_app/features/sessions/data/session_models.dart';
 import 'package:simf_app/features/sessions/widgets/session_arrival_action.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 

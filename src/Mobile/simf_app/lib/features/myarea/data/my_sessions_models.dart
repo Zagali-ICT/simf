@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:simf_app/core/utils/bilingual.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
-import 'package:simf_app/features/sessions/data/session_models.dart'
+import 'package:simf_app/features/sessions/data/session_enums.dart'
     show SessionStatus;
 
 /// One card on the "my sessions" list — App "تفاصيل الجلسات" (Figma 1388:9067),

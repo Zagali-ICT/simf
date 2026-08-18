@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:simf_app/app/theme/tokens.dart';
-import 'package:simf_app/features/sessions/data/session_models.dart';
+import 'package:simf_app/features/sessions/data/programme_day.dart';
 import 'package:simf_app/features/sessions/widgets/day_cell.dart';
 
 /// The agenda day strip (frame node 883:2327, restyled #4): a **white**
