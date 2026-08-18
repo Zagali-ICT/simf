@@ -76,8 +76,6 @@ class _HomeHeroBannerState extends State<HomeHeroBanner> {
     }
   }
 
-  // Auto-advance to the next banner every [_interval], wrapping at the end.
-  // Only runs when there is more than one banner (mirrors HighlightsCarousel).
   void _startAutoAdvance() {
     if (widget.banners.length <= 1) {
       return;

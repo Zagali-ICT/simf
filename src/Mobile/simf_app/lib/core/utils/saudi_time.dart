@@ -160,6 +160,30 @@ String formatDateTime12h(DateTime local, {required bool isArabic}) =>
       isArabic: isArabic,
     );
 
+/// The calendar date as `DD-MM-YYYY` — the news-card date line (the frame
+/// shows Western digits even in the Arabic UI, so there is no `isArabic`
+/// knob). Read off the value's own fields rather than through `intl`, so it is
+/// timezone-stable and needs no `initializeDateFormatting`.
+///
+/// The caller still has to pin `textDirection: TextDirection.ltr` on the Text:
+/// an RTL paragraph would otherwise reorder the three segments.
+String formatDateDmy(DateTime date) {
+  final dd = date.day.toString().padLeft(2, '0');
+  final mm = date.month.toString().padLeft(2, '0');
+  return '$dd-$mm-${date.year}';
+}
+
+/// The calendar date as ISO `yyyy-MM-dd` — the compact date half of a
+/// date + time line (meeting confirm). Same fields-only reading as
+/// [formatDateDmy]; the year is padded to four so a stray year < 1000 cannot
+/// shorten the string.
+String formatDateIso(DateTime date) {
+  final yyyy = date.year.toString().padLeft(4, '0');
+  final mm = date.month.toString().padLeft(2, '0');
+  final dd = date.day.toString().padLeft(2, '0');
+  return '$yyyy-$mm-$dd';
+}
+
 /// A countdown as `mm:ss`, zero-padded — the OTP resend timers.
 ///
 /// Written out three times before this (the email-OTP, sign-up-email-verify

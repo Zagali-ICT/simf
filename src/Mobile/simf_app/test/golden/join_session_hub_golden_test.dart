@@ -3,17 +3,20 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/app_theme.dart';
+import 'package:simf_app/features/sessions/data/session_enums.dart';
 import 'package:simf_app/features/sessions/data/session_models.dart';
+import 'package:simf_app/features/sessions/data/session_speaker.dart';
 import 'package:simf_app/features/sessions/data/sessions_repository.dart'
     show programmeSessionsProvider;
 import 'package:simf_app/features/sessions/join_session_hub_screen.dart';
 
+import '../support/simf_test_scope.dart';
 import 'golden_fonts.dart';
 
 /// Render-lock golden of the Join-a-session hub (D-485 — no Figma frame of its
@@ -76,7 +79,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      ProviderScope(
+      simfTestScope(
         overrides: <Override>[
           programmeSessionsProvider.overrideWith((ref) async => _sessions),
         ],

@@ -75,7 +75,6 @@ class AppL10n {
         'This will take you out of the app to an external site. Continue?',
       );
   String get externalLinkOpen => _t('فتح', 'Open');
-  // Shown on the guest home when a signed-in account is not yet approved.
   String get homePendingApprovalNote => _t(
         'حسابك قيد المراجعة. ستُفعَّل كل الميزات بعد الموافقة على تسجيلك.',
         'Your account is awaiting approval. Full features unlock once your '
@@ -107,7 +106,6 @@ class AppL10n {
         'Something went wrong. Please try again.',
       );
 
-  // Splash / store-update dialog (Page 001 — Logic L-2).
   String get updateRequiredTitle => _t('تحديث مطلوب', 'Update required');
   String get updateRequiredBody => _t(
         'يتوفر إصدار جديد من التطبيق ويجب تثبيته للمتابعة.',
@@ -121,7 +119,6 @@ class AppL10n {
   String get updateNowLabel => _t('تحديث الآن', 'Update now');
   String get updateLaterLabel => _t('لاحقاً', 'Later');
 
-  // Onboarding (Page 002). Interim slide copy standing in for the intro videos.
   String get onboardingSkip => _t('تخطي', 'Skip');
   String get onboardingNext => _t('التالي', 'Next');
   String get onboardingGetStarted => _t('ابدأ', 'Get started');
@@ -152,7 +149,6 @@ class AppL10n {
         'Everything you need in one place: the events schedule, speakers, the venue map, entry information and the live broadcast.',
       );
 
-  // Sign up — type (Page 004). Client-only account-type chooser (no API).
   String get signUpTypeTitle => _t('إنشاء حساب — النوع', 'Sign up — type');
   String get signUpTypeLead =>
       _t('اختر نوع الحساب', 'Choose your account type');
@@ -167,7 +163,6 @@ class AppL10n {
         'تُدار حسابات العارضين والرعاة من لوحة التحكم',
         'Exhibitor & sponsor accounts are managed from the Control Panel',
       );
-  // Sign up — form (Page 005).
   String get signUpTitle => _t('إنشاء حساب', 'Sign up');
   String get signUpButton => _t('إنشاء حساب', 'Create account');
   String get invalidEmail => _t('بريد إلكتروني غير صالح', 'Invalid email');
@@ -208,7 +203,6 @@ class AppL10n {
   String get signUpCheckEmail =>
       _t('تحقق من بريدك الإلكتروني', 'Check your email');
 
-  // Sign-up email verification (Page 006).
   String get emailVerifyTitle => _t('التحقق بالبريد', 'Email verification');
   String get emailVerifySentTo =>
       // D-373 — the digit count is visually obvious from the code boxes.
@@ -226,7 +220,6 @@ class AppL10n {
 
   String get haveAccountQuestion => _t('هل لديك حساب ؟', 'Have an account?');
 
-  // Sign up — visitor profile completion (Page 007).
   String get signUpVisitorTitle => _t('إنشاء حساب · زائر', 'Sign up — visitor');
   String get profileSectionPersonal => _t('البيانات الشخصية', 'Personal');
   String get profileSectionAffiliation => _t('الجهة والفئة', 'Affiliation');
@@ -451,7 +444,6 @@ class AppL10n {
   String get interestsMaxReached =>
       _t('الحد الأقصى 10 اهتمامات', 'You can pick at most 10 interests');
 
-  // Terms & conditions (Page 009).
   String get termsTitle => _t('الشروط والأحكام', 'Terms & conditions');
   String termsLastUpdated(String date) =>
       _t('آخر تحديث · $date', 'Last updated · $date');
@@ -475,7 +467,6 @@ class AppL10n {
   String get termsAcceptButton => _t('موافق', 'Agree');
   String get declineLabel => _t('رفض', 'Decline');
 
-  // Registration success (Page 010).
   String get registrationSuccessTitle =>
       _t('تم التسجيل بنجاح', 'Registration success');
   // KSA-Project success frame copy (Figma 505:1451, D-366).
@@ -523,7 +514,6 @@ class AppL10n {
         '@SIMF_RSNF · Saudi International Maritime Forum',
       );
 
-  // Registration status (Page 011).
   String get registrationStatusTitle =>
       _t('حالة التسجيل', 'Registration status');
   String get regPendingHeadline =>
@@ -559,7 +549,6 @@ class AppL10n {
       );
   String get sessionStaySignedIn => _t('البقاء مسجّلاً', 'Stay signed in');
 
-  // Sign in (Page 003).
   String get signInTitle => _t('تسجيل الدخول', 'Sign in');
   String get emailLabel => _t('البريد الإلكتروني', 'Email');
 
@@ -686,7 +675,6 @@ class AppL10n {
         'Too many attempts. Authentication is temporarily locked — try again shortly or use your device PIN.',
       );
 
-  // Email-OTP second factor + reset flow (Page 003 L-5/L-6).
   String get otpTitle => _t('رمز التحقق', 'Verification code');
   String get otpBody => _t(
         'أدخل الرمز المُرسَل إلى بريدك الإلكتروني.',
@@ -800,7 +788,6 @@ class AppL10n {
       );
   String get emailLabelGeneric => _t('البريد الإلكتروني', 'Email');
 
-  // Splash branding (Page 001) — matches the mockup brand lockup.
   String get splashTagline => 'SAUDI · MOD · RSNF';
   String get splashTitle => _t(
         'الملتقى البحري السعودي الدولي',
@@ -818,7 +805,6 @@ class AppL10n {
   String get onboardingVideoLabel => _t('مقطع تعريفي', 'Intro video');
   String get onboardingMutedTooltip => _t('الصوت مكتوم', 'Sound muted');
 
-  // Login header controls (Page 003) — buttons only for now (no wiring yet).
   String get languageToggleLabel => 'العربية · English';
 
   // Home — landing / router screen (Page 013). Interim copy + tile labels for
@@ -1210,7 +1196,6 @@ class AppL10n {
   String get myAreaError =>
       _t('تعذّر تحميل منطقتك.', 'Could not load your area.');
 
-  // Venue map (Page 015).
   String get venueMapTitle => _t('الخريطة', 'Venue map');
   String get venueMapError =>
       _t('تعذّر تحميل الخريطة.', 'Could not load the map.');
@@ -1259,7 +1244,6 @@ class AppL10n {
   String get sessionsError =>
       _t('تعذّر تحميل الجلسات.', 'Could not load the sessions.');
 
-  // Session detail (Page 017).
   String get sessionDetailTitle => _t('تفاصيل الجلسة', 'Session detail');
   String get sessionDetailError =>
       _t('تعذّر تحميل الجلسة.', 'Could not load the session.');
@@ -1352,7 +1336,6 @@ class AppL10n {
   String get bookingCancelledToast => _t('تم إلغاء الحجز', 'Booking cancelled');
   String get bookingCancelFailed =>
       _t('تعذّر إلغاء الحجز', "Couldn't cancel the booking");
-  // Seat picker (Page — select a seat).
   String get seatPickerTitle => _t('اختر مقعدك', 'Select your seat');
   String get seatPickerHint =>
       _t('اضغط على مقعد متاح لحجزه', 'Tap an available seat to reserve it');
@@ -1406,7 +1389,6 @@ class AppL10n {
         'تم حجز هذا المقعد للتو — لا يزال مقعدك الحالي محجوزاً لك.',
         'That seat was just taken — you still have your current seat.',
       );
-  // Join-a-session hub.
   String get joinHubTitle => _t('احجز مقعداً', 'Book a seat');
   String get joinHubHint =>
       _t('اختر جلسة للانضمام إليها', 'Choose a session to join');
@@ -1428,7 +1410,6 @@ class AppL10n {
   String get rowChipLabel => _t('الصف', 'Row');
   String get stageLabelBilingual => _t('المسرح · STAGE', 'Stage · STAGE');
 
-  // My Seat map (Page 018).
   String get mySeatMapTitle => _t('مقعدي · خريطة الجلوس', 'My seat map');
   String get seatMapError =>
       _t('تعذّر تحميل خريطة المقاعد.', 'Could not load the seat map.');
@@ -1506,7 +1487,6 @@ class AppL10n {
   String get staffSeatingGuestPhoto => _t('صورة الضيف', 'Guest photo');
   String get staffSeatingClear => _t('مسح النتيجة', 'Clear result');
 
-  // Speakers list (Page 019).
   String get speakersTitle => _t('المتحدثون', 'Speakers');
   String get speakersError =>
       _t('تعذّر تحميل المتحدثين.', 'Could not load the speakers.');
@@ -1517,7 +1497,6 @@ class AppL10n {
       _t('ترتيب حسب الابجدية', 'Sort alphabetically');
   String get speakersNoMatches => _t('لا نتائج مطابقة', 'No matching speakers');
 
-  // Speaker profile (Page 020).
   String get speakerProfileTitle => _t('ملف المتحدث', 'Speaker profile');
   String get speakerProfileError =>
       _t('تعذّر تحميل ملف المتحدث.', 'Could not load the speaker profile.');
@@ -1669,7 +1648,6 @@ class AppL10n {
   String get requestsError =>
       _t('تعذّر تحميل طلباتك', 'Could not load your requests');
 
-  // Type headlines (rendered from AppRequestKind).
   String get requestKindSpeaker =>
       _t('طلب لقاء مع متحدث', 'Speaker meeting request');
   String get requestKindDelegation =>
@@ -1693,7 +1671,6 @@ class AppL10n {
   String get requestsTabAccepted => _t('المقبولة', 'Accepted');
   String get requestsTabLog => _t('السجل', 'Log');
 
-  // New-request flow.
   String get requestNew => _t('طلب جديد', 'New request');
   // The نوع الطلب type-picker sheet and its document / badge forms were deleted
   // with new_request_sheet.dart (D-703 flagged it orphaned on 2026-07-08; owner
@@ -1701,7 +1678,6 @@ class AppL10n {
   // feed still RENDERS existing document/badge requests via requestKindDocument
   // / requestKindBadge below — only the creation UI is gone.
 
-  // Actions / toasts.
   String get requestCancel => _t('إلغاء الطلب', 'Cancel request');
   String get requestCancelConfirm =>
       _t('هل تريد إلغاء هذا الطلب؟', 'Cancel this request?');
@@ -1734,7 +1710,6 @@ class AppL10n {
     return '$hh:$mm $period';
   }
 
-  // Booths (Page 022).
   String get boothsTitle => _t('الأجنحة', 'Booths');
   // The screen header per Figma frame 922:2458 node 922:2464 ("المعرض" — the
   // exhibition); distinct from the nav-tile/route label (boothsTitle).
@@ -1751,7 +1726,6 @@ class AppL10n {
       _t('أرشدني إلى الجناح · $code', 'Guide me to the booth · $code');
   String get boothsOfficerRole => _t('المسؤول في الجناح', 'Booth officer');
 
-  // Sponsors (Page 023).
   String get sponsorsTitle => _t('الرعاة', 'Sponsors');
   String get sponsorsError =>
       _t('تعذّر تحميل الرعاة.', 'Could not load the sponsors.');
@@ -1779,7 +1753,6 @@ class AppL10n {
     }
   }
 
-  // Archive (Page 024).
   String get archiveTitle => _t('الأرشيف', 'Archive');
   String get archiveError =>
       _t('تعذّر تحميل الأرشيف.', 'Could not load the archive.');
@@ -1811,7 +1784,6 @@ class AppL10n {
         '$attendees attendees · $sessions sessions · $speakers speakers',
       );
 
-  // News (Page 029).
   String get newsTitle => _t('الأخبار', 'News');
   String get newsError =>
       _t('تعذّر تحميل الأخبار.', 'Could not load the news.');
@@ -1819,7 +1791,6 @@ class AppL10n {
   String get newsNotFound =>
       _t('الخبر غير موجود', 'This article was not found');
 
-  // Media gallery (Page 030).
   String get galleryTitle => _t('معرض الصور والفيديوهات', 'Media gallery');
   String get galleryError =>
       _t('تعذّر تحميل الوسائط.', 'Could not load the media.');
@@ -1834,7 +1805,6 @@ class AppL10n {
   // Header (frame 1116:16448) — the anchor mark + the forum name.
   String get aboutForumName =>
       _t('الملتقى الدولي البحري', 'The International Maritime Forum');
-  // Section titles.
   String get aboutMissionTitle => _t('الرسالة', 'Mission');
   String get aboutVisionTitle => _t('الرؤية', 'Vision');
   String get aboutDetailsTitle => _t('تفاصيل الملتقى', 'Forum details');
@@ -1985,14 +1955,12 @@ class AppL10n {
   String get rateLoadFailed =>
       _t('تعذّر تحميل نموذج التقييم.', 'Could not load the rating form.');
 
-  // Media partners (Page 031).
   String get mediaPartnersTitle => _t('الشركاء الإعلاميون', 'Media partners');
   String get mediaPartnersError => _t(
       'تعذّر تحميل الشركاء الإعلاميين.', 'Could not load the media partners.',);
   String get mediaPartnersEmpty =>
       _t('لا يوجد شركاء إعلاميون', 'No media partners');
 
-  // Notifications (Page 033).
   String get notificationsTitle => _t('الإشعارات', 'Notifications');
   String get notificationsEmpty =>
       _t('لا توجد إشعارات بعد', 'No notifications yet');
@@ -2082,7 +2050,6 @@ class AppL10n {
   String get moreSectionForumInfo => _t('معلومات الملتقى', 'Forum information');
   String get moreSectionSettings => _t('الإعدادات', 'Settings');
   String get moreSectionLegal => _t('قانوني', 'Legal');
-  // Items new to the redesigned hub.
   String get moreForumGuide => _t('دليل الملتقى', 'Forum guide');
   String get morePresentations => _t('عروض الجلسات', 'Session presentations');
   String get moreVisitSaudi => _t('اكتشف السعودية', 'Discover Saudi');
@@ -2167,7 +2134,6 @@ class AppL10n {
         );
   String get okLabel => _t('حسناً', 'OK');
 
-  // Guest mode (Page 012 — informational entry).
   String get guestModeTitle => _t('وضع الضيف', 'Guest mode');
   String get guestModeHeadline => _t('التصفح كضيف', 'Browsing as guest');
   String get guestModeBrowseBody => _t(
@@ -2492,7 +2458,6 @@ class AppL10n {
   // (D-605/D-609: the Audience-comments (Page 028) l10n strings were removed
   // with the feature — rejected by customer.)
 
-  // Entry badge (Page 032).
   String get badgeTitle => _t('بطاقة الدخول', 'Entry badge');
   String get badgeShowAtEntry =>
       _t('أبرز هذه البطاقة عند الدخول', 'Show this at entry');
@@ -2713,10 +2678,6 @@ class AppL10n {
   String get contactUnavailable =>
       _t('هذه الجهة لم تعد متاحة', 'This contact is no longer available');
   String get contactNoteLabel => _t('ملاحظة', 'Note');
-
-  // ---------------------------------------------------------------------
-  // Track D-b — strings added by the 2026-07-30 fix-all round.
-  // ---------------------------------------------------------------------
 
   /// The splash edition line (#40-residual). Split out of [splashEventLine] so
   /// the date/location half can come from the CP-configured organization

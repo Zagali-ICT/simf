@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/features/faq/data/faq_models.dart';
 import 'package:simf_app/features/faq/data/faq_repository.dart';
 import 'package:simf_app/features/faq/faq_screen.dart';
+
+import '../../support/simf_test_scope.dart';
 
 List<FaqGroup> _sample() => <FaqGroup>[
       const FaqGroup(
@@ -42,7 +44,7 @@ Future<void> _pump(
   addTearDown(tester.view.resetDevicePixelRatio);
 
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[faqOverride],
       child: MaterialApp(
         locale: locale,

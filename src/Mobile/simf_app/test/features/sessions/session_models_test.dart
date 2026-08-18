@@ -1,6 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:simf_app/features/sessions/data/programme_day.dart';
+import 'package:simf_app/features/sessions/data/session_enums.dart';
+import 'package:simf_app/features/sessions/data/session_filters.dart';
 import 'package:simf_app/features/sessions/data/session_lifecycle.dart';
 import 'package:simf_app/features/sessions/data/session_models.dart';
+import 'package:simf_app/features/sessions/data/session_speaker.dart';
 
 SessionListItem _session({
   required String id,

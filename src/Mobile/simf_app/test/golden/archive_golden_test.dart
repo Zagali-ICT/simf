@@ -3,7 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
@@ -13,6 +13,7 @@ import 'package:simf_app/features/archive/archive_screen.dart';
 import 'package:simf_app/features/archive/data/archive_models.dart';
 import 'package:simf_app/features/archive/data/archive_repository.dart';
 
+import '../support/simf_test_scope.dart';
 import 'golden_fonts.dart';
 
 /// Golden-render harness (owner 2026-06-28, verification option 2): renders the
@@ -118,7 +119,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      ProviderScope(
+      simfTestScope(
         overrides: <Override>[
           archiveEditionsProvider.overrideWith((ref) async => _editions),
           archiveEditionDetailProvider('a2024')

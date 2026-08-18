@@ -27,3 +27,20 @@ final sessionSummaryRepositoryProvider =
     Provider<SessionSummaryRepository>((ref) {
   return SessionSummaryRepository(ref.watch(simfApiClientProvider));
 });
+
+/// One session's AI summary, or **null when none is published yet** (a 404).
+///
+/// The fold-to-null shape: an unpublished summary is not a failure, and the
+/// screen shows the tabs with their empty note for it. Any other failure
+/// propagates to the retry surface.
+final sessionSummaryProvider =
+    FutureProvider.autoDispose.family<SessionSummary?, String>((ref, id) async {
+  try {
+    return await ref.watch(sessionSummaryRepositoryProvider).getSummary(id);
+  } on ApiFailure catch (failure) {
+    if (failure.httpStatus == 404) {
+      return null;
+    }
+    rethrow;
+  }
+});

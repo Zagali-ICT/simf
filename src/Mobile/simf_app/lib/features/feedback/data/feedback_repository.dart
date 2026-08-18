@@ -60,3 +60,20 @@ class FeedbackRepository {
 final feedbackRepositoryProvider = Provider<FeedbackRepository>((ref) {
   return FeedbackRepository(ref.watch(simfApiClientProvider));
 });
+
+/// Identifies which rating form to load. A record, so two screens asking for
+/// the same form share one request.
+typedef RatingFormKey = ({
+  String? code,
+  String? ratingTypeId,
+  String? targetId,
+});
+
+final ratingFormProvider = FutureProvider.autoDispose
+    .family<RatingFormView, RatingFormKey>(
+  (ref, key) => ref.watch(feedbackRepositoryProvider).getForm(
+        code: key.code,
+        ratingTypeId: key.ratingTypeId,
+        targetId: key.targetId,
+      ),
+);

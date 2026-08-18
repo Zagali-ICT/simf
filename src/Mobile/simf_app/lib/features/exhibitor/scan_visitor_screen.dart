@@ -7,16 +7,12 @@ import 'package:simf_app/app/widgets/qr_scan_view.dart';
 import 'package:simf_app/features/exhibitor/data/exhibitor_repository.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// D-426 — مسح بطاقة زائر / scan a visitor's entry-badge QR (exhibitor "Other"
-/// lead capture). On a successful scan the visitor is captured server-side and
-/// the screen routes to My Visitors. Uses the shared [QrScanView] (D-430) so
-/// the manual-entry path always works and the camera can never trap the user on
-/// EMUI. Approved + non-visitor only (a visitor-tier caller gets 403 → a
-/// toast).
-///
-/// Route: `RouteNames.scanVisitor`.
-/// Data: [exhibitorRepositoryProvider].
-/// Perf: no list — a single-screen layout.
+/// Scan a visitor badge — مسح بطاقة زائر · route: RouteNames.scanVisitor
+/// Contract: D-426 — exhibitor lead capture; a successful scan captures the
+///   visitor server-side and routes to My Visitors. Approved + non-visitor only
+///   (a visitor-tier caller gets 403 → a toast). The shared QrScanView (D-430)
+///   keeps the manual-entry path working so the camera can never trap the user
+///   on EMUI.
 class ScanVisitorScreen extends ConsumerStatefulWidget {
   const ScanVisitorScreen({super.key, this.enableCamera = true});
 

@@ -29,11 +29,8 @@ class DelegationsStatsStrip extends StatelessWidget {
   /// map, not a full list).
   final List<DelegationItem> flagItems;
 
-  /// The country whose flag is currently selected (filtering the list), or null
-  /// when no flag filter is active.
   final String? selectedCountryCode;
 
-  /// Fired with the tapped country's code so the screen can toggle the filter.
   final ValueChanged<String> onFlagTap;
 
   final AppL10n l10n;

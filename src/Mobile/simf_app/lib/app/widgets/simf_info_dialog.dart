@@ -13,7 +13,6 @@ class SimfInfoDialog extends StatelessWidget {
 
   final String title;
 
-  /// Optional body line under the title.
   final String? message;
 
   static Future<void> show(

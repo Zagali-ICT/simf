@@ -140,11 +140,8 @@ class SimfTokens {
 
   // KSA main-shell disabled palette (W2 frames 512:1492 / 512:1780): the
   // "بطاقتي" locked card and the disabled theme tile render on these.
-  /// disabled card fill
   static const Color navyDisabled = Color(0xFF0A1628);
-  /// disabled card border
   static const Color navyDisabledBorder = Color(0xFF1E3A5F);
-  /// disabled label/icon
   static const Color navyDisabledText = Color(0xFF4A6080);
 
   // On-navy hairlines + muted text + light-surface hairline, straight from
@@ -217,7 +214,6 @@ class SimfTokens {
   // seat reads the same green on the CP seat map and in the app.
   static const Color seatConfirmed = Color(0xFF4FA37D);
 
-  // Spacing scale.
   static const double space1 = 4;
   static const double space2 = 8;
   static const double space3 = 12;
@@ -228,7 +224,6 @@ class SimfTokens {
   /// 10*4 extension of the spacing scale (onboarding/splash vertical gaps)
   static const double space10 = 40;
 
-  // Radii.
   static const double radiusSmall = 4;
   /// LIVE badge (Figma 934:3609)
   static const double radius6 = 6;
@@ -300,11 +295,9 @@ class SimfTokens {
   static const double radiusTail = 2;
   /// chat-bubble horizontal text inset
   static const double chatBubblePadH = 15;
-  /// chat-bubble max width
   static const double chatBubbleMaxWidth = 288;
   /// composer send-button box
   static const double sendSquareSize = 24;
-  /// quick-reply chip strip
   static const double quickReplyStripHeight = 34;
 
   // #16 S3 — ai_summary section-heading gold bar (Figma 1072:14660).
@@ -316,25 +309,17 @@ class SimfTokens {
   static const double hairlineWide = 0.8;
   /// home LIVE banner مباشر badge square
   static const double liveBadgeSize = 60;
-  /// highlights carousel slide
   static const double highlightSlideHeight = 170;
-  /// home hero banner strip
   static const double heroBannerHeight = 160;
-  /// home tall nav-tile min height
   static const double navTileHeight = 80;
 
   // #16 S3 — requests card icon-box + status-chip metrics (Figma 1408:9761+).
   /// gold type-icon box on a request card
   static const double requestIconBox = 32;
-  /// status filter chip height
   static const double statusChipHeight = 32;
-  /// status filter chip horizontal padding
   static const double statusChipPadH = 13;
-  /// selected chip fill alpha
   static const double chipFillActiveOpacity = 0.24;
-  /// resting chip fill alpha
   static const double chipFillOpacity = 0.12;
-  /// resting chip border alpha
   static const double chipBorderOpacity = 0.2;
 
   // Type scale (Material text styles override these for actual rendering;
@@ -723,7 +708,6 @@ class SimfTokens {
     fontWeight: FontWeight.w600,
   );
 
-  // ── #16 sweep — S3 signed-in features ──────────────────────────────────
   // meetings (Figma 1408:9726) — the card date/time line.
   static const TextStyle labelBeigeMediumXs = TextStyle(
     color: beigeBorder,
@@ -884,7 +868,6 @@ class SimfTokens {
     height: 1.3,
   );
 
-  // ── #16 sweep — S4 sessions-wave features ──────────────────────────────
   // questions (Figma 934:3668 / 942:3746) — the fixed tinted question box,
   // the gold inline-span colour, the colourless submit label (rides the
   // theme font + FilledButton foreground per D-546/D-549), and the tight
@@ -905,15 +888,10 @@ class SimfTokens {
   // gates (Figma 758:4651+) — the gold QR-glyph tile box, the 2px emphasis
   // border (shared with the moderator boxes), and the disabled / subtle-tint
   // opacity stops on the setup + verdict cards.
-  /// setup gold QR-glyph tile box
   static const double qrTileSize = 134;
-  // 2px emphasis border (gate tile, moderator boxes).
   static const double borderThick = 2;
-  /// disabled control (Opacity)
   static const double opacityDisabled = 0.5;
-  /// disabled button fill alpha
   static const double opacityDisabledFill = 0.4;
-  /// disabled button text alpha
   static const double opacityDisabledText = 0.6;
   /// gold/verdict subtle tint fill
   static const double fillOpacitySubtle = 0.08;
@@ -924,7 +902,6 @@ class SimfTokens {
   static const double moderatorFilterChipHeight = 58;
   /// off-scale hairline
   static const double moderatorChipBorderWidth = 1.18;
-  /// chip count-badge square
   static const double moderatorCountBadgeSize = 28;
   /// gold card top accent
   static const double moderatorCardTopBorderWidth = 8;
@@ -1008,7 +985,6 @@ class SimfTokens {
   static const double radiusSeat = 3;
   /// reservation seat-marker inner
   static const double seatMarkerInner = 20;
-  /// programme day banner
   static const double dayBannerHeight = 85;
   /// programme calendar-day cell
   static const double dayStripCellWidth = 52;
@@ -1016,9 +992,7 @@ class SimfTokens {
   static const double metaIconBox = 24;
   /// session type-tab cell
   static const double typeTabHeight = 41;
-  /// timeline time-rail min height
   static const double timeRailMinHeight = 44;
-  /// timeline time-rail column width
   static const double timeRailWidth = 48;
   /// 50% (resting favourite heart)
   static const double opacityHalf = 0.5;
@@ -1151,11 +1125,6 @@ class SimfTokens {
   static const double cvTabHeight = 1.2;
   static const double dateOfBirthFieldSize = 18;
   static const double dayBannerFallbackSize = 28;
-  static const double delegationMeetingRequestSheetHeightSm = 5;
-  static const double delegationMeetingRequestSheetMaxHeight = 264;
-  static const double delegationMeetingRequestSheetSize = 18;
-  static const double delegationMeetingRequestSheetStrokeWidth = 2;
-  static const double delegationMeetingRequestSheetWidthMd = 80;
   static const double delegationOptionTileFontSize = 22;
   static const double delegationsStatsStripFontSize = 14;
   static const double deviceRowStrokeWidth = 2;

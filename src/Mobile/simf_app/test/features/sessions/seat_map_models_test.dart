@@ -1,4 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:simf_app/features/sessions/data/my_reservation.dart';
+import 'package:simf_app/features/sessions/data/seat_enums.dart';
 import 'package:simf_app/features/sessions/data/seat_map_models.dart';
 
 void main() {

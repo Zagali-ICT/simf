@@ -40,10 +40,8 @@ class SimfScannerBody extends StatefulWidget {
     super.key,
   });
 
-  /// Manual-entry field hint.
   final String fieldLabel;
 
-  /// Manual-entry submit button label.
   final String continueLabel;
 
   /// "Start camera" button label (shown when the camera is off — either the
@@ -97,8 +95,6 @@ class _SimfScannerBodyState extends State<SimfScannerBody> {
     _manual.dispose();
     super.dispose();
   }
-
-  // ── Camera lifecycle ──────────────────────────────────────────────────────
 
   void _startCamera() {
     setState(() {
@@ -155,8 +151,6 @@ class _SimfScannerBodyState extends State<SimfScannerBody> {
     });
   }
 
-  // ── Scan handling ─────────────────────────────────────────────────────────
-
   void _onScan(Code code) {
     if (!code.isValid) {
       return;
@@ -190,8 +184,6 @@ class _SimfScannerBodyState extends State<SimfScannerBody> {
       }
     }
   }
-
-  // ── UI ────────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {

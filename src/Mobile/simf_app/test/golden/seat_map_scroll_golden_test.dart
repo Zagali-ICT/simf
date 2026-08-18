@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/app_theme.dart';
 import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/sessions/data/seat_enums.dart';
 import 'package:simf_app/features/sessions/data/seat_map_models.dart';
 import 'package:simf_app/features/sessions/widgets/hall_seat_map.dart';
 

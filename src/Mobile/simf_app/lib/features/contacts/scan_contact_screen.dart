@@ -12,19 +12,14 @@ import 'package:simf_app/features/contacts/data/share_qr_payload.dart';
 import 'package:simf_app/features/contacts/widgets/contact_preview_sheet.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// Scan a visitor's QR → preview → save (SIMF-FDS-014 §5.5–5.6, D-286).
-/// **Auth-gated** (Approved only). Uses the shared [QrScanView] (D-430): the
-/// manual-entry path always works and the bounded opt-in camera can never trap
-/// the user on EMUI (D-426). A scanned/typed code is resolved
-/// (`POST /app/contacts/resolve`) to a live card shown in a preview sheet, where
-/// it can be saved to *My Contacts* (`POST /app/contacts/save`, idempotent;
-/// saving yourself is a 400). A scanned QR that is a **plain vCard with no SIMF
-/// share token** (a foreign phone's contact, an old QR) can't resolve to a live
-/// card, so it is offered straight to the phone's address book instead (D-744).
-///
-/// Route: `RouteNames.scanContact`.
-/// Data: [contactsRepositoryProvider].
-/// Perf: no list — a single-screen layout.
+/// Scan a visitor's QR — route: RouteNames.scanContact
+/// Contract: SIMF-FDS-014 §5.5-5.6, D-286 — a scanned/typed code resolves
+///   (`POST /app/contacts/resolve`) to a live card, saved from the preview
+///   sheet (`POST /app/contacts/save`, idempotent; saving yourself is a 400).
+///   The shared QrScanView (D-430) keeps the manual-entry path working so the
+///   bounded opt-in camera can never trap the user on EMUI (D-426). A plain
+///   vCard carrying no SIMF share token is offered to the phone's own address
+///   book instead of dead-ending (D-744).
 class ScanContactScreen extends ConsumerStatefulWidget {
   const ScanContactScreen({super.key, this.enableCamera = true});
 

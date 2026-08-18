@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/features/moderation/data/moderation_models.dart';
 import 'package:simf_app/features/moderation/data/moderation_repository.dart';
 import 'package:simf_app/features/moderation/session_moderate_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
+
+import '../../support/simf_test_scope.dart';
 
 ModeratorQuestion _q(
   String id, {
@@ -156,7 +158,7 @@ Future<void> _pump(
   Locale locale = const Locale('en'),
 }) async {
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         moderationRepositoryProvider.overrideWithValue(repo),
       ],

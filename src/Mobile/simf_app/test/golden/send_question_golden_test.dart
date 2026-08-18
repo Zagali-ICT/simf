@@ -3,7 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
@@ -11,9 +11,12 @@ import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/app_theme.dart';
 import 'package:simf_app/features/questions/data/questions_repository.dart';
 import 'package:simf_app/features/questions/send_question_screen.dart';
+import 'package:simf_app/features/sessions/data/my_seat.dart';
 import 'package:simf_app/features/sessions/data/session_detail_repository.dart';
 import 'package:simf_app/features/sessions/data/session_models.dart';
+import 'package:simf_app/features/sessions/data/session_speaker.dart';
 
+import '../support/simf_test_scope.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the About-session / send-a-question screen against Figma
@@ -81,7 +84,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      ProviderScope(
+      simfTestScope(
         overrides: <Override>[
           sessionDetailRepositoryProvider.overrideWithValue(_FakeDetailRepo()),
           questionsRepositoryProvider.overrideWithValue(_FakeQuestionsRepo()),

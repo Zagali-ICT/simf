@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
@@ -9,6 +9,8 @@ import 'package:simf_app/features/feedback/data/feedback_repository.dart';
 import 'package:simf_app/features/feedback/data/rating_models.dart';
 import 'package:simf_app/features/feedback/rate_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
+
+import '../../support/simf_test_scope.dart';
 
 /// A fake repository that returns a configured form and captures the
 /// submission.
@@ -130,7 +132,7 @@ Future<void> _pump(
   );
 
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[feedbackRepositoryProvider.overrideWithValue(repo)],
       child: MaterialApp.router(
         routerConfig: router,

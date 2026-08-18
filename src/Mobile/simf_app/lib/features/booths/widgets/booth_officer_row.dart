@@ -51,5 +51,3 @@ class BoothOfficerRow extends StatelessWidget {
     );
   }
 }
-
-/// The first two letters of a booth name, upper-cased, for the officer tile.

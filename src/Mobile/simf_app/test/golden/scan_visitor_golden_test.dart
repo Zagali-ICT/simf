@@ -3,12 +3,12 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/app_theme.dart';
 import 'package:simf_app/features/exhibitor/scan_visitor_screen.dart';
 
+import '../support/simf_test_scope.dart';
 import 'golden_fonts.dart';
 
 /// Render-lock golden of the exhibitor "scan a visitor badge" screen (مسح بطاقة
@@ -30,7 +30,7 @@ void main() {
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(
-      ProviderScope(
+      simfTestScope(
         child: MaterialApp(
           debugShowCheckedModeBanner: false,
           theme: SimfTheme.dark(),

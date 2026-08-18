@@ -375,7 +375,7 @@ Scenario: Clearing the notice in the Control Panel takes the banner down
 shipped `GET /app/programme/sessions/{id}` payload (`liveNotice`,
 `liveNoticeArabic`); `LiveSession.localizedNotice(isArabic)` picks the active
 locale, falls back to the other and returns null when both are blank;
-`LiveNoticeBanner` (`widgets/live_content.dart`) renders `SimfPageNote` on a
+`LiveNoticeBanner` (`widgets/live_notice_banner.dart`) renders `SimfPageNote` on a
 `SimfCard` and is emitted only when the notice is non-null. Screen tests
 `FR-702 — a session notice renders as the informational banner and the player
 still mounts`, `FR-702 — the banner renders the Arabic notice under the ar

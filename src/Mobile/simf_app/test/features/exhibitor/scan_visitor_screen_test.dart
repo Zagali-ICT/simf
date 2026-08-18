@@ -2,7 +2,7 @@
 // capture/route (success) and the 404 / 403 / generic-error toast branches.
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
@@ -12,6 +12,8 @@ import 'package:simf_app/features/exhibitor/data/exhibitor_models.dart';
 import 'package:simf_app/features/exhibitor/data/exhibitor_repository.dart';
 import 'package:simf_app/features/exhibitor/scan_visitor_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
+
+import '../../support/simf_test_scope.dart';
 
 /// Records the scanned code and either returns a captured card or throws the
 /// configured `ApiFailure` — so the screen's `_onCode` branches are testable.
@@ -72,7 +74,7 @@ Future<void> _pump(WidgetTester tester, _FakeExhibitorRepo repo) async {
     ],
   );
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         exhibitorRepositoryProvider.overrideWithValue(repo),
       ],

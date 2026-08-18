@@ -9,9 +9,6 @@ import 'package:simf_app/core/session/session_guard.dart';
 import 'package:simf_app/features/accessibility/data/accessibility_controller.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 
-/// The root widget. `MaterialApp.router` is wired to the go_router instance
-/// from [routerProvider], and the current locale comes from
-/// [localeControllerProvider].
 class SimfApp extends ConsumerWidget {
   const SimfApp({super.key});
 

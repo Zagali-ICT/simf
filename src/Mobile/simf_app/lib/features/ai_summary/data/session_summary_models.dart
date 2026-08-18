@@ -28,7 +28,6 @@ class SessionSummary {
     this.summaryVideoUrl,
   });
 
-  /// Decodes the `decodeData` payload (a JSON object) into a [SessionSummary].
   factory SessionSummary.fromData(Object? data) => SessionSummary.fromJson(
         (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{},
       );
@@ -69,23 +68,18 @@ class SessionSummary {
   /// player.
   final String? summaryVideoUrl;
 
-  /// The key-points block in the active language (may be empty).
   String localizedKeyPoints({required bool isArabic}) =>
       pickLocalized(keyPointsArabic, keyPoints, isArabic: isArabic);
 
-  /// The recommendations block in the active language (may be empty).
   String localizedRecommendations({required bool isArabic}) =>
       pickLocalized(recommendationsArabic, recommendations, isArabic: isArabic);
 
-  /// The speakers block in the active language (may be empty).
   String localizedSpeakers({required bool isArabic}) =>
       pickLocalized(speakersArabic, speakers, isArabic: isArabic);
 
-  /// The full-text block in the active language (may be empty).
   String localizedFullText({required bool isArabic}) =>
       pickLocalized(fullTextArabic, fullText, isArabic: isArabic);
 
-  /// The localized key points split into one bullet per non-empty line.
   List<String> keyPointsLines({required bool isArabic}) {
     return localizedKeyPoints(isArabic: isArabic)
         .split('\n')

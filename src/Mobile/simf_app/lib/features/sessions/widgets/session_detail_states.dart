@@ -26,7 +26,6 @@ class SessionDetailStates extends StatelessWidget {
     super.key,
   });
 
-  /// The first load has not resolved yet.
   final bool loading;
 
   /// The session id does not resolve (a 404).
@@ -40,10 +39,8 @@ class SessionDetailStates extends StatelessWidget {
 
   final AppL10n l10n;
 
-  /// The error state's explicit retry control.
   final VoidCallback onRetry;
 
-  /// The loaded detail body, built by the screen.
   final Widget child;
 
   @override

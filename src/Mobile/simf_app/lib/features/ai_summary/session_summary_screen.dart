@@ -14,54 +14,17 @@ import 'package:simf_app/features/ai_summary/widgets/summary_video_card.dart';
 import 'package:simf_app/features/sessions/data/session_models.dart';
 import 'package:simf_app/features/sessions/data/sessions_repository.dart';
 import 'package:simf_app/features/sessions/widgets/session_filter_tabs.dart';
-import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 /// The three summary tabs (Figma 1072:14647), in RTL display order
 /// (right→left): أبرز النقاط · التوصيات · المتحدثون. أبرز النقاط is the
 /// default.
 enum _SummaryTab { keyPoints, recommendations, speakers }
 
-/// Page 034 — ملخص الجلسة · Session summary (#34, `/ai-summary?sessionId=`),
-/// rebuilt to the KSA-Project Figma frame **1072:13518**.
+/// Session summary — route: `RouteNames.aiSummary` · Figma 1072:13518
 ///
-/// **Public** (Guest+, `AllowAnonymous`). Reached with a `sessionId` from the
-/// summaries list (#111) or the session-detail "ملخص الجلسة" button; with no id
-/// it falls back to the first programme session. Top-to-bottom: the **"الجلسة"
-/// info card** (the selected session's gold title + day·time·duration·hall over
-/// a **day-agenda timeline** — that day's sessions, reused from the cached
-/// programme, no new API), a **3-tab segmented control** (المتحدثون / أبرز
-/// النقاط / التوصيات), a **tab-content card** rendering the active section as
-/// gold-dot bullets, and a **"توليد ملخص للجلسة"** card whose gold button
-/// expands / collapses the published AI summary paragraph.
-///
-/// Reads the published summary (`GET /app/programme/sessions/{id}/summary`); a
-/// 404 = no published summary yet (the tabs + paragraph show the empty note).
-/// The summary is **Committee-generated** in the Control Panel (D-237/D-472) —
-/// this screen is a read-only consumer, so the gold button reveals the
-/// already-published text rather than triggering generation.
-///
-/// Route: `RouteNames.aiSummary`.
-/// Data: [programmeSessionsProvider], [sessionSummaryProvider],
-///       [sessionSummaryRepositoryProvider].
-/// Perf: ListView builds every child up front — correct for a short static
-///       page, a defect on a data feed.
-/// One session's AI summary, or **null when none is published yet** (a 404).
-///
-/// The fold-to-null shape: an unpublished summary is not a failure, and the
-/// screen shows the tabs with their empty note for it. Any other failure
-/// propagates to the retry surface.
-final sessionSummaryProvider =
-    FutureProvider.autoDispose.family<SessionSummary?, String>((ref, id) async {
-  try {
-    return await ref.watch(sessionSummaryRepositoryProvider).getSummary(id);
-  } on ApiFailure catch (failure) {
-    if (failure.httpStatus == 404) {
-      return null;
-    }
-    rethrow;
-  }
-});
-
+/// Contract: the summary is **Committee-generated** in the Control Panel
+/// (D-237/D-472) — this screen is a read-only consumer, so the gold button
+/// reveals the already-published text rather than triggering generation.
 class AiSummaryScreen extends ConsumerStatefulWidget {
   const AiSummaryScreen({this.sessionId, super.key});
 
@@ -92,7 +55,7 @@ class _AiSummaryScreenState extends ConsumerState<AiSummaryScreen> {
   /// The loaded summary, or null while none is selected, still loading, or
   /// none is published. A getter over the provider, so the three call sites
   /// that read it did not have to change.
-  SessionSummary? get _summary => _summaryAsync.valueOrNull;
+  SessionSummary? get _summary => _summaryAsync.value;
 
   /// Resolve the selected session (the passed id or the first) + its metadata,
   /// firing the summary load once. Runs after the programme list resolves.
@@ -120,8 +83,6 @@ class _AiSummaryScreenState extends ConsumerState<AiSummaryScreen> {
     });
   }
 
-  /// That day's sessions (the agenda timeline) — the cached programme filtered
-  /// to the selected session's local calendar day, time-ordered.
   List<SessionListItem> _dayAgenda(List<SessionListItem> all) {
     final selected = _selectedSession;
     if (selected == null) {
@@ -253,7 +214,6 @@ class _AiSummaryScreenState extends ConsumerState<AiSummaryScreen> {
         _SummaryTab.speakers => l10n.aiSummarySpeakersHeading,
       };
 
-  /// The active tab's content — bullets, the empty note, a loader, or retry.
   Widget _tabBody(AppL10n l10n, bool isArabic) {
     if (_summaryAsync.isLoading) {
       return const Padding(
@@ -304,8 +264,6 @@ class _AiSummaryScreenState extends ConsumerState<AiSummaryScreen> {
     );
   }
 
-  /// The published full-text paragraph (or the empty note) under the generate
-  /// button.
   String _summaryParagraph(AppL10n l10n, bool isArabic) {
     final text = _summary?.localizedFullText(isArabic: isArabic).trim() ?? '';
     return text.isEmpty ? l10n.aiSummaryNone : text;

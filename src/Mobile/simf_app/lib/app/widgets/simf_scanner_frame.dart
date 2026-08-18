@@ -53,7 +53,6 @@ class SimfScannerFrame extends StatefulWidget {
   /// The live camera preview painted behind the overlay; null = camera-off.
   final Widget? camera;
 
-  /// The "actively searching" caption.
   final String statusLabel;
 
   /// Animate the scan line's up/down sweep (a live camera is scanning). False =
@@ -162,7 +161,7 @@ class _SimfScannerFrameState extends State<SimfScannerFrame>
           fit: StackFit.expand,
           children: <Widget>[
             ColoredBox(color: SimfTokens.black, child: widget.camera),
-            const ColoredBox(color: SimfTokens.scrimBlack35), // black @ 35%
+            const ColoredBox(color: SimfTokens.scrimBlack35),
             const Positioned(
                 top: 16,
                 left: 16,

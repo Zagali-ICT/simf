@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/features/myarea/data/my_sessions_models.dart';
-import 'package:simf_app/features/sessions/data/session_models.dart';
+import 'package:simf_app/features/sessions/data/session_enums.dart';
 
 void main() {
   group('MyAreaSessions.fromData', () {

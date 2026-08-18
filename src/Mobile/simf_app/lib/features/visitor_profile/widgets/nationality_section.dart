@@ -3,7 +3,7 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/core/widgets/simf_field_label.dart';
 import 'package:simf_app/core/widgets/simf_picker_field.dart';
-import 'package:simf_app/features/account/data/profile_models.dart';
+import 'package:simf_app/features/account/data/profile_lookups.dart';
 
 /// The nationality picker.
 ///
@@ -28,7 +28,6 @@ class NationalitySection extends StatelessWidget {
   final List<CountryItem> countries;
   final String? selectedCode;
 
-  /// True once submit has been pressed and no country is chosen.
   final bool showError;
 
   final VoidCallback onTap;

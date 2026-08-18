@@ -133,7 +133,6 @@ class VenueMapInfoCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: SimfTokens.space2),
-              // Dismiss control (kept alongside the badge above).
               IconButton(
                 onPressed: onClose,
                 tooltip: MaterialLocalizations.of(context).closeButtonTooltip,

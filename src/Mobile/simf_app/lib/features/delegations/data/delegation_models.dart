@@ -74,8 +74,6 @@ class DelegationItem {
   /// informative graceful degradation either way.
   String get flagEmoji => _flagEmoji(countryCode);
 
-  /// The single leading character of the head's localized name, for the avatar
-  /// square. Empty when there is no head.
   String headInitial({required bool isArabic}) {
     final name = localizedHead(isArabic: isArabic)?.trim() ?? '';
     if (name.isEmpty) {
@@ -133,8 +131,6 @@ class Delegations {
   List<DelegationItem> get flagItems =>
       items.where((item) => item.flagEmoji.isNotEmpty).toList(growable: false);
 
-  /// The cards to show: the free-text [query], narrowed to one country when a
-  /// stats-strip flag is selected.
   List<DelegationItem> visible({
     String query = '',
     String? countryCode,

@@ -19,19 +19,11 @@ import 'package:simf_app/features/speakers/widgets/meeting_request_sheet.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// D-500 (Wave 5, الطلبات 1408:9726) — the unified requests feed. A "طلب جديد"
-/// action plus status filter chips (with counts), over expandable cards across
-/// every request kind the user submitted (speaker / delegation / session
-/// attendance / participation-document / badge-update). Supersedes the read-only
-/// My-meetings screen. The user can cancel their own pending speaker / document
-/// / badge requests.
-///
-/// Route: `RouteNames.requests`.
-/// Data: [authControllerProvider], [currentUserMeetingAccessProvider],
-///       [myRequestsProvider], [requestsRepositoryProvider],
-///       [simfDataConfigProvider].
-/// Perf: ListView builds every child up front — correct for a short static
-///       page, a defect on a data feed.
+/// Requests — route: RouteNames.requests · Figma 1408:9726
+/// Contract: D-500 (Wave 5) — the unified feed across every request kind
+/// (speaker / delegation / session attendance / participation-document /
+/// badge-update); the user can cancel their own pending speaker / document /
+/// badge requests.
 class RequestsScreen extends ConsumerStatefulWidget {
   const RequestsScreen({super.key});
 
@@ -110,7 +102,6 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
     }
   }
 
-  /// Pull-to-refresh — re-fetch the requests feed (invalidate + await next).
   Future<void> _refresh() => refreshAsync(ref, myRequestsProvider.future);
 
   @override

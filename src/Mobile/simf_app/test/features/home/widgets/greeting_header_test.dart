@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/features/account/data/profile_repository.dart';
 import 'package:simf_app/features/home/widgets/greeting_header.dart';
 import 'package:simf_app/features/notifications/data/notifications_repository.dart';
+
+import '../../../support/simf_test_scope.dart';
 
 /// OA-D1 — the Home greeting used to render `name.trim().split(' ').first`,
 /// which amputated every Arabic compound given name (عبد الله → عبد) and
@@ -17,7 +19,7 @@ Future<void> _pumpGreeting(
   Locale locale = const Locale('ar'),
 }) async {
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         // The bell watches the unread count and the avatar watches the photo
         // bytes — both auth-scoped. Stub them so a header test does not have to

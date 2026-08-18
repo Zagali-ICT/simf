@@ -163,6 +163,38 @@ void main() {
     });
   });
 
+  group('formatDateDmy', () {
+    test('pads day and month to two digits, year unpadded', () {
+      expect(formatDateDmy(DateTime(2026, 1, 5)), '05-01-2026');
+    });
+
+    test('leaves a two-digit day and month alone', () {
+      expect(formatDateDmy(DateTime(2026, 11, 23)), '23-11-2026');
+    });
+
+    test('ignores the time of day', () {
+      expect(formatDateDmy(DateTime(2026, 11, 23, 22, 30)), '23-11-2026');
+    });
+  });
+
+  group('formatDateIso', () {
+    test('pads day and month to two digits', () {
+      expect(formatDateIso(DateTime(2026, 1, 5)), '2026-01-05');
+    });
+
+    test('leaves a two-digit day and month alone', () {
+      expect(formatDateIso(DateTime(2026, 11, 24)), '2026-11-24');
+    });
+
+    test('ignores the time of day', () {
+      expect(formatDateIso(DateTime(2026, 11, 24, 10)), '2026-11-24');
+    });
+
+    test('pads the year to four digits', () {
+      expect(formatDateIso(DateTime(26, 11, 24)), '0026-11-24');
+    });
+  });
+
   group('formatCountdown', () {
     test('pads both fields to two digits', () {
       expect(formatCountdown(0), '00:00');

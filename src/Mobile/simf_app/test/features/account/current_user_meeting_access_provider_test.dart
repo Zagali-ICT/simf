@@ -1,8 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:simf_app/features/account/data/app_gender.dart';
 import 'package:simf_app/features/account/data/profile_models.dart';
 import 'package:simf_app/features/account/data/profile_repository.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
+import '../../support/simf_test_scope.dart';
 
 /// D-731 — the Bi-Meeting eligibility provider (D-760) sits behind a profile
 /// GET on the shared per-IP "auth" rate-limit bucket, and is watched by the
@@ -74,6 +77,7 @@ ProviderContainer _container({
   required ProfileRepository repo,
 }) {
   final container = ProviderContainer(
+    retry: simfTestNoRetry,
     overrides: <Override>[
       authControllerProvider.overrideWith(() => controller),
       profileRepositoryProvider.overrideWithValue(repo),

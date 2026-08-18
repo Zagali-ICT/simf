@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
@@ -8,8 +8,10 @@ import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/features/myarea/data/my_sessions_models.dart';
 import 'package:simf_app/features/myarea/data/my_sessions_repository.dart';
 import 'package:simf_app/features/myarea/my_sessions_screen.dart';
+import 'package:simf_app/features/sessions/data/session_enums.dart';
 import 'package:simf_app/features/sessions/data/session_favourites.dart';
-import 'package:simf_app/features/sessions/data/session_models.dart';
+
+import '../../support/simf_test_scope.dart';
 
 class _FixedFavourites extends SessionFavouritesController {
   _FixedFavourites(this._ids);
@@ -67,7 +69,7 @@ Future<void> _pump(WidgetTester tester, List<MyAreaSessionItem> items) async {
     ],
   );
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         mySessionsProvider.overrideWith((ref) async => MyAreaSessions(items)),
         sessionFavouritesProvider

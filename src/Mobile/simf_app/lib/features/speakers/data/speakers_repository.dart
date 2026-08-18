@@ -77,3 +77,29 @@ class SpeakersRepository {
 final speakersRepositoryProvider = Provider<SpeakersRepository>((ref) {
   return SpeakersRepository(ref.watch(simfApiClientProvider));
 });
+
+/// The speaker directory (`GET /app/speakers`).
+///
+/// Only the LOAD lives here. `SpeakersScreen` keeps its
+/// `ConsumerStatefulWidget` because `_query` and `_alphaSorted` are real UI
+/// state that belongs to the widget and has no server behind it — the search
+/// box and the A→Z toggle.
+final speakersListProvider = FutureProvider.autoDispose<List<SpeakerSummary>>(
+  (ref) => ref.watch(speakersRepositoryProvider).getSpeakers(),
+);
+
+/// One speaker, or **null when the server has no such id** (a 404).
+///
+/// The `newsArticleProvider` shape: a 404 is "this speaker is gone", which the
+/// screen answers with its own not-found copy rather than the error surface.
+final speakerDetailProvider =
+    FutureProvider.autoDispose.family<SpeakerDetail?, String>((ref, id) async {
+  try {
+    return await ref.watch(speakersRepositoryProvider).getSpeaker(id);
+  } on ApiFailure catch (failure) {
+    if (failure.httpStatus == 404) {
+      return null;
+    }
+    rethrow;
+  }
+});

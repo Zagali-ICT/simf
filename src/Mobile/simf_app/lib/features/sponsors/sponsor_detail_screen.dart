@@ -15,16 +15,7 @@ import 'package:simf_app/features/sponsors/data/sponsor_models.dart';
 import 'package:simf_app/features/sponsors/data/sponsors_repository.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// **Sponsor detail** — App "الراعي" (Figma 1439:11826, Guest+), opened by
-/// tapping a sponsor on the sponsors screen. The same shared
-/// [EntityDetailScaffold] as the exhibitor detail (the owner: reuse 11881): the
-/// sponsor's logo + name, the city·country line, the tier pill, the
-/// "نبذة عن الراعي" about, and the website row. No stand-code row (sponsors are
-/// not on the venue map). Reads `GET /app/sponsors/{id}` (Wave 3).
-///
-/// Route: `RouteNames.sponsorDetail`.
-/// Data: [simfDataConfigProvider], [sponsorDetailProvider].
-/// Perf: no list — a single-screen layout.
+/// Sponsor detail — route: `RouteNames.sponsorDetail` · Figma 1439:11826
 class SponsorDetailScreen extends ConsumerWidget {
   const SponsorDetailScreen({required this.sponsorId, super.key});
 

@@ -1,6 +1,7 @@
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/router.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
+import 'package:simf_app/features/sessions/data/session_enums.dart';
 import 'package:simf_app/features/sessions/data/session_models.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 

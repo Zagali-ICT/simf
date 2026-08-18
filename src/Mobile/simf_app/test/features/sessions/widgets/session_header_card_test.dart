@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/features/sessions/data/session_models.dart';
+import 'package:simf_app/features/sessions/data/session_speaker.dart';
 import 'package:simf_app/features/sessions/widgets/session_header_card.dart';
 
 SessionDetail _detail({String? categoryName, String? categoryNameArabic}) =>

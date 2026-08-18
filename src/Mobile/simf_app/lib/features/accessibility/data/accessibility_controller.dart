@@ -12,7 +12,6 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 enum AppTextSize { small, normal, large, extraLarge }
 
 extension AppTextSizeScale on AppTextSize {
-  /// The MediaQuery text-scale factor applied app-wide for this choice.
   double get scaleFactor {
     switch (this) {
       case AppTextSize.small:

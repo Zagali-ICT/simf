@@ -9,21 +9,11 @@ import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_logo.dart';
 import 'package:simf_app/core/organization_profile/organization_profile.dart';
 import 'package:simf_app/core/startup/app_update_checker.dart';
-import 'package:simf_app/features/splash/splash_controller.dart';
+import 'package:simf_app/features/splash/data/splash_controller.dart';
 
-/// Page 001 — البداية · Splash / bootstrap. The KSA-Project Figma design
-/// (node 159:573, D-361): the brand mark over "SAUDI · MOD · RSNF", the forum
-/// name, and the edition/date lines, centred on the navy primary surface.
-///
-/// Shows the lock-up while [SplashController] runs the boot sequence
-/// (version-policy update check (D-736) + cold-start session restore), then
-/// routes out once. The previous placeholder screen is parked in
-/// `_legacy_mockup/`.
-///
-/// Route: `RouteNames.splash`.
-/// Data: [appUpdateCheckerProvider], [orgProfileProvider],
-///       [splashControllerProvider].
-/// Perf: no list — a single-screen layout.
+/// Splash — البداية · route: `RouteNames.splash` · Figma 159:573
+/// D-361 — the brand mark over "SAUDI · MOD · RSNF", the forum name and the
+/// edition/date lines, centred on the navy primary surface.
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
@@ -154,7 +144,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     final l10n = AppL10n.of(context);
     await showDialog<void>(
       context: context,
-      // A forced update cannot be dismissed; a soft one can.
       barrierDismissible: !hard,
       builder: (dialogContext) {
         // A forced update also blocks the Android back button — the barrier

@@ -70,7 +70,6 @@ class LiveSession {
   /// The HLS/MP4 broadcast URL. Non-empty → the session is live / playable.
   final String? liveStreamUrl;
 
-  /// The optional sign-language companion stream.
   final String? liveSignLanguageUrl;
 
   // D-433 — broadcasting hall + the session's speakers/participants line

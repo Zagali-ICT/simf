@@ -6,37 +6,21 @@ import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/core/errors/api_error_l10n.dart';
-import 'package:simf_app/core/responsive/max_width_body.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
-import 'package:simf_app/core/widgets/simf_auth_sweep.dart';
 import 'package:simf_app/features/account/biometric_auth.dart';
-import 'package:simf_app/features/account/device_label.dart';
-import 'package:simf_app/features/account/widgets/account_sub_header.dart';
+import 'package:simf_app/features/account/data/device_label.dart';
+import 'package:simf_app/features/account/widgets/auth_bottom_bar.dart';
 import 'package:simf_app/features/account/widgets/auth_chrome.dart';
+import 'package:simf_app/features/account/widgets/auth_screen_scaffold.dart';
+import 'package:simf_app/features/account/widgets/auth_scroll_body.dart';
 import 'package:simf_app/features/account/widgets/otp_code_boxes.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 
-/// #7a / D-738 — the banking-standard step-up confirming the user wants to
-/// ENABLE biometric (Face-ID) sign-in. Reached (pushed) from the Face-ID toggle
-/// and the post-sign-in enrol nudge. On open it requests an emailed code
-/// (`POST /app/auth/device-keys/step-up`); entering it then requires an **OS
-/// device-credential confirmation** (device PIN / biometric via `local_auth`)
-/// before the device key is enrolled (`POST /app/auth/device-keys` with the
-/// code). Two factors gate enrolment — email possession AND custody of the
-/// unlocked device — so neither an emailed code alone nor a borrowed unlocked
-/// phone alone can bind a biometric credential. Restyled to the shared KSA OTP
-/// frame (D-369) via [OtpCodeBoxes]/[OtpMark], like the sign-in second factor.
-///
-/// Clean-code pass (D-554, Phase 3 — unbound auth screen, render preserved):
-/// the lone sweep-tint const dropped for `SimfTokens.surfaceTint`; the long
-/// `build` split into the shared [AccountSubHeader] (D-658) / `_buildContent` /
-/// `_buildSubmitButton` / `_buildResendRow`; the body + CTA capped by
-/// [MaxWidthBody].
-///
-/// Route: `RouteNames.biometricStepUp`.
-/// Data: [authControllerProvider], [biometricAuthProvider],
-///       [deviceLabelProvider].
-/// Perf: no list — a single-screen layout.
+/// Biometric step-up — route: RouteNames.biometricStepUp · Figma: no bound
+/// node; the shared KSA OTP frame (D-369) via [OtpCodeBoxes]/[OtpMark].
+/// Contract: #7a / D-738 — enrolment needs BOTH an emailed step-up code and an
+/// OS device-credential confirmation, so neither an emailed code alone nor a
+/// borrowed unlocked phone alone can bind a biometric credential.
 class BiometricStepUpScreen extends ConsumerStatefulWidget {
   const BiometricStepUpScreen({super.key});
 
@@ -203,119 +187,92 @@ class _BiometricStepUpScreenState extends ConsumerState<BiometricStepUpScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    return Scaffold(
-      backgroundColor: SimfTokens.navySurface,
-      body: Stack(
-        children: <Widget>[
-          const SimfAuthSweep(top: -180, left: null, right: -80),
-          SafeArea(
-            child: Column(
-              children: <Widget>[
-                AccountSubHeader(
-                  title: l10n.biometricStepUpTitle,
-                  onBack: _back,
-                  busy: _verifying,
-                ),
-                Expanded(child: _buildContent(l10n)),
-                _buildSubmitButton(l10n),
-                const SizedBox(height: SimfTokens.space4),
-                _buildResendRow(l10n),
-                const SizedBox(height: SimfTokens.space6),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildContent(AppL10n l10n) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
-      child: MaxWidthBody(
+    return AuthScreenScaffold(
+      title: l10n.biometricStepUpTitle,
+      onBack: _back,
+      busy: _verifying,
+      sweep: true,
+      body: AuthScrollBody(
         maxWidth: SimfTokens.biometricStepUpScreenMaxWidth,
-        child: Column(
-          children: <Widget>[
-            const SizedBox(height: SimfTokens.biometricStepUpScreenHeight),
-            const OtpMark(icon: Icons.fingerprint),
-            const SizedBox(height: SimfTokens.space6),
+        children: <Widget>[
+          const SizedBox(height: SimfTokens.biometricStepUpScreenHeight),
+          const OtpMark(icon: Icons.fingerprint),
+          const SizedBox(height: SimfTokens.space6),
+          Text(
+            l10n.biometricStepUpHeading,
+            textAlign: TextAlign.center,
+            style: SimfTokens.labelWhiteBoldXl,
+          ),
+          const SizedBox(height: SimfTokens.space6),
+          if (_maskedEmail != null && _maskedEmail!.isNotEmpty) ...<Widget>[
             Text(
-              l10n.biometricStepUpHeading,
+              l10n.otpSentToPrefix,
               textAlign: TextAlign.center,
-              style: SimfTokens.labelWhiteBoldXl,
-            ),
-            const SizedBox(height: SimfTokens.space6),
-            if (_maskedEmail != null && _maskedEmail!.isNotEmpty) ...<Widget>[
-              Text(
-                l10n.otpSentToPrefix,
-                textAlign: TextAlign.center,
-                style: SimfTokens.bodyBeigeMd,
-              ),
-              const SizedBox(height: SimfTokens.space2),
-              Text(
-                _maskedEmail!,
-                textAlign: TextAlign.center,
-                textDirection: TextDirection.ltr,
-                style: SimfTokens.labelGoldMedium,
-              ),
-            ],
-            const SizedBox(height: SimfTokens.biometricStepUpScreenHeight),
-            OtpCodeBoxes(
-              controller: _code,
-              focusNode: _codeFocus,
-              enabled: !_verifying,
-              onChanged: () => setState(() {}),
-              onSubmitted: () {
-                if (_canSubmit) {
-                  unawaited(_submit());
-                }
-              },
-            ),
-            const SizedBox(height: SimfTokens.space4),
-            Text.rich(
-              TextSpan(
-                children: <InlineSpan>[
-                  TextSpan(text: '${l10n.otpResendCountdown} '),
-                  TextSpan(
-                    text: _countdownLabel,
-                    style: const TextStyle(
-                      color: SimfTokens.accent,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
               style: SimfTokens.bodyBeigeMd,
             ),
-            if (_error != null) ...<Widget>[
-              const SizedBox(height: SimfTokens.space3),
-              Text(
-                _error!,
-                textAlign: TextAlign.center,
-                style: SimfTokens.labelDangerSm,
-              ),
-            ],
-            const SizedBox(height: SimfTokens.space6),
+            const SizedBox(height: SimfTokens.space2),
+            Text(
+              _maskedEmail!,
+              textAlign: TextAlign.center,
+              textDirection: TextDirection.ltr,
+              style: SimfTokens.labelGoldMedium,
+            ),
           ],
-        ),
+          const SizedBox(height: SimfTokens.biometricStepUpScreenHeight),
+          OtpCodeBoxes(
+            controller: _code,
+            focusNode: _codeFocus,
+            enabled: !_verifying,
+            onChanged: () => setState(() {}),
+            onSubmitted: () {
+              if (_canSubmit) {
+                unawaited(_submit());
+              }
+            },
+          ),
+          const SizedBox(height: SimfTokens.space4),
+          Text.rich(
+            TextSpan(
+              children: <InlineSpan>[
+                TextSpan(text: '${l10n.otpResendCountdown} '),
+                TextSpan(
+                  text: _countdownLabel,
+                  style: const TextStyle(
+                    color: SimfTokens.accent,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+            style: SimfTokens.bodyBeigeMd,
+          ),
+          if (_error != null) ...<Widget>[
+            const SizedBox(height: SimfTokens.space3),
+            Text(
+              _error!,
+              textAlign: TextAlign.center,
+              style: SimfTokens.labelDangerSm,
+            ),
+          ],
+          const SizedBox(height: SimfTokens.space6),
+        ],
       ),
-    );
-  }
-
-  Widget _buildSubmitButton(AppL10n l10n) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
-      child: MaxWidthBody(
-        maxWidth: SimfTokens.biometricStepUpScreenMaxWidth,
-        child: SizedBox(
-          width: double.infinity,
-          child: AuthSubmitButton(
-            label: l10n.verifyButton,
-            busy: _verifying,
-            onPressed: _canSubmit ? () => unawaited(_submit()) : null,
+      bottom: <Widget>[
+        AuthBottomBar(
+          maxWidth: SimfTokens.biometricStepUpScreenMaxWidth,
+          child: SizedBox(
+            width: double.infinity,
+            child: AuthSubmitButton(
+              label: l10n.verifyButton,
+              busy: _verifying,
+              onPressed: _canSubmit ? () => unawaited(_submit()) : null,
+            ),
           ),
         ),
-      ),
+        const SizedBox(height: SimfTokens.space4),
+        _buildResendRow(l10n),
+        const SizedBox(height: SimfTokens.space6),
+      ],
     );
   }
 
@@ -333,9 +290,8 @@ class _BiometricStepUpScreenState extends ConsumerState<BiometricStepUpScreen> {
               child: Text(
                 l10n.otpResendAction,
                 style: TextStyle(
-                  color: canResend
-                      ? SimfTokens.accent
-                      : SimfTokens.beigeBorder,
+                  color:
+                      canResend ? SimfTokens.accent : SimfTokens.beigeBorder,
                   fontWeight: FontWeight.w700,
                   decoration: TextDecoration.underline,
                 ),

@@ -3,7 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/app_theme.dart';
@@ -11,6 +11,7 @@ import 'package:simf_app/core/organization_profile/organization_profile.dart';
 import 'package:simf_app/features/contact_us/contact_us_screen.dart';
 import 'package:simf_app/features/contact_us/data/contact_us_repository.dart';
 
+import '../support/simf_test_scope.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the Contact-us screen against Figma frame **1388:7711**
@@ -76,7 +77,7 @@ void main() {
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(
-      ProviderScope(
+      simfTestScope(
         overrides: <Override>[
           contactUsRepositoryProvider.overrideWithValue(_NoopRepo()),
           orgProfileProvider.overrideWith(() => _StubOrgProfile(_profile)),

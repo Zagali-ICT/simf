@@ -4,8 +4,6 @@ import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/app/widgets/simf_svg_icon.dart';
 
-/// One tappable session row — a navy card with the title over the time · hall
-/// line and a direction-aware forward chevron.
 class HubRow extends StatelessWidget {
   const HubRow({
     required this.title,

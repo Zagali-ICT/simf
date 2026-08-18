@@ -11,7 +11,6 @@ import 'dart:convert';
 
 const String _tokenProperty = 'X-SIMF-TOKEN:';
 
-/// True when [payload] looks like a vCard (starts with `BEGIN:VCARD`).
 bool isVCardPayload(String payload) =>
     payload.trimLeft().toUpperCase().startsWith('BEGIN:VCARD');
 

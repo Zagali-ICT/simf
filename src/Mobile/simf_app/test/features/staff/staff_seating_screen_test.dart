@@ -6,14 +6,18 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/features/sessions/data/my_reservation.dart';
+import 'package:simf_app/features/sessions/data/seat_enums.dart';
 import 'package:simf_app/features/sessions/data/seat_map_models.dart';
 import 'package:simf_app/features/sessions/data/seat_map_repository.dart';
 import 'package:simf_app/features/staff/data/staff_seating_models.dart';
 import 'package:simf_app/features/staff/data/staff_seating_repository.dart';
 import 'package:simf_app/features/staff/staff_seating_screen.dart';
+
+import '../../support/simf_test_scope.dart';
 
 // Row A = VVIP (protocol), row B = Normal.
 SessionSeatMap _map() => const SessionSeatMap(
@@ -109,7 +113,7 @@ Future<_FakeSeatingRepo> _pump(
   addTearDown(tester.view.resetDevicePixelRatio);
   final seating = _FakeSeatingRepo(occupant);
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         seatMapRepositoryProvider.overrideWithValue(_FakeSeatMapRepo()),
         staffSeatingRepositoryProvider.overrideWithValue(seating),

@@ -20,24 +20,11 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 // importable from this file (the home widget tests reference them here).
 export 'home_greeting.dart';
 
-/// Page 013 — الرئيسية · Home (router / landing screen #13, `path=/`),
-/// rebuilt to the KSA frames: guest = 758:2910 (owner-picked), signed-in =
-/// **758:1134** (the live exact-parity frame).
-///
-/// One route, four states off the cached auth privilege: the **guest** layout
-/// (also shown to a signed-in but unapproved account), the focused **staff**
-/// and **moderator** operational homes (D-519), and the **visitor/exhibitor**
-/// signed-in layout. Each layout lives in `widgets/`. Home carries no data of
-/// its own beyond the best-effort unread-notification count (Page_013 L-5), the
-/// best-effort greeting profile, and the best-effort highlights list (reusing
-/// `GET /app/news`); the live banner stays static config (D10, L-6).
-///
-/// Route: `RouteNames.home`.
-/// Data: [authControllerProvider], [bannersProvider],
-///       [currentUserMeetingAccessProvider], [homeProfileProvider],
-///       [newsListProvider], [orgProfileProvider], [simfDataConfigProvider],
-///       [siteSettingsProvider].
-/// Perf: no list — a single-screen layout.
+/// Home — route: `RouteNames.home` · Figma 758:1134 / guest 758:2910
+/// Contract: one route, four states off the cached auth privilege — guest
+/// (also a signed-in but unapproved account, D-666), the focused staff and
+/// moderator operational homes (D-519), and the visitor/exhibitor layout.
+/// Each layout lives in `widgets/`.
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
@@ -107,40 +94,10 @@ class HomeScreen extends ConsumerWidget {
           data: (s) => s.partnerDirectoryEnabled,
           orElse: () => true,
         );
-    // Owner rule: every data page pulls to refresh. Home renders six
-    // independent reads, so the gesture re-fetches all of them and holds the
-    // spinner until the slowest settles.
-    Future<void> onRefresh() async {
-      ref
-        ..invalidate(newsListProvider)
-        ..invalidate(homeProfileProvider)
-        ..invalidate(bannersProvider)
-        // The meeting-access provider is a SELECTOR over the cached profile
-        // read, so invalidating it alone would recompute off the same stale
-        // row and the gesture would quietly stop re-fetching. Invalidate the
-        // source instead.
-        ..invalidate(myProfileProvider)
-        ..invalidate(siteSettingsProvider);
-      try {
-        await Future.wait<void>(<Future<void>>[
-          ref.read(orgProfileProvider.notifier).warm(),
-          ref.read(newsListProvider.future),
-          ref.read(homeProfileProvider.future),
-          ref.read(bannersProvider.future),
-          ref.read(currentUserMeetingAccessProvider.future),
-          ref.read(siteSettingsProvider.future),
-        ]);
-      } on Object {
-        // Every section above reads through `maybeWhen(orElse:)` and renders
-        // its own fallback, so a failed section must not reject the refresh
-        // future — that would surface as an unhandled error rather than an
-        // empty section.
-      }
-    }
 
     return VisitorHome(
       l10n: l10n,
-      onRefresh: onRefresh,
+      onRefresh: () => _refreshHome(ref),
       name: _greetingName(
         profile?.identity.localizedName(isArabic: l10n.isArabic),
         user?.displayName,
@@ -154,6 +111,35 @@ class HomeScreen extends ConsumerWidget {
       canRequestMeetings: canRequestMeetings,
       partnerDirectoryEnabled: partnerDirectoryEnabled,
     );
+  }
+}
+
+/// Owner rule: every data page pulls to refresh. Home renders six independent
+/// reads, so the gesture re-fetches all of them and holds the spinner until
+/// the slowest settles.
+Future<void> _refreshHome(WidgetRef ref) async {
+  ref
+    ..invalidate(newsListProvider)
+    ..invalidate(homeProfileProvider)
+    ..invalidate(bannersProvider)
+    // The meeting-access provider is a SELECTOR over the cached profile read,
+    // so invalidating it alone would recompute off the same stale row and the
+    // gesture would quietly stop re-fetching. Invalidate the source instead.
+    ..invalidate(myProfileProvider)
+    ..invalidate(siteSettingsProvider);
+  try {
+    await Future.wait<void>(<Future<void>>[
+      ref.read(orgProfileProvider.notifier).warm(),
+      ref.read(newsListProvider.future),
+      ref.read(homeProfileProvider.future),
+      ref.read(bannersProvider.future),
+      ref.read(currentUserMeetingAccessProvider.future),
+      ref.read(siteSettingsProvider.future),
+    ]);
+  } on Object {
+    // Every section above reads through `maybeWhen(orElse:)` and renders its
+    // own fallback, so a failed section must not reject the refresh future —
+    // that would surface as an unhandled error rather than an empty section.
   }
 }
 

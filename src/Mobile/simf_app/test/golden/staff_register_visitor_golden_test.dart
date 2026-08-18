@@ -3,16 +3,17 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/app_theme.dart';
-import 'package:simf_app/features/account/data/profile_models.dart';
+import 'package:simf_app/features/account/data/profile_lookups.dart';
 import 'package:simf_app/features/account/data/profile_repository.dart';
 import 'package:simf_app/features/staff/data/staff_models.dart';
 import 'package:simf_app/features/staff/data/staff_repository.dart';
 import 'package:simf_app/features/staff/register_visitor_screen.dart';
 
+import '../support/simf_test_scope.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the staff walk-in registration (إنشاء ملف زائر · iPad Pro
@@ -97,7 +98,7 @@ void main() {
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(
-      ProviderScope(
+      simfTestScope(
         overrides: <Override>[
           profileRepositoryProvider.overrideWithValue(_FakeProfileRepo()),
           staffRepositoryProvider.overrideWithValue(_FakeStaffRepo()),

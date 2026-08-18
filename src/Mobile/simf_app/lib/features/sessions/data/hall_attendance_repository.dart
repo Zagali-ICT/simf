@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:simf_app/features/sessions/data/session_models.dart';
+import 'package:simf_app/features/sessions/data/hall_attendance_models.dart';
 import 'package:simf_app/features/sessions/data/sessions_endpoints.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 

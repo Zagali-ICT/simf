@@ -144,7 +144,6 @@ class ModeratorQuestionCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: SimfTokens.space6),
-          // Question box — dark inset, gold border, asymmetric radii.
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(SimfTokens.space5),

@@ -3,7 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/app_theme.dart';
@@ -12,6 +12,7 @@ import 'package:simf_app/features/contacts/share_my_contact_screen.dart';
 import 'package:simf_app/features/myarea/data/myarea_repository.dart';
 
 import '../features/contacts/_fake_contacts_repo.dart';
+import '../support/simf_test_scope.dart';
 import 'golden_fonts.dart';
 
 /// Render-lock golden of the "Share my contact" screen against the
@@ -44,7 +45,7 @@ void main() {
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(
-      ProviderScope(
+      simfTestScope(
         overrides: <Override>[
           contactsRepositoryProvider
               .overrideWithValue(FakeContactsRepo(token: 'SHARE-TOKEN')),

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 
-/// A small icon + text meta row (date / location) under the hero title.
 class MetaLine extends StatelessWidget {
   const MetaLine({required this.icon, required this.text, super.key});
 

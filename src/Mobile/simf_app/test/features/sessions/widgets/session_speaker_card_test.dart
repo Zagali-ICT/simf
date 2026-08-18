@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:simf_app/features/sessions/data/session_models.dart';
+import 'package:simf_app/features/sessions/data/session_enums.dart';
+import 'package:simf_app/features/sessions/data/session_speaker.dart';
 import 'package:simf_app/features/sessions/widgets/session_speaker_card.dart';
 
 SessionSpeaker _speaker({

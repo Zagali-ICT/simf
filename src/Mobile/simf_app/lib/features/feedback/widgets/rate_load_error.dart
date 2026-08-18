@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 
-/// Form-load failure with a retry button.
 class RateLoadError extends StatelessWidget {
   const RateLoadError(
       {required this.message, required this.onRetry, super.key,});

@@ -1,4 +1,4 @@
-import 'package:simf_app/features/account/data/profile_models.dart';
+import 'package:simf_app/features/account/data/app_gender.dart';
 
 /// Whether a visitor profile carries everything the server will require, field
 /// by field.

@@ -8,15 +8,7 @@ import 'package:simf_app/core/utils/refresh.dart';
 import 'package:simf_app/features/sessions/data/sessions_repository.dart';
 import 'package:simf_app/features/sessions/widgets/hub_list.dart';
 
-/// D-485 — **Join a session** hub (`/sessions/join`, approved Visitor). The
-/// standalone entry into the join flow (the other entry is the Join CTA on the
-/// session page, per the owner's "both" choice): it lists the programme
-/// sessions; tapping one opens its detail page, where the **Select my seat /
-/// Join** CTA lives. Reuses `GET /app/programme/sessions` — no new API.
-///
-/// Route: `RouteNames.joinSessionHub`.
-/// Data: [programmeSessionsProvider].
-/// Perf: no list — a single-screen layout.
+/// Join a session hub — route: `RouteNames.joinSessionHub`
 class JoinSessionHubScreen extends ConsumerWidget {
   const JoinSessionHubScreen({super.key});
 

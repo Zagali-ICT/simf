@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
@@ -8,6 +8,7 @@ import 'package:simf_app/features/contacts/data/contacts_repository.dart';
 import 'package:simf_app/features/contacts/share_my_contact_screen.dart';
 import 'package:simf_app/features/myarea/data/myarea_repository.dart';
 
+import '../../support/simf_test_scope.dart';
 import '_fake_contacts_repo.dart';
 
 /// D-470 — the share QR now encodes the user's vCard (Arabic name + phones).
@@ -35,7 +36,7 @@ Future<void> _pump(
   _FakeMyAreaRepo? myArea,
 }) async {
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         contactsRepositoryProvider.overrideWithValue(repo),
         myAreaRepositoryProvider.overrideWithValue(myArea ?? _FakeMyAreaRepo()),

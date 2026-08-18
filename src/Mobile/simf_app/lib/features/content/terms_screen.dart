@@ -6,56 +6,18 @@ import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/core/errors/api_error_l10n.dart';
 import 'package:simf_app/core/utils/refresh.dart';
-import 'package:simf_app/features/content/data/content_models.dart';
 import 'package:simf_app/features/content/data/content_repository.dart';
-import 'package:simf_app/features/content/widgets/terms_bullet_card.dart';
+import 'package:simf_app/features/content/widgets/terms_body.dart';
+import 'package:simf_app/features/content/widgets/terms_header_bar.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// Page 009 — الشروط والأحكام · Terms & conditions. The KSA-Project Figma
-/// design (node 505:1553 — D-367, fidelity pass D-375): navy surface + sweep,
-/// custom header, the معلومات هامة لزوار الملتقى heading, the terms rendered
-/// as gold-hairline bullet cards, and the gold موافق button — per the frame
-/// the button always shows and there is no last-updated line. The previous
-/// screen is parked in `_legacy_mockup/`.
+/// Terms & conditions — route: `RouteNames.terms` · Figma 505:1553
 ///
-/// Contract: a read-only view over the anonymous `GET /app/content/terms`.
-/// Two modes (Page_009 L-2): standalone read (موافق simply leaves the page)
-/// and in-flow consent — per the design the interim checkbox is gone and the
-/// explicit **موافق** tap IS the consent (still client-side only, D8 —
-/// control returns to the caller via `pop(true)`; the back chevron declines
-/// via `pop(false)`). Each non-empty line of the server body renders as one
-/// bullet card; a 404 is the empty state, transport/5xx is the error state
-/// with retry (L-6). Guest+.
-///
-/// Route: `RouteNames.terms`.
-/// Data: [contentRepositoryProvider], [termsBlockProvider].
-/// Perf: no list — a single-screen layout.
-
-/// The terms block, or **null for the empty state**.
-///
-/// Two different things mean "there is nothing to show", and both are empty
-/// rather than broken (Page_009 L-6): the key is missing or inactive (a 404),
-/// or it exists with no body. Folding them here is what lets the screen read
-/// `AsyncValue` directly — three server outcomes collapse into the three
-/// branches `when` already has, instead of a fourth `_empty` flag beside them.
-///
-/// Any other failure propagates, so the error branch shows the server's own
-/// message rather than a generic one.
-final termsBlockProvider =
-    FutureProvider.autoDispose<ContentBlock?>((ref) async {
-  try {
-    final block = await ref
-        .watch(contentRepositoryProvider)
-        .getContentBlock(ContentRepository.termsKey);
-    return block.hasBody ? block : null;
-  } on ApiFailure catch (failure) {
-    if (failure.httpStatus == 404) {
-      return null;
-    }
-    rethrow;
-  }
-});
-
+/// Contract: a read-only view over the anonymous `GET /app/content/terms`. Two
+/// modes (Page_009 L-2, D-367 / D-375): standalone read, where موافق simply
+/// leaves the page, and in-flow consent, where the explicit **موافق** tap IS
+/// the consent (client-side only, D8 — `pop(true)`) and the back chevron
+/// declines via `pop(false)`.
 class TermsScreen extends ConsumerWidget {
   const TermsScreen({super.key, this.requireConsent = false});
 
@@ -106,40 +68,9 @@ class TermsScreen extends ConsumerWidget {
           SafeArea(
             child: Column(
               children: <Widget>[
-                // Header band (Figma 505:1558): chevron left, centred title.
-                SizedBox(
-                  height: SimfTokens.termsScreenHeightSm,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: <Widget>[
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Padding(
-                          padding:
-                              const EdgeInsets.only(left: SimfTokens.space2),
-                          child: IconButton(
-                            onPressed: () => _back(context),
-                            tooltip: MaterialLocalizations.of(context)
-                                .backButtonTooltip,
-                            icon: const Icon(
-                              Icons.arrow_back_ios_new,
-                              color: SimfTokens.surface,
-                              size: SimfTokens.termsScreenSize,
-                              textDirection: TextDirection.ltr,
-                            ),
-                          ),
-                        ),
-                      ),
-                      Text(
-                        l10n.termsTitle,
-                        style: const TextStyle(
-                          color: SimfTokens.surface,
-                          fontSize: SimfTokens.text24,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
+                TermsHeaderBar(
+                  title: l10n.termsTitle,
+                  onBack: () => _back(context),
                 ),
                 Expanded(
                   child: SimfPullToRefresh(
@@ -186,63 +117,14 @@ class TermsScreen extends ConsumerWidget {
                     onRetry: retry,
                   ),
                 )
-              : _buildContent(context, l10n, block),
-        );
-  }
-
-  Widget _buildContent(BuildContext context, AppL10n l10n, ContentBlock block) {
-    // Each non-empty body line renders as one bullet card (Figma list items).
-    final items = block.bullets(isArabic: l10n.isArabic);
-    return Column(
-      children: <Widget>[
-        Expanded(
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
-            // Full-width content (owner 2026-06-20): the cards stretch to the
-            // page width instead of the old 400-wide centred column.
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                const SizedBox(height: SimfTokens.space4),
-                Align(
-                  alignment: AlignmentDirectional.centerStart,
-                  child: Text(
-                    l10n.termsImportantInfoTitle,
-                    style: SimfTokens.labelWhiteBoldLg,
-                  ),
+              // Each non-empty body line renders as one bullet card (Figma
+              // list items).
+              : TermsBody(
+                  bullets: block.bullets(isArabic: l10n.isArabic),
+                  headingLabel: l10n.termsImportantInfoTitle,
+                  acceptLabel: l10n.termsAcceptButton,
+                  onAccept: () => _accept(context),
                 ),
-                const SizedBox(height: SimfTokens.space4),
-                for (final item in items) ...<Widget>[
-                  TermsBulletCard(text: item),
-                  const SizedBox(height: SimfTokens.space4),
-                ],
-                const SizedBox(height: SimfTokens.space2),
-              ],
-            ),
-          ),
-        ),
-        // The frame shows موافق unconditionally (505:1684); standalone it
-        // simply leaves the page, in consent mode it returns true (D-375).
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            SimfTokens.space4,
-            0,
-            SimfTokens.space4,
-            SimfTokens.space6,
-          ),
-          child: SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: () => _accept(context),
-              child: Text(
-                l10n.termsAcceptButton,
-                style: SimfTokens.titleBold,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
+        );
   }
 }

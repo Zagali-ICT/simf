@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/features/gates/data/gate_models.dart';
@@ -9,6 +9,8 @@ import 'package:simf_app/features/gates/data/gates_repository.dart';
 import 'package:simf_app/features/gates/data/offline_badge.dart';
 import 'package:simf_app/features/gates/gate_scan_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
+
+import '../../support/simf_test_scope.dart';
 
 OperatorGate _gate({
   String id = 'g1',
@@ -163,7 +165,7 @@ class _FakeGates implements GatesRepository {
 
 Future<void> _pump(WidgetTester tester, _FakeGates repo) async {
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         gatesRepositoryProvider.overrideWithValue(repo),
       ],

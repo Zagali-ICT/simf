@@ -55,7 +55,6 @@ class NotificationCategoryIcon extends StatelessWidget {
       case 'InvitationReceived': // coral — VIP special (star, see note)
       case 'VipBroadcast':
         return (SimfTokens.notifCoral, Icons.star_rounded);
-      // ---- positive / confirmations / completions (green) ----
       case 'BookingConfirmed':
         return (SimfTokens.notifGreen, Icons.event_available_rounded);
       case 'AccountWelcome':
@@ -63,13 +62,11 @@ class NotificationCategoryIcon extends StatelessWidget {
       case 'AccountPasswordChanged':
       case 'AccountPasswordResetCompleted':
         return (SimfTokens.notifGreen, Icons.lock_reset_rounded);
-      // ---- alerts / rejections / cancellations (coral) ----
       case 'BookingRejected':
       case 'MeetingCancelled':
         return (SimfTokens.notifCoral, Icons.event_busy_rounded);
       case 'AccountRejected':
         return (SimfTokens.notifCoral, Icons.cancel_rounded);
-      // ---- account / admin / credential info (gold) ----
       case 'AccountProfileSubmitted':
       case 'AdminPendingVisitor':
       case 'AdminPendingApproval':

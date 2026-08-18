@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/features/forum_guide/forum_guide_screen.dart';
+
+import '../../support/simf_test_scope.dart';
 
 Future<void> _pump(
   WidgetTester tester, {
@@ -17,7 +18,7 @@ Future<void> _pump(
   addTearDown(tester.view.resetDevicePixelRatio);
 
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       child: MaterialApp(
         locale: locale,
         supportedLocales: AppL10n.supportedLocales,

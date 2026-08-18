@@ -13,57 +13,16 @@ import 'package:simf_app/core/utils/refresh.dart';
 import 'package:simf_app/features/live/data/live_models.dart';
 import 'package:simf_app/features/live/data/live_presentation.dart';
 import 'package:simf_app/features/live/data/live_repository.dart';
-import 'package:simf_app/features/live/widgets/live_content_view.dart';
-import 'package:simf_app/features/live/widgets/need_login_state.dart';
+import 'package:simf_app/features/live/widgets/live_broadcast_body.dart';
 import 'package:simf_app/features/sessions/data/rate_prompt_tracker.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
-import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// Page 025 — البث المباشر · Live broadcast (#25, `/live?sessionId=`), rebuilt
-/// to the KSA-Project Figma frame **934:3450** on the shared navy shell.
-///
-/// **Login-only** (owner, D-577): a signed-out guest sees an in-screen "need
-/// login" prompt with a Sign-in button instead of the player, from any entry
-/// point (supersedes the D-199 "public, anonymous" design). This route is NOT
-/// router-redirect-gated (unlike sessions/detail under D-576) — the gate is
-/// in-screen, so the guest still lands here. A signed-in user takes an optional
-/// [sessionId] from the query string. With no id it shows a "pick a session"
-/// empty state and never fetches. With an id it reads the broadcast slice (`GET
-/// /app/programme/sessions/{id}`, `AllowAnonymous`) and branches three ways
-/// (Page_025 L-3):
-/// * `liveStreamUrl` non-empty → play the feed and show a LIVE badge; when a
-///   `liveSignLanguageUrl` also exists a toggle swaps the player between the
-///   main feed and the sign-language feed (Page_025 L-3);
-/// * `liveStreamUrl` null but `hasRecording` → a "recording available" note;
-/// * neither → a "not live / scheduled" state. 404 → not-found; any other
-///   failure → retry.
-///
-/// **Frame mapping (934:3450):** the navy header (circled back chevron +
-/// centred title), a **black player surface** carrying the LIVE badge + the
-/// gold-bordered organiser caption strip, then the **"يُبث الآن"
-/// now-broadcasting** block (the session title as a gold bullet) and the
-/// **ask-a-question** entry to Page 026 (`/live/question`). The player surface
-/// + its media engine live in `widgets/live_player_surface.dart` +
-///   `live_video_player.dart` + `live_badges.dart`; the non-live black bands in
-///   `live_message_surfaces.dart`; the info column widgets in
-///   `live_content.dart`.
-///
-/// **FR-702 (owner 2026-07-31):** when the session carries a live notice it is
-/// rendered as a calm informational banner ABOVE the player. It is a
-/// notification only — nothing here checks where the viewer is and nothing
-/// withholds the stream.
-///
-/// **Provider (D-349):** the live-video provider is **YouTube** (POC). Each
-/// feed URL is sniffed by `YoutubeUrl`: a YouTube link plays via the IFrame
-/// player, anything else (HLS/MP4) via `video_player`. The player widget owns
-/// its own controller lifecycle, so swapping the active URL just rebuilds it.
-///
-/// Route: `RouteNames.liveBroadcast`.
-/// Data: [authControllerProvider], [liveRepositoryProvider],
-///       [liveSessionProvider], [orgProfileProvider],
-///       [sessionRatePromptTrackerProvider], [siteSettingsProvider],
-///       [upcomingSessionsProvider].
-/// Perf: no list — a single-screen layout.
+/// Live broadcast — route: `RouteNames.liveBroadcast` · Figma 934:3450
+/// Contract: login-only (owner, D-577) — a signed-out guest gets the
+/// in-screen need-login prompt instead of the player, from every entry point.
+/// With no session id the forum-wide feed comes from the Organization profile
+/// (D-495); the video provider is YouTube (D-349); and FR-702's notice is
+/// informational only — nothing here geo-checks or withholds the stream.
 class LiveBroadcastScreen extends ConsumerStatefulWidget {
   const LiveBroadcastScreen({this.sessionId, this.liveUrl, super.key});
 
@@ -74,42 +33,6 @@ class LiveBroadcastScreen extends ConsumerStatefulWidget {
   ConsumerState<LiveBroadcastScreen> createState() =>
       _LiveBroadcastScreenState();
 }
-
-/// One live session, or **null when the server has no such id** (a 404).
-///
-/// The fold-to-null shape: the screen answers a missing session with its own
-/// not-found copy rather than the error surface.
-///
-/// Only ever watched behind the login gate and the has-an-id check — a guest
-/// sees the need-login prompt and the id-less global feed never reads a
-/// session, so neither path may start this request.
-final liveSessionProvider =
-    FutureProvider.autoDispose.family<LiveSession?, String>((ref, id) async {
-  try {
-    return await ref.watch(liveRepositoryProvider).getLiveSession(id);
-  } on ApiFailure catch (failure) {
-    if (failure.httpStatus == 404) {
-      return null;
-    }
-    rethrow;
-  }
-});
-
-/// D-433 — the "الجلسات القادمة" strip.
-///
-/// Optional chrome, so a failure yields an EMPTY list rather than an error:
-/// a list failure must not break the live screen, which is exactly what the
-/// old non-blocking second read said by swallowing its own `ApiFailure`.
-final upcomingSessionsProvider = FutureProvider.autoDispose
-    .family<List<UpcomingSession>, String?>((ref, excludeId) async {
-  try {
-    return await ref
-        .watch(liveRepositoryProvider)
-        .getUpcomingSessions(excludeSessionId: excludeId);
-  } on ApiFailure {
-    return const <UpcomingSession>[];
-  }
-});
 
 class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
   /// When true the player shows the sign-language feed instead of the main one.
@@ -221,7 +144,7 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
     // settings load / on error, matching the server, which also suppresses
     // the notification when the type is off.
     final sessionRatingEnabled =
-        ref.read(siteSettingsProvider).valueOrNull?.sessionRatingEnabled ??
+        ref.read(siteSettingsProvider).value?.sessionRatingEnabled ??
             true;
     _rateTracker = isApprovedAttendee &&
             session.liveStreamUrl != null &&
@@ -253,10 +176,6 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
     );
   }
 
-  /// D-495 — a synthetic live session for the forum's main (global) live
-  /// stream, used when the screen opens without a specific session id. The
-  /// title is the forum name; the feed is the Organization profile's
-  /// liveStreamUrl.
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
@@ -266,88 +185,15 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
       tab: SimfTab.sessions,
       body: SimfPullToRefresh(
         onRefresh: _refresh,
-        child: _buildBody(l10n),
+        child: LiveBroadcastBody(
+          sessionId: _id,
+          liveUrl: widget.liveUrl,
+          showSignLanguage: _showSignLanguage,
+          onSignLanguageChanged: (value) =>
+              setState(() => _showSignLanguage = value),
+          onAskQuestion: _askQuestion,
+        ),
       ),
     );
   }
-
-  Widget _buildBody(AppL10n l10n) {
-    // Login-gate (owner, D-577): the live stream is login-only — a signed-out
-    // guest sees a "need login" prompt with a Sign-in button instead of the
-    // player, from any entry point (session link, deep link, global main-live).
-    final isSignedIn = ref.watch(authControllerProvider) is AuthStateSignedIn;
-    if (!isSignedIn) {
-      return NeedLoginState(
-        message: l10n.liveNeedLogin,
-        signInLabel: l10n.signInButton,
-        onSignIn: () => context.pushNamed(RouteNames.signIn),
-      );
-    }
-    if (!_hasId) {
-      // D-495 — no session id → play the forum's main (global) live-stream link
-      // from the Organization profile when the admin has configured one; else
-      // the "pick a session" empty state. When a liveUrl param is provided
-      // (e.g. from the home LiveBanner tap), use it directly without hitting
-      // the API or the org profile.
-      final explicitUrl = widget.liveUrl?.trim();
-      if (explicitUrl != null && explicitUrl.isNotEmpty) {
-        return _content(
-          l10n,
-          LiveSession(
-            title: '',
-            titleArabic: '',
-            status: 1,
-            hasRecording: false,
-            liveStreamUrl: explicitUrl,
-          ),
-        );
-      }
-      final profile = ref.watch(orgProfileProvider);
-      final globalUrl = profile?.liveStreamUrl;
-      if (profile != null && globalUrl != null && globalUrl.isNotEmpty) {
-        return _content(l10n, globalLiveSession(profile, globalUrl));
-      }
-      return SimfPullableHost(
-        child: SimfEmptyState(
-          icon: Icons.live_tv_outlined,
-          message: l10n.liveNoSessionSelected,
-        ),
-      );
-    }
-    // Reached only past the login gate and the id-less global-feed branch
-    // above, which is what keeps a guest and the global feed from ever
-    // starting this request.
-    final id = _id!;
-    return ref.watch(liveSessionProvider(id)).when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (_, __) => SimfPullableHost(
-            child: SimfErrorState(
-              message: l10n.liveBroadcastError,
-              retryLabel: l10n.retryLabel,
-              onRetry: () => ref.invalidate(liveSessionProvider(id)),
-            ),
-          ),
-          // Null is the not-found state (see [liveSessionProvider]).
-          data: (session) => session == null
-              ? SimfPullableHost(
-                  child: SimfEmptyState(
-                    icon: Icons.live_tv_outlined,
-                    message: l10n.sessionNotFound,
-                  ),
-                )
-              : _content(l10n, session),
-        );
-  }
-
-  Widget _content(AppL10n l10n, LiveSession session) => LiveContentView(
-        l10n: l10n,
-        session: session,
-        upcoming: ref.watch(upcomingSessionsProvider(_id)).valueOrNull ??
-            const <UpcomingSession>[],
-        showSignLanguage: _showSignLanguage,
-        hasId: _hasId,
-        onSignLanguageChanged: (value) =>
-            setState(() => _showSignLanguage = value),
-        onAskQuestion: _askQuestion,
-      );
 }

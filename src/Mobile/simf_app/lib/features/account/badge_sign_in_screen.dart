@@ -6,21 +6,11 @@ import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/widgets/qr_scan_view.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 
-/// Part B (D-430) — badge-QR sign-in entry. The holder scans the QR printed on
-/// their badge; the server resolves it and the app branches: an account that
-/// already has a password goes to the password-completion step; a passwordless
-/// account goes to the set-password activation screen. Pre-login (anonymous).
-///
-/// Uses the shared [QrScanView] (D-737) so the scanner is consistent with the
-/// rest of the app: camera-first with the gold viewfinder, an always-usable
-/// manual-entry fallback, a single dedupe policy (no more repeated "not
-/// recognised" snackbars on a steady QR), and a visible camera-error state
-/// instead of a black dead-end when the camera permission is denied. The
-/// camera-first look keeps the KSA-Project design (node 758:4735, D-657).
-///
-/// Route: `RouteNames.badgeSignIn`.
-/// Data: [authRepositoryProvider].
-/// Perf: no list — a single-screen layout.
+/// Badge sign-in — route: RouteNames.badgeSignIn · Figma 758:4735 (D-657)
+/// Contract: D-430 — the server resolves the scanned QR and the app branches;
+/// an account that already has a password goes to the password step (D-738), a
+/// passwordless one to activation. Pre-login (anonymous), on the shared
+/// [QrScanView] (D-737).
 class BadgeSignInScreen extends ConsumerStatefulWidget {
   const BadgeSignInScreen({super.key, this.enableCamera = true});
 

@@ -5,58 +5,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
-import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_bottom_nav.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
-import 'package:simf_app/core/net/asset_urls.dart';
 import 'package:simf_app/core/utils/refresh.dart';
+import 'package:simf_app/features/sessions/data/session_enums.dart';
 import 'package:simf_app/features/sessions/data/session_models.dart';
 import 'package:simf_app/features/sessions/data/sessions_repository.dart';
-import 'package:simf_app/features/sessions/widgets/programme_day_banner.dart';
-import 'package:simf_app/features/sessions/widgets/programme_day_strip.dart';
-import 'package:simf_app/features/sessions/widgets/session_timeline_row.dart';
-import 'package:simf_app/features/sessions/widgets/session_type_tabs.dart';
-import 'package:simf_app/features/sessions/widgets/sessions_search_field.dart';
-import 'package:simf_data_pkg/simf_data_pkg.dart';
+import 'package:simf_app/features/sessions/widgets/programme_body.dart';
 
-/// Page 016 — برنامج الملتقى · Sessions (#16, `/sessions`), rebuilt to the LIVE
-/// KSA frame **883:2308** (D-452).
-///
-/// **Signed-in** (Visitor+) — D-576 login-gated: a guest who opens this route
-/// is sent to sign-in (supersedes the earlier "public Guest+" access). The
-/// screen fetches the day-grouped programme once
-/// (`GET /app/programme/days`) and filters it client-side. Frame mapping: the
-/// bordered search field; the **white day strip** (the programme days — the
-/// selected day inverts to navy, weekend weekday labels render red); the
-/// selected day's **day title + logo banner** ("تفاصيل اليوم" carries the day's
-/// own title); the **type tabs** (الكل / جلسات / ورش العمل); then the
-/// **المواعيد** list — the day's sessions filtered by the active type + the
-/// search, the **first one featured** (expanded with the day banner image), the
-/// rest collapsed. Tapping a row opens the session detail (Page_017). The
-/// section widgets live in `widgets/` (sessions_search_field,
-/// programme_day_strip, programme_day_banner, session_type_tabs,
-/// session_timeline_row).
-///
-/// Route: `RouteNames.sessions`.
-/// Data: [programmeDaysProvider], [sessionsRepositoryProvider],
-///       [simfDataConfigProvider].
-/// Perf: lazy — builds children on demand (SliverList).
-/// The programme days (`GET /app/sessions/days`).
-///
-/// Load only — the day tab, the type filter and the search box are UI state
-/// and stay on the widget, as on `speakers` and `booths`.
-final programmeDaysProvider = FutureProvider.autoDispose<List<ProgrammeDay>>(
-  (ref) => ref.watch(sessionsRepositoryProvider).getDays(),
-);
-
-/// The day to open on: the first that actually HAS sessions, not blindly the
-/// first — otherwise a programme whose sessions sit on a later day renders an
-/// empty schedule until the user taps that day by hand.
-ProgrammeDay _defaultDay(List<ProgrammeDay> days) => days.firstWhere(
-      (day) => day.sessions.isNotEmpty,
-      orElse: () => days.first,
-    );
-
+/// Sessions — برنامج الملتقى · route: `RouteNames.sessions` · Figma 883:2308
 class SessionsScreen extends ConsumerStatefulWidget {
   const SessionsScreen({super.key});
 
@@ -124,126 +81,19 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
                     message: l10n.sessionsEmpty,
                   ),
                 )
-              : _buildProgramme(l10n, days),
-        );
-  }
-
-  Widget _buildProgramme(AppL10n l10n, List<ProgrammeDay> days) {
-    final isArabic = l10n.isArabic;
-    final baseUrl = ref.watch(simfDataConfigProvider).baseUrl;
-    // The default is resolved HERE rather than written into state when the
-    // load returns. Same first render, and a pull-to-refresh no longer throws
-    // away the day the user picked — `_load` used to overwrite the selection
-    // on every reload.
-    final selected = days.firstWhere(
-      (d) => d.id == _selectedDayId,
-      orElse: () => _defaultDay(days),
-    );
-    final dayImageUrl = selected.hasImage
-        ? AssetUrls.image(baseUrl, AssetKind.programmeDayImage, selected.id)
-        : null;
-
-    // The selected day's sessions, filtered by the active type tab + the
-    // search.
-    final sessions = sessionsForDay(
-      selected,
-      type: _typeFilter,
-      query: _query,
-    );
-
-    // The chrome is a fixed handful of widgets; the schedule is one row per
-    // session for a server-driven day, so it builds lazily in its own sliver
-    // rather than being spread eagerly into the same list (section 4).
-    return SimfPullToRefresh(
-      onRefresh: _refresh,
-      child: CustomScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        slivers: <Widget>[
-          SliverPadding(
-            // Top gap below the header matches Figma 883:2308 (title row →
-            // search ≈ 32px; the shell header adds its own 8px, so the body
-            // adds ~24px) — owner 2026-06-30: the header's bottom space was
-            // too small.
-            padding: const EdgeInsets.fromLTRB(
-              SimfTokens.space4,
-              SimfTokens.space6,
-              SimfTokens.space4,
-              0,
-            ),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate(<Widget>[
-                SessionsSearchField(
-                  l10n: l10n,
-                  onChanged: (value) => setState(() => _query = value),
-                ),
-                const SizedBox(height: SimfTokens.space4),
-                ProgrammeDayStrip(
+              : ProgrammeBody(
                   days: days,
-                  selectedId: selected.id,
-                  onChanged: (id) => setState(() => _selectedDayId = id),
-                ),
-                const SizedBox(height: SimfTokens.space5),
-                // تفاصيل اليوم (883:2327 area) — the selected day's OWN title +
-                // its logo banner. The "تفاصيل اليوم" label carries the day
-                // title (owner: not a static label — it is the day's title).
-                SimfSectionHeader(
-                  title: selected.localizedTitle(isArabic: isArabic),
-                ),
-                const SizedBox(height: SimfTokens.space3),
-                ProgrammeDayBanner(imageUrl: dayImageUrl),
-                const SizedBox(height: SimfTokens.space5),
-                // Type tabs (883:2320): الكل / جلسات / ورش العمل.
-                SessionTypeTabs(
                   l10n: l10n,
-                  active: _typeFilter,
-                  onChanged: (type) => setState(() => _typeFilter = type),
+                  selectedDayId: _selectedDayId,
+                  typeFilter: _typeFilter,
+                  query: _query,
+                  emptyMessage: _filteredEmptyMessage(l10n),
+                  onQueryChanged: (value) => setState(() => _query = value),
+                  onDayChanged: (id) => setState(() => _selectedDayId = id),
+                  onTypeChanged: (type) => setState(() => _typeFilter = type),
+                  onRefresh: _refresh,
+                  onOpenSession: _openSession,
                 ),
-                const SizedBox(height: SimfTokens.space5),
-                SimfSectionHeader(title: l10n.sessionsScheduleSection),
-                const SizedBox(height: SimfTokens.space3),
-                if (sessions.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: SimfTokens.space4,
-                    ),
-                    child: Text(
-                      _filteredEmptyMessage(l10n),
-                      style: SimfTokens.hintBeige,
-                    ),
-                  ),
-              ]),
-            ),
-          ),
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(
-              SimfTokens.space4,
-              0,
-              SimfTokens.space4,
-              SimfTokens.space6,
-            ),
-            sliver: SliverList.builder(
-              itemCount: sessions.length,
-              itemBuilder: (context, index) {
-                final session = sessions[index];
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: <Widget>[
-                    if (index > 0) const SizedBox(height: SimfTokens.space4),
-                    SessionTimelineRow(
-                      session: session,
-                      isArabic: isArabic,
-                      // The first session of the day is featured — expanded
-                      // with the day banner image (frame 1310:3232).
-                      featuredImageUrl: index == 0 ? dayImageUrl : null,
-                      onTap: () => _openSession(session),
-                    ),
-                  ],
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
+        );
   }
 }

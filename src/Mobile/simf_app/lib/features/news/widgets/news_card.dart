@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/core/net/asset_urls.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 import 'package:simf_app/features/news/data/news_models.dart';
 import 'package:simf_app/features/news/widgets/news_thumbnail.dart';
 
@@ -59,7 +60,7 @@ class NewsCard extends StatelessWidget {
                       const SizedBox(height: SimfTokens.space1),
                     ],
                     Text(
-                      _formatDate(item.publishedAt),
+                      formatDateDmy(item.publishedAt),
                       // Keep DD-MM-YYYY left-to-right so the Arabic/RTL
                       // paragraph
                       // direction does not reorder the date segments.
@@ -86,15 +87,5 @@ class NewsCard extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  /// Frame date format `DD-MM-YYYY` with Western digits (the frame shows
-  /// Western
-  /// digits even in the Arabic UI). Formatted from the stored value so it is
-  /// timezone-stable.
-  static String _formatDate(DateTime publishedAt) {
-    final dd = publishedAt.day.toString().padLeft(2, '0');
-    final mm = publishedAt.month.toString().padLeft(2, '0');
-    return '$dd-$mm-${publishedAt.year}';
   }
 }

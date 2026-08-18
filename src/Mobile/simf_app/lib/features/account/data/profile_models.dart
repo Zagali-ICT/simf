@@ -1,23 +1,5 @@
 import 'package:flutter/foundation.dart';
-
-/// Gender wire enum — mirrors `SIMF.Common.Enums.Gender` (Unspecified=0,
-/// Male=1, Female=2). Sent as the integer; decoded tolerantly (unknown →
-/// Unspecified) per the append-only wire rule (D-219).
-enum AppGender {
-  unspecified(0),
-  male(1),
-  female(2);
-
-  const AppGender(this.value);
-  final int value;
-
-  static AppGender fromValue(int? value) {
-    return AppGender.values.firstWhere(
-      (g) => g.value == value,
-      orElse: () => AppGender.unspecified,
-    );
-  }
-}
+import 'package:simf_app/features/account/data/app_gender.dart';
 
 /// Body for `POST /app/account/user-profile` (Page_007 E2). Actor comes from the
 /// token (D7) — no user id / email. `dateOfBirth` is an ISO date `yyyy-MM-dd`.
@@ -129,35 +111,6 @@ class UpsertUserProfileRequest {
       jobTitleArabic: jobTitleArabic,
     );
   }
-}
-
-/// The in-memory sign-up draft carried from the profile-data screen (Page 007)
-/// to the interests screen (Page 007‑01), which adds the interests and fires
-/// the single `POST /app/account/user-profile` save (D-332). [request] is built
-/// with an empty `interestIds`; the interests screen replaces it via
-/// `copyWith`.
-@immutable
-class SignUpProfileDraft {
-  const SignUpProfileDraft({
-    required this.request,
-    this.idImageBytes,
-    this.idImageName,
-    this.faceImageBytes,
-    this.faceImageName,
-  });
-
-  final UpsertUserProfileRequest request;
-
-  /// The ID-document image (picked from the gallery) — uploaded to the
-  /// id-image endpoint before the profile save. Mandatory for every
-  /// registrant.
-  final Uint8List? idImageBytes;
-  final String? idImageName;
-
-  /// The face photo (live capture) — uploaded as the avatar before the
-  /// profile save. Mandatory for men, optional for women.
-  final Uint8List? faceImageBytes;
-  final String? faceImageName;
 }
 
 /// Response for `GET`/`POST /app/account/user-profile` (Page_007 E1/E2). Every
@@ -372,99 +325,4 @@ class UserProfileResponse {
         regionId: regionId,
         jobTitleArabic: jobTitleArabic,
       );
-}
-
-/// Country picker row — `GET /app/account/user-profile/countries` (E3).
-@immutable
-class CountryItem {
-  const CountryItem({
-    required this.code,
-    required this.name,
-    required this.nameArabic,
-  });
-
-  factory CountryItem.fromJson(Map<String, dynamic> json) => CountryItem(
-        code: json['code'] as String? ?? '',
-        name: json['name'] as String? ?? '',
-        nameArabic: json['nameArabic'] as String? ?? '',
-      );
-
-  final String code;
-  final String name;
-  final String nameArabic;
-}
-
-/// Profile-type picker row — `GET /app/account/profile-types` (E4).
-@immutable
-class ProfileTypeItem {
-  const ProfileTypeItem({
-    required this.id,
-    required this.name,
-    required this.nameArabic,
-    required this.isVisitor,
-    this.pageColor,
-  });
-
-  factory ProfileTypeItem.fromJson(Map<String, dynamic> json) =>
-      ProfileTypeItem(
-        id: json['id'] as String? ?? '',
-        name: json['name'] as String? ?? '',
-        nameArabic: json['nameArabic'] as String? ?? '',
-        pageColor: json['pageColor'] as String?,
-        isVisitor: json['isVisitor'] as bool? ?? true,
-      );
-
-  final String id;
-  final String name;
-  final String nameArabic;
-  final String? pageColor;
-  final bool isVisitor;
-}
-
-/// Interest picker row — `GET /app/account/interests` (E5).
-@immutable
-class InterestItem {
-  const InterestItem({
-    required this.id,
-    required this.name,
-    required this.nameArabic,
-    required this.displayOrder,
-  });
-
-  factory InterestItem.fromJson(Map<String, dynamic> json) => InterestItem(
-        id: json['id'] as String? ?? '',
-        name: json['name'] as String? ?? '',
-        nameArabic: json['nameArabic'] as String? ?? '',
-        displayOrder: (json['displayOrder'] as num?)?.toInt() ?? 0,
-      );
-
-  final String id;
-  final String name;
-  final String nameArabic;
-  final int displayOrder;
-}
-
-/// Organisation typeahead row — `GET /app/organisations?search=&top=` (E6).
-/// Note the wire names are `nameAr` / `nameEn` (this record really uses them).
-@immutable
-class OrganisationItem {
-  const OrganisationItem({
-    required this.id,
-    required this.nameAr,
-    this.nameEn,
-    this.city,
-  });
-
-  factory OrganisationItem.fromJson(Map<String, dynamic> json) =>
-      OrganisationItem(
-        id: json['id'] as String? ?? '',
-        nameAr: json['nameAr'] as String? ?? '',
-        nameEn: json['nameEn'] as String?,
-        city: json['city'] as String?,
-      );
-
-  final String id;
-  final String nameAr;
-  final String? nameEn;
-  final String? city;
 }

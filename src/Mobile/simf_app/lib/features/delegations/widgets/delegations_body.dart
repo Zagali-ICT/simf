@@ -9,10 +9,6 @@ import 'package:simf_app/features/delegations/widgets/active_filter_chip.dart';
 import 'package:simf_app/features/delegations/widgets/delegation_card.dart';
 import 'package:simf_app/features/delegations/widgets/delegations_stats_strip.dart';
 
-/// The loaded Delegations list — the stats strip, the search box, then the
-/// filtered per-country cards (or the empty / no-results state). Tapping a flag
-/// in the stats strip narrows the list to one country ([selectedCountryCode]);
-/// the active-filter chip below the search box clears it.
 class DelegationsBody extends StatelessWidget {
   const DelegationsBody({
     required this.data,
@@ -35,13 +31,10 @@ class DelegationsBody extends StatelessWidget {
   final TextEditingController searchController;
   final ValueChanged<String> onQueryChanged;
 
-  /// The flag-filtered country's code (from a stats-strip tap), or null.
   final String? selectedCountryCode;
 
-  /// Fired with a country code when its stats-strip flag is tapped.
   final ValueChanged<String> onFlagTap;
 
-  /// Clears the flag filter (from the active-filter chip).
   final VoidCallback onClearFilter;
 
   /// Bi-Meeting rework — when set (the user holds AllowsDelegationMeeting),
@@ -112,6 +105,4 @@ class DelegationsBody extends StatelessWidget {
     );
   }
 
-  /// The localized name of the flag-filtered country (for the active-filter
-  /// chip), or null when no flag filter is active.
 }

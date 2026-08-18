@@ -25,13 +25,13 @@ class SessionFavouritesController extends AsyncNotifier<Set<String>> {
 
   /// True when [sessionId] is currently favourited (false while loading/error).
   bool isFavourite(String sessionId) =>
-      state.valueOrNull?.contains(sessionId) ?? false;
+      state.value?.contains(sessionId) ?? false;
 
   /// Flips the heart for [sessionId]: updates the set immediately, then POSTs
   /// (add) or DELETEs (remove). Reverts the optimistic change and rethrows if
   /// the call fails, so the heart stays in sync with the server.
   Future<void> toggle(String sessionId) async {
-    final current = state.valueOrNull;
+    final current = state.value;
     if (current == null) {
       return; // not loaded yet — ignore the tap
     }

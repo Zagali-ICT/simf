@@ -19,7 +19,6 @@ class SaudiPlateLetter {
   final String english;
 }
 
-/// The 17 permitted letters, in the canonical Elm / Absher order.
 /// The [SaudiPlateLetter] for a stored Latin [code], or null when the code is
 /// not one of the 17 (a pre-D-459 or hand-entered plate).
 SaudiPlateLetter? plateLetterByCode(String code) {
@@ -31,6 +30,7 @@ SaudiPlateLetter? plateLetterByCode(String code) {
   return null;
 }
 
+/// The 17 permitted letters, in the canonical Elm / Absher order.
 const List<SaudiPlateLetter> saudiPlateLetters = <SaudiPlateLetter>[
   SaudiPlateLetter('A', 'ا', 'A'),
   SaudiPlateLetter('B', 'ب', 'B'),
