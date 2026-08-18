@@ -1,4 +1,6 @@
 // Tests: SIMF.Api.Tests/AdminGridV2Tests.cs
+// Tests: SIMF.Api.Tests/DuplicateUserRoleGrantTests.cs (Admins.Create alone must
+//        not duplicate a role-holding account onto a new address)
 using FastEndpoints;
 using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess;
@@ -29,7 +31,20 @@ public sealed class DuplicateUserEndpoint(IAdminUserProvisioningService adminAcc
     {
         var actorId = User.ActorId();
         // Email-shape rules live in AdminDuplicateUserRequestValidator.
-        var created = await adminAccountService.DuplicateUserAsync(actorId, req, ct);
+        //
+        // The copy inherits the source's roles, so duplicating a role-holding
+        // account grants those roles - duplicating an Administrator hands the copy
+        // the wildcard. That is the same act CreateAdminEndpoint refuses when the
+        // payload carries a non-empty Roles list, so it is gated on the same
+        // permission; the service refuses before creating anything when the flag is
+        // false and the source holds roles. A role-less source still duplicates on
+        // Admins.Create alone.
+        var created = await adminAccountService.DuplicateUserAsync(
+            actorId, req, CanAssignRoles(), ct);
         await Send.OkAsync(ApiResult<AdminCreateUserResponse>.Ok(created), ct);
     }
+
+    private bool CanAssignRoles() =>
+        User.HasClaim(PermissionCatalog.ClaimType, PermissionCatalog.Wildcard)
+        || User.HasClaim(PermissionCatalog.ClaimType, PermissionCatalog.Admins.AssignRoles);
 }

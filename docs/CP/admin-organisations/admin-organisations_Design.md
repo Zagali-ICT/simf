@@ -77,13 +77,14 @@ The grid action labels come from shared `Grid.*` resx keys (`Grid.Add`,
 
 `@inherits CrudAddEditFormBase<AdminOrganisationDetail>` — an `EditForm` over a
 private `Model`. Eight text fields + an Active checkbox (Edit only). Each field
-carries a UI `MaxLength` that matches the server cap.
+carries a UI `MaxLength` that matches the server cap, or is stricter
+than it (commercial registration: form 32, server 700).
 
 | Field | resx label → EN | Required | UI `MaxLength` | Notes |
 |-------|-----------------|----------|----------------|-------|
-| Name (Arabic) | `Admin.Organisations.Field.NameAr` → Name (Arabic) | **yes** | 256 | only required field |
-| Name (English) | `Admin.Organisations.Field.NameEn` → Name (English) | no | 256 | `null` when blank |
-| Commercial registration | `Admin.Organisations.Field.CommercialRegistration` → Commercial registration | no | 32 | unique when present (409 on clash) |
+| Name (Arabic) | `Admin.Organisations.Field.NameAr` → Name (Arabic) | **yes** | 150 | only required field |
+| Name (English) | `Admin.Organisations.Field.NameEn` → Name (English) | no | 150 | `null` when blank |
+| Commercial registration | `Admin.Organisations.Field.CommercialRegistration` → Commercial registration | no | 32 | unique when present (409 on clash); the form is stricter than the server's 700 |
 | Sector | `Admin.Organisations.Field.Sector` → Sector | no | 128 | |
 | City | `Admin.Organisations.Field.City` → City | no | 128 | |
 | Phone | `Admin.Organisations.Field.Phone` → Phone | no | 32 | |

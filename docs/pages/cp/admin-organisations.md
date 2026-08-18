@@ -81,14 +81,17 @@ admin-gated.
 ## 4.5 Form fields
 
 `OrganisationAddEdit` (`CrudAddEditFormBase<AdminOrganisationDetail>`). MaxLength
-values are the UI caps; the server-side `ValidateAndNormalise` is the source of
-truth and its limits match these.
+values are the UI caps. The stored column width in `OrganisationConfiguration`
+is the source of truth; `AdminOrganisationService` carries it as named constants
+used by both `ValidateAndNormalise` and the import `Clamp`, so a value that
+clears validation always fits the column. A UI cap may be stricter than the
+server cap but never looser.
 
 | Field | Required | MaxLength | Validation |
 |-------|----------|-----------|------------|
-| Name (Arabic) | yes | 256 | 1–256 chars; trimmed; only required field |
-| Name (English) | no | 256 | ≤ 256 chars; null when blank |
-| Commercial registration | no | 32 | ≤ 32 chars; unique when present (409 on clash) |
+| Name (Arabic) | yes | 150 | 1–150 chars; trimmed; only required field |
+| Name (English) | no | 150 | ≤ 150 chars; null when blank |
+| Commercial registration | no | 32 | server allows ≤ 700 (the form is stricter); unique when present (409 on clash) |
 | Sector | no | 128 | ≤ 128 chars |
 | City | no | 128 | ≤ 128 chars |
 | Phone | no | 32 | ≤ 32 chars |
@@ -128,8 +131,8 @@ an audit entry (`organisation.created` / `.updated` / `.deactivated` /
 ## 6. Validation + error handling
 
 - **Server-side `AdminOrganisationService.ValidateAndNormalise`:** trims the
-  Arabic name and length-gates it (1–256); each optional field is length-gated
-  (NameEn ≤ 256, CommercialRegistration ≤ 32, Sector ≤ 128, City ≤ 128,
+  Arabic name and length-gates it (1–150); each optional field is length-gated
+  (NameEn ≤ 150, CommercialRegistration ≤ 700, Sector ≤ 128, City ≤ 128,
   Phone ≤ 32, Email ≤ 320, Website ≤ 512) and stored `null` when blank.
 - **Invalid field:** 400 `ORGANISATION_INVALID` (`ErrorCodes.OrganisationInvalid`),
   bilingual message naming the offending field/limit.
@@ -157,7 +160,18 @@ an audit entry (`organisation.created` / `.updated` / `.deactivated` /
   generic import.
 - **Import upsert key.** A row matches an existing organisation by commercial
   registration when present, otherwise by exact **active** Arabic name; imported
-  text is clamped to the column lengths rather than rejected.
+  text is clamped to the column lengths rather than rejected. The Arabic name is
+  **not** unique, so the name path takes the oldest match (`CreatedAt`, then
+  `Id`) rather than throwing once two organisations share a name.
+- **Import fills, it does not clear.** On the update side every optional column
+  coalesces (`existing.X = value ?? existing.X`): a blank cell in a bulk sheet
+  means "not supplied", never "clear it", so a partial sheet carrying only the
+  Arabic name cannot erase curated columns. Clearing a field deliberately is
+  what the explicit admin edit form is for.
+- **Import lookup is pre-loaded, not per row.** The whole sheet is normalised
+  first, then two chunked `IN (...)` queries (≤ 500 keys each) load the
+  candidate rows into two case-insensitive maps, replacing one
+  `SingleOrDefaultAsync` per spreadsheet row.
 - **Grid summary omits contact columns.** Phone / Email / Website are not in the
   grid; Edit / Details / Delete therefore fetch the full detail
   (`GET …/{id}`) before opening the form.
@@ -185,7 +199,7 @@ is described, not quoted, here.)
 See [`docs/tests/e2e/cp-admin-organisations.md`](../../tests/e2e/cp-admin-organisations.md):
 E2E-ORG-001 golden round-trip, 002 empty/no-match, 003 server-side search,
 004 import golden, 005 page auth gate, 006 action gates, 007 client validation,
-008 server validation (Arabic name > 256), 009 duplicate-CR conflict,
+008 server validation (Arabic name > 150), 009 duplicate-CR conflict,
 010 delete-confirm cancelled, 011 import bad-file rejection, 012 list 500,
 013 RTL, 014 per-column filter, 015 column sort, 016 presentation toggle persists,
 017 full-page round-trip, 018 SimfConfirm delete gate, 019 Excel export.
@@ -214,4 +228,6 @@ E2E-ORG-001 golden round-trip, 002 empty/no-match, 003 server-side search,
 | 2026-06-02 | D-353 | CRUD forms split into reusable `OrganisationAddEdit` + `OrganisationViewDelete` hosted by `CrudShell`; the inline `SimfModal` edit + native `confirm()` delete replaced by a `SimfConfirm`-gated Deactivate and a Page↔Popup presentation toggle persisted in `localStorage`. |
 | 2026-06-11 | D-356 | Generic grid **Excel export only** added (toolbar Export → `ExportOrganisationsEndpoint`, sheet "Organisations", header `NameAr \| NameEn \| CommercialRegistration \| Sector \| City \| IsActive`, 5,000-row cap); the bespoke gov-Excel import is unchanged and there is **no** generic import endpoint. Reference doc authored; E2E-ORG-019 added. |
 
-_Last reviewed:_ 2026-06-11 by Claude (D-356 — reference doc authored, Excel export only).
+| 2026-08-18 | — | Import + validation hardening. The two name caps corrected from 256 to the column's real 150 (a 151-to-256-character name passed the 400 validator and then failed `SaveChangesAsync` as an unhandled `SqlException`), the commercial-registration server cap corrected to the widened 700, and all eight lengths pulled into named constants on `AdminOrganisationService`. The import update path now coalesces every optional column, so a partial sheet no longer nulls curated data; the per-row `SingleOrDefaultAsync` lookups were replaced by two chunked pre-load queries, and the non-unique Arabic-name match now takes the oldest row instead of throwing. |
+
+_Last reviewed:_ 2026-08-18 by Claude (import/validation hardening — column-width alignment + non-destructive import upsert).

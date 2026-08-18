@@ -106,7 +106,15 @@ public sealed record AdminGateAssignmentRow(
     // so this CP-only contract stays append-only.
     string UserEmail = "");
 
-/// <summary>Filter for `GET /api/v1/admin/gates/reports/scans`.</summary>
+/// <summary>The scan report's original bespoke filter. No endpoint binds it any
+/// more: the report is now `POST /api/v1/admin/gates/reports/scans/list`, which
+/// binds the shared <c>GridQuery</c> and answers with a page of
+/// <see cref="AdminGateScanRow"/>. Each field below has an equivalent on that
+/// query: <c>FromUtc</c> / <c>ToUtc</c> became the <c>scannedFrom</c> /
+/// <c>scannedTo</c> filter keys, <c>GateId</c> and <c>Outcome</c> became the
+/// <c>gateId</c> and <c>outcome</c> keys, and <c>Skip</c> / <c>Top</c> are the
+/// query's own paging. The type is kept rather than deleted because it is a
+/// published contract type; retiring one is an owner call, not a tidy-up.</summary>
 public sealed class AdminGateScanReportFilter
 {
     public DateTime? FromUtc { get; set; }
@@ -132,8 +140,12 @@ public sealed record AdminGateScanRow(
     Guid ScannedByUserId,
     ScanSource Source);
 
-/// <summary>One row of the "currently inside" view
-/// (the /currently-inside endpoint).</summary>
+/// <summary>One row of the "currently inside" occupancy view, served as a page by
+/// `POST /api/v1/admin/gates/reports/currently-inside/list`. The display name,
+/// Arabic name and profile type are resolved after the page is chosen, some of it
+/// out of the Identity database, so they are neither sortable nor filterable: the
+/// grid's declared keys are the scan's own <c>gateId</c> and <c>scannedAt</c>.
+/// </summary>
 public sealed record AdminCurrentlyInsideRow(
     Guid UserProfileId,
     string DisplayName,

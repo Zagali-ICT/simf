@@ -56,8 +56,17 @@ declares its own allowed token set in the catalogue.
 ## 4. UI
 
 - `SimfBanner` for the page title, then a `SimfDataGrid` of
-  `AdminEmailTemplateSummary` (the fixed six rows) inside `.simf-page-wide` /
-  `.simf-surface`.
+  `AdminEmailTemplateSummary` (one row per catalogue template) inside
+  `.simf-page-wide` / `.simf-surface`.
+- **List query.** `POST .../list` takes the standard `GridQuery` and applies it:
+  `Skip`/`Top` page the result, `Total` is the count **after** filtering (not the
+  page length), `Search` matches the type name and the subject, and `Sort` /
+  `Filters` accept `type`, `subject`, `customised`, `version` and `updatedAt`.
+  Keys match case-insensitively and an unrecognised key is a bilingual 400
+  (`GRID_SORT_KEY_INVALID` / `GRID_FILTER_KEY_INVALID`), never a silently ignored
+  clause. The rows come from the code catalogue joined to the override table
+  rather than from a queryable, so the query is applied in memory instead of
+  through the `ToGridPageAsync` seam; see the note on `ListAsync`.
 - Grid columns: **Template** (the type + its human name) and **Override** — a
   `SimfPill` reading **"Customised"** when a DB override exists (`IsOverride=true`)
   or **"Default"** when it falls back to the built-in copy (`IsOverride=false`). A

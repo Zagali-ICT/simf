@@ -21,7 +21,9 @@ namespace SIMF.Infrastructure.Organisations;
 /// duplicate), soft-delete (IsActive), audited via <see cref="IAuditLog"/>. The
 /// gov Excel sheet is parsed by <see cref="IOrganisationExcelReader"/> and
 /// up-serted: keyed on commercial registration when present, otherwise on the
-/// exact active Arabic name.
+/// exact active Arabic name. On the update side the import only ever fills
+/// columns the sheet supplied — a blank cell is "not supplied", not "clear it",
+/// so a partial sheet cannot wipe curated data.
 /// </summary>
 internal sealed class AdminOrganisationService(
     SimfAppDbContext db,
@@ -35,6 +37,22 @@ internal sealed class AdminOrganisationService(
 
     /// <summary>The most per-row error messages the result carries back.</summary>
     private const int ImportErrorCap = 50;
+
+    /// <summary>The most match keys sent in one <c>IN (...)</c> pre-load query.</summary>
+    private const int ImportKeyChunkSize = 500;
+
+    // Column lengths, mirrored from OrganisationConfiguration. These are the
+    // stored widths, so validation and the import clamp must both use them: a
+    // validator that admits more than the column holds turns a legitimate row
+    // into an unhandled SqlException on SaveChanges, and a clamp that cuts
+    // shorter than the column silently truncates the sheet.
+    private const int NameMaxLength = 150;
+    private const int CommercialRegistrationMaxLength = 700;
+    private const int SectorMaxLength = 128;
+    private const int CityMaxLength = 128;
+    private const int PhoneMaxLength = 32;
+    private const int EmailMaxLength = 320;
+    private const int WebsiteMaxLength = 512;
 
     /// <summary>
     /// The grid contract for /admin/organisations: one entry per key
@@ -219,16 +237,12 @@ internal sealed class AdminOrganisationService(
                 "تعذّرت قراءة الملف المرفوع كمصنّف Excel.");
         }
 
-        var inserted = 0;
-        var updated = 0;
         var skipped = 0;
         var errors = new List<string>();
-        var pending = 0;
+        var rows = new List<ImportDraft>(importRows.Count);
 
         foreach (var row in importRows)
         {
-            ct.ThrowIfCancellationRequested();
-
             var nameAr = NullIfBlank(row.NameAr);
             if (nameAr is null)
             {
@@ -237,51 +251,53 @@ internal sealed class AdminOrganisationService(
                 continue;
             }
 
-            var nameArClamped = Clamp(nameAr, 256)!;
-            var cr = Clamp(NullIfBlank(row.CommercialRegistration), 32);
-            var nameEn = Clamp(NullIfBlank(row.NameEn), 256);
-            var sector = Clamp(NullIfBlank(row.Sector), 128);
-            var city = Clamp(NullIfBlank(row.City), 128);
-            var phone = Clamp(NullIfBlank(row.Phone), 32);
-            var email = Clamp(NullIfBlank(row.Email), 320);
-            var website = Clamp(NullIfBlank(row.Website), 512);
+            rows.Add(new ImportDraft(
+                Clamp(nameAr, NameMaxLength)!,
+                Clamp(NullIfBlank(row.CommercialRegistration), CommercialRegistrationMaxLength),
+                Clamp(NullIfBlank(row.NameEn), NameMaxLength),
+                Clamp(NullIfBlank(row.Sector), SectorMaxLength),
+                Clamp(NullIfBlank(row.City), CityMaxLength),
+                Clamp(NullIfBlank(row.Phone), PhoneMaxLength),
+                Clamp(NullIfBlank(row.Email), EmailMaxLength),
+                Clamp(NullIfBlank(row.Website), WebsiteMaxLength)));
+        }
 
-            var existing = cr is not null
-                ? await db.Organisations
-                    .SingleOrDefaultAsync(o => o.CommercialRegistration == cr, ct)
-                : await db.Organisations
-                    .SingleOrDefaultAsync(o => o.IsActive && o.NameArabic == nameArClamped, ct);
+        var byCommercialRegistration = await LoadByCommercialRegistrationAsync(rows, ct);
+        var byArabicName = await LoadByActiveArabicNameAsync(rows, ct);
+
+        var inserted = 0;
+        var updated = 0;
+        var pending = 0;
+
+        foreach (var row in rows)
+        {
+            ct.ThrowIfCancellationRequested();
+
+            var matched = row.CommercialRegistration is not null
+                ? byCommercialRegistration.GetValueOrDefault(row.CommercialRegistration)
+                : byArabicName.GetValueOrDefault(row.NameArabic);
 
             var now = timeProvider.SimfNow();
-            if (existing is null)
+            if (matched is null)
             {
-                db.Organisations.Add(new Organisation
+                var created = NewOrganisation(row, now);
+                db.Organisations.Add(created);
+
+                // Register the new row so a later sheet row carrying the same
+                // key updates it instead of inserting a second copy — an
+                // unsaved entity is invisible to a query, so two rows sharing a
+                // commercial registration used to reach the unique index and
+                // fail the whole import.
+                if (created.CommercialRegistration is not null)
                 {
-                    Id = Guid.NewGuid(),
-                    NameArabic = nameArClamped,
-                    Name = nameEn,
-                    CommercialRegistration = cr,
-                    Sector = sector,
-                    City = city,
-                    Phone = phone,
-                    Email = email,
-                    Website = website,
-                    IsActive = true,
-                    CreatedAt = now,
-                });
+                    byCommercialRegistration.TryAdd(created.CommercialRegistration, created);
+                }
+                byArabicName.TryAdd(created.NameArabic, created);
                 inserted++;
             }
             else
             {
-                existing.NameArabic = nameArClamped;
-                existing.Name = nameEn;
-                existing.CommercialRegistration = cr;
-                existing.Sector = sector;
-                existing.City = city;
-                existing.Phone = phone;
-                existing.Email = email;
-                existing.Website = website;
-                existing.UpdatedAt = now;
+                ApplyImportUpdate(matched, row, now);
                 updated++;
             }
 
@@ -311,6 +327,119 @@ internal sealed class AdminOrganisationService(
             importRows.Count, inserted, updated, skipped, errors);
     }
 
+    /// <summary>One spreadsheet row, trimmed and clamped to the stored column
+    /// widths. A <c>null</c> optional value means the sheet did not supply the
+    /// cell, which the update path treats as "leave it alone".</summary>
+    private sealed record ImportDraft(
+        string NameArabic, string? CommercialRegistration, string? NameEn,
+        string? Sector, string? City, string? Phone, string? Email, string? Website);
+
+    /// <summary>
+    /// Pre-loads every organisation the sheet could match on commercial
+    /// registration, keyed case-insensitively like the database compares it.
+    /// Tracked on purpose — the update path mutates what this returns — and
+    /// chunked so a large sheet cannot overrun the parameter limit of a single
+    /// <c>IN (...)</c>.
+    /// </summary>
+    private async Task<Dictionary<string, Organisation>> LoadByCommercialRegistrationAsync(
+        List<ImportDraft> rows, CancellationToken ct)
+    {
+        var keys = rows
+            .Where(row => row.CommercialRegistration is not null)
+            .Select(row => row.CommercialRegistration!)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        var matched = NewKeyMap();
+        foreach (var chunk in keys.Chunk(ImportKeyChunkSize))
+        {
+            var found = await db.Organisations
+                .Where(org => org.CommercialRegistration != null
+                    && chunk.Contains(org.CommercialRegistration!))
+                .OrderBy(org => org.CreatedAt)
+                .ThenBy(org => org.Id)
+                .ToListAsync(ct);
+            foreach (var org in found)
+            {
+                matched.TryAdd(org.CommercialRegistration!, org);
+            }
+        }
+
+        return matched;
+    }
+
+    /// <summary>
+    /// Pre-loads the active organisations the sheet could match by Arabic name.
+    /// The name is NOT unique, so the oldest row wins deterministically rather
+    /// than the lookup throwing — two same-named organisations must not break
+    /// every later import.
+    /// </summary>
+    private async Task<Dictionary<string, Organisation>> LoadByActiveArabicNameAsync(
+        List<ImportDraft> rows, CancellationToken ct)
+    {
+        var keys = rows
+            .Where(row => row.CommercialRegistration is null)
+            .Select(row => row.NameArabic)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        var matched = NewKeyMap();
+        foreach (var chunk in keys.Chunk(ImportKeyChunkSize))
+        {
+            var found = await db.Organisations
+                .Where(org => org.IsActive && chunk.Contains(org.NameArabic))
+                .OrderBy(org => org.CreatedAt)
+                .ThenBy(org => org.Id)
+                .ToListAsync(ct);
+            foreach (var org in found)
+            {
+                matched.TryAdd(org.NameArabic, org);
+            }
+        }
+
+        return matched;
+    }
+
+    /// <summary>Match keys compare case-insensitively, the way the database
+    /// collation compares them.</summary>
+    private static Dictionary<string, Organisation> NewKeyMap() =>
+        new(StringComparer.OrdinalIgnoreCase);
+
+    private static Organisation NewOrganisation(ImportDraft row, DateTime now) => new()
+    {
+        Id = Guid.NewGuid(),
+        NameArabic = row.NameArabic,
+        Name = row.NameEn,
+        CommercialRegistration = row.CommercialRegistration,
+        Sector = row.Sector,
+        City = row.City,
+        Phone = row.Phone,
+        Email = row.Email,
+        Website = row.Website,
+        IsActive = true,
+        CreatedAt = now,
+    };
+
+    /// <summary>
+    /// Applies a sheet row over an existing organisation. Every optional column
+    /// coalesces: a blank cell in a bulk sheet means "not supplied", never
+    /// "clear it", so a partial-update sheet carrying only the Arabic name
+    /// cannot erase curated columns. Clearing a field deliberately is what the
+    /// explicit admin edit form is for.
+    /// </summary>
+    private static void ApplyImportUpdate(Organisation existing, ImportDraft row, DateTime now)
+    {
+        existing.NameArabic = row.NameArabic;
+        existing.CommercialRegistration = row.CommercialRegistration ?? existing.CommercialRegistration;
+        existing.Name = row.NameEn ?? existing.Name;
+        existing.Sector = row.Sector ?? existing.Sector;
+        existing.City = row.City ?? existing.City;
+        existing.Phone = row.Phone ?? existing.Phone;
+        existing.Email = row.Email ?? existing.Email;
+        existing.Website = row.Website ?? existing.Website;
+        existing.UpdatedAt = now;
+    }
+
     private sealed record OrganisationDraft(
         string NameAr, string? NameEn, string? CommercialRegistration,
         string? Sector, string? City, string? Phone, string? Email, string? Website);
@@ -320,29 +449,30 @@ internal sealed class AdminOrganisationService(
         string? sectorRaw, string? cityRaw, string? phoneRaw, string? emailRaw, string? websiteRaw)
     {
         var nameAr = (nameArRaw ?? string.Empty).Trim();
-        if (nameAr.Length is < 1 or > 256)
+        if (nameAr.Length is < 1 or > NameMaxLength)
         {
             throw new ApiException(
                 ErrorCodes.OrganisationInvalid, 400,
-                "Organisation Arabic name must be between 1 and 256 characters.",
-                "يجب أن يتراوح طول الاسم العربي للمنظمة بين 1 و 256 حرفاً.");
+                $"Organisation Arabic name must be between 1 and {NameMaxLength} characters.",
+                $"يجب أن يتراوح طول الاسم العربي للمنظمة بين 1 و {NameMaxLength} حرفاً.");
         }
 
         // Optional fields — lengths mirror OrganisationConfiguration.HasMaxLength.
         var nameEn = OptionalText(
-            nameEnRaw, 256, "Organisation English name", "الاسم الإنجليزي للمنظمة");
+            nameEnRaw, NameMaxLength, "Organisation English name", "الاسم الإنجليزي للمنظمة");
         var commercialRegistration = OptionalText(
-            commercialRegistrationRaw, 32, "Commercial registration number", "رقم السجل التجاري");
+            commercialRegistrationRaw, CommercialRegistrationMaxLength,
+            "Commercial registration number", "رقم السجل التجاري");
         var sector = OptionalText(
-            sectorRaw, 128, "Organisation sector", "قطاع المنظمة");
+            sectorRaw, SectorMaxLength, "Organisation sector", "قطاع المنظمة");
         var city = OptionalText(
-            cityRaw, 128, "Organisation city", "مدينة المنظمة");
+            cityRaw, CityMaxLength, "Organisation city", "مدينة المنظمة");
         var phone = OptionalText(
-            phoneRaw, 32, "Organisation phone", "هاتف المنظمة");
+            phoneRaw, PhoneMaxLength, "Organisation phone", "هاتف المنظمة");
         var email = OptionalText(
-            emailRaw, 320, "Organisation email", "بريد المنظمة الإلكتروني");
+            emailRaw, EmailMaxLength, "Organisation email", "بريد المنظمة الإلكتروني");
         var website = OptionalText(
-            websiteRaw, 512, "Organisation website", "الموقع الإلكتروني للمنظمة");
+            websiteRaw, WebsiteMaxLength, "Organisation website", "الموقع الإلكتروني للمنظمة");
 
         return new OrganisationDraft(
             nameAr, nameEn, commercialRegistration, sector, city, phone, email, website);

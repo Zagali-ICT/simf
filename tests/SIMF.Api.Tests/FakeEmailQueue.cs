@@ -16,7 +16,13 @@ public sealed class FakeEmailQueue : IEmailQueue
     /// <summary>The messages enqueued so far (shared across the fixture's tests).</summary>
     public IReadOnlyCollection<EmailMessage> Messages => _messages;
 
-    public void Enqueue(EmailMessage message) => _messages.Enqueue(message);
+    /// <summary>Always accepts: the fake is unbounded, so it never exercises the
+    /// real queue's "refused because full" path (see EmailQueueDropTests for that).</summary>
+    public bool Enqueue(EmailMessage message)
+    {
+        _messages.Enqueue(message);
+        return true;
+    }
 
     /// <summary>The fake records synchronously, so nothing is ever buffered awaiting
     /// send — always 0, matching the real queue's "not yet sent" semantic. Keeps the

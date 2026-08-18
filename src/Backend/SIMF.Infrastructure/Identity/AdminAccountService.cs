@@ -1058,7 +1058,8 @@ internal sealed partial class AdminAccountService(
             ExpiresAt = now.Add(inviteLifetime),
         };
         await accountCodeRepository.AddAsync(code, cancellationToken);
-        EnqueueInviteEmail(user.Email!, user.DisplayName, plaintext, inviteLifetime);
+        await EnqueueInviteEmailAsync(
+            user.Email!, user.DisplayName, plaintext, inviteLifetime, user.Id, cancellationToken);
 
         await auditLog.WriteAsync(
             new AuditEntry
@@ -1577,8 +1578,23 @@ internal sealed partial class AdminAccountService(
             },
             cancellationToken);
 
-    private void EnqueueInviteEmail(
-        string targetEmail, string displayName, string code, TimeSpan lifetime)
+    /// <summary>
+    /// Sends the invite that carries the account's activation code. Routed through
+    /// <c>TryEnqueueAsync</c> rather than a bare <c>Enqueue</c> because this
+    /// message IS the credential: if the queue refuses it, the invited admin has an
+    /// account they can never activate, and without the <c>Email.EnqueueFailed</c>
+    /// audit row nothing anywhere records that the code was generated but never
+    /// sent. The failure is audited, not thrown — the user row and the code row are
+    /// already committed, so failing the request here would report "not created"
+    /// for an account that exists.
+    /// </summary>
+    private Task EnqueueInviteEmailAsync(
+        string targetEmail,
+        string displayName,
+        string code,
+        TimeSpan lifetime,
+        Guid targetUserId,
+        CancellationToken cancellationToken)
     {
         var days = (int)lifetime.TotalDays;
         var body =
@@ -1590,8 +1606,14 @@ internal sealed partial class AdminAccountService(
             + $"<strong>Code:</strong> <strong>{code}</strong><br/>"
             + $"<strong>Valid for:</strong> {days} days.</p>"
             + "<p>If you did not expect this invitation, you can ignore this email.</p>";
-        emailQueue.Enqueue(new EmailMessage(
-            targetEmail, "SIMF — your account invitation", body));
+        return emailQueue.TryEnqueueAsync(
+            new EmailMessage(targetEmail, "SIMF — your account invitation", body),
+            purpose: "AdminInvite",
+            subjectEmail: targetEmail,
+            subjectUserId: targetUserId,
+            auditLog: auditLog,
+            logger: logger,
+            cancellationToken: cancellationToken);
     }
 
     private void EnqueueNotificationEmail(string targetEmail, string actorEmail, string reason)

@@ -1,7 +1,8 @@
 // Tests: SIMF.Api.Tests/Operations/WorkerLeaseTests.cs
-//        (inert without a SQL Server connection string; single grant; the
-//         leased decorator never blocks host startup and stops a worker it
-//         never started.)
+//        (inert without a SQL Server connection string; a lost lease stands the
+//         leased workers down and the next grant starts them again; the leased
+//         decorator never blocks host startup and never stops a worker it never
+//         started.)
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
@@ -27,6 +28,17 @@ namespace SIMF.Infrastructure.Operations;
 /// instance to poll takes over: failover costs one poll interval and needs no
 /// operator action.</para>
 ///
+/// <para>Holding it is re-checked rather than assumed. Every poll asks the server
+/// whether the lock is still ours, because each way a session-scoped application
+/// lock goes away without this process dying (a server restart, a failover, a
+/// connection silently re-established underneath the client) leaves
+/// <c>SqlConnection.State</c> still reporting Open. When the answer is no the
+/// lease stands down: <see cref="WaitForGrantAsync"/> has handed every leased
+/// worker a token, that token is cancelled, the decorator stops the worker, and
+/// the next acquisition starts it again. Two holders at once is the failure this
+/// class exists to prevent, and detecting the loss is the only thing that stops
+/// it lasting for the life of the process.</para>
+///
 /// <para>Deliberately inert when the connection string is absent or is not SQL
 /// Server. Development and the test host run one process against SQLite, where
 /// there is nothing to elect and <c>sp_getapplock</c> does not exist, so the
@@ -36,14 +48,23 @@ internal sealed class WorkerLease : BackgroundService
     // Any instance may hold it, so the name is the estate's, not the node's.
     private const string ResourceName = "SIMF.BackgroundWorkers";
 
+    // The mode sp_getapplock is asked for below, and therefore the only answer
+    // from APPLOCK_MODE that still means the lock is ours.
+    private const string HeldMode = "Exclusive";
+
+    // The liveness probe is one round trip against an in-memory structure. A
+    // server that has not answered it in five seconds is not healthy enough to be
+    // trusted with the election either, and waiting the whole poll interval to
+    // find that out only delays the handover.
+    private const int ProbeTimeoutSeconds = 5;
+
     // Failover latency when a holder dies, and the retry cadence for a follower.
     private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(30);
 
     private readonly string _connectionString;
     private readonly ILogger<WorkerLease> _logger;
-    private readonly TaskCompletionSource _granted =
-        new(TaskCreationOptions.RunContinuationsAsynchronously);
 
+    private volatile LeaseGrant _grant = new();
     private SqlConnection? _connection;
 
     public WorkerLease(IConfiguration configuration, ILogger<WorkerLease> logger)
@@ -52,14 +73,27 @@ internal sealed class WorkerLease : BackgroundService
         _logger = logger;
     }
 
-    /// <summary>Completes once this instance owns the workers. A follower's task
-    /// stays pending until the current holder goes away, so a worker gated on it
-    /// simply never starts here.</summary>
-    public Task Granted => _granted.Task;
-
-    /// <summary>True once the lock is held, or immediately when the lease is
-    /// inert. Read by the leased decorator for its log line only.</summary>
+    /// <summary>True while this instance holds the lock, and from the moment the
+    /// lease decides it is inert. Goes back to false when the lock is lost.</summary>
     public bool IsHolder { get; private set; }
+
+    /// <summary>Waits for the next grant of the lease and returns the token that
+    /// is cancelled when <b>that</b> grant ends.
+    ///
+    /// <para>The wait and the token are handed out as a pair on purpose. A caller
+    /// that took the wait from one grant and the token from another would either
+    /// watch a token that never cancels or stop a worker that had just been
+    /// legitimately restarted, and a loss signal that can be missed is worth no
+    /// more than none.</para>
+    ///
+    /// <para>A follower's wait simply stays pending, so a worker gated on it never
+    /// starts here.</para></summary>
+    public async Task<CancellationToken> WaitForGrantAsync(CancellationToken cancellationToken)
+    {
+        var grant = _grant;
+        await grant.Won.Task.WaitAsync(cancellationToken);
+        return grant.Lost.Token;
+    }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -71,29 +105,13 @@ internal sealed class WorkerLease : BackgroundService
             _logger.LogInformation(
                 "Worker lease is inert (no SQL Server connection string). This process "
                 + "runs every background worker, which is correct for a single instance.");
-            Grant();
+            MarkHeld();
             return;
         }
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            if (!IsHolder)
-            {
-                await TryAcquireAsync(stoppingToken);
-            }
-            else if (_connection?.State != System.Data.ConnectionState.Open)
-            {
-                // The lock died with the connection. Another instance may already
-                // have taken over, so stand down rather than assume we still hold
-                // it: the workers this process started are stopped by the host on
-                // shutdown, and until then a second holder is the failure this
-                // whole class exists to prevent.
-                _logger.LogError(
-                    "Worker lease connection dropped. This instance no longer holds the "
-                    + "lease; another instance will take it over within {Seconds}s.",
-                    PollInterval.TotalSeconds);
-                IsHolder = false;
-            }
+            await PollAsync(stoppingToken);
 
             try
             {
@@ -103,6 +121,48 @@ internal sealed class WorkerLease : BackgroundService
             {
                 return;
             }
+        }
+    }
+
+    /// <summary>One turn of the election: acquire the lock if we do not hold it,
+    /// otherwise confirm that we still do.
+    ///
+    /// <para>Nothing may escape this method. An exception out of
+    /// <see cref="ExecuteAsync"/> stops the whole API host, so a connection-pool
+    /// timeout or a transient network fault would take the node out of service
+    /// rather than cost it one poll.</para></summary>
+    private async Task PollAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            if (!IsHolder)
+            {
+                await TryAcquireAsync(cancellationToken);
+                return;
+            }
+
+            if (await StillHeldAsync(cancellationToken))
+            {
+                return;
+            }
+
+            _logger.LogError(
+                "Worker lease lost. This instance has stood its background workers down "
+                + "and will try to re-acquire in {Seconds}s.",
+                PollInterval.TotalSeconds);
+            await ReleaseAsync();
+        }
+        catch (Exception exception)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
+
+            _logger.LogError(
+                exception,
+                "Worker lease poll failed; retrying in {Seconds}s.",
+                PollInterval.TotalSeconds);
         }
     }
 
@@ -133,7 +193,7 @@ internal sealed class WorkerLease : BackgroundService
     {
         try
         {
-            _connection?.Dispose();
+            DiscardConnection();
             _connection = new SqlConnection(_connectionString);
             await _connection.OpenAsync(cancellationToken);
 
@@ -164,39 +224,124 @@ internal sealed class WorkerLease : BackgroundService
             // ordinary case and not an error.
             if (result.Value is int code && code >= 0)
             {
-                IsHolder = true;
-                Grant();
+                MarkHeld();
                 _logger.LogInformation(
                     "Worker lease acquired. This instance runs the background workers.");
                 return;
             }
 
-            _connection.Dispose();
-            _connection = null;
+            DiscardConnection();
         }
-        catch (SqlException exception)
+        catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
         {
+            // Every exception, not only SqlException. Exhausting the connection
+            // pool raises InvalidOperationException, and an exception escaping
+            // here stops the entire API host: a node that was merely busy would
+            // go out of service instead of retrying on the next poll.
             _logger.LogWarning(
                 exception,
                 "Worker lease could not be acquired; retrying in {Seconds}s.",
                 PollInterval.TotalSeconds);
-            _connection?.Dispose();
-            _connection = null;
+            DiscardConnection();
         }
     }
 
-    private void Grant()
+    /// <summary>Asks SQL Server whether this connection still holds the lock.
+    ///
+    /// <para>A round trip rather than a flag, because there is no flag worth
+    /// reading. <c>SqlConnection.State</c> is cached on the client and ADO.NET
+    /// only moves it off Open once an operation on that connection has failed, so
+    /// a lease that issues no further commands reports Open for the life of the
+    /// process, including long after a server restart, a failover or a
+    /// transparently re-established connection released the session-scoped lock
+    /// it is supposed to be guarding.</para>
+    ///
+    /// <para>Any answer other than <c>Exclusive</c>, and any failure to get an
+    /// answer at all, counts as loss. Standing down while we still held it costs
+    /// one poll interval of background work; staying up when we no longer do runs
+    /// every worker twice for as long as the process lives.</para></summary>
+    private async Task<bool> StillHeldAsync(CancellationToken cancellationToken)
+    {
+        if (_connection is null)
+        {
+            return false;
+        }
+
+        try
+        {
+            using var command = _connection.CreateCommand();
+            command.CommandText = "SELECT APPLOCK_MODE('public', @resource, 'Session')";
+            command.CommandTimeout = ProbeTimeoutSeconds;
+
+            var resource = command.CreateParameter();
+            resource.ParameterName = "@resource";
+            resource.Value = ResourceName;
+            command.Parameters.Add(resource);
+
+            var mode = await command.ExecuteScalarAsync(cancellationToken) as string;
+            return string.Equals(mode, HeldMode, StringComparison.Ordinal);
+        }
+        catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
+        {
+            _logger.LogError(
+                exception, "Worker lease could not be confirmed; treating it as lost.");
+            return false;
+        }
+    }
+
+    /// <summary>The one stand-down path. Cancels the current grant so every leased
+    /// worker stops, then arms a fresh one so the next acquisition starts them
+    /// again.
+    ///
+    /// <para>Internal rather than private so a test can drive a loss without a
+    /// real failover. The class is internal already, so this widens nothing.</para></summary>
+    internal async Task ReleaseAsync()
+    {
+        var ending = _grant;
+
+        IsHolder = false;
+
+        // Arm the next grant BEFORE cancelling this one. A worker that re-arms
+        // the instant it is stopped has to find a grant that is pending, not the
+        // cancelled one it has only just finished reacting to.
+        _grant = new LeaseGrant();
+        DiscardConnection();
+
+        // CancelAsync, not Cancel: the continuations behind this token are the
+        // leased workers shutting down, and running them inline would stall the
+        // poll loop that has to go and re-acquire.
+        await ending.Lost.CancelAsync();
+    }
+
+    private void MarkHeld()
     {
         IsHolder = true;
-        _granted.TrySetResult();
+        _grant.Won.TrySetResult();
+    }
+
+    private void DiscardConnection()
+    {
+        _connection?.Dispose();
+        _connection = null;
     }
 
     public override void Dispose()
     {
         // Closing the connection releases the application lock, so a clean
         // shutdown hands over immediately instead of after the poll interval.
-        _connection?.Dispose();
-        _connection = null;
+        DiscardConnection();
         base.Dispose();
+    }
+
+    /// <summary>One grant of the lease: the task that completes when it is won,
+    /// and the source that is cancelled when it is lost. Paired in a single
+    /// object because a grant is repeatable rather than a one-shot latch, and a
+    /// waiter must not be able to mix the two halves across generations.</summary>
+    private sealed class LeaseGrant
+    {
+        public TaskCompletionSource Won { get; } =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public CancellationTokenSource Lost { get; } = new();
     }
 }

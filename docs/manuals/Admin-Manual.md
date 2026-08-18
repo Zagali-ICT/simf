@@ -3816,6 +3816,9 @@ the one you are looking at.
 1. **Import Excel** in the grid toolbar.
 2. **Excel file (.xlsx)** → pick the sheet. Existing rows are matched by
    commercial registration and updated; rows with a new CR are inserted.
+   An import only **fills** columns: a cell you leave blank is read as "not
+   supplied", so a partial correction sheet cannot wipe details already held on
+   those rows. To clear a field, edit that organisation directly.
 3. **Upload**. The modal reports *"Rows read: N · Inserted: N · Updated: N ·
    Skipped: N"*, and lists any per-row errors underneath.
 4. Close the modal; the grid reloads with the new rows.
@@ -3832,7 +3835,7 @@ with nothing ticked to export everything matching the current filter.
 | "Arabic name is required." | The Arabic name was left blank | Fill Name (Arabic); English alone is not enough |
 | "The uploaded file could not be read as an Excel workbook." | Not a real .xlsx, or the file is corrupt | Re-save the sheet as .xlsx and upload again |
 | "Excel import failed." | The upload was rejected by the server | Check the per-row errors listed in the modal, fix the sheet, retry |
-| "Organisation Arabic name must be between 1 and 256 characters." | A sheet row has a blank or over-long Arabic name | Fix that row in the sheet and re-import |
+| "Organisation Arabic name must be between 1 and 150 characters." | A sheet row has a blank or over-long Arabic name | Fix that row in the sheet and re-import |
 | Rows import as Updated when you expected Inserted | Those CR numbers already exist | That is correct behaviour: CR is the match key |
 | "You do not have permission to perform this action." on Import | You hold View but not Organisations → Import | Ask an administrator for the Import permission |
 

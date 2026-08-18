@@ -12,8 +12,16 @@
 // tested is everything around it that can be got wrong silently: that the lease
 // stays inert where there is no SQL Server (the test host and Development run one
 // process against SQLite, and a lease that failed closed there would switch every
-// worker off), that waiting for it never blocks host startup, and that a follower
-// does not try to stop a worker it never started.
+// worker off), that waiting for it never blocks host startup, that a follower does
+// not try to stop a worker it never started, and - the reason the grant is not a
+// one-shot latch - that losing the lease stands a running worker down and the next
+// grant starts it again.
+//
+// Losing it is driven through WorkerLease.ReleaseAsync rather than through a real
+// failover, because the events that release a session-scoped application lock (a
+// server restart, a failover, a silently re-established connection) cannot be
+// staged in a unit test. What is proved here is the half that is ours: that the
+// signal reaches every leased worker and that the worker reacts to it.
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -45,6 +53,20 @@ public sealed class WorkerLeaseTests
         return new WorkerLease(configuration, NullLogger<WorkerLease>.Instance);
     }
 
+    /// <summary>The lease moves on continuations, so every assertion about it is
+    /// about a state it reaches shortly rather than one it is already in. Polling
+    /// to a deadline asserts that without racing it.</summary>
+    private static async Task Eventually(Func<bool> condition, string because)
+    {
+        var deadline = DateTime.UtcNow.AddSeconds(5);
+        while (!condition() && DateTime.UtcNow < deadline)
+        {
+            await Task.Delay(20);
+        }
+
+        Assert.True(condition(), because);
+    }
+
     /// <summary>No connection string at all: one process, nothing to elect. The
     /// lease must grant, or the test host and every Development run silently stop
     /// running background work.</summary>
@@ -54,7 +76,7 @@ public sealed class WorkerLeaseTests
         var lease = LeaseFor(null);
 
         await lease.StartAsync(CancellationToken.None);
-        await lease.Granted.WaitAsync(TimeSpan.FromSeconds(5));
+        await lease.WaitForGrantAsync(CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(5));
 
         Assert.True(lease.IsHolder);
         await lease.StopAsync(CancellationToken.None);
@@ -70,7 +92,7 @@ public sealed class WorkerLeaseTests
         var lease = LeaseFor("DataSource=:memory:");
 
         await lease.StartAsync(CancellationToken.None);
-        await lease.Granted.WaitAsync(TimeSpan.FromSeconds(5));
+        await lease.WaitForGrantAsync(CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(5));
 
         Assert.True(lease.IsHolder);
         await lease.StopAsync(CancellationToken.None);
@@ -106,19 +128,76 @@ public sealed class WorkerLeaseTests
         await leased.StartAsync(CancellationToken.None);
         await lease.StartAsync(CancellationToken.None);
 
-        // The wrapper starts the worker on a continuation, so give it a moment
-        // rather than asserting on a race.
-        var deadline = DateTime.UtcNow.AddSeconds(5);
-        while (worker.Starts == 0 && DateTime.UtcNow < deadline)
-        {
-            await Task.Delay(20);
-        }
-
-        Assert.Equal(1, worker.Starts);
+        await Eventually(
+            () => worker.Starts == 1, "The granted lease must start the leased worker.");
 
         await leased.StopAsync(CancellationToken.None);
         await lease.StopAsync(CancellationToken.None);
         Assert.Equal(1, worker.Stops);
+    }
+
+    /// <summary>The finding this class was rewritten for. A grant used to be a
+    /// one-shot latch, so once a worker had started nothing could stop it short of
+    /// host shutdown: an instance that lost the lock kept running all thirteen
+    /// workers while the instance that took the lock over started its own, sending
+    /// every reminder twice and releasing every no-show seat twice, indefinitely
+    /// and with a clean single acquisition in both logs.</summary>
+    [Fact]
+    public async Task A_lost_lease_stops_the_worker_it_started()
+    {
+        var lease = LeaseFor(null);
+        var worker = new RecordingWorker();
+        var leased = new LeasedHostedService(
+            worker, lease, NullLogger<LeasedHostedService>.Instance);
+
+        await leased.StartAsync(CancellationToken.None);
+        await lease.StartAsync(CancellationToken.None);
+        await Eventually(() => worker.Starts == 1, "The worker must start on the grant.");
+
+        await lease.ReleaseAsync();
+
+        await Eventually(
+            () => worker.Stops == 1,
+            "Losing the lease must stop the worker: a second holder running every "
+            + "worker alongside the new one is the failure the lease exists to prevent.");
+        Assert.False(lease.IsHolder);
+
+        // The stand-down already stopped it, so shutdown must not stop it twice.
+        await leased.StopAsync(CancellationToken.None);
+        await lease.StopAsync(CancellationToken.None);
+        Assert.Equal(1, worker.Stops);
+    }
+
+    /// <summary>Standing down is not retiring. Losing the lock to a restarting
+    /// server is ordinary, and this instance is a legitimate candidate for the
+    /// next election, so the worker has to come back when it wins one.</summary>
+    [Fact]
+    public async Task A_worker_stood_down_by_a_lost_lease_starts_again_on_the_next_grant()
+    {
+        var lease = LeaseFor(null);
+        var worker = new RecordingWorker();
+        var leased = new LeasedHostedService(
+            worker, lease, NullLogger<LeasedHostedService>.Instance);
+
+        await leased.StartAsync(CancellationToken.None);
+        await lease.StartAsync(CancellationToken.None);
+        await Eventually(() => worker.Starts == 1, "The worker must start on the grant.");
+
+        await lease.ReleaseAsync();
+        await Eventually(() => worker.Stops == 1, "Losing the lease must stop the worker.");
+
+        // A second run of the lease is a second election, won again.
+        await lease.StartAsync(CancellationToken.None);
+
+        await Eventually(
+            () => worker.Starts == 2,
+            "Re-acquiring the lease must start the worker again; a grant is repeatable, "
+            + "not a latch that fires once per process.");
+        Assert.True(lease.IsHolder);
+
+        await leased.StopAsync(CancellationToken.None);
+        await lease.StopAsync(CancellationToken.None);
+        Assert.Equal(2, worker.Stops);
     }
 
     /// <summary>The load-bearing property for a follower. Waiting for a lease it
@@ -184,6 +263,50 @@ public sealed class WorkerLeaseTests
             "AddLeasedHostedService<EmailBackgroundService>",
             source,
             StringComparison.Ordinal);
+    }
+
+    /// <summary>The poll loop must survive a failure that is not a SqlException.
+    ///
+    /// <para>Asserted on the source rather than by provoking one, because the
+    /// exceptions that matter here cannot be staged without a live server:
+    /// exhausting the connection pool raises InvalidOperationException and needs a
+    /// real pool to exhaust, and the connection-string tricks that would raise one
+    /// offline are thrown by SqlConnectionStringBuilder as readily as by
+    /// SqlConnection, in which case the lease would decide it is not SQL Server at
+    /// all and the test would prove the opposite of what it claims.</para>
+    ///
+    /// <para>Pinned all the same, because the cost of the narrow catch is not one
+    /// failed poll. An exception escaping ExecuteAsync stops the entire API host,
+    /// so a node that was merely busy would go out of service.</para></summary>
+    [Fact]
+    public void The_lease_poll_does_not_narrow_its_catch_to_sql_exceptions()
+    {
+        var source = File.ReadAllText(Path.Combine(
+            RepoRoot(), "src", "Backend", "SIMF.Infrastructure", "Operations", "WorkerLease.cs"));
+
+        Assert.DoesNotContain("catch (SqlException", source, StringComparison.Ordinal);
+
+        Assert.Contains(
+            "catch (Exception exception) when (!cancellationToken.IsCancellationRequested)",
+            source,
+            StringComparison.Ordinal);
+    }
+
+    /// <summary>The liveness probe, pinned the same way and for the same reason: a
+    /// failover cannot be staged in a unit test, but a lease that reads
+    /// SqlConnection.State instead of asking the server can never detect one.
+    /// State is cached on the client and ADO.NET only moves it off Open after an
+    /// operation has failed, so a lease that issues no further commands reports
+    /// Open for the life of the process no matter what the server did.</summary>
+    [Fact]
+    public void The_lease_confirms_it_still_holds_the_lock_by_asking_the_server()
+    {
+        var source = File.ReadAllText(Path.Combine(
+            RepoRoot(), "src", "Backend", "SIMF.Infrastructure", "Operations", "WorkerLease.cs"));
+
+        Assert.Contains("APPLOCK_MODE", source, StringComparison.Ordinal);
+
+        Assert.DoesNotContain("ConnectionState", source, StringComparison.Ordinal);
     }
 
     private static string RepoRoot()

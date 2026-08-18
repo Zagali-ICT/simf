@@ -1,6 +1,7 @@
 // Tests: SIMF.Api.Tests/DelegationMeetingRequestsTests.cs
 // Tests: SIMF.Api.Tests/DelegationMeetingQaFixesTests.cs
 // Tests: SIMF.Api.Tests/MeetingNoAvailabilityTests.cs
+// Tests: SIMF.Api.Tests/DelegationMeetingHallSerializationTests.cs
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -40,6 +41,10 @@ internal sealed class DelegationMeetingRequestService(
         { SIMF.Common.Enums.HallPurpose.Meeting, SIMF.Common.Enums.HallPurpose.General };
 
     private const int MaxAttendees = 100;
+
+    /// <summary>The nvarchar length DelegationMeetingRequestConfiguration gives
+    /// ResponseNote. Named here so the respond guard and the column cannot drift.</summary>
+    private const int MaxResponseNoteLength = 2000;
 
     public async Task<DelegationMeetingRequestSubmitted> SubmitAsync(
         Guid requesterUserId, SubmitDelegationMeetingRequestRequest request,
@@ -315,11 +320,24 @@ internal sealed class DelegationMeetingRequestService(
                 "Response status must be Accepted or Rejected.",
                 "يجب أن تكون حالة الردّ مقبولة أو مرفوضة.");
         }
-        var req = await appDbContext.DelegationMeetingRequests
-            .SingleOrDefaultAsync(r => r.Id == id, cancellationToken)
-            ?? throw new ApiException(ErrorCodes.DelegationMeetingRequestNotFound, 404,
-                "Delegation meeting request not found.",
-                "لم يتم العثور على طلب اجتماع الوفد.");
+
+        // SES §7 validation triple-lock — ResponseNote maps to nvarchar(2000). Refuse an
+        // over-length note up front: without this the trimmed value below overflows the
+        // column, SaveChanges raises a truncation DbUpdateException, and the catch around
+        // the transaction reports it as a misleading "That hall slot is no longer
+        // available." 409 (nonsensical for a Cancel, which binds no slot at all). The
+        // speaker respond path carries the same guard for the same reason.
+        if ((request.ResponseNote ?? string.Empty).Trim().Length > MaxResponseNoteLength)
+        {
+            throw new ApiException(ErrorCodes.DelegationMeetingRequestInvalid, 400,
+                $"The response note must be {MaxResponseNoteLength} characters or fewer.",
+                $"يجب ألا يتجاوز نص الردّ {MaxResponseNoteLength} حرف.");
+        }
+
+        // Read once here so a missing request is a fast 404 that never opens a
+        // Serializable transaction. The unit of work below re-reads the row inside the
+        // transaction, which is the copy every decision is actually taken on.
+        var req = await LoadTrackedRequestAsync(id, cancellationToken);
 
         var now = timeProvider.SimfNow();
 
@@ -332,101 +350,180 @@ internal sealed class DelegationMeetingRequestService(
         // sends HallId=null so the already-bound slot is kept — tying confirmVerbal to
         // bindHall would 409 that finalise-after-approve path, since a null HallId would
         // be read as a plain accept whose only legal source state is Pending. A legacy
-        // accept without a hall keeps the requester-proposed-slot behaviour. This is
-        // admin-brokered + low-concurrency; the DB (HallId, SlotStart) filtered-unique
-        // index is the equal-start hall double-book backstop.
+        // accept without a hall keeps the requester-proposed-slot behaviour.
         var cancel = request.Status == MeetingRequestStatus.Rejected;
         var bindHall = request.Status == MeetingRequestStatus.Accepted && request.HallId is not null;
         var confirmVerbal = request.Status == MeetingRequestStatus.Accepted && request.VerbalConfirmed;
+
+        // On Approve (→ AwaitingSpeaker) mint the single-use confirm token so it commits
+        // atomically with the transition; its link is emailed to the target members below.
+        // A request can therefore never be AwaitingSpeaker without its token. Staged ONCE
+        // here, OUTSIDE the retryable block, so a serialization retry re-commits the same
+        // token rather than minting a duplicate — the same reason the speaker mint sits
+        // outside its own. The condition is the state machine below read forwards: a
+        // Cancel is Rejected (never AwaitingSpeaker) and cannot be a bindHall, and an
+        // Accept with a hall lands on AwaitingSpeaker unless it is a verbal Confirm. The
+        // URL is empty when the public base URL is unconfigured (the members are then
+        // emailed without a link, as before).
+        // Staged INSIDE the transaction below, next to the transition it must commit
+        // with. Staging it out here left it tracked as Added across the retryable block
+        // and it never reached an insert, so an approve bound the hall and minted no
+        // token at all. The duplicate a retry would otherwise mint is prevented by
+        // dropping any Added token when the block re-enters, not by hoisting the stage.
+        string? confirmUrl = null;
 
         // A cancel from a state where the target delegation was already asked to confirm
         // (AwaitingSpeaker) or had confirmed (Accepted) must retract that request from
         // them — set below and dispatched with the requester's outcome notification.
         var retractFromTargetMembers = false;
 
-        if (cancel)
+        // Close the CROSS-FAMILY hall double-book race. The hall free-slot read below
+        // already subtracts BOTH request families, and the table guard scans all three
+        // (the admin-arranged business meeting owns tables too) — but every one of those
+        // scans used to run with no locks held, so a rival approve on another family
+        // could commit between a scan and this save and both writes stuck. The
+        // filtered-unique (HallId, SlotStart) index cannot backstop that: it lives on
+        // DelegationMeetingRequests alone, so it never sees the speaker row, and it keys
+        // on SlotStart, so it catches only EQUAL starts, not a 10:00-10:30 against a
+        // 10:15-10:45. Running the hall, table and delegation range scans and the write
+        // in ONE Serializable transaction makes those scans hold key-range locks, so the
+        // rival cannot slip in and the two serialize with one losing. Go through the EF
+        // execution strategy so this composes with EnableRetryOnFailure (a bare user
+        // transaction throws under the retrying strategy); on a serialization/deadlock
+        // failure the strategy re-runs the whole unit and the re-scan sees the
+        // now-committed rival and raises the clean 409. Same pattern as
+        // SpeakerMeetingRequestService and BusinessMeetingService, which this now
+        // serializes against.
+        var strategy = appDbContext.Database.CreateExecutionStrategy();
+        try
         {
-            // Cancel/Decline is allowed from any non-terminal state: a Pending decline
-            // → Rejected; a post-approval cancel releases the held slot → Cancelled.
-            if (req.Status is MeetingRequestStatus.Rejected or MeetingRequestStatus.Cancelled
-                or MeetingRequestStatus.Done)
+            await strategy.ExecuteAsync(async () =>
             {
-                throw new ApiException(ErrorCodes.AppRequestAlreadyResponded, 409,
-                    "This meeting request has already been responded to.",
-                    "تمت معالجة طلب المقابلة هذا بالفعل.");
-            }
-            var wasPending = req.Status == MeetingRequestStatus.Pending;
-            // The target members were notified only once the request left Pending (Approve),
-            // so only a non-Pending cancel needs a retraction notice.
-            retractFromTargetMembers = !wasPending;
-            req.Status = wasPending ? MeetingRequestStatus.Rejected : MeetingRequestStatus.Cancelled;
-            // Release any held hall slot so it frees up for another meeting.
-            req.HallId = null;
-            req.MeetingTableId = null;
-        }
-        else
-        {
-            // Approve is valid only from Pending; Confirm may also finalise a previously
-            // Approved (AwaitingSpeaker) request.
-            var allowed = confirmVerbal
-                ? req.Status is MeetingRequestStatus.Pending or MeetingRequestStatus.AwaitingSpeaker
-                : req.Status == MeetingRequestStatus.Pending;
-            if (!allowed)
-            {
-                throw new ApiException(ErrorCodes.AppRequestAlreadyResponded, 409,
-                    "This meeting request has already been responded to.",
-                    "تمت معالجة طلب المقابلة هذا بالفعل.");
-            }
+                await using var tx = await appDbContext.Database.BeginTransactionAsync(
+                    System.Data.IsolationLevel.Serializable, cancellationToken);
 
-            if (bindHall)
-            {
-                await BindDelegationHallSlotAsync(req, request, now, cancellationToken);
-            }
-            else if (req.Status == MeetingRequestStatus.Pending
-                && req.SlotStart is { } sStart && req.SlotEnd is { } sEnd)
-            {
-                // Legacy accept-without-hall from PENDING — honour the requester-proposed
-                // slot with the past + cross-country overlap guard. This guard must NOT run
-                // on a verbal Confirm of an already-Approved (AwaitingSpeaker) request: that
-                // slot was validated + bound at approve time, so re-checking "in the past"
-                // here would spuriously 400 (and strand the meeting) once the bound slot's
-                // start has passed — the natural case for a meet-then-confirm at the hall.
-                if (sStart < now)
+                // The strategy re-runs this whole lambda after a serialization failure,
+                // and unlike its two siblings this unit READS the request's own status
+                // and slot to decide what to do. The instance a failed attempt mutated is
+                // still tracked, and EF identity resolution would hand that stale copy
+                // back instead of the rolled-back row, so drop it and read again inside
+                // the transaction — which also puts the already-responded guard under the
+                // same lock. The staged confirm token is a different entity type and
+                // stays tracked, so it is committed exactly once by the winning attempt.
+                appDbContext.Entry(req).State = EntityState.Detached;
+                req = await LoadTrackedRequestAsync(id, cancellationToken);
+
+                // A failed attempt leaves its staged token tracked as Added. Drop it and
+                // stage a fresh one, so the winning attempt commits exactly one.
+                foreach (var staged in appDbContext.ChangeTracker
+                    .Entries<DelegationMeetingActionToken>()
+                    .Where(entry => entry.State == EntityState.Added)
+                    .ToList())
                 {
-                    throw new ApiException(ErrorCodes.DelegationMeetingRequestInvalid, 400,
-                        "The proposed meeting slot is in the past.",
-                        "فترة الاجتماع المقترحة في الماضي.");
+                    staged.State = EntityState.Detached;
                 }
-                await GuardDelegationOverlapAsync(req, sStart, sEnd, cancellationToken);
-            }
 
-            if (confirmVerbal)
-            {
-                req.Status = MeetingRequestStatus.Accepted;
-                req.ConfirmedAt = now;
-                req.ConfirmedByUserId = actorUserId;
-            }
-            else
-            {
-                // Approve with a hall → AwaitingSpeaker; legacy accept-without-hall → Accepted.
-                req.Status = bindHall ? MeetingRequestStatus.AwaitingSpeaker : MeetingRequestStatus.Accepted;
-            }
+                confirmUrl = bindHall && !confirmVerbal
+                    ? meetingActionTokens.StageDelegationConfirmToken(id)
+                    : null;
+
+                if (cancel)
+                {
+                    // Cancel/Decline is allowed from any non-terminal state: a Pending
+                    // decline → Rejected; a post-approval cancel releases the held slot
+                    // → Cancelled.
+                    if (req.Status is MeetingRequestStatus.Rejected or MeetingRequestStatus.Cancelled
+                        or MeetingRequestStatus.Done)
+                    {
+                        throw new ApiException(ErrorCodes.AppRequestAlreadyResponded, 409,
+                            "This meeting request has already been responded to.",
+                            "تمت معالجة طلب المقابلة هذا بالفعل.");
+                    }
+                    var wasPending = req.Status == MeetingRequestStatus.Pending;
+                    // The target members were notified only once the request left Pending
+                    // (Approve), so only a non-Pending cancel needs a retraction notice.
+                    retractFromTargetMembers = !wasPending;
+                    req.Status = wasPending
+                        ? MeetingRequestStatus.Rejected : MeetingRequestStatus.Cancelled;
+                    // Release any held hall slot so it frees up for another meeting.
+                    req.HallId = null;
+                    req.MeetingTableId = null;
+                }
+                else
+                {
+                    // Approve is valid only from Pending; Confirm may also finalise a
+                    // previously Approved (AwaitingSpeaker) request.
+                    var allowed = confirmVerbal
+                        ? req.Status is MeetingRequestStatus.Pending or MeetingRequestStatus.AwaitingSpeaker
+                        : req.Status == MeetingRequestStatus.Pending;
+                    if (!allowed)
+                    {
+                        throw new ApiException(ErrorCodes.AppRequestAlreadyResponded, 409,
+                            "This meeting request has already been responded to.",
+                            "تمت معالجة طلب المقابلة هذا بالفعل.");
+                    }
+
+                    if (bindHall)
+                    {
+                        await BindDelegationHallSlotAsync(req, request, now, cancellationToken);
+                    }
+                    else if (req.Status == MeetingRequestStatus.Pending
+                        && req.SlotStart is { } sStart && req.SlotEnd is { } sEnd)
+                    {
+                        // Legacy accept-without-hall from PENDING — honour the
+                        // requester-proposed slot with the past + cross-country overlap
+                        // guard. This guard must NOT run on a verbal Confirm of an
+                        // already-Approved (AwaitingSpeaker) request: that slot was
+                        // validated + bound at approve time, so re-checking "in the past"
+                        // here would spuriously 400 (and strand the meeting) once the
+                        // bound slot's start has passed — the natural case for a
+                        // meet-then-confirm at the hall.
+                        if (sStart < now)
+                        {
+                            throw new ApiException(ErrorCodes.DelegationMeetingRequestInvalid, 400,
+                                "The proposed meeting slot is in the past.",
+                                "فترة الاجتماع المقترحة في الماضي.");
+                        }
+                        await GuardDelegationOverlapAsync(req, sStart, sEnd, cancellationToken);
+                    }
+
+                    if (confirmVerbal)
+                    {
+                        req.Status = MeetingRequestStatus.Accepted;
+                        req.ConfirmedAt = now;
+                        req.ConfirmedByUserId = actorUserId;
+                    }
+                    else
+                    {
+                        // Approve with a hall → AwaitingSpeaker; legacy accept-without-hall
+                        // → Accepted.
+                        req.Status = bindHall
+                            ? MeetingRequestStatus.AwaitingSpeaker : MeetingRequestStatus.Accepted;
+                    }
+                }
+
+                req.ResponseNote = string.IsNullOrWhiteSpace(request.ResponseNote)
+                    ? null : request.ResponseNote.Trim();
+                req.RespondedAt = now;
+                req.RespondedByUserId = actorUserId;
+
+                await appDbContext.SaveChangesAsync(cancellationToken);
+                await tx.CommitAsync(cancellationToken);
+            });
         }
-
-        req.ResponseNote = string.IsNullOrWhiteSpace(request.ResponseNote)
-            ? null : request.ResponseNote.Trim();
-        req.RespondedAt = now;
-        req.RespondedByUserId = actorUserId;
-
-        // On Approve (→ AwaitingSpeaker) mint the single-use confirm token in
-        // THIS unit of work so it commits atomically with the transition; its link is
-        // emailed to the target members below. Empty when the public base URL is
-        // unconfigured (the members are then emailed without a link, as before).
-        var confirmUrl = req.Status == MeetingRequestStatus.AwaitingSpeaker
-            ? meetingActionTokens.StageDelegationConfirmToken(req.Id)
-            : null;
-
-        await appDbContext.SaveChangesAsync(cancellationToken);
+        catch (DbUpdateException)
+        {
+            // The (HallId, SlotStart) filtered-unique index is the equal-start backstop
+            // within this family: a concurrent delegation approve that won the index race
+            // after both passed the free-slot re-check surfaces here. It is non-transient,
+            // so the execution strategy does not retry it; return the same clean 409 the
+            // re-check would have. Data integrity is intact — the index prevented the
+            // double-book. The over-length note that used to reach here as a misleading
+            // conflict is refused as a 400 at the top of this method.
+            throw new ApiException(ErrorCodes.DelegationMeetingRequestInvalid, 409,
+                "That hall slot is no longer available.",
+                "لم تعد فترة القاعة هذه متاحة.");
+        }
 
         await auditLog.WriteSuccessAsync(
             AuditEvents.DelegationMeetingRequestResponded,
@@ -834,9 +931,12 @@ internal sealed class DelegationMeetingRequestService(
     // Bi-Meeting rework — bind the meeting to a free hall slot on Approve/Confirm,
     // mirroring SpeakerMeetingRequestService.BindHallSlotAsync. Validates the hall
     // hosts meetings, the picked slot is currently free (hall availability already
-    // subtracts bound meetings), neither delegation overlaps, and the optional table
-    // belongs to the hall. The (HallId, SlotStart) filtered-unique index is the race
-    // backstop.
+    // subtracts the bound meetings of BOTH request families), neither delegation
+    // overlaps, and the optional table belongs to the hall. Every scan it runs is
+    // called from inside the caller's Serializable transaction, so the key-range locks
+    // they take are what serializes a concurrent speaker or business-meeting write;
+    // the (HallId, SlotStart) filtered-unique index remains the equal-start backstop
+    // within this family.
     private async Task BindDelegationHallSlotAsync(
         DelegationMeetingRequest req,
         RespondToDelegationMeetingRequestRequest request,
@@ -906,8 +1006,9 @@ internal sealed class DelegationMeetingRequestService(
 
     // Neither delegation (as requester OR target) may already hold a LIVE meeting
     // (`MeetingRequestStatuses.SlotHolding`) overlapping [start, end) — the cross-country
-    // double-book guard. Read-then-write, acceptable for this admin-brokered,
-    // low-concurrency G2G table (the DB hall index is the equal-start backstop).
+    // double-book guard. The half-open range scan runs inside the respond path's
+    // Serializable transaction, so it holds the key-range lock that serializes a
+    // concurrent overlapping approve rather than merely reading around it.
     private async Task GuardDelegationOverlapAsync(
         DelegationMeetingRequest req, DateTime start, DateTime end,
         CancellationToken cancellationToken)
@@ -957,6 +1058,17 @@ internal sealed class DelegationMeetingRequestService(
         if (checkedInByUserId is not { } userId) { return null; }
         return namesByUserId.TryGetValue(userId, out var name) ? name : null;
     }
+
+    /// <summary>The tracked request row the respond unit of work mutates, or a bilingual
+    /// 404. Called twice per respond — once up front for the fast miss, once inside the
+    /// Serializable transaction for the copy the decision is actually taken on.</summary>
+    private async Task<DelegationMeetingRequest> LoadTrackedRequestAsync(
+        Guid id, CancellationToken cancellationToken) =>
+        await appDbContext.DelegationMeetingRequests
+            .SingleOrDefaultAsync(r => r.Id == id, cancellationToken)
+            ?? throw new ApiException(ErrorCodes.DelegationMeetingRequestNotFound, 404,
+                "Delegation meeting request not found.",
+                "لم يتم العثور على طلب اجتماع الوفد.");
 
     private async Task<AdminDelegationMeetingRequestDetail> LoadDetailAsync(
         Guid id, CancellationToken cancellationToken)

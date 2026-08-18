@@ -62,6 +62,134 @@ public sealed class EmailTemplateAdminTests : IClassFixture<SimfApiFactory>
         });
     }
 
+    // -- List: the GridQuery is actually applied -------------------------------
+    //
+    // ListAsync used to accept a GridQuery and ignore every part of it, returning
+    // all ten rows in catalogue order with Total set to the PAGE length. These
+    // pin each part of the query down. The catalogue is fixed and every test in
+    // this class resets its override, so the ten default rows are the fixture.
+
+    [Fact]
+    public async Task List_pages_and_reports_the_true_total_not_the_page_length()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        var first = await ListAsync(new GridQuery { Skip = 0, Top = 4 }, admin);
+        Assert.Equal(4, first.Items.Count);
+        // The defect: Total was rows.Count of the page, so the CP footer read
+        // "1-4 of 4" and the pager offered a single page.
+        Assert.Equal(10, first.Total);
+        Assert.Equal(0, first.Skip);
+        Assert.Equal(4, first.Top);
+
+        var last = await ListAsync(new GridQuery { Skip = 8, Top = 4 }, admin);
+        Assert.Equal(2, last.Items.Count);
+        Assert.Equal(10, last.Total);
+
+        // A page window that is ignored returns the same rows every time.
+        Assert.Empty(first.Items.Select(row => row.Type)
+            .Intersect(last.Items.Select(row => row.Type)));
+    }
+
+    [Fact]
+    public async Task List_sorts_by_the_requested_column_in_both_directions()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        var ascending = await ListAsync(
+            new GridQuery { Top = 100, Sort = "type" }, admin);
+        var descending = await ListAsync(
+            new GridQuery { Top = 100, Sort = "type", SortDescending = true }, admin);
+
+        var ascendingNames = ascending.Items.Select(row => row.TypeName).ToList();
+        var descendingNames = descending.Items.Select(row => row.TypeName).ToList();
+
+        Assert.Equal("AccountExists", ascendingNames[0]);
+        Assert.Equal("SignInOtp", descendingNames[0]);
+        // A sort that is silently dropped flips the header arrow without moving a
+        // single row, which is exactly what this asserts cannot happen.
+        Assert.Equal(ascendingNames.AsEnumerable().Reverse(), descendingNames);
+    }
+
+    [Fact]
+    public async Task List_filters_on_a_column_case_insensitively()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        // Lower-case "otp" against "SignInOtp": the grid matches case-insensitively,
+        // and SignInOtp is the only one of the ten whose name contains it.
+        var page = await ListAsync(
+            new GridQuery { Top = 100, Filters = { ["type"] = "otp" } }, admin);
+
+        var row = Assert.Single(page.Items);
+        Assert.Equal(EmailTemplateType.SignInOtp, row.Type);
+        // Total follows the filter; an ignored filter would report all ten.
+        Assert.Equal(1, page.Total);
+    }
+
+    [Fact]
+    public async Task List_applies_the_free_text_search()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        var page = await ListAsync(new GridQuery { Top = 100, Search = "OTP" }, admin);
+
+        Assert.Equal(1, page.Total);
+        Assert.Equal(EmailTemplateType.SignInOtp, Assert.Single(page.Items).Type);
+    }
+
+    [Fact]
+    public async Task List_rejects_an_unknown_sort_key_with_a_400()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        var response = await PostAuthAsync(
+            "/api/v1/admin/email/templates/list",
+            new GridQuery { Sort = "nope" },
+            admin);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.GridSortKeyInvalid, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task List_rejects_an_unknown_filter_key_with_a_400()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        var response = await PostAuthAsync(
+            "/api/v1/admin/email/templates/list",
+            new GridQuery { Filters = { ["nope"] = "x" } },
+            admin);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.GridFilterKeyInvalid, body.Error!.Code);
+    }
+
+    [Theory]
+    [InlineData("customised", "banana")]
+    [InlineData("version", "not-a-number")]
+    [InlineData("updatedAt", "the-day-before")]
+    public async Task List_rejects_an_unparseable_filter_value_with_a_400(
+        string key, string value)
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        // A value that will not parse is a 400, never a silently dropped
+        // predicate: dropping one WIDENS the result set, which reads as data
+        // rather than as a fault.
+        var response = await PostAuthAsync(
+            "/api/v1/admin/email/templates/list",
+            new GridQuery { Filters = { [key] = value } },
+            admin);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.GridFilterValueInvalid, body.Error!.Code);
+    }
+
     // -- Get -----------------------------------------------------------------
 
     [Fact]
@@ -268,6 +396,16 @@ public sealed class EmailTemplateAdminTests : IClassFixture<SimfApiFactory>
 
     private static string RouteFor(EmailTemplateType type, string action) =>
         $"/api/v1/admin/email/templates/{type}/{action}";
+
+    private async Task<GridPage<AdminEmailTemplateSummary>> ListAsync(
+        GridQuery query, string token)
+    {
+        var response = await PostAuthAsync(
+            "/api/v1/admin/email/templates/list", query, token);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        return (await response.Content
+            .ReadFromJsonAsync<ApiResult<GridPage<AdminEmailTemplateSummary>>>())!.Data!;
+    }
 
     private async Task<AdminEmailTemplateDetail> GetDetailAsync(
         EmailTemplateType type, string token)
