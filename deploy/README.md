@@ -11,9 +11,12 @@ SIMF web apps and deploy them to IIS, mirroring the V10 ERP pipeline.
 | SimfWeb | `src/Website/SIMF.Web/SIMF.Web.csproj` | `web/SIMF.Web.zip` | site `SIMF.WEB`, path `D:\System\v1.0.1\web` |
 | SimfEdge | `src/Edge/SIMF.MobileEdge/SIMF.MobileEdge.csproj` | `edge/SIMF.MobileEdge.zip` | site `SIMF.EDGE`, path `D:\System\v1.0.1\edge` |
 
-All four packages deploy to **each of the two servers** — `SIMF-Prod` (pre-production) and
-`SIM-RNSF` (production) — so there is one deployment job per server, and each package keeps
-its own environment script on that server. The **mobile edge** is the presentation tier
+All four packages are **meant** to deploy to each of the two servers — `SIMF-Prod`
+(pre-production) and `SIM-RNSF` (production) — so there is one deployment job per server,
+and each package keeps its own environment script on that server. **In fact both jobs land
+on the same machine**, the pre-production box, because the `Default` pool holds one agent
+and it lives there (D-932 — see the warning under *Choosing which environments a run
+deploys to*). Production is deployed by hand until an agent exists on it. The **mobile edge** is the presentation tier
 for the mobile clients: a YARP reverse proxy published at `edge.simrsnf.com` that
 forwards only `/api/v1/app/**` inward. See
 [the mobile edge section](#the-mobile-edge-at-edgesimrsnfcom) before deploying
@@ -89,24 +92,41 @@ Build, Test & Publish ──▶ Deploy to IIS
 
 | Parameter | Label | Default |
 |-----------|-------|---------|
-| `deployPreProduction` | Deploy to Pre-production (NO agent yet — deploys to PRODUCTION) | **`false`** |
-| `deployProduction` | Deploy to Production | `true` |
+| `deployPreProduction` | Deploy to Pre-production (same box as Production — one agent, D-932) | **`false`** |
+| `deployProduction` | Deploy to Production (actually deploys to PRE-PRODUCTION — D-932) | `true` |
 
-> ### ⚠️ There is only one agent, and it is on production (D-906)
+> ### ⚠️ There is only one agent, and it is on PRE-PRODUCTION (D-932)
 >
-> The `Default` pool holds a single agent — `server` on `WIN-MAP9VAMAU4Q`, the
-> **production** box (`SIMF APP 01`). Both deployment jobs draw from that pool,
-> and neither environment has a VM resource to bind it elsewhere (D-905), so
-> **both jobs run on production**.
+> **This pipeline cannot reach production.** Read that before debugging a deploy.
 >
-> `DeployPreProduction` therefore rehearses nothing. It deploys the same four
-> packages to the live production server a second time, stopping and restarting
-> every site again. Left on, every run took production down twice — which is why
-> it now defaults to **off**.
+> The `Default` pool holds a single agent — `server` on `WIN-MAP9VAMAU4Q`.
+> D-906 recorded that machine as the **production** box (`SIMF APP 01`).
+> **It is not.** It is the **pre-production** server, the one behind
+> `simf.zagali-ict.com`. Both deployment jobs draw from that one pool agent and
+> nothing binds them elsewhere (D-905), so **every deploy this pipeline has ever
+> run — under either environment name, with either tick box — has landed on
+> pre-production.**
 >
-> **To get a real pre-production deploy, install an Azure Pipelines agent on the
-> pre-production server.** Until then, ticking that box deploys to production
-> whatever its label says.
+> `web.simrsnf.com` (production) receives **nothing** from this pipeline and has
+> not since 2026-08-08. Shipping to it is a manual copy until an agent exists
+> there.
+>
+> **How this was established:** the `Initialize job` step of *both* deployment
+> jobs prints `Agent machine name: 'WIN-MAP9VAMAU4Q'`; the pool holds exactly one
+> agent; deploys write `D:\System\v1.0.1\web` on that machine and the site whose
+> content changes is `simf.zagali-ict.com`, while production stays byte-identical
+> (its `landing.css` still MD5s to `b98f39d41ff1b73ae3ac4e3db3e9179f` — commit
+> `f81ba630`, 2026-08-08).
+>
+> `DeployPreProduction` therefore rehearses nothing — but not for the reason
+> D-906 gave. Both jobs deploy the same four packages to the same
+> **pre-production** machine, stopping and restarting every site twice in one
+> run, which is why it defaults to **off**.
+>
+> **To deploy to either server for real:** install an Azure Pipelines agent on
+> the production box and register **both** servers as VM resources on their
+> environments. Until then an environment name is a label on a history page, not
+> a destination.
 
 And three that are **off** by default:
 
@@ -300,10 +320,12 @@ These are **placeholders** — set them to the real SIMF server values:
    environment, and authorize this pipeline.
 
    **Both environments are empty shells, and that is how this estate works.**
-   Neither has a VM resource registered, so each is what Azure calls an
-   "abstract shell to record deployment history" and the steps fall back to the
+   `SIMF-Prod` has no VM resource; `SIM-RNSF` now shows one, added after D-905
+   was written, and it changed nothing observable — both jobs still report the
+   same pool agent. An environment with no usable resource is what Azure calls an
+   "abstract shell to record deployment history", so the steps fall back to the
    **`Default` pool agent** — the agent named `server` on `WIN-MAP9VAMAU4Q` that
-   has been running these deploys all along.
+   has been running these deploys all along, **on pre-production** (D-932).
 
    **Do not add `resourceType: virtualMachine`.** It has been tried twice and
    broke deploys both times (D-903, D-905). It demands a registered VM resource

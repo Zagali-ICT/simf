@@ -43,21 +43,42 @@ trigger:
 # --- Which environments this run deploys to (chosen in the Run pipeline dialog).
 #
 #     `deployPreProduction` DEFAULTS TO FALSE, and the reason is not caution
-#     (D-906): THERE IS ONLY ONE AGENT, AND IT IS ON THE PRODUCTION SERVER.
+#     (D-906, CORRECTED by D-932): THERE IS ONLY ONE AGENT, AND IT IS ON THE
+#     PRE-PRODUCTION SERVER.
+#
+#     THIS PIPELINE CANNOT REACH PRODUCTION. Read that before debugging a deploy.
 #
 #     The `Default` pool contains a single agent - `server` on
-#     `WIN-MAP9VAMAU4Q`, which is the production box (SIMF APP 01). Both
-#     deployment jobs draw from that pool, and neither environment has a VM
-#     resource to bind it elsewhere (D-905), so BOTH jobs run on production.
-#     `DeployPreProduction` does not rehearse anything: it deploys the same four
-#     packages to the live production server a second time, stopping and
-#     restarting every site again for no gain.
+#     `WIN-MAP9VAMAU4Q`. D-906 recorded that machine as the production box
+#     (SIMF APP 01). IT IS NOT. It is the PRE-PRODUCTION server, the one behind
+#     `simf.zagali-ict.com`. Both deployment jobs draw from that one pool agent,
+#     and no environment binds them elsewhere (D-905), so EVERY deploy this
+#     pipeline has ever run - under either environment name, with either tick
+#     box - has landed on pre-production.
 #
-#     Leaving it on would mean every run took production down twice.
+#     `web.simrsnf.com` (production, SIMF APP 01) receives NOTHING from this
+#     pipeline and has not since 2026-08-08. Getting anything onto it is a manual
+#     copy until an agent exists there.
 #
-#     TO GET A REAL PRE-PRODUCTION DEPLOY: install an Azure Pipelines agent on
-#     the pre-production server. Until then, ticking this box deploys to
-#     production, whatever its label says.
+#     HOW THIS WAS ESTABLISHED, so it is not re-litigated: the owner read the
+#     `Initialize job` step of BOTH deployment jobs. Both print
+#     `Agent machine name: 'WIN-MAP9VAMAU4Q'`. The `Default` pool holds exactly
+#     one agent. Deploys write `D:\System\v1.0.1\web` on that machine, and the
+#     site whose content changes is `simf.zagali-ict.com`, while production stays
+#     byte-identical: its `landing.css` still MD5s to b98f39d41ff1b73ae3ac4e3db3e9179f,
+#     which is commit f81ba630 of 2026-08-08.
+#
+#     WHAT THIS COST. A CSS fix correct on `main` since 2026-08-15 (f31d5845) was
+#     reported as unshipped for eleven days. Three separate "fixes" were written
+#     against the wrong cause - a stale artifact staging directory, then a stale
+#     static-asset fingerprint cache - because every deploy log showed success and
+#     the machine it succeeded ON was never questioned. Both guards were kept:
+#     they are correct hygiene and cost nothing. Neither was the problem.
+#
+#     TO GET A REAL DEPLOY TO EITHER SERVER: install an Azure Pipelines agent on
+#     the production server and register BOTH servers as VM resources on their
+#     environments. Until then an environment name is a label on a history page,
+#     not a destination, and ticking either box deploys to pre-production.
 #
 #     Untick BOTH and the whole Deploy stage is omitted - build, test and
 #     publish still run, and the artifact is still produced, so a build-only run
@@ -69,7 +90,7 @@ trigger:
 #     that can disagree with itself.
 parameters:
 - name: deployPreProduction
-  displayName: 'Deploy to Pre-production (NO agent yet - deploys to PRODUCTION)'
+  displayName: 'Deploy to Pre-production (same box as Production - one agent, D-932)'
   type: boolean
   default: false
 - name: deployProduction
@@ -969,12 +990,18 @@ stages:
 # below say which is which; trust those, not the environment string.
 # #############################################################################
 #
-# THE ENVIRONMENTS ARE EMPTY SHELLS, AND THAT IS HOW THIS ESTATE WORKS. Neither
-# `SIMF-Prod` nor `SIM-RNSF` has a VM resource registered. An environment with no
-# resources is what the Azure docs call "an abstract shell to record deployment
-# history", so the steps fall back to the `Default` POOL agent - the agent
-# literally named `server` on WIN-MAP9VAMAU4Q that has been running these
-# deploys the whole time.
+# THE ENVIRONMENTS ARE EMPTY SHELLS, AND THAT IS HOW THIS ESTATE WORKS.
+# `SIMF-Prod` has no VM resource registered; `SIM-RNSF` now shows one, added
+# after D-905 was written, and it has changed nothing observable - both jobs
+# still report the same pool agent. An environment with no usable resource is
+# what the Azure docs call "an abstract shell to record deployment history", so
+# the steps fall back to the `Default` POOL agent - the agent literally named
+# `server` on WIN-MAP9VAMAU4Q that has been running these deploys the whole time.
+#
+# AND THAT AGENT IS ON PRE-PRODUCTION, not production (D-932). Every deploy this
+# pipeline runs lands on `simf.zagali-ict.com`. `web.simrsnf.com` is unreachable
+# from here. Both jobs' `Initialize job` steps print the same machine name; that
+# line is ground truth and outranks every environment label in this file.
 #
 # DO NOT ADD `resourceType: virtualMachine` HERE. It has been tried twice and
 # broken deploys both times (D-903, D-905): it demands a registered VM resource,
