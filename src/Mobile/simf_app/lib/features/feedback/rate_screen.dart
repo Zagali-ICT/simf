@@ -18,37 +18,7 @@ import 'package:simf_app/features/feedback/widgets/rate_navy_note_chip.dart';
 import 'package:simf_app/features/feedback/widgets/star_row.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// Page 040 — تقييم الملتقى · Rate (#40, `/rate`, login-only).
-///
-/// Dynamic, config-driven rating screen. It fetches the form for a rating type
-/// (resolved by `code` — e.g. "App" / "Session" — or `ratingTypeId`) and
-/// optional `targetId` (a session id for a per-session type), then renders the
-/// optional overall star row, the server-defined grouped + flat questions (each
-/// a 1–5 star bar) and the optional comment box, prefilled from any existing
-/// submission. `GET /app/feedback/form` then `POST /app/feedback/submit`.
-///
-/// Route: `RouteNames.rate`.
-/// Data: [feedbackRepositoryProvider], [ratingFormProvider].
-/// Perf: ListView builds every child up front — correct for a short static
-///       page, a defect on a data feed.
-/// Identifies which rating form to load. A record, so two screens asking for
-/// the same form share one request.
-typedef RatingFormKey = ({
-  String? code,
-  String? ratingTypeId,
-  String? targetId,
-});
-
-/// The rating form for [RatingFormKey], with any existing submission on it.
-final ratingFormProvider = FutureProvider.autoDispose
-    .family<RatingFormView, RatingFormKey>(
-  (ref, key) => ref.watch(feedbackRepositoryProvider).getForm(
-        code: key.code,
-        ratingTypeId: key.ratingTypeId,
-        targetId: key.targetId,
-      ),
-);
-
+/// Rate — route: `RouteNames.rate` · Figma 1116:16894
 class RateScreen extends ConsumerStatefulWidget {
   const RateScreen({
     super.key,
@@ -141,7 +111,6 @@ class _RateScreenState extends ConsumerState<RateScreen> {
       return;
     }
 
-    // Every required question must be scored.
     final required = <RatingFormQuestion>[
       for (final g in form.groups) ...g.questions.where((q) => q.isRequired),
       ...form.ungroupedQuestions.where((q) => q.isRequired),
@@ -156,7 +125,6 @@ class _RateScreenState extends ConsumerState<RateScreen> {
 
     setState(() => _submitting = true);
     try {
-      // Only send answered questions (stars 1–5).
       final answers = <String, int>{
         for (final e in _answers.entries)
           if (e.value >= 1) e.key: e.value,
@@ -273,7 +241,6 @@ class _RateScreenState extends ConsumerState<RateScreen> {
         ..add(const SizedBox(height: SimfTokens.space5));
     }
 
-    // Grouped questions — a section per group.
     for (final group in form.groups) {
       children
         ..add(
@@ -287,7 +254,6 @@ class _RateScreenState extends ConsumerState<RateScreen> {
       children.add(const SizedBox(height: SimfTokens.space3));
     }
 
-    // Flat (ungrouped) questions — under the generic "Rate the elements" title.
     if (form.ungroupedQuestions.isNotEmpty) {
       children
         ..add(SimfSectionHeader(title: l10n.rateElementsTitle))

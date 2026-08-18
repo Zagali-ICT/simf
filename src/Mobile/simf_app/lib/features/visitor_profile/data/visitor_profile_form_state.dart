@@ -17,7 +17,6 @@ import 'package:simf_app/features/visitor_profile/data/visitor_profile_validator
 /// disposal ownership and gain nothing, so this class holds only the values
 /// that are plain state: the picks, the lookups and the submit flag.
 class VisitorProfileFormState extends ChangeNotifier {
-  // ── Lookups, loaded once per screen open ────────────────────────────────
   List<CountryItem> _countries = const <CountryItem>[];
   List<ProfileTypeItem> _profileTypes = const <ProfileTypeItem>[];
 
@@ -35,7 +34,6 @@ class VisitorProfileFormState extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ── The user's picks ────────────────────────────────────────────────────
   String? _nationalityCode;
   String? _profileTypeId;
   String? _organisationId;
@@ -92,7 +90,6 @@ class VisitorProfileFormState extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ── Submit gate ─────────────────────────────────────────────────────────
   bool _triedSubmit = false;
 
   /// True once submit has been pressed at least once.

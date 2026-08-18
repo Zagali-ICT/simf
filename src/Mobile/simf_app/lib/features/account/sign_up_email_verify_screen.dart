@@ -8,37 +8,22 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/core/errors/api_error_l10n.dart';
-import 'package:simf_app/core/responsive/max_width_body.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
-import 'package:simf_app/core/widgets/simf_auth_sweep.dart';
-import 'package:simf_app/features/account/widgets/account_sub_header.dart';
+import 'package:simf_app/features/account/widgets/auth_bottom_bar.dart';
 import 'package:simf_app/features/account/widgets/auth_chrome.dart';
+import 'package:simf_app/features/account/widgets/auth_screen_scaffold.dart';
+import 'package:simf_app/features/account/widgets/auth_scroll_body.dart';
+import 'package:simf_app/features/account/widgets/email_verify_resend_row.dart';
 import 'package:simf_app/features/account/widgets/otp_code_boxes.dart';
 import 'package:simf_app/features/account/widgets/otp_sent_to.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// Page 006 — التحقق بالبريد · Email verification. The KSA-Project Figma
-/// design (node 505:837 — D-364): navy surface with the decorative sweep, a
-/// gold-ringed mail mark, six segmented code boxes, the gold تحقق button and
-/// the "لم يصلك الرمز؟ إعادة الإرسال" footer. The previous screen is parked in
-/// `_legacy_mockup/`.
-///
-/// Contract unchanged — sign-up **step 2**: `POST /app/auth/verify-email
-/// { email, code }` (anonymous); success routes to sign-in (verify-email
-/// issues no session). **Resend** re-issues via `POST /app/auth/resend-code`
-/// and restarts the cooldown from the returned `codeExpiresInSeconds`.
-///
-/// Clean-code pass (D-553, Phase 3): the lone sweep-tint const dropped for
-/// `SimfTokens.surfaceTint`; the long `build` split into the shared
-/// [AccountSubHeader] (D-658) / `_buildContent` / `_buildBottomActions`; the
-/// resend link reuses the shared
-/// [authLinkButtonStyle]; the body + actions capped by [MaxWidthBody].
-/// Behaviour + render unchanged — the 505:837 golden locks it.
-///
-/// Route: `RouteNames.emailOtp`.
-/// Data: [authControllerProvider], [simfPrefsStorageProvider].
-/// Perf: no list — a single-screen layout.
+/// Email verification — التحقق بالبريد · route: RouteNames.emailOtp · Figma
+/// 505:837 (D-364)
+/// Contract: sign-up step 2 — POST /app/auth/verify-email { email, code }
+/// (anonymous) issues NO session, so success routes to sign-in rather than
+/// onward. Resend re-issues via POST /app/auth/resend-code.
 class SignUpEmailVerifyScreen extends ConsumerStatefulWidget {
   const SignUpEmailVerifyScreen({required this.email, super.key});
 
@@ -196,141 +181,93 @@ class _SignUpEmailVerifyScreenState
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    return Scaffold(
-      backgroundColor: SimfTokens.navySurface,
-      body: Stack(
+    return AuthScreenScaffold(
+      title: l10n.emailVerifyTitle,
+      onBack: _back,
+      busy: _busy,
+      sweep: true,
+      body: AuthScrollBody(
+        maxWidth: SimfTokens.signUpEmailVerifyScreenMaxWidth,
         children: <Widget>[
-          const SimfAuthSweep(top: -180, left: null, right: -80),
-          SafeArea(
-            child: Column(
-              children: <Widget>[
-                AccountSubHeader(
-                  title: l10n.emailVerifyTitle,
-                  onBack: _back,
-                  busy: _busy,
-                ),
-                Expanded(child: _buildContent(l10n)),
-                _buildBottomActions(l10n),
-                const SizedBox(height: SimfTokens.space6),
-              ],
-            ),
+          const SizedBox(height: SimfTokens.signUpEmailVerifyScreenHeight),
+          // Gold-ringed mail mark (Figma 505:969).
+          const OtpMark(icon: Icons.mail_outline),
+          const SizedBox(height: SimfTokens.space6),
+          Text(
+            l10n.enterOtpTitle,
+            style: SimfTokens.labelWhiteBoldXl,
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildContent(AppL10n l10n) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
-      child: MaxWidthBody(
-        maxWidth: SimfTokens.signUpEmailVerifyScreenMaxWidth,
-        child: Column(
-          children: <Widget>[
-            const SizedBox(height: SimfTokens.signUpEmailVerifyScreenHeight),
-            // Gold-ringed mail mark (Figma 505:969).
-            const OtpMark(icon: Icons.mail_outline),
-            const SizedBox(height: SimfTokens.space6),
-            Text(
-              l10n.enterOtpTitle,
-              style: SimfTokens.labelWhiteBoldXl,
-            ),
-            const SizedBox(height: SimfTokens.space6),
-            OtpSentTo(
-              prefix: l10n.emailVerifySentTo,
-              recipient: widget.email,
-            ),
-            const SizedBox(height: SimfTokens.signUpEmailVerifyScreenHeight),
-            OtpCodeBoxes(
-              controller: _code,
-              focusNode: _codeFocus,
-              enabled: !_busy,
-              onChanged: () => setState(() {}),
-              onSubmitted: () {
-                if (_canVerify) {
-                  unawaited(_verify());
-                }
-              },
-            ),
-            const SizedBox(height: SimfTokens.space4),
-            if (_cooldown > 0) _buildCooldownRow(l10n),
-            if (_error != null) ...<Widget>[
-              const SizedBox(height: SimfTokens.space3),
-              Text(
-                _error!,
-                textAlign: TextAlign.center,
-                style: SimfTokens.labelDangerSm,
-              ),
-            ],
-            const SizedBox(height: SimfTokens.space6),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCooldownRow(AppL10n l10n) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: <Widget>[
-        Text(
-          l10n.resendInLabel,
-          style:
-              const TextStyle(color: otpMutedBlue, fontSize: SimfTokens.textMd),
-        ),
-        const SizedBox(width: SimfTokens.signUpEmailVerifyScreenWidth),
-        Text(
-          _formatCooldown(_cooldown),
-          textDirection: TextDirection.ltr,
-          style: SimfTokens.labelGoldBold,
-        ),
-      ],
-    );
-  }
-
-  /// Bottom actions (Figma 505:1003): the gold verify CTA + the resend row.
-  Widget _buildBottomActions(AppL10n l10n) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
-      child: MaxWidthBody(
-        maxWidth: SimfTokens.signUpEmailVerifyScreenMaxWidth,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            AuthSubmitButton(
-              label: l10n.verifyButton,
-              busy: _busy,
-              onPressed: _canVerify ? () => unawaited(_verify()) : null,
-            ),
-            const SizedBox(height: SimfTokens.space4),
+          const SizedBox(height: SimfTokens.space6),
+          OtpSentTo(
+            prefix: l10n.emailVerifySentTo,
+            recipient: widget.email,
+          ),
+          const SizedBox(height: SimfTokens.signUpEmailVerifyScreenHeight),
+          OtpCodeBoxes(
+            controller: _code,
+            focusNode: _codeFocus,
+            enabled: !_busy,
+            onChanged: () => setState(() {}),
+            onSubmitted: () {
+              if (_canVerify) {
+                unawaited(_verify());
+              }
+            },
+          ),
+          const SizedBox(height: SimfTokens.space4),
+          if (_cooldown > 0)
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
                 Text(
-                  l10n.noCodeQuestion,
+                  l10n.resendInLabel,
                   style: const TextStyle(
-                    color: SimfTokens.surface,
+                    color: otpMutedBlue,
                     fontSize: SimfTokens.textMd,
-                    fontWeight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(width: SimfTokens.signUpEmailVerifyScreenWidth),
-                TextButton(
-                  onPressed: _canResend ? () => unawaited(_resend()) : null,
-                  style: authLinkButtonStyle(SimfTokens.accent),
-                  child: Text(
-                    l10n.resendAction,
-                    style: const TextStyle(
-                      fontSize: SimfTokens.textMd,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+                const SizedBox(
+                  width: SimfTokens.signUpEmailVerifyScreenWidth,
+                ),
+                Text(
+                  _formatCooldown(_cooldown),
+                  textDirection: TextDirection.ltr,
+                  style: SimfTokens.labelGoldBold,
                 ),
               ],
             ),
+          if (_error != null) ...<Widget>[
+            const SizedBox(height: SimfTokens.space3),
+            Text(
+              _error!,
+              textAlign: TextAlign.center,
+              style: SimfTokens.labelDangerSm,
+            ),
           ],
-        ),
+          const SizedBox(height: SimfTokens.space6),
+        ],
       ),
+      // Bottom actions (Figma 505:1003): the gold verify CTA + the resend row.
+      bottom: <Widget>[
+        AuthBottomBar(
+          maxWidth: SimfTokens.signUpEmailVerifyScreenMaxWidth,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              AuthSubmitButton(
+                label: l10n.verifyButton,
+                busy: _busy,
+                onPressed: _canVerify ? () => unawaited(_verify()) : null,
+              ),
+              const SizedBox(height: SimfTokens.space4),
+              EmailVerifyResendRow(
+                onResend: _canResend ? () => unawaited(_resend()) : null,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: SimfTokens.space6),
+      ],
     );
   }
 }

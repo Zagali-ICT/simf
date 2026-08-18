@@ -22,43 +22,7 @@ import 'package:simf_app/features/speakers/widgets/speaker_sessions.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// Page 020 — ملف المتحدث · Speaker profile (#20, `/speakers/:speakerId`,
-/// Guest+), rebuilt to the KSA-Project Figma frame **908:2110 "About Speaker"**
-/// on the shared navy shell.
-///
-/// **Public** read (`GET /app/speakers/{id}`) — behaviour unchanged. Frame
-/// mapping: the two-line header (`SpeakerProfileHeader`), the 125px gold-ringed
-/// avatar (`SpeakerAvatar`, D-357 photo + placeholder), the four CV tab pills
-/// (`SpeakerCvTabs`) over the navy bio card (`SpeakerCvCard`). Below the
-/// frame's minimal content the screen keeps its full behaviour: the **Request
-/// meeting** action (only when `allowsMeetingRequests` **and the viewer is a
-/// VIP tier**, D-729) — login-only (`POST …/meeting-requests`, D-269), opening
-/// the `MeetingRequestSheet` (the endpoint enforces the same VIP rule); the
-/// opted-in social links (only when `allowsDataSharing`); and the speaker's
-/// sessions (`SpeakerSessionRow`, tap → session detail 17).
-///
-/// Route: `RouteNames.speakerProfile`.
-/// Data: [authControllerProvider], [currentUserMeetingAccessProvider],
-///       [simfDataConfigProvider], [speakerDetailProvider],
-///       [speakersRepositoryProvider].
-/// Perf: ListView builds every child up front — correct for a short static
-///       page, a defect on a data feed.
-/// One speaker, or **null when the server has no such id** (a 404).
-///
-/// The `newsArticleProvider` shape: a 404 is "this speaker is gone", which the
-/// screen answers with its own not-found copy rather than the error surface.
-final speakerDetailProvider =
-    FutureProvider.autoDispose.family<SpeakerDetail?, String>((ref, id) async {
-  try {
-    return await ref.watch(speakersRepositoryProvider).getSpeaker(id);
-  } on ApiFailure catch (failure) {
-    if (failure.httpStatus == 404) {
-      return null;
-    }
-    rethrow;
-  }
-});
-
+/// Speaker profile — route: RouteNames.speakerProfile · Figma 908:2110
 class SpeakerProfileScreen extends ConsumerStatefulWidget {
   const SpeakerProfileScreen({required this.speakerId, super.key});
 

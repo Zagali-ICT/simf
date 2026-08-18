@@ -4,10 +4,9 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/media_coverage_tabs.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
-import 'package:simf_app/core/responsive/grid_columns.dart';
 import 'package:simf_app/core/utils/refresh.dart';
 import 'package:simf_app/features/media_partners/data/media_partners_repository.dart';
-import 'package:simf_app/features/media_partners/widgets/partner_card.dart';
+import 'package:simf_app/features/media_partners/widgets/media_partners_grid.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 // The partner model + provider live in `data/`; re-exported so the existing
@@ -16,23 +15,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 export 'data/media_partner_models.dart';
 export 'data/media_partners_repository.dart';
 
-/// Page 031 — الشركاء الإعلاميون · Media partners (#31, `/media-partners`,
-/// Guest+), rebuilt to the KSA-Project frame **947:3764 "Media coverage"** on
-/// the shared navy shell.
-///
-/// **Public.** The frame is the two-tab "المركز الاعلامي" (Media center)
-/// container — الشركاء الإعلاميون (this screen, active gold) · احدث المستجدات.
-/// The inactive pill navigates to the news (#29) route. The body is a
-/// two-column grid of partner cards (frame node 958:2388): a gold
-/// rounded-square logo holder over the partner name on the navy KSA card. The
-/// logo is the partner's uploaded asset, fetched from the public anonymous
-/// route `…/app/assets/MediaPartnerLogo/{id}/image` (the D-357 unified
-/// media-asset pipeline) with a loading spinner and a graceful fall-back to the
-/// partner's initials on a gold tile when there is no logo or the fetch fails.
-///
-/// Route: `RouteNames.mediaPartners`.
-/// Data: [mediaPartnersProvider], [simfDataConfigProvider].
-/// Perf: lazy — builds children on demand (GridView.builder).
+/// Media partners — route: `RouteNames.mediaPartners` · Figma 947:3764
 class MediaPartnersScreen extends ConsumerWidget {
   const MediaPartnersScreen({super.key});
 
@@ -43,7 +26,6 @@ class MediaPartnersScreen extends ConsumerWidget {
     // The data-package base URL already includes `/api/v1`; the card builds
     // `{base}/app/assets/MediaPartnerLogo/{id}/image` from it.
     final baseUrl = ref.watch(simfDataConfigProvider).baseUrl;
-    // Pull-to-refresh — re-fetch the media partners (invalidate + await next).
     Future<void> onRefresh() => refreshAsync(ref, mediaPartnersProvider.future);
 
     return SimfPageShell(
@@ -74,47 +56,11 @@ class MediaPartnersScreen extends ConsumerWidget {
                   onRetry: () => ref.invalidate(mediaPartnersProvider),
                 ),
               ),
-              data: (items) {
-                if (items.isEmpty) {
-                  return SimfRefreshableMessage(
-                    onRefresh: onRefresh,
-                    child: SimfEmptyState(
-                      icon: Icons.campaign_outlined,
-                      message: l10n.mediaPartnersEmpty,
-                    ),
-                  );
-                }
-                final isArabic = l10n.isArabic;
-                // Frame 958:2388 — a 2-column grid of 163.5×104 partner cards
-                // with a 16px gap (≈1.57 aspect).
-                return SimfPullToRefresh(
-                  onRefresh: onRefresh,
-                  child: GridView.builder(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(
-                      SimfTokens.space4,
-                      SimfTokens.space2,
-                      SimfTokens.space4,
-                      SimfTokens.space6,
-                    ),
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount:
-                          responsiveGridColumns(context, compact: 2),
-                      mainAxisSpacing: SimfTokens.space4,
-                      crossAxisSpacing: SimfTokens.space4,
-                      childAspectRatio: SimfTokens.partnerCardAspectRatio,
-                    ),
-                    itemCount: items.length,
-                    itemBuilder: (context, index) {
-                      final partner = items[index];
-                      return PartnerCard(
-                        name: partner.localizedName(isArabic: isArabic),
-                        logoUrl: partner.logoAssetUrl(baseUrl),
-                      );
-                    },
-                  ),
-                );
-              },
+              data: (items) => MediaPartnersGrid(
+                partners: items,
+                baseUrl: baseUrl,
+                onRefresh: onRefresh,
+              ),
             ),
           ),
         ],

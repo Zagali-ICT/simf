@@ -55,3 +55,39 @@ class LiveRepository {
 final liveRepositoryProvider = Provider<LiveRepository>((ref) {
   return LiveRepository(ref.watch(simfApiClientProvider));
 });
+
+/// One live session, or **null when the server has no such id** (a 404).
+///
+/// The fold-to-null shape: the screen answers a missing session with its own
+/// not-found copy rather than the error surface.
+///
+/// Only ever watched behind the login gate and the has-an-id check — a guest
+/// sees the need-login prompt and the id-less global feed never reads a
+/// session, so neither path may start this request.
+final liveSessionProvider =
+    FutureProvider.autoDispose.family<LiveSession?, String>((ref, id) async {
+  try {
+    return await ref.watch(liveRepositoryProvider).getLiveSession(id);
+  } on ApiFailure catch (failure) {
+    if (failure.httpStatus == 404) {
+      return null;
+    }
+    rethrow;
+  }
+});
+
+/// D-433 — the "الجلسات القادمة" strip.
+///
+/// Optional chrome, so a failure yields an EMPTY list rather than an error:
+/// a list failure must not break the live screen, which is exactly what the
+/// old non-blocking second read said by swallowing its own `ApiFailure`.
+final upcomingSessionsProvider = FutureProvider.autoDispose
+    .family<List<UpcomingSession>, String?>((ref, excludeId) async {
+  try {
+    return await ref
+        .watch(liveRepositoryProvider)
+        .getUpcomingSessions(excludeSessionId: excludeId);
+  } on ApiFailure {
+    return const <UpcomingSession>[];
+  }
+});

@@ -9,31 +9,25 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/core/errors/api_error_l10n.dart';
-import 'package:simf_app/core/responsive/max_width_body.dart';
 import 'package:simf_app/core/validation/field_limits.dart';
 import 'package:simf_app/core/validation/password_validation.dart';
 import 'package:simf_app/core/validation/required_validation.dart';
-import 'package:simf_app/features/account/widgets/account_sub_header.dart';
+import 'package:simf_app/features/account/widgets/auth_bottom_bar.dart';
 import 'package:simf_app/features/account/widgets/auth_chrome.dart';
+import 'package:simf_app/features/account/widgets/auth_screen_scaffold.dart';
+import 'package:simf_app/features/account/widgets/auth_scroll_body.dart';
 import 'package:simf_app/features/account/widgets/navi_form_field.dart';
 import 'package:simf_app/features/account/widgets/navy_password_toggle.dart';
 import 'package:simf_app/features/account/widgets/otp_code_boxes.dart';
+import 'package:simf_app/features/account/widgets/password_requirement_errors.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// Page 003 — Reset password (Logic L-6). No dedicated Figma frame exists for
-/// this step, so it is built to match its navy sibling — the forgot-password
-/// screen (node 918:2341, D-656): the navy surface, the [AccountSubHeader], the
-/// gold-ringed lock mark, an instruction body, the emailed OTP + the new
-/// password + its confirmation, and the gold CTA pinned at the bottom (D-658).
-/// Collects the emailed OTP + a new password, calls `POST /app/auth/reset-
-/// password`, then returns to sign-in with the email pre-filled. The email is
-/// carried in from the forgot screen.
-///
-/// Route: `RouteNames.resetPassword`.
-/// Data: [authControllerProvider], [authRepositoryProvider],
-///       [simfPrefsStorageProvider].
-/// Perf: no list — a single-screen layout.
+/// Reset password — route: RouteNames.resetPassword · Figma: no frame of its
+/// own; built to match its navy sibling forgot-password (918:2341, D-656/658).
+/// Contract: Logic L-6 — the emailed OTP + a new password against POST
+/// /app/auth/reset-password, then back to sign-in with the email pre-filled.
+/// The address is carried in from the forgot screen.
 class ResetPasswordScreen extends ConsumerStatefulWidget {
   const ResetPasswordScreen({required this.email, super.key});
 
@@ -74,44 +68,6 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
       _passwordTouched = true;
       _passwordUnmet = unmetPasswordRequirements(value);
     });
-  }
-
-  Widget _buildPasswordErrors(AppL10n l10n) {
-    if (!_passwordTouched || _passwordUnmet.isEmpty) {
-      return const SizedBox.shrink();
-    }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        const SizedBox(height: SimfTokens.space2),
-        for (final PasswordRequirement req in _passwordUnmet)
-          Padding(
-            padding: const EdgeInsets.only(top: 2),
-            child: Text(
-              _passwordRequirementMessage(req, l10n),
-              style: SimfTokens.labelDangerSm,
-            ),
-          ),
-      ],
-    );
-  }
-
-  String _passwordRequirementMessage(
-    PasswordRequirement req,
-    AppL10n l10n,
-  ) {
-    switch (req) {
-      case PasswordRequirement.length:
-        return l10n.passwordLength;
-      case PasswordRequirement.uppercase:
-        return l10n.passwordUppercase;
-      case PasswordRequirement.lowercase:
-        return l10n.passwordLowercase;
-      case PasswordRequirement.digit:
-        return l10n.passwordDigit;
-      case PasswordRequirement.special:
-        return l10n.passwordSpecial;
-    }
   }
 
   Future<void> _submit() async {
@@ -180,121 +136,98 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    return Scaffold(
-      backgroundColor: SimfTokens.navySurface,
-      body: SafeArea(
-        child: Column(
-          children: <Widget>[
-            AccountSubHeader(
-              title: l10n.resetPasswordTitle,
-              onBack: _back,
-              busy: _busy,
-            ),
-            Expanded(child: _buildBody(l10n)),
-            _buildBottomActions(l10n),
-            const SizedBox(height: SimfTokens.space6),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBody(AppL10n l10n) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
-      child: MaxWidthBody(
+    return AuthScreenScaffold(
+      title: l10n.resetPasswordTitle,
+      onBack: _back,
+      busy: _busy,
+      body: AuthScrollBody(
         maxWidth: SimfTokens.resetPasswordScreenMaxWidth,
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              const SizedBox(height: SimfTokens.resetPasswordScreenHeight),
-              const Center(child: OtpMark(icon: Icons.lock_outline)),
-              const SizedBox(height: SimfTokens.space6),
-              Text(
-                l10n.resetPasswordSent,
-                textAlign: TextAlign.center,
-                style: SimfTokens.bodyBeige,
-              ),
-              const SizedBox(height: SimfTokens.space8),
-              NaviFormField(
-                label: l10n.otpLabel,
-                controller: _code,
-                enabled: !_busy,
-                keyboardType: TextInputType.number,
-                textDirection: TextDirection.ltr,
-                maxLength: FieldLimits.otpCode,
-                inputFormatters: <TextInputFormatter>[
-                  FilteringTextInputFormatter.digitsOnly,
-                ],
-                // No dedicated "6-digit code" key; reuse requiredField for the
-                // empty + wrong-length case (reported to owner).
-                validator: (value) =>
-                    isBlank(value) || value!.trim().length != 6
-                        ? l10n.requiredField
-                        : null,
-                onChanged: (_) => setState(() {}),
-              ),
-              const SizedBox(height: SimfTokens.space4),
-              NaviFormField(
-                label: l10n.newPasswordLabel,
-                controller: _password,
-                enabled: !_busy,
-                obscureText: _obscure,
-                maxLength: FieldLimits.password,
-                suffixIcon: NavyPasswordToggle(
-                  obscure: _obscure,
-                  onToggle: () => setState(() => _obscure = !_obscure),
-                ),
-                validator: (value) =>
-                    isBlank(value) ? l10n.requiredField : null,
-                onChanged: _onPasswordChanged,
-              ),
-              _buildPasswordErrors(l10n),
-              const SizedBox(height: SimfTokens.space4),
-              NaviFormField(
-                label: l10n.confirmPasswordLabel,
-                controller: _confirm,
-                enabled: !_busy,
-                obscureText: _obscure,
-                maxLength: FieldLimits.password,
-                // Must equal the new password typed above.
-                validator: (value) =>
-                    value == _password.text ? null : l10n.passwordsDoNotMatch,
-                onChanged: (_) => setState(() {}),
-                onFieldSubmitted: (_) {
-                  if (_canSubmit) {
-                    unawaited(_submit());
-                  }
-                },
-              ),
-              if (_error != null) ...<Widget>[
-                const SizedBox(height: SimfTokens.space3),
-                Text(
-                  _error!,
-                  style: SimfTokens.labelDangerSm,
-                ),
-              ],
-              const SizedBox(height: SimfTokens.space6),
+        formKey: _formKey,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          const SizedBox(height: SimfTokens.resetPasswordScreenHeight),
+          const Center(child: OtpMark(icon: Icons.lock_outline)),
+          const SizedBox(height: SimfTokens.space6),
+          Text(
+            l10n.resetPasswordSent,
+            textAlign: TextAlign.center,
+            style: SimfTokens.bodyBeige,
+          ),
+          const SizedBox(height: SimfTokens.space8),
+          NaviFormField(
+            label: l10n.otpLabel,
+            controller: _code,
+            enabled: !_busy,
+            keyboardType: TextInputType.number,
+            textDirection: TextDirection.ltr,
+            maxLength: FieldLimits.otpCode,
+            inputFormatters: <TextInputFormatter>[
+              FilteringTextInputFormatter.digitsOnly,
             ],
+            // No dedicated "6-digit code" key; reuse requiredField for the
+            // empty + wrong-length case (reported to owner).
+            validator: (value) => isBlank(value) || value!.trim().length != 6
+                ? l10n.requiredField
+                : null,
+            onChanged: (_) => setState(() {}),
+          ),
+          const SizedBox(height: SimfTokens.space4),
+          NaviFormField(
+            label: l10n.newPasswordLabel,
+            controller: _password,
+            enabled: !_busy,
+            obscureText: _obscure,
+            maxLength: FieldLimits.password,
+            suffixIcon: NavyPasswordToggle(
+              obscure: _obscure,
+              onToggle: () => setState(() => _obscure = !_obscure),
+            ),
+            validator: (value) => isBlank(value) ? l10n.requiredField : null,
+            onChanged: _onPasswordChanged,
+          ),
+          PasswordRequirementErrors(
+            unmet: _passwordTouched
+                ? _passwordUnmet
+                : const <PasswordRequirement>[],
+          ),
+          const SizedBox(height: SimfTokens.space4),
+          NaviFormField(
+            label: l10n.confirmPasswordLabel,
+            controller: _confirm,
+            enabled: !_busy,
+            obscureText: _obscure,
+            maxLength: FieldLimits.password,
+            // Must equal the new password typed above.
+            validator: (value) =>
+                value == _password.text ? null : l10n.passwordsDoNotMatch,
+            onChanged: (_) => setState(() {}),
+            onFieldSubmitted: (_) {
+              if (_canSubmit) {
+                unawaited(_submit());
+              }
+            },
+          ),
+          if (_error != null) ...<Widget>[
+            const SizedBox(height: SimfTokens.space3),
+            Text(
+              _error!,
+              style: SimfTokens.labelDangerSm,
+            ),
+          ],
+          const SizedBox(height: SimfTokens.space6),
+        ],
+      ),
+      bottom: <Widget>[
+        AuthBottomBar(
+          maxWidth: SimfTokens.resetPasswordScreenMaxWidth,
+          child: AuthSubmitButton(
+            label: l10n.resetPasswordButton,
+            busy: _busy,
+            onPressed: _canSubmit ? () => unawaited(_submit()) : null,
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildBottomActions(AppL10n l10n) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
-      child: MaxWidthBody(
-        maxWidth: SimfTokens.resetPasswordScreenMaxWidth,
-        child: AuthSubmitButton(
-          label: l10n.resetPasswordButton,
-          busy: _busy,
-          onPressed: _canSubmit ? () => unawaited(_submit()) : null,
-        ),
-      ),
+        const SizedBox(height: SimfTokens.space6),
+      ],
     );
   }
 }

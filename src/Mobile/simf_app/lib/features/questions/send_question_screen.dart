@@ -24,37 +24,10 @@ enum QuestionRecipient {
   int get wireIndex => index;
 }
 
-/// Page 026 — معلومات عن الجلسة · Session information + ask a question (#26,
-/// `/live/question`), rebuilt to the KSA-Project Figma frame **934:3636** on
-/// the shared shell.
-///
-/// **Auth-gated** (route 26 is in `_authenticatedRoutes`). Reached from a live
-/// session with the session id in the query string. With no id it shows an
-/// "open from a live session" empty state; with an id it shows the frame: the
-/// **"بيانات الجلسة"** session-data block (the session description rendered as
-/// a numbered list, frame `1049:12590`) over the **"الاسئلة"** composer — a
-/// tinted borderless multiline question box (frame `934:3668`, max 500), the
-/// gold full-width submit, and the centred gold-bulleted "reviewed before air"
-/// note (frame `943:3750`).
-///
-/// The session-data block reads the **anonymous** detail (`GET
-/// /app/programme/sessions/{id}` — the same shipped endpoint the session detail
-/// / live screens use, no new API). It is **non-blocking context**: a fetch
-/// failure just hides the block and the composer still works.
-///
-/// B7 — the composer carries the D-174 **"إلى من؟"** recipient choice (المتحدث
-/// / المضيف). It was hardcoded to Speaker, so `recipient` was always 0 and the
-/// Host half of `SessionQuestionRecipient` — which the moderator and committee
-/// queues both project — could never be produced; Speaker stays the default so
-/// a user who never taps behaves exactly as before (`POST
-/// /app/sessions/{id}/questions`, `RequireApprovedAccount`, D-169/D-174). A 400
-/// (`SESSION_NOT_LIVE_FOR_QUESTIONS`) / 404 maps to the "questions are closed"
-/// toast; any other failure to a generic error toast.
-///
-/// Route: `RouteNames.sendQuestion`.
-/// Data: [questionsRepositoryProvider], [sessionDetailRepositoryProvider].
-/// Perf: ListView builds every child up front — correct for a short static
-///       page, a defect on a data feed.
+/// Send question — route: RouteNames.sendQuestion · Figma 934:3636
+/// Contract: POST /app/sessions/{id}/questions, RequireApprovedAccount
+/// (D-169/D-174). A 400 `SESSION_NOT_LIVE_FOR_QUESTIONS` / 404 maps to the
+/// "questions are closed" toast; anything else to a generic error toast.
 class SendQuestionScreen extends ConsumerStatefulWidget {
   const SendQuestionScreen({this.sessionId, super.key});
 

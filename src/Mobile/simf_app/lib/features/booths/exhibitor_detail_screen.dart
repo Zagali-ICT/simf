@@ -17,15 +17,7 @@ import 'package:simf_app/features/exhibition/widgets/entity_logo_image.dart';
 import 'package:simf_app/features/venuemap/data/venue_map_models.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// **Exhibitor detail** — App "العارض" (Figma 1439:11881, Guest+), opened by
-/// tapping a booth in the exhibition list. The shared
-/// [EntityDetailScaffold]: the exhibitor's logo + name, the city·country line,
-/// the tier pill, the stand-code→map row, the "نبذة عن العارض" about, and the
-/// website row. Reads `GET /app/booths/{id}` (the detail extended in Wave 3).
-///
-/// Route: `RouteNames.exhibitorDetail`.
-/// Data: [exhibitorDetailProvider], [simfDataConfigProvider].
-/// Perf: no list — a single-screen layout.
+/// Exhibitor detail — route: `RouteNames.exhibitorDetail` · Figma 1439:11881
 class ExhibitorDetailScreen extends ConsumerWidget {
   const ExhibitorDetailScreen({required this.boothId, super.key});
 

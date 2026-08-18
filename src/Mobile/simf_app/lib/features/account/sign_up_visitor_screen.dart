@@ -42,31 +42,13 @@ import 'package:simf_app/features/visitor_profile/widgets/identity_section.dart'
 import 'package:simf_app/features/visitor_profile/widgets/nationality_section.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// Page 007 — إنشاء ملف شخصى · Sign up — profile **data**. The KSA-Project
-/// Figma design (node 168:2972 — D-368): the login-style navy header (logo +
-/// forum name, back chevron + the wired globe language toggle) over the beige
-/// card holding the whole form — login-style bordered fields, the beige
-/// segmented tabs (visitor/other + document type), gender radio pills, the
-/// attach box, the underlined terms link and the gold التالي. The previous
-/// screen is parked in `_legacy_mockup/`.
-///
-/// Contract unchanged (D-332): loads the existing profile + the three lookups
-/// concurrently; the visitor/other tab is a client-only `?isVisitor=` filter
-/// over the ProfileType picker; **Next** carries the collected data (+ the
-/// optional ID image) forward as a [SignUpProfileDraft] to the interests
-/// screen, which fires the single profile save. **No API write happens here.**
-/// Design deltas (recorded in D-368): the frame's "رقم اللوحة (اختياري)" has
-/// no backend field and is NOT rendered; date of birth, place of birth and
-/// the Saudi national-ID path are kept (API-required) in the same styling
-/// even though the frame omits them.
-///
-/// Clean-code pass — D-546 (2026-06-30). Decomposed to the per-page DoD
-/// (golden `sign_up_visitor_168-2972.png`); see
-/// `docs/pages/mobile/sign-up-visitor/README.md`.
-///
-/// Route: `RouteNames.signUpVisitor`.
-/// Data: [avatarBustProvider], [profileRepositoryProvider], [regionsProvider].
-/// Perf: no list — a single-screen layout.
+/// Sign up — profile data · إنشاء ملف شخصى · route: RouteNames.signUpVisitor ·
+/// Figma 168:2972 (D-368; design deltas recorded there)
+/// Contract: D-332 — NO API write happens here. The screen loads the existing
+/// profile + the three lookups concurrently, and Next carries the collected
+/// data (+ the optional ID image) forward as a [SignUpProfileDraft] to the
+/// interests screen, which fires the single profile save. The visitor/other tab
+/// is a client-only `?isVisitor=` filter over the ProfileType picker.
 class SignUpVisitorScreen extends ConsumerStatefulWidget {
   const SignUpVisitorScreen({super.key});
 

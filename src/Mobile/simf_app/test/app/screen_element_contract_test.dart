@@ -10,7 +10,7 @@ import 'package:simf_app/features/accessibility/data/accessibility_controller.da
 import 'package:simf_app/features/contacts/data/contact_models.dart';
 import 'package:simf_app/features/contacts/data/contacts_repository.dart';
 import 'package:simf_app/features/notifications/data/notifications_repository.dart';
-import 'package:simf_app/features/splash/splash_controller.dart';
+import 'package:simf_app/features/splash/data/splash_controller.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 

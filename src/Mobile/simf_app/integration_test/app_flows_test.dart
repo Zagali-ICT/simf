@@ -19,7 +19,7 @@ import 'package:simf_app/features/guest/guest_mode_screen.dart';
 import 'package:simf_app/features/home/home_screen.dart';
 import 'package:simf_app/features/myarea/identity_verification_screen.dart';
 import 'package:simf_app/features/notifications/data/notifications_repository.dart';
-import 'package:simf_app/features/splash/splash_controller.dart';
+import 'package:simf_app/features/splash/data/splash_controller.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 

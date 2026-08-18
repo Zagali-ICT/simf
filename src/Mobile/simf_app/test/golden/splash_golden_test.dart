@@ -8,7 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/app_theme.dart';
 import 'package:simf_app/core/organization_profile/organization_profile.dart';
-import 'package:simf_app/features/splash/splash_controller.dart';
+import 'package:simf_app/features/splash/data/splash_controller.dart';
 import 'package:simf_app/features/splash/splash_screen.dart';
 
 import 'golden_fonts.dart';

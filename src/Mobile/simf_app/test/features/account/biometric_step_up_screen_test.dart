@@ -9,7 +9,7 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/features/account/biometric_auth.dart';
 import 'package:simf_app/features/account/biometric_step_up_screen.dart';
-import 'package:simf_app/features/account/device_label.dart';
+import 'package:simf_app/features/account/data/device_label.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 

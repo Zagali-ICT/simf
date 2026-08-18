@@ -7,21 +7,14 @@ import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/core/site_settings/site_settings.dart';
 import 'package:simf_app/features/registration/widgets/registration_success_body.dart';
 import 'package:simf_app/features/registration/widgets/registration_success_header.dart';
+import 'package:simf_app/features/registration/widgets/registration_success_sweep.dart';
 
-/// Page 010 — تم التسجيل · Registration success. The KSA-Project Figma design
-/// (node 505:1451 — D-366): green-ringed check, the success headline + the
-/// review copy, the reference-number card, the gold حالة التسجيل and outlined
-/// الانتقال للرئيسية actions, and the visual-only تواصل معنا tiles.
-///
+/// Registration success — route: RouteNames.registrationSuccess · Figma
+/// 505:1451
 /// Contract: terminal confirmation of sign-up, offline-safe, reached as a
-/// replacement. Primary action → Page_011 status; secondary → home.
-/// D-373: the reference card renders the real DB-issued registration reference
-/// carried from the save ([referenceNumber]); the literal mask remains only as
-/// the no-data fallback so the page stays offline-safe.
-///
-/// Route: `RouteNames.registrationSuccess`.
-/// Data: [siteSettingsProvider].
-/// Perf: no list — a single-screen layout.
+/// replacement (D-366). D-373 — the reference card renders the real DB-issued
+/// registration reference carried from the save ([referenceNumber]); the
+/// literal mask remains only as the no-data fallback.
 class RegistrationSuccessScreen extends ConsumerWidget {
   const RegistrationSuccessScreen({super.key, this.referenceNumber});
 
@@ -56,22 +49,7 @@ class RegistrationSuccessScreen extends ConsumerWidget {
       backgroundColor: SimfTokens.navySurface,
       body: Stack(
         children: <Widget>[
-          // Decorative diagonal sweep (Figma 505:1453, top-right area).
-          Positioned(
-            top: -180,
-            right: -40,
-            child: Transform.rotate(
-              angle: 0.4936, // 28.28°
-              child: Container(
-                width: SimfTokens.sweepBlockWidth,
-                height: SimfTokens.sweepBlockHeight,
-                decoration: BoxDecoration(
-                  color: SimfTokens.surfaceTint,
-                  borderRadius: BorderRadius.circular(SimfTokens.radiusSheet),
-                ),
-              ),
-            ),
-          ),
+          const RegistrationSuccessSweep(),
           SafeArea(
             child: Column(
               children: <Widget>[

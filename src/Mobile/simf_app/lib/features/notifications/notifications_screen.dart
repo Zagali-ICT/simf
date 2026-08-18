@@ -11,19 +11,10 @@ import 'package:simf_app/app/widgets/simf_search_field.dart';
 import 'package:simf_app/core/utils/refresh.dart';
 import 'package:simf_app/features/notifications/data/notification_models.dart';
 import 'package:simf_app/features/notifications/data/notifications_repository.dart';
-import 'package:simf_app/features/notifications/widgets/notification_filter_chip.dart';
+import 'package:simf_app/features/notifications/notification_filters.dart';
 import 'package:simf_app/features/notifications/widgets/notification_grouped_list.dart';
+import 'package:simf_app/features/notifications/widgets/notifications_filter_bar.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-/// The chips filter by the server `group` code (D-678). The "جلسات" chip covers
-/// the event-flow groups; "VIP" covers the VIP group; "الكل" shows everything.
-const Set<String> _sessionsChipGroups = <String>{
-  'Sessions',
-  'Bookings',
-  'Meetings',
-  'Ratings',
-};
-const Set<String> _vipChipGroups = <String>{'Vip'};
 
 /// The only in-app locations a notification `clickUrl` may open — a guard so a
 /// stale or foreign value never pushes an unknown route (the router has no
@@ -39,65 +30,7 @@ const Set<String> _allowedClickPaths = <String>{
   '/meetings',
 };
 
-/// The group for [item]: the server `group`, or a client fallback derived from
-/// the kind for rows created before the group column existed.
-String _groupForItem(NotificationItem item) {
-  final group = item.group?.trim();
-  if (group != null && group.isNotEmpty) {
-    return group;
-  }
-  switch (item.kind) {
-    case 'BookingConfirmed':
-    case 'BookingRejected':
-      return 'Bookings';
-    case 'SessionReminder':
-      return 'Sessions';
-    case 'MeetingScheduled':
-    case 'MeetingCancelled':
-    // Bi-Meeting rework — the other-party confirm request + the 15-min
-    // reminder.
-    case 'MeetingRequested':
-    case 'MeetingReminder':
-      return 'Meetings';
-    case 'InvitationReceived':
-    case 'VipBroadcast':
-      return 'Vip';
-    case 'SessionRatingRequest':
-    case 'DayRatingRequest':
-    case 'EventRatingRequest':
-    case 'AppRatingRequest':
-    case 'ExhibitionRatingRequest':
-      return 'Ratings';
-    default:
-      return 'Account';
-  }
-}
-
-enum _NotifFilter { all, sessions, vip }
-
-/// Page 033 — الإشعارات · Notifications (#33, `/notifications`), rebuilt to the
-/// KSA frame **223:4264** on the shared shell.
-///
-/// **Approved-account only** (`RequireApprovedAccount`). One read returns the
-/// first page (`POST …/notifications/list`); the screen renders a search box,
-/// the **الكل / جلسات / VIP** filter chips (mapped to the notification kinds),
-/// the list grouped by **اليوم / أمس / date**, and a per-severity category icon
-/// with an unread dot. Tapping an unread row marks it read then refreshes; the
-/// trailing "mark all read" action clears every unread.
-///
-/// Route: `RouteNames.notifications`.
-/// Data: [notificationsListProvider], [notificationsRepositoryProvider].
-/// Perf: no list — a single-screen layout.
-/// The inbox (`GET /app/notifications`).
-///
-/// Load only. The read-state flips this screen makes are NOT pushed back into
-/// the provider - see `_readLocally` on the state, which is what preserves the
-/// no-reload behaviour a provider cannot express by mutation.
-final notificationsListProvider =
-    FutureProvider.autoDispose<List<NotificationItem>>(
-  (ref) => ref.watch(notificationsRepositoryProvider).getNotifications(),
-);
-
+/// Notifications — route: `RouteNames.notifications` · Figma 223:4264
 class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});
 
@@ -109,7 +42,7 @@ class NotificationsScreen extends ConsumerStatefulWidget {
 class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   bool _markingAll = false;
   String _query = '';
-  _NotifFilter _filter = _NotifFilter.all;
+  NotificationFilter _filter = NotificationFilter.all;
 
   /// Ids this screen has SUCCESSFULLY told the server are read.
   ///
@@ -164,7 +97,6 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     // the best-effort mark-read below leaves this screen unmounted (the prior
     // `if (!mounted) return` after the await skipped the deep-link).
     _maybeDeepLink(item);
-    // Mark unread items read (best effort).
     if (!item.isRead) {
       try {
         await ref.read(notificationsRepositoryProvider).markRead(item.id);
@@ -264,11 +196,11 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   ) {
     Iterable<NotificationItem> it = items;
     switch (_filter) {
-      case _NotifFilter.sessions:
-        it = it.where((n) => _sessionsChipGroups.contains(_groupForItem(n)));
-      case _NotifFilter.vip:
-        it = it.where((n) => _vipChipGroups.contains(_groupForItem(n)));
-      case _NotifFilter.all:
+      case NotificationFilter.sessions:
+        it = it.where((n) => sessionsChipGroups.contains(groupForItem(n)));
+      case NotificationFilter.vip:
+        it = it.where((n) => vipChipGroups.contains(groupForItem(n)));
+      case NotificationFilter.all:
         break;
     }
     final q = _query.trim().toLowerCase();
@@ -339,36 +271,12 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
-          child: Row(
-            children: <Widget>[
-              NotificationFilterChip(
-                label: l10n.notificationsFilterAll,
-                selected: _filter == _NotifFilter.all,
-                onTap: () => setState(() => _filter = _NotifFilter.all),
-              ),
-              const SizedBox(width: SimfTokens.space2),
-              NotificationFilterChip(
-                label: l10n.notificationsFilterSessions,
-                selected: _filter == _NotifFilter.sessions,
-                onTap: () => setState(() => _filter = _NotifFilter.sessions),
-              ),
-              const SizedBox(width: SimfTokens.space2),
-              NotificationFilterChip(
-                label: l10n.notificationsFilterVip,
-                selected: _filter == _NotifFilter.vip,
-                onTap: () => setState(() => _filter = _NotifFilter.vip),
-              ),
-              const Spacer(),
-              if (hasUnread)
-                TextButton(
-                  onPressed:
-                      _markingAll ? null : () => unawaited(_onMarkAll(l10n)),
-                  child: Text(
-                    l10n.notificationsMarkAll,
-                    style: SimfTokens.labelGoldSm,
-                  ),
-                ),
-            ],
+          child: NotificationsFilterBar(
+            l10n: l10n,
+            filter: _filter,
+            onFilter: (filter) => setState(() => _filter = filter),
+            showMarkAll: hasUnread,
+            onMarkAll: _markingAll ? null : () => unawaited(_onMarkAll(l10n)),
           ),
         ),
         const SizedBox(height: SimfTokens.space2),

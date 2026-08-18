@@ -22,57 +22,10 @@ import 'package:simf_app/features/myarea/widgets/my_area_more_row.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// Page 014 — منطقتي · My Area (#14, `/my-area`), rebuilt to the KSA Wave-2
-/// frame **213:963** (owner re-pick, D-396; the earlier build used 512:1780)
-/// on the shared shell.
-///
-/// Behaviour contract unchanged from the mockup build: an **Approved** user
-/// loads `GET /app/account/dashboard`; a signed-in pending/rejected user gets
-/// the limited cached-identity view without calling it (Approved-only, would
-/// 403 — Page_014 L-5).
-///
-/// Frame mapping (213:963): identity card (avatar 64 + name + tier·enrolled
-/// line + gold #qrId + the bordered مشاركة contact button), the two share
-/// actions (**مشاركة ملفي** and **مشاركة جهة اتصال**) which both open the
-/// in-app share-my-contact QR screen (#21 — مشاركة جهة اتصال was a native
-/// `.vcf` share sheet), the **الإحصائيات** section (two stat tiles —
-/// جلسات محفوظة = booked sessions; the second keeps the real مقابلات مؤكدة
-/// count since الأرشيف has no API counter, D-396), جدولي اليوم rows, then the
-/// المزيد rows (بطاقتي الذكية، اعدادات الحساب). The language toggle, the
-/// (inert) theme tile, the calendar export and sign-out moved to the shell's
-/// side drawer (D-396).
-///
-/// Route: `RouteNames.myArea`.
-/// Data: [authControllerProvider], [avatarBustProvider],
-///       [myAreaDashboardProvider], [myAreaRepositoryProvider],
-///       [referenceNumberProvider].
-/// Perf: ListView builds every child up front — correct for a short static
-///       page, a defect on a data feed.
-/// The My-Area dashboard, or **null when the account is not Approved**.
-///
-/// A FOURTH shape: the approval gate lives in the provider. The endpoint is
-/// Approved-only, so a pending or rejected account must not call it at all
-/// (L-5) — `initState` used to make that decision and skip the load. Null is
-/// therefore "render the limited card from cache", and the 403 that a status
-/// drifting mid-session produces maps to the same null rather than to an
-/// error, exactly as before. Any other failure propagates to the retry surface.
-final myAreaDashboardProvider =
-    FutureProvider.autoDispose<MyAreaDashboard?>((ref) async {
-  final auth = ref.watch(authControllerProvider);
-  final user = auth is AuthStateSignedIn ? auth.session.user : null;
-  if (user == null || !user.isApproved) {
-    return null;
-  }
-  try {
-    return await ref.watch(myAreaRepositoryProvider).getDashboard();
-  } on ApiFailure catch (failure) {
-    if (failure.httpStatus == 403) {
-      return null;
-    }
-    rethrow;
-  }
-});
-
+/// My Area — منطقتي · route: `RouteNames.myArea` · Figma 213:963
+/// Contract: an Approved user loads `GET /app/account/dashboard`; a
+/// pending/rejected account must NOT call it (403) and gets the limited
+/// cached-identity view instead (Page_014 L-5, D-396).
 class MyAreaScreen extends ConsumerStatefulWidget {
   const MyAreaScreen({super.key});
 

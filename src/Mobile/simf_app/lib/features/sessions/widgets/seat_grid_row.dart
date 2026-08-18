@@ -8,9 +8,10 @@ import 'package:simf_app/features/sessions/data/seat_map_models.dart';
 /// state they share.
 ///
 /// These four move together because they are one idea: SeatStatus is the
-/// vocabulary, tierBandColor and the two members of SeatGridRow speak it,
-/// and SeatBox renders it. Splitting them would mean making the enum
-/// public to no other reader.
+/// vocabulary, _tierBandColor and the two members of SeatGridRow speak it,
+/// and SeatBox renders it. They share a file for that reason. SeatStatus and
+/// SeatBox stay public because SIMF-C3 forbids a private widget class and
+/// SeatStatus is the type of one of SeatBox's public fields.
 class SeatGridRow extends StatelessWidget {
   const SeatGridRow({
     required this.rowLabel,
@@ -31,7 +32,6 @@ class SeatGridRow extends StatelessWidget {
   });
 
   final String rowLabel;
-  // This row's own count — how many seats it actually draws.
   final int seatCount;
   // D-771 — the row's seat tier, drawn as a start-edge band + a row-label
   // caption.
@@ -137,7 +137,7 @@ class SeatGridRow extends StatelessWidget {
         Container(
           width: SimfTokens.hairlineBold,
           height: seatSize,
-          color: tierBandColor(tier),
+          color: _tierBandColor(tier),
         ),
         const SizedBox(width: SimfTokens.space2),
         SizedBox(
@@ -161,7 +161,7 @@ class SeatGridRow extends StatelessWidget {
 /// D-771 — the tier band colour. Deep red = VVIP protocol, deep teal = VIP, the
 /// card fill (invisible) = Normal, matching the CP seat plan and the seeded
 /// VVIP / VIP badge colours.
-Color tierBandColor(SeatTier tier) => switch (tier) {
+Color _tierBandColor(SeatTier tier) => switch (tier) {
       SeatTier.vvip => SimfTokens.seatTierVvip,
       SeatTier.vip => SimfTokens.seatTierVip,
       SeatTier.normal => SimfTokens.transparent,
@@ -176,8 +176,8 @@ class SeatBox extends StatelessWidget {
     required this.seatNumber,
     required this.availableBorderColor,
     required this.semanticsLabel,
-    super.key,
     this.onTap,
+    super.key,
   });
 
   final SeatStatus status;

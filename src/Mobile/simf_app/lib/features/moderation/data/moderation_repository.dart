@@ -108,3 +108,34 @@ final myModeratedSessionsProvider =
     FutureProvider.autoDispose<List<ModeratedSession>>((ref) {
   return ref.watch(moderationRepositoryProvider).getMySessions();
 });
+
+/// An `AsyncNotifier`, not a `FutureProvider`, because this desk is EDITED.
+///
+/// Every action is optimistic with rollback — approve, reject, restore,
+/// answered and reorder all swap the rows first and undo the swap if the write
+/// fails. A `FutureProvider` cannot be written to, and re-fetching after each
+/// action would defeat the point of the optimism. [apply] is the seam: it
+/// publishes a new value without a request, which is exactly what `setState`
+/// used to do on the two lists.
+class ModeratorQueuesNotifier
+    extends AutoDisposeFamilyAsyncNotifier<ModeratorQueues, String> {
+  @override
+  Future<ModeratorQueues> build(String sessionId) async {
+    final repo = ref.watch(moderationRepositoryProvider);
+    final desk = await repo.getQueue(sessionId);
+    final rejected = await repo.getQueue(
+      sessionId,
+      status: ModeratorQuestionStatus.hidden,
+    );
+    return ModeratorQueues(desk: desk, rejected: rejected);
+  }
+
+  /// Publishes an optimistic edit (or a rollback) without a fetch.
+  void apply(ModeratorQueues next) =>
+      state = AsyncValue<ModeratorQueues>.data(next);
+}
+
+final moderatorQueuesProvider = AsyncNotifierProvider.autoDispose
+    .family<ModeratorQueuesNotifier, ModeratorQueues, String>(
+  ModeratorQueuesNotifier.new,
+);

@@ -8,7 +8,9 @@ environment:
   flutter: ">=3.27.0"
 
 dependencies:
-  dio: ^5.7.0
+  # 5.10 is the floor, not a preference: simf_api_client.dart matches on
+  # DioExceptionType.transformTimeout, which does not exist before it.
+  dio: ^5.10.0
   flutter:
     sdk: flutter
   flutter_riverpod: ^2.6.1

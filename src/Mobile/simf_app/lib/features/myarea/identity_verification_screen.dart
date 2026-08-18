@@ -21,23 +21,13 @@ import 'package:simf_app/features/myarea/widgets/identity_preview_view.dart';
 // screen file keep resolving them.
 export 'data/liveness.dart';
 
-/// التحقق من الهوية — the guided face-capture / liveness screen (D-404, frames
-/// 758:4180 → 758:4248 → 758:4316). A full-bleed navy screen with a live
-/// front-camera preview and a prompt per step (ابتسم → أدر رأسك يمينًا → أدر
-/// رأسك يسارًا). The user must actually smile, then turn right, then turn left;
-/// the forward/smile frame is captured and returned as the new avatar selfie.
-///
-/// **Camera security rules (owner 2026-07-06, D-662):** the capture MUST verify
-/// a live human via the liveness challenge and MUST use only a live camera
-/// image — there is no gallery / manual-shutter path, so a static "studio"
-/// photo can never be submitted. Where the live camera or the ML Kit face
-/// detector is unavailable (web / test / no camera / permission denied / a
-/// device without Google Play Services) the screen shows a "camera required"
-/// message with a retry — never a gallery fallback.
-///
-/// Route: `RouteNames.identityVerification`.
-/// Data: none — renders what it is given.
-/// Perf: no list — a single-screen layout.
+/// Identity verification — التحقق من الهوية (D-404) ·
+/// route: `RouteNames.identityVerification` · Figma 758:4180 / 4248 / 4316
+/// Contract (owner 2026-07-06, D-662): capture MUST verify a live human via
+/// the liveness challenge and MUST use only a live camera image — there is no
+/// gallery / manual-shutter path, so a static "studio" photo can never be
+/// submitted. Where the camera or ML Kit is unavailable the screen shows a
+/// "camera required" retry, never a gallery fallback.
 class IdentityVerificationScreen extends StatefulWidget {
   const IdentityVerificationScreen({this.showConfirmation = false, super.key});
 

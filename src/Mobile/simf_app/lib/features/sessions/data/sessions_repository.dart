@@ -48,6 +48,14 @@ final programmeSessionsProvider =
   (ref) => ref.watch(sessionsRepositoryProvider).getSessions(),
 );
 
+/// The programme days (`GET /app/programme/days`).
+///
+/// Load only — the day tab, the type filter and the search box are UI state
+/// and stay on the widget, as on `speakers` and `booths`.
+final programmeDaysProvider = FutureProvider.autoDispose<List<ProgrammeDay>>(
+  (ref) => ref.watch(sessionsRepositoryProvider).getDays(),
+);
+
 /// The active programme keyed by session id, derived once per programme change
 /// rather than per rebuild.
 ///

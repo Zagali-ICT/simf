@@ -12,75 +12,12 @@ import 'package:simf_app/features/moderation/widgets/moderator_desk.dart';
 import 'package:simf_app/features/moderation/widgets/moderator_header.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// Moderator (محاور) per-session Q&A desk — Figma 1461:12227 (D-405 / D-509).
-///
-/// Lists the question queue for `sessionId` with the five filter chips (الكل /
-/// جديد / الأسئلة المقبولة / تمت الإجابة / مرفوض) and the three per-question
-/// actions: **مرفوض** (reject → `hide`, the moderator's tool for an invalid /
-/// not-in-hall question — owner directive), **يتم الإجابة** (push on stage),
-/// and **تمت الإجابة** (mark answered).
-///
-/// DEF-MOD-001 / DEF-MOD-002 — every chip is backed by the PERSISTED
-/// `QuestionStatus`: the desk reads the working queue (Approved + Answered)
-/// and, separately, its own rejected (Hidden) rows. Marking answered and
-/// rejecting both hit real endpoints, so nothing is lost when the moderator
-/// leaves the screen, the app restarts, or a co-moderator opens the same desk
-/// on another device — and a mis-clicked reject can be restored from the مرفوض
-/// tab. Each action updates the row optimistically and rolls back if the call
-/// fails.
-///
-/// Authority is the per-session `SessionModerator` grant (or Administrator),
-/// **not** the mobile `AppRole.moderator` — a moderator without the grant gets
-/// a 403, shown as the "not a moderator for this session" state.
-///
-/// Route: `RouteNames.sessionModerate`.
-/// Data: [moderationRepositoryProvider], [moderatorQueuesProvider].
-/// Perf: lazy — builds children on demand (ListView.builder).
-/// The moderator's two server-owned buckets: the working desk (Approved +
-/// Answered) and the rejected (Hidden) rows.
-@immutable
-class ModeratorQueues {
-  const ModeratorQueues({required this.desk, required this.rejected});
-
-  const ModeratorQueues.empty()
-      : desk = const <ModeratorQuestion>[],
-        rejected = const <ModeratorQuestion>[];
-
-  final List<ModeratorQuestion> desk;
-  final List<ModeratorQuestion> rejected;
-}
-
-/// An `AsyncNotifier`, not a `FutureProvider`, because this desk is EDITED.
-///
-/// Every action is optimistic with rollback — approve, reject, restore,
-/// answered and reorder all swap the rows first and undo the swap if the write
-/// fails. A `FutureProvider` cannot be written to, and re-fetching after each
-/// action would defeat the point of the optimism. [apply] is the seam: it
-/// publishes a new value without a request, which is exactly what `setState`
-/// used to do on the two lists.
-class ModeratorQueuesNotifier
-    extends AutoDisposeFamilyAsyncNotifier<ModeratorQueues, String> {
-  @override
-  Future<ModeratorQueues> build(String sessionId) async {
-    final repo = ref.watch(moderationRepositoryProvider);
-    final desk = await repo.getQueue(sessionId);
-    final rejected = await repo.getQueue(
-      sessionId,
-      status: ModeratorQuestionStatus.hidden,
-    );
-    return ModeratorQueues(desk: desk, rejected: rejected);
-  }
-
-  /// Publishes an optimistic edit (or a rollback) without a fetch.
-  void apply(ModeratorQueues next) =>
-      state = AsyncValue<ModeratorQueues>.data(next);
-}
-
-final moderatorQueuesProvider = AsyncNotifierProvider.autoDispose
-    .family<ModeratorQueuesNotifier, ModeratorQueues, String>(
-  ModeratorQueuesNotifier.new,
-);
-
+/// Moderator Q&A desk — route: RouteNames.sessionModerate · Figma 1461:12227
+/// Contract: authority is the per-session `SessionModerator` grant (or
+/// Administrator), **not** the mobile `AppRole.moderator` (D-405 / D-509); a
+/// moderator without it gets a 403. DEF-MOD-001 / DEF-MOD-002 — every chip and
+/// action is backed by the persisted `QuestionStatus`, so nothing is lost when
+/// the desk is closed and a mis-clicked reject stays recoverable.
 class SessionModerateScreen extends ConsumerStatefulWidget {
   const SessionModerateScreen({required this.sessionId, super.key});
 

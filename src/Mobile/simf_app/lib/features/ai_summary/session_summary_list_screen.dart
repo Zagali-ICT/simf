@@ -13,18 +13,7 @@ import 'package:simf_app/features/sessions/data/sessions_repository.dart'
     show programmeSessionsProvider;
 import 'package:simf_app/features/sessions/widgets/session_filter_tabs.dart';
 
-/// **Session summaries** — App "ملخص الجلسات" (Figma 1388:8392, Guest+). Every
-/// programme session in a searchable, day-grouped list with three tabs — الجميع
-/// (all), جلساتي (the caller's booked sessions), المفضلة (favourited) — and the
-/// المفضلة heart on each card. Tapping a card opens that session's AI-summary
-/// details (#34). Reuses the cached programme (`programmeSessionsProvider`);
-/// the booked set + favourites come from the approved-account reads (empty for
-/// a guest).
-///
-/// Route: `RouteNames.sessionSummaryList`.
-/// Data: [mySessionsProvider], [programmeSessionsProvider],
-///       [sessionFavouritesProvider].
-/// Perf: lazy — builds children on demand (ListView.builder).
+/// Session summaries — route: `RouteNames.sessionSummaryList` · Figma 1388:8392
 class SessionSummaryListScreen extends ConsumerStatefulWidget {
   const SessionSummaryListScreen({super.key});
 
@@ -40,7 +29,6 @@ class _SessionSummaryListScreenState
   _SummaryTab _tab = _SummaryTab.all;
   String _query = '';
 
-  /// Pull-to-refresh — re-fetch the programme (invalidate + await next).
   Future<void> _refresh() =>
       refreshAsync(ref, programmeSessionsProvider.future);
 

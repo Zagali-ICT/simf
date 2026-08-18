@@ -31,9 +31,8 @@ class ModeratorDesk extends StatelessWidget {
 
   final AppL10n l10n;
 
-  /// The two buckets, passed as plain lists rather than the screen's
-  /// `ModeratorQueues` holder: that type is declared in the screen, and taking
-  /// it here would make the screen and its widget import each other.
+  /// The two buckets, passed as plain lists rather than the `ModeratorQueues`
+  /// holder, so this widget stays independent of the desk's provider.
   final List<ModeratorQuestion> desk;
   final List<ModeratorQuestion> rejected;
 

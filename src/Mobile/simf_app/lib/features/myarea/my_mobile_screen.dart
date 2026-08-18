@@ -14,43 +14,14 @@ import 'package:simf_app/features/account/data/profile_repository.dart';
 import 'package:simf_app/features/account/widgets/account_sub_header.dart';
 import 'package:simf_app/features/account/widgets/auth_chrome.dart';
 import 'package:simf_app/features/account/widgets/mobile_field.dart';
+import 'package:simf_app/features/myarea/data/my_mobile_providers.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// My mobile number — رقم الجوال · route: `RouteNames.myMobile` Purpose: owner
-/// 2026-07-26 — let a signed-in user ADD or EDIT their phone number from their
-/// profile. **Validation only — there is deliberately no OTP and no
-/// verification step**; the number is saved as typed (normalised). Data:
-/// [ProfileRepository] — `GET /app/account/user-profile` to load, then the
-/// existing full-profile upsert `POST /app/account/user-profile` carrying every
-/// loaded field back (via [UserProfileResponse.toUpsertRequest]) with only the
-/// mobile replaced, so an edit nulls nothing. No new endpoint, no schema
-/// change: `UserProfile.SaudiMobile` / `.InternationalMobile` already exist and
-/// the server's `UpsertUserProfileRequestValidator` already checks both shapes.
-/// Figma: no bound node — reuses the shared navy account chrome, like the
-/// My-interests edit surface it sits next to in My-Area. Contract: the
-/// profile's nationality picks the field — a Saudi national edits `saudiMobile`
-/// (05XXXXXXXX / +9665XXXXXXXX), everyone else `internationalMobile` (E.164).
-/// The number itself always renders LTR.
-///
-/// Route: `RouteNames.myMobile`.
-/// Data: [myMobileProfileProvider], [profileRepositoryProvider].
-/// Perf: no list — a single-screen layout.
-/// The signed-in user's profile, for the stored mobile number.
-/// This screen's OWN profile read — deliberately not the shared
-/// `myProfileProvider` from `profile_repository.dart`.
-///
-/// The shared cache swallows an `ApiFailure` into null, which is right for the
-/// selectors that read it (Badge, My Area, the speaker profile) and wrong here:
-/// this screen shows the SERVER'S reason on a failed load, and null cannot
-/// carry one. Main's own version of this screen read the repository directly
-/// for the same reason.
-///
-/// The save still invalidates the SHARED cache as well, so the rest of the app
-/// does not serve the pre-save row.
-final myMobileProfileProvider = FutureProvider.autoDispose<UserProfileResponse>(
-  (ref) => ref.watch(profileRepositoryProvider).getMyProfile(),
-);
-
+/// My mobile number — رقم الجوال · route: `RouteNames.myMobile`
+/// Contract: validation ONLY — deliberately no OTP and no verification
+/// step; the number is saved as typed (normalised). The profile's
+/// nationality picks the field — a Saudi national edits `saudiMobile`,
+/// everyone else `internationalMobile` (E.164). Owner 2026-07-26.
 class MyMobileScreen extends ConsumerStatefulWidget {
   const MyMobileScreen({super.key});
 
@@ -61,9 +32,6 @@ class MyMobileScreen extends ConsumerStatefulWidget {
 class _MyMobileScreenState extends ConsumerState<MyMobileScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _mobile = TextEditingController();
-
-  /// The loaded profile — re-sent in full on save so a mobile-only change
-  /// nulls no other field (the upsert is the only write path).
 
   bool _saving = false;
   String? _saveError;
@@ -117,6 +85,8 @@ class _MyMobileScreenState extends ConsumerState<MyMobileScreen> {
     try {
       // Submit the canonical phone — Arabic-Indic digits folded, a leading `00`
       // rewritten to `+` — so the value matches the server's `+`-only shapes.
+      // The loaded profile goes back in full, so a mobile-only change nulls no
+      // other field (the upsert is the only write path).
       await ref.read(profileRepositoryProvider).upsertMyProfile(
             profile.toUpsertRequest(mobile: normalizePhone(_mobile.text)),
           );

@@ -12,7 +12,6 @@ import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/core/utils/refresh.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
 import 'package:simf_app/features/moderation/data/moderation_repository.dart';
-import 'package:simf_app/features/sessions/data/seat_map_models.dart';
 import 'package:simf_app/features/sessions/data/seat_map_repository.dart';
 import 'package:simf_app/features/sessions/data/session_calendar.dart';
 import 'package:simf_app/features/sessions/data/session_detail_eligibility.dart';
@@ -26,112 +25,16 @@ import 'package:simf_app/features/sessions/widgets/session_detail_states.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// Page 017 — تفاصيل الجلسة · Session detail (#17, `/sessions/:sessionId`),
-/// rebuilt to the KSA-Project Figma frame **889:2450 "Session detail"** on the
-/// shared shell.
+/// Session detail — تفاصيل الجلسة · route: `RouteNames.sessionDetail` ·
+/// Figma 889:2450
 ///
-/// **Public** (Guest+). Behaviour contract unchanged: on open it fetches the
-/// full detail (`GET /app/programme/sessions/{id}`); for a signed-in account it
-/// also reads the seat map and shows the **my-seat card** when the caller holds
-/// an active reservation (`myCell`, approved-only — guest/pending see no card,
-/// L-3). The two CTAs are client-local OS actions: **Add-to-calendar** opens
-/// the device calendar pre-filled from the session (E4); the **Reminder** is
-/// deferred to the notifications platform pass (D-300).
+/// Contract: the **Reminder** CTA is a placeholder — reminders are deferred to
+/// the notifications platform pass (D-300), so it only toasts.
 ///
-/// Frame mapping (RTL-primary): a navy session **header card** (gold index
-/// badge + ordinal · title · the category tag pill when the session carries a
-/// category (PAR-D3) · clock/calendar meta · the ملخص الجلسة / رابط الجلسة
-/// actions), the وصف الجلسة description card, the المتحدثون speaker cards (name
-/// + rank, the host marked with the gold star + المضيف — PAR-P4a), the gold
-/// مقعدي my-seat card (row · seat + badge hint + a forward chevron), and the
-/// تذكير (outlined) + أضف إلى تقويمي (gold) CTA row. The section widgets live
-/// in `widgets/` (session_detail_body/header, session_header_card,
-/// session_text_sections, session_speaker_card, ask_host_card,
-/// session_reservation_card, session_booking_actions).
-///
-/// **Hall check-in (owner 2026-07-31):** an attendee's arrival at a session is
-/// established by the **gate scan** at the hall door, never by device GPS, so
-/// the detail carries a read-only [SessionArrivalAction] status strip above the
-/// body — it reports what the door recorded (or that nothing was recorded yet)
-/// and posts nothing. It replaced the old "أنا هنا" self check-in button.
-///
-/// **#29 (owner Q10, 2026-07-30) — a WORKSHOP is the exception:** when the
-/// detail's `type` is `SessionType.workshop` the body renders the title + time
-/// block ONLY (no description, speakers, ask card, seat/join section or
-/// live/summary actions). The CP half reuses the existing session admin.
-///
-/// **Rating (owner 2026-07-22):** this screen no longer opens the rate form
-/// when you leave an ended session — merely viewing a session is not attending
-/// it. The rate prompt now comes only from actually watching the live stream
-/// (`live_broadcast_screen`) or from the attendance-gated rate notification
-/// after hall check-in/out (plus the day / programme-end prompts). This removes
-/// the prompt that used to appear off the sessions list/detail for
-/// non-attendees.
-///
-/// Route: `RouteNames.sessionDetail`.
-/// Data: [authControllerProvider], [myModeratedSessionsProvider],
-///       [seatMapRepositoryProvider], [sessionCalendarProvider],
-///       [sessionDetailRepositoryProvider], [sessionDetailViewProvider],
-///       [simfDataConfigProvider].
-/// Perf: no list — a single-screen layout.
-/// The detail plus the attendee's seat map, loaded together.
-@immutable
-class SessionDetailView {
-  const SessionDetailView({
-    required this.detail,
-    required this.seatMap,
-    required this.seatMapFailed,
-  });
-
-  final SessionDetail detail;
-  final SessionSeatMap? seatMap;
-
-  /// #18 — true when an approved signed-in account's seat-map fetch FAILED, so
-  /// [seatMap] is null because it failed and not because a guest / pending
-  /// account cannot join. Drives the join area's error+retry, so the Join
-  /// affordance is never silently absent.
-  final bool seatMapFailed;
-}
-
-/// One session's detail view, or **null when the server has no such id** (404).
-final sessionDetailViewProvider = FutureProvider.autoDispose
-    .family<SessionDetailView?, String>((ref, sessionId) async {
-  try {
-    final detail =
-        await ref.watch(sessionDetailRepositoryProvider).getDetail(sessionId);
-    // DEF-MOD-004 — the join / my-seat affordances open the attendee-only
-    // routes (#18 my seat, #109 seat picker), so only an attendee's seat map is
-    // fetched: a guest / pending account has no join section (L-3), and a Staff
-    // / Moderator is not offered one either — the router would bounce them Home
-    // the moment they tapped it.
-    final canJoin = canJoinSession(roleOf(ref.watch(authControllerProvider)));
-    SessionSeatMap? seatMap;
-    if (canJoin) {
-      try {
-        seatMap = await ref
-            .watch(seatMapRepositoryProvider)
-            .getSeatMap(sessionId);
-      } on ApiFailure {
-        // 401 (no token) / 403 (not approved) / transport → no join section.
-        seatMap = null;
-      }
-    }
-    return SessionDetailView(
-      detail: detail,
-      seatMap: seatMap,
-      // A null map for an attendee means the fetch FAILED (a success always
-      // returns one), so the body can show a retry instead of silently
-      // dropping the Join button.
-      seatMapFailed: canJoin && seatMap == null,
-    );
-  } on ApiFailure catch (failure) {
-    if (failure.httpStatus == 404) {
-      return null;
-    }
-    rethrow;
-  }
-});
-
+/// Contract (owner 2026-07-22): this screen deliberately does NOT open the rate
+/// form when you leave an ended session — viewing a session is not attending
+/// it. The rate prompt comes only from watching the live stream
+/// (`live_broadcast_screen`) or from the attendance-gated rate notification.
 class SessionDetailScreen extends ConsumerStatefulWidget {
   const SessionDetailScreen({required this.sessionId, super.key});
 

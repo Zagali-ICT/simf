@@ -4,6 +4,7 @@ import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/core/country_flag.dart';
 import 'package:simf_app/core/net/asset_urls.dart';
 import 'package:simf_app/features/speakers/data/speaker_models.dart';
+import 'package:simf_app/features/speakers/widgets/speaker_name_with_flag.dart';
 import 'package:simf_app/features/speakers/widgets/speaker_photo_tile.dart';
 
 /// One selectable speaker row in the bilateral picker (owner 2026-07-11): the
@@ -62,29 +63,10 @@ class SpeakerOptionTile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        Flexible(
-                          child: Text(
-                            speaker.localizedName(isArabic: isArabic),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: SimfTokens.labelInkSemibold,
-                          ),
-                        ),
-                        if (flag != null) ...<Widget>[
-                          const SizedBox(width: SimfTokens.space2),
-                          Text(
-                            flag,
-                            textDirection: TextDirection.ltr,
-                            style: const TextStyle(
-                              fontSize: SimfTokens.textSm,
-                              height: 1,
-                            ),
-                          ),
-                        ],
-                      ],
+                    SpeakerNameWithFlag(
+                      name: speaker.localizedName(isArabic: isArabic),
+                      flag: flag,
+                      style: SimfTokens.labelInkSemibold,
                     ),
                     if (rank.isNotEmpty) ...<Widget>[
                       const SizedBox(height: SimfTokens.space1),

@@ -7,100 +7,20 @@ import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_bottom_nav.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/core/utils/refresh.dart';
+import 'package:simf_app/features/venuemap/data/venue_map_data.dart';
 import 'package:simf_app/features/venuemap/data/venue_map_models.dart';
 import 'package:simf_app/features/venuemap/data/venue_map_repository.dart';
 import 'package:simf_app/features/venuemap/widgets/venue_map_booth_sheet.dart';
 import 'package:simf_app/features/venuemap/widgets/venue_map_controls.dart';
-import 'package:simf_app/features/venuemap/widgets/venue_map_geometry.dart';
 import 'package:simf_app/features/venuemap/widgets/venue_map_info_card.dart';
-import 'package:simf_app/features/venuemap/widgets/venue_map_marker.dart';
+import 'package:simf_app/features/venuemap/widgets/venue_map_plane.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// Page 015 — الخريطة · Venue map (2D map, #15, `/map`), rebuilt to the KSA
-/// Wave-2 frame **215:562 "Location"** — with the frame's Google geographic
-/// map **replaced by the venue 2D node plane** (owner directive; the
-/// `VenueMapNodes` data is the map).
-///
-/// **Public** (Guest+). Data contract unchanged: the node list
-/// (`/app/venue-map`) and booth summaries (`/app/booths`) load in parallel
-/// (Page_015 L-1); booth descriptions stay a lazy detail call (L-5). Frame
-/// mapping: a full-bleed pan/zoom plane, the floating **gold zoom-in /
-/// zoom-out / recentre controls**, and — on node tap — the **bottom white
-/// info card** (gold code box, name, exhibitor · sector line, code chip,
-/// gold **أرشدني** centring the map on the node + bordered **عرض التفاصيل**
-/// opening the description sheet) instead of the old direct bottom sheet.
-/// The canvas geometry is **not** mirrored in RTL (physical venue
-/// coordinates, L-3). The old legend strip gave way to the frame's info
-/// card (the card names the selection).
-///
-/// Route: `RouteNames.venueMap`.
-/// Data: [simfDataConfigProvider], [venueMapDataProvider],
-///       [venueMapRepositoryProvider].
-/// Perf: no list — a single-screen layout.
-// The design-space canvas the normalised node coordinates map onto. Moved out
-// of the State so the provider can derive positions without one.
-const double _canvas = 1000;
-const double _pad = 80;
 const double _zoomStep = 1.3;
 
-/// Normalises every node's `(x, y)` onto the canvas once (Page_015 L-4).
-Map<String, Offset> _canvasPositions(List<VenueMapNode> nodes) {
-  if (nodes.isEmpty) {
-    return const <String, Offset>{};
-  }
-  final bounds = VenueMapBounds.of(nodes);
-  return <String, Offset>{
-    for (final node in nodes)
-      node.id: Offset(
-        _pad + bounds.normX(node.x) * (_canvas - 2 * _pad),
-        _pad + bounds.normY(node.y) * (_canvas - 2 * _pad),
-      ),
-  };
-}
-
-/// The map's nodes, plus the two lookups derived from them ONCE.
-///
-/// The derivation used to happen in `setState` after the load, which is what
-/// made those two maps state. Computing them here keeps them beside the data
-/// they come from, and there is exactly one place that can get them out of step
-/// with it: none.
-@immutable
-class VenueMapData {
-  const VenueMapData({
-    required this.nodes,
-    required this.positions,
-    required this.boothById,
-  });
-
-  final List<VenueMapNode> nodes;
-  final Map<String, Offset> positions;
-  final Map<String, BoothSummary> boothById;
-
-  BoothSummary? boothFor(VenueMapNode node) =>
-      node.boothId == null ? null : boothById[node.boothId];
-}
-
-/// The venue map (`GET /app/venue-map/nodes` + `GET /app/booths`).
-final venueMapDataProvider = FutureProvider.autoDispose<VenueMapData>(
-  (ref) async {
-    final repo = ref.watch(venueMapRepositoryProvider);
-    // Both reads in flight together (L-1); the screen is ready when both land.
-    final results = await Future.wait(<Future<Object>>[
-      repo.getNodes(),
-      repo.getBooths(),
-    ]);
-    final nodes = results[0] as List<VenueMapNode>;
-    final booths = results[1] as List<BoothSummary>;
-    return VenueMapData(
-      nodes: nodes,
-      positions: _canvasPositions(nodes),
-      boothById: <String, BoothSummary>{
-        for (final booth in booths) booth.id: booth,
-      },
-    );
-  },
-);
-
+/// Venue map — الخريطة · route: `RouteNames.venueMap` · Figma 215:562
+/// Contract: the canvas geometry is NOT mirrored in RTL — a node's
+/// `(x, y)` are physical venue coordinates (Page_015 L-3).
 class VenueMapScreen extends ConsumerStatefulWidget {
   const VenueMapScreen({this.targetBoothId, super.key});
 
@@ -287,62 +207,22 @@ class _VenueMapScreenState extends ConsumerState<VenueMapScreen> {
 
     return Stack(
       children: <Widget>[
-        // The canvas geometry must NOT mirror in RTL (node positions are
-        // physical venue coordinates, L-3) — force LTR for the map plane.
-        Directionality(
-          textDirection: TextDirection.ltr,
-          child: InteractiveViewer(
-            constrained: false,
-            transformationController: _transform,
-            minScale: 0.3,
-            maxScale: 4,
-            boundaryMargin: const EdgeInsets.all(SimfTokens.venueMapPanMargin),
-            child: SizedBox(
-              width: _canvas,
-              height: _canvas,
-              child: Stack(
-                children: <Widget>[
-                  for (final node in data.nodes)
-                    Positioned(
-                      left: (data.positions[node.id] ?? Offset.zero).dx - 40,
-                      top: (data.positions[node.id] ?? Offset.zero).dy - 40,
-                      width: SimfTokens.venueMapScreenWidth,
-                      child: VenueMapMarker(
-                        node: node,
-                        isArabic: isArabic,
-                        selected: node.id == selected?.id,
-                        onTap: () => setState(() => _selected = node),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ),
+        VenueMapPlane(
+          transform: _transform,
+          nodes: data.nodes,
+          positions: data.positions,
+          selectedId: selected?.id,
+          isArabic: isArabic,
+          onSelect: (node) => setState(() => _selected = node),
         ),
         // Floating gold map controls (frame right-edge stack).
         PositionedDirectional(
           end: SimfTokens.space4,
           top: SimfTokens.space4,
-          child: Column(
-            children: <Widget>[
-              VenueMapControl(
-                icon: Icons.my_location,
-                label: l10n.venueMapResetView,
-                onTap: _resetView,
-              ),
-              const SizedBox(height: SimfTokens.space2),
-              VenueMapControl(
-                icon: Icons.add,
-                label: l10n.venueMapZoomIn,
-                onTap: () => _zoomBy(_zoomStep),
-              ),
-              const SizedBox(height: SimfTokens.space2),
-              VenueMapControl(
-                icon: Icons.remove,
-                label: l10n.venueMapZoomOut,
-                onTap: () => _zoomBy(1 / _zoomStep),
-              ),
-            ],
+          child: VenueMapControlBar(
+            onReset: _resetView,
+            onZoomIn: () => _zoomBy(_zoomStep),
+            onZoomOut: () => _zoomBy(1 / _zoomStep),
           ),
         ),
         if (selected != null)

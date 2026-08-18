@@ -7,27 +7,23 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/core/errors/api_error_l10n.dart';
-import 'package:simf_app/core/responsive/max_width_body.dart';
 import 'package:simf_app/core/validation/email_validation.dart';
 import 'package:simf_app/core/validation/field_limits.dart';
 import 'package:simf_app/core/validation/required_validation.dart';
-import 'package:simf_app/features/account/widgets/account_sub_header.dart';
+import 'package:simf_app/features/account/widgets/auth_bottom_bar.dart';
 import 'package:simf_app/features/account/widgets/auth_chrome.dart';
+import 'package:simf_app/features/account/widgets/auth_screen_scaffold.dart';
+import 'package:simf_app/features/account/widgets/auth_scroll_body.dart';
 import 'package:simf_app/features/account/widgets/navi_form_field.dart';
 import 'package:simf_app/features/account/widgets/otp_code_boxes.dart';
+import 'package:simf_app/features/account/widgets/remembered_sign_in_row.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 
-/// Page 003 — نسيت كلمة المرور · Forgot password (Logic L-6). The KSA-Project
-/// Figma design (node 918:2341): navy surface, the back + centred-title header,
-/// the gold-ringed lock mark, the instruction body, the email field with a mail
-/// glyph, the gold CTA pinned at the bottom, and the "remembered? sign in"
-/// foot. Emails a reset code, then routes to the reset screen with the address
-/// carried forward. The request is enumeration-resistant on the server (always
-/// success-shaped), so the app always proceeds to the reset step.
-///
-/// Route: `RouteNames.forgotPassword`.
-/// Data: [authRepositoryProvider].
-/// Perf: no list — a single-screen layout.
+/// Forgot password — نسيت كلمة المرور · route: RouteNames.forgotPassword
+/// Figma 918:2341
+/// Contract: Logic L-6 — the request is enumeration-resistant on the server
+/// (always success-shaped), so the app always proceeds to the reset step with
+/// the address carried forward.
 class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({this.email, super.key});
 
@@ -117,131 +113,77 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    return Scaffold(
-      backgroundColor: SimfTokens.navySurface,
-      body: SafeArea(
-        child: Column(
-          children: <Widget>[
-            AccountSubHeader(
-              title: l10n.forgotPasswordTitle,
-              onBack: _back,
-              busy: _busy,
-            ),
-            Expanded(child: _buildBody(l10n)),
-            _buildBottomActions(l10n),
-            const SizedBox(height: SimfTokens.space6),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBody(AppL10n l10n) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
-      child: MaxWidthBody(
+    return AuthScreenScaffold(
+      title: l10n.forgotPasswordTitle,
+      onBack: _back,
+      busy: _busy,
+      body: AuthScrollBody(
         maxWidth: SimfTokens.forgotPasswordScreenMaxWidth,
-        child: Form(
-          key: _formKey,
+        formKey: _formKey,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          const SizedBox(height: SimfTokens.forgotPasswordScreenHeight),
+          const Center(child: OtpMark(icon: Icons.lock_outline)),
+          const SizedBox(height: SimfTokens.space6),
+          Text(
+            l10n.forgotPasswordBody,
+            textAlign: TextAlign.center,
+            style: SimfTokens.bodyBeige,
+          ),
+          const SizedBox(height: SimfTokens.space8),
+          NaviFormField(
+            label: l10n.emailLabel,
+            controller: _email,
+            enabled: !_busy,
+            keyboardType: TextInputType.emailAddress,
+            maxLength: FieldLimits.email,
+            hintText: l10n.emailHintExample,
+            // The mail glyph matches the hint colour (D-674); as a suffix
+            // it renders at the inline-start (left under RTL), per the
+            // frame.
+            suffixIcon: const Icon(
+              Icons.mail_outline,
+              color: SimfTokens.greyText,
+              size: SimfTokens.forgotPasswordScreenSize,
+            ),
+            validator: _validateEmail,
+            onChanged: (_) => setState(() {}),
+            onFieldSubmitted: (_) {
+              if (_canSubmit) {
+                unawaited(_submit());
+              }
+            },
+          ),
+          if (_error != null) ...<Widget>[
+            const SizedBox(height: SimfTokens.space3),
+            Text(
+              _error!,
+              style: SimfTokens.labelDangerSm,
+            ),
+          ],
+          const SizedBox(height: SimfTokens.space6),
+        ],
+      ),
+      // Bottom actions (918:2371): the gold send CTA + the "remembered? sign
+      // in" foot.
+      bottom: <Widget>[
+        AuthBottomBar(
+          maxWidth: SimfTokens.forgotPasswordScreenMaxWidth,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              const SizedBox(height: SimfTokens.forgotPasswordScreenHeight),
-              const Center(child: OtpMark(icon: Icons.lock_outline)),
-              const SizedBox(height: SimfTokens.space6),
-              Text(
-                l10n.forgotPasswordBody,
-                textAlign: TextAlign.center,
-                style: SimfTokens.bodyBeige,
+              AuthSubmitButton(
+                label: l10n.sendRecoveryCodeButton,
+                busy: _busy,
+                onPressed: _canSubmit ? () => unawaited(_submit()) : null,
               ),
-              const SizedBox(height: SimfTokens.space8),
-              NaviFormField(
-                label: l10n.emailLabel,
-                controller: _email,
-                enabled: !_busy,
-                keyboardType: TextInputType.emailAddress,
-                maxLength: FieldLimits.email,
-                hintText: l10n.emailHintExample,
-                // The mail glyph matches the hint colour (D-674); as a suffix
-                // it renders at the inline-start (left under RTL), per the
-                // frame.
-                suffixIcon: const Icon(
-                  Icons.mail_outline,
-                  color: SimfTokens.greyText,
-                  size: SimfTokens.forgotPasswordScreenSize,
-                ),
-                validator: _validateEmail,
-                onChanged: (_) => setState(() {}),
-                onFieldSubmitted: (_) {
-                  if (_canSubmit) {
-                    unawaited(_submit());
-                  }
-                },
-              ),
-              if (_error != null) ...<Widget>[
-                const SizedBox(height: SimfTokens.space3),
-                Text(
-                  _error!,
-                  style: SimfTokens.labelDangerSm,
-                ),
-              ],
-              const SizedBox(height: SimfTokens.space6),
+              const SizedBox(height: SimfTokens.space4),
+              RememberedSignInRow(busy: _busy),
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  /// Bottom actions (918:2371): the gold send CTA + the "remembered? sign in"
-  /// foot.
-  Widget _buildBottomActions(AppL10n l10n) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
-      child: MaxWidthBody(
-        maxWidth: SimfTokens.forgotPasswordScreenMaxWidth,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            AuthSubmitButton(
-              label: l10n.sendRecoveryCodeButton,
-              busy: _busy,
-              onPressed: _canSubmit ? () => unawaited(_submit()) : null,
-            ),
-            const SizedBox(height: SimfTokens.space4),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Flexible(
-                  child: Text(
-                    l10n.rememberedPasswordQuestion,
-                    style: const TextStyle(
-                      color: SimfTokens.surface,
-                      fontSize: SimfTokens.textMd,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: SimfTokens.forgotPasswordScreenWidth),
-                Flexible(
-                  child: TextButton(
-                    onPressed:
-                        _busy ? null : () => context.goNamed(RouteNames.signIn),
-                    style: authLinkButtonStyle(SimfTokens.accent),
-                    child: Text(
-                      l10n.signInTitle,
-                      style: const TextStyle(
-                        fontSize: SimfTokens.textMd,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
+        const SizedBox(height: SimfTokens.space6),
+      ],
     );
   }
 }

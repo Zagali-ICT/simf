@@ -10,17 +10,10 @@ import 'package:simf_app/features/myarea/data/my_sessions_repository.dart';
 import 'package:simf_app/features/myarea/widgets/my_sessions_tabbed_list.dart';
 import 'package:simf_app/features/sessions/widgets/session_filter_tabs.dart';
 
-/// **My sessions** — App "تفاصيل الجلسات" (Figma 1388:9067, Approved account),
-/// reached from the My-Area "my sessions" counter. The caller's booked / joined
-/// sessions, partitioned into four tabs computed client-side from the device
-/// clock: القادمة (still to come), حضرتها (attended), فاتتني (ended & not
-/// attended), and الأرشيف (recorded / published). Each card carries the المفضلة
-/// heart and taps through to the session detail. Reads `GET /app/account/sessions`.
-///
-/// Route: `RouteNames.myAreaSessions`.
-/// Data: [mySessionsProvider].
-/// Perf: ListView builds every child up front — correct for a short static
-///       page, a defect on a data feed.
+/// My sessions — تفاصيل الجلسات · route: `RouteNames.myAreaSessions` ·
+/// Figma 1388:9067
+/// Contract: the four tabs are partitioned CLIENT-side from the device clock
+/// (Approved account only); the wire carries no tab.
 class MySessionsScreen extends ConsumerStatefulWidget {
   const MySessionsScreen({super.key});
 

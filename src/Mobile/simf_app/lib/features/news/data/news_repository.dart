@@ -37,3 +37,21 @@ class NewsRepository {
 final newsRepositoryProvider = Provider<NewsRepository>((ref) {
   return NewsRepository(ref.watch(simfApiClientProvider));
 });
+
+/// One article, or **null when the server has no such id** (a 404).
+///
+/// A 404 here is "this article is gone", which the screen answers with its own
+/// not-found copy rather than the error surface — so folding it to null puts it
+/// on `when`'s DATA branch and leaves `error` for genuine failures. Same shape
+/// as `termsBlockProvider`.
+final newsArticleProvider =
+    FutureProvider.autoDispose.family<NewsArticle?, String>((ref, id) async {
+  try {
+    return await ref.watch(newsRepositoryProvider).getArticle(id);
+  } on ApiFailure catch (failure) {
+    if (failure.httpStatus == 404) {
+      return null;
+    }
+    rethrow;
+  }
+});

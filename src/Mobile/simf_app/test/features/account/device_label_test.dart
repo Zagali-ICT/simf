@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:simf_app/features/account/device_label.dart';
+import 'package:simf_app/features/account/data/device_label.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 /// An in-memory stand-in: the real one goes over a platform channel that never

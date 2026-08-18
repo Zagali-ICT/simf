@@ -62,8 +62,6 @@ class LiveCaptureView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            // Why we're asking — the human-check subtitle, then the big
-            // command.
             Text(
               humanCheckLabel,
               textAlign: TextAlign.center,

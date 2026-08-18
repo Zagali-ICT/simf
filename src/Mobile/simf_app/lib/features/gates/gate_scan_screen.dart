@@ -12,36 +12,18 @@ import 'package:simf_app/core/utils/refresh.dart';
 import 'package:simf_app/core/utils/uuid_v4.dart';
 import 'package:simf_app/features/gates/data/gate_models.dart';
 import 'package:simf_app/features/gates/data/gates_repository.dart';
+import 'package:simf_app/features/gates/widgets/gate_pending_banner.dart';
 import 'package:simf_app/features/gates/widgets/gate_result_view.dart';
+import 'package:simf_app/features/gates/widgets/gate_scan_app_bar.dart';
 import 'package:simf_app/features/gates/widgets/gate_setup_view.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// Staff gate-operator console — Figma 758:4651 (setup: pick gate + movement),
-/// 758:4819 (ممنوع / denied), 758:4886 (مسموح / allowed), D-406 / D-509.
-/// Role-gated to `AppRole.staff`+ (router); the server additionally requires
-/// the `Gates.Operate` permission and a gate assignment.
-///
-/// Flow (D-509): load the operator's gate assignments → **setup** screen
-/// (choose the gate + the دخول/خروج movement type) → tap **سكان الرمز** to open
-/// the camera (or type the code) → the green **مسموح** or red **ممنوع** result
-/// with the holder / gate / direction → "سكان مرة أخرى". The دخول/خروج choice
-/// is sent to the server and honoured for a **Both**-mode gate; a fixed In/Out
-/// gate locks the toggle to its one direction (no CP round-trip to switch).
-///
-/// Route: `RouteNames.gateScanner`.
-/// Data: [gatesRepositoryProvider], [operatorGatesProvider].
-/// Perf: no list — a single-screen layout.
-/// The gates this operator is assigned to (`GET /app/gates/my-assignments`).
-///
-/// The 403 stays an ERROR — it is a failure with its own copy, and DEF-STF-005
-/// needs the SERVER'S specific text ("no Gates.Operate grant" vs "not assigned
-/// to this gate" are both 403 and need different operator actions). Keeping it
-/// an error means the body can read that message straight off the failure
-/// `when` hands it, which is what removed the `_forbiddenMessage` field.
-final operatorGatesProvider = FutureProvider.autoDispose<List<OperatorGate>>(
-  (ref) => ref.watch(gatesRepositoryProvider).myAssignments(),
-);
-
+/// Staff gate-operator console — route: `RouteNames.gateScanner`
+/// Figma 758:4651 (setup) / 758:4819 (ممنوع) / 758:4886 (مسموح).
+/// Contract: D-406 / D-509 — staff-only in the router, and the server
+/// additionally requires the `Gates.Operate` permission and a gate assignment.
+/// The دخول/خروج choice is sent to the server and honoured for a **Both**-mode
+/// gate; a fixed In/Out gate locks the toggle to its one direction.
 class GateScanScreen extends ConsumerStatefulWidget {
   const GateScanScreen({super.key, this.enableCamera = true});
 
@@ -290,45 +272,7 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
       },
       child: Scaffold(
         backgroundColor: SimfTokens.navySurface,
-        // Figma puts the back button on the LEFT (LTR header) even in the RTL
-        // app; force the bar LTR so leading sits left, matching the frame.
-        appBar: PreferredSize(
-          preferredSize: const Size.fromHeight(kToolbarHeight),
-          child: Directionality(
-            textDirection: TextDirection.ltr,
-            child: AppBar(
-              backgroundColor: SimfTokens.navySurface,
-              foregroundColor: SimfTokens.surface,
-              elevation: 0,
-              centerTitle: true,
-              title: Text(
-                title,
-                textDirection: TextDirection.rtl,
-                style: SimfTokens.labelWhiteSemiboldTitle,
-              ),
-              // Figma 758:4655 — circular navy back button (left).
-              leading: Padding(
-                padding: const EdgeInsets.all(SimfTokens.space2),
-                child: Material(
-                  color: SimfTokens.navyDeep,
-                  shape: const CircleBorder(),
-                  child: InkWell(
-                    customBorder: const CircleBorder(),
-                    onTap: _back,
-                    child: const Padding(
-                      padding: EdgeInsets.all(SimfTokens.gap6),
-                      child: Icon(
-                        Icons.chevron_left,
-                        color: SimfTokens.surface,
-                        size: SimfTokens.gateScanScreenSizeMd,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
+        appBar: GateScanAppBar(title: title, onBack: _back),
         body: SafeArea(child: _body(l10n, isArabic)),
       ),
     );
@@ -404,9 +348,9 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
       );
     }
     if (!_scanning) {
-      return _withPendingBanner(
-        l10n,
-        GateSetupView(
+      return GatePendingBanner(
+        pending: _pending,
+        child: GateSetupView(
           l10n: l10n,
           isArabic: isArabic,
           gates: gates,
@@ -420,9 +364,9 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
     }
     // The shared scanner (D-737): camera-first gold viewfinder, always-usable
     // manual entry, one dedupe policy, and a visible camera-error state.
-    return _withPendingBanner(
-      l10n,
-      SingleChildScrollView(
+    return GatePendingBanner(
+      pending: _pending,
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(SimfTokens.space4),
         child: SimfScannerBody(
           fieldLabel: l10n.gateManualHint,
@@ -432,43 +376,6 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
           onCode: _scan,
         ),
       ),
-    );
-  }
-
-  /// Slim "N waiting to sync" banner above the active scanning stages while the
-  /// offline backlog is non-empty (G-4); collapses to nothing when it drains.
-  Widget _withPendingBanner(AppL10n l10n, Widget child) {
-    if (_pending == 0) {
-      return child;
-    }
-    return Column(
-      children: <Widget>[
-        Container(
-          width: double.infinity,
-          color: SimfTokens.navyDeep,
-          padding: const EdgeInsets.symmetric(
-            horizontal: SimfTokens.space4,
-            vertical: SimfTokens.space2,
-          ),
-          child: Row(
-            children: <Widget>[
-              const Icon(
-                Icons.sync,
-                color: SimfTokens.accent,
-                size: SimfTokens.gateScanScreenSizeSm,
-              ),
-              const SizedBox(width: SimfTokens.space2),
-              Expanded(
-                child: Text(
-                  l10n.gatePendingSync(_pending),
-                  style: SimfTokens.labelBeigeSm,
-                ),
-              ),
-            ],
-          ),
-        ),
-        Expanded(child: child),
-      ],
     );
   }
 

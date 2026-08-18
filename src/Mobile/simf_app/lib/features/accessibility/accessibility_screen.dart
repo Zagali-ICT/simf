@@ -1,6 +1,4 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:simf_app/app/localization/app_l10n.dart';
@@ -8,26 +6,17 @@ import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/features/accessibility/data/accessibility_controller.dart';
 import 'package:simf_app/features/accessibility/widgets/accessibility_font_size_card.dart';
+import 'package:simf_app/features/accessibility/widgets/accessibility_screen_reader_row.dart';
 import 'package:simf_app/features/accessibility/widgets/accessibility_section_heading.dart';
 import 'package:simf_app/features/accessibility/widgets/accessibility_toggle_row.dart';
 
-/// Page 038 — إمكانية الوصول · Accessibility (#38, `/settings/accessibility`).
-///
-/// Pixel-parity to KSA Figma frame `1116:16630`: the navy [SimfPageShell] shell
-/// and two grouped sections — **العرض** (font size: صغير / متوسط / كبير / أكبر,
-/// the high-contrast switch and the reduce-motion switch) and **الصوت
-/// والقراءة** (the screen-reader switch and the session-captions switch).
-///
-/// All choices are **persisted** ([AccessibilityController], prefs-backed) and
-/// **applied app-wide**: the text scaler + reduce-motion ride the root
-/// MediaQuery and high-contrast swaps the theme (`app/app.dart`); the
-/// screen-reader switch drives the navigation announcer (`router.dart`); the
-/// captions switch gates the live-broadcast caption strip.
-///
-/// Route: `RouteNames.accessibility`.
-/// Data: [accessibilityControllerProvider].
-/// Perf: ListView builds every child up front — correct for a short static
-///       page, a defect on a data feed.
+/// Accessibility — إمكانية الوصول · route: `RouteNames.accessibility`
+/// Figma 1116:16630
+/// Contract: every choice is persisted ([AccessibilityController]) and applied
+/// app-wide — the text scaler + reduce-motion ride the root MediaQuery and
+/// high-contrast swaps the theme (`app/app.dart`); the screen-reader switch
+/// drives the navigation announcer (`router.dart`); the captions switch gates
+/// the live-broadcast caption strip.
 class AccessibilityScreen extends ConsumerWidget {
   const AccessibilityScreen({super.key});
 
@@ -65,22 +54,9 @@ class AccessibilityScreen extends ConsumerWidget {
           const SizedBox(height: SimfTokens.space5),
           AccessibilitySectionHeading(l10n.accessibilitySectionSound),
           const SizedBox(height: SimfTokens.space3),
-          AccessibilityToggleRow(
-            title: l10n.accessibilityScreenReaderTitle,
-            hint: l10n.accessibilityScreenReaderSubtitle,
+          AccessibilityScreenReaderRow(
             value: settings.screenReaderAssist,
-            onChanged: (v) {
-              unawaited(controller.setScreenReaderAssist(v));
-              // Immediate confirmation through the same channel the assist
-              // uses.
-              if (v) {
-                unawaited(SemanticsService.sendAnnouncement(
-                    View.of(context),
-                    l10n.accessibilityScreenReaderTitle,
-                    Directionality.of(context),
-                  ),);
-              }
-            },
+            onChanged: controller.setScreenReaderAssist,
           ),
           const SizedBox(height: SimfTokens.space3),
           AccessibilityToggleRow(

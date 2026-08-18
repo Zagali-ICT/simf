@@ -7,6 +7,7 @@ import 'package:simf_app/app/widgets/simf_svg_icon.dart';
 import 'package:simf_app/core/country_flag.dart';
 import 'package:simf_app/core/net/asset_urls.dart';
 import 'package:simf_app/features/speakers/data/speaker_models.dart';
+import 'package:simf_app/features/speakers/widgets/speaker_name_with_flag.dart';
 import 'package:simf_app/features/speakers/widgets/speaker_photo_tile.dart';
 
 /// One speaker card on the المتحدثون list (frame 908:1999): the navy [SimfCard]
@@ -59,34 +60,11 @@ class SpeakerListCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  // Name with the country flag inline at its trailing (left, in
-                  // RTL) edge — Figma node 1318:3391 (flag left of the name, an
-                  // 8px gap), right-aligned in the column.
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Flexible(
-                        child: Text(
-                          speaker.localizedName(isArabic: isArabic),
-                          textAlign: TextAlign.start,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: SimfTokens.labelWhiteSemiboldLg,
-                        ),
-                      ),
-                      if (flag != null) ...<Widget>[
-                        const SizedBox(width: SimfTokens.space2),
-                        Text(
-                          flag,
-                          textDirection: TextDirection.ltr,
-                          // Frame 1318:3392 — the flag glyph is 12px.
-                          style: const TextStyle(
-                            fontSize: SimfTokens.textSm,
-                            height: 1,
-                          ),
-                        ),
-                      ],
-                    ],
+                  SpeakerNameWithFlag(
+                    name: speaker.localizedName(isArabic: isArabic),
+                    flag: flag,
+                    style: SimfTokens.labelWhiteSemiboldLg,
+                    textAlign: TextAlign.start,
                   ),
                   if (label.isNotEmpty) ...<Widget>[
                     const SizedBox(height: SimfTokens.space2),

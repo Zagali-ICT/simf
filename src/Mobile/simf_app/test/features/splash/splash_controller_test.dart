@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/core/startup/app_update_checker.dart';
-import 'package:simf_app/features/splash/splash_controller.dart';
+import 'package:simf_app/features/splash/data/splash_controller.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 

@@ -19,24 +19,7 @@ import 'package:simf_app/features/chatbot/widgets/quick_replies.dart';
 // injects a fake responder) keep resolving off this screen.
 export 'data/chatbot_responder.dart';
 
-/// Page 036 — المساعد الذكي · AI assistant (#36, `/chatbot`, signed-in).
-///
-/// Pixel-parity to KSA Figma frame `1064:13066`: the navy [SimfPageShell]
-/// shell, a scrolling transcript (assistant bubbles left + gold "AI" badge,
-/// user bubbles right + gold fill), the horizontal quick-reply chips (frame
-/// `1070:13389`) and the bottom input bar (frame `1070:13398`). The screen
-/// opens with the assistant greeting; each prompt (typed or a chip) is answered
-/// by the centralised AI via the overridable [chatbotResponderProvider] — its
-/// default [ApiChatbotResponder] calls `POST /app/ai/assistance` (the
-/// `assistance` prompt, grounded server-side on the live event context). A wire
-/// error surfaces as a localized error bubble. Past turns are loaded from `GET
-/// /app/ai/assistance/history` and each new turn is persisted server-side by
-/// the assistance endpoint, so the conversation survives navigation /
-/// app-restart and the assistant remembers earlier turns.
-///
-/// Route: `RouteNames.chatbot`.
-/// Data: [aiChatHistoryProvider], [chatbotResponderProvider].
-/// Perf: lazy — builds children on demand (ListView.builder).
+/// AI assistant — route: `RouteNames.chatbot` · Figma 1064:13066
 class ChatbotScreen extends ConsumerStatefulWidget {
   const ChatbotScreen({super.key});
 

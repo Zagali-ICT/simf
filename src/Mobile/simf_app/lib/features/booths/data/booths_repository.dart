@@ -10,3 +10,12 @@ final exhibitorDetailProvider =
     FutureProvider.autoDispose.family<BoothDetail, String>((ref, id) async {
   return ref.watch(venueMapRepositoryProvider).getBoothDetail(id);
 });
+
+/// `GET /app/booths` — the exhibition booths (public, D-199).
+///
+/// Load only — the booths screen's `_query` stays on the widget, like
+/// `speakersListProvider`'s screen: the local search field is UI state with no
+/// server behind it.
+final boothsListProvider = FutureProvider.autoDispose<List<BoothSummary>>(
+  (ref) => ref.watch(venueMapRepositoryProvider).getBooths(),
+);

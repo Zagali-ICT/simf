@@ -56,3 +56,15 @@ class ExhibitorRepository {
 final exhibitorRepositoryProvider = Provider<ExhibitorRepository>((ref) {
   return ExhibitorRepository(ref.watch(simfApiClientProvider));
 });
+
+/// The booth's captured leads (`GET /app/exhibitor/visitors`).
+///
+/// A THIRD shape, after the fold-to-null of `termsBlockProvider` and the plain
+/// list of `savedContactsProvider`: the 403 stays an ERROR and the screen
+/// branches on it inside `when`'s error callback. A 403 here means "your
+/// account is not linked to a booth yet", which is a failure with its own copy
+/// — not an empty result — so folding it into the data branch would be lying
+/// about what happened.
+final myVisitorsProvider = FutureProvider.autoDispose<List<ExhibitorVisitor>>(
+  (ref) => ref.watch(exhibitorRepositoryProvider).listMyVisitors(),
+);

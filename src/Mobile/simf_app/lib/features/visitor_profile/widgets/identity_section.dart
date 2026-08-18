@@ -71,7 +71,6 @@ class IdentitySection extends StatelessWidget {
           controller: englishName,
           maxLength: FieldLimits.profileName,
           textDirection: TextDirection.ltr,
-          // Latin letters + spaces only.
           inputFormatters: <TextInputFormatter>[
             FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z\s]')),
           ],
