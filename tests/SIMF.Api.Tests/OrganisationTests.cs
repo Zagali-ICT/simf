@@ -195,6 +195,126 @@ public sealed class OrganisationTests : IClassFixture<SimfApiFactory>
         Assert.Contains(items, item => item.Id == created.Id);
     }
 
+    [Fact]
+    public async Task Create_rejects_an_arabic_name_longer_than_the_stored_column()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+
+        // The name column is nvarchar(150). A 151-character name used to clear
+        // the validator (which admitted 256) and then die inside SaveChanges as
+        // an unhandled SqlException — a 500 on legitimate input.
+        var response = await PostAuthAsync(
+            "/api/v1/admin/organisations",
+            new CreateOrganisationRequest
+            {
+                NameAr = new string('ب', 151),
+                CommercialRegistration = NewCr(),
+            },
+            token);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.OrganisationInvalid, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Import_clamps_an_over_long_name_instead_of_failing_the_batch()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+
+        // Same column, the import side: a 200-character cell must be clamped to
+        // what the column holds, not carried into SaveChanges to abort a batch
+        // after earlier batches have already committed.
+        var xlsx = BuildWorkbook((new string('ب', 200), "Over Long Name Org", NewCr()));
+
+        var response = await ImportAsync(xlsx, token);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = (await response.Content
+            .ReadFromJsonAsync<ApiResult<OrganisationImportResult>>())!.Data!;
+        Assert.Equal(1, result.RowsRead);
+        Assert.Equal(1, result.Inserted);
+        Assert.Empty(result.Errors);
+    }
+
+    [Fact]
+    public async Task Import_does_not_null_the_columns_the_sheet_omits()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var nameAr = $"شركة البيانات المنسقة {Guid.NewGuid():N}";
+        var cr = NewCr();
+
+        var create = await PostAuthAsync(
+            "/api/v1/admin/organisations",
+            new CreateOrganisationRequest
+            {
+                NameAr = nameAr,
+                NameEn = "Curated Columns Org",
+                CommercialRegistration = cr,
+                Sector = "Maritime",
+                City = "Dammam",
+                Phone = "+966130000000",
+                Email = "curated@simf.test",
+                Website = "https://curated.simf.test",
+            },
+            token);
+        Assert.Equal(HttpStatusCode.OK, create.StatusCode);
+        var created = (await create.Content
+            .ReadFromJsonAsync<ApiResult<AdminOrganisationDetail>>())!.Data!;
+
+        // A partial-update sheet: the Arabic name is the ONLY column present, so
+        // the row matches on name and every other cell is "not supplied". It
+        // must not be read as "clear it".
+        var import = await ImportAsync(BuildNameOnlyWorkbook(nameAr), token);
+        Assert.Equal(HttpStatusCode.OK, import.StatusCode);
+        var result = (await import.Content
+            .ReadFromJsonAsync<ApiResult<OrganisationImportResult>>())!.Data!;
+        Assert.Equal(0, result.Inserted);
+        Assert.Equal(1, result.Updated);
+
+        var get = await GetAuthAsync($"/api/v1/admin/organisations/{created.Id}", token);
+        Assert.Equal(HttpStatusCode.OK, get.StatusCode);
+        var fetched = (await get.Content
+            .ReadFromJsonAsync<ApiResult<AdminOrganisationDetail>>())!.Data!;
+        Assert.Equal(cr, fetched.CommercialRegistration);
+        Assert.Equal("Curated Columns Org", fetched.NameEn);
+        Assert.Equal("Maritime", fetched.Sector);
+        Assert.Equal("Dammam", fetched.City);
+        Assert.Equal("+966130000000", fetched.Phone);
+        Assert.Equal("curated@simf.test", fetched.Email);
+        Assert.Equal("https://curated.simf.test", fetched.Website);
+    }
+
+    [Fact]
+    public async Task Import_upserts_a_commercial_registration_repeated_within_one_sheet()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var cr = NewCr();
+
+        // Both rows carry the same CR. An unsaved insert is invisible to a
+        // query, so matching per row against the database inserted twice and
+        // hit the filtered unique index on SaveChanges.
+        var xlsx = BuildWorkbook(
+            ("منظمة السجل المكرر الأولى", "Repeated Cr Org", cr),
+            ("منظمة السجل المكرر الثانية", "Repeated Cr Org Renamed", cr));
+
+        var response = await ImportAsync(xlsx, token);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = (await response.Content
+            .ReadFromJsonAsync<ApiResult<OrganisationImportResult>>())!.Data!;
+        Assert.Equal(2, result.RowsRead);
+        Assert.Equal(1, result.Inserted);
+        Assert.Equal(1, result.Updated);
+
+        var list = await PostAuthAsync(
+            "/api/v1/admin/organisations/list",
+            new GridQuery { Search = cr, Top = 200 },
+            token);
+        Assert.Equal(HttpStatusCode.OK, list.StatusCode);
+        var page = (await list.Content
+            .ReadFromJsonAsync<ApiResult<GridPage<AdminOrganisationSummary>>>())!.Data!;
+        Assert.Single(page.Items);
+    }
+
     // -- Helpers --------------------------------------------------------------
 
     private static string NewCr() => Guid.NewGuid().ToString("N")[..10].ToUpperInvariant();
@@ -212,6 +332,24 @@ public sealed class OrganisationTests : IClassFixture<SimfApiFactory>
             sheet.Cell(row, 1).Value = nameAr;
             sheet.Cell(row, 2).Value = nameEn;
             sheet.Cell(row, 3).Value = cr;
+            row++;
+        }
+        using var stream = new MemoryStream();
+        workbook.SaveAs(stream);
+        return stream.ToArray();
+    }
+
+    /// <summary>A partial-update sheet: an Arabic-name column and nothing else,
+    /// which is how a bulk correction file arrives.</summary>
+    private static byte[] BuildNameOnlyWorkbook(params string[] namesAr)
+    {
+        using var workbook = new XLWorkbook();
+        var sheet = workbook.Worksheets.Add("Organisations");
+        sheet.Cell(1, 1).Value = "NameAr";
+        var row = 2;
+        foreach (var nameAr in namesAr)
+        {
+            sheet.Cell(row, 1).Value = nameAr;
             row++;
         }
         using var stream = new MemoryStream();

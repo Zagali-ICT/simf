@@ -1,6 +1,9 @@
 // Tests: SIMF.Api.Tests/GateScanTests.cs
 // Tests: SIMF.Api.Tests/GateHallDoorChainTests.cs (DEF-CHK-004 — the hall-attendance
 //        chain and the advisory NoticeMessage an allowed scan can carry)
+// Tests: SIMF.Api.Tests/GateScanIdempotencyRecoveryTests.cs (a committed scan whose
+//        idempotency back-fill never landed still replays as itself, not as a blank
+//        denial)
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -635,8 +638,9 @@ internal sealed class GateOperatorService(
     /// the 24h replay window has a stale row that <see cref="TryReplayAsync"/>
     /// filters out as absent, but the PK still holds it — so a blind Add would
     /// collide (the returning-badge 500). Refreshing the stale row in place avoids
-    /// the collision. ScanId is back-filled by the caller after SaveChanges
-    /// assigns the GateScan identity.
+    /// the collision. ScanId is left null here and back-filled by the caller after
+    /// SaveChanges assigns the GateScan identity; a back-fill that never lands is
+    /// recovered by <see cref="FindReplayScanAsync"/> rather than replaying blank.
     /// </summary>
     private async Task StageIdempotencyAsync(
         string idempotencyKey, Guid gateId, string requestHash,
@@ -691,7 +695,15 @@ internal sealed class GateOperatorService(
         }
 
         // ScanId is now populated by the IDENTITY column. Back-fill the idempotency
-        // row in the same transaction window.
+        // row so the ordinary replay is a single keyed read.
+        //
+        // This is a SECOND statement, issued after the scan has already committed, so
+        // it is a best-effort pointer and NOT the replay's only source of truth: a
+        // cancelled token, a transient failure here, or a process restart would
+        // otherwise strand the committed idempotency row on a null ScanId forever.
+        // FindReplayScanAsync recovers from the scan row's own idempotency index in
+        // that case, which is what keeps a timed-out-then-retried allowed scan from
+        // replaying as a blank denial.
         if (!string.IsNullOrWhiteSpace(idempotencyKey))
         {
             await appDbContext.ScanIdempotencies
@@ -955,13 +967,46 @@ internal sealed class GateOperatorService(
             IdempotencyKey = idempotencyKey,
         };
 
+    /// <summary>Resolves the scan a prior idempotency row stands for. The fast path
+    /// is the back-filled <see cref="ScanIdempotency.ScanId"/>; when that is null the
+    /// scan is recovered from the append-only log through the unique filtered
+    /// <c>UX_GateScan_Idempotency</c> index on (IdempotencyKey, GateId), which is
+    /// written as part of the scan row itself and is therefore committed whenever the
+    /// idempotency row is.
+    ///
+    /// The recovery is not defensive padding. The back-fill is a SECOND statement
+    /// issued after the scan has already committed, so a cancelled token (the
+    /// scanner's HTTP request timing out and the client disconnecting), a transient
+    /// failure of that statement, or a process restart between the two leaves a
+    /// committed idempotency row permanently pointing at nothing. A scanner that
+    /// times out retries with the same key, and without this the replay would answer
+    /// every one of those retries with a blank denial — ScanId 0, outcome Denied, no
+    /// reason, no visitor profile — for an attendee whose committed scan says Allowed,
+    /// for the whole 24h retention window. The same gap opens on a concurrent same-key
+    /// retry that reads the row in between the winner's commit and its back-fill.
+    ///
+    /// Setting ScanId inside the original SaveChanges is not available as an
+    /// alternative: GateScan.Id is IDENTITY-generated and ScanIdempotency has no EF
+    /// relationship to propagate it from.</summary>
+    private async Task<GateScan?> FindReplayScanAsync(
+        ScanIdempotency prior, CancellationToken cancellationToken)
+    {
+        if (prior.ScanId is { } scanId)
+        {
+            return await appDbContext.GateScans.AsNoTracking()
+                .SingleOrDefaultAsync(s => s.Id == scanId, cancellationToken);
+        }
+
+        return await appDbContext.GateScans.AsNoTracking()
+            .Where(s => s.IdempotencyKey == prior.Key && s.GateId == prior.GateId)
+            .SingleOrDefaultAsync(cancellationToken);
+    }
+
     private async Task<GateScanResponse> LoadReplayAsync(
         ScanIdempotency prior, string? acceptLanguage,
         CancellationToken cancellationToken)
     {
-        if (prior.ScanId is null) { return EmptyResponse(prior.StoredAt); }
-        var scan = await appDbContext.GateScans.AsNoTracking()
-            .SingleOrDefaultAsync(s => s.Id == prior.ScanId.Value, cancellationToken);
+        var scan = await FindReplayScanAsync(prior, cancellationToken);
         if (scan is null) { return EmptyResponse(prior.StoredAt); }
 
         // Split cross-context join into App-then-Identity round-trips.

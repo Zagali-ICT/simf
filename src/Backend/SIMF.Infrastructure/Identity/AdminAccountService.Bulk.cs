@@ -3,8 +3,13 @@
 //        resolves, activates and signs in — the end-to-end holder journey)
 // Tests: SIMF.Api.Tests/GateRevokedBadgeTests.cs (both delete loops and a batch
 //        revoke withdraw admission on the profile, so the badge stops at a gate)
+// Tests: SIMF.Api.Tests/DuplicateUserRoleGrantTests.cs (duplicating a role-holding
+//        account IS a role grant, so it needs the role-assignment permission)
+// Tests: SIMF.Api.Tests/BadgeBatchListPagingTests.cs (the badge-order list pages a
+//        TOTAL order, so orders sharing a CreatedAt neither repeat nor drop)
 using System.Globalization;
 using System.IO.Compression;
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using QRCoder;
@@ -14,11 +19,13 @@ using SIMF.Application.Email;
 using SIMF.Application.Excel;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
+using SIMF.Common.Grids;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.Badges;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Profiles;
+using SIMF.Infrastructure.Common.Grids;
 using SIMF.Common.Enums;
 
 namespace SIMF.Infrastructure.Identity;
@@ -313,6 +320,7 @@ internal sealed partial class AdminAccountService
     public async Task<AdminCreateUserResponse> DuplicateUserAsync(
         Guid actorUserId,
         AdminDuplicateUserRequest request,
+        bool canAssignRoles,
         CancellationToken cancellationToken = default)
     {
         var source = await accounts.FindByIdAsync(request.SourceId, cancellationToken)
@@ -326,7 +334,6 @@ internal sealed partial class AdminAccountService
         // an Other / Visitor source duplicates as the same UserType. The
         // source's ProfileTypeId lives on the source's UserProfile row;
         // look it up and pass it through.
-        var sourceRoles = await accounts.GetRolesAsync(source);
         var sourceProfileTypeId = await appDbContext.UserProfiles
             .AsNoTracking()
             .Where(p => p.UserId == source.Id)
@@ -338,14 +345,8 @@ internal sealed partial class AdminAccountService
         // CreateVisitor (audience scope) so the duplicate inherits the
         // source's queue.
         var created = source.UserType == UserType.Admin
-            ? await CreateAdminAsync(actorUserId,
-                new AdminCreateAdminRequest
-                {
-                    Email = request.NewEmail,
-                    DisplayName = source.DisplayName,
-                    Roles = sourceRoles.ToList(),
-                },
-                cancellationToken)
+            ? await DuplicateAdminAsync(
+                actorUserId, source, request.NewEmail, canAssignRoles, cancellationToken)
             : await DuplicateVisitorScopedAsync(
                 actorUserId, source, request.NewEmail,
                 sourceProfileTypeId, cancellationToken);
@@ -361,6 +362,49 @@ internal sealed partial class AdminAccountService
         }, cancellationToken);
 
         return created;
+    }
+
+    /// <summary>
+    /// The Admin half of the duplicate. The copy inherits the source's role
+    /// membership, which is what makes duplicating an Administrator a privilege
+    /// grant rather than a convenience: the copy lands holding the wildcard.
+    ///
+    /// <para>So the caller must hold the same authority the standalone
+    /// role-assignment desk demands (<c>Admins.AssignRoles</c>, or the wildcard).
+    /// The create endpoint already refuses a non-empty <c>Roles</c> list on exactly
+    /// those terms, and duplicating an existing elevated row was the way around it:
+    /// an operator holding Create alone could copy any Administrator onto an address
+    /// it controls. Refused BEFORE the account is created, so a denied attempt
+    /// leaves nothing behind.</para>
+    ///
+    /// <para>A role-less source is unaffected — there is nothing to grant, so
+    /// Create alone still duplicates a plain admin.</para>
+    /// </summary>
+    private async Task<AdminCreateUserResponse> DuplicateAdminAsync(
+        Guid actorUserId,
+        SimfUser source,
+        string newEmail,
+        bool canAssignRoles,
+        CancellationToken cancellationToken)
+    {
+        var sourceRoles = await accounts.GetRolesAsync(source, cancellationToken);
+        if (sourceRoles.Count > 0 && !canAssignRoles)
+        {
+            throw new ApiException(
+                ErrorCodes.Forbidden, 403,
+                "Duplicating an account that holds roles grants those roles to the copy, "
+                + "which requires the role-assignment permission.",
+                "نسخ حساب يحمل أدواراً يمنح تلك الأدوار للنسخة، وهو ما يتطلب صلاحية إسناد الأدوار.");
+        }
+
+        return await CreateAdminAsync(actorUserId,
+            new AdminCreateAdminRequest
+            {
+                Email = newEmail,
+                DisplayName = source.DisplayName,
+                Roles = sourceRoles.ToList(),
+            },
+            cancellationToken);
     }
 
     // The whole-grid user export is bounded to this many rows so an accidental
@@ -683,7 +727,14 @@ internal sealed partial class AdminAccountService
         // Source UserType is already proven == kind, so DuplicateUserAsync's
         // switch lands on the matching CreateXxxAsync without any extra
         // guarding. Reuses the canonical implementation.
-        return await DuplicateUserAsync(actorUserId, request, cancellationToken);
+        //
+        // canAssignRoles: false — every caller of this overload passes a non-Admin
+        // kind, so the branch that copies role membership is unreachable from here
+        // and the flag is never read. Passing false rather than true keeps that
+        // true by construction: were an Admin-kind variant ever mapped onto this
+        // method, it would refuse to copy roles instead of quietly granting them.
+        return await DuplicateUserAsync(
+            actorUserId, request, canAssignRoles: false, cancellationToken);
     }
 
     public async Task<byte[]> ExportUsersByKindAsync(
@@ -1224,28 +1275,61 @@ internal sealed partial class AdminAccountService
         }
     }
 
+    /// <summary>
+    /// The grid contract for /admin/visitors/badge-batches: one entry per key
+    /// BadgeBatchesPage.razor can send, as both its filter and its sort. A key not
+    /// declared here is a 400, not a silently ignored request.
+    ///
+    /// <para>The page's own "summary" and "total" keys are deliberately absent.
+    /// Neither is a column: both are composed on read from the order's lines joined
+    /// to the live profile types, so there is nothing on the order to sort or
+    /// filter by. That is also why the page marks neither of them sortable.</para>
+    /// </summary>
+    private static readonly GridColumns<BadgeBatch> BadgeBatchColumns = new GridColumns<BadgeBatch>()
+        .Add("name", batch => batch.Name, searchable: true)
+        .Add("nameArabic", batch => batch.NameArabic, searchable: true)
+        .Add("recipient", batch => batch.RecipientEmail, searchable: true)
+        .Add("delegate", batch => batch.IsDelegate)
+        // The page names this column "status"; the stored fact is IsActive, which is
+        // what revoking an order flips.
+        .Add("status", batch => batch.IsActive)
+        .Add("createdAt", batch => batch.CreatedAt)
+        // Newest-first, which is how the desk reads the list. The Id tiebreak is what
+        // makes that order TOTAL: the orders minted in one transaction share a
+        // CreatedAt to the tick, and with the timestamp alone SQL Server was free to
+        // return the tied rows in a different sequence per page request — so the same
+        // order could come back on two pages while another came back on none.
+        .DefaultOrder("createdAt", descending: true)
+        // The window the hand-written ClampPage() applied, kept exactly.
+        .PageSize(fallback: 25, max: 200);
+
+    /// <summary>
+    /// The stored half of a row. CountsSummary, TotalCount and Tiers are filled in
+    /// after the page is read, from the order's lines joined to the LIVE profile
+    /// types: they are not columns and cannot ride the projection.
+    /// </summary>
+    private static readonly Expression<Func<BadgeBatch, AdminBadgeBatchSummary>> ToBadgeBatchRow =
+        batch => new AdminBadgeBatchSummary(
+            batch.Id,
+            string.Empty,
+            0,
+            batch.IsDelegate,
+            batch.RecipientEmail,
+            batch.CreatedAt,
+            batch.IsActive,
+            batch.Name,
+            batch.NameArabic,
+            null,
+            batch.Id == BadgeBatch.DirectRegistrationId);
+
     public async Task<GridPage<AdminBadgeBatchSummary>> ListBadgeBatchesAsync(
         Guid actorUserId, GridQuery query, CancellationToken cancellationToken = default)
     {
-        // Admin-only list (no per-actor scope). Newest-first; a revoked batch keeps its
-        // row with IsActive=false so the history stays visible.
-        var (skip, top) = query.ClampPage();
-        var total = await appDbContext.BadgeBatches.CountAsync(cancellationToken);
-        var rows = await appDbContext.BadgeBatches
-            .AsNoTracking()
-            .OrderByDescending(batch => batch.CreatedAt)
-            .Skip(skip).Take(top)
-            .Select(batch => new
-            {
-                batch.Id,
-                batch.IsDelegate,
-                batch.RecipientEmail,
-                batch.CreatedAt,
-                batch.IsActive,
-                batch.Name,
-                batch.NameArabic,
-            })
-            .ToListAsync(cancellationToken);
+        // Admin-only list (no per-actor scope), so nothing narrows the source. A
+        // revoked batch keeps its row with IsActive=false and the history stays
+        // visible.
+        var page = await appDbContext.BadgeBatches.ToGridPageAsync(
+            query, BadgeBatchColumns, batch => batch.Id, ToBadgeBatchRow, cancellationToken);
 
         // What each order holds, read from its own lines and joined to the LIVE
         // profile type. Both the bilingual breakdown and the composed English
@@ -1255,7 +1339,7 @@ internal sealed partial class AdminAccountService
         //
         // One query for the whole page, not one per row. The direct-registration
         // order needs no special case: it is not a badge order, so it has no lines.
-        var batchIds = rows.Select(row => row.Id).ToList();
+        var batchIds = page.Items.Select(row => row.Id).ToList();
         var lines = await appDbContext.BadgeBatchItems
             .AsNoTracking()
             .Where(item => batchIds.Contains(item.BadgeBatchId))
@@ -1278,7 +1362,7 @@ internal sealed partial class AdminAccountService
             .GroupBy(line => line.BadgeBatchId)
             .ToDictionary(g => g.Key, g => g.OrderBy(line => line.DisplayOrder).ToList());
 
-        var summaries = rows
+        var items = page.Items
             .Select(row =>
             {
                 byBatch.TryGetValue(row.Id, out var orderLines);
@@ -1303,25 +1387,19 @@ internal sealed partial class AdminAccountService
                             line.Name ?? string.Empty, line.NameArabic ?? string.Empty, line.Count))
                         .ToList();
 
-                return new AdminBadgeBatchSummary(
-                    row.Id,
-                    countsSummary,
+                return row with
+                {
+                    CountsSummary = countsSummary,
                     // Derived, not cached: the total was a second copy of what the
                     // lines already say, and the two had to be updated in lockstep
                     // or the list quietly disagreed with itself.
-                    orderLines.Sum(line => line.Count),
-                    row.IsDelegate,
-                    row.RecipientEmail,
-                    row.CreatedAt,
-                    row.IsActive,
-                    row.Name,
-                    row.NameArabic,
-                    tiers,
-                    row.Id == BadgeBatch.DirectRegistrationId);
+                    TotalCount = orderLines.Sum(line => line.Count),
+                    Tiers = tiers,
+                };
             })
             .ToList();
 
-        return GridPage<AdminBadgeBatchSummary>.Of(summaries, total, skip, top);
+        return GridPage<AdminBadgeBatchSummary>.Of(items, page.Total, page.Skip, page.Top);
     }
 
     public async Task<AdminReEmailBadgeBatchResponse> ReEmailBadgeBatchAsync(

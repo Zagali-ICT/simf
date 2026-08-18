@@ -1,9 +1,12 @@
+// Tests: SIMF.Api.Tests/EmailTemplateAdminTests.cs
+using System.Globalization;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.Auditing;
 using SIMF.Application.Email;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Grids;
 using SIMF.Contracts.Email;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.Email;
@@ -28,6 +31,51 @@ internal sealed class AdminEmailTemplateService(
     private const int MaxSubjectLength = 256;
     private const int MaxBodyLength = 8000;
 
+    // The keys this list accepts as a sort column and as a filter column, held
+    // lower-cased because keys match case-insensitively: the grid sends its column
+    // key verbatim in camelCase, exactly as it does for the queryable grid seam.
+    private const string TypeKey = "type";
+    private const string SubjectKey = "subject";
+    private const string CustomisedKey = "customised";
+    private const string VersionKey = "version";
+    private const string UpdatedAtKey = "updatedat";
+
+    private static readonly string[] GridKeys =
+        [TypeKey, SubjectKey, CustomisedKey, VersionKey, UpdatedAtKey];
+
+    /// <summary>The accepted keys in the camelCase form the grid sends, for the
+    /// bilingual error naming them. Matches the columns EmailTemplatesList.razor
+    /// renders.</summary>
+    private const string GridKeyList = "type, subject, customised, version, updatedAt";
+
+    /// <summary>
+    /// One page of the template list, with the request's filters, search, sort and
+    /// paging actually applied.
+    ///
+    /// <para>
+    /// The query is composed here by hand rather than through <c>ApplyGrid</c> /
+    /// <c>ToGridPageAsync</c>, and that is a deliberate choice rather than an
+    /// oversight. This resource is not an <c>IQueryable</c>: the rows are the fixed
+    /// code-side <see cref="EmailTemplateCatalog"/> left-joined to whatever
+    /// override rows exist, so there is no entity set to compose onto. Running the
+    /// seam over <c>AsQueryable()</c> would compile, and would be wrong: the seam
+    /// matches with <c>string.Contains</c> and gets its case-insensitivity from the
+    /// SQL Server column collation, so evaluated in memory instead of translated to
+    /// SQL that same expression tree becomes an ORDINAL, case-SENSITIVE match. That
+    /// would quietly make this the one grid in SIMF where filtering "otp" fails to
+    /// find "SignInOtp".
+    /// </para>
+    ///
+    /// <para>
+    /// So the seam's SEMANTICS are reproduced instead of its code: an unknown sort
+    /// or filter key is a bilingual 400 rather than a silently ignored clause, a
+    /// value that will not parse is a 400 rather than a dropped predicate, matching
+    /// is case-insensitive, the order always ends in a per-row-unique tiebreak, and
+    /// <c>Total</c> is the count AFTER filtering. It previously returned
+    /// <c>rows.Count</c> for a page it never actually paged, so the grid footer
+    /// read "1-10 of 10" whatever was asked for.
+    /// </para>
+    /// </summary>
     public async Task<GridPage<AdminEmailTemplateSummary>> ListAsync(
         GridQuery query, CancellationToken cancellationToken = default)
     {
@@ -35,7 +83,7 @@ internal sealed class AdminEmailTemplateService(
             .AsNoTracking()
             .ToDictionaryAsync(t => t.Type, cancellationToken);
 
-        var rows = EmailTemplateCatalog.All
+        var matched = EmailTemplateCatalog.All
             .Select(def =>
             {
                 var row = overrides.GetValueOrDefault(def.Type);
@@ -47,9 +95,143 @@ internal sealed class AdminEmailTemplateService(
                     row?.Version ?? 0,
                     row?.UpdatedAt);
             })
+            .Where(RowTest(query))
             .ToList();
 
-        return GridPage<AdminEmailTemplateSummary>.Of(rows, rows.Count, query);
+        var (skip, top) = query.ClampPage();
+
+        return GridPage<AdminEmailTemplateSummary>.Of(
+            Sort(matched, query).Skip(skip).Take(top).ToList(),
+            matched.Count,
+            skip,
+            top);
+    }
+
+    /// <summary>Builds the row test: every requested filter ANDed, then the
+    /// free-text search ORed across the two text columns.</summary>
+    private static Func<AdminEmailTemplateSummary, bool> RowTest(GridQuery query)
+    {
+        var tests = new List<Func<AdminEmailTemplateSummary, bool>>();
+
+        foreach (var (key, raw) in query.Filters)
+        {
+            var test = FilterFor(key, raw);
+            if (test is not null)
+            {
+                tests.Add(test);
+            }
+        }
+
+        var search = query.Search?.Trim();
+        if (!string.IsNullOrEmpty(search))
+        {
+            tests.Add(row => Contains(row.TypeName, search) || Contains(row.Subject, search));
+        }
+
+        return row => tests.TrueForAll(test => test(row));
+    }
+
+    /// <summary>Resolves one filter key to its row test. A blank value is no
+    /// filter, but the KEY is validated either way: a stale key is a client bug
+    /// whether or not it carries a value on this particular request.</summary>
+    private static Func<AdminEmailTemplateSummary, bool>? FilterFor(string key, string? raw)
+    {
+        var normalised = RequireKey(key, ErrorCodes.GridFilterKeyInvalid, "filterable");
+
+        var value = raw?.Trim();
+        if (string.IsNullOrEmpty(value))
+        {
+            return null;
+        }
+
+        return normalised switch
+        {
+            TypeKey => row => Contains(row.TypeName, value),
+            SubjectKey => row => Contains(row.Subject, value),
+            CustomisedKey => BoolTest(key, value),
+            VersionKey => VersionTest(key, value),
+            // RequireKey has already rejected anything else, so this is updatedAt.
+            _ => DayTest(key, value),
+        };
+    }
+
+    private static IEnumerable<AdminEmailTemplateSummary> Sort(
+        List<AdminEmailTemplateSummary> rows, GridQuery query)
+    {
+        // No sort key: the catalogue's own declaration order, which the enum value
+        // preserves. It is unique per row, so it is its own tiebreak.
+        if (string.IsNullOrWhiteSpace(query.Sort))
+        {
+            return rows.OrderBy(row => row.Type);
+        }
+
+        var descending = query.SortDescending;
+
+        return RequireKey(query.Sort, ErrorCodes.GridSortKeyInvalid, "sortable") switch
+        {
+            TypeKey => Order(rows, row => row.TypeName, StringComparer.OrdinalIgnoreCase, descending),
+            SubjectKey => Order(rows, row => row.Subject, StringComparer.OrdinalIgnoreCase, descending),
+            CustomisedKey => Order(rows, row => row.IsOverride, Comparer<bool>.Default, descending),
+            VersionKey => Order(rows, row => row.Version, Comparer<int>.Default, descending),
+            _ => Order(rows, row => row.UpdatedAt, Comparer<DateTime?>.Default, descending),
+        };
+    }
+
+    /// <summary>Orders by one column and always appends the template type as a
+    /// tiebreak. The tiebreak is unique per row, so rows that tie on the sorted
+    /// column cannot swap places between two requests — which is what lets a row
+    /// appear on two pages while another appears on none.</summary>
+    private static IEnumerable<AdminEmailTemplateSummary> Order<TKey>(
+        List<AdminEmailTemplateSummary> rows,
+        Func<AdminEmailTemplateSummary, TKey> selector,
+        IComparer<TKey> comparer,
+        bool descending) =>
+        (descending
+            ? rows.OrderByDescending(selector, comparer)
+            : rows.OrderBy(selector, comparer))
+        .ThenBy(row => row.Type);
+
+    /// <summary>Normalises a requested key and rejects one this list does not
+    /// declare, naming the accepted set. A silently ignored sort flips the header
+    /// arrow without moving a row; a silently ignored filter WIDENS the result set,
+    /// which reads as data rather than as a fault.</summary>
+    private static string RequireKey(string key, string errorCode, string capability)
+    {
+        var normalised = key.Trim().ToLowerInvariant();
+        if (Array.IndexOf(GridKeys, normalised) >= 0)
+        {
+            return normalised;
+        }
+
+        var english =
+            $"'{key}' is not a {capability} column on this list. Columns: {GridKeyList}.";
+        var arabic =
+            $"العمود '{key}' غير متاح في هذه القائمة. الأعمدة المتاحة: {GridKeyList}.";
+
+        throw new ApiException(
+            errorCode, 400, english, arabic,
+            [new ApiErrorDetail { Field = key, Message = english, MessageArabic = arabic }]);
+    }
+
+    private static bool Contains(string value, string term) =>
+        value.Contains(term, StringComparison.OrdinalIgnoreCase);
+
+    private static Func<AdminEmailTemplateSummary, bool> BoolTest(string key, string raw) =>
+        bool.TryParse(raw, out var wanted)
+            ? row => row.IsOverride == wanted
+            : throw GridFilters.ValueInvalid(key, raw, "true or false");
+
+    private static Func<AdminEmailTemplateSummary, bool> VersionTest(string key, string raw) =>
+        int.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out var wanted)
+            ? row => row.Version == wanted
+            : throw GridFilters.ValueInvalid(key, raw, "a whole number");
+
+    /// <summary>A date filter names a calendar DAY, half-open [d, d+1), so a row
+    /// stamped 14:30 on that day matches. Saudi wall-clock, per GridFilters.</summary>
+    private static Func<AdminEmailTemplateSummary, bool> DayTest(string key, string raw)
+    {
+        var day = GridFilters.ParseDay(key, raw);
+        return row => row.UpdatedAt >= day && row.UpdatedAt < day.AddDays(1);
     }
 
     public async Task<AdminEmailTemplateDetail> GetAsync(

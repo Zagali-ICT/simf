@@ -1,6 +1,9 @@
 // Tests: SIMF.Api.Tests/AdminAccountMobileTests.cs (the optional mobile
 //        correction, stored canonicalised in the one collapsed column)
 // Tests: SIMF.Api.Tests/AdminAccountNationalityTests.cs (nationality)
+// Tests: SIMF.Api.Tests/AdminUpdateUserIdentityCommitFailureTests.cs (the
+//        Identity-then-App write ordering: a failed Identity commit must leave
+//        the profile type unchanged rather than durable)
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -22,6 +25,11 @@ namespace SIMF.Infrastructure.Identity;
 /// protection a create does not need: when the login email changes the security
 /// stamp is rolled and the subject's refresh tokens are revoked, so a stale
 /// session cannot keep signing in under the old identity.
+///
+/// <para>The two-context save is ORDERED — the Identity transaction commits
+/// first, then the App-DB profile write, then the audit row. See the comment on
+/// that sequence in <c>UpdateAccountAsync</c>; the same reasoning is spelled out
+/// on the type-change path (<c>ChangeAccountTypeAsync</c>).</para>
 /// </summary>
 internal sealed partial class AdminAccountService
 {
@@ -135,6 +143,28 @@ internal sealed partial class AdminAccountService
 
         var now = timeProvider.SimfNow();
 
+        // Cross-database ordering. transactionRunner wraps a transaction on the
+        // IDENTITY database ONLY, and the two databases cannot share one, so
+        // anything written to the App database from inside its lambda is already
+        // durable by the time that transaction rolls back. The Identity unit of
+        // work therefore runs FIRST and ALONE — the account update, and, when
+        // this edit is an identity / privilege change, the security-stamp roll
+        // plus the session revoke — and the App-DB profile write follows it.
+        //
+        // Ordered this way a partial failure fails CLOSED: a demotion that dies
+        // before the profile write leaves the subject signed out and still
+        // carrying the old type, which is exactly the pre-edit state and is
+        // retryable. The reverse order committed the privilege change to the App
+        // database and then rolled the stamp roll back with the Identity
+        // transaction, so a demoted user kept a live access token carrying the
+        // OLD permission claims while the database already said otherwise —
+        // the fail-open the type-change path (ChangeAccountTypeAsync) is
+        // deliberately written to avoid.
+        //
+        // Keeping the audit write out of the lambda matters for a second reason:
+        // the runner uses the EF execution strategy, so a transient failure
+        // re-runs the whole lambda, and an audit write inside it recorded one
+        // admin action as two OperationLog rows.
         await transactionRunner.ExecuteAsync(async (innerCt) =>
         {
             target.Email = trimmedEmail;
@@ -171,34 +201,39 @@ internal sealed partial class AdminAccountService
                 await refreshTokenRepository.RevokeAllForUserAsync(
                     target.Id, now, innerCt);
             }
+        }, cancellationToken);
 
-            await UpsertProfileTypeAsync(
-                target.Id, resolvedProfileTypeId,
-                allowsSpeakerMeeting, allowsDelegationMeeting,
-                resolvedNationalityId,
-                normalisedSaudiMobile, normalisedInternationalMobile,
-                now, innerCt);
+        // Then the App-DB half, after the Identity transaction has committed.
+        await UpsertProfileTypeAsync(
+            target.Id, resolvedProfileTypeId,
+            allowsSpeakerMeeting, allowsDelegationMeeting,
+            resolvedNationalityId,
+            normalisedSaudiMobile, normalisedInternationalMobile,
+            now, cancellationToken);
 
-            await auditLog.WriteAsync(new AuditEntry
-            {
-                EventType = AuditEvents.AdminUserUpdated,
-                Outcome = AuditOutcome.Success,
-                SubjectEmail = trimmedEmail,
-                SubjectUserId = target.Id,
-                ActorUserId = actorUserId,
-                Detail = $"scope={(expectedIsVisitor ? "visitor" : "other")}; "
-                    + $"emailChanged={emailChanged}; "
-                    + $"profileTypeChanged={profileTypeChanged}; "
-                    + $"profileType={resolvedProfileTypeId}; "
-                    + $"nationalityId={resolvedNationalityId?.ToString(
-                        System.Globalization.CultureInfo.InvariantCulture) ?? "unchanged"}; "
-                    // A phone correction is a contact-detail change on
-                    // someone else's account, so the trail records THAT it happened.
-                    // The number itself is not written to the audit detail (the
-                    // RowAudit interceptor already masks the mobile columns).
-                    + $"mobileChanged={normalisedSaudiMobile is not null
-                        || normalisedInternationalMobile is not null}",
-            }, innerCt);
+        // Audit the completed edit — after both halves are durable, so the trail
+        // reflects what actually happened rather than what was attempted. A retry
+        // after a mid-way failure is idempotent: the stamp roll and the revoke
+        // re-apply harmlessly and the profile write is a no-op once applied.
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.AdminUserUpdated,
+            Outcome = AuditOutcome.Success,
+            SubjectEmail = trimmedEmail,
+            SubjectUserId = target.Id,
+            ActorUserId = actorUserId,
+            Detail = $"scope={(expectedIsVisitor ? "visitor" : "other")}; "
+                + $"emailChanged={emailChanged}; "
+                + $"profileTypeChanged={profileTypeChanged}; "
+                + $"profileType={resolvedProfileTypeId}; "
+                + $"nationalityId={resolvedNationalityId?.ToString(
+                    System.Globalization.CultureInfo.InvariantCulture) ?? "unchanged"}; "
+                // A phone correction is a contact-detail change on
+                // someone else's account, so the trail records THAT it happened.
+                // The number itself is not written to the audit detail (the
+                // RowAudit interceptor already masks the mobile columns).
+                + $"mobileChanged={normalisedSaudiMobile is not null
+                    || normalisedInternationalMobile is not null}",
         }, cancellationToken);
 
         logger.LogInformation(

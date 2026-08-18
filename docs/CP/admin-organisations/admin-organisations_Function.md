@@ -97,6 +97,10 @@ Edit/Delete hides the per-row pencil/trash icons.
   by exact active Arabic name when no CR) — so a re-import updates rather than
   duplicates. Bad rows (e.g. blank Arabic name) are skipped and listed, not
   fatal.
+- An import only **fills** columns. A cell the sheet leaves blank means "not
+  supplied", so uploading a partial correction file (say, Arabic names only)
+  will not wipe the commercial registration, English name or contact details
+  already on those rows. Use the Edit form to clear a field on purpose.
 - Guard failures (no file / > 5 MB / not a real `.xlsx`) → error toast
   `Admin.Organisations.Import.Failed` = "Excel import failed." or the server's
   bilingual message.
@@ -121,16 +125,17 @@ Edit/Delete hides the per-row pencil/trash icons.
 
 ## Validation rules (aligned across the three layers)
 
-The server-side `AdminOrganisationService.ValidateAndNormalise` is the **source
-of truth**; the UI `MaxLength` caps match it; there is no EF `HasMaxLength`
-attribute on the entity (the entity is plain; the field caps are enforced in the
-service, and the import path additionally `Clamp`s to the same lengths).
+The stored column width in `OrganisationConfiguration` is the **source of
+truth**; `AdminOrganisationService` carries it as named constants used by both
+`ValidateAndNormalise` and the import `Clamp`, so a value that clears validation
+always fits the column. The entity itself is plain (no EF attributes), and the UI
+`MaxLength` may be stricter but never looser.
 
 | Field | UI `MaxLength` | Server limit (`ValidateAndNormalise`) | Required | Over-limit error |
 |-------|----------------|----------------------------------------|----------|------------------|
-| Name (Arabic) | 256 | 1–256 (`< 1 or > 256` → throw) | yes | 400 `ORGANISATION_INVALID` |
-| Name (English) | 256 | ≤ 256 | no | 400 `ORGANISATION_INVALID` |
-| Commercial registration | 32 | ≤ 32 (+ unique → 409) | no | 400 / 409 `ORGANISATION_INVALID` |
+| Name (Arabic) | 150 | 1–150 (`< 1 or > 150` → throw) | yes | 400 `ORGANISATION_INVALID` |
+| Name (English) | 150 | ≤ 150 | no | 400 `ORGANISATION_INVALID` |
+| Commercial registration | 32 | ≤ 700 (+ unique → 409); the form is stricter than the server | no | 400 / 409 `ORGANISATION_INVALID` |
 | Sector | 128 | ≤ 128 | no | 400 |
 | City | 128 | ≤ 128 | no | 400 |
 | Phone | 32 | ≤ 32 | no | 400 |

@@ -122,10 +122,19 @@ public interface IAdminUserProvisioningService
     /// Creates a new user as a copy of an existing one — same display name,
     /// same UserType + RBAC roles, no password, fresh 7-day invite email
     ///.
+    ///
+    /// <para>Copying an Admin source copies its role membership, so duplicating a
+    /// role-holding account IS a role grant. <paramref name="canAssignRoles"/> is the
+    /// caller's authority to make one: the wildcard, or the same
+    /// <c>Admins.AssignRoles</c> permission the create endpoint demands before it
+    /// will honour a non-empty <c>Roles</c> list. Without it a role-holding source
+    /// is refused with <c>FORBIDDEN</c> (403) before anything is created; a
+    /// role-less source is unaffected either way.</para>
     /// </summary>
     Task<AdminCreateUserResponse> DuplicateUserAsync(
         Guid actorUserId,
         AdminDuplicateUserRequest request,
+        bool canAssignRoles,
         CancellationToken cancellationToken = default);
 
     // Walk-in / desk registration --------------------------------

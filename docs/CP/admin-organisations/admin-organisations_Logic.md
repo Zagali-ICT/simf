@@ -18,9 +18,9 @@ reference row — no navigation properties, no cross-context FK.
 
 | Property | Type | Notes |
 |----------|------|-------|
-| `NameArabic` | `string` (required, default `""`) | **Primary** display name, 1–256 chars; the default sort key and the picker's display |
-| `Name` | `string?` | English name, ≤ 256; optional |
-| `CommercialRegistration` | `string?` | سجل تجاري, ≤ 32; optional, **unique when present** |
+| `NameArabic` | `string` (required, default `""`) | **Primary** display name, 1–150 chars; the default sort key and the picker's display |
+| `Name` | `string?` | English name, ≤ 150; optional |
+| `CommercialRegistration` | `string?` | سجل تجاري, ≤ 700 stored; optional, **unique when present** |
 | `Sector` | `string?` | ≤ 128; optional |
 | `City` | `string?` | ≤ 128; optional |
 | `Phone` | `string?` | ≤ 32; optional |
@@ -32,10 +32,15 @@ reference row — no navigation properties, no cross-context FK.
 | (inherited) `CreatedBy` / `UpdatedBy` | actor stamps | set by the central audit-stamping interceptor |
 
 > The field length caps are enforced in the **service** (`ValidateAndNormalise`
-> + the import `Clamp`), not via EF attributes on the entity. The service comment
-> states the lengths "mirror `OrganisationConfiguration.HasMaxLength`" — the EF
-> `IEntityTypeConfiguration` was not opened this session, so treat the service
-> limits (1–256 / 256 / 32 / 128 / 128 / 32 / 320 / 512) as the verified caps.
+> + the import `Clamp`), not via EF attributes on the entity. They are now named
+> constants on `AdminOrganisationService` carrying the widths declared in
+> `OrganisationConfiguration`: **150 / 150 / 700 / 128 / 128 / 32 / 320 / 512**.
+> The two name caps read 256 until 2026-08-18 while the column held 150, so a
+> 151-to-256-character name passed the 400 validator and then failed
+> `SaveChangesAsync` as an unhandled `SqlException` — a 500 on legitimate input,
+> and mid-import an abort after earlier batches had already committed. The
+> commercial registration reads 700 to match the widened column (the CP form
+> still caps its input at 32, which is stricter than the server, not looser).
 
 ## Soft-delete (`IsActive`)
 
@@ -96,10 +101,29 @@ the inherited `CreatedBy`/`UpdatedBy` stamps.
   `OrganisationImportRow[]`. A parse failure → 400 `ORGANISATION_IMPORT_FAILED`.
 - Per row: `NullIfBlank(NameAr)`; a missing Arabic name → **skipped** + error
   `"Row {n}: Arabic name is required."`. All fields are `Clamp`-ed to the column
-  lengths (256 / 32 / 256 / 128 / 128 / 32 / 320 / 512) rather than rejected.
+  lengths (150 / 700 / 150 / 128 / 128 / 32 / 320 / 512) rather than rejected.
 - **Match key:** by `CommercialRegistration` when present; otherwise by the exact
-  **active** Arabic name (`o.IsActive && o.NameArabic == nameArClamped`). Match →
-  update; no match → insert (new `IsActive = true`).
+  **active** Arabic name. Match → update; no match → insert (new
+  `IsActive = true`).
+- **Lookup is pre-loaded, not per row.** The whole sheet is normalised first,
+  then two chunked `IN (...)` queries (≤ 500 keys each) load the candidate rows
+  into two case-insensitive maps — one keyed on commercial registration, one on
+  the active Arabic name. Before 2026-08-18 this was one `SingleOrDefaultAsync`
+  per spreadsheet row (N+1), and on the name path `Single` threw permanently
+  once two organisations shared a name; the name map now takes the oldest match
+  (`CreatedAt`, then `Id`) instead.
+- **A row inserted by the sheet is registered in both maps**, so a key repeated
+  within one workbook updates the pending row. An unsaved insert is invisible to
+  a query, so two rows sharing a commercial registration previously both
+  inserted and hit the filtered unique index on `SaveChanges`.
+- **Update fills, it does not clear.** Every optional column coalesces
+  (`existing.X = value ?? existing.X`): a blank cell in a bulk sheet means "not
+  supplied". Before 2026-08-18 the update branch assigned unconditionally, so a
+  partial-update sheet carrying only the Arabic name erased the English name,
+  the commercial registration and the contact columns while reporting
+  `updated=1` — and the next sheet carrying the real CR then matched nothing and
+  inserted a duplicate the filtered unique index could not catch. Clearing a
+  field deliberately is what the explicit Edit form is for.
 - Flushes every `ImportBatchSize = 500` rows; error list capped at
   `ImportErrorCap = 50`. Returns `OrganisationImportResult(rowsRead, inserted,
   updated, skipped, errors)`.
@@ -136,10 +160,13 @@ the inherited `CreatedBy`/`UpdatedBy` stamps.
 
 ## Invariants (summary)
 
-1. Arabic name required (1–256) and is the primary display + default sort key.
+1. Arabic name required (1–150, the stored width) and is the primary display +
+   default sort key.
 2. Commercial registration unique when present; the upsert key for re-import.
 3. Soft-delete only (`IsActive`); deactivate is idempotent; no hard delete.
 4. Admin grid shows all rows; the **public picker shows active only**.
 5. Org↔profile link is a bare Guid (`organisationId`, D-221), resolve-on-read.
-6. Every mutation is audited; field caps enforced in the service, mirrored by the
-   UI `MaxLength` and the import `Clamp`.
+6. Every mutation is audited; field caps enforced in the service from one set of
+   constants, mirrored by the import `Clamp` and never looser than the stored
+   column.
+7. A bulk import fills columns; only the explicit Edit form clears them.

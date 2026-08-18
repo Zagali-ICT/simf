@@ -21,6 +21,7 @@
 | 1.1 | 2026-05-29 | SIMF Engineering Team | D-160 — added §7.4 `POST /gates/{gateId}/visitors/list`: cursor-paged staff-app view of scans at a single gate, backed by the D-158 snapshot columns. |
 | 1.2 | 2026-07-26 | SIMF Engineering Team | BUG-018 — corrected §4 to the owner's app-first operator model (a gate operator is an approved app account on an operational ProfileType carrying Staff/Moderator, not a CP RBAC-role holder); tightened the §6.3 `assignedOperatorUserIds` rule to that eligibility with a named-id 400; added §6.7a operator-candidates and §6.7b gate-form lookups; appended `userEmail` to the §6.7 assignment row. |
 | 1.3 | 2026-08-18 | SIMF Engineering Team | Grid-seam alignment. Rewrote §6.8 Reports to the shipped contract: the scan report and the occupancy report are now POSTs binding a `GridQuery` (`.../reports/scans/list`, `.../reports/currently-inside/list`) and return `GridPage<T>`; `.../reports/scans.xlsx` keeps its route but binds the same `GridQuery` so the workbook holds filter parity with the grid. Listed the real filter, search and sort keys and the page-size fallback/cap for both reports, and replaced the removed `directionMode` report filter with the scan-level `direction`. §13 OI-1 is closed: the occupancy report is server-paged by contract, so it no longer waits on the load test. |
+| 1.4 | 2026-08-18 | SIMF Engineering Team | Removed the staleness the 1.3 rewrite left behind, so the document is internally consistent again. §6.1 gate list corrected to `POST /admin/gates/list` binding a `GridQuery`, with the real declared keys, the searchable set, the default order and the page fallback / cap, and with the render-only columns named as such: the old text documented a `GET` with query parameters and a sort-key list that was wrong twice. §6.3 corrected to the shipped **200** on create. §6.6 marked never built: no route in `src` maps `allowed-profile-types`. Operator surface re-prefixed to the shipped `/api/v1/app/gates/*` throughout §1, §4, §5 and §7. §11 offline-queue-drain seam struck through and marked shipped: `GET /app/gates/offline-config` and `GET /app/gates/offline-roster` exist, so listing them as reserved was the same class of staleness. §12 criterion 5 re-pointed at the real flat test files (there is no `SIMF.Api.Tests/Gates/` folder), and criterion 7 restated in terms of permission holders rather than the "Administrator" / "GateOperator" role names BUG-018 had already retired in §4. §2 narrowed to say the offline queue is out of scope as a device-side flow while the server side of the cached config has shipped. §8.2's two "reserved" denial codes corrected: `GateOperatorService` writes both, and `OUTSIDE_TIME_WINDOW` no longer means a time window at all but a badge from a closed edition, the code being reused on purpose so a scan cannot tell the holder which check failed; `BOOKING_REQUIRED_MISSING` is emitted at a session-hall door for an unregistered attendee, on entries only and relaxed under walk-in mode. The matching §2 and §11 rows are struck through to agree. §12 criterion 5 records that `HOLDER_LOCKED` and `PROFILE_TYPE_INACTIVE` have no direct assertion, so it is documented as not yet met in full rather than asserted as passing. Every line this revision adds or edits is free of em-dash, en-dash and ellipsis per the owner rule; untouched lines keep theirs, since a wholesale purge is not a staleness correction. |
 
 ---
 
@@ -28,8 +29,8 @@
 
 This document is the build-ready API contract for the **Gate Management and
 Scan** increment. It specifies every request and response under the two new
-route groups — `/api/v1/admin/gates/*` (administration) and `/api/v1/gates/*`
-(operator) — the idempotency contract, the error catalogue, and the headers
+route groups `/api/v1/admin/gates/*` (administration) and `/api/v1/app/gates/*`
+(operator), plus the idempotency contract, the error catalogue, and the headers
 that complement the envelope defined in SIMF-API-001.
 
 It does **not** restate the API conventions, the `ApiResult<T>` envelope, the
@@ -54,10 +55,16 @@ Out of scope:
 
 - Device authentication (the future `GateDevice` API-key flow — plan §11.5,
   reserved seam).
-- Time-window resolution (plan §11.2, reserved hook at engine step 9.5).
-- Booking-required gating (plan §11.3, reserved hook at engine step 11.5).
-- The offline queue, late-denial alerts and on-device cached config — the
-  device-side flow per design notes §5.4.
+- ~~Time-window resolution (plan §11.2, reserved hook at engine step 9.5).~~
+  Step 9.5 now has a writer, though not the one planned: it refuses a badge from
+  a closed **edition** rather than resolving a time window. See §8.2.
+- ~~Booking-required gating (plan §11.3, reserved hook at engine step 11.5).~~
+  Shipped for session-hall doors. See §8.2.
+- The offline queue and late-denial alerts as a **device-side** flow per design
+  notes §5.4: how a scanner queues, drains and reconciles is a Flutter concern.
+  The **server** side of the cached config is no longer out of scope. It shipped
+  as `GET /app/gates/offline-config` and `GET /app/gates/offline-roster`, which
+  §11's as-built note records.
 
 ## 3. Conventions inherited from SIMF-API-001
 
@@ -79,9 +86,9 @@ The conventions from SIMF-API-001 apply in full and are not restated:
 | Route group | Auth | Required permission(s) |
 |-------------|------|------------------------|
 | `/api/v1/admin/gates/*` | Bearer (Administrator) | `Gates.Manage` |
-| `/api/v1/gates/my-assignments` | Bearer | `Gates.Operate` |
-| `POST /api/v1/gates/{gateId}/scans` | Bearer | `Gates.Operate` |
-| `/api/v1/gates/my-reports/*` | Bearer | `Gates.ViewOwnReports` |
+| `/api/v1/app/gates/my-assignments` | Bearer | `Gates.Operate` |
+| `POST /api/v1/app/gates/{gateId}/scans` | Bearer | `Gates.Operate` |
+| `/api/v1/app/gates/my-reports/*` | Bearer | `Gates.ViewOwnReports` |
 
 **Who a gate operator is (BUG-018, owner ruling).** Gate scanning happens
 **through the mobile app**, not the Control Panel. A gate operator is therefore an
@@ -103,22 +110,24 @@ authenticated but lacks the permission returns **403**.
 
 | Header | Direction | Used on | Purpose |
 |--------|-----------|---------|---------|
-| `Idempotency-Key` | Request | `POST /api/v1/gates/{gateId}/scans` | Client-generated UUIDv4. Replays return the original outcome. May also be carried in the body as `idempotencyKey`; the header wins if both are present. |
-| `X-Idempotent-Replay` | Response | `POST /api/v1/gates/{gateId}/scans` | `true` when the response is a recorded replay of a prior key. Absent / `false` on the first execution of a key. |
-| `X-Gate-Failure-Circuit` | Response | `POST /api/v1/gates/{gateId}/scans` | `open` when the failure-rate circuit fired (≥10 denials per 60 s → 5-min lockout). The request is rejected with **429**. Absent when the circuit is closed. |
+| `Idempotency-Key` | Request | `POST /api/v1/app/gates/{gateId}/scans` | Client-generated UUIDv4. Replays return the original outcome. May also be carried in the body as `idempotencyKey`; the header wins if both are present. |
+| `X-Idempotent-Replay` | Response | `POST /api/v1/app/gates/{gateId}/scans` | `true` when the response is a recorded replay of a prior key. Absent / `false` on the first execution of a key. |
+| `X-Gate-Failure-Circuit` | Response | `POST /api/v1/app/gates/{gateId}/scans` | `open` when the failure-rate circuit fired (≥10 denials per 60 s → 5-min lockout). The request is rejected with **429**. Absent when the circuit is closed. |
 | `X-RateLimit-Limit`, `X-RateLimit-Remaining` | Response | All scan + admin endpoints | Standard rate-limit headers; emitted by the existing rate-limiter middleware. |
 
-## 6. Administration surface — `/api/v1/admin/gates/*`
+## 6. Administration surface: `/api/v1/admin/gates/*`
 
 Permission: `Gates.Manage`.
 
 ### 6.1 List gates
 
 ```
-GET /api/v1/admin/gates?skip=0&top=25&sort=code&desc=false&search=&isActive=
+POST /api/v1/admin/gates/list                           body: GridQuery
 ```
 
-Returns a `GridPage<AdminGateSummary>`.
+The gate list runs on the shared grid seam like the two reports in §6.8, so it is a
+**POST** whose body is a `GridQuery` (`Skip` / `Top` / `Sort` / `Desc` / `Search` /
+`Filters`) and whose payload is one `GridPage<AdminGateSummary>`.
 
 ```json
 {
@@ -134,7 +143,9 @@ Returns a `GridPage<AdminGateSummary>`.
         "allowedProfileTypeCount": 0,
         "assignedOperatorCount": 3,
         "isActive": true,
-        "createdAt": "2026-05-29T08:00:00Z"
+        "createdAt": "2026-05-29T08:00:00Z",
+        "description": null,
+        "descriptionArabic": null
       }
     ],
     "total": 1,
@@ -146,7 +157,21 @@ Returns a `GridPage<AdminGateSummary>`.
 }
 ```
 
-Query parameters per SIMF-API-001 §9. Sort keys: `code`, `name`, `directionMode`, `createdAt`.
+Declared keys, usable as both filter and sort: `code`, `name`, `nameArabic`,
+`directionMode`, `isActive`. `code`, `name` and `nameArabic` are the searchable
+keys, so `Search` matches across the three. Default order is `code` ascending; page
+size falls back to 25 and is capped at 200. A key that is not on that list is a
+bilingual **400**, not a silently ignored request, and key matching is
+case-insensitive.
+
+`isActive` is declared even though the grid renders that column without a filter
+box, because the list has always honoured an `isActive` filter. `createdAt` is
+**not** declared: the column is rendered but is neither sortable nor filterable.
+`allowedProfileTypeCount` and `assignedOperatorCount` are likewise render-only.
+They are correlated sub-queries rather than declared columns, which keeps the page
+one SELECT and keeps both counts out of the ORDER BY. `description` and
+`descriptionArabic` ride on the row so the grid's Excel export can round-trip the
+bilingual description; neither is rendered as a grid column.
 
 ### 6.2 Get a gate
 
@@ -211,7 +236,13 @@ Validation:
 | `allowedProfileTypeIds` | Optional; each must be an active `ProfileType` |
 | `assignedOperatorUserIds` | Optional; each id must be an **eligible gate operator** (see §4): an approved app account on an operational `ProfileType` (`IsForVisitor=false`) whose `MobileAppRole` confers `Gates.Operate`, or an approved Control-Panel admin account for the CP operator console. An ineligible id is rejected with **400 GATE_ASSIGNMENT_INVALID**, and the message names the offending id(s). |
 
-Returns **201** with `AdminGateDetail`. Duplicate code → **409 GATE_CODE_DUPLICATE**.
+Returns **200** with `AdminGateDetail`. Duplicate code gives **409
+GATE_CODE_DUPLICATE**.
+
+**As-built.** This section read "returns 201". The endpoint answers **200** on the
+envelope's success path like every other admin write in the system, and
+`AdminGatesTests` pins that status, so the document is corrected to the shipped
+behaviour rather than the endpoint to the document.
 
 ### 6.4 Update a gate
 
@@ -234,10 +265,15 @@ return **200** with the current state. 404 if not found.
 ### 6.6 List a gate's allowed profile types
 
 ```
-GET /api/v1/admin/gates/{id}/allowed-profile-types
+~~GET /api/v1/admin/gates/{id}/allowed-profile-types~~   Never built
 ```
 
-Returns `Guid[]` of `ProfileTypeId`s. (Convenience companion to §6.2.)
+**As-built.** This convenience companion to §6.2 was specified and never shipped.
+Nothing in `src` maps the route, so a caller gets a 404 from the router rather than
+a `Guid[]`. The allowed profile types are read from §6.2's
+`allowedProfileTypeIds`, which the Control Panel's gate form already uses, and the
+selectable options come from §6.7b. The section number is retained rather than
+renumbered so the cross-references in the sibling documents keep resolving.
 
 ### 6.7 List a gate's assigned operators
 
@@ -350,7 +386,7 @@ Its columns are declared over `GateScan` because that is what the query pages:
 renders are resolved **after** the page is chosen, some of it out of the Identity
 database, so they are neither sortable nor filterable.
 
-## 7. Operator surface — `/api/v1/gates/*`
+## 7. Operator surface: `/api/v1/app/gates/*`
 
 Permission: `Gates.Operate` (scans + my-assignments); `Gates.ViewOwnReports`
 (daily report).
@@ -358,7 +394,7 @@ Permission: `Gates.Operate` (scans + my-assignments); `Gates.ViewOwnReports`
 ### 7.1 My assignments
 
 ```
-GET /api/v1/gates/my-assignments
+GET /api/v1/app/gates/my-assignments
 ```
 
 Returns `OperatorGateAssignment[]`:
@@ -389,7 +425,7 @@ pick one for the shift. When the operator has none, the console shows a
 ### 7.2 Post a scan
 
 ```
-POST /api/v1/gates/{gateId}/scans
+POST /api/v1/app/gates/{gateId}/scans
 Headers:
   Idempotency-Key: <UUIDv4>   (optional; body field also accepted; header wins)
 Body:
@@ -508,7 +544,7 @@ but nothing emits it.
 ### 7.3 My report — today
 
 ```
-GET /api/v1/gates/my-reports/today?gateId=
+GET /api/v1/app/gates/my-reports/today?gateId=
 ```
 
 Permission: `Gates.ViewOwnReports`. Returns the operator's own scans for
@@ -537,7 +573,7 @@ omitted):
 ### 7.4 List visitors at a gate (D-160)
 
 ```
-POST /api/v1/gates/{gateId}/visitors/list
+POST /api/v1/app/gates/{gateId}/visitors/list
 ```
 
 Permission: `Gates.ViewOwnReports`. Cursor-paged list of scans recorded at
@@ -657,9 +693,9 @@ emits exactly one of these on a denial.
 | `HOLDER_DISABLED` | The visitor's account is `Disabled` | 7 |
 | `HOLDER_LOCKED` | The visitor's account is `Locked` | 8 |
 | `PROFILE_TYPE_INACTIVE` | The visitor's `ProfileType` is `IsActive = false` | 9 |
-| `OUTSIDE_TIME_WINDOW` | Reserved (engine step 9.5) — emitted only when the time-window feature ships in a later increment | 9.5 |
+| `OUTSIDE_TIME_WINDOW` | **No longer reserved, and no longer a time window.** Engine step 9.5 now emits it when the badge carries a **closed edition**: an attendee whose `EditionYear` is neither zero nor the open edition's year is refused, which is the only expiry a minted QR has. The code is deliberately reused rather than given a distinct message, because a scan must never tell the holder which half of the check failed. A zero on the record means the attendee predates the column and is left alone rather than locked out by a schema change. | 9.5 |
 | `PROFILE_TYPE_NOT_ALLOWED` | The visitor's `ProfileType` is not in the gate's allow-list (or the allow-list filtered empty per L-15) | 11 |
-| `BOOKING_REQUIRED_MISSING` | Reserved (engine step 11.5) — emitted only when the booking-required feature ships in a later increment | 11.5 |
+| `BOOKING_REQUIRED_MISSING` | **No longer reserved.** Engine step 11.5 emits it at a **session-hall door** when the attendee is not registered for the session running behind it. It had no writer, so any valid badge opened every hall. It runs after the allow-list because it needs the resolved direction, applies to **entries only** (a departure is never blocked), and is relaxed while session walk-in mode is active. Eligibility is asked by profile, so an attendee with no account is answered on their real registration rather than assumed unregistered. | 11.5 |
 | `DUPLICATE_ABSORBED_5S` | Not a denial — this is the **replay path** for a duplicate scan within 5 s; the API returns the existing scan id with `outcome = Allowed` (or the original denial) and `X-Idempotent-Replay: false` (because the key is different, but the duplicate is absorbed) | 13 |
 
 Localised message strings for every code live in `Strings.resx` /
@@ -700,17 +736,32 @@ The circuit emits one `OperationLog` row (`EventType = GateFailureCircuitOpened`
 on open and one on close (`GateFailureCircuitClosed`), so SOC can correlate the
 short outage with the underlying denial pattern.
 
-## 11. Forward-looking seams (reserved — not in this increment)
+## 11. Forward-looking seams (reserved at specification time)
 
 | Seam | Reserved at | Future increment |
 |------|-------------|------------------|
 | Device API-key authentication | §4 (gateAuth) | Flutter app / kiosk increment |
-| Time-window constraint | Engine step 9.5 + DenialReasonCode `OUTSIDE_TIME_WINDOW` | Programme & Session increment |
-| Booking-required constraint | Engine step 11.5 + DenialReasonCode `BOOKING_REQUIRED_MISSING` | Bookings increment |
-| Offline queue drain | Design notes §5 + header `X-Idempotent-Replay` + 24h idempotency store | Flutter app increment |
+| ~~Time-window constraint~~ | ~~Engine step 9.5 + DenialReasonCode `OUTSIDE_TIME_WINDOW`~~ | **Step 9.5 has a writer, see §8.2** |
+| ~~Booking-required constraint~~ | ~~Engine step 11.5 + DenialReasonCode `BOOKING_REQUIRED_MISSING`~~ | **Shipped, see §8.2** |
+| ~~Offline queue drain~~ | ~~Design notes §5 + header `X-Idempotent-Replay` + 24h idempotency store~~ | **Shipped, see the as-built note below** |
 | Materialised `VisitorPresence` table | Design notes §3.3 fallback | Reporting hardening (only if needed) |
 
-All five seams are *contract-stable*: the wire surface ships in this
+**As-built.** The offline row is no longer a reserved seam. Two operator
+endpoints ship it, both `Gates.Operate` and both rate-limited on the operational
+policy: `GET /api/v1/app/gates/offline-config`, the snapshot of scanning rules
+plus the badge key a device caches so it can judge a badge with no network, and
+`GET /api/v1/app/gates/offline-roster?since=`, the attendees an operator's doors
+are expecting, pulled whole or as a delta from the previous response's
+`issuedAt`. Both are deliberately their own call rather than fields on §7.1,
+because each carries something revocable on its own: a secret in the first case,
+attendee names and movements in the second. Every verdict a device reaches
+offline stays **advisory**: the scan is still queued and §7.2 re-decides it
+against live data, so the roster makes the offline answer better, not
+authoritative. Their request and response shapes are not specified here; this
+document is being corrected for staleness, and writing the contract for two
+endpoints it never covered is a specification change rather than a correction.
+
+The remaining seams are *contract-stable*: the wire surface ships in this
 increment so the device side and the future increments plug into the
 existing API without server-side change.
 
@@ -723,13 +774,31 @@ existing API without server-side change.
    `X-Idempotent-Replay: true`.
 4. The failure-rate circuit opens after 10 denials in 60 s and stays open
    for 5 min.
-5. Every denial code in §8.2 is reachable through at least one test in
-   `SIMF.Api.Tests/Gates/*` and carries a bilingual message string.
+5. Every denial code in §8.2 is reachable through at least one test and
+   carries a bilingual message string. The tests are flat files in
+   `tests/SIMF.Api.Tests/`, not the `SIMF.Api.Tests/Gates/*` folder this
+   criterion used to name. `GateScanTests.cs` asserts six of the codes
+   (`QR_UNKNOWN`, `GATE_INACTIVE_AT_SCAN`, `HOLDER_NOT_APPROVED`,
+   `HOLDER_DISABLED`, `PROFILE_TYPE_NOT_ALLOWED`, `OUTSIDE_TIME_WINDOW`),
+   `GateRevokedBadgeTests.cs` and `GateScanIdempotencyRecoveryTests.cs`
+   assert `HOLDER_DISABLED` and `HOLDER_NOT_APPROVED` on the revocation and
+   replay paths, and `GateHallDoorChainTests.cs` asserts
+   `BOOKING_REQUIRED_MISSING`. `HOLDER_LOCKED` and `PROFILE_TYPE_INACTIVE`
+   have no direct assertion in that set, so the criterion is not yet met in
+   full. The rest of the gate suite is `GateFailureCircuitTests.cs` (the
+   failure-rate circuit as a unit, not its 429), `GateOfflineRosterTests.cs`,
+   `GateOperatorModelTests.cs`, `GateVisitorsListTests.cs`, and
+   `AdminGatesTests.cs` plus `AdminGateCurrentlyInsideTests.cs` and
+   `GatesExcelTests.cs` for the §6 surface.
 6. The XLSX report endpoint streams a binary spreadsheet with the same
    filter set as the JSON report.
-7. The role / permission gate is enforced — Administrator hits admin
-   endpoints; GateOperator hits operator endpoints; neither can take the
-   other's role's actions without the corresponding permission.
+7. The permission gate is enforced. A holder of `Gates.Manage` reaches the
+   §6 admin surface; a holder of `Gates.Operate` reaches the §7 scan surface
+   and `Gates.ViewOwnReports` the operator reports; neither can take the
+   other's actions without the corresponding permission. The criterion named
+   an "Administrator" and a "GateOperator" **role**, which BUG-018 had already
+   corrected in §4: assignment is roles-only but enforcement is per-permission,
+   and a gate operator is an approved app account, not an RBAC role name.
 
 ## 13. Open items
 

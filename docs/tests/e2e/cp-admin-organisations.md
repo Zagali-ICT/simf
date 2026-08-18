@@ -29,7 +29,7 @@
 | E2E-ORG-005 | Auth gate — admin lacking `Organisations.View` → `/not-permitted` | auth | P0 | _to author_ |
 | E2E-ORG-006 | Action gate — admin lacking `Organisations.Create` sees no "New" button | auth | P1 | _to author_ |
 | E2E-ORG-007 | Validation — blank Arabic name → bilingual error toast, no POST | error | P1 | _to author_ |
-| E2E-ORG-008 | Server validation — Arabic name > 256 chars → 400 `ORGANISATION_INVALID` | error | P2 | _to author_ |
+| E2E-ORG-008 | Server validation — Arabic name > 150 chars → 400 `ORGANISATION_INVALID` (not 500) | error | P0 | _to author_ |
 | E2E-ORG-009 | Conflict — duplicate Commercial registration → 409 `ORGANISATION_INVALID` | error | P1 | _to author_ |
 | E2E-ORG-010 | Delete confirm cancelled — `confirm` returns false → no DELETE | function | P2 | _to author_ |
 | E2E-ORG-011 | Import rejects a non-`.xlsx` / bad-magic file → bilingual import-failed toast | error | P2 | _to author_ |
@@ -41,6 +41,9 @@
 | E2E-ORG-017 | Full-page mode: Add/Edit/View take over the content area, Save returns to grid (D-353) | happy | P1 | _to author_ |
 | E2E-ORG-018 | Delete confirmation gate — View/Delete + SimfConfirm (Cancel = no DELETE; confirm = one DELETE) (D-353) | error | P0 | _to author_ |
 | E2E-ORG-019 | Excel export: toolbar Export downloads an `.xlsx` of the filtered grid (whole grid vs selected rows) (D-356) | happy | P1 | _to author_ |
+| E2E-ORG-020 | Import — a partial sheet (Arabic name column only) must not null curated columns | error | P0 | _to author_ |
+| E2E-ORG-021 | Import — the same commercial registration twice in ONE sheet upserts, no duplicate, no 500 | error | P0 | _to author_ |
+| E2E-ORG-022 | Import — an over-long name cell is clamped, the batch is not aborted | error | P1 | _to author_ |
 | E2E-ORG-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-ORG-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
@@ -217,21 +220,27 @@ Scenario: Blank Arabic name shows a bilingual error before any request
 ### E2E-ORG-008 — Server validation (Arabic name too long)
 
 ```gherkin
-Scenario: Arabic name over 256 characters returns 400 ORGANISATION_INVALID
+Scenario: Arabic name over 150 characters returns 400 ORGANISATION_INVALID
   Given the Add modal is open
-  When the administrator fills Name (Arabic) with 257 characters
+  When the administrator fills Name (Arabic) with 151 characters
   And clicks "Save"
   Then POST /account/api/admin/organisations is forwarded
   And the API returns HTTP 400 with ApiResult.Error.Code = "ORGANISATION_INVALID"
+  And the response is NOT a 500
   And the modal stays open
   And the error toast surfaces the bilingual MessageForCurrentCulture()
-      "Organisation Arabic name must be between 1 and 256 characters."
-      / "يجب أن يتراوح طول الاسم العربي للمنظمة بين 1 و 256 حرفاً."
+      "Organisation Arabic name must be between 1 and 150 characters."
+      / "يجب أن يتراوح طول الاسم العربي للمنظمة بين 1 و 150 حرفاً."
 ```
 
-> Note: the UI field carries `MaxLength="256"`, so reproducing this typically requires
+> Note: the UI field carries `MaxLength="150"`, so reproducing this typically requires
 > programmatically setting the value past the cap (e.g. via `evaluate_script`) to exercise
 > the server guard rather than relying on keyboard entry.
+>
+> 151 is the load-bearing number. The validator admitted 256 until 2026-08-18
+> while the column stored 150, so this exact input returned a 500 from an
+> unhandled `SqlException` instead of the 400 above. Regression-pinned by
+> `OrganisationTests.Create_rejects_an_arabic_name_longer_than_the_stored_column`.
 
 ### E2E-ORG-009 — Conflict (duplicate commercial registration)
 
@@ -445,6 +454,70 @@ Scenario: Export the filtered grid to an XLSX workbook (whole grid vs selected r
 > `simfAccount.downloadXlsx` (direct browser download), not a `CrudGridExcel`
 > component. The API caps export at 5000 rows.
 
+### E2E-ORG-020 — Import must not null the columns the sheet omits
+
+```gherkin
+Scenario: A partial-update sheet fills columns but never clears them
+  Given an organisation exists with
+      Name (Arabic)="شركة البيانات المنسقة"
+      Name (English)="Curated Columns Org"
+      Commercial registration="1010998877"
+      Sector="Maritime", City="Dammam", Email="curated@simf.test"
+  And a workbook whose ONLY column is "NameAr", carrying "شركة البيانات المنسقة"
+  When the administrator imports that workbook
+  Then the result panel reads "Rows read: 1 · Inserted: 0 · Updated: 1 · Skipped: 0"
+  And re-opening that organisation still shows
+      Commercial registration="1010998877", Name (English)="Curated Columns Org",
+      Sector="Maritime", City="Dammam", Email="curated@simf.test"
+  And the grid shows exactly ONE row for that Arabic name
+```
+
+> Before 2026-08-18 the update branch assigned every column unconditionally, so
+> this sheet erased the three curated columns while reporting `updated=1`. It
+> compounded: the next sheet carrying the real commercial registration matched
+> nothing (the column it matches on had been nulled) and inserted a duplicate the
+> filtered unique index cannot catch, because it filters
+> `[CommercialRegistration] IS NOT NULL`. Regression-pinned by
+> `OrganisationTests.Import_does_not_null_the_columns_the_sheet_omits`.
+
+### E2E-ORG-021 — Same commercial registration twice in one sheet
+
+```gherkin
+Scenario: A key repeated inside one workbook upserts instead of duplicating
+  Given no organisation carries commercial registration "1010224466"
+  And a workbook with two data rows that BOTH carry "1010224466"
+      with different Arabic names
+  When the administrator imports that workbook
+  Then the request returns 200, not 500
+  And the result panel reads "Rows read: 2 · Inserted: 1 · Updated: 1 · Skipped: 0"
+  And searching the grid for "1010224466" returns exactly one row
+  And that row carries the SECOND sheet row's Arabic name
+```
+
+> An unsaved insert is invisible to a query, so matching each row against the
+> database inserted twice and hit the filtered unique index on `SaveChanges`.
+> The import now registers a newly inserted row in its own match maps.
+> Regression-pinned by
+> `OrganisationTests.Import_upserts_a_commercial_registration_repeated_within_one_sheet`.
+
+### E2E-ORG-022 — Over-long name cell is clamped, not fatal
+
+```gherkin
+Scenario: A 200-character name cell does not abort the import batch
+  Given a workbook with one data row whose Arabic name is 200 characters
+  When the administrator imports that workbook
+  Then the request returns 200, not 500
+  And the result panel reads "Rows read: 1 · Inserted: 1 · Updated: 0 · Skipped: 0"
+  And the error list is empty
+  And the stored Arabic name is the first 150 characters
+```
+
+> The import clamped to 256 against a 150-character column, so an over-long cell
+> aborted the whole `SaveChanges` — and mid-import that leaves the earlier
+> committed batches in place with no way to tell which rows landed.
+> Regression-pinned by
+> `OrganisationTests.Import_clamps_an_over_long_name_instead_of_failing_the_batch`.
+
 ---
 
 ## Implementation notes
@@ -459,10 +532,15 @@ Scenario: Export the filtered grid to an XLSX workbook (whole grid vs selected r
   `Create_then_get_then_list_contains_the_organisation`,
   `Deactivate_marks_the_organisation_inactive`,
   `Non_admin_caller_is_forbidden_on_create`,
-  `Import_inserts_new_rows_and_re_importing_upserts_by_commercial_registration`, and
-  `Public_picker_search_returns_the_matching_organisation`. These exercise the same
-  service surface (`AdminOrganisationService`) without a browser; E2E-ORG-001/004/005/009
-  are the browser-level mirror. During the transition keep both layers.
+  `Import_inserts_new_rows_and_re_importing_upserts_by_commercial_registration`,
+  `Public_picker_search_returns_the_matching_organisation`,
+  `Create_rejects_an_arabic_name_longer_than_the_stored_column`,
+  `Import_clamps_an_over_long_name_instead_of_failing_the_batch`,
+  `Import_does_not_null_the_columns_the_sheet_omits`, and
+  `Import_upserts_a_commercial_registration_repeated_within_one_sheet`. These
+  exercise the same service surface (`AdminOrganisationService`) without a
+  browser; E2E-ORG-001/004/005/008/009/020/021/022 are the browser-level mirror.
+  During the transition keep both layers.
 - **Error-code source of truth:** `ErrorCodes.OrganisationInvalid = "ORGANISATION_INVALID"`
   (400 validation + 409 duplicate CR), `ORGANISATION_NOT_FOUND` (404),
   `ORGANISATION_IMPORT_FAILED` (400/413). Audit event keys:
@@ -472,4 +550,8 @@ Scenario: Export the filtered grid to an XLSX workbook (whole grid vs selected r
 
 ---
 
-_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle; added E2E-ORG-016..019, corrected the now-stale native-`confirm()` delete copy in ORG-001/ORG-010 to the shipped CrudShell + SimfConfirm gate).
+_Last reviewed:_ 2026-08-18 by Claude (import hardening — added E2E-ORG-020..022 for
+the null-overwrite, the repeated-CR insert and the over-long name clamp; corrected
+ORG-008 from 256 to the column's real 150, which is why it was a 500 rather than a 400).
+
+_Previously:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle; added E2E-ORG-016..019, corrected the now-stale native-`confirm()` delete copy in ORG-001/ORG-010 to the shipped CrudShell + SimfConfirm gate).

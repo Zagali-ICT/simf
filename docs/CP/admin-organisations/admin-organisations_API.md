@@ -91,7 +91,7 @@ page sends `Top = 20`), `Search`, `Sort`, `SortDescending`, `Filters`
 
 | Code | HTTP | When | Bilingual surface (verbatim from service/endpoint) |
 |------|------|------|----------------------------------------------------|
-| `ORGANISATION_INVALID` | 400 | a field fails validation (Arabic name not 1–256; any optional field over its cap) | EN "Organisation Arabic name must be between 1 and 256 characters." / AR "يجب أن يتراوح طول الاسم العربي للمنظمة بين 1 و 256 حرفاً." (and per-field variants) |
+| `ORGANISATION_INVALID` | 400 | a field fails validation (Arabic name not 1–150; any optional field over its cap) | EN "Organisation Arabic name must be between 1 and 150 characters." / AR "يجب أن يتراوح طول الاسم العربي للمنظمة بين 1 و 150 حرفاً." (and per-field variants) |
 | `ORGANISATION_INVALID` | 409 | duplicate commercial registration (on create, or on update when the CR changes) | EN "An organisation with commercial registration '{cr}' already exists." / AR "توجد منظمة بالسجل التجاري '{cr}' بالفعل." |
 | `ORGANISATION_NOT_FOUND` | 404 | get/update/delete on a missing id | EN "The organisation was not found." / AR "لم يتم العثور على المنشأة." (endpoint) / "لم يتم العثور على المنظمة." (service) |
 | `ORGANISATION_IMPORT_FAILED` | 413 | import upload over 5 MB | EN "The Excel file is too large. The maximum is 5 MB." / AR "ملف Excel كبير جدًا. الحد الأقصى 5 ميغابايت." |
@@ -110,6 +110,13 @@ page sends `Top = 20`), `Search`, `Sort`, `SortDescending`, `Filters`
 4. An unparseable-but-valid-magic workbook → 400 `ORGANISATION_IMPORT_FAILED`.
    Per-row failures (e.g. blank Arabic name) are counted under "Skipped" and
    returned in `errors` (capped at 50) — a bad row is **not** a batch abort.
+
+> **Upsert semantics.** The import **fills** columns; it never clears them. A
+> cell the sheet leaves blank is "not supplied", so a partial-update workbook
+> carrying only the Arabic name updates nothing else and leaves the commercial
+> registration, the English name and the contact columns as they were. Clearing
+> a field is the explicit Edit endpoint's job (`PUT`, which does assign every
+> field from the request body).
 
 ## App-consumption note (`/app/organisations`)
 

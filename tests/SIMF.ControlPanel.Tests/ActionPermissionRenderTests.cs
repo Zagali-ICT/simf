@@ -306,6 +306,10 @@ public sealed class ActionPermissionRenderTests : CpComponentTestBase
             // The grid itself still renders - this is about the empty container,
             // not about hiding the page from someone allowed to read it.
             Assert.NotEmpty(cut.FindAll("table"));
+            // The stubbed row actually reached the grid. Without this the test
+            // still passed when the stub stopped matching the page's call, which
+            // is how it survived the list route moving to POST .../list unnoticed.
+            Assert.Contains("Opening session", cut.Markup);
         });
     }
 
@@ -323,6 +327,12 @@ public sealed class ActionPermissionRenderTests : CpComponentTestBase
         cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll(".simf-grid__toolbar")));
     }
 
+    /// <summary>The desk is a server-paged grid: it POSTs a GridQuery to
+    /// <c>.../session-summaries/list</c> and reads back one page, so the stub has to
+    /// match the verb as well as the route. It used to stub the retired
+    /// <c>GET .../session-summaries</c> returning a bare list, which under
+    /// <see cref="JSRuntimeMode.Loose"/> simply went unmatched: the page rendered
+    /// with no rows at all, and both toolbar tests ran against an empty grid.</summary>
     private void StubSessionSummaryRow()
     {
         JSInterop.Mode = JSRuntimeMode.Loose;
@@ -332,9 +342,14 @@ public sealed class ActionPermissionRenderTests : CpComponentTestBase
             HasSummary: true, GeneratedByAi: false, IsPublished: false,
             PublishedAt: null, UpdatedAt: SimfClock.Now, IsInReview: false,
             IsApproved: false, ApprovedAt: null);
-        JSInterop.Setup<ApiResult<IReadOnlyList<AdminSessionSummaryRow>>>(
-                "simfAccount.getJson", "/account/api/admin/session-summaries")
-            .SetResult(ApiResult<IReadOnlyList<AdminSessionSummaryRow>>.Ok(new[] { row }));
+        JSInterop.Setup<ApiResult<GridPage<AdminSessionSummaryRow>>>(
+                "simfAccount.postJson",
+                invocation => invocation.Arguments.Count > 0
+                    && (invocation.Arguments[0] as string)
+                        == "/account/api/admin/session-summaries/list")
+            .SetResult(ApiResult<GridPage<AdminSessionSummaryRow>>.Ok(
+                GridPage<AdminSessionSummaryRow>.Of(
+                    new[] { row }, total: 1, skip: 0, top: 20)));
     }
 
     private static IReadOnlyList<AngleSharp.Dom.IElement> ButtonsLabelled(

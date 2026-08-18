@@ -1,6 +1,7 @@
 // Tests: SIMF.Api.Tests/NotificationChannelTests.cs
 //        SIMF.Api.Tests/NotificationLifecycleTests.cs (P13 — trigger-by-trigger)
 using Microsoft.Extensions.Logging;
+using SIMF.Application.Auditing;
 using SIMF.Application.Email;
 using SIMF.Application.IdentityAccess.Abstractions;
 
@@ -19,6 +20,7 @@ namespace SIMF.Application.Notifications;
 internal sealed class EmailNotificationChannel(
     IUserAccountStore accounts,
     IEmailQueue emailQueue,
+    IAuditLog auditLog,
     ILogger<EmailNotificationChannel> logger) : INotificationChannel
 {
     public string Name => "email";
@@ -43,6 +45,21 @@ internal sealed class EmailNotificationChannel(
         // culture-aware queue / per-user language preference is a P13 follow-up.
         var body = request.PreRenderedEmailHtml
             ?? $"<p>{System.Net.WebUtility.HtmlEncode(request.Body)}</p>";
-        emailQueue.Enqueue(new EmailMessage(user.Email, request.Title, body));
+
+        // Routed through TryEnqueueAsync rather than a bare Enqueue so that a
+        // message the queue REFUSES (it is full) leaves the same Email.EnqueueFailed
+        // audit row as one that throws. A refusal is not a bad address and must not
+        // be treated like the quiet skip above: nothing else records that this
+        // recipient's email was dropped. It still does not fail the dispatch, since
+        // the in-app row written by InAppNotificationChannel is the delivery that
+        // matters and email is best-effort on top.
+        await emailQueue.TryEnqueueAsync(
+            new EmailMessage(user.Email, request.Title, body),
+            purpose: $"Notification.{request.Kind}",
+            subjectEmail: user.Email,
+            subjectUserId: request.UserId,
+            auditLog: auditLog,
+            logger: logger,
+            cancellationToken: cancellationToken);
     }
 }

@@ -61,7 +61,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/interests` | [`cp-admin-interests.md`](cp-admin-interests.md) | E2E-INT-001..013 |
 | `/admin/profile-types/visitor` | [`cp-admin-profile-types-visitor.md`](cp-admin-profile-types-visitor.md) | E2E-VPT-001..015 |
 | `/admin/profile-types/other` | [`cp-admin-profile-types-other.md`](cp-admin-profile-types-other.md) | E2E-OPT-001..018 |
-| `/admin/organisations` | [`cp-admin-organisations.md`](cp-admin-organisations.md) | E2E-ORG-001..019 |
+| `/admin/organisations` | [`cp-admin-organisations.md`](cp-admin-organisations.md) | E2E-ORG-001..022 |
 | `/admin/regions` | [`cp-admin-regions.md`](cp-admin-regions.md) | E2E-REGION-001..016 |
 | `/admin/countries` | [`cp-admin-countries.md`](cp-admin-countries.md) | E2E-CTY-001..024 |
 | `/admin/vips` | [`cp-admin-vips.md`](cp-admin-vips.md) | E2E-VIP-001..013 |
@@ -351,10 +351,10 @@ being quoted in planning as if current.
   196 against a pinned total of 197. Only the two bold totals are
   machine-checked, so the parts had drifted unnoticed; counting by prefix is
   reproducible with one `ls`.)
-- **Total scenarios:** 3179 Coverage-matrix rows, every id distinct. That
+- **Total scenarios:** 3182 Coverage-matrix rows, every id distinct. That
   includes the **360** generated element-sweep rows (`E2E-{NS}-ELS-001/002`, two
   per live page — see `tools/qa/generate_els_rows.py`); the hand-authored
-  functional total is 2819.
+  functional total is 2822.
 - **Authored:** all pages. The D-133 "pending" stubs are fully authored, and
   every event-module and P2–P5 page added since has its own file.
 - **Execution:** the canonical run today is a Chrome DevTools MCP browser pass
