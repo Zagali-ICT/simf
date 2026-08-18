@@ -52,8 +52,12 @@ public readonly record struct EventBadgePayload(
 ///
 /// <para>Sizes: <see cref="AesGcm"/> requires a 12-byte nonce, and this codec
 /// takes the full 16-byte tag (see <see cref="TagBytes"/>). Overhead is therefore 28
-/// bytes on a 9-byte payload, and a typical badge is about 61 characters — which
-/// is why <c>GateScans.QrIdAtScan</c> is nvarchar(96).</para>
+/// bytes on the 20-byte payload, so every badge is EXACTLY 78 characters: 48 bytes
+/// of nonce, ciphertext and tag become 77 base32 symbols, plus the leading
+/// key-version character. There is no "typical" and "extreme" case — the payload is
+/// fixed-width, so the length never varies. That is why <c>GateScans.QrIdAtScan</c>
+/// is nvarchar(96): 78 fits with room for the ceiling check to be a real guard
+/// rather than a coincidence.</para>
 /// </summary>
 public static class EventBadgeCodec
 {

@@ -1378,7 +1378,7 @@ internal sealed class SeatReservationService(
         Guid sessionId, string qrId, CancellationToken cancellationToken = default)
     {
         // Canonicalise first. An offline badge arrives as a
-        // ~61-character encrypted blob, not a QrId, so the direct lookup below
+        // 78-character encrypted blob, not a QrId, so the direct lookup below
         // would miss it and report an unknown badge. A minted serial passes
         // through unchanged.
         var code = qrResolver.ToStoredQrId(qrId ?? string.Empty);
