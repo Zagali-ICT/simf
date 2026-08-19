@@ -41,10 +41,9 @@ internal sealed class OrganizationHeroVideoService(
             FileService.OrganizationHeroVideo, OrganizationProfile.SingletonId,
             content, fileName, contentType, extension, actorUserId, cancellationToken);
 
-        // "One active hero video per profile" — retire the others now that the
-        // replacement is safely stored (unlinks their bytes too), keeping this
-        // request's own file and anything newer, so two overlapping replaces can
-        // never leave zero.
+        // "One active hero video per profile". The store has already done this
+        // ahead of its own insert, so on this path the call is a no-op kept for
+        // the remove path below; see RetireActiveAsync.
         await RetireActiveAsync(keepId: result.Id, actorUserId, cancellationToken);
 
         // The pointer, not a URL. CreateStreamedAsync already set it through the
@@ -133,9 +132,15 @@ internal sealed class OrganizationHeroVideoService(
     /// Nothing noticed while the profile stored a constant served route: whichever
     /// file survived, the URL read the same. It became visible the moment the
     /// profile started pointing at a specific file, because the pointer named the
-    /// deleted one and the hero went blank. This also matches
-    /// <c>AssetService.RetirePriorActiveAsync</c>, which has always kept an
-    /// explicit id.</para></summary>
+    /// deleted one and the hero went blank.</para>
+    ///
+    /// <para>On the UPLOAD path this is now a no-op, and deliberately kept anyway.
+    /// The file store retires the owner previous hero video itself, before it
+    /// inserts the replacement, because the filtered unique index on
+    /// (Service, OwnerEntityId) refuses a second active row - so by the time this
+    /// runs the only active row is the one it was told to keep. What it is still
+    /// needed for is the REMOVE path, where there is no keepId and everything
+    /// goes.</para></summary>
     private async Task RetireActiveAsync(Guid? keepId, Guid actorUserId, CancellationToken ct)
     {
         var active = await db.StoredFiles.AsNoTracking()

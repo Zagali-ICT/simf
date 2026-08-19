@@ -16,6 +16,7 @@ using SIMF.Common.Files;
 using SIMF.Common.Options;
 using SIMF.Domain.Files;
 using SIMF.Infrastructure.Persistence;
+using Microsoft.Data.SqlClient;
 
 namespace SIMF.Infrastructure.Files;
 
@@ -719,21 +720,49 @@ internal sealed class StoredFileService(
                 commitFailure,
                 "Storing file {Id} failed after its bytes were written; removing {StorageKey}.",
                 file.Id, storageKey);
-            try
+
+            // A rival replacing the SAME owner's file at the same moment is the one
+            // failure here that is not a fault: the retire and the insert are two
+            // statements, so the other request can land its own row in between and
+            // the filtered unique index refuses this one. That is the index doing
+            // its job, and it deserves a clean conflict rather than the raw
+            // duplicate-key 500 an unhandled DbUpdateException would produce. The
+            // bytes are still unlinked below either way - this only changes what
+            // the caller is told. Narrow to 2601/2627 so a genuine write failure
+            // still surfaces as one.
+            if (commitFailure is DbUpdateException duplicate
+                && duplicate.InnerException is SqlException { Number: 2601 or 2627 })
             {
-                // CancellationToken.None on purpose: a cancelled request is one of
-                // the ways to get here, and the blob still has to go.
-                await storage.DeleteAsync(storageKey, CancellationToken.None);
+                await UnwriteAsync(file, storageKey);
+                throw new ApiException(
+                    ErrorCodes.ValidationFailed, 409,
+                    "Another administrator replaced this file a moment ago. "
+                        + "Reload and try again.",
+                    "قام مسؤول آخر باستبدال هذا الملف قبل لحظات. أعد التحميل وحاول مرة أخرى.");
             }
-            catch (Exception deleteFailure) when (deleteFailure is IOException
-                or UnauthorizedAccessException)
-            {
-                logger.LogError(
-                    deleteFailure,
-                    "Could not remove the orphaned bytes at {StorageKey} for file {Id}.",
-                    storageKey, file.Id);
-            }
+            await UnwriteAsync(file, storageKey);
             throw;
+        }
+    }
+
+    /// <summary>Remove the bytes a failed insert left behind. Best-effort: the row
+    /// never committed, so the blob is unreferenced either way, and failing the
+    /// caller a second time over a disk tidy-up helps nobody.</summary>
+    private async Task UnwriteAsync(StoredFile file, string storageKey)
+    {
+        try
+        {
+            // CancellationToken.None on purpose: a cancelled request is one of
+            // the ways to get here, and the blob still has to go.
+            await storage.DeleteAsync(storageKey, CancellationToken.None);
+        }
+        catch (Exception deleteFailure) when (deleteFailure is IOException
+            or UnauthorizedAccessException)
+        {
+            logger.LogError(
+                deleteFailure,
+                "Could not remove the orphaned bytes at {StorageKey} for file {Id}.",
+                storageKey, file.Id);
         }
     }
 

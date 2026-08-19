@@ -3974,7 +3974,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 table: "StoredFiles",
                 columns: new[] { "Service", "OwnerEntityId" },
                 unique: true,
-                filter: "[IsActive] = 1 AND [OwnerEntityId] IS NOT NULL AND [Service] IN (0, 4, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17, 23)");
+                filter: "[IsActive] = 1 AND [OwnerEntityId] IS NOT NULL AND [Service] IN (0, 4, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17, 23, 24)");
 
             migrationBuilder.CreateIndex(
                 name: "IX_SystemSettings_Key",

@@ -3492,7 +3492,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("Service", "OwnerEntityId")
                         .IsUnique()
-                        .HasFilter("[IsActive] = 1 AND [OwnerEntityId] IS NOT NULL AND [Service] IN (0, 4, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17, 23)");
+                        .HasFilter("[IsActive] = 1 AND [OwnerEntityId] IS NOT NULL AND [Service] IN (0, 4, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17, 23, 24)");
 
                     b.ToTable("StoredFiles", null, t =>
                         {

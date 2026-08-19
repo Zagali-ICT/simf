@@ -279,7 +279,8 @@ toggle persist, 019 full-page round-trip, 020 account provisioning, 021
 Excel export, 022 Excel import, 023 Excel import rejection, 027/028 link an
 existing account and its rejections, 029 provision an already-registered email,
 030 revoke a booth membership, 031 revoke rejections and its permission gate
-(030/031 are authored against the API; the CP control is still to be wired).
+(030 and 031 are shipped end to end: gated API, and the Revoke action in
+the Accounts modal).
 
 ## 12. Related docs
 

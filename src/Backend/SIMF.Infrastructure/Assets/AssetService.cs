@@ -173,14 +173,13 @@ internal sealed class AssetService(
         CancellationToken cancellationToken = default)
     {
         var service = ServiceFor(category);
-        // Newest first, tie-broken on the id. For nearly every category the
-        // database now guarantees a single active row - the filtered unique index
-        // on (Service, OwnerEntityId), keyed on
-        // FileServicePolicies.SingleActivePerOwner - so the ordering has nothing
-        // left to choose between. It stays for the one category deliberately left
-        // out of that set, ArchiveGalleryImage, where several active rows are
-        // legitimate and an unordered FirstOrDefault would serve a different image
-        // per request.
+        // Newest first, tie-broken on the id. Every category the Media Library
+        // owns is now in FileServicePolicies.SingleActivePerOwner, so the filtered
+        // unique index on (Service, OwnerEntityId) guarantees at most one active
+        // row and this ordering has nothing left to choose between. It stays as
+        // the belt to that braces: it costs nothing on a single-row read, and it
+        // is what kept the public serve deterministic for the years before the
+        // database held the invariant.
         var file = await dbContext.StoredFiles.AsNoTracking()
             .Where(f => f.Service == service && f.OwnerEntityId == ownerId && f.IsActive)
             .OrderByDescending(f => f.CreatedAt)

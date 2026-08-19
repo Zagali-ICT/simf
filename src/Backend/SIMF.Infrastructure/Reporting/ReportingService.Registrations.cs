@@ -182,21 +182,22 @@ internal sealed partial class ReportingService
                 ? users.OrderByDescending(u => u.AccountState).ThenBy(u => u.Id)
                 : users.OrderBy(u => u.AccountState).ThenBy(u => u.Id),
             // "registered" is the date column's own Key (RegistrationsReport
-            // .razor:63). Without this arm a click on it fell through to the
-            // default below, which reads `descending` INVERTED so that the
-            // no-sort case comes back newest-first. The grid therefore drew an
-            // ascending arrow — and rendered aria-sort="ascending" — over
+            // .razor:63). The column is sortable, so a click really does send
+            // this key, and the arm carries the direction literally: descending
+            // is newest first. Without it a click fell through to the default
+            // below, which used to read `descending` INVERTED, so the grid drew
+            // an ascending arrow — and rendered aria-sort="ascending" — over
             // newest-first rows, and a descending arrow over oldest-first ones.
-            // The default still wants that inversion; an explicit click must
-            // not inherit it.
             "registered" => descending
                 ? users.OrderByDescending(u => u.CreatedAt).ThenBy(u => u.Id)
                 : users.OrderBy(u => u.CreatedAt).ThenBy(u => u.Id),
-            // Newest first by default: a registrations report is normally read
-            // to see who has just signed up.
-            _ => descending
-                ? users.OrderBy(u => u.CreatedAt).ThenBy(u => u.Id)
-                : users.OrderByDescending(u => u.CreatedAt).ThenBy(u => u.Id),
+            // No column chosen: the grid draws no arrow, so the direction flag
+            // has nothing to point at and reading it here is what made the flag
+            // mean its own opposite — an unsorted request asking for ascending
+            // and being served newest-first. A registrations report is read to
+            // see who has just signed up, so that order is now stated outright
+            // instead of arrived at by inverting a flag nobody set.
+            _ => users.OrderByDescending(u => u.CreatedAt).ThenBy(u => u.Id),
         };
     }
 }

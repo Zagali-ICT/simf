@@ -1,4 +1,5 @@
 // Tests: SIMF.Api.Tests/EmailFailureAlertTests.cs (outage alert behaviour)
+// Tests: SIMF.Api.Tests/EmailSendRetryTests.cs (bounded retry of a transient failure)
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -26,6 +27,15 @@ namespace SIMF.Infrastructure.Email;
 /// producers filled it, pinned at its bound, and refused everything after that.
 /// The doc here used to call the alert "fire-and-forget" and claim it could not
 /// amplify; it was neither.</para>
+///
+/// <para>A send that fails for a reason that could plausibly clear on its own
+/// (a 4xx reply, a dropped socket, the send timing out) no longer loses the
+/// message: it goes back on the BACK of the queue and is tried again, up to
+/// <see cref="MaxSendAttempts"/> attempts in total. Anything the relay has
+/// answered definitively, and anything the transport does not recognise, is
+/// discarded on the first failure exactly as before, because retrying it cannot
+/// change the answer and every attempt is a queue slot held away from the
+/// messages behind it.</para>
 /// </summary>
 public sealed class EmailBackgroundService(
     EmailQueue queue,
@@ -34,6 +44,14 @@ public sealed class EmailBackgroundService(
     IWorkerHeartbeatRegistry heartbeat,
     ILogger<EmailBackgroundService> logger) : BackgroundService
 {
+    /// <summary>How many times one message may be handed to the relay before it
+    /// is discarded. Three is a delivery budget rather than a guess limit, so it
+    /// is deliberately smaller than the code-entry caps elsewhere in SIMF: it only
+    /// has to outlast the seconds-long blips a relay actually produces (a
+    /// greylist, a restart, a reset socket), and every extra attempt is a queue
+    /// slot held away from the messages behind it.</summary>
+    private const int MaxSendAttempts = 3;
+
     private static readonly char[] RecipientDelimiters = [',', ';', ' ', '\t', '\r', '\n'];
 
     // One alert per outage, not one per message. Only ever touched by the single
@@ -69,10 +87,59 @@ public sealed class EmailBackgroundService(
                 heartbeat.RecordFailure(nameof(EmailBackgroundService), ex.Message);
                 var smtp = options.Value;
                 logger.LogError(ex,
-                    "Failed to send email {Subject} to {Recipient} via SMTP {SmtpHost}:{SmtpPort} from {FromAddress}",
-                    message.Subject, message.To, smtp.Host, smtp.Port, smtp.FromAddress);
+                    "Failed to send email {Subject} to {Recipient} via SMTP {SmtpHost}:{SmtpPort} from {FromAddress} on attempt {Attempt} of {MaxAttempts}",
+                    message.Subject, message.To, smtp.Host, smtp.Port, smtp.FromAddress,
+                    message.AttemptCount + 1, MaxSendAttempts);
+                RequeueOrDiscard(message, ex);
+
+                // Unchanged, and still raised per failed ATTEMPT rather than per
+                // discarded message: the alert exists so ops see an outage while it
+                // is happening, and holding it back until a message exhausts its
+                // attempts would delay the first alert by the whole retry budget.
+                // The once-per-outage flag inside already collapses the extra
+                // attempts into a single alert.
                 await NotifyFailureAsync(message, ex, stoppingToken);
             }
+        }
+    }
+
+    /// <summary>
+    /// Puts a failed message back at the BACK of the queue when another attempt
+    /// could plausibly succeed, and lets it go otherwise. Letting it go is what
+    /// this worker has always done with a failed send; the bounded retry is what
+    /// stops a relay hiccup from having the same outcome as a wrong address.
+    /// </summary>
+    private void RequeueOrDiscard(EmailMessage message, Exception cause)
+    {
+        // The classification lives on the SMTP sender because the exceptions being
+        // judged are MailKit's and this worker only holds an IEmailSender. A refused
+        // recipient, a rejected sender or bad credentials fail identically every
+        // time, so retrying one only delays the drop while holding a queue slot away
+        // from a message that could have been delivered.
+        if (!SmtpEmailSender.IsTransientFailure(cause))
+        {
+            return;
+        }
+
+        var attemptsMade = message.AttemptCount + 1;
+        if (attemptsMade >= MaxSendAttempts)
+        {
+            logger.LogError(
+                "Giving up on the email {Subject} to {Recipient} after {Attempts} attempts; the message is discarded.",
+                message.Subject, message.To, attemptsMade);
+            return;
+        }
+
+        // The BACK of the queue, never the front: everything already waiting gets
+        // its turn before this message is tried again, so one recipient the relay
+        // keeps deferring cannot hold up the sign-in codes behind it. A full queue
+        // refuses the write and logs its own error, in which case the retry is
+        // discarded exactly like one that ran out of attempts.
+        if (queue.Enqueue(message with { AttemptCount = attemptsMade }))
+        {
+            logger.LogWarning(
+                "Re-queued the email {Subject} to {Recipient} for attempt {NextAttempt} of {MaxAttempts} after a transient send failure.",
+                message.Subject, message.To, attemptsMade + 1, MaxSendAttempts);
         }
     }
 

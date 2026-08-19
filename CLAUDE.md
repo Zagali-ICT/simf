@@ -470,6 +470,18 @@ regeneration. Both histories are regenerated through
   2 on `SimfIdentityDbContext`. Applied by a loop over the built model in
   `OnModelCreating`, not per configuration class, so a column added later
   inherits it without anyone remembering to ask.
+
+  **Know what this does and does not fold before promising it to anyone.** It
+  folds the **alef maksura onto the yeh**, so `مصطفى` and `مصطفي` match for
+  search, equality and the unique indexes. It does **NOT** fold a precomposed
+  alef-hamza onto a bare alef: `أحمد` is still not found by searching `احمد`.
+  Accent-insensitivity discards a *secondary* weight and only the decomposed
+  sequence `U+0627 U+0654` has one, while the precomposed `U+0623` carries a
+  primary weight of its own — and precomposed is what every Arabic keyboard
+  emits. `tests/SIMF.Api.Tests/ArabicCollationTests.cs` pins both the fold and
+  the non-fold, deliberately, so nobody re-derives this from the name of the
+  collation. Closing the hamza half needs a normalised shadow column written on
+  the way in, which is a schema change and its own lift.
 - **`StoredFiles` filtered UNIQUE index on `(Service, OwnerEntityId)`**, predicate
   `[IsActive] = 1 AND [OwnerEntityId] IS NOT NULL AND [Service] IN (...)`. The
   service list is generated from `FileServicePolicies.SingleActivePerOwner`, so

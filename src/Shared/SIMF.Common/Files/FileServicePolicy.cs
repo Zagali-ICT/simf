@@ -291,11 +291,16 @@ public static class FileServicePolicies
             FileService.Banner,
             FileService.BoothLogo,
             FileService.ExhibitorLogo,
+            // The archive gallery belongs here too, which is easy to get wrong. A
+            // GALLERY holds many images, so the instinct is to leave it out - but
+            // the owner of one of these files is the individual ArchiveMediaItem
+            // ROW, not the edition, and that row has a single MediaFileId pointer.
+            // One entry, one image. Excluding it would leave the accumulation this
+            // set exists to prevent alive for exactly one category.
+            FileService.ArchiveGalleryImage,
             // Managed by their own services, same one-per-owner rule.
             FileService.Avatar,
             FileService.OrganizationHeroVideo,
-            // ArchiveGalleryImage is deliberately ABSENT even though it is an asset
-            // category: an archive edition's gallery holds many images by design.
         };
 
     /// <summary>The <see cref="SingleActivePerOwner"/> set as the SQL filtered-index

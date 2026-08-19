@@ -1,4 +1,6 @@
 // Tests: SIMF.Api.Tests/EmailQueueDropTests.cs (the transport-security choice)
+// Tests: SIMF.Api.Tests/EmailSendRetryTests.cs (which failures are worth retrying)
+using System.Net.Sockets;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using Microsoft.Extensions.Options;
@@ -61,6 +63,93 @@ public sealed class SmtpEmailSender(IOptions<EmailOptions> options) : IEmailSend
         port == ImplicitTlsPort
             ? SecureSocketOptions.SslOnConnect
             : SecureSocketOptions.StartTls;
+
+    /// <summary>
+    /// Whether a failed send is worth another attempt, or is the relay's final
+    /// answer. <see cref="EmailBackgroundService"/> asks this before it puts a
+    /// message back on the queue.
+    ///
+    /// <para>The taxonomy lives with the transport that raises it rather than with
+    /// the worker that catches it: these are MailKit exceptions, and the worker
+    /// holds an <see cref="IEmailSender"/> without knowing what is behind it. It is
+    /// a static, like <see cref="SecureOptionsForPort"/>, so the classification can
+    /// be tested directly without an SMTP server to fail against.</para>
+    ///
+    /// <para>An unrecognised failure counts as permanent, which is the keystone of
+    /// the scheme rather than an oversight: an exception this transport does not
+    /// recognise is not evidence of a transient condition, and retrying on "I do
+    /// not know" is how a queue starts to spin against a fault that will never
+    /// clear.</para>
+    /// </summary>
+    /// <param name="failure">The exception thrown by the failed send.</param>
+    public static bool IsTransientFailure(Exception failure)
+    {
+        var sawTransient = false;
+
+        // MailKit routinely wraps the deciding fault, so the outermost type is not
+        // always the one that answers the question: a socket that went away
+        // mid-command surfaces as a protocol exception with the IOException
+        // underneath. A permanent cause found ANYWHERE in the chain settles it,
+        // because no number of further attempts can change that answer.
+        for (Exception? error = failure; error is not null; error = error.InnerException)
+        {
+            if (IsPermanentCause(error))
+            {
+                return false;
+            }
+
+            sawTransient |= IsTransientCause(error);
+        }
+
+        return sawTransient;
+    }
+
+    /// <summary>A failure that would repeat identically however many times the
+    /// message were handed to the relay again.</summary>
+    private static bool IsPermanentCause(Exception error)
+    {
+        // RFC 5321 splits the reply codes for exactly this purpose: 4xx means "try
+        // again later" and 5xx means "do not". A 5xx is the relay saying the
+        // mailbox does not exist, this sender may not relay, or the message is
+        // refused outright.
+        if (error is SmtpCommandException command)
+        {
+            var status = (int)command.StatusCode;
+            return status >= 500;
+        }
+
+        // Wrong credentials, a mechanism the server will not accept, or a
+        // certificate this client will not trust. All three are configuration, so
+        // further attempts only delay the drop and hold a queue slot while they do.
+        // Judged before the transient kinds below, because a handshake failure
+        // carries the underlying stream fault as its inner exception and would
+        // otherwise read as a retryable blip.
+        return error is MailKit.Security.AuthenticationException
+            || error is SslHandshakeException;
+    }
+
+    /// <summary>A failure that a later attempt could plausibly get past.</summary>
+    private static bool IsTransientCause(Exception error)
+    {
+        // A 4xx reply is the SMTP way of saying "not now": the mailbox is busy, the
+        // store is full, the service is restarting, the relay is greylisting a
+        // sender it has not seen before.
+        if (error is SmtpCommandException command)
+        {
+            var status = (int)command.StatusCode;
+            return status is >= 400 and < 500;
+        }
+
+        // A truncated or garbled reply, a connection that dropped mid-command, a
+        // host that is unreachable or refusing, a stream fault under TLS, and the
+        // socket timeout above expiring. Every one of these is the transport
+        // rather than the recipient, and the recipient is what a retry cannot fix.
+        return error is SmtpProtocolException
+            || error is MailKit.ServiceNotConnectedException
+            || error is SocketException
+            || error is IOException
+            || error is TimeoutException;
+    }
 
     public async Task SendAsync(EmailMessage message, CancellationToken cancellationToken = default)
     {
