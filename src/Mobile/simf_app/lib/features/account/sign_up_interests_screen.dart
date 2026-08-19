@@ -7,60 +7,23 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/core/errors/api_error_l10n.dart';
-import 'package:simf_app/core/responsive/max_width_body.dart';
 import 'package:simf_app/core/widgets/simf_auth_sweep.dart';
+import 'package:simf_app/features/account/data/interests_setup.dart';
+import 'package:simf_app/features/account/data/profile_lookups.dart';
 import 'package:simf_app/features/account/data/profile_models.dart';
 import 'package:simf_app/features/account/data/profile_repository.dart';
+import 'package:simf_app/features/account/data/sign_up_profile_draft.dart';
 import 'package:simf_app/features/account/widgets/account_sub_header.dart';
-import 'package:simf_app/features/account/widgets/interest_chip.dart';
 import 'package:simf_app/features/account/widgets/sign_up_interests_body.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// Page 007‑01 — اهتماماتي · Sign up — interests. The KSA-Project Figma design
-/// (node 505:1083 — D-365): navy surface + sweep, custom header, the
-/// اختر اهتماماتك heading, a two-column pill grid (gold selected /
-/// `navyDeep`-with-border unselected), the n/10 counter, and the gold متابعة
-/// button pinned at the bottom. The previous screen is parked in
-/// `_legacy_mockup/`.
-///
-/// Second save step (D-684, was the single D-332 save): the profile fields +
-/// both images are already saved on Page 007, so this screen receives the
-/// [SignUpProfileDraft], loads the interests lookup, requires **1–10** picks,
-/// then fires `POST /app/account/user-profile` again to add the interestIds to
-/// the existing profile, and routes to Page 010. AUTH-only; a draft-less deep
-/// link shows the recover state back to the profile-data screen.
-///
-/// Clean-code pass (D-550, Phase 3): screen-local colour consts dropped for
-/// `SimfTokens` (`chipBorderNavy` added); the pill extracted to [InterestChip];
-/// header to the shared [AccountSubHeader] (D-658); the body capped by
-/// [MaxWidthBody]. Behaviour + render unchanged — the 505:1083 golden locks it.
-///
-/// Route: `RouteNames.signUpInterests`.
-/// Data: [interestsSetupProvider], [profileRepositoryProvider].
-/// Perf: no list — a single-screen layout.
-/// The interests lookup, plus the current profile in #14 EDIT mode.
-@immutable
-class InterestsSetup {
-  const InterestsSetup({required this.interests, this.profile});
-
-  final List<InterestItem> interests;
-
-  /// Non-null only in edit mode, where the save is a lossless full re-POST and
-  /// so needs the profile it is re-sending.
-  final UserProfileResponse? profile;
-}
-
-/// Keyed on `editMode` because the two modes fetch DIFFERENT things: edit mode
-/// needs the profile as well, sign-up only the lookup. The third mode — no
-/// draft and not editing — never watches this at all.
-final interestsSetupProvider =
-    FutureProvider.autoDispose.family<InterestsSetup, bool>((ref, edit) async {
-  final repo = ref.watch(profileRepositoryProvider);
-  final profile = edit ? await repo.getMyProfile() : null;
-  final interests = await repo.getInterests();
-  return InterestsSetup(interests: interests, profile: profile);
-});
-
+/// Sign up — interests · اهتماماتي · route: RouteNames.signUpInterests · Figma
+/// 505:1083 (D-365)
+/// Contract: D-684 (was the single D-332 save) — the profile fields + both
+/// images are already saved on Page 007, so this second save only adds 1-10
+/// interestIds to the existing profile. #14 re-uses the screen as the
+/// standalone My-interests EDIT surface, where the save is a lossless full
+/// re-POST. AUTH-only; a draft-less deep link shows the recover state.
 class SignUpInterestsScreen extends ConsumerStatefulWidget {
   const SignUpInterestsScreen({super.key, this.draft, this.editMode = false});
 
@@ -174,7 +137,7 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
 
     return SignUpInterestsBody(
       l10n: l10n,
-      interests: async.valueOrNull?.interests ?? const <InterestItem>[],
+      interests: async.value?.interests ?? const <InterestItem>[],
       selected: _selected,
       loading: async.isLoading,
       loadError: error == null

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
@@ -10,6 +10,8 @@ import 'package:simf_app/features/delegations/data/delegation_models.dart';
 import 'package:simf_app/features/delegations/data/delegations_repository.dart';
 import 'package:simf_app/features/delegations/delegations_screen.dart';
 import 'package:simf_app/features/delegations/widgets/delegations_stats_strip.dart';
+
+import '../../support/simf_test_scope.dart';
 
 DelegationItem _item({
   required int id,
@@ -52,7 +54,7 @@ Future<void> _pump(
     ],
   );
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         // Bi-Meeting rework — the public screen reads the meeting-access flags
         // to decide card tappability; a guest (none) keeps the plain info

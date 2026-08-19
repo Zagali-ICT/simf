@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:simf_app/core/utils/bilingual.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
-import 'package:simf_app/features/sessions/data/session_models.dart'
+import 'package:simf_app/features/sessions/data/session_enums.dart'
     show SessionStatus;
 
 /// One card on the "my sessions" list — App "تفاصيل الجلسات" (Figma 1388:9067),
@@ -75,10 +75,8 @@ class MyAreaSessionItem {
     return minutes < 0 ? 0 : minutes;
   }
 
-  /// True once the session has finished (its end is in the past).
   bool hasEnded(DateTime nowUtc) => end.isBefore(nowUtc);
 
-  /// True while the session is still to come (its start is in the future).
   bool isUpcoming(DateTime nowUtc) => start.isAfter(nowUtc);
 
   /// True when the session has a replayable recording on the archive tab

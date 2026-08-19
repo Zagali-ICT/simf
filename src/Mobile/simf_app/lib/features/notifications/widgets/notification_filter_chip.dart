@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import 'package:simf_app/app/theme/tokens.dart';
 
-/// One filter chip: gold-filled when selected, gold-outlined otherwise.
 class NotificationFilterChip extends StatelessWidget {
   const NotificationFilterChip({
     required this.label,

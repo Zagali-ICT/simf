@@ -18,16 +18,13 @@ class SimfSearchField extends StatelessWidget {
     super.key,
   });
 
-  /// Placeholder text.
   final String hint;
 
-  /// Fires on each keystroke with the current query.
   final ValueChanged<String> onChanged;
 
   /// Shows the tuning/filter glyph at the inline end (the notifications frame).
   final bool showTuningIcon;
 
-  /// Optional external controller (e.g. to clear the field).
   final TextEditingController? controller;
 
   @override

@@ -11,9 +11,6 @@ import 'package:simf_app/features/requests/data/request_models.dart';
 import 'package:simf_app/features/requests/widgets/icon_box.dart';
 import 'package:simf_app/features/requests/widgets/request_status_style.dart';
 
-/// One expandable request card: the type icon, headline + context line + date,
-/// a status-coloured leading strip, and (when expanded) the status detail and a
-/// cancel action for the user's own pending requests.
 class RequestCard extends StatefulWidget {
   const RequestCard({
     required this.item,

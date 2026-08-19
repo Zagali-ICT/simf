@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
@@ -8,6 +8,8 @@ import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/features/account/badge_activation_screen.dart';
 import 'package:simf_app/features/account/badge_sign_in_screen.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
+
+import '../../support/simf_test_scope.dart';
 
 /// Part B (D-430) — widget tests for the badge-QR sign-in / activation screens:
 /// the resolve branch (has-password → sign-in; needs-email → activation) and
@@ -84,7 +86,7 @@ Widget _activationHost({
       ),
     ],
   );
-  return ProviderScope(
+  return simfTestScope(
     overrides: <Override>[authRepositoryProvider.overrideWithValue(repo)],
     child: MaterialApp.router(
       routerConfig: router,
@@ -130,7 +132,7 @@ Widget _host(
       ),
     ],
   );
-  return ProviderScope(
+  return simfTestScope(
     overrides: <Override>[authRepositoryProvider.overrideWithValue(repo)],
     child: MaterialApp.router(
       routerConfig: router,

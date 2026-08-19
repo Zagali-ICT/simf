@@ -127,7 +127,7 @@ Scenario: Pick a session and see its hall live
 - Screenshot before: `docs/screenshots/cp-admin-session-live-hall-golden-before.png` (session picked, panels loading)
 - Screenshot after: `docs/screenshots/cp-admin-session-live-hall-golden-after.png` (seat map + present table)
 - Console errors: 0 expected
-- Network: `/account/api/admin/sessions/list` 200 on load; `/seat-map` + `/present/list` 200 on select
+- Network: `/account/api/admin/attendance/sessions/list` 200 on load; `/seat-map` + `/present/list` 200 on select
 - DOM: `scrollWidth == clientWidth` (no horizontal overflow); the seat grid scrolls inside `.seatmap` (`overflow-x: auto`), never the page body
 
 ### E2E-SLH-002 — Four seat states

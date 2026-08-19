@@ -169,6 +169,17 @@ public sealed partial class SimfAdminClient
             HttpMethod.Put, $"session-summaries/{sessionId}/return-to-draft", content: null,
             accessToken, cancellationToken);
 
+    // The hall-arrival console's session picker. Its own read, gated
+    // HallArrivals.View, because the canonical sessions list is gated
+    // Sessions.View and the operator role that runs a hall door does not hold it.
+    public Task<ApiCallResult<GridPage<SIMF.Contracts.Sessions.HallArrivalSessionOption>>>
+        ListArrivalSessionsAsync(GridQuery query, string accessToken,
+            CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<SIMF.Contracts.Sessions.HallArrivalSessionOption>>(
+            HttpMethod.Post, "hall-arrivals/sessions/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
     // Operator hall-door QR arrival (/admin/sessions/{id}/arrivals).
     public Task<ApiCallResult<SIMF.Contracts.Sessions.QrArrivalResult>>
         RecordQrArrivalAsync(Guid sessionId, SIMF.Contracts.Sessions.RecordQrArrivalRequest request,

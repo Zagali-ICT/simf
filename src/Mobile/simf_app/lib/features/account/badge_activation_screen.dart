@@ -8,29 +8,26 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/core/errors/api_error_l10n.dart';
-import 'package:simf_app/core/responsive/max_width_body.dart';
 import 'package:simf_app/core/validation/email_validation.dart';
 import 'package:simf_app/core/validation/field_limits.dart';
 import 'package:simf_app/core/validation/password_validation.dart';
 import 'package:simf_app/core/validation/required_validation.dart';
-import 'package:simf_app/features/account/widgets/account_sub_header.dart';
+import 'package:simf_app/features/account/widgets/auth_bottom_bar.dart';
 import 'package:simf_app/features/account/widgets/auth_chrome.dart';
+import 'package:simf_app/features/account/widgets/auth_screen_scaffold.dart';
+import 'package:simf_app/features/account/widgets/auth_scroll_body.dart';
 import 'package:simf_app/features/account/widgets/navi_form_field.dart';
 import 'package:simf_app/features/account/widgets/navy_password_toggle.dart';
 import 'package:simf_app/features/account/widgets/otp_code_boxes.dart';
+import 'package:simf_app/features/account/widgets/password_requirement_errors.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 
-/// Part B (D-430) — activate a passwordless badge account: verify an emailed
-/// code, then set the first password. Reached from the badge-scan screen. When
-/// the account already has a real email the code is sent there automatically on
-/// open; when it has none (`needsEmail`) the holder enters one first, which is
-/// verified and attached. Built on the navy auth family (D-659) — the same
-/// `Scaffold(navySurface)` + [AccountSubHeader] + [OtpMark] + gold CTA as its
-/// sibling reset-password (918:2341); no dedicated Figma node.
-///
-/// Route: `RouteNames.badgeActivation`.
-/// Data: [authRepositoryProvider].
-/// Perf: no list — a single-screen layout.
+/// Badge activation — route: RouteNames.badgeActivation · Figma: no bound
+/// node (navy auth family, D-659).
+/// Contract: D-430 part B — a passwordless badge account verifies an emailed
+/// code, then sets its first password. An account with a real email on file is
+/// sent the code on open; one without (`needsEmail`) enters an address first,
+/// which is verified and attached.
 class BadgeActivationScreen extends ConsumerStatefulWidget {
   const BadgeActivationScreen({
     required this.qrId,
@@ -186,103 +183,62 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
     });
   }
 
-  Widget _buildPasswordErrors(AppL10n l10n) {
-    if (!_passwordTouched || _passwordUnmet.isEmpty) {
-      return const SizedBox.shrink();
-    }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        const SizedBox(height: SimfTokens.space2),
-        for (final PasswordRequirement req in _passwordUnmet)
-          Padding(
-            padding: const EdgeInsets.only(top: 2),
-            child: Text(
-              _passwordRequirementMessage(req, l10n),
-              style: SimfTokens.labelDangerSm,
-            ),
-          ),
-      ],
-    );
-  }
-
-  String _passwordRequirementMessage(
-    PasswordRequirement req,
-    AppL10n l10n,
-  ) {
-    switch (req) {
-      case PasswordRequirement.length:
-        return l10n.passwordLength;
-      case PasswordRequirement.uppercase:
-        return l10n.passwordUppercase;
-      case PasswordRequirement.lowercase:
-        return l10n.passwordLowercase;
-      case PasswordRequirement.digit:
-        return l10n.passwordDigit;
-      case PasswordRequirement.special:
-        return l10n.passwordSpecial;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    return Scaffold(
-      backgroundColor: SimfTokens.navySurface,
-      body: SafeArea(
-        child: Column(
-          children: <Widget>[
-            AccountSubHeader(
-              title: l10n.badgeActivateTitle,
-              onBack: _back,
-              busy: _busy,
-            ),
-            Expanded(child: _buildBody(l10n)),
-            _buildBottomActions(l10n),
-            const SizedBox(height: SimfTokens.space6),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBody(AppL10n l10n) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
-      child: MaxWidthBody(
+    return AuthScreenScaffold(
+      title: l10n.badgeActivateTitle,
+      onBack: _back,
+      busy: _busy,
+      body: AuthScrollBody(
         maxWidth: SimfTokens.badgeActivationScreenMaxWidth,
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              const SizedBox(height: SimfTokens.badgeActivationScreenHeight),
-              const Center(child: OtpMark(icon: Icons.lock_outline)),
-              const SizedBox(height: SimfTokens.space6),
-              Text(
-                _emailStep
-                    ? l10n.badgeActivateEmailIntro
-                    : l10n.badgeActivateCodeSent(_maskedShown ?? ''),
-                textAlign: TextAlign.center,
-                style: SimfTokens.bodyBeige,
-              ),
-              const SizedBox(height: SimfTokens.space8),
-              if (_emailStep)
-                ..._emailStepFields(l10n)
-              else
-                ..._codeStepFields(l10n),
-              if (_error != null) ...<Widget>[
-                const SizedBox(height: SimfTokens.space3),
-                Text(
-                  _error!,
-                  style: SimfTokens.labelDangerSm,
-                ),
-              ],
-              const SizedBox(height: SimfTokens.space6),
-            ],
+        formKey: _formKey,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          const SizedBox(height: SimfTokens.badgeActivationScreenHeight),
+          const Center(child: OtpMark(icon: Icons.lock_outline)),
+          const SizedBox(height: SimfTokens.space6),
+          Text(
+            _emailStep
+                ? l10n.badgeActivateEmailIntro
+                : l10n.badgeActivateCodeSent(_maskedShown ?? ''),
+            textAlign: TextAlign.center,
+            style: SimfTokens.bodyBeige,
           ),
-        ),
+          const SizedBox(height: SimfTokens.space8),
+          if (_emailStep)
+            ..._emailStepFields(l10n)
+          else
+            ..._codeStepFields(l10n),
+          if (_error != null) ...<Widget>[
+            const SizedBox(height: SimfTokens.space3),
+            Text(
+              _error!,
+              style: SimfTokens.labelDangerSm,
+            ),
+          ],
+          const SizedBox(height: SimfTokens.space6),
+        ],
       ),
+      bottom: <Widget>[
+        AuthBottomBar(
+          maxWidth: SimfTokens.badgeActivationScreenMaxWidth,
+          child: _emailStep
+              ? AuthSubmitButton(
+                  label: l10n.badgeSendCodeButton,
+                  busy: _busy,
+                  onPressed: _email.text.trim().isNotEmpty && !_busy
+                      ? () => unawaited(_start())
+                      : null,
+                )
+              : AuthSubmitButton(
+                  label: l10n.badgeActivateButton,
+                  busy: _busy,
+                  onPressed: _canComplete ? () => unawaited(_complete()) : null,
+                ),
+        ),
+        const SizedBox(height: SimfTokens.space6),
+      ],
     );
   }
 
@@ -338,7 +294,11 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
           ),
           validator: (value) => isBlank(value) ? l10n.requiredField : null,
         ),
-        _buildPasswordErrors(l10n),
+        PasswordRequirementErrors(
+          unmet: _passwordTouched
+              ? _passwordUnmet
+              : const <PasswordRequirement>[],
+        ),
         const SizedBox(height: SimfTokens.space4),
         NaviFormField(
           label: l10n.confirmPasswordLabel,
@@ -357,26 +317,4 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
               value == _password.text ? null : l10n.passwordsDoNotMatch,
         ),
       ];
-
-  Widget _buildBottomActions(AppL10n l10n) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
-      child: MaxWidthBody(
-        maxWidth: SimfTokens.badgeActivationScreenMaxWidth,
-        child: _emailStep
-            ? AuthSubmitButton(
-                label: l10n.badgeSendCodeButton,
-                busy: _busy,
-                onPressed: _email.text.trim().isNotEmpty && !_busy
-                    ? () => unawaited(_start())
-                    : null,
-              )
-            : AuthSubmitButton(
-                label: l10n.badgeActivateButton,
-                busy: _busy,
-                onPressed: _canComplete ? () => unawaited(_complete()) : null,
-              ),
-      ),
-    );
-  }
 }

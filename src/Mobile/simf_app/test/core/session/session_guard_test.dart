@@ -5,13 +5,15 @@
 // keep-alive cannot extend the session. A mutable `clock` drives the token
 // expiry / idle maths; the widget timers are advanced with tester.pump.
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/core/session/session_activity.dart';
 import 'package:simf_app/core/session/session_guard.dart';
 import 'package:simf_app/core/session/session_timeout_overlay.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
+
+import '../../support/simf_test_scope.dart';
 
 final _t0 = DateTime.utc(2026, 1, 1, 12);
 
@@ -72,7 +74,7 @@ void main() {
 
   setUp(() => nowValue = _t0);
 
-  Widget host(_FakeAuth auth, SessionActivity activity) => ProviderScope(
+  Widget host(_FakeAuth auth, SessionActivity activity) => simfTestScope(
         overrides: <Override>[
           authControllerProvider.overrideWith(() => auth),
           sessionActivityProvider.overrideWithValue(activity),

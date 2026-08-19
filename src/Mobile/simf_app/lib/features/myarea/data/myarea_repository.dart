@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_app/features/myarea/data/myarea_endpoints.dart';
 import 'package:simf_app/features/myarea/data/myarea_models.dart';
+import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 /// App-local data layer for the My-Area dashboard (Page_014). The dashboard
@@ -75,5 +76,30 @@ final isVisitorProvider = FutureProvider.autoDispose<bool>((ref) async {
     return dashboard.identity.isVisitor;
   } on ApiFailure {
     return true;
+  }
+});
+
+/// The My-Area dashboard, or **null when the account is not Approved**.
+///
+/// A FOURTH shape: the approval gate lives in the provider. The endpoint is
+/// Approved-only, so a pending or rejected account must not call it at all
+/// (L-5) — `initState` used to make that decision and skip the load. Null is
+/// therefore "render the limited card from cache", and the 403 that a status
+/// drifting mid-session produces maps to the same null rather than to an
+/// error, exactly as before. Any other failure propagates to the retry surface.
+final myAreaDashboardProvider =
+    FutureProvider.autoDispose<MyAreaDashboard?>((ref) async {
+  final auth = ref.watch(authControllerProvider);
+  final user = auth is AuthStateSignedIn ? auth.session.user : null;
+  if (user == null || !user.isApproved) {
+    return null;
+  }
+  try {
+    return await ref.watch(myAreaRepositoryProvider).getDashboard();
+  } on ApiFailure catch (failure) {
+    if (failure.httpStatus == 403) {
+      return null;
+    }
+    rethrow;
   }
 });

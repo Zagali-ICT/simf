@@ -63,6 +63,17 @@ final notificationsRepositoryProvider =
   return NotificationsRepository(ref.watch(simfApiClientProvider));
 });
 
+/// The inbox (`GET /app/notifications`).
+///
+/// Load only. The read-state flips the Notifications screen makes are NOT
+/// pushed back into the provider - see `_readLocally` on that screen's state,
+/// which is what preserves the no-reload behaviour a provider cannot express
+/// by mutation.
+final notificationsListProvider =
+    FutureProvider.autoDispose<List<NotificationItem>>(
+  (ref) => ref.watch(notificationsRepositoryProvider).getNotifications(),
+);
+
 /// The notification-bell unread count for Home (Page_013 Logic L-5).
 ///
 /// **Signed-in only** — a guest never calls it and resolves to `0`. **Best

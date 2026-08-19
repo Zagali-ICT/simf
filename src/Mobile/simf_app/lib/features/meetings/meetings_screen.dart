@@ -19,23 +19,11 @@ import 'package:simf_app/features/speakers/widgets/meeting_request_sheet.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// Bilateral meetings — اللقاءات الثنائية · route: [RouteNames.meetings]
-/// Purpose: lists **all** the user's bilateral meeting requests (speaker +
-/// delegation), each carrying its status (pending / accepted / rejected /
-/// cancelled), above the two "request meeting" buttons and the "السجل" link to
-/// the full requests history (R9, D-767; was accepted+upcoming only, D-745).
-/// Data: [authControllerProvider], [currentUserMeetingAccessProvider],
-///       [myMeetingRequestsProvider], [simfDataConfigProvider].
-/// 1408:9726 (اللقاءات الثنائية). Perf: non-lazy ListView over the (small)
-/// meetings subset; pull-to-refresh. Contract: reads the D-219-frozen
-/// my-requests feed; VIP enforced server-side (the meeting-request endpoint
-/// 403s non-VIP) and mirrored here in-screen.
-///
-/// Route: `RouteNames.meetings`.
-/// Data: [authControllerProvider], [currentUserMeetingAccessProvider],
-///       [myMeetingRequestsProvider], [simfDataConfigProvider].
-/// Perf: ListView builds every child up front — correct for a short static
-///       page, a defect on a data feed.
+/// Bilateral meetings — route: RouteNames.meetings · Figma 1408:9726
+/// Contract: reads the D-219-frozen my-requests feed — ALL bilateral meeting
+/// requests, any status (R9/D-767; was accepted+upcoming only, D-745). VIP is
+/// enforced server-side (the meeting-request endpoint 403s non-VIP) and
+/// mirrored here in-screen.
 class MeetingsScreen extends ConsumerStatefulWidget {
   const MeetingsScreen({super.key});
 
@@ -101,7 +89,6 @@ class _MeetingsScreenState extends ConsumerState<MeetingsScreen> {
     }
   }
 
-  /// Pull-to-refresh — re-fetch the shared feed the meetings view derives from.
   Future<void> _refresh() {
     ref.invalidate(myRequestsProvider);
     return refreshAsync(ref, myMeetingRequestsProvider.future);

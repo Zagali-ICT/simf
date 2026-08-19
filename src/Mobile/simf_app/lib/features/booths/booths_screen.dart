@@ -9,43 +9,13 @@ import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/app/widgets/simf_search_field.dart';
 import 'package:simf_app/core/utils/refresh.dart';
+import 'package:simf_app/features/booths/data/booths_repository.dart';
 import 'package:simf_app/features/booths/widgets/booth_card.dart';
 import 'package:simf_app/features/venuemap/data/venue_map_models.dart';
-import 'package:simf_app/features/venuemap/data/venue_map_repository.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// Page 022 — الأجنحة · Booths (#22, `/booths`, Guest+), rebuilt to the
-/// KSA-Project Figma frame **922:2458 "Halls"** on the shared KSA shell.
-///
-/// **Public.** Reuses the shipped booth reads (`GET /app/booths` + `/{id}`,
-/// D-199 / D-230) already wired in [VenueMapRepository] — the list of exhibitor
-/// booths; tapping a booth opens the full exhibitor detail screen (Wave 3,
-/// Figma 1439:11881).
-///
-/// Frame mapping: the navy scaffold + centred header (الأجنحة) and the shared
-/// bottom nav from [SimfPageShell]; a bordered search field (ابحث عن جناح أو
-/// شركة); then one exhibitor card per booth — a company header row (short name
-/// + full name beside the square logo tile, gold-hairline divider), the
-///   gold-bordered **code pill** (A-12) beside the deep-navy **hall box**, the
-///   booth-officer row
-/// + email / phone contact boxes (D-432 — now on the wire, server resolves the
-///   officer Contact-first), and a **guide-me** gold CTA. D-764: the logo tile
-///   renders the booth's own `BoothLogo` asset (D-357) via
-///   `{base}/app/assets/BoothLogo/{booth.id}/image`, falling back to the booth
-///   short-name initials when the booth has no uploaded logo.
-///
-/// Route: `RouteNames.booths`.
-/// Data: [boothsListProvider], [simfDataConfigProvider],
-///       [venueMapRepositoryProvider].
-/// Perf: lazy — builds children on demand (ListView.separated).
-/// The exhibition booths (`GET /app/booths`).
-///
-/// Load only — `_query` stays on the widget, like `speakersListProvider`'s
-/// screen: the local search field is UI state with no server behind it.
-final boothsListProvider = FutureProvider.autoDispose<List<BoothSummary>>(
-  (ref) => ref.watch(venueMapRepositoryProvider).getBooths(),
-);
-
+/// Booths — route: `RouteNames.booths` · Figma 922:2458
+/// Reads `GET /app/booths` + `/{id}` via the venue-map repository (D-199 / D-230).
 class BoothsScreen extends ConsumerStatefulWidget {
   const BoothsScreen({super.key});
 

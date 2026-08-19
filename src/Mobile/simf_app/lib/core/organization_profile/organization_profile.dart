@@ -5,8 +5,6 @@ import 'package:simf_app/core/net/core_endpoints.dart';
 import 'package:simf_app/core/utils/event_date_range.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// Coerce a decoded JSON value into a `Map<String, dynamic>` (empty when
-/// absent).
 Map<String, dynamic> _asStringMap(dynamic value) =>
     (value as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
 
@@ -29,7 +27,7 @@ DateTime? _asDate(dynamic value) {
 /// +
 /// status, location, contact, live-stream link, social links, logo) plus the
 /// about-items + details lists. Loaded once and cached for the app lifetime;
-/// consumers read `.valueOrNull` and fall back to bundled l10n while loading /
+/// consumers read `.value` and fall back to bundled l10n while loading /
 /// on
 /// error (offline-safe). Editable in the Control Panel — the same build
 /// re-skins to

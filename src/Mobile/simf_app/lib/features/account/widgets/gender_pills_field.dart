@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/core/widgets/simf_radio_pill.dart';
-import 'package:simf_app/features/account/data/profile_models.dart';
+import 'package:simf_app/features/account/data/app_gender.dart';
 
 /// Gender as the design's two radio pills (Figma 522:2150). The screen owns the
 /// [gender] value; [onChanged] reports the pick.

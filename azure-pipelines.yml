@@ -43,21 +43,42 @@ trigger:
 # --- Which environments this run deploys to (chosen in the Run pipeline dialog).
 #
 #     `deployPreProduction` DEFAULTS TO FALSE, and the reason is not caution
-#     (D-906): THERE IS ONLY ONE AGENT, AND IT IS ON THE PRODUCTION SERVER.
+#     (D-906, CORRECTED by D-932): THERE IS ONLY ONE AGENT, AND IT IS ON THE
+#     PRE-PRODUCTION SERVER.
+#
+#     THIS PIPELINE CANNOT REACH PRODUCTION. Read that before debugging a deploy.
 #
 #     The `Default` pool contains a single agent - `server` on
-#     `WIN-MAP9VAMAU4Q`, which is the production box (SIMF APP 01). Both
-#     deployment jobs draw from that pool, and neither environment has a VM
-#     resource to bind it elsewhere (D-905), so BOTH jobs run on production.
-#     `DeployPreProduction` does not rehearse anything: it deploys the same four
-#     packages to the live production server a second time, stopping and
-#     restarting every site again for no gain.
+#     `WIN-MAP9VAMAU4Q`. D-906 recorded that machine as the production box
+#     (SIMF APP 01). IT IS NOT. It is the PRE-PRODUCTION server, the one behind
+#     `simf.zagali-ict.com`. Both deployment jobs draw from that one pool agent,
+#     and no environment binds them elsewhere (D-905), so EVERY deploy this
+#     pipeline has ever run - under either environment name, with either tick
+#     box - has landed on pre-production.
 #
-#     Leaving it on would mean every run took production down twice.
+#     `web.simrsnf.com` (production, SIMF APP 01) receives NOTHING from this
+#     pipeline and has not since 2026-08-08. Getting anything onto it is a manual
+#     copy until an agent exists there.
 #
-#     TO GET A REAL PRE-PRODUCTION DEPLOY: install an Azure Pipelines agent on
-#     the pre-production server. Until then, ticking this box deploys to
-#     production, whatever its label says.
+#     HOW THIS WAS ESTABLISHED, so it is not re-litigated: the owner read the
+#     `Initialize job` step of BOTH deployment jobs. Both print
+#     `Agent machine name: 'WIN-MAP9VAMAU4Q'`. The `Default` pool holds exactly
+#     one agent. Deploys write `D:\System\v1.0.1\web` on that machine, and the
+#     site whose content changes is `simf.zagali-ict.com`, while production stays
+#     byte-identical: its `landing.css` still MD5s to b98f39d41ff1b73ae3ac4e3db3e9179f,
+#     which is commit f81ba630 of 2026-08-08.
+#
+#     WHAT THIS COST. A CSS fix correct on `main` since 2026-08-15 (f31d5845) was
+#     reported as unshipped for eleven days. Three separate "fixes" were written
+#     against the wrong cause - a stale artifact staging directory, then a stale
+#     static-asset fingerprint cache - because every deploy log showed success and
+#     the machine it succeeded ON was never questioned. Both guards were kept:
+#     they are correct hygiene and cost nothing. Neither was the problem.
+#
+#     TO GET A REAL DEPLOY TO EITHER SERVER: install an Azure Pipelines agent on
+#     the production server and register BOTH servers as VM resources on their
+#     environments. Until then an environment name is a label on a history page,
+#     not a destination, and ticking either box deploys to pre-production.
 #
 #     Untick BOTH and the whole Deploy stage is omitted - build, test and
 #     publish still run, and the artifact is still produced, so a build-only run
@@ -69,7 +90,7 @@ trigger:
 #     that can disagree with itself.
 parameters:
 - name: deployPreProduction
-  displayName: 'Deploy to Pre-production (NO agent yet - deploys to PRODUCTION)'
+  displayName: 'Deploy to Pre-production (same box as Production - one agent, D-932)'
   type: boolean
   default: false
 - name: deployProduction
@@ -77,57 +98,65 @@ parameters:
   type: boolean
   default: true
 
-# --- Whether this run executes the test gates. BACK ON BY DEFAULT (D-915),
-#     because the reason they were switched off has been removed.
+# --- Whether this run executes the test gates. OFF, AND IT STAYS OFF.
 #
-#     D-887 set this to FALSE on 2026-08-14: a deploy should be quick, and
-#     "SIMF.Api.Tests alone runs 38 minutes when it has the agent to itself".
-#     That suite now runs in about TEN minutes on the same work (D-911..D-914:
-#     the fixture was re-provisioning its databases before every test rather
-#     than once per class, every host boot ate a 10-second SqlClient
-#     connect-retry against a database that did not exist yet, and fourteen
-#     background workers started per host). Measured full runs after the fix:
-#     9m12s and 9m56s over 2,398 tests.
+#     STANDING OWNER DIRECTIVE, 2026-08-18: do not turn this back on, and do not
+#     propose turning it back on. Previous flips are recorded in D-887 (off),
+#     D-899 (integration suite added to PRs) and D-915 (back on); this entry ends
+#     that sequence. An agent reading the history will find three reversals and a
+#     comment block that used to argue FOR the gates - that argument is spent, and
+#     is preserved below only so nobody re-derives it and mistakes it for a
+#     mandate to act.
 #
-#     Ten minutes buys the whole behavioural surface on a run that gates a
-#     merge, which SIMF-OPS-001 section 5 and the NCA Secure App-Dev Standard
-#     section 3-20 both require. Turn it off for a hotfix deploy if you must —
-#     but a run with it off proves only that the code COMPILES and the packages
-#     publish, and nothing about behaviour, permissions or the security surface.
+#     The tick box survives so a run CAN opt in. What changed is the default and
+#     the standing instruction: nobody re-enables it as a side effect of other
+#     work, and an agent asked to "fix CI" leaves this alone.
 #
-#     WHAT SWITCHING IT OFF COSTS. Read this before assuming a green run means
-#     anything about correctness:
+#     WHAT A GREEN RUN NOW MEANS. Only that the code COMPILES and the packages
+#     publish. Nothing about behaviour, permissions, or the security surface.
+#     Specifically, none of this is checked on an ordinary run:
 #       * the fast suites - Domain, Application, ApiClient, ControlPanel, Web,
-#         E2E. About a minute between them. These include the Control Panel
-#         permission and navigation gates, which are the checks that stop an
-#         admin page shipping ungated, and the E2E-catalogue integrity ratchet.
-#         (No test count is quoted here on purpose: nothing pins one, so a
-#         number written into a comment is wrong by the next sprint.)
+#         E2E. Among them the Control Panel permission and navigation gates,
+#         which are what stop an admin page shipping ungated, and the
+#         E2E-catalogue integrity ratchet.
 #       * SIMF.Api.Tests - the whole admin + app API surface, including the
-#         anonymous-endpoint allow-list that fails the build when an 18th
-#         unauthenticated entry point appears. (2,398 tests at the time of
-#         writing; the count is quoted here only to size the ~10 minutes, and
-#         nothing pins it, so treat it as indicative.)
+#         anonymous-endpoint allow-list that fails the build when a new
+#         unauthenticated entry point appears.
 #       * the LocalDB provisioning that exists only to serve those.
-#       * the Flutter and BadgeDesk stages.
 #
-#     A run with this OFF proves the code COMPILES and the packages publish.
-#     It proves nothing about behaviour, permissions or the security surface.
+#     THE COMPLIANCE POSITION, STATED PLAINLY RATHER THAN BURIED. SIMF-OPS-001
+#     section 5 and the NCA Secure App-Dev Standard section 3-20 both require a
+#     failing test to stop the pipeline. With this off, neither is satisfied.
+#     That is an accepted owner risk, not an oversight, and it is written here so
+#     an auditor reads it in the pipeline rather than inferring it from a skipped
+#     step. Testing moves to the developer's machine before the push; the
+#     pipeline no longer catches what the developer does not.
 #
-#     THIS IS A `condition:`, NOT `enabled: false`, DELIBERATELY. A disabled step
-#     vanishes from the run summary; a condition leaves it listed as skipped, so
-#     the run says out loud that it did not test. That rule is enforced by
-#     PipelineTestGateTests.No_pipeline_step_is_disabled, which exists because
-#     the last silent switch-off went unnoticed for five weeks.
+#     THE KNOWN FAILURE MODE, because it has already happened once. The last
+#     period with these gates off ended with 42 red tests discovered at once,
+#     none of them reported when they broke. Nothing here prevents that
+#     recurring; run the suites locally before a merge.
 #
-#     Untick it only deliberately, and know what the resulting green tick does
-#     not mean. SIMF-OPS-001 section 5 and the NCA Secure App-Dev Standard
-#     section 3-20 both require a failing test to stop the pipeline, and neither
-#     is satisfied while this is off.
+#     THIS IS A `condition:`, NOT `enabled: false`, DELIBERATELY - unchanged, and
+#     it matters more now than it did. A disabled step vanishes from the run
+#     summary; a condition leaves it listed as SKIPPED, so every run says out
+#     loud that it did not test. That is the whole audit trail for this decision.
+#     Enforced by PipelineTestGateTests.No_pipeline_step_is_disabled, which
+#     exists because the last silent switch-off went unnoticed for five weeks.
+#
+#     --- SPENT ARGUMENT, KEPT AS HISTORY. NOT AN INSTRUCTION. ---
+#     D-915 turned these back on because D-887's reason had been removed: the
+#     integration suite went from 38 minutes to about ten (D-911..D-914 - the
+#     fixture re-provisioned its databases per test rather than per class, every
+#     host boot ate a 10-second SqlClient connect-retry, and fourteen background
+#     workers started per host). Measured full runs after that fix: 9m12s and
+#     9m56s over 2,398 tests. So the ten minutes is real and the argument was
+#     sound. The owner has decided the trade differently, which is the owner's
+#     call to make. Do not re-open it from this paragraph.
 - name: runTests
-  displayName: 'Run the test gates'
+  displayName: 'Run the test gates (OFF by owner directive - see the comment above)'
   type: boolean
-  default: true
+  default: false
 
 # --- The two non-.NET stages. BOTH DEFAULT FALSE (owner decision, D-889), and
 #     both are INDEPENDENT of `runTests` above: ticking the test gates on for a
@@ -215,6 +244,84 @@ stages:
     steps:
     - checkout: self
       clean: true
+
+    # --- Delete every bin/ and obj/ under src/ before restoring.
+    #
+    #     THIS IS THE ONE THAT KEPT THE AUGUST-8 STYLESHEET LIVE, and it is not
+    #     the staging directory below - that guard is real but it was not the
+    #     cause. `clean: true` maps to the agent's "source" clean, which runs
+    #     `git clean -ffdx` on the SOURCES directory. bin/ and obj/ are matched
+    #     by that, so in principle they go - but the evidence from the runs says
+    #     they did not: 'Build Website' completed in 3.61 seconds having compiled
+    #     nothing, which is only possible against a warm obj/.
+    #
+    #     Why a warm obj/ is fatal HERE specifically. Blazor fingerprints static
+    #     assets - landing.css ships as landing.<hash>.css, and the hash-to-file
+    #     map is CACHED in obj/<config>/<tfm>/staticwebassets.build.json plus the
+    #     .dswa.cache.json files beside it. MSBuild treats that cache as up to
+    #     date on an incremental build, so an EDITED wwwroot file keeps its OLD
+    #     fingerprint: the publish emits landing.52jt1tmv2u.css - the August-8
+    #     name - from an August-18 source file, and the rendered <link> points at
+    #     it. The bytes on the server therefore never change.
+    #
+    #     That is exactly what the deploy log showed. After the CSS was edited
+    #     twice on main, robocopy reported "Files: 264  Copied: 136": the 136 are
+    #     the recompiled DLLs, and not one static asset is among them, because
+    #     the stale manifest reproduced them byte-for-byte.
+    #
+    #     `dotnet clean` is NOT sufficient - it removes build OUTPUT and leaves
+    #     the caches that hold the fingerprint map. The directories have to go.
+    - powershell: |
+        $ErrorActionPreference = 'Stop'
+        $root = '$(Build.SourcesDirectory)/src'
+        $stale = Get-ChildItem -Path $root -Directory -Recurse -Force -ErrorAction SilentlyContinue |
+                 Where-Object { $_.Name -eq 'bin' -or $_.Name -eq 'obj' }
+        Write-Host "Removing $($stale.Count) bin/obj directory(ies) under $root"
+        foreach ($dir in $stale) {
+            Remove-Item -LiteralPath $dir.FullName -Recurse -Force -ErrorAction SilentlyContinue
+        }
+        $left = @(Get-ChildItem -Path $root -Directory -Recurse -Force -ErrorAction SilentlyContinue |
+                  Where-Object { $_.Name -eq 'bin' -or $_.Name -eq 'obj' }).Count
+        if ($left -ne 0) { throw "$left bin/obj directory(ies) survived the clean - a locked file is the usual cause (a w3wp or MSBuild node holding a DLL). The build would reuse a stale static-asset fingerprint cache, so this fails rather than shipping August-8 CSS again." }
+        Write-Host "No bin/obj directories remain under src."
+      displayName: 'Delete bin/obj (stale static-asset fingerprint guard)'
+
+    # --- Empty the artifact staging directory before anything publishes into it.
+    #
+    #     THIS IS WHY THE WEBSITE SERVED AUGUST-8 CSS FOR TEN DAYS. `checkout:
+    #     self / clean: true` cleans the SOURCES directory; it does not touch
+    #     $(Build.ArtifactStagingDirectory), and on a self-hosted agent that
+    #     folder survives between runs. `dotnet publish --output` writes INTO a
+    #     directory without emptying it first, and `zipAfterPublish` then zips
+    #     whatever is sitting there - so a file that a later commit CHANGED gets
+    #     the new copy, but the stale one is only overwritten if the publish
+    #     happens to emit the same path. The fingerprinted static-asset names
+    #     (landing.<hash>.css) are content-derived, so a changed file arrives
+    #     under a NEW name and the old one is never overwritten, never removed,
+    #     and ships in the zip forever.
+    #
+    #     The tell is in the deploy log, and it is easy to misread as success:
+    #     robocopy reported "Files: 264  Copied: 0  Skipped: 264" against the
+    #     live site. Nothing was wrong with the deploy - it faithfully mirrored
+    #     an artifact that genuinely had not changed since 2026-08-08.
+    #
+    #     Deleting the folder is safe: every publish step below recreates it,
+    #     and the artifact is rebuilt from source on every run.
+    - powershell: |
+        $ErrorActionPreference = 'Stop'
+        $staging = '$(Build.ArtifactStagingDirectory)'
+        if (Test-Path $staging) {
+            $before = @(Get-ChildItem -Path $staging -Recurse -File -ErrorAction SilentlyContinue).Count
+            Write-Host "Clearing artifact staging directory: $staging ($before stale file(s))"
+            Remove-Item -Path (Join-Path $staging '*') -Recurse -Force -ErrorAction Stop
+        } else {
+            Write-Host "Artifact staging directory does not exist yet: $staging"
+            New-Item -ItemType Directory -Force -Path $staging | Out-Null
+        }
+        $after = @(Get-ChildItem -Path $staging -Recurse -File -ErrorAction SilentlyContinue).Count
+        if ($after -ne 0) { throw "Artifact staging directory is not empty after cleaning ($after file(s) remain)." }
+        Write-Host "Artifact staging directory is empty."
+      displayName: 'Clear artifact staging directory (stale-artifact guard)'
 
     - task: UseDotNet@2
       displayName: 'Use .NET 10 SDK'
@@ -465,11 +572,12 @@ stages:
 
     - task: DotNetCoreCLI@2
       displayName: 'Run tests (fast suites)'
-      # OFF BY DEFAULT (D-887). These suites cost about a minute, so they are not
-      # what makes a run slow - they are here because the owner asked for the
-      # test gates off for quick deploys, and leaving them on would give a green
-      # tick that looks like the full gate ran. They come back on with the
-      # `runTests` tick box.
+      # SKIPPED on an ordinary run: `runTests` is OFF by standing owner directive
+      # (see the parameter comment at the top - do not re-enable). These suites
+      # cost about a minute between them, so speed was never the reason; they sit
+      # behind the same tick box as the slow one so that a green run cannot look
+      # like a partial gate ran. Among them are the Control Panel permission and
+      # navigation gates, which are what stop an admin page shipping ungated.
       condition: and(succeeded(), eq('${{ parameters.runTests }}', 'true'))
       inputs:
         command: 'test'
@@ -504,12 +612,19 @@ stages:
     #        it in its own step is what stops it running alongside anything else.
     #     2. It needs LocalDB, provisioned by the step above.
     #
-    #     IT NOW RUNS ON PULL REQUESTS TOO (D-899). The exclusion existed because
-    #     "nobody should wait ~38 minutes per push"; the suite runs in about ten
-    #     minutes since D-895..D-898, and a merge gate that skips the one suite
-    #     covering the whole API surface is a gate in name only. Change the
-    #     condition rather than adding `enabled: false`: a disabled step is
-    #     invisible, a condition states its own rule.
+    #     SKIPPED on an ordinary run, INCLUDING pull requests, because `runTests`
+    #     is OFF by standing owner directive (see the parameter comment at the top
+    #     - do not re-enable). D-899 had added this suite to PR runs on the
+    #     argument that a merge gate skipping the one suite covering the whole API
+    #     surface is a gate in name only. That argument still holds on its own
+    #     terms; the owner has decided the trade differently, so nothing gates a
+    #     merge here now and the suite has to be run locally before a push.
+    #
+    #     If it is ever ticked on for a run: keep it in its OWN step. It is
+    #     LOAD-SENSITIVE, as recorded above, and sharing a step is what made it
+    #     fail at random. Change the condition rather than adding
+    #     `enabled: false`: a disabled step is invisible, a condition states its
+    #     own rule and shows as skipped.
     - task: DotNetCoreCLI@2
       displayName: 'Run tests (SIMF.Api.Tests, integration)'
       condition: >-
@@ -875,12 +990,18 @@ stages:
 # below say which is which; trust those, not the environment string.
 # #############################################################################
 #
-# THE ENVIRONMENTS ARE EMPTY SHELLS, AND THAT IS HOW THIS ESTATE WORKS. Neither
-# `SIMF-Prod` nor `SIM-RNSF` has a VM resource registered. An environment with no
-# resources is what the Azure docs call "an abstract shell to record deployment
-# history", so the steps fall back to the `Default` POOL agent - the agent
-# literally named `server` on WIN-MAP9VAMAU4Q that has been running these
-# deploys the whole time.
+# THE ENVIRONMENTS ARE EMPTY SHELLS, AND THAT IS HOW THIS ESTATE WORKS.
+# `SIMF-Prod` has no VM resource registered; `SIM-RNSF` now shows one, added
+# after D-905 was written, and it has changed nothing observable - both jobs
+# still report the same pool agent. An environment with no usable resource is
+# what the Azure docs call "an abstract shell to record deployment history", so
+# the steps fall back to the `Default` POOL agent - the agent literally named
+# `server` on WIN-MAP9VAMAU4Q that has been running these deploys the whole time.
+#
+# AND THAT AGENT IS ON PRE-PRODUCTION, not production (D-932). Every deploy this
+# pipeline runs lands on `simf.zagali-ict.com`. `web.simrsnf.com` is unreachable
+# from here. Both jobs' `Initialize job` steps print the same machine name; that
+# line is ground truth and outranks every environment label in this file.
 #
 # DO NOT ADD `resourceType: virtualMachine` HERE. It has been tried twice and
 # broken deploys both times (D-903, D-905): it demands a registered VM resource,

@@ -20,8 +20,6 @@ class SimfRadioPill extends StatelessWidget {
   final String label;
   final bool selected;
   final VoidCallback onTap;
-
-  /// Forces the row's direction; null follows the ambient [Directionality].
   final TextDirection? textDirection;
 
   @override

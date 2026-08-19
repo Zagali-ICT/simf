@@ -21,10 +21,10 @@ class ContactPreviewSheet extends ConsumerStatefulWidget {
 
   @override
   ConsumerState<ContactPreviewSheet> createState() =>
-      ContactPreviewSheetState();
+      _ContactPreviewSheetState();
 }
 
-class ContactPreviewSheetState extends ConsumerState<ContactPreviewSheet> {
+class _ContactPreviewSheetState extends ConsumerState<ContactPreviewSheet> {
   final TextEditingController _noteController = TextEditingController();
   bool _saving = false;
 

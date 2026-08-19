@@ -458,7 +458,7 @@ external links. **Closed by D-929** as `CK_StoredFiles_SizeBytes`
 (`[SizeBytes] IS NULL OR [SizeBytes] > 0`), which tolerates NULL and so guards
 every file service rather than presentations alone.
 
-### D-931 named lift — Arabic collation, one-active-per-owner, encrypted transcript (2026-08-19)
+### D-935 named lift — Arabic collation, one-active-per-owner, encrypted transcript (2026-08-19)
 
 Owner directive, taken as a single lift because all three need the same
 regeneration. Both histories are regenerated through
@@ -512,7 +512,7 @@ regeneration. Both histories are regenerated through
 
 Enums are untouched, and the shipped mobile wire contract stays append-only.
 The freeze must still be re-instated before the production publish / handover,
-per D-219's standing requirement. See `docs/decisions/DECISIONS_LOG.md` D-931.
+per D-219's standing requirement. See `docs/decisions/DECISIONS_LOG.md` D-935.
 
 ### D-929 named lift — the deferred audit findings, worked to the end
 

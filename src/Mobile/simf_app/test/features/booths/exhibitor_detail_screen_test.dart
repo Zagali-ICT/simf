@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/features/booths/exhibitor_detail_screen.dart';
 import 'package:simf_app/features/venuemap/data/venue_map_models.dart';
 import 'package:simf_app/features/venuemap/data/venue_map_repository.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
+
+import '../../support/simf_test_scope.dart';
 
 // The HTTP client never resolves network-image loads in tests, so the logo tile
 // stays in its (stable) loading state — the NetworkImage stays in the tree with
@@ -61,7 +63,7 @@ Set<String> _networkImageUrls(WidgetTester tester) => tester
 
 Future<void> _pump(WidgetTester tester, BoothDetail detail) async {
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         simfDataConfigProvider.overrideWithValue(_testConfig),
         venueMapRepositoryProvider.overrideWithValue(_FakeRepo(detail)),

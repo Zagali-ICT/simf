@@ -4,11 +4,12 @@
 |---|---|
 | Route | `/sign-up/visitor` (`RouteNames.signUpVisitor`) · **AUTH-only** (any signed-in account; no role / no permission, D7) |
 | Surface | Mobile (Flutter) |
-| Screen | `lib/features/account/sign_up_visitor_screen.dart` (`SignUpVisitorScreen`) |
+| Screen | `lib/features/account/sign_up_visitor_screen.dart` (`SignUpVisitorScreen`, 875 lines — the form state, the lookups, the draft assembly and the face-capture/liveness call; `_buildBody` composes the card over the field widgets below) |
+| Widgets | `lib/features/account/widgets/` — `sign_up_visitor_profile_type_field` · `sign_up_visitor_organisation_field` (owns its own search controller + debounce, so a keystroke rebuilds the field and not the whole form) · `sign_up_visitor_place_of_birth_field` · `sign_up_visitor_plate_field` (+ the `SignUpVisitorPlateState` holder, which validates the **assembled** plate rather than the digits field) · `sign_up_visitor_id_image_field` · `sign_up_visitor_face_photo_field` · `sign_up_visitor_header_avatar` · `sign_up_visitor_load_error` · `lookup_search_sheet_launcher`; plus the shared `beige_tabs` · `gender_pills_field` · `date_of_birth_field` · `mobile_field` · `attachment_field`, and `features/visitor_profile/widgets/` `nationality_section` · `document_section` · `contact_section` |
 | Figma node | `168:2972` (KSA-Project, file `PSXHhY0UVTAPSaIOf9uNKd`; D-368) |
 | Shell | `SimfFormScaffold` (`pinnedHeader: true`) — the shared account/entry scaffold (back + globe toggle, logo + forum name) |
 | Providers | `profileRepositoryProvider` → `ProfileRepository` (pre-fill + 3 lookups) |
-| Tests | `test/features/account/sign_up_visitor_screen_test.dart` (widget, 24 cases) · `plate_validation_test.dart` · `phone_validation_test.dart` · `profile_models_test.dart` · golden `test/golden/sign_up_visitor_golden_test.dart` (`goldens/sign_up_visitor_168-2972.png`) · E2E [`mobile-sign-up-visitor.md`](../../../tests/e2e/mobile-sign-up-visitor.md) (E2E-MOB007-001..024) |
+| Tests | `test/features/account/sign_up_visitor_screen_test.dart` (widget, 24 cases) · `test/features/account/sign_up_visitor_plate_state_test.dart` (the extracted plate holder) · `plate_validation_test.dart` · `phone_validation_test.dart` · `profile_models_test.dart` · golden `test/golden/sign_up_visitor_golden_test.dart` (`goldens/sign_up_visitor_168-2972.png`) · E2E [`mobile-sign-up-visitor.md`](../../../tests/e2e/mobile-sign-up-visitor.md) (E2E-MOB007-001..024) |
 | Status | ✅ Real — D-332 (rework: save moved to interests) → D-368 (Figma 168:2972) → D-371/D-373/D-374/D-375 amendments → **clean-code frozen (D-546, 2026-06-30)** |
 | Legacy detail | `docs/App/Page_007/` (Function / Logic / API / Design) — retained as the detailed historical spec |
 
@@ -49,7 +50,7 @@ stretch edge-to-edge on a tablet — §13.7) holds, in order:
    script.
 7. **الجنسية** — searchable country sheet (default SA). The pick **drives the
    document path** (D-373): SA → national-ID; else Iqama / Passport tabs + number.
-8. **document fields** (`_buildDocumentFields`).
+8. **document fields** (`DocumentSection`, shared with the profile feature).
 9. **رقم الجوال** — one conditional `MobileField` (Saudi or international, C4 shapes);
    **required** (D-723).
 10. **تاريخ الميلاد** — `DateOfBirthField` (**≥ 18**, D-197).
@@ -80,7 +81,7 @@ Read on load (concurrent), per `ProfileRepository`:
 The **save** (`POST /app/account/user-profile` + the multipart id-image upload + the
 server face-gate `VISITOR_ID_IMAGE_NO_FACE`) runs on the **interests** screen
 (007-01) once `interestIds` (1–10) are picked. Async load is surfaced via explicit
-loading (spinner) / data / inline-retry (`_buildLoadError`) states.
+loading (spinner) / data / inline-retry (`SignUpVisitorLoadError`) states.
 
 ## 5. Validation & edge cases
 - Names: 2–4 parts, one script (AR field blocks non-Arabic at the keystroke; EN
@@ -105,7 +106,10 @@ the D-545 theme fix (see Changelog).
   fallback, the D-375 lookup retry, load-failure retry, Next draft assembly, and
   the optional Arabic job title round-trip (prefill → upsert + draft, #37).
 - **Unit**: `plate_validation_test.dart` (assemble/parse round-trips, D-468/D-471),
-  `phone_validation_test.dart`, `profile_models_test.dart`.
+  `phone_validation_test.dart`, `profile_models_test.dart`, and
+  `sign_up_visitor_plate_state_test.dart` — the plate holder the field widget now
+  takes, asserting it still validates the **assembled** plate (letters + digits
+  together) rather than the digits controller on its own.
 - **Golden** (`sign_up_visitor_golden_test.dart`): `goldens/sign_up_visitor_168-2972.png`
   @375×2100 RTL (empty/default state) — locks the frozen frame parity.
 - **E2E**: [`docs/tests/e2e/mobile-sign-up-visitor.md`](../../../tests/e2e/mobile-sign-up-visitor.md).
@@ -122,6 +126,27 @@ the D-545 theme fix (see Changelog).
 - [x] `flutter analyze` 0 errors / 0 warnings; full suite green; wire contract unchanged
 
 ## 9. Changelog
+- **2026-08-18 (delivery clean-code programme, structure only):** 1,213 → **875**
+  lines. Seven of the screen's eight remaining `_build*` **widget builders** became
+  public widgets under `account/widgets/` (the field list in the header table
+  above) — `_buildRequest` is not one of them and stays: it assembles the
+  `UpsertUserProfileRequest` DTO and builds no UI. The screen's doc header
+  collapsed to a one-line pointer at this folder. Two of the
+  extractions carry a design note worth keeping: the plate field takes a
+  `SignUpVisitorPlateState` holder so the validator still runs on the assembled
+  plate rather than the digits controller, and the organisation field owns its own
+  search controller + debounce so typing a lookup query rebuilds that field alone.
+  **`_buildBody` was deliberately left in the screen** — it composes the whole form
+  card over ~30 pieces of state and ~19 callbacks, so every way out of it is either
+  a 15–18 parameter constructor or a slot widget that moves no logic; renaming it
+  to clear the report would have changed nothing real. The **face-capture path was
+  also left alone on purpose**: the liveness push stays in the screen and
+  `SignUpVisitorFacePhotoField` only receives `onCapture`, because the D-666
+  face-capture regression is exactly the kind a green golden does not catch.
+  Behaviour-preserving: the `sign_up_visitor_168-2972` golden held **without**
+  `--update-goldens` and the 24 widget cases passed unchanged. Sections 3 and 4
+  above were corrected in the same pass — they still named `_buildDocumentFields`
+  and `_buildLoadError`, which no longer exist.
 - **2026-07-22 (backlog #37):** added the optional Arabic job title input
   (`المسمى الوظيفي (بالعربية)`, RTL) right after the job title — it fills
   `UpsertUserProfileRequest.jobTitleArabic` (already serialized) so the app now

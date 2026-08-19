@@ -6,10 +6,6 @@ import 'package:simf_app/app/theme/tokens.dart';
 /// comfortable size without moving the painted dot.
 const double flagSpotHitPad = 9;
 
-/// One scattered flag glyph as a tap target. The glyph sits inside
-/// [flagSpotHitPad] of transparent padding (widening the touch
-/// area); when [selected] the padding box is ringed in gold to mark the active
-/// filter.
 class FlagSpot extends StatelessWidget {
   const FlagSpot({
     required this.flag,

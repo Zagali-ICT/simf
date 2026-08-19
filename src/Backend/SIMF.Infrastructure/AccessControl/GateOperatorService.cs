@@ -48,7 +48,7 @@ internal sealed class GateOperatorService(
     // to the full 16 bytes. The bound is NOT removed: it still guards the insert
     // against an over-length mis-scan. It is wide because a badge is no longer
     // only a 12-character serial — an offline event badge is an encrypted payload
-    // of ~61 characters, and the whole blob is stored so the audit row is exactly
+    // of 78 characters, and the whole blob is stored so the audit row is exactly
     // what was presented at the gate.
     private const int QrIdAtScanMaxLength = 96;
     private static readonly TimeSpan DuplicateWindow = TimeSpan.FromSeconds(5);

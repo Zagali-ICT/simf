@@ -56,7 +56,6 @@ class PresentationCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            // Title + speaker on the right, the file icon on the left.
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
@@ -87,7 +86,6 @@ class PresentationCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: SimfTokens.space6), // gap-24
-            // Summary button on the left, the event-day label on the right.
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[

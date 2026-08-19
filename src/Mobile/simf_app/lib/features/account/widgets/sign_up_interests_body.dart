@@ -8,7 +8,8 @@ import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/core/responsive/grid_columns.dart';
 import 'package:simf_app/core/responsive/max_width_body.dart';
-import 'package:simf_app/features/account/data/profile_models.dart';
+import 'package:simf_app/features/account/data/profile_lookups.dart';
+import 'package:simf_app/features/account/data/sign_up_profile_draft.dart';
 import 'package:simf_app/features/account/widgets/auth_chrome.dart';
 import 'package:simf_app/features/account/widgets/interest_chip.dart';
 

@@ -16,26 +16,12 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 export 'data/media_models.dart';
 export 'data/media_repository.dart';
 
-/// Page 030 — التغطية الإعلامية · معرض الصور والفيديوهات · Media gallery (#30,
-/// `/media`, Guest+), rebuilt to the KSA-Project frame **947:3764** on the
-/// shared shell.
+/// Media gallery — route: `RouteNames.gallery` · Figma 947:3764
 ///
-/// **Public.** The frame is the *media-coverage* hub: a three-tab selector
-/// (الأخبار · الشركاء الإعلاميون · معرض الصور والفيديوهات) over the active
-/// tab's content. This screen owns the **gallery** tab; the other two tabs
-/// navigate to their own routes ([RouteNames.news] /
-/// [RouteNames.mediaPartners]). The gallery splits the media cache into two
-/// labelled sections — **الصور** (image tiles) and **الفيديوهات** (video tiles
-/// with a centred play glyph) — each a two-up grid of rounded tiles with a navy
-/// bottom-gradient. Tiles with an uploaded bitmap render it from the public
-/// `…/app/media/{id}/…` route (thumbnail preferred, image fallback) with a
-/// loading spinner and a graceful fall-back to the kind icon when there is no
-/// bitmap or the fetch fails. Video *playback* (opening the external
-/// `VideoUrl`) is still deferred.
-///
-/// Route: `RouteNames.gallery`.
-/// Data: [mediaItemsProvider], [simfDataConfigProvider].
-/// Perf: no list — a single-screen layout.
+/// Contract: this screen owns the **gallery** tab of the media-coverage hub;
+/// the other two tabs navigate to [RouteNames.news] / [RouteNames.mediaPartners]
+/// rather than swapping content in place. Video *playback* (opening the
+/// external `VideoUrl`) is still deferred.
 class GalleryScreen extends ConsumerWidget {
   const GalleryScreen({super.key});
 
@@ -46,7 +32,6 @@ class GalleryScreen extends ConsumerWidget {
     // The data-package base URL already includes `/api/v1`; the tile builds
     // `{base}/app/media/{id}/(thumbnail|image)` from it.
     final baseUrl = ref.watch(simfDataConfigProvider).baseUrl;
-    // Pull-to-refresh — re-fetch the media items (invalidate + await next).
     Future<void> onRefresh() => refreshAsync(ref, mediaItemsProvider.future);
 
     return SimfPageShell(

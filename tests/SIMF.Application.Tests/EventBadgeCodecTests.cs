@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using System.Text.RegularExpressions;
 using FluentAssertions;
 using SIMF.Common.Badges;
 using SIMF.Common.Options;
@@ -375,5 +376,64 @@ public sealed class EventBadgeCrossLanguageFixtureTests
         // longer a "typical" and an "extreme" case to reason about.
         encoded.Length.Should().Be(78);
         encoded.Length.Should().BeLessThanOrEqualTo(96);
+    }
+
+    /// <summary>The badge length is stated in prose across seven files, and the
+    /// prose went stale: the 12-byte-tag era produced a variable-width badge of
+    /// "about 61" characters, and every one of those comments still said so weeks
+    /// after the tag went to 16 and the payload became a fixed 20 raw bytes. The
+    /// assertions above pin the behaviour and could not see any of it.
+    ///
+    /// <para>So the comments are pinned too. A reader who trusts a stale size
+    /// comment mis-sizes a column or a buffer, which is exactly the class of bug
+    /// the widened audit column exists to prevent - and this is cheaper than
+    /// hoping the next person greps.</para></summary>
+    [Fact]
+    public void No_source_comment_still_claims_the_old_badge_length()
+    {
+        // Matches "61 characters", "~61-character", "about 61 characters" and the
+        // "9-byte payload" that went with them. Deliberately NOT a bare "61":
+        // the number is legitimate elsewhere (a line number, a byte count).
+        var stale = new Regex(
+            @"(~\s*61[\s-]*character|about\s+61\s+character|61\s+characters|9-byte\s+payload)",
+            RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+        var offenders = SourceFiles()
+            .Where(file => stale.IsMatch(File.ReadAllText(file)))
+            .Select(file => Path.GetRelativePath(RepoRoot(), file).Replace('\\', '/'))
+            .OrderBy(path => path, StringComparer.Ordinal)
+            .ToList();
+
+        offenders.Should().BeEmpty(
+            "a badge is EXACTLY 78 characters - 12-byte nonce + 20-byte plaintext + "
+            + "16-byte tag = 48 bytes, which is 77 base32 symbols plus the leading "
+            + "key-version character. The \"~61\" wording predates the full tag and "
+            + "the fixed-width payload, and describes a badge this codec can no "
+            + "longer produce.");
+    }
+
+    /// <summary>Every C# and Dart source under src/, which is where a size comment
+    /// can mislead someone writing code. docs/ is excluded deliberately: the
+    /// decisions log records what was true on the day it was written, and
+    /// correcting history there would make it lie about what was decided when.</summary>
+    private static IEnumerable<string> SourceFiles() =>
+        Directory
+            .EnumerateFiles(Path.Combine(RepoRoot(), "src"), "*.*", SearchOption.AllDirectories)
+            .Where(file => file.EndsWith(".cs", StringComparison.OrdinalIgnoreCase)
+                           || file.EndsWith(".dart", StringComparison.OrdinalIgnoreCase))
+            .Where(file => !file.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}")
+                           && !file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}"));
+
+    private static string RepoRoot()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null
+               && !File.Exists(Path.Combine(directory.FullName, "SIMF.slnx")))
+        {
+            directory = directory.Parent;
+        }
+
+        directory.Should().NotBeNull();
+        return directory!.FullName;
     }
 }

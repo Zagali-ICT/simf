@@ -1,21 +1,16 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
-import 'package:simf_app/app/localization/locale_controller.dart';
 import 'package:simf_app/app/route_names.dart';
-import 'package:simf_app/app/router.dart';
 import 'package:simf_app/app/theme/tokens.dart';
-import 'package:simf_app/app/widgets/confirm_external_link.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
-import 'package:simf_app/core/env/build_config.dart';
-import 'package:simf_app/core/startup/app_version_policy.dart';
 import 'package:simf_app/core/utils/refresh.dart';
-import 'package:simf_app/features/account/sign_out.dart';
-import 'package:simf_app/features/more/widgets/more_list.dart';
+import 'package:simf_app/features/more/widgets/more_footer.dart';
+import 'package:simf_app/features/more/widgets/more_forum_info_section.dart';
+import 'package:simf_app/features/more/widgets/more_legal_section.dart';
 import 'package:simf_app/features/more/widgets/more_profile_card.dart';
+import 'package:simf_app/features/more/widgets/more_settings_section.dart';
 import 'package:simf_app/features/myarea/data/myarea_models.dart';
 import 'package:simf_app/features/myarea/data/myarea_repository.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
@@ -34,20 +29,8 @@ final _moreProfileProvider =
   }
 });
 
-/// Page 041 — المزيد · More (#41, `/more`, public). Pixel-parity to KSA Figma
-/// frame `1129:17224`: the navy [SimfPageShell] shell, a منطقتي profile header
-/// card (signed-in), three grouped sections (معلومات الملتقى / الإعدادات /
-/// قانوني) of bordered nav rows, the تسجيل الخروج link (signed-in) and the
-/// static version line. Unbuilt entries (Forum guide / FAQ / presentations /
-/// Contact us) route to the ComingSoon placeholder; اكتشف السعودية opens
-/// VisitSaudi; the اللغة row shows the current language and toggles it (D-464).
-///
-/// Route: `RouteNames.more`.
-/// Data: [_moreProfileProvider], [authControllerProvider],
-///       [installedAppVersionProvider], [localeControllerProvider],
-///       [myAreaRepositoryProvider].
-/// Perf: ListView builds every child up front — correct for a short static
-///       page, a defect on a data feed.
+/// More — المزيد · route: `RouteNames.more` · Figma 1129:17224
+/// D-464 — the اللغة row shows the current language and toggles it.
 class MoreScreen extends ConsumerWidget {
   const MoreScreen({super.key});
 
@@ -97,125 +80,14 @@ class MoreScreen extends ConsumerWidget {
               ),
               const SizedBox(height: SimfTokens.space5),
             ],
-
-            // معلومات الملتقى
-            MoreSection(
-              title: l10n.moreSectionForumInfo,
-              rows: <Widget>[
-                MoreRow(
-                  title: l10n.moreAbout,
-                  onTap: () => context.pushNamed(RouteNames.aboutForum),
-                ),
-                MoreRow(
-                  title: l10n.moreForumGuide,
-                  onTap: () => context.pushNamed(RouteNames.forumGuide),
-                ),
-                MoreRow(
-                  title: l10n.faqRowTitle,
-                  onTap: () => context.pushNamed(RouteNames.faq),
-                ),
-                // "عروض الجلسات" — My sessions (Figma 1388:9067). Restored
-                // to the More menu 2026-07-09 (D-710, owner reversed the D-609
-                // removal). The route is attendee-gated, so the row shows
-                // only when a signed-in role may reach it.
-                if (routeAllowsRole(RouteNames.myAreaSessions, role))
-                  MoreRow(
-                    title: l10n.mySessionsTitle,
-                    onTap: () => context.pushNamed(RouteNames.myAreaSessions),
-                  ),
-                MoreRow(
-                  title: l10n.moreVisitSaudi,
-                  onTap: () => unawaited(
-                    confirmThenLaunchExternal(
-                      context,
-                      BuildConfig.visitSaudiUrl,
-                    ),
-                  ),
-                ),
-              ],
+            MoreForumInfoSection(role: role),
+            const SizedBox(height: SimfTokens.space5),
+            MoreSettingsSection(
+              accountEmail: signedIn ? auth.session.user.email : null,
             ),
             const SizedBox(height: SimfTokens.space5),
-
-            // الإعدادات
-            MoreSection(
-              title: l10n.moreSectionSettings,
-              rows: <Widget>[
-                MoreRow(
-                  title: l10n.moreLanguage,
-                  trailingValue: l10n.languageCurrentName,
-                  onTap: () => unawaited(
-                    ref.read(localeControllerProvider.notifier).toggle(),
-                  ),
-                ),
-                MoreRow(
-                  title: l10n.moreAccessibility,
-                  onTap: () => context.pushNamed(RouteNames.accessibility),
-                ),
-                // Notifications are auth-only — hide from a not-logged-in guest
-                // so the row doesn't dead-bounce to sign-in (D-669).
-                if (signedIn)
-                  MoreRow(
-                    title: l10n.moreNotifications,
-                    onTap: () => context.pushNamed(RouteNames.notifications),
-                  ),
-                // Reset password (signed-in only) — reuses the forgot→reset
-                // flow: it emails a code, then reset sets the new password.
-                // The known email is pre-filled so it isn't retyped (D-659).
-                if (signedIn)
-                  MoreRow(
-                    title: l10n.moreResetPassword,
-                    onTap: () => context.pushNamed(
-                      RouteNames.forgotPassword,
-                      queryParameters: <String, String>{
-                        'email': auth.session.user.email,
-                      },
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: SimfTokens.space5),
-
-            // قانوني
-            MoreSection(
-              title: l10n.moreSectionLegal,
-              rows: <Widget>[
-                MoreRow(
-                  title: l10n.moreTerms,
-                  onTap: () => context.pushNamed(RouteNames.terms),
-                ),
-                MoreRow(
-                  title: l10n.contactUsTitle,
-                  onTap: () => context.pushNamed(RouteNames.contactUs),
-                ),
-                if (routeAllowsRole(RouteNames.rate, role))
-                  MoreRow(
-                    title: l10n.moreRateApp,
-                    onTap: () => context.pushNamed(RouteNames.rate),
-                  ),
-              ],
-            ),
-
-            if (signedIn) ...<Widget>[
-              const SizedBox(height: SimfTokens.space6),
-              Center(
-                child: TextButton(
-                  onPressed: () =>
-                      unawaited(confirmAndSignOut(context, ref, l10n)),
-                  child: Text(
-                    l10n.signOutLink,
-                    style: SimfTokens.bodyBeigeMd,
-                  ),
-                ),
-              ),
-            ],
-            const SizedBox(height: SimfTokens.space4),
-            Center(
-              child: Text(
-                // D-736 — the real installed version (package_info_plus).
-                l10n.moreVersionLine(ref.watch(installedAppVersionProvider)),
-                style: SimfTokens.bodyInkMutedSm,
-              ),
-            ),
+            MoreLegalSection(role: role),
+            MoreFooter(signedIn: signedIn),
           ],
         ),
       ),

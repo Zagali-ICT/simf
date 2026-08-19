@@ -27,30 +27,11 @@ import 'package:simf_app/features/account/widgets/sign_in_alt_actions.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// Page 003 — تسجيل الدخول · Sign in. The KSA-Project Figma design (node
-/// 168:2800), promoted from the D-358 preview to the official sign-in (D-360);
-/// the previous mockup screen is parked in `_legacy_mockup/`.
-///
-/// Email + password against `POST /app/auth/sign-in` with the 2FA email-OTP
-/// redirect, the post-sign-in profile-completeness route (D-288), and the
-/// Face-ID device-key path. Face-ID enrolment is offered post-sign-in via the
-/// step-up nudge (D-486/D-738: emailed OTP + OS device-credential confirm), not
-/// auto-enrolled. The email is pre-filled from the last successful sign-in; the
-/// design's "remember me" checkbox gates whether it is stored. The globe
-/// language toggle (top-right, wired to [LocaleController], D-363) and the
-/// underlined guest link (Page_012) round out the screen.
-///
-/// Clean-code (D-655): the screen composes the shared account widgets
-/// ([AccountHeader], [AccountTopControls], [AccountCard], [AccountEmailField],
-/// [AccountPasswordField], [AccountRememberForgot], [AccountAuthPrompt])
-/// instead of local `_build*` copies; the decorative sweep is the shared
-/// [SimfAuthSweep]; the back button was removed (it only dead-ended to
-/// onboarding — owner).
-///
-/// Route: `RouteNames.signIn`.
-/// Data: [authControllerProvider], [biometricAvailableProvider],
-///       [localeControllerProvider], [simfPrefsStorageProvider].
-/// Perf: no list — a single-screen layout.
+/// Sign in — تسجيل الدخول · route: RouteNames.signIn · Figma 168:2800 (D-360)
+/// Contract: Face-ID is offered post-sign-in through the step-up nudge
+/// (D-486/D-738 — emailed OTP + an OS device-credential confirm), never
+/// auto-enrolled; the "remember me" checkbox gates whether the email is stored;
+/// the back button was removed by owner directive (D-655).
 class SignInScreen extends ConsumerStatefulWidget {
   const SignInScreen({super.key});
 

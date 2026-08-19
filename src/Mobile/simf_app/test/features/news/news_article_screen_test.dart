@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/features/news/data/news_models.dart';
 import 'package:simf_app/features/news/data/news_repository.dart';
 import 'package:simf_app/features/news/news_article_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
+
+import '../../support/simf_test_scope.dart';
 
 NewsArticle _article() => NewsArticle(
       id: 'n1',
@@ -42,7 +44,7 @@ class _FakeNewsRepo implements NewsRepository {
 
 Future<void> _pump(WidgetTester tester, NewsRepository repo) async {
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[newsRepositoryProvider.overrideWithValue(repo)],
       child: const MaterialApp(
         locale: Locale('en'),

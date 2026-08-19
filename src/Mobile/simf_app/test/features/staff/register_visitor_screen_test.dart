@@ -3,19 +3,21 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/widgets/simf_language_toggle.dart';
 import 'package:simf_app/core/widgets/simf_field_style.dart';
 import 'package:simf_app/core/widgets/simf_image_source_sheet.dart';
 import 'package:simf_app/core/widgets/simf_picker_field.dart';
-import 'package:simf_app/features/account/data/profile_models.dart';
+import 'package:simf_app/features/account/data/profile_lookups.dart';
 import 'package:simf_app/features/account/data/profile_repository.dart';
 import 'package:simf_app/features/staff/data/staff_models.dart';
 import 'package:simf_app/features/staff/data/staff_repository.dart';
 import 'package:simf_app/features/staff/register_visitor_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
+
+import '../../support/simf_test_scope.dart';
 
 /// Fake lookups — only the three the screen reads; the rest throw.
 class _FakeProfileRepo implements ProfileRepository {
@@ -139,7 +141,7 @@ Future<void> _pump(
   String language = 'en',
 }) async {
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         profileRepositoryProvider.overrideWithValue(profile),
         staffRepositoryProvider.overrideWithValue(staff),

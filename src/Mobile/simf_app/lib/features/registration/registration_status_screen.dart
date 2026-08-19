@@ -7,6 +7,7 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/core/utils/refresh.dart';
+import 'package:simf_app/features/registration/data/registration_providers.dart';
 import 'package:simf_app/features/registration/widgets/registration_primary_button.dart';
 import 'package:simf_app/features/registration/widgets/registration_secondary_button.dart';
 import 'package:simf_app/features/registration/widgets/registration_sign_out_link.dart';
@@ -14,38 +15,11 @@ import 'package:simf_app/features/registration/widgets/registration_status_heade
 import 'package:simf_app/features/registration/widgets/registration_status_hero.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 
-/// Page 011 — حالة التسجيل · Registration status (Figma **1701:3789**).
-///
-/// A gate screen for a signed-in but **not-yet-approved** account. On open (and
-/// on every Re-check) it calls `GET /app/users/me` via
-/// [AuthController.refreshCurrentUser] and renders the state for the returned
-/// `registrationStatus`: **Pending** (under-review + Re-check), **Approved**
-/// (Continue → app), **Rejected** (declined copy). A wire failure shows the
-/// **Error** state with retry; a session-expired failure flips auth to
-/// signed-out and the router's auth gate (route 11) redirects to sign-in.
-///
-/// Layout matches the frame: a `navySurface` gate (no bottom nav), a back +
-/// centred title header, a vertically-centred hero (a state-coloured ring
-/// around the state icon, a white headline, a beige message), the gold primary
-/// button, and a "تسجيل الخروج" link beneath it.
-///
-/// Route: `RouteNames.registrationStatus`.
-/// Data: [authControllerProvider], [registrationStatusProvider].
-/// Perf: no list — a single-screen layout.
-/// The account's registration status, re-read from the server.
-///
-/// `GET /app/users/me` via [AuthController.refreshCurrentUser] — the same call
-/// the explicit "Re-check" button makes, which is the whole point of this
-/// gate screen. A session-expired failure flips auth to signed-out and the
-/// router's gate (route 11) redirects to sign-in; every other failure lands on
-/// the error branch.
-final registrationStatusProvider =
-    FutureProvider.autoDispose<RegistrationStatus>((ref) async {
-  final user =
-      await ref.watch(authControllerProvider.notifier).refreshCurrentUser();
-  return user.registrationStatus;
-});
-
+/// Registration status — route: RouteNames.registrationStatus · Figma
+/// 1701:3789
+/// Contract: a gate screen for a signed-in but not-yet-approved account. A
+/// session-expired failure flips auth to signed-out and the router's auth gate
+/// (route 11) redirects to sign-in.
 class RegistrationStatusScreen extends ConsumerStatefulWidget {
   const RegistrationStatusScreen({super.key});
 

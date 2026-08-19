@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
-import 'package:simf_app/app/route_names.dart' show RouteNames;
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
@@ -11,33 +10,14 @@ import 'package:simf_app/features/delegations/data/delegation_models.dart';
 import 'package:simf_app/features/delegations/data/delegations_repository.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// Confirm meeting — تأكيد الاجتماع · route: [RouteNames.meetingConfirm]
-/// Purpose: the OTHER party's one-tap confirm of a bilateral meeting. Data:
-/// [delegationsRepositoryProvider].confirmMeeting — `POST
-/// /app/delegation-meeting-requests/{id}/confirm`. Figma: no bound node — built
-/// on the shared [SimfPageShell] chrome. Perf: two short non-scrolling
-/// ListViews; no pagination, one write. Contract: eligibility + state are
-/// enforced SERVER-side and the screen only maps the outcome — 403 = not the
-/// other party, 409 = not awaiting confirmation, anything else = generic retry.
-/// The success summary carries no requester PII (stripped server-side).
-///
-/// Bi-Meeting rework — the other-party DELEGATION-meeting confirm screen (route
-/// `/meeting-confirm`), reached by tapping a "MeetingRequested" notification
-/// (deep-link `?requestId=…`). An eligible member of the TARGET delegation
-/// confirms — or, since B8, DECLINES — the meeting with one tap; on success the
-/// meeting summary (both delegations + subject + time) is shown. Eligibility +
-/// state are enforced server-side (403 = not the other party, 409 = not
-/// awaiting confirmation).
-///
-/// A30 — this screen is delegation-only and keyed on a `requestId`. The SPEAKER
-/// double-opt-in link lands on the Website's anonymous
-/// `/meeting/confirm?token=` page instead; driving a speaker meeting through
-/// here is a 403/409 by design, which is why the copy names the delegation.
-///
-/// Route: `RouteNames.meetingConfirm`.
-/// Data: [delegationsRepositoryProvider].
-/// Perf: ListView builds every child up front — correct for a short static
-///       page, a defect on a data feed.
+/// Confirm meeting — route: RouteNames.meetingConfirm · no bound Figma node
+/// Contract: eligibility + state are enforced SERVER-side and the screen only
+/// maps the outcome — 403 = not the other party, 409 = not awaiting
+/// confirmation, anything else = generic retry. The success summary carries no
+/// requester PII (stripped server-side).
+/// A30 — delegation-only, keyed on a `requestId`. The SPEAKER double-opt-in
+/// link lands on the Website's anonymous `/meeting/confirm?token=` page
+/// instead, so driving a speaker meeting through here is a 403/409 by design.
 class MeetingConfirmScreen extends ConsumerStatefulWidget {
   const MeetingConfirmScreen({required this.requestId, super.key});
 
@@ -210,9 +190,7 @@ class _MeetingConfirmScreenState extends ConsumerState<MeetingConfirmScreen> {
 
   // "2026-11-24 · 10:00 ص" — a compact local date + 12-hour time.
   String _formatSlot(DateTime local, bool isArabic) {
-    final date = '${local.year.toString().padLeft(4, '0')}-'
-        '${local.month.toString().padLeft(2, '0')}-'
-        '${local.day.toString().padLeft(2, '0')}';
+    final date = formatDateIso(local);
     final time = formatDateTime12h(local, isArabic: isArabic);
     return '$date · $time';
   }

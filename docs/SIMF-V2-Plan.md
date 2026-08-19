@@ -152,3 +152,58 @@ sites, all of which must move together:
   the biometric window differ?
 - **OI-V2-02b — Remember-me.** Should the app expose a "keep me signed in" toggle
   that picks between two configured lifetimes, or is the 5-day window fixed?
+
+---
+
+## V2-03 — freezed for the wire models (deferred from the 2026-08 clean-code programme)
+
+Adopt `freezed` across the 30 `lib/features/*/data/*_models.dart` files (63 classes
+carrying a `fromJson`), generating `copyWith`, `==` and `hashCode`.
+
+### Why it was deferred rather than built
+
+It was in scope for the clean-code programme, chosen on the premise that it would
+deliver Flutter's "strongly recommend immutable data models". Measuring the tree
+before starting showed that premise does not hold: **839 final fields and 0 mutable
+fields across the 30 model files.** The models are already immutable. What freezed
+would actually add is `copyWith` — hand-written 3 times in the entire app — and
+`==`/`hashCode`, of which there are currently none.
+
+### Why the timing was wrong specifically
+
+Riverpod 3 (landed 2026-08-18) filters provider updates by `==`. Today no model
+defines `==`, so every rebuild yields a non-equal instance and every listener fires,
+exactly as it did on Riverpod 2. Adding `==` to 63 wire classes switches app-wide
+update filtering on in a single step: a refresh that returns byte-identical data
+would silently stop notifying. That is usually the desired behaviour and occasionally
+not, and `test/repo/wire_keys_ratchet_test.dart` guards key names, not rebuild
+semantics. Doing it in the same window as the major-version bump would have made a
+red suite impossible to attribute.
+
+### How to build it when it is taken up
+
+- **freezed WITHOUT `json_serializable`.** Keep every existing `fromJson`/`toJson`
+  body verbatim as a manual factory. The decoders are tolerant by design
+  (`json['x'] as String? ?? ''`), carry int-or-string enum readers, and
+  `parseWireDateTime(value, 'fieldName')` passes the field NAME to its parser — a
+  `JsonConverter` never receives the key, so porting would mean one converter class
+  per field or losing the error message. Keeping the bodies means no `.g.dart` is
+  generated at all, only `.freezed.dart`, and the wire literals never move.
+- **Three config gaps must land first** (all measured 2026-08-18): both
+  `packages/*/analysis_options.yaml` have **no `exclude:` block**, and CI analyses
+  packages with infos fatal; the app-root `analysis_options.yaml` lacks
+  `invalid_annotation_target: ignore`, which both packages already have; and
+  `.gitignore` excludes `*.freezed.dart`. On that last one, read the comment already
+  in `.gitignore` — the rule has silently swallowed generated source twice in this
+  repo, once leaving `flutter build apk` broken from a clean clone. Either commit the
+  generated files or add a `build_runner` step to `azure-pipelines.yml` before
+  `flutter analyze`; do not leave it implicit.
+- **Exclude the four device-persisted models permanently** —
+  `gates/data/gate_scan_queue.dart`, `gates/data/gate_offline_config.dart`,
+  `core/organization_profile/organization_profile.dart` and the auth cached-user map.
+  Their JSON is written to device storage, so a renamed key breaks shipped installs
+  at upgrade with no server involved; `PendingGateScan` holds attendance records that
+  never reached the server.
+- **Sequence in four batches**, one commit each, full gate between: config + one
+  trivial model end-to-end, then read-only `fromJson` models, then models with domain
+  methods, then the two `toJson` pairs. A red batch is reverted, not debugged forward.

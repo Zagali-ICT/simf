@@ -8,84 +8,17 @@ import 'package:simf_app/app/widgets/simf_bottom_nav.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/core/utils/refresh.dart';
 import 'package:simf_app/features/account/data/profile_repository.dart' show referenceNumberProvider;
+import 'package:simf_app/features/badge/data/badge_identity_provider.dart';
 import 'package:simf_app/features/badge/widgets/badge_actions.dart';
 import 'package:simf_app/features/badge/widgets/badge_qr_card.dart';
 import 'package:simf_app/features/myarea/data/myarea_models.dart';
-import 'package:simf_app/features/myarea/data/myarea_repository.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
-import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// Page 032 — بطاقة الدخول · Entry badge (#32, `/badge`), rebuilt to the
-/// KSA frame **758:1469 "QR"** on the shared shell.
-///
-/// **Auth-gated** (route 32 in `_authenticatedRoutes`); data contract
-/// unchanged: the shipped My-Area layer (`GET /app/account/dashboard`,
-/// `RequireApprovedAccount`) supplies the identity, and the QR encodes the
-/// opaque `qrId` only. Frame mapping: the gold-bordered **white card**
-/// holding the QR, the "امسح للدخول" hint and the **gold identity strip**
-/// (avatar, name, tier line, the masked `ID · …` reference), plus the
-/// bordered **امسح لإضافة شخص** action → the existing contact-QR scanner
-/// (`/contacts/scan`, FDS-014). A pending account (null `qrId`) keeps the
-/// pending state; load failures keep the retry surface (Page_014 L-1).
-///
-/// Route: `RouteNames.badge`.
-/// Data: [authControllerProvider], [badgeIdentityProvider],
-///       [myAreaRepositoryProvider], [referenceNumberProvider].
-/// Perf: ListView builds every child up front — correct for a short static
-///       page, a defect on a data feed.
-/// The badge identity, or **null when the account is not Approved**.
-///
-/// An `AsyncNotifier` rather than a `FutureProvider`, because the two paths
-/// into it differ and a plain provider cannot say so:
-///
-///   * **build** — a pending account must NOT call the dashboard. It is
-///     Approved-only and would 403, and there is a test pinning that it is
-///     never called (Page_014 L-1).
-///   * **recheck** — a PULL always calls, even while the cached auth state
-///     still says pending, because the dashboard's 403 is precisely how
-///     approval is discovered. Gating the refresh on the stale local flag is
-///     what broke this first time round: the pending user could pull forever
-///     and never leave the state.
-///
-/// The 403 maps to null either way, so "not approved" has one meaning.
-///
-/// A signed-OUT visitor is NOT handled here: the screen answers that before
-/// watching, because a guest has no account rather than an unapproved one.
-class BadgeIdentityNotifier extends AutoDisposeAsyncNotifier<MyAreaIdentity?> {
-  @override
-  Future<MyAreaIdentity?> build() async {
-    final auth = ref.watch(authControllerProvider);
-    final user = auth is AuthStateSignedIn ? auth.session.user : null;
-    if (user == null || !user.isApproved) {
-      return null;
-    }
-    return _fetch();
-  }
-
-  /// Re-checks approval by actually calling, whatever the cached state says.
-  Future<void> recheck() async {
-    state = const AsyncValue<MyAreaIdentity?>.loading();
-    state = await AsyncValue.guard(_fetch);
-  }
-
-  Future<MyAreaIdentity?> _fetch() async {
-    try {
-      final dashboard = await ref.read(myAreaRepositoryProvider).getDashboard();
-      return dashboard.identity;
-    } on ApiFailure catch (failure) {
-      if (failure.httpStatus == 403) {
-        return null;
-      }
-      rethrow;
-    }
-  }
-}
-
-final badgeIdentityProvider =
-    AsyncNotifierProvider.autoDispose<BadgeIdentityNotifier, MyAreaIdentity?>(
-  BadgeIdentityNotifier.new,
-);
-
+/// Entry badge — بطاقة الدخول · route: `RouteNames.badge` · Figma 758:1469
+/// Contract: auth-gated; the identity comes from the shipped My-Area layer
+/// (`GET /app/account/dashboard`, `RequireApprovedAccount`) and the QR encodes
+/// the opaque `qrId` only. A pending account (null `qrId`) keeps the pending
+/// state; load failures keep the retry surface (Page_014 L-1).
 class BadgeScreen extends ConsumerStatefulWidget {
   const BadgeScreen({super.key});
 

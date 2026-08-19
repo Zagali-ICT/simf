@@ -59,7 +59,7 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 | `/admin/announcements` | ✅ Real (D-132: admin broadcast desk — one bilingual message → in-app notification + email to a specific session's registered attendees or a broad audience; background-processed, with a history grid) | Administrator ("Public relations" nav group; `Announcements.Send` = compose/send, `Announcements.View` = history) | [cp/announcements.md](cp/announcements.md) | [e2e/cp-announcements.md](../tests/e2e/cp-announcements.md) |
 | `/admin/reset-2fa` | ✅ Real | Administrator | [cp/admin-reset-2fa.md](cp/admin-reset-2fa.md) | [e2e/cp-admin-reset-2fa.md](../tests/e2e/cp-admin-reset-2fa.md) |
 | `/admin/roles` | ✅ Real | Administrator | [cp/admin-roles.md](cp/admin-roles.md) | [e2e/cp-admin-roles.md](../tests/e2e/cp-admin-roles.md) |
-| `/admin/roles/{id}/permissions` | ✅ Real | Administrator | — | [e2e/cp-admin-roles-permissions.md](../tests/e2e/cp-admin-roles-permissions.md) |
+| `/admin/roles/{id}/permissions` | ✅ Real | Administrator | [cp/admin-roles-permissions.md](cp/admin-roles-permissions.md) | [e2e/cp-admin-roles-permissions.md](../tests/e2e/cp-admin-roles-permissions.md) |
 | **Programme & sessions** | | | | |
 | `/admin/themes` | ✅ Real | Administrator | [cp/admin-themes.md](cp/admin-themes.md) | [e2e/cp-admin-themes.md](../tests/e2e/cp-admin-themes.md) |
 | `/admin/halls` | ✅ Real (QA B16: hall detail now lists the hall's assigned sessions — the hall occupancy view; QA A40: a "Seat layout" row action deep-links each hall to its seat-layout editor) | Administrator | [cp/admin-halls.md](cp/admin-halls.md) | [e2e/cp-admin-halls.md](../tests/e2e/cp-admin-halls.md) |
@@ -71,7 +71,7 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 | `/admin/session-categories` | ✅ Real (D-226) | Administrator  | [cp/admin-session-categories.md](cp/admin-session-categories.md) | [e2e/cp-admin-session-categories.md](../tests/e2e/cp-admin-session-categories.md) |
 | `/admin/programme-days` | ✅ Real (D-452) | Administrator  | [cp/admin-programme-days.md](cp/admin-programme-days.md) | [e2e/cp-admin-programme-days.md](../tests/e2e/cp-admin-programme-days.md) |
 | `/admin/session-moderators` | ✅ Real — **DEF-MOD-005**: Session + eligible-Moderator pickers replace the raw GUID boxes; server-side eligibility (`SESSION_MODERATOR_NOT_ELIGIBLE`) | Administrator  | [cp/admin-session-moderators.md](cp/admin-session-moderators.md) | [e2e/cp-admin-session-moderators.md](../tests/e2e/cp-admin-session-moderators.md) |
-| `/admin/programme/timeline` | ✅ Real | Administrator | — | [e2e/cp-admin-programme-timeline.md](../tests/e2e/cp-admin-programme-timeline.md) |
+| `/admin/programme/timeline` | ✅ Real | Administrator | [cp/admin-programme-timeline.md](cp/admin-programme-timeline.md) | [e2e/cp-admin-programme-timeline.md](../tests/e2e/cp-admin-programme-timeline.md) |
 | `/admin/bookings` | ✅ Real (#6/#17) | Administrator  | [cp/admin-bookings.md](cp/admin-bookings.md) | [e2e/cp-admin-bookings.md](../tests/e2e/cp-admin-bookings.md) |
 | `/admin/speaker-meeting-requests` | ✅ Real (D-269; bi-meeting rework — unified 3-button respond + operator check-in → Done; QA round — Accept-without-a-hall + Reopen row action, Approve refuses an undeliverable confirmation) | Administrator  | [cp/admin-speaker-meeting-requests.md](cp/admin-speaker-meeting-requests.md) | [e2e/cp-admin-speaker-meeting-requests.md](../tests/e2e/cp-admin-speaker-meeting-requests.md) |
 | `/admin/speaker-availability` | ✅ Real (D-474/D-476 #11: team-defined availability windows → VIP free slots) | Administrator | _(see e2e)_ | [e2e/cp-admin-speaker-availability.md](../tests/e2e/cp-admin-speaker-availability.md) |
@@ -86,11 +86,11 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 | `/admin/business-meetings` | ✅ Real (D-248) | Administrator | [cp/business-meetings.md](cp/business-meetings.md) | [e2e/cp-business-meetings.md](../tests/e2e/cp-business-meetings.md) |
 | **Engagement, Q&A & attendance** | | | | |
 | `/admin/question-queue` | ✅ Real (D-234) | Administrator  | [cp/admin-question-queue.md](cp/admin-question-queue.md) | [e2e/cp-admin-question-queue.md](../tests/e2e/cp-admin-question-queue.md) |
-| `/sessions/{id}/moderate` | ✅ Real | Session moderator | — | [e2e/cp-session-moderate.md](../tests/e2e/cp-session-moderate.md) |
+| `/sessions/{id}/moderate` | ✅ Real | Session moderator | [cp/session-moderate.md](cp/session-moderate.md) | [e2e/cp-session-moderate.md](../tests/e2e/cp-session-moderate.md) |
 | `/admin/ratings` | ✅ Real (D-496 — responses + KPI) | Administrator  | [cp/admin-ratings.md](cp/admin-ratings.md) | [e2e/cp-admin-ratings.md](../tests/e2e/cp-admin-ratings.md) |
 | `/admin/rating-config` | ✅ Real (D-496 — dynamic rating config) | Administrator  | [cp/admin-rating-config.md](cp/admin-rating-config.md) | [e2e/cp-admin-rating-config.md](../tests/e2e/cp-admin-rating-config.md) |
 | `/admin/session-summaries` | ✅ Real (D-238; A18 stub-content publish gate + A19 no-op-save guard, 2026-07-26) | Administrator  | [cp/admin-session-summaries.md](cp/admin-session-summaries.md) | [e2e/cp-admin-session-summaries.md](../tests/e2e/cp-admin-session-summaries.md) |
-| `/admin/hall-arrivals` | ✅ Real (D-244) | Administrator/operator | — | [e2e/cp-admin-hall-arrivals.md](../tests/e2e/cp-admin-hall-arrivals.md) |
+| `/admin/hall-arrivals` | ✅ Real (D-244) | Administrator/operator | [cp/admin-hall-arrivals.md](cp/admin-hall-arrivals.md) | [e2e/cp-admin-hall-arrivals.md](../tests/e2e/cp-admin-hall-arrivals.md) |
 | **Exhibition** | | | | |
 | `/admin/companies` | ⛔ **Retired** — renamed to `/admin/exhibitors` by `a05ef82d` (2026-06-04, Company → Exhibitor). The route does not exist; this row read "✅ Real (D-199)" until 2026-07-28. | — | — | [e2e/cp-admin-companies.md](../tests/e2e/cp-admin-companies.md) _(retired; see `cp-admin-exhibitors.md`)_ |
 | `/admin/exhibitors` | ✅ Real (D-202/D-274). **D-781:** the Accounts modal can also **link an existing account** to the exhibitor (`POST /admin/exhibitors/{id}/accounts/link`, permission `Exhibitors.LinkAccount`) — the fix for exhibitor-typed accounts created through the Others pipeline, which had no `ExhibitorMembership` and so were 403 on the app booth tools. **Revoke:** an account's booth membership can now be withdrawn (`DELETE /admin/exhibitors/{id}/accounts/{membershipId}`, permission `Exhibitors.RevokeAccount`), a soft revoke that ends badge scan, the booth's visitor contact cards and the business-meeting notifications; nothing had ever cleared that row, so access could be granted and never taken back. shipped end to end (gated API + the Revoke action in the Accounts modal) | Administrator | [cp/admin-exhibitors.md](cp/admin-exhibitors.md) | [e2e/cp-admin-exhibitors.md](../tests/e2e/cp-admin-exhibitors.md) |
@@ -111,17 +111,17 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 | `/admin/ai/services` | ✅ Real (CP Phase-1) | Administrator | [cp/admin-ai-services.md](cp/admin-ai-services.md) | [e2e/cp-admin-ai-services.md](../tests/e2e/cp-admin-ai-services.md) |
 | `/admin/ai/services/{feature}` | ✅ Real (CP Phase-2) | Administrator | [cp/admin-ai-service-detail.md](cp/admin-ai-service-detail.md) | [e2e/cp-admin-ai-service-detail.md](../tests/e2e/cp-admin-ai-service-detail.md) |
 | `/admin/ai/prompts` | ✅ Real (D-176) | Administrator  | [cp/admin-ai-prompts.md](cp/admin-ai-prompts.md) | [e2e/cp-admin-ai-prompts.md](../tests/e2e/cp-admin-ai-prompts.md) |
-| `/admin/ai/invocations` | ✅ Real (D-176/D-179) | Administrator | — | [e2e/cp-admin-ai-invocations.md](../tests/e2e/cp-admin-ai-invocations.md) |
+| `/admin/ai/invocations` | ✅ Real (D-176/D-179) | Administrator | [cp/admin-ai-invocations.md](cp/admin-ai-invocations.md) | [e2e/cp-admin-ai-invocations.md](../tests/e2e/cp-admin-ai-invocations.md) |
 | _(floating widget — every CP page)_ | ✅ Real | Any CP operator (`Assistant.Use`) | [cp/assistant.md](cp/assistant.md) | [e2e/cp-assistant.md](../tests/e2e/cp-assistant.md) |
 | **Access control & system** | | | | |
 | `/admin/gates` | ✅ Real (D-148). **D-843 (2026-08-04)** — every edit used to wipe the gate's Hall binding, demoting a hall door to a perimeter gate and silently stopping session-attendance capture. Fixed. | Administrator  | [cp/admin-gates.md](cp/admin-gates.md) | [e2e/cp-admin-gates.md](../tests/e2e/cp-admin-gates.md) |
-| `/admin/gates/operator` | ✅ Real (D-148) | Gate operator | — | [e2e/cp-admin-gates-operator.md](../tests/e2e/cp-admin-gates-operator.md) |
-| `/admin/gates/dashboard` | ✅ Real | Administrator | — | [e2e/cp-admin-gates-dashboard.md](../tests/e2e/cp-admin-gates-dashboard.md) |
+| `/admin/gates/operator` | ✅ Real (D-148) | Gate operator | [cp/admin-gates-operator.md](cp/admin-gates-operator.md) | [e2e/cp-admin-gates-operator.md](../tests/e2e/cp-admin-gates-operator.md) |
+| `/admin/gates/dashboard` | ✅ Real | Administrator | [cp/admin-gates-dashboard.md](cp/admin-gates-dashboard.md) | [e2e/cp-admin-gates-dashboard.md](../tests/e2e/cp-admin-gates-dashboard.md) |
 | `/admin/configuration` | ✅ Real (D-229) | Administrator  | [cp/admin-configuration.md](cp/admin-configuration.md) | [e2e/cp-admin-configuration.md](../tests/e2e/cp-admin-configuration.md) |
 | `/admin/email/templates` | ✅ Real (D-735: DB-backed override editor for the 6 transactional identity emails — bilingual token templates, live preview, block-on-unknown-token, reset-to-default) | Administrator | [cp/email-templates.md](cp/email-templates.md) | [e2e/cp-admin-email-templates.md](../tests/e2e/cp-admin-email-templates.md) |
 | `/admin/site-settings` | ✅ Real (D-464; Build #13 partner-directory toggle) | Administrator | [cp/site-settings.md](cp/site-settings.md) | [e2e/cp-site-settings.md](../tests/e2e/cp-site-settings.md) |
 | `/admin/organization-profile` | ✅ Real (D-495; hero-video upload D-768) | Administrator | [cp/organization-profile.md](cp/organization-profile.md) | [e2e/cp-organization-profile.md](../tests/e2e/cp-organization-profile.md) |
-| `/admin/contact-inquiries` | ✅ Real (D-464; BFF wired D-649) | Administrator | — | [e2e/cp-contact-inquiries.md](../tests/e2e/cp-contact-inquiries.md) |
+| `/admin/contact-inquiries` | ✅ Real (D-464; BFF wired D-649) | Administrator | [cp/admin-contact-inquiries.md](cp/admin-contact-inquiries.md) | [e2e/cp-contact-inquiries.md](../tests/e2e/cp-contact-inquiries.md) |
 | `/admin/operations` | ✅ Real (D-166) | Operations.View (Edit to save) | [cp/admin-operations.md](cp/admin-operations.md) | [e2e/cp-admin-operations.md](../tests/e2e/cp-admin-operations.md) |
 | `/admin/editions` | ✅ Real (the yearly edition — the open year + the one action that closes it into history and opens the next, clearing every badge for re-issue) | Administrator (`Editions.View` = read; `Editions.Open` = open a year) | [cp/admin-editions.md](cp/admin-editions.md) | [e2e/cp-admin-editions.md](../tests/e2e/cp-admin-editions.md) |
 | `/admin/reports` | ✅ Real | Reports.View | [cp/reports.md](cp/reports.md) | [e2e/cp-reports.md](../tests/e2e/cp-reports.md) |
@@ -136,9 +136,9 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 | `/admin/operation-log` | ✅ Real | Administrator | [cp/admin-operation-log.md](cp/admin-operation-log.md) | [e2e/cp-admin-operation-log.md](../tests/e2e/cp-admin-operation-log.md) |
 | `/admin/logs` | ✅ Real | Administrator | [cp/admin-logs.md](cp/admin-logs.md) | [e2e/cp-admin-logs.md](../tests/e2e/cp-admin-logs.md) |
 | `/admin/ops/services` | ✅ Real | Administrator | [cp/ops-services.md](cp/ops-services.md) | [e2e/cp-ops-services.md](../tests/e2e/cp-ops-services.md) |
-| `/admin/statistics` | ✅ Real | Administrator | — | [e2e/cp-admin-statistics.md](../tests/e2e/cp-admin-statistics.md) |
-| `/admin/attendance` | ✅ Real (FR-506) | Administrator | — | [e2e/cp-admin-attendance.md](../tests/e2e/cp-admin-attendance.md) |
-| `/admin/sessions/live-hall` | ✅ Real (2026-07-18; QA B17 — auto-refreshes every 15 s while a session is selected) | Administrator | — | [e2e/cp-admin-session-live-hall.md](../tests/e2e/cp-admin-session-live-hall.md) |
+| `/admin/statistics` | ✅ Real | Administrator | [cp/admin-statistics.md](cp/admin-statistics.md) | [e2e/cp-admin-statistics.md](../tests/e2e/cp-admin-statistics.md) |
+| `/admin/attendance` | ✅ Real (FR-506) | Administrator | [cp/admin-attendance.md](cp/admin-attendance.md) | [e2e/cp-admin-attendance.md](../tests/e2e/cp-admin-attendance.md) |
+| `/admin/sessions/live-hall` | ✅ Real (2026-07-18; QA B17 — auto-refreshes every 15 s while a session is selected) | Administrator | [cp/admin-sessions-live-hall.md](cp/admin-sessions-live-hall.md) | [e2e/cp-admin-session-live-hall.md](../tests/e2e/cp-admin-session-live-hall.md) |
 | `/m/{module}` | 🚧 Stub | Administrator | — | — |
 
 ### CP auth + account pages (not in main nav)
@@ -187,7 +187,7 @@ lives in the Flutter app; admin sign-in lives in the Control Panel.
 | `/discover` | ✅ Real (`ln-` SSR; Figma 5867-29747; reuses landing destinations band, single-sourced — Visitor cluster) | Public | [web/discover.md](web/discover.md) | [e2e/web-discover.md](../tests/e2e/web-discover.md) |
 | `/visit` | ✅ Real (`ln-` SSR; Figma 5867-24636; supersedes the old MudBlazor visit-entry page — Visitor cluster) | Public | [web/visit.md](web/visit.md) | [e2e/web-visit.md](../tests/e2e/web-visit.md) |
 | `/archive` | ✅ Real (`ln-` SSR; Figma 5840-27997; **live** archive data + static fallback — Media cluster) | Public | [web/archive.md](web/archive.md) | [e2e/web-archive.md](../tests/e2e/web-archive.md) |
-| `/meeting/confirm` | ✅ Real (D-717; D-767 — the same anonymous page also redeems the **delegation** confirm link, so an emailed delegate with no app installed can still confirm) | Public (token) | — | [e2e/web-meeting-confirm.md](../tests/e2e/web-meeting-confirm.md) |
+| `/meeting/confirm` | ✅ Real (D-717; D-767 — the same anonymous page also redeems the **delegation** confirm link, so an emailed delegate with no app installed can still confirm) | Public (token) | [web/meeting-confirm.md](web/meeting-confirm.md) | [e2e/web-meeting-confirm.md](../tests/e2e/web-meeting-confirm.md) |
 
 ### Removed 2026-07-27 — the Website login + account area (D-774)
 

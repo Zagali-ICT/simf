@@ -161,7 +161,7 @@ class _SessionGuardState extends ConsumerState<SessionGuard>
       }
       if (_secondsLeft <= 1) {
         timer.cancel();
-        unawaited(_signOut()); // ran out → sign out
+        unawaited(_signOut());
         return;
       }
       setState(() => _secondsLeft -= 1);

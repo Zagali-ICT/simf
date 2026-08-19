@@ -37,7 +37,6 @@ class RouteNames {
   static const String registrationStatus = 'registrationStatus';
   static const String guestMode = 'guestMode';
 
-  // Section 2 — Core screens (8 screens)
   static const String home = 'home';
   static const String myArea = 'myArea';
   static const String venueMap = 'venueMap';
@@ -69,7 +68,6 @@ class RouteNames {
   static const String liveBroadcast = 'liveBroadcast';
   static const String sendQuestion = 'sendQuestion';
 
-  // Section 5 — Media coverage (3 screens)
   static const String news = 'news';
 
   /// The single news article, opened from the news list or the home highlights
@@ -79,11 +77,9 @@ class RouteNames {
   static const String gallery = 'gallery';
   static const String mediaPartners = 'mediaPartners';
 
-  // Section 6 — Badge & notifications (2 screens)
   static const String badge = 'badge';
   static const String notifications = 'notifications';
 
-  // Section 7 — Smart features (4 screens)
   static const String aiSummary = 'aiSummary';
   // #1/#6 — the session-summaries LIST (home tile → list → the aiSummary details
   // page). Additive, public (Guest+, like the summary it lists).

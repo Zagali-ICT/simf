@@ -63,3 +63,35 @@ public sealed class RecordQrDepartureEndpoint(IHallAttendanceService service)
         await Send.OkAsync(ApiResult<QrArrivalResult>.Ok(result), ct);
     }
 }
+
+/// <summary>The sessions the hall-arrival console offers in its picker, gated on
+/// the console's OWN permission.
+///
+/// <para>The console used to call the canonical <c>/admin/sessions/list</c>,
+/// which is gated <c>Sessions.View</c>. SecurityTeam - the role seeded with
+/// <c>HallArrivals.View</c>, and the role that runs a hall door - does not hold
+/// that permission, so the page opened and its first fetch 403'd, leaving an
+/// empty picker and nothing the operator could do. Neither widening the
+/// canonical list (shared by many pages) nor granting SecurityTeam the whole
+/// Sessions module was the right blast radius, so the console gets a read scoped
+/// to what it needs.</para>
+///
+/// <para>Read-only, so <c>HallArrivals.View</c> rather than
+/// <c>.Record</c>: an operator who may see the console may fill its picker.
+/// Recording an arrival still demands <c>.Record</c> on the endpoints
+/// above.</para></summary>
+public sealed class ListArrivalSessionsEndpoint(IHallAttendanceService service)
+    : Endpoint<GridQuery, ApiResult<GridPage<HallArrivalSessionOption>>>
+{
+    public override void Configure()
+    {
+        Post("/admin/hall-arrivals/sessions/list");
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.HallArrivals.View),
+                 nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Tags("Admin");
+    }
+
+    public override async Task HandleAsync(GridQuery req, CancellationToken ct) =>
+        await Send.OkAsync(ApiResult<GridPage<HallArrivalSessionOption>>.Ok(
+            await service.ListArrivalSessionsAsync(req, ct)), ct);
+}

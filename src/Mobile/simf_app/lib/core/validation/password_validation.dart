@@ -13,9 +13,6 @@ final RegExp _upper = RegExp('[A-Z]');
 final RegExp _digit = RegExp(r'\d');
 final RegExp _special = RegExp('[^A-Za-z0-9]');
 
-/// True when [value] satisfies the structural policy: 8–128 characters
-/// containing a lower-case letter, an upper-case letter, a digit and a special
-/// character.
 bool isValidPassword(String value) =>
     value.length >= 8 &&
     value.length <= 128 &&
@@ -24,7 +21,6 @@ bool isValidPassword(String value) =>
     _digit.hasMatch(value) &&
     _special.hasMatch(value);
 
-/// Individual password-structure requirements.
 enum PasswordRequirement {
   length,
   lowercase,

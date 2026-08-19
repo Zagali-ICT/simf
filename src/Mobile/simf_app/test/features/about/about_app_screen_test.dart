@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
@@ -8,6 +8,8 @@ import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/core/organization_profile/organization_profile.dart';
 import 'package:simf_app/core/startup/app_version_policy.dart';
 import 'package:simf_app/features/about/about_app_screen.dart';
+
+import '../../support/simf_test_scope.dart';
 
 /// A fixed org profile (null = not loaded) so the screen never fires a real
 /// fetch / touches prefs.
@@ -66,7 +68,7 @@ Future<void> _pump(
   );
 
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         orgProfileProvider
             .overrideWith(() => _FakeOrgProfileController(profile)),

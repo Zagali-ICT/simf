@@ -272,3 +272,14 @@ final gatesRepositoryProvider = Provider<GatesRepository>((ref) {
     ref.watch(gateOfflineConfigCacheProvider),
   );
 });
+
+/// The gates this operator is assigned to (`GET /app/gates/my-assignments`).
+///
+/// The 403 stays an ERROR — it is a failure with its own copy, and DEF-STF-005
+/// needs the SERVER'S specific text ("no Gates.Operate grant" vs "not assigned
+/// to this gate" are both 403 and need different operator actions). Keeping it
+/// an error means the body can read that message straight off the failure
+/// `when` hands it, which is what removed the `_forbiddenMessage` field.
+final operatorGatesProvider = FutureProvider.autoDispose<List<OperatorGate>>(
+  (ref) => ref.watch(gatesRepositoryProvider).myAssignments(),
+);

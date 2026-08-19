@@ -28,3 +28,28 @@ class ContentRepository {
 final contentRepositoryProvider = Provider<ContentRepository>((ref) {
   return ContentRepository(ref.watch(simfApiClientProvider));
 });
+
+/// The terms block, or **null for the empty state**.
+///
+/// Two different things mean "there is nothing to show", and both are empty
+/// rather than broken (Page_009 L-6): the key is missing or inactive (a 404),
+/// or it exists with no body. Folding them here is what lets the screen read
+/// `AsyncValue` directly — three server outcomes collapse into the three
+/// branches `when` already has, instead of a fourth `_empty` flag beside them.
+///
+/// Any other failure propagates, so the error branch shows the server's own
+/// message rather than a generic one.
+final termsBlockProvider =
+    FutureProvider.autoDispose<ContentBlock?>((ref) async {
+  try {
+    final block = await ref
+        .watch(contentRepositoryProvider)
+        .getContentBlock(ContentRepository.termsKey);
+    return block.hasBody ? block : null;
+  } on ApiFailure catch (failure) {
+    if (failure.httpStatus == 404) {
+      return null;
+    }
+    rethrow;
+  }
+});

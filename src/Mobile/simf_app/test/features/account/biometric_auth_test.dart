@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/features/account/biometric_auth.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
+
+import '../../support/simf_test_scope.dart';
 
 /// A controllable [BiometricAuth] — `implements` ignores the real constructor
 /// (which needs a Ref + local_auth), so the nudge and the toggle can be driven
@@ -97,7 +100,7 @@ Future<void> _pump(
   );
 
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         biometricAuthProvider.overrideWithValue(biometric),
         // The nudge guard (D-666) reads the auth state; default to an approved

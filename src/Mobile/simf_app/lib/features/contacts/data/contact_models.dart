@@ -84,15 +84,12 @@ class VisitorCard {
   String localizedName({required bool isArabic}) =>
       pickLocalized(nameArabic, name, isArabic: isArabic);
 
-  /// Job title for the active locale, or null when none is set.
   String? localizedJobTitle({required bool isArabic}) =>
       pickLocalizedOrNull(jobTitleArabic, jobTitle, isArabic: isArabic);
 
-  /// Organisation for the active locale, or null when none is set.
   String? localizedOrganisation({required bool isArabic}) =>
       pickLocalizedOrNull(organisationArabic, organisation, isArabic: isArabic);
 
-  /// Country for the active locale, or null when none is set.
   String? localizedCountry({required bool isArabic}) =>
       pickLocalizedOrNull(countryNameArabic, countryName, isArabic: isArabic);
 }
@@ -147,7 +144,6 @@ class SavedContactRow {
   String localizedName({required bool isArabic}) =>
       pickLocalized(nameArabic, name, isArabic: isArabic);
 
-  /// Job title for the active locale, or null when none is set.
   String? localizedJobTitle({required bool isArabic}) =>
       pickLocalizedOrNull(jobTitleArabic, jobTitle, isArabic: isArabic);
 

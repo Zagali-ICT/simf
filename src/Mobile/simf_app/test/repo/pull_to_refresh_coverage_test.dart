@@ -20,6 +20,19 @@ import 'package:flutter_test/flutter_test.dart';
 /// widgets, so grepping for their names reads as coverage when applying them
 /// is opt-in per screen.
 ///
+/// It then slipped a THIRD time, in this file, on 2026-08-18. The scan read
+/// `*_screen.dart` and nothing else, so a screen whose body moved into
+/// `widgets/` — which is what CLAUDE.md section 2 asks for — stopped matching
+/// `_fetches` and dropped out of the sweep entirely instead of failing it.
+/// `my_contacts_screen.dart` and `my_visitors_screen.dart` were both in that
+/// position: their `SimfPullToRefresh` had moved into an extracted body and
+/// the screen files kept only a `const MyContactsBody()`. Nothing was broken
+/// in the app; the check had silently stopped checking them, which is worse
+/// than not having it, because the green tick reads as coverage.
+///
+/// So the unit of measurement is the screen PLUS its extracted body — see
+/// [_bundle].
+///
 /// This test is the section 4 pattern applied to section 13.6 — pin the
 /// surface with a test, not a comment. It enumerates every screen that fetches
 /// and asserts the ones WITHOUT a refresh hook are exactly the reviewed exempt
@@ -54,10 +67,17 @@ const Map<String, String> _exempt = <String, String>{
   'account/sign_up_email_verify_screen.dart': 'auth form',
   'account/sign_up_form_screen.dart': 'auth form',
 
-  // These DO load from the API, but the user then edits or selects on top of
-  // it. A pull would discard in-progress input, which is worse than no pull;
-  // both carry an explicit retry on their error branch instead.
-  'account/sign_up_interests_screen.dart': 'user edits the loaded data',
+  // This DOES load from the API, but the user then edits and selects on top
+  // of it. A pull would discard in-progress input, which is worse than no
+  // pull; an explicit retry on the error branch stands in for it.
+  //
+  // `account/sign_up_interests_screen.dart` sat here beside it and no longer
+  // does, which is the bundle rule (see [_bundle]) doing its job rather than a
+  // change of mind: its extracted body carries a SimfRefreshableMessage on its
+  // own error branch, so it does offer a refresh affordance and needs no
+  // excuse. CLAUDE.md section 13.6 still lists both under "the user edits the
+  // loaded data" and is still right — the data branch has no pull. That doc
+  // answers a different question, as the note above says.
   'myarea/my_mobile_screen.dart': 'user edits the loaded data',
 
   // A gate screen whose explicit "Re-check" button already polls (Figma
@@ -100,28 +120,85 @@ final RegExp _refreshes = RegExp(
   'SimfPullToRefresh|SimfRefreshableMessage|RefreshIndicator|onRefresh:',
 );
 
-/// Every `*_screen.dart` under `lib/`, keyed the way [_exempt] is.
-Map<String, String> _screens() {
+/// An import of a file in a feature's own `widgets/` folder, capturing the
+/// feature and the file name.
+final RegExp _featureWidgetImport =
+    RegExp(r"import\s+'package:simf_app/features/([^/]+)/widgets/([^']+)'");
+
+/// The feature a `lib/` path belongs to. Null for `lib/app/` and `lib/core/`.
+final RegExp _featurePath = RegExp('^lib/features/([^/]+)/');
+
+/// Windows `Directory.listSync` returns backslash paths.
+String _posix(String path) => path.replaceAll(r'\', '/');
+
+/// Every `*_screen.dart` under `lib/`, keyed the way [_exempt] is, each mapped
+/// to its BUNDLE rather than to its own source — see [_bundle].
+Map<String, String> _screenBundles() {
   final out = <String, String>{};
   for (final entity in Directory('lib').listSync(recursive: true)) {
     if (entity is! File || !entity.path.endsWith('_screen.dart')) {
       continue;
     }
-    final key = entity.path
-        .replaceAll(r'\', '/')
+    final key = _posix(entity.path)
         .replaceFirst('lib/features/', '')
         .replaceFirst('lib/', '');
-    out[key] = entity.readAsStringSync();
+    out[key] = _bundle(entity);
   }
   return out;
 }
+
+/// A screen's source plus the source of every widget it pulls in from its OWN
+/// feature's `widgets/` folder, transitively — the screen as the user meets
+/// it, rather than as it happens to be filed.
+///
+/// This is what closes the third slip in the header. A screen that hands its
+/// whole body to `MyContactsBody` is not a screen without a pull-to-refresh;
+/// it is a screen whose pull-to-refresh is one file over, exactly where
+/// CLAUDE.md section 2 says to put it. Reading the screen file alone made
+/// obeying section 2 look, to this test, like deleting the screen.
+///
+/// **Same-feature `widgets/` only, and that limit is the entire design.**
+/// Following `app/widgets/` would walk into `SimfPageShell`, which DEFINES
+/// `SimfPullToRefresh` — every screen in the app would read as covered, which
+/// is the original 2026-07-28 bug rebuilt one level deeper. A feature's own
+/// `widgets/` folder holds that feature's extracted parts and nothing shared,
+/// so following it adds the body and no false coverage.
+String _bundle(File screen) {
+  final source = screen.readAsStringSync();
+  final feature = _featurePath.firstMatch(_posix(screen.path))?.group(1);
+  if (feature == null) {
+    return source;
+  }
+
+  final parts = <String>[source];
+  final seen = <String>{};
+  final queue = _widgetImports(source, feature);
+  while (queue.isNotEmpty) {
+    final path = queue.removeLast();
+    if (!seen.add(path)) {
+      continue;
+    }
+    final widgetSource = File(path).readAsStringSync();
+    parts.add(widgetSource);
+    queue.addAll(_widgetImports(widgetSource, feature));
+  }
+  return parts.join('\n');
+}
+
+/// The paths [source] imports from `lib/features/[feature]/widgets/`.
+List<String> _widgetImports(String source, String feature) =>
+    _featureWidgetImport
+        .allMatches(source)
+        .where((match) => match.group(1) == feature)
+        .map((match) => 'lib/features/$feature/widgets/${match.group(2)}')
+        .toList();
 
 void main() {
   group('CLAUDE.md 13.6 — pull-to-refresh on every data-loaded screen', () {
     test('every fetching screen refreshes, unless it is a listed exemption',
         () {
       final missing = <String>[];
-      _screens().forEach((path, source) {
+      _screenBundles().forEach((path, source) {
         if (!_fetches.hasMatch(source) || _refreshes.hasMatch(source)) {
           return;
         }
@@ -145,7 +222,7 @@ void main() {
       // A stale entry is how the list quietly stops describing the app: the
       // screen is deleted or gains a refresh, and the exemption keeps standing
       // guard over nothing.
-      final screens = _screens();
+      final screens = _screenBundles();
       final stale = <String>[];
       for (final path in _exempt.keys) {
         final source = screens[path];

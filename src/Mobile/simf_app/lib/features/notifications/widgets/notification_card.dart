@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart' hide TextDirection;
 
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
@@ -7,9 +6,6 @@ import 'package:simf_app/core/utils/saudi_time.dart';
 import 'package:simf_app/features/notifications/data/notification_models.dart';
 import 'package:simf_app/features/notifications/widgets/notification_category_icon.dart';
 import 'package:simf_app/features/notifications/widgets/unread_dot.dart';
-
-/// One 12-hour formatter for the card timestamps (hoisted off the build path).
-final DateFormat _timeFormat = DateFormat('hh:mm a');
 
 /// One notification card (frame node): a solid severity-coloured circular icon
 /// at the inline end, the bold title + body + "{day} · {time}" line, and the
@@ -33,7 +29,7 @@ class NotificationCard extends StatelessWidget {
     final unread = !item.isRead;
     final time = item.createdAt == null
         ? null
-        : _timeFormat.format(saudiOf(item.createdAt!));
+        : formatSaudiTime12(saudiOf(item.createdAt!));
     // Frame 758:2491 — "{time} · {day}" order.
     final stamp =
         time == null ? null : (dayLabel.isEmpty ? time : '$time · $dayLabel');

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
@@ -8,10 +8,14 @@ import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/features/ai_summary/session_summary_list_screen.dart';
 import 'package:simf_app/features/myarea/data/my_sessions_models.dart';
 import 'package:simf_app/features/myarea/data/my_sessions_repository.dart';
+import 'package:simf_app/features/sessions/data/session_enums.dart';
 import 'package:simf_app/features/sessions/data/session_favourites.dart';
 import 'package:simf_app/features/sessions/data/session_models.dart';
+import 'package:simf_app/features/sessions/data/session_speaker.dart';
 import 'package:simf_app/features/sessions/data/sessions_repository.dart'
     show programmeSessionsProvider;
+
+import '../../support/simf_test_scope.dart';
 
 /// A favourites controller seeded with a fixed set (no API).
 class _FixedFavourites extends SessionFavouritesController {
@@ -74,7 +78,7 @@ Future<void> _pump(
     ],
   );
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         programmeSessionsProvider.overrideWith((ref) async => items),
         sessionFavouritesProvider

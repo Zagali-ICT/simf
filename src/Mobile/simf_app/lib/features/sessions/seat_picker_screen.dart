@@ -3,49 +3,26 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
-import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_bottom_nav.dart';
 import 'package:simf_app/app/widgets/simf_confirm_dialog.dart';
 import 'package:simf_app/app/widgets/simf_info_dialog.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/core/errors/api_error_l10n.dart';
 import 'package:simf_app/core/utils/refresh.dart';
+import 'package:simf_app/features/sessions/data/my_reservation.dart';
+import 'package:simf_app/features/sessions/data/seat_enums.dart';
 import 'package:simf_app/features/sessions/data/seat_map_models.dart';
 import 'package:simf_app/features/sessions/data/seat_map_repository.dart';
-import 'package:simf_app/features/sessions/widgets/hall_seat_map.dart';
 import 'package:simf_app/features/sessions/widgets/seat_map_async_view.dart';
-import 'package:simf_app/features/sessions/widgets/selected_seat_chip.dart';
+import 'package:simf_app/features/sessions/widgets/seat_picker_body.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// D-485 — **Seat picker** (`/sessions/:sessionId/pick-seat`, approved
-/// Visitor). An assigned-seat session's selectable hall grid: tap an
-/// **available** seat to SELECT it (a confirmation chip appears), then commit
-/// with "Confirm my seat"; or auto-pick one (owner 2026-07-25 — a two-step
-/// select→confirm replaces the former one-tap reserve). Reuses the shipped seat
-/// endpoints (`GET …/seats` to draw, `POST …/seats/reserve` /
-/// `…/reserve-random` to hold). It pops with `true` so the session page reloads
-/// and shows the reservation.
+/// Seat picker — اختيار المقعد · route: `RouteNames.seatPicker`
 ///
-/// A8 (2026-07-27) — there is **no approval step**: the owner made bookings
-/// reservation-only on 2026-07-18, so the reservation is created **Approved**
-/// and the seat is held the moment it is confirmed. It stays a provisional hold
-/// — the server's pre-start sweep releases it if the visitor has not checked in
-/// by three minutes before the session starts, which is what the success dialog
-/// says.
-///
-/// **B1 — change seat (owner request).** The same screen is the destination
-/// chooser for a seat CHANGE: when the seat map says the caller already holds a
-/// seat (`myCell`, seat-specific) it opens in **change mode** — its own title,
-/// hint and CTA, no auto-pick (a move is deliberate) — and committing goes
-/// through a confirm step that names the OLD and the NEW seat before calling
-/// `POST …/seats/move`. The move is atomic server-side, so a lost race leaves
-/// the visitor on the seat they already had; the picker says so and stays
-/// usable.
-///
-/// Route: `RouteNames.seatPicker`.
-/// Data: [seatMapProvider], [seatMapRepositoryProvider].
-/// Perf: ListView builds every child up front — correct for a short static
-///       page, a defect on a data feed.
+/// Contract (A8, owner 2026-07-27): there is **no approval step** — bookings
+/// are reservation-only, so the reservation is created Approved and the seat
+/// is held the moment it is confirmed. The server's pre-start sweep releases
+/// it if the visitor has not checked in three minutes before the start.
 class SeatPickerScreen extends ConsumerStatefulWidget {
   const SeatPickerScreen({required this.sessionId, super.key});
 
@@ -206,7 +183,7 @@ class _SeatPickerScreenState extends ConsumerState<SeatPickerScreen> {
     final value = ref.watch(seatMapProvider(widget.sessionId));
     // The shell's title is built before the body, so read the already-resolved
     // map (null while loading) to decide between "pick" and "change".
-    final held = _heldSeat(value.valueOrNull);
+    final held = _heldSeat(value.value);
     return SimfPageShell(
       title: held == null ? l10n.seatPickerTitle : l10n.seatChangeTitle,
       onBack: () => backOrHome(context),
@@ -215,128 +192,24 @@ class _SeatPickerScreenState extends ConsumerState<SeatPickerScreen> {
         value: value,
         onRefresh: () =>
             refreshAsync(ref, seatMapProvider(widget.sessionId).future),
-        builder: (map) => _picker(l10n, map),
-      ),
-    );
-  }
-
-  Widget _picker(AppL10n l10n, SessionSeatMap map) {
-    final held = _heldSeat(map);
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(
-          SimfTokens.space4,
-          SimfTokens.space2,
-          SimfTokens.space4,
-          SimfTokens.space5,
-        ),
-        children: <Widget>[
-          Text(
-            map.localizedSessionTitle(isArabic: l10n.isArabic) ??
-                (held == null ? l10n.seatPickerTitle : l10n.seatChangeTitle),
-            textAlign: TextAlign.center,
-            style: SimfTokens.labelWhiteBoldTitle,
-          ),
-          const SizedBox(height: SimfTokens.space2),
-          Text(
-            held == null ? l10n.seatPickerHint : l10n.seatChangeHint,
-            textAlign: TextAlign.center,
-            style: SimfTokens.labelBeigeSm,
-          ),
-          // B1 — in change mode, name the seat being left so the destination is
-          // always chosen against a visible "from".
-          if (held != null) ...<Widget>[
-            const SizedBox(height: SimfTokens.space2),
-            Text(
-              l10n.seatLocation(held.rowLabel, held.seatNumber),
-              textAlign: TextAlign.center,
-              style: SimfTokens.labelWhiteSemibold,
-            ),
-          ],
-          // D-771 — explain the padlocked seats, but only for a tiered hall so
-          // a plain hall keeps the shipped copy unchanged.
-          if (map.hasTiers) ...<Widget>[
-            const SizedBox(height: SimfTokens.space2),
-            Text(
-              l10n.seatTierPickerHint,
-              textAlign: TextAlign.center,
-              style: SimfTokens.labelBeigeSm,
-            ),
-          ],
-          const SizedBox(height: SimfTokens.space5),
-          // The shared hall card in its selectable configuration: available
-          // seats tappable with a gold border cue, 26px seat cap, 16px legend
-          // swatches (the picker's pre-consolidation render, D-600). A tap
-          // SELECTS (highlights) the seat; the Confirm CTA below commits it.
-          HallSeatMapCard(
+        builder: (map) {
+          final held = _heldSeat(map);
+          return SeatPickerBody(
             map: map,
+            held: held,
             l10n: l10n,
             busy: _busy,
+            selectedRow: _selectedRow,
+            selectedSeat: _selectedSeat,
             onSeatTap: _select,
-            selectedRowLabel: _selectedRow,
-            selectedSeatNumber: _selectedSeat,
-            maxSeatSize: SimfTokens.seatCapPicker,
-            availableBorderColor: SimfTokens.accent,
-            swatchSize: SimfTokens.seatSwatchLg,
-          ),
-          const SizedBox(height: SimfTokens.space5),
-          if (_selectedRow != null && _selectedSeat != null) ...<Widget>[
-            SelectedSeatChip(
-              label: l10n.seatPickerSelectedChip(_selectedRow!, _selectedSeat!),
-            ),
-            const SizedBox(height: SimfTokens.space4),
-          ],
-          FilledButton.icon(
-            onPressed: (_busy || _selectedRow == null || _selectedSeat == null)
-                ? null
-                : () => unawaited(
-                      held == null
-                          ? _reserve(l10n, _selectedRow!, _selectedSeat!)
-                          : _move(l10n, held, _selectedRow!, _selectedSeat!),
-                    ),
-            style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(SimfTokens.controlHeight),
-              backgroundColor: SimfTokens.accent,
-              foregroundColor: SimfTokens.surface,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-              ),
-            ),
-            icon: const Icon(Icons.event_seat,
-                size: SimfTokens.seatPickerScreenSize,),
-            label: Text(
+            onConfirm: () => unawaited(
               held == null
-                  ? l10n.seatPickerConfirmCta
-                  : l10n.seatChangeConfirmCta,
-              style: SimfTokens.titleBold,
+                  ? _reserve(l10n, _selectedRow!, _selectedSeat!)
+                  : _move(l10n, held, _selectedRow!, _selectedSeat!),
             ),
-          ),
-          // B1 — no auto-pick when changing seats: a move is a deliberate
-          // choice of WHERE to go, and a random destination would be a worse
-          // seat lottery.
-          if (held == null) ...<Widget>[
-            const SizedBox(height: SimfTokens.space4),
-            FilledButton.icon(
-              onPressed: _busy ? null : () => unawaited(_reserveRandom(l10n)),
-              style: FilledButton.styleFrom(
-                minimumSize: const Size.fromHeight(SimfTokens.controlHeight),
-                backgroundColor: SimfTokens.accent,
-                foregroundColor: SimfTokens.surface,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-                ),
-              ),
-              icon: const Icon(Icons.shuffle,
-                  size: SimfTokens.seatPickerScreenSize,),
-              label: Text(
-                l10n.seatPickerRandomCta,
-                style: SimfTokens.titleBold,
-              ),
-            ),
-          ],
-        ],
+            onRandom: () => unawaited(_reserveRandom(l10n)),
+          );
+        },
       ),
     );
   }

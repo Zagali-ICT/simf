@@ -1,9 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/features/notifications/data/notification_models.dart';
 import 'package:simf_app/features/notifications/data/notifications_repository.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
+import '../../support/simf_test_scope.dart';
 
 CurrentUser _visitor() => CurrentUser(
       id: 'u1',
@@ -66,6 +68,7 @@ void main() {
   group('unreadNotificationCountProvider (Page 013 L-5)', () {
     test('a guest resolves to 0 without calling the repository', () async {
       final container = ProviderContainer(
+        retry: simfTestNoRetry,
         overrides: <Override>[
           authControllerProvider.overrideWith(_GuestController.new),
         ],
@@ -77,6 +80,7 @@ void main() {
 
     test('a signed-in user resolves to the repository count', () async {
       final container = ProviderContainer(
+        retry: simfTestNoRetry,
         overrides: <Override>[
           authControllerProvider.overrideWith(_SignedInController.new),
           notificationsRepositoryProvider.overrideWithValue(
@@ -91,6 +95,7 @@ void main() {
 
     test('a wire error resolves to 0 (best-effort, silent)', () async {
       final container = ProviderContainer(
+        retry: simfTestNoRetry,
         overrides: <Override>[
           authControllerProvider.overrideWith(_SignedInController.new),
           notificationsRepositoryProvider.overrideWithValue(

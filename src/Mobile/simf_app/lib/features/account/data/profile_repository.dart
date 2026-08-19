@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_app/features/account/data/account_endpoints.dart';
+import 'package:simf_app/features/account/data/profile_lookups.dart';
 import 'package:simf_app/features/account/data/profile_models.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
@@ -237,7 +238,18 @@ class MeetingAccess {
 /// screen (home greeting / badge / profile) shows the new photo immediately —
 /// the avatar URL is stable, so a version token is the only thing that forces a
 /// refetch (the server also caches it `max-age=300`).
-final avatarBustProvider = StateProvider<int>((ref) => 0);
+final avatarBustProvider =
+    NotifierProvider<AvatarBustNotifier, int>(AvatarBustNotifier.new);
+
+/// Holds the avatar cache-buster token — a plain counter, since all
+/// [myAvatarBytesProvider] needs is a value that differs from the last one.
+class AvatarBustNotifier extends Notifier<int> {
+  @override
+  int build() => 0;
+
+  /// Call after a successful avatar upload.
+  void bump() => state++;
+}
 
 /// The signed-in user's avatar image bytes, fetched **through the authenticated
 /// API client** (which attaches the bearer + `X-App-Key` and handles the

@@ -33,7 +33,8 @@
 #
 # Two rules are OFF rather than clean, each with its measurement recorded at
 # the rule (`specify_nonobvious_property_types`, `public_member_api_docs`), and
-# roughly two dozen individual sites carry a targeted `// ignore:` with the
+# nine sites under lib/ carry a targeted `// ignore:` (measured 2026-08-18,
+# down from roughly two dozen) with the
 # reason above it. The zero is argued, not swept - if you are about to add an
 # `// ignore:`, write why the analyzer is WRONG about that line, or fix it.
 # ───────────────────────────────────────────────────────────────────────────

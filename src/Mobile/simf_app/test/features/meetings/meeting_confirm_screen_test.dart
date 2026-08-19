@@ -4,13 +4,15 @@
 // longer confusable with the website's `/meeting/confirm?token=` speaker page.
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/features/delegations/data/delegation_models.dart';
 import 'package:simf_app/features/delegations/data/delegations_repository.dart';
 import 'package:simf_app/features/meetings/meeting_confirm_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
+
+import '../../support/simf_test_scope.dart';
 
 /// Records which endpoint the screen called and returns a canned summary, or
 /// throws the configured [ApiFailure]. Extends the concrete repository (its
@@ -70,7 +72,7 @@ Future<_FakeDelegationsRepository> _pump(
   final repository =
       _FakeDelegationsRepository(_dummyClient(), failure: failure);
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         delegationsRepositoryProvider.overrideWithValue(repository),
       ],

@@ -30,11 +30,11 @@
         }
         else
         {
-            <SimfSelect TValue="AdminSessionSummary"
+            <SimfSelect TValue="SessionAttendanceRow"
                         Label="@L["Admin.SessionLiveHall.Pick"]"
                         Placeholder="@L["Admin.SessionLiveHall.Pick"]"
                         Items="_sessions"
-                        ValueFor="@(s => s.Id.ToString())"
+                        ValueFor="@(s => s.SessionId.ToString())"
                         LabelFor="@(s => $"{s.Code} — {s.Title}")"
                         Value="_selected"
                         ValueChanged="OnSessionChangedAsync"

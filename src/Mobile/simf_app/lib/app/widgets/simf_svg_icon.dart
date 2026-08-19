@@ -17,7 +17,6 @@ class SimfSvgIcon extends StatelessWidget {
     super.key,
   });
 
-  /// Asset path, e.g. `assets/icons/auth_globe.svg`.
   final String asset;
   final double size;
   final Color color;

@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/features/contacts/data/contact_models.dart';
 import 'package:simf_app/features/contacts/data/contacts_repository.dart';
 import 'package:simf_app/features/contacts/my_contacts_screen.dart';
 
+import '../../support/simf_test_scope.dart';
 import '_fake_contacts_repo.dart';
 
 SavedContactRow _row({
@@ -27,7 +28,7 @@ SavedContactRow _row({
 
 Future<void> _pump(WidgetTester tester, FakeContactsRepo repo) async {
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         contactsRepositoryProvider.overrideWithValue(repo),
       ],

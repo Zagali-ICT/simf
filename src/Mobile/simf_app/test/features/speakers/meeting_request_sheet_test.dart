@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/features/speakers/data/speaker_models.dart';
@@ -8,6 +8,8 @@ import 'package:simf_app/features/speakers/data/speakers_repository.dart';
 import 'package:simf_app/features/speakers/widgets/meeting_request_sheet.dart';
 import 'package:simf_app/features/speakers/widgets/meeting_slot_pickers.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
+
+import '../../support/simf_test_scope.dart';
 
 // Two local days of real slots: 2026-07-10 (09:00 + 10:00) and 2026-07-11
 // (09:00). Built as local times → a zoned value so the sheet's toLocal()
@@ -131,7 +133,7 @@ Future<void> _pump(
   SpeakersRepository? repo,
 }) async {
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         speakersRepositoryProvider.overrideWithValue(repo ?? _FakeRepo()),
       ],

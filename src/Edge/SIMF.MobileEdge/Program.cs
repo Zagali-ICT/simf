@@ -1,21 +1,22 @@
 // The mobile presentation tier.
 //
-// The Flutter app compiles its API base URL in (BuildConfig.apiBaseUrl defaults
-// to https://api.simrsnf.com/api/v1), so the client's endpoint IS the
-// application tier and no firewall changes that. Putting a transparent proxy in
-// front of a published API does not add a tier either; the client still
-// addresses the API.
+// The Flutter app compiles its API base URL in, so the client's endpoint IS
+// whichever host that constant names, and no firewall changes that. Putting a
+// transparent proxy in front of a published API does not add a tier either; the
+// client still addresses the API.
 //
 // This host is that tier. It is published at edge.simrsnf.com and forwards only
 // the mobile surface inward, which is what lets the API stop being published to
 // the internet: api.simrsnf.com stays the API's own name and resolves inside the
 // estate only.
 //
-// The cost of using a separate name, stated where it cannot be missed: the app's
-// base URL is compile-time, so an installed build still talks to the API
-// directly and knows nothing about this host. Routing mobile traffic here needs
-// a rebuild with --dart-define and a store release on both platforms, and
-// withdrawing the API's public DNS record has to wait for that release to land.
+// BuildConfig.apiBaseUrl now DEFAULTS to https://edge.simrsnf.com/api/v1, so a
+// plain `flutter build apk` routes here with no --dart-define. That default is
+// what makes this tier real rather than optional. The cost that remains, stated
+// where it cannot be missed: the base URL is still compile-time, so every build
+// released BEFORE that default keeps addressing the API directly and knows
+// nothing about this host — withdrawing the API's public DNS record has to wait
+// until those installs are gone, not merely until this host is up.
 //
 // It deliberately does almost nothing: no reshaping, no aggregation, no
 // business logic. The shipped mobile wire contract is append-only, and

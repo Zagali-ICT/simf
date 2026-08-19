@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
@@ -11,6 +11,8 @@ import 'package:simf_app/app/theme/app_assets.dart';
 import 'package:simf_app/app/theme/app_theme.dart';
 import 'package:simf_app/features/onboarding/onboarding_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
+
+import '../../support/simf_test_scope.dart';
 
 /// In-memory [SimfPrefsStorage] so the test needs no platform channel.
 class _FakePrefs implements SimfPrefsStorage {
@@ -78,7 +80,7 @@ Future<void> _pumpOnboarding(WidgetTester tester, _FakePrefs prefs) async {
   );
 
   await tester.pumpWidget(
-    ProviderScope(
+    simfTestScope(
       overrides: <Override>[
         simfPrefsStorageProvider.overrideWithValue(prefs),
         localeControllerProvider

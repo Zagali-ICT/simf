@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
@@ -14,6 +15,8 @@ import 'package:simf_app/features/account/data/profile_repository.dart';
 import 'package:simf_app/features/home/widgets/greeting_header.dart';
 import 'package:simf_app/features/notifications/data/notifications_repository.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
+
+import '../support/simf_test_scope.dart';
 
 /// Minimal in-memory prefs so a real [LocaleController] can back the
 /// language-toggle test without touching the platform store.
@@ -89,7 +92,7 @@ Future<void> _pump(
   await tester.pumpWidget(
     // The shared header carries [SimfHeaderActions] (a ConsumerWidget), so the
     // shell needs a ProviderScope just like the running app (main.dart).
-    ProviderScope(
+    simfTestScope(
       overrides: overrides,
       child: MaterialApp.router(
         routerConfig: router,

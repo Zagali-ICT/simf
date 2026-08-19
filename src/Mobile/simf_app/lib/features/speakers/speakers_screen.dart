@@ -15,41 +15,7 @@ import 'package:simf_app/features/speakers/widgets/speaker_list_card.dart';
 import 'package:simf_app/features/speakers/widgets/speaker_sort_control.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// Page 019 — المتحدثون · Speakers list (#19, `/speakers`, Guest+), rebuilt to
-/// the KSA-Project Figma frame **908:1744 "Speakers"** on the shared navy
-/// shell.
-///
-/// **Public.** One read (`GET /app/speakers`) draws the ordered speaker cards;
-/// tapping a card opens the profile (Page 020). Frame mapping: the navy shell
-/// with the centred header المتحدثون + circled back chevron (the profile's
-/// header pattern, 908:2110), then a vertical list of cards — each a navy
-/// `#192B41` card on the beige `0.2px` hairline (the shared [SimfCard])
-/// carrying, in RTL: a 44×44 gold-bordered tile holding an anchor glyph at the
-/// inline start (right), the white name (16/SemiBold) over the beige
-/// rank·affiliation line (12/Regular), and a small beige caret at the inline
-/// end (left).
-///
-/// The avatar tile renders the speaker's uploaded SpeakerPhoto asset (D-357),
-/// falling back to the gold anchor glyph when none; the country renders as
-/// text.
-///
-/// Route: `RouteNames.speakers`.
-/// Data: [simfDataConfigProvider], [speakersListProvider],
-///       [speakersRepositoryProvider].
-/// Perf: mixed — ListView.separated builds on demand; ListView builds every
-///       child up front.
-/// The speaker directory (`GET /app/speakers`).
-///
-/// Only the LOAD moves here. Unlike the fully-converted screens, this one keeps
-/// its `ConsumerStatefulWidget`, because `_query` and `_alphaSorted` are real
-/// UI state that belongs to the widget and has no server behind it — the
-/// search box and the A→Z toggle. Converting the load alone is the whole point
-/// of the phase; sweeping local UI state into providers as well would be a
-/// different, worse change.
-final speakersListProvider = FutureProvider.autoDispose<List<SpeakerSummary>>(
-  (ref) => ref.watch(speakersRepositoryProvider).getSpeakers(),
-);
-
+/// Speakers list — route: RouteNames.speakers · Figma 908:1744
 class SpeakersScreen extends ConsumerStatefulWidget {
   const SpeakersScreen({super.key});
 

@@ -6,34 +6,8 @@ import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/core/utils/refresh.dart';
 import 'package:simf_app/features/news/data/news_models.dart';
 import 'package:simf_app/features/news/data/news_repository.dart';
-import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// The full news article (Page_029 detail, `GET /app/news/{id}`). Pushed from the
-/// news list via an imperative route (the screen has no go_router entry).
-///
-/// Route: `RouteNames.newsArticle`.
-/// Data: [newsArticleProvider], [newsRepositoryProvider].
-/// Perf: ListView builds every child up front — correct for a short static
-///       page, a defect on a data feed.
-
-/// One article, or **null when the server has no such id** (a 404).
-///
-/// A 404 here is "this article is gone", which the screen answers with its own
-/// not-found copy rather than the error surface — so folding it to null puts it
-/// on `when`'s DATA branch and leaves `error` for genuine failures. Same shape
-/// as `termsBlockProvider`.
-final newsArticleProvider =
-    FutureProvider.autoDispose.family<NewsArticle?, String>((ref, id) async {
-  try {
-    return await ref.watch(newsRepositoryProvider).getArticle(id);
-  } on ApiFailure catch (failure) {
-    if (failure.httpStatus == 404) {
-      return null;
-    }
-    rethrow;
-  }
-});
-
+/// News article — route: `RouteNames.newsArticle`
 class NewsArticleScreen extends ConsumerWidget {
   const NewsArticleScreen({required this.newsId, super.key});
 

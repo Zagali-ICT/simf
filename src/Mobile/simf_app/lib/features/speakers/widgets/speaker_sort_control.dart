@@ -15,7 +15,6 @@ class SpeakerSortControl extends StatelessWidget {
 
   final String label;
 
-  /// Whether the alphabetical sort is currently applied (gold-highlighted).
   final bool selected;
   final VoidCallback onTap;
 

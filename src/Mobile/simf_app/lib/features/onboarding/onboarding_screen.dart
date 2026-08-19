@@ -10,26 +10,19 @@ import 'package:simf_app/app/theme/app_assets.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_logo.dart';
 import 'package:simf_app/core/motion/motion_durations.dart';
+import 'package:simf_app/features/onboarding/widgets/onboarding_actions.dart';
 import 'package:simf_app/features/onboarding/widgets/onboarding_background.dart';
 import 'package:simf_app/features/onboarding/widgets/onboarding_dots.dart';
+import 'package:simf_app/features/onboarding/widgets/onboarding_step.dart';
 import 'package:simf_app/features/onboarding/widgets/onboarding_top_bar.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 import 'package:video_player/video_player.dart';
 
-/// Page 002 — التهيئة · Onboarding (first-run only). The KSA-Project Figma
-/// design (frames 148:22 / 159:942 / 159:1052 — D-362): a three-step carousel
-/// over one looping, muted hero clip (world-map poster fallback) — with the
-/// brand mark, the step's own title + body, pill dots, the gold التالي button,
-/// a تخطي link (hidden on the last step) and a back chevron (steps 2–3). The
-/// old screen is parked in `_legacy_mockup/`.
-///
-/// Contract unchanged: finishing or skipping sets `onboardingCompleted` and
-/// routes to sign-in; the splash gates on that flag. There is **no SIMF API**
+/// Onboarding — التهيئة · route: `RouteNames.onboarding` · Figma 148:22 /
+/// 159:942 / 159:1052 (D-362), first-run only.
+/// Contract: finishing or skipping sets `onboardingCompleted` and routes to
+/// sign-in; the splash gates on that flag. There is no SIMF API
 /// (Page_002_API.md).
-///
-/// Route: `RouteNames.onboarding`.
-/// Data: [localeControllerProvider], [simfPrefsStorageProvider].
-/// Perf: lazy — builds children on demand (PageView.builder).
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -186,65 +179,20 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     controller: _pageController,
                     itemCount: _stepCount,
                     onPageChanged: (i) => setState(() => _index = i),
-                    itemBuilder: (context, i) => Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: SimfTokens.space6,
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: <Widget>[
-                          Text(
-                            // Per-step title (148:22 / 159:943 / 159:1053).
-                            titles[i],
-                            textAlign: TextAlign.center,
-                            style: SimfTokens.labelWhiteSemibold24Tall,
-                          ),
-                          const SizedBox(height: SimfTokens.space3),
-                          Flexible(
-                            child: Text(
-                              bodies[i],
-                              textAlign: TextAlign.center,
-                              style: SimfTokens.bodyBeigeTitleTall,
-                            ),
-                          ),
-                        ],
-                      ),
+                    itemBuilder: (context, i) => OnboardingStep(
+                      title: titles[i],
+                      body: bodies[i],
                     ),
                   ),
                 ),
                 const SizedBox(height: SimfTokens.space6),
                 OnboardingDots(count: _stepCount, activeIndex: _index),
                 const Spacer(),
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: SimfTokens.space4,
-                  ),
-                  child: FilledButton(
-                    onPressed: _onNext,
-                    child: Text(
-                      l10n.onboardingNext,
-                      style: SimfTokens.titleBold,
-                    ),
-                  ),
+                OnboardingActions(
+                  isLast: isLast,
+                  onNext: _onNext,
+                  onSkip: _onSkip,
                 ),
-                const SizedBox(height: SimfTokens.space4),
-                // تخطي sits under the primary action, centered, on every step
-                // but the last — Figma 758:1077 (node 758:1091). A matching
-                // spacer holds the last step steady when the link is gone.
-                if (isLast)
-                  const SizedBox(height: SimfTokens.controlHeight)
-                else
-                  TextButton(
-                    onPressed: _onSkip,
-                    style: TextButton.styleFrom(
-                      foregroundColor: SimfTokens.accent,
-                    ),
-                    child: Text(
-                      l10n.onboardingSkip,
-                      style: SimfTokens.titleSemibold,
-                    ),
-                  ),
-                const SizedBox(height: SimfTokens.space4),
               ],
             ),
           ),

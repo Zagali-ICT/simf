@@ -11,6 +11,7 @@ import 'package:simf_app/app/widgets/simf_scanner_body.dart';
 import 'package:simf_app/core/responsive/breakpoints.dart';
 import 'package:simf_app/core/responsive/max_width_body.dart';
 import 'package:simf_app/core/utils/refresh.dart';
+import 'package:simf_app/features/sessions/data/seat_enums.dart';
 import 'package:simf_app/features/sessions/data/seat_map_models.dart';
 import 'package:simf_app/features/sessions/data/seat_map_repository.dart';
 import 'package:simf_app/features/sessions/widgets/hall_seat_map.dart';
@@ -22,29 +23,13 @@ import 'package:simf_app/features/staff/widgets/desk_row.dart';
 import 'package:simf_app/features/staff/widgets/occupant_header.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// D-771 (owner 2026-07-26) — the **staff seating desk**
-/// (`/staff/seating/:sessionId`, approved Staff). Derived from the visitor seat
-/// picker (`SeatPickerScreen`): the same shared `HallSeatMapCard` hall grid,
-/// but tapping a seat ASKS WHO SITS THERE instead of selecting it, and a badge
-/// scanner above the grid answers the opposite question — where does this guest
-/// sit.
-///
-/// * Role-gated to `AppRole.staff` in `router.dart` (route 118), exactly like
-///   the gate scanner (105); the server independently enforces the
-///   `Seating.Assist` operational permission that the Staff app role carries
-///   (D-563), so the app gate is only a UX guard.
-/// * Tablet-responsive through the `WindowSize` API + `MaxWidthBody` (no
-///   hardcoded breakpoints): a compact phone stacks the scanner above the grid,
-///   a tablet puts the scanner and the result card side by side.
-/// * The guest photo is fetched through the authenticated Dio bytes path
-///   (D-422) — never `Image.network`, which cannot carry the bearer token.
-/// * Bilingual AR + EN with correct RTL; every control carries an accessible
-///   name.
-///
-/// Route: `RouteNames.staffSeating`.
-/// Data: [seatMapProvider], [staffSeatingRepositoryProvider].
-/// Perf: ListView builds every child up front — correct for a short static
-///       page, a defect on a data feed.
+/// Staff seating desk — route: `RouteNames.staffSeating`
+/// Contract: D-771 — the visitor seat picker turned into a desk. Tapping a seat
+/// asks WHO SITS THERE instead of selecting it, and the badge scanner answers
+/// the opposite question. Staff-only in the router (route 118); the server
+/// independently enforces the `Seating.Assist` permission (D-563), so the app
+/// gate is only a UX guard. The guest photo comes through the authenticated Dio
+/// bytes path (D-422) — never `Image.network`, which cannot carry the bearer.
 class StaffSeatingScreen extends ConsumerStatefulWidget {
   const StaffSeatingScreen({required this.sessionId, super.key});
 

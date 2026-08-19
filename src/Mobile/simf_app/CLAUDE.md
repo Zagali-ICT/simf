@@ -8,19 +8,48 @@
 > overrides an approval gate, a freeze, or a security rule.
 
 The coding constitution for this repo. Claude Code reads this every session.
-Read it fully before editing. This is a mature codebase (587 Dart files,
-~65.2k lines, measured 2026-08-13). Refine it; do not re-architect it. When in
-doubt, match the existing pattern in the file you're editing, and FLAG instead
-of guessing.
+Read it fully before editing. This is a mature codebase (718 Dart files,
+68,927 lines under `lib/`, measured 2026-08-18). Refine it; do not
+re-architect it. When in doubt, match the existing pattern in the file you're
+editing, and FLAG instead of guessing.
 
 > **Date every count in this file, and re-measure before trusting one.** The
 > numbers below have all moved at least once, and a stale one reads as current:
 > this file claimed 166 files and 526 inline styles long after they were 587
-> and 117. Measured 2026-08-13: raw `Color(0x)` outside `tokens.dart` **0** ·
-> relative imports **0** · inline `TextStyle(` outside `app/theme/` **117** ·
-> `ListView(` sites **48** (most are static content pages and correct as
-> written) · `catch` sites **78** · `flutter analyze` **0 errors, 0 warnings,
-> 2132 infos** · `tool/conventions` **12**, all SIMF-C3.
+> and 117, and it then carried the 2026-08-13 figures unchanged through a
+> clean-code round that moved every one of them. Nothing gates this block —
+> the ratchets in `test/repo/` count code, and none of them can see prose — so
+> re-measuring it belongs in the SAME changeset as the round, not after.
+>
+> **Scope, so the next reader reproduces the same numbers:** `lib/` only —
+> not `test/`, not `integration_test/`, not the two local packages under
+> `packages/`.
+>
+> Measured 2026-08-18 (re-measured after the 400-line round): Dart files
+> **718** · lines **68,927** · raw
+> `Color(0x)` outside `tokens.dart` **0** · relative imports **0** · inline
+> `TextStyle(` outside `app/theme/` **116**, **none** of which still carries a
+> raw numeric size · `ListView(` sites **43** (most are static content pages
+> and correct as written) · `catch` sites **73** · files over 400 lines **3**
+> · `// ignore:` sites **9** · private widget classes **0** ·
+> `flutter analyze` **0 errors, 0 warnings, 0 infos** ("No issues found!") ·
+> `tool/conventions` **0** ("No violations found").
+>
+> Reproduce, from `src/Mobile/simf_app`:
+> `find lib -name '*.dart' | wc -l` ·
+> `find lib -name '*.dart' -exec cat {} + | wc -l` ·
+> `grep -rn 'Color(0x' lib | grep -v app/theme/tokens.dart | wc -l` ·
+> `grep -rn 'TextStyle(' lib | grep -v '^lib/app/theme/' | wc -l` ·
+> `grep -rnE 'fontSize: *[0-9]' lib | grep -v '^lib/app/theme/' | wc -l` ·
+> `grep -rn 'ListView(' lib | wc -l` · `grep -rnw catch lib | wc -l` ·
+> `grep -rn '// ignore:' lib | wc -l` ·
+> `grep -rn "^import '\.\./\|^import '\./" lib | wc -l` (relative imports) ·
+> `grep -rnE "^class _\w+ +extends +(StatelessWidget|StatefulWidget|ConsumerWidget|ConsumerStatefulWidget|HookWidget|HookConsumerWidget)" lib | wc -l`
+> (private widget classes — the loose form of this grep counted the 53
+> framework-required `_FooState extends ConsumerState` classes the rule
+> exempts, and read as 53 violations against a checker reporting none) · `flutter analyze` · and, from `tool/conventions`,
+> `dart run bin/simf_conventions.dart`. Files over 400 lines are enumerated by
+> `test/repo/feature_shape_test.dart`.
 
 Stack: Flutter · Riverpod · go_router · `simf_data_pkg` (data) · `AppL10n`
 (ar/en, RTL-first) · `SimfTokens` (design tokens). Arabic is the primary
@@ -81,6 +110,27 @@ lib/
 ```
 Tests mirror this under `test/` (e.g. `test/features/auth/sign_in_screen_test.dart`).
 
+**This shape is enforced, not merely described.** `test/repo/feature_shape_test.dart`
+fails the build on four rules, and it is the authority — this section is where
+you read WHY, not a second copy to keep in step:
+
+1. no top-level public provider declared in a `*_screen.dart`;
+2. no widget class declared at a feature ROOT (a `*_screen.dart` is the one
+   exception — screens live at the root by convention);
+3. no file under `lib/features/` importing `package:dio` or `package:http`;
+4. no file under `lib/` over 400 lines.
+
+The first three known-offender lists are **empty** on 2026-08-18, so those
+rules hold outright and a first offender reddens the build. The fourth now pins
+just **3** files, none of them a screen or a model:
+`app/localization/app_l10n.dart` 2730 · `app/theme/tokens.dart` 1437 ·
+`app/router.dart` 1236. Each is a single flat table — bilingual strings, design
+values, the route list — and splitting one serves the number while making the
+code worse, which is what the "don't shred a cohesive file" half of the rule
+exists to protect.
+
+**Entries come off those lists as the work lands and are NEVER added.**
+
 Rules:
 - **One public widget per file**, with one exception the codebase already
   relies on: a file may hold a **named cohesive group** whose members are
@@ -91,22 +141,44 @@ Rules:
   banner, a button and a card shares nothing but a feature, and each of those
   belongs in its own file. The test is whether the file's name describes all of
   its contents (2026-08-14).
-  A `_Private` helper widget may share the screen file only if it is <60 lines
-  and used once; otherwise its own file in `widgets/`.
+  **A PRIVATE widget class is itself a violation — including in a screen's own
+  file.** `tool/conventions` SIMF-C3 fires on any `class _Foo extends`
+  `StatelessWidget` / `StatefulWidget` / `ConsumerWidget` /
+  `ConsumerStatefulWidget` / `HookWidget` / `HookConsumerWidget`, whatever its
+  length, so an extracted widget is **public**, takes `super.key`, and gets its
+  own file under `widgets/`. A framework-required `_FooState extends
+  State<Foo>` is not a widget class and is explicitly exempt; only NON-widget
+  helpers may be privatized. This replaces the old "a `_Private` helper widget
+  may share the screen file if it is <60 lines and used once" allowance, which
+  the checker had never honoured — a documented allowance the gate rejects is
+  worse than no allowance. `lib/` holds **0** private widget classes on
+  2026-08-18, so the rule holds outright.
 - File names: `snake_case.dart`. Types: `PascalCase`. Screens end in `_screen`.
 - **Names must describe the real thing** (see §13.1). No placeholder/legacy
   prefixes (`Ksa*`, `Page_NNN`, generic `temp`/`demo`).
-- No file over ~400 lines. No `build()` over ~50 lines. These are guidelines —
-  don't shred a cohesive file to hit a number, but the 500–2245 line screens in
-  this repo all violate the intent and must be split.
+- No file over ~400 lines. No `build()` over ~50 lines. Don't shred a cohesive
+  file to hit a number — but this one is gated, not advisory (the ratchet
+  above). **3** files are over on 2026-08-18 and none is a screen:
+  `sign_up_visitor_screen` finished at **398** (from 2245 at the start of the
+  programme) and `register_visitor_screen` at **397** (from 1268). Both got
+  there by moving the NON-widget half out — load, apply-profile, submit
+  assembly, validators, pickers, upload — rather than by fighting the parameter
+  count of the one `_build*` method left, which is what two earlier attempts
+  tried and abandoned. Neither has been verified on a device: D-666 is this
+  repo's banked case of a green golden missing a face-capture regression, so
+  the sign-up and walk-in flows still owe a real device run.
 - **A feature-local pure helper lives at the feature root**, as a small
   purpose-named file: `home_greeting.dart`, `youtube_url.dart`,
   `speaker_initials.dart`, `entity_detail_helpers.dart`. It holds functions and
-  constants, never a widget and never a provider. The shape above previously
-  named only `data/`, `widgets/` and `<name>_screen.dart`, which left ten such
-  files looking like violations when they are the established pattern; this
-  records it rather than moving them (2026-08-13). A *widget* at the feature
-  root IS a violation and belongs in `widgets/`.
+  constants, never a widget and never a provider. The shape above once named
+  only `data/`, `widgets/` and `<name>_screen.dart`, which left these files
+  looking like violations when they are the established pattern; recording them
+  here beat moving them. There are **11** on 2026-08-18
+  (`find lib/features -mindepth 2 -maxdepth 2 -name '*.dart' ! -name
+  '*_screen.dart'`), and the distinction is now mechanical rather than a
+  reading of this paragraph: `feature_shape_test.dart` lets a pure helper sit at
+  the root and fails the build on a *widget* there, which belongs in
+  `widgets/`.
 - **A provider belongs in `data/`, never in a `*_screen.dart`.** A provider
   declared in a screen forces any other feature that needs it to import a
   screen. Put it beside the repository that feeds it. Private (`_`-prefixed)
@@ -172,7 +244,7 @@ fixed widths / `left`/`right` to directional/adaptive equivalents.
 
 - **Lazy by default.** Every scrolling list uses `ListView.builder` /
   `SliverList` / `GridView.builder`. Never `ListView(children: [...])` for
-  data-driven or long lists. 48 `ListView(` sites exist (2026-08-13); most are
+  data-driven or long lists. 43 `ListView(` sites exist (2026-08-18); most are
   static content pages and are correct as written, so convert the data-driven
   ones and leave the rest.
 - **Pull-to-refresh on every data screen (see §13.6).** Reuse the existing
@@ -209,10 +281,12 @@ the node list and the ASK-don't-guess rule).
   isn't a token yet, add it to `tokens.dart` with the Figma variable name, then
   use the token. Base palette (from node 922-2824): BG `#192B41`, text
   `#FFFFFF`, gold `#C9A84C`, deep `#01132D`, paragraph `#C2B8A2`.
-- **Zero raw `TextStyle(fontSize:…)` in widgets** (526 at the outset, **117**
-  on 2026-08-13 — 5 of them still carry a raw numeric size, the rest assemble
-  token atoms such as `fontSize: SimfTokens.textSm`; both forms must go). Use a named token style (`SimfTokens.titleM`, `bodyR`, …). The font
-  family is set ONCE in the theme — never per-widget.
+- **Zero raw `TextStyle(fontSize:…)` in widgets** (526 at the outset, **116**
+  on 2026-08-18). The raw-numeric form is **gone** — `fontSize: <digit>`
+  outside `app/theme/` reads **0** — so all 116 survivors assemble token atoms
+  such as `fontSize: SimfTokens.textSm`. That form must still go: use a named
+  token style (`SimfTokens.titleM`, `bodyR`, …). The font family is set ONCE
+  in the theme — never per-widget.
 
 ### 5.2 Per-screen Figma audit (run for each screen)
 For the screen's Figma node, produce a diff, then fix it:
@@ -259,8 +333,8 @@ the node itself) is unknown, **STOP and ASK the owner** (§13.5).
 
 ## 8. Write it like a human, not an AI
 - Comment WHY, never WHAT. No comment that restates the next line.
-- No `try/catch` unless a failure is genuinely expected and handled (78 `catch`
-  sites on 2026-08-13 — don't add reflexive ones).
+- No `try/catch` unless a failure is genuinely expected and handled (73 `catch`
+  sites on 2026-08-18 — don't add reflexive ones).
 - No defensive null-checks for values that can't be null.
 - No speculative abstraction. Match the pragmatic data+presentation layering;
   do NOT add a `domain/` layer or interfaces "for cleanliness" unless asked.
@@ -299,8 +373,12 @@ Under `test/` mirroring the `lib/` path:
   (`phone_validation`, `plate_validation`, formatting).
 - Fake the repository; never hit the network in tests.
 - Run `flutter test` **from the `simf_app` package root** before a module is
-  done. The pre-existing `simf_auth_pkg` signUp failure is a known baseline — do
-  not count it as a regression.
+  done, and run each local package's suite from ITS root. Measured 2026-08-18:
+  `packages/simf_auth_pkg` **46/46** and `packages/simf_data_pkg` **15/15**.
+  **The `simf_auth_pkg` signUp carve-out is dead.** This line used to read "the
+  pre-existing signUp failure is a known baseline — do not count it as a
+  regression"; that suite is green, there is nothing left to subtract, and a red
+  test there is a regression like any other.
 
 ---
 
@@ -322,8 +400,13 @@ Under `test/` mirroring the `lib/` path:
 
 - Two rules are OFF rather than clean, each with its measurement recorded at the
   rule in `analysis_options.yaml` (`specify_nonobvious_property_types`,
-  `public_member_api_docs`), and ~two dozen sites carry a targeted `// ignore:`.
-  **If you add one, write why the analyzer is WRONG about that line, or fix it.**
+  `public_member_api_docs`). Targeted `// ignore:` sites, measured 2026-08-18:
+  **9** under `lib/`, **28** across `lib` + `test` + `integration_test` +
+  `packages`, plus 2 `// ignore_for_file:`. (`analysis_options.yaml` still says
+  "roughly two dozen" at the rule; that was the all-scopes figure and it is
+  close, but the `lib/` number is the one that matters when you are editing a
+  screen.) **If you add one, write why the analyzer is WRONG about that line,
+  or fix it.**
 - **Never run `dart format` on its own.** The ban's premise was re-measured on
   2026-08-14 against 250 touched files and it holds exactly: Flutter 3.44's
   "tall" formatter strips the trailing commas `require_trailing_commas` demands,
@@ -348,8 +431,6 @@ Under `test/` mirroring the `lib/` path:
   the other, not both. This repo picks trailing commas. If you run the
   formatter, you own running step two afterwards — and do not expect a second
   format run to be a no-op.
-- Don't disable a lint to silence a warning; fix the code. A genuinely-wrong rule
-  gets a deliberate `// ignore: name — reason`, flagged for review.
 - Don't disable a lint to silence a warning; fix the code. A genuinely-wrong rule
   gets a deliberate `// ignore: name — reason`, flagged for review.
 

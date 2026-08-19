@@ -21,14 +21,17 @@ active-filter chip clears it). The data is curated in the Control Panel on the
 | File | Holds |
 |------|-------|
 | `delegations_screen.dart` | State — the search `TextEditingController` + `_query`, the selected-flag `_selectedFlagCode` (with the `_onFlagTap` toggle + clear), the `delegationsProvider` watch, the `onRefresh` invalidate, and the loading / error / data branch dispatch inside `SimfPageShell`. |
-| `widgets/delegations_body.dart` (`DelegationsBody` + `_ActiveFilterChip`) | The loaded list — the stats strip, the shared `SimfFilterSearchField`, the active-filter chip (when a flag is selected), then the per-country cards filtered by **both** the flag selection and the search (or the empty / no-results `SimfEmptyState`). |
-| `widgets/delegations_stats_strip.dart` (`DelegationsStatsStrip` + `_FlagSpot` + `_GridPainter` + `_Stat`) | The navy header strip (Figma 1426:10781): the faint gold grid, the scattered invited-country flags (each a `_FlagSpot` tap target that filters the list; the selected flag is ringed), and the two big-gold stats (participating countries left / total participants right). |
-| `widgets/delegation_card.dart` (`DelegationCard` + `_FlagBox`/`_HeadAvatar`/`_HeadChip`/`_MemberChip`/`_DateGroup`) | One country card (Figma 1426:10838): the flag box + bilingual country name, the head-of-delegation box (when set), and the bottom row (member chip + date range). |
+| `widgets/delegations_body.dart` (`DelegationsBody`) + `widgets/active_filter_chip.dart` (`ActiveFilterChip`) | The loaded list — the stats strip, the shared `SimfFilterSearchField`, the active-filter chip (when a flag is selected), then the per-country cards filtered by **both** the flag selection and the search (or the empty / no-results `SimfEmptyState`). |
+| `widgets/delegations_stats_strip.dart` (`DelegationsStatsStrip` + `_GridPainter`) + `widgets/flag_spot.dart` (`FlagSpot`) + `widgets/delegations_stat.dart` (`DelegationsStat`) | The navy header strip (Figma 1426:10781): the faint gold grid, the scattered invited-country flags (each a `FlagSpot` tap target that filters the list; the selected flag is ringed), and the two big-gold stats (participating countries left / total participants right). |
+| `widgets/delegation_card.dart` (`DelegationCard`) + `widgets/flag_box.dart` (`FlagBox`) | One country card (Figma 1426:10838): the flag box + the bilingual country name (the second-language line is suppressed when it would only repeat the title), tappable into the meeting-request sheet for an entitled account. |
+| `widgets/delegation_meeting_request_sheet.dart` (`DelegationMeetingRequestSheet`) | The request sheet a tapped card opens. A thin wrapper (146 lines) over the shared `MeetingRequestForm<T>` in `speakers/widgets/` — it supplies the country options, the submit call and its own `_failureText`, which is what keeps A35 true (a server rejection shows the SERVER's bilingual reason, never the speaker copy). Its own fields live in `widgets/delegation_option_tile.dart` + `widgets/delegation_attendee_count_field.dart`. |
 
-The single-use leaf widgets (`_GridPainter`/`_Stat`, and the card's
-`_FlagBox`/`_HeadAvatar`/`_HeadChip`/`_MemberChip`/`_DateGroup`) are **colocated
-with their parent** per the booths / venue_map precedent (D-615/D-618) — cleaner
-than one micro-file per tiny leaf; each file stays ≤400 lines (largest 316).
+Only `_GridPainter` — a `CustomPainter`, not a widget — is still colocated with
+its parent per the booths / venue_map precedent (D-615/D-618). The leaves that
+WERE private (`_Stat`, `_ActiveFilterChip`, `_FlagSpot`, `_FlagBox`) are public
+one-per-file widgets now: a private widget class is itself a convention finding,
+and `FlagBox` in particular is reused by more than its original parent. Every
+file stays ≤400 lines (largest 146).
 
 ## Tokenisation (this freeze)
 
@@ -169,3 +172,23 @@ filtered set; guests still see the full list. Prior: 2026-07-13 — added the
 stats-strip **flag filter** (tap a country flag to narrow the list; removable
 active-filter chip; composes with search; default golden unchanged); 2026-07-04
 (D-624 — clean-code freeze). Originating doc D-499._
+
+## Changelog
+
+- **2026-08-18 (delivery clean-code programme, structure only):** the delegation
+  meeting-request sheet and the speaker one were 79% identical, so both now
+  compose the one parameterised `MeetingRequestForm<T>` that lives in
+  `speakers/widgets/`; each sheet keeps its own wrapper, options, submit and
+  `_failureText`, so the A35 server-reason rule (`E2E-DELREQ-011/012`) is
+  untouched. The sheet's attendee-count input became
+  `widgets/delegation_attendee_count_field.dart`. Behaviour-preserving: the
+  `delegations_1426-10771` golden held **without** `--update-goldens` and both
+  sheets' widget tests passed unchanged.
+  The **Structure** table above was re-read against the tree in the same pass and
+  corrected — it still named the private `_ActiveFilterChip` / `_FlagSpot` /
+  `_Stat` / `_FlagBox` leaves, which are public one-per-file widgets, and it did
+  not list the request sheet at all. **Flagged, not changed:** the same table
+  described the country card as carrying a head-of-delegation box and a bottom row
+  of member chip + date range; `DelegationCard` renders neither today (flag +
+  country name only), which is a content question for the owner and not something
+  a documentation pass should decide either way.

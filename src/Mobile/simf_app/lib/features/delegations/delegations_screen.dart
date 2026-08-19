@@ -11,16 +11,7 @@ import 'package:simf_app/features/delegations/data/delegations_repository.dart';
 import 'package:simf_app/features/delegations/widgets/delegation_meeting_request_sheet.dart';
 import 'package:simf_app/features/delegations/widgets/delegations_body.dart';
 
-/// The Delegations screen — App "الوفود" (Figma 1426:10771): the invited
-/// countries' delegations, each card showing the flag, country name, head of
-/// delegation (name + role), the date range and member count, topped by a
-/// stats strip (participating countries + total participants) and a search box.
-/// Public (anonymous `GET /app/delegations`).
-///
-/// Route: `RouteNames.delegations`.
-/// Data: [currentUserMeetingAccessProvider], [delegationsProvider].
-/// Perf: ListView builds every child up front — correct for a short static
-///       page, a defect on a data feed.
+/// Delegations — route: RouteNames.delegations · Figma 1426:10771
 class DelegationsScreen extends ConsumerStatefulWidget {
   const DelegationsScreen({super.key});
 

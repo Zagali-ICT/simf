@@ -8,7 +8,6 @@ library;
 
 import 'package:flutter/material.dart';
 
-/// Centres [child] and caps it at [maxWidth] logical pixels.
 class MaxWidthBody extends StatelessWidget {
   const MaxWidthBody({
     required this.child,
@@ -17,13 +16,8 @@ class MaxWidthBody extends StatelessWidget {
     super.key,
   });
 
-  /// The content to centre and cap.
   final Widget child;
-
-  /// The maximum content width in logical pixels (e.g. 560 for forms).
   final double maxWidth;
-
-  /// Optional padding applied inside the width cap (use token spacing).
   final EdgeInsetsGeometry padding;
 
   @override

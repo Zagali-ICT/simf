@@ -26,10 +26,8 @@ class IdentityPreviewView extends StatelessWidget {
 
   final AppL10n l10n;
 
-  /// Accept the photo and return it to the caller.
   final VoidCallback onSave;
 
-  /// Discard and go back to the camera.
   final VoidCallback onRetake;
 
   @override

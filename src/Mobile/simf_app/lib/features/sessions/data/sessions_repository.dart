@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/features/sessions/data/programme_day.dart';
 import 'package:simf_app/features/sessions/data/session_models.dart';
 import 'package:simf_app/features/sessions/data/sessions_endpoints.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
@@ -48,6 +49,14 @@ final programmeSessionsProvider =
   (ref) => ref.watch(sessionsRepositoryProvider).getSessions(),
 );
 
+/// The programme days (`GET /app/programme/days`).
+///
+/// Load only — the day tab, the type filter and the search box are UI state
+/// and stay on the widget, as on `speakers` and `booths`.
+final programmeDaysProvider = FutureProvider.autoDispose<List<ProgrammeDay>>(
+  (ref) => ref.watch(sessionsRepositoryProvider).getDays(),
+);
+
 /// The active programme keyed by session id, derived once per programme change
 /// rather than per rebuild.
 ///
@@ -58,7 +67,7 @@ final programmeSessionsProvider =
 final programmeSessionsByIdProvider =
     Provider.autoDispose<Map<String, SessionListItem>>((ref) {
   final sessions =
-      ref.watch(programmeSessionsProvider).valueOrNull ??
+      ref.watch(programmeSessionsProvider).value ??
       const <SessionListItem>[];
   return <String, SessionListItem>{
     for (final session in sessions) session.id: session,

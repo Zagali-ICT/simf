@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 
 import 'package:simf_app/app/theme/tokens.dart';
 
-/// The no-bitmap / failed-fetch fall-back for a media tile: a navy box with the
-/// media kind icon.
 class GalleryPlaceholderBox extends StatelessWidget {
   const GalleryPlaceholderBox({required this.isVideo, super.key});
 

@@ -4,7 +4,8 @@
 |---|---|
 | Route | `RouteNames.staffRegisterVisitor` · `/staff/register-visitor` (app screen #114) · reached from the staff-only **More** drawer entry |
 | Surface | Mobile (Flutter) — **tablet two-column**, phone single-column |
-| Screen | `lib/features/staff/register_visitor_screen.dart` (`StaffRegisterVisitorScreen`) |
+| Screen | `lib/features/staff/register_visitor_screen.dart` (`StaffRegisterVisitorScreen`, 808 lines — the controllers, the lookups, the submit + the two uploads, the server-field-error map and the retry dialog; it holds no `_build*` method) |
+| Widgets | `lib/features/staff/widgets/` — `register_visitor_form_fields` (`RegisterVisitorFormFields`, the value holder carrying the 8 controllers, 9 scroll anchors and 8 validators; built once in `initState` and handed over whole) · `register_visitor_form` (`RegisterVisitorForm`, the two-column field grid — takes the holder plus 10 callbacks) · `staff_form_row` (`StaffFormRow`, the RTL-correct two-column row) · `staff_register_card_header` · `staff_lookup_field` · `staff_gender_field` · `staff_document_type_field` · `staff_register_load_error` · `staff_upload_failed_dialog` |
 | Figma node | `1467:12357` (KSA-Project, file `PSXHhY0UVTAPSaIOf9uNKd`; iPad Pro 12.9″ 1024×1314; D-509) |
 | Shell | Shared `SimfFormScaffold(pinnedHeader: true)` — back chevron + the shared `SimfLanguageToggle` pill + logo/forum-name header over the beige card (BUG-019; the hand-rolled `_buildHeader` was removed) |
 | Providers | `profileRepositoryProvider` (`getCountries` / `getProfileTypes(isVisitor:true)` / `searchOrganisations`) · `staffRepositoryProvider` (`registerVisitor`, `uploadIdImage`, `uploadAvatar`). The language toggle is owned by `SimfFormScaffold` |
@@ -35,7 +36,8 @@ readable block on a wide tablet panel.
    forced-LTR back chevron + the shared `SimfLanguageToggle` EN/ع pill, then the
    logo + forum-name header. Identical to Create-profile / sign-in.
 2. **Beige card** — title "إنشاء ملف زائر" + the navy person-avatar tile.
-3. **Two-column field grid** (`_twoCol`; RTL: first arg → right column). Every
+3. **Two-column field grid** (`RegisterVisitorForm` over `StaffFormRow`; RTL:
+   first arg → right column). Every
    input is a shared `SimfLabeledTextField` / `MobileField` on
    `simfFieldDecoration()` (unfilled), every lookup a shared `SimfPickerField`
    opening the searchable `LookupSearchSheet`:
@@ -163,6 +165,17 @@ account screen shares. Brand font applied once in the theme.
       (`StaffWalkInRequest`/`StaffWalkInResult`, D-219) unchanged
 
 ## 9. Changelog
+- **2026-08-18 (delivery clean-code programme, structure only):** 1,068 → **808**
+  lines, and the screen now holds no `_build*` method at all. The blocker was real
+  and the conclusion was wrong: `_buildForm()` needed ~40 constructor parameters to
+  extract, so an earlier pass left it. `RegisterVisitorFormFields` collapses that
+  count — one value holder carrying the 8 controllers, 9 scroll anchors and 8
+  validators, built once in `initState` and passed whole — and `RegisterVisitorForm`
+  takes it plus 10 callbacks. `_twoCol` became the public `StaffFormRow` (§3.3
+  above was pointing at the old name). Behaviour-preserving: the 1024×1314
+  `staff_register_visitor_1467-12357` golden held **byte-identical without**
+  `--update-goldens`, and the 15 widget cases passed unchanged. Wire contract
+  (`StaffWalkInRequest` / `StaffWalkInResult`) untouched.
 - **2026-07-27 (deferred walk-in defects):** DEF-STF-003 — the Arabic/English name
   inputs cap at the server's 50 (was 100), and a 400's field-level `details[]` now
   paint on the matching input and clear when it is edited; DEF-STF-004 — an

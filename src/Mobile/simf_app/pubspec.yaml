@@ -43,7 +43,7 @@ dependencies:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
-  flutter_riverpod: ^2.6.1
+  flutter_riverpod: ^3.4.2
   # Renders the home tiles' exact iconify glyphs (KSA frame 758:1134) as bundled
   # SVGs tinted to the tile colour — the design uses iconify sets (solar/ph/
   # streamline/…) that have no 1:1 Material equivalent. Pure-Dart, no native config.
@@ -121,7 +121,8 @@ dependency_overrides:
 
 dev_dependencies:
   # D-372 regression test only — drives the real SimfApiClient over a
-  # header-recording adapter (same major as simf_data_pkg's pin).
+  # header-recording adapter. simf_data_pkg pins ^5.10.0 for
+  # DioExceptionType.transformTimeout; this caret already admits it.
   dio: ^5.7.0
   # D-373 — generates the SIMF launcher icon into the scaffolded native
   # folders. Run AFTER `flutter create --platforms=android .` (the folders

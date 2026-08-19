@@ -267,3 +267,17 @@ List<ModeratorQuestion> filterModeratorQueue(
       return rejected;
   }
 }
+
+/// The moderator's two server-owned buckets: the working desk (Approved +
+/// Answered) and the rejected (Hidden) rows.
+@immutable
+class ModeratorQueues {
+  const ModeratorQueues({required this.desk, required this.rejected});
+
+  const ModeratorQueues.empty()
+      : desk = const <ModeratorQuestion>[],
+        rejected = const <ModeratorQuestion>[];
+
+  final List<ModeratorQuestion> desk;
+  final List<ModeratorQuestion> rejected;
+}
