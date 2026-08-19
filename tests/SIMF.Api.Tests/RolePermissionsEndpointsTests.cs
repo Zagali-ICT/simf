@@ -87,6 +87,46 @@ public sealed class RolePermissionsEndpointsTests : IClassFixture<SimfApiFactory
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
+    [Fact]
+    public async Task Put_rolls_the_security_stamp_of_every_holder_of_the_role()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var roleId = await CreateCustomRoleAsync(token);
+
+        // Permission codes are baked into the access token, so editing the grants
+        // without rolling the holder's stamp leaves a removed permission live in
+        // every token already issued. The stamp is the only revocation channel.
+        var holderEmail = $"roleperm-holder-{Guid.NewGuid():N}@simf.test";
+        string? before;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<SimfRole>>();
+            var role = await roleManager.FindByIdAsync(roleId.ToString());
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+            var holder = new SimfUser
+            {
+                UserName = holderEmail,
+                Email = holderEmail,
+                EmailConfirmed = true,
+                DisplayName = "RolePerm Holder",
+                AccountState = AccountState.Approved,
+                UserType = UserType.Admin,
+            };
+            await users.CreateAsync(holder, AuthFlow.Password);
+            await users.AddToRoleAsync(holder, role!.Name!);
+            before = (await users.FindByEmailAsync(holderEmail))!.SecurityStamp;
+        }
+
+        await PutPermissionsAsync(roleId, [PermissionCatalog.Sessions.View], token);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+            var after = (await users.FindByEmailAsync(holderEmail))!.SecurityStamp;
+            Assert.NotEqual(before, after);
+        }
+    }
+
     // -- helpers ------------------------------------------------------------
 
     private async Task<Guid> CreateCustomRoleAsync(string token)

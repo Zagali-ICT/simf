@@ -47,8 +47,24 @@ internal sealed class AesGcmEnvelopeCipher : IFileCipher
         };
         if (!string.IsNullOrWhiteSpace(settings.PreviousEncryptionKey))
         {
-            keks[settings.PreviousKekVersion] =
-                DecodeKey(settings.PreviousEncryptionKey, "FileStorage:PreviousEncryptionKey");
+            // Refuse the collision rather than let the indexer overwrite. Setting
+            // the previous key and its version but forgetting to bump
+            // FileStorage:KekVersion off its default left ONE entry, holding the
+            // OLD key, under the version the active key was meant to occupy: the
+            // service started clean, no guard fired, and every file written after
+            // that was sealed under the very key the rotation existed to retire,
+            // while carrying the new version in its header.
+            if (settings.PreviousKekVersion == settings.KekVersion)
+            {
+                throw new InvalidOperationException(
+                    "'FileStorage:PreviousKekVersion' must differ from "
+                    + $"'FileStorage:KekVersion'; both are {settings.KekVersion}. "
+                    + "A rotation supplies the retiring key under its OWN version "
+                    + "and bumps the active one.");
+            }
+            keks.Add(
+                settings.PreviousKekVersion,
+                DecodeKey(settings.PreviousEncryptionKey, "FileStorage:PreviousEncryptionKey"));
         }
         _keks = keks;
         _activeKekVersion = settings.KekVersion;

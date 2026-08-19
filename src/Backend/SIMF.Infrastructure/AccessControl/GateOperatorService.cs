@@ -30,7 +30,6 @@ namespace SIMF.Infrastructure.AccessControl;
 /// </summary>
 internal sealed class GateOperatorService(
     SimfAppDbContext appDbContext,
-    SimfIdentityDbContext identityDbContext,
     IQrResolver qrResolver,
     IGateConfigCache configCache,
     IGateFailureCircuit failureCircuit,
@@ -443,19 +442,17 @@ internal sealed class GateOperatorService(
         var rows = await query
             .OrderByDescending(s => s.ScannedAt)
             .Take(500)
+            // The visitor name comes off the scan row's own immutable snapshot, not
+            // from a profile-then-Identity pair of round trips. An attendee with no
+            // account is the ordinary case, so resolving the name through
+            // SimfUser.DisplayName left every walk-in badge nameless on this report
+            // while the value it should have shown sat unread on the row.
             .Select(s => new
             {
                 s.Id, s.ScannedAt, s.Outcome, s.Direction,
-                s.UserProfileId, s.DenialReasonCode,
+                s.ScannedDisplayName, s.DenialReasonCode,
             })
             .ToListAsync(cancellationToken);
-
-        // Split cross-context join into App-then-Identity round-trips.
-        var profileIds = rows
-            .Where(r => r.UserProfileId != null)
-            .Select(r => r.UserProfileId!.Value)
-            .Distinct().ToList();
-        var displayNames = await ResolveProfileDisplayNamesAsync(profileIds, cancellationToken);
 
         // A8 — full-day aggregates over `query` (server-side GROUP BY), NOT the
         // Take(500) grid, so a gate with >500 scans/day reports correct Totals +
@@ -484,7 +481,7 @@ internal sealed class GateOperatorService(
 
         var rowDtos = rows.Select(r => new OperatorScanRow(
             r.Id, r.ScannedAt, r.Outcome, r.Direction,
-            r.UserProfileId is { } pid && displayNames.TryGetValue(pid, out var name) ? name : null,
+            r.ScannedDisplayName,
             r.DenialReasonCode)).ToList();
 
         return new OperatorDailyReport(
@@ -1009,17 +1006,20 @@ internal sealed class GateOperatorService(
         var scan = await FindReplayScanAsync(prior, cancellationToken);
         if (scan is null) { return EmptyResponse(prior.StoredAt); }
 
-        // Split cross-context join into App-then-Identity round-trips.
+        // One App-DB read. The display name is the scan row's own snapshot — the very
+        // value the original response carried — so the replay is the byte-identical
+        // one the idempotency contract promises. Resolving it through
+        // SimfUser.DisplayName instead needed a second database and returned blank for
+        // every holder with no account, which is the ordinary badge holder.
         GateScanUserProfile? profile = null;
         if (scan.UserProfileId is { } pid)
         {
             var row = await appDbContext.UserProfiles.AsNoTracking()
-                .Include(p => p.ProfileType)
                 .Where(p => p.Id == pid)
                 .Select(p => new
                 {
                     p.Id,
-                    p.UserId,
+                    p.Name,
                     p.NameArabic,
                     p.ProfileTypeId,
                     ProfileTypeName = p.ProfileType != null ? p.ProfileType.Name : null,
@@ -1028,13 +1028,8 @@ internal sealed class GateOperatorService(
                 .SingleOrDefaultAsync(cancellationToken);
             if (row is not null)
             {
-                var displayName = await identityDbContext.Users.AsNoTracking()
-                    .Where(user => user.Id == row.UserId)
-                    .Select(user => user.DisplayName)
-                    .SingleOrDefaultAsync(cancellationToken)
-                    ?? string.Empty;
                 profile = new GateScanUserProfile(
-                    row.Id, displayName, row.NameArabic,
+                    row.Id, scan.ScannedDisplayName ?? row.Name, row.NameArabic,
                     row.ProfileTypeId,
                     row.ProfileTypeName,
                     row.ProfileTypePageColor);
@@ -1073,36 +1068,6 @@ internal sealed class GateOperatorService(
         var (en, ar) = DenialMessages(reason);
         return string.Equals(acceptLanguage, ArabicLanguageCode, StringComparison.OrdinalIgnoreCase)
             ? ar : en;
-    }
-
-    /// <summary>Resolves UserProfile.Id → display name (taken from
-    /// SimfUser.DisplayName on the Identity DB) via App-then-Identity
-    /// round-trips since the two entities now live in different
-    /// DbContexts.</summary>
-    private async Task<Dictionary<Guid, string>> ResolveProfileDisplayNamesAsync(
-        IReadOnlyList<Guid> profileIds, CancellationToken cancellationToken)
-    {
-        if (profileIds.Count == 0) { return new Dictionary<Guid, string>(); }
-        var profileUsers = await appDbContext.UserProfiles.AsNoTracking()
-            .Where(profile => profileIds.Contains(profile.Id))
-            .Select(profile => new { profile.Id, profile.UserId })
-            .ToListAsync(cancellationToken);
-        // Only the accounts are looked up, but EVERY scanned profile stays in the map:
-        // an attendee with no account has no display name to fetch, and dropping them
-        // would erase their scans from the operator's daily report.
-        var userIds = profileUsers
-            .Where(pu => pu.UserId != null)
-            .Select(pu => pu.UserId!.Value)
-            .Distinct()
-            .ToList();
-        var userDisplayNames = await identityDbContext.Users.AsNoTracking()
-            .Where(user => userIds.Contains(user.Id))
-            .Select(user => new { user.Id, user.DisplayName })
-            .ToDictionaryAsync(user => user.Id, user => user.DisplayName ?? string.Empty, cancellationToken);
-        return profileUsers.ToDictionary(
-            pu => pu.Id,
-            pu => pu.UserId is { } userId && userDisplayNames.TryGetValue(userId, out var name)
-                ? name : string.Empty);
     }
 
     private static (string en, string ar) DenialMessages(DenialReasonCode reason) =>

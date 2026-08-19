@@ -5,11 +5,13 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.BusinessMeetings;
+using SIMF.Domain.BusinessMeetings;
 using SIMF.Domain.Exhibitors;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Programme;
@@ -477,6 +479,81 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
         Assert.DoesNotContain(page.Items, t => t.Id == tableId);
     }
 
+    /// <summary>THREE families can hold a meeting table, and this guard used to scan
+    /// one. A table booked by a delegation (or speaker) meeting request was invisible
+    /// to the delete check, so the table was soft-deleted out of the hall plan while
+    /// the meeting still named it — and re-creating the same code mints a NEW id, so
+    /// the orphan can never be reconciled.</summary>
+    [Fact]
+    public async Task Delete_table_held_by_a_live_delegation_meeting_is_409()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hallId = await SeedHallAsync(HallPurpose.Meeting);
+        var tableId = await CreateTableAsync(hallId, token, capacity: 4);
+        var start = EventStart.AddHours(20);
+        await SeedDelegationMeetingHoldingTableAsync(tableId, start, start.AddHours(1));
+
+        var del = await DeleteAuthAsync($"/api/v1/admin/meeting-tables/{tableId}", token);
+        Assert.Equal(HttpStatusCode.Conflict, del.StatusCode);
+        var body = (await del.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.MeetingTableInvalid, body.Error!.Code);
+    }
+
+    /// <summary>Reset soft-deletes EVERY table in the hall, so it must clear the same
+    /// bar a single delete does. It used to clear none at all: an admin re-laying a
+    /// hall silently orphaned every booked table in it, bypassing the very guard that
+    /// would have returned 409 had they pressed Delete on one of them.</summary>
+    [Fact]
+    public async Task Generate_with_reset_over_a_booked_table_is_409_and_changes_nothing()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hallId = await SeedHallAsync(HallPurpose.Meeting);
+        var tableId = await CreateTableAsync(hallId, token, capacity: 4);
+        var start = EventStart.AddHours(21);
+        await ScheduleConfirmedAsync(tableId, token, start, start.AddHours(1));
+
+        var gen = await PostAuthAsync($"/api/v1/admin/halls/{hallId}/meeting-tables/generate",
+            new GenerateMeetingTablesRequest
+            { Mode = HallAllocationMode.RandomByCount, Count = 3, Capacity = 2, Reset = true },
+            token);
+        Assert.Equal(HttpStatusCode.Conflict, gen.StatusCode);
+        var body = (await gen.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.MeetingTableInvalid, body.Error!.Code);
+
+        // Nothing removed and nothing minted: the hall is exactly as it was.
+        var list = await PostAuthAsync($"/api/v1/admin/halls/{hallId}/meeting-tables/list",
+            new { Skip = 0, Top = 100 }, token);
+        var page = (await list.Content.ReadFromJsonAsync<ApiResult<GridPage<MeetingTableRow>>>())!.Data!;
+        Assert.Equal(1, page.Total);
+        Assert.Contains(page.Items, t => t.Id == tableId);
+    }
+
+    /// <summary>The guard is about FUTURE bookings only — a table whose meetings have
+    /// all finished is still removable, which is what keeps the reset usable at all
+    /// once the event is over.</summary>
+    [Fact]
+    public async Task Generate_with_reset_over_a_cancelled_meeting_still_resets()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hallId = await SeedHallAsync(HallPurpose.Meeting);
+        var tableId = await CreateTableAsync(hallId, token, capacity: 4);
+        var start = EventStart.AddHours(22);
+        var meetingId = await ScheduleConfirmedAsync(tableId, token, start, start.AddHours(1));
+        var cancel = await PostAuthAsync(
+            $"/api/v1/admin/business-meetings/{meetingId}/cancel",
+            new CancelMeetingRequest(), token);
+        Assert.Equal(HttpStatusCode.OK, cancel.StatusCode);
+
+        var gen = await PostAuthAsync($"/api/v1/admin/halls/{hallId}/meeting-tables/generate",
+            new GenerateMeetingTablesRequest
+            { Mode = HallAllocationMode.RandomByCount, Count = 2, Capacity = 2, Reset = true },
+            token);
+        Assert.Equal(HttpStatusCode.OK, gen.StatusCode);
+        var result = (await gen.Content.ReadFromJsonAsync<ApiResult<MeetingTablesGenerated>>())!.Data!;
+        Assert.Equal(1, result.Removed);
+        Assert.Equal(2, result.Created);
+    }
+
     [Fact]
     public async Task Cancel_an_already_cancelled_meeting_is_409()
     {
@@ -801,16 +878,76 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
         Assert.Equal(3, page.Total);
     }
 
+    // Over-capacity is rejected by NAME in both generation modes. RandomByCount used
+    // to truncate the request to the free slots and answer 200 with a smaller Created
+    // count, so an admin who asked for ten tables in a hall with room for three got a
+    // success toast and never learned seven were dropped; RowColumn already answered
+    // HALL_ALLOCATION_INVALID for the identical overflow.
     [Fact]
-    public async Task Generate_random_count_is_capped_at_hall_capacity()
+    public async Task Generate_random_count_over_hall_capacity_is_rejected()
     {
         var token = await CreateAdministratorAndSignInAsync();
         var hallId = await SeedHallAsync(HallPurpose.Meeting, capacity: 3);
 
         var gen = await PostAuthAsync($"/api/v1/admin/halls/{hallId}/meeting-tables/generate",
             new GenerateMeetingTablesRequest { Mode = HallAllocationMode.RandomByCount, Count = 10, Capacity = 2 }, token);
+        Assert.Equal(HttpStatusCode.BadRequest, gen.StatusCode);
+        var body = (await gen.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.HallAllocationInvalid, body.Error!.Code);
+
+        // Nothing was minted: a rejected generate leaves the hall exactly as it was.
+        var empty = await PostAuthAsync($"/api/v1/admin/halls/{hallId}/meeting-tables/list",
+            new { Skip = 0, Top = 100 }, token);
+        var emptyPage = (await empty.Content
+            .ReadFromJsonAsync<ApiResult<GridPage<MeetingTableRow>>>())!.Data!;
+        Assert.Equal(0, emptyPage.Total);
+    }
+
+    // The overflow rejection is the first throw on this endpoint that fires AFTER the
+    // Reset loop has already called Deactivate() on every existing table, so it must
+    // remove nothing either: the deactivations are tracked but unsaved, and the request
+    // has to end with the hall untouched rather than emptied.
+    [Fact]
+    public async Task Generate_over_capacity_with_reset_removes_nothing()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hallId = await SeedHallAsync(HallPurpose.Meeting, capacity: 3);
+        await PostAuthAsync($"/api/v1/admin/halls/{hallId}/meeting-tables/generate",
+            new GenerateMeetingTablesRequest { Mode = HallAllocationMode.RandomByCount, Count = 1, Capacity = 2 }, token);
+
+        var gen = await PostAuthAsync($"/api/v1/admin/halls/{hallId}/meeting-tables/generate",
+            new GenerateMeetingTablesRequest
+            { Mode = HallAllocationMode.RandomByCount, Count = 10, Capacity = 2, Reset = true }, token);
+        Assert.Equal(HttpStatusCode.BadRequest, gen.StatusCode);
+        var body = (await gen.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.HallAllocationInvalid, body.Error!.Code);
+
+        var list = await PostAuthAsync($"/api/v1/admin/halls/{hallId}/meeting-tables/list",
+            new { Skip = 0, Top = 100 }, token);
+        var page = (await list.Content
+            .ReadFromJsonAsync<ApiResult<GridPage<MeetingTableRow>>>())!.Data!;
+        Assert.Equal(1, page.Total);
+        Assert.Equal("T-001", page.Items.Single().Code);
+    }
+
+    // The boundary the rejection above must NOT swallow: asking for exactly the
+    // hall's free slots still generates the full request.
+    [Fact]
+    public async Task Generate_random_count_equal_to_hall_capacity_is_created_in_full()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hallId = await SeedHallAsync(HallPurpose.Meeting, capacity: 3);
+
+        var gen = await PostAuthAsync($"/api/v1/admin/halls/{hallId}/meeting-tables/generate",
+            new GenerateMeetingTablesRequest { Mode = HallAllocationMode.RandomByCount, Count = 3, Capacity = 2 }, token);
+        Assert.Equal(HttpStatusCode.OK, gen.StatusCode);
         var result = (await gen.Content.ReadFromJsonAsync<ApiResult<MeetingTablesGenerated>>())!.Data!;
         Assert.Equal(3, result.Created);
+
+        // And the hall is now full, so one more table is refused rather than dropped.
+        var again = await PostAuthAsync($"/api/v1/admin/halls/{hallId}/meeting-tables/generate",
+            new GenerateMeetingTablesRequest { Mode = HallAllocationMode.RandomByCount, Count = 1, Capacity = 2 }, token);
+        Assert.Equal(HttpStatusCode.BadRequest, again.StatusCode);
     }
 
     [Fact]
@@ -1027,6 +1164,44 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
         appDb.Halls.Add(hall);
         await appDb.SaveChangesAsync();
         return hall.Id;
+    }
+
+    /// <summary>A LIVE (AwaitingSpeaker) delegation meeting holding
+    /// <paramref name="tableId"/>, written straight to the App DB.
+    ///
+    /// <para>Deliberately not through the delegation respond endpoint: that path needs
+    /// an approved app account with the delegation flag, an invited target country and
+    /// a hall availability window, none of which this file's fixtures build, and the
+    /// assertion here is only about what the TABLE guard can see. It is bound to its
+    /// OWN fresh hall so it can never collide with another row on the filtered-unique
+    /// (HallId, SlotStart) index.</para></summary>
+    private async Task SeedDelegationMeetingHoldingTableAsync(
+        Guid tableId, DateTime start, DateTime end)
+    {
+        var otherHallId = await SeedHallAsync(HallPurpose.Meeting);
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var countryIds = await appDb.Countries.AsNoTracking()
+            .OrderBy(country => country.Id)
+            .Select(country => country.Id)
+            .Take(2)
+            .ToListAsync();
+        appDb.DelegationMeetingRequests.Add(new DelegationMeetingRequest
+        {
+            Id = Guid.NewGuid(),
+            RequestedByUserId = Guid.NewGuid(),
+            RequestingCountryId = countryIds[0],
+            TargetCountryId = countryIds[1],
+            AttendeeCount = 2,
+            Subject = "Delegation meeting holding a table",
+            HallId = otherHallId,
+            SlotStart = start,
+            SlotEnd = end,
+            Status = MeetingRequestStatus.AwaitingSpeaker,
+            MeetingTableId = tableId,
+            CreatedAt = SimfClock.Now,
+        });
+        await appDb.SaveChangesAsync();
     }
 
     private async Task<Guid> SeedCompanyAsync()

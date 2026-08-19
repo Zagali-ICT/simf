@@ -1,4 +1,6 @@
-// Tests: SIMF.Api.Tests/LogsEndpointsTests.cs (todo).
+// Tests: SIMF.Api.Tests/LogFileServiceTests.cs (the tail region matches a
+//        whole-file read across the block boundary, with and without a trailing
+//        newline, and never splits a multi-byte character).
 using Microsoft.Extensions.Options;
 using SIMF.Application.Logs;
 using SIMF.Contracts.Logs;
@@ -16,6 +18,10 @@ namespace SIMF.Infrastructure.Logs;
 public sealed class LogFileService : ILogFileService
 {
     private const int MaxTailLines = 5_000;
+
+    // The backwards scan reads whole blocks; a file this size or smaller is read
+    // from the start, which is what the whole-file path always did.
+    private const int TailBlockSize = 64 * 1024;
 
     private readonly string _rootDirectory;
 
@@ -160,15 +166,22 @@ public sealed class LogFileService : ILogFileService
     }
 
     /// <summary>
-    /// Streams the file and keeps the last <paramref name="count"/> lines in a
-    /// ring buffer. Reads from the start (UTF-8 with a permissive decoder so a
-    /// truncated multi-byte sequence at the file end never throws).
+    /// Keeps the last <paramref name="count"/> lines in a ring buffer, decoding
+    /// only the tail region rather than the whole file. A production rolling log
+    /// reaches hundreds of MB before it rolls, and reading it from byte zero
+    /// allocated every line in it to keep the last few hundred — on a request an
+    /// admin can repeat with every click. <see cref="FindTailStartAsync"/> locates
+    /// the region; the forward read over it is unchanged, so decoding and CRLF
+    /// handling behave exactly as before.
     /// </summary>
     private static async Task<List<string>> ReadLastLinesAsync(
-        Stream stream,
+        FileStream stream,
         int count,
         CancellationToken cancellationToken)
     {
+        var start = await FindTailStartAsync(stream, count, cancellationToken);
+        stream.Seek(start, SeekOrigin.Begin);
+
         using var reader = new StreamReader(stream, System.Text.Encoding.UTF8);
         var buffer = new Queue<string>(count);
 
@@ -182,5 +195,59 @@ public sealed class LogFileService : ILogFileService
         }
 
         return buffer.ToList();
+    }
+
+    /// <summary>
+    /// The byte offset to start decoding from: just past the
+    /// (<paramref name="count"/> + 1)-th newline counted back from the end, or 0
+    /// when the file holds fewer lines than that. One extra boundary is counted
+    /// because the final line need not carry a trailing newline; over-reading by
+    /// a line is harmless, since the ring buffer trims to
+    /// <paramref name="count"/> anyway.
+    ///
+    /// <para>Scans backwards in fixed blocks counting the newline BYTE. In UTF-8
+    /// no continuation byte can equal 0x0A, so an offset taken immediately after
+    /// one is always a character boundary and never splits a multi-byte
+    /// sequence. A file no larger than one block is read whole, as before.</para>
+    /// </summary>
+    private static async Task<long> FindTailStartAsync(
+        FileStream stream,
+        int count,
+        CancellationToken cancellationToken)
+    {
+        // Read Length once: the file is opened FileShare.ReadWrite and Serilog is
+        // still appending to it, so re-reading it mid-scan would move the target.
+        var length = stream.Length;
+        if (length <= TailBlockSize)
+        {
+            return 0;
+        }
+
+        var block = new byte[TailBlockSize];
+        var newlines = 0;
+        var position = length;
+
+        while (position > 0)
+        {
+            var blockLength = (int)Math.Min(TailBlockSize, position);
+            position -= blockLength;
+            stream.Seek(position, SeekOrigin.Begin);
+            await stream.ReadExactlyAsync(block.AsMemory(0, blockLength), cancellationToken);
+
+            for (var index = blockLength - 1; index >= 0; index--)
+            {
+                if (block[index] != (byte)'\n')
+                {
+                    continue;
+                }
+                newlines++;
+                if (newlines > count)
+                {
+                    return position + index + 1;
+                }
+            }
+        }
+
+        return 0;
     }
 }

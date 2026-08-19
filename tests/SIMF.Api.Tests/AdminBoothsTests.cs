@@ -238,6 +238,103 @@ public sealed class AdminBoothsTests : IClassFixture<SimfApiFactory>
         Assert.Equal(ErrorCodes.BoothInUse, body.Error!.Code);
     }
 
+    // Unticking Active on the edit form is the same soft-delete by another door,
+    // so it must answer the same 409. Without the guard the update committed and
+    // the venue map kept drawing a pin whose booth the public endpoint 404s.
+    [Fact]
+    public async Task Update_cannot_deactivate_a_booth_a_venue_map_node_still_marks()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var code = NewCode();
+        var create = await PostAuthAsync(
+            "/api/v1/admin/booths",
+            new AdminCreateBoothRequest { Code = code, Name = "Pinned", NameArabic = "مثبّت" },
+            token);
+        var created = (await create.Content
+            .ReadFromJsonAsync<ApiResult<AdminBoothDetail>>())!.Data!;
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            db.Set<VenueMapNode>().Add(new VenueMapNode
+            {
+                Id = Guid.NewGuid(),
+                Label = "Booth marker",
+                LabelArabic = "علامة الجناح",
+                Kind = VenueMapNodeKind.Booth,
+                X = 11,
+                Y = 21,
+                BoothId = created.Id,
+                IsActive = true,
+                CreatedAt = SimfClock.Now,
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var update = await PutAuthAsync(
+            $"/api/v1/admin/booths/{created.Id}",
+            new AdminUpdateBoothRequest
+            {
+                Code = code, Name = "Pinned", NameArabic = "مثبّت", IsActive = false,
+            },
+            token);
+        Assert.Equal(HttpStatusCode.Conflict, update.StatusCode);
+        var body = (await update.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.BoothInUse, body.Error!.Code);
+
+        // Rejected outright — no half-applied edit.
+        var get = await GetAuthAsync($"/api/v1/admin/booths/{created.Id}", token);
+        var fetched = (await get.Content
+            .ReadFromJsonAsync<ApiResult<AdminBoothDetail>>())!.Data!;
+        Assert.True(fetched.IsActive);
+    }
+
+    // The guard fires only on the true -> false transition; an ordinary edit that
+    // leaves the booth active still saves even while it is pinned on the map.
+    [Fact]
+    public async Task Update_that_keeps_a_mapped_booth_active_still_succeeds()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var code = NewCode();
+        var create = await PostAuthAsync(
+            "/api/v1/admin/booths",
+            new AdminCreateBoothRequest { Code = code, Name = "Pinned", NameArabic = "مثبّت" },
+            token);
+        var created = (await create.Content
+            .ReadFromJsonAsync<ApiResult<AdminBoothDetail>>())!.Data!;
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            db.Set<VenueMapNode>().Add(new VenueMapNode
+            {
+                Id = Guid.NewGuid(),
+                Label = "Booth marker",
+                LabelArabic = "علامة الجناح",
+                Kind = VenueMapNodeKind.Booth,
+                X = 12,
+                Y = 22,
+                BoothId = created.Id,
+                IsActive = true,
+                CreatedAt = SimfClock.Now,
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var update = await PutAuthAsync(
+            $"/api/v1/admin/booths/{created.Id}",
+            new AdminUpdateBoothRequest
+            {
+                Code = code, Name = "Renamed", NameArabic = "مُعاد التسمية", IsActive = true,
+            },
+            token);
+        Assert.Equal(HttpStatusCode.OK, update.StatusCode);
+        var updated = (await update.Content
+            .ReadFromJsonAsync<ApiResult<AdminBoothDetail>>())!.Data!;
+        Assert.Equal("Renamed", updated.Name);
+        Assert.True(updated.IsActive);
+    }
+
     [Fact]
     public async Task Non_admin_caller_is_forbidden_on_create()
     {
@@ -406,6 +503,17 @@ public sealed class AdminBoothsTests : IClassFixture<SimfApiFactory>
         string url, TBody body, string token) where TBody : class
     {
         var request = new HttpRequestMessage(HttpMethod.Post, url)
+        {
+            Content = JsonContent.Create(body),
+        };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return _client.SendAsync(request);
+    }
+
+    private Task<HttpResponseMessage> PutAuthAsync<TBody>(
+        string url, TBody body, string token) where TBody : class
+    {
+        var request = new HttpRequestMessage(HttpMethod.Put, url)
         {
             Content = JsonContent.Create(body),
         };

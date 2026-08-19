@@ -260,20 +260,59 @@ internal sealed class MyRequestsService(
             }
             case AppRequestKind.ParticipationDocument:
             {
-                var r = await appDbContext.ParticipationDocumentRequests.SingleOrDefaultAsync(
-                    x => x.Id == id && x.RequestedByUserId == userId, cancellationToken)
+                var r = await appDbContext.ParticipationDocumentRequests.AsNoTracking()
+                    .SingleOrDefaultAsync(
+                        x => x.Id == id && x.RequestedByUserId == userId, cancellationToken)
                     ?? throw NotFound();
                 EnsurePending(r.Status);
-                r.Status = MeetingRequestStatus.Cancelled;
+
+                // The same lost-update guard as the two meeting arms above. The
+                // admin desk answers this very row through RespondAsync, which
+                // also writes the outcome onto the requester's profile; the
+                // entity carries no rowversion, so a tracked read-modify-save
+                // would emit an unconditional UPDATE and stamp Cancelled over a
+                // decision the requester has already been notified of. The
+                // conditional UPDATE lets the admin's answer win and 409s here.
+                var affected = await appDbContext.ParticipationDocumentRequests
+                    .Where(x => x.Id == id && x.RequestedByUserId == userId
+                        && x.Status == MeetingRequestStatus.Pending)
+                    .ExecuteUpdateAsync(
+                        s => s.SetProperty(x => x.Status, MeetingRequestStatus.Cancelled),
+                        cancellationToken);
+                if (affected == 0)
+                {
+                    throw new ApiException(
+                        ErrorCodes.AppRequestNotCancellable, 409,
+                        "Only a pending request can be cancelled.",
+                        "لا يمكن إلغاء سوى طلب قيد المراجعة.");
+                }
                 break;
             }
             case AppRequestKind.BadgeUpdate:
             {
-                var r = await appDbContext.BadgeUpdateRequests.SingleOrDefaultAsync(
-                    x => x.Id == id && x.RequestedByUserId == userId, cancellationToken)
+                var r = await appDbContext.BadgeUpdateRequests.AsNoTracking()
+                    .SingleOrDefaultAsync(
+                        x => x.Id == id && x.RequestedByUserId == userId, cancellationToken)
                     ?? throw NotFound();
                 EnsurePending(r.Status);
-                r.Status = MeetingRequestStatus.Cancelled;
+
+                // Same conditional UPDATE, same reason: an accepted badge update
+                // has already copied the requested job title onto the profile, so
+                // overwriting the row with Cancelled would leave the profile
+                // changed under a request that claims it never happened.
+                var affected = await appDbContext.BadgeUpdateRequests
+                    .Where(x => x.Id == id && x.RequestedByUserId == userId
+                        && x.Status == MeetingRequestStatus.Pending)
+                    .ExecuteUpdateAsync(
+                        s => s.SetProperty(x => x.Status, MeetingRequestStatus.Cancelled),
+                        cancellationToken);
+                if (affected == 0)
+                {
+                    throw new ApiException(
+                        ErrorCodes.AppRequestNotCancellable, 409,
+                        "Only a pending request can be cancelled.",
+                        "لا يمكن إلغاء سوى طلب قيد المراجعة.");
+                }
                 break;
             }
             default:

@@ -4,7 +4,9 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
@@ -80,6 +82,35 @@ public sealed class SessionFavouriteTests : IClassFixture<SimfApiFactory>
     {
         var response = await _client.GetAsync("/api/v1/app/sessions/favourites");
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    // A double-tapped heart (or an app retry of a request whose response was lost)
+    // puts two adds either side of the "does it already exist?" check, so both see
+    // "no" and both insert — and the unique index (UserId, SessionId) rejects the
+    // loser. Add is documented as idempotent, so the loser must still report
+    // success, never the unhandled 500 the raw DbUpdateException produced. Each
+    // caller gets its OWN scope, because one DbContext is not thread-safe; the
+    // interleaving is what the store decides, and both the raced and the serialised
+    // outcome must satisfy the same two assertions.
+    [Fact]
+    public async Task Concurrent_favourite_adds_stay_idempotent_and_never_500()
+    {
+        var userId = Guid.NewGuid();
+        var sessionId = await SeedSessionAsync();
+
+        await Task.WhenAll(Enumerable.Range(0, 4).Select(_ => AddFavouriteInOwnScopeAsync(userId, sessionId)));
+
+        using var scope = _factory.Services.CreateScope();
+        var app = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        Assert.Equal(1, await app.SessionFavourites
+            .CountAsync(f => f.UserId == userId && f.SessionId == sessionId));
+    }
+
+    private async Task AddFavouriteInOwnScopeAsync(Guid userId, Guid sessionId)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var favourites = scope.ServiceProvider.GetRequiredService<ISessionFavouriteService>();
+        await favourites.AddAsync(userId, sessionId);
     }
 
     // -- Helpers --------------------------------------------------------------

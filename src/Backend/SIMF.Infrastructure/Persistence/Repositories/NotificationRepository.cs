@@ -16,6 +16,18 @@ internal sealed class NotificationRepository(SimfIdentityDbContext dbContext)
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task AddRangeAsync(
+        IReadOnlyCollection<Notification> notifications,
+        CancellationToken cancellationToken = default)
+    {
+        if (notifications.Count == 0)
+        {
+            return;
+        }
+        dbContext.Notifications.AddRange(notifications);
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
     public Task<bool> ExistsForUserAsync(
         Guid userId, NotificationKind kind, Guid relatedEntityId,
         CancellationToken cancellationToken = default) =>
@@ -26,6 +38,27 @@ internal sealed class NotificationRepository(SimfIdentityDbContext dbContext)
                     && row.Kind == kind
                     && row.RelatedEntityId == relatedEntityId,
                 cancellationToken);
+
+    public async Task<IReadOnlyCollection<Guid>> ExistingUserIdsAsync(
+        NotificationKind kind, Guid relatedEntityId, IReadOnlyCollection<Guid> userIds,
+        CancellationToken cancellationToken = default)
+    {
+        if (userIds.Count == 0)
+        {
+            return [];
+        }
+        // A concrete List so the Contains below is the instance method EF expands
+        // into an IN list, not an enumerable extension it has to interpret.
+        var ids = userIds as List<Guid> ?? userIds.ToList();
+        return await dbContext.Notifications
+            .AsNoTracking()
+            .Where(row => row.Kind == kind
+                && row.RelatedEntityId == relatedEntityId
+                && ids.Contains(row.UserId))
+            .Select(row => row.UserId)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+    }
 
     public async Task<(IReadOnlyList<NotificationDto> Items, int Total)> ListForUserAsync(
         Guid userId, int skip, int top, bool unreadOnly,

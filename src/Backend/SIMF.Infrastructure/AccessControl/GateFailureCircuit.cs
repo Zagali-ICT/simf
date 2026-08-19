@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/Gates/GateFailureCircuitTests.cs
+// Tests: SIMF.Api.Tests/GateFailureCircuitTests.cs
 using System.Collections.Concurrent;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;

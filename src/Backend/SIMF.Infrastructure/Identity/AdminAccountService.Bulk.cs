@@ -5,6 +5,12 @@
 //        revoke withdraw admission on the profile, so the badge stops at a gate)
 // Tests: SIMF.Api.Tests/DuplicateUserRoleGrantTests.cs (duplicating a role-holding
 //        account IS a role grant, so it needs the role-assignment permission)
+// Tests: SIMF.Api.Tests/ImportUserRoleGrantTests.cs (so is an "Administrator" row
+//        in an imported workbook)
+// Tests: SIMF.Api.Tests/AdminGridV2Tests.cs (the Admin-family export narrows by
+//        UserType, so a smuggled visitor id cannot appear in the workbook)
+// Tests: SIMF.Api.Tests/BulkDeleteAuditOrderingTests.cs (a rolled-back delete
+//        is neither counted nor audited as a success)
 // Tests: SIMF.Api.Tests/BadgeBatchListPagingTests.cs (the badge-order list pages a
 //        TOTAL order, so orders sharing a CreatedAt neither repeat nor drop)
 using System.Globalization;
@@ -248,9 +254,16 @@ internal sealed partial class AdminAccountService
 
             // Every subject wipes state + revokes sessions inside
             // one transaction; check UpdateAsync.Succeeded so a silent
-            // Identity error doesn't pretend success. The audit row is
-            // committed in the same transaction as the state change so SOC
-            // never sees a delete-without-audit pair.
+            // Identity error doesn't pretend success.
+            //
+            // The audit row is written AFTER that transaction, not inside it.
+            // It can never be atomic with it whatever the code does — the
+            // operation log lives on the App database and the transaction is
+            // Identity-only — so writing it inside bought nothing and cost two
+            // things. A rolled-back delete left a durable "deleted / Success"
+            // row that the failure row below then contradicts, and the EF
+            // execution strategy re-runs the whole lambda on a transient
+            // failure, recording one admin action as two.
             var success = false;
             string? failureDetail = null;
             try
@@ -271,26 +284,32 @@ internal sealed partial class AdminAccountService
                         target.Id, now, innerCt);
                     await RevokeProfileAdmissionAsync(
                         target.Id, actorUserId, now, innerCt);
-                    await auditLog.WriteAsync(new AuditEntry
-                    {
-                        EventType = AuditEvents.AdminUserDeleted,
-                        Outcome = AuditOutcome.Success,
-                        SubjectEmail = target.Email,
-                        SubjectUserId = target.Id,
-                        ActorUserId = actorUserId,
-                        Detail = request.Reason,
-                    }, innerCt);
                     success = true;
                 }, cancellationToken);
             }
             catch (Exception exception) when (
                 exception is not OperationCanceledException)
             {
+                // Withdraw the flag the lambda set. The lambda runs to
+                // completion INSIDE the transaction, so it can set success and
+                // the COMMIT still fail underneath it — which left the account
+                // enabled, counted as deleted, and audited as deleted. A unit of
+                // work is a success once it has committed, not once it has run.
+                success = false;
                 failureDetail = exception.Message;
             }
 
             if (success)
             {
+                await auditLog.WriteAsync(new AuditEntry
+                {
+                    EventType = AuditEvents.AdminUserDeleted,
+                    Outcome = AuditOutcome.Success,
+                    SubjectEmail = target.Email,
+                    SubjectUserId = target.Id,
+                    ActorUserId = actorUserId,
+                    Detail = request.Reason,
+                }, cancellationToken);
                 deleted++;
             }
             else
@@ -423,10 +442,16 @@ internal sealed partial class AdminAccountService
         {
             // Selected-ids path — pull, with the role flag projected in one
             // query, which kills the per-row IsInRoleAsync N+1.
+            //
+            // Narrowed by UserType as well as id, exactly like the by-kind
+            // export below: this route is gated on the Admin-family export
+            // permission alone, so an operator who can read the Others /
+            // Visitors grids must not be able to post those ids here and get
+            // their rows back in the Admins workbook.
             var idSet = request.Ids.ToHashSet();
             var adminRoleId = await GetAdministratorRoleIdAsync(cancellationToken);
             var projected = await dbContext.Users
-                .Where(u => idSet.Contains(u.Id))
+                .Where(u => idSet.Contains(u.Id) && u.UserType == UserType.Admin)
                 .Select(u => new
                 {
                     u.Id, u.Email, u.DisplayName, u.AccountState,
@@ -492,6 +517,15 @@ internal sealed partial class AdminAccountService
         var created = 0;
         var skipped = 0;
 
+        // An `IsAdministrator` row grants the Administrator role, which IS the
+        // wildcard — so importing one is a role assignment, and role assignment
+        // carries its own permission that the import permission does not imply.
+        // The single-record create endpoint refuses a Roles list from a caller
+        // without it; without the same check here the workbook is a second door
+        // to the same elevation. Resolved ONCE, before the loop, because it is a
+        // property of the actor rather than of the row.
+        var canAssignRoles = await ActorCanAssignRolesAsync(actorUserId, cancellationToken);
+
         foreach (var row in rows)
         {
             if (string.IsNullOrWhiteSpace(row.Email) || !row.Email.Contains('@'))
@@ -508,22 +542,37 @@ internal sealed partial class AdminAccountService
                 skipped++;
                 continue;
             }
+            if (row.IsAdministrator && !canAssignRoles)
+            {
+                // Refuse the ELEVATION row, not the workbook: the rest of a
+                // legitimate import still lands, and the operator gets a
+                // per-row reason instead of an opaque 403.
+                errors.Add(new AdminImportError(row.RowNumber, row.Email,
+                    "Granting the Administrator role requires the "
+                    + "role-assignment permission."));
+                skipped++;
+                continue;
+            }
             try
             {
                 // The XLSX import is the Admin-family bulk-create
                 // path. The `IsAdministrator` flag on the imported row
                 // chooses whether the new admin gets the Administrator
                 // RBAC role; the UserType is always Admin here.
-                await CreateAdminAsync(actorUserId,
-                    new AdminCreateAdminRequest
-                    {
-                        Email = row.Email,
-                        DisplayName = row.DisplayName,
-                        Roles = row.IsAdministrator
-                            ? new List<string> { AppRoles.Administrator }
-                            : new List<string>(),
-                    },
-                    cancellationToken);
+                //
+                // notifyAdmins: false — the per-row admin fan-out is replaced
+                // by one aggregated notice after the loop. Calling the shared
+                // create worker directly rather than CreateAdminAsync is what
+                // lets this path say so; everything else about the create is
+                // identical, including the audit row and the invitation email.
+                await CreateAccountAsync(
+                    actorUserId, row.Email, row.DisplayName,
+                    UserType.Admin, profileTypeId: null,
+                    roles: row.IsAdministrator
+                        ? new List<string> { AppRoles.Administrator }
+                        : new List<string>(),
+                    cancellationToken,
+                    notifyAdmins: false);
                 created++;
             }
             catch (ApiException exception)
@@ -535,6 +584,9 @@ internal sealed partial class AdminAccountService
             }
         }
 
+        await NotifyAdminsOfImportedAccountsAsync(
+            actorUserId, UserType.Admin, created, cancellationToken);
+
         await auditLog.WriteSuccessAsync(
             AuditEvents.AdminUsersImported,
             actorUserId,
@@ -545,6 +597,24 @@ internal sealed partial class AdminAccountService
             "Admin {ActorId} imported {Created} users from XLSX (skipped {Skipped})",
             actorUserId, created, skipped);
         return new AdminImportUsersResponse(created, skipped, errors);
+    }
+
+    /// <summary>
+    /// True when the actor may hand out RBAC roles — they hold the wildcard, or
+    /// the explicit role-assignment code. Resolved through the same resolver that
+    /// mints the <c>perm</c> claims, so the answer here and the answer the
+    /// authorization handler gives on the role-assignment endpoint cannot drift.
+    /// </summary>
+    private async Task<bool> ActorCanAssignRolesAsync(
+        Guid actorUserId, CancellationToken cancellationToken)
+    {
+        var actor = await accounts.FindByIdAsync(actorUserId, cancellationToken);
+        if (actor is null) { return false; }
+
+        var roles = await accounts.GetRolesAsync(actor, cancellationToken);
+        var codes = await permissionResolver.ResolveForRolesAsync(roles, cancellationToken);
+        return codes.Contains(PermissionCatalog.Wildcard, StringComparer.Ordinal)
+            || codes.Contains(PermissionCatalog.Admins.AssignRoles, StringComparer.Ordinal);
     }
 
     // -- Type-scoped bulk operations for /admin/visitors/* and
@@ -612,6 +682,10 @@ internal sealed partial class AdminAccountService
                 continue;
             }
 
+            // The audit row is written AFTER the transaction, not inside it —
+            // it lives on the App database and the transaction is Identity-only,
+            // so it could never roll back with the delete anyway. See the same
+            // note on the Admin-grid loop above.
             var success = false;
             string? failureDetail = null;
             try
@@ -632,26 +706,32 @@ internal sealed partial class AdminAccountService
                         target.Id, now, innerCt);
                     await RevokeProfileAdmissionAsync(
                         target.Id, actorUserId, now, innerCt);
-                    await auditLog.WriteAsync(new AuditEntry
-                    {
-                        EventType = AuditEvents.AdminUserDeleted,
-                        Outcome = AuditOutcome.Success,
-                        SubjectEmail = target.Email,
-                        SubjectUserId = target.Id,
-                        ActorUserId = actorUserId,
-                        Detail = $"kind={kind}; {request.Reason}",
-                    }, innerCt);
                     success = true;
                 }, cancellationToken);
             }
             catch (Exception exception) when (
                 exception is not OperationCanceledException)
             {
+                // Withdraw the flag the lambda set. The lambda runs to
+                // completion INSIDE the transaction, so it can set success and
+                // the COMMIT still fail underneath it — which left the account
+                // enabled, counted as deleted, and audited as deleted. A unit of
+                // work is a success once it has committed, not once it has run.
+                success = false;
                 failureDetail = exception.Message;
             }
 
             if (success)
             {
+                await auditLog.WriteAsync(new AuditEntry
+                {
+                    EventType = AuditEvents.AdminUserDeleted,
+                    Outcome = AuditOutcome.Success,
+                    SubjectEmail = target.Email,
+                    SubjectUserId = target.Id,
+                    ActorUserId = actorUserId,
+                    Detail = $"kind={kind}; {request.Reason}",
+                }, cancellationToken);
                 deleted++;
             }
             else
@@ -761,11 +841,22 @@ internal sealed partial class AdminAccountService
             // wrong-scope id (e.g. an audience-side visitor smuggled
             // into the Others export) does not leak in either.
             var idSet = request.Ids.ToHashSet();
-            var scopedIds = await ResolveProfileScopedUserIdsAsync(
+            var profileScopeFilter = await ResolveProfileScopeAsync(
                 profileScope, cancellationToken);
-            if (scopedIds is not null)
+            if (profileScopeFilter is not null)
             {
-                idSet.IntersectWith(scopedIds);
+                // The audience side is the COMPLEMENT of the partner set, so
+                // the narrowing is a subtraction rather than an intersection.
+                // The UserType predicate on the query below is what keeps a
+                // non-Visitor id from surviving the subtraction.
+                if (profileScopeFilter.ExcludePartners)
+                {
+                    idSet.ExceptWith(profileScopeFilter.PartnerUserIds);
+                }
+                else
+                {
+                    idSet.IntersectWith(profileScopeFilter.PartnerUserIds);
+                }
             }
             var adminRoleId = await GetAdministratorRoleIdAsync(cancellationToken);
             var projected = await dbContext.Users
@@ -864,29 +955,22 @@ internal sealed partial class AdminAccountService
 
             try
             {
-                if (partnerScope)
-                {
-                    // ProfileTypeId is non-null per the guard above.
-                    await CreateOtherAsync(actorUserId,
-                        new AdminCreateOtherRequest
-                        {
-                            Email = row.Email,
-                            DisplayName = row.DisplayName,
-                            ProfileTypeId = row.ProfileTypeId!.Value,
-                        },
-                        cancellationToken);
-                }
-                else
-                {
-                    await CreateVisitorAsync(actorUserId,
-                        new AdminCreateVisitorRequest
-                        {
-                            Email = row.Email,
-                            DisplayName = row.DisplayName,
-                            ProfileTypeId = row.ProfileTypeId,
-                        },
-                        cancellationToken);
-                }
+                // notifyAdmins: false — one aggregated notice goes out after
+                // the loop instead of one per row per administrator. The
+                // expectedIsVisitor flag carries the partner-vs-audience
+                // ProfileType guard that CreateOtherAsync / CreateVisitorAsync
+                // would otherwise have supplied, so a partner row naming an
+                // audience ProfileType is still rejected.
+                await CreateAccountAsync(
+                    actorUserId, row.Email, row.DisplayName,
+                    UserType.Visitor,
+                    // ProfileTypeId is non-null on the partner side per the
+                    // guard above; optional on the audience side.
+                    profileTypeId: row.ProfileTypeId,
+                    roles: Array.Empty<string>(),
+                    cancellationToken,
+                    expectedIsVisitor: !partnerScope,
+                    notifyAdmins: false);
                 created++;
             }
             catch (ApiException exception)
@@ -904,6 +988,9 @@ internal sealed partial class AdminAccountService
                 skipped++;
             }
         }
+
+        await NotifyAdminsOfImportedAccountsAsync(
+            actorUserId, kind, created, cancellationToken);
 
         await auditLog.WriteSuccessAsync(
             AuditEvents.AdminUsersImported,
@@ -1027,9 +1114,25 @@ internal sealed partial class AdminAccountService
             ? null
             : new List<(string ProfileTypeName, int Seq, string QrId)>(batches.Sum(b => b.Count));
 
-        created = await MintBadgesAsync(
-            plan, badgeBatch, request.IsDelegate, actorUserId, now,
-            startingSequence: 0, badgeArtifacts, cancellationToken);
+        // Each badge commits on its own — the QR-uniqueness read has to see
+        // its predecessors — so a failure part-way leaves the badges already
+        // minted durable with nothing saying how many. An operator who sees
+        // only the error and re-submits then mints a SECOND full set beside the
+        // first, and no one can tell afterwards which box of paper was printed
+        // from which. Record what actually landed before letting the failure
+        // surface; the error itself still reaches the operator unchanged.
+        try
+        {
+            created = await MintBadgesAsync(
+                plan, badgeBatch, request.IsDelegate, actorUserId, now,
+                startingSequence: 0, badgeArtifacts, cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            await AuditPartialBadgeOrderAsync(
+                actorUserId, badgeBatch.Id, batches.Sum(b => b.Count), exception);
+            throw;
+        }
 
         await auditLog.WriteSuccessAsync(
             AuditEvents.AdminBulkBadgesGenerated,
@@ -1052,6 +1155,62 @@ internal sealed partial class AdminAccountService
         }
 
         return new AdminBulkGenerateBadgesResponse(created, emailQueued);
+    }
+
+    /// <summary>Audits how much of a badge order actually committed when the
+    /// mint loop failed part-way. Best-effort and silent on its own failure:
+    /// this runs on an already-failing path, and an exception thrown here would
+    /// replace the real cause with a bookkeeping error.</summary>
+    private async Task AuditPartialBadgeOrderAsync(
+        Guid actorUserId, Guid badgeBatchId, int ordered, Exception cause)
+    {
+        // The badge whose save threw is still tracked as Added. The audit row
+        // below goes through this same App context, so leaving it attached
+        // would have the audit write retry the very insert that just failed —
+        // and on a run where the retry happened to succeed, mint one more badge
+        // than the count this method is about to record.
+        foreach (var entry in appDbContext.ChangeTracker
+                     .Entries<UserProfile>()
+                     .Where(tracked => tracked.State == EntityState.Added)
+                     .ToList())
+        {
+            entry.State = EntityState.Detached;
+        }
+
+        var landed = -1;
+        try
+        {
+            // CancellationToken.None: a cancelled request is one of the ways to
+            // get here, and the count is worth nothing if it refuses to run.
+            landed = await appDbContext.UserProfiles
+                .AsNoTracking()
+                .CountAsync(
+                    profile => profile.BadgeBatchId == badgeBatchId,
+                    CancellationToken.None);
+
+            await auditLog.WriteAsync(new AuditEntry
+            {
+                EventType = AuditEvents.AdminBulkBadgesGenerated,
+                Outcome = AuditOutcome.Failure,
+                ActorUserId = actorUserId,
+                ErrorCode = ErrorCodes.InternalError,
+                Detail = $"partial; ordered={ordered}; created={landed}; "
+                    + $"batchId={badgeBatchId}",
+            }, CancellationToken.None);
+        }
+        catch (Exception bookkeeping)
+        {
+            logger.LogError(
+                bookkeeping,
+                "Could not record the partial badge order {BatchId} after the mint failed.",
+                badgeBatchId);
+        }
+
+        logger.LogError(
+            cause,
+            "Bulk badge generation failed for order {BatchId}: {Created} of {Ordered} "
+            + "badge(s) are already committed and must not be re-generated.",
+            badgeBatchId, landed, ordered);
     }
 
     /// <summary>Resolves every requested profile type BEFORE anything is written,

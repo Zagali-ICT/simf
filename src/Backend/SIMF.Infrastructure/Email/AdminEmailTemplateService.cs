@@ -365,7 +365,9 @@ internal sealed class AdminEmailTemplateService(
             EmailTemplateRenderer.Render(bodyAr, samples));
 
         return new EmailTemplatePreviewResult(
-            EmailTemplateRenderer.Render(subject, samples),
+            // Plain, not HTML-encoded - the preview must show the subject the
+            // recipient's mail client will actually display.
+            EmailSubjectRenderer.Render(subject, samples),
             html,
             UnknownTokens(type, subject, bodyEn, bodyAr));
     }

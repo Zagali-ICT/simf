@@ -225,6 +225,14 @@ internal sealed class AdminBoothService(
             }
         }
 
+        // Unticking Active on the edit form is a soft-delete by another door, so
+        // it answers the same 409 the explicit deactivate answers. Without this
+        // the map keeps drawing a pin whose booth the public endpoint then 404s.
+        if (booth.IsActive && !request.IsActive)
+        {
+            await EnsureNotMarkedOnVenueMapAsync(id, cancellationToken);
+        }
+
         booth.Code = draft.Code;
         booth.Name = draft.Name;
         booth.NameArabic = draft.NameArabic;
@@ -283,20 +291,7 @@ internal sealed class AdminBoothService(
             return; // idempotent
         }
 
-        // #26 — a soft-deleted booth would orphan any venue-map node that marks it
-        // (the VenueMapNode→Booth FK is Restrict, but that only guards a hard delete,
-        // not a soft delete). Block with a clear 409 so the admin removes the map
-        // node first — mirrors AdminContactService's ContactInUse guard.
-        var markedOnVenueMap = await dbContext.VenueMapNodes
-            .AsNoTracking()
-            .AnyAsync(node => node.IsActive && node.BoothId == id, cancellationToken);
-        if (markedOnVenueMap)
-        {
-            throw new ApiException(
-                ErrorCodes.BoothInUse, 409,
-                "This booth is still marked on the venue map and cannot be deactivated. Remove its venue-map node first.",
-                "ما زال هذا الجناح محدداً على خريطة المكان ولا يمكن إلغاء تفعيله. احذف عقدة الخريطة المرتبطة به أولاً.");
-        }
+        await EnsureNotMarkedOnVenueMapAsync(id, cancellationToken);
 
         booth.Deactivate();
         booth.UpdatedAt = timeProvider.SimfNow();
@@ -452,6 +447,28 @@ internal sealed class AdminBoothService(
 
     private static ApiException Invalid(string english, string arabic) =>
         new(ErrorCodes.BoothInvalid, 400, english, arabic);
+
+    /// <summary>
+    /// #26 — a soft-deleted booth would orphan any venue-map node that marks it
+    /// (the VenueMapNode→Booth FK is Restrict, but that only guards a hard
+    /// delete, not a soft delete). Both write paths that can retire a booth call
+    /// this, so unticking Active on the edit form is refused exactly like the
+    /// explicit deactivate — mirrors AdminContactService's ContactInUse guard.
+    /// </summary>
+    private async Task EnsureNotMarkedOnVenueMapAsync(
+        Guid boothId, CancellationToken cancellationToken)
+    {
+        var markedOnVenueMap = await dbContext.VenueMapNodes
+            .AsNoTracking()
+            .AnyAsync(node => node.IsActive && node.BoothId == boothId, cancellationToken);
+        if (markedOnVenueMap)
+        {
+            throw new ApiException(
+                ErrorCodes.BoothInUse, 409,
+                "This booth is still marked on the venue map and cannot be deactivated. Remove its venue-map node first.",
+                "ما زال هذا الجناح محدداً على خريطة المكان ولا يمكن إلغاء تفعيله. احذف عقدة الخريطة المرتبطة به أولاً.");
+        }
+    }
 
     private async Task EnsureHallIsValidAsync(
         Guid? hallId, CancellationToken cancellationToken)

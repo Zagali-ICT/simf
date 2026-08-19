@@ -158,6 +158,88 @@ public sealed class AdminGateCurrentlyInsideTests : IClassFixture<SimfApiFactory
         Assert.Single(rows, r => r.UserProfileId == profileId);
     }
 
+    /// <summary>A profile with NO Identity account is the ORDINARY badge holder after
+    /// the profile-owned-admission change: a walk-in registration and a bulk-minted
+    /// badge both produce one. The roster resolved the English name only from
+    /// SimfUser.DisplayName and fell straight through to empty when there was no
+    /// account, so exactly those people were listed nameless while the name the badge
+    /// was printed from sat on the profile row, unread.</summary>
+    [Fact]
+    public async Task An_attendee_with_no_account_is_listed_under_their_profile_name()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var gate = await CreateGateAsync(token);
+        var (qr, profileId) = await CreateAccountlessProfileAsync("Walk-in Badge Holder");
+
+        await SeedScanAsync(gate.Id, profileId, qr, ScanDirection.CheckIn,
+            SimfClock.Now.AddMinutes(-2));
+
+        var rows = await GetCurrentlyInsideAsync(token);
+        var row = Assert.Single(rows, r => r.UserProfileId == profileId);
+        Assert.Equal("Walk-in Badge Holder", row.DisplayName);
+    }
+
+    /// <summary>The same blank-name defect on the ADMIN scan report (and therefore its
+    /// Excel export, which renders the identical rows): the Visitor column resolved
+    /// only through SimfUser.DisplayName, so a walk-in badge produced a nameless row
+    /// even though the scan log carries the name it was admitted under.
+    ///
+    /// <para>This one drives a REAL scan through the operator endpoint rather than
+    /// seeding the row, because the name under test is the snapshot the scan engine
+    /// writes — a hand-seeded GateScan sets no <c>ScannedDisplayName</c> at all and
+    /// would prove nothing. It lives in this file because it needs the same
+    /// account-less profile fixture as the occupancy case above.</para></summary>
+    [Fact]
+    public async Task The_scan_report_names_an_attendee_who_has_no_account()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var gate = await CreateGateAsync(token);
+        var (qr, profileId) = await CreateAccountlessProfileAsync("Reported Walk-in");
+
+        await RecordScanAsync(gate.Id, qr, token);
+
+        var response = await PostAuthAsync(
+            "/api/v1/admin/gates/reports/scans/list",
+            new GridQuery
+            {
+                Top = 50,
+                Filters = new Dictionary<string, string>
+                {
+                    ["userProfileId"] = profileId.ToString(),
+                },
+            },
+            token);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var page = (await response.Content
+            .ReadFromJsonAsync<ApiResult<GridPage<AdminGateScanRow>>>())!.Data!;
+        var row = Assert.Single(page.Items);
+        Assert.Equal("Reported Walk-in", row.VisitorDisplayName);
+    }
+
+    /// <summary>A UserProfile with no <c>UserId</c> at all — a walk-in registration or
+    /// a bulk-minted badge, which is the ORDINARY attendee, not an edge case.</summary>
+    private async Task<(string Qr, Guid ProfileId)> CreateAccountlessProfileAsync(string name)
+    {
+        var profileId = Guid.NewGuid();
+        var qrId = Guid.NewGuid().ToString("N")[..12].ToUpperInvariant();
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        appDb.UserProfiles.Add(new UserProfile
+        {
+            Id = profileId,
+            UserId = null,
+            QrId = qrId,
+            Name = name,
+            NameArabic = "زائر بلا حساب",
+            NationalityId = 682,
+            PlaceOfBirth = "Riyadh",
+            AdmissionState = AccountState.Approved,
+            CreatedAt = SimfClock.Now,
+        });
+        await appDb.SaveChangesAsync();
+        return (qrId, profileId);
+    }
+
     /// <summary>Writes a GateScan row straight to the database.
     ///
     /// <para>Deliberately NOT via the scan endpoint. GateOperatorService absorbs a

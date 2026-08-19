@@ -31,10 +31,22 @@ namespace SIMF.Infrastructure.Auditing;
 /// </list>
 ///
 /// <para>Sensitive column values are redacted before being written to JSON —
-/// columns named <c>PasswordHash</c>, <c>SecurityStamp</c>, <c>ConcurrencyStamp</c>,
-/// or anything ending in <c>Hash</c>, <c>Secret</c>, <c>Token</c>, or <c>Code</c>
-/// are replaced with <c>"***"</c>. The audit row records the FACT of a change,
-/// not the secret itself.</para>
+/// columns named in <see cref="RedactedColumnNames"/>, or anything ending in
+/// <c>Hash</c>, <c>Secret</c>, <c>Token</c> or <c>Code</c>, are replaced with
+/// <c>"***"</c>. The audit row records the FACT of a change, not the secret
+/// itself.</para>
+///
+/// <para>Known gap, owner decision pending: the <c>Code</c> suffix is far wider
+/// than the secrets it was added for. Every secret <c>Code</c> column already sits
+/// on an entity excluded outright above (<c>AccountCode</c>,
+/// <c>TotpRecoveryCode</c>), while the suffix additionally blanks a dozen
+/// human-readable business identifiers — <c>Gate</c>, <c>Hall</c>, <c>Session</c>,
+/// <c>Theme</c>, <c>Booth</c>, <c>Speaker</c>, <c>MeetingTable</c>,
+/// <c>Country</c>, <c>Region</c>, <c>RatingType</c>, <c>UserProfileType</c> and
+/// <c>Permission.Code</c>. A permission-catalogue or gate rename therefore records
+/// only <c>***</c> -&gt; <c>***</c>, which is the change a security review most
+/// wants to read. Narrowing the rule means naming any genuinely secret <c>Code</c>
+/// column in <see cref="RedactedColumnNames"/> first.</para>
 /// </summary>
 internal sealed class RowAuditingSaveChangesInterceptor(
     IRequestContext requestContext,

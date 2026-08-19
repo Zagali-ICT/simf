@@ -420,6 +420,18 @@ internal sealed class SpeakerMeetingRequestService(
         if (mintsSpeakerLinks)
         {
             await EnsureSpeakerConfirmationIsDeliverableAsync(req.SpeakerId, cancellationToken);
+
+            // Nothing but the pair about to be minted may decide this request.
+            // ReopenAsync already clears the previous round's links, and this is the
+            // same guarantee taken at the moment of minting, so no other route back to
+            // Pending can leave a superseded link alive either. It runs BEFORE the mint
+            // deliberately: the request is still Pending here and no worker touches a
+            // Pending request, so revoking first opens no window — unlike the
+            // AwaitingSpeaker resend below, where the order has to be the other way
+            // round.
+            await appDbContext.MeetingActionTokens
+                .Where(t => t.SpeakerMeetingRequestId == req.Id && t.UsedAt == null)
+                .ExecuteUpdateAsync(s => s.SetProperty(t => t.UsedAt, now), cancellationToken);
         }
         var links = mintsSpeakerLinks
             ? meetingActionTokens.StageTokensForRequest(req.Id)
@@ -467,15 +479,14 @@ internal sealed class SpeakerMeetingRequestService(
                             "لم تعد هذه الفترة متاحة.");
                     }
 
-                    // The requester must not already hold another live meeting then.
-                    if (await RequesterHasOverlappingMeetingAsync(
-                            req.RequestedByUserId, req.Id, slotStart, slotEnd, cancellationToken))
-                    {
-                        throw new ApiException(
-                            ErrorCodes.SpeakerMeetingRequestInvalid, 409,
-                            "The requester already has a meeting booked at that time.",
-                            "لدى مقدّم الطلب اجتماع محجوز بالفعل في هذا الوقت.");
-                    }
+                    // The requester must not already hold another live meeting then —
+                    // in EITHER family.
+                    await MeetingRequesterOverlapGuard.EnsureRequesterIsFreeAsync(
+                        appDbContext, req.RequestedByUserId, slotStart, slotEnd,
+                        ErrorCodes.SpeakerMeetingRequestInvalid,
+                        excludeSpeakerRequestId: req.Id,
+                        excludeDelegationRequestId: null,
+                        cancellationToken);
                 }
 
                 // Bi-Meeting rework — Confirm (verbal) with a bound hall goes straight to
@@ -650,6 +661,20 @@ internal sealed class SpeakerMeetingRequestService(
                 "لا يمكن إعادة فتح سوى طلب مرفوض أو ملغى.");
         }
 
+        // Reopening mints nothing, but it re-arms the request, and an action link from
+        // the previous round can outlive it: the speaker's Decline consumes only the
+        // token they clicked, so its SIBLING Approve link is still unused with up to
+        // 72h left. Once the reopened request is approved again — onto a different hall
+        // and slot — that old link would pass validation and flip the meeting to
+        // Accepted for a time and room its email never mentioned, through an endpoint
+        // that needs no account at all. Kill every live token, with the rest of the
+        // previous round's state this method already clears. Done before the row is
+        // touched so the statement carries no pending tracked change alongside it.
+        await appDbContext.MeetingActionTokens
+            .Where(t => t.SpeakerMeetingRequestId == id && t.UsedAt == null)
+            .ExecuteUpdateAsync(
+                s => s.SetProperty(t => t.UsedAt, timeProvider.SimfNow()), cancellationToken);
+
         var previousStatus = req.Status;
         req.Status = MeetingRequestStatus.Pending;
         req.HallId = null;
@@ -663,6 +688,7 @@ internal sealed class SpeakerMeetingRequestService(
         req.ResponseNote = null;
         req.CheckedInAt = null;
         req.CheckedInByUserId = null;
+
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteSuccessAsync(
@@ -706,13 +732,32 @@ internal sealed class SpeakerMeetingRequestService(
         await EnsureSpeakerConfirmationIsDeliverableAsync(req.SpeakerId, cancellationToken);
 
         var now = timeProvider.SimfNow();
-        // Kill any still-live token so only the fresh pair can decide the request.
-        await appDbContext.MeetingActionTokens
+
+        // The tokens that are live RIGHT NOW, named before anything is minted so the
+        // revoke below can hit exactly them and can never catch the fresh pair.
+        // Revoking first and minting second left the request AwaitingSpeaker with no
+        // live token at all in between — which is precisely the state
+        // MeetingAwaitingSpeakerExpiryWorker reads as stale, so an hourly tick landing
+        // in that window reverted the request to Pending and released the hall slot
+        // while this method went on to mint links for a request that could no longer
+        // use them.
+        var supersededTokenIds = await appDbContext.MeetingActionTokens.AsNoTracking()
             .Where(t => t.SpeakerMeetingRequestId == req.Id && t.UsedAt == null)
-            .ExecuteUpdateAsync(s => s.SetProperty(t => t.UsedAt, now), cancellationToken);
+            .Select(t => t.Id)
+            .ToListAsync(cancellationToken);
 
         var links = meetingActionTokens.StageTokensForRequest(req.Id);
         await appDbContext.SaveChangesAsync(cancellationToken);
+
+        // Only once the replacement pair is committed: the request is never without a
+        // live token, and a failure here leaves two live pairs rather than none — both
+        // encoding the same current hall and slot, so the worst case is harmless.
+        if (supersededTokenIds.Count > 0)
+        {
+            await appDbContext.MeetingActionTokens
+                .Where(t => supersededTokenIds.Contains(t.Id) && t.UsedAt == null)
+                .ExecuteUpdateAsync(s => s.SetProperty(t => t.UsedAt, now), cancellationToken);
+        }
 
         await auditLog.WriteSuccessAsync(
             AuditEvents.SpeakerMeetingConfirmationResent,
@@ -887,15 +932,16 @@ internal sealed class SpeakerMeetingRequestService(
                 "لدى المتحدّث اجتماع بالفعل في هذا الوقت.");
         }
 
-        // M-7 — the requester must not already hold another live meeting at that time.
-        if (await RequesterHasOverlappingMeetingAsync(
-                req.RequestedByUserId, req.Id, start, end, cancellationToken))
-        {
-            throw new ApiException(
-                ErrorCodes.SpeakerMeetingRequestInvalid, 409,
-                "The requester already has a meeting booked at that time.",
-                "لدى مقدّم الطلب اجتماع محجوز بالفعل في هذا الوقت.");
-        }
+        // M-7 — the requester must not already hold another live meeting at that time,
+        // in EITHER family: the scan used to see speaker requests only, so one person
+        // could be approved into a speaker meeting and a delegation meeting at the same
+        // instant in two different halls.
+        await MeetingRequesterOverlapGuard.EnsureRequesterIsFreeAsync(
+            appDbContext, req.RequestedByUserId, start, end,
+            ErrorCodes.SpeakerMeetingRequestInvalid,
+            excludeSpeakerRequestId: req.Id,
+            excludeDelegationRequestId: null,
+            cancellationToken);
 
         if (request.MeetingTableId is { } tableId)
         {
@@ -942,20 +988,6 @@ internal sealed class SpeakerMeetingRequestService(
         appDbContext.SpeakerMeetingRequests.AsNoTracking()
             .AnyAsync(r => r.Id != excludeRequestId
                 && r.SpeakerId == speakerId
-                && MeetingRequestStatuses.SlotHolding.Contains(r.Status)
-                && r.SlotStart != null && r.SlotEnd != null
-                && r.SlotStart < end && start < r.SlotEnd, cancellationToken);
-
-    // M-7 — does the REQUESTER already hold a LIVE meeting (Accepted, AwaitingSpeaker or Done)
-    // overlapping [start, end) with any speaker — excluding this request? The speaker-side
-    // guard above stops one speaker being double-booked; this stops one VIP holding two
-    // concurrent meetings with two different speakers. Same half-open overlap rule.
-    private Task<bool> RequesterHasOverlappingMeetingAsync(
-        Guid requesterUserId, Guid excludeRequestId,
-        DateTime start, DateTime end, CancellationToken cancellationToken) =>
-        appDbContext.SpeakerMeetingRequests.AsNoTracking()
-            .AnyAsync(r => r.Id != excludeRequestId
-                && r.RequestedByUserId == requesterUserId
                 && MeetingRequestStatuses.SlotHolding.Contains(r.Status)
                 && r.SlotStart != null && r.SlotEnd != null
                 && r.SlotStart < end && start < r.SlotEnd, cancellationToken);

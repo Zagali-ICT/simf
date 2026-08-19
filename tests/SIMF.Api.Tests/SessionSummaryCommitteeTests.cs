@@ -8,9 +8,14 @@ using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
+using SIMF.Application.Ai.Abstractions;
+using SIMF.Application.Auditing;
+using SIMF.Application.Files.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
+using SIMF.Contracts.Ai;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Programme;
 using SIMF.Domain.IdentityAccess;
@@ -18,6 +23,7 @@ using SIMF.Domain.Profiles;
 using SIMF.Domain.Programme;
 using SIMF.Domain.SessionQuestions;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Infrastructure.Programme;
 using Xunit;
 
 namespace SIMF.Api.Tests;
@@ -395,6 +401,83 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
         // The app no longer serves the edited, unapproved text.
         Assert.Equal(HttpStatusCode.NotFound,
             (await _client.GetAsync(PublicUrl(sessionId))).StatusCode);
+    }
+
+    // A real provider can answer 200 and still carry no text — a model that stops on
+    // a safety verdict returns a candidate with no text block, and the parse yields
+    // an empty string instead of throwing. Written through, that empty string
+    // replaced the live محضر AND the pristine AI-draft snapshot, and (differing from
+    // the stored text) cleared the approval, so ONE click of Regenerate silently
+    // took a published summary offline and destroyed it. The shipped Echo stub
+    // always echoes the prompt, so this needs a provider that returns empty:
+    // the service is built directly against a fake IAiService.
+    [Fact]
+    public async Task Generate_with_an_empty_provider_answer_leaves_the_published_summary_intact()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var sessionId = await SeedSessionAsync();
+        // Draft (captures the pristine snapshot), replace with real minutes, approve
+        // and publish — the state one Regenerate click used to be able to erase.
+        await GenerateAsync(sessionId, admin);
+        await SaveAsync(sessionId, new SaveSessionSummaryRequest
+        {
+            FullText = "Minutes.", FullTextArabic = "محضر منشور.",
+        }, admin);
+        await SubmitForReviewAndApproveAsync(sessionId, admin);
+        await PutAuthAsync($"/api/v1/admin/session-summaries/{sessionId}/publish", new { }, admin);
+        Assert.Equal(HttpStatusCode.OK,
+            (await _client.GetAsync(PublicUrl(sessionId))).StatusCode);
+        var before = await ReadStoredSummaryAsync(sessionId);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var services = scope.ServiceProvider;
+            var service = new AdminSessionSummaryService(
+                services.GetRequiredService<SimfAppDbContext>(),
+                services.GetRequiredService<IFeedLinkService>(),
+                new _EmptyAiService(),
+                services.GetRequiredService<IAuditLog>(),
+                services.GetRequiredService<TimeProvider>(),
+                NullLogger<AdminSessionSummaryService>.Instance);
+
+            var ex = await Assert.ThrowsAsync<ApiException>(
+                () => service.GenerateAsync(Guid.NewGuid(), sessionId));
+            Assert.Equal(ErrorCodes.AiProviderFailed, ex.Code);
+            Assert.Equal(502, ex.StatusCode);
+        }
+
+        // Nothing moved: the text, the pristine snapshot and the publish stamp are
+        // exactly as they were, and the app still serves the محضر.
+        var after = await ReadStoredSummaryAsync(sessionId);
+        Assert.Equal(before.FullTextArabic, after.FullTextArabic);
+        Assert.Equal(before.AiDraftFullTextArabic, after.AiDraftFullTextArabic);
+        Assert.NotNull(after.ApprovedAt);
+        Assert.NotNull(after.PublishedAt);
+        Assert.Equal(HttpStatusCode.OK,
+            (await _client.GetAsync(PublicUrl(sessionId))).StatusCode);
+    }
+
+    private async Task<SessionSummary> ReadStoredSummaryAsync(Guid sessionId)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        return await db.SessionSummaries.AsNoTracking()
+            .SingleAsync(summary => summary.SessionId == sessionId);
+    }
+
+    /// <summary>A provider that succeeds and says nothing — the shape a safety-stop
+    /// or an empty candidate list produces on every real provider the seam
+    /// supports.</summary>
+    private sealed class _EmptyAiService : IAiService
+    {
+        public Task<AiCallResult> InvokeAsync(
+            string promptKey,
+            IReadOnlyDictionary<string, string> inputs,
+            AiCallerContext caller,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(new AiCallResult(
+                Guid.NewGuid(), promptKey, AiFeature.SessionSummary,
+                AiProvider.Anthropic, "test-model", string.Empty, null, null, 1));
     }
 
     // -- A18 (2026-07-26): the shipped AI provider is the offline Echo stub, which

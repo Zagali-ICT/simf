@@ -17,10 +17,18 @@ namespace SIMF.Infrastructure.Programme;
 /// <para><b>Fragile by nature + network-gated:</b> the innertube/timedtext endpoints are
 /// undocumented and can change without notice, and the RSNF/NCA on-prem network blocks
 /// YouTube egress — so every failure funnels to a single clear
-/// <c>SUBTITLE_FETCH_FAILED</c> (502) that tells the admin to paste/upload instead. It
-/// reuses the process-wide singleton <see cref="HttpClient"/> (the Infrastructure csproj
-/// does not reference <c>Microsoft.Extensions.Http</c>; adding it needs owner approval —
-/// CLAUDE.md §1.7), exactly like the AI providers.</para>
+/// <c>SUBTITLE_FETCH_FAILED</c> (502) that tells the admin to paste/upload instead.
+/// Except a cancellation the CALLER asked for: an admin who navigates away mid-fetch
+/// is not an egress outage, so that propagates untouched rather than being logged and
+/// reported as one.</para>
+///
+/// <para>It takes a DEDICATED <see cref="HttpClient"/> — a no-redirect
+/// <c>SocketsHttpHandler</c> with a 30-second timeout, built in
+/// <c>DependencyInjection</c> — not the process-wide singleton the AI providers share:
+/// the caption <c>baseUrl</c> comes back from YouTube's own response, so following a
+/// 3xx into an internal host would be SSRF. Still BCL-only (the Infrastructure csproj
+/// does not reference <c>Microsoft.Extensions.Http</c>; adding it needs owner
+/// approval — CLAUDE.md §1.7).</para>
 /// </summary>
 internal sealed class YoutubeTranscriptService(
     HttpClient httpClient,
@@ -106,6 +114,16 @@ internal sealed class YoutubeTranscriptService(
         {
             throw;
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // The CALLER went away (the admin navigated off the Sessions editor, or
+            // the browser aborted the request). That is not a failed fetch and above
+            // all not the missing-egress outage the catch-all below reports, so it
+            // must not be logged as one or turned into a 502. The guard clause is
+            // what separates it from the client's own 30-second timeout, which
+            // arrives as the same exception type and IS a fetch failure.
+            throw;
+        }
         catch (Exception ex)
         {
             throw Unreachable(ex);
@@ -169,6 +187,10 @@ internal sealed class YoutubeTranscriptService(
         catch (ApiException)
         {
             throw;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw; // the caller aborted — see ListCaptionTracksAsync
         }
         catch (Exception ex)
         {

@@ -27,10 +27,6 @@ internal sealed class DelegationAvailabilityService(
     private const int MinSlotMinutes = 5;
     private const int MaxSlotMinutes = 480;
 
-    /// <summary>The event's local-day boundary (KSA, +03:00) — same convention as the
-    /// speaker/hall availability services for the forum-day bound check.</summary>
-    private static readonly TimeSpan EventOffset = TimeSpan.FromHours(3);
-
     public async Task<AdminDelegationAvailabilityWindow> CreateWindowAsync(
         Guid actorUserId, int countryId,
         CreateDelegationAvailabilityWindowRequest request,

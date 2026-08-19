@@ -88,6 +88,37 @@ public sealed class YoutubeTranscriptServiceTests
         Assert.Equal(502, ex.StatusCode);
     }
 
+    // An admin who presses Fetch subtitle and then navigates away cancels the
+    // request. That is a routine client abort, not the missing-YouTube-egress
+    // outage the catch-all reports, so it must propagate as a cancellation instead
+    // of being logged and returned as a 502 that sends the on-call after a firewall
+    // problem that does not exist.
+    [Fact]
+    public async Task Caller_cancellation_propagates_instead_of_reporting_an_outage()
+    {
+        var service = Build(_ => Json("{}"));
+        using var aborted = new CancellationTokenSource();
+        await aborted.CancelAsync();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => service.FetchAsync(ValidUrl, null, aborted.Token));
+    }
+
+    // The other half of the same guard: the client's own 30-second timeout arrives
+    // as the SAME exception type with the caller's token untouched, and IS a failed
+    // fetch — so it must still funnel to the one bilingual 502.
+    [Fact]
+    public async Task A_client_timeout_still_reports_502()
+    {
+        var service = Build(_ => throw new TaskCanceledException("timed out"));
+
+        var ex = await Assert.ThrowsAsync<ApiException>(
+            () => service.FetchAsync(ValidUrl, null));
+
+        Assert.Equal(ErrorCodes.SubtitleFetchFailed, ex.Code);
+        Assert.Equal(502, ex.StatusCode);
+    }
+
     private sealed class StubHandler(Func<HttpRequestMessage, HttpResponseMessage> responder)
         : HttpMessageHandler
     {

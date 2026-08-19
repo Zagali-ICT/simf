@@ -587,6 +587,88 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
         Assert.Equal(success, active);
     }
 
+    // -- the seat-PICK path shares the serializable count-gate -----------------
+
+    [Fact]
+    public async Task Concurrent_seat_picks_fill_the_session_to_exactly_its_capacity()
+    {
+        // Layout A×5 capped at 2: five visitors race five DIFFERENT free seats, so
+        // the per-seat unique index refuses none of them and only the capacity gate
+        // decides. It is now the same serializable count-then-insert the random and
+        // open-seating paths use, so precisely `cap` succeed. The insert-then-count
+        // backstop it replaces counted AFTER its own commit: each racer's count
+        // included every rival that had already committed, so each saw itself over
+        // the cap, removed its own row and answered 409 — the last places went to
+        // nobody while the seat map still showed them free.
+        const int cap = 2;
+        var (session, _) = await SeedSessionWithLayoutAsync(
+            new[] { "A" }, seatsPerRow: 5, capacityOverride: cap);
+        var visitors = new List<string>();
+        for (var i = 0; i < 5; i++)
+        {
+            visitors.Add(await SignInApprovedVisitorAsync());
+        }
+
+        var responses = await Task.WhenAll(visitors.Select((token, index) =>
+            PostAuthAsync(
+                $"/api/v1/app/sessions/{session.Id}/seats/reserve",
+                new ReserveSeatRequest { RowLabel = "A", SeatNumber = index + 1 },
+                token)));
+
+        var success = responses.Count(r => r.StatusCode == HttpStatusCode.OK);
+        Assert.Equal(cap, success);
+        foreach (var r in responses.Where(r => r.StatusCode != HttpStatusCode.OK))
+        {
+            Assert.Equal(HttpStatusCode.Conflict, r.StatusCode);
+            var body = (await r.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+            Assert.Equal(ErrorCodes.SeatSessionFull, body.Error!.Code);
+        }
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var active = await db.SeatReservations
+            .CountAsync(r => r.SessionId == session.Id && r.ReleasedAt == null);
+        Assert.Equal(cap, active);
+    }
+
+    [Fact]
+    public async Task Concurrent_bookings_for_two_overlapping_sessions_admit_only_one()
+    {
+        // FR-502 — one visitor, two halls whose sessions share the same hour, both
+        // reserved at the same instant (two devices, or a double-tapped client
+        // retry). The overlap guard used to read outside any transaction, so both
+        // requests passed it before either row committed and the visitor came away
+        // holding two seats at the same hour: BOOKING_OVERLAP was unreachable for
+        // exactly the case it exists to stop, and no index could catch it — the only
+        // unique index that could is per session, and these are two sessions. Now
+        // that it is re-checked inside the insert's serializable transaction, the
+        // second booking waits for the first and then sees it.
+        var (sessionA, _) = await SeedSessionWithLayoutAsync(new[] { "A" }, seatsPerRow: 5);
+        var (sessionB, _) = await SeedSessionWithLayoutAsync(new[] { "A" }, seatsPerRow: 5);
+        var visitor = await SignInApprovedVisitorAsync();
+
+        var responses = await Task.WhenAll(
+            new[] { sessionA.Id, sessionB.Id }.Select(sessionId =>
+                PostAuthAsync(
+                    $"/api/v1/app/sessions/{sessionId}/seats/reserve",
+                    new ReserveSeatRequest { RowLabel = "A", SeatNumber = 1 },
+                    visitor)));
+
+        var success = responses.Count(r => r.StatusCode == HttpStatusCode.OK);
+        Assert.Equal(1, success);
+        var refused = responses.Single(r => r.StatusCode != HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.Conflict, refused.StatusCode);
+        var body = (await refused.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.BookingOverlap, body.Error!.Code);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var held = await db.SeatReservations
+            .CountAsync(r => r.ReleasedAt == null
+                && (r.SessionId == sessionA.Id || r.SessionId == sessionB.Id));
+        Assert.Equal(1, held);
+    }
+
     // -- M-4: admin release closes the lifecycle + notifies --------------------
 
     [Fact]
@@ -798,6 +880,102 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
         var rows = await db.HallSeatLayouts.Where(l => l.HallId == hall.Id)
             .Select(l => l.RowLabels).SingleAsync();
         Assert.Equal("A", rows);
+    }
+
+    [Fact]
+    public async Task Layout_change_ignores_the_holds_of_a_session_that_has_ended()
+    {
+        // Nothing stamps ReleasedAt when a session merely finishes, so every
+        // attendee who actually turned up leaves an active hold behind for ever. The
+        // layout guards used to look at EVERY session the hall had ever hosted, so
+        // one finished session made the hall's grid permanently un-editable: next
+        // year's admin could not drop or rename a row without first releasing
+        // hundreds of holds for an event that was over. The guard now stops at
+        // sessions that have not ended — and still blocks while one is live.
+        var (session, hall) = await SeedSessionWithLayoutAsync(
+            new[] { "A", "B" }, seatsPerRow: 5);
+        var visitor = await SignInApprovedVisitorAsync();
+        var pick = await PostAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/seats/reserve",
+            new ReserveSeatRequest { RowLabel = "B", SeatNumber = 4 }, visitor);
+        Assert.Equal(HttpStatusCode.OK, pick.StatusCode);
+
+        var admin = await CreateAdministratorAndSignInAsync();
+        var dropRowB = new SetHallSeatLayoutRequest
+        {
+            RowLabels = new[] { "A" },
+            SeatsPerRow = 5,
+        };
+
+        // While the session is still ahead of us the hold is real and blocks.
+        var blocked = await PutAuthAsync(
+            $"/api/v1/admin/halls/{hall.Id}/seat-layout", dropRowB, admin);
+        Assert.Equal(HttpStatusCode.Conflict, blocked.StatusCode);
+        Assert.Equal(
+            ErrorCodes.SeatLayoutHasReservations,
+            (await blocked.Content.ReadFromJsonAsync<ApiResult<object>>())!.Error!.Code);
+
+        // Move the session wholly into the past, leaving the hold active exactly as
+        // a real finished session does — B4 can never be sat in again.
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            var stored = await db.Sessions.SingleAsync(s => s.Id == session.Id);
+            stored.Start = SimfClock.Now.AddDays(-2);
+            stored.End = SimfClock.Now.AddDays(-2).AddHours(1);
+            await db.SaveChangesAsync();
+        }
+
+        var allowed = await PutAuthAsync(
+            $"/api/v1/admin/halls/{hall.Id}/seat-layout", dropRowB, admin);
+        Assert.Equal(HttpStatusCode.OK, allowed.StatusCode);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            var rows = await db.HallSeatLayouts.Where(l => l.HallId == hall.Id)
+                .Select(l => l.RowLabels).SingleAsync();
+            Assert.Equal("A", rows);
+        }
+    }
+
+    [Fact]
+    public async Task Omitting_seat_tiers_re_aligns_the_stored_tiers_by_row_label()
+    {
+        // Omitted tiers keep what is stored, but they used to be re-aligned by
+        // POSITION: inserting a row ahead of the others slid every tier down one, so
+        // a Normal row came back VVIP and started refusing every visitor with
+        // SEAT_TIER_RESERVED, with nothing in the response to say the tiers had
+        // moved. They now follow the row LABEL; only a label the layout did not
+        // carry before takes the VVIP default.
+        var hall = await SeedHallAsync(capacity: 30);
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        var first = await PutAuthAsync(
+            $"/api/v1/admin/halls/{hall.Id}/seat-layout",
+            new SetHallSeatLayoutRequest
+            {
+                RowLabels = new[] { "A", "B" },
+                SeatsPerRow = 4,
+                SeatTiers = new[] { SeatTier.Normal, SeatTier.Vvip },
+            }, admin);
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+
+        // A new row in FRONT of row A, tiers omitted.
+        var inserted = await PutAuthAsync(
+            $"/api/v1/admin/halls/{hall.Id}/seat-layout",
+            new SetHallSeatLayoutRequest
+            {
+                RowLabels = new[] { "A0", "A", "B" },
+                SeatsPerRow = 4,
+            }, admin);
+        Assert.Equal(HttpStatusCode.OK, inserted.StatusCode);
+        var snapshot = (await inserted.Content
+            .ReadFromJsonAsync<ApiResult<HallSeatLayoutSnapshot>>())!.Data!;
+        // A keeps Normal and B keeps Vvip; only the brand-new A0 defaults to Vvip.
+        Assert.Equal(
+            new[] { SeatTier.Vvip, SeatTier.Normal, SeatTier.Vvip },
+            snapshot.SeatTiers);
     }
 
     // -- D-767: per-row variable seat counts ----------------------------------

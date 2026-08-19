@@ -14,6 +14,27 @@ public interface INotificationDispatcher
     Task DispatchAsync(
         NotificationRequest request,
         CancellationToken cancellationToken = default);
+
+    /// <summary>Dispatches a fan-out — one audience, one batch.
+    ///
+    /// <para>Same result as looping <see cref="DispatchAsync"/>, which is exactly
+    /// what the default here does, so a test double or an alternative dispatcher
+    /// needs no change. The real dispatcher overrides it to resolve the dedup set
+    /// in one query per (kind, entity) instead of one per recipient, and to hand
+    /// each channel the whole batch so the in-app writes collapse into one
+    /// round-trip.</para>
+    ///
+    /// <para>A batch is all-or-nothing: a caller that reports per-recipient
+    /// outcomes must keep its own isolation around this call.</para></summary>
+    async Task DispatchManyAsync(
+        IReadOnlyList<NotificationRequest> requests,
+        CancellationToken cancellationToken = default)
+    {
+        foreach (var request in requests)
+        {
+            await DispatchAsync(request, cancellationToken);
+        }
+    }
 }
 
 /// <summary>

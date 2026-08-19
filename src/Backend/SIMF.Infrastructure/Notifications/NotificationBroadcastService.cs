@@ -48,7 +48,7 @@ internal sealed class NotificationBroadcastService(
     // the worker (and every later broadcast) indefinitely.
     private static readonly TimeSpan MaxPacingWait = TimeSpan.FromMinutes(2);
     // A Processing row older than this was interrupted (a crash/restart mid-send);
-    // the worker's startup reconciliation marks it Failed so it is not stuck forever.
+    // the worker's per-tick reconciliation marks it Failed so it is not stuck forever.
     private static readonly TimeSpan StalledProcessingAge = TimeSpan.FromMinutes(15);
 
     public async Task<AdminBroadcastResult> CreateAsync(
@@ -239,7 +239,10 @@ internal sealed class NotificationBroadcastService(
         // A Processing row whose StartedAt is older than the cutoff was interrupted
         // (a crash/restart mid-send) — it is never re-picked (only Pending is), so
         // mark it Failed so it surfaces in history instead of sitting Processing
-        // forever. ExecuteUpdate — no row is loaded or tracked.
+        // forever. ExecuteUpdate — no row is loaded or tracked. Called every poll,
+        // so the cutoff is the only thing separating "interrupted" from "still
+        // running"; the caller drains sequentially, so this process cannot sweep
+        // its own in-flight fan-out.
         var now = timeProvider.SimfNow();
         var cutoff = now - StalledProcessingAge;
         return await appDbContext.NotificationBroadcasts
@@ -309,40 +312,53 @@ internal sealed class NotificationBroadcastService(
             }
 
             var count = Math.Min(DispatchBatchSize, recipientIds.Count - offset);
+            var batch = new List<NotificationRequest>(count);
             foreach (var userId in recipientIds.GetRange(offset, count))
             {
                 var hasEmail = emailsByUser.TryGetValue(userId, out var email)
                     && !string.IsNullOrWhiteSpace(email);
-                try
+                batch.Add(new NotificationRequest
                 {
-                    await notificationDispatcher.DispatchAsync(new NotificationRequest
-                    {
-                        UserId = userId,
-                        Kind = NotificationKind.AdminAnnouncement,
-                        Title = broadcast.Title,
-                        TitleArabic = broadcast.TitleArabic,
-                        Body = broadcast.Body,
-                        BodyArabic = broadcast.BodyArabic,
-                        Severity = broadcast.Severity,
-                        RelatedEntityType = relatedType,
-                        RelatedEntityId = relatedId,
-                        Group = group,
-                        SendEmail = hasEmail,
-                        PreRenderedEmailHtml = hasEmail ? emailHtml : null,
-                    }, cancellationToken);
-                    dispatched++;
-                    if (hasEmail)
-                    {
-                        emailsEnqueued++;
-                    }
-                }
-                catch (Exception ex) when (ex is not OperationCanceledException)
-                {
-                    skipped++;
-                    logger.LogError(ex,
-                        "Broadcast {BroadcastId} dispatch failed for user {UserId}.",
-                        broadcast.Id, userId);
-                }
+                    UserId = userId,
+                    Kind = NotificationKind.AdminAnnouncement,
+                    Title = broadcast.Title,
+                    TitleArabic = broadcast.TitleArabic,
+                    Body = broadcast.Body,
+                    BodyArabic = broadcast.BodyArabic,
+                    Severity = broadcast.Severity,
+                    RelatedEntityType = relatedType,
+                    RelatedEntityId = relatedId,
+                    Group = group,
+                    SendEmail = hasEmail,
+                    PreRenderedEmailHtml = hasEmail ? emailHtml : null,
+                });
+            }
+
+            // One round-trip for the batch's in-app rows instead of one per
+            // recipient: a 20,000-strong "Everyone" send was 20,000 sequential
+            // INSERT + SaveChanges calls, roughly 40 seconds of pure latency during
+            // which this worker — and therefore every later broadcast — was blocked.
+            try
+            {
+                await notificationDispatcher.DispatchManyAsync(batch, cancellationToken);
+                dispatched += batch.Count;
+                emailsEnqueued += batch.Count(request => request.SendEmail);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                // The batch write is all-or-nothing, so one bad recipient would cost
+                // the other 99 their announcement. Fall back to the per-recipient
+                // path for this batch only, which reports exactly what it used to:
+                // the bad row lands in Skipped and the rest still go out.
+                logger.LogWarning(ex,
+                    "Broadcast {BroadcastId}: batched dispatch failed for {Count} recipient(s); "
+                    + "retrying them one at a time.",
+                    broadcast.Id, batch.Count);
+                var (batchDispatched, batchEmails, batchSkipped) =
+                    await DispatchOneAtATimeAsync(broadcast.Id, batch, cancellationToken);
+                dispatched += batchDispatched;
+                emailsEnqueued += batchEmails;
+                skipped += batchSkipped;
             }
 
             // Keep the shared Identity change-tracker from growing across the whole
@@ -355,6 +371,42 @@ internal sealed class NotificationBroadcastService(
         broadcast.Dispatched = dispatched;
         broadcast.EmailsEnqueued = emailsEnqueued;
         broadcast.Skipped = skipped;
+    }
+
+    /// <summary>The fallback when a batched dispatch fails: send the batch one
+    /// recipient at a time so a single bad row costs only itself. Returns the
+    /// dispatched / emails-enqueued / skipped counts for the batch.</summary>
+    private async Task<(int Dispatched, int EmailsEnqueued, int Skipped)>
+        DispatchOneAtATimeAsync(
+            Guid broadcastId,
+            IReadOnlyList<NotificationRequest> batch,
+            CancellationToken cancellationToken)
+    {
+        var dispatched = 0;
+        var emailsEnqueued = 0;
+        var skipped = 0;
+
+        foreach (var request in batch)
+        {
+            try
+            {
+                await notificationDispatcher.DispatchAsync(request, cancellationToken);
+                dispatched++;
+                if (request.SendEmail)
+                {
+                    emailsEnqueued++;
+                }
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                skipped++;
+                logger.LogError(ex,
+                    "Broadcast {BroadcastId} dispatch failed for user {UserId}.",
+                    broadcastId, request.UserId);
+            }
+        }
+
+        return (dispatched, emailsEnqueued, skipped);
     }
 
     // Builds the distinct recipient-user-id query for a target — a single-context

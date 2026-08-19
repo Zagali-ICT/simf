@@ -144,6 +144,21 @@ internal sealed class HallAvailabilityService(
             .ToListAsync(cancellationToken);
         busy.AddRange(delegationBusy);
 
+        // A WHOLE-hall allocation for a non-meeting purpose (a ceremony, a session)
+        // reserves the hall as a unit, so nothing may be booked into it over that
+        // window. BusinessMeetingService already refuses a table in a hall reserved
+        // this way; the speaker and delegation binds both take their answer from this
+        // one availability authority, so subtracting it here is what gives all three
+        // the same guard instead of each re-implementing it.
+        var allocationBusy = await appDbContext.HallAllocations.AsNoTracking()
+            .Where(allocation => allocation.HallId == hallId
+                && allocation.ReleasedAt == null
+                && allocation.Mode == HallAllocationMode.Whole
+                && allocation.Purpose != HallPurpose.Meeting)
+            .Select(allocation => new { allocation.Start, allocation.End })
+            .ToListAsync(cancellationToken);
+        busy.AddRange(allocationBusy);
+
         var slots = new List<HallAvailableSlot>();
         foreach (var w in windows)
         {

@@ -114,7 +114,87 @@ public sealed class SessionReminderWorkerTests : IClassFixture<SimfApiFactory>
             "ReminderSentAt must be committed before dispatch so a restart cannot resend.");
     }
 
+    [Fact]
+    public async Task Scan_skips_a_session_a_rival_instance_claimed_after_this_scan_loaded_it()
+    {
+        // The dedup stamp used to be a tracked read-then-write with no WHERE guard:
+        // two instances polling at once both read ReminderSentAt as null, both
+        // stamped, and both dispatched the whole attendee batch. The claim is now a
+        // conditional UPDATE, so the loser must find 0 rows and send nothing.
+        var now = SimfClock.Now;
+        // Five minutes BEFORE now, so a losing overwrite (which stamps `now`) is
+        // distinguishable from the rival's claim without comparing exact ticks.
+        var stolenAt = now.AddMinutes(-5);
+        var visitorId = await SeedVisitorAsync();
+        var firstId = await SeedSessionWithSeatAsync(now.AddMinutes(10), visitorId);
+        var secondId = await SeedSessionWithSeatAsync(now.AddMinutes(11), visitorId);
+
+        var probe = new ClaimStealingDispatcher(_factory, [firstId, secondId], stolenAt);
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            await SessionReminderWorker.RunReminderScanAsync(
+                db, probe, now, SessionReminderWorker.ReminderLeadTime,
+                NullLogger.Instance, CancellationToken.None);
+        }
+
+        Assert.NotNull(probe.DispatchedSessionId);
+        // Whichever of the pair the scan reached first, the other was stolen.
+        var skippedId = probe.DispatchedSessionId == firstId ? secondId : firstId;
+
+        using var verify = _factory.Services.CreateScope();
+        var appDb = verify.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var idDb = verify.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+
+        var skipped = await appDb.Sessions.AsNoTracking()
+            .SingleAsync(s => s.Id == skippedId);
+        Assert.True(
+            skipped.ReminderSentAt < now,
+            "The rival claim must stand: the losing scan may not overwrite the stamp.");
+        Assert.False(
+            await idDb.Notifications.AnyAsync(n =>
+                n.Kind == NotificationKind.SessionReminder
+                && n.RelatedEntityId == skippedId),
+            "A session claimed by another instance must not be dispatched here.");
+    }
+
     // -- Helpers ---------------------------------------------------------------
+
+    /// <summary>Stands in for a second worker instance racing this one. On the first
+    /// dispatch it stamps every OTHER session in the pair from a separate committed
+    /// context — exactly what a rival's claim looks like to a scan that is still
+    /// walking the list it loaded a moment earlier.</summary>
+    private sealed class ClaimStealingDispatcher(
+        SimfApiFactory factory, IReadOnlyList<Guid> pair, DateTime stolenAt)
+        : INotificationDispatcher
+    {
+        public Guid? DispatchedSessionId { get; private set; }
+
+        public async Task DispatchAsync(
+            NotificationRequest request, CancellationToken cancellationToken = default)
+        {
+            if (DispatchedSessionId is not null)
+            {
+                return;
+            }
+            DispatchedSessionId = request.RelatedEntityId!.Value;
+
+            using var scope = factory.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            foreach (var sessionId in pair)
+            {
+                if (sessionId == DispatchedSessionId)
+                {
+                    continue;
+                }
+                await db.Sessions
+                    .Where(s => s.Id == sessionId)
+                    .ExecuteUpdateAsync(
+                        setters => setters.SetProperty(s => s.ReminderSentAt, stolenAt),
+                        cancellationToken);
+            }
+        }
+    }
 
     /// <summary>A dispatcher that, on the first notification, reads the session it
     /// is FOR (via <see cref="NotificationRequest.RelatedEntityId"/>) from a fresh

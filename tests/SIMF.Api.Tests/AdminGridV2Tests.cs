@@ -255,6 +255,50 @@ public sealed class AdminGridV2Tests : IClassFixture<SimfApiFactory>
         Assert.Contains("Export B", displayNames);
     }
 
+    [Fact]
+    public async Task Export_ignores_a_smuggled_non_admin_id()
+    {
+        var (adminToken, _) = await CreateAdminAsync();
+        var admin = await CreateRegularUserAsync(adminToken, displayName: "Export Admin Row");
+
+        // A Visitor id posted to the Admin-family export. The route is gated on
+        // Admins.Export alone, so a caller who can only read the Visitors grid
+        // must not be able to pull visitor rows out through this workbook.
+        var visitorEmail = $"smuggled-{Guid.NewGuid():N}@simf.test";
+        var visitorResponse = await PostAuthAsync(
+            "/api/v1/admin/visitors",
+            new AdminCreateVisitorRequest
+            {
+                Email = visitorEmail,
+                DisplayName = "Smuggled Visitor",
+            },
+            adminToken);
+        Assert.Equal(HttpStatusCode.OK, visitorResponse.StatusCode);
+        var visitorBody = (await visitorResponse.Content
+            .ReadFromJsonAsync<ApiResult<AdminCreateUserResponse>>())!;
+        var visitorId = visitorBody.Data!.UserId;
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/admin/admins/export")
+        {
+            Content = JsonContent.Create(
+                new AdminExportUsersRequest { Ids = new List<Guid> { admin, visitorId } }),
+        };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+        using var response = await _client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var bytes = await response.Content.ReadAsByteArrayAsync();
+        using var workbook = new XLWorkbook(new MemoryStream(bytes));
+        var sheet = workbook.Worksheet("Users");
+
+        var emails = sheet.RowsUsed()
+            .Skip(1)
+            .Select(row => row.Cell(1).GetString())
+            .ToList();
+        Assert.Single(emails);
+        Assert.DoesNotContain(visitorEmail, emails);
+    }
+
     // -- Import (XLSX) ---------------------------------------------------------
 
     [Fact]

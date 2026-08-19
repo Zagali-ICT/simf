@@ -482,63 +482,29 @@ internal sealed class AdminGateService(
     /// <summary>Turns an already-filtered, already-ordered, already-bounded scan
     /// query into report rows. Shared by the grid and the Excel export so the two
     /// cannot render the same scan differently; each caller decides its own bound
-    /// first (a page window, or <see cref="ScanExportRowCap"/>), because neither the
-    /// join nor the name resolution may run over an unbounded set.</summary>
+    /// first (a page window, or <see cref="ScanExportRowCap"/>), because the join may
+    /// not run over an unbounded set.</summary>
     private async Task<IReadOnlyList<AdminGateScanRow>> BuildScanRowsAsync(
         IQueryable<GateScan> scans, CancellationToken cancellationToken)
     {
-        var scansWithGateCode = await scans
+        // The visitor name is the scan row's OWN immutable snapshot, written at scan
+        // time. It used to be resolved profile-then-Identity out of
+        // SimfUser.DisplayName, which resolves to nothing for a holder with no account
+        // — the ordinary badge holder — so the Visitor column and its Excel export
+        // went blank for exactly the people the walk-in desk mints badges for, while
+        // the correct name sat unread on the row. Reading it here also drops two
+        // cross-database round trips per page and lets the whole row be a projection
+        // rather than a materialised nineteen-column entity.
+        return await scans
             .Join(appDbContext.Gates.AsNoTracking(),
                 scan => scan.GateId, gate => gate.Id,
-                (scan, gate) => new { Scan = scan, GateCode = gate.Code })
+                (scan, gate) => new AdminGateScanRow(
+                    scan.Id, scan.GateId, gate.Code,
+                    scan.UserProfileId, scan.ScannedDisplayName,
+                    scan.QrIdAtScan, scan.Direction, scan.Outcome,
+                    scan.DenialReasonCode, scan.ScannedAt,
+                    scan.ScannedByUserId, scan.Source))
             .ToListAsync(cancellationToken);
-
-        // UserProfile + SimfUser live in different DbContexts, so
-        // resolving the display name is two round-trips — profile rows
-        // first (App), then matching user rows (Identity), merge by id.
-        var profileIds = scansWithGateCode
-            .Where(entry => entry.Scan.UserProfileId != null)
-            .Select(entry => entry.Scan.UserProfileId!.Value)
-            .Distinct()
-            .ToList();
-        Dictionary<Guid, string> displayNames;
-        if (profileIds.Count == 0)
-        {
-            displayNames = new Dictionary<Guid, string>();
-        }
-        else
-        {
-            var profileUsers = await appDbContext.UserProfiles.AsNoTracking()
-                .Where(profile => profileIds.Contains(profile.Id))
-                .Select(profile => new { profile.Id, profile.UserId })
-                .ToListAsync(cancellationToken);
-            // Only the accounts are looked up, but EVERY scanned profile stays in the
-            // map: an attendee with no account has no name to fetch, and dropping
-            // them here would erase their scans from this report and its export.
-            var userIds = profileUsers
-                .Where(profileUser => profileUser.UserId != null)
-                .Select(profileUser => profileUser.UserId!.Value)
-                .Distinct()
-                .ToList();
-            var userNamesByUserId = await userDirectory.GetDisplayNamesAsync(
-                userIds, cancellationToken);
-            displayNames = profileUsers.ToDictionary(
-                profileUser => profileUser.Id,
-                profileUser => profileUser.UserId is { } userId
-                    && userNamesByUserId.TryGetValue(userId, out var name)
-                        ? name : string.Empty);
-        }
-
-        return scansWithGateCode.Select(entry => new AdminGateScanRow(
-                entry.Scan.Id, entry.Scan.GateId, entry.GateCode,
-                entry.Scan.UserProfileId,
-                entry.Scan.UserProfileId is { } profileId
-                    && displayNames.TryGetValue(profileId, out var name)
-                        ? name : null,
-                entry.Scan.QrIdAtScan, entry.Scan.Direction, entry.Scan.Outcome,
-                entry.Scan.DenialReasonCode, entry.Scan.ScannedAt,
-                entry.Scan.ScannedByUserId, entry.Scan.Source))
-            .ToList();
     }
 
     public async Task<GridPage<AdminCurrentlyInsideRow>> ListCurrentlyInsideAsync(
@@ -629,6 +595,7 @@ internal sealed class AdminGateService(
             {
                 profile.Id,
                 profile.UserId,
+                profile.Name,
                 profile.NameArabic,
                 profile.ProfileTypeId,
                 profile.ProfileType,
@@ -637,7 +604,11 @@ internal sealed class AdminGateService(
         // Only the accounts are looked up, but EVERY profile stays in the map: an
         // attendee with no account has no display name to fetch, and dropping them
         // would take them off the occupancy roster while they are still inside. Their
-        // Arabic name and profile type come from the profile row either way.
+        // Arabic name and profile type come from the profile row either way — and so
+        // does the English one when there is no account, which is the ordinary badge
+        // holder. Falling straight through to empty listed them nameless; the profile
+        // name is what the badge is printed from, which is the same order of
+        // preference the QR resolver applies at the door.
         var profileAccountUserIds = profileRows
             .Where(profileRow => profileRow.UserId != null)
             .Select(profileRow => profileRow.UserId!.Value)
@@ -656,7 +627,7 @@ internal sealed class AdminGateService(
                     scan.UserProfileId,
                     profile.UserId is { } userId
                         && profileUserDisplayNames.TryGetValue(userId, out var name)
-                            ? name : string.Empty,
+                            ? name : profile.Name,
                     profile.NameArabic,
                     profile.ProfileTypeId,
                     profile.ProfileType?.Name,
