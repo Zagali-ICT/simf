@@ -53,7 +53,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("DescriptionArabic")
                         .HasMaxLength(1024)
-                        .HasColumnType("nvarchar(1024)");
+                        .HasColumnType("nvarchar(1024)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<int>("DirectionMode")
                         .HasColumnType("int");
@@ -72,7 +73,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("NameArabic")
                         .IsRequired()
                         .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(128)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -295,8 +297,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("Content")
                         .IsRequired()
-                        .HasMaxLength(4000)
-                        .HasColumnType("nvarchar(4000)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -404,7 +405,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("DescriptionArabic")
                         .HasMaxLength(512)
-                        .HasColumnType("nvarchar(512)");
+                        .HasColumnType("nvarchar(512)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("DisplayName")
                         .IsRequired()
@@ -414,7 +416,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("DisplayNameArabic")
                         .IsRequired()
                         .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(128)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<int>("Feature")
                         .HasColumnType("int");
@@ -889,7 +892,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("NameArabic")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("nvarchar(200)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("RecipientEmail")
                         .HasMaxLength(256)
@@ -1571,7 +1575,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("BodyArabic")
                         .IsRequired()
                         .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
+                        .HasColumnType("nvarchar(2000)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -1609,7 +1614,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("TitleArabic")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(256)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -1643,7 +1649,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("ContentArabic")
                         .IsRequired()
                         .HasMaxLength(8000)
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(max)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -1711,7 +1718,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("NameArabic")
                         .IsRequired()
                         .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(128)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("PhonePrefix")
                         .HasMaxLength(8)
@@ -2679,7 +2687,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("DescriptionArabic")
                         .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
+                        .HasColumnType("nvarchar(2048)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<Guid?>("ExhibitorId")
                         .HasColumnType("uniqueidentifier");
@@ -2690,7 +2699,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("ExhibitorNameArabic")
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(256)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<Guid?>("HallId")
                         .HasColumnType("uniqueidentifier");
@@ -2715,7 +2725,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("NameArabic")
                         .IsRequired()
                         .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(128)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("OfficerCity")
                         .HasMaxLength(128)
@@ -2723,7 +2734,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("OfficerCityArabic")
                         .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(128)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<int?>("OfficerCountryId")
                         .HasColumnType("int");
@@ -2756,7 +2768,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("OfficerNameArabic")
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(256)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("OfficerPhone")
                         .HasMaxLength(32)
@@ -2780,7 +2793,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("SectorArabic")
                         .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(128)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -2821,7 +2835,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("CityArabic")
                         .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(128)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("ContactEmail")
                         .HasMaxLength(320)
@@ -2875,7 +2890,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("NameArabic")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(256)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("PhoneSecondary")
                         .HasMaxLength(32)
@@ -3026,7 +3042,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("AnswerArabic")
                         .IsRequired()
                         .HasMaxLength(4000)
-                        .HasColumnType("nvarchar(4000)");
+                        .HasColumnType("nvarchar(4000)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -3054,7 +3071,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("QuestionArabic")
                         .IsRequired()
                         .HasMaxLength(512)
-                        .HasColumnType("nvarchar(512)");
+                        .HasColumnType("nvarchar(512)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -3098,7 +3116,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("NameArabic")
                         .IsRequired()
                         .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(128)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -3179,7 +3198,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("TextArabic")
                         .IsRequired()
                         .HasMaxLength(512)
-                        .HasColumnType("nvarchar(512)");
+                        .HasColumnType("nvarchar(512)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -3225,7 +3245,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("NameArabic")
                         .IsRequired()
                         .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(128)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<Guid>("RatingTypeId")
                         .HasColumnType("uniqueidentifier");
@@ -3318,7 +3339,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("CommentLabelArabic")
                         .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(128)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -3349,7 +3371,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("NameArabic")
                         .IsRequired()
                         .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(128)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<int>("Scope")
                         .HasColumnType("int");
@@ -3470,6 +3493,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("Service", "IsActive");
 
+                    b.HasIndex("Service", "OwnerEntityId")
+                        .IsUnique()
+                        .HasFilter("[IsActive] = 1 AND [OwnerEntityId] IS NOT NULL AND [Service] IN (0, 4, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17, 23, 24)");
+
                     b.ToTable("StoredFiles", null, t =>
                         {
                             t.HasCheckConstraint("CK_StoredFiles_SizeBytes", "[SizeBytes] IS NULL OR [SizeBytes] > 0");
@@ -3488,7 +3515,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("AlbumArabic")
                         .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("nvarchar(200)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -3517,7 +3545,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("TitleArabic")
                         .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("nvarchar(200)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -3617,7 +3646,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("BodyArabic")
                         .IsRequired()
                         .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
+                        .HasColumnType("nvarchar(2000)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime?>("CompletedAt")
                         .HasColumnType("datetime2");
@@ -3670,7 +3700,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("TitleArabic")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("nvarchar(200)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<int>("TotalRecipients")
                         .HasColumnType("int");
@@ -3781,7 +3812,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("NameArabic")
                         .IsRequired()
                         .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
+                        .HasColumnType("nvarchar(150)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("Phone")
                         .HasMaxLength(32)
@@ -3844,7 +3876,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("TextArabic")
                         .IsRequired()
                         .HasMaxLength(4000)
-                        .HasColumnType("nvarchar(4000)");
+                        .HasColumnType("nvarchar(4000)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -3854,7 +3887,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("TitleArabic")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(256)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -3898,7 +3932,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("NameArabic")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(256)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<Guid>("OrganizationProfileId")
                         .HasColumnType("uniqueidentifier");
@@ -3916,7 +3951,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("ValueArabic")
                         .HasMaxLength(1024)
-                        .HasColumnType("nvarchar(1024)");
+                        .HasColumnType("nvarchar(1024)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.HasKey("Id");
 
@@ -3940,7 +3976,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("BioArabic")
                         .HasMaxLength(4000)
-                        .HasColumnType("nvarchar(4000)");
+                        .HasColumnType("nvarchar(4000)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("ContactEmail")
                         .HasMaxLength(256)
@@ -3997,7 +4034,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("LocationTextArabic")
                         .HasMaxLength(512)
-                        .HasColumnType("nvarchar(512)");
+                        .HasColumnType("nvarchar(512)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<Guid?>("LogoFileId")
                         .HasColumnType("uniqueidentifier");
@@ -4014,7 +4052,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("NameArabic")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(256)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<bool>("PartnerDirectoryEnabled")
                         .ValueGeneratedOnAdd()
@@ -4027,7 +4066,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("RegistrationSuccessMessageArabic")
                         .HasMaxLength(1024)
-                        .HasColumnType("nvarchar(1024)");
+                        .HasColumnType("nvarchar(1024)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("Slogan")
                         .HasMaxLength(512)
@@ -4035,7 +4075,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("SloganArabic")
                         .HasMaxLength(512)
-                        .HasColumnType("nvarchar(512)");
+                        .HasColumnType("nvarchar(512)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("SnapchatUrl")
                         .HasMaxLength(1024)
@@ -4060,7 +4101,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("TitleArabic")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(256)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -4201,7 +4243,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("NameArabic")
                         .IsRequired()
                         .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(128)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -4299,7 +4342,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("HonorificArabic")
                         .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
+                        .HasColumnType("nvarchar(64)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<Guid?>("IdImageFileId")
                         .HasColumnType("uniqueidentifier");
@@ -4323,7 +4367,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("JobTitleArabic")
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("nvarchar(100)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("MawjId")
                         .HasMaxLength(64)
@@ -4341,7 +4386,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("NameArabic")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("nvarchar(50)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<int>("NationalityId")
                         .HasColumnType("int");
@@ -4382,7 +4428,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("RejectionReasonArabic")
                         .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("nvarchar(500)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("SaudiMobile")
                         .HasMaxLength(256)
@@ -4500,7 +4547,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("NameArabic")
                         .IsRequired()
                         .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(128)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("PageColor")
                         .IsRequired()
@@ -4629,7 +4677,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("NameArabic")
                         .IsRequired()
                         .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(128)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<int>("Purpose")
                         .HasColumnType("int");
@@ -4741,7 +4790,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("TitleArabic")
                         .IsRequired()
                         .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(128)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -4797,7 +4847,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("DescriptionArabic")
                         .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
+                        .HasColumnType("nvarchar(2048)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime>("End")
                         .HasColumnType("datetime2");
@@ -4814,7 +4865,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("LanguageArabic")
                         .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
+                        .HasColumnType("nvarchar(64)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("LiveCaptions")
                         .HasMaxLength(2048)
@@ -4822,7 +4874,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("LiveCaptionsArabic")
                         .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
+                        .HasColumnType("nvarchar(2048)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("LiveNotice")
                         .HasMaxLength(512)
@@ -4830,7 +4883,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("LiveNoticeArabic")
                         .HasMaxLength(512)
-                        .HasColumnType("nvarchar(512)");
+                        .HasColumnType("nvarchar(512)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<Guid?>("LiveSignLanguageFileId")
                         .HasColumnType("uniqueidentifier");
@@ -4867,7 +4921,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("TitleArabic")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(256)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<int?>("Type")
                         .HasColumnType("int");
@@ -4940,7 +4995,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("NameArabic")
                         .IsRequired()
                         .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(128)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -5016,7 +5072,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("TextArabic")
                         .IsRequired()
                         .HasMaxLength(512)
-                        .HasColumnType("nvarchar(512)");
+                        .HasColumnType("nvarchar(512)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -5060,7 +5117,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("AiDraftFullTextArabic")
                         .HasMaxLength(8000)
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(max)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime?>("AiDraftGeneratedAt")
                         .HasColumnType("datetime2");
@@ -5086,7 +5144,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("FullTextArabic")
                         .IsRequired()
                         .HasMaxLength(8000)
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(max)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -5099,7 +5158,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("KeyPointsArabic")
                         .IsRequired()
                         .HasMaxLength(4000)
-                        .HasColumnType("nvarchar(4000)");
+                        .HasColumnType("nvarchar(4000)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime?>("PublishedAt")
                         .HasColumnType("datetime2");
@@ -5115,7 +5175,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("RecommendationsArabic")
                         .IsRequired()
                         .HasMaxLength(4000)
-                        .HasColumnType("nvarchar(4000)");
+                        .HasColumnType("nvarchar(4000)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime?>("ReviewSubmittedAt")
                         .HasColumnType("datetime2");
@@ -5134,7 +5195,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("SpeakersArabic")
                         .IsRequired()
                         .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
+                        .HasColumnType("nvarchar(1000)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<Guid?>("SummaryVideoFileId")
                         .HasColumnType("uniqueidentifier");
@@ -5193,7 +5255,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("AwardsArabic")
                         .HasMaxLength(1024)
-                        .HasColumnType("nvarchar(1024)");
+                        .HasColumnType("nvarchar(1024)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("Bio")
                         .HasMaxLength(2048)
@@ -5201,7 +5264,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("BioArabic")
                         .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
+                        .HasColumnType("nvarchar(2048)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("City")
                         .HasMaxLength(128)
@@ -5209,7 +5273,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("CityArabic")
                         .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(128)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("Code")
                         .IsRequired()
@@ -5264,7 +5329,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("NameArabic")
                         .IsRequired()
                         .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(128)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("PhonePrimary")
                         .HasMaxLength(32)
@@ -5283,7 +5349,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("QualificationsArabic")
                         .HasMaxLength(1024)
-                        .HasColumnType("nvarchar(1024)");
+                        .HasColumnType("nvarchar(1024)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("Rank")
                         .HasMaxLength(256)
@@ -5291,7 +5358,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("RankArabic")
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(256)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("TrainingExperience")
                         .HasMaxLength(1024)
@@ -5299,7 +5367,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("TrainingExperienceArabic")
                         .HasMaxLength(1024)
-                        .HasColumnType("nvarchar(1024)");
+                        .HasColumnType("nvarchar(1024)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -5411,7 +5480,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("DescriptionArabic")
                         .HasMaxLength(1024)
-                        .HasColumnType("nvarchar(1024)");
+                        .HasColumnType("nvarchar(1024)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("int");
@@ -5427,7 +5497,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("NameArabic")
                         .IsRequired()
                         .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(128)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("PageColor")
                         .IsRequired()
@@ -5519,7 +5590,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("CityArabic")
                         .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(128)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<int?>("CountryId")
                         .HasColumnType("int");
@@ -5572,7 +5644,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("NameArabic")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(256)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("PhonePrimary")
                         .HasMaxLength(32)
@@ -5627,7 +5700,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("BodyArabic")
                         .IsRequired()
                         .HasMaxLength(8000)
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(max)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("Category")
                         .IsRequired()
@@ -5637,7 +5711,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("CategoryArabic")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("nvarchar(100)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -5657,7 +5732,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("ExcerptArabic")
                         .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("nvarchar(500)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<Guid?>("ImageFileId")
                         .HasColumnType("uniqueidentifier");
@@ -5676,7 +5752,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("TitleArabic")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("nvarchar(200)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -5723,7 +5800,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("NameArabic")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(256)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<int>("SortOrder")
                         .HasColumnType("int");
@@ -5892,7 +5970,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("GuestHintArabic")
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(256)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<int>("Kind")
                         .HasColumnType("int");
@@ -6057,7 +6136,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("AboutArabic")
                         .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
+                        .HasColumnType("nvarchar(2048)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("City")
                         .HasMaxLength(128)
@@ -6065,7 +6145,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("CityArabic")
                         .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(128)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<int?>("CountryId")
                         .HasColumnType("int");
@@ -6118,7 +6199,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("NameArabic")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(256)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("PhonePrimary")
                         .HasMaxLength(32)
@@ -6134,7 +6216,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("TaglineArabic")
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(256)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<int>("Tier")
                         .HasColumnType("int");
@@ -6267,7 +6350,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("LabelArabic")
                         .IsRequired()
                         .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(128)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");

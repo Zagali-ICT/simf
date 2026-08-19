@@ -3301,6 +3301,11 @@
   <data name="Admin.Exhibitors.Link.Done" xml:space="preserve"><value>Account linked to this exhibitor.</value></data>
   <data name="Admin.Exhibitors.Link.Required" xml:space="preserve"><value>The account email is required.</value></data>
   <data name="Admin.Exhibitors.Link.Failed" xml:space="preserve"><value>Could not link the account. Please try again.</value></data>
+  <data name="Admin.Exhibitors.Revoke.Action" xml:space="preserve"><value>Revoke</value></data>
+  <data name="Admin.Exhibitors.Revoke.ConfirmTitle" xml:space="preserve"><value>Revoke this account?</value></data>
+  <data name="Admin.Exhibitors.Revoke.ConfirmBody" xml:space="preserve"><value>This removes the account's access to the booth's badge scanner and to the visitor contact cards it has collected. The account itself is not deleted and can be linked again later.</value></data>
+  <data name="Admin.Exhibitors.Revoke.Done" xml:space="preserve"><value>Account revoked from this exhibitor.</value></data>
+  <data name="Admin.Exhibitors.Revoke.Failed" xml:space="preserve"><value>Could not revoke the account. Please try again.</value></data>
 
   <!-- Gates operations dashboard (read-only live overview). -->
   <data name="Module.GatesDashboard" xml:space="preserve"><value>Gates dashboard</value></data>

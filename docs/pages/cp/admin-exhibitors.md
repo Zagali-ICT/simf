@@ -7,7 +7,7 @@
 | **Auth** | `@attribute [RequirePermission(PermissionCatalog.Exhibitors.View)]` (page) + `RequireApprovedAccount` + `RequireRateLimiting("auth")` (mutations) |
 | **Pattern** | D-202 Track-2 CP CRUD + per-exhibitor account provisioning; D-353 CrudShell framing; D-356 Excel export/import. |
 | **Status** | ✅ Real (D-202; D-353 toggle + CrudShell; D-356 Excel) |
-| **Backend endpoints** | `POST /account/api/admin/exhibitors/list`, `GET /account/api/admin/exhibitors/{id}`, `POST /account/api/admin/exhibitors`, `PUT /account/api/admin/exhibitors/{id}`, `DELETE /account/api/admin/exhibitors/{id}`, `GET /account/api/admin/exhibitors/{id}/accounts`, `POST /account/api/admin/exhibitors/{id}/accounts`, `POST /account/api/admin/exhibitors/{id}/accounts/link` (D-781), `POST /account/api/admin/exhibitors/export`, `POST /account/api/admin/exhibitors/import` (BFF → API `/api/v1/admin/exhibitors/*`) |
+| **Backend endpoints** | `POST /account/api/admin/exhibitors/list`, `GET /account/api/admin/exhibitors/{id}`, `POST /account/api/admin/exhibitors`, `PUT /account/api/admin/exhibitors/{id}`, `DELETE /account/api/admin/exhibitors/{id}`, `GET /account/api/admin/exhibitors/{id}/accounts`, `POST /account/api/admin/exhibitors/{id}/accounts`, `POST /account/api/admin/exhibitors/{id}/accounts/link` (D-781), `DELETE /api/v1/admin/exhibitors/{id}/accounts/{membershipId}` (revoke a booth membership; the API route is live, its BFF `/account/api/...` forward is still to be added), `POST /account/api/admin/exhibitors/export`, `POST /account/api/admin/exhibitors/import` (BFF → API `/api/v1/admin/exhibitors/*`) |
 | **Source** | [`ExhibitorsList.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/ExhibitorsList.razor), [`ExhibitorsAddEdit.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/ExhibitorsAddEdit.razor), [`ExhibitorsViewDelete.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/ExhibitorsViewDelete.razor), [`ExhibitorEndpoints`](../../../src/Backend/SIMF.Api/Endpoints/Exhibitors/ExhibitorEndpoints.cs), [`ExhibitorsExcelEndpoints`](../../../src/Backend/SIMF.Api/Endpoints/Admin/ExhibitorsExcelEndpoints.cs), [`AdminExhibitorService`](../../../src/Backend/SIMF.Infrastructure/Exhibitors/AdminExhibitorService.cs), [`Exhibitor`](../../../src/Backend/SIMF.Domain/Exhibitors/Exhibitor.cs) |
 | **Backed by** | `dbo.Exhibitors` + `dbo.ExhibitorMemberships` (D-199/D-202 migration `D202_CompaniesAndProvisioning`; renamed in `D274_AuditFoldAndExhibitorRename`). |
 | **Tests** | [`docs/tests/e2e/cp-admin-exhibitors.md`](../../tests/e2e/cp-admin-exhibitors.md) · `tests/SIMF.Api.Tests/ExhibitorsTests.cs` · `tests/SIMF.Api.Tests/ExhibitorsExcelTests.cs` |
@@ -163,6 +163,30 @@ JOIN.
   `EXHIBITOR_ACCOUNT_NOT_ELIGIBLE`. Its own permission — separate from
   `Exhibitors.Create` — because it creates nothing and instead grants an existing
   account access to visitor PII.
+- **Revoke a booth membership**: `DELETE /admin/exhibitors/{id}/accounts/{membershipId}`
+  (policy **`Exhibitors.RevokeAccount`**, rate-limited "auth"). Writes
+  `Exhibitor.AccountRevoked`. The counterpart to the two actions above, and the
+  other half of the same gap: provisioning and linking both WRITE
+  `ExhibitorMembership` and nothing anywhere cleared one, so an account attached
+  to a booth kept the booth tools until the whole exhibitor was retired. Three
+  readers lose the account the moment this runs: the lead-capture badge scan and
+  the booth's captured visitor contact cards, the business-meeting notifications
+  that fan out to every active membership, and the account count on this grid.
+  A **soft** revoke (`IsActive` cleared, `DeletedAt` stamped), never a hard
+  delete, because the row is the attribution trail for the visitor cards that
+  account already captured and each capture notified the visitor that their
+  details had been shared. The membership is matched on its own id **and** the
+  exhibitor from the route, so an id under another booth answers 404 rather than
+  letting one exhibitor's administrator revoke another's officer; an already
+  revoked membership answers 409. Deliberately does **not** reuse the "is the
+  booth still active?" guard that provisioning and linking share: refusing an
+  inactive exhibitor is right when adding an officer and backwards when removing
+  one, so a closed booth's officers can still be stripped. Its own permission,
+  separate from `Exhibitors.Delete`, because Delete retires the whole exhibitor
+  while this removes one person and leaves the booth trading.
+  **Status:** the API, the permission and the `SimfAdminClient` method are
+  shipped; the Control Panel row action, its `SimfConfirm`, its resource strings
+  and the BFF `MapDelete` forward are still to be wired.
 - **Export** — `POST /admin/exhibitors/export` (policy
   `Exhibitors.Export`, rate-limited "auth") via
   `ExportExhibitorsEndpoint : AdminGridExportEndpoint<AdminExhibitorSummary>`.
@@ -252,7 +276,11 @@ E2E-EXH-001 CRUD round-trip, 002 add-only, 003 edit, 004 delete-confirm,
 (`EXHIBITOR_INVALID`), 012 conflict (`EXHIBITOR_INACTIVE`), 013 server 500,
 014 cancel discards, 015 RTL, 016 column filter, 017 column sort, 018
 toggle persist, 019 full-page round-trip, 020 account provisioning, 021
-Excel export, 022 Excel import, 023 Excel import rejection.
+Excel export, 022 Excel import, 023 Excel import rejection, 027/028 link an
+existing account and its rejections, 029 provision an already-registered email,
+030 revoke a booth membership, 031 revoke rejections and its permission gate
+(030 and 031 are shipped end to end: gated API, and the Revoke action in
+the Accounts modal).
 
 ## 12. Related docs
 
@@ -304,6 +332,22 @@ already carry an active exhibitor-mapped one (409
 `EXHIBITOR_ACCOUNT_NOT_ELIGIBLE` otherwise). Audit `Exhibitor.AccountLinked`.
 E2E-EXH-027.
 
-_Last reviewed:_ 2026-07-27 by Claude (D-781 — link an existing account to an
-exhibitor). Prior: 2026-07-25 by Claude (D-764 — exhibitor's own logo upload +
-thumbnail); 2026-07-14 by Claude (D-357).
+**2026-08-19 (revoke a booth membership):** the counterpart to linking, and the
+other half of the same gap. `DELETE /admin/exhibitors/{id}/accounts/{membershipId}`
+on its own `Exhibitors.RevokeAccount` permission soft-revokes the
+`ExhibitorMembership`, which nothing anywhere had ever cleared: an account
+attached to a booth kept badge scan, the booth's captured visitor contact cards
+and the business-meeting notifications until somebody retired the whole
+exhibitor. Soft, not hard, because the row is the attribution trail for the
+visitor cards that account already captured. 404 on an unknown or wrong-booth
+membership id (the lookup is scoped to the route's exhibitor as well as the id),
+409 when it was already revoked, and unlike the add paths it does not refuse an
+inactive exhibitor, so a closed booth's officers can still be stripped. Audit
+`Exhibitor.AccountRevoked`. E2E-EXH-030 / E2E-EXH-031. The API, the permission
+and the `SimfAdminClient` method shipped together; the CP row action, its
+`SimfConfirm`, its resource strings and the BFF forward are still to be wired.
+
+_Last reviewed:_ 2026-08-19 by Claude (revoke an exhibitor account: the API,
+permission and client half). Prior: 2026-07-27 by Claude (D-781 — link an
+existing account to an exhibitor); 2026-07-25 by Claude (D-764 — exhibitor's own
+logo upload + thumbnail); 2026-07-14 by Claude (D-357).

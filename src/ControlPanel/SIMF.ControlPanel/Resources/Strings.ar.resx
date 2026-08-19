@@ -3291,6 +3291,11 @@
   <data name="Admin.Exhibitors.Link.Done" xml:space="preserve"><value>تم ربط الحساب بهذا العارض.</value></data>
   <data name="Admin.Exhibitors.Link.Required" xml:space="preserve"><value>البريد الإلكتروني للحساب مطلوب.</value></data>
   <data name="Admin.Exhibitors.Link.Failed" xml:space="preserve"><value>تعذر ربط الحساب. حاول مرة أخرى.</value></data>
+  <data name="Admin.Exhibitors.Revoke.Action" xml:space="preserve"><value>إلغاء الوصول</value></data>
+  <data name="Admin.Exhibitors.Revoke.ConfirmTitle" xml:space="preserve"><value>إلغاء وصول هذا الحساب؟</value></data>
+  <data name="Admin.Exhibitors.Revoke.ConfirmBody" xml:space="preserve"><value>سيؤدي هذا إلى إزالة وصول الحساب إلى ماسح الشارات الخاص بالجناح وإلى بطاقات تواصل الزوار التي جمعها. لن يتم حذف الحساب نفسه، ويمكن ربطه مرة أخرى لاحقاً.</value></data>
+  <data name="Admin.Exhibitors.Revoke.Done" xml:space="preserve"><value>تم إلغاء وصول الحساب لهذا العارض.</value></data>
+  <data name="Admin.Exhibitors.Revoke.Failed" xml:space="preserve"><value>تعذر إلغاء وصول الحساب. حاول مرة أخرى.</value></data>
 
   <!-- Gates operations dashboard (read-only live overview). -->
   <data name="Module.GatesDashboard" xml:space="preserve"><value>لوحة البوابات</value></data>

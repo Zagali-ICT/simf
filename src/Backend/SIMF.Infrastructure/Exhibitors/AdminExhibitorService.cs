@@ -1,4 +1,5 @@
-// Tests: SIMF.Api.Tests/ExhibitorsTests.cs, SIMF.Api.Tests/ExhibitorVisitorScanTests.cs
+// Tests: SIMF.Api.Tests/ExhibitorsTests.cs, SIMF.Api.Tests/ExhibitorVisitorScanTests.cs,
+// SIMF.Api.Tests/ExhibitorAccountRevokeTests.cs
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.Assets.Abstractions;
@@ -27,7 +28,11 @@ namespace SIMF.Infrastructure.Exhibitors;
 /// exhibitor. Provisioning used to be the only writer of ExhibitorMembership, so
 /// an exhibitor-typed account created through the generic Others pipeline had no
 /// membership and was locked out of the booth tools (DEF-EXH-006) with no CP path
-/// to attach it.</para></summary>
+/// to attach it.</para>
+/// <para><see cref="RevokeAccountAsync"/> is the counterpart, and closes the other
+/// half of the same gap: both writers created memberships and nothing ever cleared
+/// one, so an account kept badge scanning and the booth's visitor contact cards
+/// until the entire exhibitor was retired.</para></summary>
 internal sealed class AdminExhibitorService(
     SimfAppDbContext appDbContext,
     IAuditLog auditLog,
@@ -36,6 +41,15 @@ internal sealed class AdminExhibitorService(
     IAssetService assetService,
     SimfIdentityDbContext identityDbContext) : IAdminExhibitorService
 {
+    /// <summary>The audit event a revoked booth membership is recorded under.
+    ///
+    /// <para>Module-local rather than a field on the shared <c>AuditEvents</c>
+    /// class, which the News events were also promoted out of. The string value is
+    /// the audit contract, so it follows the module's existing <c>Exhibitor.*</c>
+    /// shape: promoting it to the shared class is then a move, and never a rename
+    /// that would orphan the rows already written under it.</para></summary>
+    private const string ExhibitorAccountRevokedEvent = "Exhibitor.AccountRevoked";
+
     /// <summary>
     /// The grid contract for /admin/exhibitors: one entry per key
     /// ExhibitorsList.razor can send, as both its filter and its sort. A key not
@@ -219,6 +233,9 @@ internal sealed class AdminExhibitorService(
                 "Exhibitor not found.",
                 "لم يتم العثور على العارض.");
         if (!exhibitor.IsActive) { return; }
+
+        await EnsureNoBoothIsMarkedOnVenueMapAsync(id, cancellationToken);
+
         exhibitor.Deactivate();
         exhibitor.UpdatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
@@ -228,6 +245,46 @@ internal sealed class AdminExhibitorService(
             actorUserId,
             $"exhibitorId={exhibitor.Id}",
             cancellationToken);
+    }
+
+    /// <summary>Refuses to retire an exhibitor while one of its booths is still
+    /// pinned on the venue map.
+    ///
+    /// <para>The exhibitor's own IsActive is not what the map reads, which is why
+    /// this looks a level deeper than AdminBoothService's own guard. The public
+    /// booth projection drops a booth whose linked Exhibitor is inactive even
+    /// though the booth row itself stays active, so soft-deleting the exhibitor
+    /// leaves every map node pointing at a booth the public endpoint no longer
+    /// serves. Deactivating the booth directly is already refused with
+    /// BOOTH_IN_USE; without this, the same orphan was reachable by retiring the
+    /// company standing in it.</para>
+    ///
+    /// <para>Only ACTIVE booths count: an already-retired booth cannot have a
+    /// live node marking it, because the booth guard blocked that on the way
+    /// out. The blocking booth's floor code is named in the message so the admin
+    /// knows which node to remove, and the code is the same token in both
+    /// languages.</para></summary>
+    private async Task EnsureNoBoothIsMarkedOnVenueMapAsync(
+        Guid exhibitorId, CancellationToken cancellationToken)
+    {
+        var blockingBoothCode = await appDbContext.VenueMapNodes
+            .AsNoTracking()
+            .Where(node => node.IsActive
+                && node.Booth != null
+                && node.Booth.IsActive
+                && node.Booth.ExhibitorId == exhibitorId)
+            .Select(node => node.Booth!.Code)
+            // Ordered so an exhibitor blocked by several booths reports the same
+            // one every time; an error the admin cannot reproduce is a worse bug
+            // than the sort is a cost, and the row count here is a handful.
+            .OrderBy(code => code)
+            .FirstOrDefaultAsync(cancellationToken);
+        if (blockingBoothCode is null) { return; }
+
+        throw new ApiException(
+            ErrorCodes.ExhibitorInUse, 409,
+            $"Booth '{blockingBoothCode}' belongs to this exhibitor and is still marked on the venue map, so the exhibitor cannot be deactivated. Remove that venue-map node first.",
+            $"الجناح '{blockingBoothCode}' تابع لهذا العارض وما زال محدداً على خريطة المكان، لذا لا يمكن إلغاء تفعيل العارض. احذف عقدة الخريطة المرتبطة به أولاً.");
     }
 
     public async Task<IReadOnlyList<ExhibitorAccountSummary>> ListAccountsAsync(
@@ -517,6 +574,79 @@ internal sealed class AdminExhibitorService(
             link.RoleLabel,
             link.IsActive,
             link.CreatedAt);
+    }
+
+    /// <summary>Withdraw one account's booth access by soft-deleting its
+    /// <see cref="ExhibitorMembership"/>.
+    ///
+    /// <para>Why this exists: <see cref="ProvisionAccountAsync"/> and
+    /// <see cref="LinkAccountAsync"/> write that row and nothing anywhere cleared
+    /// it, so once an account was attached it held the booth tools until the whole
+    /// exhibitor was retired. Three readers lose the account the moment this runs —
+    /// the lead-capture badge scan and the booth's visitor contact cards, the
+    /// business-meeting notifications that fan out to every active membership, and
+    /// the account count on the admin grid. An officer who leaves the company has
+    /// to be removable on their own, without closing the booth.</para>
+    ///
+    /// <para>Soft revoke, never a hard delete. The row is the attribution trail for
+    /// the visitor cards that account already captured, and each of those captures
+    /// notified the visitor that their details had been shared; deleting the
+    /// membership would leave that consent trail pointing at nothing.</para>
+    ///
+    /// <para>The membership is matched on its own id AND the exhibitor from the
+    /// route, so an id belonging to a different booth answers 404 instead of
+    /// letting one exhibitor's administrator revoke another's officer. Deliberately
+    /// NOT routed through <see cref="LoadActiveExhibitorAsync"/>: that refuses an
+    /// inactive exhibitor, which is right when adding an officer and backwards when
+    /// removing one. Withdrawing access has to stay possible after a booth
+    /// closes.</para></summary>
+    public async Task RevokeAccountAsync(
+        Guid actorUserId, Guid exhibitorId, Guid membershipId,
+        CancellationToken cancellationToken = default)
+    {
+        var membership = await appDbContext.Set<ExhibitorMembership>()
+            .SingleOrDefaultAsync(
+                row => row.Id == membershipId && row.ExhibitorId == exhibitorId,
+                cancellationToken)
+            ?? throw new ApiException(
+                ErrorCodes.ExhibitorAccountNotFound, 404,
+                "No account with that membership id is attached to this exhibitor.",
+                "لا يوجد حساب مرتبط بهذا العارض بهذا المعرّف.");
+
+        // Answered rather than treated as a no-op: an admin pressing Revoke on a
+        // membership somebody else already revoked has been told the access is
+        // gone, which a silent 200 would leave them guessing about.
+        if (!membership.IsActive)
+        {
+            throw new ApiException(
+                ErrorCodes.ExhibitorAccountInvalid, 409,
+                "This account's exhibitor membership has already been revoked.",
+                "تم إلغاء ارتباط هذا الحساب بهذا العارض بالفعل.");
+        }
+
+        membership.Deactivate();
+        membership.UpdatedAt = timeProvider.SimfNow();
+        await appDbContext.SaveChangesAsync(cancellationToken);
+
+        // The account lives on the Identity database, so its address is a second
+        // read on the other context rather than a join. The audit row keeps it
+        // because the membership only ever held a bare Guid: a reader asking months
+        // later who lost booth access cannot resolve that id from this database.
+        var subjectEmail = await identityDbContext.Users
+            .AsNoTracking()
+            .Where(user => user.Id == membership.UserId)
+            .Select(user => user.Email)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = ExhibitorAccountRevokedEvent,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = actorUserId,
+            SubjectUserId = membership.UserId,
+            SubjectEmail = subjectEmail,
+            Detail = $"exhibitorId={exhibitorId}; membershipId={membership.Id}",
+        }, cancellationToken);
     }
 
     /// <summary>The contact name to show for a membership: the per-booth override

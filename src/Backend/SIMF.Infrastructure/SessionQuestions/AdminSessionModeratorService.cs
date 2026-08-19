@@ -33,6 +33,10 @@ internal sealed class AdminSessionModeratorService(
     /// chosen, so they are neither sortable nor filterable — no cross-database JOIN
     /// exists to make them either.
     /// </summary>
+    /// <summary>The collation every *Arabic column carries. Named here so the
+    /// forced COLLATE below cannot drift from the one the model applies.</summary>
+    private const string ArabicCollation = "Arabic_CI_AI";
+
     private static readonly GridColumns<SessionModerator> Columns =
         new GridColumns<SessionModerator>()
             // One key that the page sends BOTH as a sort and as a filter, over three
@@ -40,8 +44,20 @@ internal sealed class AdminSessionModeratorService(
             // filter (which could not be sorted). Ordering by the concatenation is
             // the code-then-title order the page had; matching against it is the
             // same three-way OR, since a term inside any part is inside the whole.
+            // COLLATE on the non-Arabic operands, and it is load-bearing. Every
+            // *Arabic column now carries Arabic_CI_AI while the rest carry the
+            // instance default, and SQL Server refuses to evaluate an expression
+            // whose operands disagree - so concatenating them raised
+            // "Cannot resolve the collation conflict" on every sort click and
+            // every filter box on this grid, measured against the engine rather
+            // than reasoned about. Forcing one collation across the whole
+            // expression keeps the single searchable key the page wants; the
+            // alternative, splitting it into per-column predicates, would have
+            // given the sort arrow nothing coherent to order by.
             .Add("session", grant =>
-                grant.Session!.Code + " " + grant.Session.Title + " " + grant.Session.TitleArabic,
+                EF.Functions.Collate(grant.Session!.Code, ArabicCollation) + " "
+                    + EF.Functions.Collate(grant.Session.Title, ArabicCollation) + " "
+                    + grant.Session.TitleArabic,
                 searchable: true)
             .Add("assignedAt", grant => grant.AssignedAt)
             // Not a column on the page: the single-session filter the endpoint

@@ -137,12 +137,21 @@ public class AdminUpdateVisitorRequest
     public Guid? ProfileTypeId { get; set; }
 
     /// <summary>Bi-Meeting rework — the admin-assigned per-user flag that lets this
-    /// account request a speaker meeting (لقاء ثنائي). Independent of the VIP tier.</summary>
-    public bool AllowsSpeakerMeeting { get; set; }
+    /// account request a speaker meeting (لقاء ثنائي). Independent of the VIP tier.
+    /// Optional: null (the field omitted from the body) leaves the stored flag
+    /// untouched, so a partial edit that only corrects the email cannot silently
+    /// withdraw the eligibility. An explicit <c>false</c> still clears it — that is
+    /// how an admin revokes the flag, so the two cases must stay distinguishable.
+    /// The Control Panel prefills and resends both flags, so it always supplies a
+    /// value; the omission case is the API client's.</summary>
+    public bool? AllowsSpeakerMeeting { get; set; }
 
     /// <summary>Bi-Meeting rework — the admin-assigned per-user flag that lets this
-    /// account request a delegation (وفد) meeting. Independent of the delegate flag.</summary>
-    public bool AllowsDelegationMeeting { get; set; }
+    /// account request a delegation (وفد) meeting. Independent of the delegate flag.
+    /// Same optional-means-unchanged semantics as
+    /// <see cref="AllowsSpeakerMeeting"/>: null leaves the stored flag alone, an
+    /// explicit <c>false</c> clears it.</summary>
+    public bool? AllowsDelegationMeeting { get; set; }
 
     /// <summary>The ISO alpha-2 nationality code (the same wire shape the
     /// self-service profile upsert and <see cref="AdminUserProfileView.NationalityCode"/>
@@ -191,11 +200,14 @@ public class AdminUpdateOtherRequest
     public Guid ProfileTypeId { get; set; }
 
     /// <summary>Bi-Meeting rework — the admin-assigned per-user speaker-meeting flag
-    /// (see <see cref="AdminUpdateVisitorRequest.AllowsSpeakerMeeting"/>).</summary>
+    /// (see <see cref="AdminUpdateVisitorRequest.AllowsSpeakerMeeting"/>). Unlike the
+    /// visitor request this one is NOT optional: the value sent here is always
+    /// written, so every partner edit must carry the current flag.</summary>
     public bool AllowsSpeakerMeeting { get; set; }
 
     /// <summary>Bi-Meeting rework — the admin-assigned per-user delegation-meeting flag
-    /// (see <see cref="AdminUpdateVisitorRequest.AllowsDelegationMeeting"/>).</summary>
+    /// (see <see cref="AdminUpdateVisitorRequest.AllowsDelegationMeeting"/>). Always
+    /// written, exactly like <see cref="AllowsSpeakerMeeting"/> above.</summary>
     public bool AllowsDelegationMeeting { get; set; }
 
     /// <summary>The ISO alpha-2 nationality code

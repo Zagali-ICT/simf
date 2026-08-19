@@ -13,6 +13,7 @@ using SIMF.Contracts.Authentication;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
+using SIMF.Application.Ai.Abstractions;
 
 namespace SIMF.Api.Tests;
 
@@ -167,13 +168,17 @@ public sealed class AiModuleTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task Assistance_stores_the_saved_transcript_redacted()
+    public async Task Assistance_stores_the_transcript_encrypted_not_redacted()
     {
-        // The same sentence is stored REDACTED on the invocation row. Storing it
-        // RAW on the chat transcript kept a plaintext copy of an Iqama and a
-        // mobile number in a table nothing prunes — beside the profile columns
-        // that are encrypted at rest — and replayed it into the next dozen
-        // prompts as short-term memory.
+        // The transcript used to be stored REDACTED. That protected an Iqama and a
+        // mobile number because those are patterns, and protected nothing else --
+        // an address, an employer or a diagnosis typed into the chat is not a
+        // pattern and sat in the clear in a table nothing prunes. It also handed
+        // the visitor back a mangled copy of their own conversation.
+        //
+        // The column is encrypted at rest instead, which covers the whole turn, so
+        // this asserts BOTH halves: the visitor reads their real words back, and
+        // the raw column does not contain them.
         var visitor = await SignInApprovedVisitorAsync();
         const string marker = "ZQX9";
         var post = await PostAuthAsync(
@@ -189,18 +194,112 @@ public sealed class AiModuleTests : IClassFixture<SimfApiFactory>
 
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        var stored = await db.AiChatMessages.AsNoTracking()
-            .Where(m => m.Role == "user" && m.Content.Contains(marker))
-            .Select(m => m.Content)
-            .SingleAsync();
 
-        Assert.DoesNotContain("2123456789", stored, StringComparison.Ordinal);
-        Assert.DoesNotContain("0551234567", stored, StringComparison.Ordinal);
-        Assert.Contains("[REDACTED_NID]", stored, StringComparison.Ordinal);
-        Assert.Contains("[REDACTED_PHONE]", stored, StringComparison.Ordinal);
-        Assert.Contains(marker, stored, StringComparison.Ordinal);
+        // Through the model: the converter decrypts, so the visitor's own words
+        // come back exactly as typed.
+        var throughTheConverter = await db.AiChatMessages.AsNoTracking()
+            .Where(m => m.Role == "user")
+            .OrderByDescending(m => m.CreatedAt)
+            .Select(m => m.Content)
+            .FirstAsync();
+
+        Assert.Contains(marker, throughTheConverter, StringComparison.Ordinal);
+        Assert.Contains("2123456789", throughTheConverter, StringComparison.Ordinal);
+        Assert.Contains("0551234567", throughTheConverter, StringComparison.Ordinal);
+        Assert.DoesNotContain("[REDACTED_NID]", throughTheConverter, StringComparison.Ordinal);
+
+        // Straight out of the column, bypassing the converter: ciphertext. Reading
+        // it any other way would assert the round-trip rather than the storage, and
+        // the round-trip is exactly what a missing converter would still satisfy.
+        var raw = await db.Database
+            .SqlQuery<string>($"SELECT [Content] AS [Value] FROM [AiChatMessages] WHERE [Role] = 'user'")
+            .ToListAsync();
+
+        Assert.NotEmpty(raw);
+        Assert.All(raw, value =>
+        {
+            Assert.DoesNotContain("2123456789", value, StringComparison.Ordinal);
+            Assert.DoesNotContain("0551234567", value, StringComparison.Ordinal);
+            Assert.DoesNotContain(marker, value, StringComparison.Ordinal);
+        });
     }
 
+    [Fact]
+    public async Task A_message_that_opens_with_the_cipher_marker_is_still_encrypted()
+    {
+        // The shared PII encryptor treats a value that already begins "enc:1:" as
+        // encrypted and hands it back unchanged. That idempotence is right for an
+        // identifier being re-saved and dangerous the moment the column holds text
+        // a person types: a visitor could store a message in the CLEAR by opening
+        // it with six characters, and the decryptor would then try to base64-decode
+        // the rest of their sentence on the way back out.
+        var visitor = await SignInApprovedVisitorAsync();
+        const string marker = "PLN4";
+        var post = await PostAuthAsync(
+            "/api/v1/app/ai/assistance",
+            new AssistanceRequest
+            {
+                Message = $"enc:1:this is not ciphertext, badge {marker}",
+                Locale = "en",
+            },
+            visitor);
+        Assert.Equal(HttpStatusCode.OK, post.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+
+        // Straight out of the column: the visitor's words must not be there.
+        var stored = await db.Database
+            .SqlQuery<string>($"SELECT [Content] AS [Value] FROM [AiChatMessages] WHERE [Role] = 'user'")
+            .ToListAsync();
+        Assert.NotEmpty(stored);
+        Assert.All(stored, value =>
+            Assert.DoesNotContain(marker, value, StringComparison.Ordinal));
+
+        // And it still round-trips: the marker prefix survives as the visitor's own
+        // text rather than being eaten as a cipher envelope.
+        var roundTripped = await db.AiChatMessages.AsNoTracking()
+            .Where(m => m.Role == "user")
+            .OrderByDescending(m => m.CreatedAt)
+            .Select(m => m.Content)
+            .FirstAsync();
+        Assert.Contains(marker, roundTripped, StringComparison.Ordinal);
+        Assert.StartsWith("enc:1:this is not ciphertext", roundTripped, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task The_memory_block_sent_to_the_provider_is_redacted()
+    {
+        // Redaction moved off the write path and onto this one, which is the
+        // boundary it was always for: the block of prior turns pasted into the next
+        // prompt and sent to an external model provider. The stored rows keep the
+        // visitor's real words (encrypted); what leaves the system does not.
+        var visitor = await SignInApprovedVisitorAsync();
+        var post = await PostAuthAsync(
+            "/api/v1/app/ai/assistance",
+            new AssistanceRequest
+            {
+                Message = "my Iqama is 2123456789 and my mobile is 0551234567.",
+                Locale = "en",
+            },
+            visitor);
+        Assert.Equal(HttpStatusCode.OK, post.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var userId = await db.AiChatMessages.AsNoTracking()
+            .OrderByDescending(m => m.CreatedAt)
+            .Select(m => m.UserId)
+            .FirstAsync();
+
+        var history = scope.ServiceProvider.GetRequiredService<IAiChatHistoryService>();
+        var memory = await history.GetRecentContextAsync(userId);
+
+        Assert.DoesNotContain("2123456789", memory, StringComparison.Ordinal);
+        Assert.DoesNotContain("0551234567", memory, StringComparison.Ordinal);
+        Assert.Contains("[REDACTED_NID]", memory, StringComparison.Ordinal);
+        Assert.Contains("[REDACTED_PHONE]", memory, StringComparison.Ordinal);
+    }
     [Fact]
     public async Task Assistance_second_call_includes_prior_turns_as_memory()
     {

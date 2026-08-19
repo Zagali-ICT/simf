@@ -36,17 +36,19 @@ namespace SIMF.Infrastructure.Auditing;
 /// <c>"***"</c>. The audit row records the FACT of a change, not the secret
 /// itself.</para>
 ///
-/// <para>Known gap, owner decision pending: the <c>Code</c> suffix is far wider
-/// than the secrets it was added for. Every secret <c>Code</c> column already sits
-/// on an entity excluded outright above (<c>AccountCode</c>,
-/// <c>TotpRecoveryCode</c>), while the suffix additionally blanks a dozen
-/// human-readable business identifiers — <c>Gate</c>, <c>Hall</c>, <c>Session</c>,
-/// <c>Theme</c>, <c>Booth</c>, <c>Speaker</c>, <c>MeetingTable</c>,
-/// <c>Country</c>, <c>Region</c>, <c>RatingType</c>, <c>UserProfileType</c> and
-/// <c>Permission.Code</c>. A permission-catalogue or gate rename therefore records
-/// only <c>***</c> -&gt; <c>***</c>, which is the change a security review most
-/// wants to read. Narrowing the rule means naming any genuinely secret <c>Code</c>
-/// column in <see cref="RedactedColumnNames"/> first.</para>
+/// <para>The <c>Code</c> suffix used to sit in <see cref="RedactedSuffixes"/> and
+/// has been removed, because it protected nothing and cost a great deal. Both
+/// secret-bearing <c>Code</c> columns live on entities excluded outright above
+/// (<c>AccountCode</c>, <c>TotpRecoveryCode</c>), so the suffix never reached one;
+/// what it did blank was every human-readable business identifier in the model -
+/// <c>Gate</c>, <c>Hall</c>, <c>Session</c>, <c>Theme</c>, <c>Booth</c>,
+/// <c>Speaker</c>, <c>MeetingTable</c>, <c>Country</c>, <c>Region</c>,
+/// <c>RatingType</c> and <c>Permission.Code</c>. A permission-catalogue or gate
+/// rename recorded only <c>***</c> -&gt; <c>***</c>, which is precisely the change
+/// a security review most wants to read. Should a genuinely secret <c>Code</c>
+/// column ever be added on a non-excluded entity, name it in
+/// <see cref="RedactedColumnNames"/> rather than restoring the blanket
+/// suffix.</para>
 /// </summary>
 internal sealed class RowAuditingSaveChangesInterceptor(
     IRequestContext requestContext,
@@ -95,12 +97,23 @@ internal sealed class RowAuditingSaveChangesInterceptor(
         "InternationalMobile",
     };
 
+    // Each suffix has to earn its place, because a suffix rule is blind: it
+    // blanks every property whose name happens to end that way, secret or not.
+    //
+    // "Code" used to be here and is deliberately gone. Every entity in either
+    // model with a secret-bearing Code column - AccountCode and TotpRecoveryCode -
+    // is excluded WHOLESALE above, so the suffix never protected a secret. What it
+    // did protect was Booth.Code, Country.Code, Gate.Code, Hall.Code,
+    // MeetingTable.Code, Permission.Code, RatingType.Code, Region.Code,
+    // Session.Code, Speaker.Code and Theme.Code - every one of them a business
+    // identifier an operator needs in order to read the audit trail at all. A row
+    // audit recording that somebody changed a hall, with the hall's code shown as
+    // "***", answers none of the questions an audit exists to answer.
     private static readonly string[] RedactedSuffixes =
     {
         "Hash",
         "Secret",
         "Token",
-        "Code",
     };
 
     private static readonly JsonSerializerOptions JsonOptions = new()

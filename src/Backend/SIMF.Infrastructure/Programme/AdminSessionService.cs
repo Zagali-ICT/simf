@@ -315,20 +315,51 @@ internal sealed class AdminSessionService(
         // unit against the committed rival and raises the clean 409. The session is
         // built once above with a fixed Id, so a retry re-inserts the same row
         // instead of duplicating it. Mirrors BusinessMeetingService.ScheduleAsync.
+        //
+        // Two things make the retry actually safe, and neither is optional:
+        //
+        //   acceptAllChangesOnSuccess: false. The default TRUE accepts the change
+        //   tracker the moment the INSERTs return - while the transaction is still
+        //   open - so a rollback leaves the whole graph Unchanged. Re-Adding the
+        //   root then flips ONLY the root back to Added (an Add on a tracked entity
+        //   skips the graph walk entirely), and the retry commits a session with no
+        //   speakers, no themes and no outcomes: a Type=Session row that the
+        //   speaker rule above was supposed to guarantee has at least one. Deferring
+        //   acceptance until after the commit keeps the graph Added across a retry
+        //   so it re-inserts whole.
+        //
+        //   The existence probe. Deferred acceptance still cannot see the OTHER
+        //   branch, where the commit reached SQL Server and only the acknowledgement
+        //   was lost - the ambiguity TransactionRunner documents. There the row is
+        //   stored, and a blind re-insert raises a duplicate-key 2627, which is NOT
+        //   transient and escapes as a 500 over a create that in fact succeeded.
+        //   The Id is client-generated, so the attempt can simply ask.
         var strategy = dbContext.Database.CreateExecutionStrategy();
-        await strategy.ExecuteAsync(async () =>
+        await strategy.ExecuteAsync(async token =>
         {
             await using var transaction = await dbContext.Database.BeginTransactionAsync(
-                System.Data.IsolationLevel.Serializable, cancellationToken);
+                System.Data.IsolationLevel.Serializable, token);
+
+            if (await dbContext.Sessions
+                    .AsNoTracking()
+                    .AnyAsync(row => row.Id == session.Id, token))
+            {
+                // A previous attempt committed and we never heard. Nothing to do.
+                await transaction.CommitAsync(token);
+                dbContext.ChangeTracker.AcceptAllChanges();
+                return;
+            }
 
             await EnsureNoHallTimeOverlapAsync(
-                hall.Id, request.Start, request.End, session.Id, cancellationToken);
-            await EnsureCodeIsFreeAsync(code, session.Id, cancellationToken);
+                hall.Id, request.Start, request.End, session.Id, token);
+            await EnsureCodeIsFreeAsync(code, session.Id, token);
 
             dbContext.Sessions.Add(session);
-            await dbContext.SaveChangesAsync(cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
-        });
+            await dbContext.SaveChangesAsync(
+                acceptAllChangesOnSuccess: false, token);
+            await transaction.CommitAsync(token);
+            dbContext.ChangeTracker.AcceptAllChanges();
+        }, cancellationToken);
 
         // After the save, because a file row needs a real owner id and the session
         // has none until it exists. A blank URL leaves the pointer null.
@@ -583,21 +614,34 @@ internal sealed class AdminSessionService(
         // hall. Run through the EF execution strategy so it composes with
         // EnableRetryOnFailure (a manual transaction throws under the retrying
         // strategy) and a serialization/deadlock victim re-runs the unit against the
-        // committed rival. Same pattern as CreateAsync above.
+        // committed rival. Same pattern as CreateAsync above, including the
+        // deferred change-tracker acceptance, which matters MORE here than there.
+        // Accepting on the default schedule marks every mutation Unchanged while
+        // the transaction is still open, so after a rollback the retry's
+        // SaveChangesAsync finds nothing to save, issues no SQL, and commits
+        // successfully - a silent lost update that returns 200 and redisplays the
+        // values it did not store. Worse, releasedReservations is an in-memory list
+        // that outlives the rollback, so the code below would still audit the seat
+        // release and push "your held seat was released" to every holder of a seat
+        // that is in fact still held. No existence probe is needed on this path: a
+        // re-run that finds nothing left to write is the correct outcome for an
+        // update, unlike the insert above.
         var strategy = dbContext.Database.CreateExecutionStrategy();
-        await strategy.ExecuteAsync(async () =>
+        await strategy.ExecuteAsync(async token =>
         {
             await using var transaction = await dbContext.Database.BeginTransactionAsync(
-                System.Data.IsolationLevel.Serializable, cancellationToken);
+                System.Data.IsolationLevel.Serializable, token);
 
             if (hallChanged || timeChanged || reactivating)
             {
                 await EnsureNoHallTimeOverlapAsync(
-                    hall.Id, request.Start, request.End, id, cancellationToken);
+                    hall.Id, request.Start, request.End, id, token);
             }
-            await dbContext.SaveChangesAsync(cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
-        });
+            await dbContext.SaveChangesAsync(
+                acceptAllChangesOnSuccess: false, token);
+            await transaction.CommitAsync(token);
+            dbContext.ChangeTracker.AcceptAllChanges();
+        }, cancellationToken);
 
         await auditLog.WriteSuccessAsync(
             AuditEvents.SessionUpdated,

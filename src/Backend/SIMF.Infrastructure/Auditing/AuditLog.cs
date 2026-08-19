@@ -1,3 +1,6 @@
+// Tests: SIMF.Api.Tests/AuditLogTests.cs (single write, batched write, and the
+//        swallowed failure), SIMF.Api.Tests/AuditLogBatchFallbackTests.cs (the
+//        interface's default per-entry fallback for stores that cannot batch).
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Abstractions;
 using SIMF.Application.Auditing;
@@ -25,7 +28,75 @@ internal sealed class AuditLog(
 {
     public async Task WriteAsync(AuditEntry entry, CancellationToken cancellationToken = default)
     {
-        var record = new OperationLogEntry
+        var record = BuildRecord(entry);
+
+        try
+        {
+            dbContext.OperationLog.Add(record);
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(
+                ex,
+                "Failed to write the audit entry {EventType}; the operation itself was not affected.",
+                record.EventType);
+            return;
+        }
+
+        LogWritten(record);
+    }
+
+    /// <summary>The batched write: one INSERT set and one save for the whole
+    /// collection. The pre-start no-show sweep frees many holds in one pass, and
+    /// auditing them one at a time cost a round trip per seat.</summary>
+    /// <remarks>The failure posture is the single-entry one, applied to the set:
+    /// the batch is logged and swallowed, because an audit write must never break
+    /// the operation it records. The consequence of batching is that the set
+    /// succeeds or fails together — acceptable here, since every entry in a batch
+    /// describes the same sweep, so a partial trail would be the harder one to
+    /// read.</remarks>
+    public async Task WriteManyAsync(
+        IReadOnlyCollection<AuditEntry> entries,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(entries);
+        if (entries.Count == 0)
+        {
+            return;
+        }
+
+        var records = entries.Select(BuildRecord).ToList();
+
+        try
+        {
+            dbContext.OperationLog.AddRange(records);
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(
+                ex,
+                "Failed to write {Count} audit entries of type {EventType}; the operation itself was not affected.",
+                records.Count,
+                records[0].EventType);
+            return;
+        }
+
+        // Still one structured-log line per event. The class contract is that every
+        // audited event reaches BOTH the operation log and the application log, and
+        // a single "wrote 12 entries" summary would quietly drop half of that.
+        foreach (var record in records)
+        {
+            LogWritten(record);
+        }
+    }
+
+    /// <summary>Builds the persisted row from the caller's entry plus the request
+    /// context. Shared by both write paths so the clipping lengths and the actor
+    /// display-name fallback cannot drift between them.</summary>
+    private OperationLogEntry BuildRecord(AuditEntry entry) =>
+        new()
         {
             Id = Guid.NewGuid(),
             Timestamp = timeProvider.SimfNow(),
@@ -48,27 +119,13 @@ internal sealed class AuditLog(
             Detail = Clip(entry.Detail, 1024),
         };
 
-        try
-        {
-            dbContext.OperationLog.Add(record);
-            await dbContext.SaveChangesAsync(cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(
-                ex,
-                "Failed to write the audit entry {EventType}; the operation itself was not affected.",
-                record.EventType);
-            return;
-        }
-
+    private void LogWritten(OperationLogEntry record) =>
         logger.LogInformation(
             "Audit {EventType} {Outcome} for {SubjectEmail} from {SourceIp}",
             record.EventType,
             record.Outcome,
             record.SubjectEmail,
             record.SourceIp);
-    }
 
     /// <summary>Trims a value to a maximum length so it cannot overflow its column.</summary>
     private static string? Clip(string? value, int maxLength) =>

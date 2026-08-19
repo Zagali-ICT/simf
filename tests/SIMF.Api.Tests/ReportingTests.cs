@@ -531,7 +531,7 @@ public sealed class ReportingTests : IClassFixture<SimfApiFactory>
     // column's own Key with SortDescending=false on the first press and true on
     // the second (SimfDataGrid.ToggleSortAsync). Four of the sort switches had
     // no arm for that key, so the click fell through to their default — and
-    // that default deliberately reads `descending` INVERTED, because the
+    // that default USED TO read `descending` inverted, because the
     // no-sort case has to come back newest-first. The two wrongs did not cancel:
     // the grid drew an ascending arrow (and rendered aria-sort="ascending",
     // which a screen reader announces) over newest-first rows, and a descending
@@ -621,6 +621,32 @@ public sealed class ReportingTests : IClassFixture<SimfApiFactory>
             early, late);
     }
 
+    // Meetings is the odd one out in this section: its "requested" column is NOT
+    // Sortable, so no click can reach the key and every page load took the
+    // default arm. That arm read the direction INVERTED to land newest-first,
+    // which made a request for ascending come back descending. The default is
+    // now newest-first outright and takes no notice of the flag, and this named
+    // arm carries the direction honestly for a caller that does send the key.
+    [Fact]
+    public async Task Meetings_sort_on_requested_follows_the_arrow()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var day = NextBlock();
+        var speakerId = await SeedSpeakerAsync();
+        await SeedSpeakerMeetingRequestAsync(speakerId, "EARLY-REQUEST", SaudiAt(day, 6));
+        await SeedSpeakerMeetingRequestAsync(speakerId, "LATE-REQUEST", SaudiAt(day, 18));
+
+        var ascending = await SortedAsync<MeetingsReportRow>(
+            token, MeetingsList, day, "requested", descending: false);
+        var descending = await SortedAsync<MeetingsReportRow>(
+            token, MeetingsList, day, "requested", descending: true);
+
+        AssertOrder(
+            ascending.Rows.Select(r => r.Subject).ToList(),
+            descending.Rows.Select(r => r.Subject).ToList(),
+            "EARLY-REQUEST", "LATE-REQUEST");
+    }
+
     /// <summary>Both directions, in one place: ascending must lead with the
     /// earlier record and descending must lead with the later one. Asserting
     /// only one direction would pass against a switch that ignores the key
@@ -641,6 +667,103 @@ public sealed class ReportingTests : IClassFixture<SimfApiFactory>
         Assert.True(
             descending.IndexOf(late) < descending.IndexOf(early),
             "The descending arrow must put the LATER record first.");
+    }
+
+    // -- The default order is stated, not derived from an unused flag --------
+    //
+    // A report page loads with no sort column, so the grid draws no arrow and
+    // the direction flag has nothing to point at. The registrations and gate
+    // switches used to read it anyway, INVERTED, to arrive at newest-first for
+    // the flag's own default of false. That is what made the flag mean its own
+    // opposite: a caller asking for ascending was served newest-first, and a
+    // caller asking for descending was served oldest-first. Both defaults now
+    // name the order outright and ignore the flag, so each test below asserts
+    // the SAME newest-first answer with the flag set both ways. The records are
+    // seeded oldest-last, so a switch that returned insertion order could not
+    // pass by accident.
+
+    [Fact]
+    public async Task Registrations_default_order_is_newest_first_whichever_way_the_flag_points()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var day = NextBlock();
+        var early = await SeedVisitorRegisteredAtAsync(SaudiAt(day, 6));
+        var late = await SeedVisitorRegisteredAtAsync(SaudiAt(day, 18));
+
+        var flagOff = await UnsortedAsync<RegistrationReportRow>(
+            token, RegistrationsList, day, descending: false);
+        var flagOn = await UnsortedAsync<RegistrationReportRow>(
+            token, RegistrationsList, day, descending: true);
+
+        AssertNewestFirstBothWays(
+            flagOff.Rows.Select(r => r.Email).ToList(),
+            flagOn.Rows.Select(r => r.Email).ToList(),
+            early, late);
+    }
+
+    [Fact]
+    public async Task Gate_activity_default_order_is_newest_first_whichever_way_the_flag_points()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var day = NextBlock();
+        var gateId = await SeedGateAsync();
+        await SeedScanAsync(gateId, SaudiAt(day, 6), ScanOutcome.Allowed, "Early Default Scan");
+        await SeedScanAsync(gateId, SaudiAt(day, 18), ScanOutcome.Allowed, "Late Default Scan");
+
+        var flagOff = await UnsortedAsync<GateActivityReportRow>(
+            token, GatesList, day, descending: false);
+        var flagOn = await UnsortedAsync<GateActivityReportRow>(
+            token, GatesList, day, descending: true);
+
+        AssertNewestFirstBothWays(
+            flagOff.Rows.Select(r => r.VisitorName ?? string.Empty).ToList(),
+            flagOn.Rows.Select(r => r.VisitorName ?? string.Empty).ToList(),
+            early: "Early Default Scan", late: "Late Default Scan");
+    }
+
+    /// <summary>The later record leads in both answers. Asserting only the
+    /// flag-off call would pass against a switch that still reads the flag, and
+    /// asserting only one record's position would pass against a page that
+    /// dropped the other.</summary>
+    private static void AssertNewestFirstBothWays(
+        List<string> flagOff,
+        List<string> flagOn,
+        string early,
+        string late)
+    {
+        AssertNewestFirst(flagOff, early, late, flag: "false");
+        AssertNewestFirst(flagOn, early, late, flag: "true");
+    }
+
+    private static void AssertNewestFirst(
+        List<string> rows, string early, string late, string flag)
+    {
+        Assert.Contains(early, rows);
+        Assert.Contains(late, rows);
+        Assert.True(
+            rows.IndexOf(late) < rows.IndexOf(early),
+            "With no sort column the report must lead with the LATER record, "
+            + $"whatever the direction flag says. It was sent as {flag}, and an "
+            + "answer that changes with it means the default arm is still "
+            + "reading a flag the grid never pointed at anything.");
+    }
+
+    /// <summary>One report page for a single date block with NO sort column,
+    /// which is how a report loads before anything is clicked, plus the
+    /// direction flag the caller happened to send.</summary>
+    private async Task<ReportPage<TRow>> UnsortedAsync<TRow>(
+        string token, string route, DateOnly day, bool descending)
+    {
+        var query = new ReportQuery
+        {
+            From = day,
+            To = day,
+            Grid = new GridQuery { Top = 200, SortDescending = descending },
+        };
+        var response = await PostAuthAsync(route, query, token);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        return (await response.Content
+            .ReadFromJsonAsync<ApiResult<ReportPage<TRow>>>())!.Data!;
     }
 
     // -- Helpers -------------------------------------------------------------

@@ -458,6 +458,62 @@ external links. **Closed by D-929** as `CK_StoredFiles_SizeBytes`
 (`[SizeBytes] IS NULL OR [SizeBytes] > 0`), which tolerates NULL and so guards
 every file service rather than presentations alone.
 
+### D-931 named lift — Arabic collation, one-active-per-owner, encrypted transcript (2026-08-19)
+
+Owner directive, taken as a single lift because all three need the same
+regeneration. Both histories are regenerated through
+`tools/migrations/Regenerate-Migration.ps1`, so there is still exactly one
+`InitialCreate` per context at the pinned `00000000000000` id and
+`SchemaFreezeTests` is unchanged.
+
+- **`Arabic_CI_AI` on every `*Arabic` string column** — 81 on `SimfAppDbContext`,
+  2 on `SimfIdentityDbContext`. Applied by a loop over the built model in
+  `OnModelCreating`, not per configuration class, so a column added later
+  inherits it without anyone remembering to ask.
+
+  **Know what this does and does not fold before promising it to anyone.** It
+  folds the **alef maksura onto the yeh**, so `مصطفى` and `مصطفي` match for
+  search, equality and the unique indexes. It does **NOT** fold a precomposed
+  alef-hamza onto a bare alef: `أحمد` is still not found by searching `احمد`.
+  Accent-insensitivity discards a *secondary* weight and only the decomposed
+  sequence `U+0627 U+0654` has one, while the precomposed `U+0623` carries a
+  primary weight of its own — and precomposed is what every Arabic keyboard
+  emits. `tests/SIMF.Api.Tests/ArabicCollationTests.cs` pins both the fold and
+  the non-fold, deliberately, so nobody re-derives this from the name of the
+  collation. Closing the hamza half needs a normalised shadow column written on
+  the way in, which is a schema change and its own lift.
+- **`StoredFiles` filtered UNIQUE index on `(Service, OwnerEntityId)`**, predicate
+  `[IsActive] = 1 AND [OwnerEntityId] IS NOT NULL AND [Service] IN (...)`. The
+  service list is generated from `FileServicePolicies.SingleActivePerOwner`, so
+  **adding a service to that set is a schema change** and needs the migration
+  regenerated. It is a deliberate SUBSET: galleries, identity documents and
+  speaker presentations are many-per-owner.
+- **`AiChatMessage.Content` encrypted at rest** (the existing AES-GCM PII
+  converter) and widened to `nvarchar(max)`, the base64 envelope not fitting the
+  4000-character `nvarchar` ceiling.
+
+**Two traps this lift walked into, recorded so the next one does not.**
+
+1. **A collation is part of an expression's type.** SQL Server refuses to
+   evaluate an operand pair whose collations disagree, so a single
+   `COALESCE(Name, NameArabic)` in the contact-card read began answering **500**
+   the moment the Arabic side was collated differently. Before adding a
+   collation anywhere, sweep for column-to-column `??`, concatenation, `UNION`
+   and comparison across the boundary. `?? string.Empty` is safe (a literal
+   yields to the column), column-`??`-column is not.
+2. **A unique index dictates write ORDER.** `AssetService` inserted the
+   replacement and retired the previous row afterwards; with the index that
+   inserts a second active row and raises 2627. The retire now runs FIRST, in
+   `StoredFileService`, through `ExecuteUpdateAsync` because the change tracker
+   promises no ordering between an UPDATE and an INSERT in one `SaveChanges`.
+   The byte unlink is deferred until after the replacement commits, so a failed
+   upload leaves the previous file recoverable rather than destroying it to make
+   room for something that never landed.
+
+Enums are untouched, and the shipped mobile wire contract stays append-only.
+The freeze must still be re-instated before the production publish / handover,
+per D-219's standing requirement. See `docs/decisions/DECISIONS_LOG.md` D-931.
+
 ### D-929 named lift — the deferred audit findings, worked to the end
 
 The audit programme parked what it could not fix in its own lane in

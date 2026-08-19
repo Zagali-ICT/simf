@@ -62,22 +62,45 @@ public static class DependencyInjection
         }
     }
 
-    /// <summary>Refuse to start in Production when the centralized
-    /// file-store KEK (<c>FileStorage:EncryptionKey</c>) is missing. The
-    /// <c>AesGcmEnvelopeCipher</c> already fail-fasts on construction, but that
-    /// surfaces deep inside the DI / FastEndpoints stack; this guard states the
-    /// one-line reason up front. Call from the host after the app is built.</summary>
+    /// <summary>Refuse to start when the centralized file-store key ring cannot
+    /// work: the KEK (<c>FileStorage:EncryptionKey</c>) is missing in Production,
+    /// or a rotation was configured with the retiring key sitting on the ACTIVE
+    /// key's version. The <c>AesGcmEnvelopeCipher</c> fail-fasts on both, but a
+    /// cipher is not constructed until something is uploaded, so without this
+    /// guard the operator learns of a broken key ring from a failed upload hours
+    /// after the deploy rather than from a refused start. Call from the host after
+    /// the app is built.</summary>
     public static void EnsureFileStorageEncryptionConfigured(bool isProduction, IServiceProvider services)
     {
-        if (isProduction
-            && string.IsNullOrWhiteSpace(
-                services.GetRequiredService<Microsoft.Extensions.Options.IOptions<SIMF.Common.Options.FileStorageOptions>>()
-                    .Value.EncryptionKey))
+        var fileStorage = services
+            .GetRequiredService<
+                Microsoft.Extensions.Options.IOptions<SIMF.Common.Options.FileStorageOptions>>()
+            .Value;
+
+        if (isProduction && string.IsNullOrWhiteSpace(fileStorage.EncryptionKey))
         {
             throw new InvalidOperationException(
                 "FileStorage:EncryptionKey must be a base64 32-byte AES key in Production — "
                 + "it is the KEK for the centralized file store. "
                 + "Set SIMF_API_FileStorage__EncryptionKey before starting.");
+        }
+
+        // Unlike the missing key above, this one is asserted in EVERY environment.
+        // An absent key is the normal state of a developer machine; a rotation whose
+        // two keys claim the SAME version is wrong everywhere. The key ring is a
+        // dictionary keyed by version, so the collision leaves ONE entry holding the
+        // retiring key under the number the new key was meant to occupy, and every
+        // file written afterwards is sealed under the very key the rotation existed
+        // to retire while carrying the new version in its header.
+        if (!string.IsNullOrWhiteSpace(fileStorage.PreviousEncryptionKey)
+            && fileStorage.PreviousKekVersion == fileStorage.KekVersion)
+        {
+            throw new InvalidOperationException(
+                "FileStorage:PreviousKekVersion must differ from FileStorage:KekVersion; "
+                + $"both are {fileStorage.KekVersion}. A rotation supplies the retiring "
+                + "key under its OWN version and bumps the active one: set "
+                + "SIMF_API_FileStorage__KekVersion to the new version and leave "
+                + "SIMF_API_FileStorage__PreviousKekVersion on the outgoing one.");
         }
     }
 

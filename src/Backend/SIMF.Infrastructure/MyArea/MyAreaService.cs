@@ -69,20 +69,43 @@ internal sealed class MyAreaService(
         Guid userId,
         CancellationToken cancellationToken = default)
     {
+        // The organisation name is coalesced HERE rather than in the projection.
+        // `Organisation.Name ?? Organisation.NameArabic` translates to a SQL
+        // COALESCE across two columns that no longer share a collation - the
+        // Arabic one is Arabic_CI_AI - and SQL Server refuses to resolve an
+        // expression whose operands disagree, so the whole endpoint answered 500.
+        // Bringing both columns back and choosing between them in memory costs one
+        // extra column on a single-row read and cannot conflict at all.
         var card = await appDbContext.UserProfiles.AsNoTracking()
             .Where(p => p.UserId == userId)
-            .Select(p => new MyAreaContactCard(
+            .Select(p => new
+            {
                 p.Name,
                 p.NameArabic,
                 p.JobTitle,
                 p.JobTitleArabic,
-                p.Organisation != null ? (p.Organisation.Name ?? p.Organisation.NameArabic) : null,
+                OrganisationName = p.Organisation != null ? p.Organisation.Name : null,
+                OrganisationNameArabic = p.Organisation != null ? p.Organisation.NameArabic : null,
                 p.QrId,
                 p.SaudiMobile,
-                p.InternationalMobile))
+                p.InternationalMobile,
+            })
             .FirstOrDefaultAsync(cancellationToken);
 
-        return card ?? new MyAreaContactCard(string.Empty, string.Empty, null, null, null, null);
+        if (card is null)
+        {
+            return new MyAreaContactCard(string.Empty, string.Empty, null, null, null, null);
+        }
+
+        return new MyAreaContactCard(
+            card.Name,
+            card.NameArabic,
+            card.JobTitle,
+            card.JobTitleArabic,
+            card.OrganisationName ?? card.OrganisationNameArabic,
+            card.QrId,
+            card.SaudiMobile,
+            card.InternationalMobile);
     }
 
     public async Task<MyAreaSessions> GetMySessionsAsync(

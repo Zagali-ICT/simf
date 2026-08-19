@@ -170,17 +170,22 @@ internal sealed partial class ReportingService
                 ? scans.OrderByDescending(s => s.ScannedDisplayName).ThenBy(s => s.Id)
                 : scans.OrderBy(s => s.ScannedDisplayName).ThenBy(s => s.Id),
             // "scanned" is the date column's own Key (GateActivityReport
-            // .razor:50). Without this arm a click fell through to the default
-            // below, which reads `descending` INVERTED so the no-sort case
-            // comes back most-recent-first — leaving the ascending arrow (and
-            // aria-sort="ascending") sitting over newest-first rows.
+            // .razor:50). The column is sortable, so a click really does send
+            // this key, and the arm carries the direction literally: descending
+            // is most recent first. Without it a click fell through to the
+            // default below, which used to read `descending` INVERTED, leaving
+            // the ascending arrow (and aria-sort="ascending") sitting over
+            // newest-first rows.
             "scanned" => descending
                 ? scans.OrderByDescending(s => s.ScannedAt).ThenBy(s => s.Id)
                 : scans.OrderBy(s => s.ScannedAt).ThenBy(s => s.Id),
-            // Most recent first: a gate log is read from the live end.
-            _ => descending
-                ? scans.OrderBy(s => s.ScannedAt).ThenBy(s => s.Id)
-                : scans.OrderByDescending(s => s.ScannedAt).ThenBy(s => s.Id),
+            // No column chosen: the grid draws no arrow, so the direction flag
+            // has nothing to point at and reading it here is what made the flag
+            // mean its own opposite — an unsorted request asking for ascending
+            // and being served most-recent-first. A gate log is read from the
+            // live end, so that order is now stated outright instead of arrived
+            // at by inverting a flag nobody set.
+            _ => scans.OrderByDescending(s => s.ScannedAt).ThenBy(s => s.Id),
         };
     }
 }

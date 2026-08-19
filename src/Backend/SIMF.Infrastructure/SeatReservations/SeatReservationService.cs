@@ -1225,6 +1225,10 @@ internal sealed class SeatReservationService(
     /// can send, as both its filter and its sort. A key not declared here is a 400,
     /// not a silently ignored request.
     /// </summary>
+    /// <summary>The collation every *Arabic column carries. Named here so the
+    /// forced COLLATE below cannot drift from the one the model applies.</summary>
+    private const string ArabicCollation = "Arabic_CI_AI";
+
     private static readonly GridColumns<SeatReservation> ActiveBookingColumns =
         new GridColumns<SeatReservation>()
             // One page column carries both languages, and one key has to serve both
@@ -1234,8 +1238,19 @@ internal sealed class SeatReservationService(
             // replaces, and the sort is still by English title, that being the
             // prefix. Dropping the Arabic half would have left an Arabic operator a
             // filter box that silently returns the unfiltered set.
+            // COLLATE on the non-Arabic operands, and it is load-bearing. Every
+            // *Arabic column now carries Arabic_CI_AI while the rest carry the
+            // instance default, and SQL Server refuses to evaluate an expression
+            // whose operands disagree - so concatenating them raised
+            // "Cannot resolve the collation conflict" on every sort click and
+            // every filter box on this grid, measured against the engine rather
+            // than reasoned about. Forcing one collation across the whole
+            // expression keeps the single searchable key the page wants; the
+            // alternative, splitting it into per-column predicates, would have
+            // given the sort arrow nothing coherent to order by.
             .Add("session", reservation =>
-                reservation.Session!.Title + " " + reservation.Session!.TitleArabic)
+                EF.Functions.Collate(reservation.Session!.Title, ArabicCollation)
+                    + " " + reservation.Session!.TitleArabic)
             .Add("start", reservation => reservation.Session!.Start)
             // Row label only. The hand-written switch this replaces also broke ties
             // on SeatNumber; a REQUESTED sort is one level plus the tiebreak here,
@@ -1329,9 +1344,11 @@ internal sealed class SeatReservationService(
                 .ToList(),
             cancellationToken);
 
-        foreach (var reservation in released)
-        {
-            await auditLog.WriteAsync(new AuditEntry
+        // The whole sweep's audit trail in ONE write. Entry-at-a-time cost an Add
+        // plus a SaveChanges per freed hold, so a twelve-seat sweep paid twelve
+        // round trips to record a single system decision.
+        await auditLog.WriteManyAsync(
+            released.Select(reservation => new AuditEntry
             {
                 EventType = AuditEvents.SeatReservationReleased,
                 Outcome = AuditOutcome.Success,
@@ -1340,7 +1357,11 @@ internal sealed class SeatReservationService(
                     + $"sessionId={reservation.SessionId}; "
                     + $"row={reservation.RowLabel}; seat={reservation.SeatNumber}; "
                     + "reason=no-show",
-            }, cancellationToken);
+            }).ToList(),
+            cancellationToken);
+
+        foreach (var reservation in released)
+        {
             // A holder with no account — a walk-in or a bulk-minted badge — is absent
             // from the map, so there is nobody to tell and the release still stands.
             if (titles.TryGetValue(reservation.SessionId, out var title)
@@ -1384,6 +1405,7 @@ internal sealed class SeatReservationService(
         DateTime now, CancellationToken cancellationToken)
     {
         var released = new List<SeatReservation>();
+        var reachedTheWrite = false;
         var strategy = appDbContext.Database.CreateExecutionStrategy();
         await strategy.ExecuteAsync(async () =>
         {
@@ -1395,6 +1417,27 @@ internal sealed class SeatReservationService(
                 appDbContext.Entry(stale).State = EntityState.Detached;
             }
             released.Clear();
+
+            // ...but a retry does NOT prove the previous attempt rolled back. A
+            // transient fault raised BY the commit is ambiguous: the write may have
+            // landed and only the acknowledgement been lost. In that case the
+            // candidate query below matches nothing, because every row it would have
+            // found now carries a ReleasedAt - and the caller would read zero, skip
+            // the audit row and send no "your seat was released" notice, while the
+            // holders had in fact permanently lost their seats. The stamp is the
+            // caller's `now`, so the committed set is recoverable exactly.
+            if (reachedTheWrite)
+            {
+                released.AddRange(await appDbContext.SeatReservations
+                    .Where(reservation => reservation.ReleasedAt == now
+                        && reservation.Status == BookingStatus.Cancelled
+                        && reservation.ReservedForProfileId != null)
+                    .ToListAsync(cancellationToken));
+                if (released.Count > 0)
+                {
+                    return; // it committed; hand the caller what actually landed
+                }
+            }
 
             await using var tx = await appDbContext.Database.BeginTransactionAsync(
                 System.Data.IsolationLevel.Serializable, cancellationToken);
@@ -1424,6 +1467,7 @@ internal sealed class SeatReservationService(
                 reservation.ReleasedAt = now;
                 reservation.Status = BookingStatus.Cancelled;
             }
+            reachedTheWrite = true;
             await appDbContext.SaveChangesAsync(cancellationToken);
             await tx.CommitAsync(cancellationToken);
         });

@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/ExhibitorsTests.cs
+// Tests: SIMF.Api.Tests/ExhibitorsTests.cs, SIMF.Api.Tests/ExhibitorAccountRevokeTests.cs
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
 using SIMF.Api.RequestContext;
@@ -187,5 +187,43 @@ public sealed class LinkExhibitorAccountEndpoint(IAdminExhibitorService service)
         var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<ExhibitorAccountSummary>.Ok(
             await service.LinkAccountAsync(actorId, req.Id, req, ct)), ct);
+    }
+}
+
+public sealed class RevokeExhibitorAccountRoute
+{
+    public Guid Id { get; set; }
+
+    public Guid MembershipId { get; set; }
+}
+
+/// <summary><c>DELETE /api/v1/admin/exhibitors/{id}/accounts/{membershipId}</c>.
+/// Withdraws one account's booth access by soft-deleting the ExhibitorMembership
+/// that the lead-capture scan, the booth's visitor contact cards and the
+/// business-meeting notifications all read. Provisioning and linking were the only
+/// writers of that row and nothing cleared it, so an officer held those tools until
+/// the whole exhibitor was retired.
+///
+/// <para>Gated by its own <c>Exhibitors.RevokeAccount</c> rather than by
+/// <c>Delete</c>, which retires the exhibitor itself: this leaves the booth
+/// trading and removes one person from it. It carries the same "auth" rate limit as
+/// the other mutating exhibitor routes.</para></summary>
+public sealed class RevokeExhibitorAccountEndpoint(IAdminExhibitorService service)
+    : Endpoint<RevokeExhibitorAccountRoute, ApiResult<bool>>
+{
+    public override void Configure()
+    {
+        Delete("/admin/exhibitors/{id:guid}/accounts/{membershipId:guid}");
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Exhibitors.RevokeAccount),
+                 nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Options(rb => rb.RequireRateLimiting("auth"));
+        Tags("Admin");
+    }
+
+    public override async Task HandleAsync(RevokeExhibitorAccountRoute req, CancellationToken ct)
+    {
+        var actorId = User.ActorId();
+        await service.RevokeAccountAsync(actorId, req.Id, req.MembershipId, ct);
+        await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
 }
