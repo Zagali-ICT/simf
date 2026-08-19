@@ -702,12 +702,28 @@ than erroring.
    hand-run step (`docs/migrations/2026/*.sql`); the app is fine, the data is
    absent.
 
-### Still not verified
+### D-666 face capture — VERIFIED on the device, 2026-08-20
 
-The **face-capture / liveness flow** (D-666, D-694(c)). It sits behind an
-authenticated session and the account could not be verified: sign-in is gated on
-`AccountState.EmailVerified` (`RegistrationService.cs:231`, checked by
-`SignInService`), which is NOT the second factor and is unaffected by turning
-2FA off. Clearing it needs either the emailed code inside its 600s window or the
-account state set directly. Until then D-666 stays open, and a green golden is
-on record as not catching that regression class.
+The open item is closed. Signed in on the tablet (account set to `Approved`,
+`mfaRequired:false`), reached **إنشاء ملف شخصى** — `sign_up_visitor_screen`, the
+screen this programme took from 2,245 lines to 398 — and drove the capture:
+
+- five profile calls answered 200 through the edge (`account/preferences`,
+  `account/profile-types`, `account/user-profile`, `user-profile/countries`,
+  `organisations`)
+- every extracted field rendered: nationality, national id, date and place of
+  birth, and the three plate-letter pickers that took the `SignUpVisitorPlateState`
+  holder
+- **التقاط صورة الوجه** opened **التحقق من الهوية**, the camera started
+  (`CameraService_proxy`) and ML Kit ran (`FaceDetectorV2Jni:
+  detectFacesImageByteArray`)
+- the liveness prompt advanced **ابتسم من فضلك** -> **تم التقاط الصورة الشخصية**
+  and returned to the form with the photo attached
+- no `E/flutter`, no FATAL, no crash at any point
+
+Under real input the nationality-driven document logic also behaved: choosing a
+non-Saudi nationality switched the field set to إقامة / جواز السفر, which is the
+branch `SignUpVisitorForm.applyNationality` owns.
+
+That is the regression class D-666 exists for, and it is the one a green golden
+provably does not catch — so it is now checked the only way it can be.
