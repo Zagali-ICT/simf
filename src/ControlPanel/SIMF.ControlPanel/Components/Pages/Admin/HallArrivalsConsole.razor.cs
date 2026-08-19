@@ -18,11 +18,21 @@ public partial class HallArrivalsConsole
     // accepted by the server. The server sends the RESOLVED value per
     // session (its override, else its hall's, else the global one), so there is
     // no constant here to keep in step with HallAttendanceService.
-    private static TimeSpan GraceOf(AdminSessionSummary session) =>
+    private static TimeSpan GraceOf(HallArrivalSessionOption session) =>
         TimeSpan.FromMinutes(session.EffectiveArrivalGraceMinutes);
 
-    private List<AdminSessionSummary> _sessions = new();
-    private AdminSessionSummary? _selected;
+    /// <summary>The picker's rows come from this console's OWN session read,
+    /// not the canonical Sessions list.
+    ///
+    /// <para>This page is gated <c>HallArrivals.View</c>, whose baseline role is
+    /// SecurityTeam, and <c>/admin/sessions/list</c> is gated
+    /// <c>Sessions.View</c>, which SecurityTeam does not hold. So the console
+    /// opened for the operator it exists for and its first fetch 403'd: an empty
+    /// picker at a hall door. <c>HallArrivalSessionOption</c> carries only what
+    /// the picker needs, including the RESOLVED arrival grace, and rides this
+    /// page's own permission.</para></summary>
+    private List<HallArrivalSessionOption> _sessions = new();
+    private HallArrivalSessionOption? _selected;
     private string _qrId = string.Empty;
     private bool _loading;
     private bool _busy;
@@ -35,8 +45,8 @@ public partial class HallArrivalsConsole
         _loading = true;
         try
         {
-            var envelope = await JS.InvokeAsync<ApiResult<GridPage<AdminSessionSummary>>>(
-                "simfAccount.postJson", "/account/api/admin/sessions/list",
+            var envelope = await JS.InvokeAsync<ApiResult<GridPage<HallArrivalSessionOption>>>(
+                "simfAccount.postJson", "/account/api/admin/hall-arrivals/sessions/list",
                 new GridQuery { Top = 200, Sort = "start" });
             if (envelope is { Success: true, Data: not null })
             {
@@ -52,7 +62,9 @@ public partial class HallArrivalsConsole
                 // bilingual SESSION_NOT_LIVE message in the error toast.
                 var now = SimfClock.Now;
                 _sessions = envelope.Data.Items
-                    .Where(s => s.IsActive && now >= s.Start - GraceOf(s))
+                    // No IsActive test: the endpoint scopes itself to active
+                    // sessions server-side, where no request can widen it.
+                    .Where(s => now >= s.Start - GraceOf(s))
                     // Live sessions first (the common check-in case), then the most
                     // recently ended — those are the ones still being closed out.
                     .OrderBy(s => now <= s.End + GraceOf(s) ? 0 : 1)

@@ -1,3 +1,4 @@
+using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Sessions;
 
@@ -124,6 +125,19 @@ public interface IHallAttendanceService
     Task<HallEntryEligibility> CheckHallEntryEligibilityAsync(
         Guid attendeeProfileId, Guid hallId,
         CancellationToken cancellationToken = default);
+
+    /// <summary>The sessions the hall-arrival console may offer in its picker.
+    ///
+    /// <para>Exists so that console does not have to call the canonical
+    /// <c>/admin/sessions/list</c>, which is gated on a permission its operator
+    /// role does not hold. Same reason the console has its own contract: the
+    /// page's own permission has to be sufficient to load the page.</para>
+    ///
+    /// <para>Active sessions only, and the grace value is resolved server-side
+    /// with the same rule the door applies, so the picker and the door cannot
+    /// disagree about which sessions are open for arrivals.</para></summary>
+    Task<GridPage<HallArrivalSessionOption>> ListArrivalSessionsAsync(
+        GridQuery query, CancellationToken cancellationToken = default);
 }
 
 /// <summary>

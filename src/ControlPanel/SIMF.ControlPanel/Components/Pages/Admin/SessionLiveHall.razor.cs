@@ -40,8 +40,19 @@ public partial class SessionLiveHall : IDisposable
     /// truncated view rather than as the whole room.</summary>
     private const int PresentPageSize = 200;
 
-    private List<AdminSessionSummary> _sessions = new();
-    private AdminSessionSummary? _selected;
+    /// <summary>The picker's rows come from the ATTENDANCE session list, not the
+    /// canonical Sessions list.
+    ///
+    /// <para>This page is gated <c>Attendance.View</c>, whose baseline role is
+    /// SecurityTeam, and the canonical <c>/admin/sessions/list</c> is gated
+    /// <c>Sessions.View</c>, which SecurityTeam does not hold. So the page opened
+    /// for the exact role it was built for and its first fetch 403'd: an empty
+    /// picker, a toast, and nothing an operator could do about it. The attendance
+    /// list is gated on this page's own permission and returns every active
+    /// session (the counts are a left join, so a hall with no arrivals yet is
+    /// still selectable), which is what the picker needs.</para></summary>
+    private List<SessionAttendanceRow> _sessions = new();
+    private SessionAttendanceRow? _selected;
     private SessionSeatMap? _map;
     private IReadOnlyList<SessionPresentAttendee> _present = Array.Empty<SessionPresentAttendee>();
     private int _presentTotal;
@@ -69,13 +80,16 @@ public partial class SessionLiveHall : IDisposable
         _loading = true;
         try
         {
-            var env = await JS.InvokeAsync<ApiResult<GridPage<AdminSessionSummary>>>(
-                "simfAccount.postJson", "/account/api/admin/sessions/list",
+            var env = await JS.InvokeAsync<ApiResult<GridPage<SessionAttendanceRow>>>(
+                "simfAccount.postJson", "/account/api/admin/attendance/sessions/list",
                 new GridQuery { Top = 200 });
             if (env is { Success: true, Data: not null })
             {
-                _sessions = env.Data.Items.Where(s => s.IsActive)
-                    .OrderBy(s => s.Code).ToList();
+                // No IsActive filter here: the endpoint scopes itself to active
+                // sessions server-side, where no request can widen it. The old
+                // client-side Where was filtering a list that had already been
+                // filtered.
+                _sessions = env.Data.Items.OrderBy(s => s.Code).ToList();
             }
             else
             {
@@ -87,7 +101,7 @@ public partial class SessionLiveHall : IDisposable
         finally { _loading = false; }
     }
 
-    private async Task OnSessionChangedAsync(AdminSessionSummary? session)
+    private async Task OnSessionChangedAsync(SessionAttendanceRow? session)
     {
         // Clear any stale toast / prior hall so session A's data never bleeds into B.
         _toast = null;
@@ -177,15 +191,15 @@ public partial class SessionLiveHall : IDisposable
         {
             var mapEnv = await JS.InvokeAsync<ApiResult<SessionSeatMap>>(
                 "simfAccount.getJson",
-                $"/account/api/admin/sessions/{session.Id}/seat-map");
+                $"/account/api/admin/sessions/{session.SessionId}/seat-map");
             var presentEnv = await JS.InvokeAsync<ApiResult<GridPage<SessionPresentAttendee>>>(
                 "simfAccount.postJson",
-                $"/account/api/admin/sessions/{session.Id}/present/list",
+                $"/account/api/admin/sessions/{session.SessionId}/present/list",
                 new GridQuery { Top = PresentPageSize });
 
             // The admin may have switched sessions while these were in flight —
             // dropping the stale response keeps session A's hall off session B.
-            if (_selected?.Id != session.Id) { return; }
+            if (_selected?.SessionId != session.SessionId) { return; }
 
             if (mapEnv is { Success: true, Data: not null })
             {

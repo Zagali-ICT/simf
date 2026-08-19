@@ -47,3 +47,28 @@ public sealed record QrArrivalResult(
     string DisplayNameArabic,
     HallAttendanceStatus Status,
     Guid UserProfileId);
+
+/// <summary>One selectable session for the hall-arrival console's picker.
+///
+/// <para>Deliberately NOT <c>AdminSessionSummary</c>. That record is served by
+/// <c>/admin/sessions/list</c>, which is gated <c>Sessions.View</c> - a
+/// permission the SecurityTeam role that runs this console does not hold, so the
+/// console's own first fetch used to 403 for the exact operator it was built
+/// for. This carries only what the picker needs and rides the console's own
+/// <c>HallArrivals.View</c> gate.</para>
+///
+/// <para><paramref name="EffectiveArrivalGraceMinutes"/> is the resolved value
+/// (session override -> hall -> global -> default), not a raw override. The
+/// console filters its picker by it, and the hall door applies the same shared
+/// rule, so the two cannot disagree about which sessions are open for
+/// arrivals.</para></summary>
+public sealed record HallArrivalSessionOption(
+    Guid Id,
+    string Code,
+    string Title,
+    string TitleArabic,
+    string HallName,
+    string HallNameArabic,
+    DateTime Start,
+    DateTime End,
+    int EffectiveArrivalGraceMinutes);

@@ -6,11 +6,11 @@
 | **Layout** | `CpShellLayout` (`@layout CpShellLayout`) |
 | **Surface** | Control Panel |
 | **Audience** | Any admin whose role holds `Attendance.View` **and** `Sessions.View`. See §2 - the page gate and the session picker do not use the same permission. |
-| **Auth** | Page: `@attribute [RequirePermission(PermissionCatalog.Attendance.View)]`. API: `/seat-map` and `/present/list` both `Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Attendance.View), nameof(AuthorizationPolicies.RequireApprovedAccount))`; the session picker's `/admin/sessions/list` is `Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Sessions.View), nameof(AuthorizationPolicies.RequireApprovedAccount))`. |
+| **Auth** | Page: `@attribute [RequirePermission(PermissionCatalog.Attendance.View)]`. API: `/seat-map` and `/present/list` both `Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Attendance.View), nameof(AuthorizationPolicies.RequireApprovedAccount))`; the session picker's `/admin/attendance/sessions/list` carries the SAME `Attendance.View` gate, so the page's own permission is sufficient for every call it makes. |
 | **Pattern** | **Not CRUD.** A read-only monitor: one `SimfSelect` picker, a Refresh button, a 4-state seat map and a plain roster table. No `SimfDataGrid`, no toolbar, no pager, no add / edit / delete, no `AuthorizedAction`. |
 | **Status** | Real. Page comment dates it 2026-07-18 and labels it "CP page 2e"; the 15-second auto-refresh is labelled "QA B17" in the code and in the E2E catalogue. |
 | **Implements use case(s)** | N/A - no `UC-` id anywhere under `docs/` names this route. Unverified: `SIMF-UCS-001` was not readable as an authored source for this page. |
-| **Backend endpoints** | BFF `POST /account/api/admin/sessions/list`, `GET /account/api/admin/sessions/{sessionId}/seat-map`, `POST /account/api/admin/sessions/{sessionId}/present/list` → API `POST /api/v1/admin/sessions/list`, `GET /api/v1/admin/sessions/{sessionId:guid}/seat-map`, `POST /api/v1/admin/sessions/{sessionId:guid}/present/list`. |
+| **Backend endpoints** | BFF `POST /account/api/admin/attendance/sessions/list`, `GET /account/api/admin/sessions/{sessionId}/seat-map`, `POST /account/api/admin/sessions/{sessionId}/present/list` → API `POST /api/v1/admin/attendance/sessions/list`, `GET /api/v1/admin/sessions/{sessionId:guid}/seat-map`, `POST /api/v1/admin/sessions/{sessionId:guid}/present/list`. |
 | **Source file** | [`SessionLiveHall.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SessionLiveHall.razor) + [`.razor.cs`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SessionLiveHall.razor.cs) + [`.razor.css`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SessionLiveHall.razor.css); [`SessionAttendanceEndpoints.cs`](../../../src/Backend/SIMF.Api/Endpoints/Attendance/SessionAttendanceEndpoints.cs); [`SessionAttendanceService.cs`](../../../src/Backend/SIMF.Infrastructure/Attendance/SessionAttendanceService.cs); [`SeatReservationService.cs`](../../../src/Backend/SIMF.Infrastructure/SeatReservations/SeatReservationService.cs) |
 | **Backed by** | `HallAttendance`, `SeatReservation`, `UserProfile`, `HallSeatLayout` and `Hall` on `SimfAppDbContext`. Read-only - this page issues no write of any kind. |
 | **Tests** | E2E [`docs/tests/e2e/cp-admin-session-live-hall.md`](../../tests/e2e/cp-admin-session-live-hall.md) (E2E-SLH-001..019 + two `-ELS-` element rows). bUnit [`tests/SIMF.ControlPanel.Tests/SessionLiveHallAutoRefreshTests.cs`](../../../tests/SIMF.ControlPanel.Tests/SessionLiveHallAutoRefreshTests.cs) (3 facts). API [`tests/SIMF.Api.Tests/SessionAttendanceTests.cs`](../../../tests/SIMF.Api.Tests/SessionAttendanceTests.cs) (5 facts touch this page's two endpoints). |
@@ -36,14 +36,19 @@ seat-plan editor at `/admin/sessions/seat-plans` its seat cells are not clickabl
 
 - **Who can reach the page:** any admin whose role holds `Attendance.View`.
   `Administrator` is the wildcard `"*"` (CLAUDE.md, D-207 / D-208), so it holds it.
-- **Who can use the page fully:** an admin who **also** holds `Sessions.View`. The
-  session picker is loaded from `/admin/sessions/list`, which is gated by
-  `Sessions.View`, not `Attendance.View` (`SessionEndpoints.cs:22`). An admin
-  holding only `Attendance.View` passes the page gate, gets a 403 on the picker
-  load and sees the `Admin.SessionLiveHall.LoadFailed` toast with no dropdown. The
-  Admin Manual states the same requirement in prose: "Needs the **Attendance
-  View** permission for the hall data, and the **Sessions View** permission for
-  the session picker."
+- **Who can use the page fully:** anyone who can open it. `Attendance.View` alone
+  is sufficient for all three calls.
+
+  It was not always. The picker used to load from `/admin/sessions/list`, gated
+  `Sessions.View`, whose baseline is ScientificCommittee - while this page's
+  `Attendance.View` seeds to SecurityTeam. So a SecurityTeam operator passed the
+  page gate, took a 403 on the picker load, and saw the
+  `Admin.SessionLiveHall.LoadFailed` toast with no dropdown: the page was unusable
+  for the exact role it exists for. The picker now reads
+  `/admin/attendance/sessions/list`, which carries this page's own gate. The Admin
+  Manual still says "Needs the **Attendance View** permission for the hall data,
+  and the **Sessions View** permission for the session picker" - that sentence is
+  now stale and is corrected with this change.
 - **Who can write on it:** nobody. There is no write path.
 - **Authorisation gates, all three layers:**
 
@@ -53,7 +58,7 @@ seat-plan editor at `/admin/sessions/seat-plans` its seat cells are not clickabl
   | Nav item | `CpNavigation.cs`, group `Nav.Overview`, item `Module.SessionLiveHall`, `RequiredPermission: PermissionCatalog.Attendance.View`, `Icon: "monitor"` |
   | API `GET /admin/sessions/{sessionId:guid}/seat-map` | `Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Attendance.View), nameof(AuthorizationPolicies.RequireApprovedAccount))` |
   | API `POST /admin/sessions/{sessionId:guid}/present/list` | `Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Attendance.View), nameof(AuthorizationPolicies.RequireApprovedAccount))` |
-  | API `POST /admin/sessions/list` (picker) | `Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Sessions.View), nameof(AuthorizationPolicies.RequireApprovedAccount))` |
+  | API `POST /admin/attendance/sessions/list` (picker) | `Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Attendance.View), nameof(AuthorizationPolicies.RequireApprovedAccount))` |
 
 - **Permission code:** `PermissionCatalog.Attendance.View = "Attendance.View"`
   (`PermissionCatalog.cs:741`). Its catalogue row is
@@ -220,13 +225,13 @@ documented in 4.2, which posts nothing.
 ```
 OnInitializedAsync
   -> LoadSessionsAsync
-  -> JS simfAccount.postJson("/account/api/admin/sessions/list", GridQuery{Top=200})
-  -> BFF AccountEndpoints.Programme.cs:75  group.MapPost("/admin/sessions/list")
-  -> SimfAdminClient.ListSessionsAsync
-  -> API POST /api/v1/admin/sessions/list  (ListSessionsEndpoint, Sessions.View)
-  -> IAdminSessionService.ListAllAsync
-  -> ApiResult<GridPage<AdminSessionSummary>>
-  -> _sessions = Items.Where(s => s.IsActive).OrderBy(s => s.Code)
+  -> JS simfAccount.postJson("/account/api/admin/attendance/sessions/list", GridQuery{Top=200})
+  -> BFF AccountEndpoints.FeedbackAndReports.cs  group.MapPost("/admin/attendance/sessions/list")
+  -> SimfAdminClient.ListSessionAttendanceAsync
+  -> API POST /api/v1/admin/attendance/sessions/list  (ListSessionAttendanceEndpoint, Attendance.View)
+  -> ISessionAttendanceService.ListSessionAttendanceAsync  (Where(session => session.IsActive))
+  -> ApiResult<GridPage<SessionAttendanceRow>>
+  -> _sessions = Items.OrderBy(s => s.Code)
 
 Session picked (OnSessionChangedAsync) / Refresh clicked (RefreshAsync)
   / 15-second PeriodicTimer tick (AutoRefreshLoopAsync)
@@ -263,7 +268,7 @@ and `118-120`). A BFF handler with no token returns `Results.Unauthorized()`, an
 
 | When | Page call | BFF mapping | `SimfAdminClient` method | API endpoint + gate | Response shape |
 |------|-----------|-------------|--------------------------|---------------------|----------------|
-| `OnInitializedAsync` | `simfAccount.postJson`, body `new GridQuery { Top = 200 }` | `AccountEndpoints.Programme.cs:75` `MapPost("/admin/sessions/list")` | `ListSessionsAsync` | `POST /api/v1/admin/sessions/list` - `ListSessionsEndpoint`, `Sessions.View` + `RequireApprovedAccount` | `ApiResult<GridPage<AdminSessionSummary>>` |
+| `OnInitializedAsync` | `simfAccount.postJson`, body `new GridQuery { Top = 200 }` | `AccountEndpoints.FeedbackAndReports.cs` `MapPost("/admin/attendance/sessions/list")` | `ListSessionAttendanceAsync` | `POST /api/v1/admin/attendance/sessions/list` - `ListSessionAttendanceEndpoint`, `Attendance.View` + `RequireApprovedAccount` | `ApiResult<GridPage<SessionAttendanceRow>>` |
 | Session picked / Refresh / 15 s tick | `simfAccount.getJson`, no body | `AccountEndpoints.SeatingAndMeetings.cs:106` `MapGet("/admin/sessions/{sessionId:guid}/seat-map")` | `GetAdminSessionSeatMapAsync` (relative `sessions/{sessionId}/seat-map`) | `GET /api/v1/admin/sessions/{sessionId:guid}/seat-map` - `GetAdminSessionSeatMapEndpoint`, `Attendance.View` + `RequireApprovedAccount` | `ApiResult<SessionSeatMap>` |
 | Session picked / Refresh / 15 s tick | `simfAccount.postJson`, body `new GridQuery { Top = 200 }` | `AccountEndpoints.SeatingAndMeetings.cs:114` `MapPost("/admin/sessions/{sessionId:guid}/present/list")`, binding `GridQuery` | `ListSessionPresentAttendeesAsync` (relative `sessions/{sessionId}/present/list`) | `POST /api/v1/admin/sessions/{sessionId:guid}/present/list` - `ListSessionPresentAttendeesEndpoint`, `Attendance.View` + `RequireApprovedAccount` | `ApiResult<GridPage<SessionPresentAttendee>>` |
 
@@ -375,17 +380,20 @@ name rather than as a blank line". Seats come from a second App-DB query over
 
 ## 7. Edge cases + known limitations
 
-- **The picker needs a permission the page does not gate on.** Page gate
-  `Attendance.View`; `/admin/sessions/list` gate `Sessions.View`
-  (`SessionEndpoints.cs:22`). An admin holding only `Attendance.View` reaches the
-  page, the picker load 403s, and they get the `LoadFailed` toast with no
-  dropdown and no way forward. This is real behaviour, documented in the Admin
-  Manual as a two-permission requirement, not a defect report.
-- **The session list is one 200-row page, filtered client-side.**
-  `LoadSessionsAsync` asks for `Top = 200` and then applies
-  `.Where(s => s.IsActive)` in the browser. Past 200 sessions the dropdown
-  silently misses some, and the client-side `IsActive` filter means the visible
-  count can be far below 200 even when the window was full.
+- **The picker no longer needs a second permission.** It used to: the page gates
+  on `Attendance.View` while `/admin/sessions/list` gates on `Sessions.View`, so
+  an operator holding only the page's own permission reached the page, took a 403
+  on the picker load, and got the `LoadFailed` toast with no dropdown and no way
+  forward. Both baselines made that concrete rather than theoretical:
+  `Attendance.View` seeds to SecurityTeam, `Sessions.View` to
+  ScientificCommittee. The picker now reads `/admin/attendance/sessions/list`,
+  which carries this page's own gate.
+- **The session list is one 200-row page, scoped server-side.**
+  `LoadSessionsAsync` asks for `Top = 200`; the endpoint applies
+  `Where(session => session.IsActive)` as the resource's own scope, ahead of the
+  grid filters and where no request can widen it. Past 200 sessions the dropdown
+  silently misses some: the 200 is the page size, and the scope is applied
+  before it, so an event with more than 200 active sessions would truncate.
 - **The placeholder option cannot be re-selected in a browser.** `SimfSelect`
   renders it as `<option value="" disabled ...>` (`SimfSelect.razor:26`). The
   "clear the selection" branch of `OnSessionChangedAsync` therefore has no UI

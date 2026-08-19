@@ -435,8 +435,10 @@ colours plus a named list of everyone currently inside the hall, with their
 organisation, job title, seat and the time they entered. It is the page to have
 open on a screen at the back of the room. It refreshes itself every 15 seconds
 while a session is selected, so a scan at the door appears without anyone
-touching the keyboard. Needs the **Attendance View** permission for the hall
-data, and the **Sessions View** permission for the session picker.
+touching the keyboard. Needs the **Attendance View** permission, and nothing
+else: the session picker reads the attendance session list, which carries the
+same permission. It used to need **Sessions View** as well, which meant the
+security team could open the page and then find an empty picker.
 
 #### Most common tasks
 

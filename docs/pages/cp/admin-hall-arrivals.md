@@ -10,7 +10,7 @@
 | **Pattern** | Not a CRUD list. A single-action operator console: one picker, one text field, two buttons. No `SimfDataGrid`, no toolbar, no pager, no modals. |
 | **Status** | Real (D-244, `docs/decisions/DECISIONS_LOG.md`) |
 | **Implements use case(s)** | `UC-35`. `SIMF-UCS-001-Use-Case-Specifications.md` §4.4 "Field operations" lists it as "Check an attendee in at a hall door", primary actor "Staff / System", requirement `FR-305`. `SIMF-FDS-003` §5.4 names the same id for the door scan ("A Staff user, or a device at the door, scans the attendee's badge as they enter a session hall (`UC-35`)"), and its traceability row maps `FR-305 hall-arrival verification` to `UC-35 Check an attendee in at a hall door`. |
-| **Backend endpoints** | `POST /account/api/admin/sessions/list`, `POST /account/api/admin/sessions/{sessionId}/arrivals`, `POST /account/api/admin/sessions/{sessionId}/departures` |
+| **Backend endpoints** | `POST /account/api/admin/hall-arrivals/sessions/list`, `POST /account/api/admin/sessions/{sessionId}/arrivals`, `POST /account/api/admin/sessions/{sessionId}/departures` |
 | **Source file** | [`HallArrivalsConsole.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/HallArrivalsConsole.razor) + [`HallArrivalsConsole.razor.cs`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/HallArrivalsConsole.razor.cs) |
 | **Tests** | [`docs/tests/e2e/cp-admin-hall-arrivals.md`](../../tests/e2e/cp-admin-hall-arrivals.md); `tests/SIMF.Api.Tests/HallArrivalScanTests.cs`; `tests/SIMF.ControlPanel.Tests/HallArrivalsConsoleSessionPickerTests.cs`; `tests/SIMF.Api.Tests/HallAttendanceTests.cs`; `tests/SIMF.Api.Tests/Operations/HallAttendanceCloseoutWorkerTests.cs` |
 | **Last reviewed** | `2026-08-19` |
@@ -223,7 +223,7 @@ and an `AuditEvents.HallDepartureRecorded` entry.
 
 | When | CP page call (BFF) | API route reached | Gate on the API endpoint | Request body | Response shape |
 |------|--------------------|-------------------|--------------------------|--------------|----------------|
-| `OnInitializedAsync` | `POST /account/api/admin/sessions/list` (`AccountEndpoints.Programme.cs` -> `SimfAdminClient.ListSessionsAsync`) | `POST /api/v1/admin/sessions/list` (`ListSessionsEndpoint`) | `PolicyFor(Sessions.View)` + `RequireApprovedAccount` | `GridQuery { Top = 200, Sort = "start" }` | `ApiResult<GridPage<AdminSessionSummary>>` |
+| `OnInitializedAsync` | `POST /account/api/admin/hall-arrivals/sessions/list` (`AccountEndpoints.Moderation.cs` -> `SimfAdminClient.ListArrivalSessionsAsync`) | `POST /api/v1/admin/hall-arrivals/sessions/list` (`ListArrivalSessionsEndpoint`) | `PolicyFor(HallArrivals.View)` + `RequireApprovedAccount` | `GridQuery { Top = 200, Sort = "start" }` | `ApiResult<GridPage<HallArrivalSessionOption>>` |
 | Click **Record arrival** | `POST /account/api/admin/sessions/{sessionId:guid}/arrivals` (`AccountEndpoints.Moderation.cs` -> `SimfAdminClient.RecordQrArrivalAsync`) | `POST /api/v1/admin/sessions/{sessionId:guid}/arrivals` (`RecordQrArrivalEndpoint`) | `PolicyFor(HallArrivals.Record)` + `RequireApprovedAccount` + `RequireRateLimiting(RateLimitOptions.OperationalPolicy)` | `RecordQrArrivalRequest { QrId }` | `ApiResult<QrArrivalResult>` |
 | Click **Record departure** | `POST /account/api/admin/sessions/{sessionId:guid}/departures` (`AccountEndpoints.Moderation.cs` -> `SimfAdminClient.RecordQrDepartureAsync`) | `POST /api/v1/admin/sessions/{sessionId:guid}/departures` (`RecordQrDepartureEndpoint`) | Same three as the arrival endpoint | `RecordQrArrivalRequest { QrId }` (the shapes are deliberately reused) | `ApiResult<QrArrivalResult>` |
 
@@ -241,7 +241,7 @@ client-side:
 ```csharp
 var now = SimfClock.Now;
 _sessions = envelope.Data.Items
-    .Where(s => s.IsActive && now >= s.Start - GraceOf(s))
+    .Where(s => now >= s.Start - GraceOf(s))
     .OrderBy(s => now <= s.End + GraceOf(s) ? 0 : 1)
     .ThenByDescending(s => s.Start)
     .ToList();
@@ -345,13 +345,16 @@ Server host.
   `enforceCapacity`; the gate-door caller passes `false` and logs a warning instead
   of refusing, because a person who physically passed a turnstile must still be
   counted. The operator console and the geofence path both enforce.
-- **`Sessions.View` is required to populate the picker, and it is not the page's own
-  permission.** `/admin/sessions/list` is gated by `PolicyFor(Sessions.View)`, whose
-  catalogue baseline is `ScientificCommittee`, while `HallArrivals.View` seeds to
-  `SecurityTeam`. A role granted only the two `HallArrivals` codes therefore opens
-  the page and gets an error alert instead of a session list. `Administrator` is
-  unaffected (wildcard). Recorded here as a real gap, not a design statement - no
-  source comment addresses it.
+- **The picker needs no permission beyond the page's own.** It used to: it loaded
+  from `/admin/sessions/list`, gated `PolicyFor(Sessions.View)`, whose catalogue
+  baseline is `ScientificCommittee`, while `HallArrivals.View` seeds to
+  `SecurityTeam`. A role granted only the two `HallArrivals` codes opened the page
+  and got an error alert instead of a session list - at a hall door, which is
+  where this console is used. `Administrator` was unaffected (wildcard), which is
+  why it survived so long. The console now reads
+  `/admin/hall-arrivals/sessions/list`, gated `HallArrivals.View`, returning
+  `HallArrivalSessionOption` - only what the picker needs, including the RESOLVED
+  arrival grace, so the picker and the door still apply the same rule.
 - **The session picker is capped at 200.** The request asks for `Top = 200` and the
   service's grid spec maxes at 200, so a programme with more than 200 sessions
   silently loses the tail. The page shows no "list was capped" notice (unlike
@@ -477,7 +480,7 @@ All in [`docs/tests/e2e/cp-admin-hall-arrivals.md`](../../tests/e2e/cp-admin-hal
 | Unknown badge QR | E2E-HAR-010 | §6 `ATTENDEE_QR_UNKNOWN` | `Unknown_qr_is_400` |
 | Attendee not approved | E2E-HAR-011 | §6 `ATTENDEE_NOT_APPROVED` | `Non_approved_attendee_is_403` |
 | QR field capped at 64 | E2E-HAR-012 | §4.5 | - |
-| Server 500 on `/sessions/list` | E2E-HAR-013 | §6 fallback | - |
+| Server 500 on `/hall-arrivals/sessions/list` | E2E-HAR-013 | §6 fallback | - |
 | RTL render | E2E-HAR-014 | §8 (note the `DisplayNameArabic` mismatch in §7) | - |
 | Arrival on a stale session -> `SESSION_NOT_LIVE` | E2E-HAR-015 | §6, §7 | - |
 | Hall at capacity | E2E-HAR-016 | §6 `HALL_AT_CAPACITY` | - |

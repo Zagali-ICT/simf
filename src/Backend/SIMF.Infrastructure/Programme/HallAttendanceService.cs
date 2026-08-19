@@ -12,9 +12,11 @@ using SIMF.Application.Programme.Abstractions;
 using SIMF.Application.SeatReservations.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Grids;
 using SIMF.Common.Options;
 using SIMF.Contracts.Sessions;
 using SIMF.Domain.Programme;
+using SIMF.Infrastructure.Common.Grids;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Programme;
@@ -928,4 +930,51 @@ internal sealed class HallAttendanceService(
     }
 
     private static double ToRadians(double degrees) => degrees * Math.PI / 180.0;
+
+    /// <summary>The grid contract for the hall-arrival console's session picker.
+    /// Ordered by start so the console's own live-first sort has a stable base,
+    /// and capped at the 200 the console asks for.</summary>
+    private static readonly GridColumns<Session> ArrivalSessionColumns =
+        new GridColumns<Session>()
+            .Add("code", session => session.Code, searchable: true)
+            .Add("title", session => session.Title, searchable: true)
+            .Add("titleArabic", session => session.TitleArabic, searchable: true)
+            .Add("start", session => session.Start)
+            .DefaultOrder("start")
+            .PageSize(fallback: 50, max: 200);
+
+    public Task<GridPage<HallArrivalSessionOption>> ListArrivalSessionsAsync(
+        GridQuery query, CancellationToken cancellationToken = default)
+    {
+        // Hoisted to a local so it rides the query as a parameter: the option
+        // monitor cannot be translated to SQL.
+        var globalGraceMinutes =
+            walkInMode.CurrentValue.ResolveArrivalGraceMinutes(timeProvider.SimfNow());
+
+        // Active sessions only, and that is the resource's own scope rather than
+        // one of the grid's filters, so it composes ahead of them and no request
+        // can widen it.
+        return appDbContext.Sessions
+            .Where(session => session.IsActive)
+            .ToGridPageAsync(
+                query, ArrivalSessionColumns, session => session.Id,
+                session => new HallArrivalSessionOption(
+                    session.Id,
+                    session.Code,
+                    session.Title,
+                    session.TitleArabic,
+                    session.Hall!.Name,
+                    session.Hall!.NameArabic,
+                    session.Start,
+                    session.End,
+                    // The SAME shared rule the door applies, resolved here rather
+                    // than left to the client: the console filters its picker by
+                    // this value, so a second implementation would let the picker
+                    // and the door disagree about which sessions are open.
+                    WalkInModeOptions.ResolveArrivalGraceMinutes(
+                        session.ArrivalGraceMinutesOverride,
+                        session.Hall!.ArrivalGraceMinutes,
+                        globalGraceMinutes)),
+                cancellationToken);
+    }
 }
