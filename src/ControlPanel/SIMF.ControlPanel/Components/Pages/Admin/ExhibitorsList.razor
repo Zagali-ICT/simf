@@ -187,17 +187,18 @@
                                        withdraws the badge scanner and the visitor contact
                                        cards from one officer, and is held apart from Delete
                                        because Delete retires the whole exhibitor. *@
-                                    @if (account.IsActive)
-                                    {
-                                        <AuthorizedAction Permission="@PermissionCatalog.Exhibitors.RevokeAccount">
-                                            <SimfButton Variant="danger"
-                                                        Size="sm"
-                                                        Disabled="_revokeBusy"
-                                                        OnClick="@(() => AskRevoke(account))">
-                                                @L["Admin.Exhibitors.Revoke.Action"]
-                                            </SimfButton>
-                                        </AuthorizedAction>
-                                    }
+                                    @* No IsActive test: ListAccountsAsync only ever
+                                       returns live memberships, so the guard was
+                                       always true and read as though a revoked row
+                                       could appear here. *@
+                                    <AuthorizedAction Permission="@PermissionCatalog.Exhibitors.RevokeAccount">
+                                        <SimfButton Variant="danger"
+                                                    Type="button"
+                                                    Disabled="_revokeBusy"
+                                                    OnClick="@(() => AskRevoke(account))">
+                                            @L["Admin.Exhibitors.Revoke.Action"]
+                                        </SimfButton>
+                                    </AuthorizedAction>
                                 </td>
                             </tr>
                         }

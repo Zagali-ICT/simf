@@ -63,6 +63,14 @@ internal sealed class AesGcmPiiEncryptor : IPiiEncryptor
         {
             return plaintext; // already encrypted — idempotent.
         }
+        return Seal(plaintext);
+    }
+
+    public string? EncryptFreeText(string? plaintext) =>
+        string.IsNullOrEmpty(plaintext) ? plaintext : Seal(plaintext);
+
+    private string Seal(string plaintext)
+    {
         var key = RequireKey();
 
         var nonce = new byte[NonceLengthBytes];

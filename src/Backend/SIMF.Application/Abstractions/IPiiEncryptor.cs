@@ -22,6 +22,17 @@ public interface IPiiEncryptor
     /// returned unchanged. Throws if no key is configured.</summary>
     string? Encrypt(string? plaintext);
 
+    /// <summary>Encrypts free text that the USER controls, with no idempotence
+    /// shortcut.
+    ///
+    /// <para><see cref="Encrypt"/> returns a value that already begins
+    /// <c>enc:1:</c> unchanged, which is right for a re-saved identifier and
+    /// wrong for anything a person can type: a visitor who opens a chat message
+    /// with the literal marker would have it stored in the CLEAR, and read back
+    /// through a decryptor that then tries to base64-decode the rest of their
+    /// sentence. Use this for any column whose plaintext is free text.</para></summary>
+    string? EncryptFreeText(string? plaintext);
+
     /// <summary>Decrypts an <c>enc:1:</c> value. Null/empty and legacy plaintext
     /// (no marker) are returned unchanged. Throws if a marked value is supplied
     /// but no key is configured.</summary>

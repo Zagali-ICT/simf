@@ -464,9 +464,21 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
         // about 1.4x that plus the marker, which does not fit the 4000-character
         // ceiling nvarchar allows. Nothing queries this column - no Contains, no
         // equality, no ORDER BY - so randomized encryption costs nothing here.
+        //
+        // Its OWN converter, and not the one above, because this column is the
+        // only one on the converter whose plaintext a USER types. The shared
+        // encryptor treats a value that already begins with the marker as
+        // encrypted and returns it unchanged, which is correct for an identifier
+        // being re-saved and dangerous here: a visitor who opened a message with
+        // that literal prefix would have the message stored in the clear, and read
+        // back through a decryptor that tried to base64-decode the rest of their
+        // sentence. EncryptFreeText has no such shortcut.
+        var freeTextConverter = new ValueConverter<string, string?>(
+            value => _pii.EncryptFreeText(value),
+            value => _pii.Decrypt(value) ?? string.Empty);
         modelBuilder.Entity<SIMF.Domain.Ai.AiChatMessage>()
             .Property(message => message.Content)
-            .HasConversion(requiredPiiConverter)
+            .HasConversion(freeTextConverter)
             .HasColumnType("nvarchar(max)");
     }
 }

@@ -1225,6 +1225,10 @@ internal sealed class SeatReservationService(
     /// can send, as both its filter and its sort. A key not declared here is a 400,
     /// not a silently ignored request.
     /// </summary>
+    /// <summary>The collation every *Arabic column carries. Named here so the
+    /// forced COLLATE below cannot drift from the one the model applies.</summary>
+    private const string ArabicCollation = "Arabic_CI_AI";
+
     private static readonly GridColumns<SeatReservation> ActiveBookingColumns =
         new GridColumns<SeatReservation>()
             // One page column carries both languages, and one key has to serve both
@@ -1234,8 +1238,19 @@ internal sealed class SeatReservationService(
             // replaces, and the sort is still by English title, that being the
             // prefix. Dropping the Arabic half would have left an Arabic operator a
             // filter box that silently returns the unfiltered set.
+            // COLLATE on the non-Arabic operands, and it is load-bearing. Every
+            // *Arabic column now carries Arabic_CI_AI while the rest carry the
+            // instance default, and SQL Server refuses to evaluate an expression
+            // whose operands disagree - so concatenating them raised
+            // "Cannot resolve the collation conflict" on every sort click and
+            // every filter box on this grid, measured against the engine rather
+            // than reasoned about. Forcing one collation across the whole
+            // expression keeps the single searchable key the page wants; the
+            // alternative, splitting it into per-column predicates, would have
+            // given the sort arrow nothing coherent to order by.
             .Add("session", reservation =>
-                reservation.Session!.Title + " " + reservation.Session!.TitleArabic)
+                EF.Functions.Collate(reservation.Session!.Title, ArabicCollation)
+                    + " " + reservation.Session!.TitleArabic)
             .Add("start", reservation => reservation.Session!.Start)
             // Row label only. The hand-written switch this replaces also broke ties
             // on SeatNumber; a REQUESTED sort is one level plus the tiebreak here,

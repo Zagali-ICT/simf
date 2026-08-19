@@ -1,5 +1,4 @@
 ﻿// Tests: SIMF.Api.Tests/AssetEndpointsTests.cs
-using System.Data.SqlTypes;
 using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
