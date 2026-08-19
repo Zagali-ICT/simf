@@ -51,6 +51,7 @@ public interface ITotpEnrollmentService
     /// </summary>
     Task<TotpSetupResponse?> GetCurrentPairingAsync(
         Guid userId,
+        string code,
         CancellationToken cancellationToken = default);
 
     /// <summary>

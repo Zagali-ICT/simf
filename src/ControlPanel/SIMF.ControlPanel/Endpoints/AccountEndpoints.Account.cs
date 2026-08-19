@@ -47,14 +47,17 @@ internal static partial class AccountEndpoints
             return Forward(await api.TotpSetupAsync(token));
         });
 
-        // Returns the QR for the caller's CURRENT secret (no rotation).
-        // Drives the /account/totp-pairing CP page used to re-pair a lost
-        // authenticator without resetting the seeded super-admin's secret.
-        group.MapGet("/totp/pairing", async (HttpContext http, SimfAccountClient api) =>
+        // Returns the QR for the caller's CURRENT secret (no rotation), in
+        // exchange for a code from that authenticator. Drives the
+        // /account/totp-pairing CP page, which adds a SECOND device. A POST
+        // because it carries a code, and it carries a code because the response
+        // contains the secret in plaintext.
+        group.MapPost("/totp/pairing",
+            async (TotpConfirmRequest body, HttpContext http, SimfAccountClient api) =>
         {
             var token = await http.GetTokenAsync("access_token");
             if (token is null) return Results.Unauthorized();
-            return Forward(await api.TotpPairingAsync(token));
+            return Forward(await api.TotpPairingAsync(body, token));
         });
 
         // Verifies a code against the active secret without mutating state.

@@ -174,7 +174,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/login` + `/login/totp` + `/login/recovery` + `/forgot-password` + `/auth/pending` + `/auth/rejected` | [`cp-auth-flow.md`](cp-auth-flow.md) | E2E-AUTH-001..010 |
 | `/account/profile` | [`cp-account-profile.md`](cp-account-profile.md) | E2E-PRF-001..016 |
 | `/account/notifications` | [`cp-account-notifications.md`](cp-account-notifications.md) | E2E-NTF-001..012 |
-| `/account/totp-pairing` | [`cp-account-totp-pairing.md`](cp-account-totp-pairing.md) | E2E-TPP-001..010 |
+| `/account/totp-pairing` | [`cp-account-totp-pairing.md`](cp-account-totp-pairing.md) | E2E-TPP-001..011 |
 | `/login/enrol-2fa` — mandatory first-sign-in TOTP enrolment (`#2`, enrolment-first) | [`cp-2fa-enrolment.md`](cp-2fa-enrolment.md) | E2E-TFE-001..013 |
 | `/not-permitted` + `/not-found` + `/Error` | [`cp-framework-pages.md`](cp-framework-pages.md) | E2E-FRM-001..010 |
 
@@ -351,10 +351,10 @@ being quoted in planning as if current.
   196 against a pinned total of 197. Only the two bold totals are
   machine-checked, so the parts had drifted unnoticed; counting by prefix is
   reproducible with one `ls`.)
-- **Total scenarios:** 3186 Coverage-matrix rows, every id distinct. That
+- **Total scenarios:** 3187 Coverage-matrix rows, every id distinct. That
   includes the **360** generated element-sweep rows (`E2E-{NS}-ELS-001/002`, two
   per live page — see `tools/qa/generate_els_rows.py`); the hand-authored
-  functional total is 2826.
+  functional total is 2827.
 - **Authored:** all pages. The D-133 "pending" stubs are fully authored, and
   every event-module and P2–P5 page added since has its own file.
 - **Execution:** the canonical run today is a Chrome DevTools MCP browser pass

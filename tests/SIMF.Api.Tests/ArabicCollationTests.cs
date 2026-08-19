@@ -92,6 +92,13 @@ public sealed class ArabicCollationTests : IClassFixture<SimfApiFactory>
     /// <summary>"Ahmad", opening with a bare alef U+0627.</summary>
     private const string BareAlefName = "احمد";
 
+    /// <summary>"School", ending in the teh marbuta U+0629.</summary>
+    private const string TehMarbutaWord = "مدرسة";
+
+    /// <summary>The same word ending in a plain heh U+0647, which is how it is
+    /// habitually typed.</summary>
+    private const string HehWord = "مدرسه";
+
     private readonly SimfApiFactory _factory;
     private readonly HttpClient _client;
 
@@ -200,25 +207,38 @@ public sealed class ArabicCollationTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task A_precomposed_alef_hamza_is_still_a_different_letter_from_a_bare_alef()
+    public async Task A_precomposed_alef_hamza_now_matches_a_bare_alef()
     {
-        // MEASURED, NOT WANTED. This is the case the collation was reached for and
-        // the one case it does not cover, for the reason set out on the class: SQL
-        // Server weighs the precomposed U+0623 as its own letter and never
-        // decomposes it, so accent-insensitivity has nothing to ignore. Read the
-        // green here as "the gap is still open", never as "this is correct". When
-        // it is closed, this test fails and its replacement asserts the fold.
+        // This is the replacement the previous version of this test predicted. The
+        // collation never closed this gap and could not: SQL Server weighs the
+        // precomposed U+0623 as its own letter and never decomposes it, so
+        // accent-insensitivity has nothing to ignore. The seam folds the letter
+        // forms explicitly instead - the same REPLACE chain applied to the column
+        // in SQL and to the needle in memory - which is why the row is now found
+        // from either spelling.
         var admin = await CreateAdministratorAndSignInAsync();
         var suffix = NewSuffix();
         var id = await CreateSponsorAsync(
             admin, $"{HamzaName} العتيبي {suffix}", SponsorTier.Bronze);
 
-        // Stored and searchable by the spelling it was stored with.
         Assert.Contains(await SearchAsync(admin, HamzaName), row => row.Id == id);
+        Assert.Contains(await SearchAsync(admin, BareAlefName), row => row.Id == id);
+    }
 
-        // ... and invisible to the other spelling of the same name.
-        Assert.DoesNotContain(
-            await SearchAsync(admin, BareAlefName), row => row.Id == id);
+    [Fact]
+    public async Task A_bare_alef_is_found_by_someone_typing_the_hamza()
+    {
+        // The other direction. The fold is applied to BOTH the stored column and
+        // the needle, so it cannot matter which way round the two spellings fall -
+        // and a fold applied to only one side would pass the case above while
+        // failing this one.
+        var admin = await CreateAdministratorAndSignInAsync();
+        var suffix = NewSuffix();
+        var id = await CreateSponsorAsync(
+            admin, $"{BareAlefName} العتيبي {suffix}", SponsorTier.Silver);
+
+        Assert.Contains(await SearchAsync(admin, BareAlefName), row => row.Id == id);
+        Assert.Contains(await SearchAsync(admin, HamzaName), row => row.Id == id);
     }
 
     // -- Helpers --------------------------------------------------------------

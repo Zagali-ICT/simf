@@ -172,14 +172,16 @@ public sealed class TotpEnrolmentTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Pairing_returns_404_when_the_account_has_no_active_secret()
     {
-        // D-096: a fresh visitor has not enrolled in TOTP, so the pairing
-        // endpoint returns 404 — the CP page surfaces this as "use the
-        // Profile page to enrol" rather than as an error.
+        // A fresh visitor has not enrolled in TOTP, so the pairing endpoint
+        // returns 404 — the CP page surfaces this as "use the Profile page to
+        // enrol" rather than as an error. The 404 is answered BEFORE the code is
+        // checked, deliberately: with no secret there is nothing to verify against
+        // and nothing to protect, and demanding a code first would tell a caller
+        // with no authenticator to produce one.
         var (token, _, _) = await SignInAsync();
 
-        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/v1/app/auth/totp/pairing");
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        var response = await _client.SendAsync(request);
+        var response = await PostAuthAsync(
+            "/api/v1/app/auth/totp/pairing", new TotpConfirmRequest { Code = "000000" }, token);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
@@ -187,10 +189,11 @@ public sealed class TotpEnrolmentTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Pairing_returns_the_same_QR_for_the_enrolled_users_active_secret()
     {
-        // D-096: an enrolled user can re-fetch the QR for their existing secret
-        // without rotating it; the response carries the SAME secret each call
-        // (the read endpoint is idempotent), unlike POST /auth/totp/setup which
-        // rotates a candidate secret on every call.
+        // An enrolled user can re-fetch the QR for their existing secret without
+        // rotating it — the response carries the SAME secret each call, unlike
+        // POST /auth/totp/setup which rotates a candidate on every call — but only
+        // in exchange for a current code from that authenticator, because the
+        // response contains the secret in plaintext.
         var (token, _, refreshToken) = await SignInAsync();
         var setup = await ReadAsync<TotpSetupResponse>(
             await PostAuthAsync<object>("/api/v1/app/auth/totp/setup", null, token));
@@ -205,9 +208,12 @@ public sealed class TotpEnrolmentTests : IClassFixture<SimfApiFactory>
         var refreshed = await ReadAsync<AuthTokens>(await _client.PostAsJsonAsync(
             "/api/v1/app/auth/refresh", new RefreshRequest { RefreshToken = refreshToken }));
 
-        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/v1/app/auth/totp/pairing");
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", refreshed.AccessToken);
-        var response = await _client.SendAsync(request);
+        // A fresh code: the confirm above consumed the previous window's.
+        var revealCode = new Totp(bytes).ComputeTotp(DateTime.UtcNow);
+        var response = await PostAuthAsync(
+            "/api/v1/app/auth/totp/pairing",
+            new TotpConfirmRequest { Code = revealCode },
+            refreshed.AccessToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = (await response.Content.ReadFromJsonAsync<ApiResult<TotpSetupResponse>>())!;
@@ -215,6 +221,38 @@ public sealed class TotpEnrolmentTests : IClassFixture<SimfApiFactory>
         Assert.Equal(setup.Secret, body.Data!.Secret);
         Assert.StartsWith("otpauth://totp/", body.Data.OtpAuthUri);
         Assert.Contains("<svg", body.Data.QrCodeSvg);
+    }
+
+    [Fact]
+    public async Task Pairing_without_a_valid_code_does_not_hand_over_the_secret()
+    {
+        // The whole reason the endpoint takes a code. A bearer token alone used to
+        // be enough to read this account's TOTP secret in plaintext, which let
+        // anyone holding a stolen token mint codes indefinitely - the second factor
+        // ceasing to be a second factor at exactly the moment it matters.
+        var (token, _, refreshToken) = await SignInAsync();
+        var setup = await ReadAsync<TotpSetupResponse>(
+            await PostAuthAsync<object>("/api/v1/app/auth/totp/setup", null, token));
+        var bytes = Base32Encoding.ToBytes(setup.Secret);
+        var confirm = await PostAuthAsync(
+            "/api/v1/app/auth/totp/confirm",
+            new TotpConfirmRequest { Code = new Totp(bytes).ComputeTotp(DateTime.UtcNow) },
+            token);
+        Assert.Equal(HttpStatusCode.OK, confirm.StatusCode);
+
+        var refreshed = await ReadAsync<AuthTokens>(await _client.PostAsJsonAsync(
+            "/api/v1/app/auth/refresh", new RefreshRequest { RefreshToken = refreshToken }));
+
+        var response = await PostAuthAsync(
+            "/api/v1/app/auth/totp/pairing",
+            new TotpConfirmRequest { Code = "000000" },
+            refreshed.AccessToken);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        // And the secret is nowhere in the refusal.
+        var payload = await response.Content.ReadAsStringAsync();
+        Assert.DoesNotContain(setup.Secret, payload, StringComparison.Ordinal);
     }
 
     private async Task<(string AccessToken, string Email, string RefreshToken)> SignInAsync()

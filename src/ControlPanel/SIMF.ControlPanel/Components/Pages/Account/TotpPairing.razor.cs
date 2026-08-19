@@ -12,30 +12,44 @@ public partial class TotpPairing
     [Inject] private IJSRuntime JS { get; set; } = default!;
     [Inject] private NavigationManager Nav { get; set; } = default!;
 
-    private bool _loading = true;
+    private bool _loading;
     private bool _verifying;
+    private bool _noSecret;
     private TotpSetupResponse? _pairing;
     private string? _loadError;
     private string? _verifyOk;
     private string? _verifyError;
+    private readonly CodeFormModel _revealModel = new();
     private readonly CodeFormModel _codeModel = new();
 
-    protected override async Task OnInitializedAsync()
+    /// <summary>Reveal the pairing, in exchange for a code from the authenticator
+    /// the caller already holds.
+    ///
+    /// <para>This used to run on page load with no challenge at all, which handed
+    /// the account's TOTP secret in plaintext to anything holding a bearer token.
+    /// It is a deliberate action now, and the API refuses it without a valid
+    /// code.</para></summary>
+    private async Task RevealAsync()
     {
+        if (_loading) { return; }
+        _loading = true;
+        _loadError = null;
         try
         {
             var envelope = await JS.InvokeAsync<ApiResult<TotpSetupResponse>>(
-                "simfAccount.getJson", "/account/api/totp/pairing");
+                "simfAccount.postJson", "/account/api/totp/pairing",
+                new TotpConfirmRequest { Code = _revealModel.Code });
             if (envelope is { Success: true, Data: not null })
             {
                 _pairing = envelope.Data;
+                _revealModel.Code = string.Empty;
             }
             else if (envelope?.Error is null || envelope.Error.Code == ErrorCodes.NotFound)
             {
-                // 404 from the API arrives as a failed envelope with no Data
-                // and no specific error code; treat as "no secret" and route
-                // the user to the Profile page to enrol.
-                _pairing = null;
+                // A 404 arrives as a failed envelope with no Data and no specific
+                // code: the account has no active secret, so this page has nothing
+                // to show and the user belongs on Profile to enrol.
+                _noSecret = true;
             }
             else
             {
