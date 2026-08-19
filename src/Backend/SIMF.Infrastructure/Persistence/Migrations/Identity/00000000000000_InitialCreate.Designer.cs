@@ -620,7 +620,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                     b.Property<string>("BodyArabic")
                         .IsRequired()
                         .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
+                        .HasColumnType("nvarchar(2000)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("ClickUrl")
                         .HasMaxLength(512)
@@ -661,7 +662,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                     b.Property<string>("TitleArabic")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(256)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");

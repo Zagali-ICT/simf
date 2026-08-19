@@ -311,6 +311,13 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     // these rows joined to the live profile type.
     public DbSet<BadgeBatchItem> BadgeBatchItems => Set<BadgeBatchItem>();
 
+
+    /// <summary>Case- and accent-insensitive Arabic collation, applied to every
+    /// <c>*Arabic</c> string column so a search for "احمد" also finds "أحمد".
+    /// The AI suffix is the load-bearing half: CI alone leaves the alef forms
+    /// distinct, which is the difference users actually type.</summary>
+    private const string ArabicCollation = "Arabic_CI_AI";
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -337,6 +344,41 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
         // These columns have no index/unique/equality-query dependency, so
         // randomized encryption is safe (verified). Reads of legacy plaintext
         // rows are returned unchanged until they are next written.
+
+        // Arabic search has been accent-SENSITIVE since the beginning, because no
+        // collation was ever set and both databases therefore run the SQL Server
+        // instance default (a *_CI_AS). Under it "احمد" does not match "أحمد": the
+        // bare alef and the alef-with-hamza are different characters, and Arabic is
+        // routinely typed both ways by the same person. Every admin grid search box
+        // and every public search over a bilingual column was quietly missing rows,
+        // and there is NO fix in C# - normalising the needle cannot change how the
+        // server compares it to the stored haystack.
+        //
+        // Accent-INSENSITIVE collation is the fix, applied per column rather than
+        // per database so it lands on exactly the text it is meant for: every
+        // string property whose name ends "Arabic". The bilingual convention across
+        // this model is a pair (Name, NameArabic), so the suffix IS the set, and
+        // keying on it means a column added later inherits the collation without
+        // anyone remembering to ask for it.
+        //
+        // What this changes besides search: equality does too, so a duplicate probe
+        // over an Arabic name now treats the two spellings as the same name. That is
+        // the desired reading of "already exists" rather than a side effect. Exactly
+        // one unique index covers an Arabic column - Sponsor (Tier, NameArabic)
+        // filtered on IsActive - and every seeded Arabic literal was checked against
+        // the fold before this landed: nothing collides.
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            foreach (var property in entityType.GetProperties())
+            {
+                if (property.ClrType == typeof(string)
+                    && property.Name.EndsWith("Arabic", StringComparison.Ordinal))
+                {
+                    property.SetCollation(ArabicCollation);
+                }
+            }
+        }
+
         var piiConverter = new ValueConverter<string?, string?>(
             value => _pii.Encrypt(value),
             value => _pii.Decrypt(value));
@@ -379,5 +421,27 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
             .Property(document => document.Number)
             .HasConversion(requiredPiiConverter)
             .HasMaxLength(256);
+
+        // The saved AI transcript is the third column on this converter, and it is
+        // here for a reason redaction could not cover. The turns were being stored
+        // REDACTED, which stops a national id or a mobile number landing in the
+        // clear but stops nothing else: the redactor matches known patterns, so a
+        // free-text address, an employer, a medical detail or a name typed into the
+        // chat was never a pattern and sat in plaintext in a table nothing prunes.
+        // Encrypting the column protects all of it, and it also gives the visitor
+        // their own words back - a reopened transcript no longer reads
+        // "[REDACTED_EMAIL]" where the assistant helpfully quoted the event's own
+        // contact address. Redaction still happens, but on the way OUT to the model
+        // provider, which is the boundary it was always meant to guard.
+        //
+        // nvarchar(max), not a widened fixed length: the plaintext is already
+        // capped at AiInputLimits.MaxInputValueLength and the base64 envelope is
+        // about 1.4x that plus the marker, which does not fit the 4000-character
+        // ceiling nvarchar allows. Nothing queries this column - no Contains, no
+        // equality, no ORDER BY - so randomized encryption costs nothing here.
+        modelBuilder.Entity<SIMF.Domain.Ai.AiChatMessage>()
+            .Property(message => message.Content)
+            .HasConversion(requiredPiiConverter)
+            .HasColumnType("nvarchar(max)");
     }
 }

@@ -19,7 +19,11 @@ internal sealed class AiChatMessageConfiguration : IEntityTypeConfiguration<AiCh
         builder.HasKey(x => x.Id);
 
         builder.Property(x => x.Role).HasMaxLength(16).IsRequired();
-        builder.Property(x => x.Content).HasMaxLength(4000).IsRequired();
+        // The column TYPE is set in SimfAppDbContext.OnModelCreating, beside the
+        // value converter that encrypts it: the ciphertext envelope does not fit
+        // the 4000-character ceiling nvarchar allows, so this is nvarchar(max).
+        // Declaring a length here as well would fight that registration.
+        builder.Property(x => x.Content).IsRequired();
 
         builder.HasIndex(x => new { x.UserId, x.CreatedAt });
     }

@@ -122,8 +122,17 @@ internal sealed class StoredFileService(
             CreatedAt = now,
             IsActive = true,
         };
+        // Retire the owner's previous file BEFORE inserting the replacement, for
+        // the services that hold one active file per owner. The order is forced by
+        // the filtered UNIQUE index on (Service, OwnerEntityId): inserting first and
+        // retiring afterwards - which is what this used to do - would now raise a
+        // duplicate-key violation instead of performing a replacement.
+        var retiredKeys = await RetirePriorActiveForOwnerAsync(
+            command.Service, command.OwnerEntityId, command.ActorUserId, now, cancellationToken);
+
         dbContext.StoredFiles.Add(file);
         await CommitOrUnwriteAsync(file, write.StorageKey, cancellationToken);
+        await UnlinkRetiredBlobsAsync(retiredKeys);
 
         await OwnerPointerSync.PointAtAsync(
             dbContext, command.Service, command.OwnerEntityId, fileId, cancellationToken);
@@ -196,8 +205,17 @@ internal sealed class StoredFileService(
             CreatedAt = now,
             IsActive = true,
         };
+        // Retire the owner's previous file BEFORE inserting the replacement, for
+        // the services that hold one active file per owner. The order is forced by
+        // the filtered UNIQUE index on (Service, OwnerEntityId): inserting first and
+        // retiring afterwards - which is what this used to do - would now raise a
+        // duplicate-key violation instead of performing a replacement.
+        var retiredKeys = await RetirePriorActiveForOwnerAsync(
+            service, ownerEntityId, actorUserId, now, cancellationToken);
+
         dbContext.StoredFiles.Add(file);
         await CommitOrUnwriteAsync(file, write.StorageKey, cancellationToken);
+        await UnlinkRetiredBlobsAsync(retiredKeys);
 
         await OwnerPointerSync.PointAtAsync(
             dbContext, service, ownerEntityId, fileId, cancellationToken);
@@ -623,6 +641,70 @@ internal sealed class StoredFileService(
     ///
     /// <para>The removal is deliberately best-effort and never replaces the
     /// original failure: the caller must still see why the upload failed.</para></summary>
+    /// <summary>Deactivate the owner's currently-active file for a service that
+    /// holds only one, and hand back the storage keys whose bytes may be released
+    /// once the replacement has actually committed.
+    ///
+    /// <para>Written with <c>ExecuteUpdateAsync</c> rather than by mutating tracked
+    /// entities, because the ORDER matters and the change tracker does not promise
+    /// one: the UPDATE has to reach SQL Server before the INSERT of the replacement,
+    /// or the filtered unique index rejects that insert. <c>ExecuteUpdateAsync</c>
+    /// issues its statement immediately, so the sequence is explicit rather than
+    /// dependent on how EF happens to batch a save.</para>
+    ///
+    /// <para>The bytes are deliberately NOT unlinked here. If the insert that
+    /// follows fails, the old row is left soft-deleted with its content still on
+    /// disk, so the state is recoverable and nothing the owner had is destroyed to
+    /// make room for an upload that never landed.</para></summary>
+    private async Task<IReadOnlyList<string>> RetirePriorActiveForOwnerAsync(
+        FileService service, Guid? ownerEntityId, Guid actorUserId,
+        DateTime now, CancellationToken cancellationToken)
+    {
+        if (ownerEntityId is not { } ownerId
+            || !FileServicePolicies.SingleActivePerOwner.Contains(service))
+        {
+            return [];
+        }
+
+        var prior = dbContext.StoredFiles
+            .Where(f => f.Service == service && f.OwnerEntityId == ownerId && f.IsActive);
+
+        var keys = await prior
+            .Where(f => f.SourceType == FileSourceType.Upload && f.StorageKey != null)
+            .Select(f => f.StorageKey!)
+            .ToListAsync(cancellationToken);
+
+        await prior.ExecuteUpdateAsync(
+            setters => setters
+                .SetProperty(f => f.IsActive, false)
+                .SetProperty(f => f.DeletedAt, now)
+                .SetProperty(f => f.UpdatedBy, actorUserId)
+                .SetProperty(f => f.UpdatedAt, now),
+            cancellationToken);
+
+        return keys;
+    }
+
+    /// <summary>Release the bytes of the rows a replacement retired, once that
+    /// replacement is committed. Best-effort and never fatal: the row is the source
+    /// of truth, and a surviving blob is wasted disk rather than an exposure, since
+    /// IsActive=false already makes it undownloadable.</summary>
+    private async Task UnlinkRetiredBlobsAsync(IReadOnlyList<string> storageKeys)
+    {
+        foreach (var key in storageKeys)
+        {
+            try
+            {
+                await storage.DeleteAsync(key, CancellationToken.None);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                logger.LogError(
+                    ex, "Could not release the retired blob at {StorageKey}.", key);
+            }
+        }
+    }
+
     private async Task CommitOrUnwriteAsync(
         StoredFile file, string storageKey, CancellationToken cancellationToken)
     {

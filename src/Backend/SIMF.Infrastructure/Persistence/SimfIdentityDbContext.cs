@@ -45,6 +45,13 @@ public class SimfIdentityDbContext(DbContextOptions<SimfIdentityDbContext> optio
     /// <summary>A7-20 (NCA) — retired password hashes for reuse prevention.</summary>
     public DbSet<PasswordHistoryEntry> PasswordHistory => Set<PasswordHistoryEntry>();
 
+
+    /// <summary>Case- and accent-insensitive Arabic collation, applied to every
+    /// <c>*Arabic</c> string column so a search for "احمد" also finds "أحمد".
+    /// The AI suffix is the load-bearing half: CI alone leaves the alef forms
+    /// distinct, which is the difference users actually type.</summary>
+    private const string ArabicCollation = "Arabic_CI_AI";
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -63,6 +70,39 @@ public class SimfIdentityDbContext(DbContextOptions<SimfIdentityDbContext> optio
         // Nothing here touches the "[AspNetUserStore]" LoginProvider value that
         // Identity writes into the tokens table: that is a row value, not a table
         // name, and changing it would break TOTP for every enrolled account.
+        // Arabic search has been accent-SENSITIVE since the beginning, because no
+        // collation was ever set and both databases therefore run the SQL Server
+        // instance default (a *_CI_AS). Under it "احمد" does not match "أحمد": the
+        // bare alef and the alef-with-hamza are different characters, and Arabic is
+        // routinely typed both ways by the same person. Every admin grid search box
+        // and every public search over a bilingual column was quietly missing rows,
+        // and there is NO fix in C# - normalising the needle cannot change how the
+        // server compares it to the stored haystack.
+        //
+        // Accent-INSENSITIVE collation is the fix, applied per column rather than
+        // per database so it lands on exactly the text it is meant for: every
+        // string property whose name ends "Arabic". The bilingual convention across
+        // this model is a pair (Name, NameArabic), so the suffix IS the set, and
+        // keying on it means a column added later inherits the collation without
+        // anyone remembering to ask for it.
+        //
+        // What this changes besides search: equality does too, so a duplicate probe
+        // over an Arabic name now treats the two spellings as the same name. That is
+        // the desired reading of "already exists" rather than a side effect. No unique index on this
+        // context covers an Arabic column; the only Arabic text here is the
+        // notification title and body.
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            foreach (var property in entityType.GetProperties())
+            {
+                if (property.ClrType == typeof(string)
+                    && property.Name.EndsWith("Arabic", StringComparison.Ordinal))
+                {
+                    property.SetCollation(ArabicCollation);
+                }
+            }
+        }
+
         modelBuilder.Entity<SimfUser>().ToTable("Users");
         modelBuilder.Entity<SimfRole>().ToTable("Roles");
         modelBuilder.Entity<IdentityUserRole<Guid>>().ToTable("UserRoles");

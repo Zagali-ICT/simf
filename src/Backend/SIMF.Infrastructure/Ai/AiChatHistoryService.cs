@@ -66,13 +66,23 @@ internal sealed class AiChatHistoryService(
         // Accumulate from the NEWEST end so that under the char cap the OLDEST
         // turns are dropped, not the most recent (short-term memory wants the
         // latest exchange most). Then flip to chronological for the model.
+        //
+        // This is where redaction belongs, and the ONLY place the transcript is
+        // redacted. The rows themselves are stored as written and encrypted at
+        // rest; what must not carry a visitor's national id, mobile, IBAN or an
+        // API key is the block about to be pasted into a prompt and sent to an
+        // external model provider. Redacting at write time instead protected the
+        // same values one step too late (they had already been sent, in the turn
+        // that produced them) and mangled the visitor's own history for the
+        // privilege. Redaction runs BEFORE the length accounting so the cap is
+        // measured on the text that is actually sent.
         var kept = new List<string>();
         var length = 0;
         foreach (var turn in recent)
         {
             var line = (string.Equals(turn.Role, RoleUser, StringComparison.Ordinal)
                 ? "Visitor: "
-                : "Assistant: ") + turn.Content;
+                : "Assistant: ") + AiAuditDetail.RedactValue(turn.Content);
             if (length + line.Length + 1 > MaxMemoryChars)
             {
                 break;
@@ -94,7 +104,7 @@ internal sealed class AiChatHistoryService(
             Id = Guid.NewGuid(),
             UserId = userId,
             Role = RoleUser,
-            Content = Redact(userMessage),
+            Content = Cap(userMessage),
             CreatedAt = now,
         });
         appDbContext.AiChatMessages.Add(new AiChatMessage
@@ -102,29 +112,30 @@ internal sealed class AiChatHistoryService(
             Id = Guid.NewGuid(),
             UserId = userId,
             Role = RoleAssistant,
-            // Redacted too, not just the visitor's own turn: a model routinely
-            // quotes the question back ("your Iqama 2123456789 is registered"),
-            // so redacting only the user row would leave the same number in the
-            // row beneath it. The LIVE answer the app renders is result.OutputText
-            // and is NOT redacted -- only the reopened transcript carries markers.
-            Content = Redact(assistantReply),
+            Content = Cap(assistantReply),
             // +1 tick so the assistant reply always orders after its question.
             CreatedAt = now.AddTicks(1),
         });
         await appDbContext.SaveChangesAsync(cancellationToken);
     }
 
-    /// <summary>Redact, then trim + clamp to the persisted column length.
+    /// <summary>Trim + clamp to the persisted column length (mirrors the AI
+    /// per-input cap), so an over-long turn never fails the insert.
     ///
-    /// <para>The same visitor text is stored REDACTED on the invocation row, so
-    /// leaving it raw here kept a plaintext copy of an Iqama / mobile / IBAN /
-    /// key two columns away from the encrypted profile fields, in a table that is
-    /// never pruned and is replayed into the next twelve prompts. Redaction runs
-    /// BEFORE the length clamp so a secret cannot survive by being truncated out
-    /// of its own pattern.</para></summary>
-    private static string Redact(string value)
+    /// <para>Both turns are stored as the visitor and the model actually wrote
+    /// them. They are NOT redacted here, and the earlier version of this method
+    /// that did redact them was solving the right problem in the wrong place: it
+    /// caught an Iqama or a mobile number because those are patterns, and missed a
+    /// home address, an employer or a diagnosis because those are not -- while
+    /// also handing the visitor back a transcript reading "[REDACTED_EMAIL]" where
+    /// the assistant had quoted the event's own contact address. The column is now
+    /// encrypted at rest (see SimfAppDbContext.OnModelCreating), which covers the
+    /// whole turn rather than the parts a regular expression can name, and
+    /// redaction moved to GetRecentContextAsync, on the boundary it was always for:
+    /// what leaves this system for a model provider.</para></summary>
+    private static string Cap(string value)
     {
-        var trimmed = AiAuditDetail.RedactValue(value).Trim();
+        var trimmed = (value ?? string.Empty).Trim();
         return trimmed.Length > AiInputLimits.MaxInputValueLength
             ? trimmed[..AiInputLimits.MaxInputValueLength]
             : trimmed;

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SIMF.Domain.Files;
+using SIMF.Common.Files;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
@@ -63,6 +64,31 @@ internal sealed class StoredFileConfiguration : IEntityTypeConfiguration<StoredF
 
         // Drives the Media Library / per-service management list.
         builder.HasIndex(file => new { file.Service, file.IsActive });
+
+        // One active file per (service, owner) - for the services where that is
+        // actually the rule. Until this index existed the invariant was a
+        // convention AssetService enforced after the fact: it uploaded the
+        // replacement, then retired the previous row, so two admins replacing the
+        // same logo at the same moment could both pass and both end active, and the
+        // readers then disagreed with the retire about which one was current. No
+        // amount of C# closes that; the database has to hold it.
+        //
+        // The service list is generated from FileServicePolicies.SingleActivePerOwner
+        // rather than written out here, so the constraint cannot drift from the code
+        // that maintains it. It is a genuine subset: a gallery, a set of identity
+        // documents and a speaker's presentations are all many-per-owner, and a
+        // blanket index would reject the second one.
+        //
+        // This also serves the reads AssetService.ResolveAsync and
+        // UserProfileRepository.GetOwnerScopedFileAsync perform - equality on
+        // Service + OwnerEntityId against live rows - so no separate covering index
+        // is added for them. With uniqueness at most one row matches, and the
+        // ordering those queries carry never has to sort anything.
+        builder.HasIndex(file => new { file.Service, file.OwnerEntityId })
+            .IsUnique()
+            .HasFilter(
+                "[IsActive] = 1 AND [OwnerEntityId] IS NOT NULL AND [Service] IN ("
+                + FileServicePolicies.SingleActivePerOwnerSqlList + ")");
 
         // "files I uploaded" + audit lookups.
         builder.HasIndex(file => file.CreatedBy);
