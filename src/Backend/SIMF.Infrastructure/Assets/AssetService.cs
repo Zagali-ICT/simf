@@ -1,4 +1,5 @@
 ﻿// Tests: SIMF.Api.Tests/AssetEndpointsTests.cs
+using System.Data.SqlTypes;
 using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -369,8 +370,18 @@ internal sealed class AssetService(
         {
             // Same-tick rows fall back to the id so both requests agree on which
             // of the two is the older one.
+            //
+            // SqlGuid, not Guid. SQL Server orders uniqueidentifier by the last
+            // six bytes first and .NET orders it field by field, so the two
+            // disagree on roughly half of all pairs. ResolveAsync breaks this
+            // exact tie in SQL with ThenByDescending(f => f.Id), and the admin
+            // grid breaks it with the seam's ascending id tiebreak - both SQL
+            // orderings. Comparing here with Guid.CompareTo would leave the retire
+            // keeping one row while every reader serves the other, which is the
+            // failure this tiebreak exists to prevent rather than a lesser form
+            // of it. Whichever order is chosen, all three have to be the same one.
             var isOlder = candidate.CreatedAt < keptCreatedAt.Value
-                || candidate.Id.CompareTo(keepId) < 0;
+                || new SqlGuid(candidate.Id).CompareTo(new SqlGuid(keepId)) < 0;
             if (isOlder)
             {
                 await fileService.DeleteAsync(candidate.Id, actorUserId, cancellationToken);

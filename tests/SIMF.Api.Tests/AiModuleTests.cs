@@ -202,6 +202,44 @@ public sealed class AiModuleTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Assistance_redacts_the_assistant_turn_too_not_only_the_visitor_s()
+    {
+        // Redacting only the `user` row looks sufficient and is not: a model
+        // routinely quotes the question back ("your Iqama 2123456789 is
+        // registered"), which would leave the same number in the row directly
+        // beneath the one that was cleaned. The offline Echo provider makes that
+        // concrete -- it replies with the prompt it was given -- so this test
+        // fails the moment the assistant turn stops being redacted.
+        //
+        // The sibling test above filters `Role == "user"`, so it passes either
+        // way and cannot stand in for this one.
+        var visitor = await SignInApprovedVisitorAsync();
+        const string marker = "QW7K";
+        var post = await PostAuthAsync(
+            "/api/v1/app/ai/assistance",
+            new AssistanceRequest
+            {
+                Message = $"my Iqama is 2123456789 and my mobile is 0551234567, "
+                    + $"when can I collect badge {marker}?",
+                Locale = "en",
+            },
+            visitor);
+        Assert.Equal(HttpStatusCode.OK, post.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var stored = await db.AiChatMessages.AsNoTracking()
+            .Where(m => m.Role == "assistant" && m.Content.Contains(marker))
+            .Select(m => m.Content)
+            .SingleAsync();
+
+        Assert.DoesNotContain("2123456789", stored, StringComparison.Ordinal);
+        Assert.DoesNotContain("0551234567", stored, StringComparison.Ordinal);
+        Assert.Contains("[REDACTED_NID]", stored, StringComparison.Ordinal);
+        Assert.Contains("[REDACTED_PHONE]", stored, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task Assistance_second_call_includes_prior_turns_as_memory()
     {
         var visitor = await SignInApprovedVisitorAsync();

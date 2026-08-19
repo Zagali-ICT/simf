@@ -1384,6 +1384,7 @@ internal sealed class SeatReservationService(
         DateTime now, CancellationToken cancellationToken)
     {
         var released = new List<SeatReservation>();
+        var reachedTheWrite = false;
         var strategy = appDbContext.Database.CreateExecutionStrategy();
         await strategy.ExecuteAsync(async () =>
         {
@@ -1395,6 +1396,27 @@ internal sealed class SeatReservationService(
                 appDbContext.Entry(stale).State = EntityState.Detached;
             }
             released.Clear();
+
+            // ...but a retry does NOT prove the previous attempt rolled back. A
+            // transient fault raised BY the commit is ambiguous: the write may have
+            // landed and only the acknowledgement been lost. In that case the
+            // candidate query below matches nothing, because every row it would have
+            // found now carries a ReleasedAt - and the caller would read zero, skip
+            // the audit row and send no "your seat was released" notice, while the
+            // holders had in fact permanently lost their seats. The stamp is the
+            // caller's `now`, so the committed set is recoverable exactly.
+            if (reachedTheWrite)
+            {
+                released.AddRange(await appDbContext.SeatReservations
+                    .Where(reservation => reservation.ReleasedAt == now
+                        && reservation.Status == BookingStatus.Cancelled
+                        && reservation.ReservedForProfileId != null)
+                    .ToListAsync(cancellationToken));
+                if (released.Count > 0)
+                {
+                    return; // it committed; hand the caller what actually landed
+                }
+            }
 
             await using var tx = await appDbContext.Database.BeginTransactionAsync(
                 System.Data.IsolationLevel.Serializable, cancellationToken);
@@ -1424,6 +1446,7 @@ internal sealed class SeatReservationService(
                 reservation.ReleasedAt = now;
                 reservation.Status = BookingStatus.Cancelled;
             }
+            reachedTheWrite = true;
             await appDbContext.SaveChangesAsync(cancellationToken);
             await tx.CommitAsync(cancellationToken);
         });
