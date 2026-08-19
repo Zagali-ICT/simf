@@ -621,6 +621,32 @@ public sealed class ReportingTests : IClassFixture<SimfApiFactory>
             early, late);
     }
 
+    // Meetings is the odd one out in this section: its "requested" column is NOT
+    // Sortable, so no click can reach the key and every page load took the
+    // default arm. That arm read the direction INVERTED to land newest-first,
+    // which made a request for ascending come back descending. The default is
+    // now newest-first outright and takes no notice of the flag, and this named
+    // arm carries the direction honestly for a caller that does send the key.
+    [Fact]
+    public async Task Meetings_sort_on_requested_follows_the_arrow()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var day = NextBlock();
+        var speakerId = await SeedSpeakerAsync();
+        await SeedSpeakerMeetingRequestAsync(speakerId, "EARLY-REQUEST", SaudiAt(day, 6));
+        await SeedSpeakerMeetingRequestAsync(speakerId, "LATE-REQUEST", SaudiAt(day, 18));
+
+        var ascending = await SortedAsync<MeetingsReportRow>(
+            token, MeetingsList, day, "requested", descending: false);
+        var descending = await SortedAsync<MeetingsReportRow>(
+            token, MeetingsList, day, "requested", descending: true);
+
+        AssertOrder(
+            ascending.Rows.Select(r => r.Subject).ToList(),
+            descending.Rows.Select(r => r.Subject).ToList(),
+            "EARLY-REQUEST", "LATE-REQUEST");
+    }
+
     /// <summary>Both directions, in one place: ascending must lead with the
     /// earlier record and descending must lead with the later one. Asserting
     /// only one direction would pass against a switch that ignores the key

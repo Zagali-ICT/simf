@@ -1329,9 +1329,11 @@ internal sealed class SeatReservationService(
                 .ToList(),
             cancellationToken);
 
-        foreach (var reservation in released)
-        {
-            await auditLog.WriteAsync(new AuditEntry
+        // The whole sweep's audit trail in ONE write. Entry-at-a-time cost an Add
+        // plus a SaveChanges per freed hold, so a twelve-seat sweep paid twelve
+        // round trips to record a single system decision.
+        await auditLog.WriteManyAsync(
+            released.Select(reservation => new AuditEntry
             {
                 EventType = AuditEvents.SeatReservationReleased,
                 Outcome = AuditOutcome.Success,
@@ -1340,7 +1342,11 @@ internal sealed class SeatReservationService(
                     + $"sessionId={reservation.SessionId}; "
                     + $"row={reservation.RowLabel}; seat={reservation.SeatNumber}; "
                     + "reason=no-show",
-            }, cancellationToken);
+            }).ToList(),
+            cancellationToken);
+
+        foreach (var reservation in released)
+        {
             // A holder with no account — a walk-in or a bulk-minted badge — is absent
             // from the map, so there is nobody to tell and the release still stands.
             if (titles.TryGetValue(reservation.SessionId, out var title)

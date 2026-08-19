@@ -17,9 +17,6 @@ namespace SIMF.Api.Tests;
 
 internal static class RatingAttendance
 {
-    // Event-local offset (+03:00) — the codebase convention the PerDay gate uses.
-    private static readonly TimeSpan EventOffset = TimeSpan.FromHours(3);
-
     /// <summary>The <c>SimfUser.Id</c> for a test email (Identity DB).</summary>
     internal static async Task<Guid> UserIdAsync(SimfApiFactory factory, string email)
     {

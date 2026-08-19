@@ -41,4 +41,13 @@ public interface IAdminExhibitorService
     Task<ExhibitorAccountSummary> LinkAccountAsync(
         Guid actorUserId, Guid exhibitorId, LinkExhibitorAccountRequest request,
         CancellationToken cancellationToken = default);
+
+    /// <summary>Withdraw one account's booth access by soft-deleting its
+    /// <c>ExhibitorMembership</c>. Provisioning and linking write that row and
+    /// nothing ever cleared it, so an officer kept badge scanning and the booth's
+    /// visitor contact cards until the whole exhibitor was retired. This is how a
+    /// single officer leaves while the booth keeps trading.</summary>
+    Task RevokeAccountAsync(
+        Guid actorUserId, Guid exhibitorId, Guid membershipId,
+        CancellationToken cancellationToken = default);
 }

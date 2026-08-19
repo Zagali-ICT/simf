@@ -502,6 +502,16 @@ public static class PermissionCatalog
         /// an account somebody else created, so it is the one exhibitor action that
         /// hands out access to visitor PII.</summary>
         public const string LinkAccount = "Exhibitors.LinkAccount";
+
+        /// <summary>Withdraw one account's booth access
+        /// (<c>DELETE /admin/exhibitors/{id}/accounts/{membershipId}</c>). Held
+        /// separately from <see cref="Delete"/>, which retires the whole exhibitor:
+        /// this severs a single officer and leaves the booth trading, which is what
+        /// an officer leaving the company actually needs. It is the counterpart to
+        /// <see cref="LinkAccount"/> — the action that takes back the reach into
+        /// visitor contact cards that linking hands out — so the administrator who
+        /// can grant booth access is the one who can also take it away.</summary>
+        public const string RevokeAccount = "Exhibitors.RevokeAccount";
     }
 
     public static class Booths
@@ -1096,6 +1106,10 @@ public static class PermissionCatalog
         // lead-capture tools to an account the admin did not create here).
         new(Exhibitors.LinkAccount, "Exhibitors", "LinkAccount",
             "Link an existing account to an exhibitor", AdminOnly),
+        // The counterpart: take the booth lead-capture tools back off one
+        // account without retiring the exhibitor it belongs to.
+        new(Exhibitors.RevokeAccount, "Exhibitors", "RevokeAccount",
+            "Revoke an account's exhibitor membership", AdminOnly),
 
         new(Booths.View, "Booths", "View", "View booths", AdminOnly),
         new(Booths.Create, "Booths", "Create", "Create booths", AdminOnly),

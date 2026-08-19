@@ -273,4 +273,15 @@ public sealed partial class SimfAdminClient
             HttpMethod.Post, $"exhibitors/{id}/accounts/link",
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
+
+    // Withdraw one account's booth access — the counterpart to
+    // LinkExhibitorAccountAsync. A soft revoke of the ExhibitorMembership, which is
+    // what the badge scan, the booth's visitor contact cards and the
+    // business-meeting notifications all read. Permission Exhibitors.RevokeAccount.
+    public Task<ApiCallResult<bool>> RevokeExhibitorAccountAsync(
+        Guid id, Guid membershipId, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Delete, $"exhibitors/{id}/accounts/{membershipId}", content: null,
+            accessToken, cancellationToken);
 }

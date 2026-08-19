@@ -1,4 +1,9 @@
-﻿// Tests: SIMF.Api.Tests/Gates/GateConfigCacheTests.cs
+﻿// Tests: SIMF.Api.Tests/GateScanTests.cs (the read-through snapshot behind every scan:
+//        allow-list filtered to active ProfileTypes, IsActive, operator assignment),
+//        SIMF.Api.Tests/GateHallDoorChainTests.cs (HallId, hall door vs perimeter),
+//        SIMF.Api.Tests/GateVisitorsListTests.cs (null snapshot for an unknown gate).
+//        Invalidate and the 5-minute expiry have no coverage of their own: nothing edits
+//        a gate between two scans, and the TTL runs on the wall clock with no seam.
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using SIMF.Application.AccessControl.Abstractions;

@@ -396,5 +396,16 @@ internal static partial class AccountEndpoints
             if (token is null) return Results.Unauthorized();
             return Forward(await api.LinkExhibitorAccountAsync(id, body, token));
         });
+        // Remove one officer from an exhibitor without retiring the exhibitor
+        // itself. The membership is what grants booth lead-capture and the
+        // visitors contact cards, so the API gates this on its own
+        // Exhibitors.RevokeAccount rather than on Delete.
+        group.MapDelete("/admin/exhibitors/{id:guid}/accounts/{membershipId:guid}",
+            async (Guid id, Guid membershipId, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.RevokeExhibitorAccountAsync(id, membershipId, token));
+        });
     }
 }

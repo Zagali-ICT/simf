@@ -542,6 +542,13 @@ public static class ErrorCodes
     // index on ExhibitorMembership.UserId).
     public const string ExhibitorAccountAlreadyLinked = "EXHIBITOR_ACCOUNT_ALREADY_LINKED";
 
+    // Soft-deleting an exhibitor would orphan its booths' venue-map nodes: the
+    // public booth projection hides a booth whose Exhibitor is inactive, so the
+    // map would keep drawing a pin the public endpoint no longer serves. This is
+    // the BoothInUse guard one level up, and it needs its own code because the
+    // admin is acting on an exhibitor, not on the booth the message names (409).
+    public const string ExhibitorInUse = "EXHIBITOR_IN_USE";
+
     // Organisations — the Saudi-companies lookup with government Excel
     // bulk-import; the visitor الجهة picker reads from this table.
     public const string OrganisationInvalid = "ORGANISATION_INVALID";
