@@ -805,7 +805,7 @@ stages:
         if ($LASTEXITCODE -ne 0) { throw "dart pub get failed for the convention checker (exit $LASTEXITCODE)." }
         dart test
         if ($LASTEXITCODE -ne 0) { throw "The convention checker's own tests failed (exit $LASTEXITCODE) - fix the checker before trusting its verdict." }
-        dart run bin/simf_conventions.dart --check
+        dart run bin/simf_conventions.dart --check --strict
         if ($LASTEXITCODE -ne 0) { throw "NEW convention violations introduced. See the list above and docs/SIMF-CQP-001-Code-Quality-Programme.md section 5 for where each literal belongs." }
       displayName: 'Convention gate (SIMF-CQP-001)'
 

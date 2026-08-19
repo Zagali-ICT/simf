@@ -1,7 +1,0 @@
-{
-  "version": 1,
-  "note": "Fingerprints tolerated at the time of recording. The gate fails on anything NOT in this list. Entries are removed as waves land; none are ever added by hand.",
-  "fingerprints": [
-    "SIMF-C3|src/Mobile/simf_app/lib/features/account/sign_up_visitor_screen.dart|_buildBody() returning Widget in a #-line file (limit #)"
-  ]
-}
