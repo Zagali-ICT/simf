@@ -109,7 +109,7 @@ Scenario: Select a session, scan a badge QR, record the arrival
 - Screenshot before: `docs/screenshots/cp-admin-hall-arrivals-golden-before.png` (session selected, QR field empty)
 - Screenshot after: `docs/screenshots/cp-admin-hall-arrivals-golden-after.png` (green toast with the resolved name, QR field cleared)
 - Console errors: 0 expected
-- Network: `/account/api/admin/sessions/list` returns 200 on load; `/account/api/admin/sessions/{id}/arrivals` returns 200 on record
+- Network: `/account/api/admin/hall-arrivals/sessions/list` returns 200 on load; `/account/api/admin/sessions/{id}/arrivals` returns 200 on record
 - Audit row: `OperationLog` row with `Event = 'HallAttendance.ArrivalRecorded'`, `Outcome = Success`, the operator's id as `ActorUserId`, and `Detail` containing `method=QrScan; attendee=<userId>; operator=<operatorId>`
 
 ### E2E-HAR-002 — Session dropdown lists only active sessions
@@ -118,7 +118,7 @@ Scenario: Select a session, scan a badge QR, record the arrival
 Scenario: The dropdown shows active sessions only, labelled and sorted
   Given three sessions exist: two active, one inactive (IsActive = false)
   When the operator opens /admin/hall-arrivals
-  Then GET-equivalent POST /account/api/admin/sessions/list fires with { Top: 200, Sort: "start" }
+  Then GET-equivalent POST /account/api/admin/hall-arrivals/sessions/list fires with { Top: 200, Sort: "start" }
   And the "Session" dropdown lists exactly the two active sessions
   And each option label reads "{Title} · {Code}"
   And the inactive session does not appear
@@ -193,7 +193,7 @@ Scenario: Admin lacking HallArrivals.View is denied the page
   Given a signed-in admin whose role does NOT include HallArrivals.View (and is not Administrator "*")
   When they navigate to /admin/hall-arrivals
   Then they land on /not-permitted with HTTP 200
-  And no /account/api/admin/sessions/list request fires
+  And no /account/api/admin/hall-arrivals/sessions/list request fires
   And the "Module.HallArrivals" nav item is hidden for them (RequiredPermission = HallArrivals.View)
 ```
 
@@ -247,7 +247,7 @@ Scenario: The QR field caps input at 64 characters
 
 ```gherkin
 Scenario: API 500 on /sessions/list shows the fallback toast
-  Given the API is configured to return 500 on /admin/sessions/list (e.g. DB down)
+  Given the API is configured to return 500 on /admin/hall-arrivals/sessions/list (e.g. DB down)
   When the operator opens /admin/hall-arrivals
   Then the loading line "Loading sessions…" shows briefly
   And then a red toast appears reading the server message, or the fallback

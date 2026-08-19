@@ -8,7 +8,7 @@ using System.Reflection;
 using Bunit;
 using Microsoft.Extensions.DependencyInjection;
 using SIMF.Common;
-using SIMF.Contracts.Admin;
+using SIMF.Contracts.Attendance;
 using SIMF.ControlPanel;
 using SIMF.ControlPanel.Components.Pages.Admin;
 using Xunit;
@@ -17,11 +17,14 @@ namespace SIMF.ControlPanel.Tests;
 
 public sealed class SessionLiveHallAutoRefreshTests : CpComponentTestBase
 {
-    private static readonly AdminSessionSummary LiveSession = new(
+    // The picker reads the ATTENDANCE session list, not the canonical Sessions
+    // list: this page is gated Attendance.View, which the canonical list does not
+    // accept. The row shape follows.
+    private static readonly SessionAttendanceRow LiveSession = new(
         Guid.NewGuid(), "S-LIVE", "Live Session", "S-LIVE-AR",
-        Guid.NewGuid(), "Main Hall", "MAIN-HALL-AR",
+        "Main Hall", "MAIN-HALL-AR",
         DateTime.UnixEpoch, DateTime.UnixEpoch.AddHours(1),
-        Capacity: 100, IsActive: true, CreatedAt: DateTime.UnixEpoch);
+        TotalAttendees: 0, LiveNow: 0);
 
     // The poll loop's timer, observed through the field that owns it — the only
     // way to prove "started on selection / disposed on teardown" without waiting
@@ -35,10 +38,10 @@ public sealed class SessionLiveHallAutoRefreshTests : CpComponentTestBase
     {
         JSInterop.Mode = JSRuntimeMode.Loose;
         Services.AddSingleton(new CpPreferences(JSInterop.JSRuntime));
-        JSInterop.Setup<ApiResult<GridPage<AdminSessionSummary>>>(
+        JSInterop.Setup<ApiResult<GridPage<SessionAttendanceRow>>>(
             "simfAccount.postJson", _ => true)
-            .SetResult(ApiResult<GridPage<AdminSessionSummary>>.Ok(
-                GridPage<AdminSessionSummary>.Of([LiveSession], 1, 0, 200)));
+            .SetResult(ApiResult<GridPage<SessionAttendanceRow>>.Ok(
+                GridPage<SessionAttendanceRow>.Of([LiveSession], 1, 0, 200)));
         return RenderComponent<SessionLiveHall>();
     }
 
@@ -55,7 +58,7 @@ public sealed class SessionLiveHallAutoRefreshTests : CpComponentTestBase
     {
         var cut = RenderMonitor();
 
-        cut.Find("select").Change(LiveSession.Id.ToString());
+        cut.Find("select").Change(LiveSession.SessionId.ToString());
         Assert.NotNull(PollTimer(cut.Instance));
 
         var page = cut.Instance;
@@ -68,7 +71,7 @@ public sealed class SessionLiveHallAutoRefreshTests : CpComponentTestBase
     {
         var cut = RenderMonitor();
 
-        cut.Find("select").Change(LiveSession.Id.ToString());
+        cut.Find("select").Change(LiveSession.SessionId.ToString());
         Assert.NotNull(PollTimer(cut.Instance));
 
         // Back to the placeholder option — nothing to monitor, so nothing polls.

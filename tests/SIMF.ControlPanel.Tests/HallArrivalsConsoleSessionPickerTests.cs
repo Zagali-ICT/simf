@@ -8,7 +8,8 @@
 using Bunit;
 using Microsoft.Extensions.DependencyInjection;
 using SIMF.Common;
-using SIMF.Contracts.Admin;
+using SIMF.Common.Options;
+using SIMF.Contracts.Sessions;
 using SIMF.ControlPanel;
 using SIMF.ControlPanel.Components.Pages.Admin;
 using Xunit;
@@ -17,29 +18,32 @@ namespace SIMF.ControlPanel.Tests;
 
 public sealed class HallArrivalsConsoleSessionPickerTests : CpComponentTestBase
 {
-    private static AdminSessionSummary Session(
+    private static HallArrivalSessionOption Session(
         string code, string title, int startOffsetMin, int endOffsetMin, bool isActive = true)
     {
         var now = SimfClock.Now;
-        return new AdminSessionSummary(
+        // isActive is no longer a field: the endpoint scopes itself to active
+        // sessions server-side, so an inactive one never reaches the picker.
+        _ = isActive;
+        return new HallArrivalSessionOption(
             Guid.NewGuid(), code, title, title,
-            Guid.NewGuid(), "Main Hall", "القاعة الرئيسية",
-            now.AddMinutes(startOffsetMin), now.AddMinutes(endOffsetMin), 100, isActive,
-            now);
+            "Main Hall", "القاعة الرئيسية",
+            now.AddMinutes(startOffsetMin), now.AddMinutes(endOffsetMin),
+            WalkInModeOptions.DefaultArrivalGraceMinutes);
     }
 
     // Stubs the console's session-list call with the supplied rows and grants the
     // Record permission the AuthorizedAction block gates on.
-    private void Arrange(params AdminSessionSummary[] rows)
+    private void Arrange(params HallArrivalSessionOption[] rows)
     {
         JSInterop.Mode = JSRuntimeMode.Loose;
         Services.AddSingleton(new CpPreferences(JSInterop.JSRuntime));
         Authorization.SetPolicies(
             PermissionCatalog.PolicyFor(PermissionCatalog.HallArrivals.Record));
-        var page = GridPage<AdminSessionSummary>.Of(rows, rows.Length, new GridQuery());
-        JSInterop.Setup<ApiResult<GridPage<AdminSessionSummary>>>(
+        var page = GridPage<HallArrivalSessionOption>.Of(rows, rows.Length, new GridQuery());
+        JSInterop.Setup<ApiResult<GridPage<HallArrivalSessionOption>>>(
                 inv => inv.Identifier == "simfAccount.postJson")
-            .SetResult(ApiResult<GridPage<AdminSessionSummary>>.Ok(page));
+            .SetResult(ApiResult<GridPage<HallArrivalSessionOption>>.Ok(page));
     }
 
     [Fact]
@@ -71,17 +75,27 @@ public sealed class HallArrivalsConsoleSessionPickerTests : CpComponentTestBase
         Assert.DoesNotContain(future.Title, cut.Markup);
     }
 
-    [Fact]
+    /// <summary>An inactive session is excluded SERVER-side now, not here.
+    ///
+    /// <para>This used to assert the console filtered <c>IsActive</c> off its own
+    /// rows. The console no longer receives that field: it reads
+    /// <c>/admin/hall-arrivals/sessions/list</c>, which applies
+    /// <c>Where(session =&gt; session.IsActive)</c> as the resource's own scope,
+    /// ahead of the grid filters and where no request can widen it. So the
+    /// guarantee did not disappear with the field, it moved to the one place a
+    /// client cannot override - and this test moved with it, to
+    /// <c>SIMF.Api.Tests/ConsoleRoleReachabilityTests</c>,
+    /// <c>The_arrival_picker_is_scoped_to_active_sessions</c>, which seeds one
+    /// active and one inactive session in the same hall and both inside the
+    /// arrival window, so only <c>IsActive</c> separates them.</para>
+    ///
+    /// <para>Kept as a named, skipped fact rather than deleted, because a reader
+    /// who remembers this rule should find where it went instead of concluding
+    /// nothing checks it.</para></summary>
+    [Fact(Skip = "Moved server-side: the endpoint scopes to active sessions, and "
+                 + "the console no longer receives IsActive to filter on.")]
     public void An_inactive_session_is_not_offered()
     {
-        var inactive = Session("SES-OFF", "Cancelled Panel", -15, 45, isActive: false);
-        Arrange(inactive);
-
-        var cut = RenderComponent<HallArrivalsConsole>();
-
-        cut.WaitForAssertion(() =>
-            Assert.Contains("Admin.HallArrivals.NoSessions", cut.Markup));
-        Assert.DoesNotContain(inactive.Title, cut.Markup);
     }
 
     [Fact]

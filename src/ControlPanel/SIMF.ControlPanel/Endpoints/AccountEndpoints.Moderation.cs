@@ -197,6 +197,17 @@ internal static partial class AccountEndpoints
             return Forward(await api.ReturnSessionSummaryToDraftAsync(sessionId, token));
         });
 
+        // The hall-arrival console's session picker. Its own read rather than the
+        // canonical sessions list, which is gated on a permission the operator
+        // role running a hall door does not hold.
+        group.MapPost("/admin/hall-arrivals/sessions/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListArrivalSessionsAsync(body, token));
+        });
+
         // Operator hall-door QR arrival passthrough.
         group.MapPost("/admin/sessions/{sessionId:guid}/arrivals",
             async (Guid sessionId, SIMF.Contracts.Sessions.RecordQrArrivalRequest body,
