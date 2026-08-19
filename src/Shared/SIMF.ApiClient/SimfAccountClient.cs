@@ -39,13 +39,18 @@ public sealed class SimfAccountClient(HttpClient http)
 
     /// <summary>
     /// Returns the QR + otpauth URI for the caller's CURRENT
-    /// authenticator secret without rotating it. Returns a 404
+    /// authenticator secret without rotating it, in exchange for a current code
+    /// from that authenticator - the response carries the secret in plaintext, so
+    /// it is not something a bearer token alone may read. Returns a 404
     /// <see cref="ApiCallResult{T}"/> when the account has no active
     /// secret yet — UI should route through <see cref="TotpSetupAsync"/>.
     /// </summary>
     public Task<ApiCallResult<TotpSetupResponse>> TotpPairingAsync(
-        string accessToken, CancellationToken cancellationToken = default) =>
-        SendAsync<TotpSetupResponse>(HttpMethod.Get, "auth/totp/pairing", null, accessToken, cancellationToken);
+        TotpConfirmRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<TotpSetupResponse>(
+            HttpMethod.Post, "auth/totp/pairing",
+            JsonContent.Create(request, options: JsonOptions), accessToken, cancellationToken);
 
     /// <summary>
     /// Verifies a code against the user's active authenticator

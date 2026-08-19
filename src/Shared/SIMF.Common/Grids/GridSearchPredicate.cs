@@ -52,14 +52,28 @@ internal static class GridSearchPredicate
         var row = Expression.Parameter(typeof(TEntity), "row");
 
         // One box for the whole chain, so the OR branches share ONE SQL parameter
-        // instead of emitting the same term N times.
-        var term = TermExpression(search.Trim());
+        // instead of emitting the same term N times. Two boxes, because an Arabic
+        // column is matched against the FOLDED needle and every other column
+        // against the raw one - folding a Latin needle would be a no-op, but it
+        // would still cost a second parameter and a second set of REPLACEs.
+        var trimmed = search.Trim();
+        var term = TermExpression(trimmed);
+        MemberExpression? foldedTerm = null;
 
         Expression? matched = null;
         foreach (var selector in selectors)
         {
             var body = ParameterReplacer.Rebind(selector.Body, selector.Parameters[0], row);
-            var test = Match(body, term);
+            Expression test;
+            if (GridArabicFold.Applies(selector.Body))
+            {
+                foldedTerm ??= TermExpression(GridArabicFold.Fold(trimmed));
+                test = Match(GridArabicFold.FoldColumn(body), foldedTerm);
+            }
+            else
+            {
+                test = Match(body, term);
+            }
             matched = matched is null ? test : Expression.OrElse(matched, test);
         }
 
@@ -69,10 +83,22 @@ internal static class GridSearchPredicate
     /// <summary>The per-column contains used by the string filter path, so search
     /// and filter cannot drift apart in their matching semantics.</summary>
     internal static Expression<Func<TEntity, bool>> Contains<TEntity>(
-        Expression<Func<TEntity, string?>> selector, string term) =>
-        Expression.Lambda<Func<TEntity, bool>>(
-            Match(selector.Body, TermExpression(term.Trim())),
+        Expression<Func<TEntity, string?>> selector, string term)
+    {
+        var trimmed = term.Trim();
+        // The same fold the search chain applies, for the same reason: a filter box
+        // over an Arabic column has to find the row whichever way the name was
+        // typed, and search and filter must not disagree about what matches.
+        var body = GridArabicFold.Applies(selector.Body)
+            ? GridArabicFold.FoldColumn(selector.Body)
+            : selector.Body;
+        var needle = GridArabicFold.Applies(selector.Body)
+            ? GridArabicFold.Fold(trimmed)
+            : trimmed;
+        return Expression.Lambda<Func<TEntity, bool>>(
+            Match(body, TermExpression(needle)),
             selector.Parameters);
+    }
 
     // Nullable reference annotations are erased at runtime, so a nullable and a
     // non-nullable string column are indistinguishable here and every body is
@@ -80,8 +106,25 @@ internal static class GridSearchPredicate
     // the column is NOT NULL, so the redundant case costs nothing in SQL.
     private static Expression Match(Expression body, Expression term) =>
         Expression.AndAlso(
-            Expression.NotEqual(body, NullString),
+            Expression.NotEqual(NullGuardTarget(body), NullString),
             Expression.Call(body, StringContains, term));
+
+    /// <summary>The column the null guard should test.
+    ///
+    /// <para>When the body is a fold, the guard has to reach past the REPLACE chain
+    /// to the column underneath. Testing the chain itself would still be correct at
+    /// runtime, since REPLACE of NULL is NULL, but EF's null-semantics pass can only
+    /// prune a redundant guard when it recognises the operand as a column it knows
+    /// to be NOT NULL - and it does not recognise a nest of REPLACEs as one.</para></summary>
+    private static Expression NullGuardTarget(Expression body)
+    {
+        var target = body;
+        while (target is MethodCallExpression { Method.Name: nameof(string.Replace), Object: { } inner })
+        {
+            target = inner;
+        }
+        return target;
+    }
 
     private static MemberExpression TermExpression(string term) =>
         Expression.Field(

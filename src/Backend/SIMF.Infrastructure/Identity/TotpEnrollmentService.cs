@@ -213,13 +213,23 @@ internal sealed class TotpEnrollmentService(
 
     public async Task<TotpSetupResponse?> GetCurrentPairingAsync(
         Guid userId,
+        string code,
         CancellationToken cancellationToken = default)
     {
-        // Re-render the QR for the existing active secret. No rotation,
-        // no token writes, no audit row — this is a read-only convenience for
-        // an admin re-pairing a lost authenticator. The Sign-in path's TOTP
-        // verification still uses the same secret, so a successful re-scan
-        // makes the existing seeded admin work without any DB state change.
+        // Re-render the QR for the existing active secret. No rotation, no token
+        // writes — this is how an admin adds a SECOND authenticator device.
+        //
+        // It costs a current code, and that is the whole point of the parameter.
+        // The response contains the secret itself in plaintext, so without proof
+        // of possession any holder of a stolen access token could read it and mint
+        // codes for ever after: the second factor would stop being a second factor
+        // the moment the first one leaked. The endpoint's original justification -
+        // re-pairing a LOST authenticator - could never actually happen, because
+        // losing the authenticator means failing the second factor and never
+        // obtaining the bearer token this endpoint requires. Demanding a code is
+        // therefore free in practice and closes the real hole. First enrolment is
+        // unaffected: it goes through SetupAsync, which has no secret to protect
+        // yet.
         var user = await GetUserAsync(userId);
         var activeSecret = await accounts.GetAuthenticationTokenAsync(
             user, AuthenticatorProvider, ActiveSecretTokenName, cancellationToken);
@@ -227,6 +237,23 @@ internal sealed class TotpEnrollmentService(
         {
             return null;
         }
+
+        var proof = totpVerifier.Verify(activeSecret, code);
+        if (!proof.IsValid)
+        {
+            // The same brute-force gate the disable path uses: a wrong code counts
+            // against the lockout budget, so the secret cannot be farmed by
+            // guessing at it.
+            await accounts.AccessFailedAsync(user);
+            await AuditFailure(AuditEvents.TotpDisableFailed, user,
+                ErrorCodes.AuthTotpInvalid, cancellationToken,
+                detail: "pairing-reveal-code-mismatch");
+            throw new ApiException(
+                ErrorCodes.AuthTotpInvalid, 400,
+                "The verification code is not correct.",
+                "رمز التحقق غير صحيح.");
+        }
+        await accounts.ResetAccessFailedCountAsync(user);
         var otpauthUri = BuildOtpAuthUri(user.Email!, activeSecret);
         var qrSvg = BuildQrSvg(otpauthUri);
         return new TotpSetupResponse(activeSecret, otpauthUri, qrSvg);

@@ -1704,6 +1704,8 @@
   <data name="Profile.TwoFactor.ConfirmDisabled" xml:space="preserve"><value>تم تعطيل المصادقة الثنائية.</value></data>
 
   <data name="TotpPairing.Title" xml:space="preserve"><value>إعادة إقران تطبيق المصادقة</value></data>
+  <data name="TotpPairing.RevealInstruction" xml:space="preserve"><value>أدخل رمزاً حالياً من تطبيق المصادقة الذي لديك. لا يتم عرض رمز الاقتران إلا مقابل ذلك، لأنه يكشف المفتاح السري لهذا الحساب.</value></data>
+  <data name="TotpPairing.Reveal" xml:space="preserve"><value>عرض رمز الاقتران</value></data>
   <data name="TotpPairing.Instruction" xml:space="preserve"><value>امسح رمز QR هذا باستخدام Google Authenticator (أو أي تطبيق متوافق مع TOTP). يبقى السر نفسه — إعادة المسح لا تؤثر على رموز الاسترداد الحالية.</value></data>
   <data name="TotpPairing.SecretHint" xml:space="preserve"><value>أو أدخل هذا السر يدويًا في التطبيق:</value></data>
   <data name="TotpPairing.NoSecret" xml:space="preserve"><value>لا يوجد سر مصادقة مرتبط بهذا الحساب بعد. استخدم صفحة الملف الشخصي للتسجيل.</value></data>

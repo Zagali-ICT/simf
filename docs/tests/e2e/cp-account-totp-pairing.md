@@ -32,16 +32,17 @@
 
 | ID | Scenario | Type | Priority | Status |
 |----|----------|------|----------|--------|
-| E2E-TPP-001 | Golden path — load QR for current secret → Verify a live code → "Scan confirmed" success | happy | P0 | _to author_ |
+| E2E-TPP-001 | Golden path — enter a live code → QR for the current secret is revealed → Verify a live code → "Scan confirmed" success | happy | P0 | _to author_ |
 | E2E-TPP-002 | Manual-entry secret matches the QR + `Get-Totp` of that secret verifies | happy | P1 | _to author_ |
 | E2E-TPP-003 | No-secret state (API 404) → warning + "Go to profile" routes to `/account/profile` | happy | P1 | _to author_ |
-| E2E-TPP-004 | Loading state renders `TotpPairing.Loading` before the QR paints | happy | P2 | _to author_ |
+| E2E-TPP-004 | The reveal button shows its loading state while the code is checked | happy | P2 | _to author_ |
 | E2E-TPP-005 | Auth gate — signed-out visitor → `/login` redirect (no `/totp/pairing` call) | auth | P0 | _to author_ |
 | E2E-TPP-006 | Wrong code → `Valid:false` (HTTP 200) → red "That code is not correct" alert; QR stays | error | P0 | _to author_ |
 | E2E-TPP-007 | Empty / short code submitted → still posts, server returns `Valid:false` → error alert | error | P1 | _to author_ |
 | E2E-TPP-008 | Re-pair does NOT rotate — secret + recovery-code count unchanged after Verify | happy | P0 | _to author_ |
-| E2E-TPP-009 | Server 500 on the pairing GET → load-error alert ("Could not load the pairing QR.") | resilience | P2 | _to author_ |
+| E2E-TPP-009 | Server 500 on the pairing POST → load-error alert ("Could not load the pairing QR."), QR stays hidden | resilience | P2 | _to author_ |
 | E2E-TPP-010 | RTL / Arabic render — page + Verify section mirror, Arabic strings | i18n | P1 | _to author_ |
+| E2E-TPP-011 | The QR is NEVER shown to a bearer token alone: opening the page reveals no secret, and a wrong code is refused 400 with the secret absent from the response | auth | P0 | _to author_ |
 | E2E-TPP-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-TPP-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
@@ -247,4 +248,50 @@ Scenario: Arabic toggle mirrors the page and the Verify section
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+### E2E-TPP-011: the pairing QR costs a code
+
+The page used to render the QR on load, which meant the account's TOTP secret was
+readable in plaintext by anything holding a valid access token - so a stolen token
+could be turned into an indefinite second factor. The reveal is now an action, and
+the API refuses it without a current code from the authenticator the admin already
+holds.
+
+This takes nothing away. The page never could serve an admin who has LOST their
+authenticator: losing it means failing the second factor at sign-in and never
+reaching a signed-in page. That case needs a reset, not this page.
+
+```gherkin
+Scenario: Opening the page shows no secret
+  Given an enrolled Administrator signed in to the Control Panel
+  When they open "/account/totp-pairing"
+  Then no QR image is rendered
+  And the page body contains no base32 secret
+  And a code field and a "Show pairing QR" button are shown
+
+Scenario: A wrong code is refused and reveals nothing
+  Given an enrolled Administrator on "/account/totp-pairing"
+  When they submit the code "000000"
+  Then the response is 400 with error code "AUTH_TOTP_INVALID"
+  And the response body does not contain the account's secret
+  And the QR is still not rendered
+
+Scenario: A live code reveals the same secret, unrotated
+  Given an enrolled Administrator on "/account/totp-pairing"
+  When they submit a current code from their authenticator
+  Then the QR and the base32 secret are rendered
+  And the secret equals the one their authenticator already holds
+  And their recovery-code count is unchanged
+```
+
+**Evidence (API layer):** `tests/SIMF.Api.Tests/TotpEnrolmentTests.cs`:
+`Pairing_returns_the_same_QR_for_the_enrolled_users_active_secret`,
+`Pairing_without_a_valid_code_does_not_hand_over_the_secret`,
+`Pairing_returns_404_when_the_account_has_no_active_secret`.
+
+---
+
+_Last reviewed:_ 2026-08-19 by Claude: the pairing QR moved behind a code
+challenge (`POST /app/auth/totp/pairing`, was a bodiless GET), so the account's
+TOTP secret is no longer readable by a bearer token alone. E2E-TPP-011 added;
+001, 004 and 009 rewritten for the reveal-on-demand page.
+Prior: 2026-06-02 by Claude (E2E catalogue rebuild).

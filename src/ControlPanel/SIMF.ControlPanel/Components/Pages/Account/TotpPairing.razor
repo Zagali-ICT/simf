@@ -1,13 +1,22 @@
-@* CP TOTP re-pairing page. Renders the QR + otpauth URI for the
-   caller's CURRENT authenticator secret without rotating it. Used by an
-   admin (typically the seeded super-admin) whose authenticator device
-   was lost or whose initial pairing failed — re-scanning here does NOT
-   reset the secret, so existing recovery codes survive and the sign-in
-   flow continues to verify against the same key.
+@* CP TOTP pairing page. Renders the QR + otpauth URI for the caller's CURRENT
+   authenticator secret without rotating it, so an admin can add a SECOND device:
+   re-scanning here does NOT reset the secret, existing recovery codes survive,
+   and the sign-in flow keeps verifying against the same key.
 
-   The Verify section below confirms the scan worked without
-   mutating state (no replay-guard update), so the user can immediately
-   use the same code (or the next one) to sign in. *@
+   The QR sits behind a code challenge, and that is the point of the page's shape.
+   The pairing response carries the secret in PLAINTEXT, so revealing it on page
+   load meant any holder of a stolen access token could read it and mint codes for
+   ever — the second factor ceasing to be a second factor at exactly the moment it
+   matters. The page asks for a code from the authenticator the admin already has,
+   and the API refuses without one.
+
+   This costs nothing real. The page never could help an admin who has LOST the
+   authenticator: losing it means failing the second factor at sign-in and never
+   reaching a signed-in page at all. That admin needs a reset, not this page.
+
+   The Verify section below still confirms a scan worked without mutating state
+   (no replay-guard update), so the user can immediately use the same code — or
+   the next one — to sign in. *@
 @page "/account/totp-pairing"
 @layout CpShellLayout
 
@@ -16,15 +25,7 @@
 <SimfPageHeader Title="@L["TotpPairing.Title"]" />
 
 <div class="simf-card simf-page-card">
-    @if (_loading)
-    {
-        <p>@L["TotpPairing.Loading"]</p>
-    }
-    else if (_loadError is not null)
-    {
-        <SimfAlert Variant="error">@_loadError</SimfAlert>
-    }
-    else if (_pairing is null)
+    @if (_noSecret)
     {
         <SimfAlert Variant="warning">@L["TotpPairing.NoSecret"]</SimfAlert>
         <div class="simf-form__actions">
@@ -33,6 +34,26 @@
                 @L["TotpPairing.GoToProfile"]
             </SimfButton>
         </div>
+    }
+    else if (_pairing is null)
+    {
+        <p>@L["TotpPairing.RevealInstruction"]</p>
+        @if (_loadError is not null)
+        {
+            <SimfAlert Variant="error">@_loadError</SimfAlert>
+        }
+        <EditForm Model="_revealModel" OnSubmit="RevealAsync" class="simf-form">
+            <div class="simf-form__fields">
+                <SimfCodeField Label="@L["TotpPairing.CodeLabel"]"
+                               @bind-Value="_revealModel.Code"
+                               Disabled="_loading" />
+            </div>
+            <div class="simf-form__actions">
+                <SimfButton Loading="_loading" LoadingLabel="@L["TotpPairing.Reveal"]">
+                    @L["TotpPairing.Reveal"]
+                </SimfButton>
+            </div>
+        </EditForm>
     }
     else
     {

@@ -234,14 +234,17 @@ public sealed class AiModuleTests : IClassFixture<SimfApiFactory>
         // it with six characters, and the decryptor would then try to base64-decode
         // the rest of their sentence on the way back out.
         var visitor = await SignInApprovedVisitorAsync();
-        const string marker = "PLN4";
+
+        // Long, and with a space in it. A short alphanumeric marker is a base64
+        // substring waiting to happen: every character of one is in the base64
+        // alphabet, so across a shared fixture database full of ciphertext it will
+        // eventually appear by chance and fail this test for the wrong reason.
+        var marker = $"badge {Guid.NewGuid():N}";
+        var sentence = $"enc:1:this is not ciphertext, {marker}";
+
         var post = await PostAuthAsync(
             "/api/v1/app/ai/assistance",
-            new AssistanceRequest
-            {
-                Message = $"enc:1:this is not ciphertext, badge {marker}",
-                Locale = "en",
-            },
+            new AssistanceRequest { Message = sentence, Locale = "en" },
             visitor);
         Assert.Equal(HttpStatusCode.OK, post.StatusCode);
 
@@ -257,14 +260,17 @@ public sealed class AiModuleTests : IClassFixture<SimfApiFactory>
             Assert.DoesNotContain(marker, value, StringComparison.Ordinal));
 
         // And it still round-trips: the marker prefix survives as the visitor's own
-        // text rather than being eaten as a cipher envelope.
-        var roundTripped = await db.AiChatMessages.AsNoTracking()
-            .Where(m => m.Role == "user")
-            .OrderByDescending(m => m.CreatedAt)
-            .Select(m => m.Content)
-            .FirstAsync();
-        Assert.Contains(marker, roundTripped, StringComparison.Ordinal);
-        Assert.StartsWith("enc:1:this is not ciphertext", roundTripped, StringComparison.Ordinal);
+        // text rather than being eaten as a cipher envelope. Found by its content
+        // rather than by "the newest row" - the fixture clock is frozen, so several
+        // rows share a CreatedAt and newest-first picks between them arbitrarily.
+        var mine = (await db.AiChatMessages.AsNoTracking()
+                .Where(m => m.Role == "user")
+                .Select(m => m.Content)
+                .ToListAsync())
+            .SingleOrDefault(content => content.Contains(marker, StringComparison.Ordinal));
+
+        Assert.NotNull(mine);
+        Assert.Equal(sentence, mine);
     }
 
     [Fact]
