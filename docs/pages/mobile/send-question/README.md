@@ -5,7 +5,7 @@
 | Route | `/live/question?sessionId=` (`RouteNames.sendQuestion`, page #26) · auth-gated (approved) |
 | Surface | Mobile (Flutter) |
 | Screen | `lib/features/questions/send_question_screen.dart` (`SendQuestionScreen`, 248 lines) |
-| Widgets | `lib/features/questions/widgets/send_question_content.dart` (`SendQuestionComposer`, `SendQuestionSubmitButton`, `ReviewNote`, `SessionDataBlock` + `_NumberedLine`) |
+| Widgets | `widgets/send_question_composer.dart`, `send_question_submit_button.dart`, `send_question_recipient_picker.dart`, `review_note.dart`, `session_data_block.dart`, `numbered_line.dart` — one public widget per file. They were a single `send_question_content.dart` until the 2026-08 clean-code round; that file held six unrelated widgets and its name described none of them. |
 | Figma node | `934:3636` (composer 934:3668, data block 1049:12590, note 943:3750) |
 | Shell | `SimfPageShell` (title معلومات عن الجلسة) |
 | API | `POST /app/sessions/{id}/questions` (`RequireApprovedAccount`, D-169/D-174) + `GET /app/programme/sessions/{id}` (the optional non-blocking data block) |
