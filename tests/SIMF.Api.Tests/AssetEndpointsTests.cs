@@ -308,6 +308,25 @@ public sealed class AssetEndpointsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Media_library_row_names_its_programme_day_owner()
+    {
+        // ProgrammeDayImage and OrganizationLogo were mapped categories that the
+        // owner-name resolver never handled, so their Media Library rows rendered
+        // with a blank Owner column beside rows that showed a name.
+        var token = await CreateAdministratorAndSignInAsync();
+        var owner = Guid.NewGuid();
+        await SeedProgrammeDayAsync(owner, "Opening Day");
+
+        var upload = await UploadAsync(
+            "ProgrammeDayImage", owner, "Image", Png, "image/png", "d.png", token);
+        Assert.Equal(HttpStatusCode.OK, upload.StatusCode);
+
+        var row = await FindByOwnerAsync(owner, token);
+        Assert.NotNull(row);
+        Assert.Equal("Opening Day", row!.OwnerName);
+    }
+
+    [Fact]
     public async Task Deactivate_then_restore_round_trips()
     {
         var token = await CreateAdministratorAndSignInAsync();
@@ -474,6 +493,22 @@ public sealed class AssetEndpointsTests : IClassFixture<SimfApiFactory>
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var booth = await db.Booths.FirstAsync(x => x.Id == id);
         booth.IsActive = false;
+        await db.SaveChangesAsync();
+    }
+
+    private async Task SeedProgrammeDayAsync(Guid id, string title)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        db.ProgrammeDays.Add(new ProgrammeDay
+        {
+            Id = id,
+            Date = new DateOnly(2027, 1, 20),
+            Title = title,
+            TitleArabic = "يوم الافتتاح",
+            DisplayOrder = 1,
+            IsActive = true,
+        });
         await db.SaveChangesAsync();
     }
 

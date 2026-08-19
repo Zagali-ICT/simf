@@ -28,6 +28,7 @@ namespace SIMF.Infrastructure.Identity;
 internal sealed class AdminRoleService(
     SimfIdentityDbContext dbContext,
     RoleManager<SimfRole> roleManager,
+    IUserAccountRepository accounts,
     IAuditLog auditLog,
     ILogger<AdminRoleService> logger) : IAdminRoleService
 {
@@ -348,6 +349,7 @@ internal sealed class AdminRoleService(
         if (toRemove.Count > 0 || toAdd.Count > 0)
         {
             await dbContext.SaveChangesAsync(cancellationToken);
+            await RollStampsForRoleHoldersAsync(id, cancellationToken);
         }
 
         await auditLog.WriteSuccessAsync(
@@ -359,5 +361,32 @@ internal sealed class AdminRoleService(
         logger.LogInformation(
             "Admin {ActorId} set {Count} permission(s) on role {RoleId}.",
             actorUserId, requestedPermissions.Count, id);
+    }
+
+    /// <summary>
+    /// Rolls the security stamp of every user holding <paramref name="roleId"/>.
+    /// Editing a role's grants is only half a revoke on its own: permission codes
+    /// are baked into the access token as claims, and the stamp comparison in the
+    /// JWT bearer pipeline is the ONLY channel that rejects a live one. Without
+    /// this, a permission removed at 10:00 keeps working for every holder until
+    /// their current access token expires. The refresh path re-reads the grants
+    /// from the database, so a rolled stamp costs the holder one token exchange,
+    /// not a re-login. Mirrors the same roll on the sibling role-assignment path.
+    /// </summary>
+    private async Task RollStampsForRoleHoldersAsync(
+        Guid roleId, CancellationToken cancellationToken)
+    {
+        var holderIds = await dbContext.UserRoles
+            .AsNoTracking()
+            .Where(userRole => userRole.RoleId == roleId)
+            .Select(userRole => userRole.UserId)
+            .ToListAsync(cancellationToken);
+
+        foreach (var holderId in holderIds)
+        {
+            var holder = await accounts.FindByIdAsync(holderId, cancellationToken);
+            if (holder is null) { continue; }
+            await accounts.UpdateSecurityStampAsync(holder, cancellationToken);
+        }
     }
 }

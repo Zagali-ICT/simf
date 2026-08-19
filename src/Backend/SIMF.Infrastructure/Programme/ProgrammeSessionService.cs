@@ -210,13 +210,6 @@ internal sealed class ProgrammeSessionService(
         return new PublicSessions(items);
     }
 
-    /// <summary>The event's local-day offset (KSA, +03:00, no DST). Sessions
-    /// are stored as the Saudi wall clock, so bucketing a session into
-    /// its "programme day" is a plain date comparison with no zone shift. The
-    /// constant is retained because the day boundary is still a Riyadh calendar
-    /// day and callers reason in that offset.</summary>
-    private static readonly TimeSpan EventOffset = TimeSpan.FromHours(3);
-
     public async Task<PublicProgrammeDays> ListDaysAsync(
         CancellationToken cancellationToken = default)
     {

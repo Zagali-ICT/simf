@@ -917,6 +917,91 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.OK, second.StatusCode);
     }
 
+    // The slot guard and the insert now run inside ONE Serializable transaction, so
+    // a create the guard refuses must roll the insert back and leave NOTHING behind
+    // — not a row, and not a code claimed by a session that does not exist. The
+    // concurrent race itself cannot be forced deterministically over HTTP; this pins
+    // the half of the unit that can be observed, so a future edit cannot leave the
+    // transaction uncommitted-but-not-rolled-back and go unnoticed.
+    [Fact]
+    public async Task CreateAsync_RefusedByTheSlotGuard_PersistsNothing()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hall = await SeedHallAsync(capacity: 50);
+        var start = SimfClock.Now.AddHours(30);
+        var refusedCode = NewCode();
+
+        Assert.Equal(HttpStatusCode.OK,
+            (await CreateAtAsync(token, hall.Id, start, start.AddHours(1))).StatusCode);
+
+        var refused = await PostAuthAsync(
+            "/api/v1/admin/sessions",
+            new AdminCreateSessionRequest
+            {
+                Code = refusedCode,
+                Title = "Loser", TitleArabic = "الخاسرة",
+                Type = SessionType.Event,
+                HallId = hall.Id,
+                Start = start.AddMinutes(30),
+                End = start.AddMinutes(90),
+            },
+            token);
+        Assert.Equal(HttpStatusCode.Conflict, refused.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        Assert.False(await db.Sessions.AsNoTracking().AnyAsync(s => s.Code == refusedCode));
+        Assert.Equal(1, await db.Sessions.AsNoTracking().CountAsync(s => s.HallId == hall.Id));
+    }
+
+    // The other half of the same unit: the session is built with its speaker, theme
+    // and outcome children BEFORE the transaction opens and added inside it, so the
+    // commit has to carry the whole graph. A mis-scoped transaction that saved only
+    // the parent would still answer 200 and show up only as missing children.
+    [Fact]
+    public async Task CreateAsync_InsideTheSlotTransaction_CommitsTheWholeGraph()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hall = await SeedHallAsync(capacity: 50);
+        var speaker = await SeedSpeakerAsync();
+        var theme = await SeedThemeAsync();
+        var start = SimfClock.Now.AddHours(40);
+
+        var response = await PostAuthAsync(
+            "/api/v1/admin/sessions",
+            new AdminCreateSessionRequest
+            {
+                Code = NewCode(),
+                Title = "Full graph", TitleArabic = "رسم كامل",
+                Type = SessionType.Session,
+                HallId = hall.Id,
+                Start = start,
+                End = start.AddHours(1),
+                Speakers = new List<AdminSessionSpeakerEntry>
+                {
+                    new(speaker.Id, speaker.Name, speaker.NameArabic, 0),
+                },
+                ThemeIds = new List<Guid> { theme.Id },
+                Outcomes = new List<AdminSessionOutcomeEntry>
+                {
+                    new("Outcome", "مخرج", 0),
+                },
+            },
+            token);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var detail = (await response.Content
+            .ReadFromJsonAsync<ApiResult<AdminSessionDetail>>())!.Data!;
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        Assert.Equal(1, await db.SessionSpeakers.AsNoTracking()
+            .CountAsync(link => link.SessionId == detail.Id && link.SpeakerId == speaker.Id));
+        Assert.Equal(1, await db.SessionThemes.AsNoTracking()
+            .CountAsync(link => link.SessionId == detail.Id && link.ThemeId == theme.Id));
+        Assert.Equal(1, await db.SessionOutcomes.AsNoTracking()
+            .CountAsync(outcome => outcome.SessionId == detail.Id));
+    }
+
     [Fact]
     public async Task UpdateAsync_MoveIntoOccupiedHallTime_ReturnsConflict()
     {
@@ -953,6 +1038,70 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
             UpdateFrom(created, title: "Same slot, new title"),
             token);
         Assert.Equal(HttpStatusCode.OK, update.StatusCode);
+    }
+
+    // Re-ticking Active on a deactivated session puts it back into the hall
+    // schedule. The create-time overlap scan skipped it while it was inactive, so a
+    // sibling may have taken its slot in the meantime — and neither the hall nor the
+    // time changes on this save, which is how a deterministic, no-race path to two
+    // active overlapping sessions in one hall used to slip through the ordinary CP
+    // edit form. Everything downstream (the door's admitting set, the per-session
+    // capacity count) depends on that invariant.
+    [Fact]
+    public async Task UpdateAsync_ReactivateIntoATakenSlot_ReturnsConflict()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hall = await SeedHallAsync(capacity: 50);
+        var start = SimfClock.Now.AddHours(24);
+
+        var original = (await (await CreateAtAsync(token, hall.Id, start, start.AddHours(1))).Content
+            .ReadFromJsonAsync<ApiResult<AdminSessionDetail>>())!.Data!;
+        // Deactivate it (no bookings, so the soft delete is allowed).
+        Assert.Equal(HttpStatusCode.OK,
+            (await DeleteAuthAsync($"/api/v1/admin/sessions/{original.Id}", token)).StatusCode);
+
+        // A replacement takes the freed slot — allowed, the inactive row is ignored.
+        Assert.Equal(HttpStatusCode.OK,
+            (await CreateAtAsync(token, hall.Id, start, start.AddHours(1))).StatusCode);
+
+        // Re-open the original's edit form and re-tick Active, changing nothing else.
+        var reactivate = await PutAuthAsync(
+            $"/api/v1/admin/sessions/{original.Id}",
+            UpdateFrom(original, isActive: true),
+            token);
+        Assert.Equal(HttpStatusCode.Conflict, reactivate.StatusCode);
+        var body = (await reactivate.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SessionHallTimeOverlap, body.Error!.Code);
+
+        // It stayed inactive — the refused save changed nothing.
+        var read = await GetAuthAsync($"/api/v1/admin/sessions/{original.Id}", token);
+        var after = (await read.Content
+            .ReadFromJsonAsync<ApiResult<AdminSessionDetail>>())!.Data!;
+        Assert.False(after.IsActive);
+    }
+
+    // The other half of the same gate: nothing took the slot, so re-activating is
+    // the ordinary "undo the deactivate" the CP offers and must still succeed.
+    [Fact]
+    public async Task UpdateAsync_ReactivateIntoAFreeSlot_Succeeds()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hall = await SeedHallAsync(capacity: 50);
+        var start = SimfClock.Now.AddHours(48);
+
+        var original = (await (await CreateAtAsync(token, hall.Id, start, start.AddHours(1))).Content
+            .ReadFromJsonAsync<ApiResult<AdminSessionDetail>>())!.Data!;
+        Assert.Equal(HttpStatusCode.OK,
+            (await DeleteAuthAsync($"/api/v1/admin/sessions/{original.Id}", token)).StatusCode);
+
+        var reactivate = await PutAuthAsync(
+            $"/api/v1/admin/sessions/{original.Id}",
+            UpdateFrom(original, isActive: true),
+            token);
+        Assert.Equal(HttpStatusCode.OK, reactivate.StatusCode);
+        var detail = (await reactivate.Content
+            .ReadFromJsonAsync<ApiResult<AdminSessionDetail>>())!.Data!;
+        Assert.True(detail.IsActive);
     }
 
     [Fact]

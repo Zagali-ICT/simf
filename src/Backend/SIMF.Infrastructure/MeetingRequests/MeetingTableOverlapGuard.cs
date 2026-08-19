@@ -84,4 +84,72 @@ internal static class MeetingTableOverlapGuard
                 "طاولة الاجتماع هذه محجوزة بالفعل في ذلك الوقت.");
         }
     }
+
+    /// <summary>The removal twin of <see cref="EnsureTableIsFreeAsync"/>: throws a 409
+    /// naming the offending table codes when any of <paramref name="tableIds"/> still
+    /// carries a booking that has not finished yet, in ANY of the three families.
+    ///
+    /// <para>Removing a table is a soft delete, so nothing in the database detaches the
+    /// bookings that point at it: the two request families hold <c>MeetingTableId</c> as
+    /// a nullable FK configured <c>OnDelete(SetNull)</c>, which a soft delete never
+    /// fires. The row simply stops being listed, so the hall plan loses the table while
+    /// the meetings still name it and the check-in desk has nowhere to send the parties.
+    /// The single-delete guard used to scan the business family alone and the
+    /// generate-with-reset path scanned nothing at all, which is the same
+    /// one-directional shape <see cref="EnsureTableIsFreeAsync"/> was extracted to
+    /// fix.</para></summary>
+    public static async Task EnsureTablesHaveNoFutureBookingAsync(
+        SimfAppDbContext appDbContext,
+        IReadOnlyCollection<Guid> tableIds,
+        DateTime now,
+        CancellationToken cancellationToken)
+    {
+        if (tableIds.Count == 0) { return; }
+        var ids = tableIds.Distinct().ToList();
+
+        var booked = new HashSet<Guid>(
+            await appDbContext.BusinessMeetings.AsNoTracking()
+                .Where(m => ids.Contains(m.MeetingTableId)
+                    && m.Status == BusinessMeetingStatus.Confirmed
+                    && m.End > now)
+                .Select(m => m.MeetingTableId)
+                .Distinct()
+                .ToListAsync(cancellationToken));
+
+        booked.UnionWith(
+            await appDbContext.SpeakerMeetingRequests.AsNoTracking()
+                .Where(r => r.MeetingTableId != null
+                    && ids.Contains(r.MeetingTableId.Value)
+                    && MeetingRequestStatuses.SlotHolding.Contains(r.Status)
+                    && r.SlotEnd != null && r.SlotEnd > now)
+                .Select(r => r.MeetingTableId!.Value)
+                .Distinct()
+                .ToListAsync(cancellationToken));
+
+        booked.UnionWith(
+            await appDbContext.DelegationMeetingRequests.AsNoTracking()
+                .Where(r => r.MeetingTableId != null
+                    && ids.Contains(r.MeetingTableId.Value)
+                    && MeetingRequestStatuses.SlotHolding.Contains(r.Status)
+                    && r.SlotEnd != null && r.SlotEnd > now)
+                .Select(r => r.MeetingTableId!.Value)
+                .Distinct()
+                .ToListAsync(cancellationToken));
+
+        if (booked.Count == 0) { return; }
+
+        // The codes, not the ids: the admin identifies a table by the code printed on
+        // the hall plan, and a bulk re-lay can trip on several at once.
+        var bookedIds = booked.ToList();
+        var codes = await appDbContext.MeetingTables.AsNoTracking()
+            .Where(table => bookedIds.Contains(table.Id))
+            .OrderBy(table => table.Code)
+            .Select(table => table.Code)
+            .ToListAsync(cancellationToken);
+        var named = string.Join(", ", codes);
+
+        throw new ApiException(ErrorCodes.MeetingTableInvalid, 409,
+            $"Cancel the upcoming meetings on these tables first: {named}.",
+            $"يرجى إلغاء الاجتماعات القادمة على هذه الطاولات أولاً: {named}.");
+    }
 }

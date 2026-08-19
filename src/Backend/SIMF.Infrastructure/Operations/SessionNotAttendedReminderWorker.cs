@@ -176,35 +176,50 @@ internal sealed class SessionNotAttendedReminderWorker(
                 .Distinct()
                 .ToListAsync(cancellationToken);
 
-            foreach (var userId in absenteeIds)
+            if (absenteeIds.Count == 0)
             {
-                try
+                continue;
+            }
+
+            var batch = absenteeIds
+                .Select(userId => new NotificationRequest
                 {
-                    await notifications.DispatchAsync(new NotificationRequest
-                    {
-                        UserId = userId,
-                        Kind = NotificationKind.SessionNotAttended,
-                        Title = "The session has started",
-                        TitleArabic = "بدأت الجلسة",
-                        Body = $"\"{session.Title}\" has started and you have not arrived yet. "
-                            + "Your seat is held for a short while longer.",
-                        BodyArabic = $"بدأت جلسة \"{session.TitleArabic}\" ولم تصل بعد. "
-                            + "سيبقى مقعدك محجوزاً لفترة قصيرة.",
-                        Severity = NotificationSeverity.Warning,
-                        RelatedEntityType = "Session",
-                        RelatedEntityId = session.Id,
-                        // Once per (attendee, session) — see the class remarks.
-                        DeduplicateByRelatedEntity = true,
-                        SendEmail = false,
-                    }, cancellationToken);
-                    nudged++;
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex,
-                        "SessionNotAttended dispatch failed for user {UserId} on session {SessionId}",
-                        userId, session.Id);
-                }
+                    UserId = userId,
+                    Kind = NotificationKind.SessionNotAttended,
+                    Title = "The session has started",
+                    TitleArabic = "بدأت الجلسة",
+                    Body = $"\"{session.Title}\" has started and you have not arrived yet. "
+                        + "Your seat is held for a short while longer.",
+                    BodyArabic = $"بدأت جلسة \"{session.TitleArabic}\" ولم تصل بعد. "
+                        + "سيبقى مقعدك محجوزاً لفترة قصيرة.",
+                    Severity = NotificationSeverity.Warning,
+                    RelatedEntityType = "Session",
+                    RelatedEntityId = session.Id,
+                    // Once per (attendee, session) — see the class remarks.
+                    DeduplicateByRelatedEntity = true,
+                    SendEmail = false,
+                })
+                .ToList();
+
+            // Dispatched as one batch. Per-recipient, the dedup guard cost one
+            // existence query EACH before the row was even built, and this sweep
+            // re-runs over the same absentees every minute for the whole reminder
+            // window: 400 absentees came to roughly 8,000 existence queries plus
+            // 8,000 inserts per session. Batched, it is one existence query and one
+            // insert round-trip per session per tick. A failure costs this session's
+            // batch, not the sweep — the next tick retries it, and the dedup guard
+            // stops anyone already nudged from being nudged twice.
+            try
+            {
+                await notifications.DispatchManyAsync(batch, cancellationToken);
+                nudged += batch.Count;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex,
+                    "SessionNotAttended dispatch failed for session {SessionId} "
+                    + "({Count} absentee(s)); the next tick will retry them.",
+                    session.Id, batch.Count);
             }
         }
 

@@ -37,4 +37,25 @@ public interface INotificationChannel
 
     /// <summary>Delivers the request over this channel.</summary>
     Task SendAsync(NotificationRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>Delivers a whole fan-out over this channel.
+    ///
+    /// <para>The default simply loops <see cref="SendAsync"/>, so a channel that
+    /// has nothing to gain from batching — an outbound transport that talks to one
+    /// recipient at a time, which is every gateway — implements nothing. A channel
+    /// whose cost is per round-trip rather than per message overrides it:
+    /// <see cref="InAppNotificationChannel"/> turns 20,000 INSERT + SaveChanges
+    /// round-trips into one per batch.</para>
+    ///
+    /// <para>Callers must assume a batch is all-or-nothing and keep whatever
+    /// per-recipient isolation they need around it.</para></summary>
+    async Task SendManyAsync(
+        IReadOnlyList<NotificationRequest> requests,
+        CancellationToken cancellationToken = default)
+    {
+        foreach (var request in requests)
+        {
+            await SendAsync(request, cancellationToken);
+        }
+    }
 }

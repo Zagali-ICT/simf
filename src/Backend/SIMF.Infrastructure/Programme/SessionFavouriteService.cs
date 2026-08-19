@@ -1,4 +1,5 @@
 // Tests: SIMF.Api.Tests/SessionFavouriteTests.cs
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
@@ -29,14 +30,29 @@ internal sealed class SessionFavouriteService(
             .AnyAsync(f => f.UserId == userId && f.SessionId == sessionId, cancellationToken);
         if (already) { return; } // idempotent
 
-        dbContext.SessionFavourites.Add(new SessionFavourite
+        var row = new SessionFavourite
         {
             Id = Guid.NewGuid(),
             UserId = userId,
             SessionId = sessionId,
             CreatedAt = timeProvider.SimfNow(),
-        });
-        await dbContext.SaveChangesAsync(cancellationToken);
+        };
+        dbContext.SessionFavourites.Add(row);
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException ex) when (IsUniqueIndexViolation(ex))
+        {
+            // The check above and this insert are not one atomic unit, so a
+            // double-tapped heart (or an app retry of a request whose response was
+            // lost) can put two inserts either side of it. The unique index
+            // (UserId, SessionId) rejects the loser — which means the favourite
+            // already exists, i.e. exactly the outcome this idempotent operation
+            // promises. Drop the rejected row and return success instead of
+            // surfacing a 500 for work that in fact succeeded.
+            dbContext.Entry(row).State = EntityState.Detached;
+        }
     }
 
     public async Task RemoveAsync(
@@ -57,4 +73,12 @@ internal sealed class SessionFavouriteService(
             .Where(f => f.UserId == userId)
             .Select(f => f.SessionId)
             .ToListAsync(cancellationToken);
+
+    /// <summary>True only when the store rejected the write on a UNIQUE index —
+    /// SQL Server 2601 (duplicate key in a unique index) or 2627 (unique
+    /// constraint). Every other failure EF wraps in a
+    /// <see cref="DbUpdateException"/> must propagate; swallowing them would hide
+    /// a real write failure behind a silent success.</summary>
+    private static bool IsUniqueIndexViolation(DbUpdateException exception) =>
+        exception.InnerException is SqlException { Number: 2601 or 2627 };
 }

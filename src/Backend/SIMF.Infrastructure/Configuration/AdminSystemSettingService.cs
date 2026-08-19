@@ -66,10 +66,7 @@ internal sealed class AdminSystemSettingService(
             .AnyAsync(s => s.IsActive && s.Key == key, cancellationToken);
         if (duplicate)
         {
-            throw new ApiException(
-                ErrorCodes.SystemSettingKeyDuplicate, 409,
-                $"A setting with the key '{key}' already exists.",
-                $"يوجد إعداد بالمفتاح '{key}' بالفعل.");
+            throw KeyDuplicate(key);
         }
 
         var now = timeProvider.SimfNow();
@@ -104,6 +101,23 @@ internal sealed class AdminSystemSettingService(
         var setting = await db.SystemSettings
             .SingleOrDefaultAsync(s => s.Id == id, cancellationToken)
             ?? throw NotFound();
+
+        // Reactivating is the update path's only route to the filtered unique
+        // index on the active key: the key itself is immutable here, so a live
+        // row cannot collide, but a deactivated row whose key was re-created in
+        // the meantime can. Answer the same 409 the create path answers for the
+        // identical collision instead of letting SaveChanges throw a 500.
+        if (request.IsActive && !setting.IsActive)
+        {
+            var duplicate = await db.SystemSettings.AsNoTracking()
+                .AnyAsync(
+                    s => s.Id != setting.Id && s.IsActive && s.Key == setting.Key,
+                    cancellationToken);
+            if (duplicate)
+            {
+                throw KeyDuplicate(setting.Key);
+            }
+        }
 
         setting.Value = ValidateValue(request.Value);
         setting.Description = NormaliseDescription(request.Description);
@@ -270,6 +284,15 @@ internal sealed class AdminSystemSettingService(
             ErrorCodes.SystemSettingNotFound, 404,
             "The system setting was not found.",
             "لم يتم العثور على الإعداد.");
+
+    /// <summary>The one wording for "that key is already live", shared by the
+    /// create path and the reactivating update path so both collisions read the
+    /// same to the admin who caused them.</summary>
+    private static ApiException KeyDuplicate(string key) =>
+        new(
+            ErrorCodes.SystemSettingKeyDuplicate, 409,
+            $"A setting with the key '{key}' already exists.",
+            $"يوجد إعداد بالمفتاح '{key}' بالفعل.");
 
     private static AdminSystemSettingDetail ToDetail(SystemSetting setting) => new(
         setting.Id, setting.Key, setting.Value, setting.Description, setting.IsActive,

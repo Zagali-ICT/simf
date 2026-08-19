@@ -204,6 +204,23 @@ internal sealed class AdminSessionSummaryService(
         var result = await aiService.InvokeAsync(
             SummaryPromptKey, inputs, new AiCallerContext(actorUserId, "Admin"), cancellationToken);
 
+        // A provider can answer 200 and still carry no text — a model that stops on
+        // a safety verdict returns a candidate with no text block, and the parse
+        // yields an empty string rather than throwing. Nothing below distinguishes
+        // that from real minutes: it would be written over FullTextArabic AND over
+        // the pristine AI-draft snapshot, and because "" differs from the stored
+        // text it would also clear the approval and take a LIVE محضر offline. One
+        // click of Regenerate must never be able to erase a published summary, so an
+        // empty answer is refused here, BEFORE the summary is even loaded, and the
+        // stored text is left exactly as a thrown provider error already leaves it.
+        if (string.IsNullOrWhiteSpace(result.OutputText))
+        {
+            throw new ApiException(
+                ErrorCodes.AiProviderFailed, 502,
+                "The AI provider returned no text — the stored summary was left unchanged. Try again.",
+                "لم يُعِد موفّر الذكاء الاصطناعي أي نص — تُرك الملخّص المحفوظ دون تغيير. حاول مرة أخرى.");
+        }
+
         var summary = await appDbContext.SessionSummaries
             .SingleOrDefaultAsync(
                 row => row.SessionId == sessionId && row.IsActive, cancellationToken);

@@ -1,3 +1,4 @@
+// Tests: SIMF.Api.Tests/EmailFailureAlertTests.cs (outage alert behaviour)
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -13,12 +14,18 @@ namespace SIMF.Infrastructure.Email;
 /// queue.
 ///
 /// <para>When <see cref="EmailOptions.FailureAlertRecipients"/> is
-/// configured, every send failure also dispatches a short notification email
-/// to the operations distribution list so Support / IT see SMTP outages in
-/// real time without having to tail the OperationLog. The alert email is
-/// fire-and-forget; a recursive failure (the alert ITSELF fails to send)
-/// is logged but does NOT re-trigger another alert — otherwise a sustained
-/// SMTP outage would amplify the queue.</para>
+/// configured, a send failure also dispatches a short notification email to the
+/// operations distribution list so Support / IT see SMTP outages in real time
+/// without having to tail the OperationLog. A recursive failure (the alert
+/// ITSELF fails to send) is logged but never re-triggers another alert.</para>
+///
+/// <para>Only the FIRST failure of an outage alerts, and a successful send arms
+/// it again. The alert is sent inline on the one and only consumer, so with two
+/// ops recipients and a dead relay every dequeued message used to cost three
+/// failing SMTP round trips instead of one — the queue then drained slower than
+/// producers filled it, pinned at its bound, and refused everything after that.
+/// The doc here used to call the alert "fire-and-forget" and claim it could not
+/// amplify; it was neither.</para>
 /// </summary>
 public sealed class EmailBackgroundService(
     EmailQueue queue,
@@ -28,6 +35,10 @@ public sealed class EmailBackgroundService(
     ILogger<EmailBackgroundService> logger) : BackgroundService
 {
     private static readonly char[] RecipientDelimiters = [',', ';', ' ', '\t', '\r', '\n'];
+
+    // One alert per outage, not one per message. Only ever touched by the single
+    // consumer loop below, so it needs no synchronisation.
+    private bool _outageAlreadyAlerted;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -39,6 +50,9 @@ public sealed class EmailBackgroundService(
             {
                 await sender.SendAsync(message, stoppingToken);
                 heartbeat.RecordSuccess(nameof(EmailBackgroundService));
+                // The relay answered, so the next failure is a NEW outage and
+                // earns its own alert.
+                _outageAlreadyAlerted = false;
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -65,6 +79,8 @@ public sealed class EmailBackgroundService(
     private async Task NotifyFailureAsync(
         EmailMessage failed, Exception cause, CancellationToken cancellationToken)
     {
+        if (_outageAlreadyAlerted) { return; }
+
         var recipientsRaw = options.Value.FailureAlertRecipients;
         if (string.IsNullOrWhiteSpace(recipientsRaw)) { return; }
 
@@ -84,6 +100,10 @@ public sealed class EmailBackgroundService(
             + $"{System.Net.WebUtility.HtmlEncode(cause.Message)}</p>"
             + "<p>Check the SIMF application logs for the full stack trace and the OperationLog "
             + "for the matching audit row.</p>";
+
+        // Set BEFORE the sends: they go through the same relay that just failed,
+        // so this must hold even when every one of them fails too.
+        _outageAlreadyAlerted = true;
 
         foreach (var recipient in recipients)
         {

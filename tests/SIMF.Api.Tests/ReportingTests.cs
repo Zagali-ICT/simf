@@ -18,6 +18,7 @@ using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Reporting;
 using SIMF.Domain.AccessControl;
+using SIMF.Domain.BusinessMeetings;
 using SIMF.Domain.Feedback;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Profiles;
@@ -40,6 +41,7 @@ public sealed class ReportingTests : IClassFixture<SimfApiFactory>
     private const string GatesExport = "/api/v1/admin/reports/gates/export";
     private const string RatingsList = "/api/v1/admin/reports/ratings/list";
     private const string EngagementList = "/api/v1/admin/reports/engagement/list";
+    private const string MeetingsList = "/api/v1/admin/reports/meetings/list";
 
     /// <summary>The first bytes of any XLSX: it is a ZIP container.</summary>
     private static readonly byte[] ZipMagic = [0x50, 0x4B];
@@ -239,6 +241,56 @@ public sealed class ReportingTests : IClassFixture<SimfApiFactory>
         Assert.Contains(page.Rows, r => r.Outcome == "Allowed" && r.DenialReason is null);
         Assert.Contains(page.Rows, r => r.Outcome == "Denied" && r.DenialReason is not null);
         Assert.Contains(page.Totals, t => t.LabelKey == "Admin.Reports.Total.Denied" && t.Value == "1");
+    }
+
+    // -- Meetings ordering ----------------------------------------------------
+
+    // The default arm used to order on the RENDERED "requested" cell, which is a
+    // day-first 12-hour string: "31-08-2042" sorts above "01-09-2042" ordinally,
+    // so the report presented the older request as the newest. The "requested"
+    // column is not sortable in the CP, so every page load took this arm.
+    [Fact]
+    public async Task Meetings_default_order_is_newest_first_across_a_month_boundary()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var speakerId = await SeedSpeakerAsync();
+        var older = new DateOnly(2042, 8, 31);
+        var newer = new DateOnly(2042, 9, 1);
+
+        // Seeded oldest-last so an unordered read cannot pass by accident.
+        await SeedSpeakerMeetingRequestAsync(speakerId, "AUGUST-31", SaudiAt(older, 9));
+        await SeedSpeakerMeetingRequestAsync(speakerId, "SEPTEMBER-01", SaudiAt(newer, 10));
+
+        var page = await ListAsync<MeetingsReportRow>(
+            token, MeetingsList, new DateOnly(2042, 8, 1), new DateOnly(2042, 9, 30), top: 200);
+
+        var subjects = page.Rows.Select(r => r.Subject).ToList();
+        var septemberAt = subjects.IndexOf("SEPTEMBER-01");
+        var augustAt = subjects.IndexOf("AUGUST-31");
+        Assert.True(septemberAt >= 0 && augustAt >= 0, "both seeded requests must be in the page");
+        Assert.True(
+            septemberAt < augustAt,
+            "the 1 September request is newer and must sort above the 31 August one");
+    }
+
+    // Same-day the formatted string was equally wrong: "11:00 AM" > "01:00 PM"
+    // ordinally, so a morning request outranked an afternoon one.
+    [Fact]
+    public async Task Meetings_default_order_puts_the_afternoon_request_above_the_morning_one()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var speakerId = await SeedSpeakerAsync();
+        var day = new DateOnly(2042, 10, 5);
+
+        await SeedSpeakerMeetingRequestAsync(speakerId, "MORNING-11AM", SaudiAt(day, 11));
+        await SeedSpeakerMeetingRequestAsync(speakerId, "AFTERNOON-1PM", SaudiAt(day, 13));
+
+        var page = await ListAsync<MeetingsReportRow>(token, MeetingsList, day, day, top: 200);
+
+        var subjects = page.Rows.Select(r => r.Subject).ToList();
+        Assert.True(
+            subjects.IndexOf("AFTERNOON-1PM") < subjects.IndexOf("MORNING-11AM"),
+            "the 1pm request is newer and must sort above the 11am one");
     }
 
     // -- Export --------------------------------------------------------------
@@ -643,6 +695,43 @@ public sealed class ReportingTests : IClassFixture<SimfApiFactory>
         };
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return await _client.SendAsync(request);
+    }
+
+    private async Task<Guid> SeedSpeakerAsync()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var speaker = new Speaker
+        {
+            Id = Guid.NewGuid(),
+            Code = "RS-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
+            Name = "Report Speaker",
+            NameArabic = "متحدث التقارير",
+            AllowsMeetingRequests = true,
+            IsActive = true,
+            CreatedAt = SimfClock.Now,
+        };
+        db.Speakers.Add(speaker);
+        await db.SaveChangesAsync();
+        return speaker.Id;
+    }
+
+    private async Task SeedSpeakerMeetingRequestAsync(
+        Guid speakerId, string subject, DateTime createdAt)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        db.SpeakerMeetingRequests.Add(new SpeakerMeetingRequest
+        {
+            Id = Guid.NewGuid(),
+            SpeakerId = speakerId,
+            RequestedByUserId = Guid.NewGuid(),
+            RequesterName = "Report Requester",
+            Subject = subject,
+            Status = MeetingRequestStatus.Pending,
+            CreatedAt = createdAt,
+        });
+        await db.SaveChangesAsync();
     }
 
     private async Task<Guid> SeedHallAsync()

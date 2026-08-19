@@ -34,12 +34,20 @@ namespace SIMF.Infrastructure.Operations;
 /// that the notification is addressed to. No cross-DB join (both live on
 /// <see cref="SimfAppDbContext"/>).</para>
 ///
-/// <para>Day boundaries are event-local (+03:00, the codebase
-/// <c>EventTimeZoneOffset</c> convention): a session belongs to the day whose
-/// local calendar date matches its <c>Start</c>. A day "ends" at the latest
-/// session end + <see cref="SessionGrace"/>, or (for a session-less day) at the
-/// next local midnight. The back-fill windows bound the first run after a deploy
-/// so an old day / programme is never blasted.</para>
+/// <para>Day boundaries need NO offset arithmetic, and none is performed. Every
+/// value compared here is already Saudi wall-clock: <c>Session.Start</c> /
+/// <c>End</c> and <c>GateScan.ScannedAt</c> are stored that way, and <c>now</c>
+/// arrives from <c>TimeProvider.SimfNow()</c>, which re-expresses the instant at
+/// +03:00 before reading the clock off it. So a session belongs to the day whose
+/// calendar date matches its raw <c>Start</c>, a day "ends" at the latest session
+/// end + <see cref="SessionGrace"/> (or, for a session-less day, at the next
+/// midnight), and the check-in window runs midnight to midnight on the same
+/// scale. A previous version of this remark advertised a +03:00 bucketing step
+/// that no method ever applied, which sent anyone debugging a day-boundary
+/// complaint hunting for the wrong bug.</para>
+///
+/// <para>The back-fill windows bound the first run after a deploy so an old day /
+/// programme is never blasted.</para>
 /// </summary>
 internal sealed class ProgrammeRatingPromptWorker(
     IServiceScopeFactory scopeFactory,
@@ -50,11 +58,6 @@ internal sealed class ProgrammeRatingPromptWorker(
     private static readonly TimeSpan PollInterval = TimeSpan.FromMinutes(1);
     // First tick is delayed so the host finishes migrations + seeding first.
     private static readonly TimeSpan StartupDelay = TimeSpan.FromMinutes(1);
-
-    /// <summary>Event-local offset (+03:00) — the codebase convention for bucketing
-    /// sessions into calendar days (mirrors <c>MyAreaService</c> /
-    /// <c>ProgrammeSessionService</c>).</summary>
-    internal static readonly TimeSpan EventOffset = TimeSpan.FromHours(3);
 
     /// <summary>Grace after the last session of a day before the day is treated as
     /// "ended" and the day prompt fires.</summary>
@@ -160,7 +163,10 @@ internal sealed class ProgrammeRatingPromptWorker(
             return 0;
         }
 
+        // AsNoTracking: the claim below is a conditional UPDATE, so nothing here may
+        // stay tracked and be re-saved by a later SaveChanges on this context.
         var days = await db.ProgrammeDays
+            .AsNoTracking()
             .Where(d => d.IsActive && d.RatingPromptSent == null)
             .ToListAsync(cancellationToken);
         if (days.Count == 0)
@@ -184,15 +190,25 @@ internal sealed class ProgrammeRatingPromptWorker(
                 continue; // not ended yet, or too far in the past to back-fill
             }
 
-            var recipientIds = await CheckedInUserIdsAsync(db, day.Date, cancellationToken);
-
-            // Claim the day BEFORE dispatching (see the class remarks): stamp
-            // RatingPromptSent and commit it so a restart mid-loop cannot
-            // re-send an already-processed day. Even a zero-recipient day is
-            // claimed so the worker stops re-scanning it.
-            day.RatingPromptSent = now;
-            await db.SaveChangesAsync(cancellationToken);
+            // Claim the day BEFORE dispatching: stamp RatingPromptSent in one
+            // conditional UPDATE that only lands while the day is still unstamped.
+            // The tracked read-then-write this replaces was last-writer-wins rather
+            // than a claim — two instances running this worker at once both read
+            // null, both stamped, and both blasted the whole day's audience. A claim
+            // affecting 0 rows means the other instance got there first. Even a
+            // zero-recipient day is claimed so the worker stops re-scanning it.
+            var claimed = await db.ProgrammeDays
+                .Where(d => d.Id == day.Id && d.RatingPromptSent == null)
+                .ExecuteUpdateAsync(
+                    setters => setters.SetProperty(d => d.RatingPromptSent, now),
+                    cancellationToken);
+            if (claimed == 0)
+            {
+                continue;
+            }
             prompted++;
+
+            var recipientIds = await CheckedInUserIdsAsync(db, day.Date, cancellationToken);
 
             foreach (var userId in recipientIds)
             {
@@ -258,6 +274,11 @@ internal sealed class ProgrammeRatingPromptWorker(
             return false; // not ended yet, or too old to back-fill on first deploy
         }
 
+        // Pre-check rather than insert-and-catch-duplicate: SystemSettings' unique
+        // index on Key is FILTERED to [IsActive] = 1 and this marker is written
+        // inactive, so a duplicate insert would succeed instead of raising. Closing
+        // that window properly needs an index change, which the schema freeze puts
+        // outside a code fix.
         if (await db.SystemSettings.AnyAsync(s => s.Key == ProgramEndSettingKey, cancellationToken))
         {
             return false; // already dispatched

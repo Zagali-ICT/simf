@@ -316,6 +316,60 @@ public sealed class MyRequestsTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.Conflict, cancel.StatusCode);
     }
 
+    // The document and badge arms used to be a tracked read-modify-save, which
+    // emits an unconditional UPDATE: the admin desk's Accepted decision — already
+    // copied onto the requester's profile and already notified — was silently
+    // stamped Cancelled. Both arms now flip the status with a conditional UPDATE
+    // guarded on Pending, so the admin's answer wins and the requester gets a 409.
+    [Fact]
+    public async Task Cancelling_an_accepted_document_request_is_a_conflict_and_leaves_it_Accepted()
+    {
+        var (token, userId) = await SignInApprovedVisitorAsync();
+        var docId = await SeedDocumentRequestAsync(
+            userId, MeetingRequestStatus.Accepted, responseNote: null);
+
+        var cancel = await CancelAsync(token, AppRequestKind.ParticipationDocument, docId);
+        Assert.Equal(HttpStatusCode.Conflict, cancel.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var req = await db.ParticipationDocumentRequests.SingleAsync(r => r.Id == docId);
+        Assert.Equal(MeetingRequestStatus.Accepted, req.Status);
+    }
+
+    [Fact]
+    public async Task Cancelling_an_accepted_badge_request_is_a_conflict_and_leaves_it_Accepted()
+    {
+        var (token, userId) = await SignInApprovedVisitorAsync();
+        var badgeId = await SeedBadgeRequestAsync(
+            userId, MeetingRequestStatus.Accepted, responseNote: null);
+
+        var cancel = await CancelAsync(token, AppRequestKind.BadgeUpdate, badgeId);
+        Assert.Equal(HttpStatusCode.Conflict, cancel.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var req = await db.BadgeUpdateRequests.SingleAsync(r => r.Id == badgeId);
+        Assert.Equal(MeetingRequestStatus.Accepted, req.Status);
+    }
+
+    // The happy path must still commit through the conditional UPDATE.
+    [Fact]
+    public async Task Cancelling_a_pending_badge_request_sets_Cancelled()
+    {
+        var (token, userId) = await SignInApprovedVisitorAsync();
+        var badgeId = await SeedBadgeRequestAsync(
+            userId, MeetingRequestStatus.Pending, responseNote: null);
+
+        var cancel = await CancelAsync(token, AppRequestKind.BadgeUpdate, badgeId);
+        Assert.Equal(HttpStatusCode.OK, cancel.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var req = await db.BadgeUpdateRequests.SingleAsync(r => r.Id == badgeId);
+        Assert.Equal(MeetingRequestStatus.Cancelled, req.Status);
+    }
+
     // -- R-3: the admin ResponseNote (rejection reason) is surfaced -----------
 
     [Fact]

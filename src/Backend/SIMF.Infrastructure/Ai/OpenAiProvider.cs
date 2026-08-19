@@ -1,3 +1,4 @@
+// Tests: SIMF.Api.Tests/OpenAiProviderTests.cs
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
@@ -21,6 +22,11 @@ internal sealed class OpenAiProvider(
     ILogger<OpenAiProvider> logger) : IAiProvider
 {
     public AiProvider Tag => AiProvider.OpenAi;
+
+    /// <summary>The status every failed upstream call answers with: a bad
+    /// gateway, because that is what it is. The catch-all branch below always
+    /// used it; the non-success branch used to relay the vendor's.</summary>
+    private const int UpstreamFailureStatus = 502;
 
     public async Task<AiProviderResponse> CallAsync(
         AiProviderCall call, CancellationToken cancellationToken = default)
@@ -72,9 +78,17 @@ internal sealed class OpenAiProvider(
 
                 logger.LogWarning(
                     "OpenAI call failed: {Status} {Body}", response.StatusCode, safeBody);
+                // 502, never the vendor's own status. Relaying it made a revoked
+                // vendor key answer a correctly-authenticated caller with 401, a
+                // stale model name answer a POST with 404, and a vendor throttle
+                // answer with a 429 no SIMF rate limiter produced — so every
+                // status-based consumer (client session logic, the proxy, the SIEM
+                // rules that count 401/403) mis-triaged an upstream outage as an
+                // event on our own surface. The vendor status stays in the log
+                // line above, which is where it belongs.
                 throw new ApiException(
                     ErrorCodes.AiProviderFailed,
-                    (int)response.StatusCode,
+                    UpstreamFailureStatus,
                     "AI provider call failed.",
                     "فشل استدعاء موفّر الذكاء الاصطناعي.");
             }
@@ -102,7 +116,7 @@ internal sealed class OpenAiProvider(
         {
             logger.LogError(ex, "OpenAI call threw");
             throw new ApiException(
-                ErrorCodes.AiProviderFailed, 502,
+                ErrorCodes.AiProviderFailed, UpstreamFailureStatus,
                 "AI provider call failed.",
                 "فشل استدعاء موفّر الذكاء الاصطناعي.");
         }

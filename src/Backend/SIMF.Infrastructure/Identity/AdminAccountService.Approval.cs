@@ -1,7 +1,11 @@
 ﻿// Tests: SIMF.Api.Tests/AdminApprovalTests.cs,
 //        SIMF.Api.Tests/GateRevokedBadgeTests.cs (admission is written on the
 //        profile, so a refused or withdrawn holder is denied at a gate)
+// Tests: SIMF.Api.Tests/AdminApprovalIdentityCommitFailureTests.cs (a failed
+//        Identity flip undoes the profile-side admission, so a half-approved
+//        holder is not admissible at a gate)
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Application.Notifications;
@@ -59,6 +63,13 @@ internal sealed partial class AdminAccountService
         // updated too, but for a different question: its state governs sign-in.
         // The two are not mirrors of one fact — they are two facts that happen to
         // change together on this path — and only this one is read at a gate.
+        //
+        // Remembered before the write so the App half can be undone if the
+        // Identity half never lands. See the ordering note below the mint.
+        var priorAdmissionState = profile.AdmissionState;
+        var priorStateChangedAt = profile.StateChangedAt;
+        var priorStateChangedByUserId = profile.StateChangedByUserId;
+
         profile.AdmissionState = AccountState.Approved;
         profile.StateChangedAt = now;
         profile.StateChangedByUserId = actorUserId;
@@ -98,18 +109,55 @@ internal sealed partial class AdminAccountService
         // NO distributed transaction spanning the two databases. Persist the
         // App-DB unit of work (the minted QR + the cleared rejection text +
         // the optional tier) FIRST, then flip the Identity account to Approved.
-        // A transient App-save failure now leaves the account PendingApproval
+        // A transient App-save failure leaves the account PendingApproval
         // — retryable, because the approve path re-runs and MintIfMissingAsync
         // is idempotent — instead of orphaning an Approved visitor with no QR
         // (which LoadPendingSubjectAsync would then 409 on every retry, leaving
-        // the visitor permanently un-scannable). The reverse window (a minted
-        // QR on a still-Pending account) is fail-closed: a gate scan denies it
-        // as HolderNotApproved (GateOperatorService), so it grants no access.
-        // UserProfile lives on the App DB, saved separately from the
-        // Identity-side user-state flip.
+        // the visitor permanently un-scannable).
+        //
+        // The reverse window is NOT self-correcting, which is why it is
+        // compensated below. Admission is read off the PROFILE, not off the
+        // account, so an App half that commits while the Identity half fails
+        // leaves a holder the gate ADMITS while every admin list still shows
+        // them pending and no approval notification was ever sent. Undoing the
+        // admission decision converges the two databases on "still pending",
+        // which is a state the operator can simply retry. The minted QR is
+        // deliberately LEFT in place: it grants nothing on its own (the gate
+        // reads the admission state, not the presence of an id), and keeping it
+        // means a retry re-approves the same badge rather than issuing a second
+        // one to a holder who may already have printed the first.
         await appDbContext.SaveChangesAsync(cancellationToken);
-        await accounts.UpdateAsync(subject).EnsureSuccessAsync();
-        await dbContext.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await accounts.UpdateAsync(subject).EnsureSuccessAsync();
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch
+        {
+            profile.AdmissionState = priorAdmissionState;
+            profile.StateChangedAt = priorStateChangedAt;
+            profile.StateChangedByUserId = priorStateChangedByUserId;
+            try
+            {
+                // CancellationToken.None: a cancelled request is one of the ways
+                // to get here, and a compensating write that refuses to run
+                // because the caller went away is no compensation at all.
+                await appDbContext.SaveChangesAsync(CancellationToken.None);
+            }
+            catch (Exception compensation)
+            {
+                // Both databases are unreachable, most likely. Log loudly and let
+                // the original failure surface — swallowing it here would tell
+                // the operator the approval failed cleanly when it did not.
+                logger.LogError(
+                    compensation,
+                    "Could not undo the profile-side approval for {SubjectId} after "
+                    + "the account update failed; the profile may read Approved while "
+                    + "the account does not.",
+                    subject.Id);
+            }
+            throw;
+        }
 
         // Revoke every refresh token so the subject's next API
         // call gets a fresh access token with account_state=Approved.

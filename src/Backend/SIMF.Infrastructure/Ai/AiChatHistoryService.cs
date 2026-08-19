@@ -23,6 +23,13 @@ internal sealed class AiChatHistoryService(
     /// <summary>How many recent turns feed the model's short-term memory.</summary>
     private const int MaxMemoryTurns = 12;
 
+    /// <summary>The ceiling on one saved-transcript read. Nothing prunes this
+    /// append-only table, so an unbounded read would materialise every turn a
+    /// visitor ever sent and serialise the lot into a single response on an
+    /// endpoint the chat screen calls on every open. Past the cap the OLDEST
+    /// turns drop, the same way the memory window does.</summary>
+    private const int MaxHistoryTurns = 200;
+
     /// <summary>Cap the memory block a safe margin below the per-AI-input limit.
     /// The {history} value is independently capped at 4000 by AiService, so this
     /// only needs to keep the block itself under that limit.</summary>
@@ -31,12 +38,17 @@ internal sealed class AiChatHistoryService(
     public async Task<IReadOnlyList<AiChatTurn>> GetHistoryAsync(
         Guid userId, CancellationToken cancellationToken = default)
     {
-        return await appDbContext.AiChatMessages
+        // Newest-first + Take so the read is bounded in SQL, then flipped back to
+        // chronological for the app. The wire shape is unchanged.
+        var newestFirst = await appDbContext.AiChatMessages
             .AsNoTracking()
             .Where(m => m.UserId == userId)
-            .OrderBy(m => m.CreatedAt)
+            .OrderByDescending(m => m.CreatedAt)
+            .Take(MaxHistoryTurns)
             .Select(m => new AiChatTurn(m.Role, m.Content))
             .ToListAsync(cancellationToken);
+        newestFirst.Reverse();
+        return newestFirst;
     }
 
     public async Task<string> GetRecentContextAsync(
@@ -82,7 +94,7 @@ internal sealed class AiChatHistoryService(
             Id = Guid.NewGuid(),
             UserId = userId,
             Role = RoleUser,
-            Content = Cap(userMessage),
+            Content = Redact(userMessage),
             CreatedAt = now,
         });
         appDbContext.AiChatMessages.Add(new AiChatMessage
@@ -90,18 +102,29 @@ internal sealed class AiChatHistoryService(
             Id = Guid.NewGuid(),
             UserId = userId,
             Role = RoleAssistant,
-            Content = Cap(assistantReply),
+            // Redacted too, not just the visitor's own turn: a model routinely
+            // quotes the question back ("your Iqama 2123456789 is registered"),
+            // so redacting only the user row would leave the same number in the
+            // row beneath it. The LIVE answer the app renders is result.OutputText
+            // and is NOT redacted -- only the reopened transcript carries markers.
+            Content = Redact(assistantReply),
             // +1 tick so the assistant reply always orders after its question.
             CreatedAt = now.AddTicks(1),
         });
         await appDbContext.SaveChangesAsync(cancellationToken);
     }
 
-    /// <summary>Trim + clamp to the persisted column length (mirrors the AI
-    /// per-input cap), so an over-long turn never fails the insert.</summary>
-    private static string Cap(string value)
+    /// <summary>Redact, then trim + clamp to the persisted column length.
+    ///
+    /// <para>The same visitor text is stored REDACTED on the invocation row, so
+    /// leaving it raw here kept a plaintext copy of an Iqama / mobile / IBAN /
+    /// key two columns away from the encrypted profile fields, in a table that is
+    /// never pruned and is replayed into the next twelve prompts. Redaction runs
+    /// BEFORE the length clamp so a secret cannot survive by being truncated out
+    /// of its own pattern.</para></summary>
+    private static string Redact(string value)
     {
-        var trimmed = (value ?? string.Empty).Trim();
+        var trimmed = AiAuditDetail.RedactValue(value).Trim();
         return trimmed.Length > AiInputLimits.MaxInputValueLength
             ? trimmed[..AiInputLimits.MaxInputValueLength]
             : trimmed;

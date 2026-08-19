@@ -2,6 +2,7 @@
 //        SIMF.Api.Tests/NotificationLifecycleTests.cs (trigger-by-trigger)
 //        SIMF.Api.Tests/NotificationChannelTests.cs (the INotificationChannel seam)
 using Microsoft.Extensions.Logging;
+using SIMF.Common.Enums;
 
 namespace SIMF.Application.Notifications;
 
@@ -56,5 +57,81 @@ internal sealed class NotificationDispatcher(
             }
             await channel.SendAsync(request, cancellationToken);
         }
+    }
+
+    /// <summary>The batched dispatch. Same policy, same channel order, same rows —
+    /// but the dedup guard is answered once per (kind, entity) rather than once per
+    /// recipient, and each channel is handed the whole batch so the one whose cost
+    /// is per round-trip can collapse it.</summary>
+    public async Task DispatchManyAsync(
+        IReadOnlyList<NotificationRequest> requests,
+        CancellationToken cancellationToken = default)
+    {
+        if (requests.Count == 0)
+        {
+            return;
+        }
+
+        var pending = await FilterAlreadySentAsync(requests, cancellationToken);
+        if (pending.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var channel in channels.OrderBy(channel => channel.Order))
+        {
+            var handled = pending.Where(channel.ShouldHandle).ToList();
+            if (handled.Count == 0)
+            {
+                continue;
+            }
+            await channel.SendManyAsync(handled, cancellationToken);
+        }
+    }
+
+    /// <summary>Drops the requests the opt-in one-per-(user, kind, entity) guard
+    /// already covers. One IN-list query per distinct (kind, entity) — a sweep over
+    /// 400 absentees used to ask that question 400 times, every minute, for the
+    /// whole reminder window.</summary>
+    private async Task<List<NotificationRequest>> FilterAlreadySentAsync(
+        IReadOnlyList<NotificationRequest> requests, CancellationToken cancellationToken)
+    {
+        var guarded = requests
+            .Where(request => request.DeduplicateByRelatedEntity
+                && request.RelatedEntityId is not null)
+            .ToList();
+        if (guarded.Count == 0)
+        {
+            return [.. requests];
+        }
+
+        var alreadySent = new HashSet<(NotificationKind Kind, Guid EntityId, Guid UserId)>();
+        foreach (var group in guarded.GroupBy(
+            request => (request.Kind, EntityId: request.RelatedEntityId!.Value)))
+        {
+            var userIds = group.Select(request => request.UserId).Distinct().ToList();
+            var existing = await notifications.ExistingUserIdsAsync(
+                group.Key.Kind, group.Key.EntityId, userIds, cancellationToken);
+            foreach (var userId in existing)
+            {
+                alreadySent.Add((group.Key.Kind, group.Key.EntityId, userId));
+            }
+        }
+
+        var pending = new List<NotificationRequest>(requests.Count);
+        foreach (var request in requests)
+        {
+            if (request.DeduplicateByRelatedEntity
+                && request.RelatedEntityId is { } relatedId
+                && alreadySent.Contains((request.Kind, relatedId, request.UserId)))
+            {
+                logger.LogInformation(
+                    "Notification {Kind} for {UserId} skipped — already sent for entity {EntityId}.",
+                    request.Kind, request.UserId, relatedId);
+                continue;
+            }
+            pending.Add(request);
+        }
+        return pending;
     }
 }

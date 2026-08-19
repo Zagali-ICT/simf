@@ -8,12 +8,14 @@ using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using SIMF.Application.Auditing;
 using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Operations;
+using SIMF.Infrastructure.Operations;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
 
@@ -119,6 +121,72 @@ public sealed class OperationsTogglesTests : IClassFixture<SimfApiFactory>
             Assert.Equal(HttpStatusCode.Forbidden, signUp.StatusCode);
             var body = (await signUp.Content.ReadFromJsonAsync<ApiResult<object>>())!;
             Assert.Equal(ErrorCodes.RegistrationClosed, body.Error!.Code);
+        }
+        finally
+        {
+            await ResetGateOpenAsync();
+        }
+    }
+
+    [Fact]
+    public async Task Auto_close_clears_the_spent_schedule_so_the_gate_can_be_re_opened()
+    {
+        // The worker used to flip IsOpen and leave the now-past AutoClose in place.
+        // The CP re-open form pre-fills AutoClose from the gate and posts it back
+        // verbatim, so re-opening sent IsOpen=true with a date already gone:
+        // IsRegistrationOpenAsync still refused every sign-up and the worker flipped
+        // IsOpen back within the minute. Registration could not be re-opened at all.
+        var now = SimfClock.Now;
+        var token = await CreateAdministratorAndSignInAsync();
+        try
+        {
+            using (var scope = _factory.Services.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+                var row = await db.RegistrationGate
+                    .SingleAsync(g => g.Id == RegistrationGate.SingletonId);
+                row.IsOpen = true;
+                row.AutoClose = now.AddMinutes(-1);
+                await db.SaveChangesAsync();
+
+                var auditLog = scope.ServiceProvider.GetRequiredService<IAuditLog>();
+                var fired = await RegistrationGateAutoCloseWorker.RunAutoCloseScanAsync(
+                    db, auditLog, now, CancellationToken.None);
+                Assert.NotNull(fired);
+            }
+
+            DateTime? autoCloseAfterFiring;
+            using (var scope = _factory.Services.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+                var row = await db.RegistrationGate.AsNoTracking()
+                    .SingleAsync(g => g.Id == RegistrationGate.SingletonId);
+                Assert.False(row.IsOpen);
+                Assert.Null(row.AutoClose);
+                autoCloseAfterFiring = row.AutoClose;
+            }
+
+            // The admin re-opens, echoing back whatever the gate now holds — which is
+            // exactly what the CP page does.
+            var reopen = await PutAuthAsync(
+                "/api/v1/admin/registration-gate",
+                new UpdateRegistrationGateRequest
+                {
+                    IsOpen = true,
+                    AutoClose = autoCloseAfterFiring,
+                },
+                token);
+            Assert.Equal(HttpStatusCode.OK, reopen.StatusCode);
+
+            var signUp = await _client.PostAsJsonAsync(
+                "/api/v1/app/auth/sign-up",
+                new SignUpRequest
+                {
+                    Email = $"reopened-{Guid.NewGuid():N}@simf.test",
+                    Password = AuthFlow.Password,
+                    ConfirmPassword = AuthFlow.Password,
+                });
+            Assert.Equal(HttpStatusCode.Created, signUp.StatusCode);
         }
         finally
         {

@@ -82,5 +82,23 @@ public sealed class AnthropicAiProviderTests
 
         var ex = await Assert.ThrowsAsync<ApiException>(() => provider.CallAsync(Call()));
         Assert.Equal(ErrorCodes.AiProviderFailed, ex.Code);
+        // 502, NOT the vendor's 400. Relaying the upstream status made an outage
+        // at the vendor look like an authentication / not-found / throttling
+        // event on SIMF's own surface.
+        Assert.Equal(502, ex.StatusCode);
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.Unauthorized)]
+    [InlineData(HttpStatusCode.NotFound)]
+    [InlineData(HttpStatusCode.TooManyRequests)]
+    public async Task Every_upstream_status_still_surfaces_as_bad_gateway(HttpStatusCode upstream)
+    {
+        var provider = Build(
+            new StubHandler(upstream, "{\"error\":\"upstream\"}"),
+            new AnthropicOptions { ApiKey = "sk-ant-test" });
+
+        var ex = await Assert.ThrowsAsync<ApiException>(() => provider.CallAsync(Call()));
+        Assert.Equal(502, ex.StatusCode);
     }
 }

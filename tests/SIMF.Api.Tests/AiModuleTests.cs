@@ -167,6 +167,41 @@ public sealed class AiModuleTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Assistance_stores_the_saved_transcript_redacted()
+    {
+        // The same sentence is stored REDACTED on the invocation row. Storing it
+        // RAW on the chat transcript kept a plaintext copy of an Iqama and a
+        // mobile number in a table nothing prunes — beside the profile columns
+        // that are encrypted at rest — and replayed it into the next dozen
+        // prompts as short-term memory.
+        var visitor = await SignInApprovedVisitorAsync();
+        const string marker = "ZQX9";
+        var post = await PostAuthAsync(
+            "/api/v1/app/ai/assistance",
+            new AssistanceRequest
+            {
+                Message = $"my Iqama is 2123456789 and my mobile is 0551234567, "
+                    + $"when can I collect badge {marker}?",
+                Locale = "en",
+            },
+            visitor);
+        Assert.Equal(HttpStatusCode.OK, post.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var stored = await db.AiChatMessages.AsNoTracking()
+            .Where(m => m.Role == "user" && m.Content.Contains(marker))
+            .Select(m => m.Content)
+            .SingleAsync();
+
+        Assert.DoesNotContain("2123456789", stored, StringComparison.Ordinal);
+        Assert.DoesNotContain("0551234567", stored, StringComparison.Ordinal);
+        Assert.Contains("[REDACTED_NID]", stored, StringComparison.Ordinal);
+        Assert.Contains("[REDACTED_PHONE]", stored, StringComparison.Ordinal);
+        Assert.Contains(marker, stored, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task Assistance_second_call_includes_prior_turns_as_memory()
     {
         var visitor = await SignInApprovedVisitorAsync();

@@ -228,6 +228,52 @@ public sealed class CmsTests : IClassFixture<SimfApiFactory>
         Assert.Equal(ErrorCodes.BannerInvalidTimeWindow, body.Error!.Code);
     }
 
+    // LinkUrl is nvarchar(1024) on the Banners table but had no validator, so a
+    // long tracking/CDN link reached SQL Server and failed the write — a 500
+    // where every other banner field answers a bilingual 400.
+    [Fact]
+    public async Task Banner_create_with_an_over_long_link_url_is_BANNER_INVALID()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var now = SimfClock.Now;
+        var response = await PostAuthAsync(
+            "/api/v1/admin/banners",
+            new CreateBannerRequest
+            {
+                Title = "Long link", TitleArabic = "رابط طويل",
+                Body = "b", BodyArabic = "ب",
+                LinkUrl = "https://simf.test/?utm=" + new string('a', 1025),
+                Start = now, End = now.AddDays(1),
+                DisplayOrder = 0,
+            }, admin);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.BannerInvalid, body.Error!.Code);
+    }
+
+    // A link the column can hold is still accepted — the guard is a length cap,
+    // not a ban on links.
+    [Fact]
+    public async Task Banner_create_with_a_link_url_within_the_column_succeeds()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var now = SimfClock.Now;
+        var response = await PostAuthAsync(
+            "/api/v1/admin/banners",
+            new CreateBannerRequest
+            {
+                Title = "Ok link", TitleArabic = "رابط مقبول",
+                Body = "b", BodyArabic = "ب",
+                LinkUrl = "https://simf.test/news",
+                Start = now, End = now.AddDays(1),
+                DisplayOrder = 0,
+            }, admin);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var created = (await response.Content
+            .ReadFromJsonAsync<ApiResult<AdminBannerDetail>>())!.Data!;
+        Assert.Equal("https://simf.test/news", created.LinkUrl);
+    }
+
     [Fact]
     public async Task Non_admin_caller_is_forbidden_on_content_block_upsert()
     {

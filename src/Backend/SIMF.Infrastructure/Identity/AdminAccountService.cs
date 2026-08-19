@@ -7,7 +7,10 @@
 //        mobile lands in the one canonical column and the two lockstep ones),
 //        SIMF.Api.Tests/GridContractTests.cs (the account + pending-queue column
 //        keys the Control Panel sends are joined against the two declarations
-//        below, so a page/service disagreement fails the build)
+//        below, so a page/service disagreement fails the build),
+//        SIMF.Api.Tests/AudiencePartnerScopeTests.cs (the Visitors and Others
+//        desks split one account pool, so the audience scope must stay the
+//        exact complement of the partner set)
 using System.Linq.Expressions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -49,6 +52,9 @@ namespace SIMF.Infrastructure.Identity;
 internal sealed partial class AdminAccountService(
     IUserAccountRepository accounts,
     RoleManager<SimfRole> roleManager,
+    // Resolves the ACTOR's own permission codes so a bulk path can apply the
+    // same per-action gate the single-record endpoints apply at the edge.
+    IPermissionResolver permissionResolver,
     IRefreshTokenRepository refreshTokenRepository,
     IRecoveryCodeService recoveryCodes,
     IAccountCodeRepository accountCodeRepository,
@@ -265,9 +271,8 @@ internal sealed partial class AdminAccountService(
         await accounts.UpdateSecurityStampAsync(target);
         await refreshTokenRepository.RevokeAllForUserAsync(target.Id, now, cancellationToken);
 
-        // In-app notification + email (replaces the
-        // inline EnqueueNotificationEmail call below). The dispatcher
-        // writes the in-app row + queues the rendered email.
+        // In-app notification + email. The dispatcher writes the
+        // in-app row + queues the rendered email.
         var resetTokens = new Dictionary<string, string>
         {
             ["DisplayName"] = target.DisplayName,
@@ -831,14 +836,18 @@ internal sealed partial class AdminAccountService(
                 // rush, so this degrades to today's behaviour: the desk falls
                 // back to a paper slip while an admin approves from the queue.
                 //
-                // The QR is cleared from the RESPONSE explicitly.
-                // ApproveAsync saves the App DB (minting the QR onto this same
-                // tracked profile instance) before it flips Identity, so a
-                // failure in the second half leaves a real, persisted QrId on an
-                // account that is still PendingApproval. Returning it would have
-                // the desk print a badge the gate then refuses as
-                // HolderNotApproved. Access stays fail-closed either way; this
-                // keeps the desk from printing paper it cannot use.
+                // The QR is cleared explicitly, and a gate does NOT read the
+                // presence of an id — it reads the admission state on the
+                // profile. ApproveAsync mints the QR onto this same tracked
+                // instance and saves the App DB before it flips Identity, so a
+                // failure in the second half leaves a persisted QrId behind; the
+                // approve path undoes the admission decision but deliberately
+                // leaves that id, so a retry re-issues the same badge rather
+                // than a second one. Here the desk wants it gone as well, and
+                // not only from the response: returning an id would have the
+                // operator print paper the door then refuses. Clearing it on the
+                // tracked instance also clears the column, because the audit
+                // write below shares this App context and flushes it.
                 profile.QrId = null;
                 logger.LogError(
                     ex,
@@ -912,7 +921,8 @@ internal sealed partial class AdminAccountService(
         Guid? profileTypeId,
         IList<string> roles,
         CancellationToken cancellationToken,
-        bool? expectedIsVisitor = null)
+        bool? expectedIsVisitor = null,
+        bool notifyAdmins = true)
     {
         if (await accounts.FindByEmailAsync(email) is not null)
         {
@@ -1099,36 +1109,38 @@ internal sealed partial class AdminAccountService(
         // Administrator — the actor admin who just clicked Create is
         // excluded to avoid self-pinging. Same shape as the visitor
         // self-submit fan-out in UserProfileService.DispatchAdminPendingVisitorAsync.
-        var otherAdmins = await dbContext.Users
-            .AsNoTracking()
-            .Where(u => u.UserType == UserType.Admin
-                && u.AccountState == AccountState.Approved
-                && u.Id != actorUserId)
-            .Select(u => new { u.Id, u.Email, u.DisplayName })
-            .ToListAsync(cancellationToken);
-        foreach (var admin in otherAdmins)
+        //
+        // A BULK IMPORT SUPPRESSES THIS and sends one aggregated notice per
+        // administrator after its loop instead. Per row, this is an unscoped
+        // scan of the user table plus one notification and one queued email per
+        // administrator — so a 500-row import with a dozen admins ran 500 scans
+        // and queued 6,000 near-identical emails, one per row per admin.
+        if (notifyAdmins)
         {
-            var pendingTokens = new Dictionary<string, string>
+            foreach (var admin in await LoadNotifiableAdminsAsync(actorUserId, cancellationToken))
             {
-                ["DisplayName"] = admin.DisplayName ?? string.Empty,
-                ["SubjectEmail"] = user.Email ?? string.Empty,
-                ["SubjectUserType"] = userType.ToString(),
-            };
-            await notifications.DispatchAsync(new NotificationRequest
-            {
-                UserId = admin.Id,
-                Kind = NotificationKind.AdminPendingApproval,
-                Title = $"New {userType} awaiting approval — {user.Email}",
-                TitleArabic = $"حساب {userType} جديد بانتظار الموافقة — {user.Email}",
-                Body = $"A new {userType} account was created and is awaiting approval: {user.Email}.",
-                BodyArabic = $"تم إنشاء حساب {userType} جديد بانتظار الموافقة: {user.Email}.",
-                Severity = NotificationSeverity.Info,
-                RelatedEntityType = "User",
-                RelatedEntityId = user.Id,
-                SendEmail = true,
-                PreRenderedEmailHtml = NotificationEmailTemplates.Render(
-                    NotificationKind.AdminPendingApproval, "en", pendingTokens),
-            }, cancellationToken);
+                var pendingTokens = new Dictionary<string, string>
+                {
+                    ["DisplayName"] = admin.DisplayName ?? string.Empty,
+                    ["SubjectEmail"] = user.Email ?? string.Empty,
+                    ["SubjectUserType"] = userType.ToString(),
+                };
+                await notifications.DispatchAsync(new NotificationRequest
+                {
+                    UserId = admin.Id,
+                    Kind = NotificationKind.AdminPendingApproval,
+                    Title = $"New {userType} awaiting approval — {user.Email}",
+                    TitleArabic = $"حساب {userType} جديد بانتظار الموافقة — {user.Email}",
+                    Body = $"A new {userType} account was created and is awaiting approval: {user.Email}.",
+                    BodyArabic = $"تم إنشاء حساب {userType} جديد بانتظار الموافقة: {user.Email}.",
+                    Severity = NotificationSeverity.Info,
+                    RelatedEntityType = "User",
+                    RelatedEntityId = user.Id,
+                    SendEmail = true,
+                    PreRenderedEmailHtml = NotificationEmailTemplates.Render(
+                        NotificationKind.AdminPendingApproval, "en", pendingTokens),
+                }, cancellationToken);
+            }
         }
 
         logger.LogInformation(
@@ -1136,6 +1148,59 @@ internal sealed partial class AdminAccountService(
             actorUserId, userType, user.Email);
         return new AdminCreateUserResponse(
             user.Id, user.Email!, (int)inviteLifetime.TotalSeconds);
+    }
+
+    /// <summary>An approved administrator who should hear that an account is
+    /// waiting for them. DisplayName is nullable because it only feeds the
+    /// email greeting.</summary>
+    private sealed record NotifiableAdmin(Guid Id, string? DisplayName);
+
+    // Every OTHER approved administrator. The actor is excluded so the admin
+    // who just created the account is not pinged about their own click.
+    private async Task<IReadOnlyList<NotifiableAdmin>> LoadNotifiableAdminsAsync(
+        Guid actorUserId, CancellationToken cancellationToken) =>
+        await dbContext.Users
+            .AsNoTracking()
+            .Where(u => u.UserType == UserType.Admin
+                && u.AccountState == AccountState.Approved
+                && u.Id != actorUserId)
+            .Select(u => new NotifiableAdmin(u.Id, u.DisplayName))
+            .ToListAsync(cancellationToken);
+
+    /// <summary>One aggregated "N accounts are waiting" notice per
+    /// administrator, sent once after a bulk import rather than once per
+    /// imported row per administrator. The per-row notice carries the new
+    /// account's email, which is exactly what makes it useless in bulk: an
+    /// admin facing 500 of them learns less than they do from one line saying
+    /// the queue grew by 500.</summary>
+    private async Task NotifyAdminsOfImportedAccountsAsync(
+        Guid actorUserId, UserType userType, int created,
+        CancellationToken cancellationToken)
+    {
+        if (created <= 0) { return; }
+
+        foreach (var admin in await LoadNotifiableAdminsAsync(actorUserId, cancellationToken))
+        {
+            var importTokens = new Dictionary<string, string>
+            {
+                ["DisplayName"] = admin.DisplayName ?? string.Empty,
+                ["SubjectEmail"] = $"{created} imported {userType} account(s)",
+                ["SubjectUserType"] = userType.ToString(),
+            };
+            await notifications.DispatchAsync(new NotificationRequest
+            {
+                UserId = admin.Id,
+                Kind = NotificationKind.AdminPendingApproval,
+                Title = $"{created} imported {userType} account(s) awaiting approval",
+                TitleArabic = $"{created} حساب {userType} مستورد بانتظار الموافقة",
+                Body = $"A bulk import created {created} {userType} account(s) awaiting approval.",
+                BodyArabic = $"أنشأ استيراد جماعي {created} حساب {userType} بانتظار الموافقة.",
+                Severity = NotificationSeverity.Info,
+                SendEmail = true,
+                PreRenderedEmailHtml = NotificationEmailTemplates.Render(
+                    NotificationKind.AdminPendingApproval, "en", importTokens),
+            }, cancellationToken);
+        }
     }
 
     /// <summary>
@@ -1204,7 +1269,7 @@ internal sealed partial class AdminAccountService(
         if (expectedIsVisitor is null) { return true; }  // Admin family — type is enough.
 
         // Step 2 (App DB): narrow the Visitor family to audience vs partner by the
-        // linked ProfileType, mirroring ResolveProfileScopedUserIdsAsync (partner =
+        // linked ProfileType, mirroring ResolveProfileScopeAsync (partner =
         // a UserProfile linked to a ProfileType with IsForVisitor == false). Two
         // separate reads across the DB split — never a cross-DB join.
         var isPartner = await appDbContext.UserProfiles
@@ -1233,24 +1298,21 @@ internal sealed partial class AdminAccountService(
         // flag. Only Admin-typed users carry RBAC roles.
         var adminRoleId = await GetAdministratorRoleIdAsync(cancellationToken);
 
-        // Cross-context scope guard — fetch the user-id set that
-        // matches the requested profile scope. SimfUser lives in the
-        // Identity DB and UserProfile + ProfileType in the App DB so EF
-        // join is not available. The set is small under the current
-        // single-event SIMF scale (<2k partner accounts); a future
-        // multi-event variant should swap this for a batched contains
-        // or replicate the scope flag onto SimfUser.
-        var scopedUserIds = await ResolveProfileScopedUserIdsAsync(
+        // Cross-context scope guard — SimfUser lives in the Identity DB and
+        // UserProfile + ProfileType in the App DB, so an EF join is not
+        // available and the App side has to contribute an id set. It
+        // contributes the PARTNER set, which an admin creates by hand and
+        // which therefore stays small, rather than the audience set, which is
+        // everyone who ever signed up. A multi-event variant should replicate
+        // the scope flag onto SimfUser so no cross-DB set is needed at all.
+        var profileScopeFilter = await ResolveProfileScopeAsync(
             profileScope, cancellationToken);
 
         // Narrow by UserType. The list is narrowed BEFORE any
         // filter/sort/page so the totals are correct.
-        var users = dbContext.Users
-            .Where(u => u.UserType == userType);
-        if (scopedUserIds is not null)
-        {
-            users = users.Where(u => scopedUserIds.Contains(u.Id));
-        }
+        var users = ApplyProfileScope(
+            dbContext.Users.Where(u => u.UserType == userType),
+            profileScopeFilter);
 
         // -- Search ---------------------------------------------------------
         // Hand-composed, and it has to be. The registration reference
@@ -1346,24 +1408,21 @@ internal sealed partial class AdminAccountService(
             Filters = query.Filters,
         };
 
+    // Memoised for the life of the request. The Administrator role is seeded,
+    // baseline, and refused to delete while anyone holds it, so its id cannot
+    // change under a single request. Worth caching because the users export
+    // pages through the account list, asking again on every one of up to 25
+    // pages for an answer that was settled on the first.
+    private Guid? _administratorRoleId;
+    private bool _administratorRoleIdResolved;
+
     private async Task<Guid?> GetAdministratorRoleIdAsync(CancellationToken cancellationToken)
     {
+        if (_administratorRoleIdResolved) { return _administratorRoleId; }
         var role = await roleManager.FindByNameAsync(AdministratorRole);
-        return role?.Id;
-    }
-
-    /// <summary>Every CP role id present in the database. The set is
-    /// (Administrator, Staff, Scientific, Security); missing roles are
-    /// dropped silently so the seeder is the single source of role identity.</summary>
-    private async Task<IReadOnlyList<Guid>> GetCpRoleIdsAsync(CancellationToken cancellationToken)
-    {
-        var ids = new List<Guid>(AppRoles.CpRoles.Count);
-        foreach (var name in AppRoles.CpRoles)
-        {
-            var role = await roleManager.FindByNameAsync(name);
-            if (role is not null) { ids.Add(role.Id); }
-        }
-        return ids;
+        _administratorRoleId = role?.Id;
+        _administratorRoleIdResolved = true;
+        return _administratorRoleId;
     }
 
     // -- Approval workflow (Admin / Other / Visitor) -------------------------
@@ -1415,22 +1474,50 @@ internal sealed partial class AdminAccountService(
         _ => null,
     };
 
-    // Endpoints still take a legacy UserType parameter
-    // (Visitor / Other) for backward-compat URL routing. Map it to
-    // the IsVisitor flag the scope guards expect.
-    private static bool ProfileScopeFromLegacyKind(UserType kind) =>
-        kind == UserType.Visitor;
+    /// <summary>
+    /// The audience-vs-partner narrowing, carried as the PARTNER account id set
+    /// plus the direction to apply it in — never as an enumerated answer.
+    /// </summary>
+    /// <remarks>
+    /// The audience side is defined as "every Visitor MINUS the partners".
+    /// Enumerating that meant reading every Visitor id out of the Identity
+    /// database and shipping the remainder straight back as the IN list of the
+    /// very query it came from — twice per page, because the paged read and
+    /// the row total are two queries. Excluding the partner set instead leaves
+    /// the narrowing in SQL and sends only what the OTHER database actually
+    /// knows, which is also the one set that stays small: a partner account is
+    /// created by an admin, a visitor account by anyone who signs up.
+    /// </remarks>
+    /// <param name="PartnerUserIds">Accounts explicitly linked to a partner-side
+    /// ProfileType.</param>
+    /// <param name="ExcludePartners"><c>true</c> = audience scope (everything but
+    /// the partners, so a visitor with no ProfileType at all is included);
+    /// <c>false</c> = partner scope (exactly the partners).</param>
+    private sealed record ProfileScopeFilter(
+        HashSet<Guid> PartnerUserIds, bool ExcludePartners);
 
-    // Fetch the set of SimfUser ids that match the requested
-    // ProfileType.IsVisitor scope. Returns null when no profile-scope
-    // filter is requested (Admin queue). The audience side includes
+    // Narrows a user query to the requested ProfileType.IsVisitor scope. A null
+    // scope (the Admin queue) leaves the query alone. Every caller has already
+    // narrowed by UserType, which is what makes "not a partner" and "an audience
+    // visitor" the same set.
+    private static IQueryable<SimfUser> ApplyProfileScope(
+        IQueryable<SimfUser> users, ProfileScopeFilter? scope)
+    {
+        if (scope is null) { return users; }
+        var partnerUserIds = scope.PartnerUserIds;
+        return scope.ExcludePartners
+            ? users.Where(u => !partnerUserIds.Contains(u.Id))
+            : users.Where(u => partnerUserIds.Contains(u.Id));
+    }
+
+    // Resolve the requested ProfileType.IsVisitor scope. Returns null when no
+    // profile-scope filter is requested (Admin queue). The audience side includes
     // users with no ProfileType yet — a self-signed-up visitor with
     // no admin-assigned tier still lands on the Visitors queue.
-    private async Task<HashSet<Guid>?> ResolveProfileScopedUserIdsAsync(
+    private async Task<ProfileScopeFilter?> ResolveProfileScopeAsync(
         bool? profileScope, CancellationToken cancellationToken)
     {
         if (profileScope is null) { return null; }
-        var requireIsVisitor = profileScope.Value;
 
         // Partner ProfileTypes are the discriminator. Audience scope is
         // defined as `visitor MINUS partner`, so any Visitor account
@@ -1459,33 +1546,14 @@ internal sealed partial class AdminAccountService(
             .Select(p => p.UserId!.Value)
             .ToListAsync(cancellationToken);
 
-        if (!requireIsVisitor)
-        {
-            // Partner scope = exactly the users explicitly linked to a
-            // partner ProfileType.
-            return new HashSet<Guid>(partnerUserIds);
-        }
-
-        // Audience scope = every Visitor-typed user that is NOT in the
-        // partner set. Cross-context: enumerate Visitor user-ids in
-        // Identity, then subtract the partner set computed against the
-        // App DB.
-        var visitorIds = await dbContext.Users
-            .AsNoTracking()
-            .Where(u => u.UserType == UserType.Visitor)
-            .Select(u => u.Id)
-            .ToListAsync(cancellationToken);
-
-        var partnerSet = new HashSet<Guid>(partnerUserIds);
-        var audienceSet = new HashSet<Guid>(visitorIds.Count);
-        foreach (var id in visitorIds)
-        {
-            if (!partnerSet.Contains(id))
-            {
-                audienceSet.Add(id);
-            }
-        }
-        return audienceSet;
+        // Partner scope keeps exactly this set; audience scope is its
+        // complement inside the query the caller has already narrowed to
+        // Visitor accounts. Either way the answer the OTHER database
+        // contributes is the same small set, which is the whole point of
+        // returning the direction rather than the enumerated membership.
+        return new ProfileScopeFilter(
+            new HashSet<Guid>(partnerUserIds),
+            ExcludePartners: profileScope.Value);
     }
 
     /// <summary>
@@ -1541,16 +1609,13 @@ internal sealed partial class AdminAccountService(
         // the seam builds, so the paged query stays one Identity IQueryable and
         // the seam can own the whole rest of the pipeline — including the
         // per-row tiebreak the hand-written sort never had.
-        var scopedUserIds = await ResolveProfileScopedUserIdsAsync(
+        var profileScopeFilter = await ResolveProfileScopeAsync(
             profileScope, cancellationToken);
 
-        var users = dbContext.Users
-            .Where(u => u.AccountState == AccountState.PendingApproval
-                && u.UserType == userType);
-        if (scopedUserIds is not null)
-        {
-            users = users.Where(u => scopedUserIds.Contains(u.Id));
-        }
+        var users = ApplyProfileScope(
+            dbContext.Users.Where(u => u.AccountState == AccountState.PendingApproval
+                && u.UserType == userType),
+            profileScopeFilter);
 
         return await users.ToGridPageAsync(
             query, PendingColumns, user => user.Id, ToPendingSummary, cancellationToken);
@@ -1614,20 +1679,6 @@ internal sealed partial class AdminAccountService(
             auditLog: auditLog,
             logger: logger,
             cancellationToken: cancellationToken);
-    }
-
-    private void EnqueueNotificationEmail(string targetEmail, string actorEmail, string reason)
-    {
-        var body =
-            "<p>An administrator has reset the two-factor authentication on your SIMF account.</p>"
-            + $"<p><strong>Performed by:</strong> {System.Net.WebUtility.HtmlEncode(actorEmail)}<br/>"
-            + $"<strong>Reason:</strong> {System.Net.WebUtility.HtmlEncode(reason)}</p>"
-            + "<p>Your authenticator app and any recovery codes are no longer valid. "
-            + "Sign in with your password and set up two-factor authentication again "
-            + "from your profile page.</p>"
-            + "<p>If you did not request this, contact your security team immediately.</p>";
-        emailQueue.Enqueue(new EmailMessage(
-            targetEmail, "SIMF — your two-factor authentication was reset", body));
     }
 
 }
