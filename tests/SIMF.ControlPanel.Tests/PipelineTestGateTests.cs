@@ -404,6 +404,126 @@ public class PipelineTestGateTests
             + string.Join('\n', missing));
     }
 
+    /// <summary>
+    /// Every deployment job runs on its environment's registered VM resource,
+    /// and no job anywhere names a pool.
+    ///
+    /// <para>This pins the fix for the defect that cost eleven days. Without
+    /// `resourceType: virtualMachine` an environment is what the Azure docs call
+    /// "an abstract shell to record deployment history", and the job silently
+    /// falls back to the `Default` POOL agent. Both deployment jobs therefore
+    /// ran on the SAME machine while their names, displayNames and environment
+    /// strings all claimed two servers - and every deploy between 2026-08-08 and
+    /// 2026-08-19 reported success on the wrong box (D-932, D-934).</para>
+    ///
+    /// <para>An indented `pool:` re-opens it exactly, which is why that is
+    /// asserted too: a job's pool OVERRIDES its environment's VM resource, the
+    /// deploy goes back to the shared agent, and nothing in the run summary says
+    /// so. The one pool this file may declare is the top-level one the Build
+    /// stage uses.</para>
+    /// </summary>
+    [Fact]
+    public void Every_deployment_job_runs_on_its_environments_virtual_machine()
+    {
+        var lines = Pipeline().Split('\n');
+
+        var deploymentJobs = lines.Count(l => Regex.IsMatch(l.Trim(), @"^-\s*deployment:\s*\S"));
+        var vmBindings = lines.Count(l => l.Trim() == "resourceType: virtualMachine");
+
+        Assert.True(
+            deploymentJobs > 0,
+            "azure-pipelines.yml declares no deployment jobs at all, so nothing reaches either "
+            + "server. Both are deployed by default; a run holds one back with the "
+            + "`deployPreProduction` / `deployProduction` parameters at queue time, NOT by "
+            + "deleting its job.");
+
+        Assert.True(
+            vmBindings == deploymentJobs,
+            $"azure-pipelines.yml has {deploymentJobs} deployment job(s) but {vmBindings} "
+            + "carry `resourceType: virtualMachine`. A job without it ignores the environment's "
+            + "registered VM and falls back to the `Default` POOL agent - which is how every "
+            + "deploy for eleven days landed on pre-production while reporting success under "
+            + "the production environment name (D-932, D-934). Bind the job, or the "
+            + "environment name is decoration on a history page.");
+
+        var indentedPools = lines.Where(l => Regex.IsMatch(l, @"^\s+pool:")).ToArray();
+
+        Assert.True(
+            indentedPools.Length == 0,
+            "azure-pipelines.yml names a pool inside a job: "
+            + string.Join(" | ", indentedPools.Select(l => l.Trim()))
+            + ". A deployment job's pool OVERRIDES its environment's VM resource, so the job "
+            + "returns to the shared `Default` agent and both jobs deploy to the same machine "
+            + "again. The estate has one build pool, declared once at the top of this file for "
+            + "the Build stage; deploys are routed by their VM resource and nothing else.");
+    }
+
+    /// <summary>
+    /// Every deployment job tells the deploy template which machine it expects,
+    /// and the template still carries the guard that checks it.
+    ///
+    /// <para>The pin is not the router - the VM resource is - but it is what
+    /// makes a mis-pointed environment fail loudly instead of overwriting one
+    /// estate's four sites with the other's content. It is asserted as PASSED,
+    /// not as non-empty: production's value is deliberately blank until its
+    /// first deploy prints the machine name, because no one here has seen that
+    /// server and a guard nobody can satisfy is a guard someone deletes.</para>
+    /// </summary>
+    [Fact]
+    public void Every_deploy_template_reference_pins_the_machine_it_expects()
+    {
+        const string templatePath = "deploy/deploy-all-packages.yml";
+
+        var template = PipelineFiles.SingleOrDefault(f => f.Path == templatePath).Text;
+
+        Assert.False(
+            string.IsNullOrEmpty(template),
+            $"{templatePath} was not read, so the machine guard cannot be checked. The deploy "
+            + "steps live in that template; if it has moved, move this guard with it.");
+
+        Assert.Contains("- name: expectedMachineName", template, StringComparison.Ordinal);
+        Assert.Contains("- name: forbiddenMachineName", template, StringComparison.Ordinal);
+        Assert.Contains("Confirm the deployment target", template, StringComparison.Ordinal);
+
+        // ReferencedTemplates, not a second regex of the same shape: it already
+        // skips commented-out lines, so a `# - template: ...` left in the file
+        // cannot inflate the count this compares the pins against.
+        var references = ReferencedTemplates(Pipeline())
+            .Count(p => string.Equals(p, templatePath, StringComparison.Ordinal));
+
+        var lines = Pipeline().Split('\n');
+
+        AssertPassedOncePerReference("expectedMachineName", references, lines, templatePath);
+        AssertPassedOncePerReference("forbiddenMachineName", references, lines, templatePath);
+    }
+
+    /// Both machine pins are passed exactly once per deploy-template reference.
+    ///
+    /// <para>`expectedMachineName` is the positive half and `forbiddenMachineName`
+    /// the negative one, and the negative half is the one that matters most today:
+    /// production's own pin is empty until its first deploy prints the name, so
+    /// until then the only thing stopping the production job deploying to the
+    /// PRE-production box - the original defect, wearing a green tick - is being
+    /// told that machine is forbidden.</para>
+    private static void AssertPassedOncePerReference(
+        string parameterName,
+        int references,
+        string[] lines,
+        string templatePath)
+    {
+        var passed = lines.Count(
+            l => l.Trim().StartsWith(parameterName + ":", StringComparison.Ordinal));
+
+        Assert.True(
+            references > 0 && passed == references,
+            $"azure-pipelines.yml references {templatePath} {references} time(s) but passes "
+            + $"`{parameterName}` {passed} time(s). Every deployment job names both the machine "
+            + "it expects to land on and the machine belonging to the other environment, so a "
+            + "job routed to the wrong server aborts before it stops a single site (D-934). A "
+            + "reference missing either pin deploys blind, which is the state this whole guard "
+            + "exists to end.");
+    }
+
     private static string FindRepoRoot()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);

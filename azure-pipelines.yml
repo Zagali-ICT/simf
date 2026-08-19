@@ -42,43 +42,43 @@ trigger:
 
 # --- Which environments this run deploys to (chosen in the Run pipeline dialog).
 #
-#     `deployPreProduction` DEFAULTS TO FALSE, and the reason is not caution
-#     (D-906, CORRECTED by D-932): THERE IS ONLY ONE AGENT, AND IT IS ON THE
-#     PRE-PRODUCTION SERVER.
+#     BOTH DEFAULT TO TRUE, and that is new (D-934). It is the first time this
+#     pipeline can reach two machines, so it is the first time two tick boxes
+#     mean two destinations.
 #
-#     THIS PIPELINE CANNOT REACH PRODUCTION. Read that before debugging a deploy.
+#     WHAT WAS WRONG BEFORE. The `Default` pool holds a single agent - `server`
+#     on `WIN-MAP9VAMAU4Q` - and with no VM resource on either environment BOTH
+#     deployment jobs fell back to it. Every deploy this pipeline ever ran, under
+#     either environment name and with either box ticked, landed on
+#     PRE-PRODUCTION (`simf.zagali-ict.com`). D-906 recorded that machine as the
+#     production box; it is not. D-932 corrected the identification, and D-934
+#     fixes the routing it exposed.
 #
-#     The `Default` pool contains a single agent - `server` on
-#     `WIN-MAP9VAMAU4Q`. D-906 recorded that machine as the production box
-#     (SIMF APP 01). IT IS NOT. It is the PRE-PRODUCTION server, the one behind
-#     `simf.zagali-ict.com`. Both deployment jobs draw from that one pool agent,
-#     and no environment binds them elsewhere (D-905), so EVERY deploy this
-#     pipeline has ever run - under either environment name, with either tick
-#     box - has landed on pre-production.
+#     WHAT CHANGED. The owner registered the servers as VM RESOURCES on their
+#     environments. That is the precondition D-903 and D-905 lacked, and it is
+#     the only thing that makes `resourceType: virtualMachine` work. The binding
+#     now lives on each job's `environment:` block at the Deploy stage - read the
+#     comment there before touching either one.
 #
-#     `web.simrsnf.com` (production, SIMF APP 01) receives NOTHING from this
-#     pipeline and has not since 2026-08-08. Getting anything onto it is a manual
-#     copy until an agent exists there.
+#     THEY ARE TWO MACHINES ON TWO NETWORKS, which is why nothing short of an
+#     agent on each was ever going to work. `web`, `cp` and `api.simrsnf.com`
+#     resolve to 95.177.163.108; `simf.zagali-ict.com` resolves to
+#     173.201.37.122. The production box exposes only 443 and 3389 - no Web
+#     Deploy (8172), no FTP (21), no WinRM (5985/5986) - so there is no
+#     remote-copy channel from the pre-production agent. A VM-resource agent,
+#     which polls OUTBOUND over 443 and needs no inbound port opened, is the only
+#     automatable route onto it.
 #
-#     HOW THIS WAS ESTABLISHED, so it is not re-litigated: the owner read the
-#     `Initialize job` step of BOTH deployment jobs. Both print
-#     `Agent machine name: 'WIN-MAP9VAMAU4Q'`. The `Default` pool holds exactly
-#     one agent. Deploys write `D:\System\v1.0.1\web` on that machine, and the
-#     site whose content changes is `simf.zagali-ict.com`, while production stays
-#     byte-identical: its `landing.css` still MD5s to b98f39d41ff1b73ae3ac4e3db3e9179f,
-#     which is commit f81ba630 of 2026-08-08.
-#
-#     WHAT THIS COST. A CSS fix correct on `main` since 2026-08-15 (f31d5845) was
+#     WHAT THE OLD ROUTING COST, recorded because the failure was silent rather
+#     than loud. A CSS fix correct on `main` since 2026-08-15 (f31d5845) was
 #     reported as unshipped for eleven days. Three separate "fixes" were written
 #     against the wrong cause - a stale artifact staging directory, then a stale
-#     static-asset fingerprint cache - because every deploy log showed success and
-#     the machine it succeeded ON was never questioned. Both guards were kept:
-#     they are correct hygiene and cost nothing. Neither was the problem.
-#
-#     TO GET A REAL DEPLOY TO EITHER SERVER: install an Azure Pipelines agent on
-#     the production server and register BOTH servers as VM resources on their
-#     environments. Until then an environment name is a label on a history page,
-#     not a destination, and ticking either box deploys to pre-production.
+#     static-asset fingerprint cache - because every deploy log showed success
+#     and the machine it succeeded ON was never questioned. Both guards were
+#     kept: they are correct hygiene and cost nothing. Neither was the problem.
+#     The `Confirm the deployment target` step in deploy/deploy-all-packages.yml
+#     exists so this cannot recur: it prints the machine every deploy lands on,
+#     before it touches anything.
 #
 #     Untick BOTH and the whole Deploy stage is omitted - build, test and
 #     publish still run, and the artifact is still produced, so a build-only run
@@ -90,13 +90,43 @@ trigger:
 #     that can disagree with itself.
 parameters:
 - name: deployPreProduction
-  displayName: 'Deploy to Pre-production (same box as Production - one agent, D-932)'
-  type: boolean
-  default: false
-- name: deployProduction
-  displayName: 'Deploy to Production'
+  displayName: 'Deploy to Pre-production (simf.zagali-ict.com)'
   type: boolean
   default: true
+- name: deployProduction
+  displayName: 'Deploy to Production (web / cp / api.simrsnf.com)'
+  type: boolean
+  default: true
+
+# --- The machine each environment is EXPECTED to land on.
+#
+#     THIS IS A PIN, NOT A ROUTER. The routing is the environment's VM resource;
+#     these values are only what the deploy asserts it actually got. An
+#     environment re-pointed at the wrong server then fails loudly instead of
+#     overwriting one estate's sites with the other's content.
+#
+#     Pre-production's name is evidence, not a guess: every historical deploy log
+#     prints `Agent machine name: 'WIN-MAP9VAMAU4Q'`.
+#
+#     Production's is EMPTY because nobody has ever seen that machine's name -
+#     this pipeline has never once run on it. Empty means "print it, do not
+#     assert it", so the first production deploy is not blocked by a value only
+#     that deploy can discover. It logs the real name in its `Confirm the
+#     deployment target` step; copy it in here and the pin closes.
+#
+#     EMPTY IS NOT UNGUARDED. Each job is also passed the OTHER environment's
+#     name as forbidden, so the production job refuses to run on
+#     `WIN-MAP9VAMAU4Q` even with its own pin blank. That is the case worth
+#     covering: an environment whose VM resource was registered by running the
+#     "Add resource" script on whichever box happened to be open points at that
+#     box, and the job would otherwise deploy the wrong estate under the right
+#     name - which is the original defect, wearing a green tick.
+- name: preProductionMachineName
+  type: string
+  default: 'WIN-MAP9VAMAU4Q'
+- name: productionMachineName
+  type: string
+  default: ''
 
 # --- Whether this run executes the test gates. OFF, AND IT STAYS OFF.
 #
@@ -990,47 +1020,55 @@ stages:
 # below say which is which; trust those, not the environment string.
 # #############################################################################
 #
-# THE ENVIRONMENTS ARE EMPTY SHELLS, AND THAT IS HOW THIS ESTATE WORKS.
-# `SIMF-Prod` has no VM resource registered; `SIM-RNSF` now shows one, added
-# after D-905 was written, and it has changed nothing observable - both jobs
-# still report the same pool agent. An environment with no usable resource is
-# what the Azure docs call "an abstract shell to record deployment history", so
-# the steps fall back to the `Default` POOL agent - the agent literally named
-# `server` on WIN-MAP9VAMAU4Q that has been running these deploys the whole time.
+# `resourceType: virtualMachine` BINDS EACH JOB TO ITS OWN SERVER, and that
+# reverses the DO-NOT-ADD warning this file used to carry. It was tried twice
+# before the environments had resources and broke the deploy both times (D-903,
+# D-905) with "No resource were found in the environment with ID 3" - the
+# construct being right and the estate not being ready, not the construct being
+# wrong. The resources exist now. What the old pool fallback cost, and how it was
+# established, is told once at the parameters block above; D-934 is the full
+# record. Not retold here.
 #
-# AND THAT AGENT IS ON PRE-PRODUCTION, not production (D-932). Every deploy this
-# pipeline runs lands on `simf.zagali-ict.com`. `web.simrsnf.com` is unreachable
-# from here. Both jobs' `Initialize job` steps print the same machine name; that
-# line is ground truth and outranks every environment label in this file.
+# If a job fails with that message again, a resource has been removed from that
+# environment. Fix it on the environment's Resources tab. Do NOT delete the line
+# and fall back to the pool - the pool is what deployed to one machine twice
+# while reporting success under both names.
 #
-# DO NOT ADD `resourceType: virtualMachine` HERE. It has been tried twice and
-# broken deploys both times (D-903, D-905): it demands a registered VM resource,
-# and the run dies with "No resource were found in the environment with ID 3".
-# It is the correct construct for an estate whose servers are registered as VM
-# resources; this one is not. Register both servers first, confirm they appear
-# on each environment's Resources tab, and only then reconsider.
+# NO `pool:` ON THESE JOBS, DELIBERATELY. A VM resource brings its own agent;
+# naming a pool as well puts the job back on the shared agent and re-opens that
+# exact defect.
 #
-# What that costs, stated so it is a known risk rather than a surprise: nothing
-# binds a job to a machine. The `Default` pool has an agent on both servers, so
-# `DeployProduction` can run on the pre-production box and vice versa. The
-# `dependsOn` below makes them sequential, which narrows the window but does not
-# close it. Registering the VM resources is the fix.
+# THE JOBS STAY SEQUENTIAL. Production `dependsOn` pre-production, so a deploy
+# that breaks the rehearsal box never reaches the live one. That used to narrow a
+# race between two jobs sharing one agent; now that they are two machines, it is
+# a real gate.
 - ${{ if or(eq(parameters.deployPreProduction, true), eq(parameters.deployProduction, true)) }}:
   - stage: Deploy
     displayName: 'Deploy to IIS'
     dependsOn: Build
-    condition: succeeded()
+    # NOT a bare `succeeded()` any more. Both deploy parameters now default to
+    # TRUE, so without this a pull-request validation build would deploy BOTH
+    # servers from an unmerged branch. Excluding the PR reason rather than
+    # pinning `refs/heads/main` keeps a deliberate manual run from a branch
+    # working, which is how a hotfix gets rehearsed on pre-production.
+    condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
     jobs:
     - ${{ if eq(parameters.deployPreProduction, true) }}:
       - deployment: DeployPreProduction
         displayName: 'Pre-production server (SIMF-Prod)'
-        # NOT a typo, and NOT production. See the naming warning above.
-        environment: 'SIMF-Prod'
+        environment:
+          # NOT a typo, and NOT production. See the naming warning above.
+          name: 'SIMF-Prod'
+          resourceType: virtualMachine
         strategy:
           runOnce:
             deploy:
               steps:
               - template: deploy/deploy-all-packages.yml
+                parameters:
+                  expectedMachineName: '${{ parameters.preProductionMachineName }}'
+                  forbiddenMachineName: '${{ parameters.productionMachineName }}'
+                  targetLabel: 'PRE-PRODUCTION (simf.zagali-ict.com)'
 
     - ${{ if eq(parameters.deployProduction, true) }}:
       - deployment: DeployProduction
@@ -1039,10 +1077,16 @@ stages:
         # never emitted is a compile-time failure, not a skipped dependency.
         ${{ if eq(parameters.deployPreProduction, true) }}:
           dependsOn: DeployPreProduction
-        # THIS is production. See the naming warning above.
-        environment: 'SIM-RNSF'
+        environment:
+          # THIS is production. See the naming warning above.
+          name: 'SIM-RNSF'
+          resourceType: virtualMachine
         strategy:
           runOnce:
             deploy:
               steps:
               - template: deploy/deploy-all-packages.yml
+                parameters:
+                  expectedMachineName: '${{ parameters.productionMachineName }}'
+                  forbiddenMachineName: '${{ parameters.preProductionMachineName }}'
+                  targetLabel: 'PRODUCTION (web / cp / api.simrsnf.com)'
