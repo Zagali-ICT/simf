@@ -225,6 +225,49 @@ public sealed class AiModuleTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task A_message_that_opens_with_the_cipher_marker_is_still_encrypted()
+    {
+        // The shared PII encryptor treats a value that already begins "enc:1:" as
+        // encrypted and hands it back unchanged. That idempotence is right for an
+        // identifier being re-saved and dangerous the moment the column holds text
+        // a person types: a visitor could store a message in the CLEAR by opening
+        // it with six characters, and the decryptor would then try to base64-decode
+        // the rest of their sentence on the way back out.
+        var visitor = await SignInApprovedVisitorAsync();
+        const string marker = "PLN4";
+        var post = await PostAuthAsync(
+            "/api/v1/app/ai/assistance",
+            new AssistanceRequest
+            {
+                Message = $"enc:1:this is not ciphertext, badge {marker}",
+                Locale = "en",
+            },
+            visitor);
+        Assert.Equal(HttpStatusCode.OK, post.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+
+        // Straight out of the column: the visitor's words must not be there.
+        var stored = await db.Database
+            .SqlQuery<string>($"SELECT [Content] AS [Value] FROM [AiChatMessages] WHERE [Role] = 'user'")
+            .ToListAsync();
+        Assert.NotEmpty(stored);
+        Assert.All(stored, value =>
+            Assert.DoesNotContain(marker, value, StringComparison.Ordinal));
+
+        // And it still round-trips: the marker prefix survives as the visitor's own
+        // text rather than being eaten as a cipher envelope.
+        var roundTripped = await db.AiChatMessages.AsNoTracking()
+            .Where(m => m.Role == "user")
+            .OrderByDescending(m => m.CreatedAt)
+            .Select(m => m.Content)
+            .FirstAsync();
+        Assert.Contains(marker, roundTripped, StringComparison.Ordinal);
+        Assert.StartsWith("enc:1:this is not ciphertext", roundTripped, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task The_memory_block_sent_to_the_provider_is_redacted()
     {
         // Redaction moved off the write path and onto this one, which is the

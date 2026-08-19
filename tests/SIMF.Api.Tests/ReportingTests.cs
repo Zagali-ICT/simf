@@ -531,7 +531,7 @@ public sealed class ReportingTests : IClassFixture<SimfApiFactory>
     // column's own Key with SortDescending=false on the first press and true on
     // the second (SimfDataGrid.ToggleSortAsync). Four of the sort switches had
     // no arm for that key, so the click fell through to their default — and
-    // that default deliberately reads `descending` INVERTED, because the
+    // that default USED TO read `descending` inverted, because the
     // no-sort case has to come back newest-first. The two wrongs did not cancel:
     // the grid drew an ascending arrow (and rendered aria-sort="ascending",
     // which a screen reader announces) over newest-first rows, and a descending
