@@ -5,8 +5,8 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 ///
 /// Values come from `--dart-define` at compile time so the same binary can
 /// point at different environments without code changes (SIMF-MAA-001 §13).
-/// The API base URL defaults to the **production** host
-/// (`https://api.simrsnf.com`), so a build with no overrides always
+/// The API base URL defaults to the **production mobile edge**
+/// (`https://edge.simrsnf.com`), so a build with no overrides always
 /// runs against prod — a device build can never silently fall back to a
 /// dev/LAN host (the stale-`--dart-define` trap). Override only for local dev.
 class BuildConfig {
@@ -16,12 +16,22 @@ class BuildConfig {
   static const String build =
       String.fromEnvironment('SIMF_BUILD', defaultValue: 'dev');
 
-  // The app targets the PRODUCTION API by default, so any build — including a
-  // plain `flutter build apk` with no `--dart-define` — runs against prod and
-  // can never fall back to a non-prod host. Override only for local dev.
+  // The app targets the PRODUCTION MOBILE EDGE by default, so any build —
+  // including a plain `flutter build apk` with no `--dart-define` — runs
+  // against prod and can never fall back to a non-prod host. Override only for
+  // local dev.
+  //
+  // edge.simrsnf.com, not api.simrsnf.com: the edge IS the mobile presentation
+  // tier, and it is what lets the application tier stop being published to the
+  // internet. The app's base URL is compile-time, so an installed build that
+  // names the API keeps addressing the API however the estate is arranged —
+  // which is why this default is the thing that actually routes mobile traffic,
+  // and why the API's public DNS record cannot be withdrawn until a build
+  // carrying this default has shipped. The path prefix is unchanged: the edge
+  // forwards the mobile surface inward byte for byte.
   static const String apiBaseUrl = String.fromEnvironment(
     'SIMF_API_BASE',
-    defaultValue: 'https://api.simrsnf.com/api/v1',
+    defaultValue: 'https://edge.simrsnf.com/api/v1',
   );
 
   /// Base URL used only for a dev-diagnostics web run (`flutter run -d
@@ -38,9 +48,10 @@ class BuildConfig {
     defaultValue: 'simf-dev-app-key',
   );
 
-  // There is deliberately no self-signed-TLS escape hatch here. The API is
-  // served on a real certificate for api.simrsnf.com (D-872), so the app uses
-  // ordinary TLS validation and a bypass would only be a way to lose it.
+  // There is deliberately no self-signed-TLS escape hatch here. The host the
+  // app actually dials is served on a real certificate — edge.simrsnf.com now,
+  // api.simrsnf.com before it (D-872) — so the app uses ordinary TLS validation
+  // and a bypass would only be a way to lose it.
 
   /// Official support contacts for the registration-success screen's
   /// تواصل معانا tiles (D-369). Empty (the default) keeps a tile inert —
