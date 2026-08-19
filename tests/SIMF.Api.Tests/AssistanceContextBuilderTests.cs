@@ -1,4 +1,5 @@
 // Tests: SIMF.Infrastructure.Ai.AssistanceContextBuilder (assistance grounding)
+using Microsoft.Extensions.Caching.Memory;
 using SIMF.Application.Exhibition.Abstractions;
 using SIMF.Application.Faq.Abstractions;
 using SIMF.Application.Programme.Abstractions;
@@ -19,6 +20,10 @@ namespace SIMF.Api.Tests;
 [Trait(TestAreas.SpeedTraitName, TestAreas.Fast)]
 public sealed class AssistanceContextBuilderTests
 {
+    // A private cache per builder: the grounding block is cached read-through, so
+    // a shared instance would let one case's context answer another's.
+    private static MemoryCache NewCache() => new(new MemoryCacheOptions());
+
     [Fact]
     public async Task Build_includes_real_sessions_faq_and_booths_bilingual()
     {
@@ -36,7 +41,8 @@ public sealed class AssistanceContextBuilderTests
             {
                 Code = "A-12", Name = "SAMI", NameArabic = "سامي",
                 HallName = "Hall A", HallNameArabic = "القاعة أ",
-            }));
+            }),
+            NewCache());
 
         var context = await builder.BuildAsync();
 
@@ -65,7 +71,7 @@ public sealed class AssistanceContextBuilderTests
             .ToArray();
 
         var builder = new AssistanceContextBuilder(
-            new FakeSessions(), new FakeFaq(manyEntries), new FakeBooths());
+            new FakeSessions(), new FakeFaq(manyEntries), new FakeBooths(), NewCache());
 
         var context = await builder.BuildAsync();
 
@@ -81,10 +87,27 @@ public sealed class AssistanceContextBuilderTests
     }
 
     [Fact]
+    public async Task Build_serves_the_second_call_from_the_cache()
+    {
+        // The three reads are the whole programme / FAQ / booth list and the
+        // builder runs on every chat message, so a repeat build inside the TTL
+        // must not re-query.
+        var sessions = new FakeSessions();
+        var builder = new AssistanceContextBuilder(
+            sessions, new FakeFaq(), new FakeBooths(), NewCache());
+
+        var first = await builder.BuildAsync();
+        var second = await builder.BuildAsync();
+
+        Assert.Equal(first, second);
+        Assert.Equal(1, sessions.ListCalls);
+    }
+
+    [Fact]
     public async Task Build_returns_empty_when_there_is_no_event_data()
     {
         var builder = new AssistanceContextBuilder(
-            new FakeSessions(), new FakeFaq(), new FakeBooths());
+            new FakeSessions(), new FakeFaq(), new FakeBooths(), NewCache());
 
         Assert.Equal(string.Empty, await builder.BuildAsync());
     }
@@ -93,9 +116,15 @@ public sealed class AssistanceContextBuilderTests
 file sealed class FakeSessions(params PublicSessionListItem[] items)
     : IProgrammeSessionService
 {
+    /// <summary>How many times the builder actually hit the programme read.</summary>
+    public int ListCalls { get; private set; }
+
     public Task<PublicSessions> ListAsync(
-        DateOnly? day, Guid? categoryId = null, CancellationToken cancellationToken = default) =>
-        Task.FromResult(new PublicSessions(items));
+        DateOnly? day, Guid? categoryId = null, CancellationToken cancellationToken = default)
+    {
+        ListCalls++;
+        return Task.FromResult(new PublicSessions(items));
+    }
 
     // Unused by the context builder.
     public Task<PublicProgrammeDays> ListDaysAsync(CancellationToken ct = default) =>

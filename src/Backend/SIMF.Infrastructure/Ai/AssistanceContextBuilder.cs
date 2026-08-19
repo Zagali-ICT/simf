@@ -1,6 +1,7 @@
 // Tests: SIMF.Api.Tests/AssistanceContextBuilderTests.cs
 using System.Globalization;
 using System.Text;
+using Microsoft.Extensions.Caching.Memory;
 using SIMF.Application.Ai.Abstractions;
 using SIMF.Application.Exhibition.Abstractions;
 using SIMF.Application.Faq.Abstractions;
@@ -16,13 +17,42 @@ namespace SIMF.Infrastructure.Ai;
 /// real data. Emits one bilingual line per fact via the shared
 /// <see cref="AiGroundingText"/> primitive, which caps the text a safe margin below
 /// the AI input-value limit and truncates on a whole-line boundary (the same
-/// discipline as the CP assistant's page directory).</summary>
+/// discipline as the CP assistant's page directory).
+///
+/// <para>The three reads are the WHOLE programme, the WHOLE FAQ and the WHOLE
+/// booth list — near-static content that only an admin edit changes — and the
+/// builder runs on every single chat message. So the composed block is cached
+/// for <see cref="Ttl"/> (the read-through shape <c>GateConfigCache</c> and the
+/// organization-profile read already use): a few hundred attendees chatting
+/// concurrently then cost three queries a minute instead of three per message,
+/// on the same database that is serving check-in. The TTL is short because the
+/// admin write paths for sessions / FAQ / booths do not invalidate it, so a
+/// content edit must age out rather than be pushed out.</para></summary>
 internal sealed class AssistanceContextBuilder(
     IProgrammeSessionService sessions,
     IPublicFaqService faq,
-    IPublicBoothService booths) : IAssistanceContextBuilder
+    IPublicBoothService booths,
+    IMemoryCache cache) : IAssistanceContextBuilder
 {
+    private static readonly TimeSpan Ttl = TimeSpan.FromMinutes(1);
+    private const string CacheKey = "ai-assistance-grounding:v1";
+
     public async Task<string> BuildAsync(CancellationToken cancellationToken = default)
+    {
+        if (cache.TryGetValue<string>(CacheKey, out var cached) && cached is not null)
+        {
+            return cached;
+        }
+
+        var context = await ComposeAsync(cancellationToken);
+        cache.Set(CacheKey, context, new MemoryCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = Ttl,
+        });
+        return context;
+    }
+
+    private async Task<string> ComposeAsync(CancellationToken cancellationToken)
     {
         var agenda = await sessions.ListAsync(day: null, categoryId: null, cancellationToken);
         var faqGroups = await faq.GetAsync(cancellationToken);

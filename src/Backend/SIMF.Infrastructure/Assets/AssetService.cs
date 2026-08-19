@@ -1,4 +1,5 @@
 ﻿// Tests: SIMF.Api.Tests/AssetEndpointsTests.cs
+using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Assets.Abstractions;
@@ -31,9 +32,11 @@ internal sealed class AssetService(
     TimeProvider timeProvider,
     ILogger<AssetService> logger) : IAssetService
 {
-    // The eight image categories the Media Library manages, each mapped to its
+    // The image categories the Media Library manages, each mapped to its
     // StoredFile service. Any StoredFile whose service is outside this set (avatar,
     // ID document, presentation, …) is NOT an "asset" and never surfaces here.
+    // The count is deliberately not spelled out: it went stale the first time a
+    // category was added, and MappedCategories below is the checkable answer.
     private static readonly IReadOnlyDictionary<AssetCategory, FileService> CategoryToService =
         new Dictionary<AssetCategory, FileService>
         {
@@ -166,10 +169,14 @@ internal sealed class AssetService(
         CancellationToken cancellationToken = default)
     {
         var service = ServiceFor(category);
+        // Newest first, tie-broken on the id: two concurrent uploads for one owner
+        // can both end active (see RetirePriorActiveAsync), and an unordered
+        // FirstOrDefault would then serve a different image per request.
         var file = await dbContext.StoredFiles.AsNoTracking()
-            .FirstOrDefaultAsync(
-                f => f.Service == service && f.OwnerEntityId == ownerId && f.IsActive,
-                cancellationToken);
+            .Where(f => f.Service == service && f.OwnerEntityId == ownerId && f.IsActive)
+            .OrderByDescending(f => f.CreatedAt)
+            .ThenByDescending(f => f.Id)
+            .FirstOrDefaultAsync(cancellationToken);
         if (file is null) { return null; }
 
         // A9 (security) — the anonymous public serve refuses a soft-deleted owner's
@@ -325,21 +332,49 @@ internal sealed class AssetService(
             dbContext, file.Service, file.OwnerEntityId, file.Id, cancellationToken);
     }
 
-    // Retire every OTHER active file of this (service, owner) so exactly one stays
-    // active after an upload (the Asset table's filtered-unique invariant, now
+    // Retire every PRIOR active file of this (service, owner) so one stays active
+    // after an upload (the Asset table's filtered-unique invariant, now
     // service-enforced). Delegates to the file service so the bytes are unlinked.
+    //
+    // "Prior" is load-bearing and used to read "every other". Each request runs
+    // its retire AFTER its own commit, so two admins replacing the same speaker
+    // photo at once each saw the other's freshly committed row and deleted it:
+    // both rows ended inactive, both blobs were unlinked from disk, the public
+    // image disappeared, and both admins were told the upload succeeded. Retiring
+    // only rows strictly older than the one being kept cannot destroy the row the
+    // other request is keeping.
+    //
+    // It does NOT make the pair atomic. When both rows land on the same clock
+    // tick and the losing request runs its retire before the winner commits, both
+    // stay active - which is why ResolveAsync orders. The real fix is a filtered
+    // unique index on (Service, OwnerEntityId) WHERE IsActive, which is a schema
+    // change and needs the owner.
     private async Task RetirePriorActiveAsync(
         FileService service, Guid ownerId, Guid keepId, Guid actorUserId,
         CancellationToken cancellationToken)
     {
-        var priorIds = await dbContext.StoredFiles.AsNoTracking()
+        var keptCreatedAt = await dbContext.StoredFiles.AsNoTracking()
+            .Where(f => f.Id == keepId)
+            .Select(f => (DateTime?)f.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+        if (keptCreatedAt is null) { return; }
+
+        var candidates = await dbContext.StoredFiles.AsNoTracking()
             .Where(f => f.Service == service && f.OwnerEntityId == ownerId
-                && f.IsActive && f.Id != keepId)
-            .Select(f => f.Id)
+                && f.IsActive && f.Id != keepId && f.CreatedAt <= keptCreatedAt.Value)
+            .Select(f => new { f.Id, f.CreatedAt })
             .ToListAsync(cancellationToken);
-        foreach (var priorId in priorIds)
+
+        foreach (var candidate in candidates)
         {
-            await fileService.DeleteAsync(priorId, actorUserId, cancellationToken);
+            // Same-tick rows fall back to the id so both requests agree on which
+            // of the two is the older one.
+            var isOlder = candidate.CreatedAt < keptCreatedAt.Value
+                || candidate.Id.CompareTo(keepId) < 0;
+            if (isOlder)
+            {
+                await fileService.DeleteAsync(candidate.Id, actorUserId, cancellationToken);
+            }
         }
     }
 
@@ -453,6 +488,24 @@ internal sealed class AssetService(
                         .Where(x => ids.Contains(x.Id)).Select(x => new { x.Id, x.Name, x.NameArabic })
                         .ToListAsync(cancellationToken))
                         result[(AssetCategory.ExhibitorLogo, r.Id)] =
+                            string.IsNullOrEmpty(r.Name) ? r.NameArabic : r.Name;
+                    break;
+                // These two are mapped categories that were never resolved here,
+                // so the Media Library rendered them with an empty Owner column
+                // while every neighbouring row showed a name - and two programme
+                // day images could not be told apart at all.
+                case AssetCategory.ProgrammeDayImage:
+                    foreach (var r in await dbContext.ProgrammeDays.AsNoTracking()
+                        .Where(x => ids.Contains(x.Id)).Select(x => new { x.Id, x.Title, x.Date })
+                        .ToListAsync(cancellationToken))
+                        result[(AssetCategory.ProgrammeDayImage, r.Id)] =
+                            string.IsNullOrEmpty(r.Title) ? r.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : r.Title;
+                    break;
+                case AssetCategory.OrganizationLogo:
+                    foreach (var r in await dbContext.OrganizationProfile.AsNoTracking()
+                        .Where(x => ids.Contains(x.Id)).Select(x => new { x.Id, x.Name, x.NameArabic })
+                        .ToListAsync(cancellationToken))
+                        result[(AssetCategory.OrganizationLogo, r.Id)] =
                             string.IsNullOrEmpty(r.Name) ? r.NameArabic : r.Name;
                     break;
             }

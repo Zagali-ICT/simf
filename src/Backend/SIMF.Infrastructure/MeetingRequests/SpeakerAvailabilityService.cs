@@ -27,11 +27,6 @@ internal sealed class SpeakerAvailabilityService(
     private const int MinSlotMinutes = 5;
     private const int MaxSlotMinutes = 480;
 
-    /// <summary>The event's local-day boundary (KSA, +03:00) — the same convention
-    /// the programme uses to bucket a session to a Riyadh calendar day. A window's
-    /// start/end are converted to this zone before the forum-day bound is checked.</summary>
-    private static readonly TimeSpan EventOffset = TimeSpan.FromHours(3);
-
     public async Task<AdminSpeakerAvailabilityWindow> CreateWindowAsync(
         Guid actorUserId, Guid speakerId,
         CreateSpeakerAvailabilityWindowRequest request,
@@ -60,10 +55,11 @@ internal sealed class SpeakerAvailabilityService(
 
         // Forum-day bound: an availability window may only be defined on the
         // authored event days (MIN/MAX over active ProgrammeDay.Date — NOT the stale
-        // OrganizationProfile placeholder). The window's start and end are converted
-        // to the event-local (+03:00) calendar date and both must fall inside
-        // [MinDate, MaxDate]. When no programme days are seeded the window is null and
-        // no bound is applied.
+        // OrganizationProfile placeholder). No time-zone shift is applied on the way
+        // to a date: the window is already event-local wall clock (KSA, +03:00), the
+        // same convention the programme uses to bucket a session to a Riyadh calendar
+        // day, so both ends bucket to the correct event day as they stand. When no
+        // programme days are seeded the window is null and no bound is applied.
         var forum = await forumWindow.GetForumDaysAsync(cancellationToken);
         if (forum is { } bounds)
         {

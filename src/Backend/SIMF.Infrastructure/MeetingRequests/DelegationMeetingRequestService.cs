@@ -873,6 +873,14 @@ internal sealed class DelegationMeetingRequestService(
                 && (excludeUserId == null || p.UserId != excludeUserId))
             .Select(p => p.UserId!.Value)
             .ToListAsync(cancellationToken);
+
+        // ONE cross-database resolution for the whole delegation, not one per member
+        // inside the loop — the same batch the grid already uses for display names.
+        // Only the link path needs an address at all.
+        var memberEmails = hasLink
+            ? await userDirectory.GetEmailsAsync(memberIds, cancellationToken)
+            : null;
+
         foreach (var userId in memberIds)
         {
             await notifications.TryDispatchAsync(new NotificationRequest
@@ -892,19 +900,21 @@ internal sealed class DelegationMeetingRequestService(
             if (hasLink)
             {
                 await EmailMemberConfirmLinkAsync(
-                    userId, confirmUrl!, req, requestingCountry ?? string.Empty, cancellationToken);
+                    userId,
+                    memberEmails!.TryGetValue(userId, out var memberEmail) ? memberEmail : null,
+                    confirmUrl!, req, requestingCountry ?? string.Empty, cancellationToken);
             }
         }
     }
 
     // Email one target-delegation member the confirm link (best-effort, like
-    // the speaker links email). The member is a SimfUser, so the address is resolved on
-    // Identity; a missing address or a queue failure never rolls back the committed Approve.
+    // the speaker links email). The address is resolved once for the whole delegation
+    // by the caller and handed in; a missing address or a queue failure never rolls
+    // back the committed Approve.
     private async Task EmailMemberConfirmLinkAsync(
-        Guid memberUserId, string confirmUrl, DelegationMeetingRequest req,
+        Guid memberUserId, string? email, string confirmUrl, DelegationMeetingRequest req,
         string requestingCountry, CancellationToken cancellationToken)
     {
-        var email = await userDirectory.GetEmailAsync(memberUserId, cancellationToken);
         if (string.IsNullOrWhiteSpace(email))
         {
             return;
@@ -1006,9 +1016,10 @@ internal sealed class DelegationMeetingRequestService(
 
     // Neither delegation (as requester OR target) may already hold a LIVE meeting
     // (`MeetingRequestStatuses.SlotHolding`) overlapping [start, end) — the cross-country
-    // double-book guard. The half-open range scan runs inside the respond path's
-    // Serializable transaction, so it holds the key-range lock that serializes a
-    // concurrent overlapping approve rather than merely reading around it.
+    // double-book guard — and nor may the PERSON who asked for it. The half-open range
+    // scans run inside the respond path's Serializable transaction, so they hold the
+    // key-range locks that serialize a concurrent overlapping approve rather than merely
+    // reading around it.
     private async Task GuardDelegationOverlapAsync(
         DelegationMeetingRequest req, DateTime start, DateTime end,
         CancellationToken cancellationToken)
@@ -1029,6 +1040,18 @@ internal sealed class DelegationMeetingRequestService(
                 "One of the delegations already has a meeting at that time.",
                 "لدى أحد الوفدين اجتماع بالفعل في ذلك الوقت.");
         }
+
+        // The scan above is keyed on COUNTRIES, so it cannot see the requester's own
+        // SPEAKER meeting: a delegate holding both admin flags could be approved into a
+        // speaker meeting and this delegation meeting at the same instant in two
+        // different halls, with both parties emailed and both reminders sent. The
+        // person-level guard covers both families for both bind paths.
+        await MeetingRequesterOverlapGuard.EnsureRequesterIsFreeAsync(
+            appDbContext, req.RequestedByUserId, start, end,
+            ErrorCodes.DelegationMeetingRequestInvalid,
+            excludeSpeakerRequestId: null,
+            excludeDelegationRequestId: reqId,
+            cancellationToken);
     }
 
     // The shared outcome-email body for the REQUESTER (confirmed / approved /

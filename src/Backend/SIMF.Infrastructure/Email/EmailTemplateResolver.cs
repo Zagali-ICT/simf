@@ -1,3 +1,5 @@
+// Tests: SIMF.Api.Tests/EmailSubjectRendererTests.cs (subject rendering),
+//        SIMF.Api.Tests/EmailTemplateAdminTests.cs (override resolution)
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Email;
@@ -53,6 +55,10 @@ internal sealed class EmailTemplateResolver(
             EmailTemplateRenderer.Render(bodyEn, tokens),
             EmailTemplateRenderer.Render(bodyAr, tokens));
 
-        return new EmailMessage(to, EmailTemplateRenderer.Render(subject, tokens), renderedBody);
+        // The bodies are HTML and get the encoding renderer; the subject is a MIME
+        // header and gets the plain one, or a name with an apostrophe arrives as
+        // "Sa&#39;ad".
+        return new EmailMessage(
+            to, EmailSubjectRenderer.Render(subject, tokens), renderedBody);
     }
 }

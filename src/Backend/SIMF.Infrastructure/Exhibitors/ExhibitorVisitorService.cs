@@ -587,6 +587,10 @@ internal sealed class ExhibitorVisitorService(
                 p.InternationalMobile,
             })
             .ToListAsync(cancellationToken);
+        // Keyed rather than scanned: the assembly loop below runs once per
+        // requested subject, and a busy booth's lead list makes a linear
+        // FirstOrDefault per iteration quadratic in the number of captures.
+        var profilesById = profiles.ToDictionary(p => p.Id);
 
         var orgIds = profiles
             .Where(p => p.OrganisationId.HasValue)
@@ -623,8 +627,7 @@ internal sealed class ExhibitorVisitorService(
 
         foreach (var profileId in profileIds.Distinct())
         {
-            var profile = profiles.FirstOrDefault(p => p.Id == profileId);
-            if (profile is null)
+            if (!profilesById.TryGetValue(profileId, out var profile))
             {
                 result[profileId] = new VisitorCard(
                     Guid.Empty, string.Empty, string.Empty, null, null, null,

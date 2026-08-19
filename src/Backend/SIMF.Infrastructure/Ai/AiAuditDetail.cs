@@ -1,3 +1,4 @@
+// Tests: SIMF.Api.Tests/AiHardeningTests.cs (redaction + prompt-hash)
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -70,16 +71,6 @@ internal static class AiAuditDetail
     /// into a production audit trail (the key is derived from a
     /// public source string and is trivially recomputable).</summary>
     public static bool IsHmacKeyDevFallback => _hmacKeyIsDevFallback;
-
-    /// <summary>Raw SHA-256 hex over arbitrary text — used internally
-    /// for the dev fallback key derivation; not for prompt-content
-    /// hashes (those go through HMAC).</summary>
-    private static string Sha256Hex(string? text)
-    {
-        var bytes = Encoding.UTF8.GetBytes(text ?? string.Empty);
-        var hash = SHA256.HashData(bytes);
-        return Convert.ToHexString(hash).ToLowerInvariant();
-    }
 
     /// <summary>HMAC-SHA256 over the prompt text used in
     /// <see cref="SIMF.Application.Auditing.AuditEvents.AiPromptUpdated"/> /
@@ -261,11 +252,21 @@ internal static class AiAuditDetail
         {
             return JsonSerializer.Serialize(redacted, JsonOptions);
         }
-        catch
+        catch (Exception ex) when (ex is JsonException or NotSupportedException)
         {
-            return "{}";
+            // A bare catch here would also absorb an OutOfMemoryException and
+            // would hand the SIEM an invocation row whose inputs are simply
+            // absent — indistinguishable from a genuinely empty call. Narrow it
+            // to what the serializer can actually raise, and make the loss
+            // visible in the audit row instead of silently emitting "{}".
+            return SerialisationFailedJson;
         }
     }
+
+    /// <summary>The audit payload written when redacted-input serialisation
+    /// fails: a well-formed object that says the inputs were LOST rather than
+    /// an empty one that reads as "there were none".</summary>
+    internal const string SerialisationFailedJson = "{\"_serialisationFailed\":true}";
 
     // Every canonical redaction marker the redactor emits.
     // Keeps the SIEM rule's canonical set (README "Detail JSON shape")

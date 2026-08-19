@@ -95,7 +95,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | _(cross-surface bi-meeting lifecycle)_ | [`bi-meeting-lifecycle.md`](bi-meeting-lifecycle.md) | E2E-BML-001..016 (+ 013b / 013c — G3 no-availability, D-812) |
 | `/admin/document-requests` | [`cp-document-requests.md`](cp-document-requests.md) | E2E-CPDR-001..008 |
 | `/admin/badge-requests` | [`cp-badge-requests.md`](cp-badge-requests.md) | E2E-CPBR-001..008 |
-| `/admin/meeting-tables` | [`cp-meeting-tables.md`](cp-meeting-tables.md) | E2E-MHT-001..013 |
+| `/admin/meeting-tables` | [`cp-meeting-tables.md`](cp-meeting-tables.md) | E2E-MHT-001..015 |
 | `/admin/business-meetings` | [`cp-business-meetings.md`](cp-business-meetings.md) | E2E-BMT-001..021 |
 
 ### Control Panel — Engagement, Q&A & attendance
@@ -351,10 +351,10 @@ being quoted in planning as if current.
   196 against a pinned total of 197. Only the two bold totals are
   machine-checked, so the parts had drifted unnoticed; counting by prefix is
   reproducible with one `ls`.)
-- **Total scenarios:** 3182 Coverage-matrix rows, every id distinct. That
+- **Total scenarios:** 3183 Coverage-matrix rows, every id distinct. That
   includes the **360** generated element-sweep rows (`E2E-{NS}-ELS-001/002`, two
   per live page — see `tools/qa/generate_els_rows.py`); the hand-authored
-  functional total is 2822.
+  functional total is 2823.
 - **Authored:** all pages. The D-133 "pending" stubs are fully authored, and
   every event-module and P2–P5 page added since has its own file.
 - **Execution:** the canonical run today is a Chrome DevTools MCP browser pass

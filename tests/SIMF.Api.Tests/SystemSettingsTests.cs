@@ -118,6 +118,93 @@ public sealed class SystemSettingsTests : IClassFixture<SimfApiFactory>
         Assert.False(fetched.IsActive);
     }
 
+    // Reactivating is the update path's only route to the filtered unique index
+    // on the active key, so it has to answer the create path's 409 rather than
+    // let SaveChanges fail the whole request with a 500.
+    [Fact]
+    public async Task Reactivating_a_setting_whose_key_is_live_again_is_409()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var key = "app.android.minVersion." + Guid.NewGuid().ToString("N")[..6];
+
+        var first = await PostAuthAsync(
+            "/api/v1/admin/system-settings",
+            new AdminCreateSystemSettingRequest { Key = key, Value = "1.0.0" }, token);
+        var original = (await first.Content
+            .ReadFromJsonAsync<ApiResult<AdminSystemSettingDetail>>())!.Data!;
+
+        // Retire it, then create the replacement the filtered index permits.
+        var delete = await DeleteAuthAsync(
+            $"/api/v1/admin/system-settings/{original.Id}", token);
+        Assert.Equal(HttpStatusCode.OK, delete.StatusCode);
+        var replacement = await PostAuthAsync(
+            "/api/v1/admin/system-settings",
+            new AdminCreateSystemSettingRequest { Key = key, Value = "2.0.0" }, token);
+        Assert.Equal(HttpStatusCode.OK, replacement.StatusCode);
+
+        // Reopening the retired row and flipping Active back on would put two
+        // live rows on one key.
+        var reactivate = await PutAuthAsync(
+            $"/api/v1/admin/system-settings/{original.Id}",
+            new AdminUpdateSystemSettingRequest { Value = "1.0.0", IsActive = true },
+            token);
+        Assert.Equal(HttpStatusCode.Conflict, reactivate.StatusCode);
+        var body = (await reactivate.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SystemSettingKeyDuplicate, body.Error!.Code);
+
+        // The guard rejects, it does not half-apply.
+        var get = await GetAuthAsync($"/api/v1/admin/system-settings/{original.Id}", token);
+        var fetched = (await get.Content
+            .ReadFromJsonAsync<ApiResult<AdminSystemSettingDetail>>())!.Data!;
+        Assert.False(fetched.IsActive);
+    }
+
+    // The guard must not fire on an ordinary edit of a row that is already live.
+    [Fact]
+    public async Task Updating_an_active_setting_in_place_still_succeeds()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var key = "event.hotline." + Guid.NewGuid().ToString("N")[..6];
+        var create = await PostAuthAsync(
+            "/api/v1/admin/system-settings",
+            new AdminCreateSystemSettingRequest { Key = key, Value = "920000000" }, token);
+        var created = (await create.Content
+            .ReadFromJsonAsync<ApiResult<AdminSystemSettingDetail>>())!.Data!;
+
+        var update = await PutAuthAsync(
+            $"/api/v1/admin/system-settings/{created.Id}",
+            new AdminUpdateSystemSettingRequest { Value = "920111111", IsActive = true },
+            token);
+        Assert.Equal(HttpStatusCode.OK, update.StatusCode);
+        var updated = (await update.Content
+            .ReadFromJsonAsync<ApiResult<AdminSystemSettingDetail>>())!.Data!;
+        Assert.Equal("920111111", updated.Value);
+        Assert.True(updated.IsActive);
+    }
+
+    // Reactivating a retired key nobody re-created is the ordinary case: still 200.
+    [Fact]
+    public async Task Reactivating_a_setting_whose_key_is_free_succeeds()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var key = "app.ios.minVersion." + Guid.NewGuid().ToString("N")[..6];
+        var create = await PostAuthAsync(
+            "/api/v1/admin/system-settings",
+            new AdminCreateSystemSettingRequest { Key = key, Value = "1.0.0" }, token);
+        var created = (await create.Content
+            .ReadFromJsonAsync<ApiResult<AdminSystemSettingDetail>>())!.Data!;
+        await DeleteAuthAsync($"/api/v1/admin/system-settings/{created.Id}", token);
+
+        var reactivate = await PutAuthAsync(
+            $"/api/v1/admin/system-settings/{created.Id}",
+            new AdminUpdateSystemSettingRequest { Value = "1.0.1", IsActive = true },
+            token);
+        Assert.Equal(HttpStatusCode.OK, reactivate.StatusCode);
+        var updated = (await reactivate.Content
+            .ReadFromJsonAsync<ApiResult<AdminSystemSettingDetail>>())!.Data!;
+        Assert.True(updated.IsActive);
+    }
+
     [Fact]
     public async Task Non_admin_caller_is_forbidden_on_create()
     {
@@ -166,6 +253,17 @@ public sealed class SystemSettingsTests : IClassFixture<SimfApiFactory>
         where TBody : class
     {
         var request = new HttpRequestMessage(HttpMethod.Post, url)
+        {
+            Content = JsonContent.Create(body),
+        };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return _client.SendAsync(request);
+    }
+
+    private Task<HttpResponseMessage> PutAuthAsync<TBody>(string url, TBody body, string token)
+        where TBody : class
+    {
+        var request = new HttpRequestMessage(HttpMethod.Put, url)
         {
             Content = JsonContent.Create(body),
         };

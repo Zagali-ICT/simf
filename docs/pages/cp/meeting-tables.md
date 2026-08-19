@@ -9,9 +9,9 @@ Configures a hall for its role and reserves its space. An operator picks a hall 
 1. **Sets the hall purpose** — `General` / `Booth` / `Session` / `Meeting`. General is
    the default every pre-existing hall carries (un-specialised; may host anything).
 2. **Defines / generates meeting tables** (for Meeting/General halls) — one-by-one, or
-   in bulk **random-by-count** (auto-coded `T-001…`, stopping at the hall capacity) or
-   **by row/column** from a CSV spec (e.g. `A1,A2,B3`), with an optional **Reset**
-   that clears the hall's existing tables first.
+   in bulk **random-by-count** (auto-coded `T-001…`, bounded by the hall's free
+   table slots) or **by row/column** from a CSV spec (e.g. `A1,A2,B3`), with an
+   optional **Reset** that clears the hall's existing tables first.
 3. **Reserves hall space** over a from–to time-slot by **whole** / **random-by-count**
    / **row/column** — the flexible allocation layer that keeps the same hall from
    being double-used across sessions, booths and meetings.
@@ -43,6 +43,10 @@ modal, and delete/release use the native confirm prompt).
 - A table with upcoming confirmed meetings cannot be deleted (`MEETING_TABLE_INVALID`).
 - A hall slot cannot be double-reserved — overlapping allocations are rejected
   (`HALL_ALLOCATION_OVERLAP`); random allocation needs a positive count, row/column a spec.
+- Generating **more tables than the hall has free slots** is rejected in BOTH modes
+  (`HALL_ALLOCATION_INVALID`, 400), naming the ceiling. Random-by-count used to
+  truncate the request and answer 200 with a smaller created count, which the
+  toast never showed.
 
 ## Data & audit
 

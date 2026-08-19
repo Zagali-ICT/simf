@@ -120,7 +120,12 @@ internal sealed partial class ReportingService
                 r.CheckedInAt != null))
             .ToListAsync(cancellationToken);
 
-        var all = speakers.Concat(delegations).Select(ToRow);
+        // Sorted and searched over the PROJECTION, not over the display rows.
+        // The row's "requested" cell is a day-first 12-hour string, so ordering
+        // it compares day-of-month before month and "11:00 AM" above "01:00 PM";
+        // the projection still carries the raw instant, which is the only thing
+        // that orders correctly. Status and kind are the same values either way.
+        var all = speakers.Concat(delegations);
 
         if (term is not null)
         {
@@ -133,18 +138,18 @@ internal sealed partial class ReportingService
         var sorted = query.Grid.Sort switch
         {
             "status" => query.Grid.SortDescending
-                ? all.OrderByDescending(m => m.Status, StringComparer.Ordinal)
-                : all.OrderBy(m => m.Status, StringComparer.Ordinal),
+                ? all.OrderByDescending(m => m.Status.ToString(), StringComparer.Ordinal)
+                : all.OrderBy(m => m.Status.ToString(), StringComparer.Ordinal),
             "kind" => query.Grid.SortDescending
                 ? all.OrderByDescending(m => m.Kind, StringComparer.Ordinal)
                 : all.OrderBy(m => m.Kind, StringComparer.Ordinal),
             // Newest request first.
             _ => query.Grid.SortDescending
-                ? all.OrderBy(m => m.RequestedDisplay, StringComparer.Ordinal)
-                : all.OrderByDescending(m => m.RequestedDisplay, StringComparer.Ordinal),
+                ? all.OrderBy(m => m.CreatedAt)
+                : all.OrderByDescending(m => m.CreatedAt),
         };
 
-        return sorted.ThenBy(m => m.Id).ToList();
+        return sorted.ThenBy(m => m.Id).Select(ToRow).ToList();
     }
 
     private sealed record MeetingProjection(

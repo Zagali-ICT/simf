@@ -1,4 +1,5 @@
 // Tests: SIMF.Api.Tests/InterestExcelTests.cs (import, wrong-sheet, not-a-workbook, duplicate)
+using System.IO.Compression;
 using ClosedXML.Excel;
 using SIMF.Application.Excel;
 using SIMF.Common;
@@ -31,6 +32,8 @@ internal sealed class ClosedXmlGridExcelImporter : IGridExcelImporter
                 "The Excel file is empty.",
                 "ملف Excel فارغ.");
         }
+
+        EnsureExpansionIsBounded(xlsx);
 
         using var stream = new MemoryStream(xlsx);
         XLWorkbook workbook;
@@ -105,6 +108,47 @@ internal sealed class ClosedXmlGridExcelImporter : IGridExcelImporter
                 rows.Add(new GridImportRow(r, cells));
             }
             return new GridImportSheet(rows);
+        }
+    }
+
+    /// <summary>The maximum total UNCOMPRESSED size the workbook's parts may
+    /// declare. The endpoint gate bounds the COMPRESSED upload at 5 MB, and an
+    /// xlsx is a zip of xml: a sheet of a million rows sharing a handful of
+    /// shared strings compresses far past that ratio, so a file that passes the
+    /// size gate and the zip-magic pre-check can still allocate hundreds of
+    /// megabytes while ClosedXML builds its object model - all of it before the
+    /// maxRows check in Parse gets to reject anything. Generous enough that no legitimate
+    /// import of the capped row count comes near it.</summary>
+    private const long MaxUncompressedBytes = 200L * 1024 * 1024;
+
+    /// <summary>Rejects a workbook whose parts declare more uncompressed bytes
+    /// than <see cref="MaxUncompressedBytes"/>, BEFORE the object model is built.
+    /// Reads only the zip directory, so it costs nothing on a normal file.</summary>
+    private static void EnsureExpansionIsBounded(byte[] xlsx)
+    {
+        long declared = 0;
+        try
+        {
+            using var probe = new MemoryStream(xlsx, writable: false);
+            using var archive = new ZipArchive(probe, ZipArchiveMode.Read);
+            foreach (var entry in archive.Entries)
+            {
+                declared += entry.Length;
+                if (declared > MaxUncompressedBytes)
+                {
+                    throw new DataValidationException(
+                        "The workbook is too large to process.",
+                        "المصنف كبير جدًا لمعالجته.");
+                }
+            }
+        }
+        catch (InvalidDataException)
+        {
+            // Not a readable zip at all - the same answer the workbook open
+            // below would give, said one step earlier.
+            throw new DataValidationException(
+                "The file is not a valid Excel workbook.",
+                "الملف ليس مصنف Excel صالحًا.");
         }
     }
 }

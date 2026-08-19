@@ -16,6 +16,15 @@ public sealed class SmtpEmailSender(IOptions<EmailOptions> options) : IEmailSend
     /// plaintext phase in which a STARTTLS command could be issued.</summary>
     private const int ImplicitTlsPort = 465;
 
+    /// <summary>Per-socket-operation timeout, milliseconds. MailKit defaults to
+    /// two minutes, which is the whole cost of an unreachable relay: the single
+    /// consumer in <see cref="EmailBackgroundService"/> awaits every send inline,
+    /// so a black-holed host stalls the queue for two minutes per message while
+    /// producers keep filling it. A value rather than a configuration key, so
+    /// there is no new setting to keep in step across appsettings and the
+    /// set-env scripts.</summary>
+    private const int SocketTimeoutMs = 30_000;
+
     /// <summary>
     /// The transport security to connect with. Neither branch can produce an
     /// unencrypted session.
@@ -78,7 +87,7 @@ public sealed class SmtpEmailSender(IOptions<EmailOptions> options) : IEmailSend
         }
         mime.Body = builder.ToMessageBody();
 
-        using var client = new SmtpClient();
+        using var client = new SmtpClient { Timeout = SocketTimeoutMs };
         await client.ConnectAsync(
             settings.Host,
             settings.Port,

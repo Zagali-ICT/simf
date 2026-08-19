@@ -129,12 +129,46 @@ internal sealed class PartnerDirectoryService(
         //    (linked UserProfileId) is dropped — the curated entity wins. An
         //    attendee holding no account is not in that pool by construction, so
         //    the account-less profiles are skipped rather than matched.
-        var approvedIds = await identityDbContext.Users.AsNoTracking()
-            .WhereApprovedNonAdmin()
-            .Select(u => u.Id)
+        //
+        //    Asked App-side FIRST, then Identity. The partner types are a handful
+        //    of profiles out of the whole attendee body, so enumerating every
+        //    approved account and shipping the lot across as an IN (...) list
+        //    moved twenty thousand ids to select eighty rows. Selecting the
+        //    candidates first and asking Identity only about THEIR account ids is
+        //    the same set by the same two predicates, two orders of magnitude
+        //    smaller.
+        var candidates = await appDbContext.UserProfiles.AsNoTracking()
+            .Where(p => p.UserId != null
+                && p.ShowInMeetLikeYou
+                && p.ProfileType != null && !p.ProfileType.IsForVisitor
+                // Admin master switch — hiding a partner type drops
+                // ALL its accounts here (AND with the per-user opt-in).
+                && p.ProfileType.ShowInPartnerDirectory)
+            .OrderBy(p => p.NameArabic).ThenBy(p => p.Name)
+            .Select(p => new
+            {
+                p.Id,
+                UserId = p.UserId!.Value,
+                p.Name,
+                p.NameArabic,
+                p.JobTitle,
+                p.JobTitleArabic,
+            })
             .ToListAsync(cancellationToken);
-        if (approvedIds.Count > 0)
+
+        if (candidates.Count > 0)
         {
+            var candidateAccountIds = candidates
+                .Select(p => p.UserId)
+                .Distinct()
+                .ToList();
+            var approvedIds = (await identityDbContext.Users.AsNoTracking()
+                .WhereApprovedNonAdmin()
+                .Where(u => candidateAccountIds.Contains(u.Id))
+                .Select(u => u.Id)
+                .ToListAsync(cancellationToken))
+                .ToHashSet();
+
             // The user-profile ids already curated as active Speakers. Read as a
             // minimal projection here (not from the public speaker DTO, which
             // deliberately never surfaces the UserProfileId account link) purely
@@ -145,26 +179,10 @@ internal sealed class PartnerDirectoryService(
                 .ToListAsync(cancellationToken))
                 .ToHashSet();
 
-            var people = await appDbContext.UserProfiles.AsNoTracking()
-                .Where(p => p.UserId != null && approvedIds.Contains(p.UserId!.Value)
-                    && p.ShowInMeetLikeYou
-                    && p.ProfileType != null && !p.ProfileType.IsForVisitor
-                    // Admin master switch — hiding a partner type drops
-                    // ALL its accounts here (AND with the per-user opt-in).
-                    && p.ProfileType.ShowInPartnerDirectory)
-                .OrderBy(p => p.NameArabic).ThenBy(p => p.Name)
-                .Select(p => new
-                {
-                    p.Id,
-                    p.Name,
-                    p.NameArabic,
-                    p.JobTitle,
-                    p.JobTitleArabic,
-                })
-                .ToListAsync(cancellationToken);
-
-            entries.AddRange(people
-                .Where(p => !curated.Contains(p.Id))
+            // Filtered in the SQL order the candidates came back in, so the
+            // directory keeps its Arabic-name-then-English-name ordering.
+            entries.AddRange(candidates
+                .Where(p => approvedIds.Contains(p.UserId) && !curated.Contains(p.Id))
                 .Select(p => new PartnerDirectoryEntry(
                     PartnerDirectoryKind.Person, p.Id, p.Name, p.NameArabic,
                     p.JobTitle, p.JobTitleArabic, null, null, null, null, null)));

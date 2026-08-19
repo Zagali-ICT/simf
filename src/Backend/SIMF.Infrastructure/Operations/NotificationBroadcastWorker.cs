@@ -48,13 +48,18 @@ internal sealed class NotificationBroadcastWorker(
             return;
         }
 
-        // Reconcile any broadcast left Processing by a prior crash before draining.
-        await RecoverStalledAsync(stoppingToken);
-
         while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
+                // Reconcile before draining, EVERY tick rather than once at startup.
+                // A restart 30 seconds into a fan-out leaves a Processing row younger
+                // than the stalled cutoff, which the startup-only pass skipped; the
+                // drain loop only ever picks Pending, so that row sat Processing with
+                // Dispatched=0 until the NEXT restart happened to catch it while it
+                // was old enough. Running the sweep each poll closes it within one
+                // cutoff instead.
+                await RecoverStalledAsync(stoppingToken);
                 var sent = await DrainAsync(stoppingToken);
                 heartbeat.RecordSuccess(nameof(NotificationBroadcastWorker));
                 if (sent > 0)
@@ -83,8 +88,10 @@ internal sealed class NotificationBroadcastWorker(
         }
     }
 
-    // One-time startup reconciliation: mark any broadcast left Processing by a prior
-    // crash mid-send as Failed so it surfaces in history instead of hanging.
+    // Per-tick reconciliation: mark any broadcast left Processing by a prior crash
+    // mid-send as Failed so it surfaces in history instead of hanging. The service
+    // only touches rows whose StartedAt is older than its stalled cutoff, so a
+    // fan-out still legitimately running is not swept.
     private async Task RecoverStalledAsync(CancellationToken cancellationToken)
     {
         try
@@ -105,7 +112,7 @@ internal sealed class NotificationBroadcastWorker(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "NotificationBroadcastWorker startup reconciliation failed.");
+            logger.LogError(ex, "NotificationBroadcastWorker reconciliation failed.");
         }
     }
 

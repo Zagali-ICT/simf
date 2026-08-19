@@ -4,13 +4,16 @@
 //        missing-bytes and the missing-row shapes, via the demo-image repair).
 using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using SIMF.Application.Abstractions;
 using SIMF.Application.Auditing;
 using SIMF.Application.Files.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Common.Files;
+using SIMF.Common.Options;
 using SIMF.Domain.Files;
 using SIMF.Infrastructure.Persistence;
 
@@ -26,8 +29,25 @@ internal sealed class StoredFileService(
     IUploadScanner scanner,
     IAuditLog auditLog,
     TimeProvider timeProvider,
+    IHostEnvironment environment,
+    IOptions<UploadScanningOptions> scanOptions,
     ILogger<StoredFileService> logger) : IFileService
 {
+    /// <summary>Whether an unscanned upload is rejected rather than stored.
+    ///
+    /// <para>Derived here, not taken from the caller. Every call site outside the
+    /// generic file endpoint passed <c>FailClosed: false</c> - the avatar, the ID
+    /// document, the VIP photo, the media-gallery image, the speaker
+    /// presentation, the asset upload - so a scanner that was restarted, timed
+    /// out or simply disabled meant those files were written unscanned in
+    /// Production while <c>UploadScanning:FailClosed</c> said otherwise. The
+    /// option's own contract has always read "the centralized FileService applies
+    /// this in the Production environment"; this is that sentence made true. The
+    /// command flag can still force it ON, never off.</para></summary>
+    internal static bool ResolveFailClosed(
+        bool requestedByCaller, bool isProduction, bool optionFailClosed) =>
+        requestedByCaller || (isProduction && optionFailClosed);
+
     public async Task<StoredFileResult> UploadAsync(
         UploadFileCommand command, CancellationToken cancellationToken = default)
     {
@@ -60,7 +80,11 @@ internal sealed class StoredFileService(
 
         // Scan before storing; fail-closed in Production.
         await scanner.EnsureCleanFailClosedAsync(
-            command.Content, command.OriginalFileName ?? "upload", command.FailClosed, cancellationToken);
+            command.Content,
+            command.OriginalFileName ?? "upload",
+            ResolveFailClosed(
+                command.FailClosed, environment.IsProduction(), scanOptions.Value.FailClosed),
+            cancellationToken);
 
         var sha256 = Convert.ToHexString(SHA256.HashData(command.Content)).ToLowerInvariant();
         var fileId = Guid.NewGuid();
@@ -99,7 +123,7 @@ internal sealed class StoredFileService(
             IsActive = true,
         };
         dbContext.StoredFiles.Add(file);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await CommitOrUnwriteAsync(file, write.StorageKey, cancellationToken);
 
         await OwnerPointerSync.PointAtAsync(
             dbContext, command.Service, command.OwnerEntityId, fileId, cancellationToken);
@@ -173,7 +197,7 @@ internal sealed class StoredFileService(
             IsActive = true,
         };
         dbContext.StoredFiles.Add(file);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await CommitOrUnwriteAsync(file, write.StorageKey, cancellationToken);
 
         await OwnerPointerSync.PointAtAsync(
             dbContext, service, ownerEntityId, fileId, cancellationToken);
@@ -583,6 +607,53 @@ internal sealed class StoredFileService(
 
     private static ApiException NotFound() =>
         new(ErrorCodes.NotFound, 404, "The file was not found.", "لم يتم العثور على الملف.");
+
+    /// <summary>Commits the row for bytes that are ALREADY on disk, and removes
+    /// those bytes again when the commit does not happen.
+    ///
+    /// <para>The blob is written before the row is inserted, so anything that
+    /// fails the insert - a client abort on a large upload, a SQL timeout under
+    /// event-day load, a throw from the audit / row-audit interceptors that run
+    /// on this same SaveChanges - used to leave the file on disk with no row
+    /// pointing at it. Nothing sweeps those: the retention purge only deletes
+    /// token and idempotency rows, and every delete path in this service starts
+    /// from a StoredFile row. For an ID document that meant an encrypted scan of
+    /// a national identity card sitting in the file store indefinitely, invisible
+    /// to the erasure path.</para>
+    ///
+    /// <para>The removal is deliberately best-effort and never replaces the
+    /// original failure: the caller must still see why the upload failed.</para></summary>
+    private async Task CommitOrUnwriteAsync(
+        StoredFile file, string storageKey, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (Exception commitFailure)
+        {
+            dbContext.Entry(file).State = EntityState.Detached;
+            logger.LogWarning(
+                commitFailure,
+                "Storing file {Id} failed after its bytes were written; removing {StorageKey}.",
+                file.Id, storageKey);
+            try
+            {
+                // CancellationToken.None on purpose: a cancelled request is one of
+                // the ways to get here, and the blob still has to go.
+                await storage.DeleteAsync(storageKey, CancellationToken.None);
+            }
+            catch (Exception deleteFailure) when (deleteFailure is IOException
+                or UnauthorizedAccessException)
+            {
+                logger.LogError(
+                    deleteFailure,
+                    "Could not remove the orphaned bytes at {StorageKey} for file {Id}.",
+                    storageKey, file.Id);
+            }
+            throw;
+        }
+    }
 
     private static string? SanitizeFileName(string? name)
     {

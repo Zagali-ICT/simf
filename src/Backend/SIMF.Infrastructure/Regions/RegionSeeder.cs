@@ -1,4 +1,5 @@
 // Tests: SIMF.Api.Tests/RegionTests.cs
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Common;
@@ -61,8 +62,37 @@ public sealed class RegionSeeder(
         }
 
         appDbContext.Regions.AddRange(toAdd);
-        await appDbContext.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await appDbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException ex) when (IsUniqueIndexViolation(ex))
+        {
+            // Seeding runs on EVERY API instance at startup and is not held under
+            // the worker lease, so on the first boot of a fresh database several
+            // instances read zero rows and insert the same 13 codes. The unique
+            // index on Code rejects the losers — which means the rows this seeder
+            // exists to guarantee are now present, i.e. exactly the outcome it
+            // promises. Detaching and returning keeps the losing node booting
+            // instead of failing startup on work that in fact succeeded.
+            foreach (var region in toAdd)
+            {
+                appDbContext.Entry(region).State = EntityState.Detached;
+            }
+            logger.LogInformation(
+                "Region seed lost the first-boot race — another instance inserted the {Count} region(s).",
+                toAdd.Count);
+            return;
+        }
+
         logger.LogInformation(
             "Region seed inserted {Count} region(s).", toAdd.Count);
     }
+
+    /// <summary>True only when the store rejected the write on a UNIQUE index —
+    /// SQL Server 2601 (duplicate key in a unique index) or 2627 (unique
+    /// constraint). Every other <see cref="DbUpdateException"/> must propagate;
+    /// swallowing them would hide a real seed failure behind a silent success.</summary>
+    private static bool IsUniqueIndexViolation(DbUpdateException exception) =>
+        exception.InnerException is SqlException { Number: 2601 or 2627 };
 }

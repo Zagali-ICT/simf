@@ -163,17 +163,11 @@ internal sealed class BusinessMeetingService(
                 "Meeting table not found.", "لم يتم العثور على طاولة الاجتماع.");
 
         var now = timeProvider.SimfNow();
-        var hasScheduled = await appDbContext.BusinessMeetings.AsNoTracking()
-            .AnyAsync(m => m.MeetingTableId == tableId
-                && m.Status == BusinessMeetingStatus.Confirmed
-                && m.End > now, cancellationToken);
-        if (hasScheduled)
-        {
-            throw new ApiException(
-                ErrorCodes.MeetingTableInvalid, 409,
-                "This table has upcoming meetings; cancel them first.",
-                "هذه الطاولة لديها اجتماعات قادمة؛ يرجى إلغاؤها أولاً.");
-        }
+        // All three families, not just this service's own: a speaker or delegation
+        // request can hold the table too, and neither was visible to the scan this
+        // guard used to run.
+        await MeetingTableOverlapGuard.EnsureTablesHaveNoFutureBookingAsync(
+            appDbContext, [tableId], now, cancellationToken);
 
         table.Deactivate();
         table.UpdatedAt = now;
@@ -201,6 +195,13 @@ internal sealed class BusinessMeetingService(
         var removed = 0;
         if (request.Reset)
         {
+            // A reset soft-deletes EVERY table in the hall, so it must clear the same
+            // bar a single delete does. It used to clear none at all: re-laying a hall
+            // silently orphaned every booked table, and the replacements are minted
+            // with new ids, so nothing could be reconciled afterwards.
+            await MeetingTableOverlapGuard.EnsureTablesHaveNoFutureBookingAsync(
+                appDbContext, existing.Select(t => t.Id).ToList(), now, cancellationToken);
+
             foreach (var t in existing)
             {
                 t.Deactivate();
@@ -231,10 +232,23 @@ internal sealed class BusinessMeetingService(
                     "A positive table count is required.",
                     "يلزم إدخال عدد طاولات موجب.");
             }
-            // Create up to the requested count, bounded by the hall's free table slots.
-            var target = Math.Min(request.Count.Value, freeSlots);
+            // Overflow is REPORTED, not truncated. This arm used to silently
+            // Math.Min the request down to the free slots and answer 200 with a
+            // smaller Created count, while the RowColumn arm below rejected the very
+            // same overflow by name. The Control Panel renders a bare "Generated"
+            // toast and never shows Created, so an admin who asked for twenty tables
+            // in a hall with room for three was told it had worked and had no way to
+            // see the seventeen that were dropped. Same error code and same ceiling
+            // as RowColumn, so both generation modes answer an over-capacity request
+            // identically. Strictly greater, so an exact fit still generates.
+            if (request.Count.Value > freeSlots)
+            {
+                throw Invalid(ErrorCodes.HallAllocationInvalid,
+                    $"That would exceed the hall's table capacity ({hardCeiling}).",
+                    $"سيتجاوز ذلك سعة طاولات القاعة ({hardCeiling}).");
+            }
             var seq = 1;
-            for (var i = 0; i < target; i++)
+            for (var i = 0; i < request.Count.Value; i++)
             {
                 string code;
                 do { code = $"T-{seq:000}"; seq++; }
@@ -732,53 +746,73 @@ internal sealed class BusinessMeetingService(
         BusinessMeeting meeting, NotificationKind kind,
         string title, string titleArabic, CancellationToken cancellationToken)
     {
+        IReadOnlyCollection<Guid> recipients;
         try
         {
-            var recipients = new HashSet<Guid>();
-            foreach (var p in meeting.Participants)
-            {
-                if (p.Kind == MeetingPartyKind.Visitor && p.VisitorUserId is { } uid)
-                {
-                    recipients.Add(uid);
-                }
-            }
-            var companyIds = meeting.Participants
-                .Where(p => p.Kind == MeetingPartyKind.Company && p.ExhibitorId != null)
-                .Select(p => p.ExhibitorId!.Value).Distinct().ToList();
-            if (companyIds.Count > 0)
-            {
-                var memberUserIds = await appDbContext.ExhibitorMemberships.AsNoTracking()
-                    .Where(m => companyIds.Contains(m.ExhibitorId) && m.IsActive)
-                    .Select(m => m.UserId)
-                    .ToListAsync(cancellationToken);
-                foreach (var uid in memberUserIds) recipients.Add(uid);
-            }
-
-            var severity = kind == NotificationKind.MeetingCancelled
-                ? NotificationSeverity.Warning : NotificationSeverity.Info;
-            foreach (var uid in recipients)
-            {
-                await notifications.DispatchAsync(new NotificationRequest
-                {
-                    UserId = uid,
-                    Kind = kind,
-                    Title = title,
-                    TitleArabic = titleArabic,
-                    Body = $"Table meeting on {meeting.Start.FormatSaudi()}.",
-                    BodyArabic = $"اجتماع طاولة بتاريخ {meeting.Start.FormatSaudi()}.",
-                    Severity = severity,
-                    RelatedEntityType = "BusinessMeeting",
-                    RelatedEntityId = meeting.Id,
-                    SendEmail = false,
-                }, cancellationToken);
-            }
+            recipients = await ResolveRecipientsAsync(meeting, cancellationToken);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
+            // The meeting is already committed, so failing to work out WHO to tell
+            // must not fail the caller's request. Cancellation is deliberately not
+            // caught: an abandoned request is not a notification fault, and reporting
+            // it as a successful pass hid the fact that nobody was told.
             logger.LogError(ex,
-                "Participant notification ({Kind}) failed for meeting {MeetingId}",
+                "Participant notification ({Kind}) could not resolve recipients for meeting {MeetingId}",
                 kind, meeting.Id);
+            return;
         }
+
+        var severity = kind == NotificationKind.MeetingCancelled
+            ? NotificationSeverity.Warning : NotificationSeverity.Info;
+        foreach (var uid in recipients)
+        {
+            // Best-effort PER RECIPIENT, the shared helper every sibling service uses.
+            // A single try/catch around the whole loop meant one failing dispatch
+            // stopped the batch: a cancelled meeting reached the first participant and
+            // nobody after them, and the one log line named only the meeting, so the
+            // people who never heard were invisible.
+            await notifications.TryDispatchAsync(new NotificationRequest
+            {
+                UserId = uid,
+                Kind = kind,
+                Title = title,
+                TitleArabic = titleArabic,
+                Body = $"Table meeting on {meeting.Start.FormatSaudi()}.",
+                BodyArabic = $"اجتماع طاولة بتاريخ {meeting.Start.FormatSaudi()}.",
+                Severity = severity,
+                RelatedEntityType = "BusinessMeeting",
+                RelatedEntityId = meeting.Id,
+                SendEmail = false,
+            }, logger, cancellationToken);
+        }
+    }
+
+    /// <summary>Everyone a meeting notification goes to: each visitor party, plus every
+    /// active membership account of each company party.</summary>
+    private async Task<IReadOnlyCollection<Guid>> ResolveRecipientsAsync(
+        BusinessMeeting meeting, CancellationToken cancellationToken)
+    {
+        var recipients = new HashSet<Guid>();
+        foreach (var p in meeting.Participants)
+        {
+            if (p.Kind == MeetingPartyKind.Visitor && p.VisitorUserId is { } uid)
+            {
+                recipients.Add(uid);
+            }
+        }
+
+        var companyIds = meeting.Participants
+            .Where(p => p.Kind == MeetingPartyKind.Company && p.ExhibitorId != null)
+            .Select(p => p.ExhibitorId!.Value).Distinct().ToList();
+        if (companyIds.Count == 0) { return recipients; }
+
+        var memberUserIds = await appDbContext.ExhibitorMemberships.AsNoTracking()
+            .Where(m => companyIds.Contains(m.ExhibitorId) && m.IsActive)
+            .Select(m => m.UserId)
+            .ToListAsync(cancellationToken);
+        recipients.UnionWith(memberUserIds);
+        return recipients;
     }
 
     private List<Party> NormaliseParticipants(IReadOnlyList<ScheduleMeetingParticipant> input)

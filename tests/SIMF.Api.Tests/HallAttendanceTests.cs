@@ -223,6 +223,23 @@ public sealed class HallAttendanceTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Arrival_at_a_zero_capacity_session_is_409()
+    {
+        // A capacity of 0 means the room is CLOSED, and it has to mean that on every
+        // surface that reads it: the public seat summary already reports 0 available
+        // and the booking hold already rejects the first request. This door used to
+        // read the same 0 as "no limit configured" and admitted an unlimited crowd
+        // into a session the same configuration had closed everywhere else.
+        var visitor = await SeedApprovedVisitorAsync();
+        var sessionId = await SeedSessionAsync(withGeofence: true, capacity: 0);
+
+        var response = await PostArriveAsync(sessionId, CenterLat, CenterLon, visitor);
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.HallAtCapacity, body.Error!.Code);
+    }
+
+    [Fact]
     public async Task Re_arrival_of_the_same_attendee_merges_even_when_hall_is_full()
     {
         // X-2 — a re-scan by an attendee who already holds the single open row

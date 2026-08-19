@@ -45,9 +45,13 @@ internal sealed class AiQuestionFilter(
                 cancellationToken);
             return ParseVerdict(result.OutputText);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             // Advisory filter: a failed call must never break question submission.
+            // Cancellation is deliberately NOT caught: an abandoned request (the
+            // client disconnected) is not a provider fault, and treating it as one
+            // logged a warning indistinguishable from a real AI outage and let the
+            // submission carry on building a row whose SaveChanges would throw anyway.
             logger.LogWarning(ex,
                 "Question AI filter failed for session {SessionId}; verdict falls back to unavailable.",
                 sessionId);

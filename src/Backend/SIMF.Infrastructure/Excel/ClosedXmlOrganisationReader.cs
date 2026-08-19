@@ -1,6 +1,7 @@
 // Tests: SIMF.Api.Tests/OrganisationTests.cs
 using ClosedXML.Excel;
 using SIMF.Application.Organisations.Abstractions;
+using SIMF.Common;
 
 namespace SIMF.Infrastructure.Excel;
 
@@ -15,6 +16,7 @@ namespace SIMF.Infrastructure.Excel;
 ///   Sheet 1 — the first worksheet is used (no fixed name; gov files vary)
 ///   Row 1   — header row; columns are matched by name, in any order
 ///   Row 2…  — one organisation per row; fully-empty rows are skipped
+///   Row cap - at most <see cref="MaxImportRows"/> data rows
 /// </code>
 ///
 /// <para>Header matching is case- AND whitespace-insensitive and accepts a
@@ -32,6 +34,14 @@ internal sealed class ClosedXmlOrganisationReader : IOrganisationExcelReader
     /// </summary>
     private static readonly IReadOnlyDictionary<string, OrganisationField> HeaderAliases =
         BuildHeaderAliases();
+
+    /// <summary>The maximum row count an import workbook may carry, matching the
+    /// user importer. Both siblings guard this loop and this one did not: a real
+    /// government companies export runs to tens of thousands of rows, and the
+    /// caller then issues one existence lookup PER ROW on a single request
+    /// thread, so an uncapped file ties up the API node instead of failing
+    /// cleanly with a bilingual 400.</summary>
+    public const int MaxImportRows = 5_000;
 
     /// <summary>
     /// Reads every data row from the first worksheet of <paramref name="xlsxStream"/>
@@ -56,6 +66,13 @@ internal sealed class ClosedXmlOrganisationReader : IOrganisationExcelReader
         if (lastRow is null) return rows;
 
         var lastRowNumber = lastRow.RowNumber();
+        if (lastRowNumber - 1 > MaxImportRows)
+        {
+            throw new DataValidationException(
+                $"The workbook has more than {MaxImportRows} data rows.",
+                $"يحتوي المصنف على أكثر من {MaxImportRows} صفًا.");
+        }
+
         for (var r = 2; r <= lastRowNumber; r++)
         {
             var nameAr = ReadCell(sheet, r, columns, OrganisationField.NameAr);

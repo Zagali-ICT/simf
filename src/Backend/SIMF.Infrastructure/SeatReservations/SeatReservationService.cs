@@ -1,5 +1,6 @@
 // Tests: SIMF.Api.Tests/SeatReservationsTests.cs,
 //        SIMF.Api.Tests/SeatTierEligibilityTests.cs,
+//        SIMF.Api.Tests/ReservationNoShowReleaseWorkerTests.cs,
 //        SIMF.Api.Tests/SeatChangeTests.cs,
 //        SIMF.Api.Tests/GridContractTests.cs,
 //        SIMF.Api.Tests/BookingsExcelTests.cs
@@ -74,6 +75,20 @@ internal sealed class SeatReservationService(
             .Where(profile => profile.Id == attendeeProfileId)
             .Select(profile => profile.UserId)
             .SingleOrDefaultAsync(cancellationToken);
+
+    /// <summary>The same question as <see cref="AttendeeAccountIdAsync"/> for a whole
+    /// SET of attendees, in one query — the no-show sweep frees many holds at once and
+    /// asked it a row at a time. A profile that holds no account is simply absent from
+    /// the result, which is how a caller skips an attendee it cannot reach.</summary>
+    private async Task<Dictionary<Guid, Guid>> AttendeeAccountIdsAsync(
+        IReadOnlyList<Guid> attendeeProfileIds, CancellationToken cancellationToken) =>
+        (await appDbContext.UserProfiles
+            .AsNoTracking()
+            .Where(profile => attendeeProfileIds.Contains(profile.Id)
+                && profile.UserId != null)
+            .Select(profile => new { profile.Id, AccountId = profile.UserId!.Value })
+            .ToListAsync(cancellationToken))
+        .ToDictionary(profile => profile.Id, profile => profile.AccountId);
 
     public async Task<SessionSeatMap> GetSessionSeatMapAsync(
         Guid sessionId, Guid? actorUserId,
@@ -208,57 +223,59 @@ internal sealed class SeatReservationService(
         await EnsureSessionHasCapacityAsync(ctx, cancellationToken);
 
         var actorProfileId = await ActorProfileIdAsync(actorUserId, cancellationToken);
-        var existing = await GetMyActiveAsync(sessionId, actorProfileId, cancellationToken);
-        if (existing is not null)
-        {
-            throw new ApiException(
-                ErrorCodes.SeatAlreadyOwnedBySession, 409,
-                "You already have a seat reserved for this session.",
-                "لديك مقعد محجوز بالفعل لهذه الجلسة.");
-        }
-
+        await EnsureNoActiveHoldAsync(
+            sessionId, actorProfileId, openSeating: false, cancellationToken);
         await EnsureNoOverlapAsync(
             sessionId, actorProfileId, ctx.Start, ctx.End, cancellationToken);
+        await EnsureSeatIsFreeAsync(sessionId, row, seat, cancellationToken);
 
-        var clash = await appDbContext.SeatReservations.AsNoTracking()
-            .Where(r => r.SessionId == sessionId
-                && r.RowLabel == row
-                && r.SeatNumber == seat
-                && r.ReleasedAt == null)
-            .Select(r => r.Id)
-            .FirstOrDefaultAsync(cancellationToken);
-        if (clash != Guid.Empty)
-        {
-            throw new ApiException(
-                ErrorCodes.SeatAlreadyReserved, 409,
-                "That seat is already reserved.",
-                "هذا المقعد محجوز بالفعل.");
-        }
-
-        var reservation = new SeatReservation
-        {
-            Id = Guid.NewGuid(),
-            SessionId = sessionId,
-            RowLabel = row,
-            SeatNumber = seat,
-            Kind = SeatReservationKind.UserBooking,
-            ReservedForProfileId = actorProfileId,
-            CreatedByUserId = actorUserId,
-            CreatedAt = timeProvider.SimfNow(),
-            // 2026-07-18 (reservation-only) — there is no Control Panel approval
-            // step: the reservation is confirmed the moment it is made. It stays a
-            // provisional hold until the visitor checks in at the hall gate; the
-            // pre-start sweep releases any hold that never checks in.
-            Status = BookingStatus.Approved,
-            // The no-show release deadline: 3 minutes before the session
-            // starts. If the holder has not checked in by then the seat is freed.
-            NoShowReleaseAt = ctx.Start - NoShowReleaseGrace,
-        };
-        await PersistWithUniquenessGuardAsync(reservation, cancellationToken);
-        // Hard capacity backstop against a concurrent booking that raced the
-        // pre-count; on overflow removes our row and throws SeatSessionFull.
-        await EnforceCapacityAfterInsertAsync(
-            reservation, EffectiveCapacity(ctx), cancellationToken);
+        // The capacity COUNT, the three booking guards and the INSERT run in ONE
+        // serializable transaction, the same shape the random and open-seating paths
+        // use. It replaces an insert-then-compensate backstop that counted AFTER its
+        // own commit: two visitors picking two DIFFERENT free seats for the last
+        // place both committed, both then counted one over the cap, both removed
+        // their own row and both were told the session was full — leaving the place
+        // empty and two visitors refused. It also made the two read-then-write guards
+        // above advisory: the same-attendee and overlapping-session checks ran
+        // outside any transaction, so two devices booking two overlapping sessions
+        // at once both passed and BOOKING_OVERLAP never fired for the very case it
+        // exists to stop. Re-checked inside the transaction, one of them waits for
+        // the other and then sees it.
+        var now = timeProvider.SimfNow();
+        var reservation = await InsertHoldWithinCapacityAsync(
+            sessionId, EffectiveCapacity(ctx),
+            async ct =>
+            {
+                await EnsureNoActiveHoldAsync(
+                    sessionId, actorProfileId, openSeating: false, ct);
+                await EnsureNoOverlapAsync(
+                    sessionId, actorProfileId, ctx.Start, ctx.End, ct);
+                await EnsureSeatIsFreeAsync(sessionId, row, seat, ct);
+                return new SeatReservation
+                {
+                    Id = Guid.NewGuid(),
+                    SessionId = sessionId,
+                    RowLabel = row,
+                    SeatNumber = seat,
+                    Kind = SeatReservationKind.UserBooking,
+                    ReservedForProfileId = actorProfileId,
+                    CreatedByUserId = actorUserId,
+                    // Captured outside the strategy so a retry stamps the same
+                    // created-at, exactly as the random pick does.
+                    CreatedAt = now,
+                    // 2026-07-18 (reservation-only) — there is no Control Panel
+                    // approval step: the reservation is confirmed the moment it is
+                    // made. It stays a provisional hold until the visitor checks in
+                    // at the hall gate; the pre-start sweep releases any hold that
+                    // never checks in.
+                    Status = BookingStatus.Approved,
+                    // The no-show release deadline: 3 minutes before the session
+                    // starts. If the holder has not checked in by then the seat is
+                    // freed.
+                    NoShowReleaseAt = ctx.Start - NoShowReleaseGrace,
+                };
+            },
+            cancellationToken);
 
         await auditLog.WriteSuccessAsync(
             AuditEvents.SeatReservationCreated,
@@ -285,15 +302,8 @@ internal sealed class SeatReservationService(
         EnsureSessionNotEnded(ctx.End);
 
         var actorProfileId = await ActorProfileIdAsync(actorUserId, cancellationToken);
-        var existing = await GetMyActiveAsync(sessionId, actorProfileId, cancellationToken);
-        if (existing is not null)
-        {
-            throw new ApiException(
-                ErrorCodes.SeatAlreadyOwnedBySession, 409,
-                "You already have a seat reserved for this session.",
-                "لديك مقعد محجوز بالفعل لهذه الجلسة.");
-        }
-
+        await EnsureNoActiveHoldAsync(
+            sessionId, actorProfileId, openSeating: false, cancellationToken);
         await EnsureNoOverlapAsync(
             sessionId, actorProfileId, ctx.Start, ctx.End, cancellationToken);
 
@@ -311,6 +321,14 @@ internal sealed class SeatReservationService(
             sessionId, EffectiveCapacity(ctx),
             async ct =>
             {
+                // Re-checked INSIDE the serializable transaction: outside one they
+                // are advisory, and a second request that raced this one past them
+                // reached the insert and died on the (SessionId,
+                // ReservedForProfileId) unique index as a raw 500.
+                await EnsureNoActiveHoldAsync(
+                    sessionId, actorProfileId, openSeating: false, ct);
+                await EnsureNoOverlapAsync(
+                    sessionId, actorProfileId, ctx.Start, ctx.End, ct);
                 var taken = await LoadHeldSeatsAsync(sessionId, ct);
                 return PickRandomSeat(
                     ctx, taken, actorProfileId, actorUserId, now, callerIsVip);
@@ -357,15 +375,8 @@ internal sealed class SeatReservationService(
         EnsureSessionNotEnded(session.End);
 
         var actorProfileId = await ActorProfileIdAsync(actorUserId, cancellationToken);
-        var existing = await GetMyActiveAsync(sessionId, actorProfileId, cancellationToken);
-        if (existing is not null)
-        {
-            throw new ApiException(
-                ErrorCodes.SeatAlreadyOwnedBySession, 409,
-                "You already have a booking for this session.",
-                "لديك حجز بالفعل لهذه الجلسة.");
-        }
-
+        await EnsureNoActiveHoldAsync(
+            sessionId, actorProfileId, openSeating: true, cancellationToken);
         await EnsureNoOverlapAsync(
             sessionId, actorProfileId, session.Start, session.End, cancellationToken);
 
@@ -379,22 +390,31 @@ internal sealed class SeatReservationService(
         var now = timeProvider.SimfNow();
         var reservation = await InsertHoldWithinCapacityAsync(
             sessionId, declaredCap,
-            _ => Task.FromResult<SeatReservation?>(new SeatReservation
+            async ct =>
             {
-                Id = Guid.NewGuid(),
-                SessionId = sessionId,
-                RowLabel = null,
-                SeatNumber = null,
-                Kind = SeatReservationKind.OpenSeating,
-                ReservedForProfileId = actorProfileId,
-                CreatedByUserId = actorUserId,
-                CreatedAt = now,
-                // 2026-07-18 (reservation-only) — confirmed on create, no approval
-                // step; the hold stays provisional until hall check-in.
-                Status = BookingStatus.Approved,
-                // The no-show release deadline: 3 minutes before start.
-                NoShowReleaseAt = session.Start - NoShowReleaseGrace,
-            }),
+                // Re-checked INSIDE the serializable transaction, for the same
+                // reason the seat paths do it: outside one they are advisory.
+                await EnsureNoActiveHoldAsync(
+                    sessionId, actorProfileId, openSeating: true, ct);
+                await EnsureNoOverlapAsync(
+                    sessionId, actorProfileId, session.Start, session.End, ct);
+                return new SeatReservation
+                {
+                    Id = Guid.NewGuid(),
+                    SessionId = sessionId,
+                    RowLabel = null,
+                    SeatNumber = null,
+                    Kind = SeatReservationKind.OpenSeating,
+                    ReservedForProfileId = actorProfileId,
+                    CreatedByUserId = actorUserId,
+                    CreatedAt = now,
+                    // 2026-07-18 (reservation-only) — confirmed on create, no
+                    // approval step; the hold stays provisional until hall check-in.
+                    Status = BookingStatus.Approved,
+                    // The no-show release deadline: 3 minutes before start.
+                    NoShowReleaseAt = session.Start - NoShowReleaseGrace,
+                };
+            },
             cancellationToken);
 
         await auditLog.WriteSuccessAsync(
@@ -479,6 +499,8 @@ internal sealed class SeatReservationService(
     {
         SeatReservation? origin = null;
         SeatReservation? added = null;
+        string? addedFromRowLabel = null;
+        int? addedFromSeatNumber = null;
         (SeatReservation Reservation, string? FromRowLabel, int? FromSeatNumber)? committed = null;
         var strategy = appDbContext.Database.CreateExecutionStrategy();
         await strategy.ExecuteAsync(async () =>
@@ -486,9 +508,21 @@ internal sealed class SeatReservationService(
             // A retry re-enters here; drop everything a rolled-back attempt left
             // tracked so the next SaveChanges neither re-inserts a stale row nor
             // re-applies a release the database has already thrown away.
-            if (added is not null)
+            //
+            // A retry can also mean the commit acknowledgement was lost rather than
+            // the commit: the move is already stored, and re-running would re-read the
+            // origin, find the destination row this very attempt created and answer
+            // SEAT_MOVE_SAME_SEAT for a move that succeeded. The destination id is
+            // client-generated, so finding it means the attempt committed.
+            committed = null;
+            var previous = added;
+            var recovered = false;
+            if (previous is not null)
             {
-                appDbContext.Entry(added).State = EntityState.Detached;
+                var previousId = previous.Id;
+                recovered = await appDbContext.SeatReservations.AsNoTracking()
+                    .AnyAsync(r => r.Id == previousId, cancellationToken);
+                appDbContext.Entry(previous).State = EntityState.Detached;
                 added = null;
             }
             if (origin is not null)
@@ -496,7 +530,11 @@ internal sealed class SeatReservationService(
                 appDbContext.Entry(origin).State = EntityState.Detached;
                 origin = null;
             }
-            committed = null;
+            if (recovered)
+            {
+                committed = (previous!, addedFromRowLabel, addedFromSeatNumber);
+                return;
+            }
 
             await using var tx = await appDbContext.Database.BeginTransactionAsync(
                 System.Data.IsolationLevel.Serializable, cancellationToken);
@@ -558,6 +596,10 @@ internal sealed class SeatReservationService(
             };
             appDbContext.SeatReservations.Add(target);
             added = target;
+            // Carried outside the attempt so a retry that discovers this row already
+            // committed can still report which seat the holder came FROM.
+            addedFromRowLabel = fromRow;
+            addedFromSeatNumber = fromSeat;
             await appDbContext.SaveChangesAsync(cancellationToken);
             await tx.CommitAsync(cancellationToken);
             committed = (target, fromRow, fromSeat);
@@ -752,13 +794,23 @@ internal sealed class SeatReservationService(
         }
         else
         {
-            // Keep the stored tiers, re-aligned POSITIONALLY to the new row set (a
-            // row added at the end inherits the owner's VVIP default).
-            var stored = ExpandSeatTiers(layout, ParseRowLabels(layout.RowLabels));
-            seatTiers = Enumerable.Range(0, rows.Count)
-                .Select(rowIndex =>
-                    rowIndex < stored.Count ? stored[rowIndex] : SeatTier.Vvip)
-                .ToList();
+            // Keep the stored tiers, re-aligned to the new row set by row LABEL —
+            // the same OrdinalIgnoreCase match the orphan guard beside this uses.
+            // Re-aligning by POSITION shifted every tier the moment a row was
+            // inserted ahead of an existing one: stored ["A","B"] with tiers
+            // [Normal,Vvip], re-saved as ["A0","A","B"] with the tiers omitted, gave
+            // row A the tier that belonged to row B, so a row that was bookable
+            // yesterday started refusing every visitor with SEAT_TIER_RESERVED and
+            // nothing in the response said the tiers had moved. A label the layout
+            // did not previously carry still inherits the owner's VVIP default.
+            var storedRows = ParseRowLabels(layout.RowLabels);
+            var stored = ExpandSeatTiers(layout, storedRows);
+            seatTiers = new List<SeatTier>(rows.Count);
+            foreach (var label in rows)
+            {
+                var storedIndex = RowIndex(storedRows, label);
+                seatTiers.Add(storedIndex >= 0 ? stored[storedIndex] : SeatTier.Vvip);
+            }
         }
         var tiersCsv = string.Join(',', seatTiers.Select(tier => (int)tier));
 
@@ -896,35 +948,17 @@ internal sealed class SeatReservationService(
                 .Where(seatNumber => seatNumber.HasValue)
                 .Select(seatNumber => seatNumber!.Value));
 
-        var now = timeProvider.SimfNow();
-        var inserted = 0;
+        var free = new List<int>();
         for (var seat = 1; seat <= ctx.SeatCounts[rowIndex]; seat++)
         {
-            if (taken.Contains(seat)) continue;
-            var reservation = new SeatReservation
+            if (!taken.Contains(seat))
             {
-                Id = Guid.NewGuid(),
-                SessionId = sessionId,
-                RowLabel = row,
-                SeatNumber = seat,
-                Kind = SeatReservationKind.AdminReservedRow,
-                ReservedForProfileId = null,
-                CreatedByUserId = actorUserId,
-                CreatedAt = now,
-                // An admin block is not a visitor booking; it is
-                // confirmed immediately and never enters the approval queue.
-                Status = BookingStatus.Approved,
-            };
-            try
-            {
-                await PersistWithUniquenessGuardAsync(reservation, cancellationToken);
-                inserted++;
-            }
-            catch (ApiException ex) when (ex.Code == ErrorCodes.SeatAlreadyReserved)
-            {
-                // Lost a race against a concurrent self-pick — fine.
+                free.Add(seat);
             }
         }
+
+        var inserted = await BlockRowSeatsAsync(
+            sessionId, row, free, actorUserId, timeProvider.SimfNow(), cancellationToken);
 
         await auditLog.WriteSuccessAsync(
             AuditEvents.SeatRowAdminReserved,
@@ -932,6 +966,86 @@ internal sealed class SeatReservationService(
             $"sessionId={sessionId}; row={row}; inserted={inserted}",
             cancellationToken);
     }
+
+    /// <summary>Write an administrator's row block. Every still-free seat goes in
+    /// ONE <c>SaveChanges</c>, whose implicit transaction leaves the row either
+    /// wholly blocked or wholly untouched. The seat-at-a-time save this replaces was
+    /// one round trip per seat with nothing enclosing it, so a cancelled request or a
+    /// dropped connection part-way through an 80-seat row committed the seats it had
+    /// reached, skipped the rest, never reached the audit line and answered the
+    /// operator with a 500 — leaving the organiser a row that is half protocol
+    /// seating and half still bookable, with nothing to say which half.
+    ///
+    /// <para>A concurrent self-pick that takes one of these seats first fails the
+    /// whole batch on the per-seat filtered unique index. That case falls back to the
+    /// seat-at-a-time walk, which skips whatever was taken and blocks the rest —
+    /// exactly the old behaviour, now only on the raced path. Returns how many seats
+    /// were actually blocked.</para></summary>
+    private async Task<int> BlockRowSeatsAsync(
+        Guid sessionId, string row, IReadOnlyList<int> seats,
+        Guid actorUserId, DateTime now, CancellationToken cancellationToken)
+    {
+        if (seats.Count == 0)
+        {
+            return 0;
+        }
+
+        var batch = seats
+            .Select(seat => NewRowBlock(sessionId, row, seat, actorUserId, now))
+            .ToList();
+        appDbContext.SeatReservations.AddRange(batch);
+        try
+        {
+            await appDbContext.SaveChangesAsync(cancellationToken);
+            return batch.Count;
+        }
+        catch (DbUpdateException ex)
+        {
+            foreach (var blocked in batch)
+            {
+                appDbContext.Entry(blocked).State = EntityState.Detached;
+            }
+            logger.LogWarning(
+                ex,
+                "Row block on {Row} of session {SessionId} raced a concurrent booking; "
+                + "blocking the remaining seats one at a time.", row, sessionId);
+        }
+
+        var inserted = 0;
+        foreach (var seat in seats)
+        {
+            try
+            {
+                await PersistWithUniquenessGuardAsync(
+                    NewRowBlock(sessionId, row, seat, actorUserId, now),
+                    cancellationToken);
+                inserted++;
+            }
+            catch (ApiException ex) when (ex.Code == ErrorCodes.SeatAlreadyReserved)
+            {
+                // Lost a race against a concurrent self-pick — fine.
+            }
+        }
+        return inserted;
+    }
+
+    /// <summary>One seat of an administrator's row block: no attendee, and
+    /// confirmed immediately because a block is not a visitor booking and never
+    /// enters the (dormant) approval queue.</summary>
+    private static SeatReservation NewRowBlock(
+        Guid sessionId, string row, int seat, Guid actorUserId, DateTime now) =>
+        new()
+        {
+            Id = Guid.NewGuid(),
+            SessionId = sessionId,
+            RowLabel = row,
+            SeatNumber = seat,
+            Kind = SeatReservationKind.AdminReservedRow,
+            ReservedForProfileId = null,
+            CreatedByUserId = actorUserId,
+            CreatedAt = now,
+            Status = BookingStatus.Approved,
+        };
 
     // 2026-07-18 — reserve ONE specific seat for a VIP: a single admin block on
     // that seat (Kind=AdminReservedRow, no attendee), confirmed immediately so it
@@ -946,20 +1060,7 @@ internal sealed class SeatReservationService(
         var ctx = await BuildContextAsync(sessionId, cancellationToken);
         ValidateSeatBounds(ctx, row, seat);
 
-        var clash = await appDbContext.SeatReservations.AsNoTracking()
-            .Where(r => r.SessionId == sessionId
-                && r.RowLabel == row
-                && r.SeatNumber == seat
-                && r.ReleasedAt == null)
-            .Select(r => r.Id)
-            .FirstOrDefaultAsync(cancellationToken);
-        if (clash != Guid.Empty)
-        {
-            throw new ApiException(
-                ErrorCodes.SeatAlreadyReserved, 409,
-                "That seat is already reserved.",
-                "هذا المقعد محجوز بالفعل.");
-        }
+        await EnsureSeatIsFreeAsync(sessionId, row, seat, cancellationToken);
 
         var reservation = new SeatReservation
         {
@@ -1202,48 +1303,18 @@ internal sealed class SeatReservationService(
     public async Task<int> ReleaseNoShowsAsync(
         DateTime now, CancellationToken cancellationToken = default)
     {
-        var due = await appDbContext.SeatReservations
-            .Where(reservation => reservation.Status == BookingStatus.Approved
-                && reservation.ReleasedAt == null
-                && reservation.ReservedForProfileId != null
-                && reservation.NoShowReleaseAt != null
-                && reservation.NoShowReleaseAt <= now
-                && reservation.CreatedAt < reservation.NoShowReleaseAt)
-            .ToListAsync(cancellationToken);
-        if (due.Count == 0)
-        {
-            return 0;
-        }
-
-        // One round-trip: every (session, holder) that has ANY check-in row for the
-        // sessions in play. The owner rule is "عدم تسجيل الدخول للجلسة" (never checked
-        // in), so a holder with any HallAttendance is kept; everyone else is released.
-        var sessionIds = due.Select(reservation => reservation.SessionId)
-            .Distinct()
-            .ToList();
-        var checkedIn = (await appDbContext.HallAttendances.AsNoTracking()
-            .Where(attendance => sessionIds.Contains(attendance.SessionId))
-            .Select(attendance => new { attendance.SessionId, attendance.UserProfileId })
-            .ToListAsync(cancellationToken))
-            .Select(attendance => (attendance.SessionId, attendance.UserProfileId))
-            .ToHashSet();
-
-        var released = due
-            .Where(reservation => !checkedIn.Contains(
-                (reservation.SessionId, reservation.ReservedForProfileId!.Value)))
-            .ToList();
+        var released = await ReleaseDueNoShowsAsync(now, cancellationToken);
         if (released.Count == 0)
         {
             return 0;
         }
-        foreach (var reservation in released)
-        {
-            reservation.ReleasedAt = now;
-            reservation.Status = BookingStatus.Cancelled;
-        }
-        await appDbContext.SaveChangesAsync(cancellationToken);
 
-        // Audit + notify each freed no-show. Titles resolved once per session.
+        // Audit + notify each freed no-show. The session titles and the holders'
+        // Identity accounts are each resolved ONCE for the whole released set: the
+        // account lookup used to be a query per row inside the dispatch.
+        var sessionIds = released.Select(reservation => reservation.SessionId)
+            .Distinct()
+            .ToList();
         var titles = await appDbContext.Sessions.AsNoTracking()
             .Where(session => sessionIds.Contains(session.Id))
             .Select(session => new { session.Id, session.Title, session.TitleArabic })
@@ -1251,6 +1322,13 @@ internal sealed class SeatReservationService(
                 session => session.Id,
                 session => (session.Title, session.TitleArabic),
                 cancellationToken);
+        var accounts = await AttendeeAccountIdsAsync(
+            released
+                .Select(reservation => reservation.ReservedForProfileId!.Value)
+                .Distinct()
+                .ToList(),
+            cancellationToken);
+
         foreach (var reservation in released)
         {
             await auditLog.WriteAsync(new AuditEntry
@@ -1263,16 +1341,93 @@ internal sealed class SeatReservationService(
                     + $"row={reservation.RowLabel}; seat={reservation.SeatNumber}; "
                     + "reason=no-show",
             }, cancellationToken);
-            if (titles.TryGetValue(reservation.SessionId, out var title))
+            // A holder with no account — a walk-in or a bulk-minted badge — is absent
+            // from the map, so there is nobody to tell and the release still stands.
+            if (titles.TryGetValue(reservation.SessionId, out var title)
+                && accounts.TryGetValue(
+                    reservation.ReservedForProfileId!.Value, out var recipientId))
             {
-                await TryNotifyBookingReleasedAsync(
-                    reservation, title, cancellationToken, noShow: true);
+                await NotifyBookingReleasedAsync(
+                    reservation, title, recipientId, cancellationToken, noShow: true);
             }
         }
 
         logger.LogInformation(
             "No-show release freed {Count} un-checked-in seat hold(s).", released.Count);
         return released.Count;
+    }
+
+    /// <summary>Read the due holds and release them in ONE serializable
+    /// transaction, run through the EF execution strategy because a manual
+    /// transaction under <c>EnableRetryOnFailure</c> throws otherwise.
+    ///
+    /// <para>The "never checked in" test is a NOT EXISTS in the SAME statement that
+    /// reads the candidates. It used to be a second query listing every check-in for
+    /// every session in play, followed by an in-memory filter, and that shape cost
+    /// two things. It left a window: a visitor scanning in at the hall door between
+    /// the two steps was still seen as absent, so the sweep freed the seat of
+    /// somebody standing in the room and a second visitor could book it. And it grew
+    /// without bound: a holder who DID check in keeps <c>ReleasedAt</c> null with a
+    /// deadline in the past for ever, so every one of them re-qualified as a
+    /// candidate on every 60-second tick and was materialised as a tracked entity
+    /// only to be filtered out again — a scan that climbed with cumulative
+    /// attendance, dragging a <c>sessionIds.Contains(...)</c> list toward SQL
+    /// Server's parameter limit with it. Excluded in the database, a checked-in
+    /// holder is never read at all, and a released one drops out for good.</para>
+    ///
+    /// <para>Serializable makes the decision atomic with the write: the correlated
+    /// subquery seeks <c>IX_HallAttendances_SessionId_UserProfileId_Leave</c>, so the
+    /// range locks cover only the no-show holders' own keys. A check-in landing
+    /// mid-sweep either commits first — and the sweep then sees it and keeps the seat
+    /// — or waits out the sweep. It can no longer be lost between the two.</para></summary>
+    private async Task<List<SeatReservation>> ReleaseDueNoShowsAsync(
+        DateTime now, CancellationToken cancellationToken)
+    {
+        var released = new List<SeatReservation>();
+        var strategy = appDbContext.Database.CreateExecutionStrategy();
+        await strategy.ExecuteAsync(async () =>
+        {
+            // A retry re-enters here; drop everything a rolled-back attempt left
+            // tracked so the next SaveChanges cannot re-apply a release the database
+            // has already thrown away.
+            foreach (var stale in released)
+            {
+                appDbContext.Entry(stale).State = EntityState.Detached;
+            }
+            released.Clear();
+
+            await using var tx = await appDbContext.Database.BeginTransactionAsync(
+                System.Data.IsolationLevel.Serializable, cancellationToken);
+
+            released.AddRange(await appDbContext.SeatReservations
+                .Where(reservation => reservation.Status == BookingStatus.Approved
+                    && reservation.ReleasedAt == null
+                    && reservation.ReservedForProfileId != null
+                    && reservation.NoShowReleaseAt != null
+                    && reservation.NoShowReleaseAt <= now
+                    && reservation.CreatedAt < reservation.NoShowReleaseAt
+                    // The owner rule is "عدم تسجيل الدخول للجلسة" (never checked in),
+                    // so ANY HallAttendance row for this (session, holder) keeps the
+                    // seat — an arrival that has since left still counts as arrived.
+                    && !appDbContext.HallAttendances.Any(
+                        attendance => attendance.SessionId == reservation.SessionId
+                            && attendance.UserProfileId
+                                == reservation.ReservedForProfileId))
+                .ToListAsync(cancellationToken));
+            if (released.Count == 0)
+            {
+                return; // nothing due — the transaction rolls back on dispose
+            }
+
+            foreach (var reservation in released)
+            {
+                reservation.ReleasedAt = now;
+                reservation.Status = BookingStatus.Cancelled;
+            }
+            await appDbContext.SaveChangesAsync(cancellationToken);
+            await tx.CommitAsync(cancellationToken);
+        });
+        return released;
     }
 
     // -- Staff seating desk --
@@ -1634,15 +1789,30 @@ internal sealed class SeatReservationService(
                 && r.RowLabel != null, cancellationToken);
     }
 
-    /// <summary>Every session held in this hall. One definition shared by the two
-    /// layout guards (the shrink orphan check and the layout-delete count) so they can
-    /// never disagree on which sessions a layout change affects.</summary>
+    /// <summary>Every session held in this hall that has NOT yet ended. One
+    /// definition shared by the two layout guards (the shrink orphan check and the
+    /// layout-delete count) so they can never disagree on which sessions a layout
+    /// change affects.
+    ///
+    /// <para>The end bound is the guard, not a tidy-up. Nothing stamps
+    /// <c>ReleasedAt</c> when a session merely finishes — only a cancel, an admin
+    /// release, a seat move, a session cancellation and the no-show sweep do — so
+    /// every attendee who actually turned up leaves an active row behind for ever.
+    /// Without the bound, one 300-seat session held last year makes the hall's grid
+    /// permanently un-editable: the next edition's admin cannot rename, drop or
+    /// shrink a row without first releasing hundreds of holds for a session that
+    /// finished months ago. A seat in a session that has ended can never be sat in,
+    /// so it is not a reservation a layout change can strand. A session that has
+    /// merely STARTED still counts — its attendees are in the room.</para></summary>
     private Task<List<Guid>> HallSessionIdsAsync(
-        Guid hallId, CancellationToken cancellationToken) =>
-        appDbContext.Sessions.AsNoTracking()
-            .Where(s => s.HallId == hallId)
+        Guid hallId, CancellationToken cancellationToken)
+    {
+        var now = timeProvider.SimfNow();
+        return appDbContext.Sessions.AsNoTracking()
+            .Where(s => s.HallId == hallId && s.End > now)
             .Select(s => s.Id)
             .ToListAsync(cancellationToken);
+    }
 
     private static IReadOnlyList<string> ParseRowLabels(string? csv) =>
         string.IsNullOrWhiteSpace(csv)
@@ -1898,35 +2068,62 @@ internal sealed class SeatReservationService(
             ctx.SeatCounts.Sum(),
             ctx.CapacityOverride ?? ctx.HallCapacity);
 
-    /// <summary>The hard capacity backstop the pre-count cannot give.
-    /// The reserve/join pre-check reads-then-counts-then-inserts, so two
-    /// concurrent bookings can each pass the check and both insert; only the
-    /// per-seat unique index stops that, and it caps at the LAYOUT size, not at a
-    /// smaller CapacityOverride (and not at all for open seating). After the
-    /// insert commits we re-count; if this row pushed the session past its
-    /// effective capacity we remove it and fail closed.</summary>
-    private async Task EnforceCapacityAfterInsertAsync(
-        SeatReservation reservation, int effectiveCap,
+    /// <summary>Refuse a second live hold for an attendee who already holds one in
+    /// this session — the rule the filtered unique index on
+    /// (SessionId, ReservedForProfileId) enforces, answered as a 409 instead of a
+    /// duplicate-key 500. Called TWICE on every create path: once up front, to fail
+    /// a double-tap cheaply, and once more inside the serializable transaction that
+    /// does the insert, where it is the check that actually holds.
+    /// <paramref name="openSeating"/> selects the wording only — an open-seating
+    /// join has no seat to speak of, so it says "booking" where a seat pick says
+    /// "seat reserved"; the error code is the same on both.</summary>
+    private async Task EnsureNoActiveHoldAsync(
+        Guid sessionId, Guid actorProfileId, bool openSeating,
         CancellationToken cancellationToken)
     {
-        var active = await appDbContext.SeatReservations
-            .Where(r => r.SessionId == reservation.SessionId && r.ReleasedAt == null)
-            .CountAsync(cancellationToken);
-        if (active > effectiveCap)
+        var existing = await GetMyActiveAsync(sessionId, actorProfileId, cancellationToken);
+        if (existing is null)
         {
-            appDbContext.SeatReservations.Remove(reservation);
-            await appDbContext.SaveChangesAsync(cancellationToken);
+            return;
+        }
+        throw new ApiException(
+            ErrorCodes.SeatAlreadyOwnedBySession, 409,
+            openSeating
+                ? "You already have a booking for this session."
+                : "You already have a seat reserved for this session.",
+            openSeating
+                ? "لديك حجز بالفعل لهذه الجلسة."
+                : "لديك مقعد محجوز بالفعل لهذه الجلسة.");
+    }
+
+    /// <summary>Refuse a seat somebody already holds — a visitor's booking or an
+    /// administrator's protocol block, which are the same thing to this check.
+    /// Called up front to fail cheaply, and again inside the serializable
+    /// transaction that inserts, where its key-range lock is what stops a rival
+    /// slipping in between the read and the write.</summary>
+    private async Task EnsureSeatIsFreeAsync(
+        Guid sessionId, string rowLabel, int seatNumber,
+        CancellationToken cancellationToken)
+    {
+        var taken = await appDbContext.SeatReservations.AsNoTracking()
+            .AnyAsync(r => r.SessionId == sessionId
+                && r.RowLabel == rowLabel
+                && r.SeatNumber == seatNumber
+                && r.ReleasedAt == null, cancellationToken);
+        if (taken)
+        {
             throw new ApiException(
-                ErrorCodes.SeatSessionFull, 409,
-                "No seats remain in this session.",
-                "لا توجد مقاعد متبقية في هذه الجلسة.");
+                ErrorCodes.SeatAlreadyReserved, 409,
+                "That seat is already reserved.",
+                "هذا المقعد محجوز بالفعل.");
         }
     }
 
-    /// <summary>Insert a Pending hold only while the
+    /// <summary>Insert a hold only while the
     /// session is below <paramref name="effectiveCap"/>, with the capacity COUNT and
-    /// the INSERT in ONE SERIALIZABLE transaction so concurrent reserve-random /
-    /// open-seating joins can neither oversell nor over-reject. The COUNT takes a
+    /// the INSERT in ONE SERIALIZABLE transaction so concurrent bookings — a seat
+    /// pick, a reserve-random or an open-seating join, all three go through here —
+    /// can neither oversell nor over-reject. The COUNT takes a
     /// key-range lock on (SessionId, ReleasedAt), so a concurrent insert cannot slip a
     /// phantom row in between the count and the save. Run through the EF execution
     /// strategy so it composes with <c>EnableRetryOnFailure</c> (a manual transaction
@@ -1949,12 +2146,33 @@ internal sealed class SeatReservationService(
         {
             // A retry re-enters here; drop the row a failed attempt left tracked so the
             // next SaveChanges never re-inserts a stale (rolled-back) entity.
-            if (added is not null)
+            //
+            // First establish WHICH kind of retry this is. A dropped connection
+            // between SQL Server's commit and the acknowledgement reaching us looks
+            // transient, so the strategy re-runs a block whose row is already stored;
+            // re-inserting it then violates the filtered unique index on
+            // (SessionId, ReservedForProfileId) with a duplicate key, which is NOT
+            // transient, so a raw DbUpdateException escapes as a 500 over a booking
+            // that in fact succeeded. The id is client-generated, so nobody else could
+            // have written it: finding it means the attempt committed, and the answer
+            // is that row. Detaching is load-bearing on that path too — an entity left
+            // Added would be re-inserted by the next SaveChanges on this context.
+            committed = null;
+            var previous = added;
+            var recovered = false;
+            if (previous is not null)
             {
-                appDbContext.Entry(added).State = EntityState.Detached;
+                var previousId = previous.Id;
+                recovered = await appDbContext.SeatReservations.AsNoTracking()
+                    .AnyAsync(r => r.Id == previousId, cancellationToken);
+                appDbContext.Entry(previous).State = EntityState.Detached;
                 added = null;
             }
-            committed = null;
+            if (recovered)
+            {
+                committed = previous;
+                return;
+            }
 
             await using var tx = await appDbContext.Database.BeginTransactionAsync(
                 System.Data.IsolationLevel.Serializable, cancellationToken);
@@ -2106,6 +2324,18 @@ internal sealed class SeatReservationService(
         {
             return;
         }
+        await NotifyBookingReleasedAsync(
+            booking, session, recipientId, cancellationToken, noShow);
+    }
+
+    /// <summary>Compose and dispatch the release message to an already-resolved
+    /// recipient. Split from <see cref="TryNotifyBookingReleasedAsync"/> so the sweep,
+    /// which resolves every holder's account in one query, does not pay a lookup per
+    /// freed seat.</summary>
+    private async Task NotifyBookingReleasedAsync(
+        SeatReservation booking, (string Title, string TitleArabic) session,
+        Guid recipientId, CancellationToken cancellationToken, bool noShow)
+    {
         var seat = booking.RowLabel is { } row ? $"{row}{booking.SeatNumber}" : null;
         var (body, bodyArabic) = noShow
             ? (seat is not null

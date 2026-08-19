@@ -190,6 +190,46 @@ public sealed class MeetingActionTokenTests : IClassFixture<SimfApiFactory>
         await AssertNeutralInvalidAsync(await PreviewAsync(approve));
     }
 
+    /// <summary>A Decline consumes only the token the speaker clicked, so its SIBLING
+    /// Approve link survives with up to 72h left. Reopening puts the request back to
+    /// Pending, and the next approve moves it to AwaitingSpeaker again — at which point
+    /// that superseded link passed validation once more and could flip the meeting to
+    /// Accepted for a hall and a slot its email never mentioned, through an
+    /// AllowAnonymous endpoint that needs no account. Reopen therefore kills every live
+    /// token along with the rest of the previous round's state it already clears.</summary>
+    [Fact]
+    public async Task Reopening_a_declined_request_revokes_its_outstanding_links()
+    {
+        var (requestId, _) = await SeedAwaitingSpeakerRequestAsync();
+        var (_, reject) = await MintAsync(requestId);
+
+        Assert.Equal(HttpStatusCode.OK, (await ConfirmAsync(reject)).StatusCode);
+
+        // The setup is the dangerous one: the Approve token is still unused.
+        using (var before = _factory.Services.CreateScope())
+        {
+            var db = before.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            Assert.True(await db.MeetingActionTokens.AsNoTracking()
+                .AnyAsync(t => t.SpeakerMeetingRequestId == requestId
+                    && t.Action == MeetingActionType.Approve && t.UsedAt == null));
+        }
+
+        using (var reopening = _factory.Services.CreateScope())
+        {
+            var service = reopening.ServiceProvider
+                .GetRequiredService<ISpeakerMeetingRequestService>();
+            await service.ReopenAsync(Guid.NewGuid(), requestId);
+        }
+
+        using var after = _factory.Services.CreateScope();
+        var verifyDb = after.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var request = await verifyDb.SpeakerMeetingRequests.AsNoTracking()
+            .SingleAsync(r => r.Id == requestId);
+        Assert.Equal(MeetingRequestStatus.Pending, request.Status);
+        Assert.False(await verifyDb.MeetingActionTokens.AsNoTracking()
+            .AnyAsync(t => t.SpeakerMeetingRequestId == requestId && t.UsedAt == null));
+    }
+
     // -- helpers --------------------------------------------------------------
 
     private Task<HttpResponseMessage> PreviewAsync(string token) =>

@@ -153,4 +153,19 @@ public sealed class AesGcmEnvelopeCipherTests
         var blobV2 = rotated.Encrypt("post-rotation"u8.ToArray());
         Assert.Equal("post-rotation"u8.ToArray(), rotated.Decrypt(blobV2));
     }
+
+    [Fact]
+    public void A_previous_kek_version_equal_to_the_active_one_is_a_boot_failure()
+    {
+        // The half-done rotation: the operator supplies the retiring key and its
+        // version but forgets to bump FileStorage:KekVersion. The dictionary used
+        // to be indexed rather than added, so the second entry simply overwrote
+        // the first - one entry, under the ACTIVE version, holding the OLD key.
+        // The service started clean and every file written after that was sealed
+        // under the key the rotation existed to retire.
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            Cipher(Key(2), activeVersion: 1, previousKey: Key(1), previousVersion: 1));
+
+        Assert.Contains("PreviousKekVersion", ex.Message, StringComparison.Ordinal);
+    }
 }

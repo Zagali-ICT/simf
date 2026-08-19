@@ -86,26 +86,20 @@ internal sealed class RecommendationService(
         }
         var callerInterests = caller.InterestIds.ToHashSet();
 
-        // 2) Load every Approved non-Admin user id from Identity DB —
-        //    the pool the matcher considers (minus the caller).
-        var approvedIds = await identityDbContext.Users
+        // 2) Shortlist the candidates on the App DB FIRST. A profile that shares
+        //    no interest with the caller scores nothing and the ranker below
+        //    drops it outright, so that filter belongs in SQL — otherwise every
+        //    approved attendee's whole interest collection is materialised only
+        //    to be discarded. Same set out, a fraction of the rows in.
+        var callerInterestIds = caller.InterestIds;
+        var shortlist = await appDbContext.UserProfiles
             .AsNoTracking()
-            .WhereApprovedNonAdmin(callerUserId)
-            .Select(u => u.Id)
-            .ToListAsync(cancellationToken);
-        if (approvedIds.Count == 0)
-        {
-            return new RecommendationsResponse(Array.Empty<RecommendationEntry>());
-        }
-
-        // 3) Pull candidate profiles + interest sets + display fields.
-        var candidates = await appDbContext.UserProfiles
-            .AsNoTracking()
-            .Where(p => p.UserId != null && approvedIds.Contains(p.UserId.Value))
+            .Where(p => p.UserId != null)
             .Where(p => p.ShowInMeetLikeYou)
             // Honour the per-type "Meet People" master switch too, so a
             // partner type an admin hid drops out of the recommender as well.
             .Where(p => p.ProfileType == null || p.ProfileType.ShowInPartnerDirectory)
+            .Where(p => p.Interests.Any(i => callerInterestIds.Contains(i.Id)))
             .Select(p => new
             {
                 p.Id,
@@ -122,6 +116,28 @@ internal sealed class RecommendationService(
                 }).ToList(),
             })
             .ToListAsync(cancellationToken);
+        if (shortlist.Count == 0)
+        {
+            return new RecommendationsResponse(Array.Empty<RecommendationEntry>());
+        }
+
+        // 3) "Approved, non-Admin, not me" is an Identity fact, so ask Identity
+        //    about the shortlist's account ids alone. Enumerating the whole
+        //    approved pool and shipping it back as an IN (...) list moved every
+        //    attendee id across the DB boundary on a screen every attendee opens.
+        var shortlistAccountIds = shortlist.Select(p => p.UserId).Distinct().ToList();
+        var approvedIds = (await identityDbContext.Users
+            .AsNoTracking()
+            .WhereApprovedNonAdmin(callerUserId)
+            .Where(u => shortlistAccountIds.Contains(u.Id))
+            .Select(u => u.Id)
+            .ToListAsync(cancellationToken))
+            .ToHashSet();
+        var candidates = shortlist.Where(p => approvedIds.Contains(p.UserId)).ToList();
+        if (candidates.Count == 0)
+        {
+            return new RecommendationsResponse(Array.Empty<RecommendationEntry>());
+        }
 
         // 3b) Shared-session overlap: the approved, un-released seats
         //     the caller and the candidate pool hold. A seat is held by an attendee

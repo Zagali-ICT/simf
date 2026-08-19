@@ -83,23 +83,38 @@ internal sealed class UserProfileRepository(
         // human-quotable registration reference. Raw ADO because SQL Server
         // forbids NEXT VALUE FOR inside the derived table EF wraps
         // SqlQueryRaw results into.
-        var connection = appDbContext.Database.GetDbConnection();
-        if (connection.State != System.Data.ConnectionState.Open)
+        //
+        // Opened THROUGH EF rather than by calling OpenAsync on the raw
+        // DbConnection. A physical open EF did not perform leaves its
+        // "opened internally" flag false, so every later query in the scope sees
+        // State == Open, skips opening, and never closes it either: the pooled
+        // connection is held until the scoped DbContext is disposed instead of
+        // being returned as soon as the sequence value is read. On the registration
+        // path that means one pool slot per in-flight sign-up for the whole
+        // request, exactly when registration traffic peaks. EF refcounts these, so
+        // an enclosing transaction that already holds the connection open is
+        // unaffected by the Close below.
+        await appDbContext.Database.OpenConnectionAsync(cancellationToken);
+        try
         {
-            await connection.OpenAsync(cancellationToken);
+            var connection = appDbContext.Database.GetDbConnection();
+            await using var command = connection.CreateCommand();
+            command.CommandText =
+                "SELECT NEXT VALUE FOR [dbo].[RegistrationReferenceSequence];";
+            var transaction = appDbContext.Database.CurrentTransaction;
+            if (transaction is not null)
+            {
+                command.Transaction =
+                    Microsoft.EntityFrameworkCore.Storage.DbContextTransactionExtensions
+                        .GetDbTransaction(transaction);
+            }
+            var value = await command.ExecuteScalarAsync(cancellationToken);
+            return (long)value!;
         }
-        await using var command = connection.CreateCommand();
-        command.CommandText =
-            "SELECT NEXT VALUE FOR [dbo].[RegistrationReferenceSequence];";
-        var transaction = appDbContext.Database.CurrentTransaction;
-        if (transaction is not null)
+        finally
         {
-            command.Transaction =
-                Microsoft.EntityFrameworkCore.Storage.DbContextTransactionExtensions
-                    .GetDbTransaction(transaction);
+            await appDbContext.Database.CloseConnectionAsync();
         }
-        var value = await command.ExecuteScalarAsync(cancellationToken);
-        return (long)value!;
     }
 
     public async Task<RejectionText?> GetRejectionTextAsync(

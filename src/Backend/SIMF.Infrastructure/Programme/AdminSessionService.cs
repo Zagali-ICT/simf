@@ -230,20 +230,6 @@ internal sealed class AdminSessionService(
                 "يجب أن يكون للجلسة (غير الحدث) متحدّث واحد على الأقل.");
         }
 
-        await EnsureNoHallTimeOverlapAsync(
-            hall.Id, request.Start, request.End, Guid.Empty, cancellationToken);
-
-        var clash = await dbContext.Sessions
-            .AsNoTracking()
-            .AnyAsync(row => row.Code == code, cancellationToken);
-        if (clash)
-        {
-            throw new ApiException(
-                ErrorCodes.SessionCodeDuplicate, 409,
-                $"A session with code '{code}' already exists.",
-                $"توجد جلسة بالرمز '{code}' بالفعل.");
-        }
-
         var now = timeProvider.SimfNow();
         var session = new Session
         {
@@ -313,8 +299,36 @@ internal sealed class AdminSessionService(
                 // ReplaceOutcomes) — no explicit stamp needed here.
             });
         }
-        dbContext.Sessions.Add(session);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        // Close the read-then-insert race on the one-session-per-hall-slot rule. A
+        // time RANGE cannot be a unique constraint, so the overlap scan and the
+        // insert must run inside ONE Serializable transaction: the scan then holds
+        // key-range locks and a rival insert into the same slot cannot slip in
+        // between the check and the save. Two admins creating differently-coded
+        // sessions for the same hall and hour used to both pass an unlocked
+        // AnyAsync and both commit, which silently breaks everything downstream
+        // that assumes a hall runs one session at a time — the door's admitting set
+        // and the per-session capacity count. The code-uniqueness scan joins them so
+        // its own read is range-locked too (the unique index still backstops it).
+        // Run through the EF execution strategy so it composes with
+        // EnableRetryOnFailure — a manual transaction throws under the retrying
+        // strategy otherwise — and a serialization/deadlock victim re-runs the whole
+        // unit against the committed rival and raises the clean 409. The session is
+        // built once above with a fixed Id, so a retry re-inserts the same row
+        // instead of duplicating it. Mirrors BusinessMeetingService.ScheduleAsync.
+        var strategy = dbContext.Database.CreateExecutionStrategy();
+        await strategy.ExecuteAsync(async () =>
+        {
+            await using var transaction = await dbContext.Database.BeginTransactionAsync(
+                System.Data.IsolationLevel.Serializable, cancellationToken);
+
+            await EnsureNoHallTimeOverlapAsync(
+                hall.Id, request.Start, request.End, session.Id, cancellationToken);
+            await EnsureCodeIsFreeAsync(code, session.Id, cancellationToken);
+
+            dbContext.Sessions.Add(session);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+        });
 
         // After the save, because a file row needs a real owner id and the session
         // has none until it exists. A blank URL leaves the pointer null.
@@ -406,6 +420,12 @@ internal sealed class AdminSessionService(
         // Soft-deleting via update (IsActive true -> false) must not orphan
         // active visitor bookings (same rule as DeactivateAsync).
         var deactivating = session.IsActive && !request.IsActive;
+        // The mirror case: a row coming BACK from inactive re-enters the hall
+        // schedule, and the overlap check ignores inactive rows — so the slot it
+        // used to hold may have been taken while it was away. Captured here, beside
+        // the hall/time flags and before IsActive is overwritten, because after the
+        // assignment below the stored value is gone.
+        var reactivating = !session.IsActive && request.IsActive;
         if (deactivating)
         {
             var heldVisitorBookings = await dbContext.SeatReservations
@@ -451,22 +471,18 @@ internal sealed class AdminSessionService(
 
         if (!string.Equals(session.Code, code, StringComparison.OrdinalIgnoreCase))
         {
-            var clash = await dbContext.Sessions
-                .AsNoTracking()
-                .AnyAsync(row => row.Id != id && row.Code == code, cancellationToken);
-            if (clash)
-            {
-                throw new ApiException(
-                    ErrorCodes.SessionCodeDuplicate, 409,
-                    $"A session with code '{code}' already exists.",
-                    $"توجد جلسة بالرمز '{code}' بالفعل.");
-            }
+            await EnsureCodeIsFreeAsync(code, id, cancellationToken);
         }
 
-        // Only checked when the slot actually moves: a title-only edit of a session
-        // with a pre-existing overlapping sibling (legacy data) must stay saveable,
-        // and deactivation must not be blocked.
-        if (hallChanged || timeChanged)
+        // Checked when the slot actually moves, and when the row RE-ENTERS the
+        // schedule: re-ticking Active changes neither hall nor time, but the check
+        // that let a sibling take this slot skipped this row precisely because it
+        // was inactive, so saving it active again would put two active sessions in
+        // one hall at one time through the ordinary edit form, with no race at all.
+        // Still not run on a plain edit: a title-only save of a session with a
+        // pre-existing overlapping sibling (legacy data) must stay saveable, and
+        // deactivation must not be blocked.
+        if (hallChanged || timeChanged || reactivating)
         {
             await EnsureNoHallTimeOverlapAsync(
                 hall.Id, request.Start, request.End, id, cancellationToken);
@@ -481,6 +497,21 @@ internal sealed class AdminSessionService(
         {
             cancellationAudience = await ResolveCancellationAudienceAsync(id, cancellationToken);
         }
+
+        // The live feeds become file-store rows, which validates each URL against
+        // the same rule the players apply instead of storing whatever was typed.
+        // Resolved BEFORE the first session field is assigned: the file store
+        // commits through its OWN SaveChanges on this same context (and its owner
+        // pointer sync saves again), so running it mid-mutation flushed half of this
+        // update — the new code, hall, start and end — outside the transaction
+        // below, which is both a half-applied write when the store then rejects a
+        // URL and a slot move that no lock ever covered.
+        var liveStreamFileId = await feedLinks.SetAsync(
+            FileService.SessionLiveStream, session.Id,
+            request.LiveStreamUrl, actorUserId, cancellationToken);
+        var liveSignLanguageFileId = await feedLinks.SetAsync(
+            FileService.SessionSignLanguage, session.Id,
+            request.LiveSignLanguageUrl, actorUserId, cancellationToken);
 
         session.Code = code;
         session.Title = title;
@@ -509,14 +540,8 @@ internal sealed class AdminSessionService(
             session.RatingPromptSentAt = null;
         }
         session.CapacityOverride = request.CapacityOverride;
-        // The live feeds become file-store rows, which validates each URL against
-        // the same rule the players apply instead of storing whatever was typed.
-        session.LiveStreamFileId = await feedLinks.SetAsync(
-            FileService.SessionLiveStream, session.Id,
-            request.LiveStreamUrl, actorUserId, cancellationToken);
-        session.LiveSignLanguageFileId = await feedLinks.SetAsync(
-            FileService.SessionSignLanguage, session.Id,
-            request.LiveSignLanguageUrl, actorUserId, cancellationToken);
+        session.LiveStreamFileId = liveStreamFileId;
+        session.LiveSignLanguageFileId = liveSignLanguageFileId;
         // AI live-caption text (manual stub provider, bilingual).
         session.LiveCaptions = NullIfBlank(request.LiveCaptions);
         session.LiveCaptionsArabic = NullIfBlank(request.LiveCaptionsArabic);
@@ -549,7 +574,30 @@ internal sealed class AdminSessionService(
             }
         }
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+        // The slot guard above answers the admin early — before the file-store
+        // writes — but it holds no lock, so two admins moving sessions into the same
+        // free slot at the same moment could both pass it and both commit. The check
+        // is therefore REPEATED here, inside one Serializable transaction with the
+        // write: the range scan holds key-range locks, so the loser is rejected with
+        // the same clean 409 instead of committing a second active session into the
+        // hall. Run through the EF execution strategy so it composes with
+        // EnableRetryOnFailure (a manual transaction throws under the retrying
+        // strategy) and a serialization/deadlock victim re-runs the unit against the
+        // committed rival. Same pattern as CreateAsync above.
+        var strategy = dbContext.Database.CreateExecutionStrategy();
+        await strategy.ExecuteAsync(async () =>
+        {
+            await using var transaction = await dbContext.Database.BeginTransactionAsync(
+                System.Data.IsolationLevel.Serializable, cancellationToken);
+
+            if (hallChanged || timeChanged || reactivating)
+            {
+                await EnsureNoHallTimeOverlapAsync(
+                    hall.Id, request.Start, request.End, id, cancellationToken);
+            }
+            await dbContext.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+        });
 
         await auditLog.WriteSuccessAsync(
             AuditEvents.SessionUpdated,
@@ -577,10 +625,17 @@ internal sealed class AdminSessionService(
         }
 
         // Notify each affected visitor AFTER the commit (best-effort; the
-        // dispatcher writes to the Identity DB via its own context).
+        // dispatcher writes to the Identity DB via its own context). Resolve every
+        // holder's ACCOUNT in ONE query first: a keynote in an 800-seat hall
+        // released 800 rows and this loop used to issue a profile lookup per row,
+        // holding the request open for 800 sequential round-trips before the first
+        // notice was even sent.
+        var recipientsByProfileId =
+            await ResolveReleasedSeatRecipientsAsync(releasedReservations, cancellationToken);
         foreach (var reservation in releasedReservations)
         {
-            await TryNotifyBookingReleasedAsync(reservation, session, cancellationToken);
+            await TryNotifyBookingReleasedAsync(
+                reservation, session, recipientsByProfileId, cancellationToken);
         }
 
         // The edit form's Active checkbox is a fully reachable cancellation path,
@@ -1131,6 +1186,27 @@ internal sealed class AdminSessionService(
         }
     }
 
+    // A session code is unique across the table, INACTIVE rows included — the
+    // unique index does not filter on IsActive, so a soft-deleted row still owns
+    // its code and a clean 409 here is what stops the insert failing as a 500 at
+    // the store. Create passes its own (not yet persisted) id, which excludes
+    // nothing; update passes the row being edited so re-saving its own code is not
+    // a clash.
+    private async Task EnsureCodeIsFreeAsync(
+        string code, Guid excludeSessionId, CancellationToken cancellationToken)
+    {
+        var clash = await dbContext.Sessions
+            .AsNoTracking()
+            .AnyAsync(row => row.Id != excludeSessionId && row.Code == code, cancellationToken);
+        if (clash)
+        {
+            throw new ApiException(
+                ErrorCodes.SessionCodeDuplicate, 409,
+                $"A session with code '{code}' already exists.",
+                $"توجد جلسة بالرمز '{code}' بالفعل.");
+        }
+    }
+
     private async Task<Hall> ResolveHallAsync(
         Guid hallId, CancellationToken cancellationToken)
     {
@@ -1306,11 +1382,42 @@ internal sealed class AdminSessionService(
         }
     }
 
+    /// <summary>The ACCOUNT behind each released seat, keyed by the holder's PROFILE
+    /// id, in one query for the whole cascade. Admin row-blocks (no holder) and
+    /// walk-ins (a profile with no account) are simply absent from the map, which is
+    /// exactly the "nobody to tell" case the notify step already skips. Same shape as
+    /// <see cref="ResolveCancellationAudienceAsync"/>: the join runs server-side and
+    /// the null accounts are filtered there, never row by row in the loop.</summary>
+    private async Task<IReadOnlyDictionary<Guid, Guid>> ResolveReleasedSeatRecipientsAsync(
+        IReadOnlyList<SeatReservation> releasedReservations,
+        CancellationToken cancellationToken)
+    {
+        var holderProfileIds = releasedReservations
+            .Where(reservation => reservation.ReservedForProfileId is not null)
+            .Select(reservation => reservation.ReservedForProfileId!.Value)
+            .Distinct()
+            .ToList();
+        if (holderProfileIds.Count == 0)
+        {
+            return new Dictionary<Guid, Guid>();
+        }
+
+        var rows = await dbContext.UserProfiles
+            .AsNoTracking()
+            .Where(profile => holderProfileIds.Contains(profile.Id) && profile.UserId != null)
+            .Select(profile => new { profile.Id, UserId = profile.UserId!.Value })
+            .ToListAsync(cancellationToken);
+        return rows.ToDictionary(row => row.Id, row => row.UserId);
+    }
+
     // S-1 (owner default) — tell each affected visitor their held seat was released
     // because the session was moved or rescheduled. Reuses NotificationKind.BookingRejected
     // (in-app warning, session deep-link); the authoritative bilingual text is set below.
     private async Task TryNotifyBookingReleasedAsync(
-        SeatReservation reservation, Session session, CancellationToken cancellationToken)
+        SeatReservation reservation,
+        Session session,
+        IReadOnlyDictionary<Guid, Guid> recipientsByProfileId,
+        CancellationToken cancellationToken)
     {
         if (reservation.ReservedForProfileId is not { } holderProfileId)
         {
@@ -1318,13 +1425,9 @@ internal sealed class AdminSessionService(
         }
 
         // The notice goes to an ACCOUNT. A walk-in holds a seat and no account, so
-        // there is nobody to tell; the release itself already stands.
-        var userId = await dbContext.UserProfiles
-            .AsNoTracking()
-            .Where(profile => profile.Id == holderProfileId)
-            .Select(profile => profile.UserId)
-            .SingleOrDefaultAsync(cancellationToken);
-        if (userId is not { } recipientId)
+        // there is nobody to tell (they are simply absent from the resolved map);
+        // the release itself already stands.
+        if (!recipientsByProfileId.TryGetValue(holderProfileId, out var recipientId))
         {
             return;
         }

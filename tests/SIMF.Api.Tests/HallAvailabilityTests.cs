@@ -131,6 +131,62 @@ public sealed class HallAvailabilityTests : IClassFixture<SimfApiFactory>
         Assert.Equal(before[1].Start, after[0].Start);
     }
 
+    /// <summary>A WHOLE-hall allocation for a non-meeting purpose (a session, a
+    /// ceremony) reserves the hall as a unit, so nothing may be booked into it over
+    /// that window. The free-slot read never looked at HallAllocations at all: a hall
+    /// committed to a session still offered its slots, and both the speaker and the
+    /// delegation bind took them, while the business-meeting path correctly refused
+    /// the same hall. All three now inherit the guard from this one authority.</summary>
+    [Fact]
+    public async Task A_whole_hall_allocation_removes_its_slots_from_available_slots()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var hallId = await SeedHallAsync();
+        var create = await PostAuthAsync(
+            $"/api/v1/admin/halls/{hallId}/availability-windows",
+            new CreateHallAvailabilityWindowRequest
+            {
+                Start = WindowStart, End = WindowStart.AddMinutes(60), SlotMinutes = 30,
+            }, admin);
+        Assert.Equal(HttpStatusCode.OK, create.StatusCode);
+
+        var before = await GetSlotsAsync(hallId, admin);
+        Assert.Equal(2, before.Count);
+
+        await SeedWholeHallAllocationAsync(
+            hallId, HallPurpose.Session, before[0].Start, before[0].End);
+
+        var after = await GetSlotsAsync(hallId, admin);
+        Assert.Single(after);
+        Assert.Equal(before[1].Start, after[0].Start);
+    }
+
+    /// <summary>The subtraction is deliberately narrow. An allocation whose purpose IS
+    /// Meeting is the meetings desk reserving the hall for itself, so it must not take
+    /// the hall's own slots off the board — the same carve-out the business-meeting
+    /// hall check already applies.</summary>
+    [Fact]
+    public async Task A_whole_hall_allocation_for_meetings_keeps_its_slots_offered()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var hallId = await SeedHallAsync();
+        var create = await PostAuthAsync(
+            $"/api/v1/admin/halls/{hallId}/availability-windows",
+            new CreateHallAvailabilityWindowRequest
+            {
+                Start = WindowStart, End = WindowStart.AddMinutes(60), SlotMinutes = 30,
+            }, admin);
+        Assert.Equal(HttpStatusCode.OK, create.StatusCode);
+
+        var before = await GetSlotsAsync(hallId, admin);
+        Assert.Equal(2, before.Count);
+
+        await SeedWholeHallAllocationAsync(
+            hallId, HallPurpose.Meeting, before[0].Start, before[0].End);
+
+        Assert.Equal(2, (await GetSlotsAsync(hallId, admin)).Count);
+    }
+
     [Fact]
     public async Task A36_hall_availability_is_gated_by_its_own_permission_not_the_speaker_desk()
     {
@@ -245,6 +301,25 @@ public sealed class HallAvailabilityTests : IClassFixture<SimfApiFactory>
         return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
+
+    private async Task SeedWholeHallAllocationAsync(
+        Guid hallId, HallPurpose purpose, DateTime start, DateTime end)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        db.HallAllocations.Add(new HallAllocation
+        {
+            Id = Guid.NewGuid(),
+            HallId = hallId,
+            Purpose = purpose,
+            Mode = HallAllocationMode.Whole,
+            Start = start,
+            End = end,
+            CreatedByUserId = Guid.NewGuid(),
+            CreatedAt = SimfClock.Now,
+        });
+        await db.SaveChangesAsync();
+    }
 
     private async Task SeedBoundMeetingAsync(
         Guid hallId, DateTime start, DateTime end)

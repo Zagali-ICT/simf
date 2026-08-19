@@ -25,11 +25,6 @@ internal sealed class MyAreaService(
     private const string KindSession = "Session";
     private const string KindMeeting = "Meeting";
 
-    /// <summary>The event runs in Riyadh — Arabia Standard Time (+03:00, no DST)
-    /// — so "today" on the dashboard is the AST calendar day, not the calendar day elsewhere
-    /// (otherwise an evening session would slip to the next day's card).</summary>
-    private static readonly TimeSpan EventTimeZoneOffset = TimeSpan.FromHours(3);
-
     public async Task<MyAreaDashboard> GetDashboardAsync(
         Guid userId,
         CancellationToken cancellationToken = default)
@@ -278,9 +273,10 @@ internal sealed class MyAreaService(
         return items;
     }
 
-    /// <summary>Today's window in the event timezone (AST, +03:00), as a
-    /// half-open Saudi-local interval. Deterministic via the injected
-    /// <see cref="TimeProvider"/>.</summary>
+    /// <summary>Today's window on the dashboard, as a half-open interval. Every
+    /// stored instant already IS the Saudi wall clock, so no offset is applied
+    /// here — reading the clock and cutting the day out of it is the whole rule.
+    /// Deterministic via the injected <see cref="TimeProvider"/>.</summary>
     private (DateTime Start, DateTime End) TodayWindow()
     {
         var nowLocal = timeProvider.SimfNow();

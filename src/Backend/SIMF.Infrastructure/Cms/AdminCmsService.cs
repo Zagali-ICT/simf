@@ -24,6 +24,13 @@ internal sealed class AdminCmsService(
     TimeProvider timeProvider,
     ILogger<AdminCmsService> logger) : IAdminCmsService
 {
+    /// <summary>Mirrors <c>BannerConfiguration</c>'s stored width for
+    /// <c>LinkUrl</c>. Validation has to quote the column's own number: a
+    /// tracking or CDN link longer than the column holds otherwise reaches SQL
+    /// Server and fails the write, surfacing as a 500 where every other banner
+    /// field answers a bilingual 400.</summary>
+    private const int BannerLinkUrlMaxLength = 1024;
+
     /// <summary>
     /// The grid contract for /admin/content-blocks: one entry per key
     /// ContentBlocksList.razor can send, as both its filter and its sort. A key not
@@ -203,8 +210,8 @@ internal sealed class AdminCmsService(
         CancellationToken cancellationToken = default)
     {
         ValidateBanner(request.Title, request.TitleArabic,
-            request.Body, request.BodyArabic, request.Start, request.End,
-            request.DisplayOrder);
+            request.Body, request.BodyArabic, request.LinkUrl, request.Start,
+            request.End, request.DisplayOrder);
 
         var now = timeProvider.SimfNow();
         var banner = new Banner
@@ -235,8 +242,8 @@ internal sealed class AdminCmsService(
         CancellationToken cancellationToken = default)
     {
         ValidateBanner(request.Title, request.TitleArabic,
-            request.Body, request.BodyArabic, request.Start, request.End,
-            request.DisplayOrder);
+            request.Body, request.BodyArabic, request.LinkUrl, request.Start,
+            request.End, request.DisplayOrder);
 
         var banner = await appDbContext.Banners
             .SingleOrDefaultAsync(row => row.Id == id, cancellationToken)
@@ -298,7 +305,7 @@ internal sealed class AdminCmsService(
 
     private static void ValidateBanner(
         string title, string titleArabic, string body, string bodyArabic,
-        DateTime start, DateTime end, int displayOrder)
+        string? linkUrl, DateTime start, DateTime end, int displayOrder)
     {
         if (string.IsNullOrWhiteSpace(title) || title.Length > 256
             || string.IsNullOrWhiteSpace(titleArabic) || titleArabic.Length > 256)
@@ -315,6 +322,17 @@ internal sealed class AdminCmsService(
                 ErrorCodes.BannerInvalid, 400,
                 "Banner body (EN + AR) must be between 1 and 2000 characters.",
                 "يجب أن يتراوح طول النص (إنجليزي + عربي) بين 1 و 2000 حرف.");
+        }
+        // The link is optional, but it is a stored column like every field above
+        // it, so an over-long one is a 400 here rather than a truncation failure
+        // inside SaveChanges. The Excel importer maps the same cell into the same
+        // request, so it is covered by the one check.
+        if (linkUrl is { Length: > BannerLinkUrlMaxLength })
+        {
+            throw new ApiException(
+                ErrorCodes.BannerInvalid, 400,
+                $"Banner link URL must be {BannerLinkUrlMaxLength} characters or fewer.",
+                $"يجب ألا يتجاوز رابط البانر {BannerLinkUrlMaxLength} حرفاً.");
         }
         if (end <= start)
         {

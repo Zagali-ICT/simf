@@ -699,16 +699,24 @@ internal sealed class HallAttendanceService(
 
     /// <summary>The currently-present count against the session's effective
     /// physical capacity (the session <c>CapacityOverride</c>, else the hall
-    /// <c>Capacity</c>), plus whether that arrival would exceed it. A capacity of 0
-    /// means "no limit configured" and never blocks (<c>IsOver</c> = false). The
-    /// open-row count is intentionally per-session (single-source attendance is a
+    /// <c>Capacity</c>), plus whether that arrival would exceed it.
+    ///
+    /// <para>A capacity of 0 means the room is CLOSED, not "no limit configured":
+    /// it blocks, exactly as the other two surfaces that read the same number
+    /// already do — the public seat summary reports 0 available and refuses to
+    /// offer a seat, and the booking hold rejects the very first request. This door
+    /// used to be the lone dissenter and let an unlimited crowd into a session the
+    /// same configuration had closed everywhere else. An unlimited session is an
+    /// override of null over a hall with a real capacity, never a zero.</para>
+    ///
+    /// <para>The open-row count is intentionally per-session (single-source attendance is a
     /// per-session model that relies on the no-overlap booking invariant — a future
     /// overlapping-session feature must revisit this bound). There is no DB
     /// constraint on the attendance row count, so FR-CHK-004 runs this count inside
     /// the enforcing path's SERIALIZABLE transaction — read on its own (the advisory
     /// gate-door path) it is a point-in-time snapshot, not a guarantee. The caller
     /// enforces (hard 409) or warns (advisory gate-door path) per
-    /// <c>enforceCapacity</c>.</summary>
+    /// <c>enforceCapacity</c>.</para></summary>
     private async Task<(int Present, int Cap, bool IsOver)> HallCapacityStateAsync(
         Guid sessionId, CancellationToken cancellationToken)
     {
@@ -716,7 +724,8 @@ internal sealed class HallAttendanceService(
             .Where(s => s.Id == sessionId)
             .Select(s => s.CapacityOverride ?? s.Hall!.Capacity)
             .SingleAsync(cancellationToken);
-        if (cap <= 0) { return (0, 0, false); }
+        // Closed, not unlimited — no counting needed, nobody is getting in.
+        if (cap <= 0) { return (0, 0, true); }
 
         var present = await appDbContext.HallAttendances
             .Where(a => a.SessionId == sessionId && a.Leave == null)

@@ -94,6 +94,35 @@ public sealed class DelegationMeetingExpiryWorkerTests : IClassFixture<SimfApiFa
     }
 
     [Fact]
+    public async Task Revert_clears_the_confirmation_stamp_as_well_as_the_slot()
+    {
+        // The revert cleared the slot and the response but left ConfirmedAt /
+        // ConfirmedByUserId behind, so a row handed back to the Pending queue still
+        // carried a confirmation and read as accepted wherever those fields are shown.
+        var now = SimfClock.Now;
+        var requestId = await SeedBoundAwaitingRequestAsync(
+            slotStart: now.AddDays(3), tokenExpires: now.AddHours(-1), tokenUsed: false);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            var row = await db.DelegationMeetingRequests.SingleAsync(r => r.Id == requestId);
+            row.ConfirmedAt = now.AddHours(-2);
+            row.ConfirmedByUserId = Guid.NewGuid();
+            await db.SaveChangesAsync();
+        }
+
+        Assert.Equal(1, await RunScanAsync(now));
+
+        using var verify = _factory.Services.CreateScope();
+        var verifyDb = verify.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var req = await verifyDb.DelegationMeetingRequests.SingleAsync(r => r.Id == requestId);
+        Assert.Equal(MeetingRequestStatus.Pending, req.Status);
+        Assert.Null(req.ConfirmedAt);
+        Assert.Null(req.ConfirmedByUserId);
+    }
+
+    [Fact]
     public async Task Leaves_decided_delegation_meetings_alone()
     {
         var now = SimfClock.Now;
