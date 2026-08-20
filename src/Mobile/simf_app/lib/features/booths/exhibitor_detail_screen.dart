@@ -80,13 +80,6 @@ class ExhibitorDetailScreen extends ConsumerWidget {
                 AssetKind.exhibitorLogo,
                 booth.exhibitorId!,
               ),
-        fallbackUrl: booth.exhibitorContactId == null
-            ? null
-            : AssetUrls.image(
-                baseUrl,
-                AssetKind.companyLogo,
-                booth.exhibitorContactId!,
-              ),
         initials: entityInitials(name),
         name: name,
       ),

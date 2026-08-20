@@ -78,7 +78,6 @@ countryName
 countryNameAr
 countryNameArabic
 countryNameEn
-coverImageRelativePath
 createdAt
 currentYear
 data
@@ -156,7 +155,6 @@ highContrast
 id
 idempotencyKey
 identity
-imageRelativePath
 imageUrl
 instagram
 interestIds

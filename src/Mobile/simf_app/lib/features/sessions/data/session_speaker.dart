@@ -4,8 +4,9 @@ import 'package:simf_app/features/sessions/data/session_enums.dart';
 
 /// One speaker card carried on a cached session — mirrors
 /// `SIMF.Contracts.Programme.PublicSessionSpeaker`. The country **flag** is
-/// rendered from [countryId] (the names are the label/fallback) and the
-/// **avatar** from [photoRelativePath]; all four are nullable + append-only
+/// rendered from [countryId] (the names are the label/fallback); the **avatar**
+/// URL is built from the speaker id via `AssetUrls.image`, not from any path on
+/// the wire. The remaining fields are nullable + append-only
 /// (D-271). Decoded here so the cached programme feeds the session detail
 /// (Page_017) with no extra fetch — the Sessions **list** row itself does not
 /// render speakers (the mockup row is time/index/title/description, Page_016
@@ -23,7 +24,6 @@ class SessionSpeaker {
     this.countryId,
     this.countryNameEn,
     this.countryNameAr,
-    this.photoRelativePath,
   });
 
   factory SessionSpeaker.fromJson(Map<String, dynamic> json) => SessionSpeaker(
@@ -37,7 +37,6 @@ class SessionSpeaker {
         countryId: (json['countryId'] as num?)?.toInt(),
         countryNameEn: json['countryNameEn'] as String?,
         countryNameAr: json['countryNameAr'] as String?,
-        photoRelativePath: json['photoRelativePath'] as String?,
       );
 
   final String id;
@@ -50,7 +49,6 @@ class SessionSpeaker {
   final int? countryId;
   final String? countryNameEn;
   final String? countryNameAr;
-  final String? photoRelativePath;
 
   String localizedName({required bool isArabic}) =>
       pickLocalized(nameArabic, name, isArabic: isArabic);

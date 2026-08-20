@@ -14,7 +14,6 @@ class NewsListItem {
     required this.publishedAt,
     this.excerpt,
     this.excerptArabic,
-    this.imageRelativePath,
   });
 
   factory NewsListItem.fromJson(Map<String, dynamic> json) => NewsListItem(
@@ -26,7 +25,6 @@ class NewsListItem {
         publishedAt: _utc(json['publishedAt']),
         excerpt: json['excerpt'] as String?,
         excerptArabic: json['excerptArabic'] as String?,
-        imageRelativePath: json['imageRelativePath'] as String?,
       );
 
   final String id;
@@ -37,7 +35,6 @@ class NewsListItem {
   final DateTime publishedAt;
   final String? excerpt;
   final String? excerptArabic;
-  final String? imageRelativePath;
 
   String localizedTitle({required bool isArabic}) =>
       pickLocalized(titleArabic, title, isArabic: isArabic);
@@ -66,7 +63,6 @@ class NewsArticle {
     required this.category,
     required this.categoryArabic,
     required this.publishedAt,
-    this.imageRelativePath,
   });
 
   factory NewsArticle.fromJson(Map<String, dynamic> json) => NewsArticle(
@@ -78,7 +74,6 @@ class NewsArticle {
         category: json['category'] as String? ?? '',
         categoryArabic: json['categoryArabic'] as String? ?? '',
         publishedAt: _utc(json['publishedAt']),
-        imageRelativePath: json['imageRelativePath'] as String?,
       );
 
   final String id;
@@ -89,7 +84,6 @@ class NewsArticle {
   final String category;
   final String categoryArabic;
   final DateTime publishedAt;
-  final String? imageRelativePath;
 
   String localizedTitle({required bool isArabic}) =>
       pickLocalized(titleArabic, title, isArabic: isArabic);

@@ -5,9 +5,11 @@ import 'package:simf_app/core/utils/saudi_time.dart';
 
 /// One row in the public speakers list — mirrors
 /// `SIMF.Contracts.Programme.PublicSpeakerSummary` (`GET /app/speakers`). The
-/// card shows the avatar (from [photoRelativePath]), the bilingual name, the
-/// rank
-/// line and the country (flag from [countryId] — interim renders the name).
+/// card shows the avatar, the bilingual name, the rank line and the country
+/// (flag from [countryId] — interim renders the name). The avatar URL is built
+/// from the speaker id via `AssetUrls.image`, never from a path on the wire:
+/// the server's `photoRelativePath` is permanently null now and was decoded
+/// here, unread, until it was removed.
 @immutable
 class SpeakerSummary {
   const SpeakerSummary({
@@ -20,7 +22,6 @@ class SpeakerSummary {
     this.countryId,
     this.countryNameEn,
     this.countryNameAr,
-    this.photoRelativePath,
   });
 
   factory SpeakerSummary.fromJson(Map<String, dynamic> json) => SpeakerSummary(
@@ -33,7 +34,6 @@ class SpeakerSummary {
         countryId: (json['countryId'] as num?)?.toInt(),
         countryNameEn: json['countryNameEn'] as String?,
         countryNameAr: json['countryNameAr'] as String?,
-        photoRelativePath: json['photoRelativePath'] as String?,
       );
 
   final String id;
@@ -45,7 +45,6 @@ class SpeakerSummary {
   final int? countryId;
   final String? countryNameEn;
   final String? countryNameAr;
-  final String? photoRelativePath;
 
   String localizedName({required bool isArabic}) =>
       pickLocalized(nameArabic, name, isArabic: isArabic);
@@ -168,7 +167,6 @@ class SpeakerDetail {
     this.linkedInUrl,
     this.xUrl,
     this.websiteUrl,
-    this.photoRelativePath,
   });
 
   factory SpeakerDetail.fromJson(Map<String, dynamic> json) => SpeakerDetail(
@@ -194,7 +192,6 @@ class SpeakerDetail {
         linkedInUrl: json['linkedInUrl'] as String?,
         xUrl: json['xUrl'] as String?,
         websiteUrl: json['websiteUrl'] as String?,
-        photoRelativePath: json['photoRelativePath'] as String?,
         displayOrder: (json['displayOrder'] as num?)?.toInt() ?? 0,
         sessions: (json['sessions'] as List? ?? const <dynamic>[])
             .whereType<Map<dynamic, dynamic>>()
@@ -227,7 +224,6 @@ class SpeakerDetail {
   /// Personal/professional website (D-544) — a 4th opted-in link, gated by
   /// [allowsDataSharing] like the social URLs. Wire key `websiteUrl`.
   final String? websiteUrl;
-  final String? photoRelativePath;
   final int displayOrder;
   final List<SpeakerSession> sessions;
 

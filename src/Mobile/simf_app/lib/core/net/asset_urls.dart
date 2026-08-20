@@ -20,7 +20,6 @@ library;
 enum AssetKind {
   banner('Banner'),
   boothLogo('BoothLogo'),
-  companyLogo('CompanyLogo'),
   exhibitorLogo('ExhibitorLogo'),
   mediaPartnerLogo('MediaPartnerLogo'),
   newsImage('NewsImage'),
