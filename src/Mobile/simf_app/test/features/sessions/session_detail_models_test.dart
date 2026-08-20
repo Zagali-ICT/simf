@@ -55,7 +55,6 @@ void main() {
       expect(speaker.role, SessionSpeakerRole.host);
       expect(speaker.countryId, 682);
       expect(speaker.localizedCountry(isArabic: true), 'السعودية');
-      expect(speaker.photoRelativePath, '/media/sp1.jpg');
     });
 
     test('optional fields decode to null; speakers default to empty', () {

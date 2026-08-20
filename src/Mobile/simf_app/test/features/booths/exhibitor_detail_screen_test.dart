@@ -99,21 +99,20 @@ void main() {
       );
     });
 
-    testWidgets('falls back to the legacy CompanyLogo when no own logo id',
+    testWidgets('shows initials when the exhibitor has no own logo id',
         (tester) async {
       await _pump(tester, _legacyOnly);
       final urls = _networkImageUrls(tester);
-      // No exhibitorId → the tile uses the legacy Contact CompanyLogo route so
-      // an exhibitor that has not re-uploaded its own logo still shows its
-      // logo, and no ExhibitorLogo route is wired at all.
-      expect(
-        urls,
-        contains('http://test.local/api/v1/app/assets/CompanyLogo/c1/image'),
-      );
-      expect(
-        urls.any((u) => u.contains('/ExhibitorLogo/')),
-        isFalse,
-      );
+      // There is no logo to request. This case used to fall back to the Contact
+      // CompanyLogo route, which D-929 removed server-side - its own comment
+      // reads "its Contact owner table was removed, so the category could never
+      // resolve" - so the fallback had been 404ing silently ever since. The
+      // asset endpoint answers an unknown category with the same 404 it uses
+      // for "nothing uploaded", which is why nothing reported it. The tile now
+      // goes straight to initials instead of paying for a request that cannot
+      // succeed.
+      expect(urls.any((u) => u.contains('/CompanyLogo/')), isFalse);
+      expect(urls.any((u) => u.contains('/ExhibitorLogo/')), isFalse);
     });
   });
 }

@@ -108,18 +108,28 @@ void main() {
 
       expect(speaker.logoUrl(base), '$base/app/assets/SpeakerPhoto/s1/image');
       expect(sponsor.logoUrl(base), '$base/app/assets/SponsorLogo/p1/image');
-      expect(booth.logoUrl(base), '$base/app/assets/CompanyLogo/c9/image');
+      // A booth's logo is owned by the BOOTH, keyed on its own id. It used to
+      // be built from logoContactId against CompanyLogo, a category D-929
+      // removed server-side, so it could only ever 404.
+      expect(booth.logoUrl(base), '$base/app/assets/BoothLogo/b1/image');
       expect(person.logoUrl(base), isNull);
       // No uploaded logo → no URL (the cell shows initials).
       expect(noLogoSpeaker.logoUrl(base), isNull);
-      // Booth with no exhibitor contact → no company logo.
+      // A booth carries no presence sentinel on this wire (the directory sends
+      // null for both logo fields on the booth branch), so there is nothing to
+      // gate on and the URL is always built. A booth with no uploaded logo 404s
+      // and the cell falls back to initials, which is the documented contract
+      // of the asset route.
       const boothNoContact = PartnerDirectoryEntry(
         kind: 'booth',
         id: 'b2',
         name: 'B',
         nameArabic: 'ب',
       );
-      expect(boothNoContact.logoUrl(base), isNull);
+      expect(
+        boothNoContact.logoUrl(base),
+        '$base/app/assets/BoothLogo/b2/image',
+      );
     });
   });
 }
