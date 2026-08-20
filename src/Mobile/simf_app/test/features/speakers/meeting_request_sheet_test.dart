@@ -40,6 +40,7 @@ class _FakeRepo implements SpeakersRepository {
     this.failSlots = false,
     this.crashSlots = false,
     this.crashTargets = false,
+    this.crashSubmit = false,
     this.failSubmitStatus,
     this.failSubmitCode = 'x',
     this.failSubmitMessage = 'fail',
@@ -63,6 +64,10 @@ class _FakeRepo implements SpeakersRepository {
   // The same un-wrapped failure on the bilateral roster fetch, which the sheet
   // runs once from initState and can never re-run.
   final bool crashTargets;
+
+  // The same un-wrapped failure on SUBMIT — the one path where the user has
+  // already committed real input, so saying nothing costs the most.
+  final bool crashSubmit;
 
   // G3 — how many times the availability fetch was attempted. Without this a
   // no-op Retry button would satisfy a test that only checks the button
@@ -134,6 +139,9 @@ class _FakeRepo implements SpeakersRepository {
     DateTime? slotStart,
     DateTime? slotEnd,
   }) async {
+    if (crashSubmit) {
+      throw PlatformException(code: 'keystore_unavailable');
+    }
     if (failSubmitStatus != null) {
       throw ApiFailure(
         code: failSubmitCode,
@@ -498,6 +506,30 @@ void main() {
         find.text('This speaker is not accepting meeting requests'),
         findsNothing,
       );
+    });
+
+    testWidgets(
+        'a submit that throws a NON-ApiFailure says so inline instead of '
+        'handing the button back in silence', (tester) async {
+      // The `on ApiFailure` branch never sees the keystore PlatformException
+      // the client raises on its 401-refresh path, so the finally re-enabled
+      // the button with _error still null: the send read as a no-op — the
+      // button came back, nothing was said, and nothing was sent. The error
+      // also escaped to the zone, which is why this is an `on Object` branch
+      // and not a widened finally (the same reasoning as _loadSlots).
+      final repo = _FakeRepo(slots: _twoDaySlots, crashSubmit: true);
+      await _pump(tester, speakerId: 's1', repo: repo);
+
+      await _submitWithFirstSlot(tester);
+
+      expect(
+        find.text('Could not send the request. Try again.'),
+        findsOneWidget,
+      );
+      // …and the sheet is still here with its send button back, so the user
+      // can act on what they were just told.
+      expect(find.text('Send request'), findsOneWidget);
+      expect(find.text('Loading…'), findsNothing);
     });
 
     testWidgets(

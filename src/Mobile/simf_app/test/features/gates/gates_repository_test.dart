@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 import 'package:simf_app/features/gates/data/gate_models.dart';
 import 'package:simf_app/features/gates/data/gate_offline_config.dart';
 import 'package:simf_app/features/gates/data/gate_scan_queue.dart';
@@ -24,8 +25,9 @@ class _StubGates extends GatesRepository {
   _StubGates(
     super._client,
     super._queue,
-    super._offlineConfig,
-  );
+    super._offlineConfig, {
+    super.now,
+  });
 
   /// When set, the next `recordScan` throws it; otherwise it returns
   /// `successResult`. A network failure is `ApiFailure(httpStatus: null)`.
@@ -54,16 +56,27 @@ class _StubGates extends GatesRepository {
   }
 }
 
-_StubGates _build() {
+/// The repository plus the very queue it writes to, for the tests that read the
+/// queued ITEM rather than just counting the backlog.
+({_StubGates repo, GateScanQueue queue}) _buildWithQueue({
+  DateTime Function()? now,
+}) {
   // One prefs instance for both stores: the queue and the D-820 offline-config
   // cache live side by side on a real device too.
   final prefs = FakePrefs();
-  return _StubGates(
-    _client,
-    GateScanQueue(prefs),
-    GateOfflineConfigCache(prefs),
+  final queue = GateScanQueue(prefs);
+  return (
+    repo: _StubGates(
+      _client,
+      queue,
+      GateOfflineConfigCache(prefs),
+      now: now ?? saudiNow,
+    ),
+    queue: queue,
   );
 }
+
+_StubGates _build() => _buildWithQueue().repo;
 
 ApiFailure _network() =>
     const ApiFailure(code: ApiErrorCodes.clientNetwork, message: 'x');
@@ -108,6 +121,38 @@ void main() {
         );
         expect(repo.pendingCount(), 0, reason: 'status $status must not queue');
       }
+    });
+  });
+
+  group('the queued-at stamp', () {
+    test('is the injected Saudi instant, not the device clock', () async {
+      final built = _buildWithQueue(now: () => DateTime(2026, 11, 23, 9, 30));
+      built.repo.nextFailure = _network();
+      await _record(built.repo);
+
+      // `formatWire` keeps the wall-clock reading and drops the zone, so this
+      // string is what the server will record as the arrival time. Pinned
+      // exactly: the stamp must be the clock the repository was handed, with
+      // nothing of the device's own zone in it.
+      expect(built.queue.all().single.queuedAtIso, '2026-11-23T09:30:00.000');
+    });
+
+    test('defaults to the Saudi wall clock', () async {
+      final built = _buildWithQueue();
+      built.repo.nextFailure = _network();
+
+      final before = saudiNow();
+      await _record(built.repo);
+      final after = saudiNow();
+
+      // Bracketed, because the default reads a live clock. Honest limit: on a
+      // +03:00 machine `saudiNow()` and `DateTime.now()` agree, so this cannot
+      // tell them apart — the injected test above is the pin. What it does
+      // catch anywhere is a default that drifts OFF the Saudi wall clock, e.g.
+      // a `toUtc()` or a `toLocal()` creeping into the stamp.
+      final stamped = DateTime.parse(built.queue.all().single.queuedAtIso);
+      expect(stamped.isBefore(before), isFalse);
+      expect(stamped.isAfter(after), isFalse);
     });
   });
 

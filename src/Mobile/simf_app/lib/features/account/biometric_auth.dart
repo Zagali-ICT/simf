@@ -25,14 +25,20 @@ export 'package:simf_app/features/account/widgets/face_id_toggle_tile.dart';
 /// A top-level function (not a [BiometricAuth] method) so test fakes needn't
 /// implement it.
 ///
-/// [lockedOut] is the same seam for a lockout: the recovery route out of one is
-/// caller-specific, so a caller with no password form to point at (the enrol
-/// step-up, where the user is already signed in) passes its own copy. The
-/// default is the sign-in screen's.
+/// [lockedOut] and [unavailable] are the seams for the two outcomes whose
+/// recovery route is caller-specific: both default copies send the user to the
+/// password form, which only exists on the sign-in screen. A caller with no
+/// password form to point at (the enrol step-up, where the user is already
+/// signed in) passes its own copy. The defaults are the sign-in screen's.
+///
+/// [LocalAuthOutcome.noDeviceCredential] takes no seam on purpose — its copy
+/// is device-setup advice ("set a screen lock"), which is equally actionable
+/// from either caller.
 String? localizedBiometricError(
   AppL10n l10n,
   LocalAuthOutcome outcome, {
   String? lockedOut,
+  String? unavailable,
 }) {
   switch (outcome) {
     case LocalAuthOutcome.lockedOut:
@@ -40,7 +46,7 @@ String? localizedBiometricError(
     case LocalAuthOutcome.noDeviceCredential:
       return l10n.biometricNoDeviceCredential;
     case LocalAuthOutcome.unavailable:
-      return l10n.biometricUnavailable;
+      return unavailable ?? l10n.biometricUnavailable;
     case LocalAuthOutcome.cancelled:
     case LocalAuthOutcome.success:
       return null;
@@ -95,9 +101,9 @@ class BiometricAuth {
   /// reversed the earlier device-credential posture recorded in D-738, and the
   /// commit that did it says so ("enforce biometric-only authentication").
   ///
-  /// So no lockout copy may name the PIN — this flag guarantees the sheet will
+  /// So no failure copy may name the PIN — this flag guarantees the sheet will
   /// not offer one. What the copy points at instead differs per caller, which
-  /// is why [localizedBiometricError] takes it as an argument.
+  /// is why [localizedBiometricError] takes those messages as arguments.
   Future<LocalAuthOutcome> confirmDeviceIdentity(String reason) async {
     try {
       final ok = await _localAuth.authenticate(

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/speakers/meeting_request_validation.dart';
 import 'package:simf_app/features/speakers/widgets/meeting_send_button.dart';
 import 'package:simf_app/features/speakers/widgets/meeting_sheet_fields.dart';
 import 'package:simf_app/features/speakers/widgets/meeting_slot_section.dart';
@@ -233,27 +234,18 @@ class _MeetingRequestFormState<T> extends State<MeetingRequestForm<T>> {
   Future<void> _submit() async {
     final l10n = widget.l10n;
     final target = _target;
-    if (target == null) {
-      setState(() => _error = widget.noTargetSelectedError);
-      return;
-    }
     final subject = _subject.text.trim();
-    if (subject.isEmpty) {
-      setState(() => _error = l10n.meetingRequestInvalid);
-      return;
-    }
-    final extraError = widget.validateExtra?.call();
-    if (extraError != null) {
-      setState(() => _error = extraError);
-      return;
-    }
-    // G3 — a slot is now ALWAYS required. The subject-only bypass is gone: the
-    // server 409s a request against a target with no free slot, so sending one
-    // could only ever fail. The send button is disabled in that state; this is
-    // the guard for the picked-a-day-but-not-a-time case.
     final slot = _selectedSlot;
-    if (slot == null) {
-      setState(() => _error = l10n.meetingPickDateTime);
+    final invalid = meetingRequestError(
+      l10n: l10n,
+      hasTarget: target != null,
+      noTargetSelectedError: widget.noTargetSelectedError,
+      subject: subject,
+      validateExtra: widget.validateExtra,
+      hasSlot: slot != null,
+    );
+    if (invalid != null) {
+      setState(() => _error = invalid);
       return;
     }
     // R0 — clear the inline error and submit. Feedback stays inside the sheet.
@@ -263,11 +255,13 @@ class _MeetingRequestFormState<T> extends State<MeetingRequestForm<T>> {
     });
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
+    var popped = false;
     try {
       await widget.submit(
-        target: target,
+        // `as T`, not `!` — T itself may be a nullable type.
+        target: target as T,
         subject: subject,
-        slotStart: slot.start,
+        slotStart: slot!.start,
         slotEnd: slot.end,
       );
       if (!mounted) {
@@ -275,17 +269,27 @@ class _MeetingRequestFormState<T> extends State<MeetingRequestForm<T>> {
       }
       // Success pops the sheet first, so this toast is visible (not occluded).
       navigator.pop();
+      popped = true;
       messenger.showSnackBar(SnackBar(content: Text(l10n.meetingRequestSent)));
     } on ApiFailure catch (failure) {
       if (!mounted) {
         return;
       }
       setState(() => _error = widget.failureText(failure));
+    } on Object {
+      // Wider than ApiFailure for the same reason as _loadSlots: a keystore
+      // error on the 401-refresh escapes un-wrapped. With only the finally the
+      // button came back saying nothing, and the error escaped to the zone.
+      if (!mounted) {
+        return;
+      }
+      setState(() => _error = l10n.meetingRequestFailed);
     } finally {
-      // submit() can throw beyond ApiFailure (a token-refresh / keystore error
-      // on the 401 path escapes the client un-wrapped), and without this the
-      // send button would stay disabled for the life of the sheet.
-      if (mounted) {
+      // Only for a sheet that is STAYING. `mounted` does NOT mean "already
+      // gone": pop() just reverses the route's animation and the State lives
+      // out the 200ms exit, so re-enabling here flicks the button back to life
+      // on a sheet sliding away (as the three sibling sheets found).
+      if (!popped && mounted) {
         setState(() => _submitting = false);
       }
     }

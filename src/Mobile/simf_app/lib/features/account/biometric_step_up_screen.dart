@@ -136,13 +136,14 @@ class _BiometricStepUpScreenState extends ConsumerState<BiometricStepUpScreen> {
     if (outcome != LocalAuthOutcome.success) {
       setState(() {
         _verifying = false;
-        // Both escape routes are enrol-specific: the user is already signed in
-        // here, so neither a cancel nor a lockout can be answered with the
-        // sign-in screen's "use your password" advice.
+        // Every escape route here is enrol-specific: the user is already signed
+        // in, so no cancel, lockout or platform failure can be answered with
+        // the sign-in screen's "use your password" advice.
         _error = localizedBiometricError(
               l10n,
               outcome,
               lockedOut: l10n.biometricLockedOutEnrol,
+              unavailable: l10n.biometricUnavailableEnrol,
             ) ??
             l10n.biometricLocalConfirmCancelled;
       });

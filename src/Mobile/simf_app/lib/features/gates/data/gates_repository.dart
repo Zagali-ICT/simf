@@ -16,11 +16,22 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// (`GATE_OPERATOR_NOT_ASSIGNED`). The screen renders that gracefully; the
 /// grant pipeline is flagged for the owner (D-406).
 class GatesRepository {
-  GatesRepository(this._client, this._queue, this._offlineConfig);
+  GatesRepository(
+    this._client,
+    this._queue,
+    this._offlineConfig, {
+    DateTime Function() now = saudiNow,
+  }) : _now = now;
 
   final SimfApiClient _client;
   final GateScanQueue _queue;
   final GateOfflineConfigCache _offlineConfig;
+
+  /// The clock the offline queue stamps a scan with. Injectable so a test can
+  /// pin the stamped value exactly — a stamp read off the live clock can only
+  /// be asserted loosely, and on a +03:00 machine that assertion cannot tell
+  /// the Saudi clock from the device's. Production always gets [saudiNow].
+  final DateTime Function() _now;
 
   /// `GET /app/gates/my-assignments` → the gates this operator may work.
   Future<List<OperatorGate>> myAssignments() {
@@ -111,7 +122,13 @@ class GatesRepository {
           qr: qr,
           idempotencyKey: idempotencyKey,
           direction: direction,
-          queuedAtIso: formatWire(DateTime.now()),
+          // D-219 / D-770 — the Saudi wall clock, never the device's.
+          // `formatWire` drops the zone marker and keeps the wall-clock
+          // reading, so a `DateTime.now()` here would label a tablet's own
+          // local time as Saudi time. This stamp is persisted and uploaded as
+          // the moment the attendee passed the gate, and nothing downstream
+          // can tell it was read off the wrong clock.
+          queuedAtIso: formatWire(_now()),
         ),
       );
       return null;
