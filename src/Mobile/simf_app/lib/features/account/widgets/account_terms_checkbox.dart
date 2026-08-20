@@ -42,7 +42,7 @@ class AccountTermsCheckbox extends StatelessWidget {
         Row(
           children: <Widget>[
             SizedBox(
-              width: SimfTokens.accountTermsCheckboxWidthMd,
+              width: SimfTokens.accountTermsCheckboxBoxWidth,
               height: SimfTokens.accountTermsCheckboxHeightMd,
               child: Checkbox(
                 value: accepted,
@@ -50,7 +50,7 @@ class AccountTermsCheckbox extends StatelessWidget {
                 activeColor: SimfTokens.accent,
                 side: BorderSide(
                   color: showError ? SimfTokens.danger : SimfTokens.greyText,
-                  width: SimfTokens.accountTermsCheckboxWidthSm,
+                  width: SimfTokens.checkboxBorderWidth,
                 ),
                 shape: const RoundedRectangleBorder(
                   borderRadius: SimfTokens.borderRadiusSmall,

@@ -47,17 +47,19 @@ class _CapturedVisitorSheetState extends ConsumerState<CapturedVisitorSheet> {
         mimeType: 'text/vcard',
         sharePositionOrigin: origin,
       );
-      if (mounted) {
-        setState(() => _busy = false);
-      }
     } on ApiFailure {
       if (!mounted) {
         return;
       }
-      setState(() => _busy = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.shareFailed)),
       );
+    } finally {
+      // A token refresh on the 401 path can throw a keystore PlatformException,
+      // which is not an ApiFailure — without this the button stays disabled.
+      if (mounted) {
+        setState(() => _busy = false);
+      }
     }
   }
 
@@ -86,10 +88,15 @@ class _CapturedVisitorSheetState extends ConsumerState<CapturedVisitorSheet> {
       if (!mounted) {
         return;
       }
-      setState(() => _busy = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.scanVisitorError)),
       );
+    } finally {
+      // Same 401-refresh escape as above; the mounted guard covers the success
+      // path, where the sheet has already popped.
+      if (mounted) {
+        setState(() => _busy = false);
+      }
     }
   }
 

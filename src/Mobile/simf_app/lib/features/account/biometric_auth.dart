@@ -76,12 +76,22 @@ class BiometricAuth {
 
   AuthController get _auth => _ref.read(authControllerProvider.notifier);
 
-  /// Runs the OS device-credential / biometric sheet ([reason] shown on it) and
-  /// maps the result to a [LocalAuthOutcome]. `biometricOnly` is false so the
-  /// sheet offers the device PIN/pattern/passcode as a fallback (the banking
-  /// standard, and what un-bricks the post-lockout path). Used by BOTH the
-  /// enrolment confirm and the sign-in prompt so the mapping lives in one
-  /// place.
+  /// Runs the OS biometric sheet ([reason] shown on it) and maps the result to
+  /// a [LocalAuthOutcome]. Used by BOTH the enrolment confirm and the sign-in
+  /// prompt so the mapping lives in one place.
+  ///
+  /// `biometricOnly` is TRUE, so the sheet offers no device-PIN fallback: a
+  /// face or fingerprint is the only way through it. That is deliberate — it
+  /// reversed the earlier device-credential posture recorded in D-738, and the
+  /// commit that did it says so ("enforce biometric-only authentication").
+  ///
+  /// This comment claimed the opposite until 2026-08-20, because that commit
+  /// changed the argument and left the paragraph describing it, and the
+  /// `biometricLockedOut` string, both stating the old behaviour. The string
+  /// mattered more than the comment: after five failed attempts it told the
+  /// user to fall back to their device PIN, which this flag guarantees the OS
+  /// sheet will not offer. The escape from a lockout is the password form on
+  /// the same sign-in screen, and the copy now says that instead.
   Future<LocalAuthOutcome> confirmDeviceIdentity(String reason) async {
     try {
       final ok = await _localAuth.authenticate(

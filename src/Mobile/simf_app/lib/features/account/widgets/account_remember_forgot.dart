@@ -47,7 +47,7 @@ class AccountRememberForgot extends StatelessWidget {
                   activeColor: SimfTokens.accent,
                   side: const BorderSide(
                     color: SimfTokens.greyText,
-                    width: SimfTokens.accountRememberForgotWidthSm,
+                    width: SimfTokens.checkboxBorderWidth,
                   ),
                   shape: const RoundedRectangleBorder(
                     borderRadius: SimfTokens.borderRadiusSmall,
@@ -55,7 +55,7 @@ class AccountRememberForgot extends StatelessWidget {
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
               ),
-              const SizedBox(width: SimfTokens.accountRememberForgotWidthMd),
+              const SizedBox(width: SimfTokens.accountRememberForgotGap),
               Flexible(
                 child: Text(
                   rememberLabel,

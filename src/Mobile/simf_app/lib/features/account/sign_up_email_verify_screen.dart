@@ -227,7 +227,7 @@ class _SignUpEmailVerifyScreenState
                   ),
                 ),
                 const SizedBox(
-                  width: SimfTokens.signUpEmailVerifyScreenWidth,
+                  width: SimfTokens.gap6,
                 ),
                 Text(
                   _formatCooldown(_cooldown),

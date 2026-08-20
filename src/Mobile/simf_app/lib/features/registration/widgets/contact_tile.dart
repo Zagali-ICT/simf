@@ -20,7 +20,7 @@ class ContactTile extends StatelessWidget {
         decoration: BoxDecoration(
           border: Border.all(
               color: SimfTokens.tileBorderNavy,
-              width: SimfTokens.contactTileWidth,),
+              width: SimfTokens.contactTileBorderWidth,),
           borderRadius: BorderRadius.circular(SimfTokens.radius10),
         ),
         child: Icon(icon,

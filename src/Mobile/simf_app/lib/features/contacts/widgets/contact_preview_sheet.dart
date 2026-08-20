@@ -49,7 +49,6 @@ class _ContactPreviewSheetState extends ConsumerState<ContactPreviewSheet> {
       if (!mounted) {
         return;
       }
-      setState(() => _saving = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -57,6 +56,12 @@ class _ContactPreviewSheetState extends ConsumerState<ContactPreviewSheet> {
           ),
         ),
       );
+    } finally {
+      // A token refresh on the 401 path can throw a keystore PlatformException,
+      // which is not an ApiFailure; without this the button never re-enables.
+      if (mounted) {
+        setState(() => _saving = false);
+      }
     }
   }
 

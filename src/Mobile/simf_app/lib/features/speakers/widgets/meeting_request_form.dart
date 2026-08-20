@@ -269,10 +269,14 @@ class _MeetingRequestFormState<T> extends State<MeetingRequestForm<T>> {
       if (!mounted) {
         return;
       }
-      setState(() {
-        _submitting = false;
-        _error = widget.failureText(failure);
-      });
+      setState(() => _error = widget.failureText(failure));
+    } finally {
+      // submit() can throw beyond ApiFailure (a token-refresh / keystore error
+      // on the 401 path escapes the client un-wrapped), and without this the
+      // send button would stay disabled for the life of the sheet.
+      if (mounted) {
+        setState(() => _submitting = false);
+      }
     }
   }
 

@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/tokens.dart';
@@ -16,8 +15,8 @@ import 'package:simf_app/features/account/data/profile_repository.dart';
 import 'package:simf_app/features/account/data/region_repository.dart';
 import 'package:simf_app/features/account/data/sign_up_visitor_form.dart';
 import 'package:simf_app/features/account/data/sign_up_visitor_lookups.dart';
+import 'package:simf_app/features/account/sign_up_visitor_pickers.dart';
 import 'package:simf_app/features/account/sign_up_visitor_submit.dart';
-import 'package:simf_app/features/account/widgets/lookup_search_sheet.dart';
 import 'package:simf_app/features/account/widgets/sign_up_visitor_form_card.dart';
 import 'package:simf_app/features/account/widgets/sign_up_visitor_load_error.dart';
 import 'package:simf_app/features/account/widgets/sign_up_visitor_place_of_birth_field.dart';
@@ -131,17 +130,20 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         _initialOrganisations = data.organisations;
         _fields.applyProfile(data.profile, _form);
         _type.lock(_form);
-        _loading = false;
       });
     } on ApiFailure catch (failure) {
       if (!mounted) {
         return;
       }
       final l10n = AppL10n.of(context);
-      setState(() {
-        _loadError = failure.localizedMessage(l10n);
-        _loading = false;
-      });
+      setState(() => _loadError = failure.localizedMessage(l10n));
+    } finally {
+      // A token refresh on the 401 path can throw past ApiFailure (a keystore
+      // write failing), and clearing the flag only on the two known paths
+      // strands the screen on its spinner for good.
+      if (mounted) {
+        setState(() => _loading = false);
+      }
     }
   }
 
@@ -164,26 +166,29 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
 
   Future<void> _fetchProfileTypes() async {
     setState(_type.beginFetch);
-    final types = await fetchVisitorProfileTypes(
-      ref.read(profileRepositoryProvider),
-      isVisitor: _type.isVisitor,
-    );
-    if (!mounted) {
-      return;
+    List<ProfileTypeItem>? types;
+    try {
+      types = await fetchVisitorProfileTypes(
+        ref.read(profileRepositoryProvider),
+        isVisitor: _type.isVisitor,
+      );
+    } finally {
+      // Same reason as _load: anything thrown past ApiFailure would otherwise
+      // leave the picker spinning with no retry, which blocks Next for good.
+      // A null `types` is the failure state the retry hangs off.
+      if (mounted) {
+        setState(() => _type.endFetch(_form, types));
+      }
     }
-    setState(() => _type.endFetch(_form, types));
   }
 
   // ---- Pickers -------------------------------------------------------------
 
-  /// Opens the searchable country sheet and applies the pick — the document and
-  /// mobile fields are derived from it (D-373).
   Future<void> _pickNationality(AppL10n l10n) async {
-    final pickedCode = await showLookupSearchSheet(
-      context: context,
-      options: countryPickerOptions(_form.countries, isArabic: l10n.isArabic),
-      searchHint: l10n.searchCountryHint,
-      searchFieldKey: const ValueKey<String>('countrySearchField'),
+    final pickedCode = await pickVisitorNationality(
+      context,
+      countries: _form.countries,
+      l10n: l10n,
     );
     if (pickedCode == null || !mounted) {
       return;
@@ -192,14 +197,9 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   }
 
   Future<void> _pickDateOfBirth() async {
-    final now = DateTime.now();
-    final earliest = DateTime(now.year - 120);
-    final latest = DateTime(now.year - 18, now.month, now.day);
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _fields.dateOfBirth ?? latest,
-      firstDate: earliest,
-      lastDate: latest,
+    final picked = await pickVisitorDateOfBirth(
+      context,
+      current: _fields.dateOfBirth,
     );
     if (picked != null && mounted) {
       setState(() => _fields.dateOfBirth = picked);
@@ -211,19 +211,11 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   /// face-detection step here. Mandatory for every registrant; the Next gate
   /// reports a missing image.
   Future<void> _pickIdImage() async {
-    try {
-      final file = await ImagePicker().pickImage(source: ImageSource.gallery);
-      if (file == null) {
-        return;
-      }
-      final bytes = await file.readAsBytes();
-      if (!mounted) {
-        return;
-      }
-      setState(() => _fields.setIdImage(bytes, file.name));
-    } on Object catch (_) {
-      // The gallery is unavailable — the required-ID gate on Next reports it.
+    final image = await pickIdImageFromGallery();
+    if (image == null || !mounted) {
+      return;
     }
+    setState(() => _fields.setIdImage(image.bytes, image.name));
   }
 
   /// "Face photo" — the live face capture (→ the profile avatar). Owner
@@ -281,30 +273,36 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       _saving = true;
       _saveError = null;
     });
-    final result = await saveSignUpVisitorProfile(
-      repository: ref.read(profileRepositoryProvider),
-      form: _fields,
-      picks: _form,
-      l10n: l10n,
-      stillMounted: () => mounted,
-      onAvatarUploaded: () => ref.read(avatarBustProvider.notifier).bump(),
-    );
-    if (!mounted) {
-      return;
+    try {
+      final result = await saveSignUpVisitorProfile(
+        repository: ref.read(profileRepositoryProvider),
+        form: _fields,
+        picks: _form,
+        l10n: l10n,
+        stillMounted: () => mounted,
+        onAvatarUploaded: () => ref.read(avatarBustProvider.notifier).bump(),
+      );
+      if (!mounted) {
+        return;
+      }
+      setState(() => _saveError = result.message);
+      if (result.outcome != SignUpVisitorSaveOutcome.saved) {
+        return;
+      }
+      unawaited(
+        context.pushNamed(
+          RouteNames.signUpInterests,
+          extra: _fields.toDraft(_form),
+        ),
+      );
+    } finally {
+      // The save catches ApiFailure per step, but a token refresh on the 401
+      // path can still throw past it (a keystore write failing), and that left
+      // Next disabled for the rest of the session.
+      if (mounted) {
+        setState(() => _saving = false);
+      }
     }
-    setState(() {
-      _saving = false;
-      _saveError = result.message;
-    });
-    if (result.outcome != SignUpVisitorSaveOutcome.saved) {
-      return;
-    }
-    unawaited(
-      context.pushNamed(
-        RouteNames.signUpInterests,
-        extra: _fields.toDraft(_form),
-      ),
-    );
   }
 
   void _back() {

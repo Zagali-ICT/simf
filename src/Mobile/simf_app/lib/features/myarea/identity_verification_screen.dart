@@ -274,7 +274,7 @@ class _IdentityVerificationScreenState
       case LivenessPromptDirection.none:
         return const Text('😊',
             style: TextStyle(
-                fontSize: SimfTokens.identityVerificationScreenFontSize,),);
+                fontSize: SimfTokens.livenessEmojiSize,),);
       case LivenessPromptDirection.right:
         return const Icon(Icons.east,
             color: SimfTokens.accent,

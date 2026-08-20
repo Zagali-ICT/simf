@@ -40,17 +40,19 @@ class _SavedContactSheetState extends ConsumerState<SavedContactSheet> {
         mimeType: 'text/vcard',
         sharePositionOrigin: origin,
       );
-      if (mounted) {
-        setState(() => _busy = false);
-      }
     } on ApiFailure {
       if (!mounted) {
         return;
       }
-      setState(() => _busy = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.shareFailed)),
       );
+    } finally {
+      // A token refresh on the 401 path can throw a keystore PlatformException,
+      // which is not an ApiFailure — without this the button never re-enables.
+      if (mounted) {
+        setState(() => _busy = false);
+      }
     }
   }
 
@@ -77,10 +79,15 @@ class _SavedContactSheetState extends ConsumerState<SavedContactSheet> {
       if (!mounted) {
         return;
       }
-      setState(() => _busy = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.myContactsError)),
       );
+    } finally {
+      // Same 401-refresh escape as above; the mounted guard covers the success
+      // path, where the sheet has just been popped.
+      if (mounted) {
+        setState(() => _busy = false);
+      }
     }
   }
 

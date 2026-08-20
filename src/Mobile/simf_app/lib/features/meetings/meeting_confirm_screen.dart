@@ -60,20 +60,25 @@ class _MeetingConfirmScreenState extends ConsumerState<MeetingConfirmScreen> {
       setState(() {
         _outcome = summary;
         _declined = decline;
-        _submitting = false;
       });
     } on ApiFailure catch (failure) {
       if (!mounted) {
         return;
       }
       setState(() {
-        _submitting = false;
         _error = switch (failure.httpStatus) {
           409 => l10n.meetingConfirmNotAwaiting,
           403 => l10n.delegationNotAllowed,
           _ => decline ? l10n.meetingDeclineFailed : l10n.meetingConfirmFailed,
         };
       });
+    } finally {
+      // A token refresh on the 401 path can throw a keystore PlatformException,
+      // which is NOT an ApiFailure — clearing the flag here is what keeps the
+      // confirm/decline buttons from staying disabled forever.
+      if (mounted) {
+        setState(() => _submitting = false);
+      }
     }
   }
 
