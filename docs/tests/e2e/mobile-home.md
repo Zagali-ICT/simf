@@ -28,7 +28,7 @@
 | **Surface** | Mobile (Flutter) + App API |
 | **Test runner** | xUnit + `WebApplicationFactory` (API) · Flutter widget/integration test (screen) |
 | **Auth setup** | A signed-in visitor token (`AuthFlow.SignInVisitorWithoutTwoFactorAsync`); `AuthFlow.SetAccountState` for the approved case. **No literal secrets.** |
-| **Last reviewed** | 2026-06-19 |
+| **Last reviewed** | 2026-08-20 |
 
 ## Coverage matrix
 
@@ -60,6 +60,7 @@
 | E2E-MOB013-024 | **Locked guest badge tile announces why (BUG-014):** the guest home's locked "بطاقتي" tile stays intentionally inert but now carries a semantics hint ("Locked — sign in to unlock your smart badge") so a screen-reader user learns it is locked and why | a11y | P2 | authored ✓ (`simf_page_shell_test` — `BUG-014 — a locked tile announces WHY it is locked and stays inert`) |
 | E2E-MOB013-022 | **Hero background video (D-756 / D-761):** when `OrganizationProfile.backgroundVideoUrl` is a **direct MP4/HLS** link the home hero plays it muted + looping + no-controls, cover-fitted as the base layer (edition text overlay + scrim stay on top); a **YouTube** link is NOT played in-app (an Android WebView can't be clipped into the band — D-761) and falls back to the banner-image carousel / discover photo, same as null/unsupported | happy | P2 | authored ✓ (widget — `HeroBackgroundVideo.isSupported` gate + hero base-layer selection) |
 | E2E-MOB013-026 | **Arabic compound given names greet whole (OA-D1):** the greeting renders the FULL trimmed profile name, so "عبد الله" is never amputated to "عبد" and a family-name-first record never greets the wrong token; the line stays `maxLines: 1` + ellipsised so a long name degrades gracefully | i18n | P1 | authored ✓ (widget — `greeting_header_test.dart`, 6 cases) |
+| E2E-MOB013-027 | **Both Home carousels re-arm when their list changes (2026-08-20):** the edition hero (`GET /app/banners`) and the highlights carousel (`GET /app/news`) keep auto-advancing after the list grows or shrinks underneath them — growing past a single slide starts the rotation, shrinking clamps the dots onto the page the `PageController` actually lands on (the **last**, not the first), and no tick animates backwards or onto a page that no longer exists | happy | P1 | authored ✓ (widget — `highlights_carousel_test.dart` 5 cases + `home_hero_banner_test.dart` grow/shrink cases) |
 | E2E-MOB013-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-MOB013-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
@@ -535,9 +536,64 @@ no way to know where an Arabic compound given name ended; there is no captured
 `GivenName` to split on, so the split was removed rather than patched with
 prefix heuristics (owner decision Q3, 2026-07-30).
 
+### E2E-MOB013-027 — The carousels re-arm when their list changes (2026-08-20)
+
+```gherkin
+Feature: Home carousel auto-advance
+  As an attendee watching the Home hero and the highlights strip
+  I want them to keep rotating through whatever is currently published
+  So that a refresh never leaves a blank slide or a dot pointing at the wrong one
+
+Background:
+  Given a signed-in visitor is on Home
+  And each carousel holds a slide for 4 seconds before moving on
+
+Scenario: Growing past a single slide starts the rotation
+  Given only one news post is published, so the highlights strip shows no dots
+      and never moves
+  When a second post is published and the user pulls to refresh
+  Then position dots appear
+  And after 4 seconds the strip has advanced to the second slide
+
+Scenario: A shrink leaves the dots on the slide that is actually on screen
+  Given five banners are configured and the hero has advanced to the fifth
+  When the CP removes three of them and the user pulls to refresh
+  Then the hero shows the LAST remaining banner
+  And the dots point at that same banner, not at the first
+  And the next tick advances FORWARD, never back onto a page that no longer exists
+
+Scenario: A shrink to a single slide stops the rotation
+  Given three banners are configured and the hero is rotating
+  When the CP removes two of them and the user pulls to refresh
+  Then no position dots are shown
+  And the hero stays on the one remaining banner indefinitely
+```
+
+> Before this, `HighlightsCarousel` armed its timer in `initState` **only**, so
+> after the list changed the timer went on cycling **modulo the old count** — a
+> stale index past the new end rendered a blank page, and growing from one slide
+> never started rotating at all. `HomeHeroBanner` had the same defect and its
+> `didUpdateWidget` clamped to slide **0**, which is the wrong end: a
+> `PageController` settles a past-the-end position on the **last** page, so the
+> dots disagreed with the visible slide and the next tick animated backwards. Both
+> now share one `CarouselAutoAdvance` mixin.
+
+**Evidence:** `test/features/home/widgets/highlights_carousel_test.dart` (5 cases —
+a single slide gets no dots and never advances · growing past one slide starts the
+auto-advance · shrinking leaves the dots on the page the controller lands on ·
+shrinking mid-list never advances backwards · shrinking clamps the index back into
+range) and the two cases added to
+`test/features/home/widgets/home_hero_banner_test.dart` (the same shrink pair over
+`/app/banners`). Both Home goldens held
+**without** `--update-goldens` — a first frame is unchanged, so this is invisible to
+a golden and only a timer-pumping widget test can see it.
+
 ---
 
-_Last reviewed:_ `2026-07-30` by `SIMF Team` — OA-D1: the greeting renders the
+_Last reviewed:_ `2026-08-20` by `SIMF Team` — app deep-clean audit: both
+Home carousels re-arm their auto-advance when the list changes underneath them
+(E2E-MOB013-027).
+_Prior:_ `2026-07-30` by `SIMF Team` — OA-D1: the greeting renders the
 full trimmed name; added E2E-MOB013-026.
 _Prior:_ `2026-07-27` by `SIMF Team` — D-772: the owner confirmed the
 signed-in Home keeps its language toggle, superseding the 2026-07-11 removal;

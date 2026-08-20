@@ -10,7 +10,7 @@
 | Shell | `SimfPageShell` (title ملخص الجلسات) |
 | API | `GET /app/programme/sessions` (the whole programme, cached) · `GET /app/sessions/favourites` + `POST` / `DELETE /app/sessions/{id}/favourite` (the heart) · `GET /app/account/sessions` (the جلساتي set) |
 | Providers | `programmeSessionsProvider` (`features/sessions/data/sessions_repository.dart`) · `sessionFavouritesProvider` (`session_favourites.dart`) · `mySessionsProvider` (`features/myarea/data/my_sessions_repository.dart`) |
-| Tests | `test/features/ai_summary/session_summary_list_screen_test.dart` (7); golden `test/golden/session_summary_list_golden_test.dart` (`goldens/session_summary_list_1388-8392.png`). E2E [`mobile-session-summaries.md`](../../../tests/e2e/mobile-session-summaries.md) |
+| Tests | `test/features/ai_summary/session_summary_list_screen_test.dart` (7); golden `test/golden/session_summary_list_golden_test.dart` (`goldens/session_summary_list_1388-8392.png`); shared-provider regression `test/features/sessions/session_favourites_signout_test.dart` (2 — the favourites set is per-account, §4.1). E2E [`mobile-session-summaries.md`](../../../tests/e2e/mobile-session-summaries.md) |
 | Status | ✅ Real — Figma `1388:8392`; **clean-code frozen (D-613)** — 596 → 249 lines plus the card widget, and the search field was lifted to the shared `SimfFilterSearchField` (DRY with الوفود) |
 
 ## 1. Purpose
@@ -24,7 +24,8 @@ The searchable, day-grouped index of sessions that already have a published
 Public. The programme read is anonymous, so the الكل tab works signed out. The
 جلساتي and المفضلة tabs read per-user endpoints that need an approved account —
 signed out they resolve empty, so those tabs show their own empty message rather
-than an auth wall.
+than an auth wall. المفضلة now resolves empty *without a call*: the favourites
+provider short-circuits on a signed-out auth state (§4.1).
 
 ## 3. Entry point
 
@@ -60,6 +61,36 @@ A `Column`: search field, tab row, then the list in an `Expanded`.
 `_buildList` watches `sessionFavouritesProvider` and `mySessionsProvider` purely
 to re-run the filter when those per-user sets resolve, keeping the two right-hand
 tabs and the hearts live.
+
+### 4.1 The favourites set belongs to the account (fixed 2026-08-20)
+
+`SessionFavouritesController.build()` watches `authControllerProvider` and
+returns an empty set whenever the state is not `AuthStateSignedIn`. That watch
+is what makes the set per-user.
+
+It was not there, and the old behaviour will surprise anyone who knew this
+screen. `build()` watched only `simfApiClientProvider`, and **that provider
+never rebuilds** — all three of its dependencies are root overrides, and
+`currentLanguageCodeProvider` deliberately hands out a closure rather than a
+value so that a language switch does not invalidate the client. The favourites
+set was therefore fetched once per app **process** and outlived sign-out. On a
+shared or handed-over device the next account to sign in saw the previous
+user's hearts filled in here and on [my-sessions](../my-sessions/README.md),
+their favourite count on the My-Area tile, and — because `toggle` reads the
+surviving set to decide add-or-remove — clearing one of those hearts sent a
+`DELETE /app/sessions/{id}/favourite` for a row that account does not own. The
+المفضلة tab filtered on the same stale set, so it listed the previous user's
+favourites under the new user's name. Only killing the process cleared it.
+
+The provider is still deliberately **not** `autoDispose`, which is the question
+this raises: this screen and my-sessions share one set on purpose, and
+`autoDispose` would drop and refetch it on every navigation between them. The
+account, not the route, is what the set belongs to, so the account is what
+invalidates it.
+
+Regression: `test/features/sessions/session_favourites_signout_test.dart` — a
+signed-out container holds no favourites *and* makes no call, and flipping a
+signed-in container to signed-out empties the set.
 
 ## 5. Actions
 

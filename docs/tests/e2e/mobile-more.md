@@ -13,14 +13,14 @@
 | **Surface** | Mobile (Flutter) |
 | **Figma** | `1129:17224` |
 | **Auth setup** | **None** to browse the sections; the منطقتي card + تسجيل الخروج show only when signed in. Destination routes keep their own auth gate. |
-| **Last reviewed** | 2026-06-20 |
+| **Last reviewed** | 2026-08-20 |
 
 ## Layout (D-465)
 
 - **منطقتي profile card** (signed-in only) — avatar + name · tier (from `MyAreaDashboard`), taps to `/my-area`.
-- **معلومات الملتقى**: عن الملتقى → `/about`; دليل الملتقى → ComingSoon (`/forum-guide`); الأسئلة الشائعة → ComingSoon (`/faq`); عروض الجلسات → ComingSoon (`/session-presentations`); استكشف الرياض · VisitSaudi → external `VisitSaudiUrl`.
+- **معلومات الملتقى**: عن الملتقى → `/about`; دليل الملتقى → `/forum-guide`; الأسئلة الشائعة → `/faq`; عروض الجلسات → **My sessions** `/my-area/sessions` (**signed-in attendee only** — D-710 reversed the D-609 removal on 2026-07-09; this line previously said the row was a ComingSoon placeholder for `/session-presentations`, and it has been neither since then); استكشف الرياض · VisitSaudi → external `VisitSaudiUrl`.
 - **الإعدادات**: اللغة (shows the current language, taps to toggle); إمكانية الوصول → `/settings/accessibility`; الإشعارات → `/notifications`; إعادة تعيين كلمة المرور (**signed-in only**, D-658) → `/forgot-password` (reuses the forgot→email-code→reset flow).
-- **قانوني**: الشروط والأحكام → `/terms`; تواصل معنا → ComingSoon (`/contact-us`); تقييم التطبيق → `/rate`.
+- **قانوني**: الشروط والأحكام → `/terms`; تواصل معنا → `/contact-us` (a real screen since #203 was built — this line said ComingSoon); تقييم التطبيق → `/rate`.
 - **تسجيل الخروج** (signed-in only) → confirm dialog → sign-out → `/sign-in`.
 - Version line from the REAL installed version (`package_info_plus`, D-736):
   `SIMF 2026 · الإصدار {v}` (AR) / `SIMF 2026 · v{v}` (EN) — e.g.
@@ -35,11 +35,11 @@
 | E2E-MOB041-003 | Guest hides the منطقتي card + sign-out | auth | P0 | authored ✓ (screen `guest hides the profile card and sign-out`) |
 | E2E-MOB041-004 | Signed-in shows the منطقتي card (name · tier) + sign-out | happy | P0 | authored ✓ (screen `signed-in shows the منطقتي profile card + sign-out`) |
 | E2E-MOB041-005 | Tapping About routes to the About screen | happy | P0 | authored ✓ (screen `tapping About navigates to the About route`) |
-| E2E-MOB041-006 | An unbuilt entry (Forum guide/FAQ/PPT/Contact us) opens ComingSoon | edge | P1 | covered (routes 200–203 fall through to `ComingSoonScreen`) |
+| E2E-MOB041-006 | ~~An unbuilt entry (Forum guide/FAQ/PPT/Contact us) opens ComingSoon~~ — **superseded 2026-08-20:** all four now have real screens (`ForumGuideScreen` / `FaqScreen` / `SessionPresentationsScreen` / `ContactUsScreen` in `router.dart`), so no More row falls through to `ComingSoonScreen` any more. Each row's own catalogue owns its scenarios | edge | P1 | n/a — no ComingSoon row is left on this page |
 | E2E-MOB041-007 | Tapping a gated destination (Notifications) while signed-out bounces to sign-in | edge | P1 | covered (router auth gate, destination #33) |
 | E2E-MOB041-008 | Signed-in shows the إعادة تعيين كلمة المرور row; guest hides it | auth | P1 | authored ✓ (screen `renders the three grouped sections…` + `guest hides…`) |
 | E2E-MOB041-009 | Tapping إعادة تعيين كلمة المرور opens the forgot-password flow | happy | P1 | authored ✓ (screen `signed-in tapping Reset password opens the forgot flow`) |
-| E2E-MOB041-010 | Each row's forward "open" caret points to the inline end — right in LTR (English), left in RTL (Arabic) — via the shared SimfForwardChevron | i18n | P2 | authored ✓ (`test/app/widgets/simf_forward_chevron_test.dart` — LTR flip / RTL no-flip) |
+| E2E-MOB041-010 | Every forward "open" caret on the page — the منطقتي profile card's **and** each nav row's — points to the inline end: right in LTR (English), left in RTL (Arabic), via the shared `SimfForwardChevron`. **This row read "authored ✓" from 2026-07-22 while the profile card was still a bare `SimfSvgIcon`** — the widget test proved the shared chevron flips, not that the card used it, so under English the card's caret pointed left while every row beneath it pointed right. Fixed 2026-08-20 | i18n | P2 | authored ✓ (`test/app/widgets/simf_forward_chevron_test.dart` — LTR flip / RTL no-flip; `test/features/forward_navigation_chevron_test.dart` — the منطقتي card, and the four other rows that had the same defect, each render their caret through the shared chevron) |
 | E2E-MOB041-011 | **Two menus are no longer both "More" (BUG-017):** the side drawer (`MoreDrawer`, the flat list of every destination, opened by the header ☰) is titled **القائمة / Menu**; this **More** screen — the structured hub (My area / Forum info / Settings / Legal) that uniquely holds the **language** row — keeps **المزيد / More** | nav | P2 | authored ✓ (`more_drawer_test` — `BUG-017 — the drawer is titled "Menu", not a second "More"`) |
 | E2E-MOB041-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-MOB041-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
@@ -79,17 +79,40 @@ Scenario: Reset password is a signed-in-only account action (D-658)
   When the visitor taps it
   Then the app navigates to the forgot-password screen (which emails a reset code)
 
-Scenario: An unbuilt entry opens the ComingSoon placeholder
-  When the user taps "دليل الملتقى"
-  Then the ComingSoon screen for /forum-guide is shown (no dead-end)
+Scenario: Every forward caret on the page points the same way (2026-08-20)
+  Given the app is in English (LTR)
+  When the user opens /more signed in
+  Then the منطقتي profile card's caret points RIGHT
+  And every nav row caret below it points RIGHT
+  Given the app is in Arabic (RTL)
+  When the user opens /more signed in
+  Then the منطقتي profile card's caret points LEFT
+  And every nav row caret below it points LEFT
 ```
 
-**Evidence:** screen tests (7: grouped rows, version, guest-hides-card, signed-in-card, About-nav, reset-password-row present/hidden, reset-password → forgot nav).
-ComingSoon routing covered by the router's fall-through for routes 200–203.
+> The "unbuilt entry opens ComingSoon" scenario that used to sit here was
+> removed on 2026-08-20: دليل الملتقى, الأسئلة الشائعة, تواصل معنا and عروض
+> الجلسات all reach real screens now, so there is no ComingSoon fall-through
+> left on this page to assert (see E2E-MOB041-006).
+
+**Evidence:** screen tests (**8**: grouped rows, version line, guest-hides-card,
+signed-in-card, About-nav, reset-password → forgot nav, and the D-710 عروض الجلسات
+row shown to a signed-in attendee / hidden from a guest) —
+`test/features/more/more_screen_test.dart`. The caret directions are in
+`test/app/widgets/simf_forward_chevron_test.dart` +
+`test/features/forward_navigation_chevron_test.dart`. The old line here claimed 7
+cases and pointed at a ComingSoon fall-through for routes 200–203; both were stale.
 
 ---
 
-_Last reviewed:_ `2026-07-26` by `SIMF Team` (BUG-017 — the side drawer is renamed
+_Last reviewed:_ `2026-08-20` by `SIMF Team` (app deep-clean audit — the منطقتي
+profile card's caret now goes through the shared `SimfForwardChevron`, so it no
+longer points the Arabic way under English while every row beneath it points the
+other way; **the Arabic golden `more_1129-17224.png` is unchanged**, the flip
+being LTR-only. Also corrected here: the four rows this file called ComingSoon
+placeholders all have real screens, and عروض الجلسات is My sessions, not
+`/session-presentations` — E2E-MOB041-006 / -010).
+_Prior:_ `2026-07-26` by `SIMF Team` (BUG-017 — the side drawer is renamed
 **Menu** so it no longer collides with this **More** hub; the shared language
 toggle was also added to the signed-in Home header so the language switch is
 reachable from Home — E2E-MOB041-011 / E2E-MOB013-023). Prior: `2026-07-22` by `Claude` (forward-chevron LTR direction — E2E-MOB041-010, the row caret now points to the inline end via the shared SimfForwardChevron); `2026-07-10` by `SIMF Team` (D-736 — the version line reads the real installed version, no longer a literal).

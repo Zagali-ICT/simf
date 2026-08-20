@@ -124,10 +124,23 @@ class GatesRepository {
           direction: direction,
           // D-219 / D-770 — the Saudi wall clock, never the device's.
           // `formatWire` drops the zone marker and keeps the wall-clock
-          // reading, so a `DateTime.now()` here would label a tablet's own
-          // local time as Saudi time. This stamp is persisted and uploaded as
-          // the moment the attendee passed the gate, and nothing downstream
-          // can tell it was read off the wrong clock.
+          // reading, so a `DateTime.now()` here labels a tablet's own local
+          // time as Saudi time.
+          //
+          // Scope, stated plainly because an earlier version of this comment
+          // overstated it: the stamp goes NOWHERE off the device today.
+          // `recordScan` sends qr / idempotencyKey / source / direction and no
+          // timestamp, `flushPending` replays through that same call, and a
+          // grep for `queuedAt` across lib/ and packages/ finds only this write
+          // site plus the queue model's own field, `toJson` and `fromJson`.
+          // Nothing reads it back. This is consistency, not a live data defect.
+          //
+          // Worth getting right anyway, because there is a field waiting for
+          // it: SIMF-API-GATES-001 defines an optional `clientScannedAt`
+          // ("device-asserted device-local scan time, recorded but never
+          // authoritative") that the app does not send. Read that carefully
+          // before wiring the two together — the spec's field is contractually
+          // DEVICE-LOCAL, which is NOT the Saudi wall clock stamped here.
           queuedAtIso: formatWire(_now()),
         ),
       );

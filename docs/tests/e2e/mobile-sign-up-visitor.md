@@ -24,7 +24,7 @@
 | **APIs** | `GET /api/v1/app/account/user-profile` (pre-fill); lookups `GET …/user-profile/countries`, `GET …/profile-types?isVisitor=`, `GET /app/organisations?search=&top=`. **No POST and no interests lookup on this screen** — those are on Page 007‑01. All signed-in, no role/permission (D7). |
 | **Surface** | Mobile (Flutter) — Visitor (signed-in, profile-incomplete) |
 | **Auth setup** | A signed-in Visitor token (own `sub`). Obtain via the standard app sign-in; never a literal secret. |
-| **Last reviewed** | 2026-06-11 |
+| **Last reviewed** | 2026-08-20 (the type-ahead race guard + the clamped date-of-birth picker, MOB007-026/027) |
 
 > **KSA-Project redesign (D-368, Figma 168:2972):** the form now lives in the
 > beige card under the login-style navy header (logo + forum name + wired
@@ -69,6 +69,8 @@
 | E2E-MOB007-023 | **All fields mandatory except plate + Arabic job title (owner item 4 / D-723; #37):** job title, place of birth (Saudi region / non-Saudi free text) and the mobile number are now **required** — an empty one blocks Next with its inline error ("Job title is required" / "Place of birth is required" / "Mobile number is required"); only the plate and the Arabic job title stay optional. The women's face-photo exception (D-694) is unchanged | validation | P0 | authored ✓ (widget — each empty field blocks Next) |
 | E2E-MOB007-024 | **Arabic job title (backlog #37):** an **optional** "المسمى الوظيفي (بالعربية)" input sits right after the job title (RTL). Leaving it empty still advances Next; when filled, `Next` carries it into the profile upsert (`jobTitleArabic`) + the interests-screen draft, so `UserProfile.JobTitleArabic` (already carried by the backend + CP) is finally captured by the app. Prefilled on re-entry from the stored profile | happy | P1 | authored ✓ (widget — prefill → upsert + draft round-trip) |
 | E2E-MOB007-025 | **Job-title labels + per-script masks (owner request):** the two job-title fields are language-labelled — "المسمى الوظيفي (بالإنجليزية)" (English, LTR) and "المسمى الوظيفي (بالعربية)" (Arabic, RTL) — so which is which is unambiguous. Each takes the **same per-script keystroke filter as its name field**: the English job title accepts **Latin letters + spaces only** (Arabic/digits/punctuation filtered at the keystroke); the Arabic job title accepts **Arabic letters + spaces only** (Latin filtered). Neither field can ever hold the other's script | validation | P1 | authored ✓ (golden `sign_up_visitor_168-2972` shows both labels; formatters mirror the verified name-field filters E2E-MOB007-021) |
+| E2E-MOB007-026 | **Type-ahead results always match the text in the box:** two organisation searches in flight at once resolve out of order, and the list shows the **latest** query's rows — a slow earlier response is dropped, never painted over the newer one | edge | P0 | authored ✓ (`organisation_typeahead_race_test`) |
+| E2E-MOB007-027 | **A stored date of birth outside 18–120 opens the picker clamped, not crashed:** the picker's initial date is pulled inside `firstDate..lastDate` before `showDatePicker` runs, so a server profile holding an under-18 or over-120 date opens on the nearest eligible date instead of tripping the framework assert. The window itself is measured from the **Saudi** clock, not the device clock | edge | P0 | authored ✓ (`sign_up_visitor_pickers_test`, 9 cases) |
 | E2E-MOB007-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-MOB007-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
@@ -402,6 +404,82 @@ Scenario: The Arabic job title accepts Arabic letters only
 formatters are the same verified per-script filters as the name fields
 (E2E-MOB007-021).
 
+### E2E-MOB007-026 — The organisation list always matches what is in the box
+
+```gherkin
+Scenario: A slow earlier search never overwrites the latest results
+  Given the visitor is on the profile form
+  When they type "min" into جهة العمل and the app issues GET /app/organisations?search=min
+  And they keep typing to "ministry" and the app issues a second search
+  And the "ministry" response arrives FIRST and lists "Ministry"
+  And the "min" response arrives AFTERWARDS listing "Minority"
+  Then the field still lists "Ministry"
+  And "Minority" is not shown
+  And selecting a row still links that organisation's id
+```
+
+**Why it matters:** the debounce cancels a pending timer, not a request already in
+flight, so two searches are routinely outstanding and the network decides which
+lands last — on congested venue WiFi that is often the older one. Organisation is
+**required** (D-221 / E2E-MOB007-008b), so the user could not simply skip past a
+list showing matches for text they had already replaced: they either picked the
+wrong employer or were told there was no match for a query that had one.
+
+**Evidence:** `organisation_typeahead_race_test` — "a slow earlier search does not
+overwrite the latest results". The test resolves the two futures out of order on
+purpose and fails without the generation guard in the field's `_run`.
+
+### E2E-MOB007-027 — An out-of-range stored date of birth opens the picker clamped
+
+```gherkin
+Scenario Outline: The picker opens whatever the stored date of birth is
+  Given the Saudi clock reads 2026-08-20
+  And the eligible window is 1906-01-01 (120 years back) .. 2008-08-20 (the 18th birthday)
+  And the stored profile holds the date of birth <stored>
+  When the visitor taps تاريخ الميلاد
+  Then the date picker dialog opens
+  And its initial date is <opens on>
+
+  Examples:
+    | stored     | opens on   | why                              |
+    | 2020-05-04 | 2008-08-20 | under 18, clamped to lastDate    |
+    | 1890-05-04 | 1906-01-01 | over 120, clamped to firstDate   |
+    | 1990-05-04 | 1990-05-04 | eligible, honoured verbatim      |
+    | (none)     | 2008-08-20 | nothing stored yet               |
+
+Scenario: The age boundary is the Saudi date, not the device's
+  Given the eligible window is derived from saudiNow(), never DateTime.now()
+  Then a device clock a day behind Riyadh cannot move the 18th-birthday boundary
+```
+
+> The two clamped rows are also driven through the real dialog, because the unit
+> assertions prove the clamp and only opening the picker proves it is wired to
+> `initialDate`. The Saudi-clock scenario is asserted **by source inspection**, not
+> behaviour: every other case injects `now`, so a device clock reinstated as the
+> parameter default would walk straight past them, and on a +03:00 box (every SIMF
+> dev box and CI agent) the two clocks agree, so no in-process behavioural test can
+> tell them apart.
+
+**Why it matters:** `showDatePicker` **asserts** its `initialDate` lies within
+`firstDate..lastDate`. The seed is the stored profile's date of birth, and the
+server never range-checks that value against the app's 18-to-120 rule — so an
+out-of-window date tripped the assert in debug and seeded an out-of-range picker in
+release. The user hitting this is exactly the one who most needs to correct the
+field. The Saudi-clock rule is the same one the rest of the app follows for
+user-facing dates (D-219 / D-770): an 18th birthday read off a traveller's phone
+lands on the wrong day for them.
+
+**Evidence:** `sign_up_visitor_pickers_test` — "the newest eligible date of birth is
+exactly the 18th birthday", "the oldest eligible date of birth is 120 years back",
+"a date of birth younger than 18 seeds at the newest eligible date", "a date of
+birth older than 120 seeds at the oldest eligible date", "an eligible date of birth
+is seeded verbatim", "nothing stored yet seeds at the newest eligible date", group
+"the picker opens on an out-of-range stored date", and "the default clock is the
+Saudi one, not the device clock".
+
 ---
 
-_Last reviewed:_ `2026-07-25` by `SIMF Team` — job-title fields language-labelled (بالإنجليزية / بالعربية) and given the same per-script keystroke masks as the name fields (025); goldens `sign_up_visitor_168-2972` + `staff_register_visitor_1467-12357` regenerated. Earlier: `2026-06-20` — D-471 the birth-region + the 3 plate-letter fields now use the SAME beige searchable picker as the country picker (one shared `_LookupSearchSheet`) (016/022). D-469 Saudi birth-location region picker (code-keyed, cross-locale, non-region values preserved) (022). Earlier: D-459 name 2–4 parts + the 17-letter Saudi plate dropdowns (canonical code + AR/EN renderings) (016/021); D-437 two-photo split (Upload ID gallery + Face photo camera), Arabic-only/English-only name rules, top-avatar swap, and the self-service id-image face-gate removal (017/018/020/021); D-332 data-screen rework; D-371 C4 phone standards.
+_Last reviewed:_ `2026-08-20` by `SIMF Team` — the organisation type-ahead's
+out-of-order search guard (026) and the clamped, Saudi-clock date-of-birth picker
+(027); the screen's three async paths now clear their busy flag in a `finally` (see
+the page doc, section 5). Earlier: `2026-07-25` — job-title fields language-labelled (بالإنجليزية / بالعربية) and given the same per-script keystroke masks as the name fields (025); goldens `sign_up_visitor_168-2972` + `staff_register_visitor_1467-12357` regenerated. Earlier: `2026-06-20` — D-471 the birth-region + the 3 plate-letter fields now use the SAME beige searchable picker as the country picker (one shared `_LookupSearchSheet`) (016/022). D-469 Saudi birth-location region picker (code-keyed, cross-locale, non-region values preserved) (022). Earlier: D-459 name 2–4 parts + the 17-letter Saudi plate dropdowns (canonical code + AR/EN renderings) (016/021); D-437 two-photo split (Upload ID gallery + Face photo camera), Arabic-only/English-only name rules, top-avatar swap, and the self-service id-image face-gate removal (017/018/020/021); D-332 data-screen rework; D-371 C4 phone standards.

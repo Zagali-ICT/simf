@@ -22,15 +22,20 @@ add it straight to the phone's own contacts via the OS "add contact" flow (D-744
 
 | File | Holds |
 |------|-------|
-| `contacts/scan_contact_screen.dart` (214) | `ScanContactScreen` (`ConsumerStatefulWidget`) — delegates the scan surface to the shared `QrScanView`; `_handleToken` (resolve → preview), `_showPreview`, `_leave`; plus the private `_ContactPreviewSheet` (the resolved-card + note + save sheet, shared `ContactCard`). |
+| `contacts/scan_contact_screen.dart` (141) | `ScanContactScreen` (`ConsumerStatefulWidget`) — delegates the scan surface to the shared `QrScanView`; `_handleToken` (resolve → preview), `_saveVcardToPhone`, `_showPreview`, `_leave`. |
+| `contacts/widgets/contact_preview_sheet.dart` (`ContactPreviewSheet`) | The resolved-card + note + save sheet (shared `ContactCard`), with the save call and its failure toast. |
 
 ## Clean-code freeze (D-646)
 
 The screen was **already clean** — 214 lines, delegates its surface to the shared
 **`QrScanView`** (D-430) and renders the resolved card via the shared
 **`ContactCard`**, fully tokenised (no raw `Color(0x..)`). The `_ContactPreviewSheet`
-is a cohesive private (the resolve→save half of the flow), kept in the screen.
+was a cohesive private (the resolve→save half of the flow), kept in the screen.
 So this freeze is the **render-lock golden only** (no code change).
+
+That last call no longer holds: no `_Private` widget class may live in a screen
+(`tool/conventions` SIMF-C3), so the sheet is now the public
+**`ContactPreviewSheet`** in `widgets/` and the screen is 141 lines.
 
 `ScanContactScreen`'s name + path are **kept** — `badge/widgets/badge_actions.dart`
 imports it for the visitor's full-screen "scan to add someone" action.
@@ -54,12 +59,30 @@ after a scan, so the golden locks the resting scan surface.
   add-contact flow via the shared `shareTextContent` (D-744). No new permission.
 - **Back** — `_leave`.
 
+### The save button can no longer strand (fixed 2026-08-20)
+
+`ContactPreviewSheet` cleared `_saving` on the success path and again inside
+`on ApiFailure`, with no `finally` — so anything thrown that is **not** an
+`ApiFailure` left Save disabled for good, with no toast and no way out but
+dismissing the sheet. The escape is real: `SimfApiClient` converts only the
+**first** call's errors to `ApiFailure`, and the 401 token-refresh branch sits
+outside that guard, so a keystore/keychain `PlatformException` (an OS keystore
+reset, a restored backup) surfaces raw mid-save. The flag now clears in a
+`finally` — **except** once the sheet has popped, because `mounted` does not
+stand in for "already gone": `pop()` only reverses the route's exit animation and
+the State outlives it, so re-enabling there would flick the spinner back to the
+icon on a sheet that is sliding away.
+
 ## Tests
 
 `test/golden/scan_contact_golden_test.dart` (frame 1701:7080, @375×812, ar,
 `enableCamera:false`) + `test/features/contacts/scan_contact_screen_test.dart`
-(resolve / not-found / self-save / unavailable-hides-save / foreign-vCard →
-save-to-phone). E2E: `docs/tests/e2e/mobile-my-contacts.md` (E2E-MMC-013).
+(6 — resolve + preview / save + toast / not-found / self-save / foreign-vCard →
+save-to-phone / unavailable hides save) +
+`test/features/contacts/contact_preview_sheet_test.dart` (2 — a successful save
+keeps the spinner up while the sheet exits; a failed save re-enables the button
+on the sheet that stays). E2E: `docs/tests/e2e/mobile-my-contacts.md`
+(E2E-MMC-013).
 
 ## Related decisions
 

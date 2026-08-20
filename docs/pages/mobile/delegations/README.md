@@ -21,7 +21,7 @@ active-filter chip clears it). The data is curated in the Control Panel on the
 | File | Holds |
 |------|-------|
 | `delegations_screen.dart` | State — the search `TextEditingController` + `_query`, the selected-flag `_selectedFlagCode` (with the `_onFlagTap` toggle + clear), the `delegationsProvider` watch, the `onRefresh` invalidate, and the loading / error / data branch dispatch inside `SimfPageShell`. |
-| `widgets/delegations_body.dart` (`DelegationsBody`) + `widgets/active_filter_chip.dart` (`ActiveFilterChip`) | The loaded list — the stats strip, the shared `SimfFilterSearchField`, the active-filter chip (when a flag is selected), then the per-country cards filtered by **both** the flag selection and the search (or the empty / no-results `SimfEmptyState`). |
+| `widgets/delegations_body.dart` (`DelegationsBody`) + `widgets/active_filter_chip.dart` (`ActiveFilterChip`) | The loaded list — the stats strip, the shared `SimfFilterSearchField`, the active-filter chip (when a flag is selected), then the per-country cards filtered by **both** the flag selection and the search (or the empty / no-results `SimfEmptyState`). A `ListView.builder` since 2026-08-20: the strip / search / chip are an eager head list, the country cards below them the lazy tail. |
 | `widgets/delegations_stats_strip.dart` (`DelegationsStatsStrip` + `_GridPainter`) + `widgets/flag_spot.dart` (`FlagSpot`) + `widgets/delegations_stat.dart` (`DelegationsStat`) | The navy header strip (Figma 1426:10781): the faint gold grid, the scattered invited-country flags (each a `FlagSpot` tap target that filters the list; the selected flag is ringed), and the two big-gold stats (participating countries left / total participants right). |
 | `widgets/delegation_card.dart` (`DelegationCard`) + `widgets/flag_box.dart` (`FlagBox`) | One country card (Figma 1426:10838): the flag box + the bilingual country name (the second-language line is suppressed when it would only repeat the title), tappable into the meeting-request sheet for an entitled account. |
 | `widgets/delegation_meeting_request_sheet.dart` (`DelegationMeetingRequestSheet`) | The request sheet a tapped card opens. A thin wrapper (146 lines) over the shared `MeetingRequestForm<T>` in `speakers/widgets/` — it supplies the country options, the submit call and its own `_failureText`, which is what keeps A35 true (a server rejection shows the SERVER's bilingual reason, never the speaker copy). Its own fields live in `widgets/delegation_option_tile.dart` + `widgets/delegation_attendee_count_field.dart`. |
@@ -31,7 +31,8 @@ its parent per the booths / venue_map precedent (D-615/D-618). The leaves that
 WERE private (`_Stat`, `_ActiveFilterChip`, `_FlagSpot`, `_FlagBox`) are public
 one-per-file widgets now: a private widget class is itself a convention finding,
 and `FlagBox` in particular is reused by more than its original parent. Every
-file stays ≤400 lines (largest 146).
+file stays ≤400 lines (largest 146 — re-measured 2026-08-20; `delegations_body`
+is 122 after the builder conversion).
 
 ## Tokenisation (this freeze)
 
@@ -166,7 +167,10 @@ E2E: `docs/tests/e2e/mobile-delegations.md` (`E2E-DEL-001..013`).
 
 ---
 
-_Last reviewed: 2026-07-30 — G2 (D-811): a signed-in viewer no longer sees their
+_Last reviewed: 2026-08-20 — app deep-clean audit: the country list became a
+`ListView.builder` (golden held without `--update-goldens`) and the request
+sheet's two loaders stopped dying silently on a non-`ApiFailure`. Prior:
+2026-07-30 — G2 (D-811): a signed-in viewer no longer sees their
 **own** delegation; the exclusion is server-side and both stats recompute over the
 filtered set; guests still see the full list. Prior: 2026-07-13 — added the
 stats-strip **flag filter** (tap a country flag to narrow the list; removable
@@ -174,6 +178,39 @@ active-filter chip; composes with search; default golden unchanged); 2026-07-04
 (D-624 — clean-code freeze). Originating doc D-499._
 
 ## Changelog
+
+- **2026-08-20 (app deep-clean audit):** two changes, one of them a real defect.
+
+  **The country list is lazy.** `DelegationsBody` was an eager
+  `ListView(children:)` that built every country card on every rebuild — and
+  this list rebuilds on every keystroke in the search box. It is a
+  `ListView.builder` now: the stats strip, the search field, the active-filter
+  chip and their gaps are an eager head list, and each index past them is one
+  filtered country card, keyed `ValueKey(countryId)`. The trailing gap moved
+  onto the card as bottom padding rather than becoming a separator, so the last
+  card keeps the gap it had; `AlwaysScrollableScrollPhysics` is unchanged, so
+  pull-to-refresh still fires on a short or empty list; and the empty /
+  no-results `SimfEmptyState` still renders below the head rather than
+  replacing it. Behaviour-preserving — the `delegations_1426-10771` golden held
+  without `--update-goldens`.
+
+  **The request sheet can no longer die silently.** This is inherited from the
+  shared `MeetingRequestForm<T>`, so it applies to `DelegationMeetingRequestSheet`
+  exactly as it does to the speaker one — see
+  [`speaker-profile/README.md`](../speaker-profile/README.md) for the full
+  account. In short: the country picker and the slot loader cleared their busy
+  flag only on the success and `on ApiFailure` branches, so a keystore
+  `PlatformException` thrown on the client's 401-refresh path — which is not an
+  `ApiFailure` — left them spinning forever. The **country picker** is the worse
+  half here, because it is loaded once from `initState` and has no retry path at
+  all: the sheet showed a permanent spinner where the country list belongs, the
+  عدد الحضور / subject / slot / Send section never appeared, and the sheet was
+  dead until closed and reopened. Both loaders now resolve — the slot loader to
+  the G3 load-error + Retry, the picker to its empty hint. The G3 rule that a
+  **failed** fetch is never presented as "no availability", and the A35 rule
+  that a delegation rejection shows the SERVER's bilingual reason
+  (`E2E-DELREQ-011/012`), are both untouched: the sheet keeps its own
+  `_failureText` and only the failure *types* that reach these states widened.
 
 - **2026-08-18 (delivery clean-code programme, structure only):** the delegation
   meeting-request sheet and the speaker one were 79% identical, so both now

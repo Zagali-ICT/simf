@@ -15,7 +15,7 @@
 | **Surface** | Mobile (Flutter) |
 | **Test runner** | Flutter `flutter test` (widget + golden) + on-device manual E2E |
 | **Auth setup** | An approved app account whose profile has **`allowsSpeakerMeeting`** and/or **`allowsDelegationMeeting`** = true (bi-meeting rework — replaces the VIP gate); a non-entitled approved account for the gate cases. TOTP via `Get-Totp` — never a literal secret. |
-| **Last reviewed** | 2026-07-22 |
+| **Last reviewed** | 2026-08-20 |
 
 > **How access works here (bi-meeting rework, D-760).** The page is **not** VIP-only: access
 > is gated by the two per-user flags via `currentUserMeetingAccessProvider`
@@ -49,6 +49,7 @@
 | E2E-MOBMEET-011 | RTL render (Arabic) matches Figma 1408:9726 | i18n | P1 | _to author_ |
 | E2E-MOBMEET-012 | Picker search filters speakers by name/rank; no-match hint (D-746) | filter | P1 | _to author_ |
 | E2E-MOBMEET-013 | Two flag-gated buttons — "طلب مقابلة متحدث" (speaker flag) + "طلب اجتماع وفد" (delegation flag); a single-flag account sees only its button (bi-meeting rework) | happy | P0 | authored ✓ (`meetings_screen_test.dart`, widget) |
+| E2E-MOBMEET-014 | A speaker-picker load that fails with something **other** than an `ApiFailure` resolves the picker to its "اختر المتحدث…" hint instead of spinning forever — the sheet was previously dead, with no retry path, until closed and reopened (2026-08-20) | resilience | P1 | authored ✓ (`meeting_request_sheet_test.dart` — "a roster fetch that throws a NON-ApiFailure resolves the picker instead of spinning it forever") |
 | E2E-MOBMEET-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-MOBMEET-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
@@ -201,9 +202,10 @@ Scenario: The feed fails to load
 Scenario: Arabic RTL parity
   Given the app locale is Arabic
   When I open /meetings
-  Then the header, the طلب جديد/السجل row, the cards (headline right, flag badge
-      inline-end, speaker photo inline-start) and the time row match Figma
-      1408:9726
+  Then the header, the request-pill row ("طلب مقابلة متحدث" / "طلب اجتماع وفد",
+      itself forced LTR to match the frame) above the السجل pill, the cards
+      (headline right, flag badge inline-end, speaker photo inline-start) and
+      the time row match Figma 1408:9726
   And there is no horizontal overflow
 ```
 
@@ -229,6 +231,38 @@ Scenario: The selected speaker is never hidden by the filter
   So the picker can never contradict the speaker the request is submitted to
 ```
 
+### E2E-MOBMEET-014 — A non-ApiFailure speaker-roster load resolves the picker
+
+The sheet loads its speaker roster once, from `initState`, with no retry path.
+Until 2026-08-20 the loader cleared its busy flag on the success and
+`on ApiFailure` branches only, so a keystore `PlatformException` raised on the
+API client's 401-refresh path — not an `ApiFailure` — left the picker spinning
+for the life of the sheet, and with it the subject field, the slot section and
+the Send button, all of which are gated on a chosen speaker.
+
+```gherkin
+Scenario: The speaker roster fails with something that is not an ApiFailure
+  Given I am an entitled account on /meetings
+  And the roster load will throw a PlatformException (the keystore, on the 401-refresh path)
+  When I tap "طلب مقابلة متحدث"
+  Then the picker settles on its "اختر المتحدث…" / "Choose a speaker…" hint
+  And no spinner is left running under the "اختر المتحدث" label
+  And the الموضوع, slot and "إرسال الطلب" section stay hidden, because no
+      speaker could be chosen
+  And closing and reopening the sheet retries the load
+```
+
+**Evidence:** `meeting_request_sheet_test.dart` — "a roster fetch that throws a
+NON-ApiFailure resolves the picker instead of spinning it forever".
+
+> **Not E2E-drivable, covered by a widget test instead — the "اليوم" badge.**
+> The card's today badge is now decided on the Saudi wall clock on both sides
+> (D-219 / D-770), where it used to compare a Saudi-converted meeting date
+> against the raw device calendar day. Proving the fix means moving the device
+> timezone across a Riyadh midnight, which no scenario here can drive, so the
+> boundary is pinned by `test/features/meetings/meeting_card_clock_test.dart`
+> against an injected instant. No scenario was added for it.
+
 ---
 
-_Last reviewed:_ `2026-07-22` by `Claude` — bi-meeting rework: the page is flag-gated (`currentUserMeetingAccessProvider`, not VIP); the single "طلب جديد" button becomes two flag-gated buttons ("طلب مقابلة متحدث" / "طلب اجتماع وفد"); the no-access copy is "اللقاءات الثنائية متاحة للحسابات المصرَّح لها فقط" (E2E-MOBMEET-008/009/013 now widget-backed by `meetings_screen_test.dart`). Prior: `2026-07-11` by `SIMF Team` (D-745 page split).
+_Last reviewed:_ `2026-08-20` by `Claude` — app deep-clean audit: added E2E-MOBMEET-014 (a non-`ApiFailure` roster load no longer leaves the sheet dead), corrected E2E-MOBMEET-011's Gherkin, which still described the pre-rework "طلب جديد/السجل" row this file's own header replaced, and recorded why the Saudi-clock today-badge fix gets a widget test rather than a scenario. Prior: `2026-07-22` by `Claude` — bi-meeting rework: the page is flag-gated (`currentUserMeetingAccessProvider`, not VIP); the single "طلب جديد" button becomes two flag-gated buttons ("طلب مقابلة متحدث" / "طلب اجتماع وفد"); the no-access copy is "اللقاءات الثنائية متاحة للحسابات المصرَّح لها فقط" (E2E-MOBMEET-008/009/013 now widget-backed by `meetings_screen_test.dart`). Prior: `2026-07-11` by `SIMF Team` (D-745 page split).

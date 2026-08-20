@@ -8,7 +8,7 @@
 | Figma node | `168:2800` (KSA-Project, file `PSXHhY0UVTAPSaIOf9uNKd`; D-360/D-363) |
 | Shell | Custom navy `Scaffold` — rotated sweep (168:2850) + back/globe top controls (627:2361) over the beige card |
 | Providers | `authControllerProvider` (sign-in / device-key), `simfPrefsStorageProvider` (last-email + remember-me), `localeControllerProvider` (globe toggle), `biometricAvailableProvider` (Face-ID gate) |
-| Tests | `test/features/account/sign_in_screen_test.dart` (widget, 18 cases) · golden `test/golden/sign_in_screen_golden_test.dart` (`goldens/sign_in_168-2800.png`) · auth controller in `packages/simf_auth_pkg/test/auth_controller_signin_test.dart` · E2E [`mobile-sign-in.md`](../../../tests/e2e/mobile-sign-in.md) (E2E-MOB003-001..017) |
+| Tests | `test/features/account/sign_in_screen_test.dart` (widget, 19 cases) · golden `test/golden/sign_in_screen_golden_test.dart` (`goldens/sign_in_168-2800.png`) · auth controller in `packages/simf_auth_pkg/test/auth_controller_signin_test.dart` · the Face-ID path in `test/features/account/biometric_auth_test.dart` · E2E [`mobile-sign-in.md`](../../../tests/e2e/mobile-sign-in.md) (E2E-MOB003-001..021) |
 | Status | ✅ Real — D-358/D-360 (KSA frame) → D-363 (globe + guest link) → D-422/D-430/D-441 (biometric/badge) → **clean-code frozen (D-549, 2026-06-30)** |
 | Legacy detail | `docs/App/Page_003/` — retained as the detailed historical spec |
 
@@ -47,9 +47,11 @@ child** so they paint and hit-test on top of the centred body.
 
 ## 4. Data / API (wire contract D-219 frozen)
 - `POST /app/auth/sign-in` → `AuthStateSignedIn` / `AuthStateAwaitingOtp`.
-- Device-key path: the biometric sign-in calls `signInWithDeviceKey()` after the OS
-  biometric + a prior enrolment (D-441); the button reports the two no-enrolment
-  cases instead of failing silently (D-422).
+- Device-key path: `runBiometricSignIn` (`features/account/biometric_sign_in.dart`,
+  lifted out of the screen's State) checks availability, checks enrolment, runs the
+  OS sheet, then calls `signInWithDeviceKey()` (D-441); the button reports the two
+  no-enrolment cases instead of failing silently (D-422). The OS sheet is
+  **biometric-only** — see section 5.
 - Reads/writes `StorageKeys.lastEmail` via `simfPrefsStorageProvider`.
 
 ## 5. Validation & edge cases
@@ -59,6 +61,25 @@ child** so they paint and hit-test on top of the centred body.
   is cleared; the screen stays put.
 - Face-ID hidden entirely on sensorless devices; when shown but not enrolled it
   reports `biometricUnavailable` / `biometricNotEnrolled`.
+- **The OS biometric sheet offers no device-PIN fallback.**
+  `BiometricAuth.confirmDeviceIdentity` passes `biometricOnly: true`, so a face or a
+  fingerprint is the only way through it — commit `3be516b5` ("enforce
+  biometric-only authentication") reversed D-738's earlier device-credential
+  posture. Every failure message therefore points at **the password form on this
+  screen**, which is the only route left:
+  - `lockedOut` → "محاولات كثيرة خاطئة. المصادقة مقفلة مؤقتاً — حاول لاحقاً أو سجّل الدخول بكلمة المرور."
+    ("… try again shortly, or sign in with your password.") It used to end "or use
+    your device PIN", which the biometric-only flag made unreachable.
+  - `unavailable` → `biometricUnavailable`, which also names the password form.
+  - `noDeviceCredential` → the shared "set a device screen lock first" advice.
+  - `cancelled` → **silent**. A user who dismisses the sheet made a choice; the
+    password form is already in front of them.
+
+  These two messages are the **defaults** of the shared `localizedBiometricError`,
+  and the defaults are this screen's precisely because it is the screen with a
+  password form. The enrolment step-up passes its own copy through the function's
+  `lockedOut` / `unavailable` overrides — see
+  [`mobile/biometric-step-up/`](../biometric-step-up/README.md).
 
 ## 6. i18n / RTL
 Bilingual (ar/en), Arabic-first, RTL-correct. All strings via `AppL10n`. The brand
@@ -67,7 +88,7 @@ in the theme — the dark `outlinedButtonTheme` gained the brand family in D-549
 Changelog).
 
 ## 7. Testing
-- **Widget** (`sign_in_screen_test.dart`, 18 cases): success→home + email store,
+- **Widget** (`sign_in_screen_test.dart`, 19 cases): success→home + email store,
   malformed-email inline error, empty/blank-password gating, Face-ID visibility,
   remember-me both directions, incomplete-profile + 2FA routing, invalid creds,
   pre-fill, create-account / forgot / guest links, back-fallback, globe toggle.
@@ -90,6 +111,15 @@ Changelog).
       contract (D-219) unchanged
 
 ## 9. Changelog
+- **2026-08-20 (app deep-clean audit):** the Face-ID failure copy was corrected to
+  match the **biometric-only** sheet the app has actually shown since commit
+  `3be516b5`. `biometricLockedOut` told a locked-out user to "use your device PIN",
+  a fallback `biometricOnly: true` guarantees the OS never offers — so the one
+  message a stuck user sees named the one route that does not exist. It now sends
+  them to the password form on this screen. `localizedBiometricError` also gained
+  optional `lockedOut` / `unavailable` overrides so the enrolment step-up, which has
+  no password form, can say something else; this screen passes neither and keeps the
+  defaults. Sign-in behaviour is otherwise unchanged and the golden held.
 - **2026-07-11 (D-742):** OS-autofill fix — the login form is now an `AutofillGroup`
   with `username`/`password` hints and commits the FINAL submitted credentials via
   `TextInput.finishAutofillContext(shouldSave: _rememberMe)` on a successful sign-in,

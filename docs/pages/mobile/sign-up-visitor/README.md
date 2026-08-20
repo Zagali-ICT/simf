@@ -4,12 +4,13 @@
 |---|---|
 | Route | `/sign-up/visitor` (`RouteNames.signUpVisitor`) · **AUTH-only** (any signed-in account; no role / no permission, D7) |
 | Surface | Mobile (Flutter) |
-| Screen | `lib/features/account/sign_up_visitor_screen.dart` (`SignUpVisitorScreen`, 875 lines — the form state, the lookups, the draft assembly and the face-capture/liveness call; `_buildBody` composes the card over the field widgets below) |
-| Widgets | `lib/features/account/widgets/` — `sign_up_visitor_profile_type_field` · `sign_up_visitor_organisation_field` (owns its own search controller + debounce, so a keystroke rebuilds the field and not the whole form) · `sign_up_visitor_place_of_birth_field` · `sign_up_visitor_plate_field` (+ the `SignUpVisitorPlateState` holder, which validates the **assembled** plate rather than the digits field) · `sign_up_visitor_id_image_field` · `sign_up_visitor_face_photo_field` · `sign_up_visitor_header_avatar` · `sign_up_visitor_load_error` · `lookup_search_sheet_launcher`; plus the shared `beige_tabs` · `gender_pills_field` · `date_of_birth_field` · `mobile_field` · `attachment_field`, and `features/visitor_profile/widgets/` `nationality_section` · `document_section` · `contact_section` |
+| Screen | `lib/features/account/sign_up_visitor_screen.dart` (`SignUpVisitorScreen`, **396** lines — the `setState` owner and the `mounted` checks: load, the lookups, the picker call-outs and the face-capture/liveness push. It composes `SignUpVisitorFormCard`; it holds no rules of its own) |
+| Feature-root helpers | `sign_up_visitor_pickers.dart` (the age rule + the three platform round-trips: date picker, gallery, country sheet) · `sign_up_visitor_submit.dart` (the save) · `data/sign_up_visitor_form.dart` (the field state + `applyProfile` / `toDraft`). Pure, non-widget, and therefore unit-testable without pumping the screen |
+| Widgets | `lib/features/account/widgets/` — `sign_up_visitor_profile_type_field` · `sign_up_visitor_organisation_field` (owns its own search controller + debounce, so a keystroke rebuilds the field and not the whole form) · `sign_up_visitor_place_of_birth_field` · `sign_up_visitor_plate_field` (+ the `SignUpVisitorPlateState` holder, which validates the **assembled** plate rather than the digits field) · `sign_up_visitor_id_image_field` · `sign_up_visitor_face_photo_field` · `sign_up_visitor_header_avatar` · `sign_up_visitor_load_error` · `sign_up_visitor_form_card` (the whole beige card — the screen passes it state and callbacks) · `lookup_search_sheet`; plus the shared `beige_tabs` · `gender_pills_field` · `date_of_birth_field` · `mobile_field` · `attachment_field`, and `features/visitor_profile/widgets/` `identity_section` · `nationality_section` · `document_section` · `contact_section` |
 | Figma node | `168:2972` (KSA-Project, file `PSXHhY0UVTAPSaIOf9uNKd`; D-368) |
 | Shell | `SimfFormScaffold` (`pinnedHeader: true`) — the shared account/entry scaffold (back + globe toggle, logo + forum name) |
 | Providers | `profileRepositoryProvider` → `ProfileRepository` (pre-fill + 3 lookups) |
-| Tests | `test/features/account/sign_up_visitor_screen_test.dart` (widget, 24 cases) · `test/features/account/sign_up_visitor_plate_state_test.dart` (the extracted plate holder) · `plate_validation_test.dart` · `phone_validation_test.dart` · `profile_models_test.dart` · golden `test/golden/sign_up_visitor_golden_test.dart` (`goldens/sign_up_visitor_168-2972.png`) · E2E [`mobile-sign-up-visitor.md`](../../../tests/e2e/mobile-sign-up-visitor.md) (E2E-MOB007-001..024) |
+| Tests | `test/features/account/sign_up_visitor_screen_test.dart` (widget, 32 cases) · `sign_up_visitor_pickers_test.dart` (the age rule + the picker seed, 9 cases) · `organisation_typeahead_race_test.dart` (the out-of-order search guard) · `sign_up_visitor_plate_state_test.dart` (the extracted plate holder) · `plate_validation_test.dart` · `phone_validation_test.dart` · `profile_models_test.dart` · golden `test/golden/sign_up_visitor_golden_test.dart` (`goldens/sign_up_visitor_168-2972.png`) · E2E [`mobile-sign-up-visitor.md`](../../../tests/e2e/mobile-sign-up-visitor.md) (E2E-MOB007-001..027) |
 | Status | ✅ Real — D-332 (rework: save moved to interests) → D-368 (Figma 168:2972) → D-371/D-373/D-374/D-375 amendments → **clean-code frozen (D-546, 2026-06-30)** |
 | Legacy detail | `docs/App/Page_007/` (Function / Logic / API / Design) — retained as the detailed historical spec |
 
@@ -39,7 +40,16 @@ stretch edge-to-edge on a tablet — §13.7) holds, in order:
 3. Full name **AR** / **EN** (`SimfLabeledTextField`; per-script keystroke filters).
 4. **الجنس** — `GenderPillsField` (ذكر / أنثى; default Male).
 5. **الجهة / Organisation** (`SimfPickerField` typeahead → `LookupSearchSheet`) —
-   **required** (B3 / D-221).
+   **required** (B3 / D-221). The field owns its own controller and debounce, and
+   since 2026-08-20 it also **stamps each search with a generation number and drops
+   any response that is not the newest**. The debounce can only cancel a pending
+   *timer*, never a request already in flight, so two searches are routinely
+   outstanding at once and the network decides which lands last — on congested
+   venue WiFi that is often the older one. Type `min`, keep typing to `ministry`,
+   and the short query's slower reply used to repaint the list with matches for
+   text the box no longer held. Because organisation is required, the visitor then
+   either picked the wrong employer or was told there was no match for a query that
+   had one.
 6. **المسمى الوظيفي (بالإنجليزية)** — English job title (**required**, D-723;
    Latin letters + spaces only, filtered at the keystroke, LTR), followed by
    **المسمى الوظيفي (بالعربية)** — the Arabic job title (`SimfLabeledTextField`,
@@ -53,7 +63,15 @@ stretch edge-to-edge on a tablet — §13.7) holds, in order:
 8. **document fields** (`DocumentSection`, shared with the profile feature).
 9. **رقم الجوال** — one conditional `MobileField` (Saudi or international, C4 shapes);
    **required** (D-723).
-10. **تاريخ الميلاد** — `DateOfBirthField` (**≥ 18**, D-197).
+10. **تاريخ الميلاد** — `DateOfBirthField` (**≥ 18**, D-197). The eligible window is
+    `visitorDateOfBirthRange` in `sign_up_visitor_pickers.dart`: `firstDate` is the
+    120th birthday, `lastDate` the 18th, both measured from the **Saudi** wall clock
+    (`saudiNow()`), not the device clock — an age boundary read off a traveller's
+    phone lands a day out. The picker's `initialDate` is **clamped into that window**
+    before `showDatePicker` is called: `showDatePicker` asserts its `initialDate` is
+    in range, and the seed is the stored profile's date of birth, which the server
+    never range-checks against the 18-to-120 rule. An out-of-window stored value
+    used to trip that assert in debug and seed an out-of-range picker in release.
 11. **مكان الميلاد** — place of birth (**required**, D-723; Saudi = region picker,
     else free text).
 12. **رقم اللوحة** — Saudi plate (**optional** — alongside the Arabic job title,
@@ -94,6 +112,15 @@ loading (spinner) / data / inline-retry (`SignUpVisitorLoadError`) states.
   present falls back to Saudi Arabia.
 - A failed profile-types lookup shows an inline retry — never a silently hidden
   picker (D-375). A failed pre-fill load shows the full-screen retry.
+- **No path leaves the screen stuck busy.** The three async entry points — the
+  pre-fill load, the profile-types re-query and Next's save — clear their busy flag
+  in a `finally`, not only on the `ApiFailure` branch. Each of them can throw past
+  `ApiFailure`: a 401 triggers a token refresh, and that refresh can fail on a
+  keystore write. Before 2026-08-20 the load stranded the screen on its spinner for
+  good, the type picker spun with no retry (so Next stayed blocked), and a failed
+  save left Next disabled for the rest of the session — in every case with nothing
+  on screen explaining why. `_fetchProfileTypes` treats a null result as the failure
+  state its inline retry hangs off.
 
 ## 6. i18n / RTL
 Bilingual (ar/en), Arabic-first, RTL-correct. All strings via `AppL10n`. The brand
@@ -101,15 +128,28 @@ font (`FSAlbertArabic`) is applied once in the theme — including the gold CTA,
 the D-545 theme fix (see Changelog).
 
 ## 7. Testing
-- **Widget** (`sign_up_visitor_screen_test.dart`, 24 cases): type filter, the
+- **Widget** (`sign_up_visitor_screen_test.dart`, 32 cases): type filter, the
   Visitor/Other picker lock, the D-373 nationality→document switch + gate +
   fallback, the D-375 lookup retry, load-failure retry, Next draft assembly, and
   the optional Arabic job title round-trip (prefill → upsert + draft, #37).
 - **Unit**: `plate_validation_test.dart` (assemble/parse round-trips, D-468/D-471),
-  `phone_validation_test.dart`, `profile_models_test.dart`, and
+  `phone_validation_test.dart`, `profile_models_test.dart`,
   `sign_up_visitor_plate_state_test.dart` — the plate holder the field widget now
   takes, asserting it still validates the **assembled** plate (letters + digits
-  together) rather than the digits controller on its own.
+  together) rather than the digits controller on its own — and
+  `sign_up_visitor_pickers_test.dart`, which pins the 18-to-120 window and the
+  clamped picker seed against an injected `now` — both boundaries exactly, a February-29
+  `now` in a non-leap year (Dart rolls it silently to March 1st, so the 18-years-back
+  arithmetic lands on the 1st and not the 29th — pinned because the silence is the
+  hazard), and the two
+  out-of-window stored dates driven through the real `DatePickerDialog`, which is the
+  only way to prove the clamp is actually wired to `initialDate`. One test is a source
+  check rather than a behaviour check, and says so: on a +03:00 box the device clock
+  and the Saudi clock agree, so nothing in-process can catch a `DateTime.now()`
+  reinstated as the default.
+- **Widget, regression**: `organisation_typeahead_race_test.dart` — a slow first
+  search and a fast second one resolve out of order, and the field must be showing
+  the SECOND query's rows.
 - **Golden** (`sign_up_visitor_golden_test.dart`): `goldens/sign_up_visitor_168-2972.png`
   @375×2100 RTL (empty/default state) — locks the frozen frame parity.
 - **E2E**: [`docs/tests/e2e/mobile-sign-up-visitor.md`](../../../tests/e2e/mobile-sign-up-visitor.md).
@@ -126,6 +166,32 @@ the D-545 theme fix (see Changelog).
 - [x] `flutter analyze` 0 errors / 0 warnings; full suite green; wire contract unchanged
 
 ## 9. Changelog
+- **2026-08-20 (app deep-clean audit):** three defects a green build could not see,
+  plus one extraction.
+  - **The organisation type-ahead could show results for the wrong query.** A slow
+    earlier search overwrote the results for the text actually in the box; the field
+    now numbers its searches and ignores every stale reply (section 3, item 5).
+    Organisation is required (D-221), so the visible failure was submitting the
+    wrong employer.
+  - **An out-of-window stored date of birth crashed the picker.** `showDatePicker`
+    asserts `initialDate` is inside `firstDate..lastDate`, and the seed came
+    straight from a server profile that is never range-checked. The seed is now
+    clamped (section 3, item 10), and the range is derived from the Saudi clock
+    rather than the device clock, so the 18th-birthday boundary is the same date for
+    a traveller as for everyone else.
+  - **Three async paths could leave the screen busy forever** when a token refresh
+    threw past `ApiFailure` (section 5).
+  - The eligibility rule, the gallery read and the country sheet moved out to
+    `lib/features/account/sign_up_visitor_pickers.dart`. That took the screen to
+    **396** lines and, more usefully, made the age rule unit-testable for the first
+    time — `visitorDateOfBirthRange` / `visitorDateOfBirthSeed` take an injected
+    `now`, so the boundary can be pinned without waiting a year.
+
+  Behaviour-preserving elsewhere: the `sign_up_visitor_168-2972` golden held
+  **without** `--update-goldens`, and no wire-contract key moved. The header table's
+  line count, widget list and test counts were re-measured in the same pass — the
+  875-line figure had been stale since the screen dropped to 398, and
+  `lookup_search_sheet_launcher` named a file that does not exist.
 - **2026-08-18 (delivery clean-code programme, structure only):** 1,213 → **875**
   lines. Seven of the screen's eight remaining `_build*` **widget builders** became
   public widgets under `account/widgets/` (the field list in the header table
