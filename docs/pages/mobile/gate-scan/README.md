@@ -19,7 +19,6 @@ locks the movement; a Both gate requires the operator to choose first.
 | `widgets/gate_setup_view.dart` | `GateSetupView` — QR tile + picker + movement toggle + scan CTA |
 | `widgets/gate_picker.dart` | `GatePicker` — assigned-gates dropdown (brand font sourced from theme constants) |
 | `widgets/gate_direction_button.dart` | `GateDirectionButton` — one دخول/خروج pill |
-| `widgets/gate_scanner_view.dart` | `GateScannerView` — ZXing camera + manual-entry row |
 | `widgets/gate_result_view.dart` | `GateResultView` — allowed/denied verdict card + detail rows |
 
 The forbidden / not-assigned / load-error states use the shared `SimfEmptyState`
