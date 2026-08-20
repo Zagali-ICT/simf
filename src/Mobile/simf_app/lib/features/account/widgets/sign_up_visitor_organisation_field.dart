@@ -60,6 +60,17 @@ class _SignUpVisitorOrganisationFieldState
   bool _searchFailed = false;
   Timer? _debounce;
 
+  // Which search the UI is currently showing. The debounce cancels a
+  // pending TIMER, but it cannot cancel a request already in flight, so
+  // two searches can be outstanding at once and the network decides which
+  // lands last. On the venue's congested WiFi that is routinely the OLDER
+  // one: 'min' fires, the user keeps typing 'ministry', the short query's
+  // slower response arrives afterwards and repaints the list with matches
+  // for text the box no longer contains. Organisation is required (D-221),
+  // so the visitor either picks the wrong employer or is told there is no
+  // match for a query that has one.
+  int _searchGeneration = 0;
+
   @override
   void initState() {
     super.initState();
@@ -82,6 +93,7 @@ class _SignUpVisitorOrganisationFieldState
   }
 
   Future<void> _run(String value) async {
+    final generation = ++_searchGeneration;
     setState(() {
       _searching = true;
       _searchFailed = false;
@@ -89,7 +101,7 @@ class _SignUpVisitorOrganisationFieldState
     final repo = ref.read(profileRepositoryProvider);
     try {
       final results = await repo.searchOrganisations(search: value);
-      if (!mounted) {
+      if (!mounted || generation != _searchGeneration) {
         return;
       }
       setState(() {
@@ -97,7 +109,7 @@ class _SignUpVisitorOrganisationFieldState
         _searching = false;
       });
     } on ApiFailure {
-      if (!mounted) {
+      if (!mounted || generation != _searchGeneration) {
         return;
       }
       setState(() {

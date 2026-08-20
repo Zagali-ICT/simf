@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
-import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'package:simf_data_pkg/src/api/api_error_codes.dart';
 import 'package:simf_data_pkg/src/api/api_failure.dart';
 import 'package:simf_data_pkg/src/api/api_result.dart';
@@ -58,14 +57,18 @@ class SimfApiClient {
         currentLanguageCode: currentLanguageCode,
       ),
     );
+    // The ONLY logger on this client, and it deliberately logs no body and
+    // no header. A body logger sat here until 2026-08-20 with
+    // `requestBody: true` (and `responseBody` defaulting to true), which
+    // printed the sign-in password and both tokens to the device log.
+    // `enableRequestLogging` is NOT a safe gate for that: it is
+    // `SIMF_BUILD != 'prod'`, and `SIMF_BUILD` defaults to `dev` while the
+    // base URL defaults to the PRODUCTION edge — so a plain
+    // `flutter build apk --release` with no --dart-define talked to prod
+    // with body logging on. Anything logging a body here must gate on
+    // `kReleaseMode` as well, not on the flavour.
     dio.interceptors.add(
       LoggingInterceptor(enabled: config.enableRequestLogging),
-    );
-    dio.interceptors.add(
-      PrettyDioLogger(
-        enabled: config.enableRequestLogging,
-        requestBody: true,
-      ),
     );
 
     return SimfApiClient._(dio, tokenSource, currentLanguageCode);

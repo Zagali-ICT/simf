@@ -77,7 +77,6 @@ dependencies:
   # Dart (no native config, which matters here because android/ios are
   # generated); already present transitively, now direct because we use it.
   pointycastle: ^3.9.1
-  pretty_dio_logger: ^1.4.0
   # D-736 — semver parse/compare for the server version-policy check (never
   # string-compare versions: "1.10.0" < "1.9.0" lexically). Pure Dart.
   pub_semver: ^2.1.4
