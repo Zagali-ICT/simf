@@ -46,10 +46,25 @@ figures in order of appearance and states that number in the caption, so the sam
 sheet is Figure 1 in one document and Figure 3 in another without any clash. Do
 not put a number back into a sheet title.
 
-Consumers: `SIMF-HLD-005` (landscape, sections 2.1 to 2.3) and `SIMF-LLD-003`
-(components at 2.1.1, data flow at 2.2, deployment at 7.1). LLD-003 **v1.2**
-embeds sheets 2, 3 and 4; **v1.3** embeds sheets 2, 3 and 5. Whenever a sheet is
-re-rendered, its image in every document that embeds it is stale until replaced.
+**Two documents embed these sheets, and both embed all three.** Whenever a sheet
+is re-rendered, its image in each of them is stale until that document is
+reissued at a new version.
+
+| Document | Deployment | Components | Data flow |
+|---|---|---|---|
+| `SIMF-HLD-004-MoD-HLD-External-v1.1` | sheet 4 | sheet 2 | sheet 3 |
+| `SIMF-HLD-004-MoD-HLD-External-v1.2` | **sheet 5** | sheet 2 | sheet 3 |
+| `SIMF-LLD-003-Solution-Design-Document-v1.2` | sheet 4 | sheet 2 | sheet 3 |
+| `SIMF-LLD-003-Solution-Design-Document-v1.3` | **sheet 5** | sheet 2 | sheet 3 |
+
+In the HLD the three figures sit together at the front, sized to a common
+height; in the LLD they sit at 2.1.1, 2.2 and 7.1, sized to a common width. A
+sheet whose aspect ratio differs from the one it replaces must be re-scaled on
+the axis the document does not fix, or the picture is silently stretched.
+
+`SIMF-HLD-005` is named in older notes as a consumer. **It is not on disk**: it
+was deleted in `02ca3c8f4` along with sheet 1's outputs. HLD-004 is the HLD that
+exists.
 
 ## Regenerate
 
