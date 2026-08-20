@@ -76,6 +76,7 @@ class _CapturedVisitorSheetState extends ConsumerState<CapturedVisitorSheet> {
       return;
     }
     setState(() => _busy = true);
+    var popped = false;
     try {
       await ref
           .read(exhibitorRepositoryProvider)
@@ -84,6 +85,7 @@ class _CapturedVisitorSheetState extends ConsumerState<CapturedVisitorSheet> {
         return;
       }
       Navigator.of(context).pop(true);
+      popped = true;
     } on ApiFailure {
       if (!mounted) {
         return;
@@ -92,9 +94,12 @@ class _CapturedVisitorSheetState extends ConsumerState<CapturedVisitorSheet> {
         SnackBar(content: Text(l10n.scanVisitorError)),
       );
     } finally {
-      // Same 401-refresh escape as above; the mounted guard covers the success
-      // path, where the sheet has already popped.
-      if (mounted) {
+      // Same 401-refresh escape as above — but only for a sheet that is
+      // staying. `mounted` does NOT stand in for "already gone": pop() merely
+      // reverses the route's animation controller, and the State lives until
+      // the 200ms exit transition completes, so re-enabling here repaints the
+      // spinner back to the icon on a sheet the user can still see.
+      if (!popped && mounted) {
         setState(() => _busy = false);
       }
     }

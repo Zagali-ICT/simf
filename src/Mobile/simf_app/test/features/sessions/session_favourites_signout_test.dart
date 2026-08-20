@@ -113,7 +113,13 @@ void main() {
 
     final ids = await container.read(sessionFavouritesProvider.future);
 
-    expect(ids, isEmpty);
+    expect(
+      ids,
+      isEmpty,
+      reason: 'A signed-out session must start with no favourites. A non-empty '
+          'set here means the provider fetched with no account behind it, so '
+          "whatever the server answered became this session's hearts.",
+    );
     expect(
       adapter.calls,
       isZero,
@@ -126,6 +132,19 @@ void main() {
   test("signing out drops the previous account's favourites", () async {
     final auth = _FakeAuth(_signedIn());
     final container = containerFor(auth);
+
+    // Subscribe to auth from the test, not only from inside the provider.
+    // When the defect is reinstated the provider stops watching auth, nothing
+    // else instantiates the notifier, and `becomeSignedOut()` below throws
+    // "Tried to use a notifier in an uninitialized state" BEFORE the assertion
+    // runs — a stack trace that reads as a broken fake instead of as the leak
+    // it actually is. Holding a subscription here means the notifier exists
+    // either way, so the failure is the expect and its reason.
+    final authSub = container.listen<AuthState>(
+      authControllerProvider,
+      (_, __) {},
+    );
+    addTearDown(authSub.close);
 
     expect(await container.read(sessionFavouritesProvider.future), <String>{
       's1',

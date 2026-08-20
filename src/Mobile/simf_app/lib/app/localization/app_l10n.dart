@@ -670,15 +670,22 @@ class AppL10n {
         'فعّل قفل الشاشة (رمز PIN أو نمط أو كلمة مرور) على جهازك أولاً ثم حاول مجدداً.',
         'Set a device screen lock (PIN, pattern or password) first, then try again.',
       );
-  // Points at the PASSWORD form, not the device PIN. `confirmDeviceIdentity`
-  // passes `biometricOnly: true`, so the OS sheet never offers a PIN — this
-  // string told the user to use one until 2026-08-20, which was a dead end at
-  // the moment they were already locked out. The password form is on the same
-  // sign-in screen the biometric button sits on, so it is reachable without
-  // navigating anywhere.
+  // The SIGN-IN caller's lockout copy: it names the password form because that
+  // form is on the same screen the biometric button sits on. It must not name
+  // the device PIN — `confirmDeviceIdentity` passes `biometricOnly: true`, so
+  // the OS sheet never offers one, and telling a locked-out user to use it is a
+  // dead end.
   String get biometricLockedOut => _t(
         'محاولات كثيرة خاطئة. المصادقة مقفلة مؤقتاً — حاول لاحقاً أو سجّل الدخول بكلمة المرور.',
         'Too many attempts. Authentication is temporarily locked — try again shortly, or sign in with your password.',
+      );
+
+  // The ENROLMENT caller's lockout copy. The user is already signed in on the
+  // step-up screen and there is no password form to send them to; the OS
+  // lockout clears on its own, so waiting is the whole recovery.
+  String get biometricLockedOutEnrol => _t(
+        'محاولات كثيرة خاطئة. المصادقة مقفلة مؤقتاً — حاول لاحقاً.',
+        'Too many attempts. Authentication is temporarily locked — try again shortly.',
       );
 
   String get otpTitle => _t('رمز التحقق', 'Verification code');

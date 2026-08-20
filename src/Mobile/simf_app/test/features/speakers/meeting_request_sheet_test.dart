@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -6,6 +7,7 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/features/speakers/data/speaker_models.dart';
 import 'package:simf_app/features/speakers/data/speakers_repository.dart';
 import 'package:simf_app/features/speakers/widgets/meeting_request_sheet.dart';
+import 'package:simf_app/features/speakers/widgets/meeting_sheet_fields.dart';
 import 'package:simf_app/features/speakers/widgets/meeting_slot_pickers.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
@@ -36,6 +38,8 @@ class _FakeRepo implements SpeakersRepository {
   _FakeRepo({
     this.slots = const <SpeakerSlot>[],
     this.failSlots = false,
+    this.crashSlots = false,
+    this.crashTargets = false,
     this.failSubmitStatus,
     this.failSubmitCode = 'x',
     this.failSubmitMessage = 'fail',
@@ -49,6 +53,16 @@ class _FakeRepo implements SpeakersRepository {
   // recovering,
   // which is the only way to prove Retry actually re-fetches.
   bool failSlots;
+
+  // The availability fetch throws something that is NOT an ApiFailure — the
+  // keystore PlatformException the client raises on its 401-refresh path,
+  // which escapes un-wrapped. NOT final, for the same recovery reason as
+  // [failSlots].
+  bool crashSlots;
+
+  // The same un-wrapped failure on the bilateral roster fetch, which the sheet
+  // runs once from initState and can never re-run.
+  final bool crashTargets;
 
   // G3 — how many times the availability fetch was attempted. Without this a
   // no-op Retry button would satisfy a test that only checks the button
@@ -71,27 +85,35 @@ class _FakeRepo implements SpeakersRepository {
   DateTime? lastSlotEnd;
 
   @override
-  Future<List<SpeakerSummary>> getSpeakers() async => const <SpeakerSummary>[
-        SpeakerSummary(
-          id: 's1',
-          name: 'Dr. Sarah Al-Otaibi',
-          nameArabic: 'د. سارة العتيبي',
-          displayOrder: 0,
-          // A rank whose token ('admiral') is in NO speaker name, so a search
-          // for it can only match via the rank branch of the picker predicate.
-          rank: 'Rear Admiral',
-        ),
-        SpeakerSummary(
-          id: 's2',
-          name: 'Capt. Omar Nasser',
-          nameArabic: 'الرائد عمر ناصر',
-          displayOrder: 1,
-        ),
-      ];
+  Future<List<SpeakerSummary>> getSpeakers() async {
+    if (crashTargets) {
+      throw PlatformException(code: 'keystore_unavailable');
+    }
+    return const <SpeakerSummary>[
+      SpeakerSummary(
+        id: 's1',
+        name: 'Dr. Sarah Al-Otaibi',
+        nameArabic: 'د. سارة العتيبي',
+        displayOrder: 0,
+        // A rank whose token ('admiral') is in NO speaker name, so a search
+        // for it can only match via the rank branch of the picker predicate.
+        rank: 'Rear Admiral',
+      ),
+      SpeakerSummary(
+        id: 's2',
+        name: 'Capt. Omar Nasser',
+        nameArabic: 'الرائد عمر ناصر',
+        displayOrder: 1,
+      ),
+    ];
+  }
 
   @override
   Future<List<SpeakerSlot>> getAvailableSlots(String speakerId) async {
     slotFetchCalls++;
+    if (crashSlots) {
+      throw PlatformException(code: 'keystore_unavailable');
+    }
     if (failSlots) {
       throw const ApiFailure(
         code: ApiErrorCodes.clientNetwork,
@@ -346,6 +368,46 @@ void main() {
 
       expect(repo.submitCalls, 1);
       expect(repo.lastSubject, 'Naval cooperation');
+    });
+
+    testWidgets(
+        'a roster fetch that throws a NON-ApiFailure resolves the picker '
+        'instead of spinning it forever', (tester) async {
+      // Worse than the slot case: the bilateral entry loads the roster from
+      // initState and never again, so a stuck spinner is terminal — the
+      // subject / slots / send half of the sheet is gated on a chosen target
+      // and there is nothing to choose. The sheet stays dead until it is
+      // closed and reopened.
+      await _pump(tester, speakerId: null, repo: _FakeRepo(crashTargets: true));
+
+      expect(find.byType(MeetingSheetSpinner), findsNothing);
+      expect(find.text('Choose a speaker…'), findsOneWidget);
+    });
+
+    testWidgets(
+        'G3 — a slot fetch that throws a NON-ApiFailure lands the same load '
+        'error + Retry instead of spinning forever', (tester) async {
+      // The `on ApiFailure` branch never sees a keystore PlatformException, so
+      // before the finally the sheet was left with _slotsLoading stuck true:
+      // an endless spinner, canSend permanently false, and no Retry — the
+      // Retry hangs off _slotsError, which nothing had set. The sheet was dead
+      // until the user closed and reopened it.
+      final repo = _FakeRepo(slots: _twoDaySlots, crashSlots: true);
+      await _pump(tester, speakerId: 's1', repo: repo);
+
+      expect(find.byType(MeetingSheetSpinner), findsNothing);
+      expect(find.text('Could not load the list.'), findsOneWidget);
+      // …and never as "this speaker has no availability", which G3 forbids.
+      expect(find.text('No meeting slots available right now'), findsNothing);
+
+      // Retry is reachable, which is the whole point of the error state.
+      repo.crashSlots = false;
+      await tester
+          .tap(find.byKey(const ValueKey<String>('meeting-slots-retry')));
+      await tester.pumpAndSettle();
+
+      expect(repo.slotFetchCalls, 2);
+      expect(find.byType(MeetingDayCard), findsWidgets);
     });
 
     testWidgets("submitting a picked real slot sends that slot's start + end",

@@ -85,17 +85,16 @@ public sealed class NotificationClickUrlContractTests
     private static HashSet<string> ServerClickUrlPaths()
     {
         var source = File.ReadAllText(PathUnder(ServerCatalogPath));
-
-        var start = source.IndexOf("ClickUrlFor", StringComparison.Ordinal);
-        Assert.True(
-            start >= 0,
-            "Could not find ClickUrlFor in " + ServerCatalogPath
-            + ". If it was renamed or moved, update this test - do not delete it.");
+        var body = BodyAfter(
+            source,
+            @"\bstatic\s+string\?\s+ClickUrlFor\s*\(",
+            ServerCatalogPath,
+            "ClickUrlFor");
 
         // Any quoted literal opening with `/`. An interpolated arm carries its
         // `$` OUTSIDE the quote ($"/rate?..."), so the quote is still the first
         // character matched and one pattern covers both forms.
-        return Regex.Matches(source[start..], @"""(?<url>/[^""]*)""")
+        return Regex.Matches(body, @"""(?<url>/[^""]*)""")
             .Select(match => PathOf(match.Groups["url"].Value))
             .ToHashSet(StringComparer.Ordinal);
     }
@@ -105,20 +104,79 @@ public sealed class NotificationClickUrlContractTests
     private static HashSet<string> AppAllowedPaths()
     {
         var source = File.ReadAllText(PathUnder(AppAllowListPath));
-
-        var setBody = Regex.Match(
+        var body = BodyAfter(
             source,
-            @"_allowedClickPaths\s*=\s*<String>\{(?<body>[^}]*)\}",
-            RegexOptions.Singleline);
+            @"_allowedClickPaths\s*=\s*<String>",
+            AppAllowListPath,
+            "_allowedClickPaths");
 
-        Assert.True(
-            setBody.Success,
-            "Could not find the _allowedClickPaths set literal in " + AppAllowListPath
-            + ". If it was renamed or moved, update this test - do not delete it.");
-
-        return Regex.Matches(setBody.Groups["body"].Value, "'(?<path>/[^']*)'")
+        return Regex.Matches(body, "'(?<path>/[^']*)'")
             .Select(match => match.Groups["path"].Value)
             .ToHashSet(StringComparer.Ordinal);
+    }
+
+    // The `{ … }` that follows the first match of <paramref name="declaration"/>,
+    // brace-matched — not "up to the next `}`", and never "to end of file".
+    //
+    // Why the windowing is worth this much code. The first version of this test
+    // took everything from the literal "ClickUrlFor" to the END OF THE FILE, and
+    // the app scan took everything up to the first `}`. Both were correct on the
+    // day they were written and neither would have STAYED correct: one method
+    // added below ClickUrlFor and the server scan starts collecting path
+    // literals that are not clickUrls, which either passes vacuously or reds the
+    // build naming a path no reader can find in the switch. So each boundary is
+    // asserted, and a boundary that cannot be found fails LOUDLY — there is no
+    // fallback window to fall into.
+    //
+    // Counting braces is sound for these two bodies, and only because every
+    // brace in them today is half of a balanced pair: C# interpolation holes
+    // ($"…{requestId}") and property patterns (`is { } requestId`) in the
+    // switch, and none at all in the Dart set. The matcher does NOT parse
+    // strings or comments, so it does not defend itself against a lone brace —
+    // a stray `}` truncates the window silently, a stray `{` overruns it into
+    // whatever follows. If either body ever grows an unbalanced brace this
+    // needs a real parser; do not paper over it by widening the pattern.
+    private static string BodyAfter(
+        string source, string declaration, string file, string what)
+    {
+        var match = Regex.Match(source, declaration);
+        Assert.True(
+            match.Success,
+            "Could not find the " + what + " declaration in " + file
+            + ". If it was renamed or moved, update this test - do not delete it.");
+
+        var open = source.IndexOf('{', match.Index + match.Length);
+        Assert.True(
+            open >= 0,
+            "Found " + what + " in " + file + " but no `{` after it, so this test "
+            + "cannot tell where the body it has to scan begins.");
+
+        var close = -1;
+        var depth = 0;
+        for (var index = open; index < source.Length && close < 0; index++)
+        {
+            if (source[index] == '{')
+            {
+                depth++;
+            }
+            else if (source[index] == '}')
+            {
+                depth--;
+                if (depth == 0)
+                {
+                    close = index;
+                }
+            }
+        }
+
+        Assert.True(
+            close >= 0,
+            "The " + what + " body in " + file + " has no matching `}`, so this test "
+            + "cannot bound its scan. Fix the file or fix this test - do NOT let the "
+            + "scan fall back to end-of-file, which is how it silently collects "
+            + "literals that have nothing to do with this contract.");
+
+        return source[open..(close + 1)];
     }
 
     private static string PathOf(string clickUrl)

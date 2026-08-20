@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 import 'package:simf_app/features/account/data/profile_lookups.dart';
 import 'package:simf_app/features/account/data/sign_up_visitor_lookups.dart';
 import 'package:simf_app/features/account/widgets/lookup_search_sheet.dart';
@@ -28,17 +29,44 @@ import 'package:simf_app/features/account/widgets/lookup_search_sheet.dart';
       latest: DateTime(now.year - 18, now.month, now.day),
     );
 
-/// Opens the OS date picker inside the eligible range, seeded at [current] or
-/// at the newest eligible date. Returns null when the user backs out.
+/// Where the picker opens: [current] pulled inside [range], or the newest
+/// eligible date when there is nothing stored yet.
+///
+/// `showDatePicker` ASSERTS its `initialDate` is within `firstDate..lastDate`,
+/// and [current] arrives from the server profile, which is never range-checked
+/// against the 18-to-120 rule — an out-of-window stored date would trip that
+/// assert in debug and seed an out-of-range picker in release. Comparing the
+/// raw value against the date-only bounds is deliberate: a [current] on
+/// `latest`'s own day but with a time-of-day clamps to `latest`, which is what
+/// the picker's own date-only truncation would have produced anyway.
+DateTime visitorDateOfBirthSeed({
+  required DateTime? current,
+  required ({DateTime earliest, DateTime latest}) range,
+}) {
+  if (current == null || current.isAfter(range.latest)) {
+    return range.latest;
+  }
+  if (current.isBefore(range.earliest)) {
+    return range.earliest;
+  }
+  return current;
+}
+
+/// Opens the OS date picker inside the eligible range, seeded per
+/// [visitorDateOfBirthSeed]. Returns null when the user backs out.
+///
+/// [now] defaults to the Saudi wall clock, never the device clock (D-219 /
+/// D-770): an age boundary read off a traveller's phone is a day out, so the
+/// 18th birthday would fall on the wrong date for them.
 Future<DateTime?> pickVisitorDateOfBirth(
   BuildContext context, {
   required DateTime? current,
   DateTime? now,
 }) {
-  final range = visitorDateOfBirthRange(now ?? DateTime.now());
+  final range = visitorDateOfBirthRange(now ?? saudiNow());
   return showDatePicker(
     context: context,
-    initialDate: current ?? range.latest,
+    initialDate: visitorDateOfBirthSeed(current: current, range: range),
     firstDate: range.earliest,
     lastDate: range.latest,
   );

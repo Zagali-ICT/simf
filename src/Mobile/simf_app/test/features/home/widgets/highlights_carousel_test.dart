@@ -71,6 +71,76 @@ void main() {
       expect(pageView.controller!.page, closeTo(1, 0.01));
     });
 
+    testWidgets(
+        'shrinking to two slides leaves the dots on the page the controller '
+        'lands on', (tester) async {
+      await tester.pumpWidget(
+        _harness(<NewsListItem>[_post('a'), _post('b'), _post('c')]),
+      );
+      await tester.pump();
+
+      // Rotate to the last slide, then let a refresh drop one post.
+      await tester.pump(const Duration(seconds: 4));
+      await tester.pump(const Duration(milliseconds: 600));
+      await tester.pump(const Duration(seconds: 4));
+      await tester.pump(const Duration(milliseconds: 600));
+      expect(tester.widget<CarouselDots>(find.byType(CarouselDots)).index, 2);
+
+      await tester.pumpWidget(
+        _harness(<NewsListItem>[_post('a'), _post('b')]),
+      );
+      await tester.pump();
+
+      // PageController settles a shrunken list on its LAST page, so the dots
+      // have to follow it THERE. Sending them to slide 1 instead leaves them
+      // pointing at a slide that is not on screen.
+      final pageView = tester.widget<PageView>(find.byType(PageView));
+      expect(pageView.controller!.page, closeTo(1, 0.01));
+      expect(tester.widget<CarouselDots>(find.byType(CarouselDots)).index, 1);
+
+      // ...and the next tick has somewhere to go. With the index stuck at 0 the
+      // tick targets page 1, which is already on screen, so the carousel never
+      // moves again.
+      await tester.pump(const Duration(seconds: 4));
+      await tester.pump(const Duration(milliseconds: 600));
+      expect(
+        tester.widget<PageView>(find.byType(PageView)).controller!.page,
+        closeTo(0, 0.01),
+      );
+    });
+
+    testWidgets('shrinking mid-list never auto-advances backwards',
+        (tester) async {
+      final five = <NewsListItem>[
+        _post('a'),
+        _post('b'),
+        _post('c'),
+        _post('d'),
+        _post('e'),
+      ];
+      await tester.pumpWidget(_harness(five));
+      await tester.pump();
+      for (var i = 0; i < 4; i++) {
+        await tester.pump(const Duration(seconds: 4));
+        await tester.pump(const Duration(milliseconds: 600));
+      }
+      expect(tester.widget<CarouselDots>(find.byType(CarouselDots)).index, 4);
+
+      await tester.pumpWidget(_harness(five.take(3).toList()));
+      await tester.pump();
+      expect(tester.widget<CarouselDots>(find.byType(CarouselDots)).index, 2);
+
+      // The controller sits on page 2; a tick computed from a zeroed index
+      // targets page 1 and the carousel slides BACKWARDS. From the real page it
+      // wraps forward to the first slide.
+      await tester.pump(const Duration(seconds: 4));
+      await tester.pump(const Duration(milliseconds: 600));
+      expect(
+        tester.widget<PageView>(find.byType(PageView)).controller!.page,
+        closeTo(0, 0.01),
+      );
+    });
+
     testWidgets('shrinking the list clamps the index back into range',
         (tester) async {
       await tester.pumpWidget(

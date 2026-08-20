@@ -28,6 +28,27 @@ import 'package:simf_data_pkg/src/api/interceptors/logging_interceptor.dart';
 /// "an interceptor that logs a body", not "PrettyDioLogger". Adding an
 /// interceptor here is a deliberate act: add it to the `allowed` map and say
 /// what it logs.
+///
+/// **What this test does NOT prove.** It matches on `runtimeType`, so it pins
+/// WHICH interceptors are installed — not what any of them actually writes.
+/// The `allowed` map's second column is a claim a human made, checked by a
+/// human reading the interceptor, and nothing here re-checks it. Change
+/// [LoggingInterceptor] itself to `developer.log(options.data.toString())` and
+/// this file stays green: the type name did not move.
+///
+/// That gap is not laziness, it is the harness. [LoggingInterceptor] writes
+/// through `dart:developer`'s `log()`, which in `flutter test` goes to the VM
+/// service and nowhere a test can see — a `runZoned` `ZoneSpecification.print`
+/// hook captures `print` and captures nothing from `developer.log` (probed
+/// 2026-08-20). Capturing it would mean either a `vm_service` dev dependency
+/// driving the Logging stream, or giving the interceptor an injectable sink,
+/// and both change production shape to observe it.
+///
+/// So: this file guards the ADDITION of a logger, and the review of
+/// [LoggingInterceptor]'s own body is what guards its CONTENTS. If that ever
+/// stops being enough — a second logger, or one whose output is
+/// data-dependent — the fix is the injectable sink, not a stronger matcher
+/// here.
 void main() {
   // Type name -> what it is allowed to put in the log.
   const allowed = <String, String>{

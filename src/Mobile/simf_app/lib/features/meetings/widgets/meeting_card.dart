@@ -34,6 +34,7 @@ class MeetingCard extends StatelessWidget {
     required this.l10n,
     required this.baseUrl,
     this.onTap,
+    this.now,
     super.key,
   });
 
@@ -45,6 +46,18 @@ class MeetingCard extends StatelessWidget {
   /// Tapping the card — set for a speaker meeting (opens the speaker profile);
   /// null for a delegation meeting (no speaker to open, so no chevron).
   final VoidCallback? onTap;
+
+  /// The instant the meeting date is measured against, on the Saudi wall
+  /// clock. Null in production, where [_dateLine] reads [saudiNow]; a test
+  /// passes a fixed instant.
+  ///
+  /// The clock is a constructor parameter rather than a call inside
+  /// [_dateLine] because the device zone cannot be faked in-process, and on a
+  /// +03:00 machine — which every SIMF dev box and CI agent is — the device
+  /// clock and the Saudi clock read the same value, so a card that consults
+  /// its own clock cannot be pinned there at all. Same seam, same reason, as
+  /// `visitorDateOfBirthRange(now)`.
+  final DateTime? now;
 
   @override
   Widget build(BuildContext context) {
@@ -235,15 +248,16 @@ class MeetingCard extends StatelessWidget {
   /// "07:45 AM · اليوم" when the meeting is today, else the absolute date (the
   /// same format the requests card uses, Figma 1408:9782).
   ///
-  /// Both sides of the comparison must be on the Saudi wall clock (D-219 /
-  /// D-770). This read the DEVICE clock, so a phone outside Riyadh compared a
-  /// Riyadh date against its own calendar day and labelled the wrong meetings
-  /// "today".
+  /// Both sides of the comparison are on the Saudi wall clock (D-219 /
+  /// D-770): the stored date is a Riyadh reading, so measuring it against the
+  /// phone's own calendar day badges the wrong meetings "today" outside
+  /// Riyadh.
   String _dateLine() {
     final date = saudiOf(item.displayDate);
-    final now = saudiNow();
-    final isToday =
-        date.year == now.year && date.month == now.month && date.day == now.day;
+    final today = now ?? saudiNow();
+    final isToday = date.year == today.year &&
+        date.month == today.month &&
+        date.day == today.day;
     return isToday ? l10n.requestTimeToday(date) : l10n.requestDate(date);
   }
 }

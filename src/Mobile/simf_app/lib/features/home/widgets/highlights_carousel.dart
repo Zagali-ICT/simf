@@ -1,10 +1,8 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/tokens.dart';
-import 'package:simf_app/core/motion/motion_durations.dart';
 import 'package:simf_app/core/net/asset_urls.dart';
+import 'package:simf_app/features/home/widgets/carousel_auto_advance.dart';
 import 'package:simf_app/features/home/widgets/carousel_dots.dart';
 import 'package:simf_app/features/home/widgets/highlight_slide.dart';
 import 'package:simf_app/features/news/data/news_models.dart';
@@ -33,62 +31,12 @@ class HighlightsCarousel extends StatefulWidget {
   State<HighlightsCarousel> createState() => _HighlightsCarouselState();
 }
 
-class _HighlightsCarouselState extends State<HighlightsCarousel> {
+class _HighlightsCarouselState extends State<HighlightsCarousel>
+    with CarouselAutoAdvance<HighlightsCarousel> {
   static const double _slideHeight = SimfTokens.highlightSlideHeight;
-  static const Duration _interval = Duration(seconds: 4);
-
-  late final PageController _controller;
-  Timer? _timer;
-  int _index = 0;
 
   @override
-  void initState() {
-    super.initState();
-    _controller = PageController();
-    _startAutoAdvance();
-  }
-
-  @override
-  void didUpdateWidget(HighlightsCarousel oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // The news list is re-delivered on refresh and can change length while the
-    // State is reused, so initState's one-shot set-up is not enough: the timer
-    // kept cycling modulo the OLD count, leaving _index past the end (a blank
-    // page) or the carousel static after growing past one slide. Same shape as
-    // HomeHeroBanner.
-    if (widget.items.length != oldWidget.items.length) {
-      _timer?.cancel();
-      _timer = null;
-      if (_index >= widget.items.length) {
-        _index = 0;
-      }
-      _startAutoAdvance();
-    }
-  }
-
-  void _startAutoAdvance() {
-    if (widget.items.length <= 1) {
-      return;
-    }
-    _timer = Timer.periodic(_interval, (_) {
-      if (!mounted || !_controller.hasClients) {
-        return;
-      }
-      final next = (_index + 1) % widget.items.length;
-      unawaited(_controller.animateToPage(
-          next,
-          duration: MotionDurations.carouselSlide,
-          curve: Curves.easeInOut,
-        ),);
-    });
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    _controller.dispose();
-    super.dispose();
-  }
+  int get carouselItemCount => widget.items.length;
 
   @override
   Widget build(BuildContext context) {
@@ -97,8 +45,8 @@ class _HighlightsCarouselState extends State<HighlightsCarousel> {
         SizedBox(
           height: _slideHeight,
           child: PageView.builder(
-            controller: _controller,
-            onPageChanged: (i) => setState(() => _index = i),
+            controller: carouselController,
+            onPageChanged: onCarouselPageChanged,
             itemCount: widget.items.length,
             itemBuilder: (context, i) {
               final post = widget.items[i];
@@ -116,7 +64,7 @@ class _HighlightsCarouselState extends State<HighlightsCarousel> {
         ),
         if (widget.items.length > 1) ...<Widget>[
           const SizedBox(height: SimfTokens.space3),
-          CarouselDots(count: widget.items.length, index: _index),
+          CarouselDots(count: widget.items.length, index: carouselIndex),
         ],
       ],
     );

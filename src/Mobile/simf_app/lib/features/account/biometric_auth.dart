@@ -24,10 +24,19 @@ export 'package:simf_app/features/account/widgets/face_id_toggle_tile.dart';
 /// whether a user cancel is silent (sign-in) or shows its own copy (enrol).
 /// A top-level function (not a [BiometricAuth] method) so test fakes needn't
 /// implement it.
-String? localizedBiometricError(AppL10n l10n, LocalAuthOutcome outcome) {
+///
+/// [lockedOut] is the same seam for a lockout: the recovery route out of one is
+/// caller-specific, so a caller with no password form to point at (the enrol
+/// step-up, where the user is already signed in) passes its own copy. The
+/// default is the sign-in screen's.
+String? localizedBiometricError(
+  AppL10n l10n,
+  LocalAuthOutcome outcome, {
+  String? lockedOut,
+}) {
   switch (outcome) {
     case LocalAuthOutcome.lockedOut:
-      return l10n.biometricLockedOut;
+      return lockedOut ?? l10n.biometricLockedOut;
     case LocalAuthOutcome.noDeviceCredential:
       return l10n.biometricNoDeviceCredential;
     case LocalAuthOutcome.unavailable:
@@ -40,7 +49,8 @@ String? localizedBiometricError(AppL10n l10n, LocalAuthOutcome outcome) {
 
 /// The result of an OS device-credential / biometric confirmation (D-738).
 enum LocalAuthOutcome {
-  /// The user proved the device credential (biometric or PIN/pattern/passcode).
+  /// The user proved their identity on the OS sheet (a face or a fingerprint —
+  /// [BiometricAuth.confirmDeviceIdentity] allows no PIN fallback).
   success,
 
   /// The user dismissed / failed the prompt without proving identity.
@@ -85,13 +95,9 @@ class BiometricAuth {
   /// reversed the earlier device-credential posture recorded in D-738, and the
   /// commit that did it says so ("enforce biometric-only authentication").
   ///
-  /// This comment claimed the opposite until 2026-08-20, because that commit
-  /// changed the argument and left the paragraph describing it, and the
-  /// `biometricLockedOut` string, both stating the old behaviour. The string
-  /// mattered more than the comment: after five failed attempts it told the
-  /// user to fall back to their device PIN, which this flag guarantees the OS
-  /// sheet will not offer. The escape from a lockout is the password form on
-  /// the same sign-in screen, and the copy now says that instead.
+  /// So no lockout copy may name the PIN — this flag guarantees the sheet will
+  /// not offer one. What the copy points at instead differs per caller, which
+  /// is why [localizedBiometricError] takes it as an argument.
   Future<LocalAuthOutcome> confirmDeviceIdentity(String reason) async {
     try {
       final ok = await _localAuth.authenticate(

@@ -159,7 +159,12 @@ class _MeetingRequestFormState<T> extends State<MeetingRequestForm<T>> {
         _targets = targets;
         _targetsLoaded = true;
       });
-    } on ApiFailure {
+    } on Object {
+      // Wider than ApiFailure on purpose (see _loadSlots), and it matters more
+      // here: initState is the only caller, so there is no retry path at all.
+      // Left unloaded the picker spins for the life of the sheet and the
+      // target-gated subject / slots / send never appear. An empty picker at
+      // least states its own hint.
       if (!mounted) {
         return;
       }
@@ -192,7 +197,13 @@ class _MeetingRequestFormState<T> extends State<MeetingRequestForm<T>> {
         _slots = slots;
         _slotsLoading = false;
       });
-    } on ApiFailure {
+    } on Object {
+      // Wider than ApiFailure on purpose: a keystore error on the client's
+      // 401-refresh escapes it un-wrapped, and that used to leave _slotsLoading
+      // stuck true — an endless spinner, canSend false for good, and no Retry
+      // to escape it, since the Retry hangs off _slotsError. Every failure here
+      // says one thing to the user, so they all reach the G3 load-error state
+      // and none of them the "no availability" notice.
       if (!mounted || id != _selectedId) {
         return;
       }
