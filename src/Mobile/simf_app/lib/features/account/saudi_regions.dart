@@ -33,16 +33,6 @@ const List<SaudiRegion> saudiRegions = <SaudiRegion>[
   SaudiRegion('qassim', 'منطقة القصيم', 'Al Qassim'),
 ];
 
-/// The region whose [code] equals [code], or null.
-SaudiRegion? regionByCode(String? code) {
-  for (final r in saudiRegions) {
-    if (r.code == code) {
-      return r;
-    }
-  }
-  return null;
-}
-
 /// The region whose Arabic or English name equals [name] (trimmed), or null —
 /// used to map a stored place-of-birth string back to a dropdown selection.
 SaudiRegion? regionByName(String? name) {

@@ -135,35 +135,49 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
     final effectiveFilter = effectiveRequestFilter(items, _filter);
     final filtered = filterRequests(items, _filter);
 
+    // The action row and status chips are the always-visible head of the page
+    // and stay eager; the request cards below them are the unbounded part, so
+    // they are what the builder makes lazy. Note the second spacer is
+    // unconditional — with no requests at all the chips are absent and the two
+    // gaps stack, which is the shipped render, not a defect to tidy.
+    final header = <Widget>[
+      RequestActionRow(
+        l10n: l10n,
+        filter: effectiveFilter,
+        onNew: () => unawaited(_openNewRequest()),
+        onSelect: (status) => setState(() => _filter = status),
+        showNew: canRequestSpeakerMeeting,
+      ),
+      const SizedBox(height: SimfTokens.space4),
+      if (items.isNotEmpty)
+        RequestStatusChips(
+          items: items,
+          selected: effectiveFilter,
+          l10n: l10n,
+          onSelect: (status) => setState(() => _filter = status),
+        ),
+      const SizedBox(height: SimfTokens.space4),
+    ];
+    final hasCards = items.isNotEmpty && filtered.isNotEmpty;
+
     return SimfPullToRefresh(
       onRefresh: _refresh,
-      child: ListView(
+      child: ListView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(SimfTokens.space4),
-        children: <Widget>[
-          RequestActionRow(
-            l10n: l10n,
-            filter: effectiveFilter,
-            onNew: () => unawaited(_openNewRequest()),
-            onSelect: (status) => setState(() => _filter = status),
-            showNew: canRequestSpeakerMeeting,
-          ),
-          const SizedBox(height: SimfTokens.space4),
-          if (items.isNotEmpty)
-            RequestStatusChips(
-              items: items,
-              selected: effectiveFilter,
-              l10n: l10n,
-              onSelect: (status) => setState(() => _filter = status),
-            ),
-          const SizedBox(height: SimfTokens.space4),
-          if (items.isEmpty)
-            SimfEmptyState(
+        itemCount: header.length + (hasCards ? filtered.length : 1),
+        itemBuilder: (context, index) {
+          if (index < header.length) {
+            return header[index];
+          }
+          if (items.isEmpty) {
+            return SimfEmptyState(
               icon: Icons.inbox_outlined,
               message: l10n.requestsEmpty,
-            )
-          else if (filtered.isEmpty)
-            Padding(
+            );
+          }
+          if (filtered.isEmpty) {
+            return Padding(
               padding: const EdgeInsets.symmetric(vertical: SimfTokens.space6),
               child: Center(
                 child: Text(
@@ -171,23 +185,23 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
                   style: SimfTokens.hintBeige,
                 ),
               ),
-            )
-          else
-            for (final item in filtered)
-              Padding(
-                padding: const EdgeInsets.only(bottom: SimfTokens.space3),
-                // Key on kind+id so the card's expanded state follows the
-                // request identity, not its list position, across a
-                // cancel/refetch.
-                child: RequestCard(
-                  key: ValueKey<String>('${item.kind.wireValue}:${item.id}'),
-                  item: item,
-                  isArabic: isArabic,
-                  l10n: l10n,
-                  onCancel: () => unawaited(_cancel(item)),
-                ),
-              ),
-        ],
+            );
+          }
+          final item = filtered[index - header.length];
+          return Padding(
+            padding: const EdgeInsets.only(bottom: SimfTokens.space3),
+            // Key on kind+id so the card's expanded state follows the
+            // request identity, not its list position, across a
+            // cancel/refetch.
+            child: RequestCard(
+              key: ValueKey<String>('${item.kind.wireValue}:${item.id}'),
+              item: item,
+              isArabic: isArabic,
+              l10n: l10n,
+              onCancel: () => unawaited(_cancel(item)),
+            ),
+          );
+        },
       ),
     );
   }

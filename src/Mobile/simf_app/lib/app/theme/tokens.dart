@@ -501,11 +501,6 @@ class SimfTokens {
     fontSize: textSm,
     fontWeight: FontWeight.w500,
   );
-  static const TextStyle labelBeigeMedium10 = TextStyle(
-    color: beigeBorder,
-    fontSize: 10,
-    fontWeight: FontWeight.w500,
-  );
   static const TextStyle labelGoldBoldXl = TextStyle(
     color: accent,
     fontSize: textXl,
@@ -526,9 +521,9 @@ class SimfTokens {
     fontWeight: FontWeight.w600,
   );
 
-  /// The AR / EN pill on the language toggle. Sits between
-  /// [labelWhiteSemibold9] and [labelBeigeMedium10]: white like the former,
-  /// 10pt like the latter, and neither of those combinations existed.
+  /// The AR / EN pill on the language toggle: white like
+  /// [labelWhiteSemibold9] but 10pt — a size/colour pairing no
+  /// other token carried.
   static const TextStyle labelWhiteSemibold10 = TextStyle(
     color: surface,
     fontSize: 10,

@@ -28,7 +28,19 @@ class NotificationGroupedList extends StatelessWidget {
     // Runs, not buckets: the API returns newest-first, so "Today" heads the
     // list once rather than collecting every Today row from the whole history.
     final groups = groupConsecutive(items, (i) => _dayLabel(i.createdAt));
-    return ListView(
+    // Flattened to one row per line so the feed builds lazily: a row whose item
+    // is null is that run's day header, and every row carries the day label the
+    // card stamps its time with.
+    final rows = <(String, NotificationItem?)>[];
+    for (final group in groups) {
+      if (group.key.isNotEmpty) {
+        rows.add((group.key, null));
+      }
+      for (final item in group.value) {
+        rows.add((group.key, item));
+      }
+    }
+    return ListView.builder(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(
         SimfTokens.space4,
@@ -36,26 +48,27 @@ class NotificationGroupedList extends StatelessWidget {
         SimfTokens.space4,
         SimfTokens.space4,
       ),
-      children: <Widget>[
-        for (final group in groups) ...<Widget>[
-          if (group.key.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: SimfTokens.space2),
-              child: Text(
-                group.key,
-                // Frame 758:2491 — 16px Medium, white.
-                style: SimfTokens.labelWhiteMediumLg,
-              ),
+      itemCount: rows.length,
+      itemBuilder: (context, index) {
+        final (dayLabel, item) = rows[index];
+        if (item == null) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: SimfTokens.space2),
+            child: Text(
+              dayLabel,
+              // Frame 758:2491 — 16px Medium, white.
+              style: SimfTokens.labelWhiteMediumLg,
             ),
-          for (final item in group.value)
-            NotificationCard(
-              item: item,
-              isArabic: isArabic,
-              dayLabel: group.key,
-              onTap: () => onTap(item),
-            ),
-        ],
-      ],
+          );
+        }
+        return NotificationCard(
+          key: ValueKey<String>(item.id),
+          item: item,
+          isArabic: isArabic,
+          dayLabel: dayLabel,
+          onTap: () => onTap(item),
+        );
+      },
     );
   }
 

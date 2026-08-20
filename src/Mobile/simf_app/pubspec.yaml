@@ -139,7 +139,6 @@ dev_dependencies:
   # via `flutter test integration_test/`, or on a device with `-d <id>`.
   integration_test:
     sdk: flutter
-  mocktail: ^1.0.4
   very_good_analysis: ^10.3.0
 
 # The SIMF app launcher icon (D-373 / D-388; icon art refreshed 2026-07-13).
