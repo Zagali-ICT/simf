@@ -26,8 +26,8 @@ import 'package:simf_data_pkg/src/api/interceptors/logging_interceptor.dart';
 ///
 /// This is an allowlist, not a ban on one class name, because the defect is
 /// "an interceptor that logs a body", not "PrettyDioLogger". Adding an
-/// interceptor here is a deliberate act: add it to [_allowed] and state what
-/// it logs.
+/// interceptor here is a deliberate act: add it to the `allowed` map and say
+/// what it logs.
 void main() {
   // Type name -> what it is allowed to put in the log.
   const allowed = <String, String>{

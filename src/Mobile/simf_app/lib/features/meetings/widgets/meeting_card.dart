@@ -234,9 +234,14 @@ class MeetingCard extends StatelessWidget {
 
   /// "07:45 AM · اليوم" when the meeting is today, else the absolute date (the
   /// same format the requests card uses, Figma 1408:9782).
+  ///
+  /// Both sides of the comparison must be on the Saudi wall clock (D-219 /
+  /// D-770). This read the DEVICE clock, so a phone outside Riyadh compared a
+  /// Riyadh date against its own calendar day and labelled the wrong meetings
+  /// "today".
   String _dateLine() {
     final date = saudiOf(item.displayDate);
-    final now = DateTime.now();
+    final now = saudiNow();
     final isToday =
         date.year == now.year && date.month == now.month && date.day == now.day;
     return isToday ? l10n.requestTimeToday(date) : l10n.requestDate(date);

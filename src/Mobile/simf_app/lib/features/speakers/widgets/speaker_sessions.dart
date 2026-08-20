@@ -4,8 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/app_assets.dart';
 import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_forward_chevron.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
-import 'package:simf_app/app/widgets/simf_svg_icon.dart';
 import 'package:simf_app/features/speakers/data/speaker_models.dart';
 
 /// A small caps section heading (beige, 10px Bold, tracked) — used for the
@@ -71,7 +71,7 @@ class SpeakerSessionRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: SimfTokens.space2),
-            const SimfSvgIcon(
+            const SimfForwardChevron(
               AppAssets.icCaretLeft,
               color: SimfTokens.txtTertiary,
               size: SimfTokens.speakerSessionsSize,

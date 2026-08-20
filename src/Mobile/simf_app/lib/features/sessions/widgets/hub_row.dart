@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:simf_app/app/theme/app_assets.dart';
 import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_forward_chevron.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
-import 'package:simf_app/app/widgets/simf_svg_icon.dart';
 
 class HubRow extends StatelessWidget {
   const HubRow({
@@ -45,8 +45,9 @@ class HubRow extends StatelessWidget {
             // (session-detail seat card / speakers rows). The old
             // direction-aware Icons.chevron_left DOUBLE-mirrored under RTL
             // (chevron_left carries matchTextDirection, so Flutter flipped it
-            // back to pointing right) — SimfSvgIcon never mirrors (D-601).
-            const SimfSvgIcon(
+            // back to pointing right) — the shared chevron carries the asset
+            // as drawn and mirrors it in LTR only (D-601).
+            const SimfForwardChevron(
               AppAssets.icBack,
               size: SimfTokens.hubRowSize,
               color: SimfTokens.beigeBorder,

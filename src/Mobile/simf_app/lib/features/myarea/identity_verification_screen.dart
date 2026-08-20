@@ -161,8 +161,8 @@ class _IdentityVerificationScreenState
     }
   }
 
-  /// Step passed — on the first (smile) step grab the forward selfie; advance
-  /// to the next step, or finish on the last.
+  /// Step passed. The forward selfie is grabbed on the smile step, wherever the
+  /// shuffled [_sequence] happens to put it — not on a fixed position.
   Future<void> _advance() async {
     final controller = _camera;
     if (controller == null) {

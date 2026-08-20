@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/app_assets.dart';
 import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_forward_chevron.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
-import 'package:simf_app/app/widgets/simf_svg_icon.dart';
 import 'package:simf_app/features/sessions/data/seat_enums.dart';
 import 'package:simf_app/features/sessions/data/seat_map_models.dart';
 import 'package:simf_app/features/sessions/widgets/seat_marker.dart';
@@ -71,9 +71,9 @@ class SessionReservationCard extends StatelessWidget {
               const SizedBox(width: SimfTokens.space2),
               // Figma 889:2762 — the my-seat arrow is a thin STROKED chevron
               // (left-pointing "‹"), NOT the filled triangle of ic_caret_left.
-              // ic_back.svg is that stroked chevron; SimfSvgIcon never mirrors,
-              // so it stays left-pointing in RTL (same fix as speakers_screen).
-              const SimfSvgIcon(
+              // ic_back.svg is that stroked chevron; the shared widget keeps it
+              // left-pointing in RTL and mirrors it in LTR (as speakers).
+              const SimfForwardChevron(
                 AppAssets.icBack,
                 size: SimfTokens.sessionReservationCardSize,
                 color: SimfTokens.beigeBorder,

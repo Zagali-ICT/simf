@@ -48,6 +48,24 @@ class _HighlightsCarouselState extends State<HighlightsCarousel> {
     _startAutoAdvance();
   }
 
+  @override
+  void didUpdateWidget(HighlightsCarousel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // The news list is re-delivered on refresh and can change length while the
+    // State is reused, so initState's one-shot set-up is not enough: the timer
+    // kept cycling modulo the OLD count, leaving _index past the end (a blank
+    // page) or the carousel static after growing past one slide. Same shape as
+    // HomeHeroBanner.
+    if (widget.items.length != oldWidget.items.length) {
+      _timer?.cancel();
+      _timer = null;
+      if (_index >= widget.items.length) {
+        _index = 0;
+      }
+      _startAutoAdvance();
+    }
+  }
+
   void _startAutoAdvance() {
     if (widget.items.length <= 1) {
       return;

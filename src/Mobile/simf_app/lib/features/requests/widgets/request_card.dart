@@ -118,9 +118,14 @@ class _RequestCardState extends State<RequestCard> {
 
   /// The card date line — "07:45 AM · اليوم" when the request's date is today,
   /// else the absolute date "12 يناير 2026" (Figma 1408:9782).
+  ///
+  /// Both sides of the comparison must be on the Saudi wall clock (D-219 /
+  /// D-770). This read the DEVICE clock, so a phone outside Riyadh compared a
+  /// Riyadh date against its own calendar day and labelled the wrong requests
+  /// "today".
   String _dateLine(AppL10n l10n) {
     final date = saudiOf(widget.item.displayDate);
-    final now = DateTime.now();
+    final now = saudiNow();
     final isToday =
         date.year == now.year && date.month == now.month && date.day == now.day;
     return isToday ? l10n.requestTimeToday(date) : l10n.requestDate(date);

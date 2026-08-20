@@ -123,7 +123,7 @@ void main() {
     );
   });
 
-  test('signing out drops the previous account\'s favourites', () async {
+  test("signing out drops the previous account's favourites", () async {
     final auth = _FakeAuth(_signedIn());
     final container = containerFor(auth);
 
