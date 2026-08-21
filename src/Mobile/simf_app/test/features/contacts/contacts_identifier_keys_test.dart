@@ -4,20 +4,12 @@ import 'package:simf_app/features/contacts/data/contact_models.dart';
 import 'package:simf_app/features/contacts/data/contacts_repository.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// The contacts wire carries TWO different identifiers and they are easy to
-/// confuse: a `token` (the rotatable share token a visitor hands out) and a
-/// `qrId` (the opaque entry-badge id the gate scanner reads). They are NOT
-/// interchangeable, and the server answers a swapped one with a plain 404 —
-/// so a swap here is silent at every layer above it and looks to the user
-/// like "that contact does not exist".
-///
-/// These tests drive the repository and the decoder and assert the actual key
-/// on the wire, because nothing else in the suite does: the screen tests fake
-/// the repository, so they keep passing with either key.
+/// Pins the contacts wire key as `token` (the rotatable share token), never
+/// `qrId` (the entry-badge id): the server answers a swap with a plain 404,
+/// which the user reads as "that contact does not exist".
 
-/// Captures the request body of the one POST and short-circuits with a canned
-/// success envelope — no real backend, and the body is the exact Map the
-/// repository passed (interceptors run before serialization).
+/// Captures the POST body — still the raw Map, since interceptors run before
+/// serialization — and short-circuits with a canned success envelope.
 class _CapturingInterceptor extends Interceptor {
   Map<String, dynamic>? body;
   String? path;
@@ -32,8 +24,7 @@ class _CapturingInterceptor extends Interceptor {
         statusCode: 200,
         data: <String, dynamic>{
           'success': true,
-          // A VisitorCard-shaped payload: `resolve` decodes with
-          // VisitorCard.fromData, which casts `data` to a Map.
+          // VisitorCard-shaped: `resolve` decodes via VisitorCard.fromData.
           'data': <String, dynamic>{
             'userId': 'u1',
             'name': 'Raed Al-Salem',
@@ -95,9 +86,8 @@ void main() {
   });
 
   group('VisitorShareToken decodes the `token` key', () {
-    // Both keys are present on purpose: reading the wrong one then returns a
-    // real (wrong) value instead of falling through to the blank default, so
-    // this discriminates a KEY SWAP and not merely a missing field.
+    // Both keys present on purpose: a swap then reads a real wrong value
+    // rather than the blank default, so this catches the swap itself.
     test('reads token, not a co-present qrId', () {
       final decoded = VisitorShareToken.fromData(const <String, dynamic>{
         'token': 'TOK-123',

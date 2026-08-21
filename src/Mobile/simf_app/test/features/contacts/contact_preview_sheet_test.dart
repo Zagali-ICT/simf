@@ -1,16 +1,7 @@
-// Regression guard for the busy flag on the handler that POPS the sheet.
-//
-// `Navigator.pop` only reverses the route's animation controller
-// (`TransitionRoute.didPop`); `finishedWhenPopped` is false at that moment, so
-// `finalizeRoute` — and with it the State's disposal — does not run until the
-// 200ms exit transition completes. A `mounted` guard therefore still passes for
-// the whole of that window, and clearing the flag inside it repaints a sheet
-// the user can still see: the spinner visibly flicks back to the action icon as
-// the sheet slides away.
-//
-// These tests assert MID-EXIT on purpose. After a `pumpAndSettle` the sheet is
-// gone in the broken build and the fixed one alike, so nothing tells them
-// apart.
+// Pins the busy flag on the handler that POPS the sheet: `Navigator.pop` does
+// not dispose the State until the 200ms exit finishes, so a `mounted` guard
+// still passes and clearing the flag flicks the spinner back in view. Hence the
+// assertions mid-exit — after a `pumpAndSettle` both builds look the same.
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -86,9 +77,7 @@ void main() {
       await _openPreview(tester, repo);
 
       await tester.tap(find.widgetWithText(FilledButton, _saveLabel));
-      // The save future resolves and `pop()` fires inside this frame; the
-      // second pump lands a quarter of the way through the 200ms exit, which is
-      // where the user would see the spinner flick back to the icon.
+      // The second pump lands mid-exit, where the flick-back would be visible.
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 50));
 
@@ -113,8 +102,7 @@ void main() {
       expect(find.byType(ContactPreviewSheet), findsNothing);
     });
 
-    // The other half of the same rule: a sheet that is STAYING must get its
-    // control back, which is what the `finally` was added for.
+    // The other half: a sheet that STAYS must get its control back.
     testWidgets('a failed save re-enables the button on the sheet that stays',
         (tester) async {
       final repo = FakeContactsRepo(saveStatus: 400);

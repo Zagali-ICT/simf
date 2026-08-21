@@ -7,24 +7,10 @@ import 'package:simf_app/features/sessions/data/seat_map_models.dart';
 import 'package:simf_app/features/sessions/widgets/hall_seat_map.dart';
 import 'package:simf_app/features/sessions/widgets/seat_grid_row.dart';
 
-/// D-771 — a seat this caller may NOT book must be inert, and the two halves
-/// of that rule break independently.
-///
-/// [HallSeatMapCard] decides per ROW (`inspectMode || map.canReserveRow`) and
-/// [SeatGridRow] decides per SEAT (only an available / already-selected seat is
-/// tappable). Force either one open and the grid offers a seat the API will
-/// refuse — at the venue that is a visitor who believes they hold a protocol
-/// seat, or two people sent to the same square.
-///
-/// The existing suite asserted only that an AVAILABLE seat reports its row and
-/// number, which stays true however far the gate is opened. These tests drive
-/// the negative side: a tap on a locked or occupied seat must produce nothing.
-///
-/// Seats are located STRUCTURALLY (the [SeatBox] inside the [SeatGridRow] with
-/// that row label) rather than by their spoken label, because the label is
-/// itself derived from the state under test — a finder keyed on
-/// "B1 · Reserved for VIP guests" would stop finding the seat the moment the
-/// gate opens, and the test would then fail for the wrong reason.
+/// D-771 — a seat this caller may not book must be inert; [HallSeatMapCard]
+/// gates per row and [SeatGridRow] per seat, and the two break independently.
+/// Seats are found structurally, not by spoken label, since the label is
+/// derived from the state under test.
 
 // Row A normal (A1 already held by someone else), row B VIP, row C VVIP.
 // The caller is not a VIP, so only row A is theirs to book.
@@ -96,8 +82,8 @@ Future<void> _tapSeat(WidgetTester tester, String row, int seat) async {
 
 void main() {
   group('a seat the caller may not reserve is not offered', () {
-    // The positive control. Without it every "no callback" assertion below
-    // would also pass against a harness that simply never lands a tap.
+    // Positive control: without it the "no callback" assertions below would
+    // also pass against a harness that never lands a tap.
     testWidgets('a free seat in a bookable row DOES report its tap',
         (tester) async {
       final taps = await _pump(tester);
@@ -132,8 +118,7 @@ void main() {
       expect(taps, isEmpty, reason: 'VVIP seating is assigned, never booked.');
     });
 
-    // Independent of the tier gate: this seat carries no tier and is simply
-    // taken, which is the other half of `tappable`.
+    // The other half of `tappable`: no tier, simply taken.
     testWidgets('a seat already held by someone else is inert', (tester) async {
       final taps = await _pump(tester);
 
@@ -147,8 +132,7 @@ void main() {
       );
     });
 
-    // The locked state must also be ANNOUNCED, not merely inert — a seat that
-    // silently swallows taps reads as a broken screen.
+    // Locked must also be announced, not merely inert.
     testWidgets('a locked seat says why', (tester) async {
       await _pump(tester);
 
@@ -164,9 +148,8 @@ void main() {
       );
     });
 
-    // D-771 — the staff seating desk looks occupants up, so there the same
-    // seats ARE tappable. This is what keeps the fix from becoming "make every
-    // locked seat inert everywhere".
+    // D-771 — the staff desk looks occupants up, so there the same seats
+    // ARE tappable.
     testWidgets('inspect mode (the staff desk) can still tap a locked seat',
         (tester) async {
       final taps = await _pump(tester, inspectMode: true);

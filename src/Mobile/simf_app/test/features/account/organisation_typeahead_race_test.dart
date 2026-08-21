@@ -10,18 +10,9 @@ import 'package:simf_app/features/account/data/profile_lookups.dart';
 import 'package:simf_app/features/account/data/profile_repository.dart';
 import 'package:simf_app/features/account/widgets/sign_up_visitor_organisation_field.dart';
 
-/// جهة العمل is a debounced type-ahead, and the debounce only cancels a pending
-/// TIMER — it cannot cancel a request already in flight. So two searches can be
-/// outstanding at once and the network decides which one lands last.
-///
-/// On the venue's congested WiFi that is routinely the OLDER one. Before
-/// 2026-08-20 nothing checked, and the late response simply overwrote the list:
-/// the visitor saw organisations matching text the box no longer contained.
-/// Organisation is required (D-221), so the outcome is either the wrong
-/// employer submitted or "no matches" shown for a query that has one.
-///
-/// The test drives the two responses out of order on purpose. It fails without
-/// the generation guard in `_run`.
+/// Pins the generation guard in `_run`: the debounce cancels only the pending
+/// TIMER, so a stale response would repaint the list — and organisation is
+/// required (D-221), so that submits the wrong employer.
 class _OrderedRepository implements ProfileRepository {
   final Map<String, Completer<List<OrganisationItem>>> pending =
       <String, Completer<List<OrganisationItem>>>{};

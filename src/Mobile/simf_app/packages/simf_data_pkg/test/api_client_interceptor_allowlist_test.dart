@@ -4,58 +4,14 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import 'package:simf_data_pkg/src/api/interceptors/headers_interceptor.dart';
 import 'package:simf_data_pkg/src/api/interceptors/logging_interceptor.dart';
 
-/// Pins the interceptor stack of the one API client, so a body logger cannot
-/// be added back without the build going red.
-///
-/// A `PrettyDioLogger` sat on this stack until 2026-08-20 with
-/// `requestBody: true` and `responseBody` left at its default of `true`. It
-/// printed the sign-in POST body — the real email and the real password — and
-/// the sign-in response body — the access token and the refresh token — to the
-/// device log, where `adb logcat`, a device-log export or `READ_LOGS` on a
-/// managed handset could read them.
-///
-/// The reason it survived review is worth keeping: it WAS gated, on
-/// `config.enableRequestLogging`, which reads as a flavour switch and looks
-/// safe. It is not. That flag is `SIMF_BUILD != 'prod'`, `SIMF_BUILD` defaults
-/// to `dev`, and `BuildConfig.apiBaseUrl` defaults to the PRODUCTION edge —
-/// the two defaults disagree, deliberately. So the same change that made the
-/// base URL safe against a forgotten `--dart-define` made the logger unsafe
-/// against one: `flutter build apk --release` with no defines shipped a
-/// binary that talked to production with full body logging on, and nothing at
-/// compile time or run time said so.
-///
-/// This is an allowlist, not a ban on one class name, because the defect is
-/// "an interceptor that logs a body", not "PrettyDioLogger". Adding an
-/// interceptor here is a deliberate act: add it to the `allowed` map and say
-/// what it logs.
-///
-/// **What this test does NOT prove.** It matches on `runtimeType`, so it pins
-/// WHICH interceptors are installed — not what any of them actually writes.
-/// The `allowed` map's second column is a claim a human made, checked by a
-/// human reading the interceptor, and nothing here re-checks it. Change
-/// [LoggingInterceptor] itself to `developer.log(options.data.toString())` and
-/// this file stays green: the type name did not move.
-///
-/// That gap is not laziness, it is the harness. [LoggingInterceptor] writes
-/// through `dart:developer`'s `log()`, which in `flutter test` goes to the VM
-/// service and nowhere a test can see — a `runZoned` `ZoneSpecification.print`
-/// hook captures `print` and captures nothing from `developer.log` (probed
-/// 2026-08-20). Capturing it would mean either a `vm_service` dev dependency
-/// driving the Logging stream, or giving the interceptor an injectable sink,
-/// and both change production shape to observe it.
-///
-/// So: this file guards the ADDITION of a logger, and the review of
-/// [LoggingInterceptor]'s own body is what guards its CONTENTS. If that ever
-/// stops being enough — a second logger, or one whose output is
-/// data-dependent — the fix is the injectable sink, not a stronger matcher
-/// here.
+/// Pins the interceptor allowlist so no body logger — which would see the
+/// sign-in password and both tokens — can return. Matches `runtimeType` only;
+/// what an allowed interceptor writes is guarded by review.
 void main() {
   // Type name -> what it is allowed to put in the log.
   const allowed = <String, String>{
-    // dio installs this one itself, ahead of ours, from the Dio() constructor.
-    // It only derives Content-Type from the payload shape and writes nothing
-    // anywhere. It is on the list because this test found it on its first run,
-    // which is the allowlist doing its job.
+    // dio's own, added by the Dio() constructor; derives Content-Type, logs
+    // nothing.
     'ImplyContentTypeInterceptor': 'no logging; dio built-in',
     'HeadersInterceptor': 'no logging at all; attaches the standard headers',
     'LoggingInterceptor':
@@ -71,8 +27,8 @@ void main() {
         baseUrl: 'https://api.test/api/v1',
         appKey: 'test-app-key',
         deviceType: SimfDeviceType.android,
-        // The dangerous setting, on purpose: if a body logger is ever added
-        // back behind this flag, this test must be the thing that catches it.
+        // The dangerous setting, on purpose — a logger hidden behind this
+        // flag must still be caught.
         enableRequestLogging: true,
       ),
       tokenSource: const NoAuthTokenSource(),

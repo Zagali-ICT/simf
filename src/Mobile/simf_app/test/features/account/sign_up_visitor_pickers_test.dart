@@ -17,7 +17,7 @@ const List<String> _deviceClockSpellings = <String>[
   'toLocal()',
 ];
 
-/// Opens the picker on a real MaterialApp, which is the only way the SDK's
+/// Opens the picker on a real MaterialApp, the only way the SDK's
 /// `initialDate` asserts can fire.
 Future<void> _openPicker(
   WidgetTester tester, {
@@ -43,14 +43,7 @@ Future<void> _openPicker(
   await tester.pumpAndSettle();
 }
 
-/// The 18-to-120 eligibility rule, pinned at its boundaries.
-///
-/// It used to be three lines inside `_pickDateOfBirth`, computed from
-/// `DateTime.now()` — a business rule reachable only by pumping a widget and
-/// opening an OS dialog, and therefore never tested. Moving it out of the
-/// screen (which also brought the file back under the 400-line ratchet) makes
-/// it a pure function that takes `now`, so the boundary can be asserted on a
-/// fixed date rather than on whatever day the suite happens to run.
+/// Pins the 18-to-120 date-of-birth eligibility rule at its boundaries.
 void main() {
   test('the newest eligible date of birth is exactly the 18th birthday', () {
     final range = visitorDateOfBirthRange(DateTime(2026, 8, 20));
@@ -65,19 +58,11 @@ void main() {
   });
 
   test('an impossible calendar date rolls forward rather than throwing', () {
-    // 2026 is not a leap year, so `DateTime(2026, 2, 29)` is ALREADY
-    // 2026-03-01 before the rule ever sees it — Dart rolls an out-of-range day
-    // forward silently instead of throwing. The 18-years-back arithmetic then
-    // carries that rolled month and day through, which is why the expectation
-    // is March 1st and not February 29th.
-    //
-    // Pinned because the silence is the hazard: a rewrite that clamps instead
-    // of rolling, or that parses the date from a string, would move this
-    // boundary by a day with nothing to announce it.
+    // Dart rolls an out-of-range day forward silently, so `DateTime(2026, 2,
+    // 29)` is already 2026-03-01 before the rule sees it.
     final range = visitorDateOfBirthRange(DateTime(2026, 2, 29));
 
-    // `DateTime(2008, 3)` IS 2008-03-01 — the day argument defaults to 1 and
-    // the analyzer rejects spelling it out.
+    // `DateTime(2008, 3)` is 2008-03-01; the analyzer rejects the explicit 1.
     expect(range.latest, DateTime(2008, 3));
   });
 
@@ -88,11 +73,8 @@ void main() {
     expect(range.earliest.isBefore(range.latest), isTrue);
   });
 
-  // The stored date of birth comes back from the server profile, which is
-  // never checked against the 18-to-120 rule, and `showDatePicker` ASSERTS
-  // that its `initialDate` sits within `firstDate..lastDate`. So a profile
-  // carrying an ineligible date crashed the picker in debug rather than
-  // opening it at the nearest date the user is allowed to pick.
+  // A stored date of birth is never checked against the 18-to-120 rule, and
+  // `showDatePicker` ASSERTS `initialDate` sits within `firstDate..lastDate`.
   group('the seed is pulled inside the eligible range', () {
     test('a date of birth younger than 18 seeds at the newest eligible date',
         () {
@@ -139,10 +121,7 @@ void main() {
     });
   });
 
-  // The unit tests above prove the clamp; only opening the real picker proves
-  // it is WIRED to `initialDate`. An unclamped seed trips the SDK's own
-  // `initialDate ... must be on or before lastDate` assert, which fails the
-  // test and leaves no dialog behind.
+  // Only opening the real picker proves the clamp is wired to `initialDate`.
   group('the picker opens on an out-of-range stored date', () {
     testWidgets('a date of birth younger than 18 opens the picker',
         (tester) async {
@@ -159,11 +138,8 @@ void main() {
     });
   });
 
-  // Second line only, and it catches what the tests above cannot see: they all
-  // inject `now`, so a device clock reinstated as the PARAMETER's default
-  // walks straight past them. The device zone cannot be faked in-process, and
-  // on a +03:00 box (every SIMF dev box and CI agent) the device clock and the
-  // Saudi clock agree — so no behavioural test can tell them apart here.
+  // The tests above all inject `now`, so a device clock reinstated as the
+  // PARAMETER's default walks past them; the device zone cannot be faked.
   test('the default clock is the Saudi one, not the device clock', () {
     final source = File(_pickersFile).readAsStringSync();
 

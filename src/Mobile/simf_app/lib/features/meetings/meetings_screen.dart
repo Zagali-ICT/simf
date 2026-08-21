@@ -142,9 +142,6 @@ class _MeetingsScreenState extends ConsumerState<MeetingsScreen> {
       AppL10n l10n, MeetingAccess access, List<AppRequestItem> items,) {
     final isArabic = l10n.isArabic;
     final baseUrl = ref.watch(simfDataConfigProvider).baseUrl;
-    // The action row is the always-visible head of the page and stays eager;
-    // the meeting cards below it are the unbounded part, so they are what the
-    // builder makes lazy. Index 0 is the row, index 1 its trailing gap.
     const headerCount = 2;
     return SimfPullToRefresh(
       onRefresh: _refresh,

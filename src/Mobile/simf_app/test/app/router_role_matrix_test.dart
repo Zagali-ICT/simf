@@ -24,22 +24,12 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 /// separate aux table, so `routeNumberForPath` reports them as unnumbered and
 /// the number-keyed gate sets cannot gate them one at a time — they read as
 /// "public" via these pure functions and are backend-enforced instead. They are
-/// the ONLY intentional exclusion, and the completeness test below is what
-/// makes that claim checkable rather than assumed.
+/// the only intentional exclusion.
 ///
-/// What this grid could NOT see before 2026-08-21: the tier lists were
-/// hand-maintained, and routes 113 / 117 / 118 / 290 / 702 / 703 landed without
-/// ever being added to one. An unlisted route has no row, so deleting
-/// `117: _attendee` from the role map, widening the staff-only seating desk
-/// (118) to `_attendee`, or dropping 702 / 703 from the auth set left every row
-/// here green — there was nothing to fail. Coverage is now DERIVED from the
-/// real route table (`buildRoutes`) while the verdicts stay hand-written, so an
-/// unclassified route reddens the build instead of silently shrinking the grid.
-///
-/// The other half of this gate — that `buildRouter` feeds the redirect
-/// `CurrentUser.effectiveAppRole` and not the raw token role (D-666) — is
-/// unreachable through [redirectDecision], which takes the role as a parameter.
-/// It lives in `router_effective_role_wiring_test.dart`.
+/// That `buildRouter` feeds the redirect `CurrentUser.effectiveAppRole` and not
+/// the raw token role (D-666) is unreachable through [redirectDecision], which
+/// takes the role as a parameter; it lives in
+/// `router_effective_role_wiring_test.dart`.
 void main() {
   // Access tiers, assigned by hand from the spec (the independent oracle).
   //  - public:        no sign-in required (open, or an in-screen prompt like
@@ -312,12 +302,8 @@ void main() {
     });
 
     test('every route in the real table carries exactly one tier', () {
-      // Coverage comes from the ROUTER (the real go_router table), the verdicts
-      // from the hand oracle above. That split is the point: a route added to
-      // the table — or one already there that nobody matrixed — has no tier and
-      // fails here, so the grid cannot quietly shrink to the routes someone
-      // remembered. Reading the tiers back out of the router instead would make
-      // the file agree with itself, which is what the header warns against.
+      // Coverage comes from the router; the verdicts stay hand-written, since
+      // reading them back out would let the file agree with itself.
       final classified = <String>[
         ...publicPaths,
         ...universalAuthPaths,
@@ -332,8 +318,7 @@ void main() {
         reason: 'a path is listed in two tiers (or twice in one)',
       );
 
-      // The aux auth table is unnumbered and deliberately out of scope; every
-      // other declared path must carry a tier.
+      // The unnumbered aux auth table is deliberately out of scope.
       final unclassified = <String>[
         for (final route in buildRoutes().whereType<GoRoute>())
           if (routeNumberForPath(route.path) != null &&

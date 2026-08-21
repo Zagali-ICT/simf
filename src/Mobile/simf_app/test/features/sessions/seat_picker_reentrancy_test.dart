@@ -14,19 +14,9 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../support/simf_test_scope.dart';
 
-/// The picker's hold flow must be single-shot.
-///
-/// `_hold` opens with `if (_busy) return;`. Nothing rebuilds between two taps
-/// in the same frame — `setState` only marks the element dirty — so that guard,
-/// not the disabled CTA, is what stops the second tap. Without it an impatient
-/// double-tap sends two reserve calls: the visitor holds two seats, or the
-/// second call collides with the first and the screen reports a failure for a
-/// booking that actually succeeded.
-///
-/// The fake keeps its first call PENDING on a [Completer]. An immediately
-/// resolving fake would let the first `_hold` reach its `finally` (clearing
-/// `_busy`) between the two taps, and the test would then pass with the guard
-/// deleted — it would be measuring the fake's timing rather than the guard.
+/// Pins the `_busy` re-entrancy guard in `_hold`: nothing rebuilds between two
+/// taps in one frame, so the guard and not the disabled CTA stops the second.
+/// The fake must hold its first call PENDING or the guard can be deleted.
 
 SessionSeatMap _map() => const SessionSeatMap(
       rowLabels: <String>['A', 'B'],
@@ -105,8 +95,7 @@ Future<_PendingRepo> _pump(WidgetTester tester) async {
   return repo;
 }
 
-// Releases the pending call so the widget's `finally` runs and the test tears
-// down without a live timer or an un-awaited future.
+// Releases the pending call so the tear-down has no live timer left.
 Future<void> _settle(WidgetTester tester, _PendingRepo repo) async {
   repo.gate.complete(
     const MyReservation(
@@ -128,9 +117,7 @@ void main() {
       final repo = await _pump(tester);
       final autoPick = find.widgetWithText(FilledButton, 'Auto-pick a seat');
 
-      // Both taps land inside the same frame — no pump between them — which is
-      // exactly what a real double-tap does and what the `_busy` guard exists
-      // to absorb.
+      // No pump between the taps: they must land inside the same frame.
       await tester.tap(autoPick);
       await tester.tap(autoPick, warnIfMissed: false);
       await tester.pump();
@@ -168,9 +155,8 @@ void main() {
       await _settle(tester, repo);
     });
 
-    // The control: with the first call finished, a genuine second attempt must
-    // still go through. A guard that latched `_busy` on forever would pass the
-    // two tests above and leave the picker permanently dead.
+    // The control: a guard that latched `_busy` on forever would pass both
+    // tests above and leave the picker permanently dead.
     testWidgets('a tap AFTER the first call settles is still accepted',
         (tester) async {
       final repo = await _pump(tester);
@@ -180,9 +166,8 @@ void main() {
       await tester.pump();
       expect(repo.randomCalls, 1);
 
-      // Fail the in-flight call so the screen un-freezes without navigating
-      // away, then tap again. An ApiFailure, because that is the one failure
-      // the hold flow catches; anything else escapes as an unhandled error.
+      // An ApiFailure specifically: the hold flow catches nothing else, so
+      // anything else escapes as an unhandled error.
       repo.gate.completeError(
         const ApiFailure(code: 'NETWORK', message: 'offline', httpStatus: 0),
       );

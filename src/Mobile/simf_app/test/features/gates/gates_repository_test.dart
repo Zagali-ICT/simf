@@ -56,8 +56,8 @@ class _StubGates extends GatesRepository {
   }
 }
 
-/// The repository plus the very queue it writes to, for the tests that read the
-/// queued ITEM rather than just counting the backlog.
+/// The repository plus the queue it writes to, for tests that read the queued
+/// item rather than counting the backlog.
 ({_StubGates repo, GateScanQueue queue}) _buildWithQueue({
   DateTime Function()? now,
 }) {
@@ -130,10 +130,8 @@ void main() {
       built.repo.nextFailure = _network();
       await _record(built.repo);
 
-      // `formatWire` keeps the wall-clock reading and drops the zone, so this
-      // string is what the server will record as the arrival time. Pinned
-      // exactly: the stamp must be the clock the repository was handed, with
-      // nothing of the device's own zone in it.
+      // `formatWire` keeps the wall clock and drops the zone, so this exact
+      // string is what the server records as the arrival time.
       expect(built.queue.all().single.queuedAtIso, '2026-11-23T09:30:00.000');
     });
 
@@ -145,11 +143,9 @@ void main() {
       await _record(built.repo);
       final after = saudiNow();
 
-      // Bracketed, because the default reads a live clock. Honest limit: on a
-      // +03:00 machine `saudiNow()` and `DateTime.now()` agree, so this cannot
-      // tell them apart — the injected test above is the pin. What it does
-      // catch anywhere is a default that drifts OFF the Saudi wall clock, e.g.
-      // a `toUtc()` or a `toLocal()` creeping into the stamp.
+      // Bracketed, because the default reads a live clock. On a +03:00 machine
+      // this cannot tell `saudiNow()` from `DateTime.now()` — the injected test
+      // above is that pin; this one catches a `toUtc()`/`toLocal()` in between.
       final stamped = DateTime.parse(built.queue.all().single.queuedAtIso);
       expect(stamped.isBefore(before), isFalse);
       expect(stamped.isAfter(after), isFalse);

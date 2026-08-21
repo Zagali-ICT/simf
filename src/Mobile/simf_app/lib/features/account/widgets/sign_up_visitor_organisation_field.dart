@@ -60,15 +60,9 @@ class _SignUpVisitorOrganisationFieldState
   bool _searchFailed = false;
   Timer? _debounce;
 
-  // Which search the UI is currently showing. The debounce cancels a
-  // pending TIMER, but it cannot cancel a request already in flight, so
-  // two searches can be outstanding at once and the network decides which
-  // lands last. On the venue's congested WiFi that is routinely the OLDER
-  // one: 'min' fires, the user keeps typing 'ministry', the short query's
-  // slower response arrives afterwards and repaints the list with matches
-  // for text the box no longer contains. Organisation is required (D-221),
-  // so the visitor either picks the wrong employer or is told there is no
-  // match for a query that has one.
+  // Drops an out-of-order search response: the debounce cancels a pending
+  // timer, not a request already in flight, and organisation is required
+  // (D-221), so a stale list makes the visitor pick the wrong employer.
   int _searchGeneration = 0;
 
   @override

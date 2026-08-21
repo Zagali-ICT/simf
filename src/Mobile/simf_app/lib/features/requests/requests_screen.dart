@@ -135,11 +135,8 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
     final effectiveFilter = effectiveRequestFilter(items, _filter);
     final filtered = filterRequests(items, _filter);
 
-    // The action row and status chips are the always-visible head of the page
-    // and stay eager; the request cards below them are the unbounded part, so
-    // they are what the builder makes lazy. Note the second spacer is
-    // unconditional — with no requests at all the chips are absent and the two
-    // gaps stack, which is the shipped render, not a defect to tidy.
+    // The second spacer is unconditional on purpose: with no requests the
+    // chips are absent and the two gaps stack, which is the shipped render.
     final header = <Widget>[
       RequestActionRow(
         l10n: l10n,

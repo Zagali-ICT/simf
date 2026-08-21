@@ -59,12 +59,9 @@ class _ContactPreviewSheetState extends ConsumerState<ContactPreviewSheet> {
         ),
       );
     } finally {
-      // A token refresh on the 401 path can throw a keystore PlatformException,
-      // which is not an ApiFailure; without this the button never re-enables.
-      // Skipped once popped, though: pop() only reverses the route's animation
-      // controller and the State lives until the 200ms exit transition
-      // completes, so `mounted` is still true and the spinner would visibly
-      // flick back to the icon as the sheet slides away.
+      // The 401-refresh path can throw a keystore PlatformException, which is
+      // not an ApiFailure. Skipped once popped: the State outlives pop() for
+      // the exit transition, so the spinner would flick back mid-slide.
       if (!popped && mounted) {
         setState(() => _saving = false);
       }

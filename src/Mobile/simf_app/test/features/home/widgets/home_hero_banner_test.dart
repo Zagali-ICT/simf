@@ -177,13 +177,13 @@ void main() {
       await tester.pump();
 
       // PageController settles a shrunken list on its LAST page, so the dots
-      // have to follow it THERE, not back to the first banner.
+      // must follow it there rather than back to the first banner.
       final pageView = tester.widget<PageView>(find.byType(PageView));
       expect(pageView.controller!.page, closeTo(1, 0.01));
       expect(tester.widget<CarouselDots>(find.byType(CarouselDots)).index, 1);
 
-      // With the index stuck at 0 the next tick targets page 1, which is
-      // already on screen, and the hero never rotates again.
+      // A stuck index would target the page already on screen, and the hero
+      // would never rotate again.
       await tester.pump(const Duration(seconds: 4));
       await tester.pump(const Duration(milliseconds: 600));
       expect(
@@ -215,8 +215,7 @@ void main() {
       await tester.pump();
       expect(tester.widget<CarouselDots>(find.byType(CarouselDots)).index, 2);
 
-      // The controller sits on page 2; a tick computed from a zeroed index
-      // targets page 1 and the hero slides BACKWARDS.
+      // A tick computed from a zeroed index would slide BACKWARDS from here.
       await tester.pump(const Duration(seconds: 4));
       await tester.pump(const Duration(milliseconds: 600));
       expect(

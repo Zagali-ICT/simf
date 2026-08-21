@@ -3,28 +3,11 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/core/organization_profile/organization_profile.dart';
 
-// Sentinel wire fixtures for the cached Organization profile (D-495).
-//
-// See `pending_gate_scan_wire_test.dart` for why frozen literals are needed at
-// all: every decoder here is tolerant, so a renamed key decodes to a fallback
-// instead of throwing.
-//
-// This one has no `toJson`. `OrgProfileRepository.refresh` persists the RAW
-// server map under `StorageKeys.orgProfileJson` and `loadCached` reads it back
-// through this same `OrgProfile.fromJson`, so the decoder IS the whole
-// contract — there is no write side that could drift independently, and a
-// key this decoder stops reading is simply never read again on any device
-// already holding the blob.
-//
-// The highest-value sentinels in the file are the three camelCase social keys.
-// `linkedIn` / `youTube` / `tikTok` have already been got wrong once — the
-// comment in `OrgSocial.fromJson` records the all-lowercase spelling silently
-// dropping every CP-set LinkedIn, YouTube and TikTok link. Nothing threw then
-// either.
+// Frozen wire fixtures for the cached Organization profile (D-495): there is
+// no `toJson` — the raw server map is re-read through `OrgProfile.fromJson`,
+// so the tolerant decoder IS the whole contract.
 
-/// Every field carrying a value nothing in the decoder can produce by
-/// accident: no empty strings, no nulls, a non-zero year, real dates, a
-/// populated social block and non-empty lists.
+/// Every field carrying a value the decoder cannot produce by accident.
 const String _sentinelJson = '''
 {
   "name": "WIRE:name",
@@ -145,8 +128,8 @@ void _expectEverythingDefaulted(OrgProfile profile) {
   expect(profile.eventEndDate, isNull);
   expect(profile.aboutItems, isEmpty);
   expect(profile.details, isEmpty);
-  // An absent social block still yields an OrgSocial, all links null, so the
-  // controls render inert rather than the page failing to build.
+  // An absent social block still yields an OrgSocial, so the controls render
+  // inert rather than the page failing to build.
   expect(profile.social.facebook, isNull);
   expect(profile.social.linkedin, isNull);
   expect(profile.social.youtube, isNull);
@@ -184,7 +167,7 @@ void main() {
       final profile = OrgProfile.fromJson(_decode(_sentinelJson));
 
       // Only the YYYY-MM-DD head is read, so the +03:00 offset must not shift
-      // the day for a reader in any timezone.
+      // the day in any timezone.
       expect(profile.eventStartDate, DateTime(2031, 4, 17));
       expect(profile.eventEndDate, DateTime(2031, 4, 19));
     });
@@ -195,9 +178,8 @@ void main() {
       expect(social.facebook, 'WIRE:facebook');
       expect(social.x, 'WIRE:x');
       expect(social.instagram, 'WIRE:instagram');
-      // These three are the regression this fixture exists for: the field is
-      // `linkedin`, the wire key is `linkedIn`, and all-lowercase decodes to
-      // null without throwing.
+      // The fields are lowercase, the wire keys camelCase — an all-lowercase
+      // key decodes to null without throwing, and has done once already.
       expect(social.linkedin, 'WIRE:linkedIn');
       expect(social.youtube, 'WIRE:youTube');
       expect(social.tiktok, 'WIRE:tikTok');

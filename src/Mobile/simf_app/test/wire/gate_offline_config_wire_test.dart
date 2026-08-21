@@ -6,28 +6,16 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../features/accessibility/_fake_prefs.dart';
 
-// Sentinel wire fixtures for the cached offline gate config (D-820).
-//
-// See `pending_gate_scan_wire_test.dart` for why frozen literals are needed at
-// all: every decoder here is tolerant, so a renamed key decodes to a fallback
-// instead of throwing, and a `fromJson(toJson())` round trip cannot see it.
-//
-// This blob is persisted on the device, so a drift breaks a shipped scanner at
-// upgrade with no server involved — and the failure is silent in the worst
-// way: a dropped `badgeKey` leaves `canVerifyOffline` false, so every offline
-// scan is queued with no verdict and the console merely looks unarmed.
-//
-// The one key/field asymmetry to watch: the field is `issuedAtIso`, the wire
-// key is `issuedAt`.
+// Frozen wire fixtures for the cached offline gate config (D-820), which is
+// persisted on the device. The decoder falls back rather than throwing, so a
+// dropped `badgeKey` leaves the scanner silently unarmed.
 
 /// Deterministic AES-256 material — 32 bytes, so `keyFor` returns it rather
 /// than failing closed on a wrong-length key.
 const String _badgeKey = 'AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA=';
 const String _previousKey = 'ZWZnaGlqa2xtbm9wcXJzdHV2d3h5ent8fX5/gIGCg4Q=';
 
-/// Every field carrying a value nothing in the decoder can produce by
-/// accident: non-null keys, non-zero versions, true bools, a non-empty
-/// allow-list, a non-empty gate list.
+/// Every field carrying a value the decoder cannot produce by accident.
 const String _sentinelJson = '''
 {
   "badgeKey": "$_badgeKey",
@@ -219,9 +207,8 @@ void main() {
     });
 
     test('a null key is written as a PRESENT null, never omitted', () {
-      // Unlike PendingGateScan.direction, nothing here is conditional: all
-      // seven keys are emitted whatever the values are. Pinning that stops a
-      // future `if (badgeKey != null)` from quietly changing the artefact.
+      // The writer is unconditional: a future `if (badgeKey != null)` would
+      // change the on-device artefact.
       final emitted =
           GateOfflineConfig.fromJson(_decode(_allNullsJson)).toJson();
 

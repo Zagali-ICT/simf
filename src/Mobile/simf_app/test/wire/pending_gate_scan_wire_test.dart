@@ -7,24 +7,10 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../features/accessibility/_fake_prefs.dart';
 
-// Sentinel wire fixtures for the on-device pending-gate-scan backlog.
-//
-// WHY THIS FILE EXISTS. `PendingGateScan.fromJson` is tolerant by design —
-// `json['gateId'] as String? ?? ''`, and a direction it does not recognise
-// becomes null. A renamed or dropped key therefore does NOT throw: it decodes
-// to the fallback, silently. A round-trip test written with realistic data
-// (`fromJson(scan.toJson())`) passes on a decoder that has renamed a key on
-// BOTH sides, because it never compares against anything outside the code.
-//
-// These fixtures are frozen literals — hand-written JSON text, every key
-// present, every value provably DISTINCT from that field's own fallback. If a
-// key is renamed, the field lands on its fallback and the sentinel assertion
-// fails loudly. The companion all-nulls / empty-map fixtures pin the
-// FALLBACKS, which is the half the sentinel cannot see.
-//
-// THIS IS THE WORST-CASE MODEL OF THE FOUR. These are gate scans that never
-// reached the server, held on-device for retry. A decode failure at upgrade
-// drops attendance records with no server copy to recover them from.
+// Frozen wire fixtures for the on-device pending-gate-scan backlog (D-219).
+// `PendingGateScan.fromJson` is tolerant, so a renamed key decodes to its own
+// fallback silently; each sentinel below is distinct from that fallback, and
+// the all-nulls fixture pins the fallbacks themselves.
 
 /// Every field carrying a value nothing in the decoder can produce by
 /// accident. `direction: 1` is checkOut — the non-default case; the fallback
@@ -149,10 +135,7 @@ void main() {
     });
 
     test('a null direction OMITS the key — it is not written as null', () {
-      // The two shapes are different on the wire and both must be pinned: a
-      // key absent entirely is not the same artefact as a key present with a
-      // null value, and only the round trip through prefs proves which one
-      // this queue writes.
+      // An absent key and a key present with null are different wire shapes.
       final emitted = PendingGateScan.fromJson(_decode(_allNullsJson)).toJson();
 
       expect(emitted.containsKey('direction'), isFalse);

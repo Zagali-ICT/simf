@@ -9,10 +9,8 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../accessibility/_fake_prefs.dart';
 
 /// Captures the outgoing request and short-circuits it with a canned envelope,
-/// so the assertions read the EXACT map the repository handed dio (an
-/// interceptor runs before serialization). The stubbed `recordScan` in
-/// `gates_repository_test.dart` deliberately never builds this body, which is
-/// why the wire mapping needs its own harness.
+/// so assertions read the EXACT map the repository handed dio (an interceptor
+/// runs before serialization).
 class _CapturingInterceptor extends Interceptor {
   _CapturingInterceptor(this.responseData);
 
@@ -94,9 +92,7 @@ void main() {
 
       await _scan(built.repo, ScanDirection.checkIn);
 
-      // The whole point of the assertion: an attendance row is written with
-      // the direction this integer names, so a flipped mapping records every
-      // entry as an exit and is invisible in the app.
+      // A flipped mapping records every entry as an exit, invisibly.
       expect(capture.body!['direction'], 0);
       expect(capture.path, '/app/gates/g1/scans');
     });
@@ -169,9 +165,8 @@ void main() {
       final fetched = await built.repo.refreshOfflineConfig();
       expect(fetched, isNotNull, reason: 'the call itself must succeed');
 
-      // Read back through the repository rather than the returned object: the
-      // return value is in memory, and the console re-reads the cache on every
-      // scan.
+      // Read back through the repository: the console re-reads the cache on
+      // every scan, and the returned object is only in memory.
       final cached = built.repo.cachedOfflineConfig();
       expect(cached, isNotNull);
       expect(cached!.badgeKeyVersion, 4);
@@ -186,8 +181,7 @@ void main() {
       await built.repo.refreshOfflineConfig();
 
       // `built.cache` is a SEPARATE instance over the same prefs — what a
-      // relaunched console gets. Without the write, this device boots into a
-      // dead network holding nothing and every scan queues with no verdict.
+      // relaunched console gets.
       final afterRestart = built.cache.read();
       expect(afterRestart, isNotNull);
       expect(afterRestart!.badgeKeyVersion, 4);
@@ -199,14 +193,12 @@ void main() {
         () async {
       final built = _build(configCapture());
 
-      // g2 is switched off in the fetched rules. Before the fetch this device
-      // has no rules at all, so it cannot judge.
+      // g2 is switched off in the fetched rules; before the fetch there are
+      // no rules at all, so this device cannot judge.
       expect(built.repo.judgeOffline(gateId: 'g2', qr: 'ZZ'), isNull);
 
       await built.repo.refreshOfflineConfig();
 
-      // Now it refuses at the closed gate — a decision it can only reach from
-      // rules that were actually written down.
       final verdict = built.repo.judgeOffline(gateId: 'g2', qr: 'ZZ');
       expect(verdict, isNotNull);
       expect(verdict!.isAllowed, isFalse);

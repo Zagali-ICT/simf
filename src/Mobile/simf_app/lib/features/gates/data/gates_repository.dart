@@ -27,10 +27,7 @@ class GatesRepository {
   final GateScanQueue _queue;
   final GateOfflineConfigCache _offlineConfig;
 
-  /// The clock the offline queue stamps a scan with. Injectable so a test can
-  /// pin the stamped value exactly — a stamp read off the live clock can only
-  /// be asserted loosely, and on a +03:00 machine that assertion cannot tell
-  /// the Saudi clock from the device's. Production always gets [saudiNow].
+  /// Test seam for the queued scan's stamp; production gets [saudiNow].
   final DateTime Function() _now;
 
   /// `GET /app/gates/my-assignments` → the gates this operator may work.
@@ -122,25 +119,10 @@ class GatesRepository {
           qr: qr,
           idempotencyKey: idempotencyKey,
           direction: direction,
-          // D-219 / D-770 — the Saudi wall clock, never the device's.
-          // `formatWire` drops the zone marker and keeps the wall-clock
-          // reading, so a `DateTime.now()` here labels a tablet's own local
-          // time as Saudi time.
-          //
-          // Scope, stated plainly because an earlier version of this comment
-          // overstated it: the stamp goes NOWHERE off the device today.
-          // `recordScan` sends qr / idempotencyKey / source / direction and no
-          // timestamp, `flushPending` replays through that same call, and a
-          // grep for `queuedAt` across lib/ and packages/ finds only this write
-          // site plus the queue model's own field, `toJson` and `fromJson`.
-          // Nothing reads it back. This is consistency, not a live data defect.
-          //
-          // Worth getting right anyway, because there is a field waiting for
-          // it: SIMF-API-GATES-001 defines an optional `clientScannedAt`
-          // ("device-asserted device-local scan time, recorded but never
-          // authoritative") that the app does not send. Read that carefully
-          // before wiring the two together — the spec's field is contractually
-          // DEVICE-LOCAL, which is NOT the Saudi wall clock stamped here.
+          // D-219 / D-770 — the Saudi wall clock, never the device's;
+          // `formatWire` drops the zone marker and keeps the wall-clock read.
+          // Not SIMF-API-GATES-001's `clientScannedAt`, which is contractually
+          // DEVICE-local and which the app does not send.
           queuedAtIso: formatWire(_now()),
         ),
       );

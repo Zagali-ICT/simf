@@ -66,13 +66,9 @@ class MyAreaIdentity {
   final String? pageColor;
 
   /// True for audience profile types; false for partner/exhibitor ("Other")
-  /// types. Defaults true. Read by the home greeting, which shortens a person's
-  /// name but never an organisation's.
-  ///
-  /// It no longer gates the QR-page actions: those key off the signed-in
-  /// `AppRole` (DEF-EXH-005), because this flag is false for EVERY partner
-  /// type and so showed the exhibitor-only scan button to Staff / Moderator /
-  /// Media / Sponsor alike. The key stays on the wire regardless (D-219).
+  /// types. Defaults true. Drives the home greeting only — the QR-page actions
+  /// key off the signed-in `AppRole` instead (D-426, DEF-EXH-005), this flag
+  /// being false for EVERY partner type. Key frozen on the wire (D-219).
   final bool isVisitor;
 
   /// Name for the active locale (Arabic primary, English fallback — L-8).

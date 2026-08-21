@@ -8,14 +8,8 @@ import 'package:simf_app/features/notifications/widgets/notification_category_ic
 import 'package:simf_app/features/notifications/widgets/unread_dot.dart';
 
 /// One notification card (frame node): a solid severity-coloured circular icon
-/// at the inline START (the Row's first child), the bold title + body +
-/// "{day} · {time}" line, and the unread dot at the inline END
-/// (`PositionedDirectional(end:)`), painted `SimfTokens.danger` — red.
-///
-/// All three of those were backwards here until 2026-08-20: the icon was
-/// described at the end, the dot at the start, and the dot called gold.
-/// Nothing caught it because a doc comment cannot fail in a way a golden can
-/// see — the render was always right; only the description of it was wrong.
+/// at the inline start, the bold title + body + "{day} · {time}" line, and the
+/// `SimfTokens.danger` unread dot at the inline end.
 class NotificationCard extends StatelessWidget {
   const NotificationCard({
     required this.item,

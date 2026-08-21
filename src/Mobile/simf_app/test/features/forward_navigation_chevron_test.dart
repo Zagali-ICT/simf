@@ -12,10 +12,9 @@ import 'package:simf_app/features/sessions/widgets/session_reservation_card.dart
 import 'package:simf_app/features/speakers/data/speaker_models.dart';
 import 'package:simf_app/features/speakers/widgets/speaker_sessions.dart';
 
-/// These carets were bare `SimfSvgIcon`s, which never mirror — under English
-/// they kept pointing the Arabic way while the rows beside them (More menu, My
-/// Area) pointed forward, so the same screen showed carets both ways. Each row
-/// must render its caret through [SimfForwardChevron], which flips in LTR only.
+/// Every forward caret must come from [SimfForwardChevron], which flips in LTR
+/// only — a bare `SimfSvgIcon` never mirrors, so one screen shows carets both
+/// ways.
 void main() {
   final rows = <String, Widget>{
     'MoreProfileCard': MoreProfileCard(

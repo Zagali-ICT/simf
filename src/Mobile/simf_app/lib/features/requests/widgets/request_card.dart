@@ -26,16 +26,10 @@ class RequestCard extends StatefulWidget {
   final AppL10n l10n;
   final VoidCallback onCancel;
 
-  /// The instant the request date is measured against, on the Saudi wall
-  /// clock. Null in production, where [_RequestCardState._dateLine] reads
-  /// [saudiNow]; a test passes a fixed instant.
-  ///
-  /// The clock is a constructor parameter rather than a call inside the date
-  /// line because the device zone cannot be faked in-process, and on a +03:00
-  /// machine — which every SIMF dev box and CI agent is — the device clock and
-  /// the Saudi clock read the same value, so a card that consults its own
-  /// clock cannot be pinned there at all. Same seam, same reason, as
-  /// `visitorDateOfBirthRange(now)`.
+  /// Saudi wall clock the request date is measured against; null in
+  /// production, a fixed instant in tests. A parameter rather than an internal
+  /// call because the device zone cannot be faked in-process, and every dev
+  /// box and CI agent is already +03:00.
   final DateTime? now;
 
   @override
@@ -132,10 +126,8 @@ class _RequestCardState extends State<RequestCard> {
   /// The card date line — "07:45 AM · اليوم" when the request's date is today,
   /// else the absolute date "12 يناير 2026" (Figma 1408:9782).
   ///
-  /// Both sides of the comparison are on the Saudi wall clock (D-219 /
-  /// D-770): the stored date is a Riyadh reading, so measuring it against the
-  /// phone's own calendar day badges the wrong requests "today" outside
-  /// Riyadh.
+  /// Both sides sit on the Saudi wall clock (D-219 / D-770) — the phone's own
+  /// calendar day badges the wrong requests "today" outside Riyadh.
   String _dateLine(AppL10n l10n) {
     final date = saudiOf(widget.item.displayDate);
     final today = widget.now ?? saudiNow();

@@ -25,15 +25,8 @@ export 'package:simf_app/features/account/widgets/face_id_toggle_tile.dart';
 /// A top-level function (not a [BiometricAuth] method) so test fakes needn't
 /// implement it.
 ///
-/// [lockedOut] and [unavailable] are the seams for the two outcomes whose
-/// recovery route is caller-specific: both default copies send the user to the
-/// password form, which only exists on the sign-in screen. A caller with no
-/// password form to point at (the enrol step-up, where the user is already
-/// signed in) passes its own copy. The defaults are the sign-in screen's.
-///
-/// [LocalAuthOutcome.noDeviceCredential] takes no seam on purpose — its copy
-/// is device-setup advice ("set a screen lock"), which is equally actionable
-/// from either caller.
+/// The [lockedOut] / [unavailable] defaults point at the password form, which
+/// only the sign-in screen has; the enrol step-up passes its own copy instead.
 String? localizedBiometricError(
   AppL10n l10n,
   LocalAuthOutcome outcome, {
@@ -96,14 +89,9 @@ class BiometricAuth {
   /// a [LocalAuthOutcome]. Used by BOTH the enrolment confirm and the sign-in
   /// prompt so the mapping lives in one place.
   ///
-  /// `biometricOnly` is TRUE, so the sheet offers no device-PIN fallback: a
-  /// face or fingerprint is the only way through it. That is deliberate — it
-  /// reversed the earlier device-credential posture recorded in D-738, and the
-  /// commit that did it says so ("enforce biometric-only authentication").
-  ///
-  /// So no failure copy may name the PIN — this flag guarantees the sheet will
-  /// not offer one. What the copy points at instead differs per caller, which
-  /// is why [localizedBiometricError] takes those messages as arguments.
+  /// `biometricOnly` is TRUE — a deliberate reversal of D-738's device-
+  /// credential posture — so the sheet never offers a PIN and no failure copy
+  /// may name one.
   Future<LocalAuthOutcome> confirmDeviceIdentity(String reason) async {
     try {
       final ok = await _localAuth.authenticate(

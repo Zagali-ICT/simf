@@ -50,9 +50,7 @@ class DelegationsBody extends StatelessWidget {
     final selectedName =
         data.selectedCountryName(selectedCountryCode, isArabic: isArabic);
 
-    // The strip / search / filter chip stay eager — they are the always-visible
-    // head of the page. Only the country cards below them are unbounded, so
-    // they are what the builder makes lazy.
+    // Only the country cards are unbounded; the head stays eager.
     final header = <Widget>[
       DelegationsStatsStrip(
         countryCount: data.countryCount,
@@ -102,8 +100,8 @@ class DelegationsBody extends StatelessWidget {
           );
         }
         final item = filtered[index - header.length];
-        // The trailing gap rides on the card, as the sibling spacer did, so the
-        // last card keeps the gap a separator would have dropped.
+        // The gap rides on the card, as the sibling spacer did, so the last
+        // card keeps it where a separator would not.
         return Padding(
           padding: const EdgeInsets.only(bottom: SimfTokens.space3),
           child: DelegationCard(

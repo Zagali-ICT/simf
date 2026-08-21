@@ -18,10 +18,8 @@ final _client = SimfApiClient.build(
   currentLanguageCode: () => 'en',
 );
 
-/// Overrides `recordScan` PER IDEMPOTENCY KEY, so a drain can be made to
-/// succeed, then fail mid-backlog, then succeed again. The existing suite's
-/// stub answers the same way for every scan, which cannot tell a drain that
-/// stops from one that carries on.
+/// Overrides `recordScan` PER IDEMPOTENCY KEY, so a drain can be made to fail
+/// mid-backlog.
 class _KeyedStubGates extends GatesRepository {
   _KeyedStubGates(super._client, super._queue, super._offlineConfig);
 
@@ -58,8 +56,7 @@ class _KeyedStubGates extends GatesRepository {
   );
 }
 
-/// Seeds the backlog directly, so the drain assertions do not lean on the
-/// queue-or-throw decision the first group pins.
+/// Seeds the backlog directly, bypassing the queue-or-throw decision above.
 Future<void> _seed(GateScanQueue queue, List<String> keys) async {
   for (final key in keys) {
     await queue.enqueue(
@@ -102,10 +99,8 @@ void main() {
         'a TIMEOUT is queued too — the absent response decides, not which '
         'client code named it', () async {
       final built = _build();
-      // `SimfApiClient` maps a connect/receive timeout to CLIENT_TIMEOUT with
-      // no status. The person still walked through the gate; dropping the scan
-      // because the code string is not CLIENT_NETWORK is a silent attendance
-      // hole.
+      // A timeout maps to CLIENT_TIMEOUT with no status — a different code
+      // string, but still no response, so it must queue like a network drop.
       final result = await _record(
         built.repo,
         const ApiFailure(code: ApiErrorCodes.clientTimeout, message: 'slow'),
@@ -118,10 +113,8 @@ void main() {
     test('a 500 RETHROWS even when it is reported as a network-class code',
         () async {
       final built = _build();
-      // The real shape of a 500 here: dio's badResponse maps to CLIENT_NETWORK
-      // *carrying the status*. A response arrived, so a blind retry cannot
-      // change it — queueing would swallow a server fault as if the gate were
-      // offline.
+      // dio maps a 500 to CLIENT_NETWORK *carrying the status*, and the status
+      // is what decides — a response arrived, so it must not queue.
       await expectLater(
         _record(
           built.repo,
@@ -185,8 +178,8 @@ void main() {
 
       expect(remaining, 2);
       expect(_queuedKeys(built.queue), <String>['K2', 'K3']);
-      // K3 was never tried: the link is down, so carrying on through the
-      // backlog only burns the tablet's battery and the server's rate limit.
+      // K3 was never tried: the link is down, so the drain stops rather than
+      // burning the tablet's battery and the server's rate limit.
       expect(built.repo.attempted, <String>['K1', 'K2']);
     });
 

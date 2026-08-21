@@ -55,18 +55,11 @@ class _FakeRepo implements SpeakersRepository {
   // which is the only way to prove Retry actually re-fetches.
   bool failSlots;
 
-  // The availability fetch throws something that is NOT an ApiFailure — the
-  // keystore PlatformException the client raises on its 401-refresh path,
-  // which escapes un-wrapped. NOT final, for the same recovery reason as
-  // [failSlots].
+  // A throw that is NOT an ApiFailure — the keystore PlatformException the
+  // client raises un-wrapped on its 401-refresh path. `crashSlots` is NOT
+  // final, for the same recovery reason as [failSlots].
   bool crashSlots;
-
-  // The same un-wrapped failure on the bilateral roster fetch, which the sheet
-  // runs once from initState and can never re-run.
   final bool crashTargets;
-
-  // The same un-wrapped failure on SUBMIT — the one path where the user has
-  // already committed real input, so saying nothing costs the most.
   final bool crashSubmit;
 
   // G3 — how many times the availability fetch was attempted. Without this a
@@ -381,11 +374,8 @@ void main() {
     testWidgets(
         'a roster fetch that throws a NON-ApiFailure resolves the picker '
         'instead of spinning it forever', (tester) async {
-      // Worse than the slot case: the bilateral entry loads the roster from
-      // initState and never again, so a stuck spinner is terminal — the
-      // subject / slots / send half of the sheet is gated on a chosen target
-      // and there is nothing to choose. The sheet stays dead until it is
-      // closed and reopened.
+      // initState loads the roster once and never again, so a stuck spinner
+      // leaves nothing to choose and the rest of the sheet gated shut.
       await _pump(tester, speakerId: null, repo: _FakeRepo(crashTargets: true));
 
       expect(find.byType(MeetingSheetSpinner), findsNothing);
@@ -395,11 +385,8 @@ void main() {
     testWidgets(
         'G3 — a slot fetch that throws a NON-ApiFailure lands the same load '
         'error + Retry instead of spinning forever', (tester) async {
-      // The `on ApiFailure` branch never sees a keystore PlatformException, so
-      // before the finally the sheet was left with _slotsLoading stuck true:
-      // an endless spinner, canSend permanently false, and no Retry — the
-      // Retry hangs off _slotsError, which nothing had set. The sheet was dead
-      // until the user closed and reopened it.
+      // Retry hangs off _slotsError, so a throw the `on ApiFailure` branch
+      // misses leaves the spinner up with no way back.
       final repo = _FakeRepo(slots: _twoDaySlots, crashSlots: true);
       await _pump(tester, speakerId: 's1', repo: repo);
 
@@ -408,7 +395,6 @@ void main() {
       // …and never as "this speaker has no availability", which G3 forbids.
       expect(find.text('No meeting slots available right now'), findsNothing);
 
-      // Retry is reachable, which is the whole point of the error state.
       repo.crashSlots = false;
       await tester
           .tap(find.byKey(const ValueKey<String>('meeting-slots-retry')));
@@ -511,12 +497,8 @@ void main() {
     testWidgets(
         'a submit that throws a NON-ApiFailure says so inline instead of '
         'handing the button back in silence', (tester) async {
-      // The `on ApiFailure` branch never sees the keystore PlatformException
-      // the client raises on its 401-refresh path, so the finally re-enabled
-      // the button with _error still null: the send read as a no-op — the
-      // button came back, nothing was said, and nothing was sent. The error
-      // also escaped to the zone, which is why this is an `on Object` branch
-      // and not a widened finally (the same reasoning as _loadSlots).
+      // A widened `finally` would not do: the throw must be caught, or it
+      // escapes to the zone and the send reads as a silent no-op.
       final repo = _FakeRepo(slots: _twoDaySlots, crashSubmit: true);
       await _pump(tester, speakerId: 's1', repo: repo);
 
@@ -526,8 +508,6 @@ void main() {
         find.text('Could not send the request. Try again.'),
         findsOneWidget,
       );
-      // …and the sheet is still here with its send button back, so the user
-      // can act on what they were just told.
       expect(find.text('Send request'), findsOneWidget);
       expect(find.text('Loading…'), findsNothing);
     });

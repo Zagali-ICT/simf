@@ -161,11 +161,9 @@ class _MeetingRequestFormState<T> extends State<MeetingRequestForm<T>> {
         _targetsLoaded = true;
       });
     } on Object {
-      // Wider than ApiFailure on purpose (see _loadSlots), and it matters more
-      // here: initState is the only caller, so there is no retry path at all.
-      // Left unloaded the picker spins for the life of the sheet and the
-      // target-gated subject / slots / send never appear. An empty picker at
-      // least states its own hint.
+      // Wider than ApiFailure: a keystore error on the 401-refresh escapes
+      // un-wrapped. initState is the only caller, so an unloaded picker would
+      // spin for the life of the sheet with no retry path.
       if (!mounted) {
         return;
       }
@@ -199,12 +197,9 @@ class _MeetingRequestFormState<T> extends State<MeetingRequestForm<T>> {
         _slotsLoading = false;
       });
     } on Object {
-      // Wider than ApiFailure on purpose: a keystore error on the client's
-      // 401-refresh escapes it un-wrapped, and that used to leave _slotsLoading
-      // stuck true — an endless spinner, canSend false for good, and no Retry
-      // to escape it, since the Retry hangs off _slotsError. Every failure here
-      // says one thing to the user, so they all reach the G3 load-error state
-      // and none of them the "no availability" notice.
+      // Wider than ApiFailure: a keystore error on the 401-refresh escapes
+      // un-wrapped. Every failure reaches the G3 load-error state, never the
+      // "no availability" notice, since the Retry hangs off _slotsError.
       if (!mounted || id != _selectedId) {
         return;
       }
@@ -277,18 +272,15 @@ class _MeetingRequestFormState<T> extends State<MeetingRequestForm<T>> {
       }
       setState(() => _error = widget.failureText(failure));
     } on Object {
-      // Wider than ApiFailure for the same reason as _loadSlots: a keystore
-      // error on the 401-refresh escapes un-wrapped. With only the finally the
-      // button came back saying nothing, and the error escaped to the zone.
+      // Wider than ApiFailure, as in _loadSlots: a keystore error on the
+      // 401-refresh escapes un-wrapped and would reach the zone unreported.
       if (!mounted) {
         return;
       }
       setState(() => _error = l10n.meetingRequestFailed);
     } finally {
-      // Only for a sheet that is STAYING. `mounted` does NOT mean "already
-      // gone": pop() just reverses the route's animation and the State lives
-      // out the 200ms exit, so re-enabling here flicks the button back to life
-      // on a sheet sliding away (as the three sibling sheets found).
+      // Only for a sheet that is STAYING: `mounted` stays true through the
+      // ~200ms exit after pop(), so re-enabling would repaint a leaving sheet.
       if (!popped && mounted) {
         setState(() => _submitting = false);
       }

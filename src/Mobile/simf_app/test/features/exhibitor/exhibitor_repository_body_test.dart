@@ -3,20 +3,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/features/exhibitor/data/exhibitor_repository.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// D-426 lead capture posts the visitor's **entry-badge `qrId`** — the opaque
-/// id the badge QR encodes — to `/app/exhibitor/visitors/scan`. It is NOT the
-/// contacts `token` (the rotatable share token), and the two endpoints sit one
-/// screen apart in the app, so the swap is an easy one to make. The server
-/// answers an unknown identifier with a 404, which the scanner shows as "no
-/// matching badge" — indistinguishable from a genuinely unknown visitor, so
-/// nothing above this line can catch a swapped key.
-///
-/// The scanner-screen tests fake the repository, so they stay green either
-/// way; this drives the real repository and reads the body off the wire.
+/// D-426: lead capture posts the entry-badge `qrId`, never the contacts share
+/// `token`. The server 404s a swap, which the scanner shows as "no matching
+/// badge" — indistinguishable from a genuinely unknown visitor.
 
-/// Captures the request body of the one POST and short-circuits with a canned
-/// success envelope — no real backend, and the body is the exact Map the
-/// repository passed (interceptors run before serialization).
+/// Captures the POST body — still the raw Map, since interceptors run before
+/// serialization — and short-circuits with a canned success envelope.
 class _CapturingInterceptor extends Interceptor {
   Map<String, dynamic>? body;
   String? path;
@@ -71,7 +63,6 @@ void main() {
     test('sends { qrId } and trims the scanned value', () async {
       final capture = _CapturingInterceptor();
 
-      // The scanner hands over whatever the camera decoded, padding included.
       await _repository(capture).scanByBadge('  BADGE-999  ');
 
       // Exact-map, so a rename to `token` reds AND a stray extra key reds.

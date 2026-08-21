@@ -215,9 +215,8 @@ void main() {
 
     testWidgets('a biometric lockout shows the enrol copy, never the sign-in '
         "screen's password advice", (tester) async {
-      // The user reached this screen from the side-menu toggle or the nudge, so
-      // they are already signed in: telling them to sign in with their password
-      // is advice they cannot act on.
+      // The user is already signed in here, so "sign in with your password" is
+      // advice they cannot act on.
       final controller = _FakeController();
       final biometric = _FakeBiometric(outcome: LocalAuthOutcome.lockedOut);
       await _pump(tester, controller, biometric: biometric);
@@ -243,9 +242,6 @@ void main() {
 
     testWidgets('an unavailable biometric shows the enrol copy, never the '
         "sign-in screen's password advice", (tester) async {
-      // Same reason as the lockout above, for the outcome the OS sheet's
-      // unexpected-failure branch produces: the user is already signed in here,
-      // so "sign in with your password" is advice they cannot act on.
       final controller = _FakeController();
       final biometric = _FakeBiometric(outcome: LocalAuthOutcome.unavailable);
       await _pump(tester, controller, biometric: biometric);
@@ -263,8 +259,8 @@ void main() {
         findsOneWidget,
       );
       expect(
-        // Leading 's' dropped on purpose: the sign-in copy capitalises it here
-        // and not in the lockout, and both must stay off this screen.
+        // Leading 's' dropped on purpose — the sign-in copy capitalises it
+        // here and not in the lockout.
         find.textContaining('ign in with your password'),
         findsNothing,
       );

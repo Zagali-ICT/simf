@@ -1,7 +1,5 @@
-// Regression guard for the busy flag on the handler that POPS the sheet.
-// See contact_preview_sheet_test.dart for the lifecycle this pins: `pop()` only
-// reverses the route's animation controller, so the State survives — and
-// `mounted` keeps returning true — for the whole 200ms exit transition.
+// Pins the busy flag on the handler that POPS the sheet: `mounted` stays true
+// through the ~200ms exit transition after `pop()`.
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -66,13 +64,9 @@ Future<void> _openSheet(WidgetTester tester, FakeContactsRepo repo) async {
   await tester.pumpAndSettle();
 }
 
-/// Pumps in small steps until the removal lands, then one more frame — which
-/// leaves the tree part-way through the sheet's exit transition.
-///
-/// `pumpAndSettle` cannot be used here: once the exit finishes the sheet is
-/// gone whether or not the flag was cleared, so it discriminates nothing. The
-/// loop is needed because the confirm dialog's own exit has to finish before
-/// `SimfConfirmDialog.show` resolves and the removal is even issued.
+/// Pumps until the removal lands, then one more frame, leaving the tree
+/// part-way through the sheet's exit. `pumpAndSettle` discriminates nothing
+/// here: once the exit finishes the sheet is gone either way.
 Future<void> _pumpToMidExit(WidgetTester tester, bool Function() done) async {
   for (var i = 0; i < 60 && !done(); i++) {
     await tester.pump(const Duration(milliseconds: 16));
@@ -113,8 +107,7 @@ void main() {
       expect(find.byType(SavedContactSheet), findsNothing);
     });
 
-    // The other half of the same rule: a sheet that is STAYING must get its
-    // control back, which is what the `finally` was added for.
+    // The other half: a sheet that is STAYING must get its control back.
     testWidgets('a failed removal re-enables Remove on the sheet that stays',
         (tester) async {
       final repo = FakeContactsRepo(removeStatus: 500);

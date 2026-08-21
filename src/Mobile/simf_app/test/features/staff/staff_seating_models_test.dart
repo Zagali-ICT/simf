@@ -2,15 +2,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/features/sessions/data/seat_enums.dart';
 import 'package:simf_app/features/staff/data/staff_seating_models.dart';
 
-/// `StaffSeatOccupant.fromJson` (D-771) is tolerant, so a lookup response that
-/// OMITS `found` decodes to the fallback rather than throwing.
-///
-/// `found` is not a label: the staff seating desk renders the occupant card —
-/// name, photo, check-in control — only when it is true, and the "no seat" /
-/// "seat empty" message otherwise. Defaulting it TRUE would present a card
-/// built entirely out of the OTHER fallbacks (an empty name, tier Normal,
-/// status Pending) as a real occupant, which is a staff member being told a
-/// badge holds a seat it does not.
+/// Pins `StaffSeatOccupant.found`'s fallback (D-771). It gates the occupant
+/// card, so defaulting it TRUE would present the other fallbacks — empty name,
+/// tier Normal, status Pending — as a real occupant.
 void main() {
   group('StaffSeatOccupant — found defaults to NOT found', () {
     test('a real occupant decodes every key, not a fallback', () {
@@ -48,8 +42,8 @@ void main() {
     });
 
     test('an ABSENT found is an empty seat, not an occupant', () {
-      // The shape a "nothing here" response really has: the seat coordinates
-      // come back, the occupant half does not.
+      // A "nothing here" response: the seat coordinates come back, not the
+      // occupant half.
       final occupant = StaffSeatOccupant.fromJson(const <String, dynamic>{
         'rowLabel': 'B',
         'seatNumber': 12,
@@ -57,8 +51,7 @@ void main() {
       });
 
       expect(occupant.found, isFalse);
-      // Everything the card would have shown is blank, which is why a wrong
-      // `found` renders a nameless ghost occupant rather than failing loudly.
+      // A wrong `found` renders a nameless ghost occupant rather than failing.
       expect(occupant.displayName, '');
       expect(occupant.displayNameArabic, '');
       expect(occupant.localizedName(isArabic: true), '');
