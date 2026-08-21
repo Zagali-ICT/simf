@@ -33,18 +33,8 @@ import 'package:flutter_test/flutter_test.dart';
 /// So the unit of measurement is the screen PLUS its extracted body — see
 /// [_bundle].
 ///
-/// A FOURTH time, on 2026-08-20, and the same shape again: `_fetches` only
-/// matched `ref.watch(` written on ONE line, so a screen whose read had wrapped
-/// to `ref\n    .watch(` — ordinary formatting, nothing wrong with it — read as
-/// not fetching and dropped out of the sweep instead of being checked.
-/// `registration_success_screen.dart` was sitting in that hole. Widening the
-/// pattern to tolerate the newline caught it, and it is exempt below on its
-/// merits rather than by accident.
-///
-/// The pattern of all four is worth naming, since a fifth will look like none
-/// of them: every slip made a screen INVISIBLE to the sweep, never visibly
-/// wrong. A green tick here means "the screens I could see are covered", so the
-/// question to ask of any change to this file is what it stops seeing.
+/// Every slip so far made a screen INVISIBLE to the sweep rather than visibly
+/// wrong, so ask of any change here what it stops seeing.
 ///
 /// This test is the section 4 pattern applied to section 13.6 — pin the
 /// surface with a test, not a comment. It enumerates every screen that fetches
@@ -97,11 +87,8 @@ const Map<String, String> _exempt = <String, String>{
   // 1701:3789).
   'registration/registration_status_screen.dart': 'explicit Re-check button',
 
-  // Terminal confirmation of sign-up, reached as a replacement and offline-safe
-  // by contract (D-366). Its one read is the CP-editable welcome line (D-461),
-  // which already falls back to bundled copy; the reference number comes from
-  // the route. There is nothing a pull could fetch that the screen does not
-  // already have.
+  // Terminal, offline-safe by contract (D-366); its one read is the CP-editable
+  // welcome line (D-461), which already falls back to bundled copy.
   'registration/registration_success_screen.dart': 'terminal, offline-safe',
 
   // Live camera preview: no scrollable, and no fetch to repeat.
@@ -120,12 +107,8 @@ const Map<String, String> _exempt = <String, String>{
 };
 
 /// A screen "fetches" when it reads a provider or declares the repo's standard
-/// `_load()` hook.
-///
-/// The whitespace between `ref`, `.` and the method is what closes the fourth
-/// slip in the header: a wrapped `ref\n    .watch(` is ordinary formatting and
-/// must count. No `\b` before `ref` — `_ref.read(` has to keep matching, and a
-/// word boundary would not fire between `_` and `r`.
+/// `_load()` hook. The `\s*` tolerates a read wrapped across lines; no `\b`
+/// before `ref`, or `_ref.read(` stops matching.
 final RegExp _fetches =
     RegExp(r'ref\s*\.\s*(watch|read)\(|Future<void> _load');
 

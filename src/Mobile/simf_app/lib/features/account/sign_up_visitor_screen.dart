@@ -138,9 +138,8 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       final l10n = AppL10n.of(context);
       setState(() => _loadError = failure.localizedMessage(l10n));
     } finally {
-      // A token refresh on the 401 path can throw past ApiFailure (a keystore
-      // write failing), and clearing the flag only on the two known paths
-      // strands the screen on its spinner for good.
+      // The 401-refresh path can throw past ApiFailure (a failed keystore
+      // write), which would strand the screen on its spinner.
       if (mounted) {
         setState(() => _loading = false);
       }
@@ -173,9 +172,8 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         isVisitor: _type.isVisitor,
       );
     } finally {
-      // Same reason as _load: anything thrown past ApiFailure would otherwise
-      // leave the picker spinning with no retry, which blocks Next for good.
-      // A null `types` is the failure state the retry hangs off.
+      // Same reason as _load; a null `types` is the failure state the retry
+      // hangs off.
       if (mounted) {
         setState(() => _type.endFetch(_form, types));
       }
@@ -296,9 +294,8 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         ),
       );
     } finally {
-      // The save catches ApiFailure per step, but a token refresh on the 401
-      // path can still throw past it (a keystore write failing), and that left
-      // Next disabled for the rest of the session.
+      // Same reason as _load: the per-step ApiFailure catches do not cover a
+      // throw from the 401-refresh path, which left Next disabled for good.
       if (mounted) {
         setState(() => _saving = false);
       }

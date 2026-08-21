@@ -29,13 +29,8 @@ public sealed class ListProgrammeSessionsRequest
     /// Combines with <see cref="Day"/> (AND). An unknown id returns an empty
     /// list rather than a 404, so the anonymous agenda is not a category-id
     /// oracle.
-    /// <para>There is NO public endpoint listing the categories. This comment
-    /// named <c>GET /app/programme/categories</c> as though there were; it has
-    /// never been mapped, so a caller following it gets a 404. Deferred rather
-    /// than forgotten: the lookup is team-seeded and currently ships EMPTY
-    /// pending the client's category list (open item OI-2), so the endpoint
-    /// would answer over no rows. A caller needing an id today reads it off a
-    /// session in this same list.</para></summary>
+    /// <para>No public endpoint lists the categories: the lookup ships empty
+    /// pending OI-2. Read an id off a session in this same list.</para></summary>
     public Guid? CategoryId { get; set; }
 }
 

@@ -152,10 +152,8 @@ void main() {
       );
     });
 
-    // The case the test above only claims to cover: a token IS stored, but its
-    // expiry has passed. The fast path must reject it and refresh, or the app
-    // resumes on a dead token and every call 401s. A fixed 2020 instant keeps
-    // this independent of the machine clock.
+    // A token IS stored here, but expired: the fast path must reject it, or the
+    // app resumes on a dead token and every call 401s.
     test('a stored access token past its expiry refreshes rather than resuming',
         () async {
       final repo = _MockAuthRepository();
@@ -188,9 +186,8 @@ void main() {
       final container = _container(repo, secure);
       addTearDown(container.dispose);
 
-      // Both the correct path and the resume-on-stale-token path end signed in
-      // as a visitor, so waiting on the role cannot itself discriminate — the
-      // token the session carries is what does.
+      // Both paths end signed in as a visitor, so only the token the session
+      // carries discriminates.
       final state = await _waitFor(
         container,
         (s) =>

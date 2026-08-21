@@ -31,19 +31,16 @@ void main() {
         'presents its fields', () {
       expect(_error(hasTarget: false, subject: '', hasSlot: false), _noTarget);
       expect(_error(subject: '', hasSlot: false), _en.meetingRequestInvalid);
-      // G3 — a slot is always required; the send button is disabled when the
-      // target has none, so this guards the picked-a-day-but-not-a-time case.
+      // G3 — a slot is always required (picked a day but not a time).
       expect(_error(hasSlot: false), _en.meetingPickDateTime);
     });
 
     test('the extra field is validated between the subject and the slot', () {
       expect(_error(validateExtra: () => 'Enter attendees'), 'Enter attendees');
-      // Its error outranks the missing slot…
       expect(
         _error(validateExtra: () => 'Enter attendees', hasSlot: false),
         'Enter attendees',
       );
-      // …but the subject outranks it.
       expect(
         _error(subject: '', validateExtra: () => 'Enter attendees'),
         _en.meetingRequestInvalid,
@@ -51,8 +48,8 @@ void main() {
     });
 
     test('the extra validator is not run until the checks before it pass', () {
-      // It reads live controller text, so running it on a form the user has
-      // not filled in yet would surface the wrong complaint first.
+      // It reads live controller text, so an early run complains first about
+      // a field the user has not reached.
       var calls = 0;
       String? countingExtra() {
         calls++;

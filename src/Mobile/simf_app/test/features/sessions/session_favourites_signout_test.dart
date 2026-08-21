@@ -8,22 +8,8 @@ import 'package:simf_app/features/sessions/data/session_favourites.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// The favourites set must belong to the signed-in account and to nothing else.
-///
-/// It did not, until 2026-08-20. `build()` watched `simfApiClientProvider`
-/// alone, and that provider never rebuilds — all three of its dependencies are
-/// root overrides, and `currentLanguageCodeProvider` deliberately hands out a
-/// closure rather than a value so a language switch does NOT invalidate it. So
-/// the set was fetched once per app process and then survived sign-out.
-///
-/// On a shared or handed-over device that showed up as: user B signs in and
-/// sees user A's hearts filled on the session-summaries and my-sessions
-/// screens, A's favourite count on the My Area tile, and — because `toggle`
-/// reads the surviving set to decide add-or-remove — B tapping one of those
-/// hearts sends `DELETE /app/sessions/favourites/{id}` for a row B does not
-/// own. Only killing the process cleared it.
-///
-/// Both tests below fail if the `authControllerProvider` watch is removed.
+/// Pins: `sessionFavouritesProvider` watches `authControllerProvider`, so one
+/// account's favourites cannot survive sign-out into the next account.
 class _ExplodingAdapter implements HttpClientAdapter {
   int calls = 0;
 
@@ -54,9 +40,8 @@ class _FakeAuth extends AuthController {
   @override
   AuthState build() => _initial;
 
-  /// Not named `signOut` on purpose: the real one is `Future<void> signOut()`
-  /// and it reaches `late final _repository`, which only the real `build()`
-  /// initialises. This flips the state and nothing else.
+  /// Not `signOut`: the real one reaches `late final _repository`, which only
+  /// the real `build()` initialises.
   void becomeSignedOut() => state = const AuthStateSignedOut();
 }
 
@@ -133,13 +118,9 @@ void main() {
     final auth = _FakeAuth(_signedIn());
     final container = containerFor(auth);
 
-    // Subscribe to auth from the test, not only from inside the provider.
-    // When the defect is reinstated the provider stops watching auth, nothing
-    // else instantiates the notifier, and `becomeSignedOut()` below throws
-    // "Tried to use a notifier in an uninitialized state" BEFORE the assertion
-    // runs — a stack trace that reads as a broken fake instead of as the leak
-    // it actually is. Holding a subscription here means the notifier exists
-    // either way, so the failure is the expect and its reason.
+    // Keeps the notifier alive even if the provider stops watching auth, so
+    // the failure is the expect below rather than an uninitialized-notifier
+    // throw from `becomeSignedOut()`.
     final authSub = container.listen<AuthState>(
       authControllerProvider,
       (_, __) {},

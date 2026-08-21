@@ -94,11 +94,9 @@ class _CapturedVisitorSheetState extends ConsumerState<CapturedVisitorSheet> {
         SnackBar(content: Text(l10n.scanVisitorError)),
       );
     } finally {
-      // Same 401-refresh escape as above — but only for a sheet that is
-      // staying. `mounted` does NOT stand in for "already gone": pop() merely
-      // reverses the route's animation controller, and the State lives until
-      // the 200ms exit transition completes, so re-enabling here repaints the
-      // spinner back to the icon on a sheet the user can still see.
+      // Same 401-refresh escape as above, but only for a sheet that is
+      // STAYING: `mounted` stays true through the ~200ms exit after pop(), so
+      // re-enabling would repaint a leaving sheet.
       if (!popped && mounted) {
         setState(() => _busy = false);
       }

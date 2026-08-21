@@ -56,9 +56,8 @@ void main() {
       await tester.pumpWidget(_harness(<NewsListItem>[_post('a')]));
       await tester.pump();
 
-      // A refresh returns more posts; the State is reused (no key), so only
-      // didUpdateWidget can start the rotation. Regression guard for the
-      // "carousel sits static" bug.
+      // The State is reused across the refresh (no key), so only
+      // didUpdateWidget can start the rotation.
       await tester.pumpWidget(
         _harness(<NewsListItem>[_post('a'), _post('b'), _post('c')]),
       );
@@ -92,15 +91,13 @@ void main() {
       await tester.pump();
 
       // PageController settles a shrunken list on its LAST page, so the dots
-      // have to follow it THERE. Sending them to slide 1 instead leaves them
-      // pointing at a slide that is not on screen.
+      // have to follow it there.
       final pageView = tester.widget<PageView>(find.byType(PageView));
       expect(pageView.controller!.page, closeTo(1, 0.01));
       expect(tester.widget<CarouselDots>(find.byType(CarouselDots)).index, 1);
 
-      // ...and the next tick has somewhere to go. With the index stuck at 0 the
-      // tick targets page 1, which is already on screen, so the carousel never
-      // moves again.
+      // ...and the next tick still has somewhere to go: an index stuck at 0
+      // targets the page already on screen and the carousel stops for good.
       await tester.pump(const Duration(seconds: 4));
       await tester.pump(const Duration(milliseconds: 600));
       expect(
@@ -130,9 +127,8 @@ void main() {
       await tester.pump();
       expect(tester.widget<CarouselDots>(find.byType(CarouselDots)).index, 2);
 
-      // The controller sits on page 2; a tick computed from a zeroed index
-      // targets page 1 and the carousel slides BACKWARDS. From the real page it
-      // wraps forward to the first slide.
+      // The controller sits on page 2, so the tick wraps forward to 0; from a
+      // zeroed index it would target page 1 and slide BACKWARDS.
       await tester.pump(const Duration(seconds: 4));
       await tester.pump(const Duration(milliseconds: 600));
       expect(
@@ -160,8 +156,8 @@ void main() {
 
       await tester.pumpWidget(_harness(<NewsListItem>[_post('a')]));
       await tester.pump();
-      // The dots go with the second slide; the stale index must not survive
-      // into the next growth, which would render a blank page.
+      // The stale index must not survive into the next growth — it would
+      // render a blank page.
       expect(find.byType(CarouselDots), findsNothing);
 
       await tester.pumpWidget(

@@ -36,12 +36,9 @@ import '../test/support/simf_test_scope.dart';
 /// cross-screen navigation glue — splash routing, the auth gate, and the
 /// FDS-014 / guest-entry wiring — that the per-screen widget tests cannot.
 ///
-/// **Needs a device**: run it as
-/// `flutter test integration_test/app_flows_test.dart -d DEVICE_ID`. It cannot run headless — `IntegrationTestWidgetsFlutterBinding`
-/// requires an attached target — and the header claimed otherwise until
-/// 2026-08-20, which is a large part of why nobody noticed the file had never
-/// passed. Nothing in CI or in a bare `flutter test` reaches it, so it is worth
-/// running by hand whenever D-694's shared foundations move.
+/// **Needs an attached device** — `IntegrationTestWidgetsFlutterBinding` cannot
+/// run headless, so neither CI nor a bare `flutter test` reaches this file. Run
+/// it by hand (`-d DEVICE_ID`) whenever D-694's shared foundations move.
 
 /// In-memory prefs: onboarding marked complete (so the splash routes a
 /// signed-out user straight to sign-in, not onboarding) and the UI language
@@ -126,13 +123,8 @@ class _FakeContactsRepo implements ContactsRepository {
   Future<String> getVcard(String id) async => 'BEGIN:VCARD\r\nEND:VCARD\r\n';
 }
 
-/// Share-my-contact needs BOTH repositories, which is easy to miss: the screen
-/// only names `contactsRepositoryProvider`, but `ShareCardNotifier.build()`
-/// awaits `myAreaRepositoryProvider` for the vCard as well
-/// (contacts_providers.dart:37-39). Without this fake that second await hit the
-/// unreachable test host, the notifier settled into AsyncError, and the screen
-/// rendered its error state — so `find.byType(QrImageView)` found nothing and
-/// the failure pointed at the QR widget rather than at the missing fake.
+/// Share-my-contact needs BOTH repositories: `ShareCardNotifier.build()` awaits
+/// `myAreaRepositoryProvider` for the vCard, not just the contacts repository.
 class _FakeMyAreaRepo implements MyAreaRepository {
   @override
   Future<String> getContactCardVcf() async => 'BEGIN:VCARD\r\nEND:VCARD\r\n';
@@ -153,10 +145,8 @@ AuthState _signedInApprovedVisitor() => AuthStateSignedIn(
           appRole: AppRole.visitor,
           preferredLanguage: PreferredLanguage.fromJson('en'),
           registrationStatus: RegistrationStatus.approved,
-          // Explicit, because the DEFAULT IS FALSE (current_user.dart:21) and
-          // `routeAfterAuth` sends an incomplete profile to the sign-up screen
-          // rather than Home. This file asserted Home while relying on a
-          // default that never existed, so the assertion could not pass.
+          // Explicit: the default is FALSE, and `routeAfterAuth` sends an
+          // incomplete profile to sign-up rather than Home.
           profileComplete: true,
         ),
       ),
@@ -183,25 +173,9 @@ AuthState _signedInPendingVisitor() => AuthStateSignedIn(
       ),
     );
 
-/// A throwaway data config, matching the one in
-/// `test/app/screen_element_contract_test.dart`. The host is unreachable, so a
-/// live fetch simply fails into the screen's error state — fine here, because
-/// these tests assert routing and chrome, not data.
-///
-/// It is NOT optional. `simfDataConfigProvider` throws
-/// `UnimplementedError("must be overridden at app startup")` by default, and
-/// `simfApiClientProvider` watches it — so without this override every screen
-/// that reaches the client dies at `SplashScreen` with "Tried to use a provider
-/// that is in error state". That is exactly what this file did, on all six
-/// tests, until 2026-08-20.
-///
-/// Worth more than the usual missing-line note. D-694 names this file as a
-/// REQUIRED gate before any change to the shared foundations, on the grounds
-/// that "goldens prove pixels, not navigation". The gate could not run: it
-/// needs `-d <device>`, so it never went near CI or a headless suite, and the
-/// throwing default it depends on landed separately (19a7e8b0). A mandated gate
-/// that cannot execute is worse than none, because its name in the rule reads
-/// as coverage.
+/// NOT optional: `simfDataConfigProvider` throws unless overridden, and every
+/// screen reaching the api client dies at the splash without it. The host is
+/// unreachable, which only costs these routing tests an error state.
 const _dataConfig = SimfDataConfig(
   baseUrl: 'http://test.local/api/v1',
   appKey: 'test-key',
@@ -271,12 +245,9 @@ void main() {
     // Signed-out + onboarding-complete -> the splash lands on sign-in.
     expect(find.byType(SignInScreen), findsOneWidget);
 
-    // The "Browse without signing in" entry (D-325). Located by structure, not
-    // by icon or label: D-363 redesigned it into the design-native underlined
-    // link of Figma 627:2390, which carries NO icon, and its text is Arabic by
-    // default. `SignInAltActions` holds exactly one TextButton — the badge and
-    // biometric entries are not TextButtons — so this is unambiguous and
-    // survives both a copy change and a locale change.
+    // The "Browse without signing in" entry (D-325). By structure, not icon or
+    // label: D-363 (Figma 627:2390) made it an underlined link with no icon,
+    // and `SignInAltActions` holds exactly one TextButton.
     await tester.tap(
       find.descendant(
         of: find.byType(SignInAltActions),
@@ -338,10 +309,8 @@ void main() {
 
     // Large text + high contrast force the root MediaQuery + theme to swap —
     // the whole tree must rebuild cleanly.
-    // By structure again, for the same reason: these were `ChoiceChip` and
-    // `SwitchListTile` matched on ENGLISH labels, and the screen renders in
-    // Arabic and now builds `SizeChip` + `AccessibilityToggleRow` instead. The
-    // last size chip is the largest; the first toggle row is high-contrast.
+    // By structure again — the screen renders in Arabic. The last size chip is
+    // the largest; the first toggle row is high-contrast.
     await tester.tap(find.byType(SizeChip).last);
     await tester.pumpAndSettle();
     await tester.tap(

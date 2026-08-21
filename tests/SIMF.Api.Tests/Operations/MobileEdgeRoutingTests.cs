@@ -138,22 +138,10 @@ public sealed class MobileEdgeRoutingTests
         Assert.DoesNotContain("HttpClient", program, StringComparison.Ordinal);
     }
 
-    /// <summary>The edge FILLS a missing security header; it never overwrites one
-    /// the API already set, and it registers them on the way OUT.
-    /// <para>Both halves are load-bearing and the first was live. Setting a header
-    /// before <c>next()</c> writes it before the proxy runs, and YARP concatenates
-    /// the upstream values onto whatever the pipeline already put there — so every
-    /// proxied reply carried all four security headers TWICE, the two
-    /// Content-Security-Policy values differing.</para>
-    /// <para>The obvious way to collapse that — assigning unconditionally from
-    /// here — is the trap: it makes the edge authoritative and silently strips
-    /// <c>base-uri 'none'</c> and <c>form-action 'none'</c> from every mobile
-    /// response, because the API's policy is the stricter of the two. So:
-    /// <c>OnStarting</c> (fires after the proxy has populated the response) plus
-    /// fill-if-empty. A proxied reply keeps the API's header; /health, which this
-    /// host answers itself, still gets one. A direct assignment outside the helper
-    /// is the shape that reintroduces the duplicate, so it is what this asserts
-    /// against.</para></summary>
+    /// <summary>The edge fills a missing security header on the way OUT; it never
+    /// overwrites the API's. Assigning before <c>next()</c> sends each header
+    /// twice (YARP concatenates the upstream values), and assigning at all makes
+    /// the edge authoritative and drops the API's stricter policy.</summary>
     [Fact]
     public void The_edge_fills_missing_security_headers_rather_than_overwriting_the_APIs()
     {

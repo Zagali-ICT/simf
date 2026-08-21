@@ -136,10 +136,8 @@ Widget _nudgeHost() => Consumer(
     );
 
 void main() {
-  // The sign-in prompt and the enrol step-up share localizedBiometricError but
-  // NOT its copy: only the sign-in screen has a password form on it, so only
-  // its messages may point at one. These pin which caller gets which string, so
-  // the split cannot quietly collapse back into a single shared message.
+  // Pins that only the sign-in copy points at a password form, since only the
+  // sign-in screen has one.
   group('localizedBiometricError caller seams', () {
     const l10n = AppL10n(Locale('en'));
 
@@ -175,9 +173,6 @@ void main() {
     });
 
     test('no device screen lock is caller-neutral device-setup advice', () {
-      // Deliberately NOT parameterised: "set a screen lock" is equally
-      // actionable from either caller, so an override would be copy for its
-      // own sake.
       const outcome = LocalAuthOutcome.noDeviceCredential;
       expect(
         localizedBiometricError(l10n, outcome),

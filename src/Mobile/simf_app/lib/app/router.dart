@@ -506,9 +506,8 @@ const List<_Route> _routes = <_Route>[
       labelAr: 'عروض الجلسات',
       labelEn: 'My sessions',),
 
-  // D-464 — المزيد hub entries (Figma 1129:17224). Public. Numbered from 200
-  // because they carry no mockup screen number of their own; each dispatches
-  // to a real screen in [_screenFor] like every other route.
+  // D-464 — المزيد hub entries (Figma 1129:17224). Public. Numbered from 200:
+  // they carry no mockup screen number of their own.
   _Route(
       number: 200,
       name: RouteNames.forumGuide,
@@ -726,8 +725,7 @@ List<GoRoute> _matchSafeOrder(List<GoRoute> routes) {
 /// The screen for a numbered mockup route. Shared by the bottom-nav shell
 /// branches and the flat (pushed) routes so both build identically.
 Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
-  // Every route declared in [_routes] has a branch below; the trailing
-  // ComingSoonScreen only catches a route declared without one.
+  // The trailing ComingSoonScreen catches a route with no branch below.
   if (r.name == RouteNames.splash) {
     return const SplashScreen();
   }

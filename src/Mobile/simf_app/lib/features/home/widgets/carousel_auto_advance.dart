@@ -5,23 +5,16 @@ import 'package:flutter/material.dart';
 
 import 'package:simf_app/core/motion/motion_durations.dart';
 
-/// How long a slide holds before the carousel moves on.
 const Duration _slideInterval = Duration(seconds: 4);
 
 /// The auto-advance half of a home carousel: the [PageController], the slide
 /// index the dots read, and the timer that walks them forward.
 ///
-/// `HighlightsCarousel` and `HomeHeroBanner` are different widgets over
-/// different models, but their motion is the same widget behaviour and was
-/// written out twice — including the shrink bug below, which the second copy
-/// inherited from the first. Mixed into the [State], not wrapped around the
-/// widget, because the hosts differ in where the [PageView] sits: the hero
-/// stacks it under a scrim and an overlay, the carousel puts dots beneath it.
-///
-/// The host supplies [carouselItemCount] and wires [carouselController],
-/// [carouselIndex] and [onCarouselPageChanged] into its own `PageView`.
+/// Mixed into the [State] rather than wrapped around the widget, because the
+/// hosts differ in where the [PageView] sits. The host supplies
+/// [carouselItemCount] and wires [carouselController], [carouselIndex] and
+/// [onCarouselPageChanged] into its own `PageView`.
 mixin CarouselAutoAdvance<W extends StatefulWidget> on State<W> {
-  /// How many slides the host is rendering right now.
   int get carouselItemCount;
 
   /// Drives the host's `PageView`.
@@ -32,9 +25,8 @@ mixin CarouselAutoAdvance<W extends StatefulWidget> on State<W> {
 
   Timer? _timer;
 
-  /// The count the timer was last built against. A mixin cannot read the count
-  /// off `oldWidget`, which is typed as the host's widget, so it keeps its own
-  /// copy of what it last saw.
+  /// The count the timer was last built against — a mixin cannot read it off
+  /// `oldWidget`, which is typed as the host's widget.
   int _knownItemCount = 0;
 
   @override
@@ -47,10 +39,9 @@ mixin CarouselAutoAdvance<W extends StatefulWidget> on State<W> {
   @override
   void didUpdateWidget(covariant W oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Both lists load asynchronously and are re-delivered on every pull to
-    // refresh while the State is reused, so initState's one-shot set-up is not
-    // enough: the timer would keep cycling modulo the OLD count, and the
-    // carousel would sit static after growing past a single slide.
+    // The list arrives asynchronously and is re-delivered on every refresh
+    // while the State is reused, so a timer built once in initState would keep
+    // cycling modulo the OLD count.
     final count = carouselItemCount;
     if (count == _knownItemCount) {
       return;
@@ -66,18 +57,11 @@ mixin CarouselAutoAdvance<W extends StatefulWidget> on State<W> {
   void onCarouselPageChanged(int page) => setState(() => carouselIndex = page);
 
   void _clampIndexToLastPage(int count) {
-    // A shrink leaves the scroll position past the new end, and PageController
-    // settles it on the LAST page, not the first — `_PagePosition` re-runs the
-    // ballistic back to the new maxScrollExtent, and reports no page change
-    // while doing it. So the index must be clamped to that same end. Resetting
-    // it to 0 instead is a clamp against the wrong end: the dots would point at
-    // slide 1 while slide N is on screen, and the next tick would target the
-    // page BEHIND the visible one and animate backwards.
+    // Clamp to the LAST page, not to 0: a shrink leaves the scroll position
+    // past the new end and PageController settles it on the final page.
     carouselIndex = count == 0 ? 0 : math.min(carouselIndex, count - 1);
-    // Jump rather than let the position settle there on its own: jumpTo goes
-    // idle first, which also kills an animateToPage still running from the last
-    // tick. Cancelling the timer does not stop the animation it already
-    // started, and that animation's target page may no longer exist.
+    // jumpTo goes idle first, which also kills an animateToPage still running
+    // from the last tick towards a page that may no longer exist.
     if (carouselController.hasClients) {
       carouselController.jumpToPage(carouselIndex);
     }

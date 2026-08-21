@@ -162,30 +162,10 @@ app.UseForwardedHeaders(forwardedHeaders);
 // (NCA App-Sec Standard A3-4 / A5-13 / A6-21). This host serves no HTML and is
 // never framed, so the policy can be the strict one rather than report-only.
 //
-// Two things about the shape below, both learned from a live response that
-// carried TWO Content-Security-Policy headers:
-//
-// 1. OnStarting, not on the way in. Setting a header before next() writes it
-//    before the proxy runs, and YARP CONCATENATES the upstream values onto
-//    whatever the pipeline already put there — so every proxied reply carried
-//    all four of these twice, the two Content-Security-Policy values differing.
-//    OnStarting fires after the proxy has populated the response, just before
-//    the headers flush.
-//
-//    What the duplicate cost is worth stating precisely, because the intuitive
-//    answer is wrong and the wrong answer leads to a bad fix. Two CSP headers
-//    are BOTH enforced — the effective policy is their intersection — so the
-//    browser was already getting the stricter of the two and nothing was
-//    weakened. The cost was a self-contradictory response: a doubled
-//    X-Frame-Options is treated as invalid and ignored outright by some
-//    browsers, and a duplicated security header is a standing scanner finding.
-//
-// 2. Fill only what is missing. The API's policy is STRICTER than this one — it
-//    adds base-uri 'none' and form-action 'none' — so collapsing the duplicate
-//    by assigning here would WEAKEN every proxied response. A proxied reply
-//    already carries the API's header and is left alone; a reply this host
-//    serves itself (/health, and anything it answers before the proxy runs)
-//    has none, and gets these.
+// OnStarting because YARP concatenates the upstream headers onto whatever the
+// pipeline already set; setting these before next() sends each one twice.
+// Fill-if-missing because the API's policy is the stricter of the two —
+// assigning here would weaken every proxied response.
 app.Use(async (context, next) =>
 {
     context.Response.OnStarting(static state =>
@@ -204,11 +184,8 @@ app.Use(async (context, next) =>
     await next();
 });
 
-// Tests the VALUE, not the key. A header copied from upstream with an empty
-// value is present, so ContainsKey would report it as set and suppress the
-// default here — leaving a header on the wire that declares no policy at all.
-// StringValues.IsNullOrEmpty covers both absent and present-but-empty, and
-// leaves a populated or multi-valued header untouched.
+// Value, not key: an upstream header present but EMPTY would satisfy
+// ContainsKey and suppress the default, leaving a header declaring no policy.
 static void SetIfMissing(IHeaderDictionary headers, string name, string value)
 {
     if (StringValues.IsNullOrEmpty(headers[name]))

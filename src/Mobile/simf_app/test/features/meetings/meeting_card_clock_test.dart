@@ -8,27 +8,12 @@ import 'package:simf_app/features/meetings/widgets/meeting_card.dart';
 import 'package:simf_app/features/requests/data/request_models.dart';
 import 'package:simf_app/features/requests/widgets/request_card.dart';
 
-// The "today" badge on a meeting/request card compares a Saudi wall-clock
-// meeting date against "now". It once compared it against `DateTime.now()` —
-// the DEVICE clock — so on a phone outside Riyadh the two calendars disagreed
-// for three hours a day and the badge landed on the wrong rows (D-219 / D-770:
-// Saudi +3 everywhere).
+// Pins the "today" badge on a meeting/request card to the caller-injected
+// Saudi instant rather than the device clock (D-219 / D-770: Saudi +3).
 //
-// The cards take that instant as a constructor parameter, so these tests fix
-// it instead of reading a clock. That is what makes them a pin: a card that
-// consults a wall clock in ANY spelling — `DateTime.now()`,
-// `DateTime.timestamp().toLocal()`, anything else — renders the real today,
-// which is not January 2026, and reds on every machine. Letting the card read
-// its own clock could never do that, because the device zone cannot be faked
-// in-process and on a +03:00 box (every SIMF dev box and CI agent) the buggy
-// and the correct clock produce the same value.
-
-// Both instants sit in the three-hour window each day where the Saudi and the
-// device calendar genuinely name different days: 02:30 on the 12th in Riyadh
-// is still 18:30 on the 11th at UTC-5, and 23:30 on the 11th in Riyadh is
-// already the 12th at UTC+13. So the two meetings below swap sides as the
-// injected instant crosses Saudi midnight — a flip no wall-clock reading can
-// reproduce, because it is fixed to one real instant.
+// Both instants below sit in the daily three-hour window where the Saudi and
+// the device calendar name different days, so the two meetings swap sides as
+// the injected instant crosses Saudi midnight.
 
 /// Just after Saudi midnight: 02:30 on 12 January 2026.
 final DateTime _afterSaudiMidnight = DateTime(2026, 1, 12, 2, 30);
@@ -86,8 +71,7 @@ const List<String> _cardFiles = <String>[
   'lib/features/requests/widgets/request_card.dart',
 ];
 
-/// Every way of asking the DEVICE for the wall clock. A grep pins one
-/// spelling, which is why it is the second line here and not the first.
+/// Every way of asking the DEVICE for the wall clock.
 const List<String> _deviceClockSpellings = <String>[
   'DateTime.now()',
   'DateTime.timestamp()',
@@ -189,10 +173,8 @@ void main() {
     });
   });
 
-  // Second line only. The widget tests above are what actually pin the
-  // behaviour; this catches the one case they cannot see — a device clock
-  // reinstated as the PARAMETER's default, which every injecting test walks
-  // straight past.
+  // The one case the injecting tests above cannot see: a device clock
+  // reinstated as the PARAMETER's default.
   group('neither card reads the device clock', () {
     for (final path in _cardFiles) {
       test('$path calls no device-clock API', () {

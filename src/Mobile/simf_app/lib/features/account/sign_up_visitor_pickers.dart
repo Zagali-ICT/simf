@@ -9,18 +9,8 @@ import 'package:simf_app/features/account/data/sign_up_visitor_lookups.dart';
 import 'package:simf_app/features/account/widgets/lookup_search_sheet.dart';
 
 /// The non-widget half of the sign-up profile step's pickers.
-///
-/// The screen keeps the `setState` and the `mounted` checks; the rules and the
-/// platform round-trips live here, beside `SignUpVisitorForm` and
-/// `sign_up_visitor_submit.dart`. Same reason those two exist: the screen is
-/// held under 400 lines by moving what is NOT a widget out of it, not by
-/// shredding the one `_build*` method (CLAUDE.md section 1).
 
 /// The registrant must be at least 18 and at most 120 years old.
-///
-/// A rule, not a layout choice, which is why it is out of `build()`'s reach:
-/// `latest` is the 18th birthday and `earliest` the 120th, both derived from
-/// [now] so a test can pin the boundary without waiting a year.
 ({DateTime earliest, DateTime latest}) visitorDateOfBirthRange(
   DateTime now,
 ) =>
@@ -29,16 +19,9 @@ import 'package:simf_app/features/account/widgets/lookup_search_sheet.dart';
       latest: DateTime(now.year - 18, now.month, now.day),
     );
 
-/// Where the picker opens: [current] pulled inside [range], or the newest
-/// eligible date when there is nothing stored yet.
-///
-/// `showDatePicker` ASSERTS its `initialDate` is within `firstDate..lastDate`,
-/// and [current] arrives from the server profile, which is never range-checked
-/// against the 18-to-120 rule — an out-of-window stored date would trip that
-/// assert in debug and seed an out-of-range picker in release. Comparing the
-/// raw value against the date-only bounds is deliberate: a [current] on
-/// `latest`'s own day but with a time-of-day clamps to `latest`, which is what
-/// the picker's own date-only truncation would have produced anyway.
+/// Where the picker opens: [current] pulled inside [range], else the newest
+/// eligible date. `showDatePicker` ASSERTS `initialDate` is within its bounds,
+/// and [current] comes from the server profile, which is never range-checked.
 DateTime visitorDateOfBirthSeed({
   required DateTime? current,
   required ({DateTime earliest, DateTime latest}) range,
@@ -52,12 +35,8 @@ DateTime visitorDateOfBirthSeed({
   return current;
 }
 
-/// Opens the OS date picker inside the eligible range, seeded per
-/// [visitorDateOfBirthSeed]. Returns null when the user backs out.
-///
-/// [now] defaults to the Saudi wall clock, never the device clock (D-219 /
-/// D-770): an age boundary read off a traveller's phone is a day out, so the
-/// 18th birthday would fall on the wrong date for them.
+/// Opens the OS date picker inside the eligible range; null if the user backs
+/// out. [now] defaults to the Saudi wall clock, not the device (D-219/D-770).
 Future<DateTime?> pickVisitorDateOfBirth(
   BuildContext context, {
   required DateTime? current,
@@ -72,10 +51,8 @@ Future<DateTime?> pickVisitorDateOfBirth(
   );
 }
 
-/// The picked ID scan, or null if the user cancelled OR the gallery is
-/// unavailable — the two are deliberately indistinguishable here, because the
-/// screen answers both the same way and the required-ID gate on Next is what
-/// reports a missing image.
+/// The picked ID scan, or null if the user cancelled OR the gallery failed —
+/// deliberately indistinguishable; the required-ID gate on Next reports a miss.
 Future<({Uint8List bytes, String name})?> pickIdImageFromGallery() async {
   try {
     final file = await ImagePicker().pickImage(source: ImageSource.gallery);
@@ -88,9 +65,8 @@ Future<({Uint8List bytes, String name})?> pickIdImageFromGallery() async {
   }
 }
 
-/// Opens the searchable country sheet and returns the picked ISO code, or null
-/// if the user dismissed it. The document and mobile fields are derived from
-/// the result by the caller (D-373).
+/// Opens the searchable country sheet; the picked ISO code, or null if
+/// dismissed. The caller derives the document and mobile fields (D-373).
 Future<String?> pickVisitorNationality(
   BuildContext context, {
   required List<CountryItem> countries,

@@ -40,11 +40,9 @@ class SponsorTierList extends ConsumerWidget {
     // The logo image lives at {base}/app/assets/SponsorLogo/{id}/image (D-357).
     final baseUrl = ref.watch(simfDataConfigProvider).baseUrl;
     final lastIndex = visibleGroups.length - 1;
-    // Flattened to one row per line so the directory builds lazily. A header
-    // row is the tier heading; a row with no sponsor and no header flag is the
-    // lowest tier's logo grid, which stands in for that tier's cards. Each row
-    // carries the gaps that used to be sibling spacers, so the spacing is the
-    // same widget tree with the gap moved into the padding.
+    // Flattened one row per line so the directory builds lazily. A row with
+    // neither a sponsor nor the header flag is the lowest tier's logo grid,
+    // which stands in for that whole tier's cards.
     final rows = <({int group, Sponsor? sponsor, bool header})>[];
     for (var i = 0; i < visibleGroups.length; i++) {
       rows.add((group: i, sponsor: null, header: true));
@@ -71,8 +69,6 @@ class SponsorTierList extends ConsumerWidget {
           final group = visibleGroups[row.group];
           if (row.header) {
             return Padding(
-              // Every tier but the first opens with a 24px gap above its
-              // heading, and every heading is followed by a 16px one.
               padding: EdgeInsets.only(
                 top: row.group > 0 ? SimfTokens.space6 : 0,
                 bottom: SimfTokens.space4,

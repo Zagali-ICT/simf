@@ -16,18 +16,9 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 class SessionFavouritesController extends AsyncNotifier<Set<String>> {
   @override
   Future<Set<String>> build() async {
-    // Watching auth is what makes the set PER-USER. Without it this
-    // provider watched only `simfApiClientProvider`, which never rebuilds
-    // (all three of its dependencies are root overrides), so the set was
-    // loaded once per app process and outlived sign-out: the next account
-    // to sign in on the same device saw the previous user's hearts filled
-    // in, their favourite COUNT on the My Area tile, and — because
-    // `toggle` reads the surviving set — clearing one of those hearts sent
-    // a DELETE for a row that account does not own.
-    //
-    // NOT autoDispose: two screens share this set on purpose (see the doc
-    // above), and autoDispose would refetch on every navigation between
-    // them.
+    // Watching auth is what makes the set PER-USER: `simfApiClientProvider`
+    // never rebuilds, so on its own the set outlives sign-out. Not autoDispose
+    // either — two screens share it, and it would refetch on every hop.
     final auth = ref.watch(authControllerProvider);
     if (auth is! AuthStateSignedIn) {
       return <String>{};

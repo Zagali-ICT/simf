@@ -8,19 +8,9 @@ import 'package:simf_app/features/sessions/data/session_favourites.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// `toggle` flips the heart BEFORE the server has agreed, which is the right
-/// call — the tap must feel instant. The whole of that bet rests on the revert
-/// in the failure handler: drop it and a heart that failed to save stays
-/// filled, so the list, the My Area count and the next add/remove decision all
-/// read from a set the server never accepted.
-///
-/// It is a quiet failure. `toggle` rethrows either way, so the caller still
-/// shows its error toast; only the set is wrong, and it stays wrong until the
-/// app is restarted. That is why the existing sign-out tests here — which pin
-/// a different defect in the same file — never noticed.
-///
-/// Both directions are asserted: the revert line serves the add and the remove
-/// alike, and a partial fix that restores only one is a real shape.
+/// Pins: `toggle` flips optimistically but REVERTS on failure, in both
+/// directions — without it a heart the server refused stays flipped until the
+/// app restarts, and `toggle` rethrows either way so nothing else notices.
 
 /// Answers the favourites LOAD, then fails whatever write comes next.
 class _WriteFailsAdapter implements HttpClientAdapter {
@@ -158,8 +148,7 @@ void main() {
       expect(controller.isFavourite('s1'), isTrue);
     });
 
-    // The control: the optimism itself must survive. A "fix" that simply
-    // stopped writing the set until the server answered would pass both tests
+    // The control: a "fix" that waited for the server would pass both tests
     // above while making every heart feel laggy.
     test('the flip is applied optimistically, before the call is made',
         () async {

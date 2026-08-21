@@ -9,12 +9,9 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 class _MockAuthRepository extends Mock implements AuthRepository {}
 
-/// A real in-memory store rather than a mock, because the point of these tests
-/// is what is LEFT BEHIND after teardown — a mock records calls but holds
-/// nothing, so it cannot tell a cleared keystore from an untouched one.
-/// `clearAuthValues` is deliberately NOT overridden: the inherited
-/// implementation runs for real against [delete], so the production clear path
-/// is the code under test.
+/// A real in-memory store, not a mock: these tests assert what is LEFT BEHIND
+/// after teardown. `clearAuthValues` is deliberately NOT overridden, so the
+/// production clear path is the code under test.
 class _FakeSecureStorage extends SimfSecureStorage {
   final Map<String, String> values = <String, String>{};
 
@@ -110,8 +107,7 @@ void main() {
       addTearDown(container.dispose);
       final controller = await _signedInController(container, repo);
 
-      // Guard the guard: the sign-in must actually have persisted, or the
-      // post-signOut emptiness below would be vacuously true.
+      // Without this the post-signOut emptiness below is vacuously true.
       expect(secure.values.keys, contains(StorageKeys.accessToken));
       expect(secure.values.keys, contains(StorageKeys.refreshToken));
       expect(secure.values.keys, contains(StorageKeys.accessTokenExpiresAtIso));
@@ -119,8 +115,7 @@ void main() {
 
       await controller.signOut();
 
-      // A leftover token here is a credential leak: the next cold start reads
-      // it back and silently signs the previous user in on a shared device.
+      // A leftover token signs the previous user back in on a shared device.
       expect(secure.values, isEmpty);
       expect(container.read(authControllerProvider), isA<AuthStateSignedOut>());
       expect(controller.currentAccessToken(), isNull);
@@ -150,9 +145,8 @@ void main() {
       expect(container.read(authControllerProvider), isA<AuthStateSignedOut>());
     });
 
-    // The 401-interceptor path. A dead refresh token means the session is gone,
-    // so the controller must tear it down and let the router redirect; without
-    // that the app sits SignedIn on a dead session forever.
+    // The 401-interceptor path: a dead refresh token must tear the session
+    // down, or the app sits SignedIn on it forever.
     test('refresh() tears the session down when the refresh token is dead',
         () async {
       final repo = _MockAuthRepository();
@@ -181,9 +175,7 @@ void main() {
     });
 
     // D-737 — the deliberate contrast with refresh() above: the proactive
-    // session guard must NOT sign the user out, so the 30s "stay signed in?"
-    // warning can precede any sign-out. Pinned so the two are never made
-    // "consistent" by someone who read only one of them.
+    // guard must NOT sign the user out, so the 30s warning can precede it.
     test('tryRefresh() leaves the session in place when refresh fails',
         () async {
       final repo = _MockAuthRepository();

@@ -85,11 +85,9 @@ class _SavedContactSheetState extends ConsumerState<SavedContactSheet> {
         SnackBar(content: Text(l10n.myContactsError)),
       );
     } finally {
-      // Same 401-refresh escape as above — but only for a sheet that is
-      // staying. `mounted` does NOT stand in for "already gone": pop() merely
-      // reverses the route's animation controller, and the State lives until
-      // the 200ms exit transition completes, so re-enabling here repaints the
-      // spinner back to the icon on a sheet the user can still see.
+      // Same 401-refresh escape as above, but only for a sheet that stays:
+      // `mounted` is still true through pop()'s exit transition, so without
+      // `popped` the spinner visibly flips back to the icon on the way out.
       if (!popped && mounted) {
         setState(() => _busy = false);
       }

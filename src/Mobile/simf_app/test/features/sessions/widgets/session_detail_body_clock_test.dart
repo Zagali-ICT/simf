@@ -12,31 +12,11 @@ import 'package:simf_app/features/sessions/widgets/ask_host_card.dart';
 import 'package:simf_app/features/sessions/widgets/session_booking_actions.dart';
 import 'package:simf_app/features/sessions/widgets/session_detail_body.dart';
 
-/// The session detail must phase off the SAUDI wall clock, never the device's.
+/// Pins: `SessionDetailBody` phases on the SAUDI wall clock, not the device's.
 ///
-/// `SessionDetailBody` asks `detail.phase(saudiNow())` — and, for the ask card,
-/// `detail.start.isAfter(saudiNow())`. Swap any of the three for
-/// `DateTime.now()` and the page gates on wherever the phone happens to be: a
-/// traveller (or anyone whose phone auto-set its zone abroad) is offered the
-/// Join CTA on a session that finished hours ago, or shown the "before it
-/// starts" ask on one that is already running.
-///
-/// **Why this test spawns a second `flutter test` instead of just asserting.**
-/// `saudiNow()` is `DateTime.now()` minus the device offset plus +03:00, so on
-/// a +03:00 machine — which is every SIMF machine, and the CI agent — the two
-/// return the identical instant. The substitution is a literal no-op here and
-/// NO in-process test can see it; a test that computes its expectation from the
-/// ambient clock certifies nothing. The device zone is fixed when the VM
-/// starts, so the only way to make the two disagree is another process. This
-/// file therefore re-runs ITSELF under `TZ=UTC`, where the device clock sits
-/// three hours behind Riyadh, and the sessions below are timed to fall on
-/// opposite sides of that gap. The child spawn costs about five seconds
-/// (measured 2026-08-21), so this stays an ordinary member of the suite.
-///
-/// The alternative considered and rejected: grepping the source for
-/// `DateTime.now()`. A grep pins one spelling of the defect, and this branch
-/// has already had a sweep walk straight past a source check by writing the
-/// same bug differently.
+/// Re-runs itself in a child `flutter test` under `TZ=UTC` — on a +03:00
+/// machine `saudiNow()` and `DateTime.now()` are the same instant, so no
+/// in-process assertion can discriminate.
 
 /// Set on the child process; its presence is what selects the real tests.
 const String _childMarker = 'SIMF_SESSION_DETAIL_CLOCK_CHILD';
@@ -124,13 +104,9 @@ void main() {
 }
 
 /// The child: device clock = UTC, event clock = +03:00. Every session below is
-/// placed so that the Saudi reading and the device reading fall in DIFFERENT
-/// phases, which is the whole point — read on the device clock these cases
-/// answer the opposite way, and that is what makes the assertion able to fail.
+/// timed so the two clocks disagree about its phase.
 void _saudiClockTests() {
   test('the child really is running on a non-Riyadh device clock', () {
-    // Belt and braces: if the TZ override ever stops taking effect, this fails
-    // loudly rather than letting the three tests below pass vacuously.
     expect(
       DateTime.now().timeZoneOffset,
       isNot(const Duration(hours: 3)),
@@ -140,8 +116,8 @@ void _saudiClockTests() {
   });
 
   group('a session that has ENDED on the Saudi clock', () {
-    // Ended 10 minutes ago in Riyadh; on the UTC device clock it has not even
-    // started (it reads as beginning in an hour).
+    // Ended 10 minutes ago in Riyadh; on the UTC device clock it has not
+    // started yet.
     SessionDetail ended() => _detail(
           start: saudiNow().subtract(const Duration(hours: 2)),
           end: saudiNow().subtract(const Duration(minutes: 10)),
@@ -174,8 +150,7 @@ void _saudiClockTests() {
   group('a session that is LIVE on the Saudi clock', () {
     testWidgets('offers the in-hall ask, not the ahead-of-time one',
         (tester) async {
-      // Started half an hour ago in Riyadh; the UTC device clock reads it as
-      // starting in two and a half hours.
+      // Running in Riyadh; the UTC device clock reads it as hours away.
       await _pumpBody(
         tester,
         _detail(

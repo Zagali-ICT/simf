@@ -8,26 +8,11 @@ import 'package:mocktail/mocktail.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-// Sentinel wire fixtures for the cached signed-in user.
-//
-// WHY THIS FILE EXISTS. `_restoreCurrentUserFromMap` is tolerant by design —
-// `json['displayName'] as String? ?? ''`, and three enum decoders that return
-// a default for anything they do not recognise. A renamed or dropped key
-// therefore does NOT throw: `appRole` silently becomes Guest,
-// `registrationStatus` silently becomes Pending, and the user is quietly
-// demoted out of every screen they are entitled to. `auth_controller_restore_
-// test.dart` cannot see that — it builds its own JSON from the same fields it
-// then asserts, so a rename on both sides stays green.
-//
-// This blob is written to secure storage ON THE DEVICE, so a drift breaks a
-// shipped install at upgrade with no server involved. The frozen literal below
-// is the artefact as it sits in the keystore; the map functions that read and
-// write it are private, so both directions are exercised through the
-// controller, which is also the only path that runs in production.
+// Frozen fixtures for the cached signed-in user, which lives in device secure
+// storage. The decoder falls back rather than throwing, so a renamed key does
+// not fail — it silently demotes the user to Guest/Pending.
 
-/// Every field carrying a value nothing in the decoder can produce by
-/// accident: no empty strings, a non-default case for all three enums, a
-/// non-null avatar, and `profileComplete` true against a false default.
+/// Every field carrying a value the decoder cannot produce by accident.
 const String _sentinelJson = '''
 {
   "id": "WIRE:id",
@@ -55,9 +40,8 @@ const String _allNullsJson = '''
 }
 ''';
 
-/// The user the sentinel fixture describes, built independently of it so the
-/// encode assertion compares the emitted map against the frozen literal rather
-/// than against itself.
+/// Built independently of the fixture so the encode assertion compares against
+/// the frozen literal rather than against itself.
 const CurrentUser _sentinelUser = CurrentUser(
   id: 'WIRE:id',
   email: 'WIRE:email',
@@ -71,10 +55,6 @@ const CurrentUser _sentinelUser = CurrentUser(
 
 class _MockAuthRepository extends Mock implements AuthRepository {}
 
-/// In-memory secure storage. The controller's persist path is what emits the
-/// blob, so reading it back out of a real map is more direct than capturing
-/// mock arguments — and it keeps read and write on the same store, the way the
-/// device does.
 class _FakeSecureStorage implements SimfSecureStorage {
   _FakeSecureStorage([Map<String, String>? seed]) {
     if (seed != null) {
@@ -141,11 +121,8 @@ const NetworkUnavailable _offline = NetworkUnavailable(
   ApiFailure(code: ApiErrorCodes.clientNetwork, message: 'offline'),
 );
 
-/// Cold-starts the controller on [userJson] with a still-valid access token,
-/// so the restore takes the cached-session fast path. `getCurrentUser` fails
-/// offline, which `reloadCurrentUser` swallows — that is what leaves the
-/// CACHED user in the session for the assertions to inspect, rather than a
-/// server copy.
+/// Cold-starts the controller on [userJson]. `getCurrentUser` fails offline so
+/// the session keeps the CACHED user rather than a server copy.
 Future<CurrentUser> _restoreCachedUser(String userJson) async {
   final repo = _MockAuthRepository();
   final secure = _FakeSecureStorage(<String, String>{
@@ -183,9 +160,8 @@ void main() {
         () async {
       final user = await _restoreCachedUser(_sentinelJson);
 
-      // A dropped `registrationStatus` key defaults to Pending, which folds
-      // effectiveAppRole back to Guest — a silent demotion out of every
-      // Visitor screen. Assert the consequence, not only the field.
+      // A dropped `registrationStatus` defaults to Pending, which folds
+      // effectiveAppRole back to Guest.
       expect(user.isApproved, isTrue);
       expect(user.effectiveAppRole, AppRole.exhibitor);
     });
@@ -250,15 +226,13 @@ void main() {
           ),
         ),
       );
-      // Fail the hydration call so the only currentUserJson write on the
-      // store is the one signIn made from the session above.
+      // Fail hydration so the only currentUserJson write is signIn's.
       when(repo.getCurrentUser).thenThrow(_offline);
 
       final container = _container(repo, secure);
       addTearDown(container.dispose);
 
-      // Let the cold-start restore settle to signed-out before signing in;
-      // otherwise the two paths race for the same store.
+      // Settle the cold-start restore first, or it races signIn for the store.
       await _waitFor(container, (s) => s is AuthStateSignedOut);
       await container
           .read(authControllerProvider.notifier)
@@ -270,8 +244,7 @@ void main() {
       final emitted = jsonDecode(written!) as Map<String, dynamic>;
       final fixture = jsonDecode(_sentinelJson) as Map<String, dynamic>;
 
-      // The key SET first — that is what catches a key silently dropped on
-      // write, which a value-by-value comparison would not notice.
+      // The key SET first: a value-by-value comparison misses a dropped key.
       expect(emitted.keys.toSet(), equals(fixture.keys.toSet()));
       expect(emitted, equals(fixture));
     });
@@ -318,9 +291,8 @@ void main() {
       final fixtureKeys =
           (jsonDecode(_sentinelJson) as Map<String, dynamic>).keys.toSet();
 
-      // Nothing in this writer is conditional: all eight keys are emitted
-      // whatever the values are. Pinning that stops a future
-      // `if (avatarUrl != null)` from quietly changing the artefact.
+      // The writer is unconditional: a future `if (avatarUrl != null)` would
+      // change the on-device artefact.
       expect(emitted.keys.toSet(), equals(fixtureKeys));
       expect(emitted['avatarUrl'], isNull);
       expect(emitted['appRole'], 'Guest');
