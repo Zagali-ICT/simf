@@ -141,7 +141,6 @@ class _RateScreenState extends ConsumerState<RateScreen> {
       if (!mounted) {
         return;
       }
-      setState(() => _submitting = false);
       messenger
         ..hideCurrentSnackBar()
         ..showSnackBar(SnackBar(content: Text(l10n.rateThanks)));
@@ -149,10 +148,16 @@ class _RateScreenState extends ConsumerState<RateScreen> {
       if (!mounted) {
         return;
       }
-      setState(() => _submitting = false);
       messenger
         ..hideCurrentSnackBar()
         ..showSnackBar(SnackBar(content: Text(l10n.rateFailed)));
+    } finally {
+      // A token refresh on the 401 path can throw a keystore PlatformException,
+      // which is not an ApiFailure — clearing the flag here is what keeps the
+      // submit button from stranding disabled.
+      if (mounted) {
+        setState(() => _submitting = false);
+      }
     }
   }
 

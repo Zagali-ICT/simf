@@ -205,6 +205,5 @@ class RouteParams {
   static const String speakerId = 'speakerId';
   static const String boothId = 'boothId';
   static const String sponsorId = 'sponsorId';
-  static const String liveUrl = 'liveUrl';
   static const String newsId = 'newsId';
 }

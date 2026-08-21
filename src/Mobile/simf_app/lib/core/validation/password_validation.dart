@@ -13,14 +13,6 @@ final RegExp _upper = RegExp('[A-Z]');
 final RegExp _digit = RegExp(r'\d');
 final RegExp _special = RegExp('[^A-Za-z0-9]');
 
-bool isValidPassword(String value) =>
-    value.length >= 8 &&
-    value.length <= 128 &&
-    _lower.hasMatch(value) &&
-    _upper.hasMatch(value) &&
-    _digit.hasMatch(value) &&
-    _special.hasMatch(value);
-
 enum PasswordRequirement {
   length,
   lowercase,

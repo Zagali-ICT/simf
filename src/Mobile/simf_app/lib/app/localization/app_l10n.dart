@@ -576,7 +576,11 @@ class AppL10n {
   String get biometricSignInTooltip =>
       _t('الدخول بالبصمة / الوجه', 'Sign in with biometrics');
 
-  /// No OS face/fingerprint is enrolled on the device (D-422).
+  /// The SIGN-IN caller's copy for "the device can't do this" (D-422): no OS
+  /// face/fingerprint is enrolled, or the OS sheet failed unexpectedly. It
+  /// names the password form because that form is on the same screen as the
+  /// Face-ID button — the enrol caller, which has no such form, passes
+  /// [biometricUnavailableEnrol] instead.
   String get biometricUnavailable => _t(
         'لا توجد بصمة أو بصمة وجه مفعّلة على هذا الجهاز. سجّل الدخول بكلمة المرور.',
         'No face or fingerprint is set up on this device. Sign in with your password.',
@@ -670,9 +674,33 @@ class AppL10n {
         'فعّل قفل الشاشة (رمز PIN أو نمط أو كلمة مرور) على جهازك أولاً ثم حاول مجدداً.',
         'Set a device screen lock (PIN, pattern or password) first, then try again.',
       );
+  // The SIGN-IN caller's lockout copy: it names the password form because that
+  // form is on the same screen the biometric button sits on. It must not name
+  // the device PIN — `confirmDeviceIdentity` passes `biometricOnly: true`, so
+  // the OS sheet never offers one, and telling a locked-out user to use it is a
+  // dead end.
   String get biometricLockedOut => _t(
-        'محاولات كثيرة خاطئة. المصادقة مقفلة مؤقتاً — حاول لاحقاً أو استخدم رمز قفل الجهاز.',
-        'Too many attempts. Authentication is temporarily locked — try again shortly or use your device PIN.',
+        'محاولات كثيرة خاطئة. المصادقة مقفلة مؤقتاً — حاول لاحقاً أو سجّل الدخول بكلمة المرور.',
+        'Too many attempts. Authentication is temporarily locked — try again shortly, or sign in with your password.',
+      );
+
+  // The ENROLMENT caller's lockout copy. The user is already signed in on the
+  // step-up screen and there is no password form to send them to; the OS
+  // lockout clears on its own, so waiting is the whole recovery.
+  String get biometricLockedOutEnrol => _t(
+        'محاولات كثيرة خاطئة. المصادقة مقفلة مؤقتاً — حاول لاحقاً.',
+        'Too many attempts. Authentication is temporarily locked — try again shortly.',
+      );
+
+  // The ENROLMENT caller's copy for the same "device can't do this" outcome.
+  // Same reason as the lockout above: the user is already signed in, so the
+  // sign-in copy's "sign in with your password" is advice they cannot act on.
+  // It also does not send them to the device settings — the step-up is only
+  // reachable when an enrolled biometric was found, so what lands here is an
+  // unexpected OS failure rather than a missing face/fingerprint.
+  String get biometricUnavailableEnrol => _t(
+        'تعذّر التحقق بالبصمة على هذا الجهاز. حاول مرة أخرى.',
+        "Biometric confirmation couldn't run on this device. Try again.",
       );
 
   String get otpTitle => _t('رمز التحقق', 'Verification code');

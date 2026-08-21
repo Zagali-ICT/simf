@@ -11,7 +11,9 @@
   **Exhibitor (approved, non-visitor)** — a visitor-tier caller gets 403 → the
   forbidden surface. Reached from the side drawer (Other-only), the exhibitor
   home's "Exhibitor tools" tile row, and after a successful visitor-badge scan.
-- **API:** `GET /app/exhibitor/my-visitors` (`ExhibitorRepository.listMyVisitors`).
+- **API:** `GET /app/exhibitor/visitors` (`ExhibitorRepository.listMyVisitors`;
+  the path is `ExhibitorEndpoints.visitors` — an earlier draft of this line said
+  `/app/exhibitor/my-visitors`, which the app has never called).
   DEF-EXH-004: the capture-time SUBJECT test runs here too, so a row whose
   subject has since been DEACTIVATED drops out of the list instead of projecting
   a live card. **D-780 (owner decision 2026-07-27 — "can scan all badges"):** that
@@ -113,7 +115,10 @@ was permanent and the card could only be read on screen.
 
 | File | Holds |
 |------|-------|
-| `exhibitor/my_visitors_screen.dart` | `MyVisitorsScreen` (`ConsumerStatefulWidget`) — the load → loading/forbidden/error/empty/list dispatch inside `SimfPageShell`, the pull-to-refresh list of shared `ContactCard`s (each tappable into the detail sheet), and the small `_Centered` text-only message. |
+| `exhibitor/my_visitors_screen.dart` (25) | `MyVisitorsScreen` (`ConsumerWidget`) — the `SimfPageShell` (title + `backOrHome`) and nothing else. |
+| `exhibitor/widgets/my_visitors_body.dart` (`MyVisitorsBody`) | The `myVisitorsProvider` loading / forbidden / error / empty / list dispatch. Both failure branches stay refreshable, the 403 especially: an exhibitor whose booth link lands after the first load would otherwise be stuck on it. |
+| `exhibitor/widgets/my_visitors_list.dart` (`MyVisitorsList`) | The pull-to-refresh list — the BUG-025 `SimfPageNote` then the shared `ContactCard`s, each tappable into the detail sheet; a sheet that pops `true` toasts and invalidates the list. |
+| `exhibitor/widgets/exhibitor_centered.dart` (`ExhibitorCentered`) | The text-only centred message serving both the empty and the forbidden surfaces. |
 | `exhibitor/widgets/captured_visitor_sheet.dart` | `CapturedVisitorSheet` — the lead's full card + **Export vCard** / **Remove** (FR-EXH-002). Pops `true` on a confirmed removal so the list reloads and toasts. |
 | `exhibitor/data/exhibitor_models.dart` · `exhibitor_repository.dart` | `ExhibitorVisitor` + the repo (already split). |
 
@@ -127,6 +132,12 @@ error branch already on the shared `SimfErrorState`. The one deviation was a raw
 local** — it is a text-only centred message (no icon), so neither `SimfEmptyState`
 (icon) nor `SimfErrorState` (retry button) fits; it serves both the empty and
 the forbidden surfaces. Already fully tokenised.
+
+It is no longer *in the screen*, though: it is the public `ExhibitorCentered` in
+`widgets/exhibitor_centered.dart`, alongside `MyVisitorsBody` and
+`MyVisitorsList`, since no `_Private` widget class may live in a screen
+(`tool/conventions` SIMF-C3). The call above stands — it is still feature-local,
+not one of the shared states.
 
 ## L4 render-lock (no Figma frame)
 
@@ -148,6 +159,24 @@ Figma frame is bound, so this is a structural render-lock, not a parity claim.
   message.
 - **Back** — `backOrHome`.
 
+### The sheet's buttons can no longer strand (fixed 2026-08-20)
+
+Both of `CapturedVisitorSheet`'s actions cleared `_busy` on the success path and
+again inside `on ApiFailure`, with no `finally` — so anything thrown that is
+**not** an `ApiFailure` left Export vCard and Remove disabled for good, with no
+toast and no way out but dismissing the sheet. The escape is real:
+`SimfApiClient` converts only the **first** call's errors to `ApiFailure`, and
+the 401 token-refresh branch sits outside that guard, so a keystore/keychain
+`PlatformException` (an OS keystore reset, a restored backup) surfaces raw
+mid-action. Both now clear in a `finally`.
+
+Remove adds one condition: the `finally` is skipped once the sheet has popped.
+`mounted` does **not** stand in for "already gone" — `pop()` only reverses the
+route's exit animation and the State outlives it — so re-enabling there would
+flick the spinner back to the icon on a sheet the user can still see sliding
+away. `SavedContactSheet` carries the same pair of fixes, which is the point:
+the two card lists still behave identically.
+
 ## Tests
 
 `test/golden/my_visitors_golden_test.dart` (render-lock, @375×812, ar; re-locked
@@ -155,7 +184,10 @@ for the BUG-025 title + note — unchanged by FR-EXH-002, the sheet lives behind
 tap) +
 `test/features/exhibitor/my_visitors_screen_test.dart` (empty / list / 403 /
 booth title + note / FR-EXH-002 sheet opens / FR-EXH-002 confirmed removal drops
-the lead and reloads). Backend:
+the lead and reloads) +
+`test/features/exhibitor/captured_visitor_sheet_test.dart` (2 — a confirmed
+removal leaves Remove disabled as the sheet exits; a failed removal re-enables it
+on the sheet that stays). Backend:
 `tests/SIMF.Api.Tests/ExhibitorLeadManagementTests.cs` (9 cases — booth-shared
 list, rival-booth isolation, colleague re-scan dedup, soft-delete, delete
 scoping, vCard export, cross-booth export 404, visitor-token 403, legacy

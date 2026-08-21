@@ -12,8 +12,8 @@
 | **Implements use case(s)** | See my confirmed, upcoming bilateral meetings; start a new meeting request when eligible; jump to my full requests history. |
 | **Backend endpoints** | `GET /api/v1/app/my-requests` (feed — filtered client-side to accepted + upcoming meeting kinds; D-745 added append-only `speakerId` + `countryId` for the card photo + flag) · `POST /api/v1/app/speakers/{id}/meeting-requests` (create, gated on `allowsSpeakerMeeting`, via the sheet) · `GET /api/v1/app/speakers` + `…/{id}/available-slots` (the picker). |
 | **Source file** | Flutter `features/meetings/` (screen + `MeetingCard` + `MeetingActionRow` + `upcomingMeetingsProvider`); the create sheet is the shared `features/speakers/widgets/meeting_request_sheet.dart`. Backend `MyRequestsService` + `AppRequestItem` contract. |
-| **Tests** | [`docs/tests/e2e/mobile-meetings.md`](../../tests/e2e/mobile-meetings.md) (`E2E-MOBMEET-001..011`); widget `test/features/meetings/meetings_screen_test.dart`; golden `test/golden/meetings_golden_test.dart` (`meetings_1408-9726.png`). |
-| **Last reviewed** | 2026-07-11 |
+| **Tests** | [`docs/tests/e2e/mobile-meetings.md`](../../tests/e2e/mobile-meetings.md) (`E2E-MOBMEET-001..014`); widget `test/features/meetings/meetings_screen_test.dart`; the today-badge clock boundary `test/features/meetings/meeting_card_clock_test.dart` (covers `MeetingCard` **and** `RequestCard`); golden `test/golden/meetings_golden_test.dart` (`meetings_1408-9726.png`). |
+| **Last reviewed** | 2026-08-20 |
 
 ---
 
@@ -65,12 +65,24 @@ profile keeps *my requests (history)*.
 Back chevron + centred title **اللقاءات الثنائية** / "Bilateral meetings".
 
 ### 4.2 Action row (Figma 1408:9736)
-Two equal pills (shared `RequestActionButton`):
+`MeetingActionRow`, built from the shared `RequestActionButton`. The two request
+pills share one row above a full-width **السجل** pill, and each request pill is
+shown **only** when the viewer holds its flag — so a single-flag account sees one
+request pill, and an account with neither sees the السجل pill alone:
 
-| Pill | Style | Action |
-|------|-------|--------|
-| طلب جديد / New request | beige outline | opens the meeting-request sheet (speaker picker → slot → send) |
-| السجل / Log | gold filled | navigates to the requests-history page (طلباتي, `/requests`) |
+| Pill | Shown when | Style | Action |
+|------|------------|-------|--------|
+| طلب مقابلة متحدث / Request a speaker meeting | `access.speaker` | beige outline | opens the speaker meeting-request sheet (speaker picker → slot → send) |
+| طلب اجتماع وفد / Request a delegation meeting | `access.delegation` | beige outline | opens the delegation meeting-request sheet (country picker → slot → send) |
+| السجل / Log | always | gold filled | navigates to the requests-history page (طلباتي, `/requests`) |
+
+> The row is forced `TextDirection.ltr` so the RTL shell does not mirror it —
+> the Figma frame lays these pills left-to-right in both languages.
+>
+> **Corrected 2026-08-20.** This table used to describe a single "طلب جديد"
+> pill next to السجل, which the bi-meeting rework replaced with the two
+> flag-gated pills above; `mobile-meetings.md` (E2E-MOBMEET-013) had described
+> the real control for some time.
 
 ### 4.3 Meeting card (one per approved-upcoming meeting)
 
@@ -84,10 +96,23 @@ Two equal pills (shared `RequestActionButton`):
 | Chevron | `speakerId != null` | tap the card → the speaker profile; absent for a delegation |
 | Date + clock | `eventDate` | the meeting slot, "07:45 AM · اليوم" today else the date |
 
+**"اليوم" is decided on the Saudi wall clock, both sides (D-219 / D-770).** The
+stored slot is a Riyadh reading, so the day it is compared against is
+`saudiNow()` — the device clock projected onto Riyadh — and not
+`DateTime.now()`. **Fixed 2026-08-20:** the card used to convert the *meeting's*
+date and then measure it against the raw device calendar day — one side
+converted, the other not — so a phone outside Riyadh badged the wrong meetings
+"today". On a UTC phone a 00:30 Riyadh meeting lost its badge on the morning it
+was actually happening, and a 23:30 one kept it for hours after Riyadh had
+already rolled over. `MeetingCard` now takes an optional `now`, which is null
+in production and a fixed instant in `meeting_card_clock_test.dart`; the seam
+exists because a +03:00 dev box and CI agent cannot tell the two clocks apart,
+so a card that consulted its own clock could not be pinned there at all.
+
 ## 5. The create flow (shared sheet)
 
-"طلب جديد" opens `MeetingRequestSheet` (Figma 1776:5036) with the **speaker
-picker** (D-745): a selectable list of every speaker showing the **photo + name +
+"طلب مقابلة متحدث" opens `MeetingRequestSheet` (Figma 1776:5036) with the
+**speaker picker** (D-745): a selectable list of every speaker showing the **photo + name +
 country flag + rank** (no longer a bare dropdown). A **type-to-filter search**
 sits above the list (D-746, key `meeting-speaker-search`): typing filters the
 speakers by **name or rank** (the same case-insensitive match as the المتحدثون
@@ -107,6 +132,26 @@ server backs the same rule with **409 `SPEAKER_MEETING_NO_AVAILABILITY`**
 (delegation twin: `DELEGATION_MEETING_NO_AVAILABILITY`). A **failed** slot fetch is
 a separate state — "تعذر تحميل القائمة." plus a **Retry** — so a network blip is
 never presented as the target having no availability.
+
+**Every failure reaches that state now, not just an `ApiFailure` (2026-08-20).**
+The sheet's two loaders used to clear their busy flag on the success and
+`on ApiFailure` branches only. A keystore `PlatformException` thrown on the
+client's 401-refresh path is **not** an `ApiFailure`, so it escaped both and left
+the flag set: the slot list spun forever with Send disabled and no Retry to
+escape by (the Retry hangs off the error flag, which was never set), and the
+speaker picker — loaded once from `initState`, with **no** retry path at all —
+spun for the life of the sheet, so the subject field, the slot section and the
+Send button never appeared and the sheet was dead until closed and reopened. The
+slot loader now lands every failure on the G3 load-error + Retry, and the picker
+resolves to its "اختر المتحدث" empty hint rather than a permanent spinner. The
+G3 rule holds either way: a **failed** fetch is still never shown as the target
+having no availability.
+
+Sending is guarded the same way. A non-`ApiFailure` from the submit now shows
+`meetingRequestFailed` inline instead of quietly handing the Send button back
+with nothing said, and a **successful** send no longer re-enables the button at
+all — the sheet's `State` outlives `pop()` by the route's exit animation, so
+re-enabling flicked the button back to life on a sheet already sliding away.
 
 ## 6. Data flow
 
@@ -150,13 +195,22 @@ inline-end, speaker photo inline-start) mirror right-to-left; the golden locks i
   (anchor placeholder) and no chevron (no speaker to open).
 - **Consistency deviation:** the meeting card renders real feed data; the speaker
   photo + flag rely on the D-745 additive wire fields.
+- **The list is lazy (2026-08-20).** The body is a `ListView.builder`: index 0 is
+  the action row, index 1 its trailing gap, and everything after them a meeting
+  card, so only the visible cards are built. It was an eager
+  `ListView(children:)` that built every card on every rebuild. The
+  `AlwaysScrollableScrollPhysics` is unchanged, which is what keeps
+  pull-to-refresh firing on a short list (§13.6 of the app's `CLAUDE.md`), and
+  the empty state still renders below the action row rather than replacing it.
 
 ## 10. Related E2E test scenarios
 
 See [`docs/tests/e2e/mobile-meetings.md`](../../tests/e2e/mobile-meetings.md)
-(`E2E-MOBMEET-001..011`): the golden list, the create flow, the rich picker, the
+(`E2E-MOBMEET-001..014`): the golden list, the create flow, the rich picker, the
 السجل → history nav, the approved+upcoming filter, card → speaker profile, empty
-state, both eligibility gates (tile hidden + in-screen), server-500, and RTL.
+state, both eligibility gates (tile hidden + in-screen), the two flag-gated
+request pills, server-500, RTL, and (`014`) the non-`ApiFailure` roster load that
+used to leave the sheet dead.
 
 ## 11. Related docs
 
@@ -174,8 +228,12 @@ state, both eligibility gates (tile hidden + in-screen), server-500, and RTL.
 |------|----------|--------|
 | 2026-07-11 | D-745 | Split the Home "اللقاءات الثنائية" tile into a VIP-only meetings page (Figma `1408:9726`); the requests feed retitled **طلباتي** and kept in My-Area. Added append-only `AppRequestItem.speakerId` + `countryId` for the card photo + flag (no migration — enriched the existing speaker join). The create-sheet speaker picker became a photo/name/country list. Home tile hidden for non-VIP. |
 | 2026-07-11 | D-746 | Added a **type-to-filter search** above the create-sheet speaker picker (name/rank, mirroring the المتحدثون list; shared "لا نتائج مطابقة" hint). App-only; no wire/schema change. |
+| 2026-08-20 | app deep-clean audit (no decision id) | **The "اليوم" badge is decided on the Saudi clock on both sides** — it compared a Saudi-converted meeting date against the raw device calendar day, so a phone outside Riyadh badged the wrong meetings; `MeetingCard` now reads `saudiNow()` and takes an injected `now` for the boundary test. **The sheet can no longer die silently** — a non-`ApiFailure` (a keystore `PlatformException` on the 401-refresh) left the slot list and the speaker picker spinning forever, the picker with no retry path at all; both now resolve, and a submit failure says so instead of handing the Send button back in silence. **The meeting list became a `ListView.builder`** (physics unchanged, so pull-to-refresh still fires). No wire, schema or copy change. |
 | 2026-07-30 | D-812 (G3) | A meeting request **cannot** be sent when the target has no free slot — supersedes D-767 R1's subject-only request. Both sheets require a picked slot and disable Send on an empty slot list; the API 409s `SPEAKER_MEETING_NO_AVAILABILITY` / `DELEGATION_MEETING_NO_AVAILABILITY`. A failed slot fetch now shows a load error + Retry instead of the no-availability notice. No schema/wire change (additive error codes). |
 
 ---
 
-_Last reviewed:_ 2026-07-11 by SIMF Team (D-745 — bilateral meetings split).
+_Last reviewed:_ 2026-08-20 by Claude (app deep-clean audit — the Saudi-clock
+today badge, the sheet's silent-death fix, the lazy list; and §4.2 corrected,
+which had still described the pre-rework single "طلب جديد" pill). Earlier:
+2026-07-11 by SIMF Team (D-745 — bilateral meetings split).

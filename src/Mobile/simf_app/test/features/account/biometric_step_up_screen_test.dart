@@ -213,6 +213,65 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     });
 
+    testWidgets('a biometric lockout shows the enrol copy, never the sign-in '
+        "screen's password advice", (tester) async {
+      // The user reached this screen from the side-menu toggle or the nudge, so
+      // they are already signed in: telling them to sign in with their password
+      // is advice they cannot act on.
+      final controller = _FakeController();
+      final biometric = _FakeBiometric(outcome: LocalAuthOutcome.lockedOut);
+      await _pump(tester, controller, biometric: biometric);
+
+      await tester.enterText(find.byType(TextField), '123456');
+      await tester.pump();
+      await tester.tap(find.widgetWithText(FilledButton, 'Verify'));
+      await tester.pumpAndSettle();
+
+      expect(controller.enrolledWithCode, isNull);
+      expect(
+        find.text('Too many attempts. Authentication is temporarily locked '
+            '— try again shortly.'),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('sign in with your password'),
+        findsNothing,
+      );
+
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('an unavailable biometric shows the enrol copy, never the '
+        "sign-in screen's password advice", (tester) async {
+      // Same reason as the lockout above, for the outcome the OS sheet's
+      // unexpected-failure branch produces: the user is already signed in here,
+      // so "sign in with your password" is advice they cannot act on.
+      final controller = _FakeController();
+      final biometric = _FakeBiometric(outcome: LocalAuthOutcome.unavailable);
+      await _pump(tester, controller, biometric: biometric);
+
+      await tester.enterText(find.byType(TextField), '123456');
+      await tester.pump();
+      await tester.tap(find.widgetWithText(FilledButton, 'Verify'));
+      await tester.pumpAndSettle();
+
+      expect(controller.enrolledWithCode, isNull);
+      expect(
+        find.text(
+          "Biometric confirmation couldn't run on this device. Try again.",
+        ),
+        findsOneWidget,
+      );
+      expect(
+        // Leading 's' dropped on purpose: the sign-in copy capitalises it here
+        // and not in the lockout, and both must stay off this screen.
+        find.textContaining('ign in with your password'),
+        findsNothing,
+      );
+
+      await tester.pumpWidget(const SizedBox());
+    });
+
     testWidgets('a wrong code shows the inline error and stays on the screen',
         (tester) async {
       final controller = _FakeController(

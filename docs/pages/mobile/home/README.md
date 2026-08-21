@@ -6,12 +6,12 @@
 | Surface | Mobile (Flutter) |
 | Screen | `lib/features/home/home_screen.dart` (`HomeScreen`, 165 lines — role router only) |
 | Helpers | `lib/features/home/home_greeting.dart` (`homeGreeting` / `homePostTime`, re-exported from the screen) |
-| Widgets | `lib/features/home/widgets/` — `guest_home` (+ `guest_banner` · `pending_approval_card`) · `operational_homes` (staff/moderator) · `visitor_home`, which composes `home_about_section` · `home_smart_features_section` · `home_highlights_section` · `home_live_banner_link` · `exhibitor_tools_section` (the lead-capture block, exhibitor only) · `greeting_header` · `home_banners` (live banner) · `home_hero_banner` (rotating edition hero, #43) + `hero_image` / `hero_overlay` / `meta_line` · `hero_background_video` (D-756 CP-configured hero video) · `highlights_carousel` + `highlight_slide` · `carousel_dots` (shared) · `follow_us_section` + `social_button` · `discover_saudi_row` · `website_link` · `home_icons` |
+| Widgets | `lib/features/home/widgets/` — `guest_home` (+ `guest_banner` · `pending_approval_card`) · `operational_homes` (staff/moderator) · `visitor_home`, which composes `home_about_section` · `home_smart_features_section` · `home_highlights_section` · `home_live_banner_link` · `exhibitor_tools_section` (the lead-capture block, exhibitor only) · `greeting_header` · `home_banners` (live banner) · `home_hero_banner` (rotating edition hero, #43) + `hero_image` / `hero_overlay` / `meta_line` · `hero_background_video` (D-756 CP-configured hero video) · `highlights_carousel` + `highlight_slide` · `carousel_dots` (shared) · `carousel_auto_advance` (`CarouselAutoAdvance`, the shared `State` mixin that owns the `PageController`, the slide index and the 4-second timer for **both** the hero and the highlights carousel) · `follow_us_section` + `social_button` · `discover_saudi_row` · `website_link` · `home_icons` |
 | Figma nodes | signed-in **758:1134** · guest **758:2910** · highlights carousel 758:1239 (documented multi-slide deviation) |
 | Shell | `SimfPageShell` (`SimfTab.home`); signed-in uses the `GreetingHeader`, guest/staff/moderator use the standard header |
 | API | `GET /app/notifications/unread-count` (bell badge, signed-in) · `GET /app/news` (highlights, reused) · `GET /app/banners` (hero images, #43) · `GET /app/organization-profile` (hero edition overlay) · `GET /app/me/dashboard` (best-effort greeting name); all best-effort — Home never blocks on them |
 | Providers | `homeProfileProvider` · `unreadNotificationCountProvider` · `newsListProvider` · `bannersProvider` (#43) · `orgProfileProvider` |
-| Tests | `test/features/home/home_screen_test.dart` (36); the greeting name line is in `test/features/home/widgets/greeting_header_test.dart` (OA-D1, 6 cases); the greeting header's language-pill placement + flip is in `test/app/simf_page_shell_test.dart` (D-772); goldens `test/golden/home_golden_test.dart` (`goldens/home_signed_in_758-1134.png` + `home_guest_758-2910.png` — the signed-in golden's fixture name is `أحمد محمد`, so it **must be re-locked** with `flutter test --update-goldens test/golden/home_golden_test.dart` after OA-D1); E2E [`mobile-home.md`](../../../tests/e2e/mobile-home.md) |
+| Tests | `test/features/home/home_screen_test.dart` (36); the greeting name line is in `test/features/home/widgets/greeting_header_test.dart` (OA-D1, 6 cases); the greeting header's language-pill placement + flip is in `test/app/simf_page_shell_test.dart` (D-772); the two carousels' auto-advance is in `test/features/home/widgets/highlights_carousel_test.dart` (5 cases) and `test/features/home/widgets/home_hero_banner_test.dart` (7 cases, 2 of them added 2026-08-20); goldens `test/golden/home_golden_test.dart` (`goldens/home_signed_in_758-1134.png` + `home_guest_758-2910.png` — the signed-in golden's fixture name is `أحمد محمد`, so it **must be re-locked** with `flutter test --update-goldens test/golden/home_golden_test.dart` after OA-D1); E2E [`mobile-home.md`](../../../tests/e2e/mobile-home.md) |
 | Legacy detail | `docs/App/Page_013/` — retained as the historical spec |
 | Status | ✅ Real — built → 758:1134/2910 parity → **clean-code frozen (D-602)** |
 
@@ -56,7 +56,9 @@ account sees the guest layout with an awaiting-approval note.
   tile, the news tiles, the الميزات الذكية smart tiles, the الرعاة + الأخبار
   bars, the **highlights carousel** (auto-advancing image+title slides — a
   documented multi-slide deviation from the single-card frame; hidden until a
-  post exists), the discover row, and the self-hiding follow-us row.
+  post exists; its rotation re-arms itself when the post list changes underneath
+  it — see the 2026-08-20 changelog entry), the discover row, and the
+  self-hiding follow-us row.
 - **Exhibitor**: the visitor home + a lead-capture tools section (scan visitor /
   my visitors).
 - **Staff / Moderator**: single-purpose rows into their own tools only.
@@ -90,6 +92,30 @@ and overlay-verified against 758:1134 / 758:2910. Behaviour byte-identical (29
 tests green).
 
 ## 6. Changelog
+- **2026-08-20 (app deep-clean audit — behaviour fix):** both Home carousels now
+  keep auto-advancing correctly after their list changes underneath them.
+  `HighlightsCarousel` armed its timer in `initState` **only**, and the number of
+  highlights always changes after that first frame — `/app/news` arrives on a later
+  rebuild and is re-delivered on every pull to refresh while the `State` is reused.
+  So the timer went on cycling **modulo the OLD count**: growing from a single post
+  never started the rotation at all (the one-slide early return had already run and
+  nothing re-ran it), and shrinking left a stale index past the new end, which
+  rendered as a **blank page**. `HomeHeroBanner` (#43, `/app/banners`) carried the
+  identical defect; it did have a `didUpdateWidget`, but it reset the index to **0**
+  on a shrink, which is a clamp against the wrong end — `PageController` settles a
+  past-the-end scroll position on the **LAST** page, so the dots then pointed at
+  slide 1 while slide N was on screen and the next tick animated *backwards*. The
+  auto-advance is now one shared `State` mixin, `CarouselAutoAdvance`
+  (`home/widgets/carousel_auto_advance.dart`), holding the `PageController`, the
+  slide index the dots read and the 4-second interval; its `didUpdateWidget` cancels
+  the timer, clamps the index to the **last** page, `jumpToPage`s there — which also
+  kills an `animateToPage` still running toward a page that no longer exists,
+  because cancelling a timer does not stop the animation it already started — and
+  restarts. **Nothing about a first frame changed:** both goldens
+  (`home_signed_in_758-1134` + `home_guest_758-2910`) held **without**
+  `--update-goldens`. Covered by the new
+  `test/features/home/widgets/highlights_carousel_test.dart` (5 cases) and two cases
+  added to `home_hero_banner_test.dart`.
 - **2026-08-18 (delivery clean-code programme, structure only):** `visitor_home`
   gave up the five inline blocks it was still assembling itself — the عن الملتقى
   bar + about tiles, the الميزات الذكية tiles, the highlights carousel section, the

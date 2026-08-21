@@ -112,7 +112,7 @@ void main() {
       expect(user.registrationStatus, equals(RegistrationStatus.approved));
     });
 
-    test('an expired access token refreshes, then hydrates the real privilege',
+    test('a missing access token refreshes, then hydrates the real privilege',
         () async {
       final repo = _MockAuthRepository();
       final secure = _MockSecureStorage();
@@ -150,6 +150,57 @@ void main() {
         (state as AuthStateSignedIn).session.user.appRole,
         equals(AppRole.staff),
       );
+    });
+
+    // The case the test above only claims to cover: a token IS stored, but its
+    // expiry has passed. The fast path must reject it and refresh, or the app
+    // resumes on a dead token and every call 401s. A fixed 2020 instant keeps
+    // this independent of the machine clock.
+    test('a stored access token past its expiry refreshes rather than resuming',
+        () async {
+      final repo = _MockAuthRepository();
+      final secure = _MockSecureStorage();
+      when(() => secure.read(StorageKeys.accessToken))
+          .thenAnswer((_) async => 'STALE');
+      when(() => secure.read(StorageKeys.refreshToken))
+          .thenAnswer((_) async => 'R');
+      when(() => secure.read(StorageKeys.accessTokenExpiresAtIso)).thenAnswer(
+        (_) async => DateTime.utc(2020).toIso8601String(),
+      );
+      when(() => secure.read(StorageKeys.currentUserJson)).thenAnswer(
+        (_) async =>
+            _userJson(_user(AppRole.guest, RegistrationStatus.pending)),
+      );
+      when(() => secure.write(any(), any())).thenAnswer((_) async {});
+      when(() => repo.refresh(refreshToken: any(named: 'refreshToken')))
+          .thenAnswer(
+        (_) async => Session(
+          accessToken: 'FRESH',
+          refreshToken: 'R2',
+          accessTokenExpiresAt: DateTime.now().add(const Duration(minutes: 30)),
+          user: _user(AppRole.guest, RegistrationStatus.pending),
+        ),
+      );
+      when(repo.getCurrentUser).thenAnswer(
+        (_) async => _user(AppRole.visitor, RegistrationStatus.approved),
+      );
+
+      final container = _container(repo, secure);
+      addTearDown(container.dispose);
+
+      // Both the correct path and the resume-on-stale-token path end signed in
+      // as a visitor, so waiting on the role cannot itself discriminate — the
+      // token the session carries is what does.
+      final state = await _waitFor(
+        container,
+        (s) =>
+            s is AuthStateSignedIn && s.session.user.appRole == AppRole.visitor,
+      );
+      expect(
+        (state as AuthStateSignedIn).session.accessToken,
+        equals('FRESH'),
+      );
+      verify(() => repo.refresh(refreshToken: 'R')).called(1);
     });
 
     test('an offline refresh resumes on the cached identity (degraded)',

@@ -17,7 +17,7 @@
 | **APIs** | `GET /app/countries/{countryId}/available-slots` (slots) · `POST /app/delegation-meeting-requests` (submit) — both `RequireApprovedAccount` |
 | **Surface** | Mobile (Flutter) |
 | **Auth setup** | An approved app account whose profile has **`allowsDelegationMeeting = true`** (the CP sets it on the account — see [`cp-admin-delegation-availability.md`](cp-admin-delegation-availability.md) sibling flow). A non-entitled account for the gate case. TOTP via `Get-Totp` — never a literal secret. |
-| **Last reviewed** | 2026-07-22 (bi-meeting rework — new sheet) |
+| **Last reviewed** | 2026-08-20 (app deep-clean audit — E2E-DELREQ-013). Prior: 2026-07-22 (bi-meeting rework — new sheet) |
 
 > **Gating (bi-meeting rework).** The "طلب اجتماع وفد" button and the delegation-card
 > tap target render only when `currentUserMeetingAccessProvider.delegation` is `true`
@@ -46,6 +46,7 @@
 | E2E-DELREQ-010 | RTL render (Arabic) — sheet title "طلب اجتماع وفد", fields + slots mirror | i18n | P1 | _to author_ |
 | E2E-DELREQ-011 | A35 — a server-rejected submit shows the **server's own bilingual reason**, never the speaker copy "this speaker is not accepting meeting requests" | error | P1 | authored ✓ (`delegation_meeting_request_sheet_test.dart`, widget) |
 | E2E-DELREQ-012 | A35 — an offline / never-reached-the-server failure still falls back to the local "تعذّر إرسال الطلب" copy | edge | P2 | authored ✓ (`delegation_meeting_request_sheet_test.dart`, widget) |
+| E2E-DELREQ-013 | A country-picker load that fails with something **other** than an `ApiFailure` resolves the picker to "لا توجد وفود متاحة" instead of spinning forever — the sheet stays closable and reopenable rather than dead (2026-08-20) | resilience | P1 | authored ✓ (`meeting_request_sheet_test.dart` — "a roster fetch that throws a NON-ApiFailure resolves the picker instead of spinning it forever", on the shared `MeetingRequestForm`) |
 | E2E-DELREQ-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-DELREQ-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
@@ -255,8 +256,48 @@ Scenario: The request never reached the server
   Then the sheet shows the local "تعذّر إرسال الطلب. حاول مرة أخرى." copy
 ```
 
+### E2E-DELREQ-013 — A non-ApiFailure roster load resolves the picker
+
+The sheet's two loaders used to clear their busy flag only on the success and
+`on ApiFailure` branches. A keystore `PlatformException` raised on the API
+client's 401-refresh path is not an `ApiFailure`, so it escaped both. The country
+picker is the worse case: it is loaded once from `initState` and has no retry
+path, so the sheet was dead until closed and reopened.
+
+```gherkin
+Scenario: The country roster fails with something that is not an ApiFailure
+  Given I am an entitled delegate
+  And the roster load will throw a PlatformException (the keystore, on the 401-refresh path)
+  When I open the sheet from /meetings via "طلب اجتماع وفد"
+  Then the picker settles on "لا توجد وفود متاحة" / "No delegations available"
+  And no spinner is left running under the "اختر الوفد" label
+  And the عدد الحضور, الموضوع, slot and "إرسال الطلب" section stay hidden,
+      because no target could be chosen
+  And closing and reopening the sheet retries the load
+
+Scenario: The same failure on the slot load keeps the G3 separation
+  Given a target country is chosen
+  And the slot load will throw a PlatformException
+  Then the sheet shows the load error and a Retry
+  And it does NOT show "لا توجد فترات متاحة حالياً" — a failed fetch is never
+      presented as the delegation having no availability (E2E-DELREQ-005)
+```
+
+**Evidence:** `meeting_request_sheet_test.dart` — "a roster fetch that throws a
+NON-ApiFailure resolves the picker instead of spinning it forever" and "G3 — a
+slot fetch that throws a NON-ApiFailure lands the same load error + Retry instead
+of spinning forever". Both exercise the shared `MeetingRequestForm`, which is the
+sheet's whole body, so they hold for the delegation sheet too.
+
+E2E-DELREQ-012 was **not** re-authored and did not need to be: it already says a
+failure that never reached the server falls back to the local copy, and the same
+round widened the submit's catch so that is now true for a non-`ApiFailure` as
+well as a network failure.
+
 ---
 
 _Last reviewed:_ 2026-07-22 by Claude — bi-meeting rework: new delegation meeting request sheet (flag-gated; opened from the Bi-Meeting page picker and from a tapped delegation card). Backend submit + slots covered by `DelegationMeetingRequestsTests` + `DelegationAvailabilityTests`; the sheet/golden/RTL layer is on-device `_to author_`.
 
 _Last reviewed:_ 2026-07-26 by Claude — A35: the sheet surfaces the server's bilingual message instead of a hard-coded speaker string (E2E-DELREQ-011/012).
+
+_Last reviewed:_ 2026-08-20 by Claude — app deep-clean audit: added E2E-DELREQ-013, the non-`ApiFailure` roster/slot loads that used to leave the sheet spinning forever with no retry path.

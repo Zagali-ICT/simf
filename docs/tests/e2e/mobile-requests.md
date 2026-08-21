@@ -24,6 +24,27 @@
 
 ## Layout
 
+> **Two facts below are stale — read this before driving anything (recorded
+> 2026-08-20, app deep-clean audit).** Neither was introduced by that round, and
+> neither is rewritten here: re-authoring a golden path is a test-authoring job,
+> not a documentation one. But a reader driving these scenarios needs to know.
+>
+> 1. **The title is طلباتي / "My requests"** (`l10n.requestsTitle`), not
+>    اللقاءات الثنائية — D-745 moved that name to the separate `/meetings` page.
+> 2. **"طلب جديد" opens the speaker meeting-request sheet**, not a
+>    document/badge submit sheet. `_openNewRequest()` shows `MeetingRequestSheet`
+>    with `speakerId: null` (so the sheet opens on its searchable speaker
+>    picker), and the button renders only for an account holding
+>    `allowsSpeakerMeeting`. `POST /app/document-requests` and
+>    `POST /app/badge-requests` still exist on the API and in
+>    `RequestsRepository`, but **nothing in the app calls them**, so no in-app
+>    path raises those two kinds today. That makes the submit halves of
+>    **E2E-REQ-001** — and every "طلب جديد" step below — undriveable from the app
+>    as it stands. Whether the app should regain an entry point is an owner
+>    question: see [`mobile/requests.md` §4.2](../../pages/mobile/requests.md).
+>
+> The feed, status-chip, cancel, auth-gate and RTL scenarios are unaffected.
+
 - **Header**: back chevron + centred title **اللقاءات الثنائية** ("Bilateral
   meetings") — Figma 1408:9726 frame header (D-595, was "الطلبات").
 - **Top button row (2, D-595)**: **"طلب جديد"** (New request, beige-outlined,

@@ -16,13 +16,11 @@ dependencies:
   flutter_riverpod: ^3.4.2
   flutter_secure_storage: ^9.2.2
   meta: ^1.16.0
-  pretty_dio_logger: ^1.4.0
   shared_preferences: ^2.3.3
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  mocktail: ^1.0.4
   very_good_analysis: ^10.3.0
 
 flutter:

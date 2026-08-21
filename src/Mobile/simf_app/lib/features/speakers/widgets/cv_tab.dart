@@ -43,7 +43,7 @@ class CvTab extends StatelessWidget {
             color: selected ? SimfTokens.surface : SimfTokens.beigeBorder,
             fontWeight: FontWeight.w600,
             fontSize: SimfTokens.textSm,
-            height: SimfTokens.cvTabHeight,
+            height: SimfTokens.cvTabLineHeight,
           ),
         ),
       ),

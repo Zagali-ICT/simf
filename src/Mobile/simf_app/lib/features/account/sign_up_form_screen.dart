@@ -20,6 +20,7 @@ import 'package:simf_app/features/account/widgets/account_header.dart';
 import 'package:simf_app/features/account/widgets/account_terms_checkbox.dart';
 import 'package:simf_app/features/account/widgets/account_top_controls.dart';
 import 'package:simf_app/features/account/widgets/auth_chrome.dart';
+import 'package:simf_app/features/account/widgets/password_requirement_errors.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 
 /// Sign up — إنشاء حساب · route: RouteNames.signUpForm · Figma 168:3454 (D-370)
@@ -67,44 +68,6 @@ class _SignUpFormScreenState extends ConsumerState<SignUpFormScreen> {
       _passwordTouched = true;
       _passwordUnmet = unmetPasswordRequirements(value);
     });
-  }
-
-  Widget _buildPasswordErrors(AppL10n l10n) {
-    if (!_passwordTouched || _passwordUnmet.isEmpty) {
-      return const SizedBox.shrink();
-    }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        const SizedBox(height: SimfTokens.space2),
-        for (final PasswordRequirement req in _passwordUnmet)
-          Padding(
-            padding: const EdgeInsets.only(top: 2),
-            child: Text(
-              _passwordRequirementMessage(req, l10n),
-              style: SimfTokens.labelDangerSm,
-            ),
-          ),
-      ],
-    );
-  }
-
-  String _passwordRequirementMessage(
-    PasswordRequirement req,
-    AppL10n l10n,
-  ) {
-    switch (req) {
-      case PasswordRequirement.length:
-        return l10n.passwordLength;
-      case PasswordRequirement.uppercase:
-        return l10n.passwordUppercase;
-      case PasswordRequirement.lowercase:
-        return l10n.passwordLowercase;
-      case PasswordRequirement.digit:
-        return l10n.passwordDigit;
-      case PasswordRequirement.special:
-        return l10n.passwordSpecial;
-    }
   }
 
   String? _validateConfirm(String? value) {
@@ -294,7 +257,11 @@ class _SignUpFormScreenState extends ConsumerState<SignUpFormScreen> {
                 onChanged: _onPasswordChanged,
                 autofillHints: const <String>[AutofillHints.newPassword],
               ),
-              _buildPasswordErrors(l10n),
+              PasswordRequirementErrors(
+                unmet: _passwordTouched
+                    ? _passwordUnmet
+                    : const <PasswordRequirement>[],
+              ),
               const SizedBox(height: SimfTokens.space4),
               AccountPasswordField(
                 controller: _confirm,

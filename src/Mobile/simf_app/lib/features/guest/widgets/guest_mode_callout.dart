@@ -27,7 +27,7 @@ class GuestModeCallout extends StatelessWidget {
             style: const TextStyle(
               color: SimfTokens.txtSecondary,
               fontSize: SimfTokens.textSm,
-              height: SimfTokens.guestModeScreenHeightSm,
+              height: SimfTokens.guestModeCalloutLineHeight,
             ),
           ),
           const SizedBox(height: SimfTokens.space3),
@@ -36,7 +36,7 @@ class GuestModeCallout extends StatelessWidget {
             style: const TextStyle(
               color: SimfTokens.txtSecondary,
               fontSize: SimfTokens.textSm,
-              height: SimfTokens.guestModeScreenHeightSm,
+              height: SimfTokens.guestModeCalloutLineHeight,
             ),
           ),
         ],

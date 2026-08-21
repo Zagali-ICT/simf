@@ -65,20 +65,6 @@ final myAreaRepositoryProvider = Provider<MyAreaRepository>((ref) {
   return MyAreaRepository(ref.watch(simfApiClientProvider));
 });
 
-/// True when the signed-in account is an audience (visitor) profile type, false
-/// for partner/exhibitor ("Other") types — drives the role-based QR-page actions
-/// and the Other-only "My Visitors" menu item (D-426). Sourced from the
-/// dashboard identity; defaults true (treats unknown/pending as visitor, hiding
-/// exhibitor-only surfaces).
-final isVisitorProvider = FutureProvider.autoDispose<bool>((ref) async {
-  try {
-    final dashboard = await ref.watch(myAreaRepositoryProvider).getDashboard();
-    return dashboard.identity.isVisitor;
-  } on ApiFailure {
-    return true;
-  }
-});
-
 /// The My-Area dashboard, or **null when the account is not Approved**.
 ///
 /// A FOURTH shape: the approval gate lives in the provider. The endpoint is

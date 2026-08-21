@@ -37,6 +37,7 @@ class _ContactPreviewSheetState extends ConsumerState<ContactPreviewSheet> {
   Future<void> _save() async {
     final l10n = AppL10n.of(context);
     setState(() => _saving = true);
+    var popped = false;
     try {
       await ref
           .read(contactsRepositoryProvider)
@@ -45,11 +46,11 @@ class _ContactPreviewSheetState extends ConsumerState<ContactPreviewSheet> {
         return;
       }
       Navigator.of(context).pop(true);
+      popped = true;
     } on ApiFailure catch (e) {
       if (!mounted) {
         return;
       }
-      setState(() => _saving = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -57,6 +58,16 @@ class _ContactPreviewSheetState extends ConsumerState<ContactPreviewSheet> {
           ),
         ),
       );
+    } finally {
+      // A token refresh on the 401 path can throw a keystore PlatformException,
+      // which is not an ApiFailure; without this the button never re-enables.
+      // Skipped once popped, though: pop() only reverses the route's animation
+      // controller and the State lives until the 200ms exit transition
+      // completes, so `mounted` is still true and the spinner would visibly
+      // flick back to the icon as the sheet slides away.
+      if (!popped && mounted) {
+        setState(() => _saving = false);
+      }
     }
   }
 

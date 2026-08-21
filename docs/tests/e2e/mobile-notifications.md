@@ -29,6 +29,7 @@
 | E2E-MOB033-007 | Tapping an actionable notification deep-links: a server **`clickUrl`** (allowlisted path) is pushed verbatim; otherwise the kind fallback (`SessionRatingRequest` → rate form, `BookingConfirmed` → entry-badge QR); a foreign `clickUrl` is ignored | happy | P1 | authored ✓ (screen `tapping a clickUrl notification pushes…`, `tapping a read SessionRatingRequest deep-links…`, `tapping a BookingConfirmed notification opens the badge QR`) |
 | E2E-MOB033-008 | Chips filter by the server **`group`** (with a kind→group fallback for pre-migration rows): the جلسات chip covers Sessions/Bookings/Meetings/Ratings, VIP covers Vip | happy | P1 | authored ✓ (screen `the Sessions chip includes the new Ratings group`) |
 | E2E-MOB033-009 | Every meeting-lifecycle tile is navigable (QA A27): `MeetingScheduled` / `MeetingCancelled` / `MeetingRequestConfirmed` / `MeetingReminder` carry `clickUrl = /meetings` and `/meetings` is on the allowlist, so tapping opens the bilateral-meetings page instead of doing nothing | happy | P1 | authored ✓ (`NotificationKindCatalogTests.ClickUrlFor_every_meeting_lifecycle_kind_opens_the_meetings_page` + `..._covers_every_kind_in_the_Meetings_group`) |
+| E2E-MOB033-010 | A `MatchRecommended` tile is navigable (FR-803): the server stamps `clickUrl = /meet` and `/meet` is on the app's allowlist, so tapping opens the Meet-people partner directory instead of doing nothing | happy | P1 | authored ✓ (`NotificationClickUrlContractTests.Every_click_url_the_server_can_emit_is_a_path_the_app_will_open`) |
 | E2E-MOB033-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-MOB033-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
@@ -149,4 +150,31 @@ without an arm fails the build). App side: `/meetings` added to
 
 ---
 
-_Last reviewed:_ `2026-07-26` by `Claude` — QA A27: the four meeting-lifecycle kinds are navigable (E2E-MOB033-009). Earlier: `2026-07-07` by `SIMF Team`.
+### E2E-MOB033-010 — A match-recommendation tile opens Meet people (FR-803)
+
+```gherkin
+Scenario: Tapping a match-recommendation notification opens the partner directory
+  Given the MatchRecommendationPushWorker sent me a MatchRecommended notification
+  Then its server clickUrl is "/meet"
+  When I tap the card
+  Then the app opens the Meet-people partner directory (RouteNames.meetPeople)
+  And it does not open the bilateral-meetings list — no meeting exists yet,
+      only a suggestion
+  # Before the fix "/meet" was absent from _allowedClickPaths, so the path fell
+  # through the guard and no kind fallback covers MatchRecommended: the tap
+  # marked the tile read and did nothing else. Silently — no log, no toast, no
+  # crash — which is why FR-803's only notification entry point stayed dead from
+  # the day it shipped. Same failure as E2E-MOB033-009, one kind later.
+```
+
+**Evidence:** `NotificationClickUrlContractTests.Every_click_url_the_server_can_emit_is_a_path_the_app_will_open`
+— it reads `NotificationKindCatalog.ClickUrlFor` and `_allowedClickPaths` as text
+and fails the build on any server clickUrl the app would refuse, so a future kind
+cannot repeat this. **No app-side widget test pins `/meet` specifically**; the
+generic push-the-allowlisted-clickUrl path is covered by the screen test
+`tapping a clickUrl notification pushes…` (E2E-MOB033-007), and the cross-repo
+contract test is what pins this kind.
+
+---
+
+_Last reviewed:_ `2026-08-20` by `Claude` — FR-803: the match-recommendation tile is navigable (E2E-MOB033-010). Earlier: `2026-07-26` by `Claude` — QA A27: the four meeting-lifecycle kinds are navigable (E2E-MOB033-009). Earlier: `2026-07-07` by `SIMF Team`.

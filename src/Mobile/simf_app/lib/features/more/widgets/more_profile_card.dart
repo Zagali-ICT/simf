@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/app_assets.dart';
 import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_forward_chevron.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
-import 'package:simf_app/app/widgets/simf_svg_icon.dart';
 
 /// The منطقتي header card (frame 1129:16898): the user's avatar, the "منطقتي"
 /// title over the "{name} · {tier}" sub-line, and the gold caret.
@@ -60,7 +60,7 @@ class MoreProfileCard extends StatelessWidget {
               const SizedBox(width: SimfTokens.space3),
               SimfAvatar(name: name, currentUser: true),
               const SizedBox(width: SimfTokens.space2),
-              const SimfSvgIcon(
+              const SimfForwardChevron(
                 AppAssets.icCaretLeft,
                 color: SimfTokens.accent,
                 size: SimfTokens.moreProfileCardSizeSm,

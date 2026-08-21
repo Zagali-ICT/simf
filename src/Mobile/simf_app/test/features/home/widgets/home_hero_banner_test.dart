@@ -150,6 +150,81 @@ void main() {
       expect(pageView.controller!.page, closeTo(1, 0.01));
     });
 
+    testWidgets(
+        'shrinking to two banners leaves the dots on the page the controller '
+        'lands on', (tester) async {
+      await tester.pumpWidget(
+        _harness(
+          profile: _edition(),
+          banners: <PublicBannerItem>[_banner('a'), _banner('b'), _banner('c')],
+        ),
+      );
+      await tester.pump();
+
+      // Rotate to the last banner, then let a refresh drop one.
+      await tester.pump(const Duration(seconds: 4));
+      await tester.pump(const Duration(milliseconds: 600));
+      await tester.pump(const Duration(seconds: 4));
+      await tester.pump(const Duration(milliseconds: 600));
+      expect(tester.widget<CarouselDots>(find.byType(CarouselDots)).index, 2);
+
+      await tester.pumpWidget(
+        _harness(
+          profile: _edition(),
+          banners: <PublicBannerItem>[_banner('a'), _banner('b')],
+        ),
+      );
+      await tester.pump();
+
+      // PageController settles a shrunken list on its LAST page, so the dots
+      // have to follow it THERE, not back to the first banner.
+      final pageView = tester.widget<PageView>(find.byType(PageView));
+      expect(pageView.controller!.page, closeTo(1, 0.01));
+      expect(tester.widget<CarouselDots>(find.byType(CarouselDots)).index, 1);
+
+      // With the index stuck at 0 the next tick targets page 1, which is
+      // already on screen, and the hero never rotates again.
+      await tester.pump(const Duration(seconds: 4));
+      await tester.pump(const Duration(milliseconds: 600));
+      expect(
+        tester.widget<PageView>(find.byType(PageView)).controller!.page,
+        closeTo(0, 0.01),
+      );
+    });
+
+    testWidgets('shrinking mid-list never auto-advances backwards',
+        (tester) async {
+      final five = <PublicBannerItem>[
+        _banner('a'),
+        _banner('b'),
+        _banner('c'),
+        _banner('d'),
+        _banner('e'),
+      ];
+      await tester.pumpWidget(_harness(profile: _edition(), banners: five));
+      await tester.pump();
+      for (var i = 0; i < 4; i++) {
+        await tester.pump(const Duration(seconds: 4));
+        await tester.pump(const Duration(milliseconds: 600));
+      }
+      expect(tester.widget<CarouselDots>(find.byType(CarouselDots)).index, 4);
+
+      await tester.pumpWidget(
+        _harness(profile: _edition(), banners: five.take(3).toList()),
+      );
+      await tester.pump();
+      expect(tester.widget<CarouselDots>(find.byType(CarouselDots)).index, 2);
+
+      // The controller sits on page 2; a tick computed from a zeroed index
+      // targets page 1 and the hero slides BACKWARDS.
+      await tester.pump(const Duration(seconds: 4));
+      await tester.pump(const Duration(milliseconds: 600));
+      expect(
+        tester.widget<PageView>(find.byType(PageView)).controller!.page,
+        closeTo(0, 0.01),
+      );
+    });
+
     testWidgets('English overlay uses the English edition fields',
         (tester) async {
       await _pumpHero(

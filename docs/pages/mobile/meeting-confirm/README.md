@@ -4,7 +4,7 @@
 |---|---|
 | Route | `/meeting-confirm?requestId=` (`RouteNames.meetingConfirm`, page #117) · role-gated to `_attendee` = `{AppRole.visitor, AppRole.exhibitor}`; per-user eligibility (being a member of the **target** delegation) is enforced server-side, not here |
 | Surface | Mobile (Flutter) |
-| Screen | `lib/features/meetings/meeting_confirm_screen.dart` (`MeetingConfirmScreen`, 241 lines, `ConsumerStatefulWidget`) |
+| Screen | `lib/features/meetings/meeting_confirm_screen.dart` (`MeetingConfirmScreen`, 246 lines, `ConsumerStatefulWidget`) |
 | Widgets | None — the confirm and decline buttons are private builders (`_confirmButton` / `_declineButton`) on the screen, each keyed for tests (`delegation-meeting-confirm` / `delegation-meeting-decline`) |
 | Figma node | **None bound.** No frame exists for this screen (it is a notification-deep-link leaf); the layout is token-built, not Figma-derived |
 | Shell | `SimfPageShell` (title تأكيد اجتماع الوفد) |
@@ -89,6 +89,17 @@ border) so declining never reads as the primary path but is always reachable.
 The message is rendered inline above the buttons, not as a toast, so it survives
 long enough to read and the user can retry in place. `_error` is cleared at the
 start of every submit.
+
+**Anything that is not an `ApiFailure` (fixed 2026-08-20).** `_submitting` used
+to be cleared on the success path and again inside `on ApiFailure`, with no
+`finally` — so a throw of any other type left **both** buttons disabled for
+good, with no inline message and no way out but the back chevron. The escape is
+real: `SimfApiClient` converts only the **first** call's errors to `ApiFailure`,
+and the 401 token-refresh branch sits outside that guard, so a keystore/keychain
+`PlatformException` (an OS keystore reset, a restored backup) surfaces raw
+mid-submit. The flag now clears in a `finally`, which re-enables confirm and
+decline; the row above still governs what the user is *told*, so this path
+re-enables the buttons without an inline message.
 
 ## 7. Data contract (`DelegationMeetingSummary`)
 

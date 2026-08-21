@@ -119,16 +119,12 @@ class _SendQuestionScreenState extends ConsumerState<SendQuestionScreen> {
       if (!mounted) {
         return;
       }
-      setState(() {
-        _submitting = false;
-        _question.clear();
-      });
+      setState(_question.clear);
       messenger.showSnackBar(SnackBar(content: Text(l10n.sendQuestionSent)));
     } on ApiFailure catch (failure) {
       if (!mounted) {
         return;
       }
-      setState(() => _submitting = false);
       final notOpen = failure.code == 'SESSION_NOT_LIVE_FOR_QUESTIONS' ||
           failure.httpStatus == 404;
       messenger.showSnackBar(
@@ -138,6 +134,12 @@ class _SendQuestionScreenState extends ConsumerState<SendQuestionScreen> {
           ),
         ),
       );
+    } finally {
+      // A token refresh on the 401 path can throw beyond ApiFailure (a keystore
+      // PlatformException), which would otherwise strand the submit button.
+      if (mounted) {
+        setState(() => _submitting = false);
+      }
     }
   }
 

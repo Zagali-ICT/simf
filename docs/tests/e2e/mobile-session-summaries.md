@@ -2,8 +2,8 @@
 
 > **Authority:** SIMF E2E test catalogue template (D-133). Mobile catalogue —
 > the searchable, day-grouped list of every programme session over the cached
-> `aiSummarySessionsProvider` (no new read for the list itself), with three tabs:
-> الجميع (all), جلساتي (the caller's booked sessions, from `GET /app/account/sessions`),
+> `programmeSessionsProvider` (no new read for the list itself), with three tabs:
+> الكل (all), جلساتي (the caller's booked sessions, from `GET /app/account/sessions`),
 > المفضلة (favourited, from `GET /app/sessions/favourites`). Each card carries the
 > المفضلة heart; tapping a card opens that session's AI summary (#34). Built to KSA
 > Figma frame **`1388:8392`** (ملخص الجلسات) — Wave 2 pixel pass over the earlier
@@ -25,7 +25,7 @@
 - **Header**: back chevron + centred title **ملخص الجلسات**.
 - **Search field**: navy with a magnifier, hint `ابحث عن جلسة أو متحدث...`;
   filters by session title + speaker name (both languages), live.
-- **Tabs** (pills, RTL): الجميع (all) · جلساتي (booked) · المفضلة (favourited).
+- **Tabs** (pills, RTL): الكل (all) · جلساتي (booked) · المفضلة (favourited).
 - **Day groups**: a header per distinct event day (اليوم الأول, …) over the cards.
 - **Cards** (navy-deep, beige hairline): the المفضلة heart on the trailing edge;
   title; clock line `time · {duration}`; primary speaker `name · rank` + hall; a
@@ -57,6 +57,7 @@
 | E2E-MOB111-009 | A published summary stays hidden until the session has STARTED (clock-based, S-6 owner) — a future session's summary is not viewable; once it starts it shows | data | P1 | authored ✓ (API `SessionSummaryTests.GetSessionSummaryAsync_BeforeSessionStarts_ReturnsNull` + `.GetSessionSummaryAsync_AfterStart_ReturnsSummary`) |
 | E2E-MOB111-010 | The list shows ONLY sessions with a published summary — a not-yet-summarised session is excluded (owner 2026-07-14) | data | P0 | authored ✓ (screen `excludes a session with no published summary`) |
 | E2E-MOB111-011 | Programme has sessions but none summarised → the "no published summaries yet" empty state | empty | P1 | authored ✓ (screen `shows the "no summaries yet" empty state when the programme has sessions but none are summarised`) |
+| E2E-MOB111-012 | The المفضلة set does not outlive the account — signing out empties the hearts and the المفضلة tab, and a signed-out session never reads the endpoint (fixed 2026-08-20) | auth | P0 | authored ✓ (provider `session_favourites_signout_test.dart`: `a signed-out session has no favourites and asks the API for none`, `signing out drops the previous account's favourites`) |
 | E2E-MOB111-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-MOB111-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
@@ -107,11 +108,31 @@ Scenario: No summaries yet
   Given the programme has sessions but none has a published summary
   When the user opens /session-summaries
   Then the "لا توجد ملخصات منشورة بعد" empty state is shown
+
+Scenario: The favourites set does not outlive the account
+  Given approved visitor A has favourited "Closing"
+  And A has opened /session-summaries so the hearts are loaded
+  When A signs out
+  And approved visitor B signs in on the same device WITHOUT the app being killed
+  And B opens /session-summaries
+  Then no card shows a filled heart
+  And the المفضلة tab shows the "no favourites" empty state
+  And tapping a heart sends POST /api/v1/app/sessions/{id}/favourite — never a
+    DELETE for a row A owns
+
+Scenario: A signed-out session does not read the favourites endpoint
+  Given no signed-in account
+  When the user opens /session-summaries
+  Then GET /api/v1/app/sessions/favourites is not called
+  And the المفضلة tab shows the "no favourites" empty state
 ```
 
 **Evidence:** screen tests (5 — list+nav, search, favourites tab, mine tab,
-empty); favourites API tests (4 — round-trip, unknown→404, per-user, anon→401).
+empty); favourites API tests (4 — round-trip, unknown→404, per-user, anon→401);
+provider regression (2 — signed-out fetches nothing, sign-out empties the set).
 
 ---
 
-_Last reviewed:_ `2026-06-26` by `SIMF Team`.
+_Last reviewed:_ `2026-08-20` by `SIMF Team` — **the shared favourites set is
+scoped to the signed-in account (E2E-MOB111-012); it used to be fetched once per
+app process and survive sign-out.** _Prior:_ `2026-06-26`.

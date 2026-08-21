@@ -42,7 +42,11 @@ Future<void> runBiometricSignIn({
     return;
   }
 
-  // (3) OS prompt - biometric-first, device-PIN fallback (D-738).
+  // (3) OS prompt — face/fingerprint ONLY. `confirmDeviceIdentity` passes
+  // `biometricOnly: true`, which deliberately reversed D-738's device-
+  // credential posture (commit 3be516b5, "enforce biometric-only
+  // authentication") — so no failure copy below may offer the device PIN as a
+  // way through. See that method's doc for the full story.
   final outcome =
       await biometric.confirmDeviceIdentity(l10n.biometricSignInTooltip);
   if (!context.mounted) {

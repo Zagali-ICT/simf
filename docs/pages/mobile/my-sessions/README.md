@@ -8,9 +8,9 @@
 | Widgets | `features/myarea/widgets/my_sessions_tabbed_list.dart` (`MySessionsTabbedList`, `MySessionCard`); shared `SessionFilterTabs`, `FavouriteHeartButton`, `SessionIconLine` / `SessionMetaGroup`, `SessionStateChipRow`, `SimfCard`, `SimfPullToRefresh` |
 | Figma node | `1388:9067` (tab row `1388:9077`, card `1388:9115`) |
 | Shell | `SimfPageShell` (title عروض الجلسات) |
-| API | `GET /app/account/sessions` (`MyAreaEndpoints.sessions`, `RequireApprovedAccount`) · `GET/POST/DELETE /app/sessions/favourites` behind the heart |
-| Providers | `mySessionsProvider` over `mySessionsRepositoryProvider` (`features/myarea/data/my_sessions_repository.dart`) · `sessionFavouritesProvider` (inside `FavouriteHeartButton`) |
-| Tests | `test/features/myarea/my_sessions_screen_test.dart` (3) + `my_sessions_models_test.dart` (3); golden `test/golden/my_sessions_golden_test.dart` (`goldens/my_sessions_1388-9067.png`). E2E [`mobile-my-sessions.md`](../../../tests/e2e/mobile-my-sessions.md) |
+| API | `GET /app/account/sessions` (`MyAreaEndpoints.sessions`, `RequireApprovedAccount`) · behind the heart: `GET /app/sessions/favourites` (the set) + `POST` / `DELETE /app/sessions/{id}/favourite` (the toggle) |
+| Providers | `mySessionsProvider` over `mySessionsRepositoryProvider` (`features/myarea/data/my_sessions_repository.dart`) · `sessionFavouritesProvider` (inside `FavouriteHeartButton`; shared with session-summaries — §4.1) |
+| Tests | `test/features/myarea/my_sessions_screen_test.dart` (3) + `my_sessions_models_test.dart` (3); golden `test/golden/my_sessions_golden_test.dart` (`goldens/my_sessions_1388-9067.png`); shared-provider regression `test/features/sessions/session_favourites_signout_test.dart` (2 — the favourites set is per-account, §4.1). E2E [`mobile-my-sessions.md`](../../../tests/e2e/mobile-my-sessions.md) |
 | Status | ✅ Real — **restored by D-710 (2026-07-09)**, the owner having reversed the D-609 removal: the screen was recovered, re-routed, linked from the More menu, and its golden + tests re-locked |
 
 ## 1. Purpose
@@ -66,6 +66,36 @@ A `Column`: the tab row, then the list in an `Expanded`.
   flag on the wire, so only مباشر الآن / مسجّل can appear (owner 2026-07-14, the
   same rule the agenda follows).
 
+### 4.1 The heart's set belongs to the account (fixed 2026-08-20)
+
+The heart on every card reads one app-wide set, `sessionFavouritesProvider`,
+shared with [session summaries](../session-summaries/README.md). Its `build()`
+now watches `authControllerProvider` and returns an empty set whenever the state
+is not `AuthStateSignedIn` — that watch is what makes the set per-user.
+
+It was not there, and the old behaviour will surprise anyone who knew this
+screen. `build()` watched only `simfApiClientProvider`, and **that provider
+never rebuilds** — all three of its dependencies are root overrides, and
+`currentLanguageCodeProvider` deliberately hands out a closure rather than a
+value so that a language switch does not invalidate the client. The set was
+therefore fetched once per app **process** and outlived sign-out. On a shared or
+handed-over device the next account to sign in saw the previous user's hearts
+filled in on these cards and on the summaries list, their favourite count on the
+My-Area tile, and — because `toggle` reads the surviving set to decide
+add-or-remove — clearing one of those hearts sent a
+`DELETE /app/sessions/{id}/favourite` for a row that account does not own. Only
+killing the process cleared it.
+
+The provider is still deliberately **not** `autoDispose`, which is the question
+this raises: this screen and the summaries list share one set on purpose, and
+`autoDispose` would drop and refetch it on every navigation between them. The
+account, not the route, is what the set belongs to, so the account is what
+invalidates it.
+
+Regression: `test/features/sessions/session_favourites_signout_test.dart` — a
+signed-out container holds no favourites *and* makes no call, and flipping a
+signed-in container to signed-out empties the set.
+
 ## 5. Actions
 
 | Control | Handler | Effect |
@@ -113,7 +143,10 @@ its `ص` / `م` marker follow the platform locale.
 1. **`isFavourite` is decoded and never read.** The heart's state comes from the
    app-wide `sessionFavouritesProvider` set instead, so the per-row flag the API
    sends is redundant on this screen — and can disagree with the heart if the two
-   sources drift.
+   sources drift. The worst case of that drift is now closed: the shared set used
+   to survive sign-out and could show a *different account's* hearts over this
+   account's rows (§4.1). What remains is the ordinary redundancy — two sources
+   for one fact, one of them unused.
 2. **Two inline `TextStyle`s remain** in `my_sessions_tabbed_list.dart` (the count
    header and the card title) — they assemble token atoms
    (`SimfTokens.textLg` / `textMd`, `SimfTokens.surface`) rather than raw numbers,

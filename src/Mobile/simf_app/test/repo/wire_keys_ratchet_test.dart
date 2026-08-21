@@ -35,6 +35,31 @@ import 'package:flutter_test/flutter_test.dart';
 //     signature to look for — it is what a `freezed` conversion gets wrong —
 //     and it needs an owner decision, not a snapshot edit.
 //
+// WHAT THIS RATCHET DOES **NOT** CATCH — read this before trusting it.
+//
+// It pins the SET of key literals the code mentions. It does not know which
+// decoder reads which key, so swapping one read for a DIFFERENT key that is
+// already in the set leaves the set unchanged and the ratchet green. The
+// 2026-08-21 mutation sweep proved it: `gate_models.dart` reading
+// `json['name']` where it should read `json['nameArabic']` survived this test
+// untouched, because both names are already in the snapshot from elsewhere in
+// the app. Sibling-key swaps are exactly the shape this ratchet is blind to,
+// and they are common — every bilingual model carries `x` beside `xArabic`,
+// and the app is full of `name` / `code` / `id` repeated across features.
+//
+// A tolerant decoder makes that silent twice over: the wrong key is usually
+// absent, so it falls back rather than throwing, and the fallback then drives
+// whatever the field drives. Where a fallback decides a PERMISSION rather than
+// a label, that is a gate opening on its own.
+//
+// So this file is the RENAME defence, not the correctness defence. What a key
+// decodes TO is defended per-decoder, by tests that feed a sentinel fixture
+// (a value no fallback can produce, proving the key is read) paired with a
+// key-absent fixture (pinning the fallback itself) — see `test/wire/` for the
+// device-persisted blobs, and the fallback tests sitting beside each feature's
+// models for the server responses. Do NOT read a green ratchet as meaning a
+// decoder reads the right key.
+//
 // The working directory for `flutter test` is the package root
 // (`src/Mobile/simf_app`), so every path below is relative to that. That is
 // deliberate: walking up the tree looking for a `.git` DIRECTORY finds the

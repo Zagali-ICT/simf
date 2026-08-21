@@ -22,7 +22,6 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 class LiveBroadcastBody extends ConsumerWidget {
   const LiveBroadcastBody({
     required this.sessionId,
-    required this.liveUrl,
     required this.showSignLanguage,
     required this.onSignLanguageChanged,
     required this.onAskQuestion,
@@ -31,10 +30,6 @@ class LiveBroadcastBody extends ConsumerWidget {
 
   /// The trimmed session id, or null when this view is the id-less global feed.
   final String? sessionId;
-
-  /// A feed URL handed straight in (the home LiveBanner tap), played without
-  /// hitting the API or the org profile.
-  final String? liveUrl;
 
   final bool showSignLanguage;
   final ValueChanged<bool> onSignLanguageChanged;
@@ -57,23 +52,7 @@ class LiveBroadcastBody extends ConsumerWidget {
     if (sessionId == null) {
       // D-495 — no session id → play the forum's main (global) live-stream link
       // from the Organization profile when the admin has configured one; else
-      // the "pick a session" empty state. When a liveUrl param is provided
-      // (e.g. from the home LiveBanner tap), use it directly without hitting
-      // the API or the org profile.
-      final explicitUrl = liveUrl?.trim();
-      if (explicitUrl != null && explicitUrl.isNotEmpty) {
-        return _content(
-          ref,
-          l10n,
-          LiveSession(
-            title: '',
-            titleArabic: '',
-            status: 1,
-            hasRecording: false,
-            liveStreamUrl: explicitUrl,
-          ),
-        );
-      }
+      // the "pick a session" empty state.
       final profile = ref.watch(orgProfileProvider);
       final globalUrl = profile?.liveStreamUrl;
       if (profile != null && globalUrl != null && globalUrl.isNotEmpty) {

@@ -27,11 +27,12 @@ venue-gate Check-In scan that day; **App / Event / Exhibition** (global) = any i
 
 | File | Holds |
 |------|-------|
-| `rate_screen.dart` (316) | `RateScreen` + `_RateScreenState` — the load / submit logic (overall-stars + required-question client validation), and `_buildForm` (the config-driven form assembly: kicker + lead + overall `StarRow`, the grouped / flat question sections, the comment box, the submit button). |
+| `rate_screen.dart` (366) | `RateScreen` + `_RateScreenState` — the load / submit logic (overall-stars + required-question client validation), and `_buildForm` (the config-driven form assembly: kicker + lead + overall `StarRow`, the grouped / flat question sections, the comment box, the submit button). |
 | `widgets/star_row.dart` (`StarRow`) | The tappable 1–5 star bar (ambient-direction fill), shared by the overall block + each category row. |
 | `widgets/rate_category_row.dart` (`RateCategoryRow`) | One per-element row — the beige-hairline box, name at inline-start, an 18px `StarRow` at inline-end. |
 | `widgets/rate_gold_button.dart` (`RateGoldButton`) | The full-width gold submit button (stays gold while loading, white spinner). |
 | `widgets/rate_load_error.dart` (`RateLoadError`) | The form-load failure + retry (kept custom — an `OutlinedButton`, distinct from `SimfErrorState`'s FilledButton). |
+| `widgets/rate_navy_note_chip.dart` (`RateNavyNoteChip`) | The navy chip + accent glyph + beige message above the form — the D-713 "watched at" line and the "attend to rate" note when `isEligible` is false. |
 
 The data layer already lived in `data/` (feedback_repository + rating_models).
 The screen was already fully tokenised (no raw `Color(0x..)`). Every file ≤400
@@ -61,12 +62,24 @@ Wired: overall stars + per-element stars set state; submit runs the client guard
 /app/feedback/submit` → thanks / error toast; retry on load failure; the form is
 prefilled from any existing submission. Reads `GET /app/feedback/form`.
 
+### The submit button can no longer strand (fixed 2026-08-20)
+
+`_submitting` was cleared on the success path and again inside `on ApiFailure`,
+with no `finally`. Anything thrown that is **not** an `ApiFailure` therefore left
+إرسال التقييم disabled for good — no toast, no retry, no way out but leaving the
+screen. That escape is real, not theoretical: `SimfApiClient` converts only the
+**first** call's errors to `ApiFailure`, and the 401 token-refresh branch sits
+outside that guard, so a keystore/keychain `PlatformException` (an OS keystore
+reset, a restored backup) surfaces raw mid-submit. The flag now clears in a
+`finally`; the thanks / error toasts still fire only on their own paths.
+
 ## Tests
 
 `test/golden/rate_golden_test.dart` (frame 1116:16894, @375×1100, ar) +
-`test/features/feedback/rate_screen_test.dart` (5 — no-stars prompt, overall
-submit, per-question score, submit failure, session required-question block). E2E:
-`docs/tests/e2e/mobile-rate.md`.
+`test/features/feedback/rate_screen_test.dart` (8 — no-stars prompt, overall
+submit, ineligible attend-note + disabled submit, per-question score, per-session
+watched-at header, global rating without it, submit failure, session
+required-question block). E2E: `docs/tests/e2e/mobile-rate.md`.
 
 ## Related decisions
 

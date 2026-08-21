@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/router.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 
@@ -19,9 +20,26 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 ///
 /// Known limitation: the aux auth routes (`/auth/forgot-password`,
 /// `/auth/reset-password`, `/auth/verify-otp`, `/auth/badge*`,
-/// `/auth/biometric-step-up`) all share `number: 0`, so the number-keyed gate
-/// sets cannot gate them one at a time — they read as "public" via these pure
-/// functions and are backend-enforced instead. They are intentionally excluded.
+/// `/auth/biometric-step-up`, `/account/my-devices`) live in the router's
+/// separate aux table, so `routeNumberForPath` reports them as unnumbered and
+/// the number-keyed gate sets cannot gate them one at a time — they read as
+/// "public" via these pure functions and are backend-enforced instead. They are
+/// the ONLY intentional exclusion, and the completeness test below is what
+/// makes that claim checkable rather than assumed.
+///
+/// What this grid could NOT see before 2026-08-21: the tier lists were
+/// hand-maintained, and routes 113 / 117 / 118 / 290 / 702 / 703 landed without
+/// ever being added to one. An unlisted route has no row, so deleting
+/// `117: _attendee` from the role map, widening the staff-only seating desk
+/// (118) to `_attendee`, or dropping 702 / 703 from the auth set left every row
+/// here green — there was nothing to fail. Coverage is now DERIVED from the
+/// real route table (`buildRoutes`) while the verdicts stay hand-written, so an
+/// unclassified route reddens the build instead of silently shrinking the grid.
+///
+/// The other half of this gate — that `buildRouter` feeds the redirect
+/// `CurrentUser.effectiveAppRole` and not the raw token role (D-666) — is
+/// unreachable through [redirectDecision], which takes the role as a parameter.
+/// It lives in `router_effective_role_wiring_test.dart`.
 void main() {
   // Access tiers, assigned by hand from the spec (the independent oracle).
   //  - public:        no sign-in required (open, or an in-screen prompt like
@@ -32,6 +50,7 @@ void main() {
   //  - exhibitor / staff / moderator: that single role only
   const publicPaths = <String>[
     '/', // 13 home (role-aware, but reachable)
+    '/splash', // 1 — the cold-start park; never gated (Page_001 L-6)
     '/onboarding', // 2
     '/sign-in', // 3
     '/sign-up', // 5
@@ -51,6 +70,7 @@ void main() {
     '/sessions/:sessionId', // 17 — public again (D-750, reverses D-576)
     '/live', // 25 — NOT redirect-gated (D-577 in-screen prompt)
     '/news', // 29
+    '/news/:newsId', // 290
     '/media', // 30
     '/media-partners', // 31
     '/ai-summary', // 34
@@ -73,6 +93,8 @@ void main() {
   const universalAuthPaths = <String>[
     '/sign-up/visitor', // 7
     '/sign-up/interests', // 701
+    '/my-area/interests', // 702 — edit interests from My-Area (#14)
+    '/my-area/mobile', // 703 — add / edit the mobile number (owner 2026-07-26)
     '/registration/success', // 10
     '/registration/status', // 11
     '/my-area', // 14
@@ -93,6 +115,8 @@ void main() {
     '/meetings', // 116 (VIP-only enforced in-screen; role gate = attendee)
     '/sessions/:sessionId/pick-seat', // 109
     '/sessions/join', // 110
+    '/my-sessions', // 113 (D-710 — restored)
+    '/meeting-confirm', // 117 — the other-party Bi-Meeting confirm
   ];
 
   const exhibitorPaths = <String>[
@@ -103,6 +127,7 @@ void main() {
   const staffPaths = <String>[
     '/gates/scan', // 105
     '/staff/register-visitor', // 114
+    '/staff/seating/:sessionId', // 118 — seating desk (D-771)
   ];
 
   const moderatorPaths = <String>[
@@ -275,6 +300,7 @@ void main() {
       // A wrong path string would resolve to number null -> treated public ->
       // false-green. Assert each gated path maps to a known route number.
       for (final p in <String>[
+        ...publicPaths,
         ...universalAuthPaths,
         ...attendeePaths,
         ...exhibitorPaths,
@@ -283,6 +309,42 @@ void main() {
       ]) {
         expect(routeNumberForPath(p), isNotNull, reason: p);
       }
+    });
+
+    test('every route in the real table carries exactly one tier', () {
+      // Coverage comes from the ROUTER (the real go_router table), the verdicts
+      // from the hand oracle above. That split is the point: a route added to
+      // the table — or one already there that nobody matrixed — has no tier and
+      // fails here, so the grid cannot quietly shrink to the routes someone
+      // remembered. Reading the tiers back out of the router instead would make
+      // the file agree with itself, which is what the header warns against.
+      final classified = <String>[
+        ...publicPaths,
+        ...universalAuthPaths,
+        ...attendeePaths,
+        ...exhibitorPaths,
+        ...staffPaths,
+        ...moderatorPaths,
+      ];
+      expect(
+        classified.toSet().length,
+        classified.length,
+        reason: 'a path is listed in two tiers (or twice in one)',
+      );
+
+      // The aux auth table is unnumbered and deliberately out of scope; every
+      // other declared path must carry a tier.
+      final unclassified = <String>[
+        for (final route in buildRoutes().whereType<GoRoute>())
+          if (routeNumberForPath(route.path) != null &&
+              !classified.contains(route.path))
+            route.path,
+      ];
+      expect(
+        unclassified,
+        isEmpty,
+        reason: 'route(s) declared with no access tier in this matrix',
+      );
     });
   });
 }
