@@ -45,7 +45,7 @@ public sealed class GetPublicArchiveEditionEndpoint(IPublicArchiveService servic
         GetPublicArchiveEditionRoute req, CancellationToken ct)
     {
         var detail = await service.GetAsync(req.Id, ct)
-            ?? throw new ApiException("archive_edition_not_found", 404,
+            ?? throw new ApiException(ErrorCodes.ArchiveEditionNotFound, 404,
                 "The archive edition was not found.",
                 "لم يتم العثور على نسخة الأرشيف.");
         await Send.OkAsync(ApiResult<PublicArchiveEditionDetail>.Ok(detail), ct);
@@ -87,7 +87,7 @@ public sealed class GetArchiveEditionEndpoint(IAdminArchiveService service)
         GetArchiveEditionRoute req, CancellationToken ct)
     {
         var detail = await service.GetAsync(req.Id, ct)
-            ?? throw new ApiException("archive_edition_not_found", 404,
+            ?? throw new ApiException(ErrorCodes.ArchiveEditionNotFound, 404,
                 "The archive edition was not found.",
                 "لم يتم العثور على نسخة الأرشيف.");
         await Send.OkAsync(ApiResult<AdminArchiveEditionDetail>.Ok(detail), ct);
