@@ -16,12 +16,15 @@ being published to the internet: the app reaches `edge.simrsnf.com`, the edge
 reaches the API inside the estate, and nothing outside can address the API at all.
 
 **It needs a mobile release.** `build_config.dart` compiles the base URL in
-(`String.fromEnvironment`, default `https://api.simrsnf.com/api/v1`), so an
-installed app talks to the API directly and knows nothing about the edge. Routing
-mobile traffic through it means rebuilding with `--dart-define` pointing at
-`edge.simrsnf.com` and shipping to both stores. Withdrawing the API's public DNS
-record and shipping that release must land together, or the installed app has
-nothing to reach in between.
+(`String.fromEnvironment`), and its default is now
+**`https://edge.simrsnf.com/api/v1`** — so a build with no `--dart-define` at all
+already routes through the edge, and no override is needed to get it there.
+
+What still gates this is *shipping*, not building. Every **already-installed**
+build compiled in `https://api.simrsnf.com/api/v1` and knows nothing about the
+edge, and a compiled-in URL cannot be changed from the server. Withdrawing the
+API's public DNS record and shipping the edge-default release must land together,
+or the installed app has nothing to reach in between.
 
 It deliberately does almost nothing: no reshaping, no aggregation, no business
 logic. The shipped mobile wire contract is append-only (D-219), so every field the
