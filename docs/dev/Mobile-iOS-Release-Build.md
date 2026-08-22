@@ -200,15 +200,31 @@ Stated plainly, because none of it can be checked from Windows:
   higher floor, raise it in **all three** places - `platform :ios`, the
   `post_install` override, and `Runner.xcodeproj` - because the ratchet fails if
   only one moves.
-- **Archive signing is supplied at build time and has never been exercised.**
-  The committed `Runner.xcodeproj` carries no `DEVELOPMENT_TEAM`, and its
-  `CODE_SIGN_IDENTITY` is the flutter-create default `iPhone Developer`, which is
-  a *development* identity and cannot sign a distribution archive. The pipeline
-  writes `ios/Flutter/Signing.xcconfig` (team, `CODE_SIGN_STYLE = Manual`,
-  `Apple Distribution`, the profile name) and `Release.xcconfig` pulls it in with
-  an optional `#include?`, so a developer's local `flutter run` is unaffected and
-  nothing team-specific is committed. If the first archive fails on signing, that
-  file is where to look.
+- **Archive signing is supplied at build time and has never been exercised** -
+  but the mechanism is verified, and that was the part most likely to be wrong.
+  The committed `Runner.xcodeproj` carries no `DEVELOPMENT_TEAM`, and a
+  `CODE_SIGN_IDENTITY[sdk=iphoneos*] = "iPhone Developer"` appears three times -
+  a *development* identity, which cannot sign a distribution archive. The
+  pipeline writes `ios/Flutter/Signing.xcconfig` (team,
+  `CODE_SIGN_STYLE = Manual`, `Apple Distribution`, the profile name) and
+  `Release.xcconfig` pulls it in with an optional `#include?`, so a developer's
+  local `flutter run` is unaffected and nothing team-specific is committed.
+
+  **Why that actually overrides the committed identity**, since an xcconfig does
+  not always win. Xcode resolves a build setting target-pbxproj, then
+  target-xcconfig, then project-pbxproj, then project-xcconfig. Read out of
+  `project.pbxproj`: all three `iPhone Developer` entries sit in **PROJECT**-level
+  configuration blocks; the **Runner target's** own Release and Profile blocks
+  carry no `CODE_SIGN_IDENTITY` and no `CODE_SIGN_STYLE` at all; and
+  `Release.xcconfig` is the `baseConfigurationReference` of the Runner **target's**
+  Release *and* Profile configurations. So `Signing.xcconfig` sits one level above
+  the committed default and wins. Had that identity been a target-level setting
+  instead, the xcconfig would have been silently ignored and the archive would
+  have been signed for development.
+
+  If the first archive still fails on signing, that file is where to look -
+  and re-check this precedence claim against the project as it stands, because
+  it depends on where those settings live, not on the file names.
 - **The iOS stages of the pipeline have never run.** `InstallAppleCertificate`,
   `InstallAppleProvisioningProfile` and `AppStoreRelease` are written from their
   documented inputs.
