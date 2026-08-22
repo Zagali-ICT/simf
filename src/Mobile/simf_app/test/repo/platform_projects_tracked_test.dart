@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -255,22 +256,232 @@ void main() {
     });
 
     test('no signing secret is committed', () {
-      expect(File('android/key.properties').existsSync(), isFalse);
+      // TRACKED, not "exists". These files are SUPPOSED to be on a machine
+      // that builds a signed release - android/key.properties is exactly what
+      // build.gradle.kts reads, and the pipeline writes one on the agent. They
+      // are git-ignored, and ignored is what makes them safe.
+      //
+      // This asserted non-existence until 2026-08-22, when the owner generated
+      // the upload key and did precisely the right thing: keystore outside the
+      // repo, key.properties local and ignored. The build went red for it. A
+      // guard that fails on correct behaviour trains people to disable it.
       expect(
-        File('android/app/google-services.json').existsSync(),
-        isFalse,
-      );
-      final keystores = Directory('android')
-          .listSync(recursive: true)
-          .whereType<File>()
-          .map((f) => f.path)
-          .where((p) => p.endsWith('.jks') || p.endsWith('.keystore'))
-          .toList();
-      expect(
-        keystores,
+        tracked('android/key.properties'),
         isEmpty,
-        reason: 'A signing keystore must never be committed '
-            '(NCA A11-16): $keystores',
+        reason: 'android/key.properties must stay git-ignored, never tracked.',
+      );
+      expect(tracked('android/app/google-services.json'), isEmpty);
+      expectNoCommittedSecrets(
+        'android',
+        const <String>['.jks', '.keystore'],
+        reason: 'a signing keystore must never be committed (NCA A11-16)',
+      );
+    });
+
+    test('the iOS project is present', () {
+      // `flutter create` rewrites android/ as well as ios/, which is exactly
+      // what the group above forbids. This project was therefore generated in
+      // a scratch directory and only ios/ was copied in; it is hand-edited
+      // from here, like android/.
+      expect(
+        Directory('ios').existsSync(),
+        isTrue,
+        reason: 'ios/ is the hand-edited iOS project - it must be committed, '
+            'never regenerated with `flutter create` in this directory.',
+      );
+      expect(
+        File('ios/Runner.xcodeproj/project.pbxproj').existsSync(),
+        isTrue,
+      );
+      expect(File('ios/Runner/Info.plist').existsSync(), isTrue);
+      // CocoaPods only runs on a Mac, so `flutter create` never writes a
+      // Podfile. Ours carries the two non-default lines ML Kit needs, so
+      // losing it means the first Mac build quietly takes the dynamic default.
+      expect(
+        File('ios/Podfile').existsSync(),
+        isTrue,
+        reason: 'ios/Podfile is authored, not generated - see '
+            'docs/dev/Mobile-iOS-Release-Build.md.',
+      );
+      // Existence is not the point; this line is. Asserting only the file
+      // would pass against a Podfile regenerated with the dynamic default,
+      // which is the exact regression committing it exists to prevent.
+      expect(
+        File('ios/Podfile').readAsStringSync(),
+        contains(':linkage => :static'),
+        reason: 'GoogleMLKit ships static frameworks and does not link under '
+            'the default dynamic use_frameworks!.',
+      );
+    });
+
+    test('the iOS bundle id tracks the Android applicationId', () {
+      // One identity across both stores (D-940). Play locks applicationId at
+      // first upload and App Store Connect locks the bundle id at the first
+      // app record, so drift here becomes permanent on whichever ships second.
+      final gradle = File('android/app/build.gradle.kts')
+          .readAsLinesSync()
+          .where((line) => !line.trimLeft().startsWith('//'))
+          .join('\n');
+      final applicationId = RegExp(
+        r'^\s*applicationId\s*=\s*"([\w.]+)"\s*$',
+        multiLine: true,
+      ).firstMatch(gradle)?.group(1);
+      expect(applicationId, isNotNull);
+
+      final pbxproj =
+          File('ios/Runner.xcodeproj/project.pbxproj').readAsStringSync();
+      final ids = RegExp(r'PRODUCT_BUNDLE_IDENTIFIER = ([\w.]+);')
+          .allMatches(pbxproj)
+          .map((match) => match.group(1)!)
+          .toSet();
+
+      expect(
+        ids,
+        equals(<String>{applicationId!, '$applicationId.RunnerTests'}),
+        reason: 'every PRODUCT_BUNDLE_IDENTIFIER must be $applicationId or '
+            'its .RunnerTests companion, matching the Android id.',
+      );
+    });
+
+    test('every iOS permission the app uses has a purpose string', () {
+      // iOS kills the process the first time a permission is used with no
+      // purpose string, and App Review rejects the build before it gets that
+      // far. Each key is tied to the plugin that forces it, so dropping the
+      // plugin is the only honest way to drop the key.
+      final plist = File('ios/Runner/Info.plist').readAsStringSync();
+      const required = <String, String>{
+        'NSCameraUsageDescription': 'camera + the flutter_zxing scanner',
+        'NSPhotoLibraryUsageDescription': 'image_picker profile / ID upload',
+        'NSFaceIDUsageDescription': 'local_auth biometric sign-in',
+        'NSMicrophoneUsageDescription':
+            'the camera plugin links the symbol (ITMS-90683)',
+        'NSCalendarsUsageDescription': 'add_2_calendar session reminders',
+        'NSCalendarsWriteOnlyAccessUsageDescription':
+            'add_2_calendar on iOS 17 and later',
+      };
+      for (final entry in required.entries) {
+        expect(
+          plist,
+          matches(
+            // The tail is a RAW literal, adjacent-concatenated: in a normal
+            // Dart string `\s` is not an escape the language knows, so it
+            // silently degrades to a literal `s` and the pattern stops being
+            // a regex at all. The head has to stay interpolated for the key.
+            RegExp(
+              '<key>${entry.key}</key>'
+              r'\s*<string>\s*\S[^<]*</string>',
+            ),
+          ),
+          reason: '${entry.key} needs a NON-EMPTY purpose string; it is '
+              'required by ${entry.value}. An empty <string> satisfies '
+              "Apple's static check and shows the user a blank prompt.",
+        );
+      }
+
+      // The launcher name is a non-default too - `flutter create` wrote
+      // "Simf App". Android's bilingual label is already ratcheted (D-699);
+      // this is the iOS half, minus the Arabic variant, which needs an Xcode
+      // variant group (see the iOS release note, section 2d).
+      expect(
+        plist,
+        contains('<key>CFBundleDisplayName</key>\n\t<string>SIMF</string>'),
+        reason: 'the iOS launcher name must be SIMF, not the flutter-create '
+            'default "Simf App".',
+      );
+    });
+
+    test('the Podfile and the Xcode project agree on the iOS floor', () {
+      // ML Kit sets the floor and two files carry it. A mismatch surfaces as a
+      // link failure during the archive, on a machine nobody on this team owns.
+      final podfile = File('ios/Podfile').readAsStringSync();
+      final declared =
+          RegExp("platform :ios, '([0-9.]+)'").firstMatch(podfile)?.group(1);
+      expect(declared, isNotNull, reason: 'no `platform :ios` line in Podfile');
+
+      // The Podfile states the floor TWICE - at the top, and again in the
+      // post_install override that forces it onto every pod. Reading only the
+      // first lets the two drift, which fails on the Mac and nowhere else.
+      final overrides = RegExp(
+        r"IPHONEOS_DEPLOYMENT_TARGET'\] = '([0-9.]+)'",
+      ).allMatches(podfile).map((match) => match.group(1)!).toSet();
+      expect(
+        overrides,
+        equals(<String>{declared!}),
+        reason: "the Podfile's post_install override must match its own "
+            '`platform :ios` line ($declared); found $overrides.',
+      );
+
+      final pbxproj =
+          File('ios/Runner.xcodeproj/project.pbxproj').readAsStringSync();
+      final targets = RegExp('IPHONEOS_DEPLOYMENT_TARGET = ([0-9.]+);')
+          .allMatches(pbxproj)
+          .map((match) => match.group(1)!)
+          .toSet();
+
+      expect(
+        targets,
+        equals(<String>{declared}),
+        reason: 'Runner.xcodeproj must use exactly the Podfile floor '
+            '($declared); found $targets.',
+      );
+    });
+
+    test('no iOS signing material is committed', () {
+      // The Android half of this rule is above. iOS leaks the same way through
+      // its own file types, and a provisioning profile also names the team.
+      //
+      // `.p8` is the one that matters most and is the easiest to miss: it is
+      // the App Store Connect API key, it is an UNENCRYPTED private key, and
+      // unlike the .p12 it carries no passphrase of its own. Anyone holding it
+      // can upload builds as this team.
+      expectNoCommittedSecrets(
+        'ios',
+        const <String>[
+          '.mobileprovision',
+          '.p12',
+          '.cer',
+          '.certSigningRequest',
+          '.p8',
+          '.pem',
+          '.key',
+        ],
+        reason: 'iOS signing material belongs in Azure Secure Files, never in '
+            'the repository (NCA A11-16)',
+      );
+    });
+
+    test('no hand-dropped credential note sits in a native folder', () {
+      // The suffix scans above only catch the formats someone thought of. On
+      // 2026-08-22 a plain `android/Key.txt` appeared in the working tree while
+      // the upload key was being generated - untracked, matched by no ignore
+      // rule and by no suffix here, so one `git add -A` would have committed
+      // the keystore password. This catches that shape by CONTENT instead.
+      //
+      // Only note-shaped files are read: build.gradle.kts legitimately names
+      // storePassword where it READS the properties file, and scanning source
+      // would fire on that every time.
+      const noteTypes = <String>['.txt', '.properties', '.env', '.cfg', '.ini'];
+      const markers = <String>['password', 'passphrase', 'secret', 'begin '];
+
+      final offenders = <String>[];
+      for (final path in [...tracked('android'), ...tracked('ios')]) {
+        if (!noteTypes.any(path.toLowerCase().endsWith)) {
+          continue;
+        }
+        final text = File(path).readAsStringSync().toLowerCase();
+        if (markers.any(text.contains)) {
+          // The PATH only. Never the contents - this runs in CI logs.
+          offenders.add(path);
+        }
+      }
+
+      expect(
+        offenders,
+        isEmpty,
+        reason: 'a file in a native folder reads like a credential note. Move '
+            'it out of the repository: signing material belongs in Azure '
+            'Secure Files (NCA A11-16). Contents deliberately not printed; '
+            'paths: $offenders',
       );
     });
 
@@ -388,4 +599,51 @@ void main() {
       );
     });
   });
+}
+
+/// Fails if any file under [directory] ends with one of [suffixes].
+///
+/// Both platform folders ban a list of credential file types and the only
+/// thing that differs is the directory and the list, so this is one function
+/// rather than the two near-identical scans that were here first.
+void expectNoCommittedSecrets(
+  String directory,
+  List<String> suffixes, {
+  required String reason,
+}) {
+  final files = tracked(directory);
+
+  // Prove the scan can SEE something before concluding it found nothing. If
+  // `git ls-files` ever returns empty here - wrong working directory, a
+  // detached checkout, git missing from the agent - every secret rule below
+  // passes vacuously, which is the one failure mode a security guard must not
+  // have.
+  expect(
+    files,
+    isNotEmpty,
+    reason: 'git tracks no files under $directory/, so this scan proves '
+        'nothing. Fix the scan, do not ignore the empty result.',
+  );
+
+  final offenders = files.where((path) => suffixes.any(path.endsWith)).toList();
+
+  expect(offenders, isEmpty, reason: '$reason: $offenders');
+}
+
+/// The files git TRACKS under [pathspec], relative to this package root.
+///
+/// Every secret rule here is about what reaches the repository, not about what
+/// sits on the machine running the test. A developer with a configured release
+/// signing setup, and the CI agent mid-build, both legitimately have a
+/// key.properties on disk - and neither has one in git.
+List<String> tracked(String pathspec) {
+  final result = Process.runSync('git', <String>['ls-files', '--', pathspec]);
+  if (result.exitCode != 0) {
+    fail('git ls-files failed for "$pathspec": ${result.stderr}');
+  }
+  return const LineSplitter()
+      .convert(result.stdout as String)
+      .map((line) => line.trim())
+      .where((line) => line.isNotEmpty)
+      .toList();
 }

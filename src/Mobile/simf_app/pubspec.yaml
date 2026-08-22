@@ -69,14 +69,16 @@ dependencies:
   # authority). Android/iOS only — web/test runtimes defer to the server.
   google_mlkit_face_detection: ^0.13.1
   # ID-document image picker for the visitor profile (Page_007). C7 (D-371):
-  # camera-only capture → bytes → multipart upload via simf_data_pkg. Native
-  # permission strings (Info.plist / manifest) land in the generated folders
-  # (simf-run).
+  # camera-only capture → bytes → multipart upload via simf_data_pkg. Its
+  # permission strings are COMMITTED, not generated: READ_EXTERNAL_STORAGE in
+  # android/app/src/main/AndroidManifest.xml and NSPhotoLibraryUsageDescription
+  # in ios/Runner/Info.plist. Both are pinned by the repo ratchet test.
   image_picker: ^1.1.2
   intl: ^0.19.0
   # Biometric (Face/Touch) prompt for device-key sign-in (Page_003 L-2).
-  # Native config (manifest / Info.plist / MainActivity) lands in the generated
-  # android/ios folders (simf-run); absent in this source tree.
+  # Native config IS in this source tree, both halves committed and ratcheted:
+  # USE_BIOMETRIC in android/app/src/main/AndroidManifest.xml and
+  # NSFaceIDUsageDescription in ios/Runner/Info.plist.
   local_auth: ^2.3.0
   # D-736 — the real installed version (About/More display + the launch
   # update-policy comparison). Federated plugin, no manual native config.
@@ -132,9 +134,10 @@ dev_dependencies:
   # header-recording adapter. simf_data_pkg pins ^5.10.0 for
   # DioExceptionType.transformTimeout; this caret already admits it.
   dio: ^5.7.0
-  # D-373 — generates the SIMF launcher icon into the scaffolded native
-  # folders. Run AFTER `flutter create --platforms=android .` (the folders
-  # are generated, not committed): `dart run flutter_launcher_icons`.
+  # D-373 — generates the SIMF launcher icon into the native folders. Both
+  # android/ and ios/ are TRACKED and hand-edited (BUG-010 / D-941), so run
+  # `dart run flutter_launcher_icons` IN PLACE against them. Never run
+  # `flutter create` in this directory first - it overwrites both.
   # D-699 — the launcher NAME is a manual post-scaffold step (not automated by
   # flutter_launcher_icons): in android/app/src/main/AndroidManifest.xml set
   # `android:label="@string/app_name"`, then add res/values/strings.xml
@@ -164,14 +167,20 @@ dev_dependencies:
 #                                  was cropped — this fixes that).
 # The in-app brand mark stays assets/images/simf_logo.png (SimfLogo) — a separate
 # asset, unchanged. Android/iOS icons are applied by `dart run
-# flutter_launcher_icons` (android/ is gitignored and ios/ is generated at build,
-# so neither is committed here); the same command regenerates the committed web
-# icons (web/favicon.png + web/icons/*) from icon/app_icon.png. Run it after the
-# native folders exist, then verify the launcher icon on a device.
+# flutter_launcher_icons` and ARE committed - android/ and ios/ are both tracked
+# (BUG-010 / D-941). The same command regenerates the committed web icons
+# (web/favicon.png + web/icons/*) from icon/app_icon.png, so it rewrites three
+# platforms at once: check `git status` afterwards and keep only what you meant
+# to change. Then verify the launcher icon on a device.
 flutter_launcher_icons:
   android: true
   ios: true
   image_path: "icon/app_icon.png"
+  # The App Store rejects an icon carrying an alpha channel (ITMS-90717), and
+  # icon/app_icon.png has one. The tool only strips it when asked, and it warns
+  # rather than failing - so without this line the rejection arrives from Apple
+  # instead of from the build.
+  remove_alpha_ios: true
   adaptive_icon_background: "#01132D"
   adaptive_icon_foreground: "icon/app_icon_foreground.png"
   # 0: app_icon_foreground.png already bakes in the ~20% safe-zone padding

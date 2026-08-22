@@ -14,6 +14,10 @@ overwrites the folder and destroys exactly these customisations. See
 This file stays the source of truth for **why** each non-default Android change
 exists. Read it before editing `android/`; it is no longer a re-apply checklist.
 
+Companions: `docs/dev/Mobile-iOS-Release-Build.md` does the same job for `ios/`,
+and `docs/dev/Mobile-Store-Release.md` is the operational runbook for
+`azure-pipelines-mobile.yml` (upload keystore, Secure Files, first release).
+
 ---
 
 ## 1. Release build: keep ML Kit under R8 (face detection) — REQUIRED
@@ -62,7 +66,6 @@ model `com.google.android.gms.internal.mlkit_vision_face_bundled`, etc.).
 ```kotlin
 buildTypes {
     release {
-        signingConfig = signingConfigs.getByName("debug")
         // Keep R8 minify/shrink on (obfuscation for the handover) but apply the
         // keep rules so R8 does not strip ML Kit's face-detection classes.
         isMinifyEnabled = true
@@ -73,6 +76,14 @@ buildTypes {
         )
     }
 }
+```
+
+The `signingConfig` line is deliberately NOT reproduced here. It used to be, as
+`signingConfigs.getByName("debug")`, and it went stale the moment the conditional
+landed - a reader checking whether a release build is debug-signed got the wrong
+answer from the doc. `android/app/build.gradle.kts` lines 47-67 are the one copy:
+it uses the real keystore when `key.properties` exists and falls back to the
+debug key when it does not.
 ```
 
 **Verify after a release build:** in
@@ -90,10 +101,13 @@ These are committed with the folder (BUG-010); keep them when editing it:
 
 - `android/app/build.gradle.kts` — `compileSdk = 36` (the plugins' androidx deps
   require API 36 on this toolchain), `JavaVersion.VERSION_17` /
-  `kotlin { jvmTarget = JVM_17 }`, and the debug-key signing for `release` so
-  `flutter run --release` / `build apk` works without a release keystore.
-- The cleartext / camera / `<queries>` manifest entries the plugins need land in
-  the generated folders during the local run step.
+  `kotlin { jvmTarget = JVM_17 }`, and the CONDITIONAL release signing described
+  above, which keeps `flutter run --release` working with no keystore present
+  while a real `key.properties` produces a store-signable artefact.
+- The camera / `<queries>` manifest entries the plugins need are **committed**
+  in `android/app/src/main/AndroidManifest.xml`, not generated at run time
+  (BUG-010), and are pinned by `test/repo/platform_projects_tracked_test.dart`.
+  Cleartext traffic is permitted only in the **debug** manifest.
 
 ## 3. The release build command
 

@@ -1,0 +1,7 @@
+#include "Generated.xcconfig"
+
+// Written by azure-pipelines-mobile.yml at build time and removed again
+// afterwards: DEVELOPMENT_TEAM, the manual signing style and the
+// distribution identity. `#include?` tolerates its absence, so a local
+// `flutter run` keeps the automatic signing the Xcode project ships with.
+#include? "Signing.xcconfig"

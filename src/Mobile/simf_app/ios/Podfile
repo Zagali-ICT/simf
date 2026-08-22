@@ -1,0 +1,67 @@
+# SIMF iOS pods.
+#
+# `flutter create` does not write this file - CocoaPods only needs it on a Mac,
+# so it is authored here rather than generated, and THREE lines in it are not
+# the Flutter default:
+#
+#   * `:linkage => :static` - GoogleMLKit (google_mlkit_face_detection, the
+#     guided face-capture / liveness flow) ships static frameworks and fails to
+#     link under the default dynamic `use_frameworks!`.
+#   * `use_modular_headers!` - static linkage means the Swift pods import the
+#     Objective-C ones through modules rather than a framework umbrella. It is
+#     absent from the current template, so it is a deliberate addition here and
+#     not something to "tidy back" to match a freshly generated Podfile.
+#   * the deployment-target override in post_install - ML Kit's floor is higher
+#     than the Flutter template's, and a pod that keeps the older default fails
+#     the archive rather than warning.
+#
+# Both are pinned to the same value as IPHONEOS_DEPLOYMENT_TARGET in
+# Runner.xcodeproj. Change one and change the other.
+platform :ios, '15.5'
+
+# CocoaPods analytics sends network stats synchronously, which slows the build.
+ENV['COCOAPODS_DISABLE_STATS'] = 'true'
+
+project 'Runner', {
+  'Debug' => :debug,
+  'Profile' => :release,
+  'Release' => :release,
+}
+
+def flutter_root
+  generated_xcode_build_settings_path =
+    File.expand_path(File.join('..', 'Flutter', 'Generated.xcconfig'), __FILE__)
+  unless File.exist?(generated_xcode_build_settings_path)
+    raise "#{generated_xcode_build_settings_path} must exist. Run `flutter pub get` first."
+  end
+
+  File.foreach(generated_xcode_build_settings_path) do |line|
+    matches = line.match(/FLUTTER_ROOT\=(.*)/)
+    return matches[1].strip if matches
+  end
+  raise "FLUTTER_ROOT not found in #{generated_xcode_build_settings_path}. Delete it, then run `flutter pub get`."
+end
+
+require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelper'), flutter_root)
+
+flutter_ios_podfile_setup
+
+target 'Runner' do
+  use_frameworks! :linkage => :static
+  use_modular_headers!
+
+  flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+
+  target 'RunnerTests' do
+    inherit! :search_paths
+  end
+end
+
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    flutter_additional_ios_build_settings(target)
+    target.build_configurations.each do |config|
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.5'
+    end
+  end
+end
