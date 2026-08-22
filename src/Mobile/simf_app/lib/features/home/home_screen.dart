@@ -101,7 +101,10 @@ class HomeScreen extends ConsumerWidget {
       name: _greetingName(
         profile?.identity.localizedName(isArabic: l10n.isArabic),
         user?.displayName,
-        isVisitor: profile?.identity.isVisitor ?? true,
+        // Falls back to the token's role, not to true: while the profile is
+        // still loading, `?? true` clipped an exhibitor's organisation name to
+        // two words — the mistake greetingDisplayName's own doc names.
+        isVisitor: profile?.identity.isVisitor ?? (role == AppRole.visitor),
       ),
       highlights: highlights,
       banners: banners,
