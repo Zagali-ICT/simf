@@ -42,7 +42,8 @@ Future<void> runBiometricSignIn({
     return;
   }
 
-  // (3) OS prompt - biometric-first, device-PIN fallback (D-738).
+  // (3) OS prompt — biometric ONLY, reversing D-738's device-credential
+  // fallback, so no failure copy below may offer the device PIN as a way in.
   final outcome =
       await biometric.confirmDeviceIdentity(l10n.biometricSignInTooltip);
   if (!context.mounted) {

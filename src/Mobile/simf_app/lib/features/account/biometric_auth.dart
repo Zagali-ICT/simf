@@ -24,14 +24,22 @@ export 'package:simf_app/features/account/widgets/face_id_toggle_tile.dart';
 /// whether a user cancel is silent (sign-in) or shows its own copy (enrol).
 /// A top-level function (not a [BiometricAuth] method) so test fakes needn't
 /// implement it.
-String? localizedBiometricError(AppL10n l10n, LocalAuthOutcome outcome) {
+///
+/// The [lockedOut] / [unavailable] defaults point at the password form, which
+/// only the sign-in screen has; the enrol step-up passes its own copy instead.
+String? localizedBiometricError(
+  AppL10n l10n,
+  LocalAuthOutcome outcome, {
+  String? lockedOut,
+  String? unavailable,
+}) {
   switch (outcome) {
     case LocalAuthOutcome.lockedOut:
-      return l10n.biometricLockedOut;
+      return lockedOut ?? l10n.biometricLockedOut;
     case LocalAuthOutcome.noDeviceCredential:
       return l10n.biometricNoDeviceCredential;
     case LocalAuthOutcome.unavailable:
-      return l10n.biometricUnavailable;
+      return unavailable ?? l10n.biometricUnavailable;
     case LocalAuthOutcome.cancelled:
     case LocalAuthOutcome.success:
       return null;
@@ -40,7 +48,8 @@ String? localizedBiometricError(AppL10n l10n, LocalAuthOutcome outcome) {
 
 /// The result of an OS device-credential / biometric confirmation (D-738).
 enum LocalAuthOutcome {
-  /// The user proved the device credential (biometric or PIN/pattern/passcode).
+  /// The user proved their identity on the OS sheet (a face or a fingerprint —
+  /// [BiometricAuth.confirmDeviceIdentity] allows no PIN fallback).
   success,
 
   /// The user dismissed / failed the prompt without proving identity.
@@ -76,12 +85,13 @@ class BiometricAuth {
 
   AuthController get _auth => _ref.read(authControllerProvider.notifier);
 
-  /// Runs the OS device-credential / biometric sheet ([reason] shown on it) and
-  /// maps the result to a [LocalAuthOutcome]. `biometricOnly` is false so the
-  /// sheet offers the device PIN/pattern/passcode as a fallback (the banking
-  /// standard, and what un-bricks the post-lockout path). Used by BOTH the
-  /// enrolment confirm and the sign-in prompt so the mapping lives in one
-  /// place.
+  /// Runs the OS biometric sheet ([reason] shown on it) and maps the result to
+  /// a [LocalAuthOutcome]. Used by BOTH the enrolment confirm and the sign-in
+  /// prompt so the mapping lives in one place.
+  ///
+  /// `biometricOnly` is TRUE — a deliberate reversal of D-738's device-
+  /// credential posture — so the sheet never offers a PIN and no failure copy
+  /// may name one.
   Future<LocalAuthOutcome> confirmDeviceIdentity(String reason) async {
     try {
       final ok = await _localAuth.authenticate(

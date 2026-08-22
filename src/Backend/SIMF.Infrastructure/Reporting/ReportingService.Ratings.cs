@@ -154,16 +154,22 @@ internal sealed partial class ReportingService
                 : ratings.OrderBy(r => r.OverallStars).ThenBy(r => r.Id),
             // "submitted" is the date column's own Key (RatingsReport.razor:63).
             // Without this arm a click fell through to the default below, which
-            // reads `descending` INVERTED so the no-sort case comes back
+            // USED TO read `descending` inverted so the no-sort case came back
             // newest-first — leaving the ascending arrow (and
-            // aria-sort="ascending") sitting over newest-first rows.
+            // aria-sort="ascending") sitting over newest-first rows. The default
+            // no longer reads the flag at all, but this arm is still what makes a
+            // click on the date column mean what the arrow shows.
             "submitted" => descending
                 ? ratings.OrderByDescending(r => r.CreatedAt).ThenBy(r => r.Id)
                 : ratings.OrderBy(r => r.CreatedAt).ThenBy(r => r.Id),
-            // Newest first: feedback is read from the live end.
-            _ => descending
-                ? ratings.OrderBy(r => r.CreatedAt).ThenBy(r => r.Id)
-                : ratings.OrderByDescending(r => r.CreatedAt).ThenBy(r => r.Id),
+            // Newest first, stated outright rather than arrived at by reading a
+            // flag nobody set. This arm is reached only when the request carries NO
+            // sort key, and it used to map SortDescending=false to
+            // OrderByDescending - an inversion that made the flag mean the opposite
+            // of its name on the one path where nothing had pointed an arrow. The
+            // named arms above honour the flag literally; this one has no arrow to
+            // honour, so it simply declares the order.
+            _ => ratings.OrderByDescending(r => r.CreatedAt).ThenBy(r => r.Id),
         };
     }
 }

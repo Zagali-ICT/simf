@@ -16,11 +16,19 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// (`GATE_OPERATOR_NOT_ASSIGNED`). The screen renders that gracefully; the
 /// grant pipeline is flagged for the owner (D-406).
 class GatesRepository {
-  GatesRepository(this._client, this._queue, this._offlineConfig);
+  GatesRepository(
+    this._client,
+    this._queue,
+    this._offlineConfig, {
+    DateTime Function() now = saudiNow,
+  }) : _now = now;
 
   final SimfApiClient _client;
   final GateScanQueue _queue;
   final GateOfflineConfigCache _offlineConfig;
+
+  /// Test seam for the queued scan's stamp; production gets [saudiNow].
+  final DateTime Function() _now;
 
   /// `GET /app/gates/my-assignments` → the gates this operator may work.
   Future<List<OperatorGate>> myAssignments() {
@@ -111,7 +119,11 @@ class GatesRepository {
           qr: qr,
           idempotencyKey: idempotencyKey,
           direction: direction,
-          queuedAtIso: formatWire(DateTime.now()),
+          // D-219 / D-770 — the Saudi wall clock, never the device's;
+          // `formatWire` drops the zone marker and keeps the wall-clock read.
+          // Not SIMF-API-GATES-001's `clientScannedAt`, which is contractually
+          // DEVICE-local and which the app does not send.
+          queuedAtIso: formatWire(_now()),
         ),
       );
       return null;

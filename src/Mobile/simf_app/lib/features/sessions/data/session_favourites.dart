@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_app/features/sessions/data/sessions_endpoints.dart';
+import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 /// Session favourites (المفضلة) — the per-user heart shown on the
@@ -15,6 +16,14 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 class SessionFavouritesController extends AsyncNotifier<Set<String>> {
   @override
   Future<Set<String>> build() async {
+    // Watching auth is what makes the set PER-USER: `simfApiClientProvider`
+    // never rebuilds, so on its own the set outlives sign-out. Not autoDispose
+    // either — two screens share it, and it would refetch on every hop.
+    final auth = ref.watch(authControllerProvider);
+    if (auth is! AuthStateSignedIn) {
+      return <String>{};
+    }
+
     final client = ref.watch(simfApiClientProvider);
     final ids = await client.get<List<String>>(
       SessionsEndpoints.favourites,

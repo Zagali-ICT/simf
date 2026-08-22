@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -6,6 +7,7 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/features/speakers/data/speaker_models.dart';
 import 'package:simf_app/features/speakers/data/speakers_repository.dart';
 import 'package:simf_app/features/speakers/widgets/meeting_request_sheet.dart';
+import 'package:simf_app/features/speakers/widgets/meeting_sheet_fields.dart';
 import 'package:simf_app/features/speakers/widgets/meeting_slot_pickers.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
@@ -36,6 +38,9 @@ class _FakeRepo implements SpeakersRepository {
   _FakeRepo({
     this.slots = const <SpeakerSlot>[],
     this.failSlots = false,
+    this.crashSlots = false,
+    this.crashTargets = false,
+    this.crashSubmit = false,
     this.failSubmitStatus,
     this.failSubmitCode = 'x',
     this.failSubmitMessage = 'fail',
@@ -49,6 +54,13 @@ class _FakeRepo implements SpeakersRepository {
   // recovering,
   // which is the only way to prove Retry actually re-fetches.
   bool failSlots;
+
+  // A throw that is NOT an ApiFailure — the keystore PlatformException the
+  // client raises un-wrapped on its 401-refresh path. `crashSlots` is NOT
+  // final, for the same recovery reason as [failSlots].
+  bool crashSlots;
+  final bool crashTargets;
+  final bool crashSubmit;
 
   // G3 — how many times the availability fetch was attempted. Without this a
   // no-op Retry button would satisfy a test that only checks the button
@@ -71,27 +83,35 @@ class _FakeRepo implements SpeakersRepository {
   DateTime? lastSlotEnd;
 
   @override
-  Future<List<SpeakerSummary>> getSpeakers() async => const <SpeakerSummary>[
-        SpeakerSummary(
-          id: 's1',
-          name: 'Dr. Sarah Al-Otaibi',
-          nameArabic: 'د. سارة العتيبي',
-          displayOrder: 0,
-          // A rank whose token ('admiral') is in NO speaker name, so a search
-          // for it can only match via the rank branch of the picker predicate.
-          rank: 'Rear Admiral',
-        ),
-        SpeakerSummary(
-          id: 's2',
-          name: 'Capt. Omar Nasser',
-          nameArabic: 'الرائد عمر ناصر',
-          displayOrder: 1,
-        ),
-      ];
+  Future<List<SpeakerSummary>> getSpeakers() async {
+    if (crashTargets) {
+      throw PlatformException(code: 'keystore_unavailable');
+    }
+    return const <SpeakerSummary>[
+      SpeakerSummary(
+        id: 's1',
+        name: 'Dr. Sarah Al-Otaibi',
+        nameArabic: 'د. سارة العتيبي',
+        displayOrder: 0,
+        // A rank whose token ('admiral') is in NO speaker name, so a search
+        // for it can only match via the rank branch of the picker predicate.
+        rank: 'Rear Admiral',
+      ),
+      SpeakerSummary(
+        id: 's2',
+        name: 'Capt. Omar Nasser',
+        nameArabic: 'الرائد عمر ناصر',
+        displayOrder: 1,
+      ),
+    ];
+  }
 
   @override
   Future<List<SpeakerSlot>> getAvailableSlots(String speakerId) async {
     slotFetchCalls++;
+    if (crashSlots) {
+      throw PlatformException(code: 'keystore_unavailable');
+    }
     if (failSlots) {
       throw const ApiFailure(
         code: ApiErrorCodes.clientNetwork,
@@ -112,6 +132,9 @@ class _FakeRepo implements SpeakersRepository {
     DateTime? slotStart,
     DateTime? slotEnd,
   }) async {
+    if (crashSubmit) {
+      throw PlatformException(code: 'keystore_unavailable');
+    }
     if (failSubmitStatus != null) {
       throw ApiFailure(
         code: failSubmitCode,
@@ -348,6 +371,39 @@ void main() {
       expect(repo.lastSubject, 'Naval cooperation');
     });
 
+    testWidgets(
+        'a roster fetch that throws a NON-ApiFailure resolves the picker '
+        'instead of spinning it forever', (tester) async {
+      // initState loads the roster once and never again, so a stuck spinner
+      // leaves nothing to choose and the rest of the sheet gated shut.
+      await _pump(tester, speakerId: null, repo: _FakeRepo(crashTargets: true));
+
+      expect(find.byType(MeetingSheetSpinner), findsNothing);
+      expect(find.text('Choose a speaker…'), findsOneWidget);
+    });
+
+    testWidgets(
+        'G3 — a slot fetch that throws a NON-ApiFailure lands the same load '
+        'error + Retry instead of spinning forever', (tester) async {
+      // Retry hangs off _slotsError, so a throw the `on ApiFailure` branch
+      // misses leaves the spinner up with no way back.
+      final repo = _FakeRepo(slots: _twoDaySlots, crashSlots: true);
+      await _pump(tester, speakerId: 's1', repo: repo);
+
+      expect(find.byType(MeetingSheetSpinner), findsNothing);
+      expect(find.text('Could not load the list.'), findsOneWidget);
+      // …and never as "this speaker has no availability", which G3 forbids.
+      expect(find.text('No meeting slots available right now'), findsNothing);
+
+      repo.crashSlots = false;
+      await tester
+          .tap(find.byKey(const ValueKey<String>('meeting-slots-retry')));
+      await tester.pumpAndSettle();
+
+      expect(repo.slotFetchCalls, 2);
+      expect(find.byType(MeetingDayCard), findsWidgets);
+    });
+
     testWidgets("submitting a picked real slot sends that slot's start + end",
         (tester) async {
       final repo = _FakeRepo(slots: _twoDaySlots);
@@ -436,6 +492,24 @@ void main() {
         find.text('This speaker is not accepting meeting requests'),
         findsNothing,
       );
+    });
+
+    testWidgets(
+        'a submit that throws a NON-ApiFailure says so inline instead of '
+        'handing the button back in silence', (tester) async {
+      // A widened `finally` would not do: the throw must be caught, or it
+      // escapes to the zone and the send reads as a silent no-op.
+      final repo = _FakeRepo(slots: _twoDaySlots, crashSubmit: true);
+      await _pump(tester, speakerId: 's1', repo: repo);
+
+      await _submitWithFirstSlot(tester);
+
+      expect(
+        find.text('Could not send the request. Try again.'),
+        findsOneWidget,
+      );
+      expect(find.text('Send request'), findsOneWidget);
+      expect(find.text('Loading…'), findsNothing);
     });
 
     testWidgets(

@@ -9,14 +9,12 @@ class MediaPartner {
     required this.id,
     required this.name,
     required this.nameArabic,
-    this.logoRelativePath,
   });
 
   factory MediaPartner.fromJson(Map<String, dynamic> json) => MediaPartner(
         id: json['id'] as String? ?? '',
         name: json['name'] as String? ?? '',
         nameArabic: json['nameArabic'] as String? ?? '',
-        logoRelativePath: json['logoRelativePath'] as String?,
       );
 
   final String id;
@@ -27,7 +25,6 @@ class MediaPartner {
   /// logo source. The card renders the partner's uploaded logo from the D-357
   /// asset route (see [logoAssetUrl]); this field (which historically held an
   /// arbitrary path / placeholder URL) is kept only to mirror the wire shape.
-  final String? logoRelativePath;
 
   String localizedName({required bool isArabic}) {
     final ar = nameArabic.trim();

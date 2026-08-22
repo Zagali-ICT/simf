@@ -142,49 +142,55 @@ class _MeetingsScreenState extends ConsumerState<MeetingsScreen> {
       AppL10n l10n, MeetingAccess access, List<AppRequestItem> items,) {
     final isArabic = l10n.isArabic;
     final baseUrl = ref.watch(simfDataConfigProvider).baseUrl;
+    const headerCount = 2;
     return SimfPullToRefresh(
       onRefresh: _refresh,
-      child: ListView(
+      child: ListView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(SimfTokens.space4),
-        children: <Widget>[
-          MeetingActionRow(
-            l10n: l10n,
-            showSpeaker: access.speaker,
-            showDelegation: access.delegation,
-            onRequestSpeaker: () => unawaited(_openSpeakerMeeting()),
-            onRequestDelegation: () => unawaited(_openDelegationMeeting()),
-            onHistory: () => context.pushNamed(RouteNames.requests),
-          ),
-          const SizedBox(height: SimfTokens.space4),
-          if (items.isEmpty)
-            SimfEmptyState(
+        itemCount: headerCount + (items.isEmpty ? 1 : items.length),
+        itemBuilder: (context, index) {
+          if (index == 0) {
+            return MeetingActionRow(
+              l10n: l10n,
+              showSpeaker: access.speaker,
+              showDelegation: access.delegation,
+              onRequestSpeaker: () => unawaited(_openSpeakerMeeting()),
+              onRequestDelegation: () => unawaited(_openDelegationMeeting()),
+              onHistory: () => context.pushNamed(RouteNames.requests),
+            );
+          }
+          if (index == 1) {
+            return const SizedBox(height: SimfTokens.space4);
+          }
+          if (items.isEmpty) {
+            return SimfEmptyState(
               icon: Icons.handshake_outlined,
               message: l10n.myMeetingsEmpty,
-            )
-          else
-            for (final item in items)
-              Padding(
-                padding: const EdgeInsets.only(bottom: SimfTokens.space4),
-                child: MeetingCard(
-                  key: ValueKey<String>('${item.kind.wireValue}:${item.id}'),
-                  item: item,
-                  isArabic: isArabic,
-                  l10n: l10n,
-                  baseUrl: baseUrl,
-                  // A speaker meeting opens the speaker profile; a delegation
-                  // meeting has no speaker to open.
-                  onTap: item.speakerId != null
-                      ? () => context.pushNamed(
-                            RouteNames.speakerProfile,
-                            pathParameters: <String, String>{
-                              RouteParams.speakerId: item.speakerId!,
-                            },
-                          )
-                      : null,
-                ),
-              ),
-        ],
+            );
+          }
+          final item = items[index - headerCount];
+          return Padding(
+            padding: const EdgeInsets.only(bottom: SimfTokens.space4),
+            child: MeetingCard(
+              key: ValueKey<String>('${item.kind.wireValue}:${item.id}'),
+              item: item,
+              isArabic: isArabic,
+              l10n: l10n,
+              baseUrl: baseUrl,
+              // A speaker meeting opens the speaker profile; a delegation
+              // meeting has no speaker to open.
+              onTap: item.speakerId != null
+                  ? () => context.pushNamed(
+                        RouteNames.speakerProfile,
+                        pathParameters: <String, String>{
+                          RouteParams.speakerId: item.speakerId!,
+                        },
+                      )
+                  : null,
+            ),
+          );
+        },
       ),
     );
   }

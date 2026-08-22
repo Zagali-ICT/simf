@@ -124,12 +124,78 @@ public sealed class AuditLogTests : IClassFixture<SimfApiFactory>
         Assert.Equal("audit-trace-9", entry!.CorrelationId);
     }
 
+    [Fact]
+    public async Task A_batched_write_persists_every_entry_in_the_set()
+    {
+        var email = NewEmail();
+        var entries = Enumerable.Range(1, 3)
+            .Select(index => new AuditEntry
+            {
+                EventType = AuditEvents.SeatReservationReleased,
+                Outcome = AuditOutcome.Success,
+                SubjectEmail = email,
+                Detail = $"batched-entry-{index}",
+            })
+            .ToList();
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            await scope.ServiceProvider.GetRequiredService<IAuditLog>().WriteManyAsync(entries);
+        }
+
+        // One save for the whole set, but still one row per entry carrying its own
+        // detail: the pre-start no-show sweep audits a seat at a time, and batching
+        // the write must not collapse that into a single summary row.
+        var details = FindAuditEntries(email)
+            .Select(entry => entry.Detail ?? string.Empty)
+            .OrderBy(detail => detail, StringComparer.Ordinal)
+            .ToList();
+        Assert.Equal(
+            new List<string> { "batched-entry-1", "batched-entry-2", "batched-entry-3" },
+            details);
+    }
+
+    [Fact]
+    public async Task A_failed_batched_write_is_swallowed_rather_than_failing_the_caller()
+    {
+        var email = NewEmail();
+        using var scope = _factory.Services.CreateScope();
+        var auditLog = scope.ServiceProvider.GetRequiredService<IAuditLog>();
+        // The audit log writes through the SAME scoped context, so disposing it is
+        // the cheapest way to make the write fail for real rather than simulate it.
+        scope.ServiceProvider.GetRequiredService<SimfAppDbContext>().Dispose();
+
+        await auditLog.WriteManyAsync(
+        [
+            new AuditEntry
+            {
+                EventType = AuditEvents.SeatReservationReleased,
+                Outcome = AuditOutcome.Success,
+                SubjectEmail = email,
+            },
+        ]);
+
+        // Nothing landed, and nothing was thrown, which is the point of the test:
+        // an audit failure must never break the operation it records, and the
+        // batched write inherits that posture from the single-entry one.
+        Assert.Empty(FindAuditEntries(email));
+    }
+
     private OperationLogEntry? FindAuditEntry(string email, string eventType)
     {
         using var scope = _factory.Services.CreateScope();
         var database = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         return database.OperationLog
             .FirstOrDefault(entry => entry.SubjectEmail == email && entry.EventType == eventType);
+    }
+
+    private List<OperationLogEntry> FindAuditEntries(string email)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var database = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        return database.OperationLog
+            .Where(entry => entry.SubjectEmail == email)
+            .ToList();
     }
 
     private string GetActiveVerificationCode(string email)

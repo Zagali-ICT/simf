@@ -37,6 +37,7 @@ class _ContactPreviewSheetState extends ConsumerState<ContactPreviewSheet> {
   Future<void> _save() async {
     final l10n = AppL10n.of(context);
     setState(() => _saving = true);
+    var popped = false;
     try {
       await ref
           .read(contactsRepositoryProvider)
@@ -45,11 +46,11 @@ class _ContactPreviewSheetState extends ConsumerState<ContactPreviewSheet> {
         return;
       }
       Navigator.of(context).pop(true);
+      popped = true;
     } on ApiFailure catch (e) {
       if (!mounted) {
         return;
       }
-      setState(() => _saving = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -57,6 +58,13 @@ class _ContactPreviewSheetState extends ConsumerState<ContactPreviewSheet> {
           ),
         ),
       );
+    } finally {
+      // The 401-refresh path can throw a keystore PlatformException, which is
+      // not an ApiFailure. Skipped once popped: the State outlives pop() for
+      // the exit transition, so the spinner would flick back mid-slide.
+      if (!popped && mounted) {
+        setState(() => _saving = false);
+      }
     }
   }
 

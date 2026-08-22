@@ -42,7 +42,7 @@ trigger:
 
 # --- Which environments this run deploys to (chosen in the Run pipeline dialog).
 #
-#     BOTH DEFAULT TO TRUE, and that is new (D-934). It is the first time this
+#     BOTH DEFAULT TO TRUE, and that is new (D-938). It is the first time this
 #     pipeline can reach two machines, so it is the first time two tick boxes
 #     mean two destinations.
 #
@@ -51,7 +51,7 @@ trigger:
 #     deployment jobs fell back to it. Every deploy this pipeline ever ran, under
 #     either environment name and with either box ticked, landed on
 #     PRE-PRODUCTION (`simf.zagali-ict.com`). D-906 recorded that machine as the
-#     production box; it is not. D-932 corrected the identification, and D-934
+#     production box; it is not. D-932 corrected the identification, and D-938
 #     fixes the routing it exposed.
 #
 #     WHAT CHANGED. The owner registered the servers as VM RESOURCES on their
@@ -835,7 +835,7 @@ stages:
         if ($LASTEXITCODE -ne 0) { throw "dart pub get failed for the convention checker (exit $LASTEXITCODE)." }
         dart test
         if ($LASTEXITCODE -ne 0) { throw "The convention checker's own tests failed (exit $LASTEXITCODE) - fix the checker before trusting its verdict." }
-        dart run bin/simf_conventions.dart --check
+        dart run bin/simf_conventions.dart --check --strict
         if ($LASTEXITCODE -ne 0) { throw "NEW convention violations introduced. See the list above and docs/SIMF-CQP-001-Code-Quality-Programme.md section 5 for where each literal belongs." }
       displayName: 'Convention gate (SIMF-CQP-001)'
 
@@ -1026,7 +1026,7 @@ stages:
 # D-905) with "No resource were found in the environment with ID 3" - the
 # construct being right and the estate not being ready, not the construct being
 # wrong. The resources exist now. What the old pool fallback cost, and how it was
-# established, is told once at the parameters block above; D-934 is the full
+# established, is told once at the parameters block above; D-938 is the full
 # record. Not retold here.
 #
 # If a job fails with that message again, a resource has been removed from that

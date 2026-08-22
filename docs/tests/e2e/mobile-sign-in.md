@@ -24,7 +24,9 @@
 > **globe language toggle** top-right (wired: AR ↔ EN persisted via
 > `LocaleController` — supersedes the old D-272 unwired placeholders);
 > **remember-me checkbox** (default ON) gating the email prefill store; the
-> **Face-ID button always visible** (silent fallback when unavailable); the
+> **Face-ID button** (rendered only when `biometricAvailableProvider` reports a
+> usable biometric — `SignInAltActions` guards it with `if (biometricAvailable)`,
+> so it is NOT always visible as an earlier revision of this note claimed); the
 > underlined **"الدخول كزائر"** guest link below it (design-native since the
 > frame's 2026-06-11 update). The previous mockup screen is parked in
 > `lib/features/_legacy_mockup/`.
@@ -44,7 +46,7 @@
 | E2E-MOB003-009 | Pending/rejected account → routed by registration status (Page 11) | edge | P1 | authored (status drives routing) |
 | E2E-MOB003-010 | Network / 500 → non-blocking error; fields preserved; no token mutation | resilience | P1 | authored (error surface) |
 | E2E-MOB003-011 | RTL render (Arabic) — fields, errors, links mirror; email stays LTR | i18n | P1 | authored (screen) |
-| E2E-MOB003-012 | Biometric (device-key) re-open | happy | P0 | authored ✓ (Dart client + controller tests; **.NET↔Dart interop proven by backend golden-vector test, D-266**; on-device prompt → simf-run) |
+| E2E-MOB003-012 | Biometric (device-key) re-open. The OS sheet is **biometric-only** (`biometricOnly: true`, commit `3be516b5`) — no device-PIN fallback — and each failure message points at the password form on this screen; a plain cancel is silent. Full outcome table in [`mobile-biometric-step-up.md`](mobile-biometric-step-up.md) E2E-MBSU-015 | happy | P0 | authored ✓ (Dart client + controller tests; **.NET↔Dart interop proven by backend golden-vector test, D-266**; on-device prompt → simf-run) |
 | E2E-MOB003-013 | Signed-in → server `profileComplete=false` routes to Page_007 (`/sign-up/visitor`); true → Home (D-374, both auth paths) | happy | P0 | authored ✓ (widget + API tests) |
 | E2E-MOB003-014 | "Browse without signing in" → guest landing (Page 012) → public Home, no token (D-325) | happy | P1 | authored ✓ (widget test) |
 | E2E-MOB003-015 | Remember-me unchecked → the email is NOT stored for the next prefill (D-360) **and the session is kept in memory only — it does NOT survive an app restart (#9)** | edge | P0 | authored ✓ (widget + `auth_controller_signin_test` #9) |

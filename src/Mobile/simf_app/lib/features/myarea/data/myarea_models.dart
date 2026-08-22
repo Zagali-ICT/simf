@@ -66,7 +66,9 @@ class MyAreaIdentity {
   final String? pageColor;
 
   /// True for audience profile types; false for partner/exhibitor ("Other")
-  /// types — drives the QR-page actions (D-426). Defaults true.
+  /// types. Defaults true. Drives the home greeting only — the QR-page actions
+  /// key off the signed-in `AppRole` instead (D-426, DEF-EXH-005), this flag
+  /// being false for EVERY partner type. Key frozen on the wire (D-219).
   final bool isVisitor;
 
   /// Name for the active locale (Arabic primary, English fallback — L-8).

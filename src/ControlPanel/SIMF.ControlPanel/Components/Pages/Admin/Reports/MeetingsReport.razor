@@ -68,7 +68,11 @@
                                     Sortable="true">
                     <CellTemplate>@EnumLabel("MeetingRequestStatus", context.Status)</CellTemplate>
                 </SimfDataGridColumn>
+                @* Sortable now that the service honours the direction literally on
+                   this key. It had no arrow at all before, so the arm that sorts by
+                   request date was unreachable from the page. *@
                 <SimfDataGridColumn TItem="MeetingsReportRow" Key="requested"
+                                    Sortable="true"
                                     Header="@L["Admin.Reports.Col.Requested"]">
                     <CellTemplate>@context.RequestedDisplay</CellTemplate>
                 </SimfDataGridColumn>

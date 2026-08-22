@@ -15,7 +15,6 @@ class ArchiveEdition {
     required this.speakers,
     this.summaryEn,
     this.summaryAr,
-    this.coverImageRelativePath,
   });
 
   factory ArchiveEdition.fromJson(Map<String, dynamic> json) => ArchiveEdition(
@@ -28,7 +27,6 @@ class ArchiveEdition {
         speakers: (json['speakers'] as num?)?.toInt() ?? 0,
         summaryEn: json['summaryEn'] as String?,
         summaryAr: json['summaryAr'] as String?,
-        coverImageRelativePath: json['coverImageRelativePath'] as String?,
       );
 
   final String id;
@@ -40,7 +38,6 @@ class ArchiveEdition {
   final int speakers;
   final String? summaryEn;
   final String? summaryAr;
-  final String? coverImageRelativePath;
 
   String localizedTitle({required bool isArabic}) =>
       pickLocalized(titleAr, titleEn, isArabic: isArabic);

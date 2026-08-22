@@ -12,7 +12,6 @@ class Sponsor {
     required this.nameAr,
     required this.tierName,
     required this.displayOrder,
-    this.logoRelativePath,
     this.url,
     this.email,
     this.phonePrimary,
@@ -27,7 +26,6 @@ class Sponsor {
         nameAr: json['nameAr'] as String? ?? '',
         tierName: json['tierName'] as String? ?? '',
         displayOrder: (json['displayOrder'] as num?)?.toInt() ?? 0,
-        logoRelativePath: json['logoRelativePath'] as String?,
         url: json['url'] as String?,
         email: json['email'] as String?,
         phonePrimary: json['phonePrimary'] as String?,
@@ -41,7 +39,6 @@ class Sponsor {
   final String nameAr;
   final String tierName;
   final int displayOrder;
-  final String? logoRelativePath;
   final String? url;
   final String? email;
   final String? phonePrimary;
@@ -84,7 +81,6 @@ class SponsorDetail {
     required this.nameAr,
     required this.tier,
     required this.tierName,
-    this.logoRelativePath,
     this.url,
     this.about,
     this.aboutArabic,
@@ -104,7 +100,6 @@ class SponsorDetail {
       nameAr: json['nameAr'] as String? ?? '',
       tier: (json['tier'] as num?)?.toInt() ?? 0,
       tierName: json['tierName'] as String? ?? '',
-      logoRelativePath: json['logoRelativePath'] as String?,
       url: json['url'] as String?,
       about: json['about'] as String?,
       aboutArabic: json['aboutArabic'] as String?,
@@ -121,7 +116,6 @@ class SponsorDetail {
   final String nameAr;
   final int tier;
   final String tierName;
-  final String? logoRelativePath;
   final String? url;
   final String? about;
   final String? aboutArabic;

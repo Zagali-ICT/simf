@@ -126,14 +126,38 @@ internal sealed partial class AdminAccountService
         // reads the admission state, not the presence of an id), and keeping it
         // means a retry re-approves the same badge rather than issuing a second
         // one to a holder who may already have printed the first.
+        // The compensation is CONDITIONAL, and has to be. accounts.UpdateAsync is
+        // a pass-through to UserManager, whose store calls SaveChanges itself, so
+        // the Identity row is already committed when that line returns - and a
+        // transient fault raised BY that commit is ambiguous in exactly the way
+        // TransactionRunner documents: the write may have landed and only the
+        // acknowledgement been lost. Reverting unconditionally would then turn a
+        // SUCCESSFUL approval into an Approved account with a PendingApproval
+        // profile, which is unrecoverable rather than merely wrong: the holder is
+        // refused at every gate, and both the approve and the reject paths guard
+        // on AccountState == PendingApproval, so neither can be run again to
+        // repair it. Re-reading the account settles the ambiguity, and only the
+        // genuinely-not-landed case is undone.
         await appDbContext.SaveChangesAsync(cancellationToken);
         try
         {
             await accounts.UpdateAsync(subject).EnsureSuccessAsync();
-            await dbContext.SaveChangesAsync(cancellationToken);
         }
         catch
         {
+            if (await IdentityHalfLandedAsync(subject.Id))
+            {
+                // It committed; only the answer was lost. Leave both databases on
+                // Approved - they agree - and let the caller's failure surface so
+                // the operator refreshes rather than trusting a stale screen.
+                logger.LogWarning(
+                    "The approval for {SubjectId} reported a failure but the account "
+                    + "reads Approved, so the write landed and only the acknowledgement "
+                    + "was lost. Leaving the profile approved rather than undoing it.",
+                    subject.Id);
+                throw;
+            }
+
             profile.AdmissionState = priorAdmissionState;
             profile.StateChangedAt = priorStateChangedAt;
             profile.StateChangedByUserId = priorStateChangedByUserId;
@@ -400,5 +424,40 @@ internal sealed partial class AdminAccountService
         };
         appDbContext.UserProfiles.Add(profile);
         return profile;
+    }
+
+    /// <summary>Did the Identity half of an approval actually commit?
+    ///
+    /// <para>Answers the ambiguity in <c>ApproveAsync</c>'s compensation: a fault
+    /// raised by the account write may be a genuine rejection or a lost
+    /// acknowledgement over a write that landed. Reads the row back with a fresh
+    /// no-tracking query so the failed unit of work's tracked state cannot answer
+    /// on the database's behalf, and on <c>CancellationToken.None</c> because a
+    /// cancelled request is one of the ways to reach the catch.</para>
+    ///
+    /// <para>Any failure to READ is reported as "did not land", which keeps the
+    /// compensating revert as the default: undoing an approval the operator can
+    /// simply run again is recoverable, while leaving a half-approved account
+    /// behind is not.</para></summary>
+    private async Task<bool> IdentityHalfLandedAsync(Guid subjectId)
+    {
+        try
+        {
+            return await dbContext.Users
+                .AsNoTracking()
+                .AnyAsync(
+                    user => user.Id == subjectId
+                        && user.AccountState == AccountState.Approved,
+                    CancellationToken.None);
+        }
+        catch (Exception probe)
+        {
+            logger.LogWarning(
+                probe,
+                "Could not re-read the account state for {SubjectId} while deciding "
+                + "whether to undo a failed approval; assuming it did not commit.",
+                subjectId);
+            return false;
+        }
     }
 }

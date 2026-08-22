@@ -8,8 +8,8 @@ import 'package:simf_app/features/notifications/widgets/notification_category_ic
 import 'package:simf_app/features/notifications/widgets/unread_dot.dart';
 
 /// One notification card (frame node): a solid severity-coloured circular icon
-/// at the inline end, the bold title + body + "{day} · {time}" line, and the
-/// gold unread dot at the inline start.
+/// at the inline start, the bold title + body + "{day} · {time}" line, and the
+/// `SimfTokens.danger` unread dot at the inline end.
 class NotificationCard extends StatelessWidget {
   const NotificationCard({
     required this.item,

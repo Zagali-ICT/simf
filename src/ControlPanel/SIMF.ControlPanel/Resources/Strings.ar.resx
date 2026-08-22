@@ -1704,6 +1704,8 @@
   <data name="Profile.TwoFactor.ConfirmDisabled" xml:space="preserve"><value>تم تعطيل المصادقة الثنائية.</value></data>
 
   <data name="TotpPairing.Title" xml:space="preserve"><value>إعادة إقران تطبيق المصادقة</value></data>
+  <data name="TotpPairing.RevealInstruction" xml:space="preserve"><value>أدخل رمزاً حالياً من تطبيق المصادقة الذي لديك. لا يتم عرض رمز الاقتران إلا مقابل ذلك، لأنه يكشف المفتاح السري لهذا الحساب.</value></data>
+  <data name="TotpPairing.Reveal" xml:space="preserve"><value>عرض رمز الاقتران</value></data>
   <data name="TotpPairing.Instruction" xml:space="preserve"><value>امسح رمز QR هذا باستخدام Google Authenticator (أو أي تطبيق متوافق مع TOTP). يبقى السر نفسه — إعادة المسح لا تؤثر على رموز الاسترداد الحالية.</value></data>
   <data name="TotpPairing.SecretHint" xml:space="preserve"><value>أو أدخل هذا السر يدويًا في التطبيق:</value></data>
   <data name="TotpPairing.NoSecret" xml:space="preserve"><value>لا يوجد سر مصادقة مرتبط بهذا الحساب بعد. استخدم صفحة الملف الشخصي للتسجيل.</value></data>
@@ -3291,6 +3293,11 @@
   <data name="Admin.Exhibitors.Link.Done" xml:space="preserve"><value>تم ربط الحساب بهذا العارض.</value></data>
   <data name="Admin.Exhibitors.Link.Required" xml:space="preserve"><value>البريد الإلكتروني للحساب مطلوب.</value></data>
   <data name="Admin.Exhibitors.Link.Failed" xml:space="preserve"><value>تعذر ربط الحساب. حاول مرة أخرى.</value></data>
+  <data name="Admin.Exhibitors.Revoke.Action" xml:space="preserve"><value>إلغاء الوصول</value></data>
+  <data name="Admin.Exhibitors.Revoke.ConfirmTitle" xml:space="preserve"><value>إلغاء وصول هذا الحساب؟</value></data>
+  <data name="Admin.Exhibitors.Revoke.ConfirmBody" xml:space="preserve"><value>سيؤدي هذا إلى إزالة وصول الحساب إلى ماسح الشارات الخاص بالجناح وإلى بطاقات تواصل الزوار التي جمعها. لن يتم حذف الحساب نفسه، ويمكن ربطه مرة أخرى لاحقاً.</value></data>
+  <data name="Admin.Exhibitors.Revoke.Done" xml:space="preserve"><value>تم إلغاء وصول الحساب لهذا العارض.</value></data>
+  <data name="Admin.Exhibitors.Revoke.Failed" xml:space="preserve"><value>تعذر إلغاء وصول الحساب. حاول مرة أخرى.</value></data>
 
   <!-- Gates operations dashboard (read-only live overview). -->
   <data name="Module.GatesDashboard" xml:space="preserve"><value>لوحة البوابات</value></data>

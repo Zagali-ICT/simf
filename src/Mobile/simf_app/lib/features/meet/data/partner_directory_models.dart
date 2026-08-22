@@ -84,9 +84,12 @@ class PartnerDirectoryEntry {
             ? AssetUrls.image(baseUrl, AssetKind.sponsorLogo, id)
             : null;
       case PartnerDirectoryKind.booth:
-        return logoContactId != null
-            ? AssetUrls.image(baseUrl, AssetKind.companyLogo, logoContactId!)
-            : null;
+        // No presence sentinel is sent for a booth (the directory passes null
+        // for both logo fields on this branch), so there is nothing to gate on.
+        // AssetUrls' contract covers it: the route 404s when nothing has been
+        // uploaded and every caller shows the fallback, so build the URL and
+        // let a logo-less booth fall through to initials.
+        return AssetUrls.image(baseUrl, AssetKind.boothLogo, id);
       default:
         return null;
     }

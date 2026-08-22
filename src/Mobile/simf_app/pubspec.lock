@@ -724,14 +724,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.0"
-  mocktail:
-    dependency: "direct dev"
-    description:
-      name: mocktail
-      sha256: "5e1bf53cc7baa8062a33b84424deb61513858ea05c601b8509e683815b5914aa"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.5"
   node_preamble:
     dependency: transitive
     description:
@@ -884,14 +876,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.5.0"
-  pretty_dio_logger:
-    dependency: "direct main"
-    description:
-      name: pretty_dio_logger
-      sha256: "36f2101299786d567869493e2f5731de61ce130faa14679473b26905a92b6407"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.4.0"
   process:
     dependency: transitive
     description:

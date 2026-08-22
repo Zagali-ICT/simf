@@ -40,57 +40,75 @@ class SponsorTierList extends ConsumerWidget {
     // The logo image lives at {base}/app/assets/SponsorLogo/{id}/image (D-357).
     final baseUrl = ref.watch(simfDataConfigProvider).baseUrl;
     final lastIndex = visibleGroups.length - 1;
+    // Flattened one row per line so the directory builds lazily. A row with
+    // neither a sponsor nor the header flag is the lowest tier's logo grid,
+    // which stands in for that whole tier's cards.
+    final rows = <({int group, Sponsor? sponsor, bool header})>[];
+    for (var i = 0; i < visibleGroups.length; i++) {
+      rows.add((group: i, sponsor: null, header: true));
+      // Frame 922:2824 — three bands: the top tier is the gold hero card, the
+      // lowest tier is a compact logo-tile grid, and any tier in between is a
+      // navy premium card (position-based so it is faithful for any tier
+      // naming, not just Platinum/Gold/Silver).
+      if (i == lastIndex && visibleGroups.length > 1) {
+        rows.add((group: i, sponsor: null, header: false));
+        continue;
+      }
+      for (final sponsor in visibleGroups[i].sponsors) {
+        rows.add((group: i, sponsor: sponsor, header: false));
+      }
+    }
     return SimfPullToRefresh(
       onRefresh: onRefresh,
-      child: ListView(
+      child: ListView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(SimfTokens.space4),
-        children: <Widget>[
-          for (var i = 0; i < visibleGroups.length; i++) ...<Widget>[
-            if (i > 0) const SizedBox(height: SimfTokens.space6),
-            SimfSectionHeader(
-              title: l10n.sponsorTierLabel(
-                visibleGroups[i].tier,
-                visibleGroups[i].tierName,
+        itemCount: rows.length,
+        itemBuilder: (context, index) {
+          final row = rows[index];
+          final group = visibleGroups[row.group];
+          if (row.header) {
+            return Padding(
+              padding: EdgeInsets.only(
+                top: row.group > 0 ? SimfTokens.space6 : 0,
+                bottom: SimfTokens.space4,
+              ),
+              child: SimfSectionHeader(
+                title: l10n.sponsorTierLabel(group.tier, group.tierName),
+              ),
+            );
+          }
+          final sponsor = row.sponsor;
+          if (sponsor == null) {
+            return SponsorGrid(
+              sponsors: group.sponsors,
+              baseUrl: baseUrl,
+              isArabic: isArabic,
+            );
+          }
+          return Padding(
+            padding: const EdgeInsets.only(bottom: SimfTokens.space4),
+            child: SponsorCard(
+              key: ValueKey<String>(sponsor.id),
+              id: sponsor.id,
+              baseUrl: baseUrl,
+              name: sponsor.localizedName(isArabic: isArabic),
+              badge: sponsorBadgeText(sponsor, isArabic: isArabic),
+              // D-432 — prefer the authored tagline (Figma's "الراعي
+              // الاستراتيجي · …" line); fall back to the website link.
+              secondary:
+                  sponsor.localizedTagline(isArabic: isArabic) ?? sponsor.url,
+              hero: row.group == 0,
+              // Wave 3 — tap → the sponsor detail (Figma 1439:11826).
+              onTap: () => context.pushNamed(
+                RouteNames.sponsorDetail,
+                pathParameters: <String, String>{
+                  RouteParams.sponsorId: sponsor.id,
+                },
               ),
             ),
-            const SizedBox(height: SimfTokens.space4),
-            // Frame 922:2824 — three bands: the top tier is the gold hero
-            // card, the lowest tier is a compact logo-tile grid, and any
-            // tier in between is a navy premium card (position-based so
-            // it is faithful for any tier naming, not just
-            // Platinum/Gold/Silver).
-            if (i == lastIndex && visibleGroups.length > 1)
-              SponsorGrid(
-                sponsors: visibleGroups[i].sponsors,
-                baseUrl: baseUrl,
-                isArabic: isArabic,
-              )
-            else
-              for (final sponsor in visibleGroups[i].sponsors) ...<Widget>[
-                SponsorCard(
-                  id: sponsor.id,
-                  baseUrl: baseUrl,
-                  name: sponsor.localizedName(isArabic: isArabic),
-                  badge: sponsorBadgeText(sponsor, isArabic: isArabic),
-                  // D-432 — prefer the authored tagline (Figma's "الراعي
-                  // الاستراتيجي · …" line); fall back to the website
-                  // link.
-                  secondary: sponsor.localizedTagline(isArabic: isArabic) ??
-                      sponsor.url,
-                  hero: i == 0,
-                  // Wave 3 — tap → the sponsor detail (Figma 1439:11826).
-                  onTap: () => context.pushNamed(
-                    RouteNames.sponsorDetail,
-                    pathParameters: <String, String>{
-                      RouteParams.sponsorId: sponsor.id,
-                    },
-                  ),
-                ),
-                const SizedBox(height: SimfTokens.space4),
-              ],
-          ],
-        ],
+          );
+        },
       ),
     );
   }

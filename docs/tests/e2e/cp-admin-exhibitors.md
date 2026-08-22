@@ -56,6 +56,9 @@
 | E2E-EXH-027 | Link an existing account to an exhibitor — the Others-pipeline lockout fix (D-781) | happy | P0 | authored |
 | E2E-EXH-028 | Link rejections — unknown email / not exhibitor-typed / already linked (D-781) | error | P1 | authored |
 | E2E-EXH-029 | Provision conflict — an already-registered email → 409 `ADMIN_EMAIL_ALREADY_REGISTERED`, no membership created | error | P1 | _to author_ |
+| E2E-EXH-030 | Revoke an account's booth membership: a soft revoke that ends badge scan and access to the booth's visitor contact cards | happy | P0 | authored |
+| E2E-EXH-031 | Revoke rejections and its gate: unknown or wrong-booth id 404, already revoked 409, no `Exhibitors.RevokeAccount` 403 | auth | P0 | authored |
+| E2E-EXH-032 | Deactivating an exhibitor whose booth is still pinned on the venue map is refused with `EXHIBITOR_IN_USE` | conflict | P1 | authored |
 | E2E-EXH-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-EXH-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
@@ -794,9 +797,141 @@ Scenario: Provisioning an already-registered email returns 409
   And no ExhibitorMembership row is created
 ```
 
+### E2E-EXH-030: Revoke an account's booth membership
+
+`ExhibitorMembership` was written by the provision and the link paths and cleared
+by nothing at all, so an account attached to a booth held the booth tools until
+somebody retired the whole exhibitor. That row is not bookkeeping: three readers
+authorise on it, so a revoke severs real capability.
+
+> **Status.** Shipped end to end. The API is test-backed by
+> `tests/SIMF.Api.Tests/ExhibitorAccountRevokeTests.cs`, and the Control Panel
+> control is wired: a per-row Revoke action in the Accounts modal on
+> `ExhibitorsList.razor` behind `AuthorizedAction`, a `SimfConfirm` carrying the
+> same permission, bilingual strings in both resx files, and the BFF `MapDelete`
+> that forwards to the gated endpoint.
+
+```gherkin
+Scenario: Revoking an officer ends badge scan and access to the booth's visitor cards
+  Given an Administrator holding Exhibitors.RevokeAccount
+  And an exhibitor "Naval Defence Systems" exists and is Active
+  And "officer@navaldefence.example" holds an ACTIVE ExhibitorMembership of it
+  And that account answers 200 today on the app badge scan and on My Visitors
+  When the administrator sends
+       DELETE /api/v1/admin/exhibitors/{id}/accounts/{membershipId}
+  Then the API returns HTTP 200 with ApiResult.Data = true
+       (policy Exhibitors.RevokeAccount, rate-limited "auth")
+  And the ExhibitorMembership row still EXISTS with IsActive = false and a
+      DeletedAt stamp, because it is the attribution trail for the visitor cards
+      that account already captured, each of which told the visitor their details
+      had been shared
+  And GET /api/v1/admin/exhibitors/{id}/accounts no longer lists the row
+  And the grid's "Accounts" column for that exhibitor decrements by one
+  And the account is now 403 on POST /api/v1/app/exhibitor/visitors/scan
+      and on the booth's My Visitors list
+  And the business-meeting notifications stop reaching that account, because they
+      fan out to ACTIVE memberships only
+  And an OperationLog row with Event='Exhibitor.AccountRevoked' records the actor
+      plus the revoked SubjectUserId and SubjectEmail
+
+Scenario: A closed booth's officers can still be revoked
+  Given the exhibitor has been deactivated
+  When the administrator revokes one of its memberships
+  Then the API returns HTTP 200 and the membership is revoked
+  # Adding an officer refuses an inactive exhibitor; removing one must not.
+  # Reusing that guard here would strand a closed booth's officers with their
+  # memberships and no way to strip them.
+```
+
+### E2E-EXH-031: Revoke rejections and its permission gate
+
+```gherkin
+Scenario Outline: The revoke action refuses what it must
+  Given an Administrator holding Exhibitors.RevokeAccount
+  When they send DELETE /admin/exhibitors/{id}/accounts/{membershipId} for <case>
+  Then the API returns <status> with ApiResult.Error.Code = <code>
+  And the bilingual message is surfaced verbatim
+  And no membership changes state
+
+  Examples:
+    | case                                                     | status | code                        |
+    | a membership id no exhibitor holds                       | 404    | EXHIBITOR_ACCOUNT_NOT_FOUND |
+    | a real membership id under a DIFFERENT exhibitor's route | 404    | EXHIBITOR_ACCOUNT_NOT_FOUND |
+    | a membership that was already revoked                    | 409    | EXHIBITOR_ACCOUNT_INVALID   |
+
+Scenario: An admin without Exhibitors.RevokeAccount cannot revoke
+  Given a signed-in admin holding Exhibitors.View + Create + Edit + Delete +
+        LinkAccount, but NOT Exhibitors.RevokeAccount, and not the Administrator
+        wildcard "*"
+  When they send DELETE /admin/exhibitors/{id}/accounts/{membershipId}
+  Then the API answers HTTP 403
+  And the membership is still Active, so the refusal did not half-perform the write
+
+Scenario: The permission alone is enough
+  Given a signed-in admin whose role holds ONLY Exhibitors.RevokeAccount
+  When they send the same request
+  Then the API answers HTTP 200 and the membership is revoked
+  # The mirror of the deny case. Without it, a gate wired to the wrong permission
+  # would pass the deny scenario for the wrong reason.
+```
+
+> The wrong-booth 404 is the security-relevant one: the membership is matched on
+> its own id AND the exhibitor from the route, so one exhibitor's administrator
+> cannot revoke another's officer by guessing an id. `EXHIBITOR_ACCOUNT_INVALID`
+> at 409 is a reused code, not a dedicated one; a dedicated
+> `EXHIBITOR_ACCOUNT_ALREADY_REVOKED` is the better long-term answer and needs a
+> const added to `ErrorCodes`.
+
+**Evidence (API layer):** `tests/SIMF.Api.Tests/ExhibitorAccountRevokeTests.cs`:
+`Revoking_an_account_soft_deletes_its_membership_and_drops_it_from_the_booth`,
+`Revoking_a_membership_that_belongs_to_another_exhibitor_answers_404`,
+`Revoking_an_already_revoked_membership_answers_409`,
+`An_admin_without_the_revoke_permission_is_forbidden`,
+`An_admin_granted_only_the_revoke_permission_succeeds`,
+`An_officer_can_be_revoked_after_the_exhibitor_is_deactivated`.
+
+### E2E-EXH-032: Deactivating an exhibitor a venue-map node still points at
+
+Retiring an exhibitor soft-deletes it, and `PublicBoothService` hides a booth
+whose exhibitor is inactive. The venue map's node, however, kept pointing at that
+booth, so the map offered visitors a pin that led nowhere. The booth's own
+deactivate had refused this for a while with `BOOTH_IN_USE`; the exhibitor's did
+not, which made it a side-door to the same broken state.
+
+The refusal carries its own code rather than reusing the booth's. `BOOTH_IN_USE`
+on an exhibitor action would name the wrong resource to whoever reads the error.
+
+```gherkin
+Scenario: An exhibitor whose booth is on the venue map cannot be retired
+  Given an Administrator holding Exhibitors.Delete
+  And an active exhibitor "Northern Marine" with an active booth "B-114"
+  And a venue-map node of kind Booth pinned to booth "B-114"
+  When the Administrator deactivates "Northern Marine"
+  Then the response is 409 with error code "EXHIBITOR_IN_USE"
+  And the message names the booth that blocks it, in English and in Arabic
+  And "Northern Marine" is still active
+  And its booth "B-114" is still reachable from the public venue map
+
+Scenario: The same exhibitor retires once the pin is removed
+  Given the venue-map node pinned to booth "B-114" has been deleted
+  When the Administrator deactivates "Northern Marine"
+  Then the response is 200
+  And "Northern Marine" no longer appears on the public exhibitor list
+```
+
+**Evidence (API layer):** the exhibitor-deactivate cases in
+`tests/SIMF.Api.Tests/ExhibitorsTests.cs`.
+
 ---
 
-_Last reviewed:_ 2026-07-28 by Claude — retired the orphaned
+_Last reviewed:_ 2026-08-19 by Claude: added the revoke action
+(`DELETE /admin/exhibitors/{id}/accounts/{membershipId}`, permission
+`Exhibitors.RevokeAccount`) as E2E-EXH-030 / E2E-EXH-031. Nothing had ever
+cleared an `ExhibitorMembership`, so booth access could be granted and never
+withdrawn. Shipped end to end, Control Panel control included. Added
+E2E-EXH-032 for the `EXHIBITOR_IN_USE` refusal: retiring an exhibitor whose
+booth is still pinned on the venue map would have orphaned the pin.
+Prior: 2026-07-28 by Claude — retired the orphaned
 `cp-admin-companies.md` (the `/admin/companies` route ceased to exist at
 `a05ef82d`) and ported its one uncovered scenario here as E2E-EXH-029.
 Prior: 2026-07-27 by Claude — owner decision D-781: the Accounts modal

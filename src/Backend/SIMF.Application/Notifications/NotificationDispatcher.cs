@@ -78,6 +78,18 @@ internal sealed class NotificationDispatcher(
             return;
         }
 
+        // Only the FIRST channel to do any work may fail the call. Channels run in
+        // Order, the in-app row write is Order 0, and it persists the whole batch
+        // in one SaveChanges - so once it has returned, those rows are committed.
+        // Letting a later channel's failure escape made the caller's "retry the
+        // batch one at a time" fallback re-send a batch that was already durably
+        // delivered: on an AdminAnnouncement, which sets no dedup guard, every
+        // recipient in the batch got a second bell notification because one
+        // recipient's email lookup threw. A later channel is therefore logged and
+        // swallowed, exactly as EmailNotificationChannel already treats a single
+        // bad address, and the caller's fallback stays reserved for the case where
+        // nothing was written at all.
+        var delivered = false;
         foreach (var channel in channels.OrderBy(channel => channel.Order))
         {
             var handled = pending.Where(channel.ShouldHandle).ToList();
@@ -85,7 +97,27 @@ internal sealed class NotificationDispatcher(
             {
                 continue;
             }
-            await channel.SendManyAsync(handled, cancellationToken);
+
+            if (!delivered)
+            {
+                await channel.SendManyAsync(handled, cancellationToken);
+                delivered = true;
+                continue;
+            }
+
+            try
+            {
+                await channel.SendManyAsync(handled, cancellationToken);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                logger.LogError(
+                    ex,
+                    "Channel {Channel} failed for {Count} notification(s) in a batch an "
+                    + "earlier channel had already delivered; the batch is NOT retried, "
+                    + "because retrying it would duplicate what already landed.",
+                    channel.GetType().Name, handled.Count);
+            }
         }
     }
 

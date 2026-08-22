@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
-import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'package:simf_data_pkg/src/api/api_error_codes.dart';
 import 'package:simf_data_pkg/src/api/api_failure.dart';
 import 'package:simf_data_pkg/src/api/api_result.dart';
@@ -58,14 +57,11 @@ class SimfApiClient {
         currentLanguageCode: currentLanguageCode,
       ),
     );
+    // Logs no body and no header, on purpose: `enableRequestLogging` is
+    // `SIMF_BUILD != 'prod'`, and a release build with no --dart-define still
+    // talks to the PRODUCTION edge. Gate any body logging on `kReleaseMode`.
     dio.interceptors.add(
       LoggingInterceptor(enabled: config.enableRequestLogging),
-    );
-    dio.interceptors.add(
-      PrettyDioLogger(
-        enabled: config.enableRequestLogging,
-        requestBody: true,
-      ),
     );
 
     return SimfApiClient._(dio, tokenSource, currentLanguageCode);

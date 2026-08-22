@@ -59,6 +59,27 @@ class _SignedInController extends AuthController {
   AuthState build() => AuthStateSignedIn(_session());
 }
 
+/// An exhibitor whose auth display name is the organisation it represents.
+/// Three words, so a visitor-style clip to two would be visible.
+class _ExhibitorController extends AuthController {
+  @override
+  AuthState build() => AuthStateSignedIn(
+        Session(
+          accessToken: 'A',
+          refreshToken: 'R',
+          accessTokenExpiresAt: DateTime.now().add(const Duration(minutes: 30)),
+          user: CurrentUser(
+            id: 'u9',
+            email: 'exhibitor@example.sa',
+            displayName: 'Red Sea Marine',
+            appRole: AppRole.exhibitor,
+            preferredLanguage: PreferredLanguage.fromJson('en'),
+            registrationStatus: RegistrationStatus.approved,
+          ),
+        ),
+      );
+}
+
 class _GuestController extends AuthController {
   @override
   AuthState build() => const AuthStateSignedOut();
@@ -975,6 +996,22 @@ void main() {
       // The discover badge is the filled "السعودية", not "KSA" (758:1280).
       expect(find.text('السعودية'), findsOneWidget);
       expect(find.text('KSA'), findsNothing);
+    });
+  });
+
+  group('greeting name while the profile is still loading', () {
+    testWidgets('an exhibitor keeps its full organisation name',
+        (tester) async {
+      // profile: null is the loading state. The fallback used to be `?? true`,
+      // which treated everyone as a visitor and clipped this to "Red Sea" —
+      // greetingDisplayName's own doc calls clipping an organisation a mistake.
+      await tester.runAsync(() async {
+        await _pump(tester, controller: _ExhibitorController());
+      });
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Red Sea Marine'), findsOneWidget);
+      expect(find.text('Red Sea'), findsNothing);
     });
   });
 }

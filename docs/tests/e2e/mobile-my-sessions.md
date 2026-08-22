@@ -26,7 +26,7 @@
 | | |
 |--|--|
 | **Page** | app screen #113 `myAreaSessions` |
-| **Route** | `/my-area/sessions` (`GET /app/account/sessions`) |
+| **Route** | `/my-sessions` (`GET /app/account/sessions`) — the path is `/my-sessions`, not `/my-area/sessions`; see `router.dart` `RouteNames.myAreaSessions` |
 | **Surface** | Mobile (Flutter) |
 | **Figma** | `1388:9067` |
 | **Auth setup** | **Approved account** — `RequireApprovedAccount`. Sign in as an approved visitor (`Get-Totp` for the OTP step, never a literal secret). |
@@ -60,6 +60,7 @@
 | E2E-MOB113-006 | Anonymous read → 401 | auth | P0 | authored ✓ (API `My_sessions_without_a_token_returns_401`) |
 | E2E-MOB113-007 | RTL — Arabic title / category / speaker from the same item | rtl | P2 | covered (models `localized*` getters) |
 | E2E-MOB113-008 | **State chips (owner 2026-07-14):** each card shows a state chip from its phase + status — `مباشر الآن` (live) / `مسجّل` (recorded); my-sessions carries no published-summary flag, so `الملخص متاح` is not shown here; an upcoming card shows none | visual | P1 | authored ✓ (shared `SessionStateChipRow`; `session_state_chip_test.dart` unit + golden `session_state_chips.png`) |
+| E2E-MOB113-009 | The heart's set does not outlive the account — after a sign-out / sign-in on the same device the cards show no filled hearts, and a signed-out session never reads the favourites endpoint (fixed 2026-08-20) | auth | P0 | authored ✓ (provider `session_favourites_signout_test.dart`: `a signed-out session has no favourites and asks the API for none`, `signing out drops the previous account's favourites`) |
 | E2E-MOB113-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-MOB113-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
@@ -77,27 +78,40 @@ Scenario: The booked session shows with per-user flags
 
 Scenario: The four tabs partition the list
   Given the visitor has a future not-attended session and a past attended session
-  When the visitor opens /my-area/sessions
+  When the visitor opens /my-sessions
   Then the القادمة tab shows only the future session
   And the حضرتها tab shows only the attended session
 
 Scenario: An empty tab
   Given the visitor has no sessions in the selected tab
-  When the visitor opens /my-area/sessions
+  When the visitor opens /my-sessions
   Then the screen shows "No sessions in this list."
 
 Scenario: The read requires an approved account
   Given no bearer token
   When a client GETs /api/v1/app/account/sessions
   Then it returns 401
+
+Scenario: The hearts do not outlive the account
+  Given approved visitor A has favourited one of their sessions
+  And A has opened /my-sessions so the hearts are loaded
+  When A signs out
+  And approved visitor B signs in on the same device WITHOUT the app being killed
+  And B opens /my-sessions
+  Then no card shows a filled heart
+  And tapping a heart sends POST /api/v1/app/sessions/{id}/favourite — never a
+    DELETE for a row A owns
 ```
 
 **Evidence:** screen tests (3 — upcoming list+nav, attended partition, empty);
 models test (3 — decode + flags, upcoming/ended derivation, empty); API tests
-(3 — booked+flags, empty, 401).
+(3 — booked+flags, empty, 401); provider regression (2 — signed-out fetches
+nothing, sign-out empties the shared favourites set).
 
 ---
 
-_Last reviewed:_ `2026-07-14` by `SIMF Team` — **owner state chips: each card
-shows a `مباشر الآن` / `مسجّل` chip from its `SessionPhase` + status
-(E2E-MOB113-008).** _Prior:_ `2026-06-26`.
+_Last reviewed:_ `2026-08-20` by `SIMF Team` — **the shared favourites set
+behind the heart is scoped to the signed-in account (E2E-MOB113-009); it used to
+be fetched once per app process and survive sign-out.** _Prior:_ `2026-07-14`
+(owner state chips: each card shows a `مباشر الآن` / `مسجّل` chip from its
+`SessionPhase` + status, E2E-MOB113-008); `2026-06-26`.

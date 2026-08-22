@@ -34,6 +34,7 @@ class MeetingCard extends StatelessWidget {
     required this.l10n,
     required this.baseUrl,
     this.onTap,
+    this.now,
     super.key,
   });
 
@@ -45,6 +46,10 @@ class MeetingCard extends StatelessWidget {
   /// Tapping the card — set for a speaker meeting (opens the speaker profile);
   /// null for a delegation meeting (no speaker to open, so no chevron).
   final VoidCallback? onTap;
+
+  /// Test seam for "today" on the Saudi clock; null in production
+  /// ([_dateLine] reads [saudiNow]).
+  final DateTime? now;
 
   @override
   Widget build(BuildContext context) {
@@ -234,11 +239,15 @@ class MeetingCard extends StatelessWidget {
 
   /// "07:45 AM · اليوم" when the meeting is today, else the absolute date (the
   /// same format the requests card uses, Figma 1408:9782).
+  ///
+  /// D-219 / D-770 — both sides on the Saudi wall clock; the phone's own
+  /// calendar day badges the wrong meetings "today" outside Riyadh.
   String _dateLine() {
     final date = saudiOf(item.displayDate);
-    final now = DateTime.now();
-    final isToday =
-        date.year == now.year && date.month == now.month && date.day == now.day;
+    final today = now ?? saudiNow();
+    final isToday = date.year == today.year &&
+        date.month == today.month &&
+        date.day == today.day;
     return isToday ? l10n.requestTimeToday(date) : l10n.requestDate(date);
   }
 }

@@ -24,10 +24,9 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 /// (D-495); the video provider is YouTube (D-349); and FR-702's notice is
 /// informational only — nothing here geo-checks or withholds the stream.
 class LiveBroadcastScreen extends ConsumerStatefulWidget {
-  const LiveBroadcastScreen({this.sessionId, this.liveUrl, super.key});
+  const LiveBroadcastScreen({this.sessionId, super.key});
 
   final String? sessionId;
-  final String? liveUrl;
 
   @override
   ConsumerState<LiveBroadcastScreen> createState() =>
@@ -187,7 +186,6 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
         onRefresh: _refresh,
         child: LiveBroadcastBody(
           sessionId: _id,
-          liveUrl: widget.liveUrl,
           showSignLanguage: _showSignLanguage,
           onSignLanguageChanged: (value) =>
               setState(() => _showSignLanguage = value),

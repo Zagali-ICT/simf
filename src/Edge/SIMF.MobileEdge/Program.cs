@@ -22,6 +22,7 @@
 // business logic. The shipped mobile wire contract is append-only, and
 // every field the app decodes has to survive this hop byte for byte.
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.Extensions.Primitives;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -160,15 +161,38 @@ app.UseForwardedHeaders(forwardedHeaders);
 // Baseline security response headers, matching the API and both Blazor hosts
 // (NCA App-Sec Standard A3-4 / A5-13 / A6-21). This host serves no HTML and is
 // never framed, so the policy can be the strict one rather than report-only.
+//
+// OnStarting because YARP concatenates the upstream headers onto whatever the
+// pipeline already set; setting these before next() sends each one twice.
+// Fill-if-missing because the API's policy is the stricter of the two —
+// assigning here would weaken every proxied response.
 app.Use(async (context, next) =>
 {
-    var headers = context.Response.Headers;
-    headers["X-Content-Type-Options"] = "nosniff";
-    headers["X-Frame-Options"] = "DENY";
-    headers["Referrer-Policy"] = "no-referrer";
-    headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'";
+    context.Response.OnStarting(static state =>
+    {
+        var headers = ((HttpContext)state).Response.Headers;
+        SetIfMissing(headers, "X-Content-Type-Options", "nosniff");
+        SetIfMissing(headers, "X-Frame-Options", "DENY");
+        SetIfMissing(headers, "Referrer-Policy", "no-referrer");
+        SetIfMissing(
+            headers,
+            "Content-Security-Policy",
+            "default-src 'none'; frame-ancestors 'none'");
+        return Task.CompletedTask;
+    }, context);
+
     await next();
 });
+
+// Value, not key: an upstream header present but EMPTY would satisfy
+// ContainsKey and suppress the default, leaving a header declaring no policy.
+static void SetIfMissing(IHeaderDictionary headers, string name, string value)
+{
+    if (StringValues.IsNullOrEmpty(headers[name]))
+    {
+        headers[name] = value;
+    }
+}
 
 // Answers the load balancer directly. It deliberately does NOT probe the API:
 // this endpoint reports whether the edge is up, and a health check that fails

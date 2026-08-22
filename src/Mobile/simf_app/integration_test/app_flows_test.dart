@@ -11,13 +11,17 @@ import 'package:simf_app/app/router.dart';
 import 'package:simf_app/core/startup/app_update_checker.dart';
 import 'package:simf_app/features/accessibility/accessibility_screen.dart';
 import 'package:simf_app/features/accessibility/data/accessibility_controller.dart';
+import 'package:simf_app/features/accessibility/widgets/accessibility_toggle_row.dart';
+import 'package:simf_app/features/accessibility/widgets/size_chip.dart';
 import 'package:simf_app/features/account/sign_in_screen.dart';
+import 'package:simf_app/features/account/widgets/sign_in_alt_actions.dart';
 import 'package:simf_app/features/contacts/data/contact_models.dart';
 import 'package:simf_app/features/contacts/data/contacts_repository.dart';
 import 'package:simf_app/features/contacts/my_contacts_screen.dart';
 import 'package:simf_app/features/contacts/share_my_contact_screen.dart';
 import 'package:simf_app/features/guest/guest_mode_screen.dart';
 import 'package:simf_app/features/home/home_screen.dart';
+import 'package:simf_app/features/myarea/data/myarea_repository.dart';
 import 'package:simf_app/features/myarea/identity_verification_screen.dart';
 import 'package:simf_app/features/notifications/data/notifications_repository.dart';
 import 'package:simf_app/features/splash/data/splash_controller.dart';
@@ -32,9 +36,9 @@ import '../test/support/simf_test_scope.dart';
 /// cross-screen navigation glue — splash routing, the auth gate, and the
 /// FDS-014 / guest-entry wiring — that the per-screen widget tests cannot.
 ///
-/// Runs headless via `flutter test integration_test/app_flows_test.dart`
-/// (no backend, no device, no plugins on the driven paths), or on a device
-/// with `-d <id>`.
+/// **Needs an attached device** — `IntegrationTestWidgetsFlutterBinding` cannot
+/// run headless, so neither CI nor a bare `flutter test` reaches this file. Run
+/// it by hand (`-d DEVICE_ID`) whenever D-694's shared foundations move.
 
 /// In-memory prefs: onboarding marked complete (so the splash routes a
 /// signed-out user straight to sign-in, not onboarding) and the UI language
@@ -119,6 +123,16 @@ class _FakeContactsRepo implements ContactsRepository {
   Future<String> getVcard(String id) async => 'BEGIN:VCARD\r\nEND:VCARD\r\n';
 }
 
+/// Share-my-contact needs BOTH repositories: `ShareCardNotifier.build()` awaits
+/// `myAreaRepositoryProvider` for the vCard, not just the contacts repository.
+class _FakeMyAreaRepo implements MyAreaRepository {
+  @override
+  Future<String> getContactCardVcf() async => 'BEGIN:VCARD\r\nEND:VCARD\r\n';
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
 AuthState _signedInApprovedVisitor() => AuthStateSignedIn(
       Session(
         accessToken: 'A',
@@ -131,14 +145,17 @@ AuthState _signedInApprovedVisitor() => AuthStateSignedIn(
           appRole: AppRole.visitor,
           preferredLanguage: PreferredLanguage.fromJson('en'),
           registrationStatus: RegistrationStatus.approved,
+          // Explicit: the default is FALSE, and `routeAfterAuth` sends an
+          // incomplete profile to sign-up rather than Home.
+          profileComplete: true,
         ),
       ),
     );
 
 /// A signed-in but **not-yet-approved** account. Its token carries a Visitor
 /// role, but `effectiveAppRole` resolves to [AppRole.guest] until approval
-/// (D-666). `profileComplete` defaults true so the splash boots it to Home
-/// (an incomplete profile would route to the sign-up screen instead).
+/// (D-666). `profileComplete` is set explicitly so the splash boots it to Home
+/// (an incomplete profile routes to the sign-up screen instead).
 AuthState _signedInPendingVisitor() => AuthStateSignedIn(
       Session(
         accessToken: 'A',
@@ -151,13 +168,24 @@ AuthState _signedInPendingVisitor() => AuthStateSignedIn(
           appRole: AppRole.visitor,
           preferredLanguage: PreferredLanguage.fromJson('en'),
           registrationStatus: RegistrationStatus.pending,
+          profileComplete: true,
         ),
       ),
     );
 
+/// NOT optional: `simfDataConfigProvider` throws unless overridden, and every
+/// screen reaching the api client dies at the splash without it. The host is
+/// unreachable, which only costs these routing tests an error state.
+const _dataConfig = SimfDataConfig(
+  baseUrl: 'http://test.local/api/v1',
+  appKey: 'test-key',
+  deviceType: SimfDeviceType.android,
+);
+
 List<Override> _overrides(AuthState auth) {
   final prefs = _FakePrefs();
   return <Override>[
+    simfDataConfigProvider.overrideWithValue(_dataConfig),
     simfPrefsStorageProvider.overrideWithValue(prefs),
     localeControllerProvider.overrideWith(() => LocaleController(prefs: prefs)),
     accessibilityControllerProvider
@@ -171,6 +199,7 @@ List<Override> _overrides(AuthState auth) {
     // Home's only live call — pin it so the home never touches HTTP.
     unreadNotificationCountProvider.overrideWith((ref) async => 0),
     contactsRepositoryProvider.overrideWithValue(_FakeContactsRepo()),
+    myAreaRepositoryProvider.overrideWithValue(_FakeMyAreaRepo()),
   ];
 }
 
@@ -216,9 +245,15 @@ void main() {
     // Signed-out + onboarding-complete -> the splash lands on sign-in.
     expect(find.byType(SignInScreen), findsOneWidget);
 
-    // The new "Browse without signing in" entry (D-325) — tap it (located by
-    // its explore icon so the assertion is locale-independent).
-    await tester.tap(find.widgetWithIcon(TextButton, Icons.explore_outlined));
+    // The "Browse without signing in" entry (D-325). By structure, not icon or
+    // label: D-363 (Figma 627:2390) made it an underlined link with no icon,
+    // and `SignInAltActions` holds exactly one TextButton.
+    await tester.tap(
+      find.descendant(
+        of: find.byType(SignInAltActions),
+        matching: find.byType(TextButton),
+      ),
+    );
     await tester.pumpAndSettle();
     expect(find.byType(GuestModeScreen), findsOneWidget);
 
@@ -274,9 +309,16 @@ void main() {
 
     // Large text + high contrast force the root MediaQuery + theme to swap —
     // the whole tree must rebuild cleanly.
-    await tester.tap(find.widgetWithText(ChoiceChip, 'Large'));
+    // By structure again — the screen renders in Arabic. The last size chip is
+    // the largest; the first toggle row is high-contrast.
+    await tester.tap(find.byType(SizeChip).last);
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(SwitchListTile, 'High contrast'));
+    await tester.tap(
+      find.descendant(
+        of: find.byType(AccessibilityToggleRow).first,
+        matching: find.byType(Switch),
+      ),
+    );
     await tester.pumpAndSettle();
     expect(find.byType(AccessibilityScreen), findsOneWidget);
   });

@@ -33,6 +33,9 @@ import 'package:flutter_test/flutter_test.dart';
 /// So the unit of measurement is the screen PLUS its extracted body — see
 /// [_bundle].
 ///
+/// Every slip so far made a screen INVISIBLE to the sweep rather than visibly
+/// wrong, so ask of any change here what it stops seeing.
+///
 /// This test is the section 4 pattern applied to section 13.6 — pin the
 /// surface with a test, not a comment. It enumerates every screen that fetches
 /// and asserts the ones WITHOUT a refresh hook are exactly the reviewed exempt
@@ -84,6 +87,10 @@ const Map<String, String> _exempt = <String, String>{
   // 1701:3789).
   'registration/registration_status_screen.dart': 'explicit Re-check button',
 
+  // Terminal, offline-safe by contract (D-366); its one read is the CP-editable
+  // welcome line (D-461), which already falls back to bundled copy.
+  'registration/registration_success_screen.dart': 'terminal, offline-safe',
+
   // Live camera preview: no scrollable, and no fetch to repeat.
   'contacts/scan_contact_screen.dart': 'camera preview',
   'exhibitor/scan_visitor_screen.dart': 'camera preview',
@@ -100,8 +107,10 @@ const Map<String, String> _exempt = <String, String>{
 };
 
 /// A screen "fetches" when it reads a provider or declares the repo's standard
-/// `_load()` hook.
-final RegExp _fetches = RegExp(r'ref\.watch\(|ref\.read\(|Future<void> _load');
+/// `_load()` hook. The `\s*` tolerates a read wrapped across lines; no `\b`
+/// before `ref`, or `_ref.read(` stops matching.
+final RegExp _fetches =
+    RegExp(r'ref\s*\.\s*(watch|read)\(|Future<void> _load');
 
 /// Any of the shared refresh affordances, a raw RefreshIndicator, or an
 /// `onRefresh:` handed to a child that owns one.

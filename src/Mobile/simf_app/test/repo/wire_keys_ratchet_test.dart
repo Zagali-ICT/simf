@@ -35,6 +35,10 @@ import 'package:flutter_test/flutter_test.dart';
 //     signature to look for — it is what a `freezed` conversion gets wrong —
 //     and it needs an owner decision, not a snapshot edit.
 //
+// BLIND SPOT: this pins the SET of key literals, so swapping a read for a
+// different key ALREADY in the set stays green. Which key a decoder reads is
+// defended per-decoder, in `test/wire/` and beside each feature's models.
+//
 // The working directory for `flutter test` is the package root
 // (`src/Mobile/simf_app`), so every path below is relative to that. That is
 // deliberate: walking up the tree looking for a `.git` DIRECTORY finds the

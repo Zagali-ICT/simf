@@ -27,11 +27,6 @@ internal sealed class RatingFormService(
     private const int MaxStars = 5;
     private const int CommentMaxLength = 2000;
 
-    /// <summary>Event-local offset (+03:00) — the codebase convention for bucketing
-    /// sessions / scans into calendar days (mirrors <c>ProgrammeSessionService</c>,
-    /// <c>MyAreaService</c> and <c>ProgrammeRatingPromptWorker</c>).</summary>
-    private static readonly TimeSpan EventOffset = TimeSpan.FromHours(3);
-
     public async Task<RatingFormView> GetFormAsync(
         Guid userId, RatingFormRequest request, CancellationToken cancellationToken = default)
     {

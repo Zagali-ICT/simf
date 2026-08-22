@@ -137,4 +137,28 @@ public sealed class MobileEdgeRoutingTests
         Assert.Contains("MapGet(\"/health\"", program, StringComparison.Ordinal);
         Assert.DoesNotContain("HttpClient", program, StringComparison.Ordinal);
     }
+
+    /// <summary>The edge fills a missing security header on the way OUT; it never
+    /// overwrites the API's. Assigning before <c>next()</c> sends each header
+    /// twice (YARP concatenates the upstream values), and assigning at all makes
+    /// the edge authoritative and drops the API's stricter policy.</summary>
+    [Fact]
+    public void The_edge_fills_missing_security_headers_rather_than_overwriting_the_APIs()
+    {
+        var program = EdgeFile("Program.cs");
+
+        Assert.Contains("Response.OnStarting", program, StringComparison.Ordinal);
+        Assert.Contains(
+            "SetIfMissing(headers, \"X-Content-Type-Options\"",
+            program,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "headers[\"Content-Security-Policy\"] =",
+            program,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "headers[\"X-Frame-Options\"] =",
+            program,
+            StringComparison.Ordinal);
+    }
 }

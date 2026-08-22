@@ -74,7 +74,7 @@ class ModeratorActionButton extends StatelessWidget {
                 style: TextStyle(
                   color: solid ? SimfTokens.surface : color,
                   fontWeight: FontWeight.w700,
-                  fontSize: SimfTokens.textHero - 4, // 24
+                  fontSize: SimfTokens.text24,
                 ),
               ),
             ),

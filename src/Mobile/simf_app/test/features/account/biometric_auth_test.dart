@@ -136,6 +136,65 @@ Widget _nudgeHost() => Consumer(
     );
 
 void main() {
+  // Pins that only the sign-in copy points at a password form, since only the
+  // sign-in screen has one.
+  group('localizedBiometricError caller seams', () {
+    const l10n = AppL10n(Locale('en'));
+
+    test('the sign-in caller (no overrides) gets the password advice', () {
+      expect(
+        localizedBiometricError(l10n, LocalAuthOutcome.lockedOut),
+        contains('sign in with your password'),
+      );
+      expect(
+        localizedBiometricError(l10n, LocalAuthOutcome.unavailable),
+        contains('Sign in with your password'),
+      );
+    });
+
+    test('the enrol caller overrides both, and neither names the password', () {
+      final lockedOut = localizedBiometricError(
+        l10n,
+        LocalAuthOutcome.lockedOut,
+        lockedOut: l10n.biometricLockedOutEnrol,
+        unavailable: l10n.biometricUnavailableEnrol,
+      );
+      final unavailable = localizedBiometricError(
+        l10n,
+        LocalAuthOutcome.unavailable,
+        lockedOut: l10n.biometricLockedOutEnrol,
+        unavailable: l10n.biometricUnavailableEnrol,
+      );
+
+      expect(lockedOut, l10n.biometricLockedOutEnrol);
+      expect(unavailable, l10n.biometricUnavailableEnrol);
+      expect(lockedOut, isNot(contains('password')));
+      expect(unavailable, isNot(contains('password')));
+    });
+
+    test('no device screen lock is caller-neutral device-setup advice', () {
+      const outcome = LocalAuthOutcome.noDeviceCredential;
+      expect(
+        localizedBiometricError(l10n, outcome),
+        l10n.biometricNoDeviceCredential,
+      );
+      expect(
+        localizedBiometricError(
+          l10n,
+          outcome,
+          lockedOut: l10n.biometricLockedOutEnrol,
+          unavailable: l10n.biometricUnavailableEnrol,
+        ),
+        l10n.biometricNoDeviceCredential,
+      );
+    });
+
+    test('a cancel and a success carry no message', () {
+      expect(localizedBiometricError(l10n, LocalAuthOutcome.cancelled), isNull);
+      expect(localizedBiometricError(l10n, LocalAuthOutcome.success), isNull);
+    });
+  });
+
   group('maybeOfferBiometricEnrolment nudge (D-441 / D-445; #7a)', () {
     testWidgets(
         'available + not enabled → shows the nudge; tapping Enable '

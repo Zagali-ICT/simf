@@ -22,9 +22,24 @@ class FaqList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final showGroupHeaders = groups.length > 1;
+    // Flattened to one row per line so a long catalogue builds lazily. A row
+    // whose entry is null is a group header; each row owns the trailing gap the
+    // sibling spacers used to add, so the last tile keeps its gap as before.
+    final rows = <(String?, FaqEntry?)>[];
+    for (final group in groups) {
+      if (group.entries.isEmpty) {
+        continue;
+      }
+      if (showGroupHeaders) {
+        rows.add((group.localizedName(isArabic: isArabic), null));
+      }
+      for (final entry in group.entries) {
+        rows.add((null, entry));
+      }
+    }
     return SimfPullToRefresh(
       onRefresh: onRefresh,
-      child: ListView(
+      child: ListView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(
           SimfTokens.space4,
@@ -32,21 +47,20 @@ class FaqList extends StatelessWidget {
           SimfTokens.space4,
           SimfTokens.space6,
         ),
-        children: <Widget>[
-          for (final group in groups)
-            if (group.entries.isNotEmpty) ...<Widget>[
-              if (showGroupHeaders) ...<Widget>[
-                SimfSectionHeader(
-                  title: group.localizedName(isArabic: isArabic),
-                ),
-                const SizedBox(height: SimfTokens.space3),
-              ],
-              for (final entry in group.entries) ...<Widget>[
-                FaqTile(entry: entry, isArabic: isArabic),
-                const SizedBox(height: SimfTokens.space3),
-              ],
-            ],
-        ],
+        itemCount: rows.length,
+        itemBuilder: (context, index) {
+          final (groupName, entry) = rows[index];
+          return Padding(
+            padding: const EdgeInsets.only(bottom: SimfTokens.space3),
+            child: entry == null
+                ? SimfSectionHeader(title: groupName!)
+                : FaqTile(
+                    key: ValueKey<String>(entry.id),
+                    entry: entry,
+                    isArabic: isArabic,
+                  ),
+          );
+        },
       ),
     );
   }

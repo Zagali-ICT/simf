@@ -28,6 +28,10 @@ const Set<String> _allowedClickPaths = <String>{
   // 15-minute reminder) open the bilateral-meetings page. Without this entry
   // the server clickUrl was rejected here and every such tile stayed inert.
   '/meetings',
+  // FR-803 (C5) — the match-recommendation tile opens the networking surface.
+  // This set is pinned against the server's catalogue by
+  // NotificationClickUrlContractTests.
+  '/meet',
 };
 
 /// Notifications — route: `RouteNames.notifications` · Figma 223:4264

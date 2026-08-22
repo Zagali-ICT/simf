@@ -414,7 +414,7 @@ public class PipelineTestGateTests
     /// falls back to the `Default` POOL agent. Both deployment jobs therefore
     /// ran on the SAME machine while their names, displayNames and environment
     /// strings all claimed two servers - and every deploy between 2026-08-08 and
-    /// 2026-08-19 reported success on the wrong box (D-932, D-934).</para>
+    /// 2026-08-19 reported success on the wrong box (D-932, D-938).</para>
     ///
     /// <para>An indented `pool:` re-opens it exactly, which is why that is
     /// asserted too: a job's pool OVERRIDES its environment's VM resource, the
@@ -443,7 +443,7 @@ public class PipelineTestGateTests
             + "carry `resourceType: virtualMachine`. A job without it ignores the environment's "
             + "registered VM and falls back to the `Default` POOL agent - which is how every "
             + "deploy for eleven days landed on pre-production while reporting success under "
-            + "the production environment name (D-932, D-934). Bind the job, or the "
+            + "the production environment name (D-932, D-938). Bind the job, or the "
             + "environment name is decoration on a history page.");
 
         var indentedPools = lines.Where(l => Regex.IsMatch(l, @"^\s+pool:")).ToArray();
@@ -519,7 +519,7 @@ public class PipelineTestGateTests
             $"azure-pipelines.yml references {templatePath} {references} time(s) but passes "
             + $"`{parameterName}` {passed} time(s). Every deployment job names both the machine "
             + "it expects to land on and the machine belonging to the other environment, so a "
-            + "job routed to the wrong server aborts before it stops a single site (D-934). A "
+            + "job routed to the wrong server aborts before it stops a single site (D-938). A "
             + "reference missing either pin deploys blind, which is the state this whole guard "
             + "exists to end.");
     }

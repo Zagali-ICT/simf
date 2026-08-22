@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/router.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 
@@ -19,9 +20,16 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 ///
 /// Known limitation: the aux auth routes (`/auth/forgot-password`,
 /// `/auth/reset-password`, `/auth/verify-otp`, `/auth/badge*`,
-/// `/auth/biometric-step-up`) all share `number: 0`, so the number-keyed gate
-/// sets cannot gate them one at a time — they read as "public" via these pure
-/// functions and are backend-enforced instead. They are intentionally excluded.
+/// `/auth/biometric-step-up`, `/account/my-devices`) live in the router's
+/// separate aux table, so `routeNumberForPath` reports them as unnumbered and
+/// the number-keyed gate sets cannot gate them one at a time — they read as
+/// "public" via these pure functions and are backend-enforced instead. They are
+/// the only intentional exclusion.
+///
+/// That `buildRouter` feeds the redirect `CurrentUser.effectiveAppRole` and not
+/// the raw token role (D-666) is unreachable through [redirectDecision], which
+/// takes the role as a parameter; it lives in
+/// `router_effective_role_wiring_test.dart`.
 void main() {
   // Access tiers, assigned by hand from the spec (the independent oracle).
   //  - public:        no sign-in required (open, or an in-screen prompt like
@@ -32,6 +40,7 @@ void main() {
   //  - exhibitor / staff / moderator: that single role only
   const publicPaths = <String>[
     '/', // 13 home (role-aware, but reachable)
+    '/splash', // 1 — the cold-start park; never gated (Page_001 L-6)
     '/onboarding', // 2
     '/sign-in', // 3
     '/sign-up', // 5
@@ -51,6 +60,7 @@ void main() {
     '/sessions/:sessionId', // 17 — public again (D-750, reverses D-576)
     '/live', // 25 — NOT redirect-gated (D-577 in-screen prompt)
     '/news', // 29
+    '/news/:newsId', // 290
     '/media', // 30
     '/media-partners', // 31
     '/ai-summary', // 34
@@ -73,6 +83,8 @@ void main() {
   const universalAuthPaths = <String>[
     '/sign-up/visitor', // 7
     '/sign-up/interests', // 701
+    '/my-area/interests', // 702 — edit interests from My-Area (#14)
+    '/my-area/mobile', // 703 — add / edit the mobile number (owner 2026-07-26)
     '/registration/success', // 10
     '/registration/status', // 11
     '/my-area', // 14
@@ -93,6 +105,8 @@ void main() {
     '/meetings', // 116 (VIP-only enforced in-screen; role gate = attendee)
     '/sessions/:sessionId/pick-seat', // 109
     '/sessions/join', // 110
+    '/my-sessions', // 113 (D-710 — restored)
+    '/meeting-confirm', // 117 — the other-party Bi-Meeting confirm
   ];
 
   const exhibitorPaths = <String>[
@@ -103,6 +117,7 @@ void main() {
   const staffPaths = <String>[
     '/gates/scan', // 105
     '/staff/register-visitor', // 114
+    '/staff/seating/:sessionId', // 118 — seating desk (D-771)
   ];
 
   const moderatorPaths = <String>[
@@ -275,6 +290,7 @@ void main() {
       // A wrong path string would resolve to number null -> treated public ->
       // false-green. Assert each gated path maps to a known route number.
       for (final p in <String>[
+        ...publicPaths,
         ...universalAuthPaths,
         ...attendeePaths,
         ...exhibitorPaths,
@@ -283,6 +299,37 @@ void main() {
       ]) {
         expect(routeNumberForPath(p), isNotNull, reason: p);
       }
+    });
+
+    test('every route in the real table carries exactly one tier', () {
+      // Coverage comes from the router; the verdicts stay hand-written, since
+      // reading them back out would let the file agree with itself.
+      final classified = <String>[
+        ...publicPaths,
+        ...universalAuthPaths,
+        ...attendeePaths,
+        ...exhibitorPaths,
+        ...staffPaths,
+        ...moderatorPaths,
+      ];
+      expect(
+        classified.toSet().length,
+        classified.length,
+        reason: 'a path is listed in two tiers (or twice in one)',
+      );
+
+      // The unnumbered aux auth table is deliberately out of scope.
+      final unclassified = <String>[
+        for (final route in buildRoutes().whereType<GoRoute>())
+          if (routeNumberForPath(route.path) != null &&
+              !classified.contains(route.path))
+            route.path,
+      ];
+      expect(
+        unclassified,
+        isEmpty,
+        reason: 'route(s) declared with no access tier in this matrix',
+      );
     });
   });
 }

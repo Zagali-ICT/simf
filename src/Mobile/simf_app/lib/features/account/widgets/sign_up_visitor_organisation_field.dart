@@ -60,6 +60,11 @@ class _SignUpVisitorOrganisationFieldState
   bool _searchFailed = false;
   Timer? _debounce;
 
+  // Drops an out-of-order search response: the debounce cancels a pending
+  // timer, not a request already in flight, and organisation is required
+  // (D-221), so a stale list makes the visitor pick the wrong employer.
+  int _searchGeneration = 0;
+
   @override
   void initState() {
     super.initState();
@@ -82,6 +87,7 @@ class _SignUpVisitorOrganisationFieldState
   }
 
   Future<void> _run(String value) async {
+    final generation = ++_searchGeneration;
     setState(() {
       _searching = true;
       _searchFailed = false;
@@ -89,7 +95,7 @@ class _SignUpVisitorOrganisationFieldState
     final repo = ref.read(profileRepositoryProvider);
     try {
       final results = await repo.searchOrganisations(search: value);
-      if (!mounted) {
+      if (!mounted || generation != _searchGeneration) {
         return;
       }
       setState(() {
@@ -97,7 +103,7 @@ class _SignUpVisitorOrganisationFieldState
         _searching = false;
       });
     } on ApiFailure {
-      if (!mounted) {
+      if (!mounted || generation != _searchGeneration) {
         return;
       }
       setState(() {

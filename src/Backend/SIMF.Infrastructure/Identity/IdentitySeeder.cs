@@ -10,7 +10,9 @@
 //        in Development);
 //        SIMF.Api.Tests/SuperAdminDuplicateSeedTests.cs (granting the
 //        Administrator wildcard while other accounts already hold it is
-//        audited and names them; re-seeding the same address audits nothing)
+//        audited and names them; re-seeding the same address audits nothing);
+//        SIMF.Api.Tests/SeedRaceGuardTests.cs (the concurrent first-boot
+//        tolerance every insert below now saves through)
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
@@ -27,6 +29,7 @@ using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Organization;
 using SIMF.Domain.Profiles;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Infrastructure.Seeding;
 
 namespace SIMF.Infrastructure.Identity;
 
@@ -167,9 +170,15 @@ public sealed class IdentitySeeder(
 
         if (!await accounts.IsInRoleAsync(admin, AdministratorRole, cancellationToken))
         {
-            await accounts.AddToRoleAsync(admin, AdministratorRole, cancellationToken).EnsureSuccessAsync();
-            await ReportAdditionalAdministratorAsync(
-                settings.Email, alreadyAdministrators, cancellationToken);
+            // Reported only when THIS instance performed the grant. On a
+            // concurrent first boot the losing instance finds the role already
+            // granted, and auditing the same privilege change from every node
+            // would put one event in the trail per running instance.
+            if (await TryGrantRoleAsync(admin, AdministratorRole, cancellationToken))
+            {
+                await ReportAdditionalAdministratorAsync(
+                    settings.Email, alreadyAdministrators, cancellationToken);
+            }
         }
 
         // Every seeded admin must end up with UserType = Admin. This
@@ -402,7 +411,12 @@ public sealed class IdentitySeeder(
 
     private async Task EnsureRoleAsync(string roleName)
     {
-        if (!await roleManager.RoleExistsAsync(roleName))
+        if (await roleManager.RoleExistsAsync(roleName))
+        {
+            return;
+        }
+
+        try
         {
             await roleManager.CreateAsync(new SimfRole
             {
@@ -410,6 +424,78 @@ public sealed class IdentitySeeder(
                 IsBaseline = true,
             });
         }
+        catch (DbUpdateException exception) when (SeedRaceGuard.IsUniqueIndexViolation(exception))
+        {
+            // A concurrent first boot: another instance created the same role
+            // between the existence check above and this insert, and the unique
+            // index on the normalised name rejected ours. The role exists, which
+            // is all this method promises, so the losing node detaches the
+            // refused row and keeps booting. Detaching matters more here than the
+            // log line: a rejected role left tracked as Added would be re-sent by
+            // the permission-catalogue save a few lines later and fail it too.
+            SeedRaceGuard.DetachAddedEntries(dbContext);
+            logger.LogInformation(
+                "Role '{Role}' seed lost the first-boot race — another instance created it.",
+                roleName);
+        }
+    }
+
+    /// <summary>
+    /// Grants a role, tolerating a concurrent first boot. Returns true when THIS
+    /// instance performed the grant and false when another instance had already
+    /// done so, so a caller with an audit entry to write can tell the two apart.
+    ///
+    /// <para>A lost race surfaces two different ways depending on how the two
+    /// instances interleave. If the winner commits after our caller's
+    /// <c>IsInRoleAsync</c> check but before our insert, the composite primary
+    /// key on the user-role table rejects it and Identity throws. If the winner
+    /// commits slightly earlier, Identity's own duplicate check catches it first
+    /// and returns a failed result instead. Both mean the same thing, and the
+    /// second one is why this re-reads the role membership rather than matching
+    /// on an Identity error code: the end state is the only thing that decides
+    /// whether the seed step succeeded, and a genuine failure still throws.</para>
+    /// </summary>
+    private async Task<bool> TryGrantRoleAsync(
+        SimfUser user, string role, CancellationToken cancellationToken)
+    {
+        UserOperationResult result;
+        try
+        {
+            result = await accounts.AddToRoleAsync(user, role, cancellationToken);
+        }
+        catch (DbUpdateException exception) when (SeedRaceGuard.IsUniqueIndexViolation(exception))
+        {
+            SeedRaceGuard.DetachAddedEntries(dbContext);
+            // Identity does not only insert the grant row: it stamps a fresh
+            // concurrency value on the user first, so the refused save leaves
+            // this row tracked as Modified with a stamp the database never
+            // accepted. Reloading it is what keeps the boot alive — otherwise the
+            // NEXT save on this context (creating the next demo account is one)
+            // flushes that stale UPDATE and dies on a concurrency failure, which
+            // carries no store error and so is not a race this guard can forgive.
+            await dbContext.Entry(user).ReloadAsync(cancellationToken);
+            logger.LogInformation(
+                "Role grant '{Role}' lost the first-boot race — another instance granted it.",
+                role);
+            return false;
+        }
+
+        if (result.Succeeded)
+        {
+            return true;
+        }
+
+        if (await accounts.IsInRoleAsync(user, role, cancellationToken))
+        {
+            logger.LogInformation(
+                "Role grant '{Role}' lost the first-boot race — another instance granted it.",
+                role);
+            return false;
+        }
+
+        throw new InvalidOperationException(
+            $"Seeding could not grant the '{role}' role: "
+            + string.Join("; ", result.Errors.Select(error => $"{error.Code}: {error.Description}")));
     }
 
     /// <summary>Idempotent seed of the whole Permission catalogue plus
@@ -471,7 +557,12 @@ public sealed class IdentitySeeder(
             }
         }
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+        // Tolerates a concurrent first boot. Both the unique index on
+        // Permission.Code and the composite key on the role-grant table reject
+        // whichever instance arrives second, and the rows it was rejected for
+        // are the rows this step exists to guarantee.
+        await dbContext.SaveToleratingFirstBootRaceAsync(
+            logger, "Permission catalogue seed", cancellationToken);
     }
 
     /// <summary>#6/#17 (owner 2026-07-20) — codes retired from
@@ -507,7 +598,36 @@ public sealed class IdentitySeeder(
             .ToListAsync(cancellationToken);
         dbContext.RolePermissions.RemoveRange(grants);
         dbContext.Permissions.RemoveRange(stale);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            // The concurrent-first-boot case for a cleanup step rather than an
+            // insert one, so it does not go through the shared unique-index
+            // guard: a lost delete race reports the wrong number of affected
+            // rows, not a duplicate key. This batch is nothing but DELETEs of
+            // rows read moments earlier, so the only way the store can report
+            // fewer rows than expected is that another instance deleted the same
+            // retired permissions first — which is the end state this method
+            // exists to reach. A genuine delete failure still arrives as a plain
+            // DbUpdateException carrying a store error and still propagates.
+            //
+            // The pending deletes are detached for the same reason a failed
+            // insert is: left tracked they would be re-sent by the catalogue save
+            // that follows and fail it on rows that are already gone.
+            var pendingDeletes = dbContext.ChangeTracker.Entries()
+                .Where(entry => entry.State == EntityState.Deleted)
+                .ToList();
+            foreach (var entry in pendingDeletes)
+            {
+                entry.State = EntityState.Detached;
+            }
+            logger.LogInformation(
+                "Retired-permission cleanup lost the first-boot race — another instance removed them.");
+            return;
+        }
 
         logger.LogInformation(
             "Retired {PermissionCount} removed permission(s) and {GrantCount} grant(s): {Codes}",
@@ -597,8 +717,13 @@ public sealed class IdentitySeeder(
             // carries badge codes exactly as a migrated one does.
             Code = await ProfileTypeCodeAllocator.NextAsync(appDbContext, cancellationToken),
         });
-        // ProfileType lives on App DB.
-        await appDbContext.SaveChangesAsync(cancellationToken);
+        // ProfileType lives on App DB. The save tolerates a concurrent first
+        // boot: every instance runs this seeder, so the unique index on the name
+        // rejects whichever one arrives second, and the row it was rejected for
+        // is the row this step exists to guarantee. The allocated Code races the
+        // same way and is guarded by the same index.
+        await appDbContext.SaveToleratingFirstBootRaceAsync(
+            logger, $"Profile type '{name}' seed", cancellationToken);
     }
 
     /// <summary>
@@ -706,11 +831,42 @@ public sealed class IdentitySeeder(
             CreatedAt = now,
         };
 
-        var result = await accounts.CreateAsync(admin, settings.TempPassword);
+        UserOperationResult result;
+        try
+        {
+            result = await accounts.CreateAsync(admin, settings.TempPassword, cancellationToken);
+        }
+        catch (DbUpdateException exception) when (SeedRaceGuard.IsUniqueIndexViolation(exception))
+        {
+            // A concurrent first boot: another instance inserted the same
+            // super-admin between Identity's duplicate-address check and this
+            // write, and the unique index on the normalised user name rejected
+            // ours. The refused row is detached so it cannot poison the next
+            // Identity save, and the winner's row is returned — the rest of
+            // SeedAsync needs an account to hang the role grant and the TOTP
+            // sync off, and refusing to boot over an account that now exists is
+            // exactly the failure this tolerance is here to prevent.
+            SeedRaceGuard.DetachAddedEntries(dbContext);
+            return await ResolveSuperAdminAfterLostRaceAsync(settings.Email, cancellationToken);
+        }
+
         if (!result.Succeeded)
         {
             var reasons = string.Join("; ", result.Errors.Select(error => error.Description));
             logger.LogError("Super-admin seed failed: {Errors}", reasons);
+
+            // The other half of the same race. When the winner commits early
+            // enough, Identity's duplicate-address check catches it before the
+            // insert and this is a failed result rather than a thrown one. Re-read
+            // the address before treating the failure as a failed deployment:
+            // a row that exists now is the winner's, while the failure this
+            // branch was written for — a temp password the policy rejects —
+            // leaves no row behind and still falls through to the throw below.
+            if (await ResolveSuperAdminAfterLostRaceAsync(settings.Email, cancellationToken)
+                is { } winner)
+            {
+                return winner;
+            }
 
             // This used to log and return null,
             // and the caller returned too, so the API booted normally with NO
@@ -753,6 +909,37 @@ public sealed class IdentitySeeder(
 
         logger.LogInformation("Super-admin account seeded: {Email}", settings.Email);
         return admin;
+    }
+
+    /// <summary>
+    /// The super-admin row after our own attempt to create it failed, or null
+    /// when the address still does not exist.
+    ///
+    /// <para>The caller only ever reaches the creation path because
+    /// <see cref="SeedAsync"/> looked the address up and found nothing, so an
+    /// account that exists by the time we get here was written by another
+    /// instance seeding the same fresh database. Returning it lets the losing
+    /// instance finish booting against the winner's row; the winner owns the
+    /// TOTP provisioning and the seeded-account audit entry, so neither is
+    /// repeated here.</para>
+    ///
+    /// <para>Null is the honest answer for every other failure — a temp password
+    /// the policy rejects leaves no row behind — and the caller still fails the
+    /// boot in Production on that answer.</para>
+    /// </summary>
+    private async Task<SimfUser?> ResolveSuperAdminAfterLostRaceAsync(
+        string email, CancellationToken cancellationToken)
+    {
+        var winner = await accounts.FindByEmailAsync(email, cancellationToken);
+        if (winner is null)
+        {
+            return null;
+        }
+
+        logger.LogInformation(
+            "Super-admin seed lost the first-boot race — another instance created {Email}.",
+            email);
+        return winner;
     }
 
     /// <summary>Seed one demo account per user type / profile type so
@@ -798,7 +985,24 @@ public sealed class IdentitySeeder(
                 StateChangedByUserId = actorUserId,
             };
 
-            var createResult = await accounts.CreateAsync(user, password);
+            UserOperationResult createResult;
+            try
+            {
+                createResult = await accounts.CreateAsync(user, password, cancellationToken);
+            }
+            catch (DbUpdateException exception) when (SeedRaceGuard.IsUniqueIndexViolation(exception))
+            {
+                // A concurrent first boot: another instance created the same demo
+                // address between the lookup above and this write. Detach the
+                // refused row before moving on, or the next demo account's insert
+                // would re-send it and be rejected on an address it never touched.
+                SeedRaceGuard.DetachAddedEntries(dbContext);
+                logger.LogInformation(
+                    "Demo account {Email} lost the first-boot race — another instance created it.",
+                    demo.Email);
+                continue;
+            }
+
             if (!createResult.Succeeded)
             {
                 logger.LogError(
@@ -811,7 +1015,7 @@ public sealed class IdentitySeeder(
             if (demo.UserType == UserType.Admin)
             {
                 // A CP admin — Administrator role, no visitor profile.
-                await accounts.AddToRoleAsync(user, AdministratorRole).EnsureSuccessAsync();
+                await TryGrantRoleAsync(user, AdministratorRole, cancellationToken);
                 logger.LogInformation("Demo admin account seeded: {Email}", demo.Email);
                 continue;
             }
@@ -854,8 +1058,17 @@ public sealed class IdentitySeeder(
             // Approved accounts carry a QR badge.
             await qrIdMinter.MintIfMissingAsync(profile, cancellationToken);
             appDbContext.UserProfiles.Add(profile);
-            // UserProfile (with its QrId) lives on the App DB.
-            await appDbContext.SaveChangesAsync(cancellationToken);
+            // UserProfile (with its QrId) lives on the App DB. The save tolerates
+            // a concurrent first boot, where the minted QR id or the one-profile-
+            // per-user index rejects whichever instance arrives second. A lost
+            // race on one account moves on to the next rather than abandoning the
+            // remaining ones, because each is created independently.
+            var seeded = await appDbContext.SaveToleratingFirstBootRaceAsync(
+                logger, $"Demo account {demo.Email} profile seed", cancellationToken);
+            if (!seeded)
+            {
+                continue;
+            }
 
             logger.LogInformation(
                 "Demo {ProfileType} account seeded: {Email}", demo.ProfileType, demo.Email);
@@ -941,10 +1154,18 @@ public sealed class IdentitySeeder(
                 LastUpdatedAt = now,
             });
         }
-        await appDbContext.SaveChangesAsync(cancellationToken);
-        logger.LogInformation(
-            "Cybersecurity policy content blocks ensured (seeded {NewCount} of {Total}).",
-            seed.Length - existingKeys.Count, seed.Length);
+        // Tolerates a concurrent first boot: the unique index on ContentBlock.Key
+        // rejects whichever instance arrives second, and the blocks it was
+        // rejected for are the blocks this step exists to guarantee. The count in
+        // the log line is gated on the result because it would otherwise claim
+        // rows this instance did not write.
+        if (await appDbContext.SaveToleratingFirstBootRaceAsync(
+            logger, "Cybersecurity policy content seed", cancellationToken))
+        {
+            logger.LogInformation(
+                "Cybersecurity policy content blocks ensured (seeded {NewCount} of {Total}).",
+                seed.Length - existingKeys.Count, seed.Length);
+        }
     }
 
     /// <summary>Correct the singleton OrganizationProfile's forum dates to
@@ -1045,10 +1266,15 @@ public sealed class IdentitySeeder(
                 LastUpdatedAt = now,
             });
         }
-        await appDbContext.SaveChangesAsync(cancellationToken);
-        logger.LogInformation(
-            "Landing hero content blocks ensured (seeded {NewCount} of {Total}).",
-            seed.Length - existingKeys.Count, seed.Length);
+        // Tolerates a concurrent first boot, on the same unique key index the
+        // cybersecurity blocks above race on.
+        if (await appDbContext.SaveToleratingFirstBootRaceAsync(
+            logger, "Landing hero content seed", cancellationToken))
+        {
+            logger.LogInformation(
+                "Landing hero content blocks ensured (seeded {NewCount} of {Total}).",
+                seed.Length - existingKeys.Count, seed.Length);
+        }
     }
 
     /// <summary>Seed the landing's editorial sections below the hero — About,
@@ -1172,10 +1398,15 @@ public sealed class IdentitySeeder(
                 LastUpdatedAt = now,
             });
         }
-        await appDbContext.SaveChangesAsync(cancellationToken);
-        logger.LogInformation(
-            "Landing section content blocks ensured (seeded {NewCount} of {Total}).",
-            seed.Length - existingKeys.Count, seed.Length);
+        // Tolerates a concurrent first boot, on the same unique key index the
+        // cybersecurity and hero blocks above race on.
+        if (await appDbContext.SaveToleratingFirstBootRaceAsync(
+            logger, "Landing section content seed", cancellationToken))
+        {
+            logger.LogInformation(
+                "Landing section content blocks ensured (seeded {NewCount} of {Total}).",
+                seed.Length - existingKeys.Count, seed.Length);
+        }
     }
 
     /// <summary>Baseline interests for the visitor profile picker.
@@ -1215,10 +1446,17 @@ public sealed class IdentitySeeder(
                 CreatedAt = now,
             });
         }
-        await appDbContext.SaveChangesAsync(cancellationToken);
-        logger.LogInformation(
-            "Baseline interests seeded ({Count} rows; table was empty).",
-            seed.Length);
+        // Tolerates a concurrent first boot. The "seed only when the table is
+        // empty" guard above is exactly what makes this racy: every instance
+        // reads the same empty table and inserts the same ten names, and the
+        // unique index on Interest.Name rejects all but the first.
+        if (await appDbContext.SaveToleratingFirstBootRaceAsync(
+            logger, "Baseline interests seed", cancellationToken))
+        {
+            logger.LogInformation(
+                "Baseline interests seeded ({Count} rows; table was empty).",
+                seed.Length);
+        }
     }
 
     /// <summary>Baseline organisation lookup for the profile's
@@ -1258,10 +1496,15 @@ public sealed class IdentitySeeder(
                 CreatedAt = now,
             });
         }
-        await appDbContext.SaveChangesAsync(cancellationToken);
-        logger.LogInformation(
-            "Baseline organisations seeded ({Count} rows; table was empty).",
-            seed.Length);
+        // Tolerates a concurrent first boot, on the same empty-table guard the
+        // interests seed above races on.
+        if (await appDbContext.SaveToleratingFirstBootRaceAsync(
+            logger, "Baseline organisations seed", cancellationToken))
+        {
+            logger.LogInformation(
+                "Baseline organisations seeded ({Count} rows; table was empty).",
+                seed.Length);
+        }
     }
 
     /// <summary>The app's terms + about content blocks (the same
@@ -1329,10 +1572,15 @@ public sealed class IdentitySeeder(
                 LastUpdatedAt = now,
             });
         }
-        await appDbContext.SaveChangesAsync(cancellationToken);
-        logger.LogInformation(
-            "Core app content blocks ensured (seeded {NewCount} of {Total}).",
-            seed.Length - existingKeys.Count, seed.Length);
+        // Tolerates a concurrent first boot, on the same unique key index the
+        // other content-block seeds above race on.
+        if (await appDbContext.SaveToleratingFirstBootRaceAsync(
+            logger, "Core app content seed", cancellationToken))
+        {
+            logger.LogInformation(
+                "Core app content blocks ensured (seeded {NewCount} of {Total}).",
+                seed.Length - existingKeys.Count, seed.Length);
+        }
     }
 
     /// <summary>Idempotently seeds the default
@@ -1415,13 +1663,24 @@ public sealed class IdentitySeeder(
             });
             toSeed++;
         }
-        if (toSeed > 0)
+        if (toSeed == 0)
         {
-            await appDbContext.SaveChangesAsync(cancellationToken);
+            logger.LogInformation(
+                "Default AI prompts ensured (seeded {NewCount} of {Total}).",
+                toSeed, seed.Length);
+            return;
         }
-        logger.LogInformation(
-            "Default AI prompts ensured (seeded {NewCount} of {Total}).",
-            toSeed, seed.Length);
+
+        // Tolerates a concurrent first boot: the unique index on AiPrompt.Key
+        // rejects whichever instance arrives second, and the prompts it was
+        // rejected for are the prompts this step exists to guarantee.
+        if (await appDbContext.SaveToleratingFirstBootRaceAsync(
+            logger, "Default AI prompts seed", cancellationToken))
+        {
+            logger.LogInformation(
+                "Default AI prompts ensured (seeded {NewCount} of {Total}).",
+                toSeed, seed.Length);
+        }
     }
 
     /// <summary>Give the seeded, Approved demo accounts a
@@ -1479,13 +1738,24 @@ public sealed class IdentitySeeder(
             linked++;
         }
 
-        if (linked > 0)
+        if (linked == 0)
         {
-            await appDbContext.SaveChangesAsync(cancellationToken);
+            logger.LogInformation(
+                "Demo visitor interests ensured (linked {Count} profile(s) for Meet-People).",
+                linked);
+            return;
         }
-        logger.LogInformation(
-            "Demo visitor interests ensured (linked {Count} profile(s) for Meet-People).",
-            linked);
+
+        // Tolerates a concurrent first boot: the profile-to-interest link rows
+        // carry a composite primary key, so the same three links written twice
+        // are rejected on the second instance.
+        if (await appDbContext.SaveToleratingFirstBootRaceAsync(
+            logger, "Demo visitor interests seed", cancellationToken))
+        {
+            logger.LogInformation(
+                "Demo visitor interests ensured (linked {Count} profile(s) for Meet-People).",
+                linked);
+        }
     }
 
     /// <summary>Give every seeded demo profile the two images the server

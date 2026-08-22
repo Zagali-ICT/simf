@@ -230,7 +230,6 @@ void main() {
       expect(partner.id, 'p9');
       expect(partner.localizedName(isArabic: false), 'Reuters');
       expect(partner.localizedName(isArabic: true), 'رويترز');
-      expect(partner.logoRelativePath, 'media-partners/reuters.png');
     });
 
     test('logoAssetUrl builds the D-357 anonymous asset route', () {

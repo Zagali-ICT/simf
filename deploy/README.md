@@ -14,7 +14,7 @@ SIMF web apps and deploy them to IIS, mirroring the V10 ERP pipeline.
 All four packages deploy to each of the two servers — `SIMF-Prod`
 (pre-production) and `SIM-RNSF` (production) — so there is one deployment job per server,
 and each package keeps its own environment script on that server. Each job is bound to its
-environment's registered **VM resource** (D-934), and that binding is what makes two jobs
+environment's registered **VM resource** (D-938), and that binding is what makes two jobs
 two destinations. Until 2026-08-19 no usable resource was registered, both jobs fell back
 to the single `Default` pool agent, and every deploy landed on pre-production while
 reporting success under either name (D-932 — see *Choosing which environments a run
@@ -108,7 +108,7 @@ so without that a validation build would deploy both servers from an unmerged br
 Excluding the PR *reason* rather than pinning `refs/heads/main` keeps a deliberate
 manual run from a branch working, which is how a hotfix gets rehearsed.
 
-> ### ⚠️ For eleven days both jobs deployed to the same machine (D-932 → fixed by D-934)
+> ### ⚠️ For eleven days both jobs deployed to the same machine (D-932 → fixed by D-938)
 >
 > Kept because the failure was **silent**, and the shape of it will recur if the
 > VM resources are ever removed.
@@ -356,7 +356,7 @@ These are **placeholders** — set them to the real SIMF server values:
    this file used to carry.** It was tried twice *before* the resources existed
    and broke the deploy both times (D-903, D-905) with *"No resource were found in
    the environment with ID 3"*. That was the construct being right and the estate
-   not being ready — not the construct being wrong. It is ready (D-934).
+   not being ready — not the construct being wrong. It is ready (D-938).
 
    If a job fails with that message again, a resource has been removed from that
    environment: fix it on the environment's **Resources** tab. Re-register with

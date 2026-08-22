@@ -655,3 +655,75 @@ per-screen with docs (PAGE-INDEX + `mobile/<slug>/` + DECISIONS_LOG) and pushed.
   app removal alone.
 - (D-605 audience-comments backend teardown remains outstanding for the backend session —
   destructive drop-table migration on the frozen schema + CP moderation removal.)
+
+## 2026-08-19/20 — on-device verification on the tablet (TXZ-W09, PROD)
+
+Ran against production from the connected tablet after the clean-code programme
+merged. Debug APK, arm64, installed as `dod.simf.visitor_app`.
+
+**The routing defect this found is the headline.** The app compiled
+`api.simrsnf.com` in as its base URL, so every shipped build addressed the
+application tier directly and the MobileEdge carried no mobile traffic at all.
+`build_config.dart` now defaults to `https://edge.simrsnf.com/api/v1` and the
+installed build was observed dialling it.
+
+Verified live through the edge, on a production database that had just been reset:
+
+| Path | Result |
+|---|---|
+| `POST /app/auth/sign-up` | 201, `codeExpiresInSeconds: 600` |
+| `POST /app/auth/sign-in` (unverified) | 403 `AUTH_EMAIL_NOT_VERIFIED` |
+| `POST /app/auth/sign-in` (bad password) | 401 `AUTH_INVALID_CREDENTIALS` |
+| `POST /app/auth/verify-email` (stale code) | 400 `AUTH_CODE_EXPIRED` |
+| `POST /app/auth/resend-code` | 200 |
+| `GET /app/booths`, `/app/programme/days`, `/app/venue-map`, `/app/speakers` | 200 |
+
+Every one returned the `ApiResult` envelope with both message languages intact,
+so the wire contract survives the edge hop.
+
+Guest role-gating behaves: a guest tapping the entry-badge tab is routed to
+sign-in rather than shown a broken or locked screen. Empty states render
+correctly on the reset database ("لا يوجد متحدثون", "لا توجد جلسات") rather
+than erroring.
+
+### Three things the next person needs
+
+1. **Screenshots of this app are impossible by design.** `MainActivity.kt:11`
+   sets `FLAG_SECURE` app-wide for NCA A11-6. The home screen captures 15.7 MB;
+   the app captures 0 bytes. Evidence is `uiautomator dump` text, not images. Do
+   not promise screenshots in a delivery pack.
+2. **`uiautomator` fails silently when the screen sleeps** — `ERROR: null root
+   node`, and a harness that re-reads `/sdcard/ui.xml` then serves a STALE dump
+   that looks like live state. It cost a wrong conclusion here before it was
+   caught. `adb shell svc power stayon true`, and delete the dump file before
+   every read.
+3. **The reset production database has no content seeded.** Speakers and
+   sessions return 200 with empty lists. Content seeding is a separate,
+   hand-run step (`docs/migrations/2026/*.sql`); the app is fine, the data is
+   absent.
+
+### D-666 face capture — VERIFIED on the device, 2026-08-20
+
+The open item is closed. Signed in on the tablet (account set to `Approved`,
+`mfaRequired:false`), reached **إنشاء ملف شخصى** — `sign_up_visitor_screen`, the
+screen this programme took from 2,245 lines to 398 — and drove the capture:
+
+- five profile calls answered 200 through the edge (`account/preferences`,
+  `account/profile-types`, `account/user-profile`, `user-profile/countries`,
+  `organisations`)
+- every extracted field rendered: nationality, national id, date and place of
+  birth, and the three plate-letter pickers that took the `SignUpVisitorPlateState`
+  holder
+- **التقاط صورة الوجه** opened **التحقق من الهوية**, the camera started
+  (`CameraService_proxy`) and ML Kit ran (`FaceDetectorV2Jni:
+  detectFacesImageByteArray`)
+- the liveness prompt advanced **ابتسم من فضلك** -> **تم التقاط الصورة الشخصية**
+  and returned to the form with the photo attached
+- no `E/flutter`, no FATAL, no crash at any point
+
+Under real input the nationality-driven document logic also behaved: choosing a
+non-Saudi nationality switched the field set to إقامة / جواز السفر, which is the
+branch `SignUpVisitorForm.applyNationality` owns.
+
+That is the regression class D-666 exists for, and it is the one a green golden
+provably does not catch — so it is now checked the only way it can be.

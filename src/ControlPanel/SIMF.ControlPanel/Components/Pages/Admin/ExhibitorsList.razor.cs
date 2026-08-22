@@ -61,6 +61,8 @@ public partial class ExhibitorsList
     private Guid _accountsExhibitorId;
     private string _accountsExhibitorName = string.Empty;
     private List<ExhibitorAccountSummary> _accounts = new();
+    private ExhibitorAccountSummary? _revokeTarget;
+    private bool _revokeBusy;
     private bool _provisionBusy;
     private ProvisionModel _provision = new();
     private bool _linkBusy;
@@ -322,6 +324,50 @@ public partial class ExhibitorsList
             }
         }
         finally { _linkBusy = false; }
+    }
+
+    private void AskRevoke(ExhibitorAccountSummary account)
+    {
+        _toast = null;
+        _revokeTarget = account;
+    }
+
+    /// <summary>Withdraw one officer's membership without touching the exhibitor.
+    ///
+    /// <para>The membership is what grants the booth's badge scanner and the
+    /// visitor contact cards it collects, and until this existed nothing anywhere
+    /// could take it back: both writers created memberships and no code path ever
+    /// cleared one. The account itself survives and can be linked again.</para></summary>
+    private async Task RevokeAsync()
+    {
+        if (_revokeBusy || _revokeTarget is null) return;
+        var membershipId = _revokeTarget.Id;
+        _revokeBusy = true;
+        _toast = null;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.deleteJson",
+                $"/account/api/admin/exhibitors/{_accountsExhibitorId}/accounts/{membershipId}");
+            if (env is { Success: true })
+            {
+                _toast = new Toast("success", L["Admin.Exhibitors.Revoke.Done"]);
+                await LoadAccountsAsync();
+                // Refresh the grid so the AccountCount column drops the officer.
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Exhibitors.Revoke.Failed"]);
+            }
+        }
+        finally
+        {
+            _revokeBusy = false;
+            _revokeTarget = null;
+        }
     }
 
     private static string? NullIfBlank(string value) =>

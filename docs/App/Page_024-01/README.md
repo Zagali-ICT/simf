@@ -1,40 +1,46 @@
-# Page 024-01 — تفاصيل النسخة · Past-edition detail
+# Page 024-01 — تفاصيل النسخة · Past-edition detail — **MOVED**
 
-Per-page documentation folder. Everything about this app page lives here.
+> **This page's reference doc now lives at
+> [`docs/pages/mobile/archive-detail/README.md`](../../pages/mobile/archive-detail/README.md).**
+> Read that one. It is grounded in the current screen; this location is kept only
+> so existing links (the E2E catalogue file, the sibling `Page_024` doc) still land
+> somewhere.
 
-| Aspect | Document | What it holds |
-|--------|----------|---------------|
-| Function | [Page_024-01_Function.md](Page_024-01_Function.md) | What the user does — open one past edition, read its title/summary/place/date/counts |
-| Logic | [Page_024-01_Logic.md](Page_024-01_Logic.md) | The visibility gate, the deferred rich lists, the list → detail hop |
-| API | [Page_024-01_API.md](Page_024-01_API.md) | The backend endpoint + DTO this page reads (authoritative contract) — **NEW (D-273)** |
-| Design | [Page_024-01_Design.md](Page_024-01_Design.md) | Flutter screen design — cover, title, place/date, counters, deferred sections, RTL, states |
+## Why this folder is not the doc any more
 
-## Identity
-| | |
-|---|---|
-| Mockup page | **24-01** (`Mockup.html`, line ~1678 — `تفاصيل النسخة`) |
-| Route | `RouteNames.archiveDetail` *(planned)* → `/archive/:editionId` *(planned)* (**anonymous** — public). The constant/path do **not** exist in `route_names.dart` yet — *Flutter wiring deferred, todo #9* |
-| Titles | AR **تفاصيل النسخة** (app bar shows the edition, e.g. **أرشيف 2024**) · EN **Past-edition detail** |
-| Section | 3 — المحتوى والفعاليات (Content & events): Booths (22) · Sponsors (23) · Archive (24) · **Archive Detail (24-01)** |
-| Nature | **Read-only public detail** of one past forum edition |
-| App privilege | **Anonymous — public.** No login; reads are open like the Archive list (24). Gated only by the archive-visibility operations toggle (D-166). |
-| Status | API **BUILT — NEW endpoint (D-273)**; Flutter screen is a mockup (wiring deferred to the coordinated Flutter pass) |
+The four spec files beside this one were written in 2026-06, when the D-273
+endpoint had just landed and the Flutter work had not. Four of their central
+claims are now false, and the new file says so explicitly rather than quietly
+replacing them:
 
-## Sources of truth (read first)
-`Mockup.html` screen 24-01 (the visual, line ~1678) · the Archive list screen 24
-(line ~1619, the parent) · SIMF-MOB-API-001 (shared API conventions + the public
-read posture) · `DECISIONS_LOG` **D-199** (the `ArchiveEdition` entity + the public
-list + the archive-visibility gate D-166) + **D-273** (this page — the per-edition
-detail read + the `LocationEn/Ar` + `DateLabelEn/Ar` columns).
+1. **There is no `RouteNames.archiveDetail` and no `/archive/:editionId`.** The
+   "planned" route was never added and is not needed — the detail is a **state of
+   `/archive`**, selected by an edition pill.
+2. **The gallery / session-titles / past-speakers lists are not deferred.** They
+   were modelled and built in **D-432**; there are no "coming soon" placeholders.
+3. **There is no cover banner.** `ArchiveBody` renders none, and
+   `coverImageRelativePath` is decoded by the list model and read by nothing.
+4. **There is no "not found" state.** `archiveEditionDetailProvider` folds every
+   `ApiFailure` to `null`, so a 404 renders a thinner edition instead.
 
-## Headline (§9, owner directive)
-> Screen 24-01 "تفاصيل النسخة" — tapping a past edition on the Archive list opens
-> its detail: cover + **title** + **نبذة** (summary) + **المكان** (place) +
-> **الزمن** (date label) + the three counters (الفعاليات / الحضور / المتحدثون).
+Two of their statements are still correct and are carried forward: the single-404
+visibility surface (a hidden archive and an unknown edition are indistinguishable
+to the client) and the "never render an empty labelled box" rule.
 
-The detail comes from **one** anonymous call
-(`GET /app/archive/{id}` → `PublicArchiveEditionDetail`, D-273). The rich lists the
-mockup also sketches — **الصور والفيديو** (gallery), **عناوين الجلسات** (session
-titles), **المتحدثون السابقون** (past speakers) — are **deferred** (the
-`ArchiveEdition` entity does not yet model them; §9 / D-273). See
-[Page_024-01_Logic.md](Page_024-01_Logic.md) and [Page_024-01_API.md](Page_024-01_API.md).
+## Historical spec (superseded — do not build from these)
+
+| Aspect | Document |
+|--------|----------|
+| Function | [Page_024-01_Function.md](Page_024-01_Function.md) |
+| Logic | [Page_024-01_Logic.md](Page_024-01_Logic.md) |
+| API | [Page_024-01_API.md](Page_024-01_API.md) |
+| Design | [Page_024-01_Design.md](Page_024-01_Design.md) |
+
+They are retained as the record of the D-273 increment, in the same way
+`docs/App/Page_026/` is retained beside the send-question doc. The authoritative
+wire contract, states, actions and findings are in the new file.
+
+- Screen: `src/Mobile/simf_app/lib/features/archive/archive_screen.dart` +
+  `widgets/archive_body.dart`
+- Parent page doc: [`docs/pages/mobile/archive/README.md`](../../pages/mobile/archive/README.md)
+- E2E: [`docs/tests/e2e/mobile-archive-detail.md`](../../tests/e2e/mobile-archive-detail.md)

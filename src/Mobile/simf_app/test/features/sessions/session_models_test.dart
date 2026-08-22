@@ -106,7 +106,6 @@ void main() {
       expect(speaker.role, SessionSpeakerRole.host);
       expect(speaker.countryId, 682);
       expect(speaker.localizedCountry(isArabic: true), 'السعودية');
-      expect(speaker.photoRelativePath, '/media/sp1.jpg');
       // Owner 2026-07-19 — the speaker rank/title localizes AR/EN.
       expect(speaker.localizedTitle(isArabic: true), 'كبير العلماء');
       expect(speaker.localizedTitle(isArabic: false), 'Chief Scientist');

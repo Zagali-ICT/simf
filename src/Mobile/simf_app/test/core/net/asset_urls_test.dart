@@ -23,7 +23,6 @@ void main() {
         <AssetKind, String>{
           AssetKind.banner: 'Banner',
           AssetKind.boothLogo: 'BoothLogo',
-          AssetKind.companyLogo: 'CompanyLogo',
           AssetKind.exhibitorLogo: 'ExhibitorLogo',
           AssetKind.mediaPartnerLogo: 'MediaPartnerLogo',
           AssetKind.newsImage: 'NewsImage',

@@ -501,11 +501,6 @@ class SimfTokens {
     fontSize: textSm,
     fontWeight: FontWeight.w500,
   );
-  static const TextStyle labelBeigeMedium10 = TextStyle(
-    color: beigeBorder,
-    fontSize: 10,
-    fontWeight: FontWeight.w500,
-  );
   static const TextStyle labelGoldBoldXl = TextStyle(
     color: accent,
     fontSize: textXl,
@@ -526,9 +521,7 @@ class SimfTokens {
     fontWeight: FontWeight.w600,
   );
 
-  /// The AR / EN pill on the language toggle. Sits between
-  /// [labelWhiteSemibold9] and [labelBeigeMedium10]: white like the former,
-  /// 10pt like the latter, and neither of those combinations existed.
+  /// The AR / EN pill on the language toggle: [labelWhiteSemibold9] at 10pt.
   static const TextStyle labelWhiteSemibold10 = TextStyle(
     color: surface,
     fontSize: 10,
@@ -1060,23 +1053,22 @@ class SimfTokens {
   );
 
   // ── Per-site metrics (SIMF-CQP-001 W4c) ────────────────────────────
-  // Named for the thing each one measures, following the convention
-  // above (seatStateIconSize, metaIconBox). Every value is the literal
-  // it replaced, so the render is unchanged.
+  // Every value is the literal it replaced, so the render is unchanged.
+  // Names were sweep-generated from where the literal sat, not what it
+  // measures — check the call site before trusting one; name new entries
+  // for the quantity.
   static const double aboutHeaderSize = 22;
   static const double accountAuthPromptWidth = 6;
   static const double accountFormFieldSize = 16;
   static const double accountHeaderSize = 44;
+  static const double accountRememberForgotGap = 5;
   static const double accountRememberForgotHeight = 19;
   static const double accountRememberForgotWidthLg = 19;
-  static const double accountRememberForgotWidthMd = 5;
-  static const double accountRememberForgotWidthSm = 1.5;
   static const double accountSubHeaderHeight = 56;
+  static const double accountTermsCheckboxBoxWidth = 19;
   static const double accountTermsCheckboxFontSize = 13;
   static const double accountTermsCheckboxHeightMd = 19;
   static const double accountTermsCheckboxHeightSm = 6;
-  static const double accountTermsCheckboxWidthMd = 19;
-  static const double accountTermsCheckboxWidthSm = 1.5;
   static const double accountTopControlsSize = 24;
   static const double activeFilterChipSize = 14;
   static const double archiveBulletHeight = 5;
@@ -1113,16 +1105,17 @@ class SimfTokens {
   static const double channelRowSize = 18;
   static const double chatComposerSize = 14;
   static const double chatComposerStrokeWidth = 2;
+  static const double checkboxBorderWidth = 1.5;
   static const double comingSoonScreenHeight = 80;
   static const double comingSoonScreenWidth = 80;
   static const double contactCardRadius = 26;
   static const double contactSendMessageCardStrokeWidth = 2;
+  static const double contactTileBorderWidth = 0.8;
   static const double contactTileHeight = 52;
   static const double contactTileSize = 24;
-  static const double contactTileWidth = 0.8;
   static const double contactsEmptyStateSize = 56;
   static const double countryFlagTileFontSize = 28;
-  static const double cvTabHeight = 1.2;
+  static const double cvTabLineHeight = 1.2;
   static const double dateOfBirthFieldSize = 18;
   static const double dayBannerFallbackSize = 28;
   static const double delegationOptionTileFontSize = 22;
@@ -1157,8 +1150,8 @@ class SimfTokens {
   static const double gateSetupViewSizeMd = 22;
   static const double gateSetupViewSizeSm = 18;
   static const double guestHomeSize = 32;
+  static const double guestModeCalloutLineHeight = 1.7;
   static const double guestModeScreenHeightMd = 64;
-  static const double guestModeScreenHeightSm = 1.7;
   static const double guestModeScreenSize = 30;
   static const double guestModeScreenWidthMd = 64;
   static const double guestModeScreenWidthSm = 1.5;
@@ -1179,7 +1172,6 @@ class SimfTokens {
   static const double identityCaptureViewWidthLg = 1080;
   static const double identityCaptureViewWidthSm = 10;
   static const double identityFallbackViewSize = 56;
-  static const double identityVerificationScreenFontSize = 30;
   static const double identityVerificationScreenSize = 32;
   static const double infoRowSize = 18;
   static const double interestChipWidth = 1.2;
@@ -1191,6 +1183,7 @@ class SimfTokens {
   static const double liveContentSizeMd = 56;
   static const double liveContentSizeSm = 18;
   static const double liveContentWidth = 5;
+  static const double livenessEmojiSize = 30;
   static const double mediaTabHeight = 48;
   static const double meetingCardSizeLg = 38;
   static const double meetingCardSizeMd = 20;
@@ -1308,7 +1301,6 @@ class SimfTokens {
   static const double signInScreenMaxWidth = 560;
   static const double signUpEmailVerifyScreenHeight = 48;
   static const double signUpEmailVerifyScreenMaxWidth = 560;
-  static const double signUpEmailVerifyScreenWidth = 6;
   static const double signUpFormScreenMaxWidth = 560;
   static const double signUpInterestsScreenExtent = 43;
   static const double signUpInterestsScreenMaxWidth = 560;

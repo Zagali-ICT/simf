@@ -261,4 +261,54 @@ public static class FileServicePolicies
 
     /// <summary>All mapped services — for the guard test and the classification register.</summary>
     public static IReadOnlyCollection<FileServicePolicy> All => (IReadOnlyCollection<FileServicePolicy>)Map.Values;
+
+    /// <summary>The services that hold exactly ONE active file per owner, so that
+    /// uploading a replacement retires the previous one.
+    ///
+    /// <para>This is emphatically NOT every service. An owner has one logo and one
+    /// portrait, but a gallery has many images, a profile has several identity
+    /// documents of different kinds, and a speaker has as many presentations as
+    /// they bring. Applying the rule to all of them would make the second upload
+    /// of a legitimate set delete the first.</para>
+    ///
+    /// <para>Declared here rather than inferred from the asset catalogue because
+    /// the database now enforces it: <c>StoredFileConfiguration</c> builds its
+    /// filtered UNIQUE index from this set, so the constraint and the code that
+    /// maintains it cannot drift apart. Adding a service here changes the schema
+    /// and needs the migration regenerated.</para></summary>
+    public static IReadOnlySet<FileService> SingleActivePerOwner { get; } =
+        new HashSet<FileService>
+        {
+            // The Media Library's own categories (AssetService.CategoryToService).
+            FileService.SpeakerPhoto,
+            FileService.MediaPartnerLogo,
+            FileService.SponsorLogo,
+            FileService.ArchiveCover,
+            FileService.ArchivePastSpeakerPhoto,
+            FileService.NewsImage,
+            FileService.ProgrammeDayImage,
+            FileService.OrganizationLogo,
+            FileService.Banner,
+            FileService.BoothLogo,
+            FileService.ExhibitorLogo,
+            // The archive gallery belongs here too, which is easy to get wrong. A
+            // GALLERY holds many images, so the instinct is to leave it out - but
+            // the owner of one of these files is the individual ArchiveMediaItem
+            // ROW, not the edition, and that row has a single MediaFileId pointer.
+            // One entry, one image. Excluding it would leave the accumulation this
+            // set exists to prevent alive for exactly one category.
+            FileService.ArchiveGalleryImage,
+            // Managed by their own services, same one-per-owner rule.
+            FileService.Avatar,
+            FileService.OrganizationHeroVideo,
+        };
+
+    /// <summary>The <see cref="SingleActivePerOwner"/> set as the SQL filtered-index
+    /// predicate fragment <c>[Service] IN (...)</c> uses, ordered so the generated
+    /// migration is stable across runs.</summary>
+    public static string SingleActivePerOwnerSqlList =>
+        string.Join(", ", SingleActivePerOwner
+            .Select(service => (int)service)
+            .OrderBy(value => value)
+            .Select(value => value.ToString(System.Globalization.CultureInfo.InvariantCulture)));
 }

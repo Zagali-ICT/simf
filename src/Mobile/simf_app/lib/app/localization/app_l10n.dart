@@ -64,7 +64,6 @@ class AppL10n {
         'هذه الشاشة قيد التطوير. سيتم استبدالها بنسخة UI/UX النهائية لاحقاً.',
         'This screen is under construction. It will be replaced by the final UI/UX shortly.',
       );
-  String get backLabel => _t('رجوع', 'Back');
   String get continueLabel => _t('متابعة', 'Continue');
   String get cancelLabel => _t('إلغاء', 'Cancel');
   // External-link confirmation (owner 2026-06-27) — every external link asks
@@ -121,7 +120,6 @@ class AppL10n {
 
   String get onboardingSkip => _t('تخطي', 'Skip');
   String get onboardingNext => _t('التالي', 'Next');
-  String get onboardingGetStarted => _t('ابدأ', 'Get started');
   String get onboardingTitle1 => _t(
         'مرحباً بك في تطبيق الملتقى',
         'Welcome to the SIMF app',
@@ -149,37 +147,10 @@ class AppL10n {
         'Everything you need in one place: the events schedule, speakers, the venue map, entry information and the live broadcast.',
       );
 
-  String get signUpTypeTitle => _t('إنشاء حساب — النوع', 'Sign up — type');
-  String get signUpTypeLead =>
-      _t('اختر نوع الحساب', 'Choose your account type');
   String get signUpTypeVisitor => _t('زائر', 'Visitor');
-  String get signUpTypeVisitorHelper => _t(
-        'حساب لحضور الفعالية والتفاعل معها',
-        'Account to attend and interact with the event',
-      );
-  String get signUpTypeExhibitor => _t('عارض', 'Exhibitor');
-  String get signUpTypeSponsor => _t('راعٍ', 'Sponsor');
-  String get signUpCpOnlyNote => _t(
-        'تُدار حسابات العارضين والرعاة من لوحة التحكم',
-        'Exhibitor & sponsor accounts are managed from the Control Panel',
-      );
   String get signUpTitle => _t('إنشاء حساب', 'Sign up');
   String get signUpButton => _t('إنشاء حساب', 'Create account');
   String get invalidEmail => _t('بريد إلكتروني غير صالح', 'Invalid email');
-  String get passwordPolicyError => _t(
-        'يجب أن تحقّق كلمة المرور الشروط التالية:\n'
-            '• من ٨ إلى ١٢٨ حرفًا\n'
-            '• حرف كبير واحد على الأقل\n'
-            '• حرف صغير واحد على الأقل\n'
-            '• رقم واحد على الأقل\n'
-            '• رمز خاص واحد على الأقل',
-        'Your password must meet all of the following:\n'
-            '• 8 to 128 characters\n'
-            '• at least one upper-case letter\n'
-            '• at least one lower-case letter\n'
-            '• at least one digit\n'
-            '• at least one special character',
-      );
   String get passwordLength => _t(
         'من ٨ إلى ١٢٨ حرفًا',
         '8 to 128 characters',
@@ -208,7 +179,6 @@ class AppL10n {
       // D-373 — the digit count is visually obvious from the code boxes.
       _t('أرسلنا رمز التحقق إلى', 'We sent a verification code to');
   String get emailVerifiedToast => _t('تم التحقق من البريد', 'Email verified');
-  String get resendCodeButton => _t('إعادة إرسال الرمز', 'Resend code');
   // KSA-Project OTP frame copy (Figma 505:837, D-364).
   String get enterOtpTitle =>
       _t('أدخل رمز التحقق', 'Enter the verification code');
@@ -221,9 +191,6 @@ class AppL10n {
   String get haveAccountQuestion => _t('هل لديك حساب ؟', 'Have an account?');
 
   String get signUpVisitorTitle => _t('إنشاء حساب · زائر', 'Sign up — visitor');
-  String get profileSectionPersonal => _t('البيانات الشخصية', 'Personal');
-  String get profileSectionAffiliation => _t('الجهة والفئة', 'Affiliation');
-  String get profileSectionInterests => _t('الاهتمامات', 'Interests');
   String get profileLoadError =>
       _t('تعذر تحميل النموذج.', 'Could not load the form.');
   String get arabicNameLabel =>
@@ -235,13 +202,10 @@ class AppL10n {
   String get jobTitleArabicLabel =>
       _t('المسمى الوظيفي (بالعربية)', 'Job title (Arabic)');
   String get nationalityLabel => _t('الجنسية', 'Nationality');
-  String get isSaudiLabel => _t('سعودي الجنسية', 'Saudi national');
   String get nationalIdLabel => _t('رقم الهوية الوطنية', 'National ID');
   String get documentTypeLabel => _t('نوع الوثيقة', 'Document type');
   String get iqamaSegment => _t('الإقامة', 'Iqama');
   String get passportSegment => _t('جواز السفر', 'Passport');
-  String get iqamaNumberLabel => _t('رقم الإقامة', 'Iqama number');
-  String get passportNumberLabel => _t('رقم جواز السفر', 'Passport number');
   String get saudiMobileLabel => _t('رقم الجوال', 'Mobile');
   String get internationalMobileLabel =>
       _t('رقم الجوال الدولي', 'International mobile');
@@ -252,7 +216,6 @@ class AppL10n {
   String get placeOfBirthPassportHint =>
       _t('كما في جواز السفر', 'As in your passport');
   String get genderLabel => _t('الجنس', 'Gender');
-  String get genderUnspecified => _t('غير محدد', 'Prefer not to say');
   String get genderMale => _t('ذكر', 'Male');
   String get genderFemale => _t('أنثى', 'Female');
   String get organisationLabel => _t('الجهة / المنظمة', 'Organisation');
@@ -297,7 +260,6 @@ class AppL10n {
   String get myMobileNoneYet => _t('لم يُضف بعد', 'Not added yet');
   String get myMobileUpdatedToast =>
       _t('تم تحديث رقم الجوال', 'Your mobile number was updated');
-  String get attachIdImageLabel => _t('إرفاق صورة الهوية', 'Attach ID image');
   // KSA-Project profile frame copy (Figma 168:2972, D-368).
   String get createProfileTitle => _t('إنشاء ملف شخصى', 'Create profile');
   String get documentNumberLabel => _t('رقم الوثيقة', 'Document number');
@@ -365,14 +327,9 @@ class AppL10n {
         'يجب إدخال رقم الإقامة أو جواز السفر',
         'An Iqama or passport number is required',
       );
-  String get phoneInvalid => _t('رقم الجوال غير صالح', 'Invalid phone number');
   // D-373 — the searchable country picker.
   String get searchCountryHint => _t('ابحث عن الجنسية', 'Search for a country');
   // C7 (D-371) — the male-mandatory camera photo + face check.
-  String get idImageRequiredForMen => _t(
-        'الصورة الشخصية مطلوبة — التقطها بالكاميرا',
-        'A photo is required — capture it with the camera',
-      );
   String get noFaceDetectedError => _t(
         'لم يتم التعرف على وجه في الصورة — أعد التقاط صورة واضحة للوجه',
         'No face was detected in the photo — retake a clear photo of the face',
@@ -435,12 +392,6 @@ class AppL10n {
       );
   String get dateOfBirthRequired =>
       _t('تاريخ الميلاد مطلوب', 'Date of birth is required');
-  String get ageRequirement => _t(
-        'يجب أن يكون عمرك 18 عامًا على الأقل',
-        'You must be at least 18 years old',
-      );
-  String get interestsRequired =>
-      _t('اختر اهتمامًا واحدًا على الأقل', 'Pick at least one interest');
   String get interestsMaxReached =>
       _t('الحد الأقصى 10 اهتمامات', 'You can pick at most 10 interests');
 
@@ -448,10 +399,6 @@ class AppL10n {
   String termsLastUpdated(String date) =>
       _t('آخر تحديث · $date', 'Last updated · $date');
   String get termsEmpty => _t('لا يوجد محتوى', 'No content');
-  String get termsAcceptCheckbox => _t(
-        'أوافق على الشروط والأحكام',
-        'I accept the terms and conditions',
-      );
   // Sign-up mandatory-accept checkbox (D-719): the lead text before the
   // tappable الشروط والأحكام link, and the error when it is left unchecked.
   String get termsAcceptLead => _t('أوافق على', 'I accept the');
@@ -465,7 +412,6 @@ class AppL10n {
         'Important information for forum visitors',
       );
   String get termsAcceptButton => _t('موافق', 'Agree');
-  String get declineLabel => _t('رفض', 'Decline');
 
   String get registrationSuccessTitle =>
       _t('تم التسجيل بنجاح', 'Registration success');
@@ -561,8 +507,6 @@ class AppL10n {
   String get createAccountQuestion =>
       _t('ليس لديك حساب؟', "Don't have an account?");
   String get createAccountLink => _t('إنشاء حساب', 'Create account');
-  String get browseAsGuestLink =>
-      _t('تصفّح بدون تسجيل الدخول', 'Browse without signing in');
   String get showPasswordTooltip => _t('إظهار كلمة المرور', 'Show password');
   String get hidePasswordTooltip => _t('إخفاء كلمة المرور', 'Hide password');
   // Sign in — KSA-Project design (Figma 168:2800, D-358/D-360/D-363).
@@ -576,7 +520,8 @@ class AppL10n {
   String get biometricSignInTooltip =>
       _t('الدخول بالبصمة / الوجه', 'Sign in with biometrics');
 
-  /// No OS face/fingerprint is enrolled on the device (D-422).
+  /// The SIGN-IN caller's copy (D-422): no OS face/fingerprint is enrolled.
+  /// Enrol has no password form, so it passes [biometricUnavailableEnrol].
   String get biometricUnavailable => _t(
         'لا توجد بصمة أو بصمة وجه مفعّلة على هذا الجهاز. سجّل الدخول بكلمة المرور.',
         'No face or fingerprint is set up on this device. Sign in with your password.',
@@ -670,12 +615,29 @@ class AppL10n {
         'فعّل قفل الشاشة (رمز PIN أو نمط أو كلمة مرور) على جهازك أولاً ثم حاول مجدداً.',
         'Set a device screen lock (PIN, pattern or password) first, then try again.',
       );
+  // The SIGN-IN caller's lockout copy. It must not name the device PIN —
+  // `confirmDeviceIdentity` passes `biometricOnly: true`, so no sheet offers
+  // one.
   String get biometricLockedOut => _t(
-        'محاولات كثيرة خاطئة. المصادقة مقفلة مؤقتاً — حاول لاحقاً أو استخدم رمز قفل الجهاز.',
-        'Too many attempts. Authentication is temporarily locked — try again shortly or use your device PIN.',
+        'محاولات كثيرة خاطئة. المصادقة مقفلة مؤقتاً — حاول لاحقاً أو سجّل الدخول بكلمة المرور.',
+        'Too many attempts. Authentication is temporarily locked — try again shortly, or sign in with your password.',
       );
 
-  String get otpTitle => _t('رمز التحقق', 'Verification code');
+  // The ENROLMENT caller's lockout copy: the user is already signed in, so
+  // there is no password form to send them to.
+  String get biometricLockedOutEnrol => _t(
+        'محاولات كثيرة خاطئة. المصادقة مقفلة مؤقتاً — حاول لاحقاً.',
+        'Too many attempts. Authentication is temporarily locked — try again shortly.',
+      );
+
+  // The ENROLMENT caller's unavailable copy. The step-up is only reachable
+  // once an enrolled biometric was found, so this is an OS failure rather than
+  // a missing face/fingerprint — it points at neither password nor settings.
+  String get biometricUnavailableEnrol => _t(
+        'تعذّر التحقق بالبصمة على هذا الجهاز. حاول مرة أخرى.',
+        "Biometric confirmation couldn't run on this device. Try again.",
+      );
+
   String get otpBody => _t(
         'أدخل الرمز المُرسَل إلى بريدك الإلكتروني.',
         'Enter the code we sent to your email.',
@@ -699,7 +661,6 @@ class AppL10n {
       );
   String get rememberedPasswordQuestion =>
       _t('تذكرت كلمة المرور؟', 'Remembered your password?');
-  String get sendCodeButton => _t('إرسال الرمز', 'Send code');
   // The forgot-password submit label (owner 2026-07-07, D-674). "Code", not
   // "link" — the flow emails a code the user types on the reset screen.
   String get sendRecoveryCodeButton =>
@@ -720,16 +681,9 @@ class AppL10n {
   // Part B (D-430) — badge-QR sign-in / activation.
   String get badgeSignInButton =>
       _t('الدخول بمسح الشارة', 'Sign in by scanning your badge');
-  String get badgeScanTitle => _t('امسح شارتك', 'Scan your badge');
   // The badge sign-in header title (owner 2026-07-07, D-674).
   String get badgePortalSignInTitle =>
       _t('البوابة الرئيسية • دخول', 'Main portal • Sign in');
-  String get badgeScanHint => _t(
-        'وجّه الكاميرا نحو رمز QR المطبوع على شارتك.',
-        'Point the camera at the QR code on your badge.',
-      );
-  String get badgeManualLabel =>
-      _t('أو أدخل رمز الشارة يدويًا', 'Or enter the badge code manually');
   String get badgeManualField => _t('رمز الشارة', 'Badge code');
   String get badgeResolveButton => _t('متابعة', 'Continue');
   // The scanner viewfinder's "actively searching" caption (Figma 758:4596).
@@ -800,40 +754,20 @@ class AppL10n {
         '4th Edition\n23–25 Nov 2026 · Riyadh',
       );
 
-  // Onboarding intro videos (Page 002 — interim placeholder frames; the real
-  // YouTube clips introd_001..003 land with SIMF-VID-001).
-  String get onboardingVideoLabel => _t('مقطع تعريفي', 'Intro video');
-  String get onboardingMutedTooltip => _t('الصوت مكتوم', 'Sound muted');
-
   String get languageToggleLabel => 'العربية · English';
 
   // Home — landing / router screen (Page 013). Interim copy + tile labels for
   // the functional skeleton; the final visuals come from SIMF-VID-001.
   String get homeTitle => _t('الرئيسية', 'Home');
   String get notificationsTooltip => _t('الإشعارات', 'Notifications');
-  String get homeDiscoverTitle => _t('اكتشف', 'Discover');
-  String get homeDiscoverSubtitle => _t(
-        'كل ما تحتاجه عن الملتقى في مكان واحد.',
-        'Everything you need about the forum, in one place.',
-      );
   String get liveNowLabel => _t('مباشر', 'LIVE');
-  String get liveBannerTitle => _t('البث المباشر', 'Live broadcast');
-  String get liveBannerSubtitle =>
-      _t('شاهد الجلسات مباشرةً', 'Watch the sessions live');
-  String get guestPromptText => _t(
-        'أنت تتصفح كضيف. سجّل دخولك للوصول إلى بطاقتك الذكية والإشعارات الشخصية.',
-        'You are browsing as a guest. Sign in to access your smart badge and personal notifications.',
-      );
   String get guestSignInCta => _t('تسجيل الدخول', 'Sign in');
   String get tileSessions => _t('الجلسات', 'Sessions');
   String get tileSpeakers => _t('المتحدثون', 'Speakers');
   String get tileVenueMap => _t('الخريطة', 'Venue map');
-  String get tileBooths => _t('الأجنحة', 'Booths');
   String get tileSponsors => _t('الرعاة', 'Sponsors');
   String get tileNews => _t('الأخبار والتغطية', 'News & coverage');
   String get tileArchive => _t('الأرشيف', 'Archive');
-  String get tileAbout => _t('عن الملتقى', 'About the forum');
-  String get tileMyArea => _t('منطقتي', 'My area');
   String get tileEntryBadge => _t('بطاقتي الذكية', 'My smart badge');
   String get tileMeetPeople => _t('قابل أشخاص مثلك', 'Meet people like you');
   // Signed-in home "عن الملتقى" group (frame 758:1134, node 1052:12856) — the
@@ -841,7 +775,6 @@ class AppL10n {
   String get tileAskModerator => _t('اسأل المحاور', 'Ask the moderator');
 
   // Bottom navigation (KSA Wave-2 shell — frames 512:1492 / 213:963). The
-  // sessions tab reuses [sessionsTitle] ("الجلسات", Figma 206:1732).
   String get navProfile => _t('الملف الشخصى', 'Profile');
 
   // Home — KSA Wave-2 redesign (guest 512:1492 / signed-in 203:1236).
@@ -922,9 +855,6 @@ class AppL10n {
   // admin-entered data landing in Phase 2 — the row stays hidden until the wire
   // carries them.
   String get featuredEventsSection => _t('ابرز الاحداث', 'Highlights');
-  // The post-card source name + handle (frame 758:1246 / 758:1244).
-  String get postSourceName => _t('الملتقى البحري', 'The Maritime Forum');
-  String get postSourceHandle => '@SIMF';
   String get postTimeJustNow => _t('الآن', 'just now');
   String postTimeMinutesAgo(int n) => _t('قبل $n دقيقة', '$n min ago');
   String postTimeHoursAgo(int n) => _t('قبل $n ساعة', '$n h ago');
@@ -937,7 +867,6 @@ class AppL10n {
       _t('مسجّل في $count جلسات', 'Enrolled in $count sessions');
   String get shareLabel => _t('مشاركة', 'Share');
   String get shareContact => _t('مشاركة جهة اتصال', 'Share contact');
-  String get shareMyProfile => _t('مشاركة ملفي', 'Share my profile');
   String get shareCalendar => _t('مشاركة جدولي', 'Share my calendar');
   String get shareFailed =>
       _t('تعذّرت المشاركة. حاول مرة أخرى.', 'Could not share. Try again.');
@@ -1036,8 +965,6 @@ class AppL10n {
   String get gateManualHint =>
       _t('أدخل الرمز يدويًا', 'Enter the code manually');
   String get gateManualSubmit => _t('تحقّق', 'Check');
-  String get gateHold => _t('إيقاف مؤقت', 'Hold');
-  String get gateResume => _t('استئناف', 'Resume');
   String get gateAllowed => _t('مسموح', 'Allowed');
   String get gateAllowedSub =>
       _t('مرحباً بك في الفعالية', 'Welcome to the event');
@@ -1169,7 +1096,6 @@ class AppL10n {
         'تم رفع المرفقات.',
         'The attachments were uploaded.',
       );
-  String get staffRegisterAnother => _t('تسجيل زائر آخر', 'Register another');
   // The My-Area "الجلسات المحفوظة" counter (D-584) — shows the SAVED
   // (favourited) count and opens الجلسات المحفوظة (1701:8928); Arabic already
   // read "محفوظة".
@@ -1183,7 +1109,6 @@ class AppL10n {
   String get scheduleMeetingsGroup => _t('مقابلات', 'Meetings');
   String get scheduleEmpty => _t('لا يوجد لديك مواعيد اليوم', 'No items today');
   String get smartBadgeLink => _t('بطاقتي الذكية', 'My smart badge');
-  String get accountSettingsLink => _t('إعدادات الحساب', 'Account settings');
   String get myAreaPendingNote => _t(
         'حسابك قيد المراجعة. ستظهر بطاقتك وجدولك بعد الاعتماد.',
         'Your account is under review. Your badge and schedule appear once approved.',
@@ -1196,7 +1121,6 @@ class AppL10n {
   String get myAreaError =>
       _t('تعذّر تحميل منطقتك.', 'Could not load your area.');
 
-  String get venueMapTitle => _t('الخريطة', 'Venue map');
   String get venueMapError =>
       _t('تعذّر تحميل الخريطة.', 'Could not load the map.');
   String get venueMapEmpty =>
@@ -1207,28 +1131,22 @@ class AppL10n {
   String get venueMapZoomOut => _t('تصغير الخريطة', 'Zoom out');
   String get venueMapResetView =>
       _t('إعادة ضبط عرض الخريطة', 'Reset the map view');
-  String get legendHall => _t('قاعة', 'Hall');
-  String get legendZone => _t('منطقة', 'Zone');
-  String get legendBooth => _t('جناح', 'Booth');
-  String get legendPoi => _t('نقطة اهتمام', 'Point of interest');
   // KSA Wave-2 frame 215:562 copy (the selected-node info card).
   String get venueMapDirectMe => _t('أرشدني', 'Guide me');
   String get venueMapViewDetails => _t('عرض التفاصيل', 'View details');
 
   // Sessions — daily schedule (Page 016). The two pills + the day strip + the
   // search box all filter the cached programme client-side (Page_016 L-1).
+  // NOT rendered anywhere: D-750 moved the nav tab to [agendaTitle] and the
+  // screen header is [sessionsProgrammeTitle]. Retained per E2E-MOB016-018.
   String get sessionsTitle => _t('الجلسات', 'Sessions');
-  // D-750 — the bottom-nav program/agenda tab label (owner 2026-07-20). Distinct
-  // from [sessionsTitle], which titles the Sessions screen and other surfaces.
+  // D-750 — the bottom-nav program/agenda tab label (owner 2026-07-20).
   String get agendaTitle => _t('الأجندة', 'Agenda');
-  String get sessionsViewUpcoming => _t('الأجندة القادمة', 'Upcoming agenda');
-  String get sessionsViewForum => _t('أجندة الفعالية', 'Event agenda');
-  String get sessionsAllDays => _t('كل الأيام', 'All days');
   String get sessionsSearchHint => _t('البحث', 'Search');
   String get sessionsScheduleSection => _t('المواعيد', 'Schedule');
   // The Sessions screen header (frame 883:2308 node 883:2314 "برنامج الملتقي" —
-  // corrected spelling الملتقى); distinct from the bottom-nav label
-  // ([sessionsTitle] "الجلسات", nav component 206:1732).
+  // corrected spelling الملتقى). This titles the screen; the nav tab uses
+  // [agendaTitle] (D-750).
   String get sessionsProgrammeTitle => _t('برنامج الملتقى', 'Forum programme');
   // D-452 (Figma 883:2320) — the session type tabs (احداث dropped to match
   // the 3-tab frame, owner 2026-07-03).
@@ -1268,15 +1186,8 @@ class AppL10n {
   String get mySeatHeading => _t('مقعدي', 'My seat');
   String seatLocation(String row, int seat) =>
       _t('الصف $row · مقعد $seat', 'Row $row · Seat $seat');
-  String get seatBadgeHint => _t(
-        'تأكد من إبراز بطاقتك عند الدخول',
-        'Show your badge at entry',
-      );
   String get seatViewLink => _t('عرض', 'View');
   // D-485 — the in-app session join flow (Join CTA / seat picker / hub).
-  String get joinSectionHeading => _t('الانضمام للجلسة', 'Join this session');
-  String get joinSeatCta => _t('اختر مقعدي', 'Select my seat');
-  String get joinOpenCta => _t('انضم إلى الجلسة', 'Join this session');
   // The single gold join button on the session detail (Figma 889:2450, owner
   // 2026-06-30): one label for both seating modes — open-seating joins in
   // place, assigned-seat opens the seat picker.
@@ -1286,15 +1197,6 @@ class AppL10n {
   // open-seating join is a registration, not a seat reservation.
   String get joinOpenRegisterCta =>
       _t('سجل لحضور الجلسة', 'Register to attend the session');
-  // A8 (2026-07-27) — bookings auto-confirm: the owner removed the Control
-  // Panel approval step on 2026-07-18, so the seat is HELD the moment it is
-  // picked. The old copy ("then await approval") described a dead workflow.
-  String get joinSeatHint => _t(
-        'اختر مقعدك ويُحجز لك فوراً',
-        'Pick your seat — it is held for you straight away',
-      );
-  String get joinOpenHint =>
-      _t('دخول عام — بدون مقعد محدد', 'General admission — no specific seat');
   String get joinConfirmTitle => _t('تأكيد الانضمام', 'Join this session?');
   // A8 — the open-seating join confirmation. There is no approval request:
   // the registration is recorded immediately, it does not reserve a specific
@@ -1308,8 +1210,6 @@ class AppL10n {
             'confirmed at session check-in.',
       );
   String get joinConfirmAction => _t('انضمام', 'Join');
-  String get joinPendingToast => _t('تم إرسال طلبك — بانتظار موافقة الإدارة',
-      'Request sent — pending approval',);
   // D-750 — case-1 (open-seating) post-join success alert body (replaces the
   // joinPendingToast snackbar): registering is not a seat reservation and does
   // not guarantee entry; entry is confirmed at session check-in.
@@ -1340,8 +1240,6 @@ class AppL10n {
   String get seatPickerHint =>
       _t('اضغط على مقعد متاح لحجزه', 'Tap an available seat to reserve it');
   String get seatPickerRandomCta => _t('اختيار تلقائي', 'Auto-pick a seat');
-  String get seatReservedToast =>
-      _t('تم الحجز — بانتظار الموافقة', 'Reserved — pending approval');
   // D-750 — case-2 (assigned-seat) post-reserve success alert body (replaces
   // the seatReservedToast snackbar): the hold is released if the visitor does
   // not check in by 3 minutes before the session starts, to free the seat.
@@ -1410,12 +1308,10 @@ class AppL10n {
   String get rowChipLabel => _t('الصف', 'Row');
   String get stageLabelBilingual => _t('المسرح · STAGE', 'Stage · STAGE');
 
-  String get mySeatMapTitle => _t('مقعدي · خريطة الجلوس', 'My seat map');
   String get seatMapError =>
       _t('تعذّر تحميل خريطة المقاعد.', 'Could not load the seat map.');
   String get seatMapUnavailable =>
       _t('خريطة المقاعد غير متاحة بعد', 'Seat map not available yet');
-  String get stageLabel => _t('المسرح', 'Stage');
   String get noSeatYet => _t('لا يوجد لديك مقعد بعد', 'You have no seat yet');
   String get legendMine => _t('مقعدك', 'Your seat');
   String get legendAvailable => _t('متاح', 'Available');
@@ -1465,9 +1361,6 @@ class AppL10n {
         'وجّه الكاميرا نحو رمز QR على بطاقة الضيف',
         "Point the camera at the QR code on the guest's badge",
       );
-  String get staffSeatingSessionLabel => _t('الجلسة', 'Session');
-  String get staffSeatingPickSession =>
-      _t('اختر الجلسة أولاً', 'Choose a session first');
   String get staffSeatingNoSeat => _t('لا يوجد مقعد لهذا الضيف في هذه الجلسة',
       'This guest has no seat in this session',);
   String get staffSeatingSeatEmpty =>
@@ -1511,7 +1404,6 @@ class AppL10n {
   String get copyLinkLabel => _t('نسخ الرابط', 'Copy link');
   String get linkCopied => _t('تم نسخ الرابط', 'Link copied');
   String get requestMeeting => _t('طلب مقابلة', 'Request meeting');
-  String get meetingNameLabel => _t('الاسم', 'Your name');
   String get meetingSubjectLabel => _t('الموضوع', 'Subject');
   // Bilateral-meeting entry (owner: VIP اللقاءات الثنائية) — pick a speaker.
   String get meetingSelectSpeakerLabel => _t('اختر المتحدث', 'Select speaker');
@@ -1546,10 +1438,6 @@ class AppL10n {
   String get meetingRequestInvalid => _t(
         'يرجى إدخال الاسم والموضوع',
         'Please enter your name and a subject',
-      );
-  String get meetingRequestNotAllowed => _t(
-        'هذا المتحدث لا يستقبل طلبات المقابلة',
-        'This speaker is not accepting meeting requests',
       );
   String get meetingRequestFailed => _t(
         'تعذّر إرسال الطلب. حاول مرة أخرى.',
@@ -1668,7 +1556,6 @@ class AppL10n {
 
   // الطلبات top action row (Figma 1408:9736) — السجل = all requests (default),
   // المقبولة = accepted filter shortcut.
-  String get requestsTabAccepted => _t('المقبولة', 'Accepted');
   String get requestsTabLog => _t('السجل', 'Log');
 
   String get requestNew => _t('طلب جديد', 'New request');
@@ -1710,7 +1597,6 @@ class AppL10n {
     return '$hh:$mm $period';
   }
 
-  String get boothsTitle => _t('الأجنحة', 'Booths');
   // The screen header per Figma frame 922:2458 node 922:2464 ("المعرض" — the
   // exhibition); distinct from the nav-tile/route label (boothsTitle).
   String get boothsExhibitionTitle => _t('المعرض', 'Exhibition');
@@ -1768,7 +1654,6 @@ class AppL10n {
   String get archivePlaceLabel => _t('المكان', 'Place');
   String get archiveTimeLabel => _t('الزمن', 'Time');
   String get archiveStatSpeakers => _t('المتحدثون', 'Speakers');
-  String get archiveStatAttendees => _t('الحضور', 'Attendees');
   String get archiveStatSessions => _t('الفعاليات', 'Activities');
   String archiveEditionPill(int year) => _t('ملتقى $year', 'Edition $year');
   // D-432 — the rich archive-detail sections (Figma 925-3079 / 24-01).
@@ -1799,9 +1684,6 @@ class AppL10n {
   // About the forum (Page 037 · عن الملتقى) — KSA frame 1116:16448
   // (restructured: header + الرسالة + الرؤية + تفاصيل الملتقى + المحاور).
   String get aboutTitle => _t('عن الملتقى', 'About the forum');
-  String get aboutError =>
-      _t('تعذّر تحميل المحتوى.', 'Could not load the content.');
-  String get aboutEmpty => _t('المحتوى قيد الإعداد', 'Content coming soon');
   // Header (frame 1116:16448) — the anchor mark + the forum name.
   String get aboutForumName =>
       _t('الملتقى الدولي البحري', 'The International Maritime Forum');
@@ -1930,10 +1812,6 @@ class AppL10n {
 
   // "قيّم العناصر" — the per-element scores (Figma 1116:17143).
   String get rateElementsTitle => _t('قيّم العناصر', 'Rate the elements');
-  String get rateCatOrganization => _t('التنظيم', 'Organization');
-  String get rateCatContent => _t('المحتوى', 'Content');
-  String get rateCatApp => _t('التطبيق', 'App');
-  String get rateCatVenue => _t('المكان والمرافق', 'Venue & facilities');
 
   String get rateCommentLabel => _t('ملاحظاتك', 'Your notes');
   String get rateCommentHint =>
@@ -1988,10 +1866,6 @@ class AppL10n {
 
   // Accessibility (Page 038; Figma 1116:16630 — client-local settings, no API).
   String get accessibilityTitle => _t('إمكانية الوصول', 'Accessibility');
-  String get accessibilityIntro => _t(
-        'اضبط تجربة العرض بما يناسبك. هذه الإعدادات محلية على جهازك.',
-        'Adjust the display to suit you. These settings are local to your device.',
-      );
   // Section headers (Figma العرض / الصوت والقراءة).
   String get accessibilitySectionDisplay => _t('العرض', 'Display');
   String get accessibilitySectionSound =>
@@ -2051,7 +1925,6 @@ class AppL10n {
   String get moreSectionSettings => _t('الإعدادات', 'Settings');
   String get moreSectionLegal => _t('قانوني', 'Legal');
   String get moreForumGuide => _t('دليل الملتقى', 'Forum guide');
-  String get morePresentations => _t('عروض الجلسات', 'Session presentations');
   String get moreVisitSaudi => _t('اكتشف السعودية', 'Discover Saudi');
 
   // دليل الملتقى — Forum guide (Figma 1388-7493). Static in-app copy (no
@@ -2225,25 +2098,9 @@ class AppL10n {
   String mySessionsCount(int count, String tabLabel) =>
       _t('$count جلسة · $tabLabel', '$count · $tabLabel');
 
-  // #8 — Saved sessions, App "الجلسات المحفوظة" (Figma 1701:8928), reached from
-  // the My-Area saved-sessions counter. The favourited sessions (المفضلة =
-  // محفوظة) with a saved-count header + category chips over the cached
-  // programme.
-  String get savedSessionsTitle => _t('الجلسات المحفوظة', 'Saved sessions');
-  // The gold count-row unit label, rendered as "$count جلسة محفوظة".
-  String get savedSessionsCountLabel => _t('جلسة محفوظة', 'saved sessions');
-  String get savedSessionsEmpty =>
-      _t('لا توجد جلسات محفوظة بعد.', 'No saved sessions yet.');
-
   // المقابلات, App "المقابلات" (Figma 1701:9406), reached from the My-Area
   // "مقابلات" counter. The caller's speaker + delegation meetings as person
   // cards over four status filter chips. Reuses the الطلبات feed (read-only).
-  String get myMeetingsTitle => _t('المقابلات', 'My meetings');
-  String get myMeetingsFilterCompleted => _t('مكتملة', 'Completed');
-  String get myMeetingsFilterPending => _t('قيد الانتظار', 'Pending');
-  String get myMeetingsFilterRejected => _t('مرفوضة', 'Rejected');
-  // The neutral badge on an accepted meeting card (Figma 1701:9446).
-  String get myMeetingBadgeConfirmed => _t('مؤكدة', 'Confirmed');
   String get myMeetingsEmpty => _t('لا توجد مقابلات بعد.', 'No meetings yet.');
   // The list section header, rendered as "جميع المقابلات ($count)".
   String myMeetingsAllHeader(int count) =>
@@ -2262,9 +2119,6 @@ class AppL10n {
       _t('لا توجد نتائج مطابقة.', 'No matching results.');
   String get delegationsCountriesStat =>
       _t('دولة مشاركة', 'Participating countries');
-  String get delegationsParticipantsStat =>
-      _t('إجمالي المشاركين', 'Total participants');
-  String get delegationsHeadLabel => _t('رئيس الوفد', 'Head of delegation');
 
   /// The active-filter chip shown when a stats-strip flag isolates one country;
   /// tapping the chip clears the flag filter.
@@ -2340,9 +2194,6 @@ class AppL10n {
       _t('لا توجد عروض متاحة بعد.', 'No presentations available yet.');
   String get presentationsError =>
       _t('تعذر تحميل العروض.', 'Could not load the presentations.');
-  // The gold button label on the الجلسات cards. Kept the word "تحميل" (owner) —
-  // as of D-592 it opens the session summary (34), not a file download.
-  String get presentationDownload => _t('تحميل', 'Download');
 
   // Event day group header, 1-based ("اليوم الأول" / "Day 1") — shared by the
   // session-summaries (8392) + presentations (7621) day grouping.
@@ -2416,7 +2267,6 @@ class AppL10n {
   // The session-data section header above the question composer (Figma
   // 1049:12590).
   String get sessionDataLabel => _t('بيانات الجلسة', 'Session details');
-  String get sendQuestionTitle => _t('إرسال سؤال', 'Send a question');
   String get sendQuestionNoSession => _t(
         'افتح هذه الشاشة من جلسة مباشرة لإرسال سؤال.',
         'Open this from a live session to send a question.',
@@ -2424,7 +2274,6 @@ class AppL10n {
   String get sendQuestionRecipientLabel => _t('إلى من؟', 'Send to');
   String get sendQuestionToSpeaker => _t('المتحدث', 'Speaker');
   String get sendQuestionToHost => _t('المضيف', 'Host');
-  String get sendQuestionFieldLabel => _t('سؤالك', 'Your question');
   String get sendQuestionHint =>
       _t('اكتب سؤالك هنا…', 'Type your question here…');
   String get sendQuestionEmpty =>
@@ -2459,8 +2308,6 @@ class AppL10n {
   // with the feature — rejected by customer.)
 
   String get badgeTitle => _t('بطاقة الدخول', 'Entry badge');
-  String get badgeShowAtEntry =>
-      _t('أبرز هذه البطاقة عند الدخول', 'Show this at entry');
   String get badgePendingBody => _t(
         'ستتوفر بطاقتك بعد اعتماد حسابك.',
         'Your badge is available once your account is approved.',
@@ -2502,7 +2349,6 @@ class AppL10n {
   // FR-EXH-002 — the lead list gained the remove + vCard export My Contacts has
   // had since D-286. The wording deliberately mirrors the My-Contacts sheet so
   // the two card lists behave the same way.
-  String get myVisitorsNoteLabel => _t('ملاحظة', 'Note');
   String get myVisitorsExportVcard => _t('تصدير vCard', 'Export vCard');
   String get myVisitorsRemove => _t('إزالة', 'Remove');
   String get myVisitorsRemoveConfirmTitle =>
@@ -2630,21 +2476,16 @@ class AppL10n {
       _t('تعذر تحميل رمز المشاركة.', 'Could not load your share code.');
 
   String get scanContactTitle => _t('مسح رمز QR', 'Scan QR');
-  String get scanContactManualLabel =>
-      _t('أو أدخل الرمز يدوياً', 'Or enter the code manually');
   String get scanContactManualField => _t('رمز المشاركة', 'Share code');
   String get scanContactResolve => _t('بحث', 'Look up');
   String get scanContactNotFound => _t(
       'رمز غير صالح أو لم يعد متاحاً.', 'Code not found or no longer valid.',);
   String get scanContactError =>
       _t('تعذر قراءة جهة الاتصال.', 'Could not read the contact.');
-  String get scanContactCameraUnavailable =>
-      _t('الكاميرا غير متاحة', 'Camera unavailable');
   // Shared by all QR scanners: the camera starts only on tap so the on-screen
   // back/cancel stays usable on devices where the live camera grabs taps (D-426).
   String get scanStartCamera =>
       _t('اضغط لمسح الرمز بالكاميرا', 'Tap to scan with the camera');
-  String get scanStopCamera => _t('إيقاف الكاميرا', 'Stop camera');
 
   String get contactPreviewTitle => _t('معاينة جهة الاتصال', 'Contact preview');
   String get saveContactLabel =>

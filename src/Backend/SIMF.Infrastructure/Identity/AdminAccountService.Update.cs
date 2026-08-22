@@ -4,6 +4,8 @@
 // Tests: SIMF.Api.Tests/AdminUpdateUserIdentityCommitFailureTests.cs (the
 //        Identity-then-App write ordering: a failed Identity commit must leave
 //        the profile type unchanged rather than durable)
+// Tests: SIMF.Api.Tests/AdminUpdateUserTests.cs (the visitor edit, including the
+//        two meeting flags: omitted leaves them alone, an explicit false clears them)
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -57,10 +59,14 @@ internal sealed partial class AdminAccountService
             request.SaudiMobile, request.InternationalMobile,
             cancellationToken);
 
+    // The two meeting flags are nullable HERE because the visitor request makes
+    // them optional (null = leave the stored flag alone). The Other request keeps
+    // them mandatory and always passes a value, so the partner desk still writes
+    // whatever it was given.
     private async Task UpdateAccountAsync(
         Guid actorUserId, Guid userId, string email, string displayName,
         Guid? profileTypeId, bool expectedIsVisitor, bool profileTypeRequired,
-        bool allowsSpeakerMeeting, bool allowsDelegationMeeting,
+        bool? allowsSpeakerMeeting, bool? allowsDelegationMeeting,
         string? nationalityCode,
         string? saudiMobile, string? internationalMobile,
         CancellationToken cancellationToken)
@@ -315,9 +321,9 @@ internal sealed partial class AdminAccountService
         return countryId;
     }
 
-    // Sets the subject's ProfileTypeId, the two Bi-Meeting eligibility flags
-    // (AllowsSpeakerMeeting / AllowsDelegationMeeting) and — when the edit supplied
-    // them — the nationality and the mobile numbers, on the
+    // Sets the subject's ProfileTypeId and — when the edit supplied them — the two
+    // Bi-Meeting eligibility flags (AllowsSpeakerMeeting / AllowsDelegationMeeting),
+    // the nationality and the mobile numbers, on the
     // App-DB UserProfile row. The row may not exist yet (a self-signed-up visitor
     // with no admin-assigned type); create a minimal row when a tier OR a meeting
     // flag OR a nationality OR a mobile is set so the assignment sticks. An edit
@@ -325,7 +331,7 @@ internal sealed partial class AdminAccountService
     // to persist).
     private async Task UpsertProfileTypeAsync(
         Guid subjectId, Guid? profileTypeId,
-        bool allowsSpeakerMeeting, bool allowsDelegationMeeting,
+        bool? allowsSpeakerMeeting, bool? allowsDelegationMeeting,
         int? nationalityId,
         string? saudiMobile, string? internationalMobile,
         DateTime now,
@@ -335,8 +341,11 @@ internal sealed partial class AdminAccountService
             .SingleOrDefaultAsync(p => p.UserId == subjectId, cancellationToken);
         if (profile is null)
         {
-            if (profileTypeId is null && !allowsSpeakerMeeting
-                && !allowsDelegationMeeting && nationalityId is null
+            // A flag is worth creating a row for only when it is being turned ON.
+            // Neither an omitted flag (null) nor an explicit false says anything a
+            // brand-new row does not already say, since both flags default to false.
+            if (profileTypeId is null && allowsSpeakerMeeting is not true
+                && allowsDelegationMeeting is not true && nationalityId is null
                 && saudiMobile is null && internationalMobile is null)
             {
                 return;
@@ -346,8 +355,8 @@ internal sealed partial class AdminAccountService
                 Id = Guid.NewGuid(),
                 UserId = subjectId,
                 ProfileTypeId = profileTypeId,
-                AllowsSpeakerMeeting = allowsSpeakerMeeting,
-                AllowsDelegationMeeting = allowsDelegationMeeting,
+                AllowsSpeakerMeeting = allowsSpeakerMeeting ?? false,
+                AllowsDelegationMeeting = allowsDelegationMeeting ?? false,
                 NationalityId = nationalityId ?? 0,
                 CreatedAt = now,
             };
@@ -357,8 +366,20 @@ internal sealed partial class AdminAccountService
         else
         {
             profile.ProfileTypeId = profileTypeId;
-            profile.AllowsSpeakerMeeting = allowsSpeakerMeeting;
-            profile.AllowsDelegationMeeting = allowsDelegationMeeting;
+            // The same "null = no change" rule the nationality and the mobile below
+            // follow. A caller that omits a meeting flag is not asking for it to be
+            // withdrawn: before this, a partial edit that sent only the email
+            // deserialised the two absent booleans as false and revoked the
+            // eligibility on the way past. An explicit false is still honoured,
+            // because revoking the flag has to remain possible.
+            if (allowsSpeakerMeeting is { } speaker)
+            {
+                profile.AllowsSpeakerMeeting = speaker;
+            }
+            if (allowsDelegationMeeting is { } delegation)
+            {
+                profile.AllowsDelegationMeeting = delegation;
+            }
             if (nationalityId is { } resolved)
             {
                 profile.NationalityId = resolved;

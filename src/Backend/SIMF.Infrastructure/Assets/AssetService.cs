@@ -143,9 +143,12 @@ internal sealed class AssetService(
                 service, ownerId, content, originalFileName, contentType, actorUserId, FailClosed: false),
             cancellationToken);
 
-        // "One active per (category, owner)" — retire any prior active file for this
-        // owner (unlinks its bytes too) now that the replacement is safely stored.
-        await RetirePriorActiveAsync(service, ownerId, keepId: result.Id, actorUserId, cancellationToken);
+        // The retire that used to run here has moved into IFileService, which now
+        // deactivates the owner previous file BEFORE inserting the replacement.
+        // It had to move: the filtered unique index on (Service, OwnerEntityId)
+        // rejects a second active row, so retiring afterwards is no longer a legal
+        // order. Doing it in the store also means the invariant holds for every
+        // caller rather than only for uploads that came through the Media Library.
 
         logger.LogInformation(
             "Admin {ActorId} set {Kind} upload asset {Category}/{OwnerId} ({Id})",
@@ -169,9 +172,13 @@ internal sealed class AssetService(
         CancellationToken cancellationToken = default)
     {
         var service = ServiceFor(category);
-        // Newest first, tie-broken on the id: two concurrent uploads for one owner
-        // can both end active (see RetirePriorActiveAsync), and an unordered
-        // FirstOrDefault would then serve a different image per request.
+        // Newest first, tie-broken on the id. Every category the Media Library
+        // owns is now in FileServicePolicies.SingleActivePerOwner, so the filtered
+        // unique index on (Service, OwnerEntityId) guarantees at most one active
+        // row and this ordering has nothing left to choose between. It stays as
+        // the belt to that braces: it costs nothing on a single-row read, and it
+        // is what kept the public serve deterministic for the years before the
+        // database held the invariant.
         var file = await dbContext.StoredFiles.AsNoTracking()
             .Where(f => f.Service == service && f.OwnerEntityId == ownerId && f.IsActive)
             .OrderByDescending(f => f.CreatedAt)
@@ -330,52 +337,6 @@ internal sealed class AssetService(
         await dbContext.SaveChangesAsync(cancellationToken);
         await OwnerPointerSync.PointAtAsync(
             dbContext, file.Service, file.OwnerEntityId, file.Id, cancellationToken);
-    }
-
-    // Retire every PRIOR active file of this (service, owner) so one stays active
-    // after an upload (the Asset table's filtered-unique invariant, now
-    // service-enforced). Delegates to the file service so the bytes are unlinked.
-    //
-    // "Prior" is load-bearing and used to read "every other". Each request runs
-    // its retire AFTER its own commit, so two admins replacing the same speaker
-    // photo at once each saw the other's freshly committed row and deleted it:
-    // both rows ended inactive, both blobs were unlinked from disk, the public
-    // image disappeared, and both admins were told the upload succeeded. Retiring
-    // only rows strictly older than the one being kept cannot destroy the row the
-    // other request is keeping.
-    //
-    // It does NOT make the pair atomic. When both rows land on the same clock
-    // tick and the losing request runs its retire before the winner commits, both
-    // stay active - which is why ResolveAsync orders. The real fix is a filtered
-    // unique index on (Service, OwnerEntityId) WHERE IsActive, which is a schema
-    // change and needs the owner.
-    private async Task RetirePriorActiveAsync(
-        FileService service, Guid ownerId, Guid keepId, Guid actorUserId,
-        CancellationToken cancellationToken)
-    {
-        var keptCreatedAt = await dbContext.StoredFiles.AsNoTracking()
-            .Where(f => f.Id == keepId)
-            .Select(f => (DateTime?)f.CreatedAt)
-            .FirstOrDefaultAsync(cancellationToken);
-        if (keptCreatedAt is null) { return; }
-
-        var candidates = await dbContext.StoredFiles.AsNoTracking()
-            .Where(f => f.Service == service && f.OwnerEntityId == ownerId
-                && f.IsActive && f.Id != keepId && f.CreatedAt <= keptCreatedAt.Value)
-            .Select(f => new { f.Id, f.CreatedAt })
-            .ToListAsync(cancellationToken);
-
-        foreach (var candidate in candidates)
-        {
-            // Same-tick rows fall back to the id so both requests agree on which
-            // of the two is the older one.
-            var isOlder = candidate.CreatedAt < keptCreatedAt.Value
-                || candidate.Id.CompareTo(keepId) < 0;
-            if (isOlder)
-            {
-                await fileService.DeleteAsync(candidate.Id, actorUserId, cancellationToken);
-            }
-        }
     }
 
     private static ApiException NotFound() =>

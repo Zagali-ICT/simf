@@ -25,7 +25,7 @@ class EmailVerifyResendRow extends StatelessWidget {
             fontWeight: FontWeight.w500,
           ),
         ),
-        const SizedBox(width: SimfTokens.signUpEmailVerifyScreenWidth),
+        const SizedBox(width: SimfTokens.gap6),
         TextButton(
           onPressed: onResend,
           style: authLinkButtonStyle(SimfTokens.accent),

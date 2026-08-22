@@ -1,4 +1,6 @@
-// Tests: SIMF.Api.Tests/DefaultContentSeederTests.cs
+// Tests: SIMF.Api.Tests/DefaultContentSeederTests.cs,
+//        SIMF.Api.Tests/SeedRaceGuardTests.cs (the concurrent first-boot
+//        tolerance this seeder now saves through)
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Common;
@@ -36,9 +38,19 @@ public sealed class DefaultContentSeeder(
         var now = timeProvider.SimfNow();
         var changed = await EnsureAppUpdateSettingsAsync(now, cancellationToken);
 
-        if (changed > 0)
+        if (changed == 0)
         {
-            await appDbContext.SaveChangesAsync(cancellationToken);
+            return;
+        }
+
+        // Tolerates a concurrent first boot: several API instances run this
+        // seeder against the same empty database, so the unique index on
+        // SystemSettings.Key rejects whichever one arrives second. The log line
+        // below is gated on the result because "inserted 6 row(s)" would be
+        // untrue on the instance that lost.
+        if (await appDbContext.SaveToleratingFirstBootRaceAsync(
+            logger, "Default config seed", cancellationToken))
+        {
             logger.LogInformation("Default config seed inserted/updated {Count} row(s).", changed);
         }
     }

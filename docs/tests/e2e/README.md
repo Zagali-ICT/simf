@@ -87,7 +87,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/session-moderators` | [`cp-admin-session-moderators.md`](cp-admin-session-moderators.md) | E2E-SMD-001..018 |
 | `/admin/programme/timeline` | [`cp-admin-programme-timeline.md`](cp-admin-programme-timeline.md) | E2E-PTL-001..011 |
 | `/admin/bookings` | [`cp-admin-bookings.md`](cp-admin-bookings.md) | E2E-BKG-001..012 |
-| `/admin/speaker-meeting-requests` | [`cp-admin-speaker-meeting-requests.md`](cp-admin-speaker-meeting-requests.md) | E2E-SMR-001..031 |
+| `/admin/speaker-meeting-requests` | [`cp-admin-speaker-meeting-requests.md`](cp-admin-speaker-meeting-requests.md) | E2E-SMR-001..032 |
 | `/admin/speaker-availability` | [`cp-admin-speaker-availability.md`](cp-admin-speaker-availability.md) | E2E-SAV-001..007 |
 | `/admin/hall-availability` | [`cp-admin-hall-availability.md`](cp-admin-hall-availability.md) | E2E-HAV-001..008 |
 | `/admin/delegation-meetings` | [`cp-admin-delegation-meetings.md`](cp-admin-delegation-meetings.md) | E2E-DLM-001..019 |
@@ -114,7 +114,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | Page | File | Scenarios |
 |------|------|-----------|
 | ~~`/admin/companies`~~ | [`cp-admin-companies.md`](cp-admin-companies.md) | ⛔ **Retired** — renamed to `/admin/exhibitors` by `a05ef82d`. No live scenarios; `E2E-CMP-011` was ported as `E2E-EXH-029`. |
-| `/admin/exhibitors` | [`cp-admin-exhibitors.md`](cp-admin-exhibitors.md) | E2E-EXH-001..029 (D-781 link an existing account: 027/028; 029 ported from the retired CMP file) |
+| `/admin/exhibitors` | [`cp-admin-exhibitors.md`](cp-admin-exhibitors.md) | E2E-EXH-001..032 (D-781 link an existing account: 027/028; 029 ported from the retired CMP file; 030/031 revoke a booth membership, API shipped and CP control pending) |
 | `/admin/booths` | [`cp-admin-booths.md`](cp-admin-booths.md) | E2E-BTH-001..025 |
 | `/admin/sponsors` | [`cp-admin-sponsors.md`](cp-admin-sponsors.md) | E2E-SPN-001..023 |
 | `/admin/media-partners` | [`cp-admin-media-partners.md`](cp-admin-media-partners.md) | E2E-MPR-001..019 |
@@ -174,7 +174,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/login` + `/login/totp` + `/login/recovery` + `/forgot-password` + `/auth/pending` + `/auth/rejected` | [`cp-auth-flow.md`](cp-auth-flow.md) | E2E-AUTH-001..010 |
 | `/account/profile` | [`cp-account-profile.md`](cp-account-profile.md) | E2E-PRF-001..016 |
 | `/account/notifications` | [`cp-account-notifications.md`](cp-account-notifications.md) | E2E-NTF-001..012 |
-| `/account/totp-pairing` | [`cp-account-totp-pairing.md`](cp-account-totp-pairing.md) | E2E-TPP-001..010 |
+| `/account/totp-pairing` | [`cp-account-totp-pairing.md`](cp-account-totp-pairing.md) | E2E-TPP-001..011 |
 | `/login/enrol-2fa` — mandatory first-sign-in TOTP enrolment (`#2`, enrolment-first) | [`cp-2fa-enrolment.md`](cp-2fa-enrolment.md) | E2E-TFE-001..013 |
 | `/not-permitted` + `/not-found` + `/Error` | [`cp-framework-pages.md`](cp-framework-pages.md) | E2E-FRM-001..010 |
 
@@ -244,11 +244,11 @@ API endpoints land (D-249). The per-screen design docs live under
 |------------|------|-----------|
 | #1 `splash` (`POST /app/auth/refresh` + `GET /app/users/me` + `GET /app/version-policy` — D-736) | [`mobile-splash.md`](mobile-splash.md) | E2E-MOB001-001..017 |
 | #2 `onboarding` (no API) | [`mobile-onboarding.md`](mobile-onboarding.md) | E2E-MOB002-001..008 |
-| #3 `signIn` (+ verify-otp / forgot / reset) | [`mobile-sign-in.md`](mobile-sign-in.md) | E2E-MOB003-001..017 |
+| #3 `signIn` (+ verify-otp / forgot / reset) | [`mobile-sign-in.md`](mobile-sign-in.md) | E2E-MOB003-001..021 |
 | ~~#4 `signUpType`~~ **REMOVED (D-332)** — invented; not in the mockup | [`mobile-sign-up-type.md`](mobile-sign-up-type.md) | _(retired — E2E-MOB004-* removed)_ |
 | #5 `signUpForm` (`POST /app/auth/sign-up`) | [`mobile-sign-up-form.md`](mobile-sign-up-form.md) | E2E-MOB005-001..008 |
 | #6 `emailOtp` (`verify-email` + `resend-code`) | [`mobile-email-otp.md`](mobile-email-otp.md) | E2E-MOB006-001..008 |
-| #7 `signUpVisitor` — **profile data** (Visitor/Other + ProfileType + 3 lookups; Next→interests) | [`mobile-sign-up-visitor.md`](mobile-sign-up-visitor.md) | E2E-MOB007-001..022 |
+| #7 `signUpVisitor` — **profile data** (Visitor/Other + ProfileType + 3 lookups; Next→interests) | [`mobile-sign-up-visitor.md`](mobile-sign-up-visitor.md) | E2E-MOB007-001..027 (+008b) |
 | #7‑01 `signUpInterests` — **interests (1–10) + the single `POST /app/account/user-profile` save** | [`mobile-sign-up-interests.md`](mobile-sign-up-interests.md) | E2E-MOB7A-001..008 |
 | #702 `myInterests` — **edit interests after sign-up** (same screen, edit mode) | [`mobile-my-interests.md`](mobile-my-interests.md) | E2E-MYINT-001..007 |
 | #703 `myMobile` — **add / edit the mobile number** (validate only, NO OTP) | [`mobile-my-mobile.md`](mobile-my-mobile.md) | E2E-MYMOB-001..012 |
@@ -256,7 +256,7 @@ API endpoints land (D-249). The per-screen design docs live under
 | #9 `terms` (`GET /app/content/terms`) | [`mobile-terms.md`](mobile-terms.md) | E2E-MOB009-001..008 |
 | #10 `registrationSuccess` (no API — static confirmation) | [`mobile-registration-success.md`](mobile-registration-success.md) | E2E-MOB010-001..007 |
 | #11 `registrationStatus` (`GET /app/users/me`) | [`mobile-registration-status.md`](mobile-registration-status.md) | E2E-MOB011-001..007 |
-| #13 `home` (`GET /app/bootstrap`; Moderator home also `GET /app/sessions/moderated` — FR-MOD-001 جلساتي) | [`mobile-home.md`](mobile-home.md) | E2E-MOB013-001..026 |
+| #13 `home` (`GET /app/bootstrap`; Moderator home also `GET /app/sessions/moderated` — FR-MOD-001 جلساتي) | [`mobile-home.md`](mobile-home.md) | E2E-MOB013-001..027 |
 | #14 `myArea` (`GET /app/account/dashboard` + `.ics` + `.vcf`) | [`mobile-my-area.md`](mobile-my-area.md) | E2E-MOB014-001..017 |
 | #103 `identityVerification` (`POST /app/account/avatar`) | [`mobile-identity-verification.md`](mobile-identity-verification.md) | E2E-MOBIDV-001..004 |
 | #104 `sessionModerate` (`GET/PUT /app/sessions/{id}/questions/moderate·push·hide·reorder`; FR-MOD-001 `GET /app/sessions/moderated` discovery + جلساتي on the moderator home; FR-MOD-003 drag-to-reorder the desk queue) | [`mobile-session-moderate.md`](mobile-session-moderate.md) | E2E-MOBMOD-001..010 |
@@ -287,12 +287,12 @@ API endpoints land (D-249). The per-screen design docs live under
 | #40 `rate` (`GET/POST /app/feedback/form|submit`) | [`mobile-rate.md`](mobile-rate.md) | E2E-MOB040-001..011 |
 | #31 `mediaPartners` (`GET /app/media-partners`) | [`mobile-media-partners.md`](mobile-media-partners.md) | E2E-MOB031-001..003 |
 | #12 `guestMode` (no API) | [`mobile-guest-mode.md`](mobile-guest-mode.md) | E2E-MOB012-001..004 |
-| #33 `notifications` (`POST /app/account/notifications/list` · `/{id}/read` · `/read-all`) | [`mobile-notifications.md`](mobile-notifications.md) | E2E-MOB033-001..009 |
+| #33 `notifications` (`POST /app/account/notifications/list` · `/{id}/read` · `/read-all`) | [`mobile-notifications.md`](mobile-notifications.md) | E2E-MOB033-001..010 |
 | #35 `meetPeople` (`GET /app/networking/partner-directory`) - Build #13 partner directory | [`mobile-meet-people.md`](mobile-meet-people.md) | E2E-MOB035-001..012 |
 | #38 `accessibility` (`GET`/`PUT /app/account/preferences` — `accessibility-server-sync`; the server half is [`api-account-preferences.md`](api-account-preferences.md)) | [`mobile-accessibility.md`](mobile-accessibility.md) | E2E-MOB038-001..012 |
-| #41 `more` (no API) | [`mobile-more.md`](mobile-more.md) | E2E-MOB041-001..009 |
+| #41 `more` (no API) | [`mobile-more.md`](mobile-more.md) | E2E-MOB041-001..011 |
 | #34 `aiSummary` (`GET /app/programme/sessions/{id}/summary`) | [`mobile-ai-summary.md`](mobile-ai-summary.md) | E2E-MOB034-001..010 |
-| #111 `sessionSummaryList` (cached programme + favourites/booked overlay) — Wave 2 pixel pass, Figma `1388:8392` | [`mobile-session-summaries.md`](mobile-session-summaries.md) | E2E-MOB111-001..008 |
+| #111 `sessionSummaryList` (cached programme + favourites/booked overlay) — Wave 2 pixel pass, Figma `1388:8392` | [`mobile-session-summaries.md`](mobile-session-summaries.md) | E2E-MOB111-001..012 |
 | #26 `sendQuestion` (`POST /app/sessions/{id}/questions`) | [`mobile-send-question.md`](mobile-send-question.md) | E2E-MOB026-001..015 |
 | #32 `badge` (`GET /app/account/dashboard`) | [`mobile-badge.md`](mobile-badge.md) | E2E-MOB032-001..010 |
 | #25 `liveBroadcast` (`GET /app/programme/sessions/{id}`) | [`mobile-live.md`](mobile-live.md) | E2E-MOB025-001..028 |
@@ -300,12 +300,12 @@ API endpoints land (D-249). The per-screen design docs live under
 | #24-01 `archiveDetail` (`GET /app/archive/{id}`) | [`mobile-archive-detail.md`](mobile-archive-detail.md) | E2E-MOB024D-001..009 |
 | `My Contacts` / `Share my contact` (`/app/account/share-token` + `/app/contacts/*`) | [`mobile-my-contacts.md`](mobile-my-contacts.md) | E2E-MMC-001..014 |
 | `requests` (`GET /app/my-requests` + `POST …/document-requests` · `…/badge-requests` · `…/my-requests/cancel`) — Wave 5 (D-500), retitled **طلباتي** when the meetings page split off (D-745); the full requests history | [`mobile-requests.md`](mobile-requests.md) | E2E-REQ-001..018 |
-| `meetings` (`GET /app/my-requests` filtered to approved-upcoming meetings) — **اللقاءات الثنائية** (D-745), Figma `1408:9726`; bi-meeting rework: **flag-gated** (not VIP), **two** request buttons (طلب مقابلة متحدث / طلب اجتماع وفد) + السجل history + speaker/flag cards | [`mobile-meetings.md`](mobile-meetings.md) | E2E-MOBMEET-001..013 |
-| `Delegation meeting request` sheet — bi-meeting rework: the delegation twin of the speaker request sheet; opened from `/meetings` (طلب اجتماع وفد) + a tapped delegation card; `POST /app/delegation-meeting-requests` | [`mobile-delegation-request.md`](mobile-delegation-request.md) | E2E-DELREQ-001..012 |
-| #117 `meetingConfirm` (`/meeting-confirm?requestId=…` → `POST /app/delegation-meeting-requests/{id}/confirm` + `…/decline`) — bi-meeting rework: delegation other-party confirm-on-tap, reached from a `MeetingRequested` notification | [`mobile-meeting-confirm.md`](mobile-meeting-confirm.md) | E2E-MOBMC-001..010 |
+| `meetings` (`GET /app/my-requests` filtered to approved-upcoming meetings) — **اللقاءات الثنائية** (D-745), Figma `1408:9726`; bi-meeting rework: **flag-gated** (not VIP), **two** request buttons (طلب مقابلة متحدث / طلب اجتماع وفد) + السجل history + speaker/flag cards | [`mobile-meetings.md`](mobile-meetings.md) | E2E-MOBMEET-001..014 |
+| `Delegation meeting request` sheet — bi-meeting rework: the delegation twin of the speaker request sheet; opened from `/meetings` (طلب اجتماع وفد) + a tapped delegation card; `POST /app/delegation-meeting-requests` | [`mobile-delegation-request.md`](mobile-delegation-request.md) | E2E-DELREQ-001..013 |
+| #117 `meetingConfirm` (`/meeting-confirm?requestId=…` → `POST /app/delegation-meeting-requests/{id}/confirm` + `…/decline`) — bi-meeting rework: delegation other-party confirm-on-tap, reached from a `MeetingRequested` notification | [`mobile-meeting-confirm.md`](mobile-meeting-confirm.md) | E2E-MOBMC-001..011 |
 | `myMeetings` (`GET /app/my-requests`, filtered to meetings) — المقابلات (D-587), Figma `1701:9406`; speaker + delegation meetings over status chips; reached from the My-Area "مقابلات" counter | [`mobile-my-meetings.md`](mobile-my-meetings.md) | E2E-MOBMTG-001..007 |
 | `/account/my-devices` — the account's enrolled biometric device keys, with a per-row revoke (S10 / **D-884**) | [`mobile-my-devices.md`](mobile-my-devices.md) | E2E-MYD-001..009 |
-| `Confirm Face ID` step-up (`POST /app/auth/device-keys/step-up` + gated register) — #7a biometric-enable; **D-738** OS device-credential confirm + sign-in device-PIN fallback | [`mobile-biometric-step-up.md`](mobile-biometric-step-up.md) | E2E-MBSU-001..025 |
+| `Confirm Face ID` step-up (`POST /app/auth/device-keys/step-up` + gated register) — #7a biometric-enable; **D-738** OS confirm, **biometric-only** (no device-PIN fallback) + the enrol screen's own failure copy | [`mobile-biometric-step-up.md`](mobile-biometric-step-up.md) | E2E-MBSU-001..026 |
 | ~~`Change email` self-service (`POST /app/auth/change-email/send-otp` + `/confirm`) - Build #24~~ — **REMOVED 2026-07-30 (G1, owner decision).** Screen + both endpoints deleted; email changes are administrator-only on the CP account-edit form, covered by `cp-admin-visitors.md` (E2E-VIS-001) and `cp-admin-others.md` (E2E-OTH-005) | _(withdrawn)_ | ~~E2E-MCE-001..011~~ (**retired**, do not reuse the MCE namespace) |
 | `Badge activation` + **badge sign-in** (`resolve-badge` · `badge-sign-in` · `badge-activation/{start,complete}`) — Part B passwordless activation **+ D-738 password step + D-737 unified scanner** | [`mobile-badge-activation.md`](mobile-badge-activation.md) | E2E-MOBBADGE-001..013 |
 | `Badge password` step (`POST /app/auth/badge-sign-in`) — D-738 returning has-password holder; doc [`mobile/badge-password/`](../../pages/mobile/badge-password/README.md) | [`mobile-badge-activation.md`](mobile-badge-activation.md) | E2E-MOBBADGE-008..013 |
@@ -314,7 +314,7 @@ API endpoints land (D-249). The per-screen design docs live under
 | #203 `contactUs` (`POST /app/contact-inquiry` + `GET /app/organization-profile`) — built from ComingSoon, Figma `1388:7711` | [`mobile-contact-us.md`](mobile-contact-us.md) | E2E-MOB203-001..007 |
 | #207 `aboutApp` (`GET /app/organization-profile` for support + `GET /app/version-policy` manual check — D-736) — app version/date/organizer + links (D-668) | [`mobile-about-app.md`](mobile-about-app.md) | E2E-MOB207-001..006 |
 | #202 `sessionPresentations` (`GET /app/presentations` + `/{id}/file`) — built from ComingSoon, Figma `1388:7621` | [`mobile-session-presentations.md`](mobile-session-presentations.md) | E2E-MOB202-001..006 |
-| #113 `myAreaSessions` (`GET /app/account/sessions`) — Wave 2 my-sessions, titled "عروض الجلسات" (Figma `1388:9067`; retitled + reached from the More "عروض الجلسات" row, D-588) | [`mobile-my-sessions.md`](mobile-my-sessions.md) | E2E-MOB113-001..007 |
+| #113 `myAreaSessions` (`GET /app/account/sessions`) — Wave 2 my-sessions, titled "عروض الجلسات" (Figma `1388:9067`; retitled + reached from the More "عروض الجلسات" row, D-588) | [`mobile-my-sessions.md`](mobile-my-sessions.md) | E2E-MOB113-001..009 |
 
 ## How to add a new catalogue file
 
@@ -351,10 +351,10 @@ being quoted in planning as if current.
   196 against a pinned total of 197. Only the two bold totals are
   machine-checked, so the parts had drifted unnoticed; counting by prefix is
   reproducible with one `ls`.)
-- **Total scenarios:** 3183 Coverage-matrix rows, every id distinct. That
+- **Total scenarios:** 3187 Coverage-matrix rows, every id distinct. That
   includes the **360** generated element-sweep rows (`E2E-{NS}-ELS-001/002`, two
   per live page — see `tools/qa/generate_els_rows.py`); the hand-authored
-  functional total is 2823.
+  functional total is 2827.
 - **Authored:** all pages. The D-133 "pending" stubs are fully authored, and
   every event-module and P2–P5 page added since has its own file.
 - **Execution:** the canonical run today is a Chrome DevTools MCP browser pass

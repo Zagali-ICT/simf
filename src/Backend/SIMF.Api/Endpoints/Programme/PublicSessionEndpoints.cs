@@ -25,11 +25,12 @@ public sealed class ListProgrammeSessionsRequest
     public string? Day { get; set; }
 
     /// <summary>Optional server-side track filter: the id of a
-    /// <c>SessionCategory</c> (the dynamic lookup, exposed publicly by
-    /// <c>GET /app/programme/categories</c>). Omitted = every category.
+    /// <c>SessionCategory</c> (the dynamic lookup). Omitted = every category.
     /// Combines with <see cref="Day"/> (AND). An unknown id returns an empty
     /// list rather than a 404, so the anonymous agenda is not a category-id
-    /// oracle.</summary>
+    /// oracle.
+    /// <para>No public endpoint lists the categories: the lookup ships empty
+    /// pending OI-2. Read an id off a session in this same list.</para></summary>
     public Guid? CategoryId { get; set; }
 }
 

@@ -170,6 +170,7 @@
                             <th>@L["Admin.Exhibitors.Accounts.Col.Email"]</th>
                             <th>@L["Admin.Exhibitors.Accounts.Col.RoleLabel"]</th>
                             <th>@L["Admin.Exhibitors.Accounts.Col.Active"]</th>
+                            <th>@L["Grid.Actions"]</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -180,11 +181,41 @@
                                 <td>@account.Email</td>
                                 <td>@(string.IsNullOrWhiteSpace(account.RoleLabel) ? "—" : account.RoleLabel)</td>
                                 <td>@(account.IsActive ? "✓" : "—")</td>
+                                <td>
+                                    @* Gated on the code the ENDPOINT requires, which is
+                                       RevokeAccount rather than the page's own Edit: this
+                                       withdraws the badge scanner and the visitor contact
+                                       cards from one officer, and is held apart from Delete
+                                       because Delete retires the whole exhibitor. *@
+                                    @* No IsActive test: ListAccountsAsync only ever
+                                       returns live memberships, so the guard was
+                                       always true and read as though a revoked row
+                                       could appear here. *@
+                                    <AuthorizedAction Permission="@PermissionCatalog.Exhibitors.RevokeAccount">
+                                        <SimfButton Variant="danger"
+                                                    Type="button"
+                                                    Disabled="_revokeBusy"
+                                                    OnClick="@(() => AskRevoke(account))">
+                                            @L["Admin.Exhibitors.Revoke.Action"]
+                                        </SimfButton>
+                                    </AuthorizedAction>
+                                </td>
                             </tr>
                         }
                     </tbody>
                 </table>
             }
+
+            <SimfConfirm Open="_revokeTarget is not null"
+                         Title="@L["Admin.Exhibitors.Revoke.ConfirmTitle"]"
+                         Message="@L["Admin.Exhibitors.Revoke.ConfirmBody"]"
+                         ConfirmLabel="@L["Admin.Exhibitors.Revoke.Action"]"
+                         CancelLabel="@L["Admin.Exhibitors.Cancel"]"
+                         Danger="true"
+                         Busy="_revokeBusy"
+                         Permission="@PermissionCatalog.Exhibitors.RevokeAccount"
+                         OnConfirm="RevokeAsync"
+                         OnCancel="@(() => _revokeTarget = null)" />
 
             <h3 class="simf-field__label">@L["Admin.Exhibitors.Provision.Heading"]</h3>
             <div class="simf-form__fields">

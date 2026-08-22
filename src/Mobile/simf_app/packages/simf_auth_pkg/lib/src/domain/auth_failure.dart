@@ -53,11 +53,10 @@ class ResetCodeExpired extends AuthFailure {
   const ResetCodeExpired(super.source);
 }
 
-class MfaRequired extends AuthFailure {
-  const MfaRequired(super.source, this.mfaToken);
-  final String mfaToken;
-}
-
+/// There is no "MFA required" case here on purpose: the second factor is not
+/// an error. A challenge arrives on the SUCCESS path as
+/// `OtpChallengeResponseData` (see `data/dto/sign_in_response.dart`); only a
+/// bad or stale token comes back as a failure.
 class MfaTokenInvalid extends AuthFailure {
   const MfaTokenInvalid(super.source);
 }

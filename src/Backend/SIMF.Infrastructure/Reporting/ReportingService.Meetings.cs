@@ -143,10 +143,23 @@ internal sealed partial class ReportingService
             "kind" => query.Grid.SortDescending
                 ? all.OrderByDescending(m => m.Kind, StringComparer.Ordinal)
                 : all.OrderBy(m => m.Kind, StringComparer.Ordinal),
-            // Newest request first.
-            _ => query.Grid.SortDescending
-                ? all.OrderBy(m => m.CreatedAt)
-                : all.OrderByDescending(m => m.CreatedAt),
+            // "requested" is the request-date column's own Key (MeetingsReport
+            // .razor). That column is not Sortable, so the Control Panel draws no
+            // arrow on it and never sends this key today; the arm exists because
+            // the endpoint takes whatever key it is given, and a date sort has to
+            // mean what it says for whoever sends it. Descending is newest first,
+            // literally, with none of the inversion the default below used to
+            // hand down.
+            "requested" => query.Grid.SortDescending
+                ? all.OrderByDescending(m => m.CreatedAt)
+                : all.OrderBy(m => m.CreatedAt),
+            // No column chosen: the grid renders no arrow, so the direction flag
+            // has nothing to point at and reading it here is what made the flag
+            // mean its own opposite — an unsorted request asking for ascending
+            // and being served newest-first. A meetings list is worked from the
+            // newest request down, so that order is now stated outright instead
+            // of arrived at by inverting a flag nobody set.
+            _ => all.OrderByDescending(m => m.CreatedAt),
         };
 
         return sorted.ThenBy(m => m.Id).Select(ToRow).ToList();

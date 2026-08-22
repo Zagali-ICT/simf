@@ -50,38 +50,46 @@ class DelegationsBody extends StatelessWidget {
     final selectedName =
         data.selectedCountryName(selectedCountryCode, isArabic: isArabic);
 
-    return ListView(
+    // Only the country cards are unbounded; the head stays eager.
+    final header = <Widget>[
+      DelegationsStatsStrip(
+        countryCount: data.countryCount,
+        flagItems: flagItems,
+        selectedCountryCode: selectedCountryCode,
+        onFlagTap: onFlagTap,
+        l10n: l10n,
+      ),
+      const SizedBox(height: SimfTokens.space4),
+      SimfFilterSearchField(
+        controller: searchController,
+        hint: l10n.delegationsSearchHint,
+        onChanged: onQueryChanged,
+      ),
+      // Show the chip whenever a flag filter is active — falling back to the
+      // clear label if the selected country vanished from the data (e.g. a
+      // backend removal + refresh) so the filter can never get stuck with no
+      // way out.
+      if (selectedCountryCode != null) ...<Widget>[
+        const SizedBox(height: SimfTokens.space3),
+        ActiveFilterChip(
+          country: selectedName ?? l10n.delegationsClearFilter,
+          clearLabel: l10n.delegationsClearFilter,
+          onClear: onClearFilter,
+        ),
+      ],
+      const SizedBox(height: SimfTokens.space4),
+    ];
+
+    return ListView.builder(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(SimfTokens.space4),
-      children: <Widget>[
-        DelegationsStatsStrip(
-          countryCount: data.countryCount,
-          flagItems: flagItems,
-          selectedCountryCode: selectedCountryCode,
-          onFlagTap: onFlagTap,
-          l10n: l10n,
-        ),
-        const SizedBox(height: SimfTokens.space4),
-        SimfFilterSearchField(
-          controller: searchController,
-          hint: l10n.delegationsSearchHint,
-          onChanged: onQueryChanged,
-        ),
-        // Show the chip whenever a flag filter is active — falling back to the
-        // clear label if the selected country vanished from the data (e.g. a
-        // backend removal + refresh) so the filter can never get stuck with no
-        // way out.
-        if (selectedCountryCode != null) ...<Widget>[
-          const SizedBox(height: SimfTokens.space3),
-          ActiveFilterChip(
-            country: selectedName ?? l10n.delegationsClearFilter,
-            clearLabel: l10n.delegationsClearFilter,
-            onClear: onClearFilter,
-          ),
-        ],
-        const SizedBox(height: SimfTokens.space4),
-        if (filtered.isEmpty)
-          Padding(
+      itemCount: header.length + (filtered.isEmpty ? 1 : filtered.length),
+      itemBuilder: (context, index) {
+        if (index < header.length) {
+          return header[index];
+        }
+        if (filtered.isEmpty) {
+          return Padding(
             padding: const EdgeInsets.only(top: SimfTokens.space8),
             child: SimfEmptyState(
               icon: Icons.flag_outlined,
@@ -89,19 +97,23 @@ class DelegationsBody extends StatelessWidget {
                   ? l10n.delegationsEmpty
                   : l10n.delegationsNoResults,
             ),
-          )
-        else
-          for (final item in filtered) ...<Widget>[
-            DelegationCard(
-              item: item,
-              isArabic: isArabic,
-              onTap: onRequestMeeting == null
-                  ? null
-                  : () => onRequestMeeting!(item),
-            ),
-            const SizedBox(height: SimfTokens.space3),
-          ],
-      ],
+          );
+        }
+        final item = filtered[index - header.length];
+        // The gap rides on the card, as the sibling spacer did, so the last
+        // card keeps it where a separator would not.
+        return Padding(
+          padding: const EdgeInsets.only(bottom: SimfTokens.space3),
+          child: DelegationCard(
+            key: ValueKey<int>(item.countryId),
+            item: item,
+            isArabic: isArabic,
+            onTap: onRequestMeeting == null
+                ? null
+                : () => onRequestMeeting!(item),
+          ),
+        );
+      },
     );
   }
 

@@ -8,8 +8,8 @@
 > overrides an approval gate, a freeze, or a security rule.
 
 The coding constitution for this repo. Claude Code reads this every session.
-Read it fully before editing. This is a mature codebase (718 Dart files,
-68,927 lines under `lib/`, measured 2026-08-18). Refine it; do not
+Read it fully before editing. This is a mature codebase (721 Dart files,
+68,970 lines under `lib/`, measured 2026-08-22). Refine it; do not
 re-architect it. When in doubt, match the existing pattern in the file you're
 editing, and FLAG instead of guessing.
 
@@ -21,20 +21,36 @@ editing, and FLAG instead of guessing.
 > the ratchets in `test/repo/` count code, and none of them can see prose — so
 > re-measuring it belongs in the SAME changeset as the round, not after.
 >
+> This block used to add "the ratchets in `test/repo/` count code, and none of
+> them can see prose". That stopped being true on 2026-08-21:
+> `comment_block_cap_test` caps a comment BLOCK at 12 lines and fails the build
+> above it. It does not measure the counts here, so this paragraph still has to
+> be re-measured by hand — but prose is no longer ungated.
+>
 > **Scope, so the next reader reproduces the same numbers:** `lib/` only —
 > not `test/`, not `integration_test/`, not the two local packages under
 > `packages/`.
 >
-> Measured 2026-08-18 (re-measured after the 400-line round): Dart files
-> **718** · lines **68,927** · raw
+> Measured 2026-08-22 (re-measured after the strip + cleanup rounds): Dart files
+> **721** · lines **68,970** · raw
 > `Color(0x)` outside `tokens.dart` **0** · relative imports **0** · inline
 > `TextStyle(` outside `app/theme/` **116**, **none** of which still carries a
-> raw numeric size · `ListView(` sites **43** (most are static content pages
-> and correct as written) · `catch` sites **73** · files over 400 lines **3**
+> raw numeric size · `ListView(` sites **37** (all static; the data-driven ones
+> are converted) · `catch` sites **73** · files over 400 lines **3**
 > · `// ignore:` sites **9** · private widget classes **0** ·
 > `flutter analyze` **0 errors, 0 warnings, 0 infos** ("No issues found!") ·
-> `tool/conventions` **0** ("No violations found").
+> `tool/conventions --check --strict` **0** ("No violations found") · app tests
+> **1,718** · `simf_data_pkg` **17** · `simf_auth_pkg` **58** · goldens **63**,
+> holding without `--update-goldens`.
 >
+> The audit round moved almost none of these, which is the point worth
+> recording: it found **19 verified defects** without any counter here being
+> wrong. Every one lived either in a PAIR of places that were individually
+> consistent (an app allow-list against a server catalogue), or on a path no
+> test drives (a busy flag cleared on two branches but not in `finally`). A
+> counter cannot see either. **Do not read a green table here as an audited
+> codebase.**
+
 > Reproduce, from `src/Mobile/simf_app`:
 > `find lib -name '*.dart' | wc -l` ·
 > `find lib -name '*.dart' -exec cat {} + | wc -l` ·
@@ -120,10 +136,10 @@ you read WHY, not a second copy to keep in step:
 3. no file under `lib/features/` importing `package:dio` or `package:http`;
 4. no file under `lib/` over 400 lines.
 
-The first three known-offender lists are **empty** on 2026-08-18, so those
+The first three known-offender lists are **empty** on 2026-08-20, so those
 rules hold outright and a first offender reddens the build. The fourth now pins
 just **3** files, none of them a screen or a model:
-`app/localization/app_l10n.dart` 2730 · `app/theme/tokens.dart` 1437 ·
+`app/localization/app_l10n.dart` 2736 · `app/theme/tokens.dart` 1454 ·
 `app/router.dart` 1236. Each is a single flat table — bilingual strings, design
 values, the route list — and splitting one serves the number while making the
 code worse, which is what the "don't shred a cohesive file" half of the rule
@@ -152,14 +168,14 @@ Rules:
   may share the screen file if it is <60 lines and used once" allowance, which
   the checker had never honoured — a documented allowance the gate rejects is
   worse than no allowance. `lib/` holds **0** private widget classes on
-  2026-08-18, so the rule holds outright.
+  2026-08-20, so the rule holds outright.
 - File names: `snake_case.dart`. Types: `PascalCase`. Screens end in `_screen`.
 - **Names must describe the real thing** (see §13.1). No placeholder/legacy
   prefixes (`Ksa*`, `Page_NNN`, generic `temp`/`demo`).
 - No file over ~400 lines. No `build()` over ~50 lines. Don't shred a cohesive
   file to hit a number — but this one is gated, not advisory (the ratchet
-  above). **3** files are over on 2026-08-18 and none is a screen:
-  `sign_up_visitor_screen` finished at **398** (from 2245 at the start of the
+  above). **3** files are over on 2026-08-20 and none is a screen:
+  `sign_up_visitor_screen` sits at **396** (from 2245 at the start of the
   programme) and `register_visitor_screen` at **397** (from 1268). Both got
   there by moving the NON-widget half out — load, apply-profile, submit
   assembly, validators, pickers, upload — rather than by fighting the parameter
@@ -167,13 +183,23 @@ Rules:
   tried and abandoned. Neither has been verified on a device: D-666 is this
   repo's banked case of a green golden missing a face-capture regression, so
   the sign-up and walk-in flows still owe a real device run.
+
+  On 2026-08-20 `sign_up_visitor_screen` went 398 -> 413 when three of its
+  handlers gained a `finally`, and the ratchet reddened on the same run. The
+  fix was that same lever a third time, NOT an allowlist entry: the
+  date-of-birth eligibility rule, the gallery read and the country sheet moved
+  to `sign_up_visitor_pickers.dart`, which took it to 396 and made the age rule
+  unit-testable for the first time — it had been three lines inside a method
+  that opens an OS dialog. **Leave margin.** 398 meant a two-line bug fix could
+  not land without a second piece of work, and a file sitting exactly AT 400 is
+  a trap for whoever edits it next.
 - **A feature-local pure helper lives at the feature root**, as a small
   purpose-named file: `home_greeting.dart`, `youtube_url.dart`,
   `speaker_initials.dart`, `entity_detail_helpers.dart`. It holds functions and
   constants, never a widget and never a provider. The shape above once named
   only `data/`, `widgets/` and `<name>_screen.dart`, which left these files
   looking like violations when they are the established pattern; recording them
-  here beat moving them. There are **11** on 2026-08-18
+  here beat moving them. There are **13** on 2026-08-20
   (`find lib/features -mindepth 2 -maxdepth 2 -name '*.dart' ! -name
   '*_screen.dart'`), and the distinction is now mechanical rather than a
   reading of this paragraph: `feature_shape_test.dart` lets a pure helper sit at
@@ -244,9 +270,9 @@ fixed widths / `left`/`right` to directional/adaptive equivalents.
 
 - **Lazy by default.** Every scrolling list uses `ListView.builder` /
   `SliverList` / `GridView.builder`. Never `ListView(children: [...])` for
-  data-driven or long lists. 43 `ListView(` sites exist (2026-08-18); most are
-  static content pages and are correct as written, so convert the data-driven
-  ones and leave the rest.
+  data-driven or long lists. 37 `ListView(` sites exist (2026-08-22); all
+  were classified and the 6 data-driven ones converted, so the rest are static
+  content pages and correct as written.
 - **Pull-to-refresh on every data screen (see §13.6).** Reuse the existing
   `SimfPullToRefresh` + `SimfPullableHost`.
 - **Pagination / load-more.** Lists backed by a paginated API load the next
@@ -282,7 +308,7 @@ the node list and the ASK-don't-guess rule).
   use the token. Base palette (from node 922-2824): BG `#192B41`, text
   `#FFFFFF`, gold `#C9A84C`, deep `#01132D`, paragraph `#C2B8A2`.
 - **Zero raw `TextStyle(fontSize:…)` in widgets** (526 at the outset, **116**
-  on 2026-08-18). The raw-numeric form is **gone** — `fontSize: <digit>`
+  on 2026-08-20). The raw-numeric form is **gone** — `fontSize: <digit>`
   outside `app/theme/` reads **0** — so all 116 survivors assemble token atoms
   such as `fontSize: SimfTokens.textSm`. That form must still go: use a named
   token style (`SimfTokens.titleM`, `bodyR`, …). The font family is set ONCE
@@ -334,7 +360,7 @@ the node itself) is unknown, **STOP and ASK the owner** (§13.5).
 ## 8. Write it like a human, not an AI
 - Comment WHY, never WHAT. No comment that restates the next line.
 - No `try/catch` unless a failure is genuinely expected and handled (73 `catch`
-  sites on 2026-08-18 — don't add reflexive ones).
+  sites on 2026-08-20 — don't add reflexive ones).
 - No defensive null-checks for values that can't be null.
 - No speculative abstraction. Match the pragmatic data+presentation layering;
   do NOT add a `domain/` layer or interfaces "for cleanliness" unless asked.
@@ -373,8 +399,8 @@ Under `test/` mirroring the `lib/` path:
   (`phone_validation`, `plate_validation`, formatting).
 - Fake the repository; never hit the network in tests.
 - Run `flutter test` **from the `simf_app` package root** before a module is
-  done, and run each local package's suite from ITS root. Measured 2026-08-18:
-  `packages/simf_auth_pkg` **46/46** and `packages/simf_data_pkg` **15/15**.
+  done, and run each local package's suite from ITS root. Measured 2026-08-20:
+  `packages/simf_auth_pkg` **46/46** and `packages/simf_data_pkg` **17/17**.
   **The `simf_auth_pkg` signUp carve-out is dead.** This line used to read "the
   pre-existing signUp failure is a known baseline — do not count it as a
   regression"; that suite is green, there is nothing left to subtract, and a red
@@ -400,7 +426,7 @@ Under `test/` mirroring the `lib/` path:
 
 - Two rules are OFF rather than clean, each with its measurement recorded at the
   rule in `analysis_options.yaml` (`specify_nonobvious_property_types`,
-  `public_member_api_docs`). Targeted `// ignore:` sites, measured 2026-08-18:
+  `public_member_api_docs`). Targeted `// ignore:` sites, measured 2026-08-20:
   **9** under `lib/`, **28** across `lib` + `test` + `integration_test` +
   `packages`, plus 2 `// ignore_for_file:`. (`analysis_options.yaml` still says
   "roughly two dozen" at the rule; that was the all-scopes figure and it is
@@ -577,6 +603,7 @@ no pull, but they never fetch, so the test has nothing to excuse).
 | `sign_in`, `sign_up_form`, `sign_up_email_verify`, `email_otp_verify`, `forgot_password`, `reset_password`, `badge_activation`, `badge_password`, `badge_sign_in`, `biometric_step_up` | Submit-driven auth forms. Nothing is loaded to re-load. |
 | `sign_up_interests`, `my_mobile` | They DO load from the API, but the user then edits/selects on top of it. A pull would discard in-progress input — actively worse than no pull. Both carry an explicit retry on the error branch instead. |
 | `registration_status` | A gate screen whose explicit "Re-check" button already polls (Figma 1701:3789). |
+| `registration_success` | Terminal and offline-safe by contract (D-366). The one thing it reads is the CP-editable welcome line (D-461), which already falls back to the bundled string, and the reference number comes from the route rather than the network — so a pull could fetch nothing the screen does not already have, and an always-scrollable wrapper would work against the offline-safe contract. **A new category**, added 2026-08-20: the ratchet's regex matched only a single-line `ref.watch(`, and this screen's read is wrapped across two lines, so it had never been visible to the sweep at all. |
 | `scan_contact`, `scan_visitor` | Live camera preview; there is no scrollable and no fetch to repeat. |
 | `splash`, `onboarding` | Transient boot screens that navigate away. |
 | `accessibility` | Local `SharedPreferences` settings via a `Notifier` — no network read. |

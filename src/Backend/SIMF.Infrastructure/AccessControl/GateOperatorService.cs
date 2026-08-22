@@ -229,15 +229,15 @@ internal sealed class GateOperatorService(
         var snapshot = await configCache.GetAsync(context.GateId, cancellationToken);
         if (snapshot is null)
         {
-            return Routing(GateScanResultKind.GateNotFound, "GATE_NOT_FOUND");
+            return Routing(GateScanResultKind.GateNotFound, ErrorCodes.GateNotFound);
         }
         if (!snapshot.AssignedOperatorUserIds.Contains(context.OperatorUserId))
         {
-            return Routing(GateScanResultKind.NotAssigned, "GATE_OPERATOR_NOT_ASSIGNED");
+            return Routing(GateScanResultKind.NotAssigned, ErrorCodes.GateOperatorNotAssigned);
         }
         if (failureCircuit.IsOpen(context.GateId))
         {
-            return Routing(GateScanResultKind.CircuitOpen, "GATE_FAILURE_CIRCUIT_OPEN");
+            return Routing(GateScanResultKind.CircuitOpen, ErrorCodes.GateFailureCircuitOpen);
         }
 
         // Idempotency-key precedence (SIMF-API-GATES-001 §9): header wins.
@@ -622,7 +622,7 @@ internal sealed class GateOperatorService(
         if (prior is null) { return null; }
         if (!string.Equals(prior.RequestHash, requestHash, StringComparison.Ordinal))
         {
-            return Routing(GateScanResultKind.IdempotencyConflict, "IDEMPOTENCY_KEY_CONFLICT");
+            return Routing(GateScanResultKind.IdempotencyConflict, ErrorCodes.IdempotencyKeyConflict);
         }
         var replay = await LoadReplayAsync(prior, acceptLanguage, cancellationToken);
         return new GateScanResult(GateScanResultKind.Recorded, replay, true, null);
