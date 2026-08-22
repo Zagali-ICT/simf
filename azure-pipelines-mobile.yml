@@ -332,12 +332,31 @@ stages:
         # Mac does not accumulate signing identities between builds.
         keychain: temp
 
+    # `name:` is load-bearing - without it $(appleProfile.*) resolves to empty
+    # and the export options name no profile at all.
     - task: InstallAppleProvisioningProfile@1
       name: appleProfile
       displayName: 'Install the provisioning profile'
       inputs:
         provProfileSecureFile: 'simf-appstore.mobileprovision'
         removeProfile: true
+
+    - bash: |
+        set -euo pipefail
+        # The task installs into the LEGACY directory only. Current Xcode reads
+        # ~/Library/Developer/Xcode/UserData/Provisioning Profiles instead, so a
+        # CI archive fails with "No profiles were found" while the same profile
+        # works on a developer Mac - which is the worst version of this bug,
+        # because it looks like a machine problem rather than a path problem.
+        # Copied into both; the cleanup step removes the copy.
+        legacy="$HOME/Library/MobileDevice/Provisioning Profiles"
+        current="$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"
+        mkdir -p "$current"
+        cp "$legacy/${PROFILE_UUID}.mobileprovision" "$current/"
+        echo "Profile ${PROFILE_UUID} present in both profile directories."
+      displayName: 'Copy the profile where current Xcode looks for it'
+      env:
+        PROFILE_UUID: $(appleProfile.provisioningProfileUuid)
 
     - bash: |
         set -euo pipefail
@@ -380,12 +399,25 @@ stages:
           "SIMF_SOCIAL_TIKTOK": "${SIMF_SOCIAL_TIKTOK}"
         }
         JSON
+        # The method value: Apple RENAMED it. It is app-store-connect on current
+        # Xcode, and the old app-store now logs a deprecation. That matters HERE
+        # rather than anywhere else because "flutter build ipa" only rewrites the
+        # method when you pass the export-method flag; an export-options-plist
+        # like this one reaches xcodebuild verbatim. If the Mac lands on an Xcode
+        # old enough to reject it, run "xcodebuild -help" and read the accepted
+        # values under "Available keys for -exportOptionsPlist".
+        #
+        # This note lives out here, not inside the plist, for two reasons an XML
+        # comment cannot survive: the heredoc is UNQUOTED so APPLE_TEAM_ID
+        # expands, which makes any backtick a command substitution; and XML
+        # forbids a double hyphen inside a comment, so the flag names above
+        # would produce a plist that xcodebuild refuses to parse.
         cat > "${EXPORT_PLIST}" <<PLIST
         <?xml version="1.0" encoding="UTF-8"?>
         <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
         <plist version="1.0">
         <dict>
-          <key>method</key><string>app-store</string>
+          <key>method</key><string>app-store-connect</string>
           <key>teamID</key><string>${APPLE_TEAM_ID}</string>
           <key>signingStyle</key><string>manual</string>
           <key>provisioningProfiles</key>
@@ -434,9 +466,16 @@ stages:
               "$(flutterApp)/ios/Flutter/Signing.xcconfig" \
               "$(flutterApp)/ios/Flutter/Generated.xcconfig" \
               "$(flutterApp)/ios/Flutter/flutter_export_environment.sh"
+        # `removeProfile: true` on the task cleans the LEGACY directory only, so
+        # the copy this job made would otherwise survive on a shared Mac.
+        if [ -n "${PROFILE_UUID:-}" ]; then
+          rm -f "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles/${PROFILE_UUID}.mobileprovision"
+        fi
         echo 'Signing and define files removed from the agent.'
       displayName: 'Remove the secret files from the agent'
       condition: always()
+      env:
+        PROFILE_UUID: $(appleProfile.provisioningProfileUuid)
 
     - publish: '$(Build.ArtifactStagingDirectory)'
       artifact: ios-release
