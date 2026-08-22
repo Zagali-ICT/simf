@@ -8,8 +8,8 @@
 > overrides an approval gate, a freeze, or a security rule.
 
 The coding constitution for this repo. Claude Code reads this every session.
-Read it fully before editing. This is a mature codebase (719 Dart files,
-69,047 lines under `lib/`, measured 2026-08-20). Refine it; do not
+Read it fully before editing. This is a mature codebase (721 Dart files,
+68,970 lines under `lib/`, measured 2026-08-22). Refine it; do not
 re-architect it. When in doubt, match the existing pattern in the file you're
 editing, and FLAG instead of guessing.
 
@@ -21,20 +21,26 @@ editing, and FLAG instead of guessing.
 > the ratchets in `test/repo/` count code, and none of them can see prose — so
 > re-measuring it belongs in the SAME changeset as the round, not after.
 >
+> This block used to add "the ratchets in `test/repo/` count code, and none of
+> them can see prose". That stopped being true on 2026-08-21:
+> `comment_block_cap_test` caps a comment BLOCK at 12 lines and fails the build
+> above it. It does not measure the counts here, so this paragraph still has to
+> be re-measured by hand — but prose is no longer ungated.
+>
 > **Scope, so the next reader reproduces the same numbers:** `lib/` only —
 > not `test/`, not `integration_test/`, not the two local packages under
 > `packages/`.
 >
-> Measured 2026-08-20 (re-measured after the deep-audit round): Dart files
-> **719** · lines **69,047** · raw
+> Measured 2026-08-22 (re-measured after the strip + cleanup rounds): Dart files
+> **721** · lines **68,970** · raw
 > `Color(0x)` outside `tokens.dart` **0** · relative imports **0** · inline
 > `TextStyle(` outside `app/theme/` **116**, **none** of which still carries a
-> raw numeric size · `ListView(` sites **43** (most are static content pages
-> and correct as written) · `catch` sites **73** · files over 400 lines **3**
+> raw numeric size · `ListView(` sites **37** (all static; the data-driven ones
+> are converted) · `catch` sites **73** · files over 400 lines **3**
 > · `// ignore:` sites **9** · private widget classes **0** ·
 > `flutter analyze` **0 errors, 0 warnings, 0 infos** ("No issues found!") ·
 > `tool/conventions --check --strict` **0** ("No violations found") · app tests
-> **1,574** · `simf_data_pkg` **17** · `simf_auth_pkg` **46** · goldens **63**,
+> **1,718** · `simf_data_pkg` **17** · `simf_auth_pkg` **58** · goldens **63**,
 > holding without `--update-goldens`.
 >
 > The audit round moved almost none of these, which is the point worth
@@ -264,9 +270,9 @@ fixed widths / `left`/`right` to directional/adaptive equivalents.
 
 - **Lazy by default.** Every scrolling list uses `ListView.builder` /
   `SliverList` / `GridView.builder`. Never `ListView(children: [...])` for
-  data-driven or long lists. 43 `ListView(` sites exist (2026-08-20); most are
-  static content pages and are correct as written, so convert the data-driven
-  ones and leave the rest.
+  data-driven or long lists. 37 `ListView(` sites exist (2026-08-22); all
+  were classified and the 6 data-driven ones converted, so the rest are static
+  content pages and correct as written.
 - **Pull-to-refresh on every data screen (see §13.6).** Reuse the existing
   `SimfPullToRefresh` + `SimfPullableHost`.
 - **Pagination / load-more.** Lists backed by a paginated API load the next
