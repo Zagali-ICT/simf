@@ -85,8 +85,8 @@ class SimfBottomNav extends StatelessWidget {
                   iconAsset: AppAssets.navCalendar,
                   // D-750 (owner 2026-07-20) — the program tab now reads
                   // "الأجندة" (agendaTitle), reversing the earlier 206:1732
-                  // "الجلسات" label. sessionsTitle still titles the Sessions
-                  // screen and other surfaces, so only this nav tab changes.
+                  // "الجلسات" label. The screen header is
+                  // sessionsProgrammeTitle, not sessionsTitle.
                   label: l10n.agendaTitle,
                   onTap: _shellOrGo(
                       context, SimfTab.sessions, RouteNames.sessions,),
