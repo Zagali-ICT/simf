@@ -123,6 +123,12 @@ flutter build appbundle --release \
   --dart-define=SIMF_SOCIAL_X=<...>          # + INSTAGRAM / LINKEDIN / YOUTUBE / TIKTOK
 ```
 
+That flag form is for a build **by hand**. `azure-pipelines-mobile.yml` passes the
+same values through `--dart-define-from-file` instead, because `SIMF_APP_KEY` is
+secret and `--dart-define=KEY=value` puts it in the child process's argv where a
+local process listing can read it. Same values, same result; if you add a define,
+add it in both places.
+
 `SIMF_API_BASE` is deliberately **not** passed. Its default is already the
 production mobile edge (`https://edge.simrsnf.com/api/v1`, `build_config.dart`),
 so a build with no overrides runs against production and cannot fall back to a
