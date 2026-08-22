@@ -1,10 +1,11 @@
 """Shared SVG primitives for the SIMF engineering diagrams.
 
-Three sheets are built on top of this module:
+Four sheets are built on top of this module:
 
-    fig1_deployment.py   UML deployment diagram (servers, zones, firewalls)
-    fig2_component.py    UML component diagram (C4 container discipline)
-    fig3_dataflow.py     Gane and Sarson data flow diagram
+    fig1_deployment.py      UML deployment diagram (servers, zones, firewalls)
+    fig2_component.py       UML component diagram (C4 container discipline)
+    fig3_dataflow.py        Gane and Sarson data flow diagram
+    fig4_tier_separation.py UML deployment diagram, the target three tiers
 
 Notation rules this module enforces, so a sheet cannot drift from them:
 
@@ -13,11 +14,17 @@ Notation rules this module enforces, so a sheet cannot drift from them:
   * every sheet has a title and a legend
   * colour is one value per element type, never per box, and the palette is
     printer friendly; set MONO = True for a pure greyscale render
+  * a zone name is set in ink at weight 700, heavier than anything inside the
+    zone, so the reader finds the layer before the boxes
+  * a band's wording is moved out of a path's way (`zone_pad`); a firewall's and
+    a security area's is drawn over it (`late`). The difference is deliberate:
+    a band's interior is where paths run, so patching there would sever a line,
+    while a bar or a frame spans the sheet and must be crossed.
 
-Regenerate with:  python tools/diagrams/fig1_deployment.py   (and fig2, fig3)
+Regenerate with:  python tools/diagrams/fig1_deployment.py   (and fig2, 3, 4)
 """
 
-# Flip to True for a pure greyscale render of all three sheets.
+# Flip to True for a pure greyscale render of all four sheets.
 MONO = False
 
 FONT = "Segoe UI, Calibri, Arial, sans-serif"
@@ -34,6 +41,12 @@ NODE_TOP = "#D3DDE8"        # the two visible cube faces
 STORE_FILL = "#D8D2C8"      # data stores, a clearly different grey when printed
 BAND_FILL = "#F7F8FA"       # zone bands
 BAR_FILL = "#E3E6EA"        # firewall bars
+
+CUBE_D = 13                 # depth of the two visible faces of a node cube
+BAR_H = 30                  # height of a firewall bar
+
+# A sheet that attaches a path to a node's right face, or routes one through the
+# gap below a firewall, needs these two. Read them; do not retype the numbers.
 
 
 def _grey(value):
@@ -57,14 +70,23 @@ def text_width(text, size):
 class Sheet:
     """One diagram sheet: a titled canvas that collects SVG fragments."""
 
-    def __init__(self, width, height, title, subtitle=""):
+    def __init__(self, width, height, title, subtitle="", zone_pad=14):
         self.w = width
         self.h = height
+        # How far a zone's name and note are inset from its edges. One sheet-wide
+        # typographic fact, not a per-call choice: a sheet that runs a path up
+        # the inside of its zones raises this once to open the channel, and a
+        # ragged inset would read as a mistake.
+        self.zone_pad = zone_pad
         self.parts = []
+        # Drawn after everything in `parts`. Firewall bar text lives here: a
+        # communication path that has to cross a bar in the middle would
+        # otherwise be drawn over the bar's own rule text and strike it through.
+        self.late = []
         self._defs()
         self.parts.append(
             f'<rect x="0" y="0" width="{width}" height="{height}" fill="{PAPER}"/>')
-        self.text(40, 46, title, 25, INK, bold=True)
+        self.text(40, 46, title, 25, INK, weight=600)
         if subtitle:
             self.text(40, 74, subtitle, 15, RULE)
         self.parts.append(
@@ -91,13 +113,14 @@ class Sheet:
 </defs>''')
 
     # ---------------------------------------------------------------- text
-    def text(self, x, y, body, size=13, colour=INK, bold=False, anchor="start",
-             italic=False):
-        weight = ' font-weight="600"' if bold else ""
+    def text(self, x, y, body, size=13, colour=INK, anchor="start",
+             italic=False, weight=None, into=None):
+        weight_attr = f' font-weight="{weight}"' if weight else ""
         style = ' font-style="italic"' if italic else ""
-        self.parts.append(
+        target = self.parts if into is None else into
+        target.append(
             f'<text x="{x}" y="{y}" font-family="{FONT}" font-size="{size}" '
-            f'fill="{_grey(colour)}"{weight}{style} text-anchor="{anchor}">'
+            f'fill="{_grey(colour)}"{weight_attr}{style} text-anchor="{anchor}">'
             f'{esc(body)}</text>')
 
     def lines(self, x, y, rows, size=12, colour=INK, step=None, anchor="start"):
@@ -107,28 +130,79 @@ class Sheet:
 
     # --------------------------------------------------------------- zones
     def band(self, x, y, w, h, label, note=""):
-        """A dashed network or grouping band with its name on the top left."""
+        """A dashed network zone, with its name on the top left.
+
+        A band's interior is where paths legitimately run, so its wording is
+        moved out of their way by `self.zone_pad` rather than being drawn over
+        them: a backing patch here would sever the line passing behind it.
+        """
+        pad = self.zone_pad
         self.parts.append(
             f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="4" '
             f'fill="{_grey(BAND_FILL)}" stroke="{_grey(RULE)}" '
             f'stroke-width="1.2" stroke-dasharray="7 4"/>')
-        self.text(x + 14, y + 22, label, 14, RULE, bold=True)
+        self.text(x + pad, y + 23, label, 16.5, INK, weight=700)
         if note:
-            self.text(x + w - 14, y + 22, note, 12, RULE, anchor="end")
+            self.text(x + w - pad, y + 23, note, 12, RULE, anchor="end")
+        return h
 
     def firewall(self, x, y, w, label, allowed):
-        """A firewall drawn as the conventional brick bar, with its rule."""
-        h = 30
+        """A firewall drawn as the conventional brick bar, with its rule.
+
+        Unlike a band, a bar spans the whole zone and paths MUST cross it, so
+        its wording cannot be moved aside and wins on z-order instead: both
+        texts are plated into the late layer. Returns the bar's height.
+        """
+        pad = self.zone_pad
         self.parts.append(
-            f'<rect x="{x}" y="{y}" width="{w}" height="{h}" '
+            f'<rect x="{x}" y="{y}" width="{w}" height="{BAR_H}" '
             f'fill="url(#brick)" stroke="{_grey(INK)}" stroke-width="1.3"/>')
-        self.text(x + 14, y + 20, label, 13.5, INK, bold=True)
-        self.text(x + w - 14, y + 20, allowed, 12.5, INK, anchor="end")
+        # The two plates are appended rect, text, rect, text. That is safe only
+        # while they cannot meet, which needs w > 2*pad + both widths + 10.
+        self._plate(x + pad, y + 20, label, 14.5, INK, 700, "start", BAR_FILL,
+                    self.late)
+        self._plate(x + w - pad, y + 20, allowed, 12.5, INK, None, "end",
+                    BAR_FILL, self.late)
+        return BAR_H
+
+    def _plate(self, x, y, body, size, colour, weight, anchor, fill, into=None):
+        """Text on its own backing patch, so a line underneath cannot strike it.
+
+        The patch is the text's ink box, not its line box: cap height above the
+        baseline, descender below. A looser patch would reach a neighbouring
+        zone border and rub a gap in it.
+        """
+        tw = text_width(body, size)
+        offset = {"start": 0, "middle": tw / 2, "end": tw}[anchor]
+        target = self.parts if into is None else into
+        target.append(
+            f'<rect x="{x - offset - 4}" y="{y - 0.75 * size:.1f}" '
+            f'width="{tw + 8}" height="{0.98 * size:.1f}" '
+            f'fill="{_grey(fill)}" stroke="none"/>')
+        self.text(x, y, body, size, colour, anchor=anchor, weight=weight,
+                  into=into)
+
+    def group(self, x, y, w, h, label, note=""):
+        """A security area: a solid frame enclosing one or more network zones.
+
+        Plated like a firewall's wording, and for the same reason: a frame this
+        wide is crossed by any path leaving the area it encloses.
+        """
+        pad = self.zone_pad
+        self.parts.append(
+            f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="6" '
+            f'fill="none" stroke="{_grey(INK)}" stroke-width="2"/>')
+        self._plate(x + pad, y + 27, label, 19, INK, 700, "start", PAPER,
+                    self.late)
+        if note:
+            self._plate(x + w - pad, y + 27, note, 12.5, RULE, None, "end",
+                        PAPER, self.late)
+        return h
 
     # --------------------------------------------------------------- boxes
     def node(self, x, y, w, h, name, stereotype="server", specs=(), artifacts=()):
         """A UML node: a 3D cube, a stereotype, and a specification compartment."""
-        d = 13
+        d = CUBE_D
         top = f"{x},{y} {x + d},{y - d} {x + w + d},{y - d} {x + w},{y}"
         side = (f"{x + w},{y} {x + w + d},{y - d} "
                 f"{x + w + d},{y + h - d} {x + w},{y + h}")
@@ -144,7 +218,7 @@ class Sheet:
         self.text(x + w / 2, cy, f"«{stereotype}»", 11.5, RULE,
                   anchor="middle")
         cy += 20
-        self.text(x + w / 2, cy, name, 15, INK, bold=True, anchor="middle")
+        self.text(x + w / 2, cy, name, 15, INK, weight=600, anchor="middle")
         cy += 10
         if specs:
             self.parts.append(
@@ -185,7 +259,7 @@ class Sheet:
             self.text(x + w / 2, cy, f"«{kind}»", 11.5, RULE,
                       anchor="middle")
             cy += 19
-        self.text(x + w / 2, cy, name, 14, INK, bold=True, anchor="middle")
+        self.text(x + w / 2, cy, name, 14, INK, weight=600, anchor="middle")
         if tech:
             self.text(x + w / 2, cy + 17, tech, 11.5, INK, anchor="middle")
 
@@ -201,9 +275,9 @@ class Sheet:
             f'<path d="M {x} {y} H {x + w} M {x} {y + h} H {x + w} '
             f'M {x} {y} V {y + h} M {x + 42} {y} V {y + h}" '
             f'stroke="{_grey(INK)}" stroke-width="1.4" fill="none"/>')
-        self.text(x + 21, y + h / 2 + 5, tag, 14, INK, bold=True, anchor="middle")
+        self.text(x + 21, y + h / 2 + 5, tag, 14, INK, weight=600, anchor="middle")
         self.text(x + 54, y + (h / 2 - 3 if tech else h / 2 + 5), name, 13.5, INK,
-                  bold=True)
+                  weight=600)
         if tech:
             self.text(x + 54, y + h / 2 + 15, tech, 11.5, INK)
 
@@ -215,9 +289,9 @@ class Sheet:
         self.parts.append(
             f'<path d="M {x} {y + 24} H {x + w}" stroke="{_grey(INK)}" '
             f'stroke-width="1.2"/>')
-        self.text(x + 10, y + 17, str(number), 12.5, INK, bold=True)
+        self.text(x + 10, y + 17, str(number), 12.5, INK, weight=600)
         cy = y + 44 if tech else y + h / 2 + 12
-        self.text(x + w / 2, cy, name, 13.5, INK, bold=True, anchor="middle")
+        self.text(x + w / 2, cy, name, 13.5, INK, weight=600, anchor="middle")
         if tech:
             self.text(x + w / 2, cy + 16, tech, 11.5, INK, anchor="middle")
 
@@ -243,11 +317,7 @@ class Sheet:
             lx, ly = label_at
         lx += label_dx
         ly += label_dy
-        tw = text_width(label, 11.5)
-        self.parts.append(
-            f'<rect x="{lx - tw / 2 - 4}" y="{ly - 11}" width="{tw + 8}" '
-            f'height="15" fill="{PAPER}" stroke="none"/>')
-        self.text(lx, ly, label, 11.5, INK, anchor="middle")
+        self._plate(lx, ly, label, 11.5, INK, None, "middle", PAPER)
 
     # -------------------------------------------------------------- legend
     def legend(self, x, y, w, entries, title="Key"):
@@ -256,7 +326,7 @@ class Sheet:
         self.parts.append(
             f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="3" '
             f'fill="{PAPER}" stroke="{_grey(RULE)}" stroke-width="1.2"/>')
-        self.text(x + 14, y + 22, title, 13.5, INK, bold=True)
+        self.text(x + 14, y + 22, title, 13.5, INK, weight=600)
         cy = y + 44
         for glyph, meaning in entries:
             gx = x + 16
@@ -306,25 +376,35 @@ class Sheet:
                     f'<rect x="{gx}" y="{cy - 9}" width="30" height="13" rx="2" '
                     f'fill="{_grey(BAND_FILL)}" stroke="{_grey(RULE)}" '
                     f'stroke-width="1" stroke-dasharray="4 3"/>')
+            elif glyph == "group":
+                self.parts.append(
+                    f'<rect x="{gx}" y="{cy - 10}" width="30" height="15" rx="3" '
+                    f'fill="none" stroke="{_grey(INK)}" stroke-width="1.6"/>')
             self.text(gx + 44, cy + 1, meaning, 12, INK)
             cy += 21
         return h
 
+    @staticmethod
+    def note_height(rows, title=True):
+        """A note's height before it is drawn, for a sheet that anchors one to
+        its own bottom edge rather than stacking it from the top."""
+        return 20 + len(rows) * 17 + (18 if title else 0)
+
     def note(self, x, y, w, rows, title=""):
-        h = 20 + len(rows) * 17 + (18 if title else 0)
+        h = self.note_height(rows, bool(title))
         self.parts.append(
             f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="3" '
             f'fill="{PAPER}" stroke="{_grey(RULE)}" stroke-width="1.2"/>')
         cy = y + 21
         if title:
-            self.text(x + 14, cy, title, 13, INK, bold=True)
+            self.text(x + 14, cy, title, 13, INK, weight=600)
             cy += 20
         self.lines(x + 14, cy, rows, 11.5, INK, step=17)
         return h
 
     # ---------------------------------------------------------------- save
     def save(self, stem):
-        body = "\n".join(self.parts)
+        body = "\n".join(self.parts + self.late)
         svg = (f'<svg xmlns="http://www.w3.org/2000/svg" width="{self.w}" '
                f'height="{self.h}" viewBox="0 0 {self.w} {self.h}">\n{body}\n</svg>\n')
         with open(stem + ".svg", "w", encoding="utf-8") as handle:

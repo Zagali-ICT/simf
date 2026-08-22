@@ -1,5 +1,7 @@
-import 'package:flutter/foundation.dart';
+import 'dart:typed_data';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/core/utils/image_upload_mime.dart';
 import 'package:simf_app/features/account/data/account_endpoints.dart';
 import 'package:simf_app/features/account/data/profile_lookups.dart';
 import 'package:simf_app/features/account/data/profile_models.dart';
@@ -92,7 +94,7 @@ class ProfileRepository {
       AccountEndpoints.idImage,
       bytes: bytes,
       filename: filename,
-      contentType: mimeForFilename(filename),
+      contentType: imageUploadMime(filename),
       decodeData: (data) => data is! bool || data,
     );
   }
@@ -110,27 +112,9 @@ class ProfileRepository {
       AccountEndpoints.avatar,
       bytes: bytes,
       filename: filename,
-      contentType: mimeForFilename(filename),
+      contentType: imageUploadMime(filename),
       decodeData: (_) => true,
     );
-  }
-
-  /// Maps a filename extension to the MIME the server's gate accepts
-  /// (jpeg / png / webp). Null for an unknown extension — the picker only yields
-  /// these three, so a null would be a programming error, not a user path.
-  @visibleForTesting
-  static String? mimeForFilename(String filename) {
-    final lower = filename.toLowerCase();
-    if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) {
-      return 'image/jpeg';
-    }
-    if (lower.endsWith('.png')) {
-      return 'image/png';
-    }
-    if (lower.endsWith('.webp')) {
-      return 'image/webp';
-    }
-    return null;
   }
 
   static Map<String, dynamic> _asMap(Object? data) =>

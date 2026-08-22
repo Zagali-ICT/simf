@@ -1,0 +1,14 @@
+# Declares the tags used across this suite.
+#
+# Without this file every run prints "Warning: A tag was used that wasn't
+# declared" once per tagged file — 63 golden tests here — which buries any real
+# warning in the output and makes a green run harder to read than it should be.
+#
+# Declaring a tag does not select or skip it. The golden tests still run by
+# default; `--exclude-tags=golden` skips them, and `--tags=golden` runs only
+# them, which is what a `--update-goldens` pass wants.
+tags:
+  golden:
+    # Frame goldens compared against the Figma-derived masters in
+    # test/golden/goldens/. Font rendering differs between platforms, so these
+    # are authored and updated on one toolchain rather than regenerated ad hoc.

@@ -185,8 +185,12 @@ class SimfApiClient {
     required List<int> bytes,
     required String filename,
     required T Function(Object? data) decodeData,
+    // Required though nullable: the server's upload gate matches Content-Type
+    // before it reads a byte, so omitting it fails as a 400 at runtime. Making
+    // the caller name it turns that into a compile error, and `null` becomes a
+    // deliberate "let the magic-byte check decide" rather than an oversight.
+    required String? contentType,
     String fileField = 'File',
-    String? contentType,
     Map<String, dynamic>? fields,
     CancelToken? cancelToken,
   }) {

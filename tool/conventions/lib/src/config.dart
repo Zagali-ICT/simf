@@ -9,6 +9,17 @@ abstract final class Config {
   /// The Flutter app's Dart sources — the surface the external review covered.
   static const String flutterLib = 'src/Mobile/simf_app/lib';
 
+  /// The local packages the app depends on. Their `lib/` roots are DISCOVERED
+  /// under here, never listed: until 2026-08-22 they were outside the gate
+  /// entirely, so `--strict` printed PASS while never walking them. Naming them
+  /// by hand would re-create that exact failure for package number three.
+  ///
+  /// What this bought is narrow and worth stating: of the seven Dart rules,
+  /// only SIMF-C2 (endpoint literals) and SIMF-C6 can fire in a widget-free
+  /// package — the rest key off Flutter widgets. It is not an audit of the auth
+  /// and data layers, it is an audit of those conventions in them.
+  static const String flutterPackagesRoot = 'src/Mobile/simf_app/packages';
+
   /// The .NET surfaces (`SIMF-N*` rules).
   static const List<String> razorRoots = <String>[
     'src/ControlPanel/SIMF.ControlPanel',
@@ -99,6 +110,12 @@ abstract final class Config {
     }
     if (posixPath.startsWith('$flutterLib/app/')) return 'app (shared shell)';
     if (posixPath.startsWith('$flutterLib/core/')) return 'core';
+    const String packagesRoot = 'src/Mobile/simf_app/packages/';
+    if (posixPath.startsWith(packagesRoot)) {
+      final String rest = posixPath.substring(packagesRoot.length);
+      final int slash = rest.indexOf('/');
+      return slash == -1 ? rest : rest.substring(0, slash);
+    }
     if (posixPath.startsWith('src/ControlPanel/')) return 'ControlPanel';
     if (posixPath.startsWith('src/Website/')) return 'Website';
     if (posixPath.startsWith('src/Shared/')) return 'Shared components';

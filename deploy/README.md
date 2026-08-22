@@ -11,12 +11,14 @@ SIMF web apps and deploy them to IIS, mirroring the V10 ERP pipeline.
 | SimfWeb | `src/Website/SIMF.Web/SIMF.Web.csproj` | `web/SIMF.Web.zip` | site `SIMF.WEB`, path `D:\System\v1.0.1\web` |
 | SimfEdge | `src/Edge/SIMF.MobileEdge/SIMF.MobileEdge.csproj` | `edge/SIMF.MobileEdge.zip` | site `SIMF.EDGE`, path `D:\System\v1.0.1\edge` |
 
-All four packages are **meant** to deploy to each of the two servers — `SIMF-Prod`
+All four packages deploy to each of the two servers — `SIMF-Prod`
 (pre-production) and `SIM-RNSF` (production) — so there is one deployment job per server,
-and each package keeps its own environment script on that server. **In fact both jobs land
-on the same machine**, the pre-production box, because the `Default` pool holds one agent
-and it lives there (D-932 — see the warning under *Choosing which environments a run
-deploys to*). Production is deployed by hand until an agent exists on it. The **mobile edge** is the presentation tier
+and each package keeps its own environment script on that server. Each job is bound to its
+environment's registered **VM resource** (D-938), and that binding is what makes two jobs
+two destinations. Until 2026-08-19 no usable resource was registered, both jobs fell back
+to the single `Default` pool agent, and every deploy landed on pre-production while
+reporting success under either name (D-932 — see *Choosing which environments a run
+deploys to*). The **mobile edge** is the presentation tier
 for the mobile clients: a YARP reverse proxy published at `edge.simrsnf.com` that
 forwards only `/api/v1/app/**` inward. See
 [the mobile edge section](#the-mobile-edge-at-edgesimrsnfcom) before deploying
@@ -92,41 +94,66 @@ Build, Test & Publish ──▶ Deploy to IIS
 
 | Parameter | Label | Default |
 |-----------|-------|---------|
-| `deployPreProduction` | Deploy to Pre-production (same box as Production — one agent, D-932) | **`false`** |
-| `deployProduction` | Deploy to Production (actually deploys to PRE-PRODUCTION — D-932) | `true` |
+| `deployPreProduction` | Deploy to Pre-production (`simf.zagali-ict.com`) | `true` |
+| `deployProduction` | Deploy to Production (`web` / `cp` / `api.simrsnf.com`) | `true` |
+| `preProductionMachineName` | *(not shown — the machine the pre-prod job asserts it landed on)* | `WIN-MAP9VAMAU4Q` |
+| `productionMachineName` | *(not shown — same, for production)* | *empty, see below* |
 
-> ### ⚠️ There is only one agent, and it is on PRE-PRODUCTION (D-932)
+Untick both and the whole Deploy stage is omitted: build and publish still run and
+the artifact is still produced, so a build-only run needs no separate pipeline.
+
+The stage also refuses to run on a **pull-request** build
+(`ne(variables['Build.Reason'], 'PullRequest')`). Both parameters default to `true`,
+so without that a validation build would deploy both servers from an unmerged branch.
+Excluding the PR *reason* rather than pinning `refs/heads/main` keeps a deliberate
+manual run from a branch working, which is how a hotfix gets rehearsed.
+
+> ### ⚠️ For eleven days both jobs deployed to the same machine (D-932 → fixed by D-938)
 >
-> **This pipeline cannot reach production.** Read that before debugging a deploy.
+> Kept because the failure was **silent**, and the shape of it will recur if the
+> VM resources are ever removed.
 >
 > The `Default` pool holds a single agent — `server` on `WIN-MAP9VAMAU4Q`.
 > D-906 recorded that machine as the **production** box (`SIMF APP 01`).
 > **It is not.** It is the **pre-production** server, the one behind
-> `simf.zagali-ict.com`. Both deployment jobs draw from that one pool agent and
-> nothing binds them elsewhere (D-905), so **every deploy this pipeline has ever
-> run — under either environment name, with either tick box — has landed on
-> pre-production.**
->
-> `web.simrsnf.com` (production) receives **nothing** from this pipeline and has
-> not since 2026-08-08. Shipping to it is a manual copy until an agent exists
-> there.
+> `simf.zagali-ict.com`. With no VM resource registered on either environment,
+> both deployment jobs fell back to that one pool agent, so **every deploy —
+> under either environment name, with either tick box — landed on
+> pre-production**, and every one of them reported success.
 >
 > **How this was established:** the `Initialize job` step of *both* deployment
 > jobs prints `Agent machine name: 'WIN-MAP9VAMAU4Q'`; the pool holds exactly one
 > agent; deploys write `D:\System\v1.0.1\web` on that machine and the site whose
-> content changes is `simf.zagali-ict.com`, while production stays byte-identical
+> content changes is `simf.zagali-ict.com`, while production stayed byte-identical
 > (its `landing.css` still MD5s to `b98f39d41ff1b73ae3ac4e3db3e9179f` — commit
-> `f81ba630`, 2026-08-08).
+> `f81ba630`, 2026-08-08). They are also two machines on two networks:
+> `*.simrsnf.com` resolves to `95.177.163.108`, `simf.zagali-ict.com` to
+> `173.201.37.122`.
 >
-> `DeployPreProduction` therefore rehearses nothing — but not for the reason
-> D-906 gave. Both jobs deploy the same four packages to the same
-> **pre-production** machine, stopping and restarting every site twice in one
-> run, which is why it defaults to **off**.
+> **What fixed it:** the servers are registered as VM resources, and each job now
+> binds to its own with `resourceType: virtualMachine`. See *Do NOT put a `pool:`
+> on a deployment job* below.
 >
-> **To deploy to either server for real:** install an Azure Pipelines agent on
-> the production box and register **both** servers as VM resources on their
-> environments. Until then an environment name is a label on a history page, not
-> a destination.
+> **What keeps it fixed:** the first step of every deploy is
+> `Confirm the deployment target`, which prints the machine and the IIS site
+> inventory *before* the artifact is downloaded or any site stopped, and throws if
+> the machine is not the one the job pinned. `productionMachineName` starts
+> **empty** on purpose — nobody has seen that server's name, because this pipeline
+> has never run on it. Empty means *print, do not assert*: the first production
+> deploy logs the real name, and copying it into `azure-pipelines.yml` closes the
+> pin.
+>
+> **Empty is not unguarded.** Each job is also handed the *other* environment's
+> name as **forbidden**, so the production job refuses to run on
+> `WIN-MAP9VAMAU4Q` even with its own pin blank. That is the case worth covering:
+> an environment whose VM resource was registered by running the *Add resource*
+> script on whichever box happened to be open points at **that** box, and the job
+> would otherwise deploy the wrong estate under the right name.
+>
+> **And the path is checked too.** A site that exists but still serves the
+> previous version's folder would take the mirror, start clean and report success
+> while serving old content. Each package asserts the site's `PhysicalPath` equals
+> the path it is about to write, before it stops anything.
 
 And three that are **off** by default:
 
@@ -319,27 +346,37 @@ These are **placeholders** — set them to the real SIMF server values:
    half of the error message: **Security → Pipeline permissions** on that
    environment, and authorize this pipeline.
 
-   **Both environments are empty shells, and that is how this estate works.**
-   `SIMF-Prod` has no VM resource; `SIM-RNSF` now shows one, added after D-905
-   was written, and it changed nothing observable — both jobs still report the
-   same pool agent. An environment with no usable resource is what Azure calls an
-   "abstract shell to record deployment history", so the steps fall back to the
-   **`Default` pool agent** — the agent named `server` on `WIN-MAP9VAMAU4Q` that
-   has been running these deploys all along, **on pre-production** (D-932).
+   **The environments are no longer empty shells, and that is what fixed the
+   routing.** Until 2026-08-19 neither had a usable VM resource. An environment
+   with no resource is what Azure calls an *"abstract shell to record deployment
+   history"*, so the steps fell back to the **`Default` pool agent** — `server` on
+   `WIN-MAP9VAMAU4Q` — and both jobs deployed to **pre-production** (D-932).
 
-   **Do not add `resourceType: virtualMachine`.** It has been tried twice and
-   broke deploys both times (D-903, D-905). It demands a registered VM resource
-   and the run dies with *"No resource were found in the environment with ID 3"*.
-   It is the right construct for an estate whose servers are registered as VM
-   resources; this one is not.
+   **`resourceType: virtualMachine` is now used, and that reverses the warning
+   this file used to carry.** It was tried twice *before* the resources existed
+   and broke the deploy both times (D-903, D-905) with *"No resource were found in
+   the environment with ID 3"*. That was the construct being right and the estate
+   not being ready — not the construct being wrong. It is ready (D-938).
 
-   **The cost, so it is a known risk rather than a surprise:** nothing binds a
-   job to a machine. The `Default` pool has an agent on both servers, so
-   `DeployProduction` can run on the pre-production box and vice versa.
-   Sequencing the jobs narrows the window; it does not close it. Registering
-   both servers as VM resources — the environment → **Add resource** → **Virtual
-   machines**, script run as Administrator with a **unique** agent name — is the
-   fix, and only then is `resourceType` worth revisiting.
+   If a job fails with that message again, a resource has been removed from that
+   environment: fix it on the environment's **Resources** tab. Re-register with
+   the environment → **Add resource** → **Virtual machines**, copy the script, run
+   it **as Administrator on that server** with a **unique** agent name, then
+   confirm the machine appears on the Resources tab. The agent polls **outbound
+   over 443** and needs no inbound port opened — which is the only reason
+   production is reachable at all, since it exposes nothing but 443 and 3389 (no
+   Web Deploy on 8172, no FTP, no WinRM).
+
+   The agent's Windows service must log on as an account in the **local
+   Administrators** group. Without it the deploy throws on its first package:
+   reading IIS configuration needs elevation, and the agent installs as a
+   non-admin service by default.
+
+   **Do NOT put a `pool:` on a deployment job.** A job's pool overrides its
+   environment's VM resource, so the job returns to the shared agent and both
+   jobs deploy to the same machine again — the exact defect above, and it reports
+   success while doing it. `PipelineTestGateTests` fails the build on an indented
+   `pool:` and on a deployment job missing its `resourceType`.
 
 4. **IIS site names + physical paths** — the `packages` list and `sitePathRoot`
    parameter at the top of [`deploy-all-packages.yml`](deploy-all-packages.yml).
@@ -351,9 +388,10 @@ These are **placeholders** — set them to the real SIMF server values:
 
 Per SIMF-OPS-001 §6, production overrides and every secret are applied as
 **Machine-scope environment variables** on the server by a per-service script —
-**not** baked into the pipeline or committed with real values. The committed
-templates here carry **empty values**; fill them on the server, run **as
-Administrator**, then **restart the IIS app pool** so `w3wp` picks them up:
+**not** baked into the pipeline or committed with real values. As of 2026-08-22
+the five `set-env-*.ps1` are **not in the repository at all** (see the box
+below) — the operator holds them. Run **as Administrator**, then **restart the
+IIS app pool** so `w3wp` picks them up:
 
 | Script | Server | Key groups |
 |--------|--------|-----------|
@@ -423,17 +461,26 @@ restarts its own pool.**
 .\deploy\set-env-edge.ps1
 ```
 
-> ### These five files carry live production credentials
+> ### These five files are NOT in the repository — the operator holds them
 >
-> There is no longer a template/overlay pair. The `.template.ps1` files were
-> deleted and these `set-env-*.ps1` **are** the operator's filled scripts,
+> `set-env-{api,cp,web,edge,webapp}.ps1` **are** the operator's filled scripts,
 > holding the real connection strings, the JWT signing key, both encryption
-> keys, the SMTP password and the AI key. They are **tracked** at the owner's
-> instruction, and the `.gitignore` rules that used to hide them were removed.
+> keys, the SMTP password and the AI keys. They were tracked for a period at
+> the owner's instruction; that was **reversed on 2026-08-22**. They are now
+> `.gitignore`d and untracked, so a fresh clone does not contain them and the
+> links above resolve only on a machine that already has them.
 >
-> A credential pushed once is in git history permanently, and deleting the file
-> later does not remove it from history. Rotate anything that reaches a remote
-> you do not control.
+> **Untracking is not rotation.** Every secret they carried is still readable in
+> git history, permanently. Rotate anything that reached a remote you do not
+> control — that is the step that closes the exposure.
+>
+> **Consequence to know:** `clean-env.ps1` reads `set-env-$Target.ps1` from its
+> own directory to learn which variables to sweep, so its scoped mode
+> (`-Target Api`) throws on a machine without these files. Its `-Target All`
+> path is unaffected. If a fresh clone ever needs to run scoped, track
+> `set-env-*.template.ps1` files carrying the key names with empty values and
+> point that lookup at them — deliberately not done here, because it re-adds a
+> committed file whose whole purpose is to mirror the secret one.
 
 Each variable carries a comment saying what breaks when it is missing, including
 the Production **boot gates** that stop a host starting at all. Five entries are

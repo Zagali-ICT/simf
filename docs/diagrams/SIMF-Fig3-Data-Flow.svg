@@ -19,7 +19,7 @@
 <text x="40" y="74" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="15" fill="#6B7280" text-anchor="start">Data flow diagram, Gane and Sarson notation.  Level 1 balances with the level 0 context above it.</text>
 <line x1="40" y1="90" x2="1620" y2="90" stroke="#6B7280" stroke-width="1.2"/>
 <rect x="40" y="110" width="1580" height="220" rx="4" fill="#F7F8FA" stroke="#6B7280" stroke-width="1.2" stroke-dasharray="7 4"/>
-<text x="54" y="132" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#6B7280" font-weight="600" text-anchor="start">Level 0, context</text>
+<text x="54" y="133" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="16.5" fill="#1A1A1A" font-weight="700" text-anchor="start">Level 0, context</text>
 <rect x="80" y="150" width="220" height="60" rx="3" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.4"/>
 <text x="190.0" y="171" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#6B7280" text-anchor="middle">«entity»</text>
 <text x="190.0" y="190" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#1A1A1A" font-weight="600" text-anchor="middle">Attendee</text>
@@ -40,25 +40,25 @@
 <text x="1450.0" y="285" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#6B7280" text-anchor="middle">«entity»</text>
 <text x="1450.0" y="304" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#1A1A1A" font-weight="600" text-anchor="middle">AI service</text>
 <path d="M 300 180 L 700 180" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
-<rect x="471.62" y="162.0" width="56.760000000000005" height="15" fill="#FFFFFF" stroke="none"/>
+<rect x="471.62" y="164.4" width="56.760000000000005" height="11.3" fill="#FFFFFF" stroke="none"/>
 <text x="500.0" y="173.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">requests</text>
 <path d="M 700 205 L 300 205" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
-<rect x="432.0025" y="187.0" width="135.995" height="15" fill="#FFFFFF" stroke="none"/>
+<rect x="432.0025" y="189.4" width="135.995" height="11.3" fill="#FFFFFF" stroke="none"/>
 <text x="500.0" y="198.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">responses and notices</text>
 <path d="M 300 255 L 700 255" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
-<rect x="432.0025" y="237.0" width="135.995" height="15" fill="#FFFFFF" stroke="none"/>
+<rect x="432.0025" y="239.4" width="135.995" height="11.3" fill="#FFFFFF" stroke="none"/>
 <text x="500.0" y="248.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">decisions and content</text>
 <path d="M 1000 166 L 1340 166" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
-<rect x="1126.3825" y="148" width="87.235" height="15" fill="#FFFFFF" stroke="none"/>
+<rect x="1126.3825" y="150.4" width="87.235" height="11.3" fill="#FFFFFF" stroke="none"/>
 <text x="1170" y="159" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">notifications</text>
 <path d="M 1000 215 L 1250 215 L 1250 228 L 1340 228" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
-<rect x="1086.765" y="224" width="166.47" height="15" fill="#FFFFFF" stroke="none"/>
+<rect x="1086.765" y="226.4" width="166.47" height="11.3" fill="#FFFFFF" stroke="none"/>
 <text x="1170" y="235" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">live stream, summary video</text>
 <path d="M 1000 250 L 1200 250 L 1200 290 L 1340 290" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
-<rect x="1198.955" y="272" width="142.09" height="15" fill="#FFFFFF" stroke="none"/>
+<rect x="1198.955" y="274.4" width="142.09" height="11.3" fill="#FFFFFF" stroke="none"/>
 <text x="1270" y="283" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">text for AI processing</text>
 <rect x="40" y="340" width="1580" height="660" rx="4" fill="#F7F8FA" stroke="#6B7280" stroke-width="1.2" stroke-dasharray="7 4"/>
-<text x="54" y="362" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#6B7280" font-weight="600" text-anchor="start">Level 1, decomposition</text>
+<text x="54" y="363" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="16.5" fill="#1A1A1A" font-weight="700" text-anchor="start">Level 1, decomposition</text>
 <rect x="40" y="380" width="240" height="130" rx="3" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.4"/>
 <text x="160.0" y="401" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#6B7280" text-anchor="middle">«entity»</text>
 <text x="160.0" y="420" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#1A1A1A" font-weight="600" text-anchor="middle">Attendee</text>
@@ -127,58 +127,58 @@
 <text x="1230.0" y="936" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#1A1A1A" font-weight="600" text-anchor="middle">AI service</text>
 <text x="1230.0" y="953" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">Gemini API</text>
 <path d="M 400 390 L 280 390" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
-<rect x="268.955" y="365" width="142.09" height="15" fill="#FFFFFF" stroke="none"/>
+<rect x="268.955" y="367.4" width="142.09" height="11.3" fill="#FFFFFF" stroke="none"/>
 <text x="340" y="376" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">badge, approval notice</text>
 <path d="M 280 415 L 400 415" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
-<rect x="299.43" y="390" width="81.14" height="15" fill="#FFFFFF" stroke="none"/>
+<rect x="299.43" y="392.4" width="81.14" height="11.3" fill="#FFFFFF" stroke="none"/>
 <text x="340" y="401" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">registration</text>
 <path d="M 280 445 L 370 445 L 370 510 L 400 510" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
-<rect x="287.4775" y="420" width="75.045" height="15" fill="#FFFFFF" stroke="none"/>
+<rect x="287.4775" y="422.4" width="75.045" height="11.3" fill="#FFFFFF" stroke="none"/>
 <text x="325" y="431" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">credentials</text>
 <path d="M 280 470 L 355 470 L 355 710 L 400 710" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
-<rect x="287.24" y="445" width="105.52000000000001" height="15" fill="#FFFFFF" stroke="none"/>
+<rect x="287.24" y="447.4" width="105.52000000000001" height="11.3" fill="#FFFFFF" stroke="none"/>
 <text x="340" y="456" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">seat reservation</text>
 <path d="M 280 495 L 340 495 L 340 810 L 400 810" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
-<rect x="287.24" y="470" width="105.52000000000001" height="15" fill="#FFFFFF" stroke="none"/>
+<rect x="287.24" y="472.4" width="105.52000000000001" height="11.3" fill="#FFFFFF" stroke="none"/>
 <text x="340" y="481" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">question, rating</text>
 <path d="M 280 560 L 385 560 L 385 430 L 400 430" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
-<rect x="284.1925" y="535" width="111.61500000000001" height="15" fill="#FFFFFF" stroke="none"/>
+<rect x="284.1925" y="537.4" width="111.61500000000001" height="11.3" fill="#FFFFFF" stroke="none"/>
 <text x="340" y="546" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">approval decision</text>
 <path d="M 280 590 L 365 590 L 365 610 L 400 610" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
-<rect x="293.5725" y="565" width="62.855000000000004" height="15" fill="#FFFFFF" stroke="none"/>
+<rect x="293.5725" y="567.4" width="62.855000000000004" height="11.3" fill="#FFFFFF" stroke="none"/>
 <text x="325" y="576" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">programme</text>
 <path d="M 280 620 L 330 620 L 330 900 L 400 900" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
-<rect x="274.1925" y="752" width="111.61500000000001" height="15" fill="#FFFFFF" stroke="none"/>
+<rect x="274.1925" y="754.4" width="111.61500000000001" height="11.3" fill="#FFFFFF" stroke="none"/>
 <text x="330" y="763" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">content and media</text>
 <path d="M 820 410 L 940 410 L 940 404 L 1000 404" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
-<rect x="853.335" y="379" width="93.33" height="15" fill="#FFFFFF" stroke="none"/>
+<rect x="853.335" y="381.4" width="93.33" height="11.3" fill="#FFFFFF" stroke="none"/>
 <text x="900" y="390" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">account record</text>
 <path d="M 820 510 L 960 510 L 960 420 L 1000 420" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
-<rect x="834.1925" y="485" width="111.61500000000001" height="15" fill="#FFFFFF" stroke="none"/>
+<rect x="834.1925" y="487.4" width="111.61500000000001" height="11.3" fill="#FFFFFF" stroke="none"/>
 <text x="890" y="496" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">credential record</text>
 <path d="M 820 610 L 950 610 L 950 524 L 1000 524" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
-<rect x="838.335" y="585" width="93.33" height="15" fill="#FFFFFF" stroke="none"/>
+<rect x="838.335" y="587.4" width="93.33" height="11.3" fill="#FFFFFF" stroke="none"/>
 <text x="885" y="596" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">session record</text>
 <path d="M 820 710 L 935 710 L 935 540 L 1000 540" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
-<rect x="822.1925" y="685" width="111.61500000000001" height="15" fill="#FFFFFF" stroke="none"/>
+<rect x="822.1925" y="687.4" width="111.61500000000001" height="11.3" fill="#FFFFFF" stroke="none"/>
 <text x="878" y="696" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">reservation, scan</text>
 <path d="M 820 810 L 925 810 L 925 552 L 1000 552" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
-<rect x="819.24" y="785" width="105.52000000000001" height="15" fill="#FFFFFF" stroke="none"/>
+<rect x="819.24" y="787.4" width="105.52000000000001" height="11.3" fill="#FFFFFF" stroke="none"/>
 <text x="872" y="796" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">question, rating</text>
 <path d="M 820 900 L 915 900 L 915 644 L 1000 644" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
-<rect x="833.525" y="875" width="68.95" height="15" fill="#FFFFFF" stroke="none"/>
+<rect x="833.525" y="877.4" width="68.95" height="11.3" fill="#FFFFFF" stroke="none"/>
 <text x="868" y="886" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">media file</text>
 <path d="M 820 640 L 985 640 L 985 770 L 1000 770" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
-<rect x="785.385" y="644" width="215.23000000000002" height="15" fill="#FFFFFF" stroke="none"/>
+<rect x="785.385" y="646.4" width="215.23000000000002" height="11.3" fill="#FFFFFF" stroke="none"/>
 <text x="893" y="655" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">live session stream, summary video</text>
 <path d="M 820 925 L 975 925 L 975 848 L 1000 848" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
-<rect x="919.3825" y="862" width="87.235" height="15" fill="#FFFFFF" stroke="none"/>
+<rect x="919.3825" y="864.4" width="87.235" height="11.3" fill="#FFFFFF" stroke="none"/>
 <text x="963" y="873" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">notifications</text>
 <path d="M 820 835 L 895 835 L 895 918 L 1000 918" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
-<rect x="793.6225" y="748" width="184.755" height="15" fill="#FFFFFF" stroke="none"/>
+<rect x="793.6225" y="750.4" width="184.755" height="11.3" fill="#FFFFFF" stroke="none"/>
 <text x="886" y="759" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">subtitles, summary, questions</text>
 <path d="M 820 935 L 970 935 L 970 940 L 1000 940" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
-<rect x="828.05" y="944" width="129.9" height="15" fill="#FFFFFF" stroke="none"/>
+<rect x="828.05" y="946.4" width="129.9" height="11.3" fill="#FFFFFF" stroke="none"/>
 <text x="893" y="955" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">FAQ and support text</text>
 <rect x="40" y="1030" width="760" height="139" rx="3" fill="#FFFFFF" stroke="#6B7280" stroke-width="1.2"/>
 <text x="54" y="1052" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="13.5" fill="#1A1A1A" font-weight="600" text-anchor="start">Key</text>

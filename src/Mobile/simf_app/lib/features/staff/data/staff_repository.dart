@@ -1,23 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/core/utils/image_upload_mime.dart';
 import 'package:simf_app/features/staff/data/staff_endpoints.dart';
 import 'package:simf_app/features/staff/data/staff_models.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-/// Maps an image filename to the MIME the upload gate accepts (jpeg/png/webp).
-/// The picker only yields these three, so a null is a programming error.
-String? _mimeForFilename(String filename) {
-  final lower = filename.toLowerCase();
-  if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) {
-    return 'image/jpeg';
-  }
-  if (lower.endsWith('.png')) {
-    return 'image/png';
-  }
-  if (lower.endsWith('.webp')) {
-    return 'image/webp';
-  }
-  return null;
-}
 
 /// D-509 — data layer for the staff walk-in registration (Figma 1467:12357).
 ///
@@ -56,7 +41,7 @@ class StaffRepository {
       StaffEndpoints.visitorIdDocument(userId),
       bytes: bytes,
       filename: filename,
-      contentType: _mimeForFilename(filename),
+      contentType: imageUploadMime(filename),
       decodeData: (_) => true,
     );
   }
@@ -72,7 +57,7 @@ class StaffRepository {
       StaffEndpoints.visitorAvatar(userId),
       bytes: bytes,
       filename: filename,
-      contentType: _mimeForFilename(filename),
+      contentType: imageUploadMime(filename),
       decodeData: (_) => true,
     );
   }

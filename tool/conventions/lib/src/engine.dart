@@ -12,6 +12,8 @@ import 'violation.dart';
 List<Violation> scanRepository(String repoRoot) {
   final List<Violation> found = <Violation>[
     ..._scanTree(repoRoot, Config.flutterLib),
+    for (final String root in _packageLibRoots(repoRoot))
+      ..._scanTree(repoRoot, root),
     for (final String root in Config.razorRoots) ..._scanTree(repoRoot, root),
   ];
 
@@ -23,6 +25,27 @@ List<Violation> scanRepository(String repoRoot) {
     return a.line.compareTo(b.line);
   });
   return found;
+}
+
+/// Every `packages/*/lib` under [Config.flutterPackagesRoot], sorted so two
+/// runs order their findings identically. Discovered rather than listed: a
+/// hand-maintained list silently drops the next package added, which is the
+/// failure this scan root exists to fix.
+List<String> _packageLibRoots(String repoRoot) {
+  final Directory packages =
+      Directory(p.join(repoRoot, Config.flutterPackagesRoot));
+  if (!packages.existsSync()) return const <String>[];
+
+  final List<String> roots = <String>[];
+  for (final FileSystemEntity entity in packages.listSync(followLinks: false)) {
+    if (entity is! Directory) continue;
+    final Directory lib = Directory(p.join(entity.path, 'lib'));
+    if (lib.existsSync()) {
+      roots.add(Config.relativePosix(lib.path, repoRoot));
+    }
+  }
+  roots.sort();
+  return roots;
 }
 
 List<Violation> _scanTree(String repoRoot, String relativeRoot) {

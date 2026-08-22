@@ -28,6 +28,27 @@ parameters:
   type: string
   default: 'D:\System\v1.0.1'
 
+# The machine this job is EXPECTED to run on, asserted before anything is
+# touched. Empty means "print the machine but do not assert it" - the state a
+# server is in before anyone has ever seen a deploy land on it. See the caller.
+- name: expectedMachineName
+  type: string
+  default: ''
+
+# The machine this job must NEVER run on: the one pinned to the OTHER
+# environment. This is the half of the check that still works while
+# `expectedMachineName` is empty. What it catches, and why that case is likely,
+# is spelled out in the throw itself rather than twice here.
+- name: forbiddenMachineName
+  type: string
+  default: ''
+
+# Which estate this is, in words, so the log and any failure name a destination
+# rather than an environment id nobody can map from memory.
+- name: targetLabel
+  type: string
+  default: '(unnamed target)'
+
 # One entry per package, in deploy order. Written once and expanded below, so
 # the stop/mirror/start sequence exists in exactly one place.
 - name: packages
@@ -39,6 +60,84 @@ parameters:
   - { key: edge, zip: SIMF.MobileEdge.zip,   site: SIMF.EDGE, label: 'the mobile edge' }
 
 steps:
+# --- STEP ZERO: which machine is this, really? -------------------------------
+#
+# A deploy that succeeds on the WRONG machine is indistinguishable, in the log,
+# from a deploy that succeeded. That is not hypothetical: every run between
+# 2026-08-08 and 2026-08-19 reported success while writing to pre-production
+# under BOTH environment names, and it cost eleven days because no step ever
+# printed the destination (D-932, D-938).
+#
+# This runs before the artifact download and before any site is stopped, so a
+# misrouted job cannot reach IIS at all.
+- powershell: |
+    $ErrorActionPreference = 'Stop'
+
+    $expected = '${{ parameters.expectedMachineName }}'
+    $actual   = $env:COMPUTERNAME
+
+    $expectedLabel = $expected
+    if (-not $expected) { $expectedLabel = '(not pinned yet)' }
+
+    Write-Host '=============================================================='
+    Write-Host "Deploy target : ${{ parameters.targetLabel }}"
+    Write-Host "Machine       : $actual"
+    Write-Host "Expected      : $expectedLabel"
+    Write-Host '=============================================================='
+
+    # The IIS inventory is the other half of the bootstrap. The first deploy to a
+    # machine nobody has seen prints its real site names and physical paths, so
+    # `packages` and `sitePathRoot` can be confirmed against that server rather
+    # than assumed from the other one. Best-effort: a freshly registered agent
+    # may not be elevated yet, and that gets its own better-worded failure per
+    # package below.
+    try {
+        Import-Module WebAdministration -ErrorAction Stop
+        Write-Host 'IIS sites on this machine:'
+        Get-Website | ForEach-Object {
+            Write-Host ('  {0,-16} state={1,-8} path={2}' -f $_.Name, $_.State, $_.PhysicalPath)
+        }
+    } catch {
+        Write-Warning "Could not read IIS configuration here: $($_.Exception.Message)"
+    }
+
+    # Checked BEFORE the empty-pin escape below, because it is the half that
+    # still works when this target's own name is unknown. A job that lands on the
+    # machine belonging to the OTHER environment is the original defect exactly -
+    # green job, right environment name, wrong estate - and an empty
+    # `expectedMachineName` would otherwise wave it through.
+    $forbidden = '${{ parameters.forbiddenMachineName }}'
+
+    if ($forbidden -and $actual -eq $forbidden) {
+        throw (
+            "WRONG ESTATE. This job is bound to '${{ parameters.targetLabel }}' but it is " +
+            "running on '$actual', which is the machine pinned to the OTHER environment. " +
+            'Nothing has been deployed. Its VM resource points at the wrong server - almost ' +
+            'always because the "Add resource" script was run on whichever box was already ' +
+            "open. Re-register that environment's resource on the correct machine.")
+    }
+
+    if (-not $expected) {
+        Write-Warning (
+            'No machine name is pinned for this target, so this deploy is proceeding WITHOUT ' +
+            "verifying where it lands. Copy the 'Machine' value above into the matching " +
+            '*MachineName parameter in azure-pipelines.yml to close the pin.')
+        return
+    }
+
+    if ($actual -ne $expected) {
+        throw (
+            "WRONG MACHINE. This job is bound to '${{ parameters.targetLabel }}' and expects " +
+            "'$expected', but it is running on '$actual'. Nothing has been deployed. Either " +
+            "the environment's VM resource points at the wrong server, or the pin in " +
+            'azure-pipelines.yml is stale. Fix one of those - do NOT delete this check. It is ' +
+            "the only thing standing between a mislabelled environment and one estate's " +
+            "content overwriting the other's.")
+    }
+
+    Write-Host 'Machine confirmed.'
+  displayName: 'Confirm the deployment target'
+
 # `deploy` auto-injects an artifact download, but naming it keeps the pipeline
 # readable and pins WHICH artifact lands in $(Pipeline.Workspace).
 - download: current
@@ -96,18 +195,52 @@ steps:
       }
 
       # --- Stop the site + pool, release file locks ---------------------------
+      # Read the site and the pool ONCE. Neither their existence nor the site's
+      # physical path changes across this block, and the checks below run four
+      # times per job on a live box.
       $pool = $null
       try { $pool = (Get-Item "IIS:\Sites\$siteName").applications["/"].applicationPool } catch { }
       Write-Host "site=$siteName pool=$pool -> $sitePath"
 
-      if (Get-Website -Name $siteName -ErrorAction SilentlyContinue) {
-          Write-Host "Stopping IIS site: $siteName"
-          Stop-Website -Name $siteName -ErrorAction SilentlyContinue
-      } else {
-          Write-Warning "IIS site not found (skip stop): $siteName"
+      $site = Get-Website -Name $siteName -ErrorAction SilentlyContinue
+
+      $poolExists = $false
+      if ($pool) {
+          $poolExists = [bool](Get-Item "IIS:\AppPools\$pool" -ErrorAction SilentlyContinue)
       }
 
-      if ($pool -and (Get-Item "IIS:\AppPools\$pool" -ErrorAction SilentlyContinue)) {
+      # A MISSING SITE IS FATAL, not a warning. This used to warn and carry on,
+      # which mirrors the build into a folder no site serves and then reports a
+      # clean success - the same silent shape as the wrong-machine deploy, and
+      # the first thing a second server hits if its site names differ from this
+      # one's. The `Confirm the deployment target` step lists the names that
+      # machine actually has.
+      if (-not $site) {
+          throw ("IIS site '$siteName' does not exist on $env:COMPUTERNAME, so there is " +
+                 "nowhere to deploy $package. Create the site, or correct the 'site' value " +
+                 "in the packages list. Refusing to mirror into $sitePath, which no site " +
+                 "would serve.")
+      }
+
+      # The site exists - but does it SERVE this path? A site still pointed at
+      # the previous version's folder takes the mirror, starts clean and reports
+      # success while serving the old content: the same silent shape as the wrong
+      # machine, and the likeliest way a second server diverges from the first,
+      # because nothing here has ever seen that server's paths. Checked BEFORE
+      # the stop, so a site that cannot be correctly deployed is never taken down.
+      $actualPath = [Environment]::ExpandEnvironmentVariables($site.PhysicalPath).TrimEnd('\')
+
+      if ($actualPath -ne $sitePath.TrimEnd('\')) {
+          throw ("IIS site '$siteName' on $env:COMPUTERNAME serves '$actualPath', but this " +
+                 "deploy targets '$sitePath'. Mirroring anyway would write $package where the " +
+                 "site never reads it and then report success. Repoint the site's physical " +
+                 "path, or pass the 'sitePathRoot' this server actually uses.")
+      }
+
+      Write-Host "Stopping IIS site: $siteName"
+      Stop-Website -Name $siteName -ErrorAction SilentlyContinue
+
+      if ($poolExists) {
           Write-Host "Stopping AppPool: $pool"
           Stop-WebAppPool -Name $pool -ErrorAction SilentlyContinue
       }
@@ -151,15 +284,54 @@ steps:
       }
       if (-not $mirrored) { throw "Robocopy failed after 3 attempts for $package." }
 
-      # --- Start the pool, then the site --------------------------------------
-      if ($pool -and (Get-Item "IIS:\AppPools\$pool" -ErrorAction SilentlyContinue)) {
+      # --- Start the pool, then the site, then PROVE both came up -------------
+      # `-ErrorAction SilentlyContinue` on the starts is deliberate - starting an
+      # already-running pool throws - but on its own it means a site that REFUSES
+      # to start still reports a successful deploy. The state check below is what
+      # turns that into a failure. It is not theoretical: production served HTTP
+      # 500 on every one of its sites while its last deploy was recorded green.
+      if ($poolExists) {
           Write-Host "Starting AppPool: $pool"
           Start-WebAppPool -Name $pool -ErrorAction SilentlyContinue
       }
-      if (Get-Website -Name $siteName -ErrorAction SilentlyContinue) {
-          Write-Host "Starting IIS site: $siteName"
-          Start-Website -Name $siteName -ErrorAction SilentlyContinue
+
+      Write-Host "Starting IIS site: $siteName"
+      Start-Website -Name $siteName -ErrorAction SilentlyContinue
+
+      # A bounded poll, not a flat sleep. The normal path clears on the first
+      # tick, and a slow app pool gets a second and a half instead of a guess -
+      # where a fixed wait is dead time on every package AND too short on the one
+      # that needed it. State is the one thing here that genuinely changes, so
+      # this is the only place the site and pool are re-read.
+      $siteState = 'unknown'
+      $poolState = 'n/a'
+
+      for ($tick = 1; $tick -le 5; $tick++) {
+          $siteState = (Get-Website -Name $siteName).State
+          if ($poolExists) { $poolState = (Get-Item "IIS:\AppPools\$pool").State }
+
+          if ($siteState -eq 'Started' -and (-not $poolExists -or $poolState -eq 'Started')) {
+              break
+          }
+
+          Start-Sleep -Milliseconds 300
       }
 
-      Write-Host "$package deployed to $sitePath"
+      Write-Host "$siteName state=$siteState  pool '$pool' state=$poolState"
+
+      if ($siteState -ne 'Started') {
+          throw ("IIS site '$siteName' is '$siteState' after the deploy, not 'Started'. The " +
+                 "files are in $sitePath but the site is not serving them. The usual cause is " +
+                 "a binding clash - another site holding the same port or certificate - which " +
+                 "leaves every URL on this site returning an error while the deploy log looks " +
+                 "clean.")
+      }
+
+      if ($poolExists -and $poolState -ne 'Started') {
+          throw ("AppPool '$pool' is '$poolState' after the deploy, not 'Started'. The site " +
+                 "returns HTTP 503 until the pool runs. A pool that stops on its own is " +
+                 "usually a bad identity or a missing .NET hosting bundle on this machine.")
+      }
+
+      Write-Host "$package deployed to $sitePath and serving."
     displayName: 'Deploy ${{ pkg.label }}'
