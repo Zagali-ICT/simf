@@ -89,7 +89,11 @@ class _RuleVisitor extends RecursiveAstVisitor<void> {
   final List<Violation> violations = <Violation>[];
 
   late final String _feature = Config.featureOf(posixPath);
-  late final bool _isRepositoryFile = posixPath.endsWith('_repository.dart');
+  // `_api.dart` counts too: the local packages name their transport layer that
+  // way rather than `_repository.dart`, so without it SIMF-C6 could never fire
+  // in the package roots the checker now scans.
+  late final bool _isRepositoryFile = posixPath.endsWith('_repository.dart') ||
+      posixPath.endsWith('_api.dart');
 
   void _add({
     required String rule,

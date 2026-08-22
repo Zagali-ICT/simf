@@ -95,10 +95,43 @@ These are committed with the folder (BUG-010); keep them when editing it:
 - The cleartext / camera / `<queries>` manifest entries the plugins need land in
   the generated folders during the local run step.
 
-Build command used for the prod-pointed APK:
+## 3. The release build command
+
+Google Play requires an **App Bundle** (`.aab`) for a new app; an APK cannot be
+uploaded. Build the store artefact with:
 
 ```bash
-flutter build apk --release \
+flutter build appbundle --release \
   --dart-define=SIMF_BUILD=prod \
-  --dart-define=SIMF_API_BASE=https://api.simrsnf.com/api/v1
+  --dart-define=SIMF_APP_KEY=<production value, never committed> \
+  --dart-define=SIMF_SUPPORT_PHONE=<...> \
+  --dart-define=SIMF_SUPPORT_EMAIL=<...> \
+  --dart-define=SIMF_SOCIAL_X=<...>          # + INSTAGRAM / LINKEDIN / YOUTUBE / TIKTOK
 ```
+
+`SIMF_API_BASE` is deliberately **not** passed. Its default is already the
+production mobile edge (`https://edge.simrsnf.com/api/v1`, `build_config.dart`),
+so a build with no overrides runs against production and cannot fall back to a
+dev host. Passing it by hand is how a stale host gets shipped — which is what the
+previous version of this section did: it named `https://api.simrsnf.com/api/v1`,
+the host the edge superseded, and it built an APK.
+
+`SIMF_BUILD=prod` turns off one interceptor that logs HTTP **method, path and
+status** — never a header, body or query string. It is the only consumer of that
+flag. Pass it for cleanliness, not because a leak exists.
+
+Empty support/social defines leave those tiles inert by design (D-369): supply
+real values or those buttons do nothing in the shipped app.
+
+**Signing.** The release build signs from the git-ignored `android/key.properties`
+and falls back to the **debug** key when that file is absent. A debug-signed
+bundle is rejected by Play at upload, so prove the signer before submitting:
+
+```bash
+keytool -printcert -jarfile build/app/outputs/bundle/release/app-release.aab
+```
+
+The Owner line must be your release identity, not `CN=Android Debug`.
+
+**Keep `build/app/outputs/mapping/release/mapping.txt`** for each release and
+upload it to Play, or every R8-obfuscated crash report is unreadable.

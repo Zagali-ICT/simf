@@ -1,4 +1,4 @@
-package dod.simf.visitor_app
+package com.apexium.simf
 
 import android.os.Bundle
 import android.view.WindowManager

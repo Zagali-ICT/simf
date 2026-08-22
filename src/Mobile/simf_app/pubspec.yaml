@@ -2,9 +2,18 @@ name: simf_app
 description: SIMF Maritime Forum — the Flutter mobile application for Android and iOS. Routes the 41 mockup screens, applies localisation and theme, and hosts the auth and data packages. See SIMF-MAA-001 v1.2.
 # D-736 — the About / More screens display this real value via
 # package_info_plus, and the server version-policy gate compares against it.
-# Bumped for the local-time wire rename (*Utc fields dropped, datetimes now
-# Saudi +03:00): installed builds decode the old wire, so the server's
-# minimum-required-version must be set to 1.1.0 at deploy to force the update.
+#
+# DO NOT set the server's minimum-required-version to 1.1.0. This comment used to
+# say exactly that, left over from a 1.1.0 bump that was reverted on 2026-07-28
+# and lost the 07-30 merge. Following it would have BRICKED the release:
+# app_version_policy.dart deliberately drops build metadata, so this build
+# reports "1.0.1", and 1.0.1 < 1.1.0 resolves to AppUpdateStatus.forced — every
+# user hard-blocked at launch, waiting for an update that does not exist.
+#
+# For the first Play release leave AndroidMinVersion EMPTY. The gate is
+# fail-open by design (it needs both a minimum version and a usable store URL),
+# so an empty value simply keeps it off until a real store URL exists to send
+# people to. Any value set later must be <= the shipped version below.
 version: 1.0.1+18
 publish_to: none
 

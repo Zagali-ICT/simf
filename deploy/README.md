@@ -388,9 +388,10 @@ These are **placeholders** — set them to the real SIMF server values:
 
 Per SIMF-OPS-001 §6, production overrides and every secret are applied as
 **Machine-scope environment variables** on the server by a per-service script —
-**not** baked into the pipeline or committed with real values. The committed
-templates here carry **empty values**; fill them on the server, run **as
-Administrator**, then **restart the IIS app pool** so `w3wp` picks them up:
+**not** baked into the pipeline or committed with real values. As of 2026-08-22
+the five `set-env-*.ps1` are **not in the repository at all** (see the box
+below) — the operator holds them. Run **as Administrator**, then **restart the
+IIS app pool** so `w3wp` picks them up:
 
 | Script | Server | Key groups |
 |--------|--------|-----------|
@@ -460,17 +461,26 @@ restarts its own pool.**
 .\deploy\set-env-edge.ps1
 ```
 
-> ### These five files carry live production credentials
+> ### These five files are NOT in the repository — the operator holds them
 >
-> There is no longer a template/overlay pair. The `.template.ps1` files were
-> deleted and these `set-env-*.ps1` **are** the operator's filled scripts,
+> `set-env-{api,cp,web,edge,webapp}.ps1` **are** the operator's filled scripts,
 > holding the real connection strings, the JWT signing key, both encryption
-> keys, the SMTP password and the AI key. They are **tracked** at the owner's
-> instruction, and the `.gitignore` rules that used to hide them were removed.
+> keys, the SMTP password and the AI keys. They were tracked for a period at
+> the owner's instruction; that was **reversed on 2026-08-22**. They are now
+> `.gitignore`d and untracked, so a fresh clone does not contain them and the
+> links above resolve only on a machine that already has them.
 >
-> A credential pushed once is in git history permanently, and deleting the file
-> later does not remove it from history. Rotate anything that reaches a remote
-> you do not control.
+> **Untracking is not rotation.** Every secret they carried is still readable in
+> git history, permanently. Rotate anything that reached a remote you do not
+> control — that is the step that closes the exposure.
+>
+> **Consequence to know:** `clean-env.ps1` reads `set-env-$Target.ps1` from its
+> own directory to learn which variables to sweep, so its scoped mode
+> (`-Target Api`) throws on a machine without these files. Its `-Target All`
+> path is unaffected. If a fresh clone ever needs to run scoped, track
+> `set-env-*.template.ps1` files carrying the key names with empty values and
+> point that lookup at them — deliberately not done here, because it re-adds a
+> committed file whose whole purpose is to mirror the secret one.
 
 Each variable carries a comment saying what breaks when it is missing, including
 the Production **boot gates** that stop a host starting at all. Five entries are

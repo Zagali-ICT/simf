@@ -81,7 +81,7 @@ void main() {
             '($namespace), or Gradle cannot find it.',
       );
       // Anchored: `contains` would also accept a package that merely STARTS
-      // with the namespace, e.g. dod.simf.visitor_app_old.
+      // with the namespace, e.g. com.apexium.simf_old.
       expect(
         RegExp('^package ${RegExp.escape(namespace)};?\\s*\$', multiLine: true)
             .hasMatch(activity.readAsStringSync()),
@@ -107,6 +107,62 @@ void main() {
 
       expect(manifest, contains('android.permission.CAMERA'));
       expect(manifest, contains('android.permission.USE_BIOMETRIC'));
+    });
+
+    test('the manifest keeps the store-facing permission decisions', () {
+      // Three deliberate decisions in the one file `flutter create` overwrites
+      // silently. Each is a Play listing fact, so losing one is not a build
+      // break — it is a wrong permission shipped to users.
+      final manifest =
+          File('android/app/src/main/AndroidManifest.xml').readAsStringSync();
+
+      // INTERNET reaches the release build only via ML Kit's transitive
+      // play-services graph. Declared here so dropping that dependency cannot
+      // take network access with it.
+      expect(manifest, contains('android.permission.INTERNET'));
+
+      // camera_android_camerax contributes RECORD_AUDIO; this app never
+      // records, so it is rejected at merge time.
+      expect(
+        manifest,
+        matches(
+          RegExp(
+            r'RECORD_AUDIO"\s*\n?\s*tools:node="remove"',
+            multiLine: true,
+          ),
+        ),
+        reason: 'RECORD_AUDIO must stay removed — the app opens no microphone.',
+      );
+
+      // The merger implies READ_EXTERNAL_STORAGE with NO cap, which would
+      // request storage on every API level.
+      expect(
+        manifest,
+        matches(
+          RegExp(
+            r'READ_EXTERNAL_STORAGE"\s*\n?\s*android:maxSdkVersion="32"',
+            multiLine: true,
+          ),
+        ),
+        reason: 'READ_EXTERNAL_STORAGE must stay capped at API 32.',
+      );
+    });
+
+    test('no camera in the app enables audio capture', () {
+      // The justification for removing RECORD_AUDIO above, made enforceable:
+      // if a CameraController ever turns audio on, the manifest edit becomes a
+      // silent bug rather than a correct simplification.
+      final dartSources = Directory('lib')
+          .listSync(recursive: true)
+          .whereType<File>()
+          .where((file) => file.path.endsWith('.dart'));
+      for (final source in dartSources) {
+        expect(
+          source.readAsStringSync(),
+          isNot(contains('enableAudio: true')),
+          reason: '${source.path} enables audio, but RECORD_AUDIO is removed.',
+        );
+      }
     });
 
     test('no self-signed TLS escape hatch has come back (D-872)', () {

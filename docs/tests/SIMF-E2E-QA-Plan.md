@@ -50,7 +50,8 @@ feature-branch API produced a false "session times are epoch" result (see BUG-01
 
 ```
 flutter build apk --debug --dart-define=SIMF_API_BASE=http://localhost:5275/api/v1 --dart-define=SIMF_BUILD=dev
-adb uninstall dod.simf.visitor_app   # required if the installed build has a higher versionCode
+adb uninstall com.apexium.simf       # required if the installed build has a higher versionCode
+adb uninstall dod.simf.visitor_app   # once, on any device carrying a pre-2026-08-22 build
 adb uninstall com.example.simf_app   # once, on any device still carrying a pre-D-867 build
 adb install -r <apk>
 ```
@@ -485,7 +486,7 @@ HiSilicon hardware decoder — the root cause of "the video does not work" on th
 
 | id | title | surface | steps | expected | data | blocked-by |
 |----|-------|---------|-------|----------|------|------------|
-| E2E-ONB-001 | Onboarding shows on first run only | app | `adb uninstall dod.simf.visitor_app` → install → launch | Splash → **/onboarding**. Complete or skip it, kill and relaunch: the app goes straight to sign-in (`StorageKeys.onboardingCompleted`) | — | — |
+| E2E-ONB-001 | Onboarding shows on first run only | app | `adb uninstall com.apexium.simf` → install → launch | Splash → **/onboarding**. Complete or skip it, kill and relaunch: the app goes straight to sign-in (`StorageKeys.onboardingCompleted`) | — | — |
 | E2E-ONB-002 | The background video is present and playing | app | On step 1 sweep the semantics tree and take an `adb shell dumpsys media.player` / SurfaceFlinger reading | An active media surface exists and its position advances between two samples ≥2 s apart. The tablet returns a black `screencap` for the Flutter surface (§1.3), so playback is asserted from the media stack, **not** from a screenshot | — | — |
 | E2E-ONB-003 | The video is muted | app | Play step 1 with the device volume up | Silence. `setVolume(0)` is called before `play()`; no audio-focus change and no media notification appears | — | — |
 | E2E-ONB-004 | The video loops | app | Watch one step for longer than the clip length (~2× its duration) | It restarts seamlessly and keeps playing; no black frame at the loop point and no "replay" control | — | — |

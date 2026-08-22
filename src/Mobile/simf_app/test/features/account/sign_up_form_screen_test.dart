@@ -164,7 +164,14 @@ Future<void> _fill(
 }
 
 Future<void> _tapCreate(WidgetTester tester) async {
-  await tester.tap(find.widgetWithText(FilledButton, 'Create account'));
+  final button = find.widgetWithText(FilledButton, 'Create account');
+  // The button sits below the default 800x600 test viewport once the form is
+  // filled, so tapping it directly hit-tests off-screen and Flutter warns.
+  // Today that is only a warning; it becomes a failure the moment
+  // hitTestWarningShouldBeFatal is turned on.
+  await tester.ensureVisible(button);
+  await tester.pumpAndSettle();
+  await tester.tap(button);
   await tester.pumpAndSettle();
 }
 

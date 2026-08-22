@@ -1,3 +1,4 @@
+import 'package:simf_auth_pkg/src/data/auth_endpoints.dart';
 import 'package:simf_auth_pkg/src/data/dto/badge_auth_dtos.dart';
 import 'package:simf_auth_pkg/src/data/dto/current_user_dto.dart';
 import 'package:simf_auth_pkg/src/data/dto/device_key_dtos.dart';
@@ -21,7 +22,7 @@ class AuthApi {
   // SIMF-API-001 §12.4
   Future<SignInResponseData> signIn(SignInRequest request) {
     return _client.post<SignInResponseData>(
-      '/app/auth/sign-in',
+      AuthEndpoints.signIn,
       body: request.toJson(),
       decodeData: (data) {
         if (data is! Map<String, dynamic>) {
@@ -37,7 +38,7 @@ class AuthApi {
   // D-738 — badge-QR password sign-in; returns the standard sign-in envelope.
   Future<SignInResponseData> badgeSignIn(BadgeSignInRequest request) {
     return _client.post<SignInResponseData>(
-      '/app/auth/badge-sign-in',
+      AuthEndpoints.badgeSignIn,
       body: request.toJson(),
       decodeData: (data) {
         if (data is! Map<String, dynamic>) {
@@ -53,7 +54,7 @@ class AuthApi {
   // SIMF-API-001 Amendment A.1 — visitor email-OTP second factor.
   Future<TokenPayloadDto> verifyOtp(VerifyOtpRequest request) {
     return _client.post<TokenPayloadDto>(
-      '/app/auth/verify-otp',
+      AuthEndpoints.verifyOtp,
       body: request.toJson(),
       decodeData: _decodeTokenPayload,
     );
@@ -62,7 +63,7 @@ class AuthApi {
   // #12 — re-issue the emailed sign-in OTP in place (no re-authentication).
   Future<ResendOtpResponseDto> resendOtp(ResendOtpRequest request) {
     return _client.post<ResendOtpResponseDto>(
-      '/app/auth/resend-otp',
+      AuthEndpoints.resendOtp,
       body: request.toJson(),
       decodeData: (data) {
         if (data is! Map<String, dynamic>) {
@@ -76,7 +77,7 @@ class AuthApi {
   // SIMF-API-001 §12.4
   Future<Map<String, dynamic>> signUp(SignUpRequest request) {
     return _client.post<Map<String, dynamic>>(
-      '/app/auth/sign-up',
+      AuthEndpoints.signUp,
       body: request.toJson(),
       decodeData: (data) => (data as Map?)?.cast<String, dynamic>() ?? const {},
     );
@@ -84,7 +85,7 @@ class AuthApi {
 
   Future<Map<String, dynamic>> verifyEmail(VerifyEmailRequest request) {
     return _client.post<Map<String, dynamic>>(
-      '/app/auth/verify-email',
+      AuthEndpoints.verifyEmail,
       body: request.toJson(),
       decodeData: (data) => (data as Map?)?.cast<String, dynamic>() ?? const {},
     );
@@ -92,7 +93,7 @@ class AuthApi {
 
   Future<Map<String, dynamic>> resendCode(ResendCodeRequest request) {
     return _client.post<Map<String, dynamic>>(
-      '/app/auth/resend-code',
+      AuthEndpoints.resendCode,
       body: request.toJson(),
       decodeData: (data) => (data as Map?)?.cast<String, dynamic>() ?? const {},
     );
@@ -100,7 +101,7 @@ class AuthApi {
 
   Future<TokenPayloadDto> refresh(RefreshRequest request) {
     return _client.post<TokenPayloadDto>(
-      '/app/auth/refresh',
+      AuthEndpoints.refresh,
       body: request.toJson(),
       decodeData: _decodeTokenPayload,
       // The refresh call must not re-enter the 401 refresh path: a 401 here
@@ -112,7 +113,7 @@ class AuthApi {
 
   Future<Map<String, dynamic>> signOut(SignOutRequest request) {
     return _client.post<Map<String, dynamic>>(
-      '/app/auth/sign-out',
+      AuthEndpoints.signOut,
       body: request.toJson(),
       decodeData: (data) => (data as Map?)?.cast<String, dynamic>() ?? const {},
     );
@@ -121,7 +122,7 @@ class AuthApi {
   // SIMF-MOB-API-001 §5.1
   Future<CurrentUserDto> getCurrentUser() {
     return _client.get<CurrentUserDto>(
-      '/app/users/me',
+      AuthEndpoints.currentUser,
       decodeData: (data) {
         if (data is! Map<String, dynamic>) {
           throw const FormatException(
@@ -137,7 +138,7 @@ class AuthApi {
   Future<DeviceKeyEntryDto> registerDeviceKey(
       RegisterDeviceKeyRequest request,) {
     return _client.post<DeviceKeyEntryDto>(
-      '/app/auth/device-keys',
+      AuthEndpoints.deviceKeys,
       body: request.toJson(),
       decodeData: (data) {
         if (data is! Map<String, dynamic>) {
@@ -155,7 +156,7 @@ class AuthApi {
   /// approved caller; returns the masked recipient + the code lifetime.
   Future<SendBiometricStepUpResponseDto> sendBiometricStepUp() {
     return _client.post<SendBiometricStepUpResponseDto>(
-      '/app/auth/device-keys/step-up',
+      AuthEndpoints.deviceKeyStepUp,
       decodeData: (data) {
         if (data is! Map<String, dynamic>) {
           throw const FormatException(
@@ -169,7 +170,7 @@ class AuthApi {
 
   Future<DeviceKeyChallengeDto> issueDeviceKeyChallenge(String deviceKeyId) {
     return _client.post<DeviceKeyChallengeDto>(
-      '/app/auth/device-keys/$deviceKeyId/challenge',
+      AuthEndpoints.deviceKeyChallenge(deviceKeyId),
       body: const <String, dynamic>{},
       decodeData: (data) {
         if (data is! Map<String, dynamic>) {
@@ -186,7 +187,7 @@ class AuthApi {
     SignInWithDeviceKeyRequest request,
   ) {
     return _client.post<TokenPayloadDto>(
-      '/app/auth/sign-in-with-device-key',
+      AuthEndpoints.signInWithDeviceKey,
       body: request.toJson(),
       decodeData: _decodeTokenPayload,
     );
@@ -196,7 +197,7 @@ class AuthApi {
   /// Requires a signed-in approved caller. Feeds the My Devices screen.
   Future<List<DeviceKeyEntryDto>> listDeviceKeys() {
     return _client.get<List<DeviceKeyEntryDto>>(
-      '/app/auth/device-keys',
+      AuthEndpoints.deviceKeys,
       decodeData: (data) {
         if (data is! List) {
           throw const FormatException(
@@ -216,7 +217,7 @@ class AuthApi {
   /// sign-in off. Requires a signed-in approved caller.
   Future<void> revokeDeviceKey(String deviceKeyId) {
     return _client.delete<void>(
-      '/app/auth/device-keys/$deviceKeyId',
+      AuthEndpoints.deviceKey(deviceKeyId),
       decodeData: (_) {},
     );
   }
@@ -224,7 +225,7 @@ class AuthApi {
   // Password reset — planned, SIMF-API-001 OI-3.
   Future<Map<String, dynamic>> forgotPassword(ForgotPasswordRequest request) {
     return _client.post<Map<String, dynamic>>(
-      '/app/auth/forgot-password',
+      AuthEndpoints.forgotPassword,
       body: request.toJson(),
       decodeData: (data) => (data as Map?)?.cast<String, dynamic>() ?? const {},
     );
@@ -232,7 +233,7 @@ class AuthApi {
 
   Future<Map<String, dynamic>> resetPassword(ResetPasswordRequest request) {
     return _client.post<Map<String, dynamic>>(
-      '/app/auth/reset-password',
+      AuthEndpoints.resetPassword,
       body: request.toJson(),
       decodeData: (data) => (data as Map?)?.cast<String, dynamic>() ?? const {},
     );
@@ -241,7 +242,7 @@ class AuthApi {
   // Part B (D-430) — badge-QR sign-in / activation.
   Future<Map<String, dynamic>> resolveBadge(ResolveBadgeRequest request) {
     return _client.post<Map<String, dynamic>>(
-      '/app/auth/resolve-badge',
+      AuthEndpoints.resolveBadge,
       body: request.toJson(),
       decodeData: (data) => (data as Map?)?.cast<String, dynamic>() ?? const {},
     );
@@ -251,7 +252,7 @@ class AuthApi {
     BadgeActivationStartRequest request,
   ) {
     return _client.post<Map<String, dynamic>>(
-      '/app/auth/badge-activation/start',
+      AuthEndpoints.badgeActivationStart,
       body: request.toJson(),
       decodeData: (data) => (data as Map?)?.cast<String, dynamic>() ?? const {},
     );
@@ -261,7 +262,7 @@ class AuthApi {
     BadgeActivationCompleteRequest request,
   ) {
     return _client.post<Map<String, dynamic>>(
-      '/app/auth/badge-activation/complete',
+      AuthEndpoints.badgeActivationComplete,
       body: request.toJson(),
       decodeData: (data) => (data as Map?)?.cast<String, dynamic>() ?? const {},
     );

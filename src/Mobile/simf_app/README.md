@@ -40,8 +40,7 @@ scaffold. `flutter create` OVERWRITES them and silently destroys:
 |------|-------|----------------|
 | `android.permission.CAMERA` + `<uses-feature …camera[.front] required="false"/>` | `android/app/src/main/AndroidManifest.xml` | `flutter_zxing` QR scanning (Huawei/HMS-safe, D-426) and the live-preview `camera` liveness flow (D-404). Without it the liveness screen degrades to its gallery fallback. |
 | `android.permission.USE_BIOMETRIC` | same manifest | Face-ID / fingerprint device-key sign-in via `local_auth` (D-738). |
-| `android:networkSecurityConfig="@xml/network_security_config"` + `res/raw/simf_api_cert.pem` | `android/app/src/main/res/` | Host-scoped trust anchor for the self-signed API cert so ExoPlayer can stream the hero video (D-768). Delete only once the API has a real CA cert. |
-| `MainActivity : FlutterFragmentActivity` + `FLAG_SECURE` | `android/app/src/main/kotlin/dod/simf/visitor_app/MainActivity.kt` | `local_auth`'s `BiometricPrompt` needs a `FragmentActivity` (a plain `FlutterActivity` throws `no_fragment_activity`); `FLAG_SECURE` blocks screenshots app-wide (NCA A11-6). |
+| `MainActivity : FlutterFragmentActivity` + `FLAG_SECURE` | `android/app/src/main/kotlin/com/apexium/simf/MainActivity.kt` | `local_auth`'s `BiometricPrompt` needs a `FragmentActivity` (a plain `FlutterActivity` throws `no_fragment_activity`); `FLAG_SECURE` blocks screenshots app-wide (NCA A11-6). |
 | Launcher mipmaps + adaptive icon | `android/app/src/main/res/mipmap-*` | The white SIMF mark on navy `#01132D` (D-373/D-388), generated once by `dart run flutter_launcher_icons`. |
 | Release signing + R8 keep rules | `android/app/build.gradle.kts`, `android/app/proguard-rules.pro` | Signs from the git-ignored `android/key.properties` (NCA A11-16) and keeps ML Kit's face-detection classes alive under R8. |
 | SIMF title, description, icons, brand colours | `web/index.html`, `web/manifest.json` | The deployed `simf_app` web shell. |
@@ -52,10 +51,24 @@ still on disk, so re-ignoring or regenerating the folder fails the test suite.
 Never committed (git-ignored, owner-provided): `android/key.properties`, any
 `*.jks` / `*.keystore`, `android/local.properties`.
 
-**App identity (D-867).** `applicationId` and `namespace` are both
-`dod.simf.visitor_app`, and `MainActivity.kt` lives under the matching
-`kotlin/dod/simf/visitor_app/` path. `applicationId` is immutable once a Play
-listing exists, so it must not be changed again.
+**App identity.** `applicationId` and `namespace` are both `com.apexium.simf`,
+and `MainActivity.kt` lives under the matching `kotlin/com/apexium/simf/` path.
+
+Changed from `dod.simf.visitor_app` on 2026-08-22, superseding D-867, after the
+owner confirmed nothing had ever been uploaded to a Play Console listing.
+`applicationId` is immutable once a listing exists, so that confirmation was the
+whole precondition — **this cannot be changed again after the first upload.**
+
+A changed `applicationId` means a new build installs *alongside* the old one
+rather than upgrading it, so every device carrying a pre-rename build needs a
+one-time `adb uninstall dod.simf.visitor_app`.
+
+**TLS (D-872).** There is no `networkSecurityConfig` and no pinned certificate.
+The app uses ordinary platform TLS validation against the system trust store;
+`test/repo/platform_projects_tracked_test.dart` asserts the removed bypass files
+and the manifest attribute stay gone. An earlier row in the table above claimed
+`res/raw/simf_api_cert.pem` was present and must be preserved — it had been
+deleted months earlier, and that row was removed on 2026-08-22.
 
 **Launcher name (D-699, applied under D-867).** `android:label="@string/app_name"`
 with `res/values/strings.xml` (`app_name` = `SIMF`) and `res/values-ar/strings.xml`

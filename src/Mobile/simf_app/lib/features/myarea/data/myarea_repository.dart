@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/core/utils/image_upload_mime.dart';
 import 'package:simf_app/features/myarea/data/myarea_endpoints.dart';
 import 'package:simf_app/features/myarea/data/myarea_models.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
@@ -41,20 +42,9 @@ class MyAreaRepository {
       MyAreaEndpoints.avatar,
       bytes: bytes,
       filename: filename,
-      contentType: _avatarMime(filename),
+      contentType: imageUploadMime(filename),
       decodeData: (_) => true,
     );
-  }
-
-  static String _avatarMime(String filename) {
-    final f = filename.toLowerCase();
-    if (f.endsWith('.png')) {
-      return 'image/png';
-    }
-    if (f.endsWith('.webp')) {
-      return 'image/webp';
-    }
-    return 'image/jpeg';
   }
 
   static Map<String, dynamic> _asMap(Object? data) =>

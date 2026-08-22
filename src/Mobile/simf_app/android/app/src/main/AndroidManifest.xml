@@ -1,4 +1,11 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <!-- Every network call the app makes. Declared here rather than left to the
+         merger: INTERNET reaches the release build only as a side-effect of the
+         ML Kit dependency graph (play-services -> transport-backend-cct), and
+         none of the app's own manifests contributed it. Dropping ML Kit face
+         detection would otherwise take network access with it, silently. -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <!-- D-404 — the guided face-capture / liveness flow uses the live camera
          preview (the `camera` plugin); the camera is optional so devices
          without one can still install (and fall back to the gallery). -->
@@ -9,6 +16,20 @@
          local_auth. local_auth_android already merges this permission; declared
          here explicitly so the app's own manifest documents the capability. -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <!-- camera_android_camerax declares RECORD_AUDIO for video capture. This app
+         never records: its only CameraController sets `enableAudio: false`
+         (identity_verification_screen.dart) and there is no microphone code.
+         Removed so the Play listing does not request a microphone the app never
+         opens, and so the Data Safety form has nothing to declare for it. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO"
+        tools:node="remove" />
+    <!-- The merger IMPLIES READ_EXTERNAL_STORAGE from camerax's legacy
+         WRITE_EXTERNAL_STORAGE, and the implied form carries NO maxSdkVersion,
+         so it would apply on every API level. Declared explicitly with the cap
+         instead. Not removed outright: image_picker takes the photo-picker path
+         on API 33+, but the gallery route below that still needs read access. -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
     <application
         android:label="@string/app_name"
         android:name="${applicationName}"

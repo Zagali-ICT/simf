@@ -1,16 +1,24 @@
 # SIMF — .gitignore
 
 # ── Production secrets ────────────────────────────────────────────────
-# The .template.ps1 / filled-overlay pair is gone. deploy/ now holds five
-# set-env-*.ps1 (api, cp, web, edge, webapp) and clean-env.ps1, and those five
-# ARE the operator-facing files: they carry the real connection strings, the
-# JWT signing key, both encryption keys, the SMTP password and the AI key.
+# deploy/ holds five set-env-*.ps1 (api, cp, web, edge, webapp) plus
+# clean-env.ps1. Those five ARE the operator-facing files: they carry the real
+# connection strings, the JWT signing key, both encryption keys, the SMTP
+# password and the AI keys — 18 secret-marked entries in set-env-api.ps1 alone.
 #
-# They are therefore tracked ON PURPOSE, at the owner's instruction, and the
-# ignore rules that used to cover them have been removed. Understand what that
-# means before committing: a credential pushed once is in git history
-# permanently, and removing the file later does not remove it from history.
-# Rotate anything that reaches a remote you do not control.
+# They were tracked ON PURPOSE for a period, and this text used to say so. That
+# is REVERSED as of 2026-08-22, at the owner's instruction: all five are now
+# untracked and operator-supplied. They stay on disk beside clean-env.ps1, which
+# reads `set-env-$Target.ps1` from $PSScriptRoot — so a local deploy still works,
+# while a FRESH CLONE deliberately does not have them.
+#
+# Untracking is NOT rotation. Every secret these files ever carried is still
+# readable in git history, permanently. Rotate anything that reached a remote you
+# do not control — that is the step that actually closes the exposure.
+#
+# Nothing in CI depends on them: azure-pipelines.yml only names them in a comment
+# about not staging them into artifacts, and a deployment job never clones.
+deploy/set-env-*.ps1
 set-env-prod.ps1
 set-env-*.local.ps1
 
