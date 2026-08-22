@@ -775,7 +775,6 @@ class AppL10n {
   String get tileAskModerator => _t('اسأل المحاور', 'Ask the moderator');
 
   // Bottom navigation (KSA Wave-2 shell — frames 512:1492 / 213:963). The
-  // sessions tab reuses [sessionsTitle] ("الجلسات", Figma 206:1732).
   String get navProfile => _t('الملف الشخصى', 'Profile');
 
   // Home — KSA Wave-2 redesign (guest 512:1492 / signed-in 203:1236).
@@ -1138,15 +1137,16 @@ class AppL10n {
 
   // Sessions — daily schedule (Page 016). The two pills + the day strip + the
   // search box all filter the cached programme client-side (Page_016 L-1).
+  // NOT rendered anywhere: D-750 moved the nav tab to [agendaTitle] and the
+  // screen header is [sessionsProgrammeTitle]. Retained per E2E-MOB016-018.
   String get sessionsTitle => _t('الجلسات', 'Sessions');
-  // D-750 — the bottom-nav program/agenda tab label (owner 2026-07-20). Distinct
-  // from [sessionsTitle], which titles the Sessions screen and other surfaces.
+  // D-750 — the bottom-nav program/agenda tab label (owner 2026-07-20).
   String get agendaTitle => _t('الأجندة', 'Agenda');
   String get sessionsSearchHint => _t('البحث', 'Search');
   String get sessionsScheduleSection => _t('المواعيد', 'Schedule');
   // The Sessions screen header (frame 883:2308 node 883:2314 "برنامج الملتقي" —
-  // corrected spelling الملتقى); distinct from the bottom-nav label
-  // ([sessionsTitle] "الجلسات", nav component 206:1732).
+  // corrected spelling الملتقى). This titles the screen; the nav tab uses
+  // [agendaTitle] (D-750).
   String get sessionsProgrammeTitle => _t('برنامج الملتقى', 'Forum programme');
   // D-452 (Figma 883:2320) — the session type tabs (احداث dropped to match
   // the 3-tab frame, owner 2026-07-03).
