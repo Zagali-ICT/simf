@@ -152,24 +152,69 @@ answering it by committing a value.
 
 ---
 
-## 5. Three things that will stall a review, none of them code
+## 5. Review prerequisites: two resolved, two still open
 
-1. **No privacy policy URL exists anywhere in the repository.** Both stores
-   require one, and it is not optional here: the app collects national ID
-   numbers, identity-document photographs and face images. RSNF / MoD legal owes
-   this before either listing can be submitted.
-2. **No reviewer demo account.** Play "App access" and Apple both require working
-   credentials. Visitor sign-in is an **emailed OTP** (D-033), and a store
-   reviewer cannot receive that mail - so a normal test account is not enough.
-   This needs a deliberate answer (a pre-approved reviewer account with a fixed
-   code, or a documented review bypass) and it stalls the review even after a
-   successful upload.
-3. **Listing screenshots cannot be captured on an Android device.**
-   `MainActivity.kt` sets `FLAG_SECURE` app-wide, which blocks screenshots and
-   screen recording. Capture them from an emulator or on iOS, where the
-   screenshot block is an accepted exception (see the iOS note, section 3).
+Owner decisions taken 2026-08-23.
 
----
+### 5.1 Privacy policy - RESOLVED
+
+**https://mod.gov.sa/ar/pages/privacyPolicy.aspx** (verified reachable, HTTP 200).
+Enter it in **both** consoles: Play Console -> App content -> Privacy policy, and
+App Store Connect -> App Privacy -> Privacy Policy URL. It is mandatory in both
+because the app collects national ID numbers, identity-document photographs and
+face images.
+
+**Still open, and a listing can be rejected for it:** the app has **no in-app
+privacy link**. Google requires a policy link inside apps handling sensitive
+data, not only on the listing, and a grep of `lib/` finds no privacy route,
+string or URL anywhere. Adding one is a small UI change (a row in the More /
+About screen opening this URL through `url_launcher`, which is already a
+dependency) and it is NOT in this changeset.
+
+### 5.2 Reviewer demo account - RESOLVED, with work owed
+
+Account: **zagali.sust@gmail.com**.
+
+**The password is deliberately NOT in this repository, and must never be.** It
+belongs in exactly two places, both of which are private form fields, not files:
+Play Console -> App content -> **App access** (provide credentials for the
+sign-in-protected flows), and App Store Connect -> the version's **App Review
+Information** -> Sign-in required. Keep the value in a password manager. Anyone
+adding it to a doc, a README or a pipeline variable has widened the blast radius
+of a store listing to the whole repository history.
+
+**The OTP bypass is owed work, not a setting.** Visitor sign-in is an emailed OTP
+(D-033) and a store reviewer cannot receive that mail, so this account needs a
+path through the second factor. Whatever form it takes, it is a deliberate hole
+in the authentication surface and must be built as one:
+
+- **scoped to this single account**, matched on the stored user id - never on a
+  domain, a prefix, a role, or a build flag that a wider set could satisfy;
+- **auditable** - every use written to the operation log like any other sign-in,
+  so the bypass is visible in the audit trail rather than silent;
+- **removable** - one row or one constant to revoke, and revoked once the app is
+  live and the store no longer needs it;
+- covered by a test asserting **no other account** can take that path.
+
+`tests/SIMF.Api.Tests/BusinessFlow13PermissionMatrixTests.cs` pins the anonymous
+auth surface; whatever is built here must not widen that set without being argued
+for in the same changeset.
+
+### 5.3 In-app account deletion - OWNER WILL FIX
+
+Apple **Guideline 5.1.1(v)** requires an app that supports account creation to
+support account deletion in-app. This app has full in-app sign-up and **no delete
+path at all** - no route, no screen, no endpoint. It is an outright rejection,
+not a warning, and no pipeline work substitutes for it. Owner has taken this;
+it is product work across the app, the API and a retention decision (what is
+erased, what is retained for the audit trail, and for how long).
+
+### 5.4 Listing screenshots - STILL OPEN
+
+`MainActivity.kt` sets `FLAG_SECURE` app-wide, which blocks screenshots and screen
+recording on Android. Capture the store screenshots from an **emulator**, or on
+iOS, where the absence of a screenshot block is the accepted exception recorded
+in `docs/dev/Mobile-iOS-Release-Build.md` section 3.
 
 ## 6. Releasing, once the above is done
 
