@@ -58,7 +58,13 @@ Notes that matter:
   same value, so `androidKeystorePassword` and `androidKeyPassword` in the
   variable group get the same string. (JKS allowed two, but modern `keytool`
   warns that JKS is a proprietary format.)
-- **The alias is `simf-upload`** and must match `androidKeyAlias`.
+- **The alias must match `androidKeyAlias`** in the variable group. The command
+  above suggests `simf-upload`, but the key that was actually generated on
+  2026-08-23 uses the alias **`upload`** - so that is the value to put in the
+  variable group. Confirm yours rather than trusting either name:
+  `cd src/Mobile/simf_app/android && ./gradlew signingReport` prints the alias,
+  the store path and the certificate for the `release` variant without building
+  the app.
 - **Back the `.jks` up somewhere durable and private.** If it is lost after the
   first Play upload, you cannot ship an update to that listing again without
   Google's key-reset process.
@@ -73,6 +79,16 @@ keytool -list -v -keystore simf-upload-keystore.jks -alias simf-upload
 
 The certificate must **not** say `CN=Android Debug`. The pipeline re-checks this
 on every build, against the finished bundle, and fails the run if it does.
+
+**As built, 2026-08-23** (from `./gradlew signingReport`, which reads the real
+config rather than the intent): the `release` variant resolves to the `release`
+signing config, not the debug fallback; the keystore lives **outside the
+repository**; the alias is `upload`; and the certificate is valid until
+**7 January 2054**. Its SHA-256 fingerprint is
+`FD:9C:94:15:00:85:03:70:D2:30:6E:B6:C0:49:2C:68:26:1F:73:5F:4F:41:F4:3F:E9:A8:F2:A2:55:CC:D3:E3` -
+not a secret (it is public in every signed artefact and shown in Play Console),
+and worth keeping here so a future upload signed with a different key is
+recognisable as such immediately.
 
 ---
 
@@ -103,7 +119,7 @@ marked SECRET as secret - that is what keeps them out of the logs:
 |---|---|---|
 | `androidKeystorePassword` | yes | the section 2 password |
 | `androidKeyPassword` | yes | same value, PKCS12 |
-| `androidKeyAlias` | no | `simf-upload` |
+| `androidKeyAlias` | no | `upload` (as generated 2026-08-23; verify with `signingReport`) |
 | `SIMF_APP_KEY` | yes | production app key |
 | `SIMF_SUPPORT_PHONE` | no | shown in the app |
 | `SIMF_SUPPORT_EMAIL` | no | shown in the app |
