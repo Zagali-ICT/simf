@@ -1,0 +1,538 @@
+# SIMF mobile RELEASE pipeline - the Flutter app to Google Play and TestFlight.
+#
+# WHY THIS IS A SEPARATE FILE. `azure-pipelines.yml` builds and deploys the four
+# web apps on every push to `main`. A store release is deliberate, rare, and
+# signs artefacts with material the web pipeline must never touch, so it gets its
+# own file, its own triggers and its own variable group. Nothing here changes
+# that pipeline: its `MobileApp` stage (analyze + test, default OFF) stays as it
+# is, and this file does not duplicate it.
+#
+# NEITHER HALF HAS EVER RUN. Be precise about this, because an earlier draft of
+# this header claimed the Android half "works today" and it does not:
+#   * Android is written against the existing self-hosted Windows pool, but its
+#     first run needs the Flutter SDK and the Android SDK provisioned on that
+#     agent (the same open item azure-pipelines.yml's MobileApp stage carries)
+#     AND the Secure File + variable group from
+#     docs/dev/Mobile-Store-Release.md section 3.
+#   * iOS additionally needs a macOS agent, which does not exist yet. It is
+#     written out in full so it can be REVIEWED before the Mac mini lands, and
+#     it is defaulted OFF because an unmatched `demands` queues for ever instead
+#     of failing. See docs/dev/Mobile-iOS-Release-Build.md.
+#
+# PREREQUISITES - all owner actions, none of them code:
+#   * Variable group `simf-mobile-release` (Pipelines -> Library) holding the
+#     dart-define values. Mark SIMF_APP_KEY and the three signing passwords
+#     SECRET.
+#   * Secure Files (Pipelines -> Library -> Secure files):
+#       - simf-upload-keystore.jks        Android upload key
+#       - simf-play-service-account.json  Google Play service account
+#       - simf-appstore-api-key.p8        App Store Connect API key
+#       - simf-distribution.p12           Apple distribution certificate
+#       - simf-appstore.mobileprovision   App Store provisioning profile
+#   * Marketplace extensions, installed once at organisation level:
+#       - "Google Play"     (ms-vsclient.google-play)
+#       - "Apple App Store" (ms-vsclient.app-store)
+#
+# NOTHING SECRET IS IN THIS FILE. Every credential is referenced by NAME and
+# resolved at run time from the variable group or a Secure File.
+
+name: mobile-$(Date:yyyyMMdd)$(Rev:.r)
+
+# A store build is never automatic. It is started by hand from the Run dialog,
+# which is also where the tick boxes below are chosen.
+trigger: none
+pr: none
+
+parameters:
+- name: buildAndroid
+  displayName: 'Android: build the signed app bundle (.aab)'
+  type: boolean
+  default: true
+- name: publishAndroid
+  displayName: 'Android: upload it to Google Play'
+  type: boolean
+  default: false
+- name: androidTrack
+  displayName: 'Android: which Play track'
+  type: string
+  default: internal
+  values:
+  - internal
+  - alpha
+  - beta
+  - production
+- name: buildIos
+  displayName: 'iOS: build the signed archive (.ipa) - NEEDS THE macOS AGENT'
+  type: boolean
+  default: false
+- name: publishIos
+  displayName: 'iOS: upload it to TestFlight'
+  type: boolean
+  default: false
+
+variables:
+# Holds the dart-define values and the signing passwords. A missing group fails
+# the run at queue time, which is the behaviour we want: a release must not
+# start with half its configuration.
+- group: simf-mobile-release
+- name: flutterApp
+  value: '$(Build.SourcesDirectory)/src/Mobile/simf_app'
+
+stages:
+
+# ---------------------------------------------------------------------------
+- stage: Android
+  displayName: 'Android - signed app bundle'
+  condition: eq('${{ parameters.buildAndroid }}', 'true')
+  jobs:
+  - job: Bundle
+    displayName: 'flutter build appbundle --release'
+    timeoutInMinutes: 60
+    # The `Default` pool holds the two Windows servers AND, once it is
+    # registered, the Mac mini. Every step in this job is Windows PowerShell, so
+    # the OS demand is load-bearing rather than decorative: without it Azure may
+    # schedule this job onto the Mac and fail on the first `Join-Path`.
+    pool:
+      name: Default
+      demands:
+      - Agent.OS -equals Windows_NT
+    steps:
+    - checkout: self
+      fetchDepth: 1
+
+    - powershell: |
+        $flutter = Get-Command flutter -ErrorAction SilentlyContinue
+        if (-not $flutter) {
+          throw 'Flutter SDK not found on PATH. Install Flutter 3.44+ on this agent, add it to PATH, then re-run.'
+        }
+        flutter --version
+        if ($LASTEXITCODE -ne 0) { throw "flutter --version failed (exit $LASTEXITCODE)." }
+      displayName: 'Verify the Flutter SDK'
+
+    - powershell: |
+        foreach ($target in @('.', 'packages/simf_auth_pkg', 'packages/simf_data_pkg')) {
+          $dir = Join-Path '$(flutterApp)' $target
+          Write-Host "flutter pub get -> $dir"
+          Set-Location $dir
+          flutter pub get
+          if ($LASTEXITCODE -ne 0) { throw "flutter pub get failed in $target (exit $LASTEXITCODE)." }
+        }
+      displayName: 'flutter pub get (app + local packages)'
+
+    # The keystore never lives in the repository - the ratchet test
+    # test/repo/platform_projects_tracked_test.dart fails the build if a .jks or
+    # a key.properties ever appears under android/.
+    - task: DownloadSecureFile@1
+      name: uploadKeystore
+      displayName: 'Download the upload keystore'
+      inputs:
+        secureFile: 'simf-upload-keystore.jks'
+
+    - powershell: |
+        # android/app/build.gradle.kts reads this file and falls back to the
+        # DEBUG key when it is absent - silently, producing an artefact Play
+        # rejects. Written here at build time, and never committed.
+        #
+        # NO BOM, DELIBERATELY. `Set-Content -Encoding utf8` under Windows
+        # PowerShell 5.1 writes a UTF-8 BOM, and Gradle reads this file with
+        # java.util.Properties.load(), which decodes ISO-8859-1 - so the BOM
+        # becomes part of the FIRST key name. `storePassword` parses as
+        # "<BOM>storePassword", the lookup returns null, and build.gradle.kts
+        # dies at configuration time on a non-null cast, pointing nowhere near
+        # the real cause. Only the first line is affected, which makes it look
+        # arbitrary. WriteAllLines with UTF8Encoding($false) emits no BOM.
+        $keystore = '$(uploadKeystore.secureFilePath)' -replace '\\', '/'
+        $lines = @(
+          "storePassword=$env:KEYSTORE_PASSWORD",
+          "keyPassword=$env:KEY_PASSWORD",
+          "keyAlias=$env:KEY_ALIAS",
+          "storeFile=$keystore"
+        )
+        $path = Join-Path '$(flutterApp)' 'android/key.properties'
+        [System.IO.File]::WriteAllLines($path, $lines, (New-Object System.Text.UTF8Encoding $false))
+        Write-Host 'key.properties written (values masked).'
+      displayName: 'Write android/key.properties'
+      env:
+        # Secret variables are NOT auto-mapped into the environment - naming
+        # them here is what makes them available, and it keeps them off the
+        # command line where a process listing would show them.
+        KEYSTORE_PASSWORD: $(androidKeystorePassword)
+        KEY_PASSWORD: $(androidKeyPassword)
+        KEY_ALIAS: $(androidKeyAlias)
+
+    - powershell: |
+        # The defines go in a FILE, not on the command line. SIMF_APP_KEY is a
+        # secret, and `--dart-define=SIMF_APP_KEY=...` puts it in the child
+        # process's argv where any local process listing can read it - which
+        # would contradict the env-not-argv reasoning three steps above. Written
+        # BOM-less for the same reason key.properties is.
+        $defines = [ordered]@{
+          SIMF_BUILD             = 'prod'
+          SIMF_APP_KEY           = $env:SIMF_APP_KEY
+          SIMF_SUPPORT_PHONE     = $env:SIMF_SUPPORT_PHONE
+          SIMF_SUPPORT_EMAIL     = $env:SIMF_SUPPORT_EMAIL
+          SIMF_SOCIAL_X          = $env:SIMF_SOCIAL_X
+          SIMF_SOCIAL_INSTAGRAM  = $env:SIMF_SOCIAL_INSTAGRAM
+          SIMF_SOCIAL_LINKEDIN   = $env:SIMF_SOCIAL_LINKEDIN
+          SIMF_SOCIAL_YOUTUBE    = $env:SIMF_SOCIAL_YOUTUBE
+          SIMF_SOCIAL_TIKTOK     = $env:SIMF_SOCIAL_TIKTOK
+        }
+        $path = Join-Path '$(Agent.TempDirectory)' 'simf-defines.json'
+        [System.IO.File]::WriteAllText($path, ($defines | ConvertTo-Json), (New-Object System.Text.UTF8Encoding $false))
+        Write-Host "dart-defines written to $path (values masked)."
+      displayName: 'Write the dart-define file'
+      env:
+        SIMF_APP_KEY: $(SIMF_APP_KEY)
+        SIMF_SUPPORT_PHONE: $(SIMF_SUPPORT_PHONE)
+        SIMF_SUPPORT_EMAIL: $(SIMF_SUPPORT_EMAIL)
+        SIMF_SOCIAL_X: $(SIMF_SOCIAL_X)
+        SIMF_SOCIAL_INSTAGRAM: $(SIMF_SOCIAL_INSTAGRAM)
+        SIMF_SOCIAL_LINKEDIN: $(SIMF_SOCIAL_LINKEDIN)
+        SIMF_SOCIAL_YOUTUBE: $(SIMF_SOCIAL_YOUTUBE)
+        SIMF_SOCIAL_TIKTOK: $(SIMF_SOCIAL_TIKTOK)
+
+    - powershell: |
+        Set-Location '$(flutterApp)'
+        # SIMF_API_BASE is deliberately NOT passed: its default is already the
+        # production mobile edge, so a build with no override cannot ship a dev
+        # host. See docs/dev/Mobile-Android-Release-Build.md section 3.
+        flutter build appbundle --release --dart-define-from-file="$(Agent.TempDirectory)/simf-defines.json"
+        if ($LASTEXITCODE -ne 0) { throw "flutter build appbundle failed (exit $LASTEXITCODE)." }
+      displayName: 'Build the release app bundle'
+
+    - powershell: |
+        # Prove the artefact carries the UPLOAD key, not the debug key. This is
+        # the exact check that catches the silent fallback: a debug-signed
+        # bundle builds and uploads cleanly, right up to Play's rejection.
+        $aab = Join-Path '$(flutterApp)' 'build/app/outputs/bundle/release/app-release.aab'
+        if (-not (Test-Path $aab)) { throw "No app bundle at $aab." }
+        $out = & keytool -printcert -jarfile $aab | Out-String
+        Write-Host $out
+        if ($out -match 'CN=Android Debug') {
+          throw 'The bundle is DEBUG-SIGNED. key.properties did not reach Gradle - Play would reject this.'
+        }
+        Write-Host 'Signed with a non-debug certificate.'
+      displayName: 'Verify the bundle is not debug-signed'
+
+    - powershell: |
+        # R8 obfuscates the release build, so without this file every crash
+        # report from the store is unreadable. Archived per release.
+        $map = Join-Path '$(flutterApp)' 'build/app/outputs/mapping/release/mapping.txt'
+        if (Test-Path $map) {
+          Copy-Item $map (Join-Path '$(Build.ArtifactStagingDirectory)' 'mapping.txt')
+        } else {
+          Write-Warning 'No R8 mapping.txt produced - crash reports will not deobfuscate.'
+        }
+        Copy-Item (Join-Path '$(flutterApp)' 'build/app/outputs/bundle/release/app-release.aab') (Join-Path '$(Build.ArtifactStagingDirectory)' 'app-release.aab')
+      displayName: 'Stage the bundle and the R8 mapping'
+
+    - powershell: |
+        # Both files carry live secrets. Remove them whether the build passed or
+        # failed - a self-hosted agent keeps its working directory between runs.
+        foreach ($path in @(
+          (Join-Path '$(flutterApp)' 'android/key.properties'),
+          (Join-Path '$(Agent.TempDirectory)' 'simf-defines.json')
+        )) {
+          if (Test-Path $path) { Remove-Item $path -Force }
+        }
+        Write-Host 'key.properties and the dart-define file removed from the agent.'
+      displayName: 'Remove the secret files from the agent'
+      condition: always()
+
+    - publish: '$(Build.ArtifactStagingDirectory)'
+      artifact: android-release
+      displayName: 'Publish the android-release artifact'
+
+# ---------------------------------------------------------------------------
+- stage: AndroidPublish
+  displayName: 'Android - upload to Google Play'
+  dependsOn: Android
+  condition: and(succeeded(), eq('${{ parameters.publishAndroid }}', 'true'))
+  jobs:
+  - deployment: PlayUpload
+    displayName: 'Upload the bundle to Google Play'
+    pool:
+      name: Default
+      demands:
+      - Agent.OS -equals Windows_NT
+    # A store upload is irreversible on the production track, so it runs against
+    # an Environment and inherits whatever approval is configured on it.
+    environment: 'Google-Play'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: current
+            artifact: android-release
+
+          - task: DownloadSecureFile@1
+            name: playServiceAccount
+            displayName: 'Download the Play service account'
+            inputs:
+              secureFile: 'simf-play-service-account.json'
+
+          # NOTE: the very FIRST release cannot go through this task. Google
+          # Play will not create the app entry, the store listing, the content
+          # rating or the Data Safety form over the API - all four are console
+          # work. From release two onward this is the whole upload.
+          - task: GooglePlayRelease@4
+            displayName: 'Upload to the ${{ parameters.androidTrack }} track'
+            inputs:
+              authType: JsonFile
+              serviceAccountKey: '$(playServiceAccount.secureFilePath)'
+              applicationId: 'com.apexium.simf'
+              action: SingleBundle
+              bundleFile: '$(Pipeline.Workspace)/android-release/app-release.aab'
+              track: '${{ parameters.androidTrack }}'
+              changesNotSentForReview: false
+
+# ---------------------------------------------------------------------------
+- stage: IOS
+  displayName: 'iOS - signed archive'
+  condition: eq('${{ parameters.buildIos }}', 'true')
+  jobs:
+  - job: Archive
+    displayName: 'flutter build ipa --release'
+    timeoutInMinutes: 90
+    # THE MAC MINI. `Agent.OS` is a built-in capability every agent reports, so
+    # this demand needs no manual capability setup - but it does need a Darwin
+    # agent to exist in the pool, which is why `buildIos` defaults to false.
+    # Without one the job queues indefinitely rather than failing.
+    pool:
+      name: Default
+      demands:
+      - Agent.OS -equals Darwin
+    steps:
+    - checkout: self
+      fetchDepth: 1
+
+    - bash: |
+        set -euo pipefail
+        which flutter || { echo 'Flutter SDK not on PATH for this agent user.'; exit 1; }
+        flutter --version
+        xcodebuild -version
+        pod --version
+      displayName: 'Verify Flutter, Xcode and CocoaPods'
+
+    - bash: |
+        set -euo pipefail
+        cd "$(flutterApp)"
+        for target in . packages/simf_auth_pkg packages/simf_data_pkg; do
+          echo "flutter pub get -> $target"
+          ( cd "$target" && flutter pub get )
+        done
+      displayName: 'flutter pub get (app + local packages)'
+
+    - task: InstallAppleCertificate@2
+      displayName: 'Install the distribution certificate'
+      inputs:
+        certSecureFile: 'simf-distribution.p12'
+        certPwd: $(appleCertificatePassword)
+        # A fresh keychain per run, deleted afterwards, so a shared self-hosted
+        # Mac does not accumulate signing identities between builds.
+        keychain: temp
+
+    # `name:` is load-bearing - without it $(appleProfile.*) resolves to empty
+    # and the export options name no profile at all.
+    - task: InstallAppleProvisioningProfile@1
+      name: appleProfile
+      displayName: 'Install the provisioning profile'
+      inputs:
+        provProfileSecureFile: 'simf-appstore.mobileprovision'
+        removeProfile: true
+
+    - bash: |
+        set -euo pipefail
+        # The task installs into the LEGACY directory only. Current Xcode reads
+        # ~/Library/Developer/Xcode/UserData/Provisioning Profiles instead, so a
+        # CI archive fails with "No profiles were found" while the same profile
+        # works on a developer Mac - which is the worst version of this bug,
+        # because it looks like a machine problem rather than a path problem.
+        # Copied into both; the cleanup step removes the copy.
+        legacy="$HOME/Library/MobileDevice/Provisioning Profiles"
+        current="$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"
+        mkdir -p "$current"
+        cp "$legacy/${PROFILE_UUID}.mobileprovision" "$current/"
+        echo "Profile ${PROFILE_UUID} present in both profile directories."
+      displayName: 'Copy the profile where current Xcode looks for it'
+      env:
+        PROFILE_UUID: $(appleProfile.provisioningProfileUuid)
+
+    - bash: |
+        set -euo pipefail
+        # The checked-in Runner.xcodeproj carries no DEVELOPMENT_TEAM and its
+        # CODE_SIGN_IDENTITY is the flutter-create default "iPhone Developer",
+        # which is a DEVELOPMENT identity and cannot sign a distribution
+        # archive. Supplying it here rather than committing it keeps the team id
+        # and profile name out of the repository, and keeps a developer's local
+        # `flutter run` on automatic signing. ios/Flutter/Release.xcconfig
+        # includes this file optionally (`#include?`), so its absence is not an
+        # error.
+        cat > "$(flutterApp)/ios/Flutter/Signing.xcconfig" <<CFG
+        DEVELOPMENT_TEAM = ${APPLE_TEAM_ID}
+        CODE_SIGN_STYLE = Manual
+        CODE_SIGN_IDENTITY = Apple Distribution
+        CODE_SIGN_IDENTITY[sdk=iphoneos*] = Apple Distribution
+        PROVISIONING_PROFILE_SPECIFIER = ${PROFILE_NAME}
+        CFG
+        echo 'Signing.xcconfig written.'
+      displayName: 'Write the build-time signing xcconfig'
+      env:
+        APPLE_TEAM_ID: $(appleTeamId)
+        PROFILE_NAME: $(appleProfile.provisioningProfileName)
+
+    - bash: |
+        set -euo pipefail
+        cd "$(flutterApp)"
+        # Same reasoning as the Android side: the secret goes in a file, not in
+        # argv. Written to the agent temp directory, removed by the cleanup step.
+        cat > "${DEFINES_FILE}" <<JSON
+        {
+          "SIMF_BUILD": "prod",
+          "SIMF_APP_KEY": "${SIMF_APP_KEY}",
+          "SIMF_SUPPORT_PHONE": "${SIMF_SUPPORT_PHONE}",
+          "SIMF_SUPPORT_EMAIL": "${SIMF_SUPPORT_EMAIL}",
+          "SIMF_SOCIAL_X": "${SIMF_SOCIAL_X}",
+          "SIMF_SOCIAL_INSTAGRAM": "${SIMF_SOCIAL_INSTAGRAM}",
+          "SIMF_SOCIAL_LINKEDIN": "${SIMF_SOCIAL_LINKEDIN}",
+          "SIMF_SOCIAL_YOUTUBE": "${SIMF_SOCIAL_YOUTUBE}",
+          "SIMF_SOCIAL_TIKTOK": "${SIMF_SOCIAL_TIKTOK}"
+        }
+        JSON
+        # The method value: Apple RENAMED it. It is app-store-connect on current
+        # Xcode, and the old app-store now logs a deprecation. That matters HERE
+        # rather than anywhere else because "flutter build ipa" only rewrites the
+        # method when you pass the export-method flag; an export-options-plist
+        # like this one reaches xcodebuild verbatim. If the Mac lands on an Xcode
+        # old enough to reject it, run "xcodebuild -help" and read the accepted
+        # values under "Available keys for -exportOptionsPlist".
+        #
+        # This note lives out here, not inside the plist, for two reasons an XML
+        # comment cannot survive: the heredoc is UNQUOTED so APPLE_TEAM_ID
+        # expands, which makes any backtick a command substitution; and XML
+        # forbids a double hyphen inside a comment, so the flag names above
+        # would produce a plist that xcodebuild refuses to parse.
+        cat > "${EXPORT_PLIST}" <<PLIST
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+          <key>method</key><string>app-store-connect</string>
+          <key>teamID</key><string>${APPLE_TEAM_ID}</string>
+          <key>signingStyle</key><string>manual</string>
+          <key>provisioningProfiles</key>
+          <dict>
+            <key>com.apexium.simf</key><string>${PROFILE_NAME}</string>
+          </dict>
+        </dict>
+        </plist>
+        PLIST
+        flutter build ipa --release \
+          --export-options-plist="${EXPORT_PLIST}" \
+          --dart-define-from-file="${DEFINES_FILE}"
+      displayName: 'Build the signed .ipa'
+      env:
+        DEFINES_FILE: $(Agent.TempDirectory)/simf-defines.json
+        EXPORT_PLIST: $(Agent.TempDirectory)/ExportOptions.plist
+        APPLE_TEAM_ID: $(appleTeamId)
+        PROFILE_NAME: $(appleProfile.provisioningProfileName)
+        SIMF_APP_KEY: $(SIMF_APP_KEY)
+        SIMF_SUPPORT_PHONE: $(SIMF_SUPPORT_PHONE)
+        SIMF_SUPPORT_EMAIL: $(SIMF_SUPPORT_EMAIL)
+        SIMF_SOCIAL_X: $(SIMF_SOCIAL_X)
+        SIMF_SOCIAL_INSTAGRAM: $(SIMF_SOCIAL_INSTAGRAM)
+        SIMF_SOCIAL_LINKEDIN: $(SIMF_SOCIAL_LINKEDIN)
+        SIMF_SOCIAL_YOUTUBE: $(SIMF_SOCIAL_YOUTUBE)
+        SIMF_SOCIAL_TIKTOK: $(SIMF_SOCIAL_TIKTOK)
+
+    - bash: |
+        set -euo pipefail
+        cp "$(flutterApp)"/build/ios/ipa/*.ipa "$(Build.ArtifactStagingDirectory)/"
+        # dSYMs deobfuscate iOS crash reports, the job mapping.txt does on
+        # Android. They are not inside the .ipa, so archive them separately.
+        if [ -d "$(flutterApp)/build/ios/archive/Runner.xcarchive/dSYMs" ]; then
+          ( cd "$(flutterApp)/build/ios/archive/Runner.xcarchive" && zip -qr "$(Build.ArtifactStagingDirectory)/dSYMs.zip" dSYMs )
+        else
+          echo '##vso[task.logissue type=warning]No dSYMs produced - iOS crash reports will not symbolicate.'
+        fi
+      displayName: 'Stage the .ipa and the dSYMs'
+
+    - bash: |
+        # The same rule the Android job follows: the Mac is a shared self-hosted
+        # agent that keeps its working directory, and three of these files carry
+        # the production app key or name the signing identity.
+        rm -f "$(Agent.TempDirectory)/simf-defines.json" \
+              "$(Agent.TempDirectory)/ExportOptions.plist" \
+              "$(flutterApp)/ios/Flutter/Signing.xcconfig" \
+              "$(flutterApp)/ios/Flutter/Generated.xcconfig" \
+              "$(flutterApp)/ios/Flutter/flutter_export_environment.sh"
+        # `removeProfile: true` on the task cleans the LEGACY directory only, so
+        # the copy this job made would otherwise survive on a shared Mac.
+        if [ -n "${PROFILE_UUID:-}" ]; then
+          rm -f "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles/${PROFILE_UUID}.mobileprovision"
+        fi
+        echo 'Signing and define files removed from the agent.'
+      displayName: 'Remove the secret files from the agent'
+      condition: always()
+      env:
+        PROFILE_UUID: $(appleProfile.provisioningProfileUuid)
+
+    - publish: '$(Build.ArtifactStagingDirectory)'
+      artifact: ios-release
+      displayName: 'Publish the ios-release artifact'
+
+# ---------------------------------------------------------------------------
+- stage: IosPublish
+  displayName: 'iOS - upload to TestFlight'
+  dependsOn: IOS
+  condition: and(succeeded(), eq('${{ parameters.publishIos }}', 'true'))
+  jobs:
+  - deployment: TestFlightUpload
+    displayName: 'Upload the archive to TestFlight'
+    pool:
+      name: Default
+      demands:
+      - Agent.OS -equals Darwin
+    environment: 'Apple-TestFlight'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: current
+            artifact: ios-release
+
+          - task: DownloadSecureFile@1
+            name: appStoreKey
+            displayName: 'Download the App Store Connect API key'
+            inputs:
+              secureFile: 'simf-appstore-api-key.p8'
+
+          - bash: |
+              set -euo pipefail
+              # AppStoreRelease@1's `apitoken` input is the base64-encoded
+              # CONTENT of the .p8, NOT a path to it - the task hands the value
+              # straight to fastlane with is_key_content_base64=true, so a path
+              # gets base64-DECODED into binary garbage and authentication
+              # fails after the archive is already built. The path arrives via
+              # `env:` so Azure's $(...) macro substitution cannot collide with
+              # bash command substitution.
+              key=$(base64 -i "${P8_PATH}" | tr -d '\n')
+              echo "##vso[task.setvariable variable=appStoreKeyB64;issecret=true]${key}"
+            displayName: 'Base64-encode the App Store Connect key'
+            env:
+              P8_PATH: $(appStoreKey.secureFilePath)
+
+          # As on the Android side, the FIRST submission needs console work: the
+          # app record, the listing, the privacy questionnaire and the
+          # export-compliance answer. This task uploads builds, nothing else.
+          - task: AppStoreRelease@1
+            displayName: 'Upload the build to TestFlight'
+            inputs:
+              authType: ApiKey
+              apiKeyId: $(appStoreKeyId)
+              apiKeyIssuerId: $(appStoreIssuerId)
+              apitoken: $(appStoreKeyB64)
+              releaseTrack: TestFlight
+              appIdentifier: 'com.apexium.simf'
+              ipaPath: '$(Pipeline.Workspace)/ios-release/*.ipa'
+              shouldSkipWaitingForProcessing: true

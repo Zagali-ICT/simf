@@ -16,8 +16,11 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Portrait-only: the SIMF app is designed for vertical use, so lock out
-  // landscape / auto-rotate app-wide. The native android/ios folders are
-  // generated (simf-run), so this Flutter-side lock is the source of truth.
+  // landscape / auto-rotate app-wide. Both native projects are TRACKED, not
+  // generated (BUG-010), and the iOS Info.plist deliberately still PERMITS
+  // landscape - the live player rotates into it for fullscreen video, and a
+  // plist that forbade it would block that rotation. So this Flutter-side
+  // lock stays the source of truth for what the app actually does.
   await SystemChrome.setPreferredOrientations(
     const <DeviceOrientation>[DeviceOrientation.portraitUp],
   );

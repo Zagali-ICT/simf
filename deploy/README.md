@@ -614,12 +614,16 @@ being published to the internet.
 It is served on its **own** name. `api.simrsnf.com` stays with the API and is
 reserved for it, resolving inside the estate only.
 
-**This needs a mobile app release.** `build_config.dart` compiles the base URL in
-(`String.fromEnvironment`, default `https://api.simrsnf.com/api/v1`), so an
-installed app talks to the API directly and knows nothing about the edge. Routing
-mobile traffic through it means rebuilding with `--dart-define` pointing at
-`edge.simrsnf.com` and shipping to both stores. **Withdrawing the API's public DNS
-record and shipping that release have to land together**, or the installed app has
+**This needs a mobile app release.** `build_config.dart` compiles the base URL
+in (`String.fromEnvironment`), and its default is now
+**`https://edge.simrsnf.com/api/v1`** — so a build with no `--dart-define` at all
+already routes through the edge, and no override is needed to get it there.
+
+What still gates this is *shipping*, not building. Every **already-installed**
+build compiled in `https://api.simrsnf.com/api/v1` and knows nothing about the
+edge, and a compiled-in URL cannot be changed from the server. **Withdrawing the
+API's public DNS record and shipping the edge-default release have to land
+together**, or the installed app has
 nothing to reach in between.
 
 **Addressing.** Hostnames, never raw IPs: every certificate bypass was removed on
