@@ -147,6 +147,13 @@ var rateLimitOptions =
     builder.Configuration.GetSection(RateLimitOptions.SectionName).Get<RateLimitOptions>()
     ?? new RateLimitOptions();
 
+// The X-App-Key gate. No AppKey section anywhere means an empty key list, which
+// means the gate is inert — the deliberate default, so that shipping this cannot
+// reject a request from a client built before it existed.
+var appKeyOptions =
+    builder.Configuration.GetSection(AppKeyOptions.SectionName).Get<AppKeyOptions>()
+    ?? new AppKeyOptions();
+
 // True when the resolved endpoint declares the operational
 // rate-limit policy. Reads the metadata that RequireRateLimiting(...) attaches,
 // so the global-limiter exemption is derived from the endpoints themselves and
@@ -677,6 +684,14 @@ if (webCorsEnabled)
 {
     app.UseCors(devWebCorsPolicy);
 }
+
+// The X-App-Key gate on /api/v1/app/*. INERT unless the AppKey section
+// configures keys, so this deploys with no behaviour change and no client
+// coordination; read AppKeyOptions before populating it, because turning it on
+// before a build carrying the key has shipped locks out every installed app.
+// After CORS so a preflight is answered, after ErrorHandlingMiddleware so its
+// refusal comes back in the standard ApiResult envelope.
+app.UseMiddleware<AppKeyMiddleware>(appKeyOptions);
 
 // Peek the request body for the email field on credential
 // paths so the "auth-email" rate-limit policy can key its partition on

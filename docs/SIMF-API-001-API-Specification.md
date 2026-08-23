@@ -94,14 +94,42 @@ Every request to the API carries these headers.
 
 | Header | Required | Purpose |
 |--------|----------|---------|
-| `X-App-Key` | Yes | Identifies the calling application. A request without a valid key is rejected. |
+| `X-App-Key` | Yes on `/app/*` | Identifies the calling application. Enforced on the mobile surface only, and only while keys are configured - see below. |
 | `X-Device-Type` | Yes | One of `Web`, `ControlPanel`, `Android`, `iOS`. Used for logging and device-aware behaviour. |
 | `Accept-Language` | Yes | `ar` or `en`. Sets the language of messages in the response. `ar` is the default if the value is missing or unrecognised. |
 | `Authorization` | For protected endpoints | `Bearer <access token>`. |
 | `X-Anti-Forgery` | For state-changing requests | The anti-forgery (SFC) token. Required on POST, PUT, PATCH and DELETE. |
 
-A request that is missing `X-App-Key` or, on a protected endpoint, a valid
-`Authorization` header, is rejected before it reaches the endpoint logic.
+A request missing a valid `Authorization` header on a protected endpoint is
+rejected before it reaches the endpoint logic.
+
+### 5.1 `X-App-Key`, precisely
+
+This paragraph used to say a request without a valid `X-App-Key` is rejected.
+**That was not true**: the app and the website both sent the header and no code
+on the server read it, so the specification described a control that did not
+exist. It is now implemented, and the accurate statement is narrower:
+
+- **Scope is `/api/v1/app/*` only.** `/auth/*` and `/admin/*` are NOT gated by
+  it. They are driven by the website and the Control Panel as well, and their
+  protection is authentication and permissions - never a value shipped inside a
+  client.
+- **It is inert until keys are configured.** With no `AppKey:Keys` in
+  configuration the gate passes every request, which is the default. That is
+  deliberate: enabling it before a client build carrying the key has shipped
+  would lock out every installed app.
+- A key that is present but unrecognised is refused exactly like a missing one,
+  with `403` and code `FORBIDDEN` in the standard envelope.
+- A CORS preflight (`OPTIONS`) is never gated - it carries no custom header by
+  definition.
+- More than one key is accepted at once, so a key can be rotated while builds
+  roll out.
+
+**Do not mistake it for authentication.** The value ships inside the Flutter
+binary and is readable from a published APK. It raises the cost of casual
+scripted traffic and lets app traffic be told apart from the website's; it
+protects nothing on its own, and no endpoint's own gate may be relaxed because
+it exists.
 
 ## 6. The response envelope
 
