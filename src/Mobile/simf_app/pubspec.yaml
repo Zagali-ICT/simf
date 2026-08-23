@@ -14,7 +14,7 @@ description: SIMF Maritime Forum — the Flutter mobile application for Android 
 # fail-open by design (it needs both a minimum version and a usable store URL),
 # so an empty value simply keeps it off until a real store URL exists to send
 # people to. Any value set later must be <= the shipped version below.
-version: 1.0.1+18
+version: 1.0.1+19
 publish_to: none
 
 environment:

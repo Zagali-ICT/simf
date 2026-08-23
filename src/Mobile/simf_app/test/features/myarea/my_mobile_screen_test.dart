@@ -61,6 +61,9 @@ class _FakeProfileRepository implements ProfileRepository {
   UpsertUserProfileRequest? upserted;
 
   @override
+  Future<void> deleteMyAccount() async {}
+
+  @override
   Future<UserProfileResponse> getMyProfile() async {
     if (throwOnLoad) {
       throw const ApiFailure(code: 'X', message: 'load-boom');

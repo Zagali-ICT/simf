@@ -75,6 +75,9 @@ class _FakeProfileRepository implements ProfileRepository {
   );
 
   @override
+  Future<void> deleteMyAccount() async {}
+
+  @override
   Future<List<InterestItem>> getInterests() async => interests;
 
   @override

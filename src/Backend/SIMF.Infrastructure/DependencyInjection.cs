@@ -308,6 +308,7 @@ public static class DependencyInjection
         services.AddScoped<ITotpEnrollmentService, TotpEnrollmentService>();
         services.AddScoped<IRecoveryCodeService, RecoveryCodeService>();
         services.AddScoped<IAccountService, AccountService>();
+        services.AddScoped<IAccountDeletionService, AccountDeletionService>();
         // AdminAccountService implements the five focused
         // interfaces split out of the original aggregate
         // IAdminAccountService. One scoped instance backs all five

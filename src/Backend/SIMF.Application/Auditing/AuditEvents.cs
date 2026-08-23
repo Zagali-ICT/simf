@@ -89,6 +89,11 @@ public static class AuditEvents
     // configured threshold. A system action (no actor).
     public const string AccountDormantDisabled = "Account.DormantDisabled";
 
+    // Self-service deletion. The row survives the erasure on purpose: it records
+    // WHO asked and WHEN, which is the one fact a deletion must still be able to
+    // answer afterwards, and the subject columns are captured before the scrub.
+    public const string AccountSelfDeleted = "Account.SelfDeleted";
+
     // An email-enqueue failure that lands AFTER the matching
     // code row is already persisted to the DB. The success audit was
     // already written; this row tells SOC the user never actually got
