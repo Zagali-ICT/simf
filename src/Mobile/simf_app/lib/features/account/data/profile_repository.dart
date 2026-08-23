@@ -117,6 +117,19 @@ class ProfileRepository {
     );
   }
 
+  /// `DELETE /app/account` — permanently erases the signed-in user's account.
+  ///
+  /// Irreversible: the server scrubs the profile, destroys the identity
+  /// document and photos, revokes every session and device key, and disables
+  /// the account. Idempotent, so a retry after a dropped connection is safe.
+  /// The caller must sign out afterwards — the session is dead on the server.
+  Future<void> deleteMyAccount() {
+    return _client.delete<bool>(
+      AccountEndpoints.deleteMe,
+      decodeData: (_) => true,
+    );
+  }
+
   static Map<String, dynamic> _asMap(Object? data) =>
       (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
 

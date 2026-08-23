@@ -5,6 +5,7 @@ import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/features/account/biometric_auth.dart';
+import 'package:simf_app/features/myarea/widgets/delete_account_tile.dart';
 import 'package:simf_app/features/myarea/widgets/my_area_more_row.dart';
 
 /// The المزيد section of the My-Area dashboard (frame 213:963), which ends at
@@ -61,6 +62,11 @@ class MyAreaMoreSection extends StatelessWidget {
         // Face-ID sign-in enable/disable (D-445) — self-hides when the device
         // has no usable biometric. Also offered in the side menu.
         const FaceIdToggleTile(),
+        // Google Play requires an in-app account-deletion path. It sits last
+        // and reads in the danger colour, because it is the only irreversible
+        // action on this screen.
+        const SizedBox(height: SimfTokens.space4),
+        const DeleteAccountTile(),
       ],
     );
   }

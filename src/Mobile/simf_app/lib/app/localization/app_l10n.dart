@@ -481,6 +481,22 @@ class AppL10n {
   String get regStatusError =>
       _t('تعذر تحميل حالة الحساب.', 'Could not load your account status.');
   String get reCheckButton => _t('إعادة التحقق', 'Re-check');
+  String get deleteAccountLink => _t('حذف حسابي', 'Delete my account');
+  String get deleteAccountConfirmTitle =>
+      _t('حذف الحساب نهائياً', 'Delete account permanently');
+  String get deleteAccountConfirmBody => _t(
+        'سيتم حذف بياناتك الشخصية وصورك ووثيقة هويتك نهائياً، وإلغاء بطاقتك '
+            'وجميع أجهزتك المسجلة. لا يمكن التراجع عن هذا الإجراء.',
+        'Your personal data, photos and identity document will be permanently '
+            'erased, and your badge and every enrolled device revoked. This '
+            'cannot be undone.',
+      );
+  String get deleteAccountConfirmAction => _t('حذف نهائي', 'Delete for ever');
+  String get deleteAccountFailed => _t(
+        'تعذر حذف الحساب. حاول مرة أخرى.',
+        'Could not delete the account. Please try again.',
+      );
+
   String get signOutLink => _t('تسجيل الخروج', 'Sign out');
   // D-373 — the My-Area sign-out confirmation.
   String get signOutConfirmBody => _t(

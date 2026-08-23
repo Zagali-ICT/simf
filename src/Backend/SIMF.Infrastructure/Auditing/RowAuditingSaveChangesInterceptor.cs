@@ -95,6 +95,28 @@ internal sealed class RowAuditingSaveChangesInterceptor(
         "Number",
         "SaudiMobile",
         "InternationalMobile",
+        // A2-10, extended 2026-08-23 for self-service deletion. Erasing a
+        // profile writes the OLD value into OldValuesJson, so without these the
+        // deletion re-persisted the very PII it was erasing into a table nothing
+        // prunes - the audit trail became the leak. The trail still records THAT
+        // each column changed, which is what it exists for.
+        //
+        // MobileNumber is the live column that superseded the two above; it is
+        // encrypted at rest, but the interceptor reads the model (plaintext)
+        // value, so it needs naming here exactly as they did.
+        "MobileNumber",
+        "Name",
+        "NameArabic",
+        "PlaceOfBirth",
+        "DateOfBirth",
+        "PlateNumber",
+        "MawjId",
+        "DisplayName",
+        "Email",
+        "NormalizedEmail",
+        "UserName",
+        "NormalizedUserName",
+        "PhoneNumber",
     };
 
     // Each suffix has to earn its place, because a suffix rule is blind: it
