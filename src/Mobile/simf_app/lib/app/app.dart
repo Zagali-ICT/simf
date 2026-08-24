@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/localization/locale_controller.dart';
 import 'package:simf_app/app/router.dart';
 import 'package:simf_app/app/theme/app_theme.dart';
+import 'package:simf_app/app/theme/system_ui.dart';
 import 'package:simf_app/core/session/session_guard.dart';
 import 'package:simf_app/features/accessibility/data/accessibility_controller.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
@@ -71,7 +73,10 @@ class SimfApp extends ConsumerWidget {
           // every screen: it marks activity on each touch, silently refreshes
           // the access token while active, and paints the idle timeout
           // countdown.
-          child: SessionGuard(child: child ?? const SizedBox.shrink()),
+          child: AnnotatedRegion<SystemUiOverlayStyle>(
+            value: SimfSystemUi.edgeToEdge,
+            child: SessionGuard(child: child ?? const SizedBox.shrink()),
+          ),
         );
       },
     );
