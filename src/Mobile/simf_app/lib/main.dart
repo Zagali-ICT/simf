@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/misc.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:simf_app/app/app.dart';
 import 'package:simf_app/app/localization/locale_controller.dart';
+import 'package:simf_app/app/theme/system_ui.dart';
 import 'package:simf_app/core/env/build_config.dart';
 import 'package:simf_app/core/startup/app_version_policy.dart';
 import 'package:simf_app/features/accessibility/data/accessibility_controller.dart';
@@ -14,6 +15,12 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Android 15/API 35+ enforces edge-to-edge, and Android 16 removes the
+  // opt-out. Request it explicitly so Android 10-14 get the same layout path
+  // and the app always draws under transparent system bars.
+  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  SystemChrome.setSystemUIOverlayStyle(SimfSystemUi.edgeToEdge);
 
   // Portrait-only: the SIMF app is designed for vertical use, so lock out
   // landscape / auto-rotate app-wide. Both native projects are TRACKED, not

@@ -89,3 +89,7 @@ kotlin {
 flutter {
     source = "../.."
 }
+
+dependencies {
+    implementation("androidx.core:core:1.18.0")
+}

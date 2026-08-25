@@ -2,6 +2,7 @@ package com.apexium.simf
 
 import android.os.Bundle
 import android.view.WindowManager
+import androidx.core.view.WindowCompat
 import io.flutter.embedding.android.FlutterFragmentActivity
 
 // FlutterFragmentActivity (not FlutterActivity) is REQUIRED by local_auth: its
@@ -18,5 +19,6 @@ class MainActivity : FlutterFragmentActivity() {
             WindowManager.LayoutParams.FLAG_SECURE,
         )
         super.onCreate(savedInstanceState)
+        WindowCompat.enableEdgeToEdge(window)
     }
 }
