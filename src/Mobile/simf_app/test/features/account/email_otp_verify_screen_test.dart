@@ -48,7 +48,20 @@ class _FakeAuthController extends AuthController {
   }
 }
 
-Future<void> _pump(WidgetTester tester, _FakeAuthController controller) async {
+class _SignedOutAuthController extends AuthController {
+  bool resendCalled = false;
+
+  @override
+  AuthState build() => const AuthStateSignedOut();
+
+  @override
+  Future<int> resendOtp() async {
+    resendCalled = true;
+    return 60;
+  }
+}
+
+Future<void> _pump(WidgetTester tester, AuthController controller) async {
   final router = GoRouter(
     initialLocation: '/auth/verify-otp',
     routes: <RouteBase>[
@@ -89,6 +102,9 @@ Future<void> _pump(WidgetTester tester, _FakeAuthController controller) async {
 FilledButton _verifyButton(WidgetTester tester) =>
     tester.widget<FilledButton>(find.byType(FilledButton));
 
+Finder _countdownText(String value) =>
+    find.textContaining(value, findRichText: true);
+
 void main() {
   group('EmailOtpVerifyScreen (Page 003 2FA — frame 758:2616)', () {
     testWidgets('renders the recipient email, the six boxes and the controls',
@@ -128,6 +144,54 @@ void main() {
       await tester.pump(); // settle the error setState
 
       expect(controller.verifiedCode, '123456');
+    });
+
+    testWidgets('resend countdown ticks down from two minutes', (tester) async {
+      await _pump(tester, _FakeAuthController());
+
+      expect(_countdownText('02:00'), findsOneWidget);
+
+      await tester.pump(const Duration(seconds: 1));
+
+      expect(_countdownText('01:59'), findsOneWidget);
+    });
+
+    testWidgets('resend calls the OTP resend endpoint and restarts cooldown',
+        (tester) async {
+      final controller = _FakeAuthController();
+      await _pump(tester, controller);
+
+      await tester.pump(const Duration(seconds: 120));
+      expect(_countdownText('00:00'), findsOneWidget);
+
+      await tester.tap(find.widgetWithText(TextButton, 'Resend'));
+      await tester.pump();
+      await tester.pump();
+
+      expect(controller.resendCalled, isTrue);
+      expect(_countdownText('01:00'), findsOneWidget);
+      expect(find.text('A new code was sent to your email'), findsOneWidget);
+    });
+
+    testWidgets('resend is disabled when the OTP ticket is no longer present',
+        (tester) async {
+      final controller = _SignedOutAuthController();
+      await _pump(tester, controller);
+
+      expect(
+        find.text(
+          'The verification session has expired. '
+          'Sign in again to request a new code.',
+        ),
+        findsOneWidget,
+      );
+
+      await tester.pump(const Duration(seconds: 120));
+      await tester.tap(find.widgetWithText(TextButton, 'Resend'));
+      await tester.pump();
+
+      expect(controller.resendCalled, isFalse);
+      expect(find.text('A new code was sent to your email'), findsNothing);
     });
 
     testWidgets('the back chevron with no history falls back to sign-in',

@@ -669,6 +669,10 @@ class AppL10n {
   // #12 — confirmation that a fresh sign-in code was emailed in place.
   String get otpResentToast =>
       _t('تم إرسال رمز جديد إلى بريدك', 'A new code was sent to your email');
+  String get otpSessionExpired => _t(
+        'انتهت جلسة التحقق. سجّل الدخول مرة أخرى لطلب رمز جديد.',
+        'The verification session has expired. Sign in again to request a new code.',
+      );
   String get forgotPasswordTitle => _t('نسيت كلمة المرور', 'Forgot password');
   String get forgotPasswordBody => _t(
         'أدخل بريدك الإلكتروني المسجّل وسنرسل لك رمز إعادة تعيين كلمة المرور.',

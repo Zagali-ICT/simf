@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/gestures.dart' show TapGestureRecognizer;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -46,30 +45,41 @@ class _EmailOtpVerifyScreenState extends ConsumerState<EmailOtpVerifyScreen> {
   static const int _resendSeconds = 120;
   int _secondsLeft = _resendSeconds;
   Timer? _ticker;
-  // Owned once (not rebuilt each tick) so it is disposed cleanly.
-  late final TapGestureRecognizer _resendTap;
 
   @override
   void initState() {
     super.initState();
     // The focused-box highlight follows the hidden field's focus.
     _codeFocus.addListener(() => setState(() {}));
-    _resendTap = TapGestureRecognizer()..onTap = () => unawaited(_resend());
-    _startCountdown();
+    if (_hasOtpTicket) {
+      _startCountdown(notify: false);
+    } else {
+      _secondsLeft = 0;
+    }
   }
 
-  void _startCountdown({int? seconds}) {
+  void _startCountdown({int? seconds, bool notify = true}) {
     _ticker?.cancel();
-    setState(() => _secondsLeft = seconds ?? _resendSeconds);
+    final cooldown = seconds ?? _resendSeconds;
+    final next = cooldown <= 0 ? 0 : cooldown;
+    if (notify && mounted) {
+      setState(() => _secondsLeft = next);
+    } else {
+      _secondsLeft = next;
+    }
+    if (next == 0) {
+      return;
+    }
     _ticker = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted) {
+        timer.cancel();
         return;
       }
-      if (_secondsLeft <= 1) {
+      setState(() {
+        _secondsLeft = _secondsLeft <= 1 ? 0 : _secondsLeft - 1;
+      });
+      if (_secondsLeft == 0) {
         timer.cancel();
-        setState(() => _secondsLeft = 0);
-      } else {
-        setState(() => _secondsLeft -= 1);
       }
     });
   }
@@ -79,13 +89,16 @@ class _EmailOtpVerifyScreenState extends ConsumerState<EmailOtpVerifyScreen> {
   @override
   void dispose() {
     _ticker?.cancel();
-    _resendTap.dispose();
     _codeFocus.dispose();
     _code.dispose();
     super.dispose();
   }
 
-  bool get _canSubmit => _code.text.trim().length == 6 && !_busy;
+  bool get _hasOtpTicket =>
+      ref.read(authControllerProvider) is AuthStateAwaitingOtp;
+
+  bool get _canSubmit =>
+      _code.text.trim().length == 6 && !_busy && _hasOtpTicket;
 
   Future<void> _submit() async {
     final code = _code.text.trim();
@@ -93,6 +106,10 @@ class _EmailOtpVerifyScreenState extends ConsumerState<EmailOtpVerifyScreen> {
       return;
     }
     final l10n = AppL10n.of(context);
+    if (!_hasOtpTicket) {
+      setState(() => _error = l10n.otpSessionExpired);
+      return;
+    }
     setState(() {
       _busy = true;
       _error = null;
@@ -132,6 +149,14 @@ class _EmailOtpVerifyScreenState extends ConsumerState<EmailOtpVerifyScreen> {
   Future<void> _resend() async {
     final l10n = AppL10n.of(context);
     final messenger = ScaffoldMessenger.of(context);
+    if (!_hasOtpTicket) {
+      _ticker?.cancel();
+      setState(() {
+        _secondsLeft = 0;
+        _error = l10n.otpSessionExpired;
+      });
+      return;
+    }
     setState(() {
       _busy = true;
       _error = null;
@@ -144,7 +169,15 @@ class _EmailOtpVerifyScreenState extends ConsumerState<EmailOtpVerifyScreen> {
       if (!mounted) {
         return;
       }
-      _startCountdown(seconds: cooldown > 0 ? cooldown : _resendSeconds);
+      if (cooldown <= 0) {
+        _ticker?.cancel();
+        setState(() {
+          _secondsLeft = 0;
+          _error = l10n.otpSessionExpired;
+        });
+        return;
+      }
+      _startCountdown(seconds: cooldown);
       messenger.showSnackBar(SnackBar(content: Text(l10n.otpResentToast)));
     } on AuthFailure catch (failure) {
       if (!mounted) {
@@ -172,7 +205,9 @@ class _EmailOtpVerifyScreenState extends ConsumerState<EmailOtpVerifyScreen> {
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
     final authState = ref.watch(authControllerProvider);
-    final email = authState is AuthStateAwaitingOtp ? authState.email : null;
+    final hasOtpTicket = authState is AuthStateAwaitingOtp;
+    final email = hasOtpTicket ? authState.email : null;
+    final errorText = _error ?? (hasOtpTicket ? null : l10n.otpSessionExpired);
     return AuthScreenScaffold(
       title: l10n.otpHeaderTitle,
       onBack: _back,
@@ -215,10 +250,10 @@ class _EmailOtpVerifyScreenState extends ConsumerState<EmailOtpVerifyScreen> {
             prefix: l10n.otpResendCountdown,
             remaining: _countdownLabel,
           ),
-          if (_error != null) ...<Widget>[
+          if (errorText != null) ...<Widget>[
             const SizedBox(height: SimfTokens.space3),
             Text(
-              _error!,
+              errorText,
               textAlign: TextAlign.center,
               style: SimfTokens.labelDangerSm,
             ),
@@ -239,7 +274,7 @@ class _EmailOtpVerifyScreenState extends ConsumerState<EmailOtpVerifyScreen> {
           ),
         ),
         const SizedBox(height: SimfTokens.space4),
-        _buildResendRow(l10n),
+        _buildResendRow(l10n, hasOtpTicket: hasOtpTicket),
         const SizedBox(height: SimfTokens.space6),
       ],
     );
@@ -248,28 +283,32 @@ class _EmailOtpVerifyScreenState extends ConsumerState<EmailOtpVerifyScreen> {
   /// Resend row (frame 758:2616). When the countdown ends, the underlined
   /// "إعادة الإرسال" re-issues the code in place (resend-otp, #12) — it does
   /// not return to sign-in.
-  Widget _buildResendRow(AppL10n l10n) {
+  Widget _buildResendRow(AppL10n l10n, {required bool hasOtpTicket}) {
     // Gate on !_busy as well as the countdown, so the resend can't fire a
     // second request on top of an in-flight verify (matches the sibling OTP
     // screens).
-    final canResend = _secondsLeft == 0 && !_busy;
-    return Text.rich(
-      TextSpan(
-        children: <InlineSpan>[
-          TextSpan(text: '${l10n.otpDidntReceive} '),
-          TextSpan(
-            text: l10n.otpResendAction,
-            style: TextStyle(
-              color: canResend ? SimfTokens.accent : SimfTokens.beigeBorder,
+    final canResend = hasOtpTicket && _secondsLeft == 0 && !_busy;
+    return Wrap(
+      alignment: WrapAlignment.center,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: <Widget>[
+        Text('${l10n.otpDidntReceive} ', style: SimfTokens.bodyWhiteMd),
+        TextButton(
+          onPressed: canResend ? () => unawaited(_resend()) : null,
+          style: TextButton.styleFrom(
+            foregroundColor: SimfTokens.accent,
+            disabledForegroundColor: SimfTokens.beigeBorder,
+            padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space2),
+            minimumSize: const Size(48, 40),
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            textStyle: SimfTokens.bodyWhiteMd.copyWith(
               fontWeight: FontWeight.w700,
               decoration: TextDecoration.underline,
             ),
-            recognizer: canResend ? _resendTap : null,
           ),
-        ],
-      ),
-      textAlign: TextAlign.center,
-      style: SimfTokens.bodyWhiteMd,
+          child: Text(l10n.otpResendAction),
+        ),
+      ],
     );
   }
 }
