@@ -3,6 +3,7 @@ using FastEndpoints;
 using SIMF.Api.RequestContext;
 using SIMF.Application.Organisations.Abstractions;
 using SIMF.Common;
+using SIMF.Common.Options;
 using SIMF.Contracts.Organisations;
 
 namespace SIMF.Api.Endpoints.Admin;
@@ -236,7 +237,12 @@ public sealed class OrganisationPickerSearchEndpoint(IPublicOrganisationService 
     {
         Get("/app/organisations");
         Tags("Account");
-        Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
+        // NOT the "auth" policy. This is a type-ahead: it fires once per typing
+        // pause, and "auth" is 20 requests a minute per IP shared with sign-in,
+        // the OTP step and password reset - so typing a long employer name used
+        // to exhaust the visitor's own sign-in budget and lock them out.
+        Options(routeBuilder =>
+            routeBuilder.RequireRateLimiting(RateLimitOptions.LookupPolicy));
         Summary(summary => summary.Summary =
             "Search active organisations for the picker (requires sign-in).");
     }

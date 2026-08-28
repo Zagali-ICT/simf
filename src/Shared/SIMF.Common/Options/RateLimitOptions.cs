@@ -42,8 +42,33 @@ public sealed class RateLimitOptions
     /// </summary>
     public const string OperationalPolicy = "operational";
 
+    /// <summary>
+    /// The policy for signed-in reads of REFERENCE DATA that a UI queries
+    /// repeatedly - today the organisation type-ahead on the sign-up profile
+    /// step, which fires once per typing pause.
+    /// <para>It exists because such a lookup was on the <c>auth</c> policy, and
+    /// <c>auth</c> is the credential-flow limiter: 20 requests a minute per IP,
+    /// shared with sign-in, the OTP step and password reset. Typing an employer
+    /// name therefore spent the visitor's SIGN-IN budget, and a long enough
+    /// name locked them out of logging in. Raising <c>auth</c> to fit a
+    /// type-ahead would have removed brute-force protection from all of those
+    /// paths at once, so the lookup moves off it instead.</para>
+    /// <para>Not unlimited: an unauthenticated-cost search is still a cheap
+    /// amplification target, so it keeps its own generous per-IP window.</para>
+    /// </summary>
+    public const string LookupPolicy = "lookup";
+
     /// <summary>Requests permitted per window, per client IP.</summary>
     public int PermitLimit { get; set; } = 20;
+
+    /// <summary>Per-IP cap on the reference-data lookups that use
+    /// <see cref="LookupPolicy"/>. 120/minute is two searches a second
+    /// sustained - far above a human typing behind a 350 ms debounce, far below
+    /// a scraper.</summary>
+    public int LookupPermitLimit { get; set; } = 120;
+
+    /// <summary>The lookup window length, in seconds.</summary>
+    public int LookupWindowSeconds { get; set; } = 60;
 
     /// <summary>The per-IP window length, in seconds.</summary>
     public int WindowSeconds { get; set; } = 60;

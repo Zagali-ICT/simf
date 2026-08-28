@@ -225,6 +225,19 @@ builder.Services.AddRateLimiter(rateLimiter =>
         RateLimitOptions.OperationalPolicy,
         _ => RateLimitPartition.GetNoLimiter<string>("operational"));
 
+    // Signed-in reference-data lookups a UI queries repeatedly. Kept OFF the
+    // "auth" policy: that one is the credential limiter, and a type-ahead
+    // sharing its 20/minute bucket spends the visitor's own sign-in budget.
+    rateLimiter.AddPolicy(
+        RateLimitOptions.LookupPolicy,
+        httpContext => RateLimitPartition.GetFixedWindowLimiter(
+            httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = rateLimitOptions.LookupPermitLimit,
+                Window = TimeSpan.FromSeconds(rateLimitOptions.LookupWindowSeconds),
+            }));
+
     rateLimiter.AddPolicy("auth", httpContext =>
         RateLimitPartition.GetFixedWindowLimiter(
             // Still one shared bucket for null-IP traffic
