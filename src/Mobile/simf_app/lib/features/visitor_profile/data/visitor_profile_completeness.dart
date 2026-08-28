@@ -17,7 +17,20 @@ class VisitorProfileCompleteness {
   const VisitorProfileCompleteness._();
 
   /// D-221 - الجهة. The organisation is required; the server enforces it too.
-  static bool organisation(String? organisationId) => organisationId != null;
+  /// A pick alone is not enough when the pick is the catch-all: "Other" with no
+  /// name beside it records LESS than picking a real employer, and the server
+  /// rejects it (400), so gating submit here turns a round-trip failure into an
+  /// inline one.
+  static bool organisation(
+    String? organisationId, {
+    bool isOther = false,
+    String? otherName,
+  }) {
+    if (organisationId == null) {
+      return false;
+    }
+    return !isOther || (otherName?.trim().isNotEmpty ?? false);
+  }
 
   /// D-373 - nationality drives the document section and is required server
   /// side. The picker is not a `FormField`, so its inline error cannot gate

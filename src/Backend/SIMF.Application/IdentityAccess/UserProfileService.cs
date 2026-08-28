@@ -26,6 +26,7 @@ using SIMF.Contracts.UserProfile;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Notifications;
+using SIMF.Domain.Organisations;
 using SIMF.Domain.Profiles;
 
 namespace SIMF.Application.IdentityAccess;
@@ -326,6 +327,13 @@ internal sealed class UserProfileService(
         profile.PlateNumber = NormalisePlate(request.PlateNumber);
         // الجهة + الجنس + المنطقة.
         profile.OrganisationId = request.OrganisationId;
+        // Only meaningful alongside the seeded "Other" row. Cleared on any
+        // ordinary pick, so a visitor who typed a name and then found their
+        // real employer in the list does not leave the old free text behind to
+        // contradict the id beside it.
+        profile.OrganisationOther = request.OrganisationId == Organisation.OtherId
+            ? request.OrganisationOther?.Trim()
+            : null;
         profile.RegionId = request.RegionId;
         profile.Gender = request.Gender;
         // "Show in Meet People Like You" toggle; null = no change.
@@ -985,6 +993,7 @@ internal sealed class UserProfileService(
             PlateNumberEn = SaudiPlate.ToEnglish(profile.PlateNumber),
             ReferenceNumber = profile.ReferenceNumber,
             OrganisationId = profile.OrganisationId,
+            OrganisationOther = profile.OrganisationOther,
             RegionId = profile.RegionId,
             Gender = profile.Gender,
             HasIdImage = profile.IdImageFileId != null,

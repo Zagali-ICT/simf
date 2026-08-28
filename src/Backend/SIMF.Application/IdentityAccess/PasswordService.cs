@@ -1,4 +1,5 @@
-// Tests: SIMF.Api.Tests/PasswordTests.cs (forgot / reset / change),
+// Tests: SIMF.Api.Tests/PasswordTests.cs (forgot / reset / change, and the
+//        Registered -> EmailVerified promotion a consumed reset code earns),
 //        SIMF.Api.Tests/PasswordResetExpiryTests.cs (expired code),
 //        SIMF.Api.Tests/AccountCodeConcurrencyTests.cs (atomic attempt cap and
 //        single-use consumption under a concurrent burst).
@@ -188,6 +189,7 @@ public sealed class PasswordService(
         // password. It is inside the transaction, so a policy-rejected password
         // rolls the consumption back and leaves the code usable for a retry.
         var consumed = false;
+        var promotedToVerified = false;
         await transactionRunner.ExecuteAsync(
             async token =>
             {
@@ -197,6 +199,25 @@ public sealed class PasswordService(
                     return;
                 }
                 await SetPasswordAsync(user, request.NewPassword);
+                // Consuming an emailed reset code proves control of the mailbox
+                // — the same fact the emailed verification code proves. An
+                // account left at Registered was otherwise stranded: it can be
+                // sent a reset code (ForgotPasswordAsync refuses only Disabled
+                // and Rejected), enter it, change its password, and still be
+                // told to "verify your email address before signing in", with
+                // no way to verify. The system watched the user prove the very
+                // thing it went on refusing to accept.
+                //
+                // EmailVerified is the WEAKEST post-registration state: approval
+                // is still required, so this closes a lockout without granting
+                // anything. Mutating before ClearChangeFlagAndEndSessionsAsync
+                // means its UpdateAsync persists both in one write.
+                promotedToVerified = user.AccountState == AccountState.Registered;
+                if (promotedToVerified)
+                {
+                    user.EmailConfirmed = true;
+                    user.AccountState = AccountState.EmailVerified;
+                }
                 await ClearChangeFlagAndEndSessionsAsync(user, now, token);
             },
             cancellationToken);
@@ -213,6 +234,15 @@ public sealed class PasswordService(
 
         await AuditAsync(AuditEvents.PasswordResetCompleted, AuditOutcome.Success,
             user.Email!, user.Id, cancellationToken: cancellationToken);
+
+        // A state change on the authentication surface gets its own row, under
+        // the same event the sign-up path writes, so "how did this account
+        // become verified" has one answer to search for either way.
+        if (promotedToVerified)
+        {
+            await AuditAsync(AuditEvents.EmailVerificationSucceeded, AuditOutcome.Success,
+                user.Email!, user.Id, cancellationToken: cancellationToken);
+        }
 
         // Security notice — in-app row + email confirming the reset.
         // Wrapped in TryDispatchAsync so a notification failure never

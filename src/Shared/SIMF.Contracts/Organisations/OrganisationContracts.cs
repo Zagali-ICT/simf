@@ -88,11 +88,17 @@ public class UpdateOrganisationRequest
 }
 
 /// <summary>Lightweight organisation item for the public picker / typeahead search.</summary>
+/// <param name="IsOther">True for the single seeded catch-all row. The client
+/// reveals a free-text box when it is chosen and sends what the visitor types as
+/// <c>organisationOther</c>. Flagged on the item rather than compared against a
+/// well-known id, so the app never has to carry a hard-coded GUID. Appended
+/// last, so the shipped wire contract stays append-only.</param>
 public sealed record OrganisationPickerItem(
     Guid Id,
     string NameAr,
     string? NameEn,
-    string? City);
+    string? City,
+    bool IsOther = false);
 
 /// <summary>Outcome of a bulk Excel import — row tallies plus per-row error messages.</summary>
 public sealed record OrganisationImportResult(

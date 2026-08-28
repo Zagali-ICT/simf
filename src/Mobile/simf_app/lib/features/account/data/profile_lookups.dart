@@ -12,16 +12,23 @@ class CountryItem {
     required this.code,
     required this.name,
     required this.nameArabic,
+    this.phonePrefix,
   });
 
   factory CountryItem.fromJson(Map<String, dynamic> json) => CountryItem(
         code: json['code'] as String? ?? '',
         name: json['name'] as String? ?? '',
         nameArabic: json['nameArabic'] as String? ?? '',
+        phonePrefix: json['phonePrefix'] as String?,
       );
 
   final String code;
   final String name;
+
+  /// The E.164 calling code ("+966"), from the server's own Country row.
+  /// Null for a country an administrator created without one, which is why
+  /// the picker skips those rather than offering a blank code.
+  final String? phonePrefix;
   final String nameArabic;
 }
 
@@ -84,6 +91,7 @@ class OrganisationItem {
     required this.nameAr,
     this.nameEn,
     this.city,
+    this.isOther = false,
   });
 
   factory OrganisationItem.fromJson(Map<String, dynamic> json) =>
@@ -92,10 +100,21 @@ class OrganisationItem {
         nameAr: json['nameAr'] as String? ?? '',
         nameEn: json['nameEn'] as String?,
         city: json['city'] as String?,
+        isOther: json['isOther'] as bool? ?? false,
       );
 
   final String id;
   final String nameAr;
   final String? nameEn;
   final String? city;
+
+  /// The single catch-all row, flagged by the server so the app never carries a
+  /// hard-coded id. Choosing it reveals a free-text box, and what the visitor
+  /// types is sent as `organisationOther`.
+  ///
+  /// The server excludes it from the name filter and appends it last, so it is
+  /// present even when the search matched nothing — which is the only moment it
+  /// matters. Defaults false, so a build talking to an older server behaves
+  /// exactly as it did before.
+  final bool isOther;
 }

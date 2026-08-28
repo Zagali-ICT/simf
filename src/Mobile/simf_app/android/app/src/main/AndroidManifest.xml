@@ -12,10 +12,24 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-feature android:name="android.hardware.camera.front" android:required="false" />
+    <!-- camera_android_camerax injects camera.any with NO android:required, and
+         the attribute defaults to true - which made the shipped bundle
+         camera-mandatory on Play, the opposite of what the two lines above
+         decide. tools:replace is load-bearing: android:required uses an OR
+         merge, so a plain required="false" here loses to the library's implied
+         true and changes nothing. -->
+    <uses-feature android:name="android.hardware.camera.any" android:required="false"
+        tools:replace="android:required" />
     <!-- D-738 — biometric (Face-ID / fingerprint) device-key sign-in via
          local_auth. local_auth_android already merges this permission; declared
          here explicitly so the app's own manifest documents the capability. -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <!-- androidx.biometric contributes USE_FINGERPRINT uncapped. It has been
+         deprecated since API 28 in favour of USE_BIOMETRIC above, so cap it
+         rather than let it sit in the Play Console permission list on every
+         API level. -->
+    <uses-permission android:name="android.permission.USE_FINGERPRINT"
+        android:maxSdkVersion="28" tools:replace="android:maxSdkVersion" />
     <!-- camera_android_camerax declares RECORD_AUDIO for video capture. This app
          never records: its only CameraController sets `enableAudio: false`
          (identity_verification_screen.dart) and there is no microphone code.
@@ -30,7 +44,15 @@
          on API 33+, but the gallery route below that still needs read access. -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
+    <!-- allowBackup defaults to TRUE, and Android auto-backup copies plaintext
+         SharedPreferences to the user's Drive. That would take the AES-256
+         offline badge key and the queued gate-scan backlog off a staff device,
+         where neither the "armed only during the event" nor the reconcile
+         control that justifies storing them in the clear still applies. Auth
+         tokens were never at risk - they are Keystore-backed and the master key
+         does not back up - but the badge key is not. -->
     <application
+        android:allowBackup="false"
         android:label="@string/app_name"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">

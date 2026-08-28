@@ -26,6 +26,9 @@ class SignUpVisitorOrganisationField extends ConsumerStatefulWidget {
     required this.selectedId,
     required this.selectedLabel,
     required this.showError,
+    required this.isOther,
+    required this.otherController,
+    required this.showOtherError,
     required this.onSelected,
     required this.onCleared,
     super.key,
@@ -42,6 +45,16 @@ class SignUpVisitorOrganisationField extends ConsumerStatefulWidget {
 
   /// B3 (D-221) — organisation is required; flag an empty pick after a submit.
   final bool showError;
+
+  /// True once the server-flagged catch-all is the chosen row.
+  final bool isOther;
+
+  /// Owned by the screen's form state, so the typed name survives a rebuild
+  /// and is disposed with the rest of the form.
+  final TextEditingController otherController;
+
+  /// "Other" picked with nothing typed, after a submit attempt.
+  final bool showOtherError;
 
   final ValueChanged<OrganisationItem> onSelected;
   final VoidCallback onCleared;
@@ -134,6 +147,9 @@ class _SignUpVisitorOrganisationFieldState
       searchFailed: _searchFailed,
       results: _results,
       showError: widget.showError,
+      isOther: widget.isOther,
+      otherController: widget.otherController,
+      showOtherError: widget.showOtherError,
       onSearchChanged: _onSearchChanged,
       onRetry: () => unawaited(_run(_search.text.trim())),
       onSelected: _select,

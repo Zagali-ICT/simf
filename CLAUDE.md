@@ -458,6 +458,40 @@ external links. **Closed by D-929** as `CK_StoredFiles_SizeBytes`
 (`[SizeBytes] IS NULL OR [SizeBytes] > 0`), which tolerates NULL and so guards
 every file service rather than presentations alone.
 
+### D-944 named lift — the organisation a visitor types (2026-08-28)
+
+One additive nullable column on `SimfAppDbContext`: **`UserProfile.OrganisationOther`**,
+`nvarchar(150)`, plus one seeded row (`Organisation.OtherId`, via `HasData`).
+Regenerated through `tools/migrations/Regenerate-Migration.ps1`, so there is
+still exactly one `InitialCreate` per context at the pinned `00000000000000` id
+and `SchemaFreezeTests` is unchanged.
+
+**Why it needed a lift rather than riding an older one.** D-895 terminated
+D-219's open-ended *"and further audit-surfaced additions"*, so every schema
+change since is argued on its own. This is that argument, and it is small: one
+column, no nullability inversion, no drop, no index.
+
+**Why the column and not just the seeded row.** Organisation is required on the
+form (D-221) and the list is a curated government import, so a visitor whose
+employer was absent could not finish registering — the picker said "no matches"
+and stopped. The seeded "Other" row alone fixes that and records *"47 people work
+at Other"*. The column alone would leave `OrganisationId` null and force every
+existing join, grid and export over it to learn a second path. Both together
+keep reporting working unchanged **and** capture the answer.
+
+**Rejected:** letting the app create `Organisation` rows on the fly. It fills a
+curated, government-sourced list with "google", "Google" and "GOOGLE Inc". These
+rows are read as free text; a human reconciles them later.
+
+150 is not arbitrary — it matches `Organisation.NameArabic`'s own ceiling, so a
+value later promoted into the lookup cannot be truncated on the way in. The
+seeded row deliberately carries **no `CommercialRegistration`**: the government
+Excel import matches on that column, so a re-import can never update or
+duplicate it.
+
+Enums are untouched, and the shipped mobile wire contract stays append-only —
+`OrganisationPickerItem.IsOther` is appended last.
+
 ### D-935 named lift — Arabic collation, one-active-per-owner, encrypted transcript (2026-08-19)
 
 Owner directive, taken as a single lift because all three need the same

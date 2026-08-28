@@ -62,6 +62,20 @@ class BuildConfig {
   static const String supportEmail =
       String.fromEnvironment('SIMF_SUPPORT_EMAIL');
 
+  /// The published privacy policy, opened from the More menu's قانوني group.
+  /// Google Play requires the policy to be reachable from INSIDE an app that
+  /// handles sensitive data — this one takes identity documents, photos, the
+  /// camera and biometrics — as well as from the store listing.
+  ///
+  /// Unlike the contact tiles above this carries a real default rather than
+  /// an empty string: an unconfigured build must still be able to show the
+  /// policy, and the page is public and permanent. Same shape as [apiBaseUrl]
+  /// so a different deployment can still override it.
+  static const String privacyPolicyUrl = String.fromEnvironment(
+    'SIMF_PRIVACY_URL',
+    defaultValue: 'https://web.simrsnf.com/privacy',
+  );
+
   /// Official social-profile links for the home "تابعنا" row (W2 home,
   /// frame 203:1236). Same contract as the contact tiles (D-369): an empty
   /// value keeps that button inert until the real URL is supplied at build

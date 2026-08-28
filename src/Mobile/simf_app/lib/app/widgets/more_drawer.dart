@@ -7,6 +7,7 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/router.dart';
 import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/confirm_external_link.dart';
 import 'package:simf_app/app/widgets/drawer_tile.dart';
 import 'package:simf_app/app/widgets/simf_confirm_dialog.dart';
 import 'package:simf_app/core/sharing/content_sharer.dart';
@@ -70,15 +71,24 @@ class MoreDrawer extends ConsumerWidget {
                   // guest); the approved-only ones (media partners) hide for
                   // any non-approved account (D-666).
                   for (final entry in moreMenuEntries(l10n))
-                    if (routeAllowsRole(entry.routeName, role) &&
+                    if ((entry.routeName == null ||
+                            routeAllowsRole(entry.routeName!, role)) &&
                         (!entry.approvedOnly || approved) &&
                         (!entry.signedInOnly || signedIn))
                       DrawerTile(
                         icon: entry.icon,
                         title: entry.title,
                         onTap: () {
+                          final url = entry.externalUrl;
+                          if (url != null) {
+                            // Confirm BEFORE closing: the dialog needs this
+                            // element mounted, and popping first disposes the
+                            // context the callback closed over.
+                            unawaited(confirmThenLaunchExternal(context, url));
+                            return;
+                          }
                           Navigator.of(context).pop();
-                          unawaited(context.pushNamed(entry.routeName));
+                          unawaited(context.pushNamed(entry.routeName!));
                         },
                       ),
                   // The one action a signed-in-but-unapproved account gets that

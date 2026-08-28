@@ -131,6 +131,27 @@ public class UserProfile : BaseAuditEntity
 
     public Organisation? Organisation { get; set; }
 
+    /// <summary>
+    /// The employer the visitor typed when theirs is not in the curated lookup,
+    /// captured alongside <see cref="OrganisationId"/> pointing at the seeded
+    /// <see cref="Organisation.OtherId"/> row.
+    ///
+    /// <para>Both halves are kept on purpose. Without the free text, "not in the
+    /// list" was a dead end: the picker said no matches and the visitor could
+    /// not proceed, because organisation is a required field on the form
+    /// (D-221). Without the lookup row, every existing join, grid and export
+    /// over <c>OrganisationId</c> would have had to learn a second, nullable
+    /// path — so the id stays populated and reporting keeps working unchanged,
+    /// while this column carries what the person actually wrote.</para>
+    ///
+    /// <para>Deliberately NOT a route into the lookup table. Letting the app
+    /// create an Organisation on the fly is the obvious third option and it
+    /// fills a curated, government-sourced list with "google", "Google" and
+    /// "GOOGLE Inc". These rows are read as free text and can be reconciled by
+    /// a human later.</para>
+    /// </summary>
+    public string? OrganisationOther { get; set; }
+
     /// <summary>The visitor's region, picked from the curated
     /// <see cref="SIMF.Domain.Regions.Region"/> lookup. Optional, and a real
     /// foreign key of the same shape as <see cref="OrganisationId"/>.</summary>

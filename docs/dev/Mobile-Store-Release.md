@@ -6,7 +6,7 @@ The runbook for `azure-pipelines-mobile.yml`. Rationale for the native projects
 lives in `docs/dev/Mobile-Android-Release-Build.md` and
 `docs/dev/Mobile-iOS-Release-Build.md`; this file is the operational sequence.
 
-**One app identity, both stores: `com.apexium.simf`** (D-940). Play locks it at
+**One app identity, both stores: `com.simrsnf.simf`** (D-940). Play locks it at
 first upload and App Store Connect locks it at the first app record. After that
 it cannot be changed on either side.
 
@@ -27,6 +27,28 @@ additionally needs the Mac mini registered**, which is why `buildIos` defaults t
 off - an unmatched agent demand queues for ever instead of failing.
 
 ---
+
+## 1a. THE FIRST RELEASE SHIPS THE PLACEHOLDER APP KEY - do not arm the gate
+
+Owner decision, 2026-08-28. The versionCode 21 bundle is built locally with no
+`SIMF_APP_KEY` define, so `BuildConfig.appKey` keeps its compiled-in default
+**`simf-dev-app-key`**, and `headers_interceptor` sends that literal on every
+request. It is readable in `libapp.so` by anyone who downloads the app.
+
+This is safe **only while the X-App-Key gate stays fail-open**, which it is
+today - verified by an anonymous request to `edge.simrsnf.com` that carried no
+key at all and got `200`.
+
+**Arming that gate server-side would 401 every installed copy at once**, with no
+remedy except shipping a new build through the store and waiting for users to
+update. So it is not a switch that can be flipped during the event. Before
+arming it, ship a build carrying the real key, wait for adoption, and only then
+turn the gate on - the same ordering the API base URL needed.
+
+The CI route that injects the real key (`azure-pipelines-mobile.yml`, via the
+defines file) is unavailable for release one regardless: the
+`simf-mobile-release` variable group and the Secure Files in section 3 have
+never been created, and neither half of that pipeline has ever run.
 
 ## 2. Generate the Android upload key
 
@@ -172,20 +194,31 @@ answering it by committing a value.
 
 Owner decisions taken 2026-08-23.
 
-### 5.1 Privacy policy - RESOLVED
+### 5.1 Privacy policy - RESOLVED, and the URL CHANGED
 
-**https://mod.gov.sa/ar/pages/privacyPolicy.aspx** (verified reachable, HTTP 200).
-Enter it in **both** consoles: Play Console -> App content -> Privacy policy, and
-App Store Connect -> App Privacy -> Privacy Policy URL. It is mandatory in both
-because the app collects national ID numbers, identity-document photographs and
-face images.
+**https://web.simrsnf.com/privacy** - the forum's own policy, published
+2026-08-28 and live. Enter it in **both** consoles: Play Console -> App content
+-> Privacy policy, and App Store Connect -> App Privacy -> Privacy Policy URL.
+Also enter **https://web.simrsnf.com/privacy#delete-account** under Play Console
+-> App content -> Data deletion.
 
-**Still open, and a listing can be rejected for it:** the app has **no in-app
-privacy link**. Google requires a policy link inside apps handling sensitive
-data, not only on the listing, and a grep of `lib/` finds no privacy route,
-string or URL anywhere. Adding one is a small UI change (a row in the More /
-About screen opening this URL through `url_launcher`, which is already a
-dependency) and it is NOT in this changeset.
+**This supersedes the mod.gov.sa URL this section used to name.** That page was
+reachable, but it describes the Ministry's own sites and says nothing about this
+app collecting national ID numbers, identity-document photographs and face
+images - and Play compares the listed policy against what the binary actually
+does. Two live policies for one app is itself a Data-safety consistency risk, so
+web.simrsnf.com/privacy is canonical and mod.gov.sa must not be entered anywhere.
+
+**The in-app link is BUILT** (commit `50f6b5e4a`): More -> قانوني ->
+سياسة الخصوصية, and the same entry in the side drawer, opening
+`BuildConfig.privacyPolicyUrl` through the shared leave-the-app confirmation.
+This section previously said "a grep of lib/ finds no privacy route, string or
+URL anywhere" - that was true when written and is not now.
+
+**It is NOT in versionCode 20.** The link commit is a child of the versionCode-20
+commit, so the bundle built 2026-08-24 does not contain it. Rebuild before
+uploading, or the submission is rejected under the User Data policy after Play
+has already accepted the upload.
 
 ### 5.2 Reviewer demo account - RESOLVED, with work owed
 
@@ -216,21 +249,39 @@ in the authentication surface and must be built as one:
 auth surface; whatever is built here must not widen that set without being argued
 for in the same changeset.
 
-### 5.3 In-app account deletion - OWNER WILL FIX
+### 5.3 In-app account deletion - BUILT AND SHIPPED
 
-Apple **Guideline 5.1.1(v)** requires an app that supports account creation to
-support account deletion in-app. This app has full in-app sign-up and **no delete
-path at all** - no route, no screen, no endpoint. It is an outright rejection,
-not a warning, and no pipeline work substitutes for it. Owner has taken this;
-it is product work across the app, the API and a retention decision (what is
-erased, what is retained for the audit trail, and for how long).
+Apple **Guideline 5.1.1(v)** and Google Play both require an app that supports
+account creation to support account deletion. Both halves exist:
 
-### 5.4 Listing screenshots - STILL OPEN
+- **In-app:** My Area -> حذف حسابي -> confirm. `DeleteAccountTile` ->
+  `DELETE /app/account` (`AccountDeleteEndpoint`), shipped since versionCode 19
+  and present in versionCode 20 - verified by decoding the bundle's own
+  `libapp.so`, not by reading the source tree.
+- **Web:** https://web.simrsnf.com/privacy#delete-account, which is what Play
+  Console -> App content -> Data deletion wants.
+
+Deletion scrubs the profile's personal data, destroys the uploaded photos and
+identity document, revokes every session and device key, and disables the
+account; only the deletion audit row is retained. This section previously read
+"no delete path at all - no route, no screen, no endpoint"; that was true when
+written and has been false since 2026-08-23.
+
+### 5.4 Listing screenshots - RESOLVED
+
+Eight phone screenshots plus the feature graphic and store icon are in
+`store-screenshots/play-ready/`. The FLAG_SECURE constraint below still holds
+for capturing NEW ones.
 
 `MainActivity.kt` sets `FLAG_SECURE` app-wide, which blocks screenshots and screen
 recording on Android. Capture the store screenshots from an **emulator**, or on
 iOS, where the absence of a screenshot block is the accepted exception recorded
 in `docs/dev/Mobile-iOS-Release-Build.md` section 3.
+
+**Open on the graphics:** the feature graphic's wordmark reads
+«الملتقى الدولى البحرى», which is neither the launcher name «الملتقى البحري»
+nor the full brand name «الملتقى البحري السعودي الدولي». D-358 already flagged
+that spelling. Settle the canonical Arabic name before the listing goes up.
 
 ## 6. Releasing, once the above is done
 

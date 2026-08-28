@@ -169,6 +169,7 @@ isFavourite
 isForVisitor
 isHallDoor
 isHidden
+isOther
 isPushed
 isRead
 isRequired
@@ -238,6 +239,7 @@ orderedQuestionIds
 organisation
 organisationArabic
 organisationId
+organisationOther
 otpToken
 outcome
 outputText
@@ -247,6 +249,7 @@ partnerDirectoryEnabled
 passportNumber
 password
 pastSpeakers
+phonePrefix
 phonePrimary
 photoRelativePath
 placeOfBirth

@@ -207,6 +207,8 @@ class AppL10n {
   String get iqamaSegment => _t('الإقامة', 'Iqama');
   String get passportSegment => _t('جواز السفر', 'Passport');
   String get saudiMobileLabel => _t('رقم الجوال', 'Mobile');
+  /// D-944 — the calling-code selector in front of the mobile number.
+  String get mobileCallingCodeHint => _t('الرمز', 'Code');
   String get internationalMobileLabel =>
       _t('رقم الجوال الدولي', 'International mobile');
   String get dateOfBirthLabel => _t('تاريخ الميلاد', 'Date of birth');
@@ -223,6 +225,12 @@ class AppL10n {
       _t('ابحث عن جهتك', 'Search your organisation');
   String get organisationEmpty =>
       _t('لا توجد جهات مطابقة', 'No organisations found');
+  // D-944 — the picker's catch-all. The list is a curated government
+  // import, so an absent employer used to end registration outright.
+  String get organisationOtherHint =>
+      _t('اكتب اسم جهة عملك', "Type your organisation's name");
+  String get organisationOtherRequired =>
+      _t('اكتب اسم جهة عملك', "Enter your organisation's name");
   String get organisationSelected => _t('الجهة محددة', 'Organisation selected');
   // B3 — D-221 (الجهة): required-field message on the sign-up screen.
   String get organisationRequired =>
@@ -1934,6 +1942,7 @@ class AppL10n {
   String get moreAbout => _t('عن الملتقى', 'About the forum');
   String get moreAccessibility => _t('إمكانية الوصول', 'Accessibility');
   String get moreTerms => _t('الشروط والأحكام', 'Terms & conditions');
+  String get morePrivacy => _t('سياسة الخصوصية', 'Privacy policy');
   String get moreRate => _t('تقييم', 'Rate');
   String get moreNotifications => _t('الإشعارات', 'Notifications');
   String get moreResetPassword =>

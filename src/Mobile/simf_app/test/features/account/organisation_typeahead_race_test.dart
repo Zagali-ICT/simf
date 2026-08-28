@@ -37,6 +37,8 @@ OrganisationItem _item(String name) =>
 void main() {
   testWidgets('a slow earlier search does not overwrite the latest results',
       (tester) async {
+    final otherController = TextEditingController();
+    addTearDown(otherController.dispose);
     final repo = _OrderedRepository();
 
     await tester.pumpWidget(
@@ -54,6 +56,9 @@ void main() {
               selectedId: null,
               selectedLabel: null,
               showError: false,
+              isOther: false,
+              otherController: otherController,
+              showOtherError: false,
               onSelected: (_) {},
               onCleared: () {},
             ),

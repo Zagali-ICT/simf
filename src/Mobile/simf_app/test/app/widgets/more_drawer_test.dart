@@ -223,6 +223,23 @@ void main() {
       expect(find.text('About the forum'), findsNothing); // drawer closed
     });
 
+    testWidgets('the external Privacy policy entry confirms instead of routing',
+        (tester) async {
+      // The one entry with no route: it opens the published web policy, so it
+      // must reach the leave-the-app confirmation rather than `pushNamed` —
+      // which would throw, there being no such route to match.
+      await _pump(tester, auth: _RecordingAuthController(signedIn: true));
+
+      await tester.tap(find.text('Privacy policy'));
+      await tester.pumpAndSettle();
+      expect(find.byType(Dialog), findsOneWidget);
+      expect(find.text('Open'), findsOneWidget);
+
+      await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+      await tester.pumpAndSettle();
+      expect(find.byType(Dialog), findsNothing);
+    });
+
     testWidgets('logout → confirm → signOut() and navigates to sign-in',
         (tester) async {
       final auth = _RecordingAuthController(signedIn: true);

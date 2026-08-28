@@ -30,6 +30,9 @@ class OrganisationTypeaheadField extends StatelessWidget {
     required this.onRetry,
     required this.onSelected,
     required this.onCleared,
+    required this.isOther,
+    required this.otherController,
+    required this.showOtherError,
     super.key,
   });
 
@@ -48,6 +51,17 @@ class OrganisationTypeaheadField extends StatelessWidget {
   final VoidCallback onRetry;
   final ValueChanged<OrganisationItem> onSelected;
   final VoidCallback onCleared;
+
+  /// True once the server-flagged catch-all is the chosen row, which is what
+  /// reveals the free-text box below the selection.
+  final bool isOther;
+
+  /// Holds the employer the visitor types against that catch-all.
+  final TextEditingController otherController;
+
+  /// "Other" with nothing typed is rejected server-side, so flag it inline
+  /// after a submit rather than letting the round trip report it.
+  final bool showOtherError;
 
   @override
   Widget build(BuildContext context) {
@@ -71,6 +85,21 @@ class OrganisationTypeaheadField extends StatelessWidget {
             ],
           ),
         ),
+        if (isOther) ...<Widget>[
+          const SizedBox(height: SimfTokens.space3),
+          TextField(
+            key: const ValueKey<String>('organisationOtherField'),
+            controller: otherController,
+            style: simfInputStyle,
+            maxLength: 150,
+            textInputAction: TextInputAction.next,
+            decoration: simfFieldDecoration(
+              hintText: l10n.organisationOtherHint,
+              counterText: '',
+              errorText: showOtherError ? l10n.organisationOtherRequired : null,
+            ),
+          ),
+        ],
       ]);
     }
     return _labelled(<Widget>[

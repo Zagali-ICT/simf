@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.Organisations.Abstractions;
 using SIMF.Contracts.Organisations;
+using SIMF.Domain.Organisations;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Organisations;
@@ -19,7 +20,13 @@ internal sealed class PublicOrganisationService(SimfAppDbContext db) : IPublicOr
         string? search, int top, CancellationToken ct = default)
     {
         var take = Math.Clamp(top, 1, 50);
-        var rows = db.Organisations.AsNoTracking().Where(o => o.IsActive);
+        // The catch-all is excluded from the search and re-attached below. It
+        // has to be reachable at the moment the search finds NOTHING, which is
+        // exactly when a name filter would drop it: someone typing their real
+        // employer is not typing "Other", so matching it on name would hide it
+        // from the only person who needs it.
+        var rows = db.Organisations.AsNoTracking()
+            .Where(o => o.IsActive && o.Id != Organisation.OtherId);
 
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -30,14 +37,34 @@ internal sealed class PublicOrganisationService(SimfAppDbContext db) : IPublicOr
                 || EF.Functions.Like(o.City, $"%{term}%"));
         }
 
-        return await rows
+        // take - 1 keeps the response within the caller's requested size once
+        // the catch-all is appended, so a client sizing its list to `top` does
+        // not silently lose a real match to it.
+        var matches = await rows
             .OrderBy(o => o.NameArabic)
-            .Take(take)
+            .Take(Math.Max(1, take - 1))
             .Select(o => new OrganisationPickerItem(
                 o.Id,
                 o.NameArabic,
                 o.Name,
-                o.City))
+                o.City,
+                false))
             .ToListAsync(ct);
+
+        var other = await db.Organisations.AsNoTracking()
+            .Where(o => o.Id == Organisation.OtherId && o.IsActive)
+            .Select(o => new OrganisationPickerItem(
+                o.Id,
+                o.NameArabic,
+                o.Name,
+                o.City,
+                true))
+            .FirstOrDefaultAsync(ct);
+
+        // Last, not first: it is the fallback, and a picker that offers "Other"
+        // above the visitor's actual employer invites the wrong pick. Null only
+        // if an administrator deactivated the seeded row, in which case the list
+        // degrades to what it was before rather than failing.
+        return other is null ? matches : [.. matches, other];
     }
 }

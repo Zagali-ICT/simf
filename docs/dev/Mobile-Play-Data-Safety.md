@@ -8,13 +8,19 @@ yours rather than mine, it says so.
 
 ---
 
-## STOP — one blocker that is not in any other doc
+## Account deletion — CLOSED (was the blocker this file opened with)
 
-**There is no account-deletion path anywhere.** Not in the app
-(`grep deleteAccount lib packages/*/lib` → nothing) and not in the backend as a
-self-service endpoint — every `Deactivate*` in `src/Backend` is an **admin**
-operation on content (booths, countries, banners), not a user deleting their own
-account.
+Both halves are built. **In-app:** My Area → حذف حسابي → confirm
+(`DeleteAccountTile` → `DELETE /app/account`), shipped in versionCode 19 and
+present in versionCode 20 — verified by decoding the bundle's `libapp.so`.
+**Web:** https://web.simrsnf.com/privacy#delete-account.
+
+So **App content → Data deletion** answers *yes*, with that URL.
+
+This section used to open "There is no account-deletion path anywhere" on the
+strength of `grep deleteAccount lib packages/*/lib → nothing`. That was true on
+2026-08-22 and stopped being true the next day. The requirement it described is
+unchanged and still worth reading:
 
 Google Play requires that **any app offering account creation also offers
 account deletion**, and the declaration has two parts:

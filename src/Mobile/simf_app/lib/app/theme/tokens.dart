@@ -1227,6 +1227,10 @@ class SimfTokens {
   static const double organisationTypeaheadFieldSize = 18;
   static const double organisationTypeaheadFieldStrokeWidth = 2;
   static const double organisationTypeaheadFieldWidthMd = 14;
+  /// Width of the calling-code selector in front of the mobile number. Wide
+  /// enough for the longest E.164 code in the list ("+1876") plus the
+  /// dropdown caret, so the code never truncates to something wrong.
+  static const double mobileCallingCodeWidth = 112;
   static const double organisationTypeaheadFieldWidthSm = 10;
   static const double otpCodeBoxesHeightMd = 96;
   static const double otpCodeBoxesHeightSm = 52;

@@ -9,7 +9,7 @@ The app's "more" hub: a منطقتي profile header card (signed-in → My Area)
 grouped sections of bordered nav rows — **معلومات الملتقى** (about / forum-guide /
 FAQ / my-sessions / VisitSaudi), **الإعدادات** (language toggle / accessibility /
 notifications / reset-password),
-**قانوني** (terms / contact-us / rate) — the تسجيل الخروج link (signed-in) and the
+**قانوني** (terms / privacy-policy / contact-us / rate) — the تسجيل الخروج link (signed-in) and the
 version line. The footer version line reads the REAL installed version
 (`installedAppVersionProvider`, from `package_info_plus` — D-736) rendered as
 `SIMF 2026 · الإصدار {v}` / `SIMF 2026 · v{v}` (edition alone when the version
@@ -74,8 +74,18 @@ before** the refactor, then **held it WITHOUT `--update`** after — proving the
 
 Wired: profile card → My Area; each row navigates (about / forum-guide / faq /
 accessibility / notifications / terms / contact-us / rate) or acts (language
-toggle, VisitSaudi confirm-launch); sign-out (confirm); rate/attendee rows
-role-filtered. No API of its own.
+toggle, VisitSaudi confirm-launch, privacy-policy confirm-launch); sign-out
+(confirm); rate/attendee rows role-filtered. No API of its own.
+
+**سياسة الخصوصية opens the published web policy** (`BuildConfig.privacyPolicyUrl`,
+default `https://web.simrsnf.com/privacy`) through the shared leave-the-app
+confirmation, rather than an in-app copy: it is a legal document that is
+updated without a store release, so a second copy here would go stale
+silently. Google Play requires the policy to be reachable from inside an app
+that handles sensitive data — this one takes identity documents, photos, the
+camera and biometrics — and not from the store listing alone. The same entry
+is in the side drawer, which is why `MoreMenuEntry` now carries either a
+`routeName` or an `externalUrl`.
 
 ## Tests
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:simf_app/core/validation/phone_country_code.dart';
 import 'package:simf_app/core/validation/phone_validation.dart';
 import 'package:simf_app/features/account/data/app_gender.dart';
 import 'package:simf_app/features/account/data/profile_lookups.dart';
@@ -33,6 +34,9 @@ class SignUpVisitorForm {
   final TextEditingController documentNumber = TextEditingController();
   final TextEditingController saudiMobile = TextEditingController();
   final TextEditingController internationalMobile = TextEditingController();
+  /// The employer typed when the picker's catch-all row is chosen. Empty and
+  /// unread for every ordinary pick.
+  final TextEditingController organisationOther = TextEditingController();
 
   // C6 (D-459) — the three letter picks, the digits and the assembled plate
   // code, which are only ever useful together.
@@ -49,6 +53,15 @@ class SignUpVisitorForm {
   /// whole [OrganisationItem] once and the field has nothing to look it up in
   /// afterwards, so the two are set and cleared together.
   String? organisationLabel;
+
+  /// True when the chosen organisation is the server-flagged catch-all, which
+  /// is what reveals [organisationOther]. Read from the picked item rather
+  /// than compared against an id, so the app carries no hard-coded GUID.
+  bool organisationIsOther = false;
+
+  /// The `+`-prefixed calling code shown in front of the mobile number.
+  /// Seeded from the nationality on load and then owned by the visitor.
+  String mobileCallingCode = '';
 
   // The ID DOCUMENT image (picked from the gallery) — mandatory for all.
   Uint8List? idImageBytes;
@@ -107,8 +120,19 @@ class SignUpVisitorForm {
       picks.docType = VisitorDocType.passport;
       documentNumber.text = profile.passportNumber!;
     }
-    saudiMobile.text = profile.saudiMobile ?? '';
-    internationalMobile.text = profile.internationalMobile ?? '';
+    // The stored value is one canonical E.164 string; the form edits it as a
+    // calling code plus subscriber digits, so it has to be split back apart.
+    // An unrecognised code leaves the whole number in the field rather than
+    // truncating it — see splitPhone.
+    final storedMobile = profile.saudiMobile ?? profile.internationalMobile;
+    final parts = splitPhone(
+      storedMobile,
+      picks.countries.map((country) => country.phonePrefix ?? ''),
+    );
+    mobileCallingCode = parts.callingCode;
+    saudiMobile.text = profile.saudiMobile == null ? '' : parts.number;
+    internationalMobile.text =
+        profile.internationalMobile == null ? '' : parts.number;
     plate.setFromCode(profile.plateNumber);
     // D-373 defaults — Male and Saudi Arabia pre-selected on a first-time
     // (empty) profile; a saved profile keeps its own values.
@@ -129,6 +153,12 @@ class SignUpVisitorForm {
           picks.profileTypes.any((t) => t.id == typeId) ? typeId : null
       ..organisationId = profile.organisationId;
     organisationLabel = null;
+    // A stored free-text employer means the saved pick WAS the catch-all, so
+    // the box has to come back open — otherwise re-opening the form silently
+    // drops the name and submits an "Other" with nothing beside it.
+    final storedOther = profile.organisationOther;
+    organisationIsOther = storedOther != null && storedOther.isNotEmpty;
+    organisationOther.text = storedOther ?? '';
 
     final storedBirthDate = profile.dateOfBirth ?? '';
     if (storedBirthDate.isNotEmpty) {
@@ -146,6 +176,12 @@ class SignUpVisitorForm {
     required bool isArabic,
   }) {
     picks.organisationId = organisation.id;
+    organisationIsOther = organisation.isOther;
+    if (!organisation.isOther) {
+      // An ordinary pick clears any name typed against a previous "Other",
+      // so the two can never contradict each other on submit.
+      organisationOther.clear();
+    }
     organisationLabel = isArabic
         ? organisation.nameAr
         : (organisation.nameEn ?? organisation.nameAr);
@@ -154,6 +190,8 @@ class SignUpVisitorForm {
   void clearOrganisation(VisitorProfileFormState picks) {
     picks.organisationId = null;
     organisationLabel = null;
+    organisationIsOther = false;
+    organisationOther.clear();
   }
 
   /// Applies a nationality pick. Clearing the stale national-id / iqama input
@@ -205,6 +243,14 @@ class SignUpVisitorForm {
   UpsertUserProfileRequest toRequest(VisitorProfileFormState picks) {
     final isSaudi = picks.isSaudi;
     final birthDate = dateOfBirth;
+    // One number, assembled from the code the visitor chose and the digits
+    // they typed. Which controller holds those digits still follows the
+    // nationality, because the screen keeps one per shape so switching
+    // nationality does not lose what was typed.
+    final composedMobile = composePhone(
+      mobileCallingCode,
+      isSaudi ? saudiMobile.text : internationalMobile.text,
+    );
     return UpsertUserProfileRequest(
       profileTypeId: picks.profileTypeId,
       interestIds: existingInterestIds,
@@ -228,13 +274,20 @@ class SignUpVisitorForm {
           : null,
       // Submit the canonical phone — Arabic digits folded, a leading `00`
       // rewritten to `+` — so the value matches the server's `+`-only shapes.
-      saudiMobile:
-          isSaudi ? _emptyToNull(normalizePhone(saudiMobile.text)) : null,
-      internationalMobile: !isSaudi
-          ? _emptyToNull(normalizePhone(internationalMobile.text))
-          : null,
+      // The calling code is the visitor's pick, so the SHAPE of the composed
+      // number decides which wire field carries it — not the nationality. A
+      // Sudanese national on a +966 number sends a Saudi mobile, which is the
+      // whole point of letting the code be chosen.
+      saudiMobile: _emptyToNull(
+        isStandardSaudiMobile(composedMobile) ? composedMobile : '',
+      ),
+      internationalMobile: _emptyToNull(
+        isStandardSaudiMobile(composedMobile) ? '' : composedMobile,
+      ),
       plateNumber: _emptyToNull(plate.value),
       organisationId: picks.organisationId,
+      organisationOther:
+          organisationIsOther ? _emptyToNull(organisationOther.text) : null,
       gender: picks.gender,
       showInMeetLikeYou: showInMeetLikeYou,
     );
@@ -262,6 +315,7 @@ class SignUpVisitorForm {
     documentNumber.dispose();
     saudiMobile.dispose();
     internationalMobile.dispose();
+    organisationOther.dispose();
     plate.dispose();
   }
 

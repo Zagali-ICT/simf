@@ -363,6 +363,8 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
             onProfileTypeChanged: (id) =>
                 setState(() => _form.profileTypeId = id),
             onGenderChanged: (value) => setState(() => _form.gender = value),
+            onMobileCallingCodeChanged: (code) =>
+                setState(() => _fields.mobileCallingCode = code),
             onOrganisationSelected: (organisation) => setState(
               () => _fields.setOrganisation(
                 _form,

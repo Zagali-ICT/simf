@@ -10,6 +10,44 @@ void main() {
     test('are required', () {
       expect(VisitorProfileCompleteness.organisation(null), isFalse);
       expect(VisitorProfileCompleteness.organisation('org-1'), isTrue);
+
+      // D-944 — the catch-all is a pick like any other, so the id alone would
+      // pass. "Other" with nothing typed records LESS than picking a real
+      // employer, and the server rejects it, so submit is gated here instead of
+      // letting the round trip report it.
+      expect(
+        VisitorProfileCompleteness.organisation(
+          'other-id',
+          isOther: true,
+        ),
+        isFalse,
+        reason: 'Other picked with no name is not a complete answer.',
+      );
+      expect(
+        VisitorProfileCompleteness.organisation(
+          'other-id',
+          isOther: true,
+          otherName: '   ',
+        ),
+        isFalse,
+        reason: 'whitespace is not a name.',
+      );
+      expect(
+        VisitorProfileCompleteness.organisation(
+          'other-id',
+          isOther: true,
+          otherName: 'Sudanese Maritime Authority',
+        ),
+        isTrue,
+      );
+      // An ordinary pick is unaffected by a leftover name.
+      expect(
+        VisitorProfileCompleteness.organisation(
+          'org-1',
+          otherName: 'stale',
+        ),
+        isTrue,
+      );
       expect(VisitorProfileCompleteness.nationality(null), isFalse);
       expect(VisitorProfileCompleteness.nationality('SA'), isTrue);
     });

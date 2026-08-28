@@ -6,6 +6,7 @@ using FluentValidation;
 using SIMF.Api.Endpoints.Auth.Validators;
 using SIMF.Common;
 using SIMF.Contracts.UserProfile;
+using SIMF.Domain.Organisations;
 
 namespace SIMF.Api.Endpoints.Account.Validators;
 
@@ -124,6 +125,27 @@ public sealed class UpsertUserProfileRequestValidator
             .Must(id => id is { } orgId && orgId != Guid.Empty).Bilingual(
                 "Organisation is required.",
                 "الجهة مطلوبة.");
+
+        // "Other" is a pick like any other, so the rule above is satisfied by
+        // it — but picking it and typing nothing records less than picking a
+        // real employer, which is the one outcome this whole path exists to
+        // avoid. Demanded here rather than in the service because it is a
+        // shape rule on the request, not a lookup.
+        RuleFor(request => request.OrganisationOther)
+            .NotEmpty()
+            .When(r => r.OrganisationId == Organisation.OtherId)
+            .Bilingual(
+                "Enter your organisation's name.",
+                "اكتب اسم جهة عملك.");
+
+        // 150 matches the lookup's own name column, so a value promoted into
+        // the list later cannot be truncated on the way in.
+        RuleFor(request => request.OrganisationOther)
+            .MaximumLength(150)
+            .When(r => !string.IsNullOrEmpty(r.OrganisationOther))
+            .Bilingual(
+                "Organisation name must be at most 150 characters.",
+                "يجب ألا يتجاوز اسم الجهة 150 حرفًا.");
 
         // المنطقة is optional. Shape-check only here (non-empty
         // Guid when supplied); the existence / IsActive check runs in the service

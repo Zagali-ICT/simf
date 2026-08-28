@@ -59,6 +59,11 @@ public sealed class UserProfileResponse
     /// or null when the user has not picked one.</summary>
     public Guid? OrganisationId { get; set; }
 
+    /// <summary>The employer the user typed when theirs is not in the curated
+    /// lookup, alongside <see cref="OrganisationId"/> pointing at the seeded
+    /// "Other" row. Null for every ordinary pick.</summary>
+    public string? OrganisationOther { get; set; }
+
     /// <summary>The picked region id (المنطقة), from
     /// <c>GET /api/v1/app/regions</c>, or null when the user has not picked
     /// one. Append-only field — the region pick is now persisted (it used to
@@ -176,6 +181,13 @@ public sealed class UpsertUserProfileRequest
     /// Optional; the service rejects an unknown / inactive id.</summary>
     public Guid? OrganisationId { get; set; }
 
+    /// <summary>The employer the user typed when theirs is not in the lookup.
+    /// Only meaningful with <see cref="OrganisationId"/> set to the seeded
+    /// "Other" row, which the picker flags as <c>isOther</c>; ignored
+    /// otherwise. Max 150, matching the lookup's own name column so a value
+    /// promoted into the list later cannot be truncated on the way.</summary>
+    public string? OrganisationOther { get; set; }
+
     /// <summary>The user's self-picked region id (المنطقة), from
     /// <c>GET /api/v1/app/regions</c>. Optional; the service rejects an unknown /
     /// inactive id, exactly like <see cref="OrganisationId"/>.</summary>
@@ -192,7 +204,13 @@ public sealed class UpsertUserProfileRequest
 }
 
 /// <summary>One country entry surfaced to the client picker.</summary>
-public sealed record CountryDto(string Code, string Name, string NameArabic);
+/// <param name="PhonePrefix">The E.164 calling code ("+966"), already held on
+/// <c>Country</c> and seeded, but never projected here until the app needed a
+/// country-code selector on the mobile field. Appended last, so the shipped
+/// wire contract stays append-only; null for a row an administrator created
+/// without one.</param>
+public sealed record CountryDto(
+    string Code, string Name, string NameArabic, string? PhonePrefix = null);
 
 /// <summary>The body of <c>GET /api/v1/app/account/user-profile/countries</c>.</summary>
 public sealed record CountryListResponse(IReadOnlyList<CountryDto> Countries);
