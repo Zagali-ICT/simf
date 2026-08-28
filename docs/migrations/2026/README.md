@@ -24,7 +24,14 @@ reference data every environment needs identically, so migrations are their home
   back (no partial data). Set `QUOTED_IDENTIFIER`/`ANSI_NULLS` ON explicitly.
 - Use the system actor `@sys = '00000000-0000-0000-0000-000000000000'` for
   `CreatedBy` (matches the app seeders) and `@now = SYSDATETIMEOFFSET()`.
-- Respect the D-110 schema freeze: **data rows only**, no `ALTER`/`CREATE`.
+- Respect the D-110 schema freeze: **data rows only**, no `ALTER`/`CREATE` —
+  in the CONTENT SEEDS. The prod-only `*_Hotfix.sql` files are the stated
+  exception and do carry DDL, because of this:
+  **a regenerated `InitialCreate` is a no-op against a database that already
+  has one.** `__EFMigrationsHistory` records it as applied, so `MigrateAsync`
+  applies nothing and the live DB never receives the newer schema. Any schema
+  change landing on a database with data therefore needs a hand-run delta here
+  as well as the regeneration — see `tools/migrations/Regenerate-Migration.ps1`.
   Adding a missing lookup *value* an admin could add via the CP (e.g. a `Country`
   row) is allowed as a guarded `INSERT` — it is data, not a schema change.
 - Do **not** add content rosters to `IdentitySeeder` / `DefaultContentSeeder`.
@@ -115,6 +122,13 @@ Not content seeds:
   create-user 500 · SqlException 208). A fresh DB needs nothing from it (the
   sequence is in the consolidated App `InitialCreate`), but it stays for an
   existing production database. **Not part of the seed run.**
+- **`SIMF_App_D944_OrganisationOther_Hotfix.sql`** — a **prod-only** unblock
+  adding `dbo.UserProfiles.OrganisationOther` and seeding the "Other"
+  organisation on a *running* DB (D-944). A fresh DB needs nothing from it. It
+  is the worked example of the trap below: the API deployed, the code-only half
+  worked, and the schema half silently did not exist — so every
+  `GET /app/account/user-profile` answered 500 on Invalid column name.
+  **Not part of the seed run.**
 - **`SIMF_App_AssistancePromptGrounding.sql`** / **`SIMF_App_AssistancePromptHistory.sql`**
   — idempotent one-shot updates that re-point an **already-seeded** `assistance`
   AI prompt at the grounded / history-carrying template. A freshly-seeded DB
