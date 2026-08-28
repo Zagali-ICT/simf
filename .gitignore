@@ -166,3 +166,8 @@ TestResults/
 # Python bytecode cache from the diagram scripts under tools/diagrams.
 __pycache__/
 *.pyc
+
+# Store submission masters: 1080x2400 RGBA device captures, kept as the
+# source for store-screenshots/play-ready/ but never uploaded (Play caps the
+# aspect ratio at 2:1 and rejects alpha on screenshots). Large; not tracked.
+store-screenshots/raw-captures/
