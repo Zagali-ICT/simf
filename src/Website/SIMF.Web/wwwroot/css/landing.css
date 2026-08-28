@@ -1452,3 +1452,37 @@
   .ln-chat__launcher, .ln-chat__launcher::after { animation: none; }
   .ln-chat__panel { animation: none; }
 }
+
+/* ============ LEGAL / POLICY PROSE (ln-legal) ============ */
+/* Long-form legal text (the privacy policy) inside a raised card on the
+   standard ln-fsection band. One readable measure, start-aligned so the whole
+   block flips with the Arabic RTL direction without a second rule. */
+.landing .ln-legal {
+  background: var(--white); border: 1px solid var(--primary-light); border-radius: 16px;
+  box-shadow: var(--shadow-card); padding: clamp(24px, 4vw, 48px);
+  display: flex; flex-direction: column; gap: 12px; text-align: start;
+}
+/* scroll-margin-top clears the sticky header when the Play Console deep-links
+   at #delete-account; without it the heading lands underneath the nav. */
+.landing .ln-legal__h2 {
+  font-size: 24px; font-weight: 800; line-height: 1.3; color: var(--ink-display);
+  margin: 24px 0 4px; scroll-margin-top: 120px; text-align: start;
+}
+.landing .ln-legal__h2:first-child { margin-top: 0; }
+.landing .ln-legal__h3 {
+  font-size: 18px; font-weight: 700; line-height: 1.4; color: var(--ink);
+  margin: 12px 0 0; text-align: start;
+}
+.landing .ln-legal__p {
+  font-size: 16px; line-height: 28px; color: var(--ink); margin: 0;
+  max-width: 900px; text-align: start;
+}
+.landing .ln-legal__mail {
+  color: var(--gold-dark); font-weight: 700; text-decoration: underline; word-break: break-word;
+}
+.landing .ln-legal__mail:hover { color: var(--navy); }
+@media (max-width: 520px) {
+  .landing .ln-legal__h2 { font-size: 20px; }
+  .landing .ln-legal__h3 { font-size: 16px; }
+  .landing .ln-legal__p { font-size: 15px; line-height: 26px; }
+}

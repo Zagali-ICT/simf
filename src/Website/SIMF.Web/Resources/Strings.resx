@@ -349,4 +349,46 @@
   <data name="Archive.Speakers.Lead" xml:space="preserve"><value>A distinguished group of Saudi and international leaders, decision-makers and experts who took part in previous editions of the forum.</value></data>
   <data name="Archive.Editions.Title" xml:space="preserve"><value>Browse the past editions</value></data>
   <data name="Archive.Editions.Desc" xml:space="preserve"><value>The forum's editions over the years.</value></data>
+  <data name="Privacy.PageTitle" xml:space="preserve"><value>Privacy Policy — Saudi International Maritime Forum</value></data>
+  <data name="Privacy.Meta" xml:space="preserve"><value>The Saudi International Maritime Forum privacy policy: how we collect, use and share your personal information when you use our digital services.</value></data>
+  <data name="Privacy.Breadcrumb" xml:space="preserve"><value>Privacy Policy</value></data>
+  <data name="Privacy.Hero.Title" xml:space="preserve"><value>Privacy Policy</value></data>
+  <data name="Privacy.Hero.Subtitle" xml:space="preserve"><value>Last updated: 23 August 2026</value></data>
+  <data name="Privacy.Intro.Title" xml:space="preserve"><value>Introduction</value></data>
+  <data name="Privacy.Intro.Body" xml:space="preserve"><value>This privacy policy explains how the Saudi International Maritime Forum ("we", "us" or "our") collects, uses and shares your personal information when you use our services, including when you use any of our digital services.</value></data>
+  <data name="Privacy.Collect.Title" xml:space="preserve"><value>Information we collect</value></data>
+  <data name="Privacy.Collect.Personal.Title" xml:space="preserve"><value>Personal information</value></data>
+  <data name="Privacy.Collect.Personal.Body" xml:space="preserve"><value>We collect the information you give us directly, such as your name, your email address and your phone number. From time to time we may ask for additional information in order to process certain services, such as registration.</value></data>
+  <data name="Privacy.Collect.Usage.Title" xml:space="preserve"><value>Usage data</value></data>
+  <data name="Privacy.Collect.Usage.Body" xml:space="preserve"><value>We collect information about how you use our services, including your Internet Protocol (IP) address, your browser type and your operating system.</value></data>
+  <data name="Privacy.Collect.Cookies.Title" xml:space="preserve"><value>Cookies and tracking technologies</value></data>
+  <data name="Privacy.Collect.Cookies.Body" xml:space="preserve"><value>We use cookies and other tracking technologies to improve your experience and to analyse how our services are used.</value></data>
+  <data name="Privacy.Use.Title" xml:space="preserve"><value>How we use your information</value></data>
+  <data name="Privacy.Use.Services.Title" xml:space="preserve"><value>Providing our services</value></data>
+  <data name="Privacy.Use.Services.Body" xml:space="preserve"><value>We use your information to provide our services and to improve them.</value></data>
+  <data name="Privacy.Use.Communication.Title" xml:space="preserve"><value>Communication</value></data>
+  <data name="Privacy.Use.Communication.Body" xml:space="preserve"><value>We use your information to send you marketing messages, such as important news, updates and the essential information that supports your attendance.</value></data>
+  <data name="Privacy.Use.Legal.Title" xml:space="preserve"><value>Legal obligations</value></data>
+  <data name="Privacy.Use.Legal.Body" xml:space="preserve"><value>We may use your information to comply with our legal obligations.</value></data>
+  <data name="Privacy.Disclosure.Title" xml:space="preserve"><value>Disclosure of your information</value></data>
+  <data name="Privacy.Disclosure.Body" xml:space="preserve"><value>We do not sell your personal information to third parties. We may, however, share your information with official third-party service providers who perform services on our behalf, such as research or customer support.</value></data>
+  <data name="Privacy.Exhibitors.Title" xml:space="preserve"><value>Exhibitors: disclosure of your information</value></data>
+  <data name="Privacy.Exhibitors.Body1" xml:space="preserve"><value>By completing the "Exhibitor participation request" and registering as an exhibitor, you automatically agree to our privacy policy. As an exhibitor at the Saudi International Maritime Forum exhibition, we will disclose your data to a limited number of third parties. Those parties are official contractors engaged by us to deliver essential services to you as the exhibitor.</value></data>
+  <data name="Privacy.Exhibitors.Body2" xml:space="preserve"><value>You have the right to ask us not to disclose your personal data to third parties, but you should be aware that doing so will significantly affect your participation in the exhibition.</value></data>
+  <data name="Privacy.Exhibitors.Body3" xml:space="preserve"><value>If you wish to withdraw from the disclosure of your personal data, please write to us at:</value></data>
+  <data name="Privacy.Visitors.Title" xml:space="preserve"><value>Visitors: disclosure of your information</value></data>
+  <data name="Privacy.Visitors.Body" xml:space="preserve"><value>By registering to attend the 4th Saudi International Maritime Forum, you agree that the exhibition organiser may use your data to contact you about important information relating to your registration status, and about exhibition news and developments, in order to help you plan your visit. Once registered, you also agree to your data being shared with a third-party provider (or providers) appointed specifically to gather visitor research, so that suggestions and impressions can help improve the exhibition.</value></data>
+  <data name="Privacy.Links.Title" xml:space="preserve"><value>Links to other sites</value></data>
+  <data name="Privacy.Links.Body" xml:space="preserve"><value>Our service may contain links to other sites. If you click an external link you will be directed to that site. Please note that we do not operate those sites, so we strongly advise you to review the privacy policy of those websites. We have no control over, and accept no responsibility for, the content, privacy policies or practices of those websites or their services.</value></data>
+  <data name="Privacy.Security.Title" xml:space="preserve"><value>Security measures</value></data>
+  <data name="Privacy.Security.Body" xml:space="preserve"><value>We take appropriate security measures to protect your personal information from unauthorised access, alteration or destruction.</value></data>
+  <data name="Privacy.Delete.Title" xml:space="preserve"><value>Account and data deletion</value></data>
+  <data name="Privacy.Delete.Body1" xml:space="preserve"><value>You can delete your Saudi International Maritime Forum app account at any time from inside the app itself: open "My area", choose "Delete account", then confirm.</value></data>
+  <data name="Privacy.Delete.Body2" xml:space="preserve"><value>When an account is deleted we erase the personal data on your profile, destroy your uploaded photos and identity document, revoke every session and registered device, and permanently disable the account. The action cannot be undone. We retain only a minimal record of the deletion itself, to meet our legal obligations and for security auditing.</value></data>
+  <data name="Privacy.Delete.Body3" xml:space="preserve"><value>If you cannot reach the app, you can request deletion of your account and data by writing to us at:</value></data>
+  <data name="Privacy.Changes.Title" xml:space="preserve"><value>Changes to this privacy policy</value></data>
+  <data name="Privacy.Changes.Body" xml:space="preserve"><value>We may update this privacy policy from time to time. We will notify you of any material changes by updating the "Last updated" date shown above in this policy.</value></data>
+  <data name="Privacy.Contact.Title" xml:space="preserve"><value>Contact us</value></data>
+  <data name="Privacy.Contact.Body" xml:space="preserve"><value>For further enquiries, contact us by email at:</value></data>
+  <data name="Privacy.Contact.Email" xml:space="preserve"><value>info@simrsnf.com</value></data>
 </root>

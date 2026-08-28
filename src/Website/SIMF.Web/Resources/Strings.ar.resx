@@ -349,4 +349,46 @@
   <data name="Archive.Speakers.Lead" xml:space="preserve"><value>نخبة من القادة وصنّاع القرار والخبراء من المملكة والعالم شاركوا في نسخ الملتقى السابقة.</value></data>
   <data name="Archive.Editions.Title" xml:space="preserve"><value>استعرض الإصدارات السابقة</value></data>
   <data name="Archive.Editions.Desc" xml:space="preserve"><value>نسخ الملتقى عبر السنوات.</value></data>
+  <data name="Privacy.PageTitle" xml:space="preserve"><value>سياسة الخصوصية — الملتقى البحري السعودي الدولي</value></data>
+  <data name="Privacy.Meta" xml:space="preserve"><value>سياسة الخصوصية للملتقى البحري السعودي الدولي: كيف نجمع معلوماتك الشخصية ونستخدمها ونشاركها عند استخدامك لخدماتنا الرقمية.</value></data>
+  <data name="Privacy.Breadcrumb" xml:space="preserve"><value>سياسة الخصوصية</value></data>
+  <data name="Privacy.Hero.Title" xml:space="preserve"><value>سياسة الخصوصية</value></data>
+  <data name="Privacy.Hero.Subtitle" xml:space="preserve"><value>آخر تحديث: 23 اغسطس 2026</value></data>
+  <data name="Privacy.Intro.Title" xml:space="preserve"><value>المقدمة</value></data>
+  <data name="Privacy.Intro.Body" xml:space="preserve"><value>توضح سياسة الخصوصية هذه كيفية قيام الملتقى البحري السعودي الدولي ("نحن"، "لنا"، أو "خاصتنا") بجمع واستخدام ومشاركة معلوماتك الشخصية عند استخدامك لخدماتنا، بما في ذلك عند استخدام أي من خدماتنا الرقمية.</value></data>
+  <data name="Privacy.Collect.Title" xml:space="preserve"><value>المعلومات التي نجمعها</value></data>
+  <data name="Privacy.Collect.Personal.Title" xml:space="preserve"><value>المعلومات الشخصية</value></data>
+  <data name="Privacy.Collect.Personal.Body" xml:space="preserve"><value>نقوم بجمع المعلومات التي تقدمها لنا بشكل مباشر، مثل اسمك، وعنوان بريدك الإلكتروني، ورقم هاتفك. ومن حين لآخر، قد نطلب معلومات إضافية لمعالجة بعض الخدمات مثل التسجيل.</value></data>
+  <data name="Privacy.Collect.Usage.Title" xml:space="preserve"><value>بيانات الاستخدام</value></data>
+  <data name="Privacy.Collect.Usage.Body" xml:space="preserve"><value>نجمع معلومات حول كيفية استخدامك لخدماتنا، بما في ذلك عنوان بروتوكول الإنترنت (IP)، ونوع المتصفح، ونظام التشغيل.</value></data>
+  <data name="Privacy.Collect.Cookies.Title" xml:space="preserve"><value>ملفات تعريف الارتباط وتقنيات التتبع</value></data>
+  <data name="Privacy.Collect.Cookies.Body" xml:space="preserve"><value>نستخدم ملفات تعريف الارتباط (Cookies) وتقنيات تتبع أخرى لتحسين تجربتك وتحليل كيفية استخدام خدماتنا.</value></data>
+  <data name="Privacy.Use.Title" xml:space="preserve"><value>كيفية استخدامنا لمعلوماتك</value></data>
+  <data name="Privacy.Use.Services.Title" xml:space="preserve"><value>تقديم الخدمات</value></data>
+  <data name="Privacy.Use.Services.Body" xml:space="preserve"><value>نستخدم معلوماتك لتقديم خدماتنا وتحسينها.</value></data>
+  <data name="Privacy.Use.Communication.Title" xml:space="preserve"><value>التواصل</value></data>
+  <data name="Privacy.Use.Communication.Body" xml:space="preserve"><value>نستخدم معلوماتك لإرسال رسائل تسويقية لك، مثل الأخبار المهمة والتحديثات والمعلومات الأساسية لدعم حضورك.</value></data>
+  <data name="Privacy.Use.Legal.Title" xml:space="preserve"><value>الالتزامات القانونية</value></data>
+  <data name="Privacy.Use.Legal.Body" xml:space="preserve"><value>قد نستخدم معلوماتك للامتثال للالتزامات القانونية.</value></data>
+  <data name="Privacy.Disclosure.Title" xml:space="preserve"><value>الإفصاح عن معلوماتك</value></data>
+  <data name="Privacy.Disclosure.Body" xml:space="preserve"><value>نحن لا نقوم ببيع معلوماتك الشخصية لأطراف ثالثة. ومع ذلك، قد نشارك معلوماتك مع مزودي خدمات رسميين من الأطراف الثالثة ممن يؤدون خدمات نيابةً عنا، مثل الأبحاث، أو دعم العملاء.</value></data>
+  <data name="Privacy.Exhibitors.Title" xml:space="preserve"><value>العارضون: الإفصاح عن معلوماتكم</value></data>
+  <data name="Privacy.Exhibitors.Body1" xml:space="preserve"><value>من خلال استكمال "طلب المشاركة كعارض" والتسجيل كعارض، فإنك توافق تلقائيًا على سياسة الخصوصية الخاصة بنا. وبصفتك عارضًا في معرض الملتقى البحري السعودي الدولي، سنقوم بالإفصاح عن بياناتك لعدد محدود من الأطراف الثالثة. هؤلاء الأطراف هم متعاقدون رسميون تم التعاقد معهم من قبلنا لتقديم خدمات أساسية لك، بصفتك العارض.</value></data>
+  <data name="Privacy.Exhibitors.Body2" xml:space="preserve"><value>لديك الحق في أن تطلب منا عدم الإفصاح عن بياناتك الشخصية لأطراف ثالثة، غير أنه يجب أن تدرك أن القيام بذلك سيؤثر بشكل كبير على مشاركتك في المعرض.</value></data>
+  <data name="Privacy.Exhibitors.Body3" xml:space="preserve"><value>إذا رغبت في الانسحاب من الإفصاح عن بياناتك الشخصية، يرجى مراسلتنا عبر البريد الإلكتروني:</value></data>
+  <data name="Privacy.Visitors.Title" xml:space="preserve"><value>الزوار: الإفصاح عن معلوماتكم</value></data>
+  <data name="Privacy.Visitors.Body" xml:space="preserve"><value>من خلال تسجيلك لحضور الملتقى البحري السعودي الدولي الرابع، فإنك توافق على استخدام بياناتك من قبل منظم المعرض للتواصل معك بشأن معلومات مهمة تتعلق بحالة تسجيلك، وأخبار وتطورات المعرض، وذلك لمساعدتك في التخطيط لزيارتك. وبمجرد التسجيل، فإنك توافق أيضًا على مشاركة بياناتك مع مزوّد (أو مزوّدين) من الأطراف الثالثة تم تكليفهم خصيصًا بجمع أبحاث من الزوار للحصول على مقترحات وانطباعات تسهم في تحسين المعرض.</value></data>
+  <data name="Privacy.Links.Title" xml:space="preserve"><value>الروابط لمواقع أخرى</value></data>
+  <data name="Privacy.Links.Body" xml:space="preserve"><value>قد تتضمن خدمتنا روابط لمواقع أخرى. إذا قمت بالضغط على رابط خارجي فسيتم توجيهك إلى ذلك الموقع. تجدر الإشارة إلى أننا لا نشغّل تلك المواقع. لذا، فإننا ننصحك بشدة بمراجعة سياسة الخصوصية الخاصة بتلك المواقع الإلكترونية. إننا لا نملك أي سيطرة على المحتوى، أو سياسات الخصوصية، أو الممارسات الخاصة بتلك المواقع الإلكترونية أو خدماتها، ولا نتحمل أي مسؤولية عن ذلك.</value></data>
+  <data name="Privacy.Security.Title" xml:space="preserve"><value>إجراءات الأمان</value></data>
+  <data name="Privacy.Security.Body" xml:space="preserve"><value>نتخذ الإجراءات الأمنية المناسبة لحماية معلوماتك الشخصية من الوصول غير المصرح به أو التغيير أو الإتلاف.</value></data>
+  <data name="Privacy.Delete.Title" xml:space="preserve"><value>حذف الحساب وحذف البيانات</value></data>
+  <data name="Privacy.Delete.Body1" xml:space="preserve"><value>يمكنك حذف حسابك في تطبيق الملتقى البحري السعودي الدولي في أي وقت ومن داخل التطبيق نفسه: افتح "منطقتي"، ثم اختر "حذف الحساب"، ثم أكّد العملية.</value></data>
+  <data name="Privacy.Delete.Body2" xml:space="preserve"><value>عند حذف الحساب نقوم بمسح بياناتك الشخصية من ملفك الشخصي، وإتلاف صورك ووثيقة هويتك المرفوعة، وإلغاء جميع جلساتك وأجهزتك المسجلة، وتعطيل الحساب نهائيًا. العملية غير قابلة للتراجع. ونحتفظ فقط بالحد الأدنى من سجل عملية الحذف نفسها للامتثال للالتزامات القانونية والتدقيق الأمني.</value></data>
+  <data name="Privacy.Delete.Body3" xml:space="preserve"><value>إذا لم تتمكن من الوصول إلى التطبيق، يمكنك طلب حذف حسابك وبياناتك بمراسلتنا عبر البريد الإلكتروني:</value></data>
+  <data name="Privacy.Changes.Title" xml:space="preserve"><value>التعديلات على سياسة الخصوصية</value></data>
+  <data name="Privacy.Changes.Body" xml:space="preserve"><value>قد نقوم بتحديث سياسة الخصوصية هذه من وقت لآخر. وسنخطرك بأي تغييرات جوهرية من خلال تحديث تاريخ "آخر تحديث" الموضح أعلاه في هذه السياسة.</value></data>
+  <data name="Privacy.Contact.Title" xml:space="preserve"><value>التواصل معنا</value></data>
+  <data name="Privacy.Contact.Body" xml:space="preserve"><value>للمزيد من الاستفسارات تواصل معنا عبر البريد الإلكتروني:</value></data>
+  <data name="Privacy.Contact.Email" xml:space="preserve"><value>info@simrsnf.com</value></data>
 </root>
