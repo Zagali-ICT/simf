@@ -16,7 +16,8 @@ namespace SIMF.Application.IdentityAccess.Abstractions;
 /// SimfUser or a UserProfile.</para>
 /// <para>The immutable audit snapshots survive deliberately. OperationLog,
 /// RowAudit and GateScan capture the actor's name at write time precisely so
-/// the trail stays self-contained (D-157), and erasure does not reach them.</para>
+/// the trail stays self-contained across the two separated databases, and
+/// erasure does not reach them.</para>
 /// </remarks>
 public interface IAccountDeletionService
 {

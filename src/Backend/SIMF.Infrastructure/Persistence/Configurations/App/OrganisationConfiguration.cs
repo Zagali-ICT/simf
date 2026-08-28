@@ -46,8 +46,8 @@ internal sealed class OrganisationConfiguration : IEntityTypeConfiguration<Organ
         builder.HasIndex(organisation => new { organisation.IsActive, organisation.NameArabic });
 
         // "Other", so a visitor whose employer is not in this curated list can
-        // still finish registering — organisation is required on the form
-        // (D-221), and before this the picker said "no matches" and the
+        // still finish registering — organisation is required on the form,
+        // and before this the picker said "no matches" and the
         // registration stopped there. They pick this row and type the real name
         // into UserProfile.OrganisationOther.
         //
