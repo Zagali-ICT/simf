@@ -1,0 +1,99 @@
+@* SIMF public "Privacy policy" page. Long-form legal text supplied by the
+   forum's owner, rendered on the shared LandingShell + LandingPageHero
+   (two-level breadcrumb Home / Privacy policy) inside the ln-legal prose card.
+   Bilingual AR-RTL / EN-LTR, fully static (no API): every paragraph is a resx
+   key so the Arabic original and the English translation stay in step.
+   Serves "/privacy".
+
+   This page is also the app store submission's privacy-policy URL. Google Play
+   requires a publicly reachable policy for any app that offers account
+   creation, and a web-reachable account-deletion request path alongside the
+   in-app one - hence the "Account and data deletion" section, anchored at
+   #delete-account so the Play Console Data safety form can link straight to it.
+   The in-app half lives in DeleteAccountTile / DELETE /app/account. *@
+@page "/privacy"
+@layout LandingLayout
+@inject IStringLocalizer<Strings> L
+
+<LandingShell Title="@L["Privacy.PageTitle"]" Description="@L["Privacy.Meta"]">
+
+    @* ============================== HERO ============================== *@
+    <LandingPageHero Title="@L["Privacy.Hero.Title"]"
+                     Subtitle="@L["Privacy.Hero.Subtitle"]"
+                     Crumb="@L["Privacy.Breadcrumb"]"
+                     ImageSrc="assets/figma/about/about-hero.jpg" />
+
+    @* ============================ POLICY BODY ============================ *@
+    <section class="ln-fsection" aria-label="@L["Privacy.Hero.Title"]">
+        <div class="ln-fsection__inner ln-reveal">
+            <article class="ln-legal">
+
+                <h2 class="ln-legal__h2">@L["Privacy.Intro.Title"]</h2>
+                <p class="ln-legal__p">@L["Privacy.Intro.Body"]</p>
+
+                <h2 class="ln-legal__h2">@L["Privacy.Collect.Title"]</h2>
+                <h3 class="ln-legal__h3">@L["Privacy.Collect.Personal.Title"]</h3>
+                <p class="ln-legal__p">@L["Privacy.Collect.Personal.Body"]</p>
+                <h3 class="ln-legal__h3">@L["Privacy.Collect.Usage.Title"]</h3>
+                <p class="ln-legal__p">@L["Privacy.Collect.Usage.Body"]</p>
+                <h3 class="ln-legal__h3">@L["Privacy.Collect.Cookies.Title"]</h3>
+                <p class="ln-legal__p">@L["Privacy.Collect.Cookies.Body"]</p>
+
+                <h2 class="ln-legal__h2">@L["Privacy.Use.Title"]</h2>
+                <h3 class="ln-legal__h3">@L["Privacy.Use.Services.Title"]</h3>
+                <p class="ln-legal__p">@L["Privacy.Use.Services.Body"]</p>
+                <h3 class="ln-legal__h3">@L["Privacy.Use.Communication.Title"]</h3>
+                <p class="ln-legal__p">@L["Privacy.Use.Communication.Body"]</p>
+                <h3 class="ln-legal__h3">@L["Privacy.Use.Legal.Title"]</h3>
+                <p class="ln-legal__p">@L["Privacy.Use.Legal.Body"]</p>
+
+                <h2 class="ln-legal__h2">@L["Privacy.Disclosure.Title"]</h2>
+                <p class="ln-legal__p">@L["Privacy.Disclosure.Body"]</p>
+
+                <h2 class="ln-legal__h2">@L["Privacy.Exhibitors.Title"]</h2>
+                <p class="ln-legal__p">@L["Privacy.Exhibitors.Body1"]</p>
+                <p class="ln-legal__p">@L["Privacy.Exhibitors.Body2"]</p>
+                <p class="ln-legal__p">
+                    @L["Privacy.Exhibitors.Body3"]
+                    <a class="ln-legal__mail" href="mailto:@ContactEmail">@ContactEmail</a>
+                </p>
+
+                <h2 class="ln-legal__h2">@L["Privacy.Visitors.Title"]</h2>
+                <p class="ln-legal__p">@L["Privacy.Visitors.Body"]</p>
+
+                <h2 class="ln-legal__h2">@L["Privacy.Links.Title"]</h2>
+                <p class="ln-legal__p">@L["Privacy.Links.Body"]</p>
+
+                <h2 class="ln-legal__h2">@L["Privacy.Security.Title"]</h2>
+                <p class="ln-legal__p">@L["Privacy.Security.Body"]</p>
+
+                @* The Play Console Data safety form links directly at this id. *@
+                <h2 class="ln-legal__h2" id="delete-account">@L["Privacy.Delete.Title"]</h2>
+                <p class="ln-legal__p">@L["Privacy.Delete.Body1"]</p>
+                <p class="ln-legal__p">@L["Privacy.Delete.Body2"]</p>
+                <p class="ln-legal__p">
+                    @L["Privacy.Delete.Body3"]
+                    <a class="ln-legal__mail" href="mailto:@ContactEmail">@ContactEmail</a>
+                </p>
+
+                <h2 class="ln-legal__h2">@L["Privacy.Changes.Title"]</h2>
+                <p class="ln-legal__p">@L["Privacy.Changes.Body"]</p>
+
+                <h2 class="ln-legal__h2">@L["Privacy.Contact.Title"]</h2>
+                <p class="ln-legal__p">
+                    @L["Privacy.Contact.Body"]
+                    <a class="ln-legal__mail" href="mailto:@ContactEmail">@ContactEmail</a>
+                </p>
+
+            </article>
+        </div>
+    </section>
+
+</LandingShell>
+
+@code {
+    // One resx key, read in both languages and rendered at all three places the
+    // policy prints an address, so changing the published contact is a two-line
+    // edit (Strings.resx + Strings.ar.resx) rather than a hunt through markup.
+    private string ContactEmail => L["Privacy.Contact.Email"].Value;
+}
