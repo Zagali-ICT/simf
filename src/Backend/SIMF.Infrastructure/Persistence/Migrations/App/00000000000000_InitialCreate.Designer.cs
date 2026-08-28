@@ -3842,6 +3842,17 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.HasIndex("IsActive", "NameArabic");
 
                     b.ToTable("Organisations", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("a17e9c42-0b6d-4f58-9e31-7c2a8d5f60b4"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedBy = new Guid("00000000-0000-0000-0000-000000000000"),
+                            IsActive = true,
+                            Name = "Other",
+                            NameArabic = "أخرى"
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.Organization.OrganizationAboutItem", b =>
@@ -4394,6 +4405,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<Guid?>("OrganisationId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("OrganisationOther")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
 
                     b.Property<string>("PlaceOfBirth")
                         .IsRequired()

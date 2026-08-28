@@ -59,6 +59,11 @@ public sealed class UserProfileResponse
     /// or null when the user has not picked one.</summary>
     public Guid? OrganisationId { get; set; }
 
+    /// <summary>The employer the user typed when theirs is not in the curated
+    /// lookup, alongside <see cref="OrganisationId"/> pointing at the seeded
+    /// "Other" row. Null for every ordinary pick.</summary>
+    public string? OrganisationOther { get; set; }
+
     /// <summary>The picked region id (المنطقة), from
     /// <c>GET /api/v1/app/regions</c>, or null when the user has not picked
     /// one. Append-only field — the region pick is now persisted (it used to
@@ -175,6 +180,13 @@ public sealed class UpsertUserProfileRequest
     /// from <c>GET /api/v1/app/organisations</c>.
     /// Optional; the service rejects an unknown / inactive id.</summary>
     public Guid? OrganisationId { get; set; }
+
+    /// <summary>The employer the user typed when theirs is not in the lookup.
+    /// Only meaningful with <see cref="OrganisationId"/> set to the seeded
+    /// "Other" row, which the picker flags as <c>isOther</c>; ignored
+    /// otherwise. Max 150, matching the lookup's own name column so a value
+    /// promoted into the list later cannot be truncated on the way.</summary>
+    public string? OrganisationOther { get; set; }
 
     /// <summary>The user's self-picked region id (المنطقة), from
     /// <c>GET /api/v1/app/regions</c>. Optional; the service rejects an unknown /

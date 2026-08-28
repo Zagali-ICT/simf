@@ -74,6 +74,12 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
         builder.Property(profile => profile.JobTitle).HasMaxLength(100);
         // Arabic twin, same length as JobTitle.
         builder.Property(profile => profile.JobTitleArabic).HasMaxLength(100);
+        // The typed employer for a visitor whose organisation is not in the
+        // curated lookup. 150 deliberately matches Organisation.NameArabic's own
+        // ceiling: a name typed here that is later promoted into the lookup must
+        // fit without truncation, and a shorter cap here would silently lose the
+        // tail of exactly the long government-body names this field exists for.
+        builder.Property(profile => profile.OrganisationOther).HasMaxLength(150);
         // NationalityId is validated at the service layer
         // (UserProfileService.ResolveIdAsync rejects unknown ids). We do
         // NOT add a real DB FK here even though Country now lives in the

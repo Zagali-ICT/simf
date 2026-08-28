@@ -44,5 +44,30 @@ internal sealed class OrganisationConfiguration : IEntityTypeConfiguration<Organ
             .HasFilter("[CommercialRegistration] IS NOT NULL");
 
         builder.HasIndex(organisation => new { organisation.IsActive, organisation.NameArabic });
+
+        // "Other", so a visitor whose employer is not in this curated list can
+        // still finish registering — organisation is required on the form
+        // (D-221), and before this the picker said "no matches" and the
+        // registration stopped there. They pick this row and type the real name
+        // into UserProfile.OrganisationOther.
+        //
+        // Seeded in EF model data rather than by a service, for the same reason
+        // BadgeBatch.DirectRegistrationId is: it has to exist the instant the
+        // database does, because the first registration can need it.
+        //
+        // CommercialRegistration is deliberately null. The government Excel
+        // import matches on that column, so a row without one can never be
+        // updated or duplicated by a re-import.
+        //
+        // A fixed date, not "now" — HasData is compared into the migration, and
+        // a moving value makes every model check report a pending change.
+        builder.HasData(new Organisation
+        {
+            Id = Organisation.OtherId,
+            Name = "Other",
+            NameArabic = "أخرى",
+            IsActive = true,
+            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0),
+        });
     }
 }

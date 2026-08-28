@@ -8,6 +8,19 @@ namespace SIMF.Domain.Organisations;
 /// </summary>
 public class Organisation: BaseAuditEntity
 {
+    /// <summary>The catch-all row a visitor picks when their employer is not in
+    /// the curated list, at which point they type it into
+    /// <see cref="Profiles.UserProfile.OrganisationOther"/>.
+    ///
+    /// <para>A constant id rather than a lookup by name — the same reason
+    /// <see cref="Badges.BadgeBatch.DirectRegistrationId"/> is one: the seeder
+    /// stays idempotent and nothing depends on the display text staying put.
+    /// The government Excel import matches on commercial registration, which
+    /// this row has none of, so a re-import cannot collide with it.</para>
+    /// </summary>
+    public static readonly Guid OtherId =
+        new("A17E9C42-0B6D-4F58-9E31-7C2A8D5F60B4");
+
     public string? Name { get; set; }
 
     public string NameArabic { get; set; } = string.Empty;

@@ -10,6 +10,7 @@ using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Organisations;
+using SIMF.Domain.Organisations;
 using SIMF.Domain.IdentityAccess;
 using Xunit;
 
@@ -193,6 +194,58 @@ public sealed class OrganisationTests : IClassFixture<SimfApiFactory>
         var items = (await search.Content
             .ReadFromJsonAsync<ApiResult<IReadOnlyList<OrganisationPickerItem>>>())!.Data!;
         Assert.Contains(items, item => item.Id == created.Id);
+    }
+
+    [Fact]
+    public async Task The_catch_all_row_survives_a_search_that_matches_nothing()
+    {
+        // The whole point of "Other": it must be reachable at the moment the
+        // search finds NOTHING, which is exactly when a name filter would drop
+        // it. Someone typing their real employer is not typing "Other", so
+        // matching it on name would hide it from the only person who needs it —
+        // and before this row existed, the picker said "no matches" and a
+        // required field could not be satisfied at all.
+        var token = await CreateAdministratorAndSignInAsync();
+        var noMatch = $"zzz{Guid.NewGuid():N}";
+
+        var search = await GetAuthAsync(
+            $"/api/v1/app/organisations?search={noMatch}&top=20", token);
+        Assert.Equal(HttpStatusCode.OK, search.StatusCode);
+        var items = (await search.Content
+            .ReadFromJsonAsync<ApiResult<IReadOnlyList<OrganisationPickerItem>>>())!.Data!;
+
+        var other = Assert.Single(items);
+        Assert.Equal(Organisation.OtherId, other.Id);
+        Assert.True(other.IsOther);
+        Assert.Equal("أخرى", other.NameAr);
+    }
+
+    [Fact]
+    public async Task The_catch_all_row_is_last_and_is_the_only_one_flagged()
+    {
+        // Last, not first: it is the fallback, and a picker offering "Other"
+        // above the visitor's actual employer invites the wrong pick.
+        var token = await CreateAdministratorAndSignInAsync();
+        var marker = $"Ord{Guid.NewGuid():N}".Substring(0, 8);
+        await PostAuthAsync(
+            "/api/v1/admin/organisations",
+            new CreateOrganisationRequest
+            {
+                NameAr = $"{marker} شركة",
+                NameEn = $"{marker} Company",
+                CommercialRegistration = NewCr(),
+            },
+            token);
+
+        var search = await GetAuthAsync("/api/v1/app/organisations?top=50", token);
+        var items = (await search.Content
+            .ReadFromJsonAsync<ApiResult<IReadOnlyList<OrganisationPickerItem>>>())!.Data!;
+
+        Assert.True(items.Count > 1, "seed the list before asserting the order");
+        Assert.True(items[^1].IsOther, "the catch-all must sort last");
+        Assert.Single(items, item => item.IsOther);
+        // And it is not double-counted: excluded from the search, appended once.
+        Assert.Single(items, item => item.Id == Organisation.OtherId);
     }
 
     [Fact]

@@ -1329,6 +1329,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     JobTitle = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     JobTitleArabic = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true, collation: "Arabic_CI_AI"),
                     OrganisationId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    OrganisationOther = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: true),
                     RegionId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     BadgeBatchId = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValue: new Guid("0f1e2d3c-4b5a-6978-8796-a5b4c3d2e1f0")),
                     EditionYear = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
@@ -2854,6 +2855,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 table: "EventEdition",
                 columns: new[] { "Id", "LastClosedAt", "LastReissueCount", "OpenedAt", "Year" },
                 values: new object[] { new Guid("00000000-0000-0000-0000-000000000003"), null, 0, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), 2026 });
+
+            migrationBuilder.InsertData(
+                table: "Organisations",
+                columns: new[] { "Id", "City", "CommercialRegistration", "CreatedAt", "CreatedBy", "DeletedAt", "Email", "IsActive", "Name", "NameArabic", "Phone", "Sector", "UpdatedAt", "UpdatedBy", "Website" },
+                values: new object[] { new Guid("a17e9c42-0b6d-4f58-9e31-7c2a8d5f60b4"), null, null, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new Guid("00000000-0000-0000-0000-000000000000"), null, null, true, "Other", "أخرى", null, null, null, null, null });
 
             migrationBuilder.InsertData(
                 table: "OrganizationProfile",
