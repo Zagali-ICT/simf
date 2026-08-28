@@ -48,34 +48,6 @@ internal sealed class UserProfileRepository(
 
     public void Add(UserProfile profile) => appDbContext.UserProfiles.Add(profile);
 
-    public async Task<bool> AnyOtherProfileWithIdentityHashAsync(
-        Guid excludeUserId, string? nationalIdHash, string? iqamaNumberHash,
-        string? passportNumberHash, CancellationToken cancellationToken = default)
-    {
-        // A caller who supplied no document at all cannot collide with anyone.
-        var candidateHashes = new[] { nationalIdHash, iqamaNumberHash, passportNumberHash }
-            .Where(hash => hash is not null)
-            .Select(hash => hash!)
-            .ToList();
-        if (candidateHashes.Count == 0)
-        {
-            return false;
-        }
-
-        // One question asked of the child table, where there used to be a second
-        // one asked of three per-kind hash columns first. This one is STRICTLY
-        // WIDER and subsumes it: every supplied digest is compared against every
-        // stored document whatever its kind, so somebody who registered on a
-        // passport and returns with an Iqama carrying the same number is caught.
-        // The three columns could only ever compare like with like.
-        return await appDbContext.UserProfiles
-            .AsNoTracking()
-            .Where(p => p.UserId != excludeUserId)
-            .SelectMany(p => p.IdentityDocuments)
-            .AnyAsync(document => candidateHashes.Contains(document.NumberHash),
-                cancellationToken);
-    }
-
     public async Task<long> NextRegistrationReferenceAsync(
         CancellationToken cancellationToken = default)
     {
@@ -238,24 +210,4 @@ internal sealed class UserProfileRepository(
 
     public Task SaveAppChangesAsync(CancellationToken cancellationToken = default) =>
         appDbContext.SaveChangesAsync(cancellationToken);
-
-    public async Task SaveProfileIdentityChangesAsync(CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            await appDbContext.SaveChangesAsync(cancellationToken);
-        }
-        // ONE index name now, where there used to be three per-kind ones beside
-        // it. The child table's single digest index is the whole duplicate-identity
-        // constraint; without this filter matching it, a duplicate that slips the
-        // soft guard surfaces as an uncaught 500 instead of the 409 the same
-        // duplicate gets on every other path. Named from the constant rather than
-        // spelled out, because this filter matches index names as STRINGS and a
-        // renamed index would silently stop matching.
-        catch (DbUpdateException ex) when (ex.ViolatesAnyIndex(
-            Configurations.App.ProfileIdentityDocumentConfiguration.NumberHashIndexName))
-        {
-            throw ApiException.DuplicateIdentity();
-        }
-    }
 }

@@ -289,29 +289,16 @@ internal sealed class UserProfileService(
         profile.PlaceOfBirth = request.PlaceOfBirth;
         profile.IsSaudi = request.IsSaudi;
         // H-1 — normalise the identity numbers exactly like the walk-in desk
-        // (AdminAccountService) before either the guard or the storage sees them,
-        // so the digest the unique index enforces and the digest the soft guard
-        // queries are computed from the same strings.
+        // (AdminAccountService) before storage sees them, so both write paths
+        // persist the same strings.
         var nationalId = request.IsSaudi ? NormaliseOptional(request.NationalId) : null;
         var iqamaNumber = request.IsSaudi ? null : NormaliseOptional(request.IqamaNumber);
         var passportNumber = request.IsSaudi ? null : NormaliseOptional(request.PassportNumber);
-        // One row per document, behind one unique digest index over all of them,
-        // which is what makes a CROSS-KIND duplicate visible at all. This is the
-        // only storage: the three number columns and their three blind-index
-        // siblings are gone, and the response below is built from these rows.
+        // One row per document. This is the only storage: the three number
+        // columns and their three blind-index siblings are gone, and the response
+        // below is built from these rows.
         ProfileIdentityStorage.SyncDocuments(
             profile, pii, nationalId, iqamaNumber, passportNumber);
-
-        // H-1 — reject an identifier already registered on ANOTHER user's profile
-        // (409). Self-excluding (UserId != actorUserId) so a user re-saving their
-        // OWN id is never a false conflict. A concurrent duplicate that slips this
-        // soft guard hits the unique digest index and is translated below (FIX E).
-        if (await profiles.AnyOtherProfileWithIdentityHashAsync(
-                actorUserId, pii.BlindIndex(nationalId), pii.BlindIndex(iqamaNumber),
-                pii.BlindIndex(passportNumber), cancellationToken))
-        {
-            throw ApiException.DuplicateIdentity();
-        }
 
         // The mobile number, written to the storage that supersedes the two
         // columns: ONE canonical E.164 value, because a Saudi mobile is an
@@ -466,10 +453,7 @@ internal sealed class UserProfileService(
         // this). The window where Identity commits and App fails is
         // covered by user retry — the next upsert reattempts the App
         // save against an idempotent (UserId-unique) row.
-        // FIX E — a concurrent duplicate identity that slipped the soft guard
-        // above hits the filtered UNIQUE index here; the repository translates
-        // that race into a 409 DuplicateIdentity instead of an uncaught 500.
-        await profiles.SaveProfileIdentityChangesAsync(cancellationToken);
+        await profiles.SaveAppChangesAsync(cancellationToken);
 
         // The audit Detail carries the ProfileTypeId so
         // the CP pending-profile review surface shows the user's

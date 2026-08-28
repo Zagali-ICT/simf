@@ -458,6 +458,45 @@ external links. **Closed by D-929** as `CK_StoredFiles_SizeBytes`
 (`[SizeBytes] IS NULL OR [SizeBytes] > 0`), which tolerates NULL and so guards
 every file service rather than presentations alone.
 
+### D-945 named lift — the cross-profile duplicate-identity constraint is gone (2026-08-29)
+
+Owner instruction. One index dropped on `SimfAppDbContext`:
+**`IX_ProfileIdentityDocuments_NumberHash`**, the UNIQUE digest index that made a
+national ID / Iqama / passport unique ACROSS profiles. Regenerated through
+`tools/migrations/Regenerate-Migration.ps1`, so there is still exactly one
+`InitialCreate` per context at the pinned `00000000000000` id and
+`SchemaFreezeTests` is unchanged.
+
+**`IX_ProfileIdentityDocuments_ProfileId_Kind` SURVIVES** and is not part of this
+lift. It bounds a SINGLE profile to one document per kind, was never the
+registration blocker, and dropping it would let one profile hold two passports
+with the read path forced to choose. Do not read "the duplicate-identity
+constraint was removed" as covering both.
+
+The `NumberHash` **column is kept** though nothing reads it now:
+`ProfileIdentityDocument.Number` is AES-GCM encrypted under a random nonce and can
+never be equality-queried, so the digest is the only seam a future
+document-number lookup could use. Dropping it is a separate decision.
+
+**Shipped with its hand-run delta**,
+`docs/migrations/2026/SIMF_App_D945_DropIdentityDocumentUniqueIndex.sql`. A
+regenerated migration is a no-op against a database that already has one, so
+without the delta the index survives on production and keeps rejecting exactly
+the registrations this lift exists to allow. D-944 learned that the expensive way
+eight days earlier.
+
+**The thing worth remembering is how the constraint got here.** It was added on
+2026-07-12 (`24aaf88ca`, `7fb2c6358`) labelled "H-1", inside a wave called "W4
+on-site remediation" that a review pass generated for itself. No decision row was
+ever taken, and no document in the repository defines W4's H-1. A
+schema-affecting constraint therefore entered the system with no record anyone
+could later question, and the first person to question it was a user blocked by
+it seven weeks later. A guard nobody can trace is a guard nobody can weigh.
+
+Enums are untouched, and the shipped mobile wire contract stays append-only.
+`ErrorCodes.DuplicateIdentity` is removed, but it is an error code the server
+emitted rather than a field the app decodes, and no client parses it.
+
 ### D-944 named lift — the organisation a visitor types (2026-08-28)
 
 One additive nullable column on `SimfAppDbContext`: **`UserProfile.OrganisationOther`**,

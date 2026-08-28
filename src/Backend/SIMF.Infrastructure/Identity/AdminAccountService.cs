@@ -70,7 +70,6 @@ internal sealed partial class AdminAccountService(
     ITransactionRunner transactionRunner,
     SimfIdentityDbContext dbContext,
     SimfAppDbContext appDbContext,
-    IUserProfileRepository profiles,
     IPiiEncryptor pii,
     TimeProvider timeProvider,
     INotificationDispatcher notifications,
@@ -553,23 +552,6 @@ internal sealed partial class AdminAccountService(
         var nationalId = request.IsSaudi ? NormaliseOptional(request.NationalId) : null;
         var iqamaNumber = request.IsSaudi ? null : NormaliseOptional(request.IqamaNumber);
         var passportNumber = request.IsSaudi ? null : NormaliseOptional(request.PassportNumber);
-        var nationalIdHash = pii.BlindIndex(nationalId);
-        var iqamaNumberHash = pii.BlindIndex(iqamaNumber);
-        var passportNumberHash = pii.BlindIndex(passportNumber);
-
-        // Reuse the repository's single OR-query identity-exists check
-        // (IUserProfileRepository.AnyOtherProfileWithIdentityHashAsync). Guid.Empty
-        // excludes nobody — no real profile has UserId == Guid.Empty — so this NEW
-        // walk-in user is checked against every existing profile.
-        var duplicateIdentity = await profiles.AnyOtherProfileWithIdentityHashAsync(
-            Guid.Empty, nationalIdHash, iqamaNumberHash, passportNumberHash, cancellationToken);
-        if (duplicateIdentity)
-        {
-            await AuditFailure(
-                AuditEvents.AdminWalkInRegisterFailed, actorUserId, email, null,
-                ErrorCodes.DuplicateIdentity, cancellationToken);
-            throw ApiException.DuplicateIdentity();
-        }
 
         var now = timeProvider.SimfNow();
         var user = new SimfUser
@@ -711,29 +693,9 @@ internal sealed partial class AdminAccountService(
         // path mints the QR badge. The QR is the access key, granted on
         // approval, not at the desk.
         // UserProfile lives on App DB now; save both contexts.
-        // The soft guard above is a non-atomic read-then-insert; a
-        // concurrent duplicate that slips it hits the filtered UNIQUE identity
-        // index here. Translate that race into the same 409 DuplicateIdentity
-        // instead of an uncaught 500 (narrow — any other violation rethrows).
         try
         {
             await appDbContext.SaveChangesAsync(cancellationToken);
-        }
-        // ONE index name now, where there used to be three per-kind ones beside
-        // it: the child table's single digest index is the whole duplicate-identity
-        // constraint, and it fires on a cross-kind duplicate the three could not
-        // see. Named from the constant, not a string, so removing the index cannot
-        // leave a filter that silently stops matching and turns this 409 into a
-        // 500. Deliberately NOT added to the QrId catch below, which answers a
-        // different conflict with a different code.
-        catch (DbUpdateException ex) when (ex.ViolatesAnyIndex(
-            Persistence.Configurations.App.ProfileIdentityDocumentConfiguration
-                .NumberHashIndexName))
-        {
-            await AuditFailure(
-                AuditEvents.AdminWalkInRegisterFailed, actorUserId, email, null,
-                ErrorCodes.DuplicateIdentity, cancellationToken);
-            throw ApiException.DuplicateIdentity();
         }
         // Two desks uploading the same batch at once. The pre-check in
         // the upload service is a non-atomic read-then-insert, so the loser lands

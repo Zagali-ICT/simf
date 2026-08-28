@@ -82,10 +82,6 @@ public static class ErrorCodes
 
     // Admin user-creation
     public const string AdminEmailAlreadyRegistered = "ADMIN_EMAIL_ALREADY_REGISTERED";
-    // Walk-in registration: the supplied National ID
-    // / Iqama / passport already belongs to a profile row (duplicate-identity
-    // guard, matched via the deterministic blind-index hash of the identifier).
-    public const string DuplicateIdentity = "DUPLICATE_IDENTITY";
 
     // Admin bulk actions
     public const string AdminUserNotFound = "ADMIN_USER_NOT_FOUND";

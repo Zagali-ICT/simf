@@ -3547,12 +3547,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 columns: new[] { "Status", "CreatedAt" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_ProfileIdentityDocuments_NumberHash",
-                table: "ProfileIdentityDocuments",
-                column: "NumberHash",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
                 name: "IX_ProfileIdentityDocuments_ProfileId_Kind",
                 table: "ProfileIdentityDocuments",
                 columns: new[] { "ProfileId", "Kind" },

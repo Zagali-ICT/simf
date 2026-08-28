@@ -922,7 +922,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task Self_service_upsert_of_an_id_on_another_users_profile_is_409()
+    public async Task Self_service_upsert_of_an_id_on_another_users_profile_is_accepted()
     {
         var sharedNationalId = TestIdentity.MintNationalId();
 
@@ -936,9 +936,9 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         var reqB = await ValidSaudiRequestAsync();
         reqB.NationalId = sharedNationalId;
         var second = await PostAuthAsync(Path, reqB, tokenB);
-        Assert.Equal(HttpStatusCode.Conflict, second.StatusCode);
-        var body = (await second.Content.ReadFromJsonAsync<ApiResult<object>>())!;
-        Assert.Equal(ErrorCodes.DuplicateIdentity, body.Error!.Code);
+        // No longer a conflict: the duplicate-identity guard was removed on
+        // owner instruction (2026-08-29).
+        Assert.Equal(HttpStatusCode.OK, second.StatusCode);
     }
 
     // The identity-document collapse — the three number columns are superseded by

@@ -23,15 +23,6 @@ namespace SIMF.Infrastructure.Persistence.Configurations.App;
 internal sealed class ProfileIdentityDocumentConfiguration
     : IEntityTypeConfiguration<ProfileIdentityDocument>
 {
-    /// <summary>The unique digest index's name, pinned rather than left to EF's
-    /// convention because it is matched as a STRING when a concurrent insert
-    /// loses the race and the violation has to be translated into a 409
-    /// <c>DUPLICATE_IDENTITY</c> (<c>UserProfileRepository</c> and
-    /// <c>AdminAccountService</c>). A conventional name would change silently
-    /// under an index-shape edit and turn that 409 into an uncaught 500.</summary>
-    public const string NumberHashIndexName =
-        "IX_ProfileIdentityDocuments_NumberHash";
-
     public void Configure(EntityTypeBuilder<ProfileIdentityDocument> builder)
     {
         builder.ToTable("ProfileIdentityDocuments");
@@ -63,15 +54,6 @@ internal sealed class ProfileIdentityDocumentConfiguration
         builder.Property(document => document.NumberHash)
             .HasMaxLength(64)
             .IsRequired();
-
-        // THE cross-kind duplicate guard, and the whole reason this table exists.
-        //
-        // Not filtered, unlike the per-kind uniques it replaced: the column is
-        // required here, so there are no NULL rows to exempt. A document row
-        // exists only when there is a number to put in it.
-        builder.HasIndex(document => document.NumberHash)
-            .IsUnique()
-            .HasDatabaseName(NumberHashIndexName);
 
         // One document of each kind per attendee. This is the constraint that used
         // to be expressed by there being exactly one NationalId / IqamaNumber /
