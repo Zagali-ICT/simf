@@ -1934,6 +1934,7 @@ class AppL10n {
   String get moreAbout => _t('عن الملتقى', 'About the forum');
   String get moreAccessibility => _t('إمكانية الوصول', 'Accessibility');
   String get moreTerms => _t('الشروط والأحكام', 'Terms & conditions');
+  String get morePrivacy => _t('سياسة الخصوصية', 'Privacy policy');
   String get moreRate => _t('تقييم', 'Rate');
   String get moreNotifications => _t('الإشعارات', 'Notifications');
   String get moreResetPassword =>

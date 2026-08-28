@@ -2,24 +2,36 @@ import 'package:flutter/material.dart';
 
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/core/env/build_config.dart';
 import 'package:simf_app/features/more/more_screen.dart' show MoreScreen;
 
-/// One entry in the المزيد menu: an icon, the localized title, and the route it
-/// opens. Single source of truth shared by the full-page [MoreScreen] and the
-/// shell's side drawer (`MoreDrawer`) so the list never drifts between them.
+/// One entry in the المزيد menu: an icon, the localized title, and where it
+/// goes — an in-app route or an external website, exactly one of the two.
+/// Single source of truth shared by the full-page [MoreScreen] and the shell's
+/// side drawer (`MoreDrawer`) so the list never drifts between them.
 @immutable
 class MoreMenuEntry {
   const MoreMenuEntry({
     required this.icon,
     required this.title,
-    required this.routeName,
+    this.routeName,
+    this.externalUrl,
     this.approvedOnly = false,
     this.signedInOnly = false,
-  });
+  }) : assert(
+          (routeName == null) != (externalUrl == null),
+          'an entry opens a route or an external URL, never both or neither',
+        );
 
   final IconData icon;
   final String title;
-  final String routeName;
+
+  /// The in-app route this opens, or null when the entry leaves the app.
+  final String? routeName;
+
+  /// The website this opens instead of a route, behind the shared
+  /// leave-the-app confirmation. Null for an ordinary in-app entry.
+  final String? externalUrl;
 
   /// When true the entry is advertised only to an **approved** account — the
   /// target page stays reachable elsewhere (e.g. media partners from the public
@@ -51,6 +63,13 @@ List<MoreMenuEntry> moreMenuEntries(AppL10n l10n) => <MoreMenuEntry>[
         icon: Icons.gavel_outlined,
         title: l10n.moreTerms,
         routeName: RouteNames.terms,
+      ),
+      // The published web policy, not a copy in the app — see the matching row
+      // in `MoreLegalSection`, which is the same destination on the full page.
+      MoreMenuEntry(
+        icon: Icons.privacy_tip_outlined,
+        title: l10n.morePrivacy,
+        externalUrl: BuildConfig.privacyPolicyUrl,
       ),
       MoreMenuEntry(
         icon: Icons.star_outline,

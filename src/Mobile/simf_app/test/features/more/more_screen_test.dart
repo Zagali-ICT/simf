@@ -179,10 +179,30 @@ void main() {
       // the feature: an email can now only be changed by an administrator from
       // the Control Panel account-edit form.
       expect(find.text('Change email'), findsNothing);
-      // قانوني rows.
+      // قانوني rows. Privacy policy sits beside the terms — Google Play wants
+      // the policy reachable from inside an app that takes identity documents,
+      // photos, the camera and biometrics, not from the store listing alone.
       expect(find.text('Terms & conditions'), findsOneWidget);
+      expect(find.text('Privacy policy'), findsOneWidget);
       expect(find.text('Contact us'), findsOneWidget);
       expect(find.text('Rate the app'), findsOneWidget);
+    });
+
+    testWidgets('Privacy policy asks before leaving the app', (tester) async {
+      // It opens the published web policy rather than an in-app copy, so it
+      // goes through the shared leave-the-app confirmation (owner 2026-06-27)
+      // instead of navigating. Cancel, so no launch is attempted.
+      await _pump(tester, router: _router(), signedIn: true);
+
+      await tester.tap(find.text('Privacy policy'));
+      await tester.pumpAndSettle();
+      expect(find.byType(Dialog), findsOneWidget);
+      expect(find.text('Open'), findsOneWidget);
+
+      await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+      await tester.pumpAndSettle();
+      expect(find.byType(Dialog), findsNothing);
+      expect(find.text('Privacy policy'), findsOneWidget); // still on More
     });
 
     testWidgets('shows the app-version line', (tester) async {
