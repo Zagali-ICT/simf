@@ -25,6 +25,21 @@
     reader to believe it records when anything happened. It sorts before any real
     timestamp, so a future delta migration still applies after it.
 
+    A REGENERATED MIGRATION DOES NOT REACH A DATABASE THAT ALREADY HAS ONE.
+    __EFMigrationsHistory records `00000000000000_InitialCreate` as applied, so
+    MigrateAsync finds nothing pending and applies nothing - the regenerated file
+    describes a newer schema the live database never receives. A FRESH database
+    (drop + MigrateAsync) is correct and needs nothing extra.
+
+    So any schema change landing on a database with data needs a hand-run delta
+    in docs/migrations/2026/ ALONGSIDE this regeneration. Skipping it deploys
+    code that selects a column the database does not have, which is an immediate
+    500 on every read of that table - not a slow-burn defect. D-944 shipped
+    exactly that on 2026-08-28 and broke every visitor profile read in
+    production; SIMF_App_D944_OrganisationOther_Hotfix.sql is the remedy and the
+    worked example. D-881 hid the trap by dropping both databases, which it could
+    only do because there was no data worth preserving.
+
 .PARAMETER Context
     App or Identity. Omit to regenerate both.
 
