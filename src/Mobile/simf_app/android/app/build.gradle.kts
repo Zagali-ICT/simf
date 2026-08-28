@@ -18,7 +18,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.apexium.simf"
+    namespace = "com.simrsnf.simf"
     // Pinned to 36 (> flutter.compileSdkVersion=33 on this toolchain) because
     // the plugins' androidx deps (core 1.18, activity 1.12, browser 1.9) require
     // compiling against API 36. android-36 is installed.
@@ -35,7 +35,7 @@ android {
         // and will not accept a later change, so it is set to the real identity
         // rather than the Flutter scaffold's com.example.* placeholder (which
         // Play rejects outright).
-        applicationId = "com.apexium.simf"
+        applicationId = "com.simrsnf.simf"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

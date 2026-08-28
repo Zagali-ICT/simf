@@ -82,7 +82,7 @@ void main() {
             '($namespace), or Gradle cannot find it.',
       );
       // Anchored: `contains` would also accept a package that merely STARTS
-      // with the namespace, e.g. com.apexium.simf_old.
+      // with the namespace, e.g. com.simrsnf.simf_old.
       expect(
         RegExp('^package ${RegExp.escape(namespace)};?\\s*\$', multiLine: true)
             .hasMatch(activity.readAsStringSync()),

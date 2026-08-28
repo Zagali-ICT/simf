@@ -40,11 +40,11 @@ From here `ios/` is hand-edited exactly like `android/`. **Never run
 Six things. Most of them fail on a Mac rather than here, which is the worst place
 to discover them.
 
-### 2a. Bundle id `com.apexium.simf`
+### 2a. Bundle id `com.simrsnf.simf`
 
-Every `PRODUCT_BUNDLE_IDENTIFIER` in `Runner.xcodeproj` is `com.apexium.simf`
-(the `RunnerTests` target carries `com.apexium.simf.RunnerTests`). `flutter
-create` derived `com.apexium.simfApp` from the project name; that was corrected
+Every `PRODUCT_BUNDLE_IDENTIFIER` in `Runner.xcodeproj` is `com.simrsnf.simf`
+(the `RunnerTests` target carries `com.simrsnf.simf.RunnerTests`). `flutter
+create` derived `com.simrsnf.simfApp` from the project name; that was corrected
 immediately.
 
 This is the **same string as the Android `applicationId`** (D-940), deliberately.

@@ -51,7 +51,7 @@ still on disk, so re-ignoring or regenerating the folder fails the test suite.
 Never committed (git-ignored, owner-provided): `android/key.properties`, any
 `*.jks` / `*.keystore`, `android/local.properties`.
 
-**App identity.** `applicationId` and `namespace` are both `com.apexium.simf`,
+**App identity.** `applicationId` and `namespace` are both `com.simrsnf.simf`,
 and `MainActivity.kt` lives under the matching `kotlin/com/apexium/simf/` path.
 
 Changed from `dod.simf.visitor_app` on 2026-08-22, superseding D-867, after the

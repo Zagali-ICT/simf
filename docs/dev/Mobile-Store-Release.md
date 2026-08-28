@@ -6,7 +6,7 @@ The runbook for `azure-pipelines-mobile.yml`. Rationale for the native projects
 lives in `docs/dev/Mobile-Android-Release-Build.md` and
 `docs/dev/Mobile-iOS-Release-Build.md`; this file is the operational sequence.
 
-**One app identity, both stores: `com.apexium.simf`** (D-940). Play locks it at
+**One app identity, both stores: `com.simrsnf.simf`** (D-940). Play locks it at
 first upload and App Store Connect locks it at the first app record. After that
 it cannot be changed on either side.
 
