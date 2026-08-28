@@ -80,32 +80,24 @@ Future<({Uint8List bytes, String name})?> pickIdImageFromGallery() async {
 Future<CapturedSelfie?> pickVisitorFacePhoto(BuildContext context) =>
     context.pushNamed<CapturedSelfie>(RouteNames.identityVerification);
 
-/// The mobile calling code, from the SAME country sheet the nationality uses —
-/// same options, same search, same chrome, because the codes come from the
-/// country list.
+/// Opens the calling-code sheet and returns the picked `+`-prefixed code.
 ///
-/// Null when the sheet was dismissed OR the country carries no prefix: an
-/// administrator can create one without, and blanking a good code for a blank
-/// one is worse than keeping it. Picking here sets only the code; the
-/// nationality is untouched, which is the point of the field.
+/// It lists the CODES rather than the countries (owner, 2026-08-29). It used to
+/// reuse the nationality sheet and map the chosen country to its prefix, which
+/// read as picking a country, and silently returned null — the field simply did
+/// not change — when that country had no prefix seeded.
 Future<String?> pickVisitorCallingCode(
   BuildContext context, {
   required List<CountryItem> countries,
   required AppL10n l10n,
-}) async {
-  final pickedCode = await pickVisitorNationality(
-    context,
-    countries: countries,
-    l10n: l10n,
+}) {
+  return showLookupSearchSheet(
+    context: context,
+    options: callingCodePickerOptions(countries),
+    // Name search still works against this list, so the country hint holds.
+    searchHint: l10n.searchCountryHint,
+    searchFieldKey: const ValueKey<String>('callingCodeSearchField'),
   );
-  if (pickedCode == null) {
-    return null;
-  }
-  final prefix = countries
-      .where((country) => country.code == pickedCode)
-      .map((country) => (country.phonePrefix ?? '').trim())
-      .firstWhere((value) => value.isNotEmpty, orElse: () => '');
-  return prefix.isEmpty ? null : prefix;
 }
 
 /// Opens the searchable country sheet; the picked ISO code, or null if

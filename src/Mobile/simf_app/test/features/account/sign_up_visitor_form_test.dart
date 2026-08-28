@@ -393,4 +393,67 @@ void main() {
       expect(english.first.search, contains('السعودية'));
     });
   });
+
+  group('callingCodePickerOptions', () {
+    const shared = <CountryItem>[
+      CountryItem(
+        code: 'US', name: 'United States', nameArabic: 'أمريكا',
+        phonePrefix: '+1',
+      ),
+      CountryItem(
+        code: 'CA', name: 'Canada', nameArabic: 'كندا', phonePrefix: '+1',
+      ),
+      CountryItem(
+        code: 'RU', name: 'Russia', nameArabic: 'روسيا', phonePrefix: '+7',
+      ),
+      CountryItem(
+        code: 'SD', name: 'Sudan', nameArabic: 'السودان', phonePrefix: '+249',
+      ),
+      CountryItem(
+        code: 'SA', name: 'Saudi Arabia', nameArabic: 'السعودية',
+        phonePrefix: '+966',
+      ),
+      CountryItem(
+        code: 'EG', name: 'Egypt', nameArabic: 'مصر', phonePrefix: '+20',
+      ),
+    ];
+
+    test('shows the CODE, not the country name', () {
+      final options = callingCodePickerOptions(shared);
+
+      expect(options.map((o) => o.label), everyElement(startsWith('+')));
+      expect(options.first.value, options.first.label);
+    });
+
+    test('orders by numeric value ascending, not as a string', () {
+      final options = callingCodePickerOptions(shared);
+
+      // A string sort would put +20 before +7 and +1 before +249.
+      expect(
+        options.map((o) => o.label).toList(),
+        <String>['+1', '+7', '+20', '+249', '+966'],
+      );
+    });
+
+    test('one row per code, however many countries share it', () {
+      final options = callingCodePickerOptions(shared);
+
+      expect(options.where((o) => o.label == '+1'), hasLength(1));
+    });
+
+    test('a country with no prefix contributes no row', () {
+      final options = callingCodePickerOptions(_countries);
+
+      expect(options.map((o) => o.label), isNot(contains('')));
+      expect(options, hasLength(2));
+    });
+
+    test('typing a country name still finds its code', () {
+      final options = callingCodePickerOptions(shared);
+      final sudan = options.firstWhere((o) => o.label == '+249');
+
+      expect(sudan.search, contains('Sudan'));
+      expect(sudan.search, contains('السودان'));
+    });
+  });
 }
