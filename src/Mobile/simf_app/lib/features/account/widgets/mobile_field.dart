@@ -8,7 +8,7 @@ import 'package:simf_app/core/validation/field_limits.dart';
 import 'package:simf_app/core/validation/phone_country_code.dart';
 import 'package:simf_app/core/widgets/simf_field_label.dart';
 import 'package:simf_app/core/widgets/simf_field_style.dart';
-import 'package:simf_app/features/account/data/profile_lookups.dart';
+import 'package:simf_app/core/widgets/simf_picker_field.dart';
 import 'package:simf_app/features/visitor_profile/data/visitor_profile_validators.dart';
 
 /// The mobile-number form rule for this field: required (D-723), then the C4
@@ -29,25 +29,24 @@ String? validateMobile(
         ? validateSaudiMobile(value, l10n)
         : validateInternationalMobile(value, l10n);
 
-/// The mobile-number field: a calling-code selector, then the number.
+/// The mobile-number field: a calling-code picker, then the number.
 ///
-/// **The calling code is independent of nationality.** It used to be derived
-/// from it — `saudi: isSaudi` chose both the label and the validator — so a
-/// visitor of one nationality attending on another country's number had no way
-/// to say so, and no prefix was shown at all before typing. A Sudanese
-/// national on a Saudi number is the reported case. The code now defaults from
-/// the nationality and is then the visitor's to change.
+/// **The calling code DEFAULTS from the nationality and is then the visitor's
+/// to change.** It used to be derived from it outright — one `saudi` flag chose
+/// the label, the validator and the wire field — so a visitor of one
+/// nationality attending on another country's number had no way to say so.
 ///
-/// The two halves are edited separately and stored as one canonical E.164
-/// string, so the screen owns the split (`splitPhone` / `composePhone`).
+/// The code uses [SimfPickerField], the same chrome as nationality,
+/// birth-region, profile-type and plate-letter, and opens the same searchable
+/// country sheet. It was briefly a `DropdownButtonFormField`, which put a
+/// control on this form that looked like nothing else on it.
 class MobileField extends StatelessWidget {
   const MobileField({
     required this.saudi,
     required this.controller,
     required this.validator,
     this.callingCode = '',
-    this.countries = const <CountryItem>[],
-    this.onCallingCodeChanged,
+    this.onPickCallingCode,
     super.key,
   });
 
@@ -62,29 +61,15 @@ class MobileField extends StatelessWidget {
   /// The chosen `+`-prefixed calling code, or empty before one is resolved.
   final String callingCode;
 
-  /// The country list the code comes from. Rows without a `phonePrefix` are
-  /// skipped rather than offered as a blank choice.
-  final List<CountryItem> countries;
-
-  /// Null on the surfaces that have no country list to offer (the My-Area
-  /// mobile edit), where the field renders exactly as it did before.
-  final ValueChanged<String>? onCallingCodeChanged;
+  /// Opens the searchable country sheet. Null on a surface with no country list
+  /// to offer (the My-Area mobile edit), where the picker is hidden and the
+  /// field renders exactly as it did before.
+  final VoidCallback? onPickCallingCode;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    // Distinct codes only: several countries share one (+1, +7), and the
-    // picker is choosing a CODE, not a country.
-    final codes = <String>{
-      for (final country in countries)
-        if ((country.phonePrefix ?? '').trim().isNotEmpty)
-          country.phonePrefix!.trim(),
-      // Whatever is currently set stays selectable even if the list does not
-      // carry it — otherwise a stored number's code would vanish from its own
-      // dropdown and reset itself on first build.
-      if (callingCode.trim().isNotEmpty) callingCode.trim(),
-    }.toList()
-      ..sort();
+    final hasCode = callingCode.trim().isNotEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -95,39 +80,22 @@ class MobileField extends StatelessWidget {
         const SizedBox(height: SimfTokens.space2),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
+          // The code sits to the LEFT of the number in both languages: a phone
+          // number reads left-to-right everywhere, and mirroring it in RTL
+          // would put the country code after the subscriber digits.
           textDirection: TextDirection.ltr,
           children: <Widget>[
-            // The code sits to the LEFT of the number in both languages: a
-            // phone number reads left-to-right everywhere, and mirroring it in
-            // RTL would put the country code after the subscriber digits.
-            // No codes to offer means no selector at all, so a surface with no
-            // country list (the My-Area mobile edit) renders exactly the field
-            // it rendered before rather than an empty dropdown.
-            if (codes.isNotEmpty) ...<Widget>[
+            if (onPickCallingCode != null) ...<Widget>[
               SizedBox(
                 width: SimfTokens.mobileCallingCodeWidth,
-                child: DropdownButtonFormField<String>(
-                  key: const ValueKey<String>('mobileCallingCode'),
-                  initialValue:
-                      codes.contains(callingCode) ? callingCode : null,
-                  isExpanded: true,
-                  dropdownColor: SimfTokens.navyDeep,
-                  style: simfInputStyle,
-                  decoration: simfFieldDecoration(),
-                  hint: Text(l10n.mobileCallingCodeHint, style: simfInputStyle),
-                  items: <DropdownMenuItem<String>>[
-                    for (final code in codes)
-                      DropdownMenuItem<String>(
-                        value: code,
-                        child: Text(
-                          code,
-                          style: simfInputStyle,
-                          textDirection: TextDirection.ltr,
-                        ),
-                      ),
-                  ],
-                  onChanged: (value) =>
-                      onCallingCodeChanged?.call(value ?? callingCode),
+                child: SimfPickerField(
+                  fieldKey: 'mobileCallingCode',
+                  displayText:
+                      hasCode ? callingCode : l10n.mobileCallingCodeHint,
+                  isPlaceholder: !hasCode,
+                  onTap: onPickCallingCode,
+                  // The code only — the hint is Arabic prose and mirrors.
+                  textDirection: hasCode ? TextDirection.ltr : null,
                 ),
               ),
               const SizedBox(width: SimfTokens.space2),

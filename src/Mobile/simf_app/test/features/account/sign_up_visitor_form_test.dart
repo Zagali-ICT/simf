@@ -15,6 +15,7 @@ import 'package:simf_app/features/visitor_profile/data/visitor_profile_validator
 /// their own and previously could not be reached without pumping the form.
 UserProfileResponse _profile({
   String nationalityCode = 'SA',
+  String? saudiMobile = '٠٥٠١٢٣٤٥٦٧',
   String placeOfBirth = '',
   String? profileTypeId,
   String? iqamaNumber,
@@ -36,13 +37,21 @@ UserProfileResponse _profile({
     iqamaNumber: iqamaNumber,
     passportNumber: passportNumber,
     dateOfBirth: dateOfBirth,
-    saudiMobile: '٠٥٠١٢٣٤٥٦٧',
+    saudiMobile: saudiMobile,
   );
 }
 
 const List<CountryItem> _countries = <CountryItem>[
-  CountryItem(code: 'SA', name: 'Saudi Arabia', nameArabic: 'السعودية'),
-  CountryItem(code: 'EG', name: 'Egypt', nameArabic: 'مصر'),
+  CountryItem(
+    code: 'SA', name: 'Saudi Arabia', nameArabic: 'السعودية',
+    phonePrefix: '+966',
+  ),
+  CountryItem(
+    code: 'EG', name: 'Egypt', nameArabic: 'مصر', phonePrefix: '+20',
+  ),
+  // A country an administrator created without a prefix — the case that must
+  // not blank a good code for a blank one.
+  CountryItem(code: 'NP', name: 'No Prefix', nameArabic: 'بلا رمز'),
 ];
 
 void main() {
@@ -130,6 +139,40 @@ void main() {
     });
   });
 
+  test('a profile with NO stored number seeds the code from its nationality',
+      () {
+    // The load path, distinct from applyNationality: a form opened on a saved
+    // profile never passes through the nationality picker, so without this it
+    // would show an empty code beside a required field — which is what was
+    // reported from the device.
+    final form = SignUpVisitorForm();
+    addTearDown(form.dispose);
+    final picks = VisitorProfileFormState()..setLookups(countries: _countries);
+    addTearDown(picks.dispose);
+
+    form.applyProfile(
+      _profile(nationalityCode: 'EG', saudiMobile: null),
+      picks,
+    );
+
+    expect(form.mobileCallingCode, '+20');
+  });
+
+  test('a STORED number wins over the nationality default', () {
+    // The stored value is the truth: an Egyptian national whose saved number
+    // is Saudi must come back as +966, not be reset to +20 on load.
+    final form = SignUpVisitorForm();
+    addTearDown(form.dispose);
+    final picks = VisitorProfileFormState()..setLookups(countries: _countries);
+    addTearDown(picks.dispose);
+
+    form.applyProfile(_profile(nationalityCode: 'EG'), picks);
+
+    expect(form.mobileCallingCode, '+966');
+    // and the box holds the subscriber digits only
+    expect(form.saudiMobile.text, '501234567');
+  });
+
   group('SignUpVisitorForm.applyNationality', () {
     test('leaving Saudi clears the national id and keeps free-text birthplace',
         () {
@@ -145,6 +188,42 @@ void main() {
 
       expect(form.nationalId.text, isEmpty);
       expect(form.placeOfBirth.text, 'منطقة الرياض');
+    });
+
+    test('the calling code DEFAULTS from the picked nationality', () {
+      // Reported: "the default value gets from country". It did not — the code
+      // was only ever set by hydrating a stored number or by the visitor
+      // picking one, so a fresh form showed an empty code beside a required
+      // field while the comments claimed otherwise.
+      final form = SignUpVisitorForm();
+      addTearDown(form.dispose);
+      final picks = VisitorProfileFormState()
+        ..setLookups(countries: _countries);
+      addTearDown(picks.dispose);
+
+      form.applyNationality(picks, 'EG');
+      expect(form.mobileCallingCode, '+20');
+
+      // Moving between two NON-Saudi countries must still update it. That path
+      // hits applyNationality's `wasSaudi == isSaudi` early return, which is
+      // why the seeding runs before it.
+      form.applyNationality(picks, 'SA');
+      expect(form.mobileCallingCode, '+966');
+    });
+
+    test('a country with no prefix leaves the existing code alone', () {
+      final form = SignUpVisitorForm();
+      addTearDown(form.dispose);
+      final picks = VisitorProfileFormState()
+        ..setLookups(countries: _countries);
+      addTearDown(picks.dispose);
+
+      form.applyNationality(picks, 'SA');
+      expect(form.mobileCallingCode, '+966');
+
+      // Blanking a good value for a blank one is worse than keeping it.
+      form.applyNationality(picks, 'NP');
+      expect(form.mobileCallingCode, '+966');
     });
 
     test('becoming Saudi drops a birthplace no region matches (D-469)', () {

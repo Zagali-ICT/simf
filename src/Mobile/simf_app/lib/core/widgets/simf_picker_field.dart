@@ -21,6 +21,7 @@ class SimfPickerField extends StatelessWidget {
     required this.onTap,
     this.errorText,
     this.showChevron = true,
+    this.textDirection,
     super.key,
   });
 
@@ -30,6 +31,14 @@ class SimfPickerField extends StatelessWidget {
   final VoidCallback? onTap;
   final String? errorText;
   final bool showChevron;
+
+  /// Forces the DISPLAY TEXT's direction, leaving the field's own chrome to
+  /// mirror as usual. Null (the default) inherits the ambient direction, which
+  /// is right for a label in either language.
+  ///
+  /// A phone calling code needs LTR: `+` is bidi-neutral, so in the Arabic form
+  /// it takes the paragraph direction and `+966` renders as `966+`.
+  final TextDirection? textDirection;
 
   @override
   Widget build(BuildContext context) {
@@ -49,6 +58,7 @@ class SimfPickerField extends StatelessWidget {
         ),
         child: Text(
           displayText,
+          textDirection: textDirection,
           style: isPlaceholder
               ? simfInputStyle.copyWith(color: SimfTokens.greyText)
               : simfInputStyle,

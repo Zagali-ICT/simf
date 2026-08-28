@@ -67,4 +67,9 @@ abstract final class FieldLimits {
 
   /// Free-text feedback comment. Backend: `MaximumLength(2000)`.
   static const int feedbackComment = 2000;
+
+  /// Employer typed in when the curated list has no match (D-944). Matches
+  /// `UserProfile.OrganisationOther` — and `Organisation.NameArabic`'s own
+  /// ceiling, so a name later promoted into the lookup is not truncated.
+  static const int organisationOther = 150;
 }

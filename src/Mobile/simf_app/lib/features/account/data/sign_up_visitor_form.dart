@@ -153,6 +153,18 @@ class SignUpVisitorForm {
           picks.profileTypes.any((t) => t.id == typeId) ? typeId : null
       ..organisationId = profile.organisationId;
     organisationLabel = null;
+
+    if (mobileCallingCode.isEmpty) {
+      // No stored number to split from, so fall back to the nationality just
+      // resolved above — otherwise a fresh form shows an empty code beside a
+      // required field, which is what was reported.
+      final nationality = picks.nationalityCode;
+      mobileCallingCode = picks.countries
+          .where((country) => country.code == nationality)
+          .map((country) => (country.phonePrefix ?? '').trim())
+          .firstWhere((value) => value.isNotEmpty, orElse: () => '');
+    }
+
     // A stored free-text employer means the saved pick WAS the catch-all, so
     // the box has to come back open — otherwise re-opening the form silently
     // drops the name and submits an "Other" with nothing beside it.
@@ -200,6 +212,21 @@ class SignUpVisitorForm {
   void applyNationality(VisitorProfileFormState picks, String code) {
     final wasSaudi = picks.isSaudi;
     picks.nationalityCode = code;
+    // The calling code DEFAULTS from the nationality. Seeded here rather than
+    // read from the nationality at render time, so the visitor can then change
+    // it and keep their choice - which is the whole point: a Sudanese national
+    // attending on a Saudi number.
+    //
+    // Before the early return below: that returns when Saudi-ness is unchanged,
+    // and moving between two non-Saudi countries is exactly the case that must
+    // still update the code.
+    final prefix = picks.countries
+        .where((country) => country.code == code)
+        .map((country) => country.phonePrefix ?? '')
+        .firstWhere((value) => value.trim().isNotEmpty, orElse: () => '');
+    if (prefix.isNotEmpty) {
+      mobileCallingCode = prefix.trim();
+    }
     if (wasSaudi == picks.isSaudi) {
       return;
     }

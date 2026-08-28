@@ -1,12 +1,16 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
 import 'package:simf_app/features/account/data/profile_lookups.dart';
 import 'package:simf_app/features/account/data/sign_up_visitor_lookups.dart';
 import 'package:simf_app/features/account/widgets/lookup_search_sheet.dart';
+import 'package:simf_app/features/myarea/data/liveness.dart';
 
 /// The non-widget half of the sign-up profile step's pickers.
 
@@ -63,6 +67,45 @@ Future<({Uint8List bytes, String name})?> pickIdImageFromGallery() async {
   } on Object catch (_) {
     return null;
   }
+}
+
+/// The live face capture that becomes the profile avatar.
+///
+/// Owner directive: reuse the guided liveness screen (`identityVerification`,
+/// Page 103) the My-Area avatar already uses, NOT a direct camera picker. That
+/// page owns the camera permission and the on-device face + liveness check
+/// (live-only, no gallery fallback — D-662). Mandatory for men, optional for
+/// women. Route 103 is universal-auth (D-694), so a pending sign-up account
+/// reaches it instead of bouncing home.
+Future<CapturedSelfie?> pickVisitorFacePhoto(BuildContext context) =>
+    context.pushNamed<CapturedSelfie>(RouteNames.identityVerification);
+
+/// The mobile calling code, from the SAME country sheet the nationality uses —
+/// same options, same search, same chrome, because the codes come from the
+/// country list.
+///
+/// Null when the sheet was dismissed OR the country carries no prefix: an
+/// administrator can create one without, and blanking a good code for a blank
+/// one is worse than keeping it. Picking here sets only the code; the
+/// nationality is untouched, which is the point of the field.
+Future<String?> pickVisitorCallingCode(
+  BuildContext context, {
+  required List<CountryItem> countries,
+  required AppL10n l10n,
+}) async {
+  final pickedCode = await pickVisitorNationality(
+    context,
+    countries: countries,
+    l10n: l10n,
+  );
+  if (pickedCode == null) {
+    return null;
+  }
+  final prefix = countries
+      .where((country) => country.code == pickedCode)
+      .map((country) => (country.phonePrefix ?? '').trim())
+      .firstWhere((value) => value.isNotEmpty, orElse: () => '');
+  return prefix.isEmpty ? null : prefix;
 }
 
 /// Opens the searchable country sheet; the picked ISO code, or null if

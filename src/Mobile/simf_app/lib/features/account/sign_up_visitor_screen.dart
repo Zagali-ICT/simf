@@ -20,8 +20,6 @@ import 'package:simf_app/features/account/sign_up_visitor_submit.dart';
 import 'package:simf_app/features/account/widgets/sign_up_visitor_form_card.dart';
 import 'package:simf_app/features/account/widgets/sign_up_visitor_load_error.dart';
 import 'package:simf_app/features/account/widgets/sign_up_visitor_place_of_birth_field.dart';
-import 'package:simf_app/features/myarea/data/liveness.dart'
-    show CapturedSelfie;
 import 'package:simf_app/features/visitor_profile/data/visitor_profile_form_state.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
@@ -194,6 +192,17 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     setState(() => _fields.applyNationality(_form, pickedCode));
   }
 
+  Future<void> _pickMobileCallingCode(AppL10n l10n) async {
+    final prefix = await pickVisitorCallingCode(
+      context,
+      countries: _form.countries,
+      l10n: l10n,
+    );
+    if (prefix != null && mounted) {
+      setState(() => _fields.mobileCallingCode = prefix);
+    }
+  }
+
   Future<void> _pickDateOfBirth() async {
     final picked = await pickVisitorDateOfBirth(
       context,
@@ -216,18 +225,8 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     setState(() => _fields.setIdImage(image.bytes, image.name));
   }
 
-  /// "Face photo" — the live face capture (→ the profile avatar). Owner
-  /// directive: reuse the existing **face-detection page** (the guided
-  /// liveness screen, `identityVerification`, Page 103) the My-Area avatar
-  /// already uses and that runs reliably — NOT a direct camera picker. That
-  /// page owns the camera-permission request and the on-device face + liveness
-  /// check (live-only, no gallery fallback — D-662); the returned selfie
-  /// becomes the avatar and is shown at the top of the card immediately.
-  /// Mandatory for men, optional for women. Route 103 is universal-auth (D-694)
-  /// so a pending sign-up account reaches it instead of bouncing home.
   Future<void> _pickFacePhoto() async {
-    final selfie = await context
-        .pushNamed<CapturedSelfie>(RouteNames.identityVerification);
+    final selfie = await pickVisitorFacePhoto(context);
     if (selfie == null || !mounted) {
       return;
     }
@@ -363,8 +362,8 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
             onProfileTypeChanged: (id) =>
                 setState(() => _form.profileTypeId = id),
             onGenderChanged: (value) => setState(() => _form.gender = value),
-            onMobileCallingCodeChanged: (code) =>
-                setState(() => _fields.mobileCallingCode = code),
+            onPickMobileCallingCode: () =>
+                unawaited(_pickMobileCallingCode(l10n)),
             onOrganisationSelected: (organisation) => setState(
               () => _fields.setOrganisation(
                 _form,
