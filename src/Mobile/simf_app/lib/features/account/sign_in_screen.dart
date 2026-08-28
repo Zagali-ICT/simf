@@ -114,6 +114,15 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       if (!mounted) {
         return;
       }
+      // A never-verified account used to dead-end here. The server answers 403
+      // AUTH_EMAIL_NOT_VERIFIED and the message says "verify your email
+      // address" — while offering nowhere to do it. Sign-up is closed to them
+      // (the address is already registered), so the account was stranded.
+      // Send a fresh code and hand them the verification screen instead.
+      if (failure is EmailNotVerified) {
+        await _resumeEmailVerification(email, l10n);
+        return;
+      }
       setState(() {
         _error = failure.source.localizedMessage(l10n);
         _password.clear();
@@ -123,6 +132,38 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         setState(() => _busy = false);
       }
     }
+  }
+
+  /// Re-issues the sign-up verification code and opens the verification screen
+  /// with it, so an unverified account can finish where it got stuck.
+  ///
+  /// The code goes out FIRST and the screen only opens if it was sent: that
+  /// screen starts a two-minute resend cooldown on entry, so arriving there
+  /// with no code in the inbox would leave the user staring at a countdown
+  /// with nothing to type. If the resend is refused — the server caps how many
+  /// codes one address may be sent — the reason is shown here instead.
+  Future<void> _resumeEmailVerification(String email, AppL10n l10n) async {
+    // Captured before the await: routing must survive this State being
+    // disposed by the navigation it triggers.
+    final router = GoRouter.of(context);
+    try {
+      await ref.read(authControllerProvider.notifier).resendCode(email: email);
+    } on AuthFailure catch (failure) {
+      if (mounted) {
+        setState(() {
+          _error = failure.source.localizedMessage(l10n);
+          _password.clear();
+        });
+      }
+      return;
+    }
+    _password.clear();
+    unawaited(
+      router.pushNamed(
+        RouteNames.emailOtp,
+        queryParameters: <String, String>{'email': email},
+      ),
+    );
   }
 
   Future<void> _onSignedIn() async {

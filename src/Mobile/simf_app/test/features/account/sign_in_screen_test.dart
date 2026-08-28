@@ -13,7 +13,14 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../support/simf_test_scope.dart';
 
-enum _Outcome { success, otp, invalid }
+enum _Outcome { success, otp, invalid, emailNotVerified }
+
+/// Records what the screen asked of `resendCode`. Module-level because the fake
+/// controller is built inside the provider override, where a test cannot hold a
+/// reference to the instance.
+int _resendCalls = 0;
+String? _resendEmail;
+bool _resendRefused = false;
 
 /// A fake controller whose `signIn` transitions to a configured outcome,
 /// so the screen's UI → navigation/error glue can be tested in isolation
@@ -69,7 +76,37 @@ class _FakeAuthController extends AuthController {
             httpStatus: 401,
           ),
         );
+      case _Outcome.emailNotVerified:
+        // Sealed RESULT type, thrown by the fake for the same reason as the
+        // InvalidCredentials case above.
+        // ignore: only_throw_errors
+        throw const EmailNotVerified(
+          ApiFailure(
+            code: ApiErrorCodes.authEmailNotVerified,
+            message: 'Verify your email address before signing in.',
+            httpStatus: 403,
+          ),
+        );
     }
+  }
+
+  @override
+  Future<int> resendCode({required String email}) async {
+    _resendCalls++;
+    _resendEmail = email;
+    if (_resendRefused) {
+      // AuthFailure is a sealed RESULT type, so it is deliberately neither an
+      // Exception nor an Error; a fake throws it to drive the failure path.
+      // ignore: only_throw_errors
+      throw const RateLimited(
+        ApiFailure(
+          code: ApiErrorCodes.rateLimitExceeded,
+          message: 'Too many requests.',
+          httpStatus: 429,
+        ),
+      );
+    }
+    return 600;
   }
 }
 
@@ -156,6 +193,13 @@ Future<void> _pump(
         name: RouteNames.guestMode,
         path: '/guest',
         builder: (c, s) => const Scaffold(body: Text('GUEST')),
+      ),
+      GoRoute(
+        name: RouteNames.emailOtp,
+        path: '/sign-up/otp',
+        builder: (c, s) => Scaffold(
+          body: Text('VERIFY-EMAIL ${s.uri.queryParameters['email']}'),
+        ),
       ),
     ],
   );
@@ -379,6 +423,54 @@ void main() {
 
       expect(find.text('PROFILE'), findsOneWidget);
       expect(find.text('HOME'), findsNothing);
+    });
+
+    // A never-verified account used to dead-end on this screen: the server
+    // answers 403 with "verify your email address", sign-up is closed to it
+    // (the address is already registered), and nothing offered a way to
+    // verify. It now re-issues the code and opens the verification screen.
+    testWidgets('an unverified account is sent a fresh code and taken to the '
+        'verification screen', (tester) async {
+      _resendCalls = 0;
+      _resendEmail = null;
+      _resendRefused = false;
+      final prefs = _FakePrefs();
+      await _pump(tester, _Outcome.emailNotVerified, prefs);
+
+      await _enterCreds(tester);
+      await tester.tap(find.widgetWithText(FilledButton, 'Sign in'));
+      await tester.pumpAndSettle();
+
+      expect(_resendCalls, 1);
+      expect(_resendEmail, equals('visitor@example.sa'));
+      // The address rides the route, so the screen can show where it was sent.
+      expect(find.text('VERIFY-EMAIL visitor@example.sa'), findsOneWidget);
+      // The dead-end message must NOT be what the user is left with.
+      expect(
+        find.text('Verify your email address before signing in.'),
+        findsNothing,
+      );
+    });
+
+    testWidgets('a refused resend keeps the user on sign-in with the reason, '
+        'rather than a screen with no code to type', (tester) async {
+      // The server caps how many codes one address may be sent. Routing anyway
+      // would strand the user on a two-minute resend cooldown with an empty
+      // inbox, which is a worse dead end than the one being fixed.
+      _resendCalls = 0;
+      _resendEmail = null;
+      _resendRefused = true;
+      final prefs = _FakePrefs();
+      await _pump(tester, _Outcome.emailNotVerified, prefs);
+
+      await _enterCreds(tester);
+      await tester.tap(find.widgetWithText(FilledButton, 'Sign in'));
+      await tester.pumpAndSettle();
+
+      expect(_resendCalls, 1);
+      expect(find.text('VERIFY-EMAIL visitor@example.sa'), findsNothing);
+      expect(find.text('Too many requests.'), findsOneWidget);
+      _resendRefused = false;
     });
 
     testWidgets('a 2FA account routes to the email-OTP screen', (tester) async {

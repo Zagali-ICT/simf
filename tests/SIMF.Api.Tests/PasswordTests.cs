@@ -108,6 +108,50 @@ public sealed class PasswordTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Reset_password_promotes_a_never_verified_account_to_EmailVerified()
+    {
+        // An account left at Registered was stranded: sign-in 403s with
+        // AUTH_EMAIL_NOT_VERIFIED, sign-up is closed (the address is taken), and
+        // forgot-password refuses only Disabled and Rejected - so it WILL send a
+        // reset code, the holder proves control of the mailbox by entering it,
+        // and the account stayed unverified anyway.
+        var email = await AuthFlow.RegisterVerifiedVisitorAsync(_client, _factory);
+        AuthFlow.SetAccountState(_factory, email, AccountState.Registered);
+        Assert.Equal(
+            AccountState.Registered, AuthFlow.GetAccountState(_factory, email).State);
+
+        await ForgotAsync(email);
+        var code = AuthFlow.GetActiveCode(_factory, email, AccountCodePurpose.PasswordReset);
+        Assert.Equal(HttpStatusCode.OK, (await ResetAsync(email, code, NewPassword)).StatusCode);
+
+        var after = AuthFlow.GetAccountState(_factory, email);
+        Assert.Equal(AccountState.EmailVerified, after.State);
+        Assert.True(after.EmailConfirmed);
+
+        // The transition is auditable under the same event the sign-up path
+        // writes, so "how did this become verified" has one answer either way.
+        Assert.True(AuthFlow.AuditEntryExists(
+            _factory, email, AuditEvents.EmailVerificationSucceeded));
+    }
+
+    [Fact]
+    public async Task Reset_password_leaves_an_already_approved_account_approved()
+    {
+        // The promotion must be a floor, not an assignment: a reset by an
+        // APPROVED holder must not demote them to EmailVerified and cost them
+        // the app.
+        var email = await AuthFlow.RegisterVerifiedVisitorAsync(_client, _factory);
+        AuthFlow.SetAccountState(_factory, email, AccountState.Approved);
+
+        await ForgotAsync(email);
+        var code = AuthFlow.GetActiveCode(_factory, email, AccountCodePurpose.PasswordReset);
+        Assert.Equal(HttpStatusCode.OK, (await ResetAsync(email, code, NewPassword)).StatusCode);
+
+        Assert.Equal(
+            AccountState.Approved, AuthFlow.GetAccountState(_factory, email).State);
+    }
+
+    [Fact]
     public async Task Reset_password_with_a_wrong_code_returns_400()
     {
         var email = await AuthFlow.RegisterVerifiedVisitorAsync(_client, _factory);

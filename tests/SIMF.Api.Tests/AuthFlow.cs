@@ -408,6 +408,16 @@ internal static class AuthFlow
         database.SaveChanges();
     }
 
+    /// <summary>Reads back the account's current state and email-confirmed flag.</summary>
+    public static (AccountState State, bool EmailConfirmed) GetAccountState(
+        SimfApiFactory factory, string email)
+    {
+        using var scope = factory.Services.CreateScope();
+        var database = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var user = database.Users.Single(candidate => candidate.Email == email);
+        return (user.AccountState, user.EmailConfirmed);
+    }
+
     /// <summary>True when an operation-log entry of the given type exists for the email.</summary>
     public static bool AuditEntryExists(SimfApiFactory factory, string email, string eventType)
     {
