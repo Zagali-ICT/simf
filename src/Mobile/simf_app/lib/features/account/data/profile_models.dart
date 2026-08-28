@@ -23,6 +23,7 @@ class UpsertUserProfileRequest {
     this.internationalMobile,
     this.plateNumber,
     this.organisationId,
+    this.organisationOther,
     this.showInMeetLikeYou,
     this.regionId,
     this.jobTitleArabic,
@@ -46,6 +47,10 @@ class UpsertUserProfileRequest {
   /// C6 (D-371) — رقم اللوحة, optional; Saudi standard when filled.
   final String? plateNumber;
   final String? organisationId;
+
+  /// Set only alongside an [organisationId] the picker flagged
+  /// `isOther`; the server clears it on any ordinary pick.
+  final String? organisationOther;
   final AppGender gender;
 
   /// D-736 — "Show in Meet People Like You" visibility toggle. Null means
@@ -78,6 +83,7 @@ class UpsertUserProfileRequest {
         'internationalMobile': internationalMobile,
         'plateNumber': plateNumber,
         'organisationId': organisationId,
+        'organisationOther': organisationOther,
         'gender': gender.value,
         'showInMeetLikeYou': showInMeetLikeYou,
         'regionId': regionId,
@@ -106,6 +112,7 @@ class UpsertUserProfileRequest {
       internationalMobile: internationalMobile,
       plateNumber: plateNumber,
       organisationId: organisationId,
+      organisationOther: organisationOther,
       showInMeetLikeYou: showInMeetLikeYou,
       regionId: regionId,
       jobTitleArabic: jobTitleArabic,
@@ -141,6 +148,7 @@ class UserProfileResponse {
     this.plateNumberEn,
     this.referenceNumber,
     this.organisationId,
+    this.organisationOther,
     this.qrId,
     this.isVip = false,
     this.allowsSpeakerMeeting = false,
@@ -174,6 +182,7 @@ class UserProfileResponse {
       plateNumberEn: json['plateNumberEn'] as String?,
       referenceNumber: json['referenceNumber'] as String?,
       organisationId: json['organisationId'] as String?,
+      organisationOther: json['organisationOther'] as String?,
       gender: AppGender.fromValue((json['gender'] as num?)?.toInt()),
       hasIdImage: json['hasIdImage'] as bool? ?? false,
       hasAvatar: json['hasAvatar'] as bool? ?? false,
@@ -219,6 +228,10 @@ class UserProfileResponse {
   /// at profile creation. Customer-facing lookup key; NOT the QR id.
   final String? referenceNumber;
   final String? organisationId;
+
+  /// The employer the user typed when theirs is not in the lookup;
+  /// null for every ordinary pick.
+  final String? organisationOther;
   final AppGender gender;
   final bool hasIdImage;
 
@@ -321,6 +334,7 @@ class UserProfileResponse {
             mobile == null || isSaudi ? internationalMobile : mobile,
         plateNumber: plateNumber,
         organisationId: organisationId,
+        organisationOther: organisationOther,
         showInMeetLikeYou: showInMeetLikeYou ?? this.showInMeetLikeYou,
         regionId: regionId,
         jobTitleArabic: jobTitleArabic,

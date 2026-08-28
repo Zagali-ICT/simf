@@ -152,6 +152,11 @@ class SignUpVisitorFormCard extends StatelessWidget {
                 selectedId: picks.organisationId,
                 selectedLabel: form.organisationLabel,
                 showError: picks.triedSubmit && picks.organisationId == null,
+                isOther: form.organisationIsOther,
+                otherController: form.organisationOther,
+                showOtherError: picks.triedSubmit &&
+                    form.organisationIsOther &&
+                    form.organisationOther.text.trim().isEmpty,
                 onSelected: onOrganisationSelected,
                 onCleared: onOrganisationCleared,
               ),

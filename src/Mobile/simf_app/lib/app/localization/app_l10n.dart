@@ -223,6 +223,12 @@ class AppL10n {
       _t('ابحث عن جهتك', 'Search your organisation');
   String get organisationEmpty =>
       _t('لا توجد جهات مطابقة', 'No organisations found');
+  // D-944 — the picker's catch-all. The list is a curated government
+  // import, so an absent employer used to end registration outright.
+  String get organisationOtherHint =>
+      _t('اكتب اسم جهة عملك', "Type your organisation's name");
+  String get organisationOtherRequired =>
+      _t('اكتب اسم جهة عملك', "Enter your organisation's name");
   String get organisationSelected => _t('الجهة محددة', 'Organisation selected');
   // B3 — D-221 (الجهة): required-field message on the sign-up screen.
   String get organisationRequired =>

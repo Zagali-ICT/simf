@@ -29,7 +29,11 @@ bool isSignUpVisitorComplete({
   required SignUpVisitorTypeSelection type,
 }) {
   return VisitorProfileCompleteness.dateOfBirth(form.dateOfBirth) &&
-      VisitorProfileCompleteness.organisation(picks.organisationId) &&
+      VisitorProfileCompleteness.organisation(
+        picks.organisationId,
+        isOther: form.organisationIsOther,
+        otherName: form.organisationOther.text,
+      ) &&
       VisitorProfileCompleteness.nationality(picks.nationalityCode) &&
       VisitorProfileCompleteness.placeOfBirth(
         isSaudi: picks.isSaudi,
