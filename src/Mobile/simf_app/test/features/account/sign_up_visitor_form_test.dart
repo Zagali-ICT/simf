@@ -198,8 +198,13 @@ void main() {
       expect(request.iqamaNumber, isNull);
       expect(request.passportNumber, isNull);
       expect(request.internationalMobile, isNull);
-      // The Arabic digits are folded to the server's canonical shape.
-      expect(request.saudiMobile, '0501234567');
+      // Arabic digits folded, and now FULLY QUALIFIED. With a calling code
+      // in front of the number the form composes E.164 rather than passing
+      // the local spelling through - one canonical wire value instead of
+      // two. The server's Saudi shape accepts both (`05\d{8}` or
+      // `\+9665\d{8}`), and `MobileNumber.Normalize` canonicalises either
+      // way, so this is a tightening rather than a contract change.
+      expect(request.saudiMobile, '+966501234567');
       // The wire date stays ISO even though the field displays dd-MM-yyyy.
       expect(request.dateOfBirth, '1990-04-05');
       expect(request.interestIds, <String>['i1']);

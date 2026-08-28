@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:simf_app/core/validation/phone_country_code.dart';
 import 'package:simf_app/core/validation/phone_validation.dart';
 import 'package:simf_app/features/account/data/app_gender.dart';
 import 'package:simf_app/features/account/data/profile_lookups.dart';
@@ -58,6 +59,10 @@ class SignUpVisitorForm {
   /// than compared against an id, so the app carries no hard-coded GUID.
   bool organisationIsOther = false;
 
+  /// The `+`-prefixed calling code shown in front of the mobile number.
+  /// Seeded from the nationality on load and then owned by the visitor.
+  String mobileCallingCode = '';
+
   // The ID DOCUMENT image (picked from the gallery) — mandatory for all.
   Uint8List? idImageBytes;
   String? idImageName;
@@ -115,8 +120,19 @@ class SignUpVisitorForm {
       picks.docType = VisitorDocType.passport;
       documentNumber.text = profile.passportNumber!;
     }
-    saudiMobile.text = profile.saudiMobile ?? '';
-    internationalMobile.text = profile.internationalMobile ?? '';
+    // The stored value is one canonical E.164 string; the form edits it as a
+    // calling code plus subscriber digits, so it has to be split back apart.
+    // An unrecognised code leaves the whole number in the field rather than
+    // truncating it — see splitPhone.
+    final storedMobile = profile.saudiMobile ?? profile.internationalMobile;
+    final parts = splitPhone(
+      storedMobile,
+      picks.countries.map((country) => country.phonePrefix ?? ''),
+    );
+    mobileCallingCode = parts.callingCode;
+    saudiMobile.text = profile.saudiMobile == null ? '' : parts.number;
+    internationalMobile.text =
+        profile.internationalMobile == null ? '' : parts.number;
     plate.setFromCode(profile.plateNumber);
     // D-373 defaults — Male and Saudi Arabia pre-selected on a first-time
     // (empty) profile; a saved profile keeps its own values.
@@ -227,6 +243,14 @@ class SignUpVisitorForm {
   UpsertUserProfileRequest toRequest(VisitorProfileFormState picks) {
     final isSaudi = picks.isSaudi;
     final birthDate = dateOfBirth;
+    // One number, assembled from the code the visitor chose and the digits
+    // they typed. Which controller holds those digits still follows the
+    // nationality, because the screen keeps one per shape so switching
+    // nationality does not lose what was typed.
+    final composedMobile = composePhone(
+      mobileCallingCode,
+      isSaudi ? saudiMobile.text : internationalMobile.text,
+    );
     return UpsertUserProfileRequest(
       profileTypeId: picks.profileTypeId,
       interestIds: existingInterestIds,
@@ -250,11 +274,16 @@ class SignUpVisitorForm {
           : null,
       // Submit the canonical phone — Arabic digits folded, a leading `00`
       // rewritten to `+` — so the value matches the server's `+`-only shapes.
-      saudiMobile:
-          isSaudi ? _emptyToNull(normalizePhone(saudiMobile.text)) : null,
-      internationalMobile: !isSaudi
-          ? _emptyToNull(normalizePhone(internationalMobile.text))
-          : null,
+      // The calling code is the visitor's pick, so the SHAPE of the composed
+      // number decides which wire field carries it — not the nationality. A
+      // Sudanese national on a +966 number sends a Saudi mobile, which is the
+      // whole point of letting the code be chosen.
+      saudiMobile: _emptyToNull(
+        isStandardSaudiMobile(composedMobile) ? composedMobile : '',
+      ),
+      internationalMobile: _emptyToNull(
+        isStandardSaudiMobile(composedMobile) ? '' : composedMobile,
+      ),
       plateNumber: _emptyToNull(plate.value),
       organisationId: picks.organisationId,
       organisationOther:

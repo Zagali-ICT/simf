@@ -249,6 +249,7 @@ partnerDirectoryEnabled
 passportNumber
 password
 pastSpeakers
+phonePrefix
 phonePrimary
 photoRelativePath
 placeOfBirth

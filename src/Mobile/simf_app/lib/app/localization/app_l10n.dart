@@ -207,6 +207,8 @@ class AppL10n {
   String get iqamaSegment => _t('الإقامة', 'Iqama');
   String get passportSegment => _t('جواز السفر', 'Passport');
   String get saudiMobileLabel => _t('رقم الجوال', 'Mobile');
+  /// D-944 — the calling-code selector in front of the mobile number.
+  String get mobileCallingCodeHint => _t('الرمز', 'Code');
   String get internationalMobileLabel =>
       _t('رقم الجوال الدولي', 'International mobile');
   String get dateOfBirthLabel => _t('تاريخ الميلاد', 'Date of birth');

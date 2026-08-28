@@ -43,6 +43,7 @@ class SignUpVisitorFormCard extends StatelessWidget {
     required this.onRetryProfileTypes,
     required this.onProfileTypeChanged,
     required this.onGenderChanged,
+    required this.onMobileCallingCodeChanged,
     required this.onOrganisationSelected,
     required this.onOrganisationCleared,
     required this.onPickNationality,
@@ -76,6 +77,10 @@ class SignUpVisitorFormCard extends StatelessWidget {
   final VoidCallback onRetryProfileTypes;
   final ValueChanged<String?> onProfileTypeChanged;
   final ValueChanged<AppGender> onGenderChanged;
+
+  /// The calling code is the visitor's own pick, not a consequence of
+  /// nationality, so the screen owns it like any other field.
+  final ValueChanged<String> onMobileCallingCodeChanged;
   final ValueChanged<OrganisationItem> onOrganisationSelected;
   final VoidCallback onOrganisationCleared;
   final VoidCallback onPickNationality;
@@ -186,6 +191,9 @@ class SignUpVisitorFormCard extends StatelessWidget {
               isSaudi: picks.isSaudi,
               saudiMobile: form.saudiMobile,
               internationalMobile: form.internationalMobile,
+              callingCode: form.mobileCallingCode,
+              countries: picks.countries,
+              onCallingCodeChanged: onMobileCallingCodeChanged,
             ),
             gap,
             DateOfBirthField(

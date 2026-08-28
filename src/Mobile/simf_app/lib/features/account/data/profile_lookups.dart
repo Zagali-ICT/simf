@@ -12,16 +12,23 @@ class CountryItem {
     required this.code,
     required this.name,
     required this.nameArabic,
+    this.phonePrefix,
   });
 
   factory CountryItem.fromJson(Map<String, dynamic> json) => CountryItem(
         code: json['code'] as String? ?? '',
         name: json['name'] as String? ?? '',
         nameArabic: json['nameArabic'] as String? ?? '',
+        phonePrefix: json['phonePrefix'] as String?,
       );
 
   final String code;
   final String name;
+
+  /// The E.164 calling code ("+966"), from the server's own Country row.
+  /// Null for a country an administrator created without one, which is why
+  /// the picker skips those rather than offering a blank code.
+  final String? phonePrefix;
   final String nameArabic;
 }
 
