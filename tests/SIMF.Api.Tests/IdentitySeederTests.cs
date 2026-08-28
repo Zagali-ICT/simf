@@ -216,9 +216,15 @@ public sealed class IdentitySeederTests : IClassFixture<SimfApiFactory>
         Assert.True(organisationCount > 0, "baseline organisations must be seeded");
         Assert.Contains(database.ContentBlocks, b => b.Key == "terms" && b.IsActive);
         Assert.Contains(database.ContentBlocks, b => b.Key == "about" && b.IsActive);
-        // The "Other — not listed" catch-all keeps a visitor whose organisation
-        // is missing from being blocked.
-        Assert.Contains(database.Organisations, o => o.Name == "Other — not listed");
+        // The catch-all keeps a visitor whose organisation is missing from
+        // being blocked. It is seeded by the migration under a FIXED id, so it
+        // is asserted by that id rather than by a name anyone can edit.
+        Assert.Contains(
+            database.Organisations,
+            o => o.Id == SIMF.Domain.Organisations.Organisation.OtherId);
+        // ...and the nine real organisations still seed alongside it.
+        Assert.Contains(
+            database.Organisations, o => o.Name == "Royal Saudi Naval Forces");
 
         await seeder.SeedAsync();
         Assert.Equal(interestCount, database.Interests.Count());

@@ -1466,7 +1466,17 @@ public sealed class IdentitySeeder(
     private async Task EnsureBaselineOrganisationsAsync(
         Guid actorUserId, CancellationToken cancellationToken)
     {
-        if (await appDbContext.Organisations.AnyAsync(cancellationToken)) { return; }
+        // The catch-all is seeded by the MIGRATION (it needs a fixed id so the
+        // app and the picker can name it), so this table is never empty on a
+        // fresh database. Excluding it is load-bearing: on the plain
+        // AnyAsync the guard returned early and the nine real organisations
+        // below were silently never seeded at all.
+        if (await appDbContext.Organisations.AnyAsync(
+                o => o.Id != SIMF.Domain.Organisations.Organisation.OtherId,
+                cancellationToken))
+        {
+            return;
+        }
 
         var seed = new (string NameArabic, string? Name, string? Sector)[]
         {
@@ -1479,7 +1489,6 @@ public sealed class IdentitySeeder(
             ("شركة الزامل أوفشور", "Zamil Offshore", "Marine Services"),
             ("جامعة الملك فهد للبترول والمعادن", "King Fahd University of Petroleum and Minerals", "Academia"),
             ("جامعة الملك عبدالله للعلوم والتقنية", "King Abdullah University of Science and Technology (KAUST)", "Academia"),
-            ("أخرى — غير مدرجة", "Other — not listed", null),
         };
 
         var now = timeProvider.SimfNow();
