@@ -204,7 +204,13 @@ public sealed class UpsertUserProfileRequest
 }
 
 /// <summary>One country entry surfaced to the client picker.</summary>
-public sealed record CountryDto(string Code, string Name, string NameArabic);
+/// <param name="PhonePrefix">The E.164 calling code ("+966"), already held on
+/// <c>Country</c> and seeded, but never projected here until the app needed a
+/// country-code selector on the mobile field. Appended last, so the shipped
+/// wire contract stays append-only; null for a row an administrator created
+/// without one.</param>
+public sealed record CountryDto(
+    string Code, string Name, string NameArabic, string? PhonePrefix = null);
 
 /// <summary>The body of <c>GET /api/v1/app/account/user-profile/countries</c>.</summary>
 public sealed record CountryListResponse(IReadOnlyList<CountryDto> Countries);
