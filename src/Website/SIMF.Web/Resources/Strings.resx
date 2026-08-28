@@ -391,4 +391,7 @@
   <data name="Privacy.Contact.Title" xml:space="preserve"><value>Contact us</value></data>
   <data name="Privacy.Contact.Body" xml:space="preserve"><value>For further enquiries, contact us by email at:</value></data>
   <data name="Privacy.Contact.Email" xml:space="preserve"><value>info@simrsnf.com</value></data>
+  <data name="Privacy.Collect.Identity.Title" xml:space="preserve"><value>Identity documents and photographs</value></data>
+  <data name="Privacy.Collect.Identity.Body" xml:space="preserve"><value>When you register to attend, we ask for an image of your identity document (national ID, Iqama or passport) and its number, and a photograph of your face. The photograph is taken through an in-app liveness check: the face detection runs on your own device and the preview frames never leave it, while the resulting photograph and the identity-document image are uploaded to the forum's servers.</value></data>
+  <data name="Privacy.Collect.Identity.Purpose" xml:space="preserve"><value>We use this data to verify your identity, to issue your admission badge, and to match your face at the entry gates. We do not sell it and we do not share it with any advertiser, and it is deleted with your account as described in the "Account and data deletion" section below.</value></data>
 </root>

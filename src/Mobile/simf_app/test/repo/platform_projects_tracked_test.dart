@@ -147,6 +147,47 @@ void main() {
         ),
         reason: 'READ_EXTERNAL_STORAGE must stay capped at API 32.',
       );
+
+      // camera_android_camerax injects camera.any with no android:required,
+      // which DEFAULTS TO TRUE and made the shipped bundle camera-mandatory on
+      // Play — the opposite of the required="false" on the two features above.
+      // tools:replace is load-bearing: android:required uses an OR merge, so a
+      // plain required="false" loses to the library's implied true and changes
+      // nothing in the merged manifest.
+      expect(
+        manifest,
+        matches(
+          RegExp(
+            r'camera\.any"\s+android:required="false"\s*\n?\s*'
+            'tools:replace="android:required"',
+            multiLine: true,
+          ),
+        ),
+        reason: 'camera.any must stay optional, and only tools:replace wins.',
+      );
+
+      // androidx.biometric contributes USE_FINGERPRINT uncapped; it has been
+      // deprecated since API 28 in favour of USE_BIOMETRIC.
+      expect(
+        manifest,
+        matches(
+          RegExp(
+            r'USE_FINGERPRINT"\s*\n?\s*android:maxSdkVersion="28"',
+            multiLine: true,
+          ),
+        ),
+        reason: 'USE_FINGERPRINT must stay capped at API 28.',
+      );
+
+      // allowBackup defaults to TRUE, and auto-backup copies plaintext
+      // SharedPreferences — including the AES-256 offline badge key — to the
+      // user's Drive, where the "armed only during the event" control that
+      // justifies storing it in the clear no longer applies.
+      expect(
+        manifest,
+        contains('android:allowBackup="false"'),
+        reason: 'auto-backup must stay off — it would copy the badge key out.',
+      );
     });
 
     test('no camera in the app enables audio capture', () {
