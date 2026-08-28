@@ -15,19 +15,32 @@ promotional text (170); those are noted where they differ.
 
 ---
 
-## App name — ALREADY PINNED IN CODE, both fit the 30-char cap
+## Developer name (public on the listing)
 
-Do not invent a new one; use what the launcher already shows, or the two will
-disagree on the device and in the listing.
+**Apexium** — owner decision, 2026-08-28. The Play account belongs to
+Zagali for Multi Active (UK, Organization, D-U-N-S held); Apexium is its KSA
+branch and is the name shown to users.
 
-| Locale | Value | Source | Length |
-|--------|-------|--------|--------|
-| English | `SIMF` | `android/app/src/main/res/values/strings.xml` | 4 |
-| Arabic | `الملتقى البحري` | `android/app/src/main/res/values-ar/strings.xml` | 14 |
+## App name — the LAUNCHER and the STORE TITLE are different, deliberately
 
-If the owner wants the fuller name on the listing, `الملتقى البحري السعودي الدولي`
-is 29 characters and still fits — but then change `values-ar/strings.xml` in the
-same changeset so the launcher matches.
+This section first said "use what the launcher already shows, or the two will
+disagree". That was wrong, and it is the kind of wrong that costs installs. The
+launcher name and the store title serve different jobs and normally differ: the
+launcher is what fits under an icon, the store title is **what people search
+for**. `SIMF` alone is four letters nobody types into Play.
+
+| | Launcher (code, unchanged) | Store listing title | Length |
+|---|---|---|---|
+| English | `SIMF` | `SIMF – Saudi Maritime Forum` | 27 |
+| Arabic | `الملتقى البحري` | `الملتقى البحري السعودي الدولي` | 29 |
+
+Both titles fit Play's 30-character cap. **No code change** — `values/strings.xml`
+and `values-ar/strings.xml` keep the short forms, which is what the launcher and
+the in-app header want.
+
+Do not add promotional words ("best", "official #1", "free") to the title. Play
+rejects keyword-stuffed titles, and the descriptive form above is already the
+searchable one.
 
 ---
 
