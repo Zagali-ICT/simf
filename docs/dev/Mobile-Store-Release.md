@@ -28,6 +28,28 @@ off - an unmatched agent demand queues for ever instead of failing.
 
 ---
 
+## 1a. THE FIRST RELEASE SHIPS THE PLACEHOLDER APP KEY - do not arm the gate
+
+Owner decision, 2026-08-28. The versionCode 21 bundle is built locally with no
+`SIMF_APP_KEY` define, so `BuildConfig.appKey` keeps its compiled-in default
+**`simf-dev-app-key`**, and `headers_interceptor` sends that literal on every
+request. It is readable in `libapp.so` by anyone who downloads the app.
+
+This is safe **only while the X-App-Key gate stays fail-open**, which it is
+today - verified by an anonymous request to `edge.simrsnf.com` that carried no
+key at all and got `200`.
+
+**Arming that gate server-side would 401 every installed copy at once**, with no
+remedy except shipping a new build through the store and waiting for users to
+update. So it is not a switch that can be flipped during the event. Before
+arming it, ship a build carrying the real key, wait for adoption, and only then
+turn the gate on - the same ordering the API base URL needed.
+
+The CI route that injects the real key (`azure-pipelines-mobile.yml`, via the
+defines file) is unavailable for release one regardless: the
+`simf-mobile-release` variable group and the Secure Files in section 3 have
+never been created, and neither half of that pipeline has ever run.
+
 ## 2. Generate the Android upload key
 
 Nothing has ever been uploaded to Play, so this key does not exist yet.
