@@ -5811,8 +5811,8 @@
       "blocks": [
         {
           "t": "p",
-          "en": "This appendix records what was found while every page was opened and every constraint checked against the code. The first two groups were CORRECTED in the same change that produced this manual, and are kept here because the pattern matters more than any single line: a document and the code drift apart silently, and the drift is only visible to somebody reading both. The third group is behaviour, not error - nothing to fix, but worth knowing before it surprises somebody.",
-          "ar": "يسجّل هذا الملحق ما وُجد أثناء فتح كل صفحة ومقارنة كل قيد بالشيفرة. وقد صُحّحت المجموعتان الأوليان في التغيير نفسه الذي أنتج هذا الدليل، وأُبقيتا هنا لأن النمط أهم من أي سطر بعينه: فالوثيقة والشيفرة تتباعدان بصمت، ولا يرى هذا التباعد إلا من يقرأ الاثنتين معًا. أما المجموعة الثالثة فسلوك لا خطأ — لا شيء يُصلَح فيها، لكنها جديرة بالمعرفة قبل أن تفاجئ أحدًا."
+          "en": "This appendix records what was found while every page was opened and every constraint checked against the code. Four groups. The first and the third were CORRECTED in the same change that produced this manual, and are kept here because the pattern matters more than any single line: a document and the code drift apart silently, and the drift is only visible to somebody reading both. The second group is differences with the requirements documents, which are recorded here and left for their owners to amend. The fourth is behaviour, not error - nothing to fix, but worth knowing before it surprises somebody.",
+          "ar": "يسجّل هذا الملحق ما وُجد أثناء فتح كل صفحة ومقارنة كل قيد بالشيفرة. وهي أربع مجموعات. صُحّحت الأولى والثالثة في التغيير نفسه الذي أنتج هذا الدليل، وأُبقيتا هنا لأن النمط أهم من أي سطر بعينه: فالوثيقة والشيفرة تتباعدان بصمت، ولا يرى هذا التباعد إلا من يقرأ الاثنتين معًا. أما المجموعة الثانية ففروق مع وثائق المتطلبات، تُسجَّل هنا ويُترك تعديلها لمالكيها. والرابعة سلوك لا خطأ — لا شيء يُصلَح فيها، لكنها جديرة بالمعرفة قبل أن تفاجئ أحدًا."
         },
         {
           "t": "h2",
@@ -5898,6 +5898,91 @@
               [
                 "إجراء الاسترداد يقول إن البذّار يعيد تطبيق سرّ المصادقة المهيّأ عند كل تشغيل",
                 "وهو يعيد تطبيقه فقط ما دامت المصادقة الثنائية مفعّلة لذلك الحساب"
+              ]
+            ]
+          }
+        },
+        {
+          "t": "h2",
+          "en": "Requirements documents that describe something the system does not do — recorded, not corrected",
+          "ar": "وثائق متطلبات تصف ما لا يفعله النظام — مسجَّلة لا مصحَّحة"
+        },
+        {
+          "t": "p",
+          "en": "These came out of writing the module chapters. They are differences between a controlled requirements document and the built system, and unlike the group above they were NOT changed here: a requirements document is amended by the person who owns it, through the process that governs it, not by the writer of a manual. Each is stated in the chapter it belongs to as well, so a reader of that chapter is not misled by the document.",
+          "ar": "خرجت هذه من كتابة فصول الوحدات. وهي فروق بين وثيقة متطلبات مضبوطة والنظام المبني، وخلافًا للمجموعة أعلاه لم تُغيَّر هنا: فوثيقة المتطلبات يعدّلها مالكها عبر الإجراء الذي يحكمها، لا كاتب دليل. وكلٌّ منها مذكور كذلك في الفصل الذي يخصه، فلا يُضلَّل قارئ ذلك الفصل بالوثيقة."
+        },
+        {
+          "t": "table",
+          "headers": {
+            "en": [
+              "What the document says",
+              "What the system does"
+            ],
+            "ar": [
+              "ما تقوله الوثيقة",
+              "ما يفعله النظام"
+            ]
+          },
+          "rows": {
+            "en": [
+              [
+                "FDS-006: sponsor tiers are Strategic, Premium and Gold",
+                "They are Platinum, Gold, Silver and Bronze, and a new sponsor starts at Bronze. Exhibitors carry a separate tier list of their own"
+              ],
+              [
+                "FDS-006: the venue map is a three-dimensional isometric floor plan",
+                "It is a two-dimensional set of labelled points, and the public website shows a static exported image rather than drawing it"
+              ],
+              [
+                "FDS-009: notifications go out over text message and messaging applications as well",
+                "There are two channels: a notification inside the app and an email. The others were never built"
+              ],
+              [
+                "FDS-010: a news article's category is a managed list",
+                "It is free text typed on the article, so two articles can carry two spellings of one category"
+              ],
+              [
+                "FDS-010: each previous edition carries its own visibility flag",
+                "There is one switch for the whole archive, on the Operations page"
+              ],
+              [
+                "FDS-012: a content-block edit shows on the website and the app without a release",
+                "The app reads content blocks. No shipped website page does"
+              ],
+              [
+                "FDS-012: registration is opened and closed from the System Configuration page",
+                "It is on the Operations page. The Configuration table ships empty and holds no registration control"
+              ]
+            ],
+            "ar": [
+              [
+                "FDS-006: فئات الرعاة استراتيجي وبريميوم وذهبي",
+                "هي بلاتيني وذهبي وفضي وبرونزي، ويبدأ الراعي الجديد عند البرونزي. وللعارضين قائمة فئات منفصلة خاصة بهم"
+              ],
+              [
+                "FDS-006: خريطة الموقع مخطط مجسَّم ثلاثي الأبعاد",
+                "هي مجموعة نقاط معنونة ثنائية الأبعاد، والموقع العام يعرض صورة مصدَّرة ثابتة بدل رسمها"
+              ],
+              [
+                "FDS-009: تخرج الإشعارات عبر الرسائل النصية وتطبيقات المراسلة أيضًا",
+                "القناتان اثنتان: إشعار داخل التطبيق وبريد إلكتروني. ولم تُبنَ الأخريات قط"
+              ],
+              [
+                "FDS-010: تصنيف الخبر قائمة مُدارة",
+                "هو نص حر يُكتب على المقال، فقد يحمل مقالان صيغتين لتصنيف واحد"
+              ],
+              [
+                "FDS-010: لكل دورة سابقة راية ظهور خاصة بها",
+                "هناك مفتاح واحد للأرشيف كله في صفحة العمليات"
+              ],
+              [
+                "FDS-012: تعديل كتلة المحتوى يظهر في الموقع والتطبيق بلا إصدار",
+                "التطبيق يقرأ كتل المحتوى. ولا تقرؤها أي صفحة منشورة في الموقع"
+              ],
+              [
+                "FDS-012: يُفتح التسجيل ويُغلق من صفحة تهيئة النظام",
+                "بل من صفحة العمليات. وجدول التهيئة يُشحن فارغًا ولا يحمل أي تحكم في التسجيل"
               ]
             ]
           }
