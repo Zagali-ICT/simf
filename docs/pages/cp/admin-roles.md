@@ -6,7 +6,7 @@
 | **Layout** | `CpShellLayout` |
 | **Surface** | Control Panel |
 | **Audience** | Administrator |
-| **Auth** | `[Authorize(Roles = "Administrator")]` + `RequireApprovedAccount` + `RequireRateLimiting("auth")` (mutations) |
+| **Auth** | `@attribute [RequirePermission(PermissionCatalog.Roles.View)]` + `RequireApprovedAccount` + `RequireRateLimiting("auth")` (mutations) |
 | **Pattern** | D-117 + D-132 canonical CRUD (mirror of `InterestsList.razor`) |
 | **Status** | ✅ Real (D-134 Sprint A) |
 | **Implements UC(s)** | UC-ROL-LIST, UC-ROL-CREATE, UC-ROL-RENAME, UC-ROL-DELETE _(pending UCS entry)_ |
@@ -40,7 +40,7 @@ delete without leaving the page.
 - **Who can reach it:** Administrator (only role with the
   `Administrator` CP role).
 - **Authorisation gates:**
-  - Razor: `@attribute [Authorize(Roles = "Administrator")]` on
+  - Razor: `@attribute [RequirePermission(PermissionCatalog.Roles.View)]` on
     `RolesList.razor`.
   - BFF: `/account/api/admin/roles/*` routes require auth via the
     `account` group's `RequireAuthorization()`.

@@ -1346,7 +1346,8 @@
   <data name="Admin.CreateVisitor.Submit" xml:space="preserve"><value>Add visitor</value></data>
   <data name="Admin.CreateVisitor.Submitting" xml:space="preserve"><value>Saving</value></data>
   <data name="Admin.CreateVisitor.BackToList" xml:space="preserve"><value>Back to list</value></data>
-  <data name="Admin.CreateVisitor.Success" xml:space="preserve"><value>Invitation sent to {0}.</value></data>
+  <data name="Admin.CreateVisitor.Success" xml:space="preserve"><value>Visitor {0} was registered.</value></data>
+  <data name="Admin.CreateOther.Success" xml:space="preserve"><value>{0} was registered and is waiting for approval.</value></data>
   <data name="Admin.CreateVisitor.Fallback" xml:space="preserve"><value>The visitor could not be created.</value></data>
   <data name="Admin.Users.BulkDelete.Title" xml:space="preserve"><value>Delete users</value></data>
   <data name="Admin.Users.BulkDelete.Confirm" xml:space="preserve"><value>This will disable {0} account(s). Sessions are revoked and the users are notified by email.</value></data>
@@ -1712,8 +1713,10 @@
   <data name="Profile.TwoFactor.ConfirmEnabled" xml:space="preserve"><value>Two-factor authentication is now enabled.</value></data>
 
   <data name="TotpPairing.Title" xml:space="preserve"><value>Re-pair authenticator</value></data>
-  <data name="TotpPairing.RevealInstruction" xml:space="preserve"><value>Enter a current code from the authenticator you already have. The pairing QR is only shown in exchange for one, because it reveals this account's secret key.</value></data>
-  <data name="TotpPairing.Reveal" xml:space="preserve"><value>Show pairing QR</value></data>
+  <data name="TotpPairing.RevealInstruction" xml:space="preserve"><value>Enter a current code from the authenticator you already have. The pairing QR is only shown in exchange for one, because it reveals this account's secret key.</value></data>
+
+  <data name="TotpPairing.Reveal" xml:space="preserve"><value>Show pairing QR</value></data>
+
   <data name="TotpPairing.Instruction" xml:space="preserve"><value>Scan this QR code with Google Authenticator (or any compatible TOTP app). The secret stays the same — re-scanning does not affect your existing recovery codes.</value></data>
   <data name="TotpPairing.SecretHint" xml:space="preserve"><value>Or type this secret into the authenticator manually:</value></data>
   <data name="TotpPairing.NoSecret" xml:space="preserve"><value>This account does not have an authenticator secret yet. Use the Profile page to enrol.</value></data>
@@ -1814,7 +1817,7 @@
   <data name="Admin.Others.None" xml:space="preserve"><value>No Other accounts yet.</value></data>
   <data name="Admin.Others.LoadFailed" xml:space="preserve"><value>The other users could not be loaded.</value></data>
   <data name="Admin.Others.New.Title" xml:space="preserve"><value>Add Other user</value></data>
-  <data name="Admin.Others.New.Supporting" xml:space="preserve"><value>Create a new Other-typed user. The user receives a 7-day password-set invitation by email.</value></data>
+  <data name="Admin.Others.New.Supporting" xml:space="preserve"><value>Register a partner, exhibitor, media or staff account. The account waits for approval and has no password - access is the badge issued when it is approved.</value></data>
   <data name="Admin.Others.New.Submit" xml:space="preserve"><value>Create Other user</value></data>
   <data name="Admin.Others.New.ProfileTypeRequired" xml:space="preserve"><value>A profile type is required.</value></data>
   <data name="Admin.Others.ProfileType" xml:space="preserve"><value>Profile type</value></data>

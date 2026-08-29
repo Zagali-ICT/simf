@@ -4,7 +4,7 @@
 |--|--|
 | **Route** | `/admin/halls` |
 | **Audience** | Administrator |
-| **Auth** | `[Authorize(Roles = "Administrator")]` + `RequireApprovedAccount` + `RequireRateLimiting("auth")` (mutations) |
+| **Auth** | `@attribute [RequirePermission(PermissionCatalog.Halls.View)]` + `RequireApprovedAccount` + `RequireRateLimiting("auth")` (mutations) |
 | **Pattern** | D-117 + D-132 canonical CRUD. |
 | **Status** | ✅ Real (D-134 Sprint B / D-135) |
 | **Backend endpoints** | `POST /account/api/admin/halls/list`, `GET /admin/halls/{id}`, `POST /admin/halls`, `PUT /admin/halls/{id}`, `DELETE /admin/halls/{id}`, `GET /admin/halls/{id}/schedule` (QA B16 — the hall occupancy view, `Halls.View`) |

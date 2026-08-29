@@ -755,7 +755,7 @@ authoring.
      audits `Admin.InterestCreated`.
   6. Modal closes; grid reloads; toast `Admin.Interests.Created` with the
      new name.
-- **Exception — Duplicate name:** 409 + `ErrorCodes.InterestNameNotUnique`
+- **Exception — Duplicate name:** 409 + `ErrorCodes.InterestNameDuplicate`
   → toast shows bilingual server message; modal stays open.
 - **Exception — Bad input:** server-side FluentValidation → 400 with
   field-level errors mapped to the bilingual `*.Invalid` resx keys.

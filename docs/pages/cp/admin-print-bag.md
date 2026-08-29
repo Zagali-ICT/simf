@@ -6,7 +6,7 @@
 | **Layout** | `CpShellLayout` |
 | **Surface** | Control Panel |
 | **Audience** | Administrator (print desk staff at run-time) |
-| **Auth** | `[Authorize(Roles = "Administrator")]` + Approved account |
+| **Auth** | `@attribute [RequirePermission(PermissionCatalog.Attendees.PrintBag)]` + Approved account |
 | **Pattern** | Standalone lookup-+-action page (no grid). Page-top `SimfBanner` per D-117/D-132. |
 | **Status** | ✅ Real |
 | **Implements use case(s)** | UC-PRT-LOOKUP, UC-PRT-REPRINT _(pending UCS)_ |

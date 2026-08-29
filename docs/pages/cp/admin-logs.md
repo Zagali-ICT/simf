@@ -4,7 +4,7 @@
 |--|--|
 | **Route** | `/admin/logs` |
 | **Audience** | Administrator |
-| **Auth** | `[Authorize(Roles = "Administrator")]` |
+| **Auth** | `@attribute [RequirePermission(PermissionCatalog.Logs.View)]` |
 | **Pattern** | SimfBanner (D-132) + 2-row filter / actions layout (D-117 §11.1). |
 | **Status** | ✅ Real |
 | **Backend** | `GET /account/api/admin/logs/projects`, `GET /account/api/admin/logs/files?project={p}`, `GET /account/api/admin/logs/tail?project={p}&file={f}&lines={n}`, `GET /account/api/admin/logs/download?project={p}&file={f}` |

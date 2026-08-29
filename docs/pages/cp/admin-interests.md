@@ -6,7 +6,7 @@
 | **Layout** | `CpShellLayout` |
 | **Surface** | Control Panel |
 | **Audience** | Administrator |
-| **Auth** | `[Authorize(Roles = "Administrator")]` + cookie-auth session + JWT bearer forwarded by BFF |
+| **Auth** | `@attribute [RequirePermission(PermissionCatalog.Interests.View)]` + cookie-auth session + JWT bearer forwarded by BFF |
 | **Pattern** | D-117 canonical CRUD + D-132 Multiselect / SimfBanner + D-353 centralized dialog/full-page framing (reference pilot) |
 | **Status** | ✅ Real |
 | **Implements use case(s)** | UC-INT-LIST, UC-INT-CREATE, UC-INT-EDIT, UC-INT-VIEW, UC-INT-DEACTIVATE _(to be authored under `SIMF-UCS-001`)_ |
@@ -34,7 +34,7 @@ effect on the visitor-facing picker the next time it loads.
 - **Who can reach it:** Administrator (only role with the `Administrator` CP role).
 - **Who can edit/write on it:** same — every row action is admin-only.
 - **Authorisation gates:**
-  - Razor: `@attribute [Authorize(Roles = "Administrator")]` on `InterestsList.razor`.
+  - Razor: `@attribute [RequirePermission(PermissionCatalog.Interests.View)]` on `InterestsList.razor`.
   - BFF: `/account/api/admin/interests/*` routes guarded by the same role
     + `RequireApprovedAccount` (AccountState must be `Approved` — pending
     admins are blocked).
@@ -165,7 +165,7 @@ Administrator clicks Add
   `AdminUpdateInterestRequestValidator` (FluentValidation). Server is the
   canonical rule set — client is the UX layer.
 - **Error envelope:** standard `ApiResult<T>` with `Error.Code` from
-  `ErrorCodes` (e.g. `InterestNameNotUnique`, `ValidationFailed`,
+  `ErrorCodes` (e.g. `InterestNameDuplicate`, `ValidationFailed`,
   `NotFound`) and bilingual `Message` / `MessageArabic`.
 - **Toast strategy** (`Toast` record in code-behind):
   - Success: `Admin.Interests.Created` / `…Updated` / `…Deactivated` (green)
@@ -176,7 +176,7 @@ Administrator clicks Add
 
 - **Empty list:** `<EmptyTemplate><SimfEmptyState Title="@L[\"Admin.Interests.None\"]" /></EmptyTemplate>` renders when no rows.
 - **Duplicate name:** the unique index on `Interest.Name` enforces this at the
-  DB; the server returns 409 + `ErrorCodes.InterestNameNotUnique` and the toast
+  DB; the server returns 409 + `ErrorCodes.InterestNameDuplicate` and the toast
   surfaces the bilingual message.
 - **Deactivating an in-use interest:** allowed. Visitors who already linked
   to it keep the link; the picker just stops offering the deactivated

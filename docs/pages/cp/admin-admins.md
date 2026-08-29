@@ -6,7 +6,7 @@
 | **Layout** | `CpShellLayout` |
 | **Surface** | Control Panel |
 | **Audience** | Administrator |
-| **Auth** | `[Authorize(Roles = "Administrator")]` + Approved account |
+| **Auth** | `@attribute [RequirePermission(PermissionCatalog.Admins.View)]` + Approved account |
 | **Pattern** | D-117 canonical CRUD (gold-standard reference) |
 | **Status** | ✅ Real |
 | **Implements use case(s)** | UC-USR-LIST, UC-USR-CREATE, UC-USR-EDIT (stub), UC-USR-DETAILS, UC-USR-DELETE (single + bulk), UC-USR-DUPLICATE, UC-USR-IMPORT, UC-USR-EXPORT _(to be authored)_ |
@@ -136,8 +136,11 @@ on the API enforces: email format, display name 2–128, password complexity
   the `/admin/admins/*` paths (those scopes are role-pinned).
 - **Import XLSX** caps at 5 MB; the parser validates the ZIP magic before
   reading. Bad rows land in the error report; good rows still commit.
-- **Edit is a stub** — the modal exists for UI consistency but no fields are
-  editable yet. Awaits the User Management module.
+- **Edit manages roles** — it is not a stub. The modal loads the assignable
+  roles and the ones this account already holds, and `PUT .../{id}/roles` saves
+  the new set. It is gated by `Admins.AssignRoles`, separately from the
+  permission that allows adding an account at all. The account's own fields
+  (email, display name) are not editable here.
 - **No 2FA reset here** — that lives on `/admin/reset-2fa` (per-target reset).
 
 ## 8. i18n + RTL

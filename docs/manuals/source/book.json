@@ -3265,13 +3265,13 @@
       "blocks": [
         {
           "t": "p",
-          "en": "This appendix records what was noticed while every page was opened and every constraint checked against the code. Nothing here was changed: a manual describes the system, it does not quietly alter it. They are listed so that the next person does not spend the same hours discovering them again.",
-          "ar": "يسجّل هذا الملحق ما لوحظ أثناء فتح كل صفحة ومقارنة كل قيد بالشيفرة. ولم يُغيَّر شيء منها: فالدليل يصف النظام ولا يعدّله بصمت. وقد أُدرجت هنا كي لا يقضي من يأتي بعدُ الساعات ذاتها في اكتشافها من جديد."
+          "en": "This appendix records what was found while every page was opened and every constraint checked against the code. The first two groups were CORRECTED in the same change that produced this manual, and are kept here because the pattern matters more than any single line: a document and the code drift apart silently, and the drift is only visible to somebody reading both. The third group is behaviour, not error - nothing to fix, but worth knowing before it surprises somebody.",
+          "ar": "يسجّل هذا الملحق ما وُجد أثناء فتح كل صفحة ومقارنة كل قيد بالشيفرة. وقد صُحّحت المجموعتان الأوليان في التغيير نفسه الذي أنتج هذا الدليل، وأُبقيتا هنا لأن النمط أهم من أي سطر بعينه: فالوثيقة والشيفرة تتباعدان بصمت، ولا يرى هذا التباعد إلا من يقرأ الاثنتين معًا. أما المجموعة الثالثة فسلوك لا خطأ — لا شيء يُصلَح فيها، لكنها جديرة بالمعرفة قبل أن تفاجئ أحدًا."
         },
         {
           "t": "h2",
-          "en": "Documents that disagree with the code",
-          "ar": "وثائق تخالف الشيفرة"
+          "en": "Documents that disagreed with the code — corrected",
+          "ar": "وثائق كانت تخالف الشيفرة — صُحّحت"
         },
         {
           "t": "table",
@@ -3288,8 +3288,8 @@
           "rows": {
             "en": [
               [
-                "Several page references describe the page guard as a role check on Administrator",
-                "Pages are guarded by a named permission, not by a role"
+                "Thirteen page references described the page guard as a role check on Administrator — because the TEMPLATE they were copied from did, which is why one error appeared thirteen times",
+                "Pages are guarded by a named permission, not by a role. The template now says so, and says why"
               ],
               [
                 "The administrator manual says the Edit action on the administrators list is an unbuilt placeholder",
@@ -3358,20 +3358,20 @@
         },
         {
           "t": "h2",
-          "en": "Wording in the product that no longer matches its behaviour",
-          "ar": "صياغات في المنتج لم تعد تطابق سلوكه"
+          "en": "Wording in the product that no longer matched its behaviour — corrected",
+          "ar": "صياغات في المنتج لم تعد تطابق سلوكه — صُحّحت"
         },
         {
           "t": "bullets",
           "en": [
-            "Saving a new visitor shows a message saying an invitation has been sent. No invitation is sent on that path — the wording predates the registration wizard that replaced it.",
-            "Saving a new partner account shows the administrators' message, which mentions an invitation email that this path never queues.",
-            "The registration form's own comment says the server approves and issues the badge in one step. That happens only when the walk-in mode is switched on, and it ships off."
+            "Saving a new visitor said an invitation had been sent. None is sent on that path — the wording predated the registration wizard that replaced it. It now says the visitor was registered.",
+            "Saving a partner account showed the ADMINISTRATORS' message, which promises an invitation email that this path never queues. Partner accounts now have their own message, and it says the account is waiting for approval.",
+            "The partner page's supporting line described a seven-day password invitation, which belongs to a create endpoint no page calls. It now describes what the page actually does."
           ],
           "ar": [
-            "يعرض حفظ زائر جديد رسالة تقول إن دعوة أُرسلت. ولا تُرسل أي دعوة في ذلك المسار — فالصياغة سابقة لمعالج التسجيل الذي حلّ محله.",
-            "ويعرض حفظ حساب شريك جديد رسالة المسؤولين، التي تذكر بريد دعوة لا يضعه هذا المسار في الطابور أصلًا.",
-            "ويقول تعليق نموذج التسجيل نفسه إن الخادم يعتمد ويصدر الشارة في خطوة واحدة. وهذا لا يحدث إلا عند تفعيل وضع الحضور، وهو مُشحون معطّلًا."
+            "كان حفظ زائر جديد يقول إن دعوة أُرسلت. ولا تُرسل أي دعوة في ذلك المسار — فالصياغة سبقت معالج التسجيل الذي حلّ محلها. وصار النص الآن يفيد بأن الزائر سُجّل.",
+            "وكان حفظ حساب شريك يعرض رسالة المسؤولين، التي تَعِد ببريد دعوة لا يضعه هذا المسار في الطابور أصلًا. ولحسابات الشركاء الآن رسالتها الخاصة، وهي تفيد بأن الحساب ينتظر الموافقة.",
+            "وكان السطر التوضيحي في صفحة الشركاء يصف دعوةً لتعيين كلمة مرور صالحة سبعة أيام، وهي تخص خدمة إنشاء لا تستدعيها أي صفحة. وصار يصف ما تفعله الصفحة فعلًا."
           ]
         },
         {

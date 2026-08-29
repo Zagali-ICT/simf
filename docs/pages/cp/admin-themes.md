@@ -4,7 +4,7 @@
 |--|--|
 | **Route** | `/admin/themes` |
 | **Audience** | Administrator |
-| **Auth** | `[Authorize(Roles = "Administrator")]` + `RequireApprovedAccount` + `RequireRateLimiting("auth")` (mutations) |
+| **Auth** | `@attribute [RequirePermission(PermissionCatalog.Themes.View)]` + `RequireApprovedAccount` + `RequireRateLimiting("auth")` (mutations) |
 | **Pattern** | D-117 + D-132 canonical CRUD. **First D-135 freeze-lift module.** |
 | **Status** | ✅ Real (D-134 Sprint B) |
 | **Backend endpoints** | `POST /account/api/admin/themes/list`, `GET /admin/themes/{id}`, `POST /admin/themes`, `PUT /admin/themes/{id}`, `DELETE /admin/themes/{id}` |
