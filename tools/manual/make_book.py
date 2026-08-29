@@ -25,6 +25,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from blocks import bullets, figure, h2, h3, note, p, t, table
 from content_accounts import chapter_changing_accounts, chapter_roles
 from content_modules import chapter_reference_data
+from content_eventday import chapter_event_day
+from content_programme import chapter_programme
 from content_ops import (chapter_configuration, chapter_deployment,
                          chapter_observations)
 
@@ -675,6 +677,8 @@ def build():
             chapter_profile_image(),
             chapter_changing_accounts(),
             chapter_roles(),
+            chapter_programme(),
+            chapter_event_day(),
             chapter_reference_data(),
             chapter_deployment(),
             chapter_configuration(),

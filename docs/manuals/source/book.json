@@ -1278,6 +1278,624 @@
       ]
     },
     {
+      "id": "programme",
+      "title": {
+        "en": "Building the programme",
+        "ar": "بناء البرنامج"
+      },
+      "blocks": [
+        {
+          "t": "p",
+          "en": "The Programme menu lists twenty pages in a sensible reading order, and it is easy to take that order for a wizard. It is not. The actual dependencies are far sparser than the menu suggests, and knowing which is which saves an afternoon of filling in screens nothing was waiting for.",
+          "ar": "تسرد قائمة البرنامج عشرين صفحة بترتيب قراءة منطقي، ومن السهل أن يُظنّ هذا الترتيب معالجًا متسلسلًا. وليس كذلك. فالاعتماديات الفعلية أقل بكثير مما توحي به القائمة، ومعرفة الفرق يوفّر عصرًا كاملًا في ملء شاشات لم يكن أحد ينتظرها."
+        },
+        {
+          "t": "h2",
+          "en": "What a session actually needs",
+          "ar": "ما تحتاجه الجلسة فعلًا"
+        },
+        {
+          "t": "table",
+          "headers": {
+            "en": [
+              "To create a session you need",
+              "Required?"
+            ],
+            "ar": [
+              "لإنشاء جلسة تحتاج",
+              "مطلوب؟"
+            ]
+          },
+          "rows": {
+            "en": [
+              [
+                "A hall, and it must be active",
+                "Yes — the only hard link a session has"
+              ],
+              [
+                "A type: Workshop, Session or Event",
+                "Yes"
+              ],
+              [
+                "At least one speaker",
+                "Yes, unless the type is Event"
+              ],
+              [
+                "A unique code",
+                "Yes — and it stays taken by a deleted session"
+              ],
+              [
+                "One or more themes",
+                "No"
+              ],
+              [
+                "A session category",
+                "No"
+              ],
+              [
+                "A programme day covering its date",
+                "No — sessions are matched to a day by DATE, not by a link"
+              ]
+            ],
+            "ar": [
+              [
+                "قاعة، ويجب أن تكون نشطة",
+                "نعم — وهي الارتباط الإلزامي الوحيد للجلسة"
+              ],
+              [
+                "نوع: ورشة أو جلسة أو فعالية",
+                "نعم"
+              ],
+              [
+                "متحدث واحد على الأقل",
+                "نعم، إلا إذا كان النوع فعالية"
+              ],
+              [
+                "رمز فريد",
+                "نعم — ويظل محجوزًا لجلسة محذوفة"
+              ],
+              [
+                "محور واحد أو أكثر",
+                "لا"
+              ],
+              [
+                "تصنيف للجلسة",
+                "لا"
+              ],
+              [
+                "يوم برنامج يغطي تاريخها",
+                "لا — تُربط الجلسات باليوم بالتاريخ، لا برابط"
+              ]
+            ]
+          }
+        },
+        {
+          "t": "note",
+          "en": "Two rules catch people out. A session code stays reserved after the session is deleted, because deletion deactivates rather than removes — so reusing a code from a cancelled session is refused. And two active sessions cannot overlap in the same hall; the second one is rejected outright rather than flagged.",
+          "ar": "قاعدتان توقعان الناس. يظل رمز الجلسة محجوزًا بعد حذفها، لأن الحذف تعطيل لا إزالة — فيُرفض إعادة استخدام رمز جلسة ملغاة. ولا يمكن أن تتداخل جلستان نشطتان في القاعة نفسها؛ وتُرفض الثانية رفضًا صريحًا لا تُعلَّم فحسب."
+        },
+        {
+          "t": "note",
+          "en": "The requirements document says a session's theme, hall and category are all required. The code requires only the hall. Where the two disagree, the system does what the code says.",
+          "ar": "تقول وثيقة المتطلبات إن محور الجلسة وقاعتها وتصنيفها كلها مطلوبة. والشيفرة لا تشترط إلا القاعة. وحين يختلفان، يفعل النظام ما تقوله الشيفرة."
+        },
+        {
+          "t": "h3",
+          "en": "Themes and categories are not the same thing",
+          "ar": "المحاور والتصنيفات ليست شيئًا واحدًا"
+        },
+        {
+          "t": "p",
+          "en": "A theme is one of the forum's pillars: a code, a bilingual name, an order and an accent colour, and a session may carry several. A category is a single, separate label, and its list ships EMPTY on purpose — the values are the client's to decide, which is why it is a table you fill rather than a fixed set in the code. Neither is required, so a session with no theme and no category is legal and will simply appear ungrouped wherever the programme is shown.",
+          "ar": "المحور أحد ركائز الملتقى: رمز واسم بلغتين وترتيب ولون مميّز، وقد تحمل الجلسة أكثر من محور. أما التصنيف فتسمية واحدة منفصلة، وقائمته تُشحن فارغة عن قصد — فالقيم يحدّدها العميل، ولهذا هي جدول تملؤه لا مجموعة ثابتة في الشيفرة. وليس أيٌّ منهما مطلوبًا، فالجلسة بلا محور وبلا تصنيف جلسة سليمة، وستظهر فحسب غير مجمّعة حيثما عُرض البرنامج."
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-sessions-default",
+          "caption": {
+            "en": "The sessions list, with the real programme in it.",
+            "ar": "قائمة الجلسات، وفيها البرنامج الحقيقي."
+          }
+        },
+        {
+          "t": "h3",
+          "en": "Programme days matter — but not where you would expect",
+          "ar": "أيام البرنامج مهمة — لكن ليس حيث تتوقع"
+        },
+        {
+          "t": "p",
+          "en": "Because a session finds its day by date, a missing programme day does not stop anybody scheduling anything. What it does instead is quiet and worse. The forum's own date boundary is calculated as the earliest and latest ACTIVE programme day, and every meeting slot and availability window must fall inside it. When there are no active days that boundary is nothing at all, and the check stops applying — so an administrator can set a speaker's availability in the wrong month and nothing objects.",
+          "ar": "لأن الجلسة تجد يومها بالتاريخ، فإن غياب يوم برنامج لا يمنع أحدًا من جدولة أي شيء. لكن ما يفعله بدلًا من ذلك أهدأ وأسوأ. إذ يُحسب حدّ تواريخ الملتقى بأبكر وأحدث يوم برنامج نشط، ويجب أن يقع كل موعد اجتماع وكل نافذة إتاحة داخله. وحين لا توجد أيام نشطة ينعدم ذلك الحد ويتوقف التحقق — فيستطيع المسؤول ضبط إتاحة متحدث في شهر خاطئ دون أن يعترض شيء."
+        },
+        {
+          "t": "note",
+          "en": "The boundary is read from the programme days deliberately, and not from the event start and end dates on the organisation profile — those hold a placeholder range that has been stale for some time. If meetings are landing outside the forum, check the programme days are present AND active before anything else.",
+          "ar": "يُقرأ الحد من أيام البرنامج عن قصد، لا من تاريخَي بداية الفعالية ونهايتها في ملف الجهة — فهذان يحملان نطاقًا مؤقتًا قديمًا منذ مدة. فإذا وقعت اجتماعات خارج أيام الملتقى، فتحقق أولًا من وجود أيام البرنامج ومن كونها نشطة."
+        },
+        {
+          "t": "note",
+          "en": "Run of Show is a read-only view. It groups the same sessions by day on one screen and authors nothing — there is no edit permission for it because there is nothing to edit.",
+          "ar": "جدول الفعاليات صفحة عرض فقط. فهي تجمّع الجلسات نفسها حسب اليوم في شاشة واحدة ولا تنشئ شيئًا — ولا توجد لها صلاحية تحرير لأنه لا شيء فيها يُحرَّر."
+        },
+        {
+          "t": "h3",
+          "en": "Publishing a session needs a recording",
+          "ar": "نشر الجلسة يتطلب تسجيلًا"
+        },
+        {
+          "t": "p",
+          "en": "A session moves Scheduled → Held → Recorded → Published, one step at a time; it cannot jump. It cannot be marked Held before its start time has passed, and it cannot reach Recorded or Published at all until a recording file has been uploaded. Un-publishing means stepping back to Recorded — that is the only retraction.",
+          "ar": "تنتقل الجلسة من مجدولة إلى منعقدة إلى مُسجَّلة إلى منشورة، خطوة بخطوة ولا تقفز. ولا يمكن وسمها منعقدة قبل مرور وقت بدايتها، ولا يمكنها بلوغ «مسجّلة» أو «منشورة» إطلاقًا قبل رفع ملف تسجيل. والتراجع عن النشر هو العودة خطوةً إلى «مسجّلة» — وهو سبيل التراجع الوحيد."
+        },
+        {
+          "t": "pagebreak"
+        },
+        {
+          "t": "h2",
+          "en": "Seating is two levels, and the top one is the hall",
+          "ar": "المقاعد مستويان، وأعلاهما القاعة"
+        },
+        {
+          "t": "p",
+          "en": "The hall owns the seat map; the session only paints reservations on it. There is no per-session layout: the session seat plan draws the hall's rows and shows what is held on them for that session.",
+          "ar": "القاعة هي التي تملك خريطة المقاعد؛ والجلسة لا تفعل سوى رسم الحجوزات عليها. فلا يوجد مخطط خاص بكل جلسة: إذ يرسم مخطط مقاعد الجلسة صفوف القاعة ويعرض ما هو محجوز عليها لتلك الجلسة."
+        },
+        {
+          "t": "bullets",
+          "en": [
+            "Define the hall's rows once, on Hall seat layouts: row labels, seats per row, and a tier per row. The seats across all rows may not exceed the hall's capacity.",
+            "Then, per session, use Session seat plans to block a whole row, hold a single seat for a VIP, or release something held.",
+            "A hall with NO layout has no seat picker at all. The session silently becomes open seating and allocates against the hall's capacity number — it does not fail, it just stops being a seat map."
+          ],
+          "ar": [
+            "عرّف صفوف القاعة مرة واحدة في صفحة مخططات مقاعد القاعات: تسميات الصفوف، وعدد المقاعد في كل صف، وفئة لكل صف. ولا يجوز أن يتجاوز مجموع المقاعد سعة القاعة.",
+            "ثم استخدم مخططات مقاعد الجلسات، لكل جلسة، لحجب صف كامل أو حجز مقعد واحد لشخصية بارزة أو تحرير محجوز.",
+            "والقاعة التي لا مخطط لها لا يوجد بها اختيار مقاعد أصلًا. فتتحول الجلسة بهدوء إلى جلوس مفتوح وتُوزّع مقابل رقم سعة القاعة — ولا تُخفق، بل تكفّ عن كونها خريطة مقاعد."
+          ]
+        },
+        {
+          "t": "note",
+          "en": "A newly added row starts as VVIP, deliberately: nobody may book it until an administrator downgrades it to VIP or Normal. That default has a history — a layout re-saved without its tiers once shifted every row's tier by one, and a row that had been bookable the day before began refusing every visitor with no explanation that the tiers had moved. When you edit a layout, check the tiers afterwards.",
+          "ar": "يبدأ الصف المضاف حديثًا بفئة كبار كبار الشخصيات عن قصد: فلا يجوز لأحد حجزه حتى يخفضه مسؤول إلى فئة كبار الشخصيات أو الفئة العادية. ولهذا الإعداد الافتراضي تاريخ — إذ أدّى حفظ مخطط دون فئاته مرة إلى إزاحة فئة كل صف بمقدار واحد، فصار صف كان قابلًا للحجز بالأمس يرفض كل زائر دون أي إشارة إلى أن الفئات قد انزاحت. فبعد تعديل أي مخطط، راجع الفئات."
+        },
+        {
+          "t": "h3",
+          "en": "Three ways a seat can be unavailable",
+          "ar": "ثلاث طرق يصبح بها المقعد غير متاح"
+        },
+        {
+          "t": "table",
+          "headers": {
+            "en": [
+              "What it is",
+              "What it means"
+            ],
+            "ar": [
+              "ما هو",
+              "ماذا يعني"
+            ]
+          },
+          "rows": {
+            "en": [
+              [
+                "An admin-reserved row",
+                "A whole row painted off-limits for one session. It is written as one record per seat, and it holds nobody — it just blocks"
+              ],
+              [
+                "A VIP tier row",
+                "A property of the HALL layout, not of a session. Only a visitor whose profile type is a VIP tier may pick it"
+              ],
+              [
+                "A VVIP seat with a guest note",
+                "Nobody may self-pick it. There is no registration behind it, so the note you type IS the occupant record — \"Reserved for the Minister\" is what the app and the seating desk show"
+              ]
+            ],
+            "ar": [
+              [
+                "صف محجوز إداريًا",
+                "صف كامل يُحجب لجلسة واحدة. ويُكتب سجلًا لكل مقعد، ولا يحجز لأحد — بل يمنع فحسب"
+              ],
+              [
+                "صف بفئة كبار الشخصيات",
+                "خاصية في مخطط القاعة لا في الجلسة. ولا يختاره إلا زائر نوع ملفه من فئات كبار الشخصيات"
+              ],
+              [
+                "مقعد كبار كبار الشخصيات مع ملاحظة ضيف",
+                "لا يجوز لأحد اختياره بنفسه. ولا تسجيل خلفه، فالملاحظة التي تكتبها هي سجل شاغله — و«محجوز لمعالي الوزير» هو ما يعرضه التطبيق ومكتب الإجلاس"
+              ]
+            ]
+          }
+        },
+        {
+          "t": "h3",
+          "en": "A booking IS a seat",
+          "ar": "الحجز هو المقعد نفسه"
+        },
+        {
+          "t": "p",
+          "en": "There is no separate booking record. When a visitor books a session on a hall that has a layout, the booking is the seat; on an open-seating session it is the same record with no seat on it. A visitor cannot hold two bookings for sessions that overlap in time — the second is refused.",
+          "ar": "لا يوجد سجل حجز منفصل. فحين يحجز زائر جلسة في قاعة لها مخطط، يكون الحجز هو المقعد؛ وفي جلسة الجلوس المفتوح يكون السجل نفسه بلا مقعد. ولا يمكن للزائر أن يحمل حجزين لجلستين متداخلتين في الوقت — ويُرفض الثاني."
+        },
+        {
+          "t": "note",
+          "en": "The Bookings page is a monitor, not a desk. Its approve and reject actions were removed when the approval queue was retired, so a booking is confirmed the moment it is made. Releasing a held seat is done on Session seat plans — the server's own error message says so, because people looked for it here first.",
+          "ar": "صفحة الحجوزات شاشة مراقبة لا مكتب عمل. فقد أُزيل منها إجراءا القبول والرفض عند إلغاء قائمة الاعتماد، فالحجز مؤكد لحظة إنشائه. أما تحرير مقعد محجوز فيتم في مخططات مقاعد الجلسات — ورسالة الخطأ من الخادم تقول ذلك صراحة، لأن الناس بحثوا عنه هنا أولًا."
+        },
+        {
+          "t": "p",
+          "en": "A held seat whose holder has not arrived is released automatically three minutes before the session starts. Blocked rows are exempt — they are not waiting for anybody.",
+          "ar": "يُحرَّر تلقائيًا المقعد المحجوز الذي لم يحضر صاحبه قبل ثلاث دقائق من بدء الجلسة. والصفوف المحجوبة مستثناة — فهي لا تنتظر أحدًا."
+        },
+        {
+          "t": "pagebreak"
+        },
+        {
+          "t": "h2",
+          "en": "Four kinds of meeting, and only two have a queue",
+          "ar": "أربعة أنواع من الاجتماعات، ولاثنين منها فقط قائمة انتظار"
+        },
+        {
+          "t": "table",
+          "headers": {
+            "en": [
+              "Kind",
+              "Who asks",
+              "Who decides"
+            ],
+            "ar": [
+              "النوع",
+              "من يطلب",
+              "من يقرّر"
+            ]
+          },
+          "rows": {
+            "en": [
+              [
+                "Speaker meeting request",
+                "An attendee, from the app",
+                "An administrator accepts — then the SPEAKER confirms by email before it is really booked"
+              ],
+              [
+                "Delegation meeting request",
+                "A delegate, for their country",
+                "The team accepts, then the target delegation confirms. Any eligible member's click confirms for all of them"
+              ],
+              [
+                "Business meeting",
+                "Nobody — there is no request",
+                "An administrator creates it, already confirmed"
+              ],
+              [
+                "Meeting table",
+                "Not a request at all — it is a resource",
+                "An administrator adds tables to a meeting hall"
+              ]
+            ],
+            "ar": [
+              [
+                "طلب مقابلة متحدث",
+                "أحد الحضور، من التطبيق",
+                "يقبله مسؤول — ثم يؤكده المتحدث نفسه بالبريد قبل أن يُحجز فعلًا"
+              ],
+              [
+                "طلب اجتماع وفد",
+                "مندوب، نيابة عن بلده",
+                "يقبله الفريق، ثم يؤكده الوفد المستهدف. ونقرة أي عضو مؤهل تؤكد عنهم جميعًا"
+              ],
+              [
+                "اجتماع أعمال",
+                "لا أحد — لا يوجد طلب",
+                "ينشئه مسؤول، مؤكدًا منذ لحظته"
+              ],
+              [
+                "طاولة اجتماعات",
+                "ليست طلبًا أصلًا — بل مورد",
+                "يضيف المسؤول طاولات إلى قاعة اجتماعات"
+              ]
+            ]
+          }
+        },
+        {
+          "t": "note",
+          "en": "The state that causes the most confusion is the one between accept and confirm. When an administrator accepts a speaker request and binds it to a slot, the request is not yet booked: it waits for the speaker's own click on an emailed link, and while it waits the ATTENDEE'S APP STILL SHOWS IT AS PENDING. Telling them it is confirmed at that point is telling them something the app contradicts. The slot is held throughout, so offering it to somebody else will fail.",
+          "ar": "أكثر الحالات إثارةً للّبس هي التي بين القبول والتأكيد. فحين يقبل المسؤول طلب مقابلة متحدث ويربطه بموعد، لا يكون الطلب محجوزًا بعد: بل ينتظر نقرة المتحدث نفسه على رابط في بريده، وأثناء الانتظار يظل تطبيق صاحب الطلب يعرضه «قيد الانتظار». وإخباره بأنه مؤكد في تلك اللحظة إخبارٌ بما يناقضه التطبيق. والموعد محجوز طوال ذلك، فعرضه على شخص آخر سيُخفق."
+        },
+        {
+          "t": "p",
+          "en": "The three availability pages — speaker, hall and delegation — exist to produce the bookable slots those requests choose from. Each window is a start and an end divided into fixed slots, half an hour by default, and each must fall inside the forum days. Deleting a window does not cancel a meeting already booked in it; the meeting keeps its time.",
+          "ar": "صفحات الإتاحة الثلاث — للمتحدثين والقاعات والوفود — موجودة لإنتاج المواعيد القابلة للحجز التي تختار منها تلك الطلبات. وكل نافذة بداية ونهاية مقسّمة إلى مواعيد ثابتة، نصف ساعة افتراضيًا، ويجب أن تقع كل منها داخل أيام الملتقى. وحذف النافذة لا يلغي اجتماعًا حُجز فيها؛ إذ يحتفظ الاجتماع بوقته."
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-business-meetings-default",
+          "caption": {
+            "en": "Business meetings — created here, never requested.",
+            "ar": "اجتماعات الأعمال — تُنشأ هنا ولا تُطلب."
+          }
+        }
+      ]
+    },
+    {
+      "id": "event-day",
+      "title": {
+        "en": "Running the event day",
+        "ar": "تشغيل يوم الفعالية"
+      },
+      "blocks": [
+        {
+          "t": "p",
+          "en": "On the day, four groups of pages matter: the gates that let people in, the halls that record where they went, the question and summary desks the scientific committee works, and the numbers everybody asks for. This chapter is about those, in that order.",
+          "ar": "في يوم الفعالية تهمّ أربع مجموعات من الصفحات: البوابات التي تُدخل الناس، والقاعات التي تسجّل أين ذهبوا، ومكتبا الأسئلة والملخصات اللذان تعمل عليهما اللجنة العلمية، والأرقام التي يسأل عنها الجميع. وهذا الفصل عنها، بهذا الترتيب."
+        },
+        {
+          "t": "h2",
+          "en": "Gates",
+          "ar": "البوابات"
+        },
+        {
+          "t": "p",
+          "en": "A gate is a physical way in. Each one carries a direction — in, out, or both — a list of profile types it admits, and the operators assigned to work it. A gate attached to a hall is a hall door, and an allowed scan there opens or closes the attendee's attendance for that hall; a gate with no hall is a perimeter gate.",
+          "ar": "البوابة مدخل مادي. ولكل واحدة اتجاه — دخول أو خروج أو كلاهما — وقائمة بأنواع الملفات التي تسمح بها، والمشغّلون المكلّفون بها. والبوابة المرتبطة بقاعة هي باب قاعة، والمسح المسموح عندها يفتح حضور صاحبه في تلك القاعة أو يغلقه؛ أما البوابة بلا قاعة فهي بوابة محيط."
+        },
+        {
+          "t": "note",
+          "en": "The allow-list is the single most dangerous control on this page, because it is not read the way it looks. An EMPTY list admits everybody. A list with entries admits only those. And a list whose every entry has been DEACTIVATED admits nobody at all — it does not fall back to allow-all. That is deliberate: denying visibly was judged safer than silently turning a VIP gate into a public one. The consequence on the day is that the gate refuses everyone, and because ten refusals inside a minute trip the gate's failure circuit, it then starts refusing its own operator too.",
+          "ar": "قائمة السماح أخطر أداة في هذه الصفحة، لأنها لا تُقرأ كما تبدو. فالقائمة الفارغة تسمح للجميع. والقائمة التي فيها مدخلات لا تسمح إلا لها. أما القائمة التي عُطّلت كل مدخلاتها فلا تسمح لأحد إطلاقًا — ولا ترجع إلى السماح للجميع. وهذا مقصود: فقد رُئي أن المنع الظاهر أسلم من تحويل بوابة كبار الشخصيات بصمت إلى بوابة عامة. وأثر ذلك في اليوم أن البوابة ترفض الجميع، ولأن عشر رفضات في دقيقة واحدة تُفعّل قاطع الأعطال في البوابة، فإنها تبدأ عندئذ برفض مشغّلها نفسه أيضًا."
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-gates-default",
+          "caption": {
+            "en": "The gates list. Each row is an entrance with its own direction and allow-list.",
+            "ar": "قائمة البوابات. كل صف مدخل له اتجاهه وقائمة السماح الخاصة به."
+          }
+        },
+        {
+          "t": "h3",
+          "en": "A refused scan is not an error",
+          "ar": "المسح المرفوض ليس خطأً"
+        },
+        {
+          "t": "p",
+          "en": "This is the distinction to hold on to. If the request itself failed — the operator is not assigned to this gate, or the gate's circuit has tripped — the console shows an error. If the badge was simply not admitted, the request SUCCEEDED and the refusal comes back as a reason on a normal response. So \"it worked\" is never evidence that anybody got in, and the operator should be reading the reason, not the status.",
+          "ar": "هذا هو الفارق الذي ينبغي تذكّره. فإن أخفق الطلب نفسه — لأن المشغّل غير مكلّف بهذه البوابة، أو لأن قاطع البوابة قد فُعّل — أظهرت الشاشة خطأً. أما إذا لم تُقبل الشارة فحسب، فإن الطلب ينجح ويعود الرفض سببًا ضمن استجابة عادية. فـ«نجح» ليست دليلًا قط على أن أحدًا قد دخل، وعلى المشغّل أن يقرأ السبب لا الحالة."
+        },
+        {
+          "t": "table",
+          "headers": {
+            "en": [
+              "The scan was refused because",
+              "What to do"
+            ],
+            "ar": [
+              "رُفض المسح لأن",
+              "ما العمل"
+            ]
+          },
+          "rows": {
+            "en": [
+              [
+                "The code matched no attendee",
+                "Wrong or damaged badge — re-issue from Print badge"
+              ],
+              [
+                "The gate was deactivated between the scan and the check",
+                "Somebody edited the gate mid-shift; re-activate it"
+              ],
+              [
+                "The holder is not approved",
+                "Approve them from the pending queue"
+              ],
+              [
+                "The account is disabled, or locked out",
+                "An administrator disabled it, or it hit the sign-in lockout"
+              ],
+              [
+                "The holder's profile type is inactive",
+                "Re-activate the type in Reference data"
+              ],
+              [
+                "The badge belongs to a closed edition",
+                "A badge from last year. Deliberately not distinguished to the holder"
+              ],
+              [
+                "The profile type is not on this gate's list",
+                "Either genuinely the wrong entrance, or the allow-list problem above"
+              ],
+              [
+                "A hall door, and they are not registered for anything it admits for",
+                "They need a booking, or walk-in mode opened for the day"
+              ]
+            ],
+            "ar": [
+              [
+                "الرمز لا يطابق أي حاضر",
+                "شارة خاطئة أو تالفة — أعد إصدارها من صفحة طباعة الشارة"
+              ],
+              [
+                "عُطّلت البوابة بين المسح والتحقق",
+                "عدّل أحدهم البوابة أثناء الوردية؛ أعد تفعيلها"
+              ],
+              [
+                "حامل الشارة غير معتمد",
+                "اعتمده من قائمة الانتظار"
+              ],
+              [
+                "الحساب معطّل أو مقفل",
+                "عطّله مسؤول، أو بلغ قفل تسجيل الدخول"
+              ],
+              [
+                "نوع ملف الحامل غير نشط",
+                "أعد تفعيل النوع في البيانات المرجعية"
+              ],
+              [
+                "الشارة من نسخة مغلقة للملتقى",
+                "شارة من العام الماضي. ولا يُميَّز ذلك للحامل عن قصد"
+              ],
+              [
+                "نوع الملف ليس في قائمة هذه البوابة",
+                "إمّا أنه المدخل الخاطئ فعلًا، وإمّا مشكلة قائمة السماح أعلاه"
+              ],
+              [
+                "باب قاعة، وهو غير مسجّل في أي جلسة تسمح بها",
+                "يحتاج إلى حجز، أو إلى فتح وضع الحضور لذلك اليوم"
+              ]
+            ]
+          }
+        },
+        {
+          "t": "note",
+          "en": "Two behaviours that look like faults and are not. The same badge scanned twice within five seconds replays the first result instead of recording a second movement — unless the operator deliberately flipped the direction on a both-way gate, which is a real movement and is recorded. And the badge is never told WHICH check it failed; a refusal is deliberately vague to the person holding it, and specific only on the operator's screen.",
+          "ar": "سلوكان يبدوان عطلًا وليسا كذلك. فالشارة نفسها إذا مُسحت مرتين خلال خمس ثوانٍ يُعاد عرض نتيجة الأولى بدل تسجيل حركة ثانية — إلا إذا قلب المشغّل الاتجاه عمدًا في بوابة ثنائية، فتلك حركة حقيقية وتُسجَّل. كما لا يُخبَر حامل الشارة قط بأي فحص أخفق؛ فالرفض مبهم له عن قصد، ولا يكون مفصّلًا إلا على شاشة المشغّل."
+        },
+        {
+          "t": "h2",
+          "en": "Halls and who is inside them",
+          "ar": "القاعات ومن بداخلها"
+        },
+        {
+          "t": "p",
+          "en": "Hall attendance is a different record from a gate scan. A scan is the audit of an entrance; attendance is one row per attendee per session, opened when they arrive and closed when they leave. A row with no leaving time is somebody still in the room. Attendance is keyed to the PROFILE, not to an account, because a walk-in visitor may have no account at all.",
+          "ar": "حضور القاعة سجل مختلف عن مسح البوابة. فالمسح تدقيق لمدخل، أما الحضور فسجل واحد لكل حاضر في كل جلسة، يُفتح عند وصوله ويُغلق عند مغادرته. والسجل بلا وقت مغادرة يعني شخصًا ما زال في القاعة. والحضور مرتبط بالملف لا بالحساب، لأن الزائر الحاضر قد لا يملك حسابًا أصلًا."
+        },
+        {
+          "t": "bullets",
+          "en": [
+            "Hall arrivals is the door console for a hall.",
+            "Live hall is the read-only monitor: the seat map and everyone currently in the room, refreshing itself every fifteen seconds. It writes nothing.",
+            "The gates dashboard shows who is currently inside the venue, worked out from each visitor's most recent allowed scan."
+          ],
+          "ar": [
+            "صفحة الوصول إلى القاعات هي وحدة الباب لقاعة بعينها.",
+            "والقاعة المباشرة شاشة مراقبة للقراءة فقط: خريطة المقاعد وكل من في القاعة الآن، وتحدّث نفسها كل خمس عشرة ثانية. ولا تكتب شيئًا.",
+            "ولوحة البوابات تعرض من هم داخل الموقع حاليًا، مستنتجًا ذلك من آخر مسح مسموح لكل زائر."
+          ]
+        },
+        {
+          "t": "note",
+          "en": "\"Currently inside\" is derived, not stored, and it is bounded by a rolling window on purpose. An entrance that only ever records arrivals never records a departure, so without that bound a visitor who came in once would be counted as present forever.",
+          "ar": "«الموجودون بالداخل الآن» قيمة مستنتجة لا مخزَّنة، وهي مقيّدة بنافذة متحركة عن قصد. فالمدخل الذي لا يسجّل إلا الوصول لا يسجّل مغادرة قط، فلولا ذلك القيد لظل الزائر الذي دخل مرة محسوبًا حاضرًا إلى الأبد."
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-hall-arrivals-default",
+          "caption": {
+            "en": "The hall arrivals console.",
+            "ar": "وحدة الوصول إلى القاعات."
+          }
+        },
+        {
+          "t": "pagebreak"
+        },
+        {
+          "t": "h2",
+          "en": "Questions, and who may touch them",
+          "ar": "الأسئلة، ومن يجوز له التعامل معها"
+        },
+        {
+          "t": "p",
+          "en": "Attendees submit questions from the app while a session is on. They travel through three hands: an AI screen, the scientific committee, and then the session's own moderator. Each of those is a different page and a different permission.",
+          "ar": "يرسل الحضور أسئلتهم من التطبيق أثناء الجلسة. وتمرّ عبر ثلاث جهات: فرز بالذكاء الاصطناعي، ثم اللجنة العلمية، ثم مشرف الجلسة نفسه. وكل من هذه صفحة مختلفة وصلاحية مختلفة."
+        },
+        {
+          "t": "bullets",
+          "en": [
+            "The AI verdict is ADVISORY. It blocks nothing and hides nothing, and in the shipped configuration the filter is a stub until it is switched on.",
+            "The committee works the central question queue: approve, hide, or escalate to a ROLE — never to a named person.",
+            "The moderator works only their own session's approved set: reorder, hide, push to stage, mark answered. Questions still waiting for the committee are not readable from that desk, on purpose.",
+            "Un-hiding restores a question to where it was, so a rejected question returns to pending rather than jumping to the stage."
+          ],
+          "ar": [
+            "حكم الذكاء الاصطناعي استرشادي. فهو لا يمنع شيئًا ولا يخفي شيئًا، وفي التهيئة المشحونة يكون المرشِّح معطّلًا حتى يُفعَّل.",
+            "وتعمل اللجنة على قائمة الأسئلة المركزية: قبول أو إخفاء أو تصعيد إلى دور — لا إلى شخص بعينه أبدًا.",
+            "ويعمل المشرف على المجموعة المعتمدة لجلسته وحدها: إعادة ترتيب وإخفاء ودفع إلى المنصة ووسم بالإجابة. أما الأسئلة التي ما زالت تنتظر اللجنة فلا تُقرأ من ذلك المكتب، عن قصد.",
+            "وإلغاء الإخفاء يعيد السؤال إلى حيث كان، فالسؤال المرفوض يعود إلى الانتظار لا يقفز إلى المنصة."
+          ]
+        },
+        {
+          "t": "note",
+          "en": "Moderator authority is granted PER SESSION, on the Session moderators page. The mobile application's own Moderator role grants none of it. Somebody given the app role and no grant opens an empty desk and reports the system as broken; somebody given the grant moderates exactly the session it names.",
+          "ar": "تُمنح صلاحية الإشراف لكل جلسة على حدة، من صفحة مشرفي الجلسات. أما دور «مشرف» في تطبيق الجوال فلا يمنح منها شيئًا. فمن يُمنح دور التطبيق بلا تفويض يفتح مكتبًا فارغًا ويبلّغ عن عطل في النظام؛ ومن يُمنح التفويض يشرف على الجلسة المذكورة فيه تحديدًا."
+        },
+        {
+          "t": "p",
+          "en": "A question is only accepted while its session is open to them: shortly before the start and until the end. Where the hall has a geofence the attendee must actually be recorded as present, so somebody watching remotely is refused — which is the intended behaviour, not a fault.",
+          "ar": "لا يُقبل السؤال إلا ما دامت جلسته مفتوحة له: قبيل البداية وحتى النهاية. وحيث تكون للقاعة حدود جغرافية يجب أن يكون الحاضر مسجّلًا فعلًا بأنه موجود، فيُرفض من يتابع عن بُعد — وهذا هو السلوك المقصود لا عطل."
+        },
+        {
+          "t": "h2",
+          "en": "Session summaries",
+          "ar": "ملخصات الجلسات"
+        },
+        {
+          "t": "p",
+          "en": "The committee's minutes for a session are drafted by the AI service and then approved by a person. The draft the model produced is kept separately and never overwritten by an edit, so there is always a record of where the text started.",
+          "ar": "تُصاغ محاضر اللجنة لكل جلسة بخدمة الذكاء الاصطناعي ثم يعتمدها إنسان. وتُحفظ المسودة التي أنتجها النموذج على حدة ولا يُعاد كتابتها بأي تعديل، فيبقى دائمًا سجل لنقطة انطلاق النص."
+        },
+        {
+          "t": "note",
+          "en": "In the shipped configuration the AI provider is a stub that echoes the prompt back. It produces something that looks like minutes and is not, and the system refuses to publish it — which reads as a bug unless you know a real provider has not been configured yet. Configuring one is a change to the prompt's provider in the Control Panel, not a code change.",
+          "ar": "في التهيئة المشحونة يكون مزوّد الذكاء الاصطناعي بديلًا يردّ المحفّز نفسه. فينتج شيئًا يشبه المحضر وليس محضرًا، ويرفض النظام نشره — وهو ما يبدو خللًا ما لم تعلم أنه لم يُهيَّأ مزوّد حقيقي بعد. وتهيئته تغيير لمزوّد المحفّز داخل لوحة التحكم، لا تغيير في الشيفرة."
+        },
+        {
+          "t": "note",
+          "en": "Approval is not permanent. Any edit to the content clears it, and the summary must be approved again — so a small correction after sign-off quietly returns it to the queue.",
+          "ar": "الاعتماد ليس نهائيًا. فأي تعديل في المحتوى يلغيه، ويجب اعتماد الملخص من جديد — فالتصحيح الصغير بعد التوقيع يعيده بهدوء إلى قائمة الانتظار."
+        },
+        {
+          "t": "h2",
+          "en": "Ratings",
+          "ar": "التقييمات"
+        },
+        {
+          "t": "p",
+          "en": "Five rating forms ship with the system: one for the application, one for the event, one for the exhibition, one per day, and one per session. Their scope decides how often somebody may answer — once overall, once a day, or once per session — and the rule throughout is that you may only rate what you attended.",
+          "ar": "تُشحن مع النظام خمس استمارات تقييم: واحدة للتطبيق، وواحدة للفعالية، وواحدة للمعرض، وواحدة لكل يوم، وواحدة لكل جلسة. ويحدّد نطاقها كم مرة يجوز للشخص الإجابة — مرة إجمالًا، أو مرة كل يوم، أو مرة لكل جلسة — والقاعدة في جميعها أنك لا تقيّم إلا ما حضرته."
+        },
+        {
+          "t": "p",
+          "en": "A rating is asked for automatically: at the end of a day to everybody who checked in that day, at the end of the programme, when a session's clock runs out, when somebody leaves a hall, and when they close the live stream. Leaving the venue through a gate is NOT one of the triggers, because a gate belongs to the venue and knows nothing about which session anybody was in.",
+          "ar": "يُطلب التقييم تلقائيًا: في نهاية اليوم من كل من سجّل حضوره ذلك اليوم، وفي نهاية البرنامج، وعند انتهاء وقت الجلسة، وعند مغادرة أحدهم القاعة، وعند إغلاقه البث المباشر. أما مغادرة الموقع من البوابة فليست من المحفّزات، لأن البوابة تخص الموقع ولا تعرف شيئًا عن الجلسة التي كان فيها أحد."
+        },
+        {
+          "t": "note",
+          "en": "The five built-in forms can be renamed and their questions changed, but they cannot be deleted and they cannot be deactivated — the switch is ignored on a built-in type. Only forms an administrator added can be turned off.",
+          "ar": "يمكن إعادة تسمية الاستمارات الخمس المدمجة وتغيير أسئلتها، لكن لا يمكن حذفها ولا تعطيلها — إذ يُتجاهل المفتاح في النوع المدمج. ولا يمكن إيقاف إلا الاستمارات التي أضافها مسؤول."
+        },
+        {
+          "t": "h2",
+          "en": "The numbers",
+          "ar": "الأرقام"
+        },
+        {
+          "t": "p",
+          "en": "The dashboard and the statistics page compute every figure the moment you open them. There is no snapshot, no overnight rollup and no \"as at\" time — two people opening the page seconds apart can legitimately see different numbers, and there is nothing to re-run when a figure looks stale.",
+          "ar": "تحسب لوحة المعلومات وصفحة الإحصائيات كل رقم لحظة فتحها. فلا توجد لقطة محفوظة ولا تجميع ليلي ولا وقت «حتى تاريخه» — فقد يرى شخصان يفتحان الصفحة بفارق ثوانٍ أرقامًا مختلفة عن حق، ولا شيء يُعاد تشغيله حين يبدو رقم قديمًا."
+        },
+        {
+          "t": "bullets",
+          "en": [
+            "Attendees are counted from PROFILES, not from accounts, because a walk-in or a pre-printed badge may have no account behind it — and at a real event that is a large share of the room.",
+            "\"Total arrivals\" counts distinct attendee-and-session pairs, not scans: somebody who steps out of a hall and comes back counts once. It will therefore never equal the gate scan count, and the two should not be reconciled.",
+            "Exhibitors and sponsors are counted as organisations the team manages, not as accounts."
+          ],
+          "ar": [
+            "يُحتسب الحضور من الملفات لا من الحسابات، لأن الحاضر المباشر أو الشارة المطبوعة مسبقًا قد لا يقف خلفها حساب — وفي فعالية حقيقية يمثّل هؤلاء نسبة كبيرة من القاعة.",
+            "و«إجمالي الوصول» يعدّ أزواج الحاضر والجلسة المتمايزة لا عمليات المسح: فمن يخرج من قاعة ويعود يُحتسب مرة واحدة. ولذلك لن يساوي أبدًا عدد عمليات مسح البوابات، ولا ينبغي مطابقة الرقمين.",
+            "ويُحتسب العارضون والرعاة جهاتٍ يديرها الفريق، لا حسابات."
+          ]
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-statistics-default",
+          "caption": {
+            "en": "The statistics page. Every figure on it was calculated when the page opened.",
+            "ar": "صفحة الإحصائيات. كل رقم فيها حُسب لحظة فتح الصفحة."
+          }
+        }
+      ]
+    },
+    {
       "id": "reference-data",
       "title": {
         "en": "The lists everything else chooses from",
