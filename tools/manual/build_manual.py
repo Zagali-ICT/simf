@@ -33,7 +33,8 @@ from docx.shared import Inches, Pt, RGBColor
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from docx_kit import (  # noqa: E402
     ARABIC_FONT, LATIN_FONT, MONO_FONT, add_field, mark_dirty_fields,
-    paragraph_rtl, run_font, run_rtl, section_rtl, style_rtl, table_rtl,
+    paragraph_rtl, run_bold, run_font, run_rtl, section_rtl, style_rtl,
+    table_rtl,
 )
 
 REPO = Path(__file__).resolve().parents[2]
@@ -83,6 +84,33 @@ TECHNICAL_PATTERN = re.compile(
 # is not a dotted code, and rendering it in a different face from the "20" and
 # "5" beside it looks like a mistake.
 NOT_TECHNICAL = re.compile(r"^[0-9]+(?:\.[0-9]+)?$")
+
+
+EMPHASIS = re.compile(r"\*\*(.+?)\*\*", re.DOTALL)
+
+
+def emphasis_pieces(text):
+    """Split ``a **bold** phrase`` into (text, bold) runs.
+
+    A chapter marks the sentence that carries the warning, and without this the
+    marks were printed as literal asterisks in both volumes - a paragraph was
+    one run, so there was nowhere for a bold span to live.
+
+    An unpaired ``**`` raises rather than printing itself, because that is
+    exactly the failure this replaces: it is invisible in the source and
+    obvious in the book.
+    """
+    pieces, at = [], 0
+    for match in EMPHASIS.finditer(text):
+        if match.start() > at:
+            pieces.append((text[at:match.start()], False))
+        pieces.append((match.group(1), True))
+        at = match.end()
+    if at < len(text):
+        pieces.append((text[at:], False))
+    if any("**" in piece for piece, _ in pieces):
+        raise ValueError(f"unpaired ** in: {text}")
+    return pieces or [(text, False)]
 
 
 def is_technical(text):
@@ -140,15 +168,17 @@ class Builder:
     def para(self, text, style=None, size=10.5, bold=False, color=None,
              mono=False, align=None, space_after=6):
         paragraph = self.document.add_paragraph(style=style)
-        run = paragraph.add_run(text)
-        run.bold = bold
-        if color is not None:
-            run.font.color.rgb = color
-        run_rtl(run, self.rtl)
-        run_font(run,
-                 latin=MONO_FONT if mono else LATIN_FONT,
-                 complex_script=ARABIC_FONT,
-                 size_pt=size)
+        for piece, emphasised in emphasis_pieces(text):
+            run = paragraph.add_run(piece)
+            if bold or emphasised:
+                run_bold(run)
+            if color is not None:
+                run.font.color.rgb = color
+            run_rtl(run, self.rtl)
+            run_font(run,
+                     latin=MONO_FONT if mono else LATIN_FONT,
+                     complex_script=ARABIC_FONT,
+                     size_pt=size)
         paragraph_rtl(paragraph, self.rtl)
         if align is not None:
             paragraph.alignment = align
@@ -206,7 +236,7 @@ class Builder:
             cell.text = ""
             paragraph = cell.paragraphs[0]
             run = paragraph.add_run(str(heading))
-            run.bold = True
+            run_bold(run)
             run.font.color.rgb = ACCENT
             run_rtl(run, self.rtl)
             run_font(run, size_pt=9)

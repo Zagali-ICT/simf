@@ -1896,6 +1896,1740 @@
       ]
     },
     {
+      "id": "exhibition",
+      "title": {
+        "en": "The exhibition floor",
+        "ar": "أرض المعرض"
+      },
+      "blocks": [
+        {
+          "t": "p",
+          "en": "Four pages carry the exhibition, and the thing worth knowing before opening any of them is that they are not one hierarchy. An exhibitor is a company. A booth is a stand — a physical space on the floor, which is coded and numbered before anybody has signed for it. A sponsor is neither: it is a marketing row with a tier and a logo, attached to no booth and no exhibitor. The venue map is drawn from its own set of points and not from any of them.",
+          "ar": "أربع صفحات تحمل المعرض، وأول ما ينبغي معرفته قبل فتح أي منها أنها ليست تسلسلًا هرميًّا واحدًا. فالعارض شركة. والجناح مساحة مادية على أرض المعرض، تُرقَّم ويُعطى لها رمز قبل أن يوقّع عليها أحد. والراعي ليس هذا ولا ذاك: بل سجل تسويقي له فئة وشعار، لا يرتبط بجناح ولا بعارض. وخريطة الموقع تُرسم من مجموعة نقاطها الخاصة، لا من أيٍّ من هؤلاء."
+        },
+        {
+          "t": "h2",
+          "en": "Three entities and one optional link",
+          "ar": "ثلاثة كيانات ورابط واحد اختياري"
+        },
+        {
+          "t": "table",
+          "headers": {
+            "en": [
+              "Page",
+              "What the row is",
+              "What it links to"
+            ],
+            "ar": [
+              "الصفحة",
+              "ما هو السجل",
+              "بماذا يرتبط"
+            ]
+          },
+          "rows": {
+            "en": [
+              [
+                "Exhibitors",
+                "An exhibiting company: bilingual name, contact email, phone and website, a tier, social links, city, map coordinates, country and its own logo",
+                "Nothing above it. Booths point at it, not the reverse"
+              ],
+              [
+                "Booths",
+                "The stand itself: a floor code such as A-12, a bilingual booth name, a hall, and a booth officer — the person standing on it, who is a different party from the company",
+                "A hall, and optionally one exhibitor. The exhibitor link may be left empty for as long as the stand is unsold"
+              ],
+              [
+                "Sponsors",
+                "A sponsorship: tier, tagline, about text, contact block and logo",
+                "Nothing. A sponsor is not a booth and not an exhibitor, and giving a company a booth does not make it a sponsor"
+              ],
+              [
+                "Venue map",
+                "One labelled point: a hall, a zone, a booth or a point of interest, placed at an X and Y",
+                "Optionally a hall or a booth, so tapping the point in the app opens that record"
+              ]
+            ],
+            "ar": [
+              [
+                "العارضون",
+                "شركة عارضة: اسم بلغتين، وبريد وهاتف وموقع للتواصل، وفئة، وروابط تواصل اجتماعي، ومدينة، وإحداثيات، ودولة، وشعار خاص بها",
+                "لا شيء فوقه. الأجنحة تشير إليه، لا العكس"
+              ],
+              [
+                "الأجنحة",
+                "الجناح نفسه: رمز أرضي مثل A-12، واسم جناح بلغتين، وقاعة، ومسؤول جناح — وهو الشخص الواقف فيه، وطرف مختلف عن الشركة",
+                "قاعة، وعارض واحد اختياريًّا. ويجوز ترك رابط العارض فارغًا ما دام الجناح غير مباع"
+              ],
+              [
+                "الرعاة",
+                "رعاية: فئة، وعبارة تعريفية، ونبذة، وبيانات تواصل، وشعار",
+                "لا شيء. فالراعي ليس جناحًا ولا عارضًا، ومنح شركةٍ جناحًا لا يجعلها راعيًا"
+              ],
+              [
+                "خريطة الموقع",
+                "نقطة معنونة واحدة: قاعة أو منطقة أو جناح أو معلم، توضع عند إحداثي س وص",
+                "قاعة أو جناح اختياريًّا، فيفتح النقر على النقطة في التطبيق ذلك السجل"
+              ]
+            ]
+          }
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-exhibitors-default",
+          "caption": {
+            "en": "The exhibitors list. Each row is a company, and the account count on the row is what tells you whether anybody from it can scan a visitor.",
+            "ar": "قائمة العارضين. كل سجل شركة، وعدد الحسابات في السجل هو ما يخبرك إن كان أحد من الشركة يستطيع مسح زائر."
+          }
+        },
+        {
+          "t": "h2",
+          "en": "The booth is the space, and it comes first",
+          "ar": "الجناح هو المساحة، وهو يأتي أولًا"
+        },
+        {
+          "t": "p",
+          "en": "A booth is created and coded before an exhibitor is signed, which is why every exhibitor-facing field on it can be left empty. The floor code is upper-cased when saved and must be unique across every booth including the deactivated ones — a code freed by retiring a stand is not free for re-use.",
+          "ar": "يُنشأ الجناح ويُعطى رمزه قبل التعاقد مع العارض، ولذلك يجوز ترك كل حقل يخص العارض فيه فارغًا. ويُحوَّل الرمز الأرضي إلى حروف كبيرة عند الحفظ، ويجب أن يكون فريدًا بين جميع الأجنحة بما فيها المعطَّلة — فالرمز الذي يُفرَج عنه بإيقاف جناح لا يصبح متاحًا لإعادة الاستخدام."
+        },
+        {
+          "t": "note",
+          "en": "The officer fields belong to the person on the stand, not to the booth and not to the company. The booth's own name is the plain Name field; everything prefixed \"officer\" is that individual's name, phone, email, city and links. It is the single most-confused pair of fields on the page.",
+          "ar": "حقول المسؤول تخص الشخص الواقف في الجناح، لا الجناح ولا الشركة. فاسم الجناح هو حقل الاسم المجرَّد؛ وكل ما سُبق بكلمة «المسؤول» هو اسم ذلك الشخص وهاتفه وبريده ومدينته وروابطه. وهما أكثر حقلين يقع فيهما اللبس في الصفحة."
+        },
+        {
+          "t": "p",
+          "en": "One consequence catches people out. When a booth is linked to an exhibitor, the public listing reads the company name off the exhibitor — and it hides the booth entirely if that exhibitor is inactive, even though the booth's own active switch was never touched. A stand that vanishes from the app while its own row still reads active is almost always an exhibitor that was deactivated.",
+          "ar": "ولهذا أثرٌ يفاجئ الناس. فحين يُربط الجناح بعارض، تقرأ القائمة العامة اسم الشركة من العارض — وتُخفي الجناح كليًّا إن كان ذلك العارض معطَّلًا، مع أن مفتاح تفعيل الجناح نفسه لم يُمس. والجناح الذي يختفي من التطبيق بينما سجله ما زال مفعَّلًا يكون في الغالب الأعم عارضًا قد عُطِّل."
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-booths-default",
+          "caption": {
+            "en": "The booths list. The code, the hall and the linked exhibitor are the three columns that decide what the app shows.",
+            "ar": "قائمة الأجنحة. الرمز والقاعة والعارض المرتبط هي الأعمدة الثلاثة التي تحدد ما يعرضه التطبيق."
+          }
+        },
+        {
+          "t": "h2",
+          "en": "Giving somebody on a stand the ability to scan visitors",
+          "ar": "منح شخص في الجناح القدرة على مسح الزوار"
+        },
+        {
+          "t": "p",
+          "en": "This is the part of the exhibition module that is genuinely a procedure, and it is the part that goes wrong. Exhibitor sign-up inside the app does not exist and was dropped on purpose: an account is created here, in the Control Panel, or it is not created at all. Open an exhibitor's row and use its Accounts button; there are two ways in and they are not interchangeable.",
+          "ar": "هذا هو الجزء الذي يمثل إجراءً فعليًّا في وحدة المعرض، وهو الجزء الذي يقع فيه الخطأ. فتسجيل العارض من داخل التطبيق غير موجود وقد أُسقط عمدًا: الحساب يُنشأ هنا في لوحة التحكم، أو لا يُنشأ أصلًا. افتح سجل العارض واستخدم زر الحسابات؛ فأمامك طريقان وهما غير متكافئين."
+        },
+        {
+          "t": "bullets",
+          "en": [
+            "**Create a new account.** The Control Panel provisions a fresh identity, sets the exhibitor profile type on it, and records the membership against this exhibitor in one step. Use this for somebody who has no account yet.",
+            "**Link an account that already exists.** Matched on the email address, case-insensitively. Use this for somebody who was already created elsewhere — on the Others page, or at a desk."
+          ],
+          "ar": [
+            "**إنشاء حساب جديد.** تنشئ لوحة التحكم هويةً جديدة، وتضبط عليها نوع ملف العارض، وتسجّل العضوية لدى هذا العارض في خطوة واحدة. استخدم هذا لمن ليس له حساب بعد.",
+            "**ربط حساب موجود.** يُطابَق على عنوان البريد الإلكتروني دون تمييز بين الحروف الكبيرة والصغيرة. استخدم هذا لمن أُنشئ حسابه في مكان آخر — في صفحة الحسابات الأخرى أو عند أحد المكاتب."
+          ]
+        },
+        {
+          "t": "h3",
+          "en": "Why Link refuses, and what to do about it",
+          "ar": "لماذا يرفض الربط، وما العمل"
+        },
+        {
+          "t": "p",
+          "en": "Linking checks two things before it agrees, and both refusals are deliberate rather than defensive.",
+          "ar": "يتحقق الربط من أمرين قبل أن يوافق، وكلا الرفضين مقصود لا وقائي فحسب."
+        },
+        {
+          "t": "table",
+          "headers": {
+            "en": [
+              "The refusal",
+              "What it means",
+              "What to do"
+            ],
+            "ar": [
+              "الرفض",
+              "ماذا يعني",
+              "ما العمل"
+            ]
+          },
+          "rows": {
+            "en": [
+              [
+                "The account is not eligible",
+                "The account does not carry an active profile type whose app role is Exhibitor. The Control Panel will not quietly change the profile type here, because that would silently overwrite an app role another administrator assigned",
+                "Set an exhibitor profile type on the account first, on the Others page, then link"
+              ],
+              [
+                "The account is already linked",
+                "That person already holds a live membership with another exhibitor. One account belongs to one exhibitor at a time, and the database enforces it",
+                "Revoke the earlier membership, then link — or use a different account"
+              ]
+            ],
+            "ar": [
+              [
+                "الحساب غير مؤهل",
+                "لا يحمل الحساب نوع ملف مفعَّلًا يكون دوره في التطبيق «عارض». ولن تغيّر لوحة التحكم نوع الملف هنا بصمت، لأن ذلك يعني الكتابة فوق دور في التطبيق أسنده مسؤول آخر",
+                "اضبط نوع ملف عارض على الحساب أولًا من صفحة الحسابات الأخرى، ثم اربط"
+              ],
+              [
+                "الحساب مرتبط بالفعل",
+                "هذا الشخص يحمل عضوية سارية لدى عارض آخر. فالحساب الواحد يتبع عارضًا واحدًا في الوقت الواحد، وقاعدة البيانات تفرض ذلك",
+                "ألغِ العضوية السابقة ثم اربط — أو استخدم حسابًا آخر"
+              ]
+            ]
+          }
+        },
+        {
+          "t": "note",
+          "en": "The most common failure in this whole chapter: an account was created on the Others page with an exhibitor profile type, and everybody assumes it is ready. It is not. It has the profile type and no membership, so the app refuses its badge scans and its visitor list, and nothing on the Exhibitors page ties it to a stand. The instinct is to create the account again from the Accounts panel, which fails on the duplicate email address. The fix is Link, not Create.",
+          "ar": "أشهر إخفاق في هذا الفصل كله: حساب أُنشئ في صفحة الحسابات الأخرى بنوع ملف عارض، فيفترض الجميع أنه جاهز. وليس كذلك. فهو يحمل نوع الملف ولا يحمل عضوية، فيرفض التطبيق عمليات مسح الشارات وقائمة الزوار لديه، ولا شيء في صفحة العارضين يربطه بجناح. ويكون الميل إلى إنشاء الحساب مجددًا من لوحة الحسابات، فيفشل بسبب تكرار البريد الإلكتروني. والحل هو الربط لا الإنشاء."
+        },
+        {
+          "t": "h3",
+          "en": "What a live membership actually grants",
+          "ar": "ماذا تمنحه العضوية السارية فعلًا"
+        },
+        {
+          "t": "p",
+          "en": "Two things together authorise lead capture: the exhibitor profile type on the account, and a live membership against an exhibitor. With both, that person's app can scan a visitor's entry badge and keep the resulting contact card, list the visitors they collected, delete one, and export a card as a vCard. They also become a recipient of the business-meeting notifications sent to the exhibitor.",
+          "ar": "أمران معًا يمنحان صلاحية التقاط العملاء: نوع ملف العارض على الحساب، وعضوية سارية لدى عارض. فبهما معًا يستطيع تطبيق ذلك الشخص مسح شارة دخول الزائر والاحتفاظ ببطاقة التواصل الناتجة، وعرض قائمة الزوار الذين جمعهم، وحذف واحدة منها، وتصدير البطاقة كملف vCard. ويصبح كذلك من متلقّي إشعارات لقاءات الأعمال المرسلة إلى العارض."
+        },
+        {
+          "t": "h3",
+          "en": "Revoking access",
+          "ar": "سحب الصلاحية"
+        },
+        {
+          "t": "p",
+          "en": "Revoking deactivates the membership; it never deletes it. The row is the record of who captured which visitor's details and under whose consent, so it has to survive the person losing access. Three things stop working immediately: the badge scan and the booth's collected contact cards, the business-meeting notifications, and the account count on the exhibitors grid. Revoking works on an inactive exhibitor too — withdrawing access has to remain possible after a stand closes.",
+          "ar": "سحب الصلاحية يعطّل العضوية، ولا يحذفها أبدًا. فالسجل هو الدليل على من التقط بيانات أي زائر وبأي موافقة، فوجب أن يبقى بعد فقدان الشخص لصلاحيته. وتتوقف ثلاثة أمور فورًا: مسح الشارات وبطاقات التواصل المجمَّعة للجناح، وإشعارات لقاءات الأعمال، وعدّاد الحسابات في شبكة العارضين. ويعمل السحب على عارض معطَّل أيضًا — إذ يجب أن يظل سحب الصلاحية ممكنًا بعد إغلاق الجناح."
+        },
+        {
+          "t": "note",
+          "en": "Only live memberships are listed in the Accounts panel, which is why a revoked person simply disappears from it rather than appearing greyed out. Revoking one that is already revoked is refused rather than silently accepted.",
+          "ar": "لا تُعرض في لوحة الحسابات إلا العضويات السارية، ولذلك يختفي الشخص الذي سُحبت صلاحيته منها بدل أن يظهر باهتًا. ويُرفض سحب صلاحية مسحوبة أصلًا بدل قبوله بصمت."
+        },
+        {
+          "t": "h2",
+          "en": "Sponsors and their tiers",
+          "ar": "الرعاة وفئاتهم"
+        },
+        {
+          "t": "p",
+          "en": "Sponsors carry four tiers — Platinum, Gold, Silver and Bronze — and a new sponsor starts at Bronze. The public surface groups them by tier with Platinum first, and within a tier orders by the display-order number and then by Arabic name.",
+          "ar": "للرعاة أربع فئات — بلاتيني وذهبي وفضي وبرونزي — ويبدأ الراعي الجديد عند البرونزي. وتجمعهم الواجهة العامة بحسب الفئة والبلاتيني أولًا، وترتبهم داخل الفئة الواحدة بحسب رقم ترتيب العرض ثم بالاسم العربي."
+        },
+        {
+          "t": "note",
+          "en": "FDS-006 describes the sponsor tiers as Strategic, Premium and Gold. The system does not use those; the four above are what it offers and what the public listing groups by. Separately, exhibitors have their own distinct tier list — Premium, Gold, Silver, Bronze — which is not the sponsor list even though two of the words are shared.",
+          "ar": "يصف المستند FDS-006 فئات الرعاة بأنها: استراتيجي وبريميوم وذهبي. والنظام لا يستخدم تلك؛ فالفئات الأربع أعلاه هي ما يوفره وما تُجمَّع القائمة العامة على أساسه. وللعارضين — بشكل منفصل — قائمة فئات خاصة بهم: بريميوم وذهبي وفضي وبرونزي، وهي ليست قائمة الرعاة وإن تشاركتا كلمتين."
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-sponsors-default",
+          "caption": {
+            "en": "The sponsors list. Tier and display order together decide the order the public surfaces show.",
+            "ar": "قائمة الرعاة. الفئة وترتيب العرض معًا يحددان الترتيب الذي تعرضه الواجهات العامة."
+          }
+        },
+        {
+          "t": "h2",
+          "en": "The venue map",
+          "ar": "خريطة الموقع"
+        },
+        {
+          "t": "p",
+          "en": "The map is a set of labelled points, each one a hall, a zone, a booth or a point of interest, placed at an X and Y in relative units of roughly nought to a thousand which the app scales onto its own canvas. A point may carry a hall or a booth, which is what makes it tappable. It is a two-dimensional map of points, not the three-dimensional isometric floor plan FDS-006 describes.",
+          "ar": "الخريطة مجموعة نقاط معنونة، كل نقطة قاعة أو منطقة أو جناح أو معلم، توضع عند إحداثي س وص بوحدات نسبية من صفر إلى ألف تقريبًا يقيسها التطبيق على مساحته. وقد تحمل النقطة قاعة أو جناحًا، وهو ما يجعلها قابلة للنقر. وهي خريطة نقاط ثنائية الأبعاد، لا المخطط المجسَّم ثلاثي الأبعاد الذي يصفه المستند FDS-006."
+        },
+        {
+          "t": "note",
+          "en": "A booth also has its own map coordinates on the booths page. They are stored and published, and no map is drawn from them — the app's map is built from the venue-map points. Placing a booth by editing its coordinates therefore moves nothing on screen; add or move its point on the venue map instead.",
+          "ar": "للجناح كذلك إحداثيات خريطة خاصة به في صفحة الأجنحة. وهي تُحفظ وتُنشر، ولا تُرسم منها أي خريطة — فخريطة التطبيق مبنية من نقاط خريطة الموقع. ولذلك فإن تحديد موضع جناح بتحرير إحداثياته لا يحرّك شيئًا على الشاشة؛ بل أضف نقطته على خريطة الموقع أو حرّكها."
+        },
+        {
+          "t": "p",
+          "en": "One anonymous read serves the map, cached for forty-five seconds, and the mobile app is its only consumer. The public website does not use it: its exhibition page shows an exported floor-plan image instead, which is static and is not produced from these points. Moving a point therefore changes the app and leaves the website picture exactly as it was.",
+          "ar": "تخدم الخريطةَ قراءةٌ واحدة مجهولة، مخزَّنة مؤقتًا خمسًا وأربعين ثانية، وتطبيق الجوال هو مستهلكها الوحيد. أما الموقع العام فلا يستخدمها: إذ تعرض صفحة المعرض فيه صورة مخطط مصدَّرة، وهي ثابتة ولا تُنتج من هذه النقاط. ولذلك فتحريك نقطةٍ يغيّر التطبيق ويترك صورة الموقع كما هي تمامًا."
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-venue-map-default",
+          "caption": {
+            "en": "The venue map points. Each row is one point on the map the mobile app draws.",
+            "ar": "نقاط خريطة الموقع. كل سجل نقطة على الخريطة التي يرسمها تطبيق الجوال."
+          }
+        }
+      ]
+    },
+    {
+      "id": "content",
+      "title": {
+        "en": "Publishing content, and where it shows up",
+        "ar": "نشر المحتوى، وأين يظهر"
+      },
+      "blocks": [
+        {
+          "t": "p",
+          "en": "Before the fields, the map. These pages do not all feed the same audience, and the difference is not visible from the Control Panel: the page looks identical whether a hundred thousand app users read it or nothing does. Publishing is only half the job — knowing where to go and look is the other half.",
+          "ar": "قبل الحقول، الخريطة. فهذه الصفحات لا تغذّي جمهورًا واحدًا، والفرق غير ظاهر من لوحة التحكم: إذ تبدو الصفحة كما هي سواء قرأها مئة ألف مستخدم للتطبيق أو لم يقرأها أحد. والنشر نصف العمل — ونصفه الآخر معرفة أين تذهب لتنظر."
+        },
+        {
+          "t": "h2",
+          "en": "Who reads what",
+          "ar": "من يقرأ ماذا"
+        },
+        {
+          "t": "table",
+          "headers": {
+            "en": [
+              "Page",
+              "Mobile app",
+              "Public website"
+            ],
+            "ar": [
+              "الصفحة",
+              "تطبيق الجوال",
+              "الموقع العام"
+            ]
+          },
+          "rows": {
+            "en": [
+              [
+                "Content blocks",
+                "Yes — the About and Terms screens read their text from here",
+                "No"
+              ],
+              [
+                "Banners",
+                "Yes — the rotating hero on the app's home screen",
+                "No"
+              ],
+              [
+                "Media Center",
+                "Yes — the gallery",
+                "No"
+              ],
+              [
+                "News",
+                "Yes — the news list and each article",
+                "No — the website's news cards are fixed in the site itself"
+              ],
+              [
+                "Media partners",
+                "Yes",
+                "No"
+              ],
+              [
+                "Previous editions",
+                "Yes",
+                "Yes — the Archive page and the Archive menu"
+              ],
+              [
+                "Sponsors",
+                "Yes",
+                "Yes — the logo strip on the landing page and the Partners page"
+              ]
+            ],
+            "ar": [
+              [
+                "كتل المحتوى",
+                "نعم — تقرأ شاشتا «عن» و«الشروط» نصّهما من هنا",
+                "لا"
+              ],
+              [
+                "اللافتات",
+                "نعم — الشريط المتحرك في الشاشة الرئيسية للتطبيق",
+                "لا"
+              ],
+              [
+                "المركز الإعلامي",
+                "نعم — معرض الصور",
+                "لا"
+              ],
+              [
+                "الأخبار",
+                "نعم — قائمة الأخبار وكل مقال",
+                "لا — بطاقات أخبار الموقع مثبَّتة داخل الموقع نفسه"
+              ],
+              [
+                "الشركاء الإعلاميون",
+                "نعم",
+                "لا"
+              ],
+              [
+                "الدورات السابقة",
+                "نعم",
+                "نعم — صفحة الأرشيف وقائمة الأرشيف"
+              ],
+              [
+                "الرعاة",
+                "نعم",
+                "نعم — شريط الشعارات في الصفحة الرئيسية وصفحة الشركاء"
+              ]
+            ]
+          }
+        },
+        {
+          "t": "note",
+          "en": "This is the single most useful fact in the chapter. A news article, a banner, a gallery item, a media partner or a content block is published for the mobile app. The website reads sponsors, previous editions, the programme sessions and the speakers live, and nothing else — the aggregating endpoint that once fed the rest of the landing page is still there and no shipped page calls it, and the landing's news cards are written into the site. Check the app, not the website, and the save you were about to repeat will turn out to have worked.",
+          "ar": "هذه أنفع حقيقة في الفصل. فالمقال الإخباري واللافتة وعنصر المعرض والشريك الإعلامي وكتلة المحتوى تُنشر لتطبيق الجوال. أما الموقع فيقرأ مباشرةً الرعاة والدورات السابقة وجلسات البرنامج والمتحدثين، ولا شيء غير ذلك — فنقطة القراءة المجمِّعة التي كانت تغذّي بقية الصفحة الرئيسية ما زالت موجودة ولا تستدعيها أي صفحة منشورة، وبطاقات الأخبار في الصفحة الرئيسية مكتوبة داخل الموقع. تحقّق من التطبيق لا من الموقع، وسيتبيّن أن الحفظ الذي كدت تعيده قد نجح."
+        },
+        {
+          "t": "h2",
+          "en": "Three shapes, not three lists of text",
+          "ar": "ثلاثة أشكال، لا ثلاث قوائم نصوص"
+        },
+        {
+          "t": "p",
+          "en": "Content blocks, banners and news look alike on the menu and behave nothing alike. Each has its own idea of what makes an item appear.",
+          "ar": "تتشابه كتل المحتوى واللافتات والأخبار في القائمة ولا تتشابه في السلوك إطلاقًا. ولكلٍّ منها مفهومه الخاص لما يجعل العنصر يظهر."
+        },
+        {
+          "t": "table",
+          "headers": {
+            "en": [
+              "",
+              "Content block",
+              "Banner",
+              "News item"
+            ],
+            "ar": [
+              "",
+              "كتلة محتوى",
+              "لافتة",
+              "خبر"
+            ]
+          },
+          "rows": {
+            "en": [
+              [
+                "Addressed by",
+                "A key, such as home.welcome.title",
+                "Its display order",
+                "Its publish date and order"
+              ],
+              [
+                "What makes it visible",
+                "Being active",
+                "Being active and the present moment falling inside its start and end",
+                "Its publish date having passed"
+              ],
+              [
+                "Ordering",
+                "None — clients ask for the key they want",
+                "Display order, zero first; ties break on the start date",
+                "Publish date and display order"
+              ],
+              [
+                "Carries a picture",
+                "No",
+                "Yes",
+                "Yes"
+              ]
+            ],
+            "ar": [
+              [
+                "يُطلب بواسطة",
+                "مفتاح، مثل home.welcome.title",
+                "ترتيب عرضه",
+                "تاريخ نشره وترتيبه"
+              ],
+              [
+                "ما يجعله ظاهرًا",
+                "أن يكون مفعَّلًا",
+                "أن يكون مفعَّلًا وأن تقع اللحظة الحالية بين بدايته ونهايته",
+                "أن يكون تاريخ نشره قد مضى"
+              ],
+              [
+                "الترتيب",
+                "لا يوجد — يطلب العملاء المفتاح الذي يريدونه",
+                "ترتيب العرض والصفر أولًا، ويُفصل التعادل بتاريخ البداية",
+                "تاريخ النشر ثم ترتيب العرض"
+              ],
+              [
+                "يحمل صورة",
+                "لا",
+                "نعم",
+                "نعم"
+              ]
+            ]
+          }
+        },
+        {
+          "t": "h3",
+          "en": "Content blocks: the key is the contract",
+          "ar": "كتل المحتوى: المفتاح هو العقد"
+        },
+        {
+          "t": "p",
+          "en": "A content block is a named slot. The app asks for a key and shows whatever text is in it, so the key is what the app was written against — renaming one does not move the text, it breaks the screen that asked for the old name. Add a block, edit a block, deactivate a block; do not rename its key unless the app is being changed with it.",
+          "ar": "كتلة المحتوى خانة مسمّاة. يطلب التطبيق مفتاحًا ويعرض ما فيه من نص، فالمفتاح هو ما كُتب التطبيق عليه — وإعادة تسميته لا تنقل النص، بل تُعطّل الشاشة التي طلبت الاسم القديم. أضِف كتلة، وحرّر كتلة، وعطّل كتلة؛ ولا تُعِد تسمية مفتاحها ما لم يكن التطبيق يتغيّر معها."
+        },
+        {
+          "t": "note",
+          "en": "The value is shown as plain text. Typing HTML into it puts the tags on the screen; it does not format anything.",
+          "ar": "تُعرض القيمة نصًّا صِرفًا. فكتابة HTML فيها يضع الوسوم على الشاشة ولا ينسّق شيئًا."
+        },
+        {
+          "t": "p",
+          "en": "Clients cache these and re-check them against the block's last-updated time, so an edit reaches devices on their next check rather than instantly on every phone at once.",
+          "ar": "يخزّن العملاء هذه مؤقتًا ويعيدون فحصها مقابل وقت آخر تحديث للكتلة، فيصل التعديل إلى الأجهزة عند فحصها التالي لا فوريًّا على كل هاتف دفعة واحدة."
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-content-blocks-default",
+          "caption": {
+            "en": "The content blocks. The key column is what the app is coded against; the text beside it is what it shows.",
+            "ar": "كتل المحتوى. عمود المفتاح هو ما بُرمج التطبيق عليه؛ والنص المجاور له هو ما يعرضه."
+          }
+        },
+        {
+          "t": "h3",
+          "en": "Banners: a window, not a switch",
+          "ar": "اللافتات: نافذة زمنية لا مفتاح"
+        },
+        {
+          "t": "p",
+          "en": "A banner has a start and an end, and the public read returns only the active banners whose window contains right now. A banner that will not appear is far more often outside its dates than deactivated. Display order decides the sequence, with zero at the top, and two banners sharing an order are separated by their start date.",
+          "ar": "للافتة بداية ونهاية، ولا تُرجع القراءة العامة إلا اللافتات المفعَّلة التي تقع اللحظة الحالية داخل نافذتها. واللافتة التي لا تظهر تكون خارج تواريخها أكثر بكثير مما تكون معطَّلة. ويحدّد ترتيب العرض التسلسل والصفر في الأعلى، ويُفصل بين لافتتين لهما الترتيب نفسه بتاريخ البداية."
+        },
+        {
+          "t": "note",
+          "en": "The link on a banner is stored as a plain address because it is navigation rather than media: it is where tapping the banner takes the reader, and it is optional.",
+          "ar": "يُحفظ رابط اللافتة عنوانًا صِرفًا لأنه تنقّل لا وسائط: فهو الموضع الذي ينتقل إليه القارئ بالنقر على اللافتة، وهو اختياري."
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-banners-default",
+          "caption": {
+            "en": "The banners. Start, end and display order are what decide whether one is on screen right now.",
+            "ar": "اللافتات. البداية والنهاية وترتيب العرض هي ما يحدد إن كانت اللافتة على الشاشة الآن."
+          }
+        },
+        {
+          "t": "h3",
+          "en": "News: the publish date is the gate",
+          "ar": "الأخبار: تاريخ النشر هو البوابة"
+        },
+        {
+          "t": "p",
+          "en": "An article becomes public when its publish date has passed. Dating one ahead is how an article is written today and released on Sunday — and it is why an article can be plainly visible on this page and absent from the app. The admin grid shows every article regardless of its date, on purpose.",
+          "ar": "يصبح المقال عامًّا حين يمضي تاريخ نشره. وتأريخه إلى الأمام هو الطريقة التي يُكتب بها المقال اليوم ويصدر يوم الأحد — وهو سبب أن يكون المقال ظاهرًا تمامًا في هذه الصفحة وغائبًا عن التطبيق. وتعرض شبكة الإدارة كل المقالات بصرف النظر عن تاريخها، وذلك مقصود."
+        },
+        {
+          "t": "bullets",
+          "en": [
+            "The excerpt is optional — leave it empty and the app derives one from the body.",
+            "The category is the small kicker printed above the title. It is free text typed on the article, not a list to choose from, so spelling it differently on two articles produces two different kickers. FDS-010 describes it as a managed list; it is not one.",
+            "Both title and body are bilingual, and both languages are wanted: the app shows the reader whichever matches their language."
+          ],
+          "ar": [
+            "المقتطف اختياري — اتركه فارغًا فيشتقّه التطبيق من المتن.",
+            "التصنيف هو العنوان الصغير المطبوع فوق العنوان. وهو نص حر يُكتب على المقال، لا قائمة يُختار منها، فكتابته بصيغتين على مقالين تُنتج عنوانين صغيرين مختلفين. ويصفه المستند FDS-010 قائمةً مُدارة؛ وليس كذلك.",
+            "العنوان والمتن كلاهما بلغتين، وكلتا اللغتين مطلوبة: إذ يعرض التطبيق للقارئ ما يوافق لغته."
+          ]
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-news-default",
+          "caption": {
+            "en": "The news list. Every article appears here, including the ones dated ahead that the app is not showing yet.",
+            "ar": "قائمة الأخبار. تظهر هنا كل المقالات، بما فيها المؤرَّخة إلى الأمام التي لا يعرضها التطبيق بعد."
+          }
+        },
+        {
+          "t": "h2",
+          "en": "Media library and Media Center are different things",
+          "ar": "مكتبة الوسائط والمركز الإعلامي شيئان مختلفان"
+        },
+        {
+          "t": "p",
+          "en": "The Media Center is the public gallery: each item is either a picture uploaded to it or a video held as a link to where it plays, grouped into albums and ordered. That is content the audience browses.",
+          "ar": "المركز الإعلامي هو المعرض العام: كل عنصر فيه إما صورة رُفعت إليه أو مقطع مرئي محفوظ كرابط إلى موضع تشغيله، مجموعةً في ألبومات ومرتَّبة. وهذا محتوى يتصفحه الجمهور."
+        },
+        {
+          "t": "p",
+          "en": "The Media library is not content at all. It is a view across every image the system holds, whoever uploaded it and whatever it belongs to — speaker photographs, sponsor and exhibitor and booth logos, archive covers, news pictures, programme-day images, the organisation logo, banner images. It exists so somebody can find a file, look at it, and deactivate or restore it without hunting through the page that owns it. Deactivating a file here removes it from wherever it was being shown.",
+          "ar": "أما مكتبة الوسائط فليست محتوى إطلاقًا. بل هي عرض شامل لكل صورة يحملها النظام، أيًّا كان من رفعها وأيًّا كان ما تتبعه — صور المتحدثين، وشعارات الرعاة والعارضين والأجنحة، وأغلفة الأرشيف، وصور الأخبار، وصور أيام البرنامج، وشعار الجهة، وصور اللافتات. وهي موجودة ليتمكن أحدهم من إيجاد ملف والنظر إليه وتعطيله أو استعادته دون التنقيب في الصفحة التي تملكه. وتعطيل ملف هنا يزيله من حيث كان يُعرض."
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-media-library-default",
+          "caption": {
+            "en": "The media library: every uploaded image in the system, whatever page it belongs to.",
+            "ar": "مكتبة الوسائط: كل صورة مرفوعة في النظام، أيًّا كانت الصفحة التي تتبعها."
+          }
+        },
+        {
+          "t": "h2",
+          "en": "Previous editions are not the event edition",
+          "ar": "الدورات السابقة ليست دورة الفعالية"
+        },
+        {
+          "t": "p",
+          "en": "Two pages carry a year and they have nothing to do with each other. Previous editions is hand-written history: a year, a bilingual title and summary, and reported totals for attendees, sessions and speakers that an administrator types in. They are not counted from anything. Alongside them sit that edition's gallery pictures, its session titles and its past speakers.",
+          "ar": "صفحتان تحملان سنة ولا علاقة لإحداهما بالأخرى. فالدورات السابقة تاريخ مكتوب باليد: سنة، وعنوان وملخص بلغتين، وإجماليات مُبلَّغة للحضور والجلسات والمتحدثين يكتبها مسؤول. وهي لا تُحتسب من أي شيء. ويصحبها صور معرض تلك الدورة وعناوين جلساتها ومتحدثوها السابقون."
+        },
+        {
+          "t": "p",
+          "en": "The event edition page, in the System menu, records which year the forum is currently running. Closing this year there does not produce an archive card for it: somebody writes that card here, by hand, with the totals they want reported.",
+          "ar": "أما صفحة دورة الفعالية في قائمة النظام فتسجّل السنة التي يُقام فيها الملتقى حاليًّا. وإغلاق هذه السنة هناك لا يُنتج بطاقة أرشيف لها: بل يكتب أحدهم تلك البطاقة هنا يدويًّا بالإجماليات التي يريد الإبلاغ عنها."
+        },
+        {
+          "t": "note",
+          "en": "Whether the archive is publicly visible at all is not a setting on an edition. It is one switch for the whole archive, on the Operations page: turn it off and the public list comes back empty and each edition's page reports not found. FDS-010 describes a visibility flag per edition; the system has a single global one.",
+          "ar": "وكون الأرشيف ظاهرًا للعموم أصلًا ليس إعدادًا على الدورة. بل هو مفتاح واحد للأرشيف كله في صفحة العمليات: أوقفه فتعود القائمة العامة فارغة وتُبلِّغ صفحة كل دورة بعدم الوجود. ويصف المستند FDS-010 راية ظهور لكل دورة؛ وفي النظام مفتاح عام واحد."
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-archive-default",
+          "caption": {
+            "en": "Previous editions. The attendee, session and speaker totals on each row are typed, not counted.",
+            "ar": "الدورات السابقة. إجماليات الحضور والجلسات والمتحدثين في كل سجل مكتوبة لا محتسَبة."
+          }
+        }
+      ]
+    },
+    {
+      "id": "public-relations",
+      "title": {
+        "en": "Reaching people: invitations, VIPs and announcements",
+        "ar": "الوصول إلى الناس: الدعوات وكبار الشخصيات والإعلانات"
+      },
+      "blocks": [
+        {
+          "t": "p",
+          "en": "Four pages send things to people, and they are not variations on one another. Read this table before using the third one.",
+          "ar": "أربع صفحات تُرسل أشياء إلى الناس، وهي ليست صيغًا مختلفة لشيء واحد. اقرأ هذا الجدول قبل استخدام الثالثة منها."
+        },
+        {
+          "t": "table",
+          "headers": {
+            "en": [
+              "Page",
+              "Reaches",
+              "Ceiling",
+              "Channels"
+            ],
+            "ar": [
+              "الصفحة",
+              "تصل إلى",
+              "الحد الأقصى",
+              "القنوات"
+            ]
+          },
+          "rows": {
+            "en": [
+              [
+                "Invitations",
+                "One named person, one row per send",
+                "One at a time",
+                "In-app notification only — no email"
+              ],
+              [
+                "VIPs — notify",
+                "The VIP profiles you tick",
+                "500 per send, refused above that",
+                "In-app notification and email"
+              ],
+              [
+                "Announcements",
+                "One session's seat-holders, or a whole audience",
+                "None anywhere",
+                "In-app notification and email, one of each per recipient"
+              ],
+              [
+                "Contact inquiries",
+                "Nobody — it is an inbox, not an outbox",
+                "—",
+                "Incoming from the app's contact form"
+              ]
+            ],
+            "ar": [
+              [
+                "الدعوات",
+                "شخص واحد محدَّد، وسجل لكل إرسال",
+                "واحد في المرة",
+                "إشعار داخل التطبيق فقط — بلا بريد"
+              ],
+              [
+                "كبار الشخصيات — إشعار",
+                "ملفات كبار الشخصيات التي تحدّدها",
+                "٥٠٠ في الإرسالة الواحدة، ويُرفض ما زاد",
+                "إشعار داخل التطبيق وبريد إلكتروني"
+              ],
+              [
+                "الإعلانات",
+                "أصحاب مقاعد جلسة واحدة، أو جمهور كامل",
+                "لا حد في أي موضع",
+                "إشعار داخل التطبيق وبريد إلكتروني، واحد من كلٍّ لكل مستلم"
+              ],
+              [
+                "رسائل التواصل",
+                "لا أحد — فهي صندوق وارد لا صادر",
+                "—",
+                "واردة من نموذج التواصل في التطبيق"
+              ]
+            ]
+          }
+        },
+        {
+          "t": "h2",
+          "en": "Invitations",
+          "ar": "الدعوات"
+        },
+        {
+          "t": "p",
+          "en": "An invitation is a record of one send to one person. Inviting the same person again does not update the first invitation — it adds a second row, and the first one stays as the record that they were invited before. The row carries who sent it, who it was addressed to, its state, free-text notes, and when the recipient responded.",
+          "ar": "الدعوة سجلٌّ لإرسال واحد إلى شخص واحد. ودعوة الشخص نفسه مرة أخرى لا تحدّث الدعوة الأولى — بل تضيف سجلًّا ثانيًا، ويبقى الأول شاهدًا على أنه دُعي من قبل. ويحمل السجل من أرسلها، ومن وُجّهت إليه، وحالتها، وملاحظات نصية حرّة، ووقت رد المستلم."
+        },
+        {
+          "t": "p",
+          "en": "Issuing one sends an in-app notification and nothing else. There is no invitation email, so a recipient who does not open the app will not learn about it from the system.",
+          "ar": "إصدار الدعوة يرسل إشعارًا داخل التطبيق ولا شيء غيره. فلا يوجد بريد دعوة، ومن لا يفتح التطبيق من المستلمين لن يعلم بها من النظام."
+        },
+        {
+          "t": "bullets",
+          "en": [
+            "The invitation is addressed to the profile, not to a sign-in account. Somebody with no account can be invited; they simply have no inbox to receive the notification in, and the invitation still stands as a record.",
+            "The notification is best-effort. If notifications are down the invitation is still created and still succeeds — it does not fail on the way out.",
+            "A state can move from pending to a settled answer. It cannot be pushed back to pending afterwards, because the recipient has already answered and unsaying that is not something an administrator should be able to do."
+          ],
+          "ar": [
+            "الدعوة موجَّهة إلى الملف لا إلى حساب دخول. فمن لا حساب له يمكن دعوته؛ غير أنه لا يملك صندوقًا يتلقى فيه الإشعار، وتبقى الدعوة قائمة كسجل.",
+            "الإشعار على أساس بذل الوسع. فإن كانت الإشعارات متوقفة تُنشأ الدعوة وتنجح رغم ذلك — ولا تفشل في طريقها للخروج.",
+            "يمكن أن تنتقل الحالة من قيد الانتظار إلى جواب نهائي. ولا يمكن إعادتها إلى قيد الانتظار بعد ذلك، لأن المستلم قد أجاب فعلًا وسحب ذلك ليس مما ينبغي أن يقدر عليه مسؤول."
+          ]
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-invitations-default",
+          "caption": {
+            "en": "The invitations list. One row per send, so a re-invitation appears alongside the earlier one rather than replacing it.",
+            "ar": "قائمة الدعوات. سجل لكل إرسال، فتظهر إعادة الدعوة إلى جانب السابقة لا بدلًا منها."
+          }
+        },
+        {
+          "t": "h2",
+          "en": "VIPs are a profile type, not a list you edit",
+          "ar": "كبار الشخصيات نوع ملف، لا قائمة تحرّرها"
+        },
+        {
+          "t": "p",
+          "en": "There is no VIP table and no VIP switch. The VIPs page shows every profile whose profile type is named VVIP, VIP or Gold — those three names, exactly. Somebody becomes a VIP by being given one of those profile types, and stops being one by being given a different type. Nothing on the VIPs page itself changes who is on it.",
+          "ar": "لا يوجد جدول لكبار الشخصيات ولا مفتاح لهم. فصفحة كبار الشخصيات تعرض كل ملف يكون نوعه مسمًّى VVIP أو VIP أو Gold — هذه الأسماء الثلاثة تحديدًا. ويصير المرء من كبار الشخصيات بمنحه أحد هذه الأنواع، ويكفّ عن ذلك بمنحه نوعًا آخر. ولا شيء في صفحة كبار الشخصيات نفسها يغيّر من عليها."
+        },
+        {
+          "t": "note",
+          "en": "Guests with no sign-in account are listed here without an email address rather than left out. They are real invitees and hiding them would make the list disagree with the guest list.",
+          "ar": "يُدرج الضيوف الذين لا حساب دخول لهم هنا بلا بريد إلكتروني بدل استبعادهم. فهم مدعوّون حقيقيون، وإخفاؤهم يجعل القائمة تخالف قائمة الضيوف."
+        },
+        {
+          "t": "p",
+          "en": "The notify action on this page sends to the profiles you have selected. It refuses more than five hundred in one send, and it quietly skips anybody in the selection who is not actually a VIP or who has no account to notify — then tells you, on the result, how many it skipped. That report is the useful part: it is the difference between believing a hundred people were told and knowing that eighty-three were.",
+          "ar": "يرسل إجراء الإشعار في هذه الصفحة إلى الملفات التي حدّدتها. ويرفض ما زاد على خمسمائة في الإرسالة الواحدة، ويتخطى بهدوء كل من في التحديد ممن ليس فعلًا من كبار الشخصيات أو ليس له حساب يُشعَر — ثم يخبرك في النتيجة بعدد من تخطاهم. وذلك التقرير هو الجزء النافع: فهو الفرق بين اعتقاد أن مئةً قد أُبلغوا ومعرفة أن ثلاثةً وثمانين أُبلغوا."
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-vips-default",
+          "caption": {
+            "en": "The VIPs page. Everybody on it is here because of their profile type, and that is the only way on or off.",
+            "ar": "صفحة كبار الشخصيات. كل من فيها موجود بسبب نوع ملفه، وذلك هو السبيل الوحيد للدخول إليها أو الخروج منها."
+          }
+        },
+        {
+          "t": "h2",
+          "en": "Announcements",
+          "ar": "الإعلانات"
+        },
+        {
+          "t": "p",
+          "en": "An announcement is the broadcast desk. Write a bilingual title and message, choose an importance, choose who it goes to, and submit. Each recipient gets one notification inside the app and one queued email. There is no text-message or messaging-app channel — FDS-009 lists them; they were never built.",
+          "ar": "الإعلان هو مكتب البث. اكتب عنوانًا ورسالة بلغتين، واختر الأهمية، واختر من تصل إليه، ثم أرسل. فيتلقى كل مستلم إشعارًا واحدًا داخل التطبيق وبريدًا واحدًا في الطابور. ولا توجد قناة رسائل نصية ولا تطبيقات مراسلة — يذكرها المستند FDS-009؛ ولم تُبنَ قط."
+        },
+        {
+          "t": "h3",
+          "en": "Choosing who it goes to",
+          "ar": "اختيار من تصل إليه"
+        },
+        {
+          "t": "table",
+          "headers": {
+            "en": [
+              "Target",
+              "Who that is"
+            ],
+            "ar": [
+              "الهدف",
+              "من هم"
+            ]
+          },
+          "rows": {
+            "en": [
+              [
+                "A session",
+                "Everybody holding a live seat reservation in that session"
+              ],
+              [
+                "Approved app users",
+                "Every approved non-administrator account"
+              ],
+              [
+                "Event attendees",
+                "Everybody holding a live seat reservation in at least one session"
+              ],
+              [
+                "Everyone including pending",
+                "Every non-administrator account whatever its state — including sign-ups nobody has approved yet"
+              ]
+            ],
+            "ar": [
+              [
+                "جلسة",
+                "كل من يحمل حجز مقعد ساريًا في تلك الجلسة"
+              ],
+              [
+                "مستخدمو التطبيق المعتمدون",
+                "كل حساب معتمد ليس مسؤولًا"
+              ],
+              [
+                "حضور الفعالية",
+                "كل من يحمل حجز مقعد ساريًا في جلسة واحدة على الأقل"
+              ],
+              [
+                "الجميع بمن فيهم قيد الانتظار",
+                "كل حساب ليس مسؤولًا أيًّا كانت حالته — بمن فيهم المسجَّلون الذين لم يعتمدهم أحد بعد"
+              ]
+            ]
+          }
+        },
+        {
+          "t": "note",
+          "en": "Nothing anywhere limits how many people an announcement reaches. The composer accepts the target, checks the title and message lengths, and queues it. The VIP page's five-hundred ceiling does not exist here, and \"everyone including pending\" means exactly that. This is the one page in the Control Panel where a wrong click is measured in tens of thousands of messages.",
+          "ar": "لا شيء في أي موضع يحدّ عدد من يصلهم الإعلان. فالمحرّر يقبل الهدف، ويتحقق من طولي العنوان والرسالة، ثم يضعه في الطابور. وسقف الخمسمائة في صفحة كبار الشخصيات لا وجود له هنا، و«الجميع بمن فيهم قيد الانتظار» تعني ذلك حرفيًّا. وهذه هي الصفحة الوحيدة في لوحة التحكم التي تُقاس فيها النقرة الخاطئة بعشرات الآلاف من الرسائل."
+        },
+        {
+          "t": "h3",
+          "en": "What happens after you submit",
+          "ar": "ماذا يحدث بعد الإرسال"
+        },
+        {
+          "t": "p",
+          "en": "Submitting does not send. It writes one pending job and hands back an estimate of how many people it will reach; a background worker picks the job up shortly afterwards and does the sending. Two consequences follow, and both surprise people.",
+          "ar": "الإرسال لا يبعث الرسائل. بل يكتب مهمة واحدة قيد الانتظار ويعيد تقديرًا لعدد من ستصلهم؛ ثم يلتقط عاملٌ في الخلفية المهمةَ بعد قليل ويتولى الإرسال. ويترتب على ذلك أمران، وكلاهما يفاجئ الناس."
+        },
+        {
+          "t": "bullets",
+          "en": [
+            "**The number you were shown is an estimate, computed when you submitted.** The recipients are worked out again at send time, so the count on the history is legitimately different from the one the composer promised — somebody signed up, or was approved, in between.",
+            "**It cannot be recalled.** The worker claims the job before it starts dispatching, precisely so a restart mid-send never sends everything twice. The same claim means there is no way to stop it once it has started. A job left claimed for a quarter of an hour is marked failed rather than retried, for the same reason."
+          ],
+          "ar": [
+            "**الرقم الذي عُرض عليك تقدير حُسب لحظة الإرسال.** فالمستلمون يُستخرجون من جديد وقت البث، ولذلك يختلف العدد في السجل اختلافًا مشروعًا عمّا وعد به المحرّر — إذ سجّل أحدهم أو اعتُمد في ما بين ذلك.",
+            "**ولا يمكن استرجاعه.** فالعامل يحجز المهمة قبل أن يبدأ البث، وذلك تحديدًا حتى لا يؤدي إعادة التشغيل في منتصف الإرسال إلى بعث كل شيء مرتين. وهذا الحجز نفسه يعني أنه لا سبيل إلى إيقافه بعد أن يبدأ. وتُعلَّم المهمة المحجوزة ربع ساعة بالفشل بدل إعادة محاولتها، للسبب نفسه."
+          ]
+        },
+        {
+          "t": "p",
+          "en": "Sending is paced rather than instantaneous: recipients go out in batches of a hundred, and the worker waits when the email queue is already carrying seven hundred messages, half a second at a time. It will wait up to two minutes; beyond that it stops holding back and lets the queue drop what it cannot take, rather than stalling every later announcement behind this one. A very large announcement is therefore delivered over minutes, and its emails are the part that can be shed under load.",
+          "ar": "والبث متدرّج لا فوري: إذ يخرج المستلمون على دفعات من مئة، وينتظر العامل حين يكون طابور البريد يحمل سبعمائة رسالة أصلًا، نصف ثانية في كل مرة. وينتظر حتى دقيقتين؛ فإذا تجاوزهما كفّ عن التمهّل وترك الطابور يُسقط ما لا يسعه، بدل تعطيل كل إعلان لاحق خلف هذا الإعلان. ولذلك يُسلَّم الإعلان الضخم على مدى دقائق، ورسائل بريده هي الجزء الذي قد يسقط عند الضغط."
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-announcements-default",
+          "caption": {
+            "en": "The announcements desk with its history. The recipient count on a past row is what was actually resolved at send time.",
+            "ar": "مكتب الإعلانات وسجله. عدد المستلمين في السجل السابق هو ما استُخرج فعلًا وقت البث."
+          }
+        },
+        {
+          "t": "h2",
+          "en": "Contact inquiries",
+          "ar": "رسائل التواصل"
+        },
+        {
+          "t": "p",
+          "en": "This is an inbox. The messages come from the contact form in the mobile app, which anybody may use — no sign-in is required — so a row may carry a name, an email address and a message with no account behind it at all. The public website has no form wired to this page.",
+          "ar": "هذه صندوق وارد. تأتي الرسائل من نموذج التواصل في تطبيق الجوال، ويجوز لأي أحد استخدامه — إذ لا يلزم تسجيل دخول — فقد يحمل السجل اسمًا وبريدًا ورسالة بلا حساب خلفها إطلاقًا. وليس في الموقع العام نموذج موصول بهذه الصفحة."
+        },
+        {
+          "t": "p",
+          "en": "Open inquiries are listed first, newest first. Marking one handled records who dealt with it and when; the same control reopens it if it was closed too early.",
+          "ar": "تُعرض الرسائل المفتوحة أولًا والأحدث أولًا. ووسمها بأنها عولجت يسجّل من عالجها ومتى؛ والزر نفسه يعيد فتحها إن أُغلقت قبل أوانها."
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-contact-inquiries-default",
+          "caption": {
+            "en": "The contact inquiries inbox. Open messages come first.",
+            "ar": "صندوق رسائل التواصل. الرسائل المفتوحة أولًا."
+          }
+        }
+      ]
+    },
+    {
+      "id": "knowledge-ai",
+      "title": {
+        "en": "The FAQ and the AI features",
+        "ar": "الأسئلة الشائعة وخصائص الذكاء الاصطناعي"
+      },
+      "blocks": [
+        {
+          "t": "p",
+          "en": "The FAQ is ordinary content. The other four pages are the controls for a set of features that call a language model, and they are read-and-configure pages rather than pages you work on daily. The order to learn them in is: what the FAQ feeds, then what is running, then how to change it, then how to see what it did.",
+          "ar": "الأسئلة الشائعة محتوى عادي. أما الصفحات الأربع الأخرى فهي أدوات التحكم في مجموعة خصائص تستدعي نموذجًا لغويًّا، وهي صفحات قراءة وتهيئة لا صفحات عمل يومي. وترتيب تعلّمها: ما تغذّيه الأسئلة الشائعة، ثم ما الذي يعمل الآن، ثم كيف يُغيَّر، ثم كيف يُرى ما فعله."
+        },
+        {
+          "t": "h2",
+          "en": "The FAQ has three readers",
+          "ar": "للأسئلة الشائعة ثلاثة قرّاء"
+        },
+        {
+          "t": "p",
+          "en": "Entries are grouped, ordered inside their group, and only the active ones are published. What is worth knowing is who reads them.",
+          "ar": "المدخلات مجمَّعة، ومرتَّبة داخل مجموعتها، ولا يُنشر إلا المفعَّل منها. والجدير بالمعرفة هو من يقرؤها."
+        },
+        {
+          "t": "bullets",
+          "en": [
+            "**The app's questions screen** reads them directly and shows them as they are.",
+            "**The website's chat bubble** does not: it asks the AI to answer the visitor's question, and the answer is composed rather than quoted. A blank answer is reported as a failure instead of appearing as an empty bubble.",
+            "**The in-app assistant** is given the whole FAQ, the programme sessions and the booth list as its grounding, so it can only talk about real, active data. That grounding is rebuilt about once a minute: a FAQ edit reaches the assistant when the old copy expires, not the instant it is saved."
+          ],
+          "ar": [
+            "**شاشة الأسئلة في التطبيق** تقرؤها مباشرة وتعرضها كما هي.",
+            "**فقاعة المحادثة في الموقع** لا تفعل ذلك: بل تطلب من الذكاء الاصطناعي أن يجيب سؤال الزائر، فتكون الإجابة مؤلَّفة لا منقولة. والإجابة الفارغة يُبلَّغ عنها كإخفاق بدل أن تظهر فقاعة خالية.",
+            "**المساعد داخل التطبيق** يُعطى الأسئلة الشائعة كاملةً وجلسات البرنامج وقائمة الأجنحة أساسًا له، فلا يستطيع الحديث إلا عن بيانات حقيقية مفعَّلة. ويُعاد بناء ذلك الأساس كل دقيقة تقريبًا: فتعديل سؤال شائع يصل إلى المساعد حين تنتهي صلاحية النسخة القديمة، لا لحظة حفظه."
+          ]
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-faq-default",
+          "caption": {
+            "en": "The FAQ. Groups and their entries, in the order the app shows them.",
+            "ar": "الأسئلة الشائعة. المجموعات ومدخلاتها بالترتيب الذي يعرضه التطبيق."
+          }
+        },
+        {
+          "t": "h2",
+          "en": "What is running: services and prompts",
+          "ar": "ما الذي يعمل: الخدمات والموجّهات"
+        },
+        {
+          "t": "p",
+          "en": "A service is one AI feature — the question filter, the FAQ answering, the assistant, translation, live translation, live sign language, session summaries and the Control Panel's own help assistant. The services page is read-only: it collects, for every feature, which prompt is active on it, which provider and model that prompt uses, and whether that provider is hosted outside the organisation. It exists so the question \"what runs the translation, and where?\" has one place to be answered. Nothing is changed there.",
+          "ar": "الخدمة هي خاصية ذكاء اصطناعي واحدة — مرشّح الأسئلة، والإجابة عن الأسئلة الشائعة، والمساعد، والترجمة، والترجمة الفورية، ولغة الإشارة الفورية، وملخصات الجلسات، ومساعد لوحة التحكم نفسه. وصفحة الخدمات للقراءة فقط: إذ تجمع لكل خاصية الموجّه المفعَّل عليها، والمزوّد والنموذج الذي يستخدمه ذلك الموجّه، وهل ذلك المزوّد مستضاف خارج الجهة. وهي موجودة ليكون لسؤال «ما الذي يشغّل الترجمة، وأين؟» موضع واحد يُجاب فيه. ولا يُغيَّر فيها شيء."
+        },
+        {
+          "t": "note",
+          "en": "The page warns when a sensitive feature is routed to a provider that is definitely in the cloud. Sensitive here means the four that carry the audience's own words or a session's contents: session summaries, the assistant, live translation and live sign language. One provider is shown as depending on its endpoint rather than flagged, because it can be pointed at an internal address and the row alone cannot tell.",
+          "ar": "تحذّر الصفحة حين تُوجَّه خاصية حساسة إلى مزوّد في السحابة قطعًا. والحساس هنا هو الخصائص الأربع التي تحمل كلام الجمهور نفسه أو محتوى جلسة: ملخصات الجلسات، والمساعد، والترجمة الفورية، ولغة الإشارة الفورية. ويُعرض أحد المزودين على أنه رهنٌ بعنوان نقطته بدل تعليمه بتحذير، لأنه يمكن توجيهه إلى عنوان داخلي ولا يستطيع السجل وحده أن يعرف."
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-ai-services-default",
+          "caption": {
+            "en": "The services view: one row per AI feature, with the prompt, provider and model actually serving it.",
+            "ar": "عرض الخدمات: سجل لكل خاصية ذكاء اصطناعي، ومعه الموجّه والمزوّد والنموذج الذي يخدمها فعلًا."
+          }
+        },
+        {
+          "t": "h3",
+          "en": "A prompt is the whole unit of behaviour",
+          "ar": "الموجّه هو وحدة السلوك كاملةً"
+        },
+        {
+          "t": "p",
+          "en": "Everything about how a feature behaves lives on its prompt: the key that callers reference, which feature it serves, its provider and model, the system prompt, the user template whose placeholders are filled from the request, the temperature, the output ceiling and whether it is active. Saving increments its version. Editing a prompt changes what the system does immediately — there is no deployment and no restart.",
+          "ar": "كل ما يتعلق بسلوك الخاصية يقيم في موجّهها: المفتاح الذي يشير إليه المستدعون، والخاصية التي يخدمها، ومزوّده ونموذجه، وموجّه النظام، وقالب المستخدم الذي تُملأ مواضعه من الطلب، ودرجة التنويع، وسقف المخرجات، وهل هو مفعَّل. والحفظ يزيد رقم إصداره. وتحرير الموجّه يغيّر ما يفعله النظام فورًا — بلا نشر ولا إعادة تشغيل."
+        },
+        {
+          "t": "note",
+          "en": "More than one prompt may serve the same feature; the caller names the key it wants. That is how two wordings are compared against each other without either one being deleted.",
+          "ar": "قد يخدم أكثر من موجّه الخاصية نفسها؛ ويسمّي المستدعي المفتاح الذي يريده. وهكذا تُقارن صياغتان إحداهما بالأخرى دون حذف أيٍّ منهما."
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-ai-prompts-default",
+          "caption": {
+            "en": "The prompt catalogue. The key, the feature, the provider and the active flag are the four columns that decide behaviour.",
+            "ar": "فهرس الموجّهات. المفتاح والخاصية والمزوّد وراية التفعيل هي الأعمدة الأربعة التي تحدد السلوك."
+          }
+        },
+        {
+          "t": "h2",
+          "en": "Turning a feature off — and the way that does not work",
+          "ar": "إيقاف خاصية — والطريقة التي لا تعمل"
+        },
+        {
+          "t": "p",
+          "en": "Every prompt ships pinned to Echo, an offline provider that makes no outbound call at all: it returns the text it was given, behind a marker naming itself. That is what makes a fresh installation safe to run with no provider account of any kind.",
+          "ar": "يُشحن كل موجّه مثبَّتًا على Echo، وهو مزوّد غير متصل لا يجري أي استدعاء خارجي إطلاقًا: بل يعيد النص الذي أُعطي له خلف علامة تسمّي نفسها. وهذا ما يجعل التثبيت الجديد آمنًا للتشغيل بلا حساب مزوّد من أي نوع."
+        },
+        {
+          "t": "note",
+          "en": "**Echo is not an off switch once a real provider is configured.** Setting the estate's default provider redirects every prompt still pinned to Echo onto that provider — which is exactly what makes it the single setting that turns AI on, and exactly why it is not a mute. Only a prompt pinned to a named provider is left alone. To stop a feature, deactivate its prompt: it then answers with a plain \"this feature is disabled\" and calls nothing.",
+          "ar": "**ليس Echo مفتاح إيقاف بعد تهيئة مزوّد حقيقي.** فضبط المزوّد الافتراضي للمنشأة يحوّل كل موجّه ما زال مثبَّتًا على Echo إلى ذلك المزوّد — وهو بالضبط ما يجعله الإعداد الوحيد الذي يشغّل الذكاء الاصطناعي، وبالضبط سبب أنه ليس كتمًا. ولا يُترك على حاله إلا الموجّه المثبَّت على مزوّد مسمّى. ولإيقاف خاصية، عطّل موجّهها: فيجيب حينئذ بأن هذه الخاصية معطَّلة ولا يستدعي شيئًا."
+        },
+        {
+          "t": "p",
+          "en": "After a real provider is wired, the check that it took effect is that answers stop arriving with the Echo marker in front of them. A session summary drafted while Echo was serving carries a do-not-publish sentinel, and the publishing step looks for it again before approving — so a stub draft cannot reach an audience even if somebody forgets which provider produced it.",
+          "ar": "وبعد توصيل مزوّد حقيقي، فإن الدليل على أن ذلك أخذ مفعوله هو أن تكفّ الإجابات عن الوصول وعلامة Echo أمامها. والملخص الذي صيغ بينما كان Echo يخدم يحمل علامة «لا يُنشر»، وتبحث خطوة النشر عنها مجددًا قبل الاعتماد — فلا تصل مسودة صورية إلى جمهور ولو نسي أحدهم أي مزوّد أنتجها."
+        },
+        {
+          "t": "h3",
+          "en": "The two ways a call fails",
+          "ar": "الطريقتان اللتان يفشل بهما الاستدعاء"
+        },
+        {
+          "t": "table",
+          "headers": {
+            "en": [
+              "What happened",
+              "What the caller sees",
+              "Where to look"
+            ],
+            "ar": [
+              "ما الذي حدث",
+              "ماذا يرى المستدعي",
+              "أين تنظر"
+            ]
+          },
+          "rows": {
+            "en": [
+              [
+                "The provider is chosen but has no key",
+                "The service is unavailable, refused before any call goes out",
+                "The provider's key in the deployment configuration — see the configuration chapter"
+              ],
+              [
+                "The provider is not wired up at all",
+                "The service is unavailable, and a failed call is recorded in the invocations log first",
+                "The invocations page, which will hold the row with its error code"
+              ],
+              [
+                "The prompt is deactivated",
+                "The feature reports itself disabled",
+                "The prompt catalogue"
+              ]
+            ],
+            "ar": [
+              [
+                "المزوّد مختار ولا مفتاح له",
+                "الخدمة غير متاحة، ويُرفض الطلب قبل خروج أي استدعاء",
+                "مفتاح المزوّد في تهيئة النشر — انظر فصل التهيئة"
+              ],
+              [
+                "المزوّد غير موصول أصلًا",
+                "الخدمة غير متاحة، ويُسجَّل الاستدعاء الفاشل في سجل الاستدعاءات أولًا",
+                "صفحة الاستدعاءات، وفيها السجل مع رمز خطئه"
+              ],
+              [
+                "الموجّه معطَّل",
+                "تُبلِّغ الخاصية بأنها معطَّلة",
+                "فهرس الموجّهات"
+              ]
+            ]
+          }
+        },
+        {
+          "t": "h2",
+          "en": "Seeing what it did",
+          "ar": "رؤية ما فعله"
+        },
+        {
+          "t": "p",
+          "en": "Every AI call writes one row, whether it succeeded or failed: which prompt and feature, which provider and model, the inputs after personal data and secrets have been stripped out, the output text, how many tokens went in and came out, how long it took, an error code when there was one, and who the caller was — anonymous, a visitor, staff, an administrator or a moderator. The dashboard is the same data summarised.",
+          "ar": "يكتب كل استدعاء للذكاء الاصطناعي سجلًّا واحدًا، نجح أم فشل: أي موجّه وأي خاصية، وأي مزوّد وأي نموذج، والمدخلات بعد تجريدها من البيانات الشخصية والأسرار، ونص المخرجات، وكم رمزًا دخل وخرج، وكم استغرق، ورمز الخطأ إن وُجد، ومن كان المستدعي — مجهولًا أو زائرًا أو موظفًا أو مسؤولًا أو مشرف جلسة. ولوحة المؤشرات هي البيانات نفسها ملخَّصة."
+        },
+        {
+          "t": "note",
+          "en": "The prompt text itself is not on those rows. Prompt wording is kept separately: every edit is stored in full in the prompt's own history, which is never pruned, and the audit trail records a fingerprint of the wording before and after each save so a security reviewer can tell that a prompt changed without the text being copied into a second place.",
+          "ar": "ونص الموجّه نفسه ليس في تلك السجلات. فصياغة الموجّه تُحفظ على حدة: إذ يُخزَّن كل تعديل كاملًا في تاريخ الموجّه الخاص، وهو لا يُقلَّم أبدًا، ويسجّل أثر التدقيق بصمةً للصياغة قبل كل حفظ وبعده، فيتبيّن لمراجع الأمن أن الموجّه تغيّر دون نسخ النص إلى موضع ثانٍ."
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-ai-invocations-default",
+          "caption": {
+            "en": "The invocations log. Failures are here too — that is the point of it.",
+            "ar": "سجل الاستدعاءات. والإخفاقات هنا أيضًا — وهذا هو المقصود منه."
+          }
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-ai-default",
+          "caption": {
+            "en": "The AI dashboard: the same calls, rolled up.",
+            "ar": "لوحة مؤشرات الذكاء الاصطناعي: الاستدعاءات نفسها مجمَّعة."
+          }
+        },
+        {
+          "t": "h2",
+          "en": "How often you may test a prompt",
+          "ar": "كم مرة يجوز لك اختبار موجّه"
+        },
+        {
+          "t": "p",
+          "en": "The Test button on a prompt is limited to twenty calls an hour, counted per administrator on a rolling window rather than per computer — so two administrators sharing an office each get their own twenty, and one administrator moving between machines does not get forty. The Control Panel's own help assistant has a separate, larger allowance of forty an hour.",
+          "ar": "زر الاختبار في الموجّه محدود بعشرين استدعاءً في الساعة، تُحسب لكل مسؤول على نافذة متحركة لا لكل جهاز — فمسؤولان يتشاركان مكتبًا لكلٍّ منهما عشرونه، ومسؤول واحد ينتقل بين الأجهزة لا يحصل على أربعين. ولمساعد لوحة التحكم نفسه مخصَّص منفصل أكبر: أربعون في الساعة."
+        }
+      ]
+    },
+    {
+      "id": "system",
+      "title": {
+        "en": "System settings, the event year, and the logs",
+        "ar": "إعدادات النظام وسنة الفعالية والسجلات"
+      },
+      "blocks": [
+        {
+          "t": "p",
+          "en": "Two warnings before the detail. First, the page called Configuration on this menu is not the deployment configuration described later in this manual: that one is environment variables on a server, and this one is a small table inside the application. Second, opening a new event year cancels every badge in the system. Both are covered below.",
+          "ar": "تحذيران قبل التفصيل. أولًا، الصفحة المسماة «التهيئة» في هذه القائمة ليست تهيئة النشر الموصوفة لاحقًا في هذا الدليل: فتلك متغيّرات بيئة على خادم، وهذه جدول صغير داخل التطبيق. وثانيًا، فتح سنة فعالية جديدة يُلغي كل شارة في النظام. وكلاهما مشروح أدناه."
+        },
+        {
+          "t": "h2",
+          "en": "Four settings pages, four different mechanisms",
+          "ar": "أربع صفحات إعدادات، وأربع آليات مختلفة"
+        },
+        {
+          "t": "table",
+          "headers": {
+            "en": [
+              "Page",
+              "What it holds",
+              "What it is for"
+            ],
+            "ar": [
+              "الصفحة",
+              "ماذا تحمل",
+              "لماذا هي"
+            ]
+          },
+          "rows": {
+            "en": [
+              [
+                "Configuration",
+                "Free key/value rows: a machine key, a value, and a description for whoever edits it next",
+                "Whatever the organisation decides to keep there. It ships empty on purpose — the list of keys is the client's to decide"
+              ],
+              [
+                "Site settings",
+                "A typed form: the bilingual registration welcome message and the partner-directory switch",
+                "The handful of settings the app and the website read through a public endpoint"
+              ],
+              [
+                "Operations",
+                "Two switches: whether registration is open, with an optional automatic closing time, and whether the archive is publicly visible",
+                "The two things most likely to be turned on and off during an event"
+              ],
+              [
+                "Walk-in mode",
+                "Two overrides on top of what the servers were deployed with, plus a read-only master state",
+                "Relaxing or tightening the on-site desk mid-event without a deployment"
+              ]
+            ],
+            "ar": [
+              [
+                "التهيئة",
+                "سجلات مفتاح/قيمة حرة: مفتاح آلي، وقيمة، ووصف لمن يحرّرها بعدك",
+                "ما تقرر الجهة الاحتفاظ به هناك. وتُشحن فارغة عمدًا — فقائمة المفاتيح من شأن العميل"
+              ],
+              [
+                "إعدادات الموقع",
+                "نموذج محدَّد الحقول: رسالة ترحيب التسجيل بلغتين، ومفتاح دليل الشركاء",
+                "الإعدادات القليلة التي يقرؤها التطبيق والموقع عبر نقطة قراءة عامة"
+              ],
+              [
+                "العمليات",
+                "مفتاحان: هل التسجيل مفتوح، مع وقت إغلاق تلقائي اختياري، وهل الأرشيف ظاهر للعموم",
+                "أكثر أمرين ترجيحًا للتشغيل والإيقاف أثناء الفعالية"
+              ],
+              [
+                "وضع الحضور المباشر",
+                "تجاوزان فوق ما نُشرت به الخوادم، مع حالة رئيسية للقراءة فقط",
+                "تخفيف ضبط مكتب الموقع أو تشديده أثناء الفعالية دون نشر"
+              ]
+            ]
+          }
+        },
+        {
+          "t": "h3",
+          "en": "Site settings no longer live where their name suggests",
+          "ar": "إعدادات الموقع لم تعد تقيم حيث يوحي اسمها"
+        },
+        {
+          "t": "p",
+          "en": "The registration welcome message and the social links used to be rows in the Configuration table. They are not any more: they were moved onto the organisation profile so there is one copy of each fact, and the social links are now edited on the Organisation profile page rather than here. The public reading of them is unchanged, so nothing downstream noticed the move — which is exactly why an operator can still type a registration-message key into the Configuration table and watch it change nothing.",
+          "ar": "كانت رسالة ترحيب التسجيل وروابط التواصل الاجتماعي سجلات في جدول التهيئة. ولم تعد كذلك: فقد نُقلت إلى ملف الجهة ليكون لكل حقيقة نسخة واحدة، وصارت روابط التواصل تُحرَّر في صفحة ملف الجهة لا هنا. ولم تتغير قراءتها العامة، فلم يلحظ أحد في المصبّ النقل — وهو بالضبط سبب أن يظل المشغّل قادرًا على كتابة مفتاح رسالة تسجيل في جدول التهيئة ثم يرى أنه لم يغيّر شيئًا."
+        },
+        {
+          "t": "note",
+          "en": "A social link is only published if it is a complete web address. Anything else is dropped rather than shown as a broken link.",
+          "ar": "لا يُنشر رابط التواصل إلا إذا كان عنوان ويب كاملًا. وما عدا ذلك يُسقَط بدل عرضه رابطًا مكسورًا."
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-site-settings-default",
+          "caption": {
+            "en": "Site settings. The social links moved to the organisation profile; what remains here is the registration message and the partner-directory switch.",
+            "ar": "إعدادات الموقع. انتقلت روابط التواصل إلى ملف الجهة؛ والباقي هنا رسالة التسجيل ومفتاح دليل الشركاء."
+          }
+        },
+        {
+          "t": "h3",
+          "en": "Walk-in mode overrides configuration; it does not replace it",
+          "ar": "وضع الحضور المباشر يتجاوز التهيئة ولا يحل محلها"
+        },
+        {
+          "t": "p",
+          "en": "The two switches here sit on top of what the servers were deployed with. Leave one alone and the deployed setting applies; set it and your setting wins; clear it and the deployed setting applies again. The page shows you which of the two is in force, so a switch that currently agrees with the deployment is distinguishable from one that is overriding it.",
+          "ar": "المفتاحان هنا يجلسان فوق ما نُشرت به الخوادم. فاترك أحدهما وشأنه يسرِ الإعداد المنشور؛ واضبطه يغلب إعدادك؛ وامسحه يعُد الإعداد المنشور. وتُظهر لك الصفحة أيَّهما النافذ، فيتميز المفتاح الموافق حاليًّا للنشر عن المفتاح المتجاوز له."
+        },
+        {
+          "t": "note",
+          "en": "The master switch — whether walk-in mode is armed at all, and the window it is armed in — is deliberately not editable here. An administrator may turn automatic approval off in the middle of a rush, but cannot arm walk-in registration on an estate that never enabled it; that still costs server access. When the mode is not armed the page says so, rather than showing a switch that would do nothing.",
+          "ar": "أما المفتاح الرئيس — هل وضع الحضور المباشر مسلَّح أصلًا، وفي أي نافذة — فغير قابل للتحرير هنا عمدًا. فللمسؤول أن يوقف الاعتماد التلقائي في وسط الزحام، ولا يستطيع تسليح تسجيل الحضور المباشر في منشأة لم تفعّله قط؛ فذلك ما زال يستلزم صلاحية على الخادم. وحين لا يكون الوضع مسلَّحًا تقول الصفحة ذلك، بدل عرض مفتاح لا يفعل شيئًا."
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-walk-in-mode-default",
+          "caption": {
+            "en": "Walk-in mode. The armed state at the top is read-only; the two switches below it are the overrides.",
+            "ar": "وضع الحضور المباشر. حالة التسليح في الأعلى للقراءة فقط؛ والمفتاحان تحتها هما التجاوزان."
+          }
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-operations-default",
+          "caption": {
+            "en": "The operations toggles: the registration gate and the archive's public visibility.",
+            "ar": "مفاتيح العمليات: بوابة التسجيل وظهور الأرشيف للعموم."
+          }
+        },
+        {
+          "t": "h2",
+          "en": "Opening an event year",
+          "ar": "فتح سنة فعالية"
+        },
+        {
+          "t": "p",
+          "en": "The forum recurs. A year is opened, registrations and content accumulate against it, and then the next year is opened and that one becomes history. The page holds the open year, when it was opened, when a year was last closed, and how many badges the last opening re-issued.",
+          "ar": "الملتقى يتكرر. تُفتح سنة، ويتراكم عليها التسجيل والمحتوى، ثم تُفتح السنة التالية فتصير تلك تاريخًا. وتحمل الصفحة السنةَ المفتوحة، ومتى فُتحت، ومتى أُغلقت آخر سنة، وكم شارة أعاد آخر فتحٍ إصدارها."
+        },
+        {
+          "t": "note",
+          "en": "**Opening a year cancels every badge that exists.** Every attendee's badge is cleared and a fresh one is issued in its place, in one operation. Printed badges, emailed badges and badges on a phone all stop opening gates the moment it completes, and every attendee carried forward needs their new one sent or printed. This is not a side effect: the gate refuses a badge that does not carry the open year, so the re-issue is what keeps returning attendees able to get in at all. The confirmation states how many badges will be affected before you agree.",
+          "ar": "**فتح سنة يُلغي كل شارة قائمة.** فتُمسح شارة كل حاضر وتُصدر له شارة جديدة مكانها، في عملية واحدة. والشارات المطبوعة والمرسلة بالبريد والموجودة على الهواتف كلها تكفّ عن فتح البوابات لحظة اكتمال العملية، ويحتاج كل حاضر مُرحَّل إلى إرسال شارته الجديدة أو طباعتها. وليس هذا أثرًا جانبيًّا: فالبوابة ترفض الشارة التي لا تحمل السنة المفتوحة، وإعادة الإصدار هي ما يُبقي العائدين قادرين على الدخول أصلًا. ويذكر التأكيد عدد الشارات التي ستتأثر قبل أن توافق."
+        },
+        {
+          "t": "bullets",
+          "en": [
+            "The year must be four digits between 2000 and 2999. A typed \"202\" or \"20265\" is refused, because the year is printed into the badge and read by a scanner that has no other way to ask.",
+            "The year already open is refused.",
+            "A year earlier than the open one is refused, permanently. Re-opening a closed year would make every badge issued since valid again, which is the opposite of what closing it meant.",
+            "The re-issue count is written down afterwards. It is the only evidence that the re-issue actually ran, and it is the first thing you will be asked for when a returning attendee finds their badge dead."
+          ],
+          "ar": [
+            "يجب أن تكون السنة من أربعة أرقام بين ٢٠٠٠ و٢٩٩٩. ويُرفض ما يُكتب مثل «٢٠٢» أو «٢٠٢٦٥»، لأن السنة تُطبع في الشارة ويقرؤها ماسحٌ لا سبيل له إلى السؤال بغيرها.",
+            "وتُرفض السنة المفتوحة أصلًا.",
+            "وتُرفض السنة الأقدم من المفتوحة رفضًا دائمًا. فإعادة فتح سنة مغلقة تُعيد صلاحية كل شارة أُصدرت منذ ذلك الحين، وهو نقيض المقصود من إغلاقها.",
+            "ويُدوَّن عدد إعادة الإصدار بعد ذلك. وهو الدليل الوحيد على أن إعادة الإصدار جرت فعلًا، وأول ما ستُسأل عنه حين يجد حاضرٌ عائد شارته ميتة."
+          ]
+        },
+        {
+          "t": "p",
+          "en": "The year an attendee belongs to is stamped on their record the moment it is created, whichever way it was created — a sign-up, a desk, a bulk order, an approval. Opening a year moves that stamp forward only for the attendees who actually held a badge; somebody who never held one keeps the year they registered for, which is what makes the year worth reporting on.",
+          "ar": "وتُختم السنة التي ينتمي إليها الحاضر على سجله لحظة إنشائه، بأي طريق أُنشئ — تسجيل ذاتي أو مكتب أو طلب جماعي أو اعتماد. وفتح سنة يقدّم ذلك الختم للحاضرين الذين حملوا شارة فعلًا فحسب؛ أما من لم يحمل شارة قط فيبقى على السنة التي سجّل لها، وهو ما يجعل السنة جديرة بأن يُقرَّر عليها."
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-editions-default",
+          "caption": {
+            "en": "The event edition page. Almost all of it exists to state the consequence before the button is pressed.",
+            "ar": "صفحة دورة الفعالية. جلّها موجود لبيان العاقبة قبل ضغط الزر."
+          }
+        },
+        {
+          "t": "h2",
+          "en": "The two logs are for two different people",
+          "ar": "السجلّان لشخصين مختلفين"
+        },
+        {
+          "t": "table",
+          "headers": {
+            "en": [
+              "",
+              "Operation log",
+              "Logs"
+            ],
+            "ar": [
+              "",
+              "سجل العمليات",
+              "السجلات"
+            ]
+          },
+          "rows": {
+            "en": [
+              [
+                "Answers",
+                "Who did what, to whom, and did it succeed",
+                "What the software did, technically, at 14:32"
+              ],
+              [
+                "Holds",
+                "One row per business or security event: the time in local Saudi time, the event, the outcome, the subject, the administrator who acted, the address they acted from, and an error code when it failed",
+                "The applications' own log files, one per project per day"
+              ],
+              [
+                "Can be edited",
+                "No. Nobody, including an administrator, can change or remove an entry through the application",
+                "Not applicable — they are files, and can be downloaded"
+              ]
+            ],
+            "ar": [
+              [
+                "يجيب عن",
+                "من فعل ماذا، بمن، وهل نجح",
+                "ما الذي فعله البرنامج تقنيًّا عند الساعة ١٤:٣٢"
+              ],
+              [
+                "يحمل",
+                "سجلًّا لكل حدث عملي أو أمني: الوقت بتوقيت السعودية المحلي، والحدث، والنتيجة، والمعنيّ، والمسؤول الذي نفّذ، والعنوان الذي نفّذ منه، ورمز الخطأ عند الإخفاق",
+                "ملفات سجلات التطبيقات نفسها، ملف لكل مشروع في كل يوم"
+              ],
+              [
+                "هل يمكن تحريره",
+                "لا. ولا أحد، ولا المسؤول، يستطيع تغيير مدخل أو إزالته من خلال التطبيق",
+                "لا ينطبق — فهي ملفات ويمكن تنزيلها"
+              ]
+            ]
+          }
+        },
+        {
+          "t": "note",
+          "en": "The operation log stores the subject's name as it was at the time, so an entry still reads correctly after somebody is renamed. Its detail line never carries a secret.",
+          "ar": "يحفظ سجل العمليات اسم المعنيّ كما كان حينها، فيظل المدخل مقروءًا بعد إعادة تسميته. ولا يحمل سطر تفصيله سرًّا أبدًا."
+        },
+        {
+          "t": "p",
+          "en": "The Logs page lists the log files it can find, tails the one you pick every few seconds, and offers each as a download. It distinguishes between failing to reach the log service and finding no files, which are opposite facts when something is wrong.",
+          "ar": "تعرض صفحة السجلات ملفاتِ السجلات التي تجدها، وتتابع آخر ما يُكتب في الملف الذي تختاره كل بضع ثوانٍ، وتتيح كلًّا منها للتنزيل. وتميّز بين تعذّر الوصول إلى خدمة السجلات وعدم وجود ملفات، وهما حقيقتان متضادتان حين يكون هناك خلل."
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-operation-log-default",
+          "caption": {
+            "en": "The operation log: the business and security audit trail.",
+            "ar": "سجل العمليات: أثر التدقيق العملي والأمني."
+          }
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-logs-default",
+          "caption": {
+            "en": "The logs viewer: the applications' own files, per project and per day.",
+            "ar": "عارض السجلات: ملفات التطبيقات نفسها، لكل مشروع ولكل يوم."
+          }
+        },
+        {
+          "t": "h2",
+          "en": "Background services",
+          "ar": "خدمات الخلفية"
+        },
+        {
+          "t": "p",
+          "en": "Thirteen background workers do the things nobody presses a button for. This page shows whether each is running, when it last ran, how many times it has run and failed, and its last error. It refreshes itself and has no actions — it is a health display, not a control panel.",
+          "ar": "ثلاثة عشر عاملًا في الخلفية تؤدي ما لا يضغط أحد زرًّا لأجله. وتُظهر هذه الصفحة هل يعمل كلٌّ منها، ومتى عمل آخر مرة، وكم مرة عمل وأخفق، وآخر خطأ له. وهي تحدّث نفسها ولا إجراءات فيها — فهي عرض حالة لا لوحة تحكم."
+        },
+        {
+          "t": "table",
+          "headers": {
+            "en": [
+              "Worker",
+              "What it does"
+            ],
+            "ar": [
+              "العامل",
+              "ماذا يفعل"
+            ]
+          },
+          "rows": {
+            "en": [
+              [
+                "Registration gate auto-close",
+                "Closes registration the first time the automatic closing time passes"
+              ],
+              [
+                "Session reminder",
+                "\"Your session starts soon\" to everybody holding a seat"
+              ],
+              [
+                "Meeting reminder",
+                "The same, a quarter of an hour before a confirmed meeting, by app and email"
+              ],
+              [
+                "Awaiting-speaker expiry",
+                "Returns a meeting request to the queue when the speaker's links expire, freeing the held slot"
+              ],
+              [
+                "No-show seat release",
+                "Releases seats a few minutes before a session starts when the holder never arrived"
+              ],
+              [
+                "Not-attended reminder",
+                "\"The session started and you are not here\", after a grace period"
+              ],
+              [
+                "Match recommendation push",
+                "\"You match this attendee\" for strong matches, in batches"
+              ],
+              [
+                "Session rating prompt",
+                "Asks for a rating — of the people who checked into the hall, not everybody who booked"
+              ],
+              [
+                "Programme rating prompt",
+                "The end-of-day and end-of-programme rating prompts"
+              ],
+              [
+                "Hall attendance close-out",
+                "Closes attendance records left open when a session ends"
+              ],
+              [
+                "Announcement queue",
+                "Sends the queued announcements"
+              ],
+              [
+                "Dormant account sweep",
+                "Disables accounts unused for the configured number of days; does nothing until that number is set"
+              ],
+              [
+                "Retention sweep",
+                "The daily purge of expired security artefacts"
+              ]
+            ],
+            "ar": [
+              [
+                "الإغلاق التلقائي لبوابة التسجيل",
+                "يغلق التسجيل أول مرة يمضي فيها وقت الإغلاق التلقائي"
+              ],
+              [
+                "تذكير الجلسة",
+                "«تبدأ جلستك قريبًا» لكل من يحمل مقعدًا"
+              ],
+              [
+                "تذكير اللقاء",
+                "الشيء نفسه قبل ربع ساعة من لقاء مؤكَّد، بالتطبيق والبريد"
+              ],
+              [
+                "انتهاء انتظار المتحدث",
+                "يعيد طلب اللقاء إلى الطابور حين تنتهي صلاحية روابط المتحدث، فيحرّر الموعد المحجوز"
+              ],
+              [
+                "تحرير مقاعد المتخلفين",
+                "يحرّر المقاعد قبل دقائق من بدء الجلسة إذا لم يحضر صاحبها"
+              ],
+              [
+                "تذكير عدم الحضور",
+                "«بدأت الجلسة ولست هنا»، بعد مهلة"
+              ],
+              [
+                "دفع توصيات المطابقة",
+                "«هذا الحاضر يوافقك» للمطابقات القوية، على دفعات"
+              ],
+              [
+                "طلب تقييم الجلسة",
+                "يطلب التقييم — ممن سجّل دخوله إلى القاعة، لا من كل من حجز"
+              ],
+              [
+                "طلب تقييم البرنامج",
+                "طلبا التقييم في نهاية اليوم ونهاية البرنامج"
+              ],
+              [
+                "إقفال حضور القاعة",
+                "يقفل سجلات الحضور المتروكة مفتوحة عند انتهاء الجلسة"
+              ],
+              [
+                "طابور الإعلانات",
+                "يرسل الإعلانات المصفوفة في الطابور"
+              ],
+              [
+                "مسح الحسابات الخاملة",
+                "يعطّل الحسابات غير المستخدمة للمدة المهيَّأة؛ ولا يفعل شيئًا حتى تُضبط تلك المدة"
+              ],
+              [
+                "مسح الاحتفاظ",
+                "التنقية اليومية للأدلة الأمنية منتهية الصلاحية"
+              ]
+            ]
+          }
+        },
+        {
+          "t": "note",
+          "en": "Each of these runs on exactly one server, whatever the size of the estate, because two copies would send everything twice. The email sender is the exception and runs everywhere on purpose: its queue lives inside each server, so a server that is not sending is a server whose emails never leave. It retries a message three times, and can be configured to email an operations address when a send fails.",
+          "ar": "يعمل كلٌّ من هذه على خادم واحد بالضبط مهما كان حجم المنشأة، لأن نسختين ترسلان كل شيء مرتين. ومرسل البريد استثناء ويعمل في كل مكان عمدًا: إذ يقيم طابوره داخل كل خادم، فالخادم الذي لا يرسل خادمٌ لا يغادره بريده. ويعيد محاولة الرسالة ثلاث مرات، ويمكن تهيئته ليراسل عنوان عمليات عند إخفاق الإرسال."
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-ops-services-default",
+          "caption": {
+            "en": "The background services monitor. No actions — the value is in the last-run and failure columns.",
+            "ar": "مراقب خدمات الخلفية. لا إجراءات فيه — والقيمة في عمودي آخر تشغيل والإخفاقات."
+          }
+        },
+        {
+          "t": "h2",
+          "en": "Email templates",
+          "ar": "قوالب البريد"
+        },
+        {
+          "t": "p",
+          "en": "Ten emails can be reworded here: the sign-in code, email verification, the account-already-exists notice, password reset, badge activation, the biometric step-up code, the bulk-badge cover note, email-change verification, the email-changed alert, and the exhibitor lead-capture message. There is no Add and no Delete, because the set is fixed by the code that sends them; the only action is Edit, and every template can be reset to the wording it shipped with.",
+          "ar": "عشر رسائل بريد يمكن إعادة صياغتها هنا: رمز تسجيل الدخول، وتوثيق البريد، وإشعار وجود الحساب مسبقًا، وإعادة تعيين كلمة المرور، وتفعيل الشارة، ورمز التحقق الحيوي الإضافي، ورسالة الشارات الجماعية، وتوثيق تغيير البريد، وتنبيه تغيّر البريد، ورسالة التقاط العملاء للعارض. ولا إضافة ولا حذف، لأن المجموعة مثبَّتة بالشيفرة التي ترسلها؛ والإجراء الوحيد هو التحرير، ويمكن إرجاع كل قالب إلى صياغته الأصلية."
+        },
+        {
+          "t": "bullets",
+          "en": [
+            "The database holds only your changes. A template you never touched is sent from the wording built into the application, so a fresh installation sends correct emails with an empty table.",
+            "The tokens are per template and are offered as chips beside the editor — the code and its expiry for the code emails, the count and generation time for the bulk-badge note, the new address for the change-of-email alert. A token that does not belong to the template is rejected on save.",
+            "**The notification emails are not here.** Booking confirmed, session reminder, registration approved or rejected, badge ready, the VIP notice and announcements are written in the code and cannot be reworded from the Control Panel. The one place their text is yours is the announcement composer, where you type it per send."
+          ],
+          "ar": [
+            "لا تحمل قاعدة البيانات إلا تغييراتك. فالقالب الذي لم تمسسه يُرسل بالصياغة المضمَّنة في التطبيق، فيرسل التثبيت الجديد رسائل صحيحة والجدول فارغ.",
+            "والرموز البديلة خاصة بكل قالب وتُعرض شارات إلى جانب المحرّر — الرمز ومدة صلاحيته في رسائل الرموز، والعدد ووقت التوليد في رسالة الشارات الجماعية، والعنوان الجديد في تنبيه تغيّر البريد. ويُرفض عند الحفظ أي رمز لا يخص القالب.",
+            "**ورسائل الإشعارات ليست هنا.** فتأكيد الحجز، وتذكير الجلسة، واعتماد التسجيل أو رفضه، وجاهزية الشارة، وإشعار كبار الشخصيات، والإعلانات مكتوبة في الشيفرة ولا يمكن إعادة صياغتها من لوحة التحكم. والموضع الوحيد الذي يكون نصّها فيه لك هو محرّر الإعلانات، حيث تكتبه في كل إرسالة."
+          ]
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-email-templates-default",
+          "caption": {
+            "en": "The email templates. Edit is the only row action; the set itself is fixed.",
+            "ar": "قوالب البريد. التحرير هو الإجراء الوحيد في السجل؛ والمجموعة نفسها ثابتة."
+          }
+        },
+        {
+          "t": "h2",
+          "en": "Organisation profile",
+          "ar": "ملف الجهة"
+        },
+        {
+          "t": "p",
+          "en": "This is the forum's own record, and it is edition-generic: the name, title, slogan and biography, the version and its dates, the status and year, the location and its coordinates, the contact details, the live-stream address, the social links, and the repeating lists of about-items and details. Opening it needs the view permission; saving it needs the manage permission, so a reader can be given the page without being able to change the forum's public identity.",
+          "ar": "هذا سجل الملتقى نفسه، وهو عام لكل الدورات: الاسم والعنوان والشعار والنبذة، والإصدار وتواريخه، والحالة والسنة، والموقع وإحداثياته، وبيانات التواصل، وعنوان البث المباشر، وروابط التواصل الاجتماعي، والقوائم المتكررة لعناصر «عن» والتفاصيل. ويلزم لفتحه صلاحية العرض؛ ويلزم لحفظه صلاحية الإدارة، فيمكن منح القارئ الصفحة دون أن يقدر على تغيير الهوية العامة للملتقى."
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-organization-profile-default",
+          "caption": {
+            "en": "The organisation profile: the forum's own details, and the home of the social links.",
+            "ar": "ملف الجهة: تفاصيل الملتقى نفسه، وموطن روابط التواصل."
+          }
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-configuration-default",
+          "caption": {
+            "en": "The Configuration table. It ships empty; the keys it holds are the organisation's to decide.",
+            "ar": "جدول التهيئة. يُشحن فارغًا؛ والمفاتيح التي يحملها من شأن الجهة."
+          }
+        }
+      ]
+    },
+    {
+      "id": "reports",
+      "title": {
+        "en": "Reports",
+        "ar": "التقارير"
+      },
+      "blocks": [
+        {
+          "t": "p",
+          "en": "The reports hub is a grid of cards, and you see only the cards you hold the permission for — the hub does not advertise a report it would then refuse to open. Each report is also gated at the server, on its own permission, so somebody can be given the gate log without being given the attendee roster.",
+          "ar": "مركز التقارير شبكة بطاقات، ولا ترى منها إلا ما تملك صلاحيته — فهو لا يعرض تقريرًا سيرفض فتحه بعد ذلك. وكل تقرير مُحصَّن كذلك في الخادم بصلاحيته الخاصة، فيمكن منح أحدهم سجل البوابات دون منحه كشف الحضور."
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-reports-default",
+          "caption": {
+            "en": "The reports hub. A card you cannot see is a report you do not have permission for.",
+            "ar": "مركز التقارير. البطاقة التي لا تراها تقريرٌ لا تملك صلاحيته."
+          }
+        },
+        {
+          "t": "note",
+          "en": "Every figure in every report is calculated when you open it, from the live records. Nothing is stored, summarised nightly or cached, so two people running the same report a minute apart can legitimately see different numbers. FDS-011 describes stored statistics snapshots; they were never built, and the document records that correction itself.",
+          "ar": "كل رقم في كل تقرير يُحسب حين تفتحه، من السجلات الحية. ولا شيء مخزَّن ولا ملخَّص ليلًا ولا مخبَّأ مؤقتًا، فقد يرى شخصان يشغّلان التقرير نفسه بفارق دقيقة أرقامًا مختلفة عن حق. ويصف المستند FDS-011 لقطات إحصائية مخزَّنة؛ ولم تُبنَ قط، والمستند نفسه يسجّل ذلك التصحيح."
+        },
+        {
+          "t": "h2",
+          "en": "What each report answers",
+          "ar": "عمّا يجيب كل تقرير"
+        },
+        {
+          "t": "table",
+          "headers": {
+            "en": [
+              "Report",
+              "The question it answers",
+              "Worth knowing"
+            ],
+            "ar": [
+              "التقرير",
+              "السؤال الذي يجيب عنه",
+              "جدير بالمعرفة"
+            ]
+          },
+          "rows": {
+            "en": [
+              [
+                "Attendance",
+                "Was this session attended? One row per session, with how many people arrived and how many are still inside",
+                "The attendee number counts people, not scans: somebody who left and came back counts once"
+              ],
+              [
+                "Registrations",
+                "Who registered, and in what state? One row per attendee account",
+                "The date range filters when the account was created"
+              ],
+              [
+                "Gate activity",
+                "What happened at the doors? One row per scan, admitted or refused, with the reason",
+                "The visitor's name and type are the ones recorded on the scan itself, so a historic row still reads correctly after somebody is renamed"
+              ],
+              [
+                "Sessions",
+                "How did this session do? Programme, speakers, attendance, questions and average score on one row",
+                "An unrated session shows an empty score, not zero — a zero would read as unanimously terrible"
+              ],
+              [
+                "Ratings",
+                "What was scored, and where? One row per rating submitted",
+                "The respondent is deliberately not shown: a rating carries a free-text comment, and naming the author would turn an anonymous channel into an attributed one"
+              ],
+              [
+                "Partners",
+                "Who is participating? Exhibitors, sponsors and booths flattened into one contact directory",
+                "This one ignores the date range, and the control is hidden on it — a directory is who is here, not events in a period"
+              ],
+              [
+                "Meetings",
+                "What was requested, of whom, and was it answered? Speaker and delegation requests together",
+                "The date range filters when the request was made, not when the meeting was scheduled"
+              ],
+              [
+                "Engagement",
+                "What did the audience ask, and what was suppressed? Session questions with their moderation state",
+                "Hidden questions are included — that is the point of a moderation report. The asker is not shown"
+              ]
+            ],
+            "ar": [
+              [
+                "الحضور",
+                "هل حُضرت هذه الجلسة؟ سجل لكل جلسة، ومعه كم شخصًا وصل وكم ما زال بالداخل",
+                "عدد الحاضرين يعدّ الأشخاص لا عمليات المسح: فمن خرج ثم عاد يُعدّ مرة واحدة"
+              ],
+              [
+                "التسجيلات",
+                "من سجّل، وبأي حالة؟ سجل لكل حساب حاضر",
+                "يرشّح المدى الزمني وقت إنشاء الحساب"
+              ],
+              [
+                "نشاط البوابات",
+                "ماذا جرى عند الأبواب؟ سجل لكل مسح، سماحًا أو رفضًا، مع السبب",
+                "اسم الزائر ونوعه هما المسجَّلان في عملية المسح نفسها، فيظل السجل التاريخي مقروءًا بعد إعادة تسمية الشخص"
+              ],
+              [
+                "الجلسات",
+                "كيف كان أداء هذه الجلسة؟ البرنامج والمتحدثون والحضور والأسئلة ومتوسط التقييم في سجل واحد",
+                "الجلسة غير المقيَّمة تُعرض بتقييم فارغ لا بصفر — فالصفر يُقرأ سوءًا بالإجماع"
+              ],
+              [
+                "التقييمات",
+                "ماذا قُيِّم، وأين؟ سجل لكل تقييم مُرسَل",
+                "لا يُعرض المقيِّم عمدًا: فالتقييم يحمل تعليقًا نصيًّا حرًّا، وذكر كاتبه يحوّل قناة مجهولة إلى قناة منسوبة"
+              ],
+              [
+                "الشركاء",
+                "من المشارك؟ العارضون والرعاة والأجنحة في دليل تواصل واحد",
+                "هذا التقرير يتجاهل المدى الزمني، وأداة المدى مخفية فيه — فالدليل هو من هنا، لا أحداث في فترة"
+              ],
+              [
+                "اللقاءات",
+                "ماذا طُلب، وممن، وهل أُجيب؟ طلبات المتحدثين والوفود معًا",
+                "يرشّح المدى الزمني وقت تقديم الطلب لا وقت انعقاد اللقاء"
+              ],
+              [
+                "التفاعل",
+                "ماذا سأل الجمهور، وما الذي حُجب؟ أسئلة الجلسات وحالة الإشراف عليها",
+                "الأسئلة المحجوبة مُدرجة — وهذا هو المقصود من تقرير إشراف. ولا يُعرض السائل"
+              ]
+            ]
+          }
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-reports-gates-default",
+          "caption": {
+            "en": "The gate activity report. Refusals are rows here too, with the reason each one was refused.",
+            "ar": "تقرير نشاط البوابات. والرفض سجلات هنا أيضًا، ومع كل رفض سببه."
+          }
+        },
+        {
+          "t": "h2",
+          "en": "The toolbar every report shares",
+          "ar": "الشريط الذي تشترك فيه كل التقارير"
+        },
+        {
+          "t": "bullets",
+          "en": [
+            "**The date range is in Saudi calendar dates and includes both ends.** A range of the 1st to the 3rd includes everything on the 3rd, up to midnight.",
+            "**The totals describe the whole filtered set, not the page you are looking at.** They will not add up to the rows on screen, and that is correct.",
+            "**Changing the range takes you back to the first page.** Staying on page seven of a different period would show an empty grid for no visible reason.",
+            "**There is no filter for the event year.** A report has no edition dimension; use the date range."
+          ],
+          "ar": [
+            "**المدى الزمني بالتواريخ الميلادية بتوقيت السعودية ويشمل الطرفين.** فالمدى من الأول إلى الثالث يشمل كل ما وقع في الثالث حتى منتصف الليل.",
+            "**والإجماليات تصف المجموعة المرشَّحة كاملةً لا الصفحة التي تنظر إليها.** فلن تساوي مجموع السجلات المعروضة، وذلك صحيح.",
+            "**وتغيير المدى يعيدك إلى الصفحة الأولى.** فالبقاء في الصفحة السابعة من فترة أخرى يعرض شبكة فارغة بلا سبب ظاهر.",
+            "**ولا يوجد ترشيح بسنة الفعالية.** فليس للتقرير بُعد دورةٍ؛ استخدم المدى الزمني."
+          ]
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-reports-ratings-default",
+          "caption": {
+            "en": "A report page: the range and the totals strip above the grid, and the export beside them.",
+            "ar": "صفحة تقرير: المدى وشريط الإجماليات فوق الشبكة، والتصدير إلى جانبهما."
+          }
+        },
+        {
+          "t": "h2",
+          "en": "Exporting",
+          "ar": "التصدير"
+        },
+        {
+          "t": "p",
+          "en": "Export produces an Excel workbook, downloaded as an attachment and named for the report and the moment you asked for it in Saudi local time. It carries the whole filtered report, not just the page on screen. It is gated by its own permission, separate from the permission to read the report: taking the data off the premises as a file is a bigger act than reading a page of it.",
+          "ar": "ينتج التصدير مصنّف إكسل، يُنزَّل كمرفق ويُسمّى باسم التقرير ولحظة طلبك إياه بتوقيت السعودية المحلي. ويحمل التقرير المرشَّح كاملًا لا الصفحة المعروضة فقط. وهو محصَّن بصلاحيته الخاصة، منفصلةً عن صلاحية قراءة التقرير: فإخراج البيانات من المنشأة في ملف فعلٌ أكبر من قراءة صفحة منها."
+        },
+        {
+          "t": "note",
+          "en": "**An export stops at twenty thousand rows, and says nothing.** Beyond that it returns the first twenty thousand in the report's own order rather than failing, and nothing on screen tells you it happened. On an event-scale gate log that is easy to reach. Narrow the date range and export in pieces when the report is large.",
+          "ar": "**يتوقف التصدير عند عشرين ألف سجل، ولا يقول شيئًا.** فإذا تجاوزها أعاد أول عشرين ألفًا بترتيب التقرير نفسه بدل أن يفشل، ولا شيء على الشاشة يخبرك بذلك. وبلوغ هذا العدد يسير في سجل بوابات بحجم فعالية. فضيّق المدى الزمني وصدّر على أجزاء حين يكون التقرير كبيرًا."
+        },
+        {
+          "t": "p",
+          "en": "The workbook also does not read like the screen. Where the page shows a translated label, the file carries the underlying code — so a gate export says HolderNotApproved and CheckIn where the Arabic page said them in Arabic. That is deliberate: an export is a file people sort, filter and pivot on, and a stable identifier is worth more there than a sentence.",
+          "ar": "والمصنّف كذلك لا يُقرأ كما تُقرأ الشاشة. فحيث تعرض الصفحة تسمية مترجَمة، يحمل الملف الرمز الأصلي — فيقول تصدير البوابات HolderNotApproved وCheckIn حيث قالتهما الصفحة العربية بالعربية. وذلك مقصود: فالتصدير ملف يفرزه الناس ويرشّحونه ويحلّلونه، والمعرّف الثابت فيه أنفع من الجملة."
+        }
+      ]
+    },
+    {
       "id": "reference-data",
       "title": {
         "en": "The lists everything else chooses from",

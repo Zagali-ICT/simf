@@ -24,9 +24,15 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from blocks import bullets, figure, h2, h3, note, p, t, table
 from content_accounts import chapter_changing_accounts, chapter_roles
+from content_ai import chapter_knowledge_ai
+from content_exhibition import chapter_exhibition
 from content_modules import chapter_reference_data
 from content_eventday import chapter_event_day
+from content_pr import chapter_public_relations
 from content_programme import chapter_programme
+from content_publishing import chapter_content
+from content_reports import chapter_reports
+from content_system import chapter_system
 from content_ops import (chapter_configuration, chapter_deployment,
                          chapter_observations)
 
@@ -679,6 +685,12 @@ def build():
             chapter_roles(),
             chapter_programme(),
             chapter_event_day(),
+            chapter_exhibition(),
+            chapter_content(),
+            chapter_public_relations(),
+            chapter_knowledge_ai(),
+            chapter_system(),
+            chapter_reports(),
             chapter_reference_data(),
             chapter_deployment(),
             chapter_configuration(),
