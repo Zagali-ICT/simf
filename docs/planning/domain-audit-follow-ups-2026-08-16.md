@@ -33,7 +33,14 @@ re-added without a reader that filters on the publish stamp *without* a session 
 D-877 specified moving admission from `SimfUser.AccountState` onto
 `UserProfile.AdmissionState` as a **relocation, not a copy**.
 
-**Closed on the read path.** `QrResolver` used to resolve a `Disabled` account onto
+**REOPENED on the read path (2026-08-29).** What follows was true when written and
+is not true now: `8dc33eddd` restored the account veto on 2026-08-18, so
+`QrResolver` reads the account again. The reasoning below still explains why the
+fallback was removed; it no longer describes the code. Kept rather than deleted
+because the argument matters — if the veto is ever removed a second time, this
+is the case for it. See D-948.
+
+**Closed on the read path (SUPERSEDED).** `QrResolver` used to resolve a `Disabled` account onto
 admission (`userRow?.AccountState == Disabled ? Disabled : profileRow.AdmissionState`),
 which made the account a second input to a profile-owned decision. That fallback
 existed because, when it was written, nothing withdrew admission on the profile.

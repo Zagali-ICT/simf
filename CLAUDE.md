@@ -388,10 +388,15 @@ treatment.
 
 - **D-880's `QrId` widening never happened.** `UserProfile.QrId` is still
   `nvarchar(16)`. Widening it for an encrypted badge needs a new lift.
-- **D-877's admission relocation is half done.** The READ path is single-source
-  as of D-929: `QrResolver` reads `UserProfile.AdmissionState` alone, every
-  production disable path having been made to withdraw profile admission in the
-  same transaction. The WRITE path is still a dual-write — approve and reject
+- **D-877's admission relocation is half done, and LESS done than this file
+  used to claim.** D-929 made the READ path single-source; **eight days later
+  `8dc33eddd` put the account veto back**, and `QrResolver` now reads
+  `userRow.AccountState == Disabled ? Disabled : profileRow.AdmissionState`
+  again. That reversal is deliberate and defensible — an account disabled for
+  fraud should not walk through a gate because a profile row still says
+  Approved — but **no decision row recorded it**, and three documents went on
+  asserting the single-source read for eleven days. Corrected here on
+  2026-08-29; see D-948. The WRITE path is still a dual-write — approve and reject
   set `SimfUser.AccountState` as well. Finishing it means **dropping an Identity
   column**, so it needs a new lift, and it is not obvious it should be dropped:
   an account can be disabled for reasons unrelated to attending, and a walk-in
