@@ -93,13 +93,31 @@ then fails on the absent screenshot rather than skipping the page.
 
 ## Where the content lives
 
+`make_book.py` assembles the chapters and writes `book.json`; every
+`content_*.py` module contributes one or two chapters to it. The chapters are
+grouped by the JOB rather than by the menu, because the job is what somebody
+arrives with.
+
 | File | Holds |
 |---|---|
 | `make_book.py` | signing in, creating a user, the profile picture |
 | `content_accounts.py` | changing an account, roles and permissions |
+| `content_programme.py` | building the programme, halls and seating |
+| `content_eventday.py` | running the event day: gates, arrivals, questions |
+| `content_exhibition.py` | exhibitors, booths, sponsors, the venue map |
+| `content_publishing.py` | content, banners, news, media, previous editions |
+| `content_pr.py` | invitations, VIPs, announcements, contact inquiries |
+| `content_ai.py` | the FAQ and the AI features |
+| `content_system.py` | settings, the event year, logs, background services |
+| `content_reports.py` | the eight reports and the export |
+| `content_modules.py` | the reference lists everything else chooses from |
 | `content_ops.py` | deployment, every configuration value, the appendix |
+| `blocks.py` | the block builders every content module shares |
 | `docx_kit.py` | the right-to-left Word primitives |
 | `build_page_model.py` | the extraction that produces the page reference |
+
+`**double asterisks**` mark an emphasised span inside a paragraph, a note or a
+bullet. An unpaired marker fails the build rather than printing itself.
 
 Two rules govern the content:
 
