@@ -20,31 +20,21 @@
     "horizontalOverflow": false
   },
   {
-    "slug": "login-password-change",
-    "state": "empty",
+    "slug": "login-enrol-2fa",
+    "state": "qr",
     "lang": "ar",
-    "url": "http://localhost:5158/login",
-    "file": "cp-login-password-change-empty-ar.png",
+    "url": "http://localhost:5158/login/enrol-2fa",
+    "file": "cp-login-enrol-2fa-qr-ar.png",
     "consoleErrors": [],
     "failedRequests": [],
     "horizontalOverflow": false
   },
   {
-    "slug": "login-password-change",
-    "state": "filled",
+    "slug": "login-enrol-2fa",
+    "state": "recovery-codes",
     "lang": "ar",
-    "url": "http://localhost:5158/login",
-    "file": "cp-login-password-change-filled-ar.png",
-    "consoleErrors": [],
-    "failedRequests": [],
-    "horizontalOverflow": false
-  },
-  {
-    "slug": "login-totp",
-    "state": "empty",
-    "lang": "ar",
-    "url": "http://localhost:5158/login/totp",
-    "file": "cp-login-totp-empty-ar.png",
+    "url": "http://localhost:5158/login/enrol-2fa",
+    "file": "cp-login-enrol-2fa-recovery-codes-ar.png",
     "consoleErrors": [],
     "failedRequests": [],
     "horizontalOverflow": false

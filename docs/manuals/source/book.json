@@ -178,6 +178,14 @@
           "ar": "رموز الاسترداد"
         },
         {
+          "t": "figure",
+          "image": "cp-login-enrol-2fa-recovery-codes",
+          "caption": {
+            "en": "The ten recovery codes, shown once and never again. They are obscured here because they were real when this was taken — a manual that printed a working set would be handing them out.",
+            "ar": "رموز الاسترداد العشرة، تُعرض مرة واحدة ولا تظهر بعدها أبدًا. وقد حُجبت هنا لأنها كانت حقيقية وقت التقاط الصورة — فالدليل الذي يطبع مجموعة صالحة إنما يوزّعها."
+          }
+        },
+        {
           "t": "p",
           "en": "When an account pairs its authenticator the system displays ten single-use recovery codes. They are shown once and never again. Print them or store them somewhere safe: they are what gets the account back in when the phone is lost. If they are lost as well, an administrator must reset the account's second factor from Reset user 2FA, which is covered later in this manual.",
           "ar": "عند إقران الحساب لتطبيق المصادقة يعرض النظام عشرة رموز استرداد يُستخدم كل منها مرة واحدة. تُعرض مرة واحدة فقط ولا تظهر بعدها أبدًا. اطبعها أو احفظها في مكان آمن، فهي وسيلة استعادة الحساب عند فقدان الهاتف. وإذا فُقدت أيضًا، فيجب على مسؤول إعادة تعيين العامل الثاني للحساب من صفحة إعادة تعيين المصادقة الثنائية، وهو ما يتناوله هذا الدليل لاحقًا."

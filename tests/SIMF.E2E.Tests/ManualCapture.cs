@@ -205,7 +205,13 @@ public sealed class ManualCapture : IAsyncLifetime
                 pairedSecret = await ReadPairingSecretAsync()
                     ?? throw new InvalidOperationException(
                         "The enrolment page did not expose a manual-entry secret to pair with.");
-                await SubmitCodeAsync(pairedSecret);
+                await SubmitCodeAsync(pairedSecret, ReadPairingSecretAsync);
+
+                // The recovery codes replace the QR on the same page and are
+                // shown once, ever - so this shot is taken only once the list is
+                // actually on screen, never on the chance that the code worked.
+                var codes = _page.Locator("ol.simf-recovery-codes");
+                await codes.WaitForAsync(new LocatorWaitForOptions { Timeout = 20_000 });
                 if (capture) { await ShotAsync("login-enrol-2fa", "recovery-codes"); }
                 await ClickFirstAsync("button[type=submit]", "button.simf-button");
                 await SettleAsync();
@@ -268,13 +274,26 @@ public sealed class ManualCapture : IAsyncLifetime
         }
     }
 
-    private async Task SubmitCodeAsync(string secret)
+    /// <summary>Enters a verification code and submits it.</summary>
+    /// <param name="secret">The base32 secret to derive the code from.</param>
+    /// <param name="refresh">Optional. Re-reads the secret from the page before
+    /// a retry. Enrolment mints a fresh secret every time the page starts it, so
+    /// a code derived from an earlier read is refused - and retrying with the
+    /// same stale secret fails identically, forever.</param>
+    private async Task SubmitCodeAsync(string secret, Func<Task<string?>>? refresh = null)
     {
         var field = _page.Locator("input.simf-code__input, input[inputmode=numeric]").First;
         await field.WaitForAsync(new LocatorWaitForOptions { Timeout = 15_000 });
         for (var attempt = 1; attempt <= 2; attempt++)
         {
-            if (attempt > 1) { await WaitForNextWindowAsync(); }
+            if (attempt > 1)
+            {
+                if (refresh is not null)
+                {
+                    secret = await refresh() ?? secret;
+                }
+                await WaitForNextWindowAsync();
+            }
             // Fill, then re-type only if the bound model did not take it. The
             // key-by-key path is slower and, on the enrolment screen, waits on
             // an element the circuit re-renders underneath it - which times out
@@ -289,6 +308,16 @@ public sealed class ManualCapture : IAsyncLifetime
             await field.BlurAsync();
             await _page.ClickAsync("button[type=submit]");
             await SettleAsync();
+            // Success is NOT "the address changed". A completed enrolment renders
+            // the recovery codes in the same component, at the same address, so a
+            // URL test reports the one flow that DID work as a failure - and then
+            // retries a code the server has already accepted. Ask the page what
+            // it is showing instead.
+            if (await _page.Locator("ol.simf-recovery-codes").CountAsync() > 0)
+            {
+                return;
+            }
+
             var stillOnCode = _page.Url.Contains("/totp", StringComparison.OrdinalIgnoreCase)
                 || _page.Url.Contains("/enrol-2fa", StringComparison.OrdinalIgnoreCase);
             if (!stillOnCode) { return; }

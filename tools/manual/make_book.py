@@ -183,6 +183,13 @@ def chapter_getting_in():
                  "تطبيق الجوال ولا على الموقع العام."),
 
             h2("Recovery codes", "رموز الاسترداد"),
+            figure("cp-login-enrol-2fa-recovery-codes",
+                   "The ten recovery codes, shown once and never again. They are "
+                   "obscured here because they were real when this was taken — a "
+                   "manual that printed a working set would be handing them out.",
+                   "رموز الاسترداد العشرة، تُعرض مرة واحدة ولا تظهر بعدها أبدًا. وقد "
+                   "حُجبت هنا لأنها كانت حقيقية وقت التقاط الصورة — فالدليل الذي "
+                   "يطبع مجموعة صالحة إنما يوزّعها."),
             p("When an account pairs its authenticator the system displays ten "
               "single-use recovery codes. They are shown once and never again. "
               "Print them or store them somewhere safe: they are what gets the "
