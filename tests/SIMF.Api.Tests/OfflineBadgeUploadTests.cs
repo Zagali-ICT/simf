@@ -246,9 +246,10 @@ public sealed class OfflineBadgeUploadTests : IClassFixture<SimfApiFactory>
 
         var sequence = NextSequence();
         var code = await ResolveProfileTypeCodeAsync();
-        var response = await PostBatchAsync(client, token, new OfflineBadgeBatchRequest
+        var registration = BuildRegistration(sequence, code);
+    var response = await PostBatchAsync(client, token, new OfflineBadgeBatchRequest
         {
-            Registrations = [BuildRegistration(sequence, code)],
+            Registrations = [registration],
         });
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
@@ -256,7 +257,7 @@ public sealed class OfflineBadgeUploadTests : IClassFixture<SimfApiFactory>
         // server seeks by primary key. The desk sequence is only how the row was
         // found here; it is not what travels inside the badge.
         var badge = EventBadgeCodec.Encode(
-            new EventBadgePayload(await ProfileIdForSequenceAsync(armed, sequence), 2026, code),
+            new EventBadgePayload(registration.ProfileId, 2026, code),
             Convert.FromBase64String(BadgeKey),
             BadgeKeyVersion);
 
@@ -280,13 +281,14 @@ public sealed class OfflineBadgeUploadTests : IClassFixture<SimfApiFactory>
 
         var sequence = NextSequence();
         var code = await ResolveProfileTypeCodeAsync();
+        var registration = BuildRegistration(sequence, code);
         await PostBatchAsync(client, token, new OfflineBadgeBatchRequest
         {
-            Registrations = [BuildRegistration(sequence, code)],
+            Registrations = [registration],
         });
 
         var badge = EventBadgeCodec.Encode(
-            new EventBadgePayload(await ProfileIdForSequenceAsync(armed, sequence), 2026, code),
+            new EventBadgePayload(registration.ProfileId, 2026, code),
             Convert.FromBase64String(BadgeKey),
             BadgeKeyVersion);
 
@@ -306,14 +308,15 @@ public sealed class OfflineBadgeUploadTests : IClassFixture<SimfApiFactory>
 
         var sequence = NextSequence();
         var code = await ResolveProfileTypeCodeAsync();
+        var registration = BuildRegistration(sequence, code);
         await PostBatchAsync(client, token, new OfflineBadgeBatchRequest
         {
-            Registrations = [BuildRegistration(sequence, code)],
+            Registrations = [registration],
         });
 
         var foreignKey = RandomNumberGenerator.GetBytes(EventBadgeCodec.KeyBytes);
         var forged = EventBadgeCodec.Encode(
-            new EventBadgePayload(await ProfileIdForSequenceAsync(armed, sequence), 2026, code),
+            new EventBadgePayload(registration.ProfileId, 2026, code),
             foreignKey, BadgeKeyVersion);
 
         using var scope = armed.Services.CreateScope();
@@ -607,25 +610,16 @@ public sealed class OfflineBadgeUploadTests : IClassFixture<SimfApiFactory>
     private static long NextSequence() =>
         3_000_000L + RandomNumberGenerator.GetInt32(1, 900_000_000);
 
-    /// <summary>The attendee the desk upload created for a sequence, found via
-    /// the serial the upload derived. The badge itself carries the profile id,
-    /// not the sequence, so a test that wants to mint one has to resolve it.</summary>
-    private static async Task<Guid> ProfileIdForSequenceAsync(
-        WebApplicationFactory<Program> factory, long sequence)
-    {
-        Assert.True(OfflineBadgeId.TryFormat(sequence, out var serial));
-        using var scope = factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        return await db.UserProfiles.AsNoTracking()
-            .Where(profile => profile.QrId == serial)
-            .Select(profile => profile.Id)
-            .SingleAsync();
-    }
-
+    /// <summary>One desk row. It mints its OWN ProfileId, because that is what a
+    /// real desk does: the id is generated, encrypted into the printed QR, and
+    /// only then uploaded. A test that lets the SERVER choose the id proves the
+    /// wrong thing - and did, while every badge printed at a real desk was
+    /// unresolvable at the gate.</summary>
     private static OfflineBadgeRegistration BuildRegistration(
         long sequence, short profileTypeCode) =>
         new()
         {
+            ProfileId = Guid.NewGuid(),
             Sequence = sequence,
             ProfileTypeCode = profileTypeCode,
             Name = "Offline Desk Visitor",

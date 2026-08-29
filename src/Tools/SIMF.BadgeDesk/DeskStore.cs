@@ -153,6 +153,14 @@ public sealed class DeskStore
             .Take(max)
             .Select(record => new OfflineBadgeRegistration
             {
+                // THE id that is already printed on the badge. Omitting it was
+                // fatal and silent: the field arrived as Guid.Empty, the server
+                // ignores an empty preset and minted its own, and QrResolver
+                // resolves an encrypted badge ONLY by the id inside it - with no
+                // serial fallback - so every badge printed offline scanned as
+                // "not recognised". The row carries it, the contract carries it
+                // and the server honours it; only this projection dropped it.
+                ProfileId = record.ProfileId,
                 Sequence = record.Sequence,
                 ProfileTypeCode = record.ProfileTypeCode,
                 Name = record.Name,

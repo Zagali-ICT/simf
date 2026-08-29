@@ -35,8 +35,36 @@ public sealed class DeskStoreTests : IDisposable
         ProfileTypes = [new DeskProfileType { Code = 1, Name = "Visitor" }],
     };
 
+    [Fact]
+    public void The_upload_batch_carries_the_ProfileId_that_is_printed_on_the_badge()
+    {
+        // The badge's QR carries ONLY this id, and QrResolver looks a scan up by
+        // it with no fallback to the printed sequence. The projection used to
+        // omit it: the field arrived as Guid.Empty, the server ignored the empty
+        // preset and minted its own, and every badge printed at an offline desk
+        // scanned as "not recognised" at the gate.
+        //
+        // Nothing caught it because the server-side test built its badge from the
+        // id the SERVER minted, so the round trip closed on the wrong id and
+        // stayed green while real badges were dead.
+        var store = new DeskStore(_path);
+        var record = Registration(3_000_011);
+        store.Append(record);
+
+        var batch = store.BuildPendingBatch(500);
+
+        batch.Should().ContainSingle()
+            .Which.ProfileId.Should().Be(
+                record.ProfileId,
+                "the QR is encrypted around this id, so the server must create "
+                + "the profile with it rather than minting its own");
+        batch[0].ProfileId.Should().NotBe(Guid.Empty);
+    }
+
     private static StoredRegistration Registration(long sequence) => new()
     {
+        // Minted here exactly as MainForm does, because it is what gets printed.
+        ProfileId = Guid.NewGuid(),
         Sequence = sequence,
         ProfileTypeCode = 1,
         Name = "Test Visitor",
