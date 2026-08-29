@@ -25,6 +25,16 @@ class WalkInAttachments {
     idDocument = null;
     photo = null;
   }
+  /// Assigns by slot. The screen used to branch on the enum itself; the mapping
+  /// from slot to field belongs on the object that owns both.
+  void set(WalkInAttachment which, WalkInAttachmentFile? file) {
+    if (which == WalkInAttachment.idDocument) {
+      idDocument = file;
+    } else {
+      photo = file;
+    }
+  }
+
 }
 
 /// Uploads the picked images against the new visitor's id and returns the ones

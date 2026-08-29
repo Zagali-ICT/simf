@@ -3858,4 +3858,6 @@
   <data name="Admin.WalkInMode.Field.AutoApprove.Hint" xml:space="preserve"><value>تتم الموافقة على الزائر الميداني ومنحه البطاقة في المكتب بدلاً من انتظار المسؤول.</value></data>
   <data name="Admin.WalkInMode.Disarmed" xml:space="preserve"><value>وضع التسجيل الميداني معطّل في هذا النشر، لذا لا يؤثر أي من الخيارين أدناه بعد. تفعيله إعداد على الخادم وليس من لوحة التحكم.</value></data>
   <data name="Module.WalkInMode" xml:space="preserve"><value>وضع التسجيل الميداني</value></data>
+  <data name="Admin.WalkIn.Error.QuickNameRequired" xml:space="preserve"><value>الاسم مطلوب.</value></data>
+  <data name="Admin.WalkIn.Error.QuickDocumentRequired" xml:space="preserve"><value>رقم وثيقة الهوية مطلوب (الهوية الوطنية أو الإقامة أو جواز السفر).</value></data>
 </root>

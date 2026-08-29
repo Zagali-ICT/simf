@@ -7,6 +7,7 @@ using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Components.Forms;
 using SIMF.Contracts.Authentication;
+using SIMF.Contracts.Configuration;
 using SIMF.Contracts.Organisations;
 using SIMF.Contracts.Regions;
 using SIMF.Contracts.UserProfile;
@@ -101,6 +102,13 @@ public partial class WalkInRegistrationForm : IDisposable
         // (the Others desk showed "no profile types defined"). Fetch
         // under the valid Visitor scope and split audience vs partner client-side
         // by IsVisitor below; Kind still drives that split + the submit routing.
+        // The desk mode decides which fields this form may demand. Fetched with
+        // the rest rather than before them: a failure here leaves _quickRegister
+        // false, so the form asks for everything and the desk is no worse off
+        // than it was before quick mode existed.
+        var deskModeTask = JS.InvokeAsync<ApiResult<WalkInDeskModeResponse>>(
+            "simfAccount.getJson",
+            "/account/api/admin/walk-in-mode/desk").AsTask();
         var profileTypesTask = JS.InvokeAsync<ApiResult<IReadOnlyList<AdminProfileTypeSummary>>>(
             "simfAccount.getJson",
             "/account/api/admin/profile-types?userType=Visitor").AsTask();
@@ -127,6 +135,15 @@ public partial class WalkInRegistrationForm : IDisposable
         {
             interestsTask = JS.InvokeAsync<ApiResult<InterestListResponse>>(
                 "simfAccount.getJson", "/account/api/interests").AsTask();
+        }
+
+        // A failed read leaves quick mode OFF, so the form demands the full set
+        // and the desk behaves exactly as it did before the mode existed.
+        var deskMode = await deskModeTask;
+        if (deskMode is { Success: true, Data: not null })
+        {
+            _quickRegister = deskMode.Data.QuickRegister;
+            _quickRequiresIdentityDocument = deskMode.Data.RequiresIdentityDocument;
         }
 
         ApplyProfileTypes(await profileTypesTask);
@@ -485,11 +502,31 @@ public partial class WalkInRegistrationForm : IDisposable
     /// </summary>
     /// <remarks>Every guard runs: the desk sees ALL of its mistakes at once
     /// rather than one per submit, so this must not early-return.</remarks>
+    /// <summary>True when the desk is in quick mode, so this form may ask for
+    /// the reduced field set. Defaults false: if the read fails the form demands
+    /// everything, which is the behaviour that existed before quick mode.</summary>
+    private bool _quickRegister;
+
+    /// <summary>Whether the quick floor includes an identity document. Not
+    /// admin-editable; it comes from deployment configuration.</summary>
+    private bool _quickRequiresIdentityDocument = true;
+
     private bool ValidateForm()
     {
         _messages.Clear();
         _error = null;
         _orgError = null;
+
+        // Quick mode: mirror the server's floor exactly (AdminAccountService
+        // .EnsureQuickDeskFloor) - ANY one name, and ANY one identity document
+        // when configuration still demands one. Asking for more here is what made
+        // the mode unusable: the server would have accepted the short form, but
+        // this form refused to submit it.
+        if (_quickRegister)
+        {
+            return ValidateQuickFloor();
+        }
+
         var ok = true;
 
         if (_model.ProfileTypeId == Guid.Empty)
@@ -527,6 +564,32 @@ public partial class WalkInRegistrationForm : IDisposable
 
         _editContext.NotifyValidationStateChanged();
         return ok;
+    }
+
+    /// <summary>The quick-mode floor, mirroring the server's
+    /// <c>EnsureQuickDeskFloor</c>. Deliberately NOT a relaxed copy of the full
+    /// rules: the two must agree, and the cheapest way to keep them agreeing is
+    /// for this to state the same two conditions and nothing else.</summary>
+    private bool ValidateQuickFloor()
+    {
+        var hasName = !string.IsNullOrWhiteSpace(_model.ArabicName)
+            || !string.IsNullOrWhiteSpace(_model.EnglishName)
+            || !string.IsNullOrWhiteSpace(_model.DisplayName);
+        if (!hasName)
+        {
+            _error = L["Admin.WalkIn.Error.QuickNameRequired"];
+        }
+
+        var hasDocument = !string.IsNullOrWhiteSpace(_model.NationalId)
+            || !string.IsNullOrWhiteSpace(_model.IqamaNumber)
+            || !string.IsNullOrWhiteSpace(_model.PassportNumber);
+        if (hasName && _quickRequiresIdentityDocument && !hasDocument)
+        {
+            _error = L["Admin.WalkIn.Error.QuickDocumentRequired"];
+        }
+
+        _editContext.NotifyValidationStateChanged();
+        return hasName && (!_quickRequiresIdentityDocument || hasDocument);
     }
 
     /// <summary>Validates the identity document for the Saudi / non-Saudi branch

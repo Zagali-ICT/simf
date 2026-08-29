@@ -20,6 +20,21 @@ public sealed record WalkInModeSettingsResponse(
     bool QuickRegisterOverridden,
     bool AutoApproveOverridden);
 
+/// <summary>What a DESK needs to render its form, and nothing more.
+///
+/// <para>Separate from <see cref="WalkInModeSettingsResponse"/> on purpose: this
+/// is read by whoever may register a walk-in, which is a different and much
+/// larger set of people than those who may change the modes. It carries no
+/// configuration-versus-override detail because a desk operator cannot act on
+/// it.</para>
+///
+/// <para><see cref="RequiresIdentityDocument"/> is NOT admin-editable — it stays
+/// in deployment configuration — but the form has to know it, because it decides
+/// whether the quick floor is "a name" or "a name and one document".</para></summary>
+public sealed record WalkInDeskModeResponse(
+    bool QuickRegister,
+    bool RequiresIdentityDocument);
+
 /// <summary>The CP save. Each field is tri-state: true or false writes an
 /// explicit override, null CLEARS it and returns that mode to whatever
 /// deployment configuration says. Clearing is the reason these are nullable —

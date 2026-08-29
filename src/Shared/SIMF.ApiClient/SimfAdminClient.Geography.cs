@@ -155,6 +155,12 @@ public sealed partial class SimfAdminClient
             HttpMethod.Get, "walk-in-mode", content: null,
             accessToken, cancellationToken);
 
+    public Task<ApiCallResult<WalkInDeskModeResponse>> GetDeskWalkInModeAsync(
+        string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<WalkInDeskModeResponse>(
+            HttpMethod.Get, "walk-in-mode/desk", content: null,
+            accessToken, cancellationToken);
+
     public Task<ApiCallResult<WalkInModeSettingsResponse>> UpdateWalkInModeAsync(
         AdminUpdateWalkInModeRequest request, string accessToken,
         CancellationToken cancellationToken = default) =>

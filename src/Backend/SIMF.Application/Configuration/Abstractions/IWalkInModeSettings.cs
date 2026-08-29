@@ -26,6 +26,12 @@ public interface IWalkInModeSettings
     Task<WalkInModeSettingsResponse> GetAsync(
         CancellationToken cancellationToken = default);
 
+    /// <summary>What a desk form needs to decide which fields it must demand:
+    /// whether the reduced field set is live, and whether that floor includes an
+    /// identity document.</summary>
+    Task<WalkInDeskModeResponse> GetDeskAsync(
+        CancellationToken cancellationToken = default);
+
     /// <summary>Writes or clears the two overrides. A null field clears, handing
     /// that mode back to configuration.</summary>
     Task<WalkInModeSettingsResponse> SaveAsync(

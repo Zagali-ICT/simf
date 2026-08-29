@@ -55,6 +55,20 @@ class RegisterVisitorFormFields {
   final FormFieldValidator<String> validateDocumentNumber;
   final FormFieldValidator<String> validatePhone;
 
+  /// Empties every controller. Lives here rather than in the screen because
+  /// this object owns them: a controller added above and forgotten in the
+  /// screen's reset is a field that silently survives a submit.
+  void clear() {
+    email.clear();
+    arabicName.clear();
+    englishName.clear();
+    jobTitle.clear();
+    jobTitleArabic.clear();
+    phone.clear();
+    nationalId.clear();
+    documentNumber.clear();
+  }
+
   void dispose() {
     email.dispose();
     arabicName.dispose();

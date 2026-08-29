@@ -29,6 +29,16 @@ class StaffRepository {
     );
   }
 
+  /// `GET /app/staff/walk-in-mode` — which fields this desk must demand.
+  Future<StaffWalkInMode> walkInMode() {
+    return _client.get<StaffWalkInMode>(
+      StaffEndpoints.walkInMode,
+      decodeData: (data) => StaffWalkInMode.fromJson(
+        (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{},
+      ),
+    );
+  }
+
   /// `POST /app/staff/visitors/{userId}/id-document` (multipart) — attaches the
   /// new visitor's ID-document image. 5 MB / jpeg|png|webp + human-face gate are
   /// server-side. Returns true on success.

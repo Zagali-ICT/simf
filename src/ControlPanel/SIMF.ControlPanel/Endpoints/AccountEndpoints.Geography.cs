@@ -148,6 +148,13 @@ internal static partial class AccountEndpoints
             if (token is null) return Results.Unauthorized();
             return Forward(await api.GetWalkInModeAsync(token));
         });
+        group.MapGet("/admin/walk-in-mode/desk",
+            async (HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetDeskWalkInModeAsync(token));
+        });
         group.MapPost("/admin/walk-in-mode",
             async (AdminUpdateWalkInModeRequest body, HttpContext http, SimfAdminClient api) =>
         {

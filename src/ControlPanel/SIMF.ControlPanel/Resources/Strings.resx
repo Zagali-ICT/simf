@@ -3868,4 +3868,6 @@
   <data name="Admin.WalkInMode.Field.AutoApprove.Hint" xml:space="preserve"><value>An on-site visitor is approved and given a badge at the desk, instead of waiting for an administrator.</value></data>
   <data name="Admin.WalkInMode.Disarmed" xml:space="preserve"><value>Walk-in mode is switched off for this deployment, so neither toggle below has any effect yet. Arming it is a server setting, not a Control Panel one.</value></data>
   <data name="Module.WalkInMode" xml:space="preserve"><value>Walk-in Mode</value></data>
+  <data name="Admin.WalkIn.Error.QuickNameRequired" xml:space="preserve"><value>A name is required.</value></data>
+  <data name="Admin.WalkIn.Error.QuickDocumentRequired" xml:space="preserve"><value>An identity document number is required (national ID, Iqama or passport).</value></data>
 </root>

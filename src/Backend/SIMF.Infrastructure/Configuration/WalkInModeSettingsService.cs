@@ -50,6 +50,11 @@ internal sealed class WalkInModeSettingsService(
             && Effective(overrides, WalkInModeSettingKeys.AutoApprove, current.AutoApprove);
     }
 
+    public async Task<WalkInDeskModeResponse> GetDeskAsync(
+        CancellationToken cancellationToken = default) =>
+        new(await QuickRegisterActiveAsync(cancellationToken),
+            options.CurrentValue.QuickRegisterRequiresIdentityDocument);
+
     public async Task<WalkInModeSettingsResponse> GetAsync(
         CancellationToken cancellationToken = default)
     {

@@ -8,6 +8,10 @@
 /// exactly. Changing one breaks installed builds.
 abstract final class StaffEndpoints {
   static const String registerOnsite = '/app/staff/visitors/register-onsite';
+
+  /// `GET` — which fields this desk must demand. Read on screen open so the
+  /// tablet form asks for the reduced set while quick mode is live.
+  static const String walkInMode = '/app/staff/walk-in-mode';
   static String visitorIdDocument(String userId) => '/app/staff/visitors/$userId/id-document';
   static String visitorAvatar(String userId) => '/app/staff/visitors/$userId/avatar';
   static String seatingByBadge(String sessionId) => '/app/staff/sessions/$sessionId/seating/by-badge';

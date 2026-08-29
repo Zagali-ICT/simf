@@ -1,6 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:simf_app/features/account/data/profile_lookups.dart';
 import 'package:simf_app/features/account/data/profile_repository.dart';
+import 'package:simf_app/features/staff/data/staff_models.dart';
+import 'package:simf_app/features/staff/data/staff_repository.dart';
+import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 /// The three lookups the walk-in form picks from, and the defaults they seed
 /// the empty form with.
@@ -58,4 +61,17 @@ Future<WalkInLookups> loadWalkInLookups(ProfileRepository repo) async {
     profileTypes: results[1] as List<ProfileTypeItem>,
     organisations: results[2] as List<OrganisationItem>,
   );
+}
+
+/// Which fields the desk must demand, read alongside the lookups.
+///
+/// A failure is NOT an error: it falls back to the strict form, which is always
+/// safe to submit. Failing the whole load would take the desk offline over a
+/// knob it can do without.
+Future<StaffWalkInMode> loadWalkInMode(StaffRepository repo) async {
+  try {
+    return await repo.walkInMode();
+  } on ApiFailure {
+    return const StaffWalkInMode();
+  }
 }
