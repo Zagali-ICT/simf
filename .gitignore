@@ -18,7 +18,10 @@
 #
 # Nothing in CI depends on them: azure-pipelines.yml only names them in a comment
 # about not staging them into artifacts, and a deployment job never clones.
-deploy/set-env-*.ps1
+# The set-env-*.ps1 scripts are TEMPLATES and are tracked: every secret is
+# declared but ships EMPTY, so an operator can see which keys exist without
+# the repository carrying one. Only the FILLED overlays are ignored.
+deploy/set-env-*.local.ps1
 set-env-prod.ps1
 set-env-*.local.ps1
 
