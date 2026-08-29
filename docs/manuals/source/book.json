@@ -880,10 +880,26 @@
         },
         {
           "t": "figure",
-          "image": "cp-account-profile-default",
+          "image": "cp-account-profile-avatar-empty",
           "caption": {
-            "en": "My profile, where an account sets its own picture.",
-            "ar": "صفحة ملفي الشخصي، حيث يضبط الحساب صورته."
+            "en": "The avatar card before a picture is set: a placeholder, the accepted formats and the size ceiling, and the file picker.",
+            "ar": "بطاقة الصورة قبل ضبط أي صورة: عنصر نائب، والصيغ المقبولة والحد الأقصى للحجم، وأداة اختيار الملف."
+          }
+        },
+        {
+          "t": "figure",
+          "image": "cp-account-profile-avatar-cropper",
+          "caption": {
+            "en": "Choosing a file opens the cropper straight away. The frame is square because the stored picture is square; there is no separate upload button, and nothing is sent until this is saved.",
+            "ar": "يفتح اختيار الملف أداة القص فورًا. والإطار مربّع لأن الصورة المحفوظة مربّعة؛ ولا يوجد زر رفع منفصل، ولا يُرسل شيء حتى يُحفظ هذا."
+          }
+        },
+        {
+          "t": "figure",
+          "image": "cp-account-profile-avatar-set",
+          "caption": {
+            "en": "The picture in place, with the option to remove it.",
+            "ar": "الصورة بعد ضبطها، مع خيار إزالتها."
           }
         },
         {
@@ -959,6 +975,14 @@
           "t": "h2",
           "en": "Replacing and removing",
           "ar": "الاستبدال والحذف"
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-admins-avatar-thumbnail",
+          "caption": {
+            "en": "The difference in a list: an account with a picture shows a thumbnail, one without shows a tile of its initials. An empty cell therefore means no picture was ever set, not a picture that failed to load.",
+            "ar": "الفارق كما يظهر في القائمة: الحساب الذي له صورة يعرض صورة مصغّرة، والذي لا صورة له يعرض مربعًا بالأحرف الأولى من اسمه. فالخانة الفارغة تعني أنه لم تُضبط صورة قط، لا أن صورة أخفقت في التحميل."
+          }
         },
         {
           "t": "p",
@@ -1443,6 +1467,14 @@
           ]
         },
         {
+          "t": "figure",
+          "image": "cp-admin-ops-services-default",
+          "caption": {
+            "en": "After a deployment, this is where you confirm the background workers came up. They run inside the API process, so a healthy site with a dead worker looks fine from the outside.",
+            "ar": "بعد النشر، من هنا تتأكد من أن الخدمات الخلفية قد بدأت. فهي تعمل داخل عملية واجهة البرمجة، فالموقع السليم مع خدمة متوقفة يبدو سليمًا من الخارج."
+          }
+        },
+        {
           "t": "h2",
           "en": "The databases",
           "ar": "قواعد البيانات"
@@ -1485,6 +1517,27 @@
           "t": "p",
           "en": "Configuration reaches the applications as machine-wide environment variables set on the server. The files shipped inside each application carry only non-secret defaults, and they are overwritten by every deployment, so nothing that matters may be edited there.",
           "ar": "تصل التهيئة إلى التطبيقات عبر متغيّرات بيئة على مستوى الجهاز تُضبط على الخادم. أما الملفات المشحونة داخل كل تطبيق فلا تحمل سوى القيم الافتراضية غير السرية، ويُعاد كتابتها مع كل نشر، فلا يجوز تعديل أي شيء مهم فيها."
+        },
+        {
+          "t": "p",
+          "en": "Not everything is an environment variable. Some settings are edited in the Control Panel itself and stored in the database, which is the right place for anything an administrator should be able to change without a deployment.",
+          "ar": "ليست كل الإعدادات متغيّرات بيئة. فبعضها يُحرَّر داخل لوحة التحكم نفسها ويُحفظ في قاعدة البيانات، وهو الموضع الصحيح لكل ما ينبغي أن يستطيع المسؤول تغييره دون الحاجة إلى نشر جديد."
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-configuration-default",
+          "caption": {
+            "en": "The configuration list — key and value pairs the system reads at run time.",
+            "ar": "قائمة الإعدادات — أزواج المفتاح والقيمة التي يقرأها النظام أثناء التشغيل."
+          }
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-operations-default",
+          "caption": {
+            "en": "The operations switches, which turn features on and off for an event day without touching the server.",
+            "ar": "مفاتيح التشغيل، التي تفعّل الخصائص وتعطّلها ليوم الفعالية دون المساس بالخادم."
+          }
         },
         {
           "t": "h2",

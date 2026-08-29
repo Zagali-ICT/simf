@@ -163,6 +163,14 @@ def chapter_deployment():
                 "أول مسؤول.",
             ]),
 
+            figure("cp-admin-ops-services-default",
+                   "After a deployment, this is where you confirm the background "
+                   "workers came up. They run inside the API process, so a healthy "
+                   "site with a dead worker looks fine from the outside.",
+                   "بعد النشر، من هنا تتأكد من أن الخدمات الخلفية قد بدأت. فهي "
+                   "تعمل داخل عملية واجهة البرمجة، فالموقع السليم مع خدمة متوقفة "
+                   "يبدو سليمًا من الخارج."),
+
             h2("The databases", "قواعد البيانات"),
             p("There are two, deliberately kept apart: one holds accounts, "
               "roles and permissions, the other holds everything else. There is "
@@ -229,6 +237,24 @@ def chapter_configuration():
               "على الخادم. أما الملفات المشحونة داخل كل تطبيق فلا تحمل سوى القيم "
               "الافتراضية غير السرية، ويُعاد كتابتها مع كل نشر، فلا يجوز تعديل أي "
               "شيء مهم فيها."),
+
+            p("Not everything is an environment variable. Some settings are "
+              "edited in the Control Panel itself and stored in the database, "
+              "which is the right place for anything an administrator should be "
+              "able to change without a deployment.",
+              "ليست كل الإعدادات متغيّرات بيئة. فبعضها يُحرَّر داخل لوحة التحكم "
+              "نفسها ويُحفظ في قاعدة البيانات، وهو الموضع الصحيح لكل ما ينبغي أن "
+              "يستطيع المسؤول تغييره دون الحاجة إلى نشر جديد."),
+            figure("cp-admin-configuration-default",
+                   "The configuration list — key and value pairs the system reads "
+                   "at run time.",
+                   "قائمة الإعدادات — أزواج المفتاح والقيمة التي يقرأها النظام أثناء "
+                   "التشغيل."),
+            figure("cp-admin-operations-default",
+                   "The operations switches, which turn features on and off for "
+                   "an event day without touching the server.",
+                   "مفاتيح التشغيل، التي تفعّل الخصائص وتعطّلها ليوم الفعالية دون "
+                   "المساس بالخادم."),
 
             h2("How a variable name is built", "كيف يُبنى اسم المتغيّر"),
             p("Each application reads its own prefix, and a colon in the setting "

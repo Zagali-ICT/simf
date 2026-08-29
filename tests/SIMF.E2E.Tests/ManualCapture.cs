@@ -577,6 +577,72 @@ public sealed class ManualCapture : IAsyncLifetime
         }
     }
 
+    /// <summary>The profile picture, from an empty avatar to a picture in the
+    /// grid.</summary>
+    /// <remarks>The manual can state the rules from the code, but it could not
+    /// SHOW a picture being set - the only image in that chapter was the
+    /// account page with no photo on it. This walks the real path: pick a file,
+    /// crop it, save it, and see it come back as a thumbnail where an initials
+    /// tile used to be.
+    /// <para>The file is supplied through the input directly. A file picker is
+    /// an operating-system dialog that no browser automation can drive, and it
+    /// is not what is being documented anyway.</para></remarks>
+    [SkippableFact]
+    public async Task Capture_profile_picture()
+    {
+        Skip.If(OutDir.Length == 0, "SIMF_MANUAL_OUT is not set.");
+        var image = Env("SIMF_MANUAL_AVATAR", "");
+        Skip.If(image.Length == 0 || !File.Exists(image),
+            "SIMF_MANUAL_AVATAR must point at an image to upload.");
+
+        await SignInCapturingFirstRunAsync(capture: false);
+        await AssertSignedInAsync();
+        if (Lang == "ar")
+        {
+            await _page.GotoAsync(Cp + "/culture?culture=ar&redirectUri=%2F",
+                new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
+            await SettleAsync();
+        }
+
+        var crop = Env("SIMF_MANUAL_CROP_LABEL", "Crop and save");
+
+        await StepAsync("avatar-before", async () =>
+        {
+            await _page.GotoAsync(Cp + "/account/profile",
+                new PageGotoOptions { WaitUntil = WaitUntilState.DOMContentLoaded });
+            await SettleAsync();
+            // The avatar card is well down the page; the shot has to show it.
+            await _page.Locator("#avatar-input").ScrollIntoViewIfNeededAsync();
+            await Task.Delay(500);
+            await ShotAsync("account-profile", "avatar-empty");
+        });
+
+        await StepAsync("avatar-cropper", async () =>
+        {
+            await _page.SetInputFilesAsync("#avatar-input", image);
+            await Task.Delay(2_500);          // the cropper loads the image itself
+            await ShotAsync("account-profile", "avatar-cropper");
+            await ClickButtonAsync(crop);
+            await Task.Delay(3_000);
+            await _page.Locator("#avatar-input").ScrollIntoViewIfNeededAsync();
+            await Task.Delay(500);
+            await ShotAsync("account-profile", "avatar-set");
+        });
+
+        // The grid is where the difference is visible: a picture where there was
+        // an initials tile, beside accounts that still have one.
+        await StepAsync("avatar-in-grid", async () =>
+        {
+            await _page.GotoAsync(Cp + "/admin/admins",
+                new PageGotoOptions { WaitUntil = WaitUntilState.DOMContentLoaded });
+            await SettleAsync();
+            await ShotAsync("admin-admins", "avatar-thumbnail");
+        });
+
+        WriteReport("profile-picture");
+        Assert.NotEmpty(_report);
+    }
+
     /// <summary>Walks every route in SIMF_MANUAL_ROUTES and photographs it.</summary>
     [SkippableFact]
     public async Task Capture_route_sweep()
