@@ -152,9 +152,10 @@ internal sealed partial class AdminAccountService(
     /// Any single script satisfies it; the service mirrors it into the other
     /// language column, which is what keeps the NOT NULL pair valid.</para>
     ///
-    /// <para>An IDENTITY DOCUMENT, because it is the only thing preventing one
-    /// person from collecting several badges: the duplicate-identity guard and
-    /// its three filtered unique indexes key off a blind index of it. The
+    /// <para>An IDENTITY DOCUMENT, because it is how a person is identified on
+    /// the day at all. It no longer BOUNDS them to one badge: the cross-profile
+    /// duplicate guard was removed on owner instruction, so a repeated number is
+    /// now an operator-visible mistake rather than a server-side refusal. The
     /// plaintext columns are AES-GCM encrypted with a random nonce, so an id not
     /// captured at the desk can never be reconstructed afterwards. Made optional
     /// only by an explicit configuration choice, which the operator has to take
@@ -538,17 +539,18 @@ internal sealed partial class AdminAccountService(
             organisationId = requestedOrganisationId;
         }
 
-        // On-site duplicate-identity guard (soft, service-layer). A National
-        // ID / Iqama / passport already on a profile row must not be re-registered
-        // at the desk. The plaintext id columns are AES-GCM encrypted with a RANDOM
-        // nonce (SimfAppDbContext), so they can neither be equality-queried nor
-        // unique-indexed — the guard + its filtered UNIQUE indexes key off the
-        // deterministic blind-index HMAC (pii.BlindIndex) instead. This is a
-        // plain single-context read on appDbContext — no cross-DB JOIN. The
-        // validator forces two SEPARATE patterns — ^1[0-9]{9}$ (National ID) and
-        // ^2[0-9]{9}$ (Iqama) — so IsSaudi partitions the identifiers: at most one
-        // is non-null per request. Reads never crash on pre-existing data; a
-        // duplicate simply makes the guard match and rejects the new attempt.
+        // Normalise the three numbers before storage sees them, so the desk and
+        // the self-service upsert persist byte-identical strings.
+        //
+        // A duplicate-identity guard used to stand here and reject a number
+        // already held by another profile. It was removed on owner instruction:
+        // a visitor whose number sat on an earlier profile could not register at
+        // all, and the desk had no way to release it. Nothing detects a repeat
+        // now — the digest is still written, but no index or query reads it.
+        //
+        // The validator forces two SEPARATE patterns — ^1[0-9]{9}$ (National ID)
+        // and ^2[0-9]{9}$ (Iqama) — so IsSaudi partitions the identifiers: at
+        // most one is non-null per request.
         var nationalId = request.IsSaudi ? NormaliseOptional(request.NationalId) : null;
         var iqamaNumber = request.IsSaudi ? null : NormaliseOptional(request.IqamaNumber);
         var passportNumber = request.IsSaudi ? null : NormaliseOptional(request.PassportNumber);
@@ -680,11 +682,10 @@ internal sealed partial class AdminAccountService(
             profile.Id = presetProfileId;
         }
         // The three captured numbers, written to the only storage that holds
-        // them: one row per document, one unique digest index over all of them,
-        // which is what makes a CROSS-KIND duplicate visible at all. The
-        // already-normalised values are reused rather than re-derived, so the rows
-        // and the soft guard above key off the same strings — a trailing-space
-        // passport cannot slip past one and be stored by the other.
+        // them: one row per document, bounded per profile by (ProfileId, Kind).
+        // The already-normalised values from above are reused rather than
+        // re-derived, so the desk and the self-service upsert cannot store two
+        // different spellings of one number.
         ProfileIdentityStorage.SyncDocuments(
             profile, pii, nationalId, iqamaNumber, passportNumber);
         appDbContext.UserProfiles.Add(profile);

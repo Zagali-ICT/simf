@@ -558,7 +558,7 @@ filter + POST wiring). Live browser drive pending the E2E-VIS authoring pass.
   Where an E2E scenario fully covers one of these, the lower-layer case may be
   retired later — keep both during the transition.
 
-## On-site remediation (W4 — H-1 duplicate-identity guard)
+## On-site remediation (identity documents at the desk — guard removed by D-945)
 
 | Id | Scenario | Category | Priority | Status |
 |----|----------|----------|----------|--------|

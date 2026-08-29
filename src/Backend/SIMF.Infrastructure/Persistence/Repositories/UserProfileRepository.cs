@@ -1,7 +1,6 @@
-// Tests: SIMF.Api.Tests/UserProfileIdentifierUniquenessTests.cs (the unique
-//        digest index catches a same-kind AND a cross-kind duplicate, and
-//        SaveProfileIdentityChangesAsync translates the violation into a 409
-//        rather than letting it escape as a 500)
+// Tests: SIMF.Api.Tests/UserProfileIdentifierUniquenessTests.cs (two profiles
+//        may now carry the same identity number, same-kind or cross-kind, while
+//        ONE profile still cannot hold two documents of the same kind)
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.IdentityAccess;
 using SIMF.Common;
@@ -25,7 +24,7 @@ internal sealed class UserProfileRepository(
         // IdentityDocuments is Included and NOT optional. The upsert syncs the
         // collection in place, and an unloaded navigation looks EMPTY — so a user
         // re-saving their own profile would insert a second copy of every document
-        // and trip the unique digest index on their own number.
+        // and trip the (ProfileId, Kind) unique index on their own row.
         IQueryable<UserProfile> query = appDbContext.UserProfiles
             .Include(p => p.Interests)
             .Include(p => p.IdentityDocuments);

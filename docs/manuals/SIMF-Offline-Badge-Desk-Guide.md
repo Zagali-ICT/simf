@@ -186,7 +186,7 @@ The response is the reconciliation report:
 | `Created` | Account created and approved. The badge works. |
 | `CreatedPendingApproval` | Created, but auto-approve is not armed. **That badge will be refused at the gate** until an administrator approves it. |
 | `AlreadyUploaded` | Seen before. Nothing changed. |
-| `Rejected` | Not written. The message says why — a duplicate identity document, or a number that failed its check digit. **Fix it with F3 and upload again.** |
+| `Rejected` | Not written. The message says why — a number that failed its check digit, a missing or over-long name, or a badge sequence outside the desk's range. **Fix it with F3 and upload again.** A repeated identity document is no longer a rejection reason (D-945): the same number on a second person now uploads cleanly, so watch for it yourself. |
 
 Only accounted-for rows are marked done locally, so a rejected row stays pending
 until it is corrected. **Reconciliation is complete when "waiting to upload"

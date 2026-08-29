@@ -124,8 +124,9 @@ internal sealed class AesGcmPiiEncryptor : IPiiEncryptor
         }
         var key = RequireKey();
         // Deterministic (unlike Encrypt): the SAME plaintext always yields the SAME
-        // digest, so the H-1 duplicate-identity guard + its filtered UNIQUE indexes
-        // work — the encrypted columns cannot, because Encrypt uses a random nonce.
+        // digest, so a value encrypted under a random nonce can still be matched.
+        // Its original consumer, the duplicate-identity guard, is gone; the live
+        // one is VisitorShareService's share-token digest.
         // Keyed HMAC (not a bare hash) so a DB leak cannot brute-force the small
         // identifier space back to plaintext offline.
         var digest = HMACSHA256.HashData(key, Encoding.UTF8.GetBytes(value));

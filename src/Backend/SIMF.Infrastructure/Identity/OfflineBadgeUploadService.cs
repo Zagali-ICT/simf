@@ -319,11 +319,11 @@ internal sealed class OfflineBadgeUploadService(
     /// makes rejecting SAFE: the row comes back named, the operator fixes the
     /// number, the same badge uploads. The paper never changes.</para>
     ///
-    /// <para>Why it matters that these run at all: the duplicate-identity guard
-    /// keys off a blind-index HMAC of the number. A mistyped id is still unique,
-    /// so it hashes to a value matching nothing, the guard never fires, and the
-    /// same person collects a second badge at another desk. Checking the Luhn
-    /// digit is what makes the guard mean anything on this path.</para>
+    /// <para>Why it matters that these run at all: the check digit is the ONLY
+    /// thing standing between a mistyped id and the badge printed from it. There
+    /// used to be a duplicate-identity guard behind it that would at least catch
+    /// the consequence — the same person collecting a second badge at another
+    /// desk — but that guard was removed, so nothing downstream notices now.</para>
     ///
     /// <para>Returns null when the row is fine. Only NON-EMPTY values are
     /// checked: whether a document is REQUIRED is the quick-register floor's

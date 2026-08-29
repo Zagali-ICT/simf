@@ -479,7 +479,7 @@ never be equality-queried, so the digest is the only seam a future
 document-number lookup could use. Dropping it is a separate decision.
 
 **Shipped with its hand-run delta**,
-`docs/migrations/2026/SIMF_App_D945_DropIdentityDocumentUniqueIndex.sql`. A
+`docs/migrations/2026/SIMF_App_D945_DropIdentityDocumentUniqueIndex_Hotfix.sql`. A
 regenerated migration is a no-op against a database that already has one, so
 without the delta the index survives on production and keeps rejecting exactly
 the registrations this lift exists to allow. D-944 learned that the expensive way

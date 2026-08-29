@@ -382,12 +382,11 @@ public sealed class OfflineBadgeUploadTests : IClassFixture<SimfApiFactory>
         // D-824. Before the desk had a correction path this could not be checked
         // at all: rejecting a row meant a printed badge nobody could fix. Now a
         // typo comes back named, the operator presses F3, and the SAME badge
-        // uploads - so the rule that makes the duplicate-identity guard mean
-        // anything can finally run on this path.
+        // uploads - so the check digit can finally be enforced on this path.
         //
-        // A mistyped id is still UNIQUE, so its blind index matches nothing, the
-        // duplicate guard never fires, and the same person collects a second
-        // badge at another desk. The Luhn digit is what catches it.
+        // It is now the ONLY defence: a mistyped id of the right shape belongs to
+        // nobody and is what gets printed, and since D-945 removed the duplicate
+        // guard nothing downstream notices the consequence.
         using var armed = CreateArmedFactory();
         using var client = armed.CreateClient();
         var token = await CreateAdminTokenAsync(client);

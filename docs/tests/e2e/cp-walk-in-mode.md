@@ -63,13 +63,13 @@ late.
 | E2E-WIM-012 | Quick register accepts a name and one identity document | Armed |
 | E2E-WIM-013 | Quick register still demands an identity document | Armed |
 | E2E-WIM-014 | A mistyped identity document is still rejected | Armed |
-| E2E-WIM-015 | The same person cannot collect two badges | Armed |
+| E2E-WIM-015 | A repeated national ID is accepted at the desk (D-945) | Armed |
 | E2E-WIM-016 | The arrival window widens | Armed |
 | E2E-WIM-017 | Offline upload is refused while disarmed | Disarmed |
 | E2E-WIM-018 | An uploaded badge works at the gate | Armed |
 | E2E-WIM-019 | Re-uploading a batch changes nothing | Armed |
 | E2E-WIM-020 | One bad row does not fail the batch | Armed |
-| E2E-WIM-021 | An uploaded duplicate identity is refused | Armed |
+| E2E-WIM-021 | An uploaded duplicate identity is accepted (D-945) | Armed |
 | E2E-WIM-022 | An uploaded badge is pending without auto-approve | Armed |
 | E2E-WIM-023 | A foreign-key badge is not recognised | Armed |
 | E2E-WIM-024 | The desk reconciles to zero | Armed |
@@ -230,9 +230,10 @@ When a desk operator submits a registration with no national ID,
 Then the response is HTTP 400
 And the message asks for an identity document, bilingually
 ```
-> This is the field quick mode keeps. It is the only thing preventing one person
-> collecting several badges, and the encrypted columns cannot be reconstructed
-> after the event.
+> This is the field quick mode keeps. It is how an attendee is identified on the
+> day at all, and the encrypted columns cannot be reconstructed after the event.
+> It does NOT bound one person to one badge — that was the cross-profile
+> duplicate guard, removed by D-945.
 
 ### E2E-WIM-014 — a mistyped identity document is still rejected
 ```gherkin
@@ -241,15 +242,20 @@ When a desk operator submits a national ID of the right shape
      but a wrong Luhn check digit
 Then the response is HTTP 400
 ```
-> Shape rules stayed in the validator and always apply: a mistyped id would
-> create a false-unique row and defeat duplicate detection permanently.
+> Shape rules stayed in the validator and always apply. They are now the ONLY
+> thing standing between a mistyped id and the badge printed from it, since
+> D-945 removed the duplicate guard that used to catch the consequence.
 
-### E2E-WIM-015 — the same person cannot collect two badges
+### E2E-WIM-015 — a repeated national ID is accepted at the desk (D-945)
 ```gherkin
 Given WalkInMode is armed with QuickRegister = true
 And a visitor already registered with national ID "1xxxxxxxxx"
 When a desk operator registers again with the same national ID
-Then the response is HTTP 409 DUPLICATE_IDENTITY
+Then the response is HTTP 200 and a second account is created
+# The cross-profile duplicate guard was removed on owner instruction: a
+# visitor whose number already sat on an earlier profile could not register
+# at all, and the desk had no way to release it. A second badge for one
+# person is now an operator-visible mistake, not a server-side refusal.
 ```
 
 ### E2E-WIM-016 — the arrival window widens
@@ -316,12 +322,15 @@ And two results are "Created" and two are "Rejected"
 And both rejections carry error code OFFLINE_BADGE_INVALID
 ```
 
-### E2E-WIM-021 — an uploaded duplicate identity is refused
+### E2E-WIM-021 — an uploaded duplicate identity is accepted (D-945)
 ```gherkin
 Given a batch of two rows carrying the SAME national ID
 When the desk uploads it
-Then one result is "Created"
-And the other is "Rejected" with error code DUPLICATE_IDENTITY
+Then BOTH results are "Created"
+And no row is rejected with DUPLICATE_IDENTITY — that code no longer exists
+# Batch rejection on a repeated identity went with the cross-profile guard.
+# The OFFLINE_BADGE_SEQUENCE_TAKEN conflict on IX_UserProfiles_QrId is a
+# different guard and still applies.
 ```
 
 ### E2E-WIM-022 — an uploaded badge is pending without auto-approve
@@ -424,9 +433,9 @@ And the first row is "Created"
 And the second is "Rejected" naming the national ID
 And the desk's "waiting to upload" counter still shows that one row
 ```
-> A mistyped id is still UNIQUE, so its blind index matches nothing and the
-> duplicate-identity guard never fires. Without the check digit the same person
-> collects a second badge at another desk.
+> The check digit is what keeps a mistyped id from being accepted as a real one.
+> Since D-945 nothing downstream catches the consequence — there is no
+> duplicate guard left to fire — so the validator is the whole defence.
 
 ### E2E-WIM-030 — F3 corrects a rejected row without reprinting
 ```gherkin

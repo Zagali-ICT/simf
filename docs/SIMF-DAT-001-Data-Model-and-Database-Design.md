@@ -661,22 +661,26 @@ registering once on a passport and again on an iqama passed all three, because
 the two digests never landed in the same column. The child table has **one** digest
 column holding every document's digest, so a single unique index over it sees the
 cross-kind repeat as well. The three per-kind number columns and their three
-digests have since been dropped, so the unique index over
-`ProfileIdentityDocuments.NumberHash` is now the only uniqueness guard on an
-identity number.
+digests have since been dropped.
 
-The child index is referenced **by name** in the code that translates a
-duplicate-key violation into a `409 DUPLICATE_IDENTITY`, so its name is pinned
-rather than left to EF's convention: a conventional name would change silently
-under an index-shape edit and turn a clean 409 into an uncaught 500. It is
-deliberately **not** filtered, unlike the unique indexes of §8.2, because the
-column is required on that table — a document row exists only when there is a
-number to put in it, so there are no nulls to exempt.
+**The cross-profile uniqueness guard is gone (D-945, 2026-08-29.)** The unique
+index over `ProfileIdentityDocuments.NumberHash` was dropped on owner
+instruction, together with the soft guards in front of it and the
+`409 DUPLICATE_IDENTITY` it raised: a visitor whose national ID, Iqama or
+passport already sat on an earlier profile could not register at all, and the
+desk had no way to release the number. **The same identity number may now
+appear on more than one profile.**
 
-The digest index is global, not scoped to an edition. A returning attendee keeps
-one profile row across editions — the year on the row is re-stamped — so their
-documents are updated in place and there is no second registration for a
-per-edition scope to permit.
+What still holds is the per-profile bound: the unique index over
+`(ProfileId, Kind)` keeps ONE profile to at most one national ID, one Iqama and
+one passport, so the read path never has to choose between two passports. The
+`NumberHash` column survives the drop unread, because `Number` is encrypted
+under a random nonce and the digest is the only seam a future document-number
+lookup could use.
+
+A returning attendee keeps one profile row across editions — the year on the
+row is re-stamped — so their documents are updated in place, and there was never
+a second registration for a per-edition scope to permit.
 
 ### 8.4 CHECK constraints
 
@@ -715,9 +719,11 @@ those columns is a service-layer obligation, stated per case in §5.3.1. Within 
 database the constraint is declared: `Restrict` wherever deleting the principal
 must not remove history or strand a registrant, `Cascade` only where the dependent
 row has no meaning without its parent — an identity document, a join row. An
-orphaned identity document would keep occupying the unique digest index and reject
-that person's next legitimate registration for ever, which is why that one cascades
-where its siblings restrict.
+orphaned identity document is retained personal data with nothing left to justify
+it, which is why that one cascades where its siblings restrict. Until D-945 it
+also kept occupying the cross-profile unique index and barred that person from
+registering the number again; that index is gone and the PII reason stands
+without it.
 
 ## 9. Open items
 
@@ -922,9 +928,11 @@ Unlike the mobile pair in C.3, the profile's three per-kind number columns and
 their three digests are **gone**. They were kept for a time and written in
 lockstep with the child rows, so the two could not disagree while both existed,
 and they were dropped once nothing read them. The unique index over
-`ProfileIdentityDocuments.NumberHash` is now the only uniqueness guard on an
-identity number; there is no per-kind backstop behind it. The three shipped JSON
-field names stay on the wire whatever the storage does.
+`ProfileIdentityDocuments.NumberHash` that replaced them has since been dropped
+too (D-945), so **no uniqueness guard remains on an identity number across
+profiles** — only `(ProfileId, Kind)`, which bounds ONE profile to one document
+per kind. The three shipped JSON field names stay on the wire whatever the
+storage does.
 
 ### C.3 One mobile number — amends §5.2
 The attendee has one mobile number, held once in canonical E.164. A Saudi number

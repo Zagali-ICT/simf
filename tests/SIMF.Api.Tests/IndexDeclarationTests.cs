@@ -40,12 +40,12 @@ public sealed class IndexDeclarationTests : IClassFixture<SimfApiFactory>
     public IndexDeclarationTests(SimfApiFactory factory) => _factory = factory;
 
     /// <summary>Either <c>HasDatabaseName("literal")</c> or
-    /// <c>HasDatabaseName(SomeConst)</c>. The const form is not a stylistic
-    /// variant to tolerate: the one index name in this codebase with runtime
-    /// behaviour attached is written that way. `IX_ProfileIdentityDocuments_NumberHash`
-    /// is matched by string at two call sites to turn a unique-key violation into
-    /// a 409 rather than an uncaught 500, so a literal-only pattern would check
-    /// the eight names that do not matter and skip the one that does.</summary>
+    /// <c>HasDatabaseName(SomeConst)</c>. Both forms are matched because an index
+    /// name can acquire runtime behaviour: a name matched as a STRING by a
+    /// DbUpdateException filter changes meaning silently when the index is
+    /// reshaped. The case that motivated it, IX_ProfileIdentityDocuments_NumberHash
+    /// and its two 409-translating call sites, has since been removed outright,
+    /// which is exactly the drift this pattern exists to keep visible.</summary>
     private static readonly Regex DeclaredIndexName =
         new(@"HasDatabaseName\(\s*(?:""(?<literal>[^""]+)""|(?<symbol>[A-Za-z_][\w.]*))\s*\)",
             RegexOptions.Compiled);

@@ -894,10 +894,10 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         Assert.True(seqB > seqA, $"expected {seqB} > {seqA}");
     }
 
-    // H-1 (FIX A) — the self-service write path must populate the identity blind
-    // index (so the unique digest index + the duplicate-identity guard see it)
-    // and reject a National ID / Iqama / passport already on ANOTHER user's row,
-    // while never false-flagging a user re-saving their OWN id.
+    // The self-service write path must still populate the identity blind index.
+    // Nothing reads it since D-945 dropped the cross-profile unique index, but it
+    // is the only seam a future document-number lookup could use — the plaintext
+    // is encrypted under a random nonce and can never be equality-queried.
     [Fact]
     public async Task Self_service_upsert_persists_a_non_null_national_id_hash()
     {

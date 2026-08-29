@@ -129,6 +129,15 @@ Not content seeds:
   worked, and the schema half silently did not exist — so every
   `GET /app/account/user-profile` answered 500 on Invalid column name.
   **Not part of the seed run.**
+- **`SIMF_App_D945_DropIdentityDocumentUniqueIndex_Hotfix.sql`** — a **prod-only**
+  delta dropping `IX_ProfileIdentityDocuments_NumberHash` on a *running* DB
+  (D-945), so a visitor whose national ID / Iqama / passport already sits on an
+  earlier profile can register. A fresh DB needs nothing from it. Unlike the two
+  above it is NOT an emergency unblock — it shipped in the same commit as the
+  code, which is the trap below being avoided rather than demonstrated. It
+  deliberately does not touch `IX_ProfileIdentityDocuments_ProfileId_Kind`, and
+  verifies that index still exists before it reports success.
+  **Not part of the seed run.**
 - **`SIMF_App_AssistancePromptGrounding.sql`** / **`SIMF_App_AssistancePromptHistory.sql`**
   — idempotent one-shot updates that re-point an **already-seeded** `assistance`
   AI prompt at the grounded / history-carrying template. A freshly-seeded DB

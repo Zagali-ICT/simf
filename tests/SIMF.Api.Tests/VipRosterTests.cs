@@ -121,9 +121,10 @@ public sealed class VipRosterTests : IClassFixture<SimfApiFactory>
             ProfileTypeId = profileTypeId,
             NationalityCode = "SA",
             IsSaudi = true,
-            // H-1 — the blind-index duplicate-identity guard rejects a repeated
-            // National ID (409), so every registered VIP needs a UNIQUE Luhn-valid
-            // id. The roster assertions key off MawjId, not NationalId.
+            // A UNIQUE Luhn-valid id per VIP. The duplicate-identity guard that
+            // once made this mandatory is gone, so a repeat would no longer fail
+            // — but distinct ids keep the fixtures independent, and the roster
+            // assertions key off MawjId rather than NationalId regardless.
             NationalId = TestIdentity.MintNationalId(),
             SaudiMobile = "+966500000001",
             OrganisationId = organisationId,

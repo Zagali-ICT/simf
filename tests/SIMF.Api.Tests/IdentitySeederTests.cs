@@ -364,8 +364,7 @@ public sealed class IdentitySeederTests : IClassFixture<SimfApiFactory>
     {
         // The seeder used to write the demo national id straight onto
         // UserProfile.NationalId, with no blind-index digest and no child row —
-        // which made every demo account invisible to the duplicate-identity guard,
-        // and would have silently dropped the number altogether once the column
+        // which would have silently dropped the number altogether once the column
         // went. It now writes through ProfileIdentityStorage, the same helper the
         // self-service upsert and the walk-in desk use.
         using var scope = _factory.Services.CreateScope();

@@ -47,13 +47,15 @@ public sealed class WalkInModeOptions
 
     /// <summary>
     /// Whether quick register still demands one identity document (national ID,
-    /// Iqama or passport). Defaults to TRUE, and should stay that way: the number
-    /// is the only thing preventing one person collecting several badges, because
-    /// the duplicate-identity guard and its three filtered unique indexes key off
-    /// a blind index of it. The plaintext columns are AES-GCM encrypted with a
-    /// random nonce, so an id not captured at the desk can never be reconstructed
-    /// afterwards. Turning this off buys a few seconds per visitor and gives up
-    /// duplicate detection entirely.
+    /// Iqama or passport). Defaults to TRUE, and should stay that way: it is how
+    /// an attendee is identified on the day at all, and the plaintext columns are
+    /// AES-GCM encrypted with a random nonce, so an id not captured at the desk
+    /// can never be reconstructed afterwards. Turning this off buys a few seconds
+    /// per visitor and leaves the registration with no identifier.
+    ///
+    /// It does NOT bound one person to one badge. That was the cross-profile
+    /// duplicate guard, removed on owner instruction; nothing detects a repeat
+    /// now.
     /// </summary>
     public bool QuickRegisterRequiresIdentityDocument { get; set; } = true;
 

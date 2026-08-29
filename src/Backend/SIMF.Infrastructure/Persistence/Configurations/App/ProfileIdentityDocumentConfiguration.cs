@@ -12,13 +12,17 @@ namespace SIMF.Infrastructure.Persistence.Configurations.App;
 /// <c>DbSet</c>, because every read reaches the rows through their profile and a
 /// context-level set would only invite an unscoped query over encrypted PII.
 ///
-/// <para>The one index that matters here is the unique digest index. It is the
-/// single index over EVERY document number, which is what makes a CROSS-KIND
-/// duplicate — the same person registering once on a passport and again on an
-/// Iqama — detectable at all, and it is now the WHOLE duplicate-identity
-/// constraint. It replaced three per-kind filtered uniques on
-/// <see cref="UserProfile"/>, none of which could see that case, because the two
-/// numbers never shared a column.</para>
+/// <para>The one index that matters here is <c>(ProfileId, Kind)</c>: one profile
+/// holds at most one national ID, one Iqama and one passport, so the read path
+/// never has to choose between two passports.</para>
+///
+/// <para>There is NO cross-profile constraint. A unique index over
+/// <see cref="ProfileIdentityDocument.NumberHash"/> used to make the same number
+/// on two different profiles impossible; it was dropped on owner instruction
+/// because it blocked a visitor whose number already sat on an earlier profile
+/// from registering at all. The digest column survives it unread — nothing
+/// queries or indexes it — because the plaintext is encrypted under a random
+/// nonce and the digest is the only seam a future lookup could use.</para>
 /// </summary>
 internal sealed class ProfileIdentityDocumentConfiguration
     : IEntityTypeConfiguration<ProfileIdentityDocument>
@@ -63,9 +67,12 @@ internal sealed class ProfileIdentityDocumentConfiguration
             .IsUnique();
 
         // Cascade, unlike every other foreign key on the profile row. A document
-        // has no meaning apart from its attendee, and a row left behind would keep
-        // occupying the unique digest index and reject that person's next
-        // legitimate registration for ever.
+        // has no meaning apart from its attendee, and it is PII: a row outliving
+        // the profile it describes is retained personal data with nothing left to
+        // justify it. It used to matter more — an orphan kept occupying the
+        // cross-profile unique index and barred that person from ever registering
+        // the number again — but that index is gone and the reason above stands
+        // without it.
         builder.HasOne(document => document.Profile)
             .WithMany(profile => profile.IdentityDocuments)
             .HasForeignKey(document => document.ProfileId)
