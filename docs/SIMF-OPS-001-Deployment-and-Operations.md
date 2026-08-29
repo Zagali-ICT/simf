@@ -123,9 +123,9 @@ Configuration follows SIMF-SES-001 section 4.4.
   missing. Three of them are **Production boot gates** — the API refuses to
   start without `SIMF_API_FileStorage__EncryptionKey` (the centralized file-store
   KEK, D-568), `SIMF_API_Storage__UserIdDocumentEncryptionKey` (the PII column key,
-  NCA A2-10) or `SIMF_API_Ai__PromptHash__Secret` (the AI audit HMAC secret). A
-  fourth, `SIMF_Storage__AvatarBase`, is validated with `ValidateOnStart`, so
-  the host fails to build without it.
+  NCA A2-10) or `SIMF_API_Ai__PromptHash__Secret` (the AI audit HMAC secret).
+  There is no fourth: `Storage:AvatarBase` was removed when the centralised file
+  store replaced the per-kind directories, and setting it now does nothing.
 - First-time provisioning uses the runbook `deploy/configure-prod-env.ps1`
   (§B.3): it generates the missing base64 32-byte AES keys with
   `System.Security.Cryptography.RandomNumberGenerator` without printing them,
@@ -135,12 +135,16 @@ Configuration follows SIMF-SES-001 section 4.4.
   verifies by reporting each key's name and set/missing state only, then
   restarts the IIS app pools and health-checks the API. It is safe to re-run,
   and `-VerifyOnly` audits without changing anything.
-- Variables use the ASP.NET Core double-underscore convention with a `SIMF_`
-  prefix (`SIMF_API_ConnectionStrings__SimfAppDb`). Each host registers
-  `builder.Configuration.AddEnvironmentVariables("SIMF_")`, which strips the
-  prefix at bind time so the value lands on `ConnectionStrings:SimfAppDb`
-  (D-355). The prefix keeps SIMF's variables from colliding with other apps' on
-  a shared host.
+- Variables use the ASP.NET Core double-underscore convention with a prefix
+  **per application** — `SIMF_API_`, `SIMF_CP_`, `SIMF_WEB_` and `SIMF_EDGE_`.
+  Each host registers only its own (`AddEnvironmentVariables("SIMF_API_")` in
+  `src/Backend/SIMF.Api/Program.cs`, and the equivalent in the other three), so
+  `SIMF_API_ConnectionStrings__SimfAppDb` binds to `ConnectionStrings:SimfAppDb`
+  for the API alone. A bare `SIMF_` prefix binds to **nothing**, and each host
+  refuses to start in Production when it finds one — the estate runs all four
+  applications on the same server, and one shared namespace meant two of them
+  could not be given different values for the same key. `ASPNETCORE_ENVIRONMENT`
+  is the exception: it is read before any prefix applies and stays unprefixed.
 
 ### 6.0 Meeting confirmation links (`SIMF_API_MeetingLinks__PublicWebBaseUrl`) — REQUIRED
 
@@ -389,7 +393,7 @@ populate every row marked **Required**.
 | Jwt | `Issuer` | Optional (default `SIMF`) | JWT `iss` claim | Default OK |
 | Jwt | `Audience` | Optional (default `SIMF`) | JWT `aud` claim | Default OK |
 | Jwt | `SigningKey` | **Required** | HS256 signing key — generate with `openssl rand -base64 48` | Token issuance throws; SignIn 500s on every call |
-| Jwt | `AccessTokenMinutes` | Optional (default 30) | Access-token lifetime | Default OK |
+| Jwt | `AccessTokenMinutes` | Optional (default **5**) | Access-token lifetime | Default OK |
 | Email | `Host` | **Required** | SMTP host for code/notification email | Email enqueue throws; sign-up loops in EmailVerified state |
 | Email | `Port` | Optional (default 587) | SMTP port | Default OK |
 | Email | `User` / `Password` | **Required** | SMTP auth | Email enqueue throws |
@@ -403,8 +407,8 @@ populate every row marked **Required**.
 | RateLimit | `EmailPermitLimit` / `EmailWindowSeconds` | Optional (default 5 / 60s) | Per-email bucket (H7 — D-062) | Defaults OK |
 | RateLimit | `GlobalPermitLimit` / `GlobalWindowSeconds` | Optional (default 600 / 60s) | Top-level safety cap | Defaults OK |
 | RateLimit | `AiTestPermitLimit` / `AiTestWindowSeconds` | Optional (default 20 / 3600s) | Per-admin AI dry-run quota (D-179 + D-189) | Defaults OK |
-| Storage | `AvatarBase` | **Required** | Absolute path for the avatar filesystem store (D-039) | Avatar upload throws |
-| Storage | `UserIdDocumentBase` | **Required** | Absolute path for encrypted ID-image storage (D-046 b; renamed P8) | ID-image upload throws |
+| Storage | ~~`AvatarBase`~~ | **REMOVED** | Was the avatar directory (D-039). The centralised file store replaced it; use `FileStorage:RootPath` | Setting it does nothing |
+| Storage | ~~`UserIdDocumentBase`~~ | **REMOVED** | Was the encrypted ID-image directory (D-046 b). Same replacement | Setting it does nothing |
 | Storage | `UserIdDocumentEncryptionKey` | **Required** | Base64-encoded 32-byte AES-GCM key — generate with `openssl rand -base64 32` | ID-image upload throws on every call (rejected at write time) |
 | Storage | `LogDirectory` | Optional (default `logs`) | Serilog file-sink directory | Default OK |
 | FileStorage | `RootPath` | Optional (see failure mode) | Root directory every stored file's bytes live under, one sub-folder per `FileService` beneath it | Empty falls back to `%ProgramData%\SIMF\files` (`FilesystemFileStorageProvider.DefaultRoot`). Nothing throws, which is the risk: the store lands in a location no operator chose and may not be backing up (§C.2 artefact 3). Deliberately never a relative path - that resolved against the process working directory and put uploads in the source tree |

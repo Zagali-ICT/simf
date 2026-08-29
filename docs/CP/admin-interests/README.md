@@ -89,11 +89,16 @@ and become rows in the `UserProfileInterests` many-to-many join.
   (interests lookup in [`../../App/Page_007-01/Page_007-01_API.md`](../../App/Page_007-01/Page_007-01_API.md))
 - Permission catalogue: `docs/SIMF-Permission-Catalogue.md` (`PermissionCatalog.Interests`)
 
-> **Drift note (report-only, no code change):** the older `docs/pages/cp/admin-interests.md`
-> states the auth gate as `[Authorize(Roles = "Administrator")]` and the duplicate-name
-> error code as `InterestNameNotUnique`. The **code** gates the page with
-> `@attribute [RequirePermission(PermissionCatalog.Interests.View)]` and the per-action
-> permission policies (`Interests.View/Create/Edit/Delete`), and the duplicate code is
-> `ErrorCodes.InterestNameDuplicate` (`INTEREST_NAME_DUPLICATE`). This set documents the
-> as-built code; the older doc predates the permission system (D-207/D-208) and is stale
-> on those two points.
+> **Drift note — the auth half is now CLOSED.** This note reported that
+> `docs/pages/cp/admin-interests.md` stated the gate as
+> `[Authorize(Roles = "Administrator")]` while the code uses
+> `@attribute [RequirePermission(PermissionCatalog.Interests.View)]` and the
+> per-action policies (`Interests.View/Create/Edit/Delete`). That doc has been
+> corrected, along with the twelve others carrying the same claim and the page
+> template they were all copied from — which is why the same error appeared
+> thirteen times rather than once.
+>
+> **The error-code half is closed too.** The older doc named the duplicate as
+> `InterestNameNotUnique` in two places; `InterestService` raises
+> `ErrorCodes.InterestNameDuplicate` (`INTEREST_NAME_DUPLICATE`), verified in
+> the source rather than taken from this note, and the doc now says so.

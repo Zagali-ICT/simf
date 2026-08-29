@@ -1,0 +1,112 @@
+[
+  {
+    "slug": "admin-admins",
+    "state": "add-empty",
+    "lang": "en",
+    "url": "http://localhost:5158/admin/admins",
+    "file": "cp-admin-admins-add-empty.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-admins",
+    "state": "add-validation",
+    "lang": "en",
+    "url": "http://localhost:5158/admin/admins",
+    "file": "cp-admin-admins-add-validation.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-admins",
+    "state": "add-filled",
+    "lang": "en",
+    "url": "http://localhost:5158/admin/admins",
+    "file": "cp-admin-admins-add-filled.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-admins",
+    "state": "add-result",
+    "lang": "en",
+    "url": "http://localhost:5158/admin/admins",
+    "file": "cp-admin-admins-add-result.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-admins",
+    "state": "after-create",
+    "lang": "en",
+    "url": "http://localhost:5158/admin/admins",
+    "file": "cp-admin-admins-after-create.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-visitors",
+    "state": "add-top",
+    "lang": "en",
+    "url": "http://localhost:5158/admin/visitors",
+    "file": "cp-admin-visitors-add-top.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-visitors",
+    "state": "add-middle",
+    "lang": "en",
+    "url": "http://localhost:5158/admin/visitors",
+    "file": "cp-admin-visitors-add-middle.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-visitors",
+    "state": "add-lower",
+    "lang": "en",
+    "url": "http://localhost:5158/admin/visitors",
+    "file": "cp-admin-visitors-add-lower.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-visitors",
+    "state": "add-bottom",
+    "lang": "en",
+    "url": "http://localhost:5158/admin/visitors",
+    "file": "cp-admin-visitors-add-bottom.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-others",
+    "state": "add-top",
+    "lang": "en",
+    "url": "http://localhost:5158/admin/others",
+    "file": "cp-admin-others-add-top.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-visitors-vip",
+    "state": "add-top",
+    "lang": "en",
+    "url": "http://localhost:5158/admin/visitors/vip",
+    "file": "cp-admin-visitors-vip-add-top.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  }
+]

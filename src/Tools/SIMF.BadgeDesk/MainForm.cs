@@ -564,7 +564,22 @@ public sealed class MainForm : Form
                         result => $"  {result.Sequence}: {result.Message}"))
                     + Environment.NewLine + "Press F3 to correct one.";
             }
-            ShowStatus(summary, isError: response.Rejected > 0);
+            // A wrong badge key is the failure this desk cannot otherwise see: it
+            // prints happily for three days and every badge is refused at the
+            // gate with the same generic denial any garbage produces. The server
+            // echoes which key version IT holds, so a mismatch surfaces here, on
+            // the first upload, while the badges can still be reprinted.
+            var keyMismatch = response.ServerBadgeKeyVersion != _config.BadgeKeyVersion;
+            if (keyMismatch)
+            {
+                summary += Environment.NewLine
+                    + $"WARNING: this desk is keyed v{_config.BadgeKeyVersion}, the "
+                    + $"server holds v{response.ServerBadgeKeyVersion}. Badges printed "
+                    + "here will NOT scan. Stop and re-provision the key before "
+                    + "printing more.";
+            }
+
+            ShowStatus(summary, isError: response.Rejected > 0 || keyMismatch);
         }
         catch (Exception ex) when (ex is InvalidOperationException or HttpRequestException
                                       or TaskCanceledException)

@@ -35,8 +35,12 @@ public sealed class OfflineBadgeRegistration
     /// carries. The server creates the attendee record under this id so the
     /// badge already in someone's hand resolves the moment the shift uploads.
     ///
-    /// <para>Empty from a desk that predates this, in which case the server
-    /// mints one and the printed badge resolves through its serial instead.</para>
+    /// <para><b>It is not optional in practice.</b> The QR carries ONLY this id
+    /// and <c>QrResolver</c> looks a scan up by it with no fallback to the
+    /// printed serial, so a batch that leaves it empty makes the server mint a
+    /// different id and every badge from that desk scans as "not recognised".
+    /// This comment used to claim the serial resolved it; that was never true,
+    /// and the claim is part of why the omission survived.</para>
     /// </summary>
     public Guid ProfileId { get; set; }
 
@@ -108,4 +112,14 @@ public sealed record OfflineBadgeBatchResponse(
     int PendingApproval,
     int AlreadyUploaded,
     int Rejected,
-    IReadOnlyList<OfflineBadgeUploadResult> Results);
+    IReadOnlyList<OfflineBadgeUploadResult> Results,
+    /// <summary>The badge-key version the SERVER is holding.
+    ///
+    /// <para>Echoed so a desk provisioned with the wrong key learns on its first
+    /// upload rather than at the gate. A wrong-but-well-formed 32-byte key
+    /// produces badges that fail authentication everywhere and are reported as
+    /// the same generic "not recognised" any garbage produces, so without this
+    /// the only warning is a pre-event checklist step someone has to remember.
+    /// The version is not the key and reveals nothing: it is a small integer
+    /// that says WHICH key, never what it is.</para></summary>
+    int ServerBadgeKeyVersion = 0);

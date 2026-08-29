@@ -72,7 +72,7 @@ path is **configuration-side**:
 | 2 | Sign in to the API host with operator privileges. |
 | 3 | Generate a fresh TOTP secret (Base32, 32 chars). Example: `openssl rand -hex 20 \| xxd -r -p \| base32`. Save it for the next step. |
 | 4 | Update the `SuperAdmin:TotpSecret` value in `appsettings.json` (or the equivalent environment-variable override `SuperAdmin__TotpSecret`) for the SIMF API process. |
-| 5 | **Restart the API.** The `IdentitySeeder` re-applies the configured TOTP secret on every boot to the super-administrator account. |
+| 5 | **Restart the API.** The `IdentitySeeder` re-applies the configured TOTP secret to the super-administrator — but **only while that account still has two-factor switched on**. If two-factor was disabled for it, the seeder deliberately leaves the row alone (a disabled choice must survive a restart), the restart changes nothing, and this recovery stalls with no error. Re-enable two-factor on the account first. |
 | 6 | Share the new secret with the verified administrator through a secure channel (a sealed envelope, an internal vault, an in-person hand-off). They add it to their authenticator as a setup-key entry (`Account: superadmin@…`, key: as generated). |
 | 7 | The administrator signs in with password + the TOTP code from the new entry. |
 | 8 | On `/account/profile`, the administrator should **re-generate recovery codes immediately** and save the new set in the same secure channel. |

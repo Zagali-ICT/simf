@@ -540,7 +540,7 @@ public static class ErrorCodes
     public const string Conflict = "Conflict";
     public const string ValidationFailed = "ValidationFailed";
     public const string EmailAlreadyExists = "EmailAlreadyExists";
-    public const string InterestNameNotUnique = "InterestNameNotUnique";
+    public const string InterestNameDuplicate = "InterestNameDuplicate";
     // …
 }
 ```
@@ -869,10 +869,12 @@ are unchanged; the value is supplied per-developer, out of the repo:
 | `ConnectionStrings:SimfIdentityDb` | `SIMF_API_ConnectionStrings__SimfIdentityDb` | SQL login when not using `Trusted_Connection` |
 | `ConnectionStrings:SimfAppDb` | `SIMF_API_ConnectionStrings__SimfAppDb` | SQL login when not using `Trusted_Connection` |
 
-Naming is `SIMF_` + the ASP.NET Core double-underscore section separator — every
-app calls `AddEnvironmentVariables("SIMF_")`, which strips the prefix, so
-`SIMF_API_Email__Password` binds to `Email:Password` (same convention as
-`deploy/set-env-*.ps1`).
+Naming is a prefix **per application** plus the ASP.NET Core double-underscore
+section separator. Each host registers only its own — `AddEnvironmentVariables("SIMF_API_")`
+in the API, and `SIMF_CP_`, `SIMF_WEB_`, `SIMF_EDGE_` in the other three — which
+strips that prefix, so `SIMF_API_Email__Password` binds to `Email:Password` for
+the API alone (same convention as `deploy/set-env-*.ps1`). A bare `SIMF_` binds
+to nothing, and each host refuses to start in Production if it finds one.
 
 A local developer needs **none** of these to run the API, the Control Panel and
 the Website: with the values empty the demo-account seed is skipped

@@ -395,7 +395,7 @@ IIS app pool** so `w3wp` picks them up:
 
 | Script | Server | Key groups |
 |--------|--------|-----------|
-| [set-env-api.ps1](set-env-api.ps1) | SimfAPI | The bulk, 62 keys: `SIMF_API_ConnectionStrings__*`, `SIMF_API_Jwt__*`, `SIMF_API_FileStorage__*`, `SIMF_API_Email__*`, `SIMF_API_SuperAdmin__*`, `SIMF_API_Seed__DemoPassword`, `SIMF_API_Ai__*`, `SIMF_API_MeetingLinks__*`, `SIMF_API_Cors__WebAppOrigins__n`, `SIMF_API_RateLimit__*`, `SIMF_API_WalkInMode__*`, `SIMF_API_Swagger__*` |
+| [set-env-api.ps1](set-env-api.ps1) | SimfAPI | The bulk, 82 keys: `SIMF_API_ConnectionStrings__*`, `SIMF_API_Jwt__*`, `SIMF_API_FileStorage__*`, `SIMF_API_Email__*`, `SIMF_API_SuperAdmin__*`, `SIMF_API_Seed__DemoPassword`, `SIMF_API_Ai__*`, `SIMF_API_MeetingLinks__*`, `SIMF_API_Cors__WebAppOrigins__n`, `SIMF_API_RateLimit__*`, `SIMF_API_WalkInMode__*`, `SIMF_API_Swagger__*` |
 | [set-env-cp.ps1](set-env-cp.ps1) | SimfCP | `SIMF_CP_Api__BaseUrl`, `SIMF_CP_Session__LifetimeHours`, `SIMF_CP_DataProtection__KeyRingPath` |
 | [set-env-web.ps1](set-env-web.ps1) | SimfWeb | `SIMF_WEB_Api__BaseUrl`, `SIMF_WEB_DataProtection__KeyRingPath` |
 | [set-env-edge.ps1](set-env-edge.ps1) | SimfEdge | `SIMF_EDGE_ReverseProxy__Clusters__api__Destinations__primary__Address`, `SIMF_EDGE_ReverseProxy__KnownProxies__0` |

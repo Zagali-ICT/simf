@@ -1,0 +1,6940 @@
+[
+  {
+    "labelKey": "Module.Dashboard",
+    "route": "/",
+    "navPermission": null,
+    "icon": "layout-dashboard",
+    "isStub": false,
+    "navGroupKey": "Nav.Overview",
+    "navGroupEn": "Overview",
+    "navGroupAr": "نظرة عامة",
+    "labelEn": "Dashboard",
+    "labelAr": "لوحة المعلومات",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Home.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Home.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": null,
+    "access": "authenticated",
+    "titleKey": "Dashboard.Title",
+    "actions": [],
+    "actionGates": [],
+    "columns": [],
+    "calls": [
+      "/account/api/admin/statistics",
+      "/account/api/admin/statistics/programme"
+    ],
+    "slug": "dashboard",
+    "titleEn": "Dashboard",
+    "titleAr": "لوحة المعلومات",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.Attendance",
+    "route": "/admin/attendance",
+    "navPermission": "Attendance.View",
+    "icon": "user-check",
+    "isStub": false,
+    "navGroupKey": "Nav.Overview",
+    "navGroupEn": "Overview",
+    "navGroupAr": "نظرة عامة",
+    "labelEn": "Session attendance",
+    "labelAr": "حضور الجلسات",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/AttendanceDashboard.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/AttendanceDashboard.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Attendance.View",
+    "access": "permission",
+    "titleKey": "Admin.Attendance.Title",
+    "actions": [],
+    "actionGates": [],
+    "columns": [
+      {
+        "key": "code",
+        "headerKey": "Admin.Attendance.Col.Code"
+      },
+      {
+        "key": "title",
+        "headerKey": "Admin.Attendance.Col.Session"
+      },
+      {
+        "key": "hall",
+        "headerKey": "Admin.Attendance.Col.Hall"
+      },
+      {
+        "key": "start",
+        "headerKey": "Admin.Attendance.Col.Start"
+      },
+      {
+        "key": "total",
+        "headerKey": "Admin.Attendance.Col.TotalAttendees"
+      },
+      {
+        "key": "live",
+        "headerKey": "Admin.Attendance.Col.LiveNow"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/attendance/sessions/list",
+      "/account/api/admin/attendance/summary"
+    ],
+    "slug": "admin-attendance",
+    "titleEn": "Session attendance",
+    "titleAr": "حضور الجلسات",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.SessionLiveHall",
+    "route": "/admin/sessions/live-hall",
+    "navPermission": "Attendance.View",
+    "icon": "monitor",
+    "isStub": false,
+    "navGroupKey": "Nav.Overview",
+    "navGroupEn": "Overview",
+    "navGroupAr": "نظرة عامة",
+    "labelEn": "Live hall",
+    "labelAr": "القاعة المباشرة",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SessionLiveHall.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SessionLiveHall.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Attendance.View",
+    "access": "permission",
+    "titleKey": "Admin.SessionLiveHall.Title",
+    "actions": [],
+    "actionGates": [],
+    "columns": [],
+    "calls": [
+      "/account/api/admin/attendance/sessions/list",
+      "/account/api/admin/sessions/{session.SessionId}/present/list",
+      "/account/api/admin/sessions/{session.SessionId}/seat-map"
+    ],
+    "slug": "admin-sessions-live-hall",
+    "titleEn": "Live hall",
+    "titleAr": "القاعة المباشرة",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.Statistics",
+    "route": "/admin/statistics",
+    "navPermission": "Statistics.View",
+    "icon": "bar-chart",
+    "isStub": false,
+    "navGroupKey": "Nav.Overview",
+    "navGroupEn": "Overview",
+    "navGroupAr": "نظرة عامة",
+    "labelEn": "Statistics",
+    "labelAr": "الإحصائيات",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/StatisticsDashboard.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/StatisticsDashboard.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Statistics.View",
+    "access": "permission",
+    "titleKey": "Admin.Statistics.Title",
+    "actions": [],
+    "actionGates": [],
+    "columns": [],
+    "calls": [
+      "/account/api/admin/statistics"
+    ],
+    "slug": "admin-statistics",
+    "titleEn": "Statistics",
+    "titleAr": "الإحصائيات",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.Attendees",
+    "route": "/admin/attendees",
+    "navPermission": "Attendees.View",
+    "icon": "users",
+    "isStub": false,
+    "navGroupKey": "Nav.People",
+    "navGroupEn": "People",
+    "navGroupAr": "الأشخاص",
+    "labelEn": "Attendees",
+    "labelAr": "الحضور",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/AttendeesList.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/AttendeesList.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Attendees.View",
+    "access": "permission",
+    "titleKey": "Admin.Attendees.Title",
+    "actions": [],
+    "actionGates": [
+      {
+        "covers": "An action on the page",
+        "permission": "Attendees.Export"
+      }
+    ],
+    "columns": [
+      {
+        "key": "email",
+        "headerKey": "Admin.Attendees.Column.Email"
+      },
+      {
+        "key": "displayName",
+        "headerKey": "Admin.Attendees.Column.DisplayName"
+      },
+      {
+        "key": "userType",
+        "headerKey": "Admin.Attendees.Column.UserType"
+      },
+      {
+        "key": "profileType",
+        "headerKey": "Admin.Attendees.Column.ProfileType"
+      },
+      {
+        "key": "accountState",
+        "headerKey": "Admin.Attendees.Column.AccountState"
+      },
+      {
+        "key": "qrId",
+        "headerKey": "Admin.Attendees.Column.QrId"
+      },
+      {
+        "key": "createdAt",
+        "headerKey": "Admin.Attendees.Column.CreatedAt"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/attendees/export",
+      "/account/api/admin/attendees/list"
+    ],
+    "slug": "admin-attendees",
+    "titleEn": "Attendees",
+    "titleAr": "الحضور",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.AdminVisitors",
+    "route": "/admin/visitors",
+    "navPermission": "Visitors.View",
+    "icon": "user",
+    "isStub": false,
+    "navGroupKey": "Nav.People",
+    "navGroupEn": "People",
+    "navGroupAr": "الأشخاص",
+    "labelEn": "Visitors",
+    "labelAr": "الزوار",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/VisitorsList.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/VisitorsList.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Visitors.View",
+    "access": "permission",
+    "titleKey": "Admin.Visitors.Title",
+    "actions": [
+      {
+        "name": "Add",
+        "labelKey": "Admin.Users.Action.Add"
+      },
+      {
+        "name": "Edit",
+        "labelKey": "Admin.Users.Action.Edit"
+      },
+      {
+        "name": "Details",
+        "labelKey": "Admin.Users.Action.Details"
+      },
+      {
+        "name": "Duplicate",
+        "labelKey": "Admin.Users.Action.Duplicate"
+      },
+      {
+        "name": "Copy",
+        "labelKey": "Admin.Users.Action.Copy"
+      },
+      {
+        "name": "Copy selected",
+        "labelKey": "Admin.Users.Action.Copy"
+      },
+      {
+        "name": "Paste",
+        "labelKey": "Admin.Users.Action.Paste"
+      },
+      {
+        "name": "Delete",
+        "labelKey": "Admin.Users.Action.Delete"
+      },
+      {
+        "name": "Delete selected",
+        "labelKey": "Admin.Users.Action.Delete"
+      },
+      {
+        "name": "Import",
+        "labelKey": "Admin.Users.Action.Import"
+      },
+      {
+        "name": "Export",
+        "labelKey": "Admin.Users.Action.Export"
+      }
+    ],
+    "actionGates": [
+      {
+        "covers": "Add, Duplicate and Paste",
+        "permission": "Visitors.Create"
+      },
+      {
+        "covers": "Edit",
+        "permission": "Visitors.Edit"
+      },
+      {
+        "covers": "Delete",
+        "permission": "Visitors.Delete"
+      },
+      {
+        "covers": "Import",
+        "permission": "Visitors.Import"
+      },
+      {
+        "covers": "Export",
+        "permission": "Visitors.Export"
+      },
+      {
+        "covers": "An action on the page",
+        "permission": "Visitors.BulkGenerate"
+      }
+    ],
+    "columns": [
+      {
+        "key": "email",
+        "headerKey": "Admin.Users.Column.Email"
+      },
+      {
+        "key": "displayName",
+        "headerKey": "Admin.Users.Column.DisplayName"
+      },
+      {
+        "key": "state",
+        "headerKey": "Admin.Users.Column.State"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/visitors/bulk-delete",
+      "/account/api/admin/visitors/duplicate",
+      "/account/api/admin/visitors/export",
+      "/account/api/admin/visitors/import",
+      "/account/api/admin/visitors/list",
+      "/account/api/admin/visitors/{row.Id}/avatar"
+    ],
+    "slug": "admin-visitors",
+    "titleEn": "Visitors",
+    "titleAr": "الزوار",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.AdminVisitorsPending",
+    "route": "/admin/visitors/pending",
+    "navPermission": "Visitors.View",
+    "icon": "hourglass",
+    "isStub": false,
+    "navGroupKey": "Nav.People",
+    "navGroupEn": "People",
+    "navGroupAr": "الأشخاص",
+    "labelEn": "Pending visitors",
+    "labelAr": "الزوار — بانتظار الموافقة",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/PendingVisitors.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/PendingVisitors.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Visitors.View",
+    "access": "permission",
+    "titleKey": "Admin.Pending.Visitors.Title",
+    "actions": [
+      {
+        "name": "Approve selected",
+        "labelKey": "Admin.Pending.Action.BulkApprove"
+      },
+      {
+        "name": "Reject selected",
+        "labelKey": "Admin.Pending.Action.BulkReject"
+      }
+    ],
+    "actionGates": [
+      {
+        "covers": "Approve",
+        "permission": "Visitors.Approve"
+      },
+      {
+        "covers": "Reject",
+        "permission": "Visitors.Reject"
+      }
+    ],
+    "columns": [
+      {
+        "key": "email",
+        "headerKey": "Admin.Users.Column.Email"
+      },
+      {
+        "key": "displayName",
+        "headerKey": "Admin.Users.Column.DisplayName"
+      },
+      {
+        "key": "created",
+        "headerKey": "Admin.Pending.Column.Created"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/visitors/{row.Id}/avatar",
+      "/account/api/admin/visitors/{user.Id}/profile-for-approval"
+    ],
+    "slug": "admin-visitors-pending",
+    "titleEn": "Pending visitor approvals",
+    "titleAr": "موافقات الزوار المعلّقة",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.AdminVisitorsVip",
+    "route": "/admin/visitors/vip",
+    "navPermission": "Visitors.RegisterOnsite",
+    "icon": "star",
+    "isStub": false,
+    "navGroupKey": "Nav.People",
+    "navGroupEn": "People",
+    "navGroupAr": "الأشخاص",
+    "labelEn": "VIP registration",
+    "labelAr": "تسجيل كبار الشخصيات",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/VipRegistration.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/VipRegistration.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Visitors.RegisterOnsite",
+    "access": "permission",
+    "titleKey": "Admin.VipRegistration.ListTitle",
+    "actions": [
+      {
+        "name": "Add",
+        "labelKey": "Admin.Vips.Action.AddVip"
+      },
+      {
+        "name": "Edit",
+        "labelKey": "Admin.Users.Action.Edit"
+      },
+      {
+        "name": "Details",
+        "labelKey": "Admin.Vips.Action.Details"
+      }
+    ],
+    "actionGates": [],
+    "columns": [
+      {
+        "key": "name",
+        "headerKey": "Admin.Vips.Col.Name"
+      },
+      {
+        "key": "jobTitle",
+        "headerKey": "Admin.Vips.Col.JobTitle"
+      },
+      {
+        "key": "profileType",
+        "headerKey": "Admin.Vips.Col.ProfileType"
+      },
+      {
+        "key": "email",
+        "headerKey": "Admin.Vips.Col.Email"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/vips/list"
+    ],
+    "slug": "admin-visitors-vip",
+    "titleEn": "VIP Registration",
+    "titleAr": "تسجيل كبار الشخصيات",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.AdminVisitorsVipExport",
+    "route": "/admin/visitors/vip/export",
+    "navPermission": "Visitors.ExportVip",
+    "icon": "download",
+    "isStub": false,
+    "navGroupKey": "Nav.People",
+    "navGroupEn": "People",
+    "navGroupAr": "الأشخاص",
+    "labelEn": "VIP welcome export",
+    "labelAr": "تصدير ترحيب كبار الشخصيات",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/VipExport.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/VipExport.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Visitors.ExportVip",
+    "access": "permission",
+    "titleKey": "Admin.VipExport.Title",
+    "actions": [],
+    "actionGates": [],
+    "columns": [
+      {
+        "key": "photo",
+        "headerKey": "Admin.VipExport.Photo"
+      },
+      {
+        "key": "tier",
+        "headerKey": "Admin.VipExport.Title"
+      },
+      {
+        "key": "name",
+        "headerKey": "Admin.WalkIn.Field.EnglishName"
+      },
+      {
+        "key": "honorific",
+        "headerKey": "Admin.WalkIn.Field.Honorific"
+      },
+      {
+        "key": "jobTitle",
+        "headerKey": "Admin.WalkIn.Field.JobTitle"
+      },
+      {
+        "key": "mawjId",
+        "headerKey": "Admin.WalkIn.Field.MawjId"
+      },
+      {
+        "key": "prefLang",
+        "headerKey": "Admin.WalkIn.Field.PreferredLanguage"
+      },
+      {
+        "key": "email",
+        "headerKey": "Admin.WalkIn.Field.Email"
+      },
+      {
+        "key": "mobile",
+        "headerKey": "Admin.WalkIn.Field.SaudiMobile"
+      },
+      {
+        "key": "reference",
+        "headerKey": "Admin.Pending.View.Field.ReferenceNumber"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/visitors/vip/roster",
+      "/account/api/admin/visitors/vip/roster/list",
+      "/account/api/admin/visitors/{userId}/vip-photo"
+    ],
+    "slug": "admin-visitors-vip-export",
+    "titleEn": "VIP welcome export (Mawj)",
+    "titleAr": "تصدير ترحيب كبار الشخصيات (موج)",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.AdminDelegates",
+    "route": "/admin/delegates",
+    "navPermission": "Visitors.RegisterOnsite",
+    "icon": "users",
+    "isStub": false,
+    "navGroupKey": "Nav.People",
+    "navGroupEn": "People",
+    "navGroupAr": "الأشخاص",
+    "labelEn": "Delegates",
+    "labelAr": "الوفود",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/DelegatesPage.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/DelegatesPage.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Visitors.RegisterOnsite",
+    "access": "permission",
+    "titleKey": "Admin.Delegates.Title",
+    "actions": [],
+    "actionGates": [
+      {
+        "covers": "An action on the page",
+        "permission": "Visitors.BulkGenerate"
+      }
+    ],
+    "columns": [],
+    "calls": [],
+    "slug": "admin-delegates",
+    "titleEn": "Delegates",
+    "titleAr": "الوفود",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.AdminBadgeBatches",
+    "route": "/admin/visitors/badge-batches",
+    "navPermission": "Visitors.ViewBatches",
+    "icon": "layers",
+    "isStub": false,
+    "navGroupKey": "Nav.People",
+    "navGroupEn": "People",
+    "navGroupAr": "الأشخاص",
+    "labelEn": "Badge batches",
+    "labelAr": "دفعات الشارات",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/BadgeBatchesPage.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/BadgeBatchesPage.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Visitors.ViewBatches",
+    "access": "permission",
+    "titleKey": "Admin.BadgeBatches.Title",
+    "actions": [],
+    "actionGates": [
+      {
+        "covers": "An action on the page",
+        "permission": "Visitors.BulkGenerate"
+      },
+      {
+        "covers": "An action on the page",
+        "permission": "Visitors.ManageBatches"
+      }
+    ],
+    "columns": [
+      {
+        "key": "name",
+        "headerKey": "Admin.BadgeBatches.Col.Name"
+      },
+      {
+        "key": "summary",
+        "headerKey": "Admin.BadgeBatches.Col.Summary"
+      },
+      {
+        "key": "total",
+        "headerKey": "Admin.BadgeBatches.Col.Total"
+      },
+      {
+        "key": "delegate",
+        "headerKey": "Admin.BadgeBatches.Col.Delegate"
+      },
+      {
+        "key": "recipient",
+        "headerKey": "Admin.BadgeBatches.Col.Recipient"
+      },
+      {
+        "key": "createdAt",
+        "headerKey": "Admin.BadgeBatches.Col.CreatedAt"
+      },
+      {
+        "key": "status",
+        "headerKey": "Admin.BadgeBatches.Col.Status"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/visitors/badge-batches/list",
+      "/account/api/admin/visitors/badge-batches/re-email",
+      "/account/api/admin/visitors/badge-batches/revoke",
+      "/account/api/admin/visitors/badge-batches/top-up"
+    ],
+    "slug": "admin-visitors-badge-batches",
+    "titleEn": "Badge batches",
+    "titleAr": "دفعات الشارات",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.AdminOthers",
+    "route": "/admin/others",
+    "navPermission": "Others.View",
+    "icon": "id-card",
+    "isStub": false,
+    "navGroupKey": "Nav.People",
+    "navGroupEn": "People",
+    "navGroupAr": "الأشخاص",
+    "labelEn": "Others",
+    "labelAr": "مستخدمون آخرون",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/OthersList.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/OthersList.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Others.View",
+    "access": "permission",
+    "titleKey": "Admin.Others.Title",
+    "actions": [
+      {
+        "name": "Add",
+        "labelKey": "Admin.Users.Action.Add"
+      },
+      {
+        "name": "Edit",
+        "labelKey": "Admin.Users.Action.Edit"
+      },
+      {
+        "name": "Details",
+        "labelKey": "Admin.Users.Action.Details"
+      },
+      {
+        "name": "Duplicate",
+        "labelKey": "Admin.Users.Action.Duplicate"
+      },
+      {
+        "name": "Copy",
+        "labelKey": "Admin.Users.Action.Copy"
+      },
+      {
+        "name": "Copy selected",
+        "labelKey": "Admin.Users.Action.Copy"
+      },
+      {
+        "name": "Paste",
+        "labelKey": "Admin.Users.Action.Paste"
+      },
+      {
+        "name": "Delete",
+        "labelKey": "Admin.Users.Action.Delete"
+      },
+      {
+        "name": "Delete selected",
+        "labelKey": "Admin.Users.Action.Delete"
+      },
+      {
+        "name": "Import",
+        "labelKey": "Admin.Users.Action.Import"
+      },
+      {
+        "name": "Export",
+        "labelKey": "Admin.Users.Action.Export"
+      }
+    ],
+    "actionGates": [
+      {
+        "covers": "Add, Duplicate and Paste",
+        "permission": "Others.Create"
+      },
+      {
+        "covers": "Edit",
+        "permission": "Others.Edit"
+      },
+      {
+        "covers": "Delete",
+        "permission": "Others.Delete"
+      },
+      {
+        "covers": "Import",
+        "permission": "Others.Import"
+      },
+      {
+        "covers": "Export",
+        "permission": "Others.Export"
+      }
+    ],
+    "columns": [
+      {
+        "key": "email",
+        "headerKey": "Admin.Users.Column.Email"
+      },
+      {
+        "key": "displayName",
+        "headerKey": "Admin.Users.Column.DisplayName"
+      },
+      {
+        "key": "state",
+        "headerKey": "Admin.Users.Column.State"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/others/bulk-delete",
+      "/account/api/admin/others/duplicate",
+      "/account/api/admin/others/export",
+      "/account/api/admin/others/import",
+      "/account/api/admin/others/list",
+      "/account/api/admin/others/{id}/profile",
+      "/account/api/admin/others/{row.Id}/avatar"
+    ],
+    "slug": "admin-others",
+    "titleEn": "Others",
+    "titleAr": "مستخدمون آخرون",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.AdminOthersPending",
+    "route": "/admin/others/pending",
+    "navPermission": "Others.View",
+    "icon": "hourglass",
+    "isStub": false,
+    "navGroupKey": "Nav.People",
+    "navGroupEn": "People",
+    "navGroupAr": "الأشخاص",
+    "labelEn": "Pending others",
+    "labelAr": "مستخدمون آخرون — بانتظار الموافقة",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/PendingOthers.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/PendingOthers.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Others.View",
+    "access": "permission",
+    "titleKey": "Admin.Pending.Others.Title",
+    "actions": [
+      {
+        "name": "Approve selected",
+        "labelKey": "Admin.Pending.Action.BulkApprove"
+      },
+      {
+        "name": "Reject selected",
+        "labelKey": "Admin.Pending.Action.BulkReject"
+      }
+    ],
+    "actionGates": [
+      {
+        "covers": "Approve",
+        "permission": "Others.Approve"
+      },
+      {
+        "covers": "Reject",
+        "permission": "Others.Reject"
+      }
+    ],
+    "columns": [
+      {
+        "key": "email",
+        "headerKey": "Admin.Users.Column.Email"
+      },
+      {
+        "key": "displayName",
+        "headerKey": "Admin.Users.Column.DisplayName"
+      },
+      {
+        "key": "created",
+        "headerKey": "Admin.Pending.Column.Created"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/others/{row.Id}/avatar",
+      "/account/api/admin/others/{user.Id}/profile-for-approval"
+    ],
+    "slug": "admin-others-pending",
+    "titleEn": "Pending Other approvals",
+    "titleAr": "موافقات المستخدمين الآخرين المعلّقة",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.PrintBag",
+    "route": "/admin/print-bag",
+    "navPermission": "Attendees.PrintBag",
+    "icon": "printer",
+    "isStub": false,
+    "navGroupKey": "Nav.People",
+    "navGroupEn": "People",
+    "navGroupAr": "الأشخاص",
+    "labelEn": "Print badge",
+    "labelAr": "طباعة الشارة",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/PrintBag.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/PrintBag.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Attendees.PrintBag",
+    "access": "permission",
+    "titleKey": "Admin.PrintBag.Title",
+    "actions": [],
+    "actionGates": [],
+    "columns": [],
+    "calls": [],
+    "slug": "admin-print-bag",
+    "titleEn": "Print badge",
+    "titleAr": "طباعة الشارة",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.AdminAdmins",
+    "route": "/admin/admins",
+    "navPermission": "Admins.View",
+    "icon": "shield",
+    "isStub": false,
+    "navGroupKey": "Nav.AccessControl",
+    "navGroupEn": "Access control",
+    "navGroupAr": "التحكم في الوصول",
+    "labelEn": "Admins",
+    "labelAr": "المسؤولون",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/UsersList.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/UsersList.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Admins.View",
+    "access": "permission",
+    "titleKey": "Admin.Users.Title",
+    "actions": [
+      {
+        "name": "Add",
+        "labelKey": "Admin.Users.Action.Add"
+      },
+      {
+        "name": "Edit",
+        "labelKey": "Admin.Users.Action.Edit"
+      },
+      {
+        "name": "Details",
+        "labelKey": "Admin.Users.Action.Details"
+      },
+      {
+        "name": "Duplicate",
+        "labelKey": "Admin.Users.Action.Duplicate"
+      },
+      {
+        "name": "Copy",
+        "labelKey": "Admin.Users.Action.Copy"
+      },
+      {
+        "name": "Copy selected",
+        "labelKey": "Admin.Users.Action.Copy"
+      },
+      {
+        "name": "Paste",
+        "labelKey": "Admin.Users.Action.Paste"
+      },
+      {
+        "name": "Delete",
+        "labelKey": "Admin.Users.Action.Delete"
+      },
+      {
+        "name": "Delete selected",
+        "labelKey": "Admin.Users.Action.Delete"
+      },
+      {
+        "name": "Import",
+        "labelKey": "Admin.Users.Action.Import"
+      },
+      {
+        "name": "Export",
+        "labelKey": "Admin.Users.Action.Export"
+      }
+    ],
+    "actionGates": [
+      {
+        "covers": "Add, Duplicate and Paste",
+        "permission": "Admins.Create"
+      },
+      {
+        "covers": "Edit",
+        "permission": "Admins.AssignRoles"
+      },
+      {
+        "covers": "Delete",
+        "permission": "Admins.Delete"
+      },
+      {
+        "covers": "Import",
+        "permission": "Admins.Import"
+      },
+      {
+        "covers": "Export",
+        "permission": "Admins.Export"
+      }
+    ],
+    "columns": [
+      {
+        "key": "email",
+        "headerKey": "Admin.Users.Column.Email"
+      },
+      {
+        "key": "displayName",
+        "headerKey": "Admin.Users.Column.DisplayName"
+      },
+      {
+        "key": "state",
+        "headerKey": "Admin.Users.Column.State"
+      },
+      {
+        "key": "role",
+        "headerKey": "Admin.Users.Column.Role"
+      },
+      {
+        "key": "twoFactor",
+        "headerKey": "Admin.Users.Column.TwoFactor"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/admins/bulk-delete",
+      "/account/api/admin/admins/duplicate",
+      "/account/api/admin/admins/export",
+      "/account/api/admin/admins/import",
+      "/account/api/admin/admins/list",
+      "/account/api/admin/admins/{row.Id}/avatar"
+    ],
+    "slug": "admin-admins",
+    "titleEn": "Admins",
+    "titleAr": "المسؤولون",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.AdminAdminsPending",
+    "route": "/admin/admins/pending",
+    "navPermission": "Admins.View",
+    "icon": "hourglass",
+    "isStub": false,
+    "navGroupKey": "Nav.AccessControl",
+    "navGroupEn": "Access control",
+    "navGroupAr": "التحكم في الوصول",
+    "labelEn": "Pending admins",
+    "labelAr": "المسؤولون — بانتظار الموافقة",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/PendingStaff.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/PendingStaff.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Admins.View",
+    "access": "permission",
+    "titleKey": "Admin.Pending.Staff.Title",
+    "actions": [
+      {
+        "name": "Approve selected",
+        "labelKey": "Admin.Pending.Action.BulkApprove"
+      },
+      {
+        "name": "Reject selected",
+        "labelKey": "Admin.Pending.Action.BulkReject"
+      }
+    ],
+    "actionGates": [
+      {
+        "covers": "Approve",
+        "permission": "Admins.Approve"
+      },
+      {
+        "covers": "Reject",
+        "permission": "Admins.Reject"
+      }
+    ],
+    "columns": [
+      {
+        "key": "email",
+        "headerKey": "Admin.Users.Column.Email"
+      },
+      {
+        "key": "displayName",
+        "headerKey": "Admin.Users.Column.DisplayName"
+      },
+      {
+        "key": "created",
+        "headerKey": "Admin.Pending.Column.Created"
+      }
+    ],
+    "calls": [],
+    "slug": "admin-admins-pending",
+    "titleEn": "Pending staff approvals",
+    "titleAr": "موافقات الفريق المعلّقة",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.Roles",
+    "route": "/admin/roles",
+    "navPermission": "Roles.View",
+    "icon": "key",
+    "isStub": false,
+    "navGroupKey": "Nav.AccessControl",
+    "navGroupEn": "Access control",
+    "navGroupAr": "التحكم في الوصول",
+    "labelEn": "Roles & permissions",
+    "labelAr": "الأدوار والصلاحيات",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/RolesList.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/RolesList.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Roles.View",
+    "access": "permission",
+    "titleKey": "Admin.Roles.Title",
+    "actions": [
+      {
+        "name": "Add",
+        "labelKey": "Admin.Roles.Action.Add"
+      },
+      {
+        "name": "Edit",
+        "labelKey": "Admin.Roles.Action.Edit"
+      },
+      {
+        "name": "Details",
+        "labelKey": "Admin.Roles.Action.Details"
+      },
+      {
+        "name": "Delete",
+        "labelKey": "Admin.Roles.Action.Delete"
+      },
+      {
+        "name": "Import",
+        "labelKey": "Grid.Import"
+      },
+      {
+        "name": "Export",
+        "labelKey": "Grid.Export"
+      }
+    ],
+    "actionGates": [
+      {
+        "covers": "Add, Duplicate and Paste",
+        "permission": "Roles.Create"
+      },
+      {
+        "covers": "Edit",
+        "permission": "Roles.Edit"
+      },
+      {
+        "covers": "Delete",
+        "permission": "Roles.Delete"
+      },
+      {
+        "covers": "Import",
+        "permission": "Roles.Import"
+      },
+      {
+        "covers": "Export",
+        "permission": "Roles.Export"
+      },
+      {
+        "covers": "An action on the page",
+        "permission": "Roles.AssignPermissions"
+      }
+    ],
+    "columns": [
+      {
+        "key": "name",
+        "headerKey": "Admin.Roles.Column.Name"
+      },
+      {
+        "key": "baseline",
+        "headerKey": "Admin.Roles.Column.Baseline"
+      },
+      {
+        "key": "userCount",
+        "headerKey": "Admin.Roles.Column.UserCount"
+      },
+      {
+        "key": "permissionCount",
+        "headerKey": "Admin.Roles.Column.PermissionCount"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/roles/list"
+    ],
+    "slug": "admin-roles",
+    "titleEn": "Roles & permissions",
+    "titleAr": "الأدوار والصلاحيات",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.AdminResetTwoFactor",
+    "route": "/admin/reset-2fa",
+    "navPermission": "Admins.ResetTwoFactor",
+    "icon": "rotate",
+    "isStub": false,
+    "navGroupKey": "Nav.AccessControl",
+    "navGroupEn": "Access control",
+    "navGroupAr": "التحكم في الوصول",
+    "labelEn": "Reset user 2FA",
+    "labelAr": "إعادة تعيين المصادقة الثنائية لمستخدم",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/ResetTwoFactor.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/ResetTwoFactor.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Admins.ResetTwoFactor",
+    "access": "permission",
+    "titleKey": "Admin.ResetTwoFactor.Title",
+    "actions": [],
+    "actionGates": [],
+    "columns": [],
+    "calls": [
+      "/account/api/admin/reset-2fa"
+    ],
+    "slug": "admin-reset-2fa",
+    "titleEn": "Reset another user's 2FA",
+    "titleAr": "إعادة تعيين المصادقة الثنائية لمستخدم آخر",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.Themes",
+    "route": "/admin/themes",
+    "navPermission": "Themes.View",
+    "icon": "layers",
+    "isStub": false,
+    "navGroupKey": "Nav.Programme",
+    "navGroupEn": "Programme",
+    "navGroupAr": "البرنامج",
+    "labelEn": "Themes & pillars",
+    "labelAr": "المحاور والركائز",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/ThemesList.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/ThemesList.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Themes.View",
+    "access": "permission",
+    "titleKey": "Admin.Themes.Title",
+    "actions": [
+      {
+        "name": "Add",
+        "labelKey": "Admin.Themes.Action.Add"
+      },
+      {
+        "name": "Edit",
+        "labelKey": "Admin.Themes.Action.Edit"
+      },
+      {
+        "name": "Details",
+        "labelKey": "Admin.Themes.Action.Details"
+      },
+      {
+        "name": "Delete",
+        "labelKey": "Admin.Themes.Action.Deactivate"
+      },
+      {
+        "name": "Import",
+        "labelKey": "Grid.Import"
+      },
+      {
+        "name": "Export",
+        "labelKey": "Grid.Export"
+      }
+    ],
+    "actionGates": [
+      {
+        "covers": "Add, Duplicate and Paste",
+        "permission": "Themes.Create"
+      },
+      {
+        "covers": "Edit",
+        "permission": "Themes.Edit"
+      },
+      {
+        "covers": "Delete",
+        "permission": "Themes.Delete"
+      },
+      {
+        "covers": "Import",
+        "permission": "Themes.Import"
+      },
+      {
+        "covers": "Export",
+        "permission": "Themes.Export"
+      }
+    ],
+    "columns": [
+      {
+        "key": "code",
+        "headerKey": "Admin.Themes.Column.Code"
+      },
+      {
+        "key": "name",
+        "headerKey": "Admin.Themes.Column.Name"
+      },
+      {
+        "key": "nameArabic",
+        "headerKey": "Admin.Themes.Column.NameArabic"
+      },
+      {
+        "key": "displayOrder",
+        "headerKey": "Admin.Themes.Column.DisplayOrder"
+      },
+      {
+        "key": "pageColor",
+        "headerKey": "Admin.Themes.Column.PageColor"
+      },
+      {
+        "key": "isActive",
+        "headerKey": "Admin.Themes.Column.Active"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/themes/list",
+      "/account/api/admin/themes/{id}"
+    ],
+    "slug": "admin-themes",
+    "titleEn": "Themes & pillars",
+    "titleAr": "المحاور والمواضيع",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.Sessions",
+    "route": "/admin/sessions",
+    "navPermission": "Sessions.View",
+    "icon": "calendar",
+    "isStub": false,
+    "navGroupKey": "Nav.Programme",
+    "navGroupEn": "Programme",
+    "navGroupAr": "البرنامج",
+    "labelEn": "Sessions",
+    "labelAr": "الجلسات",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SessionsList.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SessionsList.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Sessions.View",
+    "access": "permission",
+    "titleKey": "Admin.Sessions.Title",
+    "actions": [
+      {
+        "name": "Add",
+        "labelKey": "Admin.Sessions.Action.Add"
+      },
+      {
+        "name": "Edit",
+        "labelKey": "Admin.Sessions.Action.Edit"
+      },
+      {
+        "name": "Details",
+        "labelKey": "Admin.Sessions.Action.Details"
+      },
+      {
+        "name": "Delete",
+        "labelKey": "Admin.Sessions.Action.Deactivate"
+      },
+      {
+        "name": "Import",
+        "labelKey": "Grid.Import"
+      },
+      {
+        "name": "Export",
+        "labelKey": "Grid.Export"
+      }
+    ],
+    "actionGates": [
+      {
+        "covers": "Add, Duplicate and Paste",
+        "permission": "Sessions.Create"
+      },
+      {
+        "covers": "Edit",
+        "permission": "Sessions.Edit"
+      },
+      {
+        "covers": "Delete",
+        "permission": "Sessions.Delete"
+      },
+      {
+        "covers": "Import",
+        "permission": "Sessions.Import"
+      },
+      {
+        "covers": "Export",
+        "permission": "Sessions.Export"
+      },
+      {
+        "covers": "An action on the page",
+        "permission": "Questions.Moderate"
+      }
+    ],
+    "columns": [
+      {
+        "key": "code",
+        "headerKey": "Admin.Sessions.Column.Code"
+      },
+      {
+        "key": "title",
+        "headerKey": "Admin.Sessions.Column.Title"
+      },
+      {
+        "key": "titleArabic",
+        "headerKey": "Admin.Sessions.Column.TitleArabic"
+      },
+      {
+        "key": "hall",
+        "headerKey": "Admin.Sessions.Column.Hall"
+      },
+      {
+        "key": "start",
+        "headerKey": "Admin.Sessions.Column.StartUtc"
+      },
+      {
+        "key": "end",
+        "headerKey": "Admin.Sessions.Column.EndUtc"
+      },
+      {
+        "key": "capacity",
+        "headerKey": "Admin.Sessions.Column.Capacity"
+      },
+      {
+        "key": "isActive",
+        "headerKey": "Admin.Sessions.Column.Active"
+      },
+      {
+        "key": "status",
+        "headerKey": "Admin.Sessions.Column.Status"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/sessions/list",
+      "/account/api/admin/sessions/{id}"
+    ],
+    "slug": "admin-sessions",
+    "titleEn": "Sessions",
+    "titleAr": "الجلسات",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.SessionCategories",
+    "route": "/admin/session-categories",
+    "navPermission": "SessionCategories.View",
+    "icon": "folder",
+    "isStub": false,
+    "navGroupKey": "Nav.Programme",
+    "navGroupEn": "Programme",
+    "navGroupAr": "البرنامج",
+    "labelEn": "Session categories",
+    "labelAr": "تصنيفات الجلسات",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SessionCategoriesList.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SessionCategoriesList.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "SessionCategories.View",
+    "access": "permission",
+    "titleKey": "Admin.SessionCategories.Title",
+    "actions": [
+      {
+        "name": "Add",
+        "labelKey": "Grid.Add"
+      },
+      {
+        "name": "Edit",
+        "labelKey": "Grid.Edit"
+      },
+      {
+        "name": "Details",
+        "labelKey": "Grid.Details"
+      },
+      {
+        "name": "Delete",
+        "labelKey": "Grid.Delete"
+      },
+      {
+        "name": "Import",
+        "labelKey": "Grid.Import"
+      },
+      {
+        "name": "Export",
+        "labelKey": "Grid.Export"
+      }
+    ],
+    "actionGates": [
+      {
+        "covers": "Add, Duplicate and Paste",
+        "permission": "SessionCategories.Create"
+      },
+      {
+        "covers": "Edit",
+        "permission": "SessionCategories.Edit"
+      },
+      {
+        "covers": "Delete",
+        "permission": "SessionCategories.Delete"
+      },
+      {
+        "covers": "Import",
+        "permission": "SessionCategories.Import"
+      },
+      {
+        "covers": "Export",
+        "permission": "SessionCategories.Export"
+      }
+    ],
+    "columns": [
+      {
+        "key": "name",
+        "headerKey": "Admin.SessionCategories.Col.NameEn"
+      },
+      {
+        "key": "namearabic",
+        "headerKey": "Admin.SessionCategories.Col.NameAr"
+      },
+      {
+        "key": "order",
+        "headerKey": "Admin.SessionCategories.Col.Order"
+      },
+      {
+        "key": "isActive",
+        "headerKey": "Admin.SessionCategories.Col.Active"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/session-categories/list",
+      "/account/api/admin/session-categories/{id}"
+    ],
+    "slug": "admin-session-categories",
+    "titleEn": "Session categories",
+    "titleAr": "تصنيفات الجلسات",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.ProgrammeDays",
+    "route": "/admin/programme-days",
+    "navPermission": "ProgrammeDays.View",
+    "icon": "calendar",
+    "isStub": false,
+    "navGroupKey": "Nav.Programme",
+    "navGroupEn": "Programme",
+    "navGroupAr": "البرنامج",
+    "labelEn": "Programme days",
+    "labelAr": "أيام البرنامج",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/ProgrammeDaysList.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/ProgrammeDaysList.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "ProgrammeDays.View",
+    "access": "permission",
+    "titleKey": "Admin.ProgrammeDays.Title",
+    "actions": [
+      {
+        "name": "Add",
+        "labelKey": "Grid.Add"
+      },
+      {
+        "name": "Edit",
+        "labelKey": "Grid.Edit"
+      },
+      {
+        "name": "Details",
+        "labelKey": "Grid.Details"
+      },
+      {
+        "name": "Delete",
+        "labelKey": "Grid.Delete"
+      }
+    ],
+    "actionGates": [
+      {
+        "covers": "Add, Duplicate and Paste",
+        "permission": "ProgrammeDays.Create"
+      },
+      {
+        "covers": "Edit",
+        "permission": "ProgrammeDays.Edit"
+      },
+      {
+        "covers": "Delete",
+        "permission": "ProgrammeDays.Delete"
+      }
+    ],
+    "columns": [
+      {
+        "key": "date",
+        "headerKey": "Admin.ProgrammeDays.Col.Date"
+      },
+      {
+        "key": "title",
+        "headerKey": "Admin.ProgrammeDays.Col.TitleEn"
+      },
+      {
+        "key": "titlearabic",
+        "headerKey": "Admin.ProgrammeDays.Col.TitleAr"
+      },
+      {
+        "key": "order",
+        "headerKey": "Admin.ProgrammeDays.Col.Order"
+      },
+      {
+        "key": "image",
+        "headerKey": "Admin.ProgrammeDays.Col.Image"
+      },
+      {
+        "key": "isActive",
+        "headerKey": "Admin.ProgrammeDays.Col.Active"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/programme-days/list",
+      "/account/api/admin/programme-days/{id}"
+    ],
+    "slug": "admin-programme-days",
+    "titleEn": "Programme days",
+    "titleAr": "أيام البرنامج",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.ProgrammeTimeline",
+    "route": "/admin/programme/timeline",
+    "navPermission": "ProgrammeTimeline.View",
+    "icon": "clock",
+    "isStub": false,
+    "navGroupKey": "Nav.Programme",
+    "navGroupEn": "Programme",
+    "navGroupAr": "البرنامج",
+    "labelEn": "Run of Show",
+    "labelAr": "جدول الفعاليات",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/ProgrammeTimeline.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/ProgrammeTimeline.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "ProgrammeTimeline.View",
+    "access": "permission",
+    "titleKey": "Admin.ProgrammeTimeline.Title",
+    "actions": [],
+    "actionGates": [],
+    "columns": [],
+    "calls": [
+      "/account/api/admin/sessions/list"
+    ],
+    "slug": "admin-programme-timeline",
+    "titleEn": "Programme run of show",
+    "titleAr": "جدول سير الفعاليات",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.Halls",
+    "route": "/admin/halls",
+    "navPermission": "Halls.View",
+    "icon": "building",
+    "isStub": false,
+    "navGroupKey": "Nav.Programme",
+    "navGroupEn": "Programme",
+    "navGroupAr": "البرنامج",
+    "labelEn": "Halls & seating",
+    "labelAr": "القاعات والمقاعد",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/HallsList.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/HallsList.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Halls.View",
+    "access": "permission",
+    "titleKey": "Admin.Halls.Title",
+    "actions": [
+      {
+        "name": "Add",
+        "labelKey": "Admin.Halls.Action.Add"
+      },
+      {
+        "name": "Edit",
+        "labelKey": "Admin.Halls.Action.Edit"
+      },
+      {
+        "name": "Details",
+        "labelKey": "Admin.Halls.Action.Details"
+      },
+      {
+        "name": "Delete",
+        "labelKey": "Admin.Halls.Action.Deactivate"
+      },
+      {
+        "name": "Import",
+        "labelKey": "Grid.Import"
+      },
+      {
+        "name": "Export",
+        "labelKey": "Grid.Export"
+      }
+    ],
+    "actionGates": [
+      {
+        "covers": "Add, Duplicate and Paste",
+        "permission": "Halls.Create"
+      },
+      {
+        "covers": "Edit",
+        "permission": "Halls.Edit"
+      },
+      {
+        "covers": "Delete",
+        "permission": "Halls.Delete"
+      },
+      {
+        "covers": "Import",
+        "permission": "Halls.Import"
+      },
+      {
+        "covers": "Export",
+        "permission": "Halls.Export"
+      },
+      {
+        "covers": "An action on the page",
+        "permission": "SeatLayouts.View"
+      }
+    ],
+    "columns": [
+      {
+        "key": "code",
+        "headerKey": "Admin.Halls.Column.Code"
+      },
+      {
+        "key": "name",
+        "headerKey": "Admin.Halls.Column.Name"
+      },
+      {
+        "key": "nameArabic",
+        "headerKey": "Admin.Halls.Column.NameArabic"
+      },
+      {
+        "key": "capacity",
+        "headerKey": "Admin.Halls.Column.Capacity"
+      },
+      {
+        "key": "floor",
+        "headerKey": "Admin.Halls.Column.Floor"
+      },
+      {
+        "key": "isActive",
+        "headerKey": "Admin.Halls.Column.Active"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/halls/list",
+      "/account/api/admin/halls/{id}"
+    ],
+    "slug": "admin-halls",
+    "titleEn": "Halls & seating",
+    "titleAr": "القاعات والمقاعد",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.HallSeatLayouts",
+    "route": "/admin/halls/seat-layouts",
+    "navPermission": "SeatLayouts.View",
+    "icon": "grid",
+    "isStub": false,
+    "navGroupKey": "Nav.Programme",
+    "navGroupEn": "Programme",
+    "navGroupAr": "البرنامج",
+    "labelEn": "Hall seat layouts",
+    "labelAr": "مخططات مقاعد القاعات",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/HallSeatLayoutEditor.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/HallSeatLayoutEditor.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "SeatLayouts.View",
+    "access": "permission",
+    "titleKey": "Admin.HallSeatLayouts.Title",
+    "actions": [],
+    "actionGates": [
+      {
+        "covers": "An action on the page",
+        "permission": "SeatLayouts.Edit"
+      },
+      {
+        "covers": "An action on the page",
+        "permission": "SeatLayouts.Delete"
+      }
+    ],
+    "columns": [],
+    "calls": [
+      "/account/api/admin/halls/list",
+      "/account/api/admin/halls/{_selectedHallId}/seat-layout"
+    ],
+    "slug": "admin-halls-seat-layouts",
+    "titleEn": "Hall seat layouts",
+    "titleAr": "مخططات مقاعد القاعات",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.SessionSeatPlans",
+    "route": "/admin/sessions/seat-plans",
+    "navPermission": "SeatPlans.View",
+    "icon": "armchair",
+    "isStub": false,
+    "navGroupKey": "Nav.Programme",
+    "navGroupEn": "Programme",
+    "navGroupAr": "البرنامج",
+    "labelEn": "Session seat plans",
+    "labelAr": "مخطط مقاعد الجلسات",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SessionSeatPlan.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SessionSeatPlan.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "SeatPlans.View",
+    "access": "permission",
+    "titleKey": "Admin.SessionSeatPlans.Title",
+    "actions": [],
+    "actionGates": [
+      {
+        "covers": "An action on the page",
+        "permission": "SeatPlans.Edit"
+      }
+    ],
+    "columns": [],
+    "calls": [
+      "/account/api/admin/halls/{session.HallId}/seat-layout",
+      "/account/api/admin/sessions/list",
+      "/account/api/admin/sessions/{_selectedSessionId}/seats/list",
+      "/account/api/admin/sessions/{_selectedSessionId}/seats/reserve-row",
+      "/account/api/admin/sessions/{_selectedSessionId}/seats/reserve-seat",
+      "/account/api/admin/sessions/{_selectedSessionId}/seats/{row.ReservationId}"
+    ],
+    "slug": "admin-sessions-seat-plans",
+    "titleEn": "Session seat plans",
+    "titleAr": "مخطط مقاعد الجلسات",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.SpeakerMeetingRequests",
+    "route": "/admin/speaker-meeting-requests",
+    "navPermission": "SpeakerMeetingRequests.View",
+    "icon": "inbox",
+    "isStub": false,
+    "navGroupKey": "Nav.Programme",
+    "navGroupEn": "Programme",
+    "navGroupAr": "البرنامج",
+    "labelEn": "Speaker meeting requests",
+    "labelAr": "طلبات مقابلة المتحدثين",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SpeakerMeetingRequestsList.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SpeakerMeetingRequestsList.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "SpeakerMeetingRequests.View",
+    "access": "permission",
+    "titleKey": "Admin.SpeakerMeetingRequests.Title",
+    "actions": [
+      {
+        "name": "Export",
+        "labelKey": "Grid.Export"
+      }
+    ],
+    "actionGates": [
+      {
+        "covers": "Export",
+        "permission": "SpeakerMeetingRequests.Export"
+      },
+      {
+        "covers": "An action on the page",
+        "permission": "SpeakerMeetingRequests.Manage"
+      }
+    ],
+    "columns": [
+      {
+        "key": "speaker",
+        "headerKey": "Admin.SpeakerMeetingRequests.Col.Speaker"
+      },
+      {
+        "key": "requesterName",
+        "headerKey": "Admin.SpeakerMeetingRequests.Col.Requester"
+      },
+      {
+        "key": "subject",
+        "headerKey": "Admin.SpeakerMeetingRequests.Col.Subject"
+      },
+      {
+        "key": "status",
+        "headerKey": "Admin.SpeakerMeetingRequests.Col.Status"
+      },
+      {
+        "key": "createdAt",
+        "headerKey": "Admin.SpeakerMeetingRequests.Col.CreatedAt"
+      },
+      {
+        "key": "respondedAt",
+        "headerKey": "Admin.SpeakerMeetingRequests.Col.RespondedAt"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/halls/list",
+      "/account/api/admin/halls/{hallId}/available-slots",
+      "/account/api/admin/halls/{hallId}/meeting-tables/list",
+      "/account/api/admin/speaker-meeting-requests/export",
+      "/account/api/admin/speaker-meeting-requests/list",
+      "/account/api/admin/speaker-meeting-requests/{_respondTarget.Id}/respond",
+      "/account/api/admin/speaker-meeting-requests/{row.Id}",
+      "/account/api/admin/speaker-meeting-requests/{row.Id}/check-in",
+      "/account/api/admin/speaker-meeting-requests/{row.Id}/reopen",
+      "/account/api/admin/speaker-meeting-requests/{row.Id}/resend-confirmation"
+    ],
+    "slug": "admin-speaker-meeting-requests",
+    "titleEn": "Speaker meeting requests",
+    "titleAr": "طلبات مقابلة المتحدثين",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.AdminSpeakerAvailability",
+    "route": "/admin/speaker-availability",
+    "navPermission": "SpeakerMeetingRequests.Manage",
+    "icon": "calendar",
+    "isStub": false,
+    "navGroupKey": "Nav.Programme",
+    "navGroupEn": "Programme",
+    "navGroupAr": "البرنامج",
+    "labelEn": "Speaker availability",
+    "labelAr": "توفّر المتحدثين",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SpeakerAvailabilityPage.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SpeakerAvailabilityPage.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "SpeakerMeetingRequests.Manage",
+    "access": "permission",
+    "titleKey": "Admin.SpeakerAvailability.Title",
+    "actions": [],
+    "actionGates": [
+      {
+        "covers": "An action on the page",
+        "permission": "SpeakerMeetingRequests.Manage"
+      }
+    ],
+    "columns": [],
+    "calls": [
+      "/account/api/admin/programme/forum-window",
+      "/account/api/admin/speaker-availability-windows/{windowId}",
+      "/account/api/admin/speakers/list",
+      "/account/api/admin/speakers/{id}/availability-windows"
+    ],
+    "slug": "admin-speaker-availability",
+    "titleEn": "Speaker availability",
+    "titleAr": "توفّر المتحدثين",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.AdminHallAvailability",
+    "route": "/admin/hall-availability",
+    "navPermission": "HallAvailability.Manage",
+    "icon": "calendar",
+    "isStub": false,
+    "navGroupKey": "Nav.Programme",
+    "navGroupEn": "Programme",
+    "navGroupAr": "البرنامج",
+    "labelEn": "Hall availability",
+    "labelAr": "توفّر القاعات",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/HallAvailabilityPage.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/HallAvailabilityPage.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "HallAvailability.Manage",
+    "access": "permission",
+    "titleKey": "Admin.HallAvailability.Title",
+    "actions": [],
+    "actionGates": [
+      {
+        "covers": "An action on the page",
+        "permission": "HallAvailability.Manage"
+      }
+    ],
+    "columns": [],
+    "calls": [
+      "/account/api/admin/hall-availability-windows/{windowId}",
+      "/account/api/admin/halls/list",
+      "/account/api/admin/halls/{id}/availability-windows"
+    ],
+    "slug": "admin-hall-availability",
+    "titleEn": "Hall availability (meeting time)",
+    "titleAr": "توفّر القاعات (وقت الاجتماعات)",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.AdminDelegationMeetings",
+    "route": "/admin/delegation-meetings",
+    "navPermission": "DelegationMeetings.View",
+    "icon": "inbox",
+    "isStub": false,
+    "navGroupKey": "Nav.Programme",
+    "navGroupEn": "Programme",
+    "navGroupAr": "البرنامج",
+    "labelEn": "Delegation meetings",
+    "labelAr": "اجتماعات الوفود",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/DelegationMeetingsList.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/DelegationMeetingsList.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "DelegationMeetings.View",
+    "access": "permission",
+    "titleKey": "Admin.DelegationMeetings.Title",
+    "actions": [],
+    "actionGates": [
+      {
+        "covers": "An action on the page",
+        "permission": "DelegationMeetings.Manage"
+      }
+    ],
+    "columns": [
+      {
+        "key": "requestingCountry",
+        "headerKey": "Admin.DelegationMeetings.Col.From"
+      },
+      {
+        "key": "targetCountry",
+        "headerKey": "Admin.DelegationMeetings.Col.To"
+      },
+      {
+        "key": "attendeeCount",
+        "headerKey": "Admin.DelegationMeetings.Col.Attendees"
+      },
+      {
+        "key": "subject",
+        "headerKey": "Admin.DelegationMeetings.Col.Subject"
+      },
+      {
+        "key": "status",
+        "headerKey": "Admin.DelegationMeetings.Col.Status"
+      },
+      {
+        "key": "createdAt",
+        "headerKey": "Admin.DelegationMeetings.Col.CreatedAt"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/delegation-meeting-requests/list",
+      "/account/api/admin/delegation-meeting-requests/{_respondTarget.Id}/respond",
+      "/account/api/admin/delegation-meeting-requests/{row.Id}",
+      "/account/api/admin/delegation-meeting-requests/{row.Id}/check-in",
+      "/account/api/admin/halls/list",
+      "/account/api/admin/halls/{hallId}/available-slots",
+      "/account/api/admin/halls/{hallId}/meeting-tables/list"
+    ],
+    "slug": "admin-delegation-meetings",
+    "titleEn": "Delegation meetings",
+    "titleAr": "اجتماعات الوفود",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.AdminDelegationAvailability",
+    "route": "/admin/delegation-availability",
+    "navPermission": "DelegationMeetings.Manage",
+    "icon": "calendar",
+    "isStub": false,
+    "navGroupKey": "Nav.Programme",
+    "navGroupEn": "Programme",
+    "navGroupAr": "البرنامج",
+    "labelEn": "Delegation availability",
+    "labelAr": "أوقات إتاحة الوفود",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/DelegationAvailabilityPage.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/DelegationAvailabilityPage.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "DelegationMeetings.Manage",
+    "access": "permission",
+    "titleKey": "Admin.DelegationAvailability.Title",
+    "actions": [],
+    "actionGates": [
+      {
+        "covers": "An action on the page",
+        "permission": "DelegationMeetings.Manage"
+      }
+    ],
+    "columns": [],
+    "calls": [
+      "/account/api/admin/countries/list",
+      "/account/api/admin/countries/{id}/availability-windows",
+      "/account/api/admin/delegation-availability-windows/{windowId}",
+      "/account/api/admin/programme/forum-window"
+    ],
+    "slug": "admin-delegation-availability",
+    "titleEn": "Delegation availability",
+    "titleAr": "أوقات إتاحة الوفود",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.AdminDocumentRequests",
+    "route": "/admin/document-requests",
+    "navPermission": "ParticipationDocumentRequests.View",
+    "icon": "inbox",
+    "isStub": false,
+    "navGroupKey": "Nav.Programme",
+    "navGroupEn": "Programme",
+    "navGroupAr": "البرنامج",
+    "labelEn": "Document requests",
+    "labelAr": "طلبات الوثائق",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/DocumentRequestsList.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/DocumentRequestsList.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "ParticipationDocumentRequests.View",
+    "access": "permission",
+    "titleKey": "Admin.DocumentRequests.Title",
+    "actions": [],
+    "actionGates": [
+      {
+        "covers": "An action on the page",
+        "permission": "ParticipationDocumentRequests.Manage"
+      }
+    ],
+    "columns": [
+      {
+        "key": "requester",
+        "headerKey": "Admin.DocumentRequests.Col.Requester"
+      },
+      {
+        "key": "documentType",
+        "headerKey": "Admin.DocumentRequests.Col.DocumentType"
+      },
+      {
+        "key": "note",
+        "headerKey": "Admin.DocumentRequests.Col.Note"
+      },
+      {
+        "key": "status",
+        "headerKey": "Admin.DocumentRequests.Col.Status"
+      },
+      {
+        "key": "createdAt",
+        "headerKey": "Admin.DocumentRequests.Col.CreatedAt"
+      },
+      {
+        "key": "respondedAt",
+        "headerKey": "Admin.DocumentRequests.Col.RespondedAt"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/document-requests/list",
+      "/account/api/admin/document-requests/{_respondTarget.Id}/respond",
+      "/account/api/admin/document-requests/{row.Id}"
+    ],
+    "slug": "admin-document-requests",
+    "titleEn": "Document requests",
+    "titleAr": "طلبات الوثائق",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.AdminBadgeRequests",
+    "route": "/admin/badge-requests",
+    "navPermission": "BadgeUpdateRequests.View",
+    "icon": "inbox",
+    "isStub": false,
+    "navGroupKey": "Nav.Programme",
+    "navGroupEn": "Programme",
+    "navGroupAr": "البرنامج",
+    "labelEn": "Badge requests",
+    "labelAr": "طلبات تحديث البادج",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/BadgeRequestsList.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/BadgeRequestsList.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "BadgeUpdateRequests.View",
+    "access": "permission",
+    "titleKey": "Admin.BadgeRequests.Title",
+    "actions": [],
+    "actionGates": [
+      {
+        "covers": "An action on the page",
+        "permission": "BadgeUpdateRequests.Manage"
+      }
+    ],
+    "columns": [
+      {
+        "key": "requester",
+        "headerKey": "Admin.BadgeRequests.Col.Requester"
+      },
+      {
+        "key": "jobTitle",
+        "headerKey": "Admin.BadgeRequests.Col.Requested"
+      },
+      {
+        "key": "current",
+        "headerKey": "Admin.BadgeRequests.Col.Current"
+      },
+      {
+        "key": "status",
+        "headerKey": "Admin.BadgeRequests.Col.Status"
+      },
+      {
+        "key": "createdAt",
+        "headerKey": "Admin.BadgeRequests.Col.CreatedAt"
+      },
+      {
+        "key": "respondedAt",
+        "headerKey": "Admin.BadgeRequests.Col.RespondedAt"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/badge-requests/list",
+      "/account/api/admin/badge-requests/{_respondTarget.Id}/respond",
+      "/account/api/admin/badge-requests/{row.Id}"
+    ],
+    "slug": "admin-badge-requests",
+    "titleEn": "Badge requests",
+    "titleAr": "طلبات تحديث البادج",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.Speakers",
+    "route": "/admin/speakers",
+    "navPermission": "Speakers.View",
+    "icon": "mic",
+    "isStub": false,
+    "navGroupKey": "Nav.Programme",
+    "navGroupEn": "Programme",
+    "navGroupAr": "البرنامج",
+    "labelEn": "Speakers",
+    "labelAr": "المتحدثون",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SpeakersList.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SpeakersList.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Speakers.View",
+    "access": "permission",
+    "titleKey": "Admin.Speakers.Title",
+    "actions": [
+      {
+        "name": "Add",
+        "labelKey": "Admin.Speakers.Action.Add"
+      },
+      {
+        "name": "Edit",
+        "labelKey": "Admin.Speakers.Action.Edit"
+      },
+      {
+        "name": "Details",
+        "labelKey": "Admin.Speakers.Action.Details"
+      },
+      {
+        "name": "Delete",
+        "labelKey": "Admin.Speakers.Action.Deactivate"
+      },
+      {
+        "name": "Import",
+        "labelKey": "Grid.Import"
+      },
+      {
+        "name": "Export",
+        "labelKey": "Grid.Export"
+      }
+    ],
+    "actionGates": [
+      {
+        "covers": "Add, Duplicate and Paste",
+        "permission": "Speakers.Create"
+      },
+      {
+        "covers": "Edit",
+        "permission": "Speakers.Edit"
+      },
+      {
+        "covers": "Delete",
+        "permission": "Speakers.Delete"
+      },
+      {
+        "covers": "Import",
+        "permission": "Speakers.Import"
+      },
+      {
+        "covers": "Export",
+        "permission": "Speakers.Export"
+      }
+    ],
+    "columns": [
+      {
+        "key": "name",
+        "headerKey": "Admin.Speakers.Column.Speaker"
+      },
+      {
+        "key": "country",
+        "headerKey": "Admin.Speakers.Column.Country"
+      },
+      {
+        "key": "code",
+        "headerKey": "Admin.Speakers.Column.Code"
+      },
+      {
+        "key": "displayOrder",
+        "headerKey": "Admin.Speakers.Column.DisplayOrder"
+      },
+      {
+        "key": "isActive",
+        "headerKey": "Admin.Speakers.Column.Active"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/speakers/list",
+      "/account/api/admin/speakers/{id}"
+    ],
+    "slug": "admin-speakers",
+    "titleEn": "Speakers",
+    "titleAr": "المتحدّثون",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.SpeakerPresentations",
+    "route": "/admin/speaker-presentations",
+    "navPermission": "Speakers.View",
+    "icon": "presentation",
+    "isStub": false,
+    "navGroupKey": "Nav.Programme",
+    "navGroupEn": "Programme",
+    "navGroupAr": "البرنامج",
+    "labelEn": "Speaker presentations",
+    "labelAr": "عروض المتحدثين",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SpeakerPresentationsList.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SpeakerPresentationsList.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Speakers.View",
+    "access": "permission",
+    "titleKey": "Admin.SpeakerPresentations.Title",
+    "actions": [
+      {
+        "name": "Export",
+        "labelKey": "Grid.Export"
+      }
+    ],
+    "actionGates": [
+      {
+        "covers": "Export",
+        "permission": "Speakers.Export"
+      },
+      {
+        "covers": "An action on the page",
+        "permission": "Speakers.Edit"
+      },
+      {
+        "covers": "An action on the page",
+        "permission": "Speakers.View"
+      }
+    ],
+    "columns": [
+      {
+        "key": "fileName",
+        "headerKey": "Admin.SpeakerPresentations.Col.File"
+      },
+      {
+        "key": "sessionTitle",
+        "headerKey": "Admin.SpeakerPresentations.Col.Session"
+      },
+      {
+        "key": "sizeBytes",
+        "headerKey": "Admin.SpeakerPresentations.Col.Size"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/sessions/list",
+      "/account/api/admin/speaker-presentations/export",
+      "/account/api/admin/speaker-presentations/{row.Id}",
+      "/account/api/admin/speaker-presentations/{row.Id}/file",
+      "/account/api/admin/speakers/list",
+      "/account/api/admin/speakers/{_speakerId}/presentations"
+    ],
+    "slug": "admin-speaker-presentations",
+    "titleEn": "Speaker presentations",
+    "titleAr": "عروض المتحدثين",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.Bookings",
+    "route": "/admin/bookings",
+    "navPermission": "Bookings.View",
+    "icon": "ticket",
+    "isStub": false,
+    "navGroupKey": "Nav.Programme",
+    "navGroupEn": "Programme",
+    "navGroupAr": "البرنامج",
+    "labelEn": "Bookings",
+    "labelAr": "الحجوزات",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/BookingsList.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/BookingsList.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Bookings.View",
+    "access": "permission",
+    "titleKey": "Admin.Bookings.Title",
+    "actions": [
+      {
+        "name": "Export",
+        "labelKey": "Grid.Export"
+      }
+    ],
+    "actionGates": [
+      {
+        "covers": "Export",
+        "permission": "Bookings.Export"
+      }
+    ],
+    "columns": [
+      {
+        "key": "session",
+        "headerKey": "Admin.Bookings.Col.Session"
+      },
+      {
+        "key": "start",
+        "headerKey": "Admin.Bookings.Col.Start"
+      },
+      {
+        "key": "seat",
+        "headerKey": "Admin.Bookings.Col.Seat"
+      },
+      {
+        "key": "attendee",
+        "headerKey": "Admin.Bookings.Col.Attendee"
+      },
+      {
+        "key": "bookedAt",
+        "headerKey": "Admin.Bookings.Col.BookedAt"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/bookings/export",
+      "/account/api/admin/bookings/list"
+    ],
+    "slug": "admin-bookings",
+    "titleEn": "Booking monitor",
+    "titleAr": "مراقبة الحجوزات",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.MeetingTables",
+    "route": "/admin/meeting-tables",
+    "navPermission": "MeetingTables.View",
+    "icon": "table",
+    "isStub": false,
+    "navGroupKey": "Nav.Programme",
+    "navGroupEn": "Programme",
+    "navGroupAr": "البرنامج",
+    "labelEn": "Meeting Tables",
+    "labelAr": "طاولات الاجتماعات",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/MeetingTablesList.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/MeetingTablesList.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "MeetingTables.View",
+    "access": "permission",
+    "titleKey": "Admin.MeetingTables.Title",
+    "actions": [
+      {
+        "name": "Add",
+        "labelKey": "Admin.MeetingTables.AddTable"
+      },
+      {
+        "name": "Edit",
+        "labelKey": "Grid.Edit"
+      },
+      {
+        "name": "Details",
+        "labelKey": "Admin.MeetingTables.Action.Details"
+      },
+      {
+        "name": "Delete",
+        "labelKey": "Grid.Delete"
+      },
+      {
+        "name": "Export",
+        "labelKey": "Grid.Export"
+      }
+    ],
+    "actionGates": [
+      {
+        "covers": "Add, Duplicate and Paste",
+        "permission": "MeetingTables.Edit"
+      },
+      {
+        "covers": "Edit",
+        "permission": "MeetingTables.Edit"
+      },
+      {
+        "covers": "Delete",
+        "permission": "MeetingTables.Edit"
+      },
+      {
+        "covers": "Export",
+        "permission": "MeetingTables.Export"
+      },
+      {
+        "covers": "An action on the page",
+        "permission": "Halls.Edit"
+      },
+      {
+        "covers": "An action on the page",
+        "permission": "HallAllocations.Edit"
+      }
+    ],
+    "columns": [
+      {
+        "key": "code",
+        "headerKey": "Admin.MeetingTables.Col.Code"
+      },
+      {
+        "key": "row",
+        "headerKey": "Admin.MeetingTables.Col.Row"
+      },
+      {
+        "key": "column",
+        "headerKey": "Admin.MeetingTables.Col.Column"
+      },
+      {
+        "key": "capacity",
+        "headerKey": "Admin.MeetingTables.Col.Capacity"
+      },
+      {
+        "key": "purpose",
+        "headerKey": "Admin.MeetingTables.Col.Purpose"
+      },
+      {
+        "key": "mode",
+        "headerKey": "Admin.MeetingTables.Col.Mode"
+      },
+      {
+        "key": "start",
+        "headerKey": "Admin.MeetingTables.Col.Start"
+      },
+      {
+        "key": "end",
+        "headerKey": "Admin.MeetingTables.Col.End"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/hall-allocations/{row.Id}",
+      "/account/api/admin/halls/list",
+      "/account/api/admin/halls/{hid}/hall-allocations",
+      "/account/api/admin/halls/{hid}/hall-allocations/list",
+      "/account/api/admin/halls/{hid}/meeting-tables",
+      "/account/api/admin/halls/{hid}/meeting-tables/generate",
+      "/account/api/admin/halls/{hid}/meeting-tables/list",
+      "/account/api/admin/halls/{hid}/purpose",
+      "/account/api/admin/meeting-tables/export",
+      "/account/api/admin/meeting-tables/{_editingTableId}",
+      "/account/api/admin/meeting-tables/{row.Id}"
+    ],
+    "slug": "admin-meeting-tables",
+    "titleEn": "Meeting Tables & Hall Allocation",
+    "titleAr": "طاولات الاجتماعات وتخصيص القاعات",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.BusinessMeetings",
+    "route": "/admin/business-meetings",
+    "navPermission": "BusinessMeetings.View",
+    "icon": "handshake",
+    "isStub": false,
+    "navGroupKey": "Nav.Programme",
+    "navGroupEn": "Programme",
+    "navGroupAr": "البرنامج",
+    "labelEn": "Business Meetings",
+    "labelAr": "اجتماعات الأعمال",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/BusinessMeetingsList.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/BusinessMeetingsList.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "BusinessMeetings.View",
+    "access": "permission",
+    "titleKey": "Admin.BusinessMeetings.Title",
+    "actions": [
+      {
+        "name": "Add",
+        "labelKey": "Admin.BusinessMeetings.New"
+      },
+      {
+        "name": "Details",
+        "labelKey": "Admin.BusinessMeetings.View"
+      },
+      {
+        "name": "Export",
+        "labelKey": "Grid.Export"
+      }
+    ],
+    "actionGates": [
+      {
+        "covers": "Add, Duplicate and Paste",
+        "permission": "BusinessMeetings.Schedule"
+      },
+      {
+        "covers": "Export",
+        "permission": "BusinessMeetings.Export"
+      },
+      {
+        "covers": "An action on the page",
+        "permission": "BusinessMeetings.Cancel"
+      }
+    ],
+    "columns": [
+      {
+        "key": "hall",
+        "headerKey": "Admin.BusinessMeetings.Col.Hall"
+      },
+      {
+        "key": "table",
+        "headerKey": "Admin.BusinessMeetings.Col.Table"
+      },
+      {
+        "key": "type",
+        "headerKey": "Admin.BusinessMeetings.Col.Type"
+      },
+      {
+        "key": "start",
+        "headerKey": "Admin.BusinessMeetings.Col.Start"
+      },
+      {
+        "key": "end",
+        "headerKey": "Admin.BusinessMeetings.Col.End"
+      },
+      {
+        "key": "parties",
+        "headerKey": "Admin.BusinessMeetings.Col.Parties"
+      },
+      {
+        "key": "status",
+        "headerKey": "Admin.BusinessMeetings.Col.Status"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/attendees/list",
+      "/account/api/admin/business-meetings",
+      "/account/api/admin/business-meetings/export",
+      "/account/api/admin/business-meetings/list",
+      "/account/api/admin/business-meetings/{_cancelTarget.Id}/cancel",
+      "/account/api/admin/business-meetings/{row.Id}",
+      "/account/api/admin/exhibitors/list",
+      "/account/api/admin/halls/list",
+      "/account/api/admin/halls/{hid}/meeting-tables/list",
+      "/account/api/admin/programme/forum-window"
+    ],
+    "slug": "admin-business-meetings",
+    "titleEn": "Business Meetings",
+    "titleAr": "اجتماعات الأعمال",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.SessionModerators",
+    "route": "/admin/session-moderators",
+    "navPermission": "SessionModerators.View",
+    "icon": "gavel",
+    "isStub": false,
+    "navGroupKey": "Nav.ScientificCommittee",
+    "navGroupEn": "Scientific committee",
+    "navGroupAr": "اللجنة العلمية",
+    "labelEn": "Session moderators",
+    "labelAr": "مشرفو الجلسات",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SessionModeratorsList.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SessionModeratorsList.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "SessionModerators.View",
+    "access": "permission",
+    "titleKey": "Admin.SessionModerators.Title",
+    "actions": [
+      {
+        "name": "Add",
+        "labelKey": "Grid.Add"
+      },
+      {
+        "name": "Export",
+        "labelKey": "Grid.Export"
+      }
+    ],
+    "actionGates": [
+      {
+        "covers": "Add, Duplicate and Paste",
+        "permission": "SessionModerators.Assign"
+      },
+      {
+        "covers": "Export",
+        "permission": "SessionModerators.Export"
+      },
+      {
+        "covers": "An action on the page",
+        "permission": "SessionModerators.Revoke"
+      }
+    ],
+    "columns": [
+      {
+        "key": "session",
+        "headerKey": "Admin.SessionModerators.Col.Session"
+      },
+      {
+        "key": "moderator",
+        "headerKey": "Admin.SessionModerators.Col.Moderator"
+      },
+      {
+        "key": "assignedBy",
+        "headerKey": "Admin.SessionModerators.Col.AssignedBy"
+      },
+      {
+        "key": "assignedAt",
+        "headerKey": "Admin.SessionModerators.Col.AssignedAt"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/session-moderators",
+      "/account/api/admin/session-moderators/assign-options",
+      "/account/api/admin/session-moderators/export",
+      "/account/api/admin/session-moderators/list",
+      "/account/api/admin/session-moderators/{row.SessionId}/{row.UserId}"
+    ],
+    "slug": "admin-session-moderators",
+    "titleEn": "Session moderators",
+    "titleAr": "مشرفو الجلسات",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.QuestionQueue",
+    "route": "/admin/question-queue",
+    "navPermission": "Questions.View",
+    "icon": "help-circle",
+    "isStub": false,
+    "navGroupKey": "Nav.ScientificCommittee",
+    "navGroupEn": "Scientific committee",
+    "navGroupAr": "اللجنة العلمية",
+    "labelEn": "Question queue",
+    "labelAr": "قائمة الأسئلة",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/QuestionQueueList.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/QuestionQueueList.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Questions.View",
+    "access": "permission",
+    "titleKey": "Admin.QuestionQueue.Title",
+    "actions": [
+      {
+        "name": "Export",
+        "labelKey": "Grid.Export"
+      }
+    ],
+    "actionGates": [
+      {
+        "covers": "Export",
+        "permission": "Questions.Export"
+      },
+      {
+        "covers": "An action on the page",
+        "permission": "Questions.Moderate"
+      },
+      {
+        "covers": "An action on the page",
+        "permission": "Questions.Escalate"
+      }
+    ],
+    "columns": [
+      {
+        "key": "session",
+        "headerKey": "Admin.QuestionQueue.Col.Session"
+      },
+      {
+        "key": "question",
+        "headerKey": "Admin.QuestionQueue.Col.Question"
+      },
+      {
+        "key": "submitter",
+        "headerKey": "Admin.QuestionQueue.Col.Submitter"
+      },
+      {
+        "key": "phase",
+        "headerKey": "Admin.QuestionQueue.Col.Phase"
+      },
+      {
+        "key": "ai",
+        "headerKey": "Admin.QuestionQueue.Col.Ai"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/questions/export",
+      "/account/api/admin/questions/list",
+      "/account/api/admin/questions/{id}/approve",
+      "/account/api/admin/questions/{id}/escalate",
+      "/account/api/admin/questions/{id}/hide"
+    ],
+    "slug": "admin-question-queue",
+    "titleEn": "Question queue",
+    "titleAr": "قائمة الأسئلة",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.SessionSummaries",
+    "route": "/admin/session-summaries",
+    "navPermission": "SessionSummaries.View",
+    "icon": "file-text",
+    "isStub": false,
+    "navGroupKey": "Nav.ScientificCommittee",
+    "navGroupEn": "Scientific committee",
+    "navGroupAr": "اللجنة العلمية",
+    "labelEn": "Session summaries",
+    "labelAr": "ملخصات الجلسات",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SessionSummariesList.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SessionSummariesList.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "SessionSummaries.View",
+    "access": "permission",
+    "titleKey": "Admin.SessionSummaries.Title",
+    "actions": [
+      {
+        "name": "Export",
+        "labelKey": "Grid.Export"
+      }
+    ],
+    "actionGates": [
+      {
+        "covers": "Export",
+        "permission": "SessionSummaries.Export"
+      },
+      {
+        "covers": "An action on the page",
+        "permission": "SessionSummaries.Edit"
+      },
+      {
+        "covers": "An action on the page",
+        "permission": "SessionSummaries.Approve"
+      },
+      {
+        "covers": "An action on the page",
+        "permission": "SessionSummaries.Publish"
+      }
+    ],
+    "columns": [
+      {
+        "key": "session",
+        "headerKey": "Admin.SessionSummaries.Col.Session"
+      },
+      {
+        "key": "status",
+        "headerKey": "Admin.SessionSummaries.Col.Status"
+      },
+      {
+        "key": "source",
+        "headerKey": "Admin.SessionSummaries.Col.Source"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/session-summaries/export",
+      "/account/api/admin/session-summaries/list",
+      "/account/api/admin/session-summaries/{_editSessionId}",
+      "/account/api/admin/session-summaries/{sessionId}",
+      "/account/api/admin/session-summaries/{sessionId}/generate",
+      "/account/api/admin/session-summaries/{sessionId}/publish",
+      "/account/api/admin/session-summaries/{sessionId}/unpublish",
+      "/account/api/admin/session-summaries/{sessionId}/{action}"
+    ],
+    "slug": "admin-session-summaries",
+    "titleEn": "Session summaries (محضر)",
+    "titleAr": "ملخصات الجلسات (المحاضر)",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.Exhibitors",
+    "route": "/admin/exhibitors",
+    "navPermission": "Exhibitors.View",
+    "icon": "briefcase",
+    "isStub": false,
+    "navGroupKey": "Nav.Exhibition",
+    "navGroupEn": "Exhibition",
+    "navGroupAr": "المعرض",
+    "labelEn": "Exhibitors",
+    "labelAr": "العارضون",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/ExhibitorsList.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/ExhibitorsList.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Exhibitors.View",
+    "access": "permission",
+    "titleKey": "Admin.Exhibitors.Title",
+    "actions": [
+      {
+        "name": "Add",
+        "labelKey": "Grid.Add"
+      },
+      {
+        "name": "Edit",
+        "labelKey": "Grid.Edit"
+      },
+      {
+        "name": "Details",
+        "labelKey": "Grid.Details"
+      },
+      {
+        "name": "Delete",
+        "labelKey": "Grid.Delete"
+      },
+      {
+        "name": "Import",
+        "labelKey": "Grid.Import"
+      },
+      {
+        "name": "Export",
+        "labelKey": "Grid.Export"
+      }
+    ],
+    "actionGates": [
+      {
+        "covers": "Add, Duplicate and Paste",
+        "permission": "Exhibitors.Create"
+      },
+      {
+        "covers": "Edit",
+        "permission": "Exhibitors.Edit"
+      },
+      {
+        "covers": "Delete",
+        "permission": "Exhibitors.Delete"
+      },
+      {
+        "covers": "Import",
+        "permission": "Exhibitors.Import"
+      },
+      {
+        "covers": "Export",
+        "permission": "Exhibitors.Export"
+      },
+      {
+        "covers": "An action on the page",
+        "permission": "Exhibitors.RevokeAccount"
+      },
+      {
+        "covers": "An action on the page",
+        "permission": "Exhibitors.LinkAccount"
+      }
+    ],
+    "columns": [
+      {
+        "key": "nameEn",
+        "headerKey": "Admin.Exhibitors.Col.NameEn"
+      },
+      {
+        "key": "nameAr",
+        "headerKey": "Admin.Exhibitors.Col.NameAr"
+      },
+      {
+        "key": "accountCount",
+        "headerKey": "Admin.Exhibitors.Col.AccountCount"
+      },
+      {
+        "key": "isActive",
+        "headerKey": "Admin.Exhibitors.Col.Active"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/exhibitors/list",
+      "/account/api/admin/exhibitors/{_accountsExhibitorId}/accounts",
+      "/account/api/admin/exhibitors/{_accountsExhibitorId}/accounts/link",
+      "/account/api/admin/exhibitors/{_accountsExhibitorId}/accounts/{membershipId}",
+      "/account/api/admin/exhibitors/{id}"
+    ],
+    "slug": "admin-exhibitors",
+    "titleEn": "Exhibitors",
+    "titleAr": "العارضون",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.Booths",
+    "route": "/admin/booths",
+    "navPermission": "Booths.View",
+    "icon": "store",
+    "isStub": false,
+    "navGroupKey": "Nav.Exhibition",
+    "navGroupEn": "Exhibition",
+    "navGroupAr": "المعرض",
+    "labelEn": "Booths",
+    "labelAr": "الأجنحة",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/BoothsList.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/BoothsList.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Booths.View",
+    "access": "permission",
+    "titleKey": "Admin.Booths.Title",
+    "actions": [
+      {
+        "name": "Add",
+        "labelKey": "Grid.Add"
+      },
+      {
+        "name": "Edit",
+        "labelKey": "Grid.Edit"
+      },
+      {
+        "name": "Details",
+        "labelKey": "Grid.Details"
+      },
+      {
+        "name": "Delete",
+        "labelKey": "Grid.Delete"
+      },
+      {
+        "name": "Import",
+        "labelKey": "Grid.Import"
+      },
+      {
+        "name": "Export",
+        "labelKey": "Grid.Export"
+      }
+    ],
+    "actionGates": [
+      {
+        "covers": "Add, Duplicate and Paste",
+        "permission": "Booths.Create"
+      },
+      {
+        "covers": "Edit",
+        "permission": "Booths.Edit"
+      },
+      {
+        "covers": "Delete",
+        "permission": "Booths.Delete"
+      },
+      {
+        "covers": "Import",
+        "permission": "Booths.Import"
+      },
+      {
+        "covers": "Export",
+        "permission": "Booths.Export"
+      }
+    ],
+    "columns": [
+      {
+        "key": "code",
+        "headerKey": "Admin.Booths.Col.Code"
+      },
+      {
+        "key": "name",
+        "headerKey": "Admin.Booths.Col.NameEn"
+      },
+      {
+        "key": "nameArabic",
+        "headerKey": "Admin.Booths.Col.NameAr"
+      },
+      {
+        "key": "exhibitor",
+        "headerKey": "Admin.Booths.Col.Exhibitor"
+      },
+      {
+        "key": "sector",
+        "headerKey": "Admin.Booths.Col.SectorEn"
+      },
+      {
+        "key": "hall",
+        "headerKey": "Admin.Booths.Col.Hall"
+      },
+      {
+        "key": "isActive",
+        "headerKey": "Admin.Booths.Col.Active"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/booths/list",
+      "/account/api/admin/booths/{id}",
+      "/account/api/admin/exhibitors/list",
+      "/account/api/admin/halls/list"
+    ],
+    "slug": "admin-booths",
+    "titleEn": "Exhibition Booths",
+    "titleAr": "أجنحة المعرض",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.Sponsors",
+    "route": "/admin/sponsors",
+    "navPermission": "Sponsors.View",
+    "icon": "award",
+    "isStub": false,
+    "navGroupKey": "Nav.Exhibition",
+    "navGroupEn": "Exhibition",
+    "navGroupAr": "المعرض",
+    "labelEn": "Sponsors",
+    "labelAr": "الرعاة",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SponsorsList.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SponsorsList.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Sponsors.View",
+    "access": "permission",
+    "titleKey": "Admin.Sponsors.Title",
+    "actions": [
+      {
+        "name": "Add",
+        "labelKey": "Grid.Add"
+      },
+      {
+        "name": "Edit",
+        "labelKey": "Grid.Edit"
+      },
+      {
+        "name": "Details",
+        "labelKey": "Grid.Details"
+      },
+      {
+        "name": "Delete",
+        "labelKey": "Grid.Delete"
+      },
+      {
+        "name": "Import",
+        "labelKey": "Grid.Import"
+      },
+      {
+        "name": "Export",
+        "labelKey": "Grid.Export"
+      }
+    ],
+    "actionGates": [
+      {
+        "covers": "Add, Duplicate and Paste",
+        "permission": "Sponsors.Create"
+      },
+      {
+        "covers": "Edit",
+        "permission": "Sponsors.Edit"
+      },
+      {
+        "covers": "Delete",
+        "permission": "Sponsors.Delete"
+      },
+      {
+        "covers": "Import",
+        "permission": "Sponsors.Import"
+      },
+      {
+        "covers": "Export",
+        "permission": "Sponsors.Export"
+      }
+    ],
+    "columns": [
+      {
+        "key": "nameEn",
+        "headerKey": "Admin.Sponsors.Col.NameEn"
+      },
+      {
+        "key": "tier",
+        "headerKey": "Admin.Sponsors.Col.Tier"
+      },
+      {
+        "key": "url",
+        "headerKey": "Admin.Sponsors.Col.Url"
+      },
+      {
+        "key": "displayOrder",
+        "headerKey": "Admin.Sponsors.Col.DisplayOrder"
+      },
+      {
+        "key": "isActive",
+        "headerKey": "Admin.Sponsors.Col.Active"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/sponsors/list",
+      "/account/api/admin/sponsors/{id}"
+    ],
+    "slug": "admin-sponsors",
+    "titleEn": "Sponsors",
+    "titleAr": "الرعاة",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.VenueMap",
+    "route": "/admin/venue-map",
+    "navPermission": "VenueMap.View",
+    "icon": "map",
+    "isStub": false,
+    "navGroupKey": "Nav.Exhibition",
+    "navGroupEn": "Exhibition",
+    "navGroupAr": "المعرض",
+    "labelEn": "Venue map",
+    "labelAr": "خريطة الموقع",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/VenueMapList.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/VenueMapList.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "VenueMap.View",
+    "access": "permission",
+    "titleKey": "Admin.VenueMap.Title",
+    "actions": [
+      {
+        "name": "Add",
+        "labelKey": "Grid.Add"
+      },
+      {
+        "name": "Edit",
+        "labelKey": "Grid.Edit"
+      },
+      {
+        "name": "Details",
+        "labelKey": "Grid.Details"
+      },
+      {
+        "name": "Delete",
+        "labelKey": "Grid.Delete"
+      },
+      {
+        "name": "Import",
+        "labelKey": "Grid.Import"
+      },
+      {
+        "name": "Export",
+        "labelKey": "Grid.Export"
+      }
+    ],
+    "actionGates": [
+      {
+        "covers": "Add, Duplicate and Paste",
+        "permission": "VenueMap.Create"
+      },
+      {
+        "covers": "Edit",
+        "permission": "VenueMap.Edit"
+      },
+      {
+        "covers": "Delete",
+        "permission": "VenueMap.Delete"
+      },
+      {
+        "covers": "Import",
+        "permission": "VenueMap.Import"
+      },
+      {
+        "covers": "Export",
+        "permission": "VenueMap.Export"
+      }
+    ],
+    "columns": [
+      {
+        "key": "label",
+        "headerKey": "Admin.VenueMap.Col.Label"
+      },
+      {
+        "key": "kind",
+        "headerKey": "Admin.VenueMap.Col.Kind"
+      },
+      {
+        "key": "position",
+        "headerKey": "Admin.VenueMap.Col.Position"
+      },
+      {
+        "key": "isActive",
+        "headerKey": "Admin.VenueMap.Col.Active"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/venue-map/list",
+      "/account/api/admin/venue-map/{id}"
+    ],
+    "slug": "admin-venue-map",
+    "titleEn": "Venue map",
+    "titleAr": "خريطة المكان",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.LiveSessions",
+    "route": "/m/live-sessions",
+    "navPermission": "Sessions.View",
+    "icon": "video",
+    "isStub": true,
+    "navGroupKey": "Nav.Engagement",
+    "navGroupEn": "Engagement",
+    "navGroupAr": "التفاعل",
+    "labelEn": "Live sessions",
+    "labelAr": "الجلسات المباشرة",
+    "inNavigation": true,
+    "slug": "m-live-sessions",
+    "titleEn": null,
+    "titleAr": null,
+    "hasPage": false
+  },
+  {
+    "labelKey": "Module.Ratings",
+    "route": "/admin/ratings",
+    "navPermission": "Ratings.View",
+    "icon": "star",
+    "isStub": false,
+    "navGroupKey": "Nav.Engagement",
+    "navGroupEn": "Engagement",
+    "navGroupAr": "التفاعل",
+    "labelEn": "Ratings",
+    "labelAr": "التقييمات",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/RatingsList.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/RatingsList.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Ratings.View",
+    "access": "permission",
+    "titleKey": "Admin.Ratings.Title",
+    "actions": [
+      {
+        "name": "Export",
+        "labelKey": "Grid.Export"
+      }
+    ],
+    "actionGates": [
+      {
+        "covers": "Export",
+        "permission": "Ratings.Export"
+      }
+    ],
+    "columns": [
+      {
+        "key": "type",
+        "headerKey": "Admin.Ratings.Col.Type"
+      },
+      {
+        "key": "target",
+        "headerKey": "Admin.Ratings.Col.Target"
+      },
+      {
+        "key": "overall",
+        "headerKey": "Admin.Ratings.Col.Overall"
+      },
+      {
+        "key": "answers",
+        "headerKey": "Admin.Ratings.Col.Answers"
+      },
+      {
+        "key": "comment",
+        "headerKey": "Admin.Ratings.Col.Comment"
+      },
+      {
+        "key": "isActive",
+        "headerKey": "Admin.Ratings.Col.Active"
+      },
+      {
+        "key": "createdAt",
+        "headerKey": "Admin.Ratings.Col.CreatedAt"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/feedback/ratings",
+      "/account/api/admin/feedback/ratings/kpi",
+      "/account/api/admin/ratings/export"
+    ],
+    "slug": "admin-ratings",
+    "titleEn": "Ratings",
+    "titleAr": "التقييمات",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.RatingConfig",
+    "route": "/admin/rating-config",
+    "navPermission": "RatingConfig.View",
+    "icon": "sliders",
+    "isStub": false,
+    "navGroupKey": "Nav.Engagement",
+    "navGroupEn": "Engagement",
+    "navGroupAr": "التفاعل",
+    "labelEn": "Rating configuration",
+    "labelAr": "إعداد التقييمات",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/RatingConfig.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/RatingConfig.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "RatingConfig.View",
+    "access": "permission",
+    "titleKey": "Admin.RatingConfig.Title",
+    "actions": [
+      {
+        "name": "Add",
+        "labelKey": "Grid.Add"
+      },
+      {
+        "name": "Edit",
+        "labelKey": "Grid.Edit"
+      },
+      {
+        "name": "Details",
+        "labelKey": "Admin.RatingConfig.Action.Details"
+      },
+      {
+        "name": "Delete",
+        "labelKey": "Grid.Delete"
+      }
+    ],
+    "actionGates": [
+      {
+        "covers": "Add, Duplicate and Paste",
+        "permission": "RatingConfig.Create"
+      },
+      {
+        "covers": "Edit",
+        "permission": "RatingConfig.Edit"
+      },
+      {
+        "covers": "Delete",
+        "permission": "RatingConfig.Delete"
+      }
+    ],
+    "columns": [
+      {
+        "key": "code",
+        "headerKey": "Admin.RatingConfig.Col.Code"
+      },
+      {
+        "key": "name",
+        "headerKey": "Admin.RatingConfig.Col.Name"
+      },
+      {
+        "key": "scope",
+        "headerKey": "Admin.RatingConfig.Col.Scope"
+      },
+      {
+        "key": "system",
+        "headerKey": "Admin.RatingConfig.Col.System"
+      },
+      {
+        "key": "groups",
+        "headerKey": "Admin.RatingConfig.Col.Groups"
+      },
+      {
+        "key": "questions",
+        "headerKey": "Admin.RatingConfig.Col.Questions"
+      },
+      {
+        "key": "responses",
+        "headerKey": "Admin.RatingConfig.Col.Responses"
+      },
+      {
+        "key": "isActive",
+        "headerKey": "Admin.RatingConfig.Col.Active"
+      },
+      {
+        "key": "name",
+        "headerKey": "Admin.RatingConfig.Col.Name"
+      },
+      {
+        "key": "namear",
+        "headerKey": "Admin.RatingConfig.Col.NameAr"
+      },
+      {
+        "key": "displayorder",
+        "headerKey": "Admin.RatingConfig.Col.Order"
+      },
+      {
+        "key": "questions",
+        "headerKey": "Admin.RatingConfig.Col.Questions"
+      },
+      {
+        "key": "isActive",
+        "headerKey": "Admin.RatingConfig.Col.Active"
+      },
+      {
+        "key": "text",
+        "headerKey": "Admin.RatingConfig.Col.Text"
+      },
+      {
+        "key": "textar",
+        "headerKey": "Admin.RatingConfig.Col.NameAr"
+      },
+      {
+        "key": "group",
+        "headerKey": "Admin.RatingConfig.Col.Group"
+      },
+      {
+        "key": "required",
+        "headerKey": "Admin.RatingConfig.Col.Required"
+      },
+      {
+        "key": "displayorder",
+        "headerKey": "Admin.RatingConfig.Col.Order"
+      },
+      {
+        "key": "isActive",
+        "headerKey": "Admin.RatingConfig.Col.Active"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/ratings/groups",
+      "/account/api/admin/ratings/groups/{_groupEditId}",
+      "/account/api/admin/ratings/groups/{g.Id}",
+      "/account/api/admin/ratings/questions",
+      "/account/api/admin/ratings/questions/{_questionEditId}",
+      "/account/api/admin/ratings/questions/{q.Id}",
+      "/account/api/admin/ratings/types",
+      "/account/api/admin/ratings/types/list",
+      "/account/api/admin/ratings/types/{_selectedType.Id}/groups/list",
+      "/account/api/admin/ratings/types/{_selectedType.Id}/questions/list",
+      "/account/api/admin/ratings/types/{_typeEditId}",
+      "/account/api/admin/ratings/types/{t.Id}"
+    ],
+    "slug": "admin-rating-config",
+    "titleEn": "Rating configuration",
+    "titleAr": "إعداد التقييمات",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.Faq",
+    "route": "/admin/faq",
+    "navPermission": "Faq.View",
+    "icon": "help-circle",
+    "isStub": false,
+    "navGroupKey": "Nav.Knowledge",
+    "navGroupEn": "Knowledge & AI",
+    "navGroupAr": "المعرفة والذكاء الاصطناعي",
+    "labelEn": "FAQ groups & entries",
+    "labelAr": "الأسئلة الشائعة",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/FaqManager.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/FaqManager.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Faq.View",
+    "access": "permission",
+    "titleKey": "Admin.Faq.Title",
+    "actions": [
+      {
+        "name": "Add",
+        "labelKey": "Grid.Add"
+      },
+      {
+        "name": "Edit",
+        "labelKey": "Grid.Edit"
+      },
+      {
+        "name": "Details",
+        "labelKey": "Admin.Faq.Action.Details"
+      },
+      {
+        "name": "Delete",
+        "labelKey": "Grid.Delete"
+      }
+    ],
+    "actionGates": [
+      {
+        "covers": "Add, Duplicate and Paste",
+        "permission": "Faq.Create"
+      },
+      {
+        "covers": "Edit",
+        "permission": "Faq.Edit"
+      },
+      {
+        "covers": "Delete",
+        "permission": "Faq.Delete"
+      }
+    ],
+    "columns": [
+      {
+        "key": "nameen",
+        "headerKey": "Admin.Faq.Col.NameEn"
+      },
+      {
+        "key": "namear",
+        "headerKey": "Admin.Faq.Col.NameAr"
+      },
+      {
+        "key": "displayorder",
+        "headerKey": "Admin.Faq.Col.Order"
+      },
+      {
+        "key": "entryCount",
+        "headerKey": "Admin.Faq.Col.EntryCount"
+      },
+      {
+        "key": "isActive",
+        "headerKey": "Admin.Faq.Col.Active"
+      },
+      {
+        "key": "question",
+        "headerKey": "Admin.Faq.Col.Question"
+      },
+      {
+        "key": "questionar",
+        "headerKey": "Admin.Faq.Col.NameAr"
+      },
+      {
+        "key": "displayorder",
+        "headerKey": "Admin.Faq.Col.Order"
+      },
+      {
+        "key": "isActive",
+        "headerKey": "Admin.Faq.Col.Active"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/faq/entries",
+      "/account/api/admin/faq/entries/{_entryEditId}",
+      "/account/api/admin/faq/entries/{e.Id}",
+      "/account/api/admin/faq/groups",
+      "/account/api/admin/faq/groups/list",
+      "/account/api/admin/faq/groups/{_groupEditId}",
+      "/account/api/admin/faq/groups/{_selectedGroup.Id}/entries/list",
+      "/account/api/admin/faq/groups/{g.Id}"
+    ],
+    "slug": "admin-faq",
+    "titleEn": "FAQ management",
+    "titleAr": "إدارة الأسئلة الشائعة",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.AiDashboard",
+    "route": "/admin/ai",
+    "navPermission": "AiDashboard.View",
+    "icon": "bar-chart",
+    "isStub": false,
+    "navGroupKey": "Nav.Knowledge",
+    "navGroupEn": "Knowledge & AI",
+    "navGroupAr": "المعرفة والذكاء الاصطناعي",
+    "labelEn": "AI dashboard",
+    "labelAr": "لوحة الذكاء الاصطناعي",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/AiDashboard.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/AiDashboard.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "AiDashboard.View",
+    "access": "permission",
+    "titleKey": "Admin.AiDashboard.Title",
+    "actions": [],
+    "actionGates": [],
+    "columns": [],
+    "calls": [
+      "/account/api/admin/ai/dashboard"
+    ],
+    "slug": "admin-ai",
+    "titleEn": "AI dashboard",
+    "titleAr": "لوحة الذكاء الاصطناعي",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.AiServices",
+    "route": "/admin/ai/services",
+    "navPermission": "AiPrompts.View",
+    "icon": "list",
+    "isStub": false,
+    "navGroupKey": "Nav.Knowledge",
+    "navGroupEn": "Knowledge & AI",
+    "navGroupAr": "المعرفة والذكاء الاصطناعي",
+    "labelEn": "AI services",
+    "labelAr": "خدمات الذكاء الاصطناعي",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/AiServicesConsole.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/AiServicesConsole.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "AiPrompts.View",
+    "access": "permission",
+    "titleKey": "Admin.AiServices.Title",
+    "actions": [],
+    "actionGates": [
+      {
+        "covers": "An action on the page",
+        "permission": "AiPrompts.Edit"
+      }
+    ],
+    "columns": [
+      {
+        "key": "service",
+        "headerKey": "Admin.AiServices.Col.Service"
+      },
+      {
+        "key": "activePrompt",
+        "headerKey": "Admin.AiServices.Col.ActivePrompt"
+      },
+      {
+        "key": "provider",
+        "headerKey": "Admin.AiPrompts.Col.Provider"
+      },
+      {
+        "key": "model",
+        "headerKey": "Admin.AiPrompts.Col.Model"
+      },
+      {
+        "key": "hosting",
+        "headerKey": "Admin.AiPrompts.Col.Hosting"
+      },
+      {
+        "key": "prompts",
+        "headerKey": "Admin.AiServices.Col.Prompts"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/ai/prompts/list"
+    ],
+    "slug": "admin-ai-services",
+    "titleEn": "AI services",
+    "titleAr": "خدمات الذكاء الاصطناعي",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.AiPrompts",
+    "route": "/admin/ai/prompts",
+    "navPermission": "AiPrompts.View",
+    "icon": "sparkle",
+    "isStub": false,
+    "navGroupKey": "Nav.Knowledge",
+    "navGroupEn": "Knowledge & AI",
+    "navGroupAr": "المعرفة والذكاء الاصطناعي",
+    "labelEn": "AI prompts",
+    "labelAr": "محفّزات الذكاء الاصطناعي",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/AiPromptsList.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/AiPromptsList.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "AiPrompts.View",
+    "access": "permission",
+    "titleKey": "Admin.AiPrompts.Title",
+    "actions": [
+      {
+        "name": "Add",
+        "labelKey": "Grid.Add"
+      },
+      {
+        "name": "Edit",
+        "labelKey": "Grid.Edit"
+      },
+      {
+        "name": "Details",
+        "labelKey": "Grid.Details"
+      },
+      {
+        "name": "Delete",
+        "labelKey": "Grid.Delete"
+      },
+      {
+        "name": "Import",
+        "labelKey": "Grid.Import"
+      },
+      {
+        "name": "Export",
+        "labelKey": "Grid.Export"
+      }
+    ],
+    "actionGates": [
+      {
+        "covers": "Add, Duplicate and Paste",
+        "permission": "AiPrompts.Create"
+      },
+      {
+        "covers": "Edit",
+        "permission": "AiPrompts.Edit"
+      },
+      {
+        "covers": "Delete",
+        "permission": "AiPrompts.Delete"
+      },
+      {
+        "covers": "Import",
+        "permission": "AiPrompts.Import"
+      },
+      {
+        "covers": "Export",
+        "permission": "AiPrompts.Export"
+      },
+      {
+        "covers": "An action on the page",
+        "permission": "AiPrompts.Test"
+      },
+      {
+        "covers": "An action on the page",
+        "permission": "AiPrompts.View"
+      }
+    ],
+    "columns": [
+      {
+        "key": "key",
+        "headerKey": "Admin.AiPrompts.Col.Key"
+      },
+      {
+        "key": "feature",
+        "headerKey": "Admin.AiPrompts.Col.Feature"
+      },
+      {
+        "key": "displayName",
+        "headerKey": "Admin.AiPrompts.Col.DisplayName"
+      },
+      {
+        "key": "provider",
+        "headerKey": "Admin.AiPrompts.Col.Provider"
+      },
+      {
+        "key": "model",
+        "headerKey": "Admin.AiPrompts.Col.Model"
+      },
+      {
+        "key": "hosting",
+        "headerKey": "Admin.AiPrompts.Col.Hosting"
+      },
+      {
+        "key": "version",
+        "headerKey": "Admin.AiPrompts.Col.Version"
+      },
+      {
+        "key": "isActive",
+        "headerKey": "Admin.AiPrompts.Col.Active"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/ai/prompts/list",
+      "/account/api/admin/ai/prompts/{_historyPromptId}/history/list",
+      "/account/api/admin/ai/prompts/{_testTargetId}/test",
+      "/account/api/admin/ai/prompts/{id}"
+    ],
+    "slug": "admin-ai-prompts",
+    "titleEn": "AI prompts",
+    "titleAr": "محفّزات الذكاء الاصطناعي",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.AiInvocations",
+    "route": "/admin/ai/invocations",
+    "navPermission": "AiInvocations.View",
+    "icon": "list-tree",
+    "isStub": false,
+    "navGroupKey": "Nav.Knowledge",
+    "navGroupEn": "Knowledge & AI",
+    "navGroupAr": "المعرفة والذكاء الاصطناعي",
+    "labelEn": "AI invocations",
+    "labelAr": "سجلّ استدعاءات الذكاء الاصطناعي",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/AiInvocationsLog.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/AiInvocationsLog.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "AiInvocations.View",
+    "access": "permission",
+    "titleKey": "Admin.AiInvocations.Title",
+    "actions": [],
+    "actionGates": [
+      {
+        "covers": "An action on the page",
+        "permission": "AiInvocations.View"
+      }
+    ],
+    "columns": [
+      {
+        "key": "createdAt",
+        "headerKey": "Admin.AiInvocations.Col.Time"
+      },
+      {
+        "key": "promptKey",
+        "headerKey": "Admin.AiInvocations.Col.PromptKey"
+      },
+      {
+        "key": "feature",
+        "headerKey": "Admin.AiInvocations.Col.Feature"
+      },
+      {
+        "key": "provider",
+        "headerKey": "Admin.AiInvocations.Col.Provider"
+      },
+      {
+        "key": "callerKind",
+        "headerKey": "Admin.AiInvocations.Col.Caller"
+      },
+      {
+        "key": "latencyMs",
+        "headerKey": "Admin.AiInvocations.Col.Latency"
+      },
+      {
+        "key": "tokens",
+        "headerKey": "Admin.AiInvocations.Col.Tokens"
+      },
+      {
+        "key": "error",
+        "headerKey": "Admin.AiInvocations.Col.Error"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/ai/invocations/list",
+      "/account/api/admin/ai/invocations/{row.Id}"
+    ],
+    "slug": "admin-ai-invocations",
+    "titleEn": "AI invocations",
+    "titleAr": "سجلّ استدعاءات الذكاء الاصطناعي",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.MediaLibrary",
+    "route": "/admin/media-library",
+    "navPermission": "MediaLibrary.View",
+    "icon": "grid",
+    "isStub": false,
+    "navGroupKey": "Nav.Content",
+    "navGroupEn": "Content",
+    "navGroupAr": "المحتوى",
+    "labelEn": "Media library",
+    "labelAr": "مكتبة الوسائط",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/MediaLibraryList.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/MediaLibraryList.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "MediaLibrary.View",
+    "access": "permission",
+    "titleKey": "Admin.MediaLibrary.Title",
+    "actions": [
+      {
+        "name": "Details",
+        "labelKey": "Admin.MediaLibrary.Manage"
+      }
+    ],
+    "actionGates": [
+      {
+        "covers": "An action on the page",
+        "permission": "MediaLibrary.Manage"
+      }
+    ],
+    "columns": [
+      {
+        "key": "category",
+        "headerKey": "Admin.MediaLibrary.Col.Category"
+      },
+      {
+        "key": "owner",
+        "headerKey": "Admin.MediaLibrary.Col.Owner"
+      },
+      {
+        "key": "preview",
+        "headerKey": "Admin.MediaLibrary.Col.Preview"
+      },
+      {
+        "key": "kind",
+        "headerKey": "Admin.MediaLibrary.Col.Kind"
+      },
+      {
+        "key": "type",
+        "headerKey": "Admin.MediaLibrary.Col.Type"
+      },
+      {
+        "key": "isActive",
+        "headerKey": "Grid.Active"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/assets/item/{_deactivateTarget.Id}",
+      "/account/api/admin/assets/item/{_detailsTarget.Id}/restore",
+      "/account/api/admin/assets/item/{row.Id}",
+      "/account/api/admin/assets/list",
+      "/account/api/admin/assets/{a.Category}/{a.OwnerId}/image"
+    ],
+    "slug": "admin-media-library",
+    "titleEn": "Media library",
+    "titleAr": "مكتبة الوسائط",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.ContentBlocks",
+    "route": "/admin/content-blocks",
+    "navPermission": "ContentBlocks.View",
+    "icon": "layout",
+    "isStub": false,
+    "navGroupKey": "Nav.Content",
+    "navGroupEn": "Content",
+    "navGroupAr": "المحتوى",
+    "labelEn": "Content blocks",
+    "labelAr": "كتل المحتوى",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/ContentBlocksList.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/ContentBlocksList.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "ContentBlocks.View",
+    "access": "permission",
+    "titleKey": "Admin.ContentBlocks.Title",
+    "actions": [
+      {
+        "name": "Add",
+        "labelKey": "Grid.Add"
+      },
+      {
+        "name": "Edit",
+        "labelKey": "Grid.Edit"
+      },
+      {
+        "name": "Details",
+        "labelKey": "Grid.Details"
+      },
+      {
+        "name": "Delete",
+        "labelKey": "Grid.Delete"
+      },
+      {
+        "name": "Import",
+        "labelKey": "Grid.Import"
+      },
+      {
+        "name": "Export",
+        "labelKey": "Grid.Export"
+      }
+    ],
+    "actionGates": [
+      {
+        "covers": "Add, Duplicate and Paste",
+        "permission": "ContentBlocks.Edit"
+      },
+      {
+        "covers": "Edit",
+        "permission": "ContentBlocks.Edit"
+      },
+      {
+        "covers": "Delete",
+        "permission": "ContentBlocks.Delete"
+      },
+      {
+        "covers": "Import",
+        "permission": "ContentBlocks.Import"
+      },
+      {
+        "covers": "Export",
+        "permission": "ContentBlocks.Export"
+      }
+    ],
+    "columns": [
+      {
+        "key": "key",
+        "headerKey": "Admin.ContentBlocks.Col.Key"
+      },
+      {
+        "key": "content",
+        "headerKey": "Admin.ContentBlocks.Col.ContentEn"
+      },
+      {
+        "key": "lastUpdatedAt",
+        "headerKey": "Admin.ContentBlocks.Col.LastUpdatedAt"
+      },
+      {
+        "key": "isActive",
+        "headerKey": "Admin.ContentBlocks.Col.Active"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/content-blocks/list"
+    ],
+    "slug": "admin-content-blocks",
+    "titleEn": "Content blocks",
+    "titleAr": "كتل المحتوى",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.Banners",
+    "route": "/admin/banners",
+    "navPermission": "Banners.View",
+    "icon": "image",
+    "isStub": false,
+    "navGroupKey": "Nav.Content",
+    "navGroupEn": "Content",
+    "navGroupAr": "المحتوى",
+    "labelEn": "Banners",
+    "labelAr": "اللافتات",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/BannersList.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/BannersList.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Banners.View",
+    "access": "permission",
+    "titleKey": "Admin.Banners.Title",
+    "actions": [
+      {
+        "name": "Add",
+        "labelKey": "Grid.Add"
+      },
+      {
+        "name": "Edit",
+        "labelKey": "Grid.Edit"
+      },
+      {
+        "name": "Details",
+        "labelKey": "Grid.Details"
+      },
+      {
+        "name": "Delete",
+        "labelKey": "Grid.Delete"
+      },
+      {
+        "name": "Import",
+        "labelKey": "Grid.Import"
+      },
+      {
+        "name": "Export",
+        "labelKey": "Grid.Export"
+      }
+    ],
+    "actionGates": [
+      {
+        "covers": "Add, Duplicate and Paste",
+        "permission": "Banners.Create"
+      },
+      {
+        "covers": "Edit",
+        "permission": "Banners.Edit"
+      },
+      {
+        "covers": "Delete",
+        "permission": "Banners.Delete"
+      },
+      {
+        "covers": "Import",
+        "permission": "Banners.Import"
+      },
+      {
+        "covers": "Export",
+        "permission": "Banners.Export"
+      }
+    ],
+    "columns": [
+      {
+        "key": "title",
+        "headerKey": "Admin.Banners.Col.Title"
+      },
+      {
+        "key": "start",
+        "headerKey": "Admin.Banners.Col.Start"
+      },
+      {
+        "key": "end",
+        "headerKey": "Admin.Banners.Col.End"
+      },
+      {
+        "key": "displayOrder",
+        "headerKey": "Admin.Banners.Col.DisplayOrder"
+      },
+      {
+        "key": "isActive",
+        "headerKey": "Admin.Banners.Col.Active"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/banners/list",
+      "/account/api/admin/banners/{id}"
+    ],
+    "slug": "admin-banners",
+    "titleEn": "Banners",
+    "titleAr": "اللافتات",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.Media",
+    "route": "/admin/media",
+    "navPermission": "Media.View",
+    "icon": "film",
+    "isStub": false,
+    "navGroupKey": "Nav.Content",
+    "navGroupEn": "Content",
+    "navGroupAr": "المحتوى",
+    "labelEn": "Media Center",
+    "labelAr": "المركز الإعلامي",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/MediaList.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/MediaList.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Media.View",
+    "access": "permission",
+    "titleKey": "Admin.Media.Title",
+    "actions": [
+      {
+        "name": "Add",
+        "labelKey": "Grid.Add"
+      },
+      {
+        "name": "Edit",
+        "labelKey": "Grid.Edit"
+      },
+      {
+        "name": "Details",
+        "labelKey": "Grid.Details"
+      },
+      {
+        "name": "Delete",
+        "labelKey": "Grid.Delete"
+      },
+      {
+        "name": "Import",
+        "labelKey": "Grid.Import"
+      },
+      {
+        "name": "Export",
+        "labelKey": "Grid.Export"
+      }
+    ],
+    "actionGates": [
+      {
+        "covers": "Add, Duplicate and Paste",
+        "permission": "Media.Create"
+      },
+      {
+        "covers": "Edit",
+        "permission": "Media.Edit"
+      },
+      {
+        "covers": "Delete",
+        "permission": "Media.Delete"
+      },
+      {
+        "covers": "Import",
+        "permission": "Media.Import"
+      },
+      {
+        "covers": "Export",
+        "permission": "Media.Export"
+      }
+    ],
+    "columns": [
+      {
+        "key": "kind",
+        "headerKey": "Admin.Media.Col.Kind"
+      },
+      {
+        "key": "title",
+        "headerKey": "Admin.Media.Col.TitleEn"
+      },
+      {
+        "key": "titlearabic",
+        "headerKey": "Admin.Media.Col.TitleAr"
+      },
+      {
+        "key": "album",
+        "headerKey": "Admin.Media.Col.AlbumEn"
+      },
+      {
+        "key": "albumarabic",
+        "headerKey": "Admin.Media.Col.AlbumAr"
+      },
+      {
+        "key": "hasImage",
+        "headerKey": "Admin.Media.Col.HasImage"
+      },
+      {
+        "key": "displayOrder",
+        "headerKey": "Admin.Media.Col.DisplayOrder"
+      },
+      {
+        "key": "isActive",
+        "headerKey": "Admin.Media.Col.Active"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/media/list",
+      "/account/api/admin/media/{id}"
+    ],
+    "slug": "admin-media",
+    "titleEn": "Media Center",
+    "titleAr": "مركز الوسائط",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.News",
+    "route": "/admin/news",
+    "navPermission": "News.View",
+    "icon": "newspaper",
+    "isStub": false,
+    "navGroupKey": "Nav.Content",
+    "navGroupEn": "Content",
+    "navGroupAr": "المحتوى",
+    "labelEn": "News",
+    "labelAr": "الأخبار",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/NewsList.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/NewsList.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "News.View",
+    "access": "permission",
+    "titleKey": "Admin.News.Title",
+    "actions": [
+      {
+        "name": "Add",
+        "labelKey": "Grid.Add"
+      },
+      {
+        "name": "Edit",
+        "labelKey": "Grid.Edit"
+      },
+      {
+        "name": "Details",
+        "labelKey": "Grid.Details"
+      },
+      {
+        "name": "Delete",
+        "labelKey": "Grid.Delete"
+      },
+      {
+        "name": "Import",
+        "labelKey": "Grid.Import"
+      },
+      {
+        "name": "Export",
+        "labelKey": "Grid.Export"
+      }
+    ],
+    "actionGates": [
+      {
+        "covers": "Add, Duplicate and Paste",
+        "permission": "News.Create"
+      },
+      {
+        "covers": "Edit",
+        "permission": "News.Edit"
+      },
+      {
+        "covers": "Delete",
+        "permission": "News.Delete"
+      },
+      {
+        "covers": "Import",
+        "permission": "News.Import"
+      },
+      {
+        "covers": "Export",
+        "permission": "News.Export"
+      }
+    ],
+    "columns": [
+      {
+        "key": "title",
+        "headerKey": "Admin.News.Col.TitleEn"
+      },
+      {
+        "key": "titlearabic",
+        "headerKey": "Admin.News.Col.TitleAr"
+      },
+      {
+        "key": "category",
+        "headerKey": "Admin.News.Col.CategoryEn"
+      },
+      {
+        "key": "categoryarabic",
+        "headerKey": "Admin.News.Col.CategoryAr"
+      },
+      {
+        "key": "publishedat",
+        "headerKey": "Admin.News.Col.PublishedAt"
+      },
+      {
+        "key": "displayorder",
+        "headerKey": "Admin.News.Col.DisplayOrder"
+      },
+      {
+        "key": "isactive",
+        "headerKey": "Admin.News.Col.Active"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/news/list",
+      "/account/api/admin/news/{id}"
+    ],
+    "slug": "admin-news",
+    "titleEn": "News",
+    "titleAr": "الأخبار",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.MediaPartners",
+    "route": "/admin/media-partners",
+    "navPermission": "MediaPartners.View",
+    "icon": "share",
+    "isStub": false,
+    "navGroupKey": "Nav.Content",
+    "navGroupEn": "Content",
+    "navGroupAr": "المحتوى",
+    "labelEn": "Media Partners",
+    "labelAr": "شركاء النجاح",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/MediaPartnersList.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/MediaPartnersList.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "MediaPartners.View",
+    "access": "permission",
+    "titleKey": "Admin.MediaPartners.Title",
+    "actions": [
+      {
+        "name": "Add",
+        "labelKey": "Grid.Add"
+      },
+      {
+        "name": "Edit",
+        "labelKey": "Grid.Edit"
+      },
+      {
+        "name": "Details",
+        "labelKey": "Grid.Details"
+      },
+      {
+        "name": "Delete",
+        "labelKey": "Grid.Delete"
+      },
+      {
+        "name": "Import",
+        "labelKey": "Grid.Import"
+      },
+      {
+        "name": "Export",
+        "labelKey": "Grid.Export"
+      }
+    ],
+    "actionGates": [
+      {
+        "covers": "Add, Duplicate and Paste",
+        "permission": "MediaPartners.Create"
+      },
+      {
+        "covers": "Edit",
+        "permission": "MediaPartners.Edit"
+      },
+      {
+        "covers": "Delete",
+        "permission": "MediaPartners.Delete"
+      },
+      {
+        "covers": "Import",
+        "permission": "MediaPartners.Import"
+      },
+      {
+        "covers": "Export",
+        "permission": "MediaPartners.Export"
+      }
+    ],
+    "columns": [
+      {
+        "key": "name",
+        "headerKey": "Admin.MediaPartners.Col.NameEn"
+      },
+      {
+        "key": "url",
+        "headerKey": "Admin.MediaPartners.Col.Url"
+      },
+      {
+        "key": "displayorder",
+        "headerKey": "Admin.MediaPartners.Col.DisplayOrder"
+      },
+      {
+        "key": "isActive",
+        "headerKey": "Admin.MediaPartners.Col.Active"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/media-partners/list",
+      "/account/api/admin/media-partners/{id}"
+    ],
+    "slug": "admin-media-partners",
+    "titleEn": "Media Partners",
+    "titleAr": "شركاء النجاح",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.PreviousEditions",
+    "route": "/admin/archive",
+    "navPermission": "Archive.View",
+    "icon": "archive",
+    "isStub": false,
+    "navGroupKey": "Nav.Content",
+    "navGroupEn": "Content",
+    "navGroupAr": "المحتوى",
+    "labelEn": "Previous editions",
+    "labelAr": "الدورات السابقة",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/ArchiveList.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/ArchiveList.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Archive.View",
+    "access": "permission",
+    "titleKey": "Admin.Archive.Title",
+    "actions": [
+      {
+        "name": "Add",
+        "labelKey": "Grid.Add"
+      },
+      {
+        "name": "Edit",
+        "labelKey": "Grid.Edit"
+      },
+      {
+        "name": "Details",
+        "labelKey": "Grid.Details"
+      },
+      {
+        "name": "Delete",
+        "labelKey": "Grid.Delete"
+      },
+      {
+        "name": "Import",
+        "labelKey": "Grid.Import"
+      },
+      {
+        "name": "Export",
+        "labelKey": "Grid.Export"
+      }
+    ],
+    "actionGates": [
+      {
+        "covers": "Add, Duplicate and Paste",
+        "permission": "Archive.Create"
+      },
+      {
+        "covers": "Edit",
+        "permission": "Archive.Edit"
+      },
+      {
+        "covers": "Delete",
+        "permission": "Archive.Delete"
+      },
+      {
+        "covers": "Import",
+        "permission": "Archive.Import"
+      },
+      {
+        "covers": "Export",
+        "permission": "Archive.Export"
+      },
+      {
+        "covers": "An action on the page",
+        "permission": "Archive.Snapshot"
+      }
+    ],
+    "columns": [
+      {
+        "key": "year",
+        "headerKey": "Admin.Archive.Col.Year"
+      },
+      {
+        "key": "titleEn",
+        "headerKey": "Admin.Archive.Col.TitleEn"
+      },
+      {
+        "key": "titleAr",
+        "headerKey": "Admin.Archive.Col.TitleAr"
+      },
+      {
+        "key": "attendees",
+        "headerKey": "Admin.Archive.Col.Attendees"
+      },
+      {
+        "key": "sessions",
+        "headerKey": "Admin.Archive.Col.Sessions"
+      },
+      {
+        "key": "speakers",
+        "headerKey": "Admin.Archive.Col.Speakers"
+      },
+      {
+        "key": "isActive",
+        "headerKey": "Admin.Archive.Col.Active"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/archive/list",
+      "/account/api/admin/archive/snapshot-current"
+    ],
+    "slug": "admin-archive",
+    "titleEn": "Previous Editions",
+    "titleAr": "النسخ السابقة",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.Invitations",
+    "route": "/admin/invitations",
+    "navPermission": "Invitations.View",
+    "icon": "mail",
+    "isStub": false,
+    "navGroupKey": "Nav.PublicRelations",
+    "navGroupEn": "Public relations",
+    "navGroupAr": "العلاقات العامة",
+    "labelEn": "Invitations",
+    "labelAr": "الدعوات",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/InvitationsList.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/InvitationsList.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Invitations.View",
+    "access": "permission",
+    "titleKey": "Admin.Invitations.Title",
+    "actions": [
+      {
+        "name": "Add",
+        "labelKey": "Admin.Invitations.New"
+      },
+      {
+        "name": "Edit",
+        "labelKey": "Grid.Edit"
+      },
+      {
+        "name": "Details",
+        "labelKey": "Grid.Details"
+      },
+      {
+        "name": "Delete",
+        "labelKey": "Admin.Invitations.Deactivate"
+      },
+      {
+        "name": "Export",
+        "labelKey": "Grid.Export"
+      }
+    ],
+    "actionGates": [
+      {
+        "covers": "Add, Duplicate and Paste",
+        "permission": "Invitations.Manage"
+      },
+      {
+        "covers": "Edit",
+        "permission": "Invitations.Manage"
+      },
+      {
+        "covers": "Delete",
+        "permission": "Invitations.Manage"
+      },
+      {
+        "covers": "Export",
+        "permission": "Invitations.Export"
+      }
+    ],
+    "columns": [
+      {
+        "key": "recipient",
+        "headerKey": "Admin.Invitations.Col.Recipient"
+      },
+      {
+        "key": "profileType",
+        "headerKey": "Admin.Invitations.Col.ProfileType"
+      },
+      {
+        "key": "state",
+        "headerKey": "Admin.Invitations.Col.State"
+      },
+      {
+        "key": "createdat",
+        "headerKey": "Admin.Invitations.Col.CreatedAt"
+      },
+      {
+        "key": "sentBy",
+        "headerKey": "Admin.Invitations.Col.SentBy"
+      },
+      {
+        "key": "active",
+        "headerKey": "Grid.Active"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/invitations/export",
+      "/account/api/admin/invitations/list",
+      "/account/api/admin/invitations/{id}"
+    ],
+    "slug": "admin-invitations",
+    "titleEn": "Invitations",
+    "titleAr": "الدعوات",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.Vips",
+    "route": "/admin/vips",
+    "navPermission": "Vips.View",
+    "icon": "crown",
+    "isStub": false,
+    "navGroupKey": "Nav.PublicRelations",
+    "navGroupEn": "Public relations",
+    "navGroupAr": "العلاقات العامة",
+    "labelEn": "VIPs",
+    "labelAr": "كبار الضيوف",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/VipsList.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/VipsList.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Vips.View",
+    "access": "permission",
+    "titleKey": "Admin.Vips.Title",
+    "actions": [
+      {
+        "name": "Export",
+        "labelKey": "Grid.Export"
+      }
+    ],
+    "actionGates": [
+      {
+        "covers": "Export",
+        "permission": "Vips.Export"
+      },
+      {
+        "covers": "An action on the page",
+        "permission": "Vips.Notify"
+      }
+    ],
+    "columns": [
+      {
+        "key": "name",
+        "headerKey": "Admin.Vips.Col.Name"
+      },
+      {
+        "key": "jobTitle",
+        "headerKey": "Admin.Vips.Col.JobTitle"
+      },
+      {
+        "key": "profileType",
+        "headerKey": "Admin.Vips.Col.ProfileType"
+      },
+      {
+        "key": "email",
+        "headerKey": "Admin.Vips.Col.Email"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/vips/export",
+      "/account/api/admin/vips/list",
+      "/account/api/admin/vips/notify"
+    ],
+    "slug": "admin-vips",
+    "titleEn": "VIPs",
+    "titleAr": "كبار الضيوف",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.Announcements",
+    "route": "/admin/announcements",
+    "navPermission": "Announcements.View",
+    "icon": "send",
+    "isStub": false,
+    "navGroupKey": "Nav.PublicRelations",
+    "navGroupEn": "Public relations",
+    "navGroupAr": "العلاقات العامة",
+    "labelEn": "Announcements",
+    "labelAr": "الإعلانات",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/Announcements.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/Announcements.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Announcements.View",
+    "access": "permission",
+    "titleKey": "Admin.Announcements.Title",
+    "actions": [],
+    "actionGates": [
+      {
+        "covers": "An action on the page",
+        "permission": "Announcements.Send"
+      }
+    ],
+    "columns": [
+      {
+        "key": "when",
+        "headerKey": "Admin.Announcements.Col.When"
+      },
+      {
+        "key": "target",
+        "headerKey": "Admin.Announcements.Col.Target"
+      },
+      {
+        "key": "message",
+        "headerKey": "Admin.Announcements.Col.Message"
+      },
+      {
+        "key": "status",
+        "headerKey": "Admin.Announcements.Col.Status"
+      },
+      {
+        "key": "recipients",
+        "headerKey": "Admin.Announcements.Col.Recipients"
+      },
+      {
+        "key": "emails",
+        "headerKey": "Admin.Announcements.Col.Emails"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/notifications/broadcast",
+      "/account/api/admin/notifications/broadcast/estimate",
+      "/account/api/admin/notifications/broadcasts/list",
+      "/account/api/admin/sessions/list"
+    ],
+    "slug": "admin-announcements",
+    "titleEn": "Announcements",
+    "titleAr": "الإعلانات",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.ContactInquiries",
+    "route": "/admin/contact-inquiries",
+    "navPermission": "ContactInquiries.View",
+    "icon": "inbox",
+    "isStub": false,
+    "navGroupKey": "Nav.PublicRelations",
+    "navGroupEn": "Public relations",
+    "navGroupAr": "العلاقات العامة",
+    "labelEn": "Contact inquiries",
+    "labelAr": "رسائل تواصل معنا",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/ContactInquiriesList.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/ContactInquiriesList.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "ContactInquiries.View",
+    "access": "permission",
+    "titleKey": "Admin.ContactInquiries.Title",
+    "actions": [],
+    "actionGates": [
+      {
+        "covers": "An action on the page",
+        "permission": "ContactInquiries.Manage"
+      }
+    ],
+    "columns": [
+      {
+        "key": "name",
+        "headerKey": "Admin.ContactInquiries.Col.Name"
+      },
+      {
+        "key": "email",
+        "headerKey": "Admin.ContactInquiries.Col.Email"
+      },
+      {
+        "key": "message",
+        "headerKey": "Admin.ContactInquiries.Col.Message"
+      },
+      {
+        "key": "status",
+        "headerKey": "Admin.ContactInquiries.Col.Status"
+      },
+      {
+        "key": "createdAt",
+        "headerKey": "Admin.ContactInquiries.Col.Received"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/contact-inquiries/list",
+      "/account/api/admin/contact-inquiries/{row.Id}/handled"
+    ],
+    "slug": "admin-contact-inquiries",
+    "titleEn": "Contact inquiries",
+    "titleAr": "رسائل تواصل معنا",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.Gates",
+    "route": "/admin/gates",
+    "navPermission": "Gates.Manage",
+    "icon": "door",
+    "isStub": false,
+    "navGroupKey": "Nav.Gates",
+    "navGroupEn": "Gates & arrivals",
+    "navGroupAr": "البوابات والوصول",
+    "labelEn": "Gates",
+    "labelAr": "البوابات",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/GatesList.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/GatesList.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Gates.Manage",
+    "access": "permission",
+    "titleKey": "Admin.Gates.Title",
+    "actions": [
+      {
+        "name": "Add",
+        "labelKey": "Admin.Gates.Action.Add"
+      },
+      {
+        "name": "Edit",
+        "labelKey": "Admin.Gates.Action.Edit"
+      },
+      {
+        "name": "Details",
+        "labelKey": "Admin.Gates.Action.Details"
+      },
+      {
+        "name": "Delete",
+        "labelKey": "Admin.Gates.Action.Deactivate"
+      },
+      {
+        "name": "Import",
+        "labelKey": "Grid.Import"
+      },
+      {
+        "name": "Export",
+        "labelKey": "Grid.Export"
+      }
+    ],
+    "actionGates": [
+      {
+        "covers": "Add, Duplicate and Paste",
+        "permission": "Gates.Manage"
+      },
+      {
+        "covers": "Edit",
+        "permission": "Gates.Manage"
+      },
+      {
+        "covers": "Delete",
+        "permission": "Gates.Manage"
+      },
+      {
+        "covers": "Import",
+        "permission": "Gates.Import"
+      },
+      {
+        "covers": "Export",
+        "permission": "Gates.Export"
+      }
+    ],
+    "columns": [
+      {
+        "key": "code",
+        "headerKey": "Admin.Gates.Column.Code"
+      },
+      {
+        "key": "name",
+        "headerKey": "Admin.Gates.Column.Name"
+      },
+      {
+        "key": "nameArabic",
+        "headerKey": "Admin.Gates.Column.NameArabic"
+      },
+      {
+        "key": "directionMode",
+        "headerKey": "Admin.Gates.Column.DirectionMode"
+      },
+      {
+        "key": "allowCount",
+        "headerKey": "Admin.Gates.Column.AllowCount"
+      },
+      {
+        "key": "operatorCount",
+        "headerKey": "Admin.Gates.Column.OperatorCount"
+      },
+      {
+        "key": "isActive",
+        "headerKey": "Admin.Gates.Column.Active"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/gates/list",
+      "/account/api/admin/gates/{id}"
+    ],
+    "slug": "admin-gates",
+    "titleEn": "Gates",
+    "titleAr": "البوابات",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.GatesOperator",
+    "route": "/admin/gates/operator",
+    "navPermission": "Gates.Operate",
+    "icon": "scan",
+    "isStub": false,
+    "navGroupKey": "Nav.Gates",
+    "navGroupEn": "Gates & arrivals",
+    "navGroupAr": "البوابات والوصول",
+    "labelEn": "Gate operator",
+    "labelAr": "مشغل البوابة",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/GateOperatorConsole.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/GateOperatorConsole.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Gates.Operate",
+    "access": "permission",
+    "titleKey": "Admin.Gates.Operator.Title",
+    "actions": [],
+    "actionGates": [],
+    "columns": [],
+    "calls": [
+      "/account/api/gates/my-assignments",
+      "/account/api/gates/my-reports/today",
+      "/account/api/gates/{_selectedGateId}/scans"
+    ],
+    "slug": "admin-gates-operator",
+    "titleEn": "Gate operator",
+    "titleAr": "مشغل البوابة",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.HallArrivals",
+    "route": "/admin/hall-arrivals",
+    "navPermission": "HallArrivals.View",
+    "icon": "log-in",
+    "isStub": false,
+    "navGroupKey": "Nav.Gates",
+    "navGroupEn": "Gates & arrivals",
+    "navGroupAr": "البوابات والوصول",
+    "labelEn": "Hall arrivals",
+    "labelAr": "الوصول إلى القاعات",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/HallArrivalsConsole.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/HallArrivalsConsole.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "HallArrivals.View",
+    "access": "permission",
+    "titleKey": "Admin.HallArrivals.Title",
+    "actions": [],
+    "actionGates": [
+      {
+        "covers": "An action on the page",
+        "permission": "HallArrivals.Record"
+      }
+    ],
+    "columns": [],
+    "calls": [
+      "/account/api/admin/hall-arrivals/sessions/list",
+      "/account/api/admin/sessions/{_selected.Id}/arrivals",
+      "/account/api/admin/sessions/{_selected.Id}/departures"
+    ],
+    "slug": "admin-hall-arrivals",
+    "titleEn": "Hall arrivals (door scan)",
+    "titleAr": "الوصول إلى القاعات (مسح الباب)",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.GatesDashboard",
+    "route": "/admin/gates/dashboard",
+    "navPermission": "Gates.Manage",
+    "icon": "bar-chart",
+    "isStub": false,
+    "navGroupKey": "Nav.Gates",
+    "navGroupEn": "Gates & arrivals",
+    "navGroupAr": "البوابات والوصول",
+    "labelEn": "Gates dashboard",
+    "labelAr": "لوحة البوابات",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/GatesOperationsDashboard.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/GatesOperationsDashboard.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Gates.Manage",
+    "access": "permission",
+    "titleKey": "Admin.GatesDashboard.Title",
+    "actions": [],
+    "actionGates": [],
+    "columns": [],
+    "calls": [
+      "/account/api/admin/gates/list",
+      "/account/api/admin/gates/reports/currently-inside/list"
+    ],
+    "slug": "admin-gates-dashboard",
+    "titleEn": "Gates operations dashboard",
+    "titleAr": "لوحة عمليات البوابات",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.AdminInterests",
+    "route": "/admin/interests",
+    "navPermission": "Interests.View",
+    "icon": "tag",
+    "isStub": false,
+    "navGroupKey": "Nav.ReferenceData",
+    "navGroupEn": "Reference data",
+    "navGroupAr": "البيانات المرجعية",
+    "labelEn": "Interests",
+    "labelAr": "الاهتمامات",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/InterestsList.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/InterestsList.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Interests.View",
+    "access": "permission",
+    "titleKey": "Admin.Interests.Title",
+    "actions": [
+      {
+        "name": "Add",
+        "labelKey": "Admin.Interests.Action.Add"
+      },
+      {
+        "name": "Edit",
+        "labelKey": "Admin.Interests.Action.Edit"
+      },
+      {
+        "name": "Details",
+        "labelKey": "Admin.Interests.Action.Details"
+      },
+      {
+        "name": "Delete",
+        "labelKey": "Admin.Interests.Action.Deactivate"
+      },
+      {
+        "name": "Import",
+        "labelKey": "Grid.Import"
+      },
+      {
+        "name": "Export",
+        "labelKey": "Grid.Export"
+      }
+    ],
+    "actionGates": [
+      {
+        "covers": "Add, Duplicate and Paste",
+        "permission": "Interests.Create"
+      },
+      {
+        "covers": "Edit",
+        "permission": "Interests.Edit"
+      },
+      {
+        "covers": "Delete",
+        "permission": "Interests.Delete"
+      },
+      {
+        "covers": "Import",
+        "permission": "Interests.Import"
+      },
+      {
+        "covers": "Export",
+        "permission": "Interests.Export"
+      }
+    ],
+    "columns": [
+      {
+        "key": "name",
+        "headerKey": "Admin.Interests.Column.Name"
+      },
+      {
+        "key": "nameArabic",
+        "headerKey": "Admin.Interests.Column.NameArabic"
+      },
+      {
+        "key": "displayOrder",
+        "headerKey": "Admin.Interests.Column.DisplayOrder"
+      },
+      {
+        "key": "isActive",
+        "headerKey": "Admin.Interests.Column.Active"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/interests/list"
+    ],
+    "slug": "admin-interests",
+    "titleEn": "Interests",
+    "titleAr": "الاهتمامات",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.AdminCountries",
+    "route": "/admin/countries",
+    "navPermission": "Countries.View",
+    "icon": "globe",
+    "isStub": false,
+    "navGroupKey": "Nav.ReferenceData",
+    "navGroupEn": "Reference data",
+    "navGroupAr": "البيانات المرجعية",
+    "labelEn": "Countries",
+    "labelAr": "البلدان",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/CountriesList.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/CountriesList.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Countries.View",
+    "access": "permission",
+    "titleKey": "Admin.Countries.Title",
+    "actions": [
+      {
+        "name": "Add",
+        "labelKey": "Admin.Countries.Action.Add"
+      },
+      {
+        "name": "Edit",
+        "labelKey": "Admin.Countries.Action.Edit"
+      },
+      {
+        "name": "Details",
+        "labelKey": "Admin.Countries.Action.Details"
+      },
+      {
+        "name": "Delete",
+        "labelKey": "Admin.Countries.Action.Deactivate"
+      },
+      {
+        "name": "Import",
+        "labelKey": "Grid.Import"
+      },
+      {
+        "name": "Export",
+        "labelKey": "Grid.Export"
+      }
+    ],
+    "actionGates": [
+      {
+        "covers": "Add, Duplicate and Paste",
+        "permission": "Countries.Create"
+      },
+      {
+        "covers": "Edit",
+        "permission": "Countries.Edit"
+      },
+      {
+        "covers": "Delete",
+        "permission": "Countries.Delete"
+      },
+      {
+        "covers": "Import",
+        "permission": "Countries.Import"
+      },
+      {
+        "covers": "Export",
+        "permission": "Countries.Export"
+      }
+    ],
+    "columns": [
+      {
+        "key": "id",
+        "headerKey": "Admin.Countries.Column.Id"
+      },
+      {
+        "key": "code",
+        "headerKey": "Admin.Countries.Column.Code"
+      },
+      {
+        "key": "name",
+        "headerKey": "Admin.Countries.Column.NameEn"
+      },
+      {
+        "key": "namearabic",
+        "headerKey": "Admin.Countries.Column.NameAr"
+      },
+      {
+        "key": "phonePrefix",
+        "headerKey": "Admin.Countries.Column.PhonePrefix"
+      },
+      {
+        "key": "displayOrder",
+        "headerKey": "Admin.Countries.Column.DisplayOrder"
+      },
+      {
+        "key": "isActive",
+        "headerKey": "Admin.Countries.Column.Active"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/countries/list",
+      "/account/api/admin/countries/{id}"
+    ],
+    "slug": "admin-countries",
+    "titleEn": "Countries",
+    "titleAr": "البلدان",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.Organisations",
+    "route": "/admin/organisations",
+    "navPermission": "Organisations.View",
+    "icon": "building",
+    "isStub": false,
+    "navGroupKey": "Nav.ReferenceData",
+    "navGroupEn": "Reference data",
+    "navGroupAr": "البيانات المرجعية",
+    "labelEn": "Organisations",
+    "labelAr": "الجهات",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/OrganisationsList.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/OrganisationsList.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Organisations.View",
+    "access": "permission",
+    "titleKey": "Admin.Organisations.Title",
+    "actions": [
+      {
+        "name": "Add",
+        "labelKey": "Grid.Add"
+      },
+      {
+        "name": "Edit",
+        "labelKey": "Grid.Edit"
+      },
+      {
+        "name": "Details",
+        "labelKey": "Grid.Details"
+      },
+      {
+        "name": "Delete",
+        "labelKey": "Grid.Delete"
+      },
+      {
+        "name": "Import",
+        "labelKey": "Admin.Organisations.Import"
+      },
+      {
+        "name": "Export",
+        "labelKey": "Grid.Export"
+      }
+    ],
+    "actionGates": [
+      {
+        "covers": "Add, Duplicate and Paste",
+        "permission": "Organisations.Create"
+      },
+      {
+        "covers": "Edit",
+        "permission": "Organisations.Edit"
+      },
+      {
+        "covers": "Delete",
+        "permission": "Organisations.Delete"
+      },
+      {
+        "covers": "Import",
+        "permission": "Organisations.Import"
+      },
+      {
+        "covers": "Export",
+        "permission": "Organisations.Export"
+      }
+    ],
+    "columns": [
+      {
+        "key": "name",
+        "headerKey": "Admin.Organisations.Col.NameAr"
+      },
+      {
+        "key": "nameEn",
+        "headerKey": "Admin.Organisations.Col.NameEn"
+      },
+      {
+        "key": "commercialRegistration",
+        "headerKey": "Admin.Organisations.Col.CommercialRegistration"
+      },
+      {
+        "key": "sector",
+        "headerKey": "Admin.Organisations.Col.Sector"
+      },
+      {
+        "key": "city",
+        "headerKey": "Admin.Organisations.Col.City"
+      },
+      {
+        "key": "isActive",
+        "headerKey": "Admin.Organisations.Col.Active"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/organisations/export",
+      "/account/api/admin/organisations/import",
+      "/account/api/admin/organisations/list",
+      "/account/api/admin/organisations/{id}"
+    ],
+    "slug": "admin-organisations",
+    "titleEn": "Organisations",
+    "titleAr": "الجهات",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.Regions",
+    "route": "/admin/regions",
+    "navPermission": "Regions.View",
+    "icon": "map",
+    "isStub": false,
+    "navGroupKey": "Nav.ReferenceData",
+    "navGroupEn": "Reference data",
+    "navGroupAr": "البيانات المرجعية",
+    "labelEn": "Regions",
+    "labelAr": "المناطق",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/RegionsList.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/RegionsList.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Regions.View",
+    "access": "permission",
+    "titleKey": "Admin.Regions.Title",
+    "actions": [
+      {
+        "name": "Add",
+        "labelKey": "Grid.Add"
+      },
+      {
+        "name": "Edit",
+        "labelKey": "Grid.Edit"
+      },
+      {
+        "name": "Details",
+        "labelKey": "Grid.Details"
+      },
+      {
+        "name": "Delete",
+        "labelKey": "Grid.Delete"
+      }
+    ],
+    "actionGates": [
+      {
+        "covers": "Add, Duplicate and Paste",
+        "permission": "Regions.Create"
+      },
+      {
+        "covers": "Edit",
+        "permission": "Regions.Edit"
+      },
+      {
+        "covers": "Delete",
+        "permission": "Regions.Delete"
+      }
+    ],
+    "columns": [
+      {
+        "key": "code",
+        "headerKey": "Admin.Regions.Col.Code"
+      },
+      {
+        "key": "name",
+        "headerKey": "Admin.Regions.Col.NameAr"
+      },
+      {
+        "key": "nameEn",
+        "headerKey": "Admin.Regions.Col.NameEn"
+      },
+      {
+        "key": "isActive",
+        "headerKey": "Admin.Regions.Col.Active"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/regions/list",
+      "/account/api/admin/regions/{id}"
+    ],
+    "slug": "admin-regions",
+    "titleEn": "Regions",
+    "titleAr": "المناطق",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.AdminVisitorProfileTypes",
+    "route": "/admin/profile-types/visitor",
+    "navPermission": "ProfileTypes.View",
+    "icon": "list",
+    "isStub": false,
+    "navGroupKey": "Nav.ReferenceData",
+    "navGroupEn": "Reference data",
+    "navGroupAr": "البيانات المرجعية",
+    "labelEn": "Visitor profile types",
+    "labelAr": "أنواع ملفات الزوار",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/ProfileTypes/VisitorProfileTypesList.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/ProfileTypes/VisitorProfileTypesList.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "ProfileTypes.View",
+    "access": "permission",
+    "titleKey": "Admin.ProfileTypes.Visitor.Title",
+    "actions": [
+      {
+        "name": "Add",
+        "labelKey": "Admin.ProfileTypes.Add.Title"
+      },
+      {
+        "name": "Edit",
+        "labelKey": "Admin.ProfileTypes.Edit.Title"
+      },
+      {
+        "name": "Details",
+        "labelKey": "Admin.Users.Action.Details"
+      },
+      {
+        "name": "Delete",
+        "labelKey": "Admin.ProfileTypes.Delete.Title"
+      }
+    ],
+    "actionGates": [
+      {
+        "covers": "Add, Duplicate and Paste",
+        "permission": "ProfileTypes.Create"
+      },
+      {
+        "covers": "Edit",
+        "permission": "ProfileTypes.Edit"
+      },
+      {
+        "covers": "Delete",
+        "permission": "ProfileTypes.Delete"
+      }
+    ],
+    "columns": [
+      {
+        "key": "userType",
+        "headerKey": "Admin.ProfileTypes.Column.UserType"
+      },
+      {
+        "key": "name",
+        "headerKey": "Admin.ProfileTypes.Column.Name"
+      },
+      {
+        "key": "nameArabic",
+        "headerKey": "Admin.ProfileTypes.Column.NameArabic"
+      },
+      {
+        "key": "pageColor",
+        "headerKey": "Admin.ProfileTypes.Column.PageColor"
+      },
+      {
+        "key": "isActive",
+        "headerKey": "Admin.ProfileTypes.Column.Active"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/profile-types/list",
+      "/account/api/admin/profile-types/{_deleteTarget.Id}"
+    ],
+    "slug": "admin-profile-types-visitor",
+    "titleEn": "Visitor profile types",
+    "titleAr": "أنواع ملفات الزوار",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.AdminOtherProfileTypes",
+    "route": "/admin/profile-types/other",
+    "navPermission": "ProfileTypes.View",
+    "icon": "list",
+    "isStub": false,
+    "navGroupKey": "Nav.ReferenceData",
+    "navGroupEn": "Reference data",
+    "navGroupAr": "البيانات المرجعية",
+    "labelEn": "Other profile types",
+    "labelAr": "أنواع الملفات الأخرى",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/ProfileTypes/OtherProfileTypesList.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/ProfileTypes/OtherProfileTypesList.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "ProfileTypes.View",
+    "access": "permission",
+    "titleKey": "Admin.ProfileTypes.Other.Title",
+    "actions": [
+      {
+        "name": "Add",
+        "labelKey": "Admin.ProfileTypes.Add.Title"
+      },
+      {
+        "name": "Edit",
+        "labelKey": "Admin.ProfileTypes.Edit.Title"
+      },
+      {
+        "name": "Details",
+        "labelKey": "Admin.Users.Action.Details"
+      },
+      {
+        "name": "Delete",
+        "labelKey": "Admin.ProfileTypes.Delete.Title"
+      }
+    ],
+    "actionGates": [
+      {
+        "covers": "Add, Duplicate and Paste",
+        "permission": "ProfileTypes.Create"
+      },
+      {
+        "covers": "Edit",
+        "permission": "ProfileTypes.Edit"
+      },
+      {
+        "covers": "Delete",
+        "permission": "ProfileTypes.Delete"
+      }
+    ],
+    "columns": [
+      {
+        "key": "userType",
+        "headerKey": "Admin.ProfileTypes.Column.UserType"
+      },
+      {
+        "key": "name",
+        "headerKey": "Admin.ProfileTypes.Column.Name"
+      },
+      {
+        "key": "nameArabic",
+        "headerKey": "Admin.ProfileTypes.Column.NameArabic"
+      },
+      {
+        "key": "pageColor",
+        "headerKey": "Admin.ProfileTypes.Column.PageColor"
+      },
+      {
+        "key": "mobileAppRole",
+        "headerKey": "Admin.ProfileTypes.Column.MobileAppRole"
+      },
+      {
+        "key": "isActive",
+        "headerKey": "Admin.ProfileTypes.Column.Active"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/profile-types/list",
+      "/account/api/admin/profile-types/{_deleteTarget.Id}"
+    ],
+    "slug": "admin-profile-types-other",
+    "titleEn": "Other profile types",
+    "titleAr": "أنواع الملفات الأخرى",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.Configuration",
+    "route": "/admin/configuration",
+    "navPermission": "Configuration.View",
+    "icon": "settings",
+    "isStub": false,
+    "navGroupKey": "Nav.System",
+    "navGroupEn": "System",
+    "navGroupAr": "النظام",
+    "labelEn": "Configuration",
+    "labelAr": "الإعدادات العامة",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/ConfigurationList.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/ConfigurationList.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Configuration.View",
+    "access": "permission",
+    "titleKey": "Admin.Configuration.Title",
+    "actions": [
+      {
+        "name": "Add",
+        "labelKey": "Grid.Add"
+      },
+      {
+        "name": "Edit",
+        "labelKey": "Grid.Edit"
+      },
+      {
+        "name": "Details",
+        "labelKey": "Grid.Details"
+      },
+      {
+        "name": "Delete",
+        "labelKey": "Grid.Delete"
+      },
+      {
+        "name": "Import",
+        "labelKey": "Grid.Import"
+      },
+      {
+        "name": "Export",
+        "labelKey": "Grid.Export"
+      }
+    ],
+    "actionGates": [
+      {
+        "covers": "Add, Duplicate and Paste",
+        "permission": "Configuration.Create"
+      },
+      {
+        "covers": "Edit",
+        "permission": "Configuration.Edit"
+      },
+      {
+        "covers": "Delete",
+        "permission": "Configuration.Delete"
+      },
+      {
+        "covers": "Import",
+        "permission": "Configuration.Import"
+      },
+      {
+        "covers": "Export",
+        "permission": "Configuration.Export"
+      }
+    ],
+    "columns": [
+      {
+        "key": "key",
+        "headerKey": "Admin.Configuration.Col.Key"
+      },
+      {
+        "key": "value",
+        "headerKey": "Admin.Configuration.Col.Value"
+      },
+      {
+        "key": "description",
+        "headerKey": "Admin.Configuration.Col.Description"
+      },
+      {
+        "key": "isActive",
+        "headerKey": "Admin.Configuration.Col.Active"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/system-settings/list",
+      "/account/api/admin/system-settings/{id}"
+    ],
+    "slug": "admin-configuration",
+    "titleEn": "System configuration",
+    "titleAr": "إعدادات النظام",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.SiteSettings",
+    "route": "/admin/site-settings",
+    "navPermission": "Configuration.Edit",
+    "icon": "globe",
+    "isStub": false,
+    "navGroupKey": "Nav.System",
+    "navGroupEn": "System",
+    "navGroupAr": "النظام",
+    "labelEn": "Site Settings",
+    "labelAr": "إعدادات الموقع",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SiteSettingsPage.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SiteSettingsPage.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Configuration.Edit",
+    "access": "permission",
+    "titleKey": "Admin.SiteSettings.Title",
+    "actions": [],
+    "actionGates": [],
+    "columns": [],
+    "calls": [
+      "/account/api/admin/site-settings"
+    ],
+    "slug": "admin-site-settings",
+    "titleEn": "Site Settings",
+    "titleAr": "إعدادات الموقع",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.WalkInMode",
+    "route": "/admin/walk-in-mode",
+    "navPermission": "WalkInMode.View",
+    "icon": "power",
+    "isStub": false,
+    "navGroupKey": "Nav.System",
+    "navGroupEn": "System",
+    "navGroupAr": "النظام",
+    "labelEn": "Walk-in Mode",
+    "labelAr": "وضع التسجيل الميداني",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/WalkInModePage.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/WalkInModePage.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "WalkInMode.View",
+    "access": "permission",
+    "titleKey": "Admin.WalkInMode.Title",
+    "actions": [],
+    "actionGates": [],
+    "columns": [],
+    "calls": [
+      "/account/api/admin/walk-in-mode"
+    ],
+    "slug": "admin-walk-in-mode",
+    "titleEn": "Walk-in Mode",
+    "titleAr": "وضع التسجيل الميداني",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.EmailTemplates",
+    "route": "/admin/email/templates",
+    "navPermission": "EmailTemplates.View",
+    "icon": "mail",
+    "isStub": false,
+    "navGroupKey": "Nav.System",
+    "navGroupEn": "System",
+    "navGroupAr": "النظام",
+    "labelEn": "Email Templates",
+    "labelAr": "قوالب البريد الإلكتروني",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/EmailTemplatesList.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/EmailTemplatesList.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "EmailTemplates.View",
+    "access": "permission",
+    "titleKey": "Admin.EmailTemplates.Title",
+    "actions": [],
+    "actionGates": [],
+    "columns": [
+      {
+        "key": "type",
+        "headerKey": "Admin.EmailTemplates.Col.Type"
+      },
+      {
+        "key": "subject",
+        "headerKey": "Admin.EmailTemplates.Col.Subject"
+      },
+      {
+        "key": "customised",
+        "headerKey": "Admin.EmailTemplates.Col.Customised"
+      },
+      {
+        "key": "version",
+        "headerKey": "Admin.EmailTemplates.Col.Version"
+      },
+      {
+        "key": "updatedAt",
+        "headerKey": "Admin.EmailTemplates.Col.UpdatedAt"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/email/templates/list",
+      "/account/api/admin/email/templates/{row.Type}"
+    ],
+    "slug": "admin-email-templates",
+    "titleEn": "Email templates",
+    "titleAr": "قوالب البريد الإلكتروني",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.OrganizationProfile",
+    "route": "/admin/organization-profile",
+    "navPermission": "OrganizationProfile.View",
+    "icon": "building",
+    "isStub": false,
+    "navGroupKey": "Nav.System",
+    "navGroupEn": "System",
+    "navGroupAr": "النظام",
+    "labelEn": "Organization Profile",
+    "labelAr": "ملف الملتقى",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/OrganizationProfilePage.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/OrganizationProfilePage.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "OrganizationProfile.View",
+    "access": "permission",
+    "titleKey": "Admin.OrganizationProfile.Title",
+    "actions": [
+      {
+        "name": "Add",
+        "labelKey": "Admin.OrganizationProfile.About.Add"
+      }
+    ],
+    "actionGates": [
+      {
+        "covers": "An action on the page",
+        "permission": "OrganizationProfile.Manage"
+      }
+    ],
+    "columns": [],
+    "calls": [
+      "/account/api/admin/organization-profile",
+      "/account/api/admin/organization-profile/hero-video"
+    ],
+    "slug": "admin-organization-profile",
+    "titleEn": "Organization Profile",
+    "titleAr": "ملف الملتقى",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.AdminLogs",
+    "route": "/admin/logs",
+    "navPermission": "Logs.View",
+    "icon": "file-text",
+    "isStub": false,
+    "navGroupKey": "Nav.System",
+    "navGroupEn": "System",
+    "navGroupAr": "النظام",
+    "labelEn": "Logs",
+    "labelAr": "السجلات",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/LogsViewer.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/LogsViewer.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Logs.View",
+    "access": "permission",
+    "titleKey": "Admin.Logs.Title",
+    "actions": [],
+    "actionGates": [],
+    "columns": [],
+    "calls": [
+      "/account/api/admin/logs/download",
+      "/account/api/admin/logs/list",
+      "/account/api/admin/logs/tail"
+    ],
+    "slug": "admin-logs",
+    "titleEn": "System logs",
+    "titleAr": "سجلات النظام",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.ServicesMonitor",
+    "route": "/admin/ops/services",
+    "navPermission": "ServicesMonitor.View",
+    "icon": "bar-chart",
+    "isStub": false,
+    "navGroupKey": "Nav.System",
+    "navGroupEn": "System",
+    "navGroupAr": "النظام",
+    "labelEn": "Background services",
+    "labelAr": "الخدمات الخلفية",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/ServicesMonitor.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/ServicesMonitor.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "ServicesMonitor.View",
+    "access": "permission",
+    "titleKey": "Admin.ServicesMonitor.Title",
+    "actions": [],
+    "actionGates": [],
+    "columns": [
+      {
+        "key": "name",
+        "headerKey": "Admin.ServicesMonitor.Col.Worker"
+      },
+      {
+        "key": "state",
+        "headerKey": "Admin.ServicesMonitor.Col.State"
+      },
+      {
+        "key": "lastRun",
+        "headerKey": "Admin.ServicesMonitor.Col.LastRun"
+      },
+      {
+        "key": "lastSuccess",
+        "headerKey": "Admin.ServicesMonitor.Col.LastSuccess"
+      },
+      {
+        "key": "runs",
+        "headerKey": "Admin.ServicesMonitor.Col.Runs"
+      },
+      {
+        "key": "failures",
+        "headerKey": "Admin.ServicesMonitor.Col.Failures"
+      },
+      {
+        "key": "error",
+        "headerKey": "Admin.ServicesMonitor.Col.Error"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/ops/workers"
+    ],
+    "slug": "admin-ops-services",
+    "titleEn": "Background services",
+    "titleAr": "الخدمات الخلفية",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.OperationLog",
+    "route": "/admin/operation-log",
+    "navPermission": "OperationLog.View",
+    "icon": "list-tree",
+    "isStub": false,
+    "navGroupKey": "Nav.System",
+    "navGroupEn": "System",
+    "navGroupAr": "النظام",
+    "labelEn": "Operation log",
+    "labelAr": "سجل العمليات",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/OperationLogViewer.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/OperationLogViewer.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "OperationLog.View",
+    "access": "permission",
+    "titleKey": "Admin.OperationLog.Title",
+    "actions": [
+      {
+        "name": "Details",
+        "labelKey": "Admin.OperationLog.Action.Details"
+      }
+    ],
+    "actionGates": [
+      {
+        "covers": "An action on the page",
+        "permission": "OperationLog.Export"
+      }
+    ],
+    "columns": [
+      {
+        "key": "timestamp",
+        "headerKey": "Admin.OperationLog.Column.Timestamp"
+      },
+      {
+        "key": "eventType",
+        "headerKey": "Admin.OperationLog.Column.EventType"
+      },
+      {
+        "key": "outcome",
+        "headerKey": "Admin.OperationLog.Column.Outcome"
+      },
+      {
+        "key": "subjectEmail",
+        "headerKey": "Admin.OperationLog.Column.SubjectEmail"
+      },
+      {
+        "key": "sourceIp",
+        "headerKey": "Admin.OperationLog.Column.SourceIp"
+      }
+    ],
+    "calls": [
+      "/account/api/admin/operation-log/export",
+      "/account/api/admin/operation-log/list",
+      "/account/api/admin/operation-log/{row.Id}"
+    ],
+    "slug": "admin-operation-log",
+    "titleEn": "Operation log",
+    "titleAr": "سجل العمليات",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.OperationsToggles",
+    "route": "/admin/operations",
+    "navPermission": "Operations.View",
+    "icon": "sliders",
+    "isStub": false,
+    "navGroupKey": "Nav.System",
+    "navGroupEn": "System",
+    "navGroupAr": "النظام",
+    "labelEn": "Operations toggles",
+    "labelAr": "مفاتيح التشغيل",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/OperationsToggles.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/OperationsToggles.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Operations.View",
+    "access": "permission",
+    "titleKey": "Admin.Operations.Title",
+    "actions": [],
+    "actionGates": [
+      {
+        "covers": "An action on the page",
+        "permission": "Operations.Edit"
+      }
+    ],
+    "columns": [],
+    "calls": [
+      "/account/api/admin/archive/visibility",
+      "/account/api/admin/registration-gate"
+    ],
+    "slug": "admin-operations",
+    "titleEn": "Operations toggles",
+    "titleAr": "مفاتيح التشغيل",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.EventEdition",
+    "route": "/admin/editions",
+    "navPermission": "Editions.View",
+    "icon": "calendar",
+    "isStub": false,
+    "navGroupKey": "Nav.System",
+    "navGroupEn": "System",
+    "navGroupAr": "النظام",
+    "labelEn": "Event edition",
+    "labelAr": "نسخة الملتقى",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/EventEdition.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/EventEdition.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Editions.View",
+    "access": "permission",
+    "titleKey": "Admin.Editions.Title",
+    "actions": [],
+    "actionGates": [
+      {
+        "covers": "An action on the page",
+        "permission": "Editions.Open"
+      }
+    ],
+    "columns": [],
+    "calls": [
+      "/account/api/admin/editions/current",
+      "/account/api/admin/editions/open"
+    ],
+    "slug": "admin-editions",
+    "titleEn": "Event edition",
+    "titleAr": "نسخة الملتقى",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.ReportsHub",
+    "route": "/admin/reports",
+    "navPermission": "Reports.View",
+    "icon": "table",
+    "isStub": false,
+    "navGroupKey": "Nav.Reports",
+    "navGroupEn": "Reports",
+    "navGroupAr": "التقارير",
+    "labelEn": "All reports",
+    "labelAr": "جميع التقارير",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/Reports/ReportsHub.razor",
+    "codeBehind": null,
+    "layout": "CpShellLayout",
+    "permission": "Reports.View",
+    "access": "permission",
+    "titleKey": "Admin.Reports.Title",
+    "actions": [],
+    "actionGates": [
+      {
+        "covers": "An action on the page",
+        "permission": "Reports.Attendance"
+      },
+      {
+        "covers": "An action on the page",
+        "permission": "Reports.Registrations"
+      },
+      {
+        "covers": "An action on the page",
+        "permission": "Reports.Gates"
+      },
+      {
+        "covers": "An action on the page",
+        "permission": "Reports.Sessions"
+      },
+      {
+        "covers": "An action on the page",
+        "permission": "Reports.Ratings"
+      },
+      {
+        "covers": "An action on the page",
+        "permission": "Reports.Partners"
+      },
+      {
+        "covers": "An action on the page",
+        "permission": "Reports.Meetings"
+      },
+      {
+        "covers": "An action on the page",
+        "permission": "Reports.Engagement"
+      }
+    ],
+    "columns": [],
+    "calls": [],
+    "slug": "admin-reports",
+    "titleEn": "Reports",
+    "titleAr": "التقارير",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.ReportsAttendance",
+    "route": "/admin/reports/attendance",
+    "navPermission": "Reports.Attendance",
+    "icon": "user-check",
+    "isStub": false,
+    "navGroupKey": "Nav.Reports",
+    "navGroupEn": "Reports",
+    "navGroupAr": "التقارير",
+    "labelEn": "Attendance report",
+    "labelAr": "تقرير الحضور",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/Reports/AttendanceReport.razor",
+    "codeBehind": null,
+    "layout": "CpShellLayout",
+    "permission": "Reports.Attendance",
+    "access": "permission",
+    "titleKey": "Admin.Reports.Attendance.Title",
+    "actions": [
+      {
+        "name": "Export",
+        "labelKey": null
+      }
+    ],
+    "actionGates": [],
+    "columns": [
+      {
+        "key": "code",
+        "headerKey": "Admin.Reports.Col.Code"
+      },
+      {
+        "key": "title",
+        "headerKey": "Admin.Reports.Col.Session"
+      },
+      {
+        "key": "hall",
+        "headerKey": "Admin.Reports.Col.Hall"
+      },
+      {
+        "key": "start",
+        "headerKey": "Admin.Reports.Col.Start"
+      },
+      {
+        "key": "attendees",
+        "headerKey": "Admin.Reports.Col.Attendees"
+      },
+      {
+        "key": "live",
+        "headerKey": "Admin.Reports.Col.InsideNow"
+      }
+    ],
+    "calls": [],
+    "slug": "admin-reports-attendance",
+    "titleEn": "Attendance report",
+    "titleAr": "تقرير الحضور",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.ReportsRegistrations",
+    "route": "/admin/reports/registrations",
+    "navPermission": "Reports.Registrations",
+    "icon": "users",
+    "isStub": false,
+    "navGroupKey": "Nav.Reports",
+    "navGroupEn": "Reports",
+    "navGroupAr": "التقارير",
+    "labelEn": "Registrations report",
+    "labelAr": "تقرير التسجيلات",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/Reports/RegistrationsReport.razor",
+    "codeBehind": null,
+    "layout": "CpShellLayout",
+    "permission": "Reports.Registrations",
+    "access": "permission",
+    "titleKey": "Admin.Reports.Registrations.Title",
+    "actions": [
+      {
+        "name": "Export",
+        "labelKey": null
+      }
+    ],
+    "actionGates": [],
+    "columns": [
+      {
+        "key": "name",
+        "headerKey": "Admin.Reports.Col.Name"
+      },
+      {
+        "key": "email",
+        "headerKey": "Admin.Reports.Col.Email"
+      },
+      {
+        "key": "profileType",
+        "headerKey": "Admin.Reports.Col.ProfileType"
+      },
+      {
+        "key": "state",
+        "headerKey": "Admin.Reports.Col.AccountState"
+      },
+      {
+        "key": "registered",
+        "headerKey": "Admin.Reports.Col.Registered"
+      }
+    ],
+    "calls": [],
+    "slug": "admin-reports-registrations",
+    "titleEn": "Registrations report",
+    "titleAr": "تقرير التسجيلات",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.ReportsGates",
+    "route": "/admin/reports/gates",
+    "navPermission": "Reports.Gates",
+    "icon": "shield",
+    "isStub": false,
+    "navGroupKey": "Nav.Reports",
+    "navGroupEn": "Reports",
+    "navGroupAr": "التقارير",
+    "labelEn": "Gate activity report",
+    "labelAr": "تقرير حركة البوابات",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/Reports/GateActivityReport.razor",
+    "codeBehind": null,
+    "layout": "CpShellLayout",
+    "permission": "Reports.Gates",
+    "access": "permission",
+    "titleKey": "Admin.Reports.Gates.Title",
+    "actions": [
+      {
+        "name": "Export",
+        "labelKey": null
+      }
+    ],
+    "actionGates": [],
+    "columns": [
+      {
+        "key": "gate",
+        "headerKey": "Admin.Reports.Col.Gate"
+      },
+      {
+        "key": "scanned",
+        "headerKey": "Admin.Reports.Col.Scanned"
+      },
+      {
+        "key": "visitor",
+        "headerKey": "Admin.Reports.Col.Visitor"
+      },
+      {
+        "key": "profileType",
+        "headerKey": "Admin.Reports.Col.ProfileType"
+      },
+      {
+        "key": "direction",
+        "headerKey": "Admin.Reports.Col.Direction"
+      },
+      {
+        "key": "outcome",
+        "headerKey": "Admin.Reports.Col.Outcome"
+      },
+      {
+        "key": "denial",
+        "headerKey": "Admin.Reports.Col.DenialReason"
+      }
+    ],
+    "calls": [],
+    "slug": "admin-reports-gates",
+    "titleEn": "Gate activity report",
+    "titleAr": "تقرير حركة البوابات",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.ReportsSessions",
+    "route": "/admin/reports/sessions",
+    "navPermission": "Reports.Sessions",
+    "icon": "presentation",
+    "isStub": false,
+    "navGroupKey": "Nav.Reports",
+    "navGroupEn": "Reports",
+    "navGroupAr": "التقارير",
+    "labelEn": "Sessions report",
+    "labelAr": "تقرير الجلسات",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/Reports/SessionsReport.razor",
+    "codeBehind": null,
+    "layout": "CpShellLayout",
+    "permission": "Reports.Sessions",
+    "access": "permission",
+    "titleKey": "Admin.Reports.Sessions.Title",
+    "actions": [
+      {
+        "name": "Export",
+        "labelKey": null
+      }
+    ],
+    "actionGates": [],
+    "columns": [
+      {
+        "key": "code",
+        "headerKey": "Admin.Reports.Col.Code"
+      },
+      {
+        "key": "title",
+        "headerKey": "Admin.Reports.Col.Session"
+      },
+      {
+        "key": "hall",
+        "headerKey": "Admin.Reports.Col.Hall"
+      },
+      {
+        "key": "start",
+        "headerKey": "Admin.Reports.Col.Start"
+      },
+      {
+        "key": "speakers",
+        "headerKey": "Admin.Reports.Col.Speakers"
+      },
+      {
+        "key": "attendees",
+        "headerKey": "Admin.Reports.Col.Attendees"
+      },
+      {
+        "key": "questions",
+        "headerKey": "Admin.Reports.Col.Questions"
+      },
+      {
+        "key": "rating",
+        "headerKey": "Admin.Reports.Col.AverageRating"
+      }
+    ],
+    "calls": [],
+    "slug": "admin-reports-sessions",
+    "titleEn": "Sessions report",
+    "titleAr": "تقرير الجلسات",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.ReportsRatings",
+    "route": "/admin/reports/ratings",
+    "navPermission": "Reports.Ratings",
+    "icon": "star",
+    "isStub": false,
+    "navGroupKey": "Nav.Reports",
+    "navGroupEn": "Reports",
+    "navGroupAr": "التقارير",
+    "labelEn": "Ratings report",
+    "labelAr": "تقرير التقييمات",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/Reports/RatingsReport.razor",
+    "codeBehind": null,
+    "layout": "CpShellLayout",
+    "permission": "Reports.Ratings",
+    "access": "permission",
+    "titleKey": "Admin.Reports.Ratings.Title",
+    "actions": [
+      {
+        "name": "Export",
+        "labelKey": null
+      }
+    ],
+    "actionGates": [],
+    "columns": [
+      {
+        "key": "type",
+        "headerKey": "Admin.Reports.Col.RatingType"
+      },
+      {
+        "key": "scope",
+        "headerKey": "Admin.Reports.Col.Scope"
+      },
+      {
+        "key": "stars",
+        "headerKey": "Admin.Reports.Col.Stars"
+      },
+      {
+        "key": "comment",
+        "headerKey": "Admin.Reports.Col.Comment"
+      },
+      {
+        "key": "submitted",
+        "headerKey": "Admin.Reports.Col.Submitted"
+      }
+    ],
+    "calls": [],
+    "slug": "admin-reports-ratings",
+    "titleEn": "Ratings report",
+    "titleAr": "تقرير التقييمات",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.ReportsPartners",
+    "route": "/admin/reports/partners",
+    "navPermission": "Reports.Partners",
+    "icon": "handshake",
+    "isStub": false,
+    "navGroupKey": "Nav.Reports",
+    "navGroupEn": "Reports",
+    "navGroupAr": "التقارير",
+    "labelEn": "Partners report",
+    "labelAr": "تقرير الشركاء",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/Reports/PartnersReport.razor",
+    "codeBehind": null,
+    "layout": "CpShellLayout",
+    "permission": "Reports.Partners",
+    "access": "permission",
+    "titleKey": "Admin.Reports.Partners.Title",
+    "actions": [
+      {
+        "name": "Export",
+        "labelKey": null
+      }
+    ],
+    "actionGates": [],
+    "columns": [
+      {
+        "key": "kind",
+        "headerKey": "Admin.Reports.Col.Kind"
+      },
+      {
+        "key": "name",
+        "headerKey": "Admin.Reports.Col.Name"
+      },
+      {
+        "key": "tier",
+        "headerKey": "Admin.Reports.Col.Tier"
+      },
+      {
+        "key": "email",
+        "headerKey": "Admin.Reports.Col.Email"
+      },
+      {
+        "key": "phone",
+        "headerKey": "Admin.Reports.Col.Phone"
+      },
+      {
+        "key": "website",
+        "headerKey": "Admin.Reports.Col.Website"
+      }
+    ],
+    "calls": [],
+    "slug": "admin-reports-partners",
+    "titleEn": "Partners report",
+    "titleAr": "تقرير الشركاء",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.ReportsMeetings",
+    "route": "/admin/reports/meetings",
+    "navPermission": "Reports.Meetings",
+    "icon": "calendar",
+    "isStub": false,
+    "navGroupKey": "Nav.Reports",
+    "navGroupEn": "Reports",
+    "navGroupAr": "التقارير",
+    "labelEn": "Meetings report",
+    "labelAr": "تقرير الاجتماعات",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/Reports/MeetingsReport.razor",
+    "codeBehind": null,
+    "layout": "CpShellLayout",
+    "permission": "Reports.Meetings",
+    "access": "permission",
+    "titleKey": "Admin.Reports.Meetings.Title",
+    "actions": [
+      {
+        "name": "Export",
+        "labelKey": null
+      }
+    ],
+    "actionGates": [],
+    "columns": [
+      {
+        "key": "kind",
+        "headerKey": "Admin.Reports.Col.Kind"
+      },
+      {
+        "key": "requester",
+        "headerKey": "Admin.Reports.Col.Requester"
+      },
+      {
+        "key": "target",
+        "headerKey": "Admin.Reports.Col.Target"
+      },
+      {
+        "key": "subject",
+        "headerKey": "Admin.Reports.Col.Subject"
+      },
+      {
+        "key": "slot",
+        "headerKey": "Admin.Reports.Col.Slot"
+      },
+      {
+        "key": "status",
+        "headerKey": "Admin.Reports.Col.Status"
+      },
+      {
+        "key": "requested",
+        "headerKey": "Admin.Reports.Col.Requested"
+      }
+    ],
+    "calls": [],
+    "slug": "admin-reports-meetings",
+    "titleEn": "Meetings report",
+    "titleAr": "تقرير الاجتماعات",
+    "hasPage": true
+  },
+  {
+    "labelKey": "Module.ReportsEngagement",
+    "route": "/admin/reports/engagement",
+    "navPermission": "Reports.Engagement",
+    "icon": "message-circle",
+    "isStub": false,
+    "navGroupKey": "Nav.Reports",
+    "navGroupEn": "Reports",
+    "navGroupAr": "التقارير",
+    "labelEn": "Engagement report",
+    "labelAr": "تقرير التفاعل",
+    "inNavigation": true,
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/Reports/EngagementReport.razor",
+    "codeBehind": null,
+    "layout": "CpShellLayout",
+    "permission": "Reports.Engagement",
+    "access": "permission",
+    "titleKey": "Admin.Reports.Engagement.Title",
+    "actions": [
+      {
+        "name": "Export",
+        "labelKey": null
+      }
+    ],
+    "actionGates": [],
+    "columns": [
+      {
+        "key": "sessionCode",
+        "headerKey": "Admin.Reports.Col.Code"
+      },
+      {
+        "key": "session",
+        "headerKey": "Admin.Reports.Col.Session"
+      },
+      {
+        "key": "question",
+        "headerKey": "Admin.Reports.Col.Question"
+      },
+      {
+        "key": "recipient",
+        "headerKey": "Admin.Reports.Col.Recipient"
+      },
+      {
+        "key": "status",
+        "headerKey": "Admin.Reports.Col.Status"
+      },
+      {
+        "key": "phase",
+        "headerKey": "Admin.Reports.Col.Phase"
+      },
+      {
+        "key": "asked",
+        "headerKey": "Admin.Reports.Col.Asked"
+      }
+    ],
+    "calls": [],
+    "slug": "admin-reports-engagement",
+    "titleEn": "Engagement report",
+    "titleAr": "تقرير التفاعل",
+    "hasPage": true
+  },
+  {
+    "route": "/Error",
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Error.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Error.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": null,
+    "access": "anonymous",
+    "titleKey": "Error.Title",
+    "actions": [],
+    "actionGates": [],
+    "columns": [],
+    "calls": [],
+    "slug": "error",
+    "inNavigation": false,
+    "labelEn": null,
+    "labelAr": null,
+    "titleEn": "Something went wrong",
+    "titleAr": "حدث خطأ ما",
+    "hasPage": true
+  },
+  {
+    "route": "/account/notifications",
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Account/Notifications.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Account/Notifications.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": null,
+    "access": "authenticated",
+    "titleKey": "Account.Notifications.Title",
+    "actions": [
+      {
+        "name": "Details",
+        "labelKey": "Account.Notifications.Action.Details"
+      },
+      {
+        "name": "Delete",
+        "labelKey": "Account.Notifications.Action.Delete"
+      },
+      {
+        "name": "Delete selected",
+        "labelKey": "Account.Notifications.Action.Delete"
+      }
+    ],
+    "actionGates": [],
+    "columns": [
+      {
+        "key": "title",
+        "headerKey": "Account.Notifications.Column.Title"
+      },
+      {
+        "key": "body",
+        "headerKey": "Account.Notifications.Column.Body"
+      },
+      {
+        "key": "severity",
+        "headerKey": "Account.Notifications.Column.Severity"
+      },
+      {
+        "key": "createdAt",
+        "headerKey": "Account.Notifications.Column.CreatedAt"
+      }
+    ],
+    "calls": [
+      "/account/api/notifications/list",
+      "/account/api/notifications/read-all",
+      "/account/api/notifications/{row.Id}",
+      "/account/api/notifications/{row.Id}/read"
+    ],
+    "slug": "account-notifications",
+    "inNavigation": false,
+    "labelEn": null,
+    "labelAr": null,
+    "titleEn": "Notifications",
+    "titleAr": "الإشعارات",
+    "hasPage": true
+  },
+  {
+    "route": "/account/profile",
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Account/Profile.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Account/Profile.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": null,
+    "access": "authenticated",
+    "titleKey": "Profile.Title",
+    "actions": [],
+    "actionGates": [],
+    "columns": [],
+    "calls": [
+      "/account/api/avatar",
+      "/account/api/change-password",
+      "/account/api/profile",
+      "/account/api/recovery-codes/regenerate",
+      "/account/api/totp/confirm",
+      "/account/api/totp/disable",
+      "/account/api/totp/setup"
+    ],
+    "slug": "account-profile",
+    "inNavigation": false,
+    "labelEn": null,
+    "labelAr": null,
+    "titleEn": "My profile",
+    "titleAr": "ملفي الشخصي",
+    "hasPage": true
+  },
+  {
+    "route": "/account/totp-pairing",
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Account/TotpPairing.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Account/TotpPairing.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": null,
+    "access": "authenticated",
+    "titleKey": "TotpPairing.Title",
+    "actions": [],
+    "actionGates": [],
+    "columns": [],
+    "calls": [
+      "/account/api/totp/pairing",
+      "/account/api/totp/pairing/verify"
+    ],
+    "slug": "account-totp-pairing",
+    "inNavigation": false,
+    "labelEn": null,
+    "labelAr": null,
+    "titleEn": "Re-pair authenticator",
+    "titleAr": "إعادة إقران تطبيق المصادقة",
+    "hasPage": true
+  },
+  {
+    "route": "/admin/admins/new",
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/CreateUser.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/CreateUser.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Admins.Create",
+    "access": "permission",
+    "titleKey": "Admin.CreateUser.Title",
+    "actions": [],
+    "actionGates": [],
+    "columns": [],
+    "calls": [],
+    "slug": "admin-admins-new",
+    "inNavigation": false,
+    "labelEn": null,
+    "labelAr": null,
+    "titleEn": "Add a new user",
+    "titleAr": "إضافة مستخدم جديد",
+    "hasPage": true
+  },
+  {
+    "route": "/admin/ai/services/{Feature}",
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/AiServiceDetail.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/AiServiceDetail.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "AiPrompts.View",
+    "access": "permission",
+    "titleKey": "Admin.AiServiceDetail.Title",
+    "actions": [],
+    "actionGates": [
+      {
+        "covers": "An action on the page",
+        "permission": "AiPrompts.Edit"
+      }
+    ],
+    "columns": [],
+    "calls": [
+      "/account/api/admin/ai/dashboard",
+      "/account/api/admin/ai/prompts/list"
+    ],
+    "slug": "admin-ai-services-x",
+    "inNavigation": false,
+    "labelEn": null,
+    "labelAr": null,
+    "titleEn": "AI service",
+    "titleAr": "خدمة الذكاء الاصطناعي",
+    "hasPage": true
+  },
+  {
+    "route": "/admin/others/new",
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/CreateOther.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/CreateOther.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Others.Create",
+    "access": "permission",
+    "titleKey": "Admin.Others.New.Title",
+    "actions": [],
+    "actionGates": [],
+    "columns": [],
+    "calls": [],
+    "slug": "admin-others-new",
+    "inNavigation": false,
+    "labelEn": null,
+    "labelAr": null,
+    "titleEn": "Add Other user",
+    "titleAr": "إضافة مستخدم من نوع آخر",
+    "hasPage": true
+  },
+  {
+    "route": "/admin/roles/{RoleId:guid}/permissions",
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/RolePermissionsEditor.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/RolePermissionsEditor.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Roles.AssignPermissions",
+    "access": "permission",
+    "titleKey": null,
+    "actions": [],
+    "actionGates": [],
+    "columns": [],
+    "calls": [
+      "/account/api/admin/roles/{RoleId}/permissions"
+    ],
+    "slug": "admin-roles-x-permissions",
+    "inNavigation": false,
+    "labelEn": null,
+    "labelAr": null,
+    "titleEn": null,
+    "titleAr": null,
+    "hasPage": true
+  },
+  {
+    "route": "/admin/visitors/new",
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/CreateVisitor.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/CreateVisitor.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Visitors.Create",
+    "access": "permission",
+    "titleKey": "Admin.CreateVisitor.Title",
+    "actions": [],
+    "actionGates": [],
+    "columns": [],
+    "calls": [],
+    "slug": "admin-visitors-new",
+    "inNavigation": false,
+    "labelEn": null,
+    "labelAr": null,
+    "titleEn": "Add a new visitor",
+    "titleAr": "إضافة زائر جديد",
+    "hasPage": true
+  },
+  {
+    "route": "/auth/pending",
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Auth/PendingApproval.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Auth/PendingApproval.razor.cs",
+    "layout": "MainLayout",
+    "permission": null,
+    "access": "authenticated",
+    "titleKey": "Auth.Pending.Title",
+    "actions": [],
+    "actionGates": [],
+    "columns": [],
+    "calls": [],
+    "slug": "auth-pending",
+    "inNavigation": false,
+    "labelEn": null,
+    "labelAr": null,
+    "titleEn": "Your account is waiting for approval",
+    "titleAr": "حسابك بانتظار الموافقة",
+    "hasPage": true
+  },
+  {
+    "route": "/auth/rejected",
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Auth/Rejected.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Auth/Rejected.razor.cs",
+    "layout": "MainLayout",
+    "permission": null,
+    "access": "authenticated",
+    "titleKey": "Auth.Rejected.Title",
+    "actions": [],
+    "actionGates": [],
+    "columns": [],
+    "calls": [],
+    "slug": "auth-rejected",
+    "inNavigation": false,
+    "labelEn": null,
+    "labelAr": null,
+    "titleEn": "Your account was not approved",
+    "titleAr": "تم رفض حسابك",
+    "hasPage": true
+  },
+  {
+    "route": "/forgot-password",
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Auth/ForgotPassword.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Auth/ForgotPassword.razor.cs",
+    "layout": null,
+    "permission": null,
+    "access": "anonymous",
+    "titleKey": "Auth.PageTitle.Forgot",
+    "actions": [],
+    "actionGates": [],
+    "columns": [],
+    "calls": [],
+    "slug": "forgot-password",
+    "inNavigation": false,
+    "labelEn": null,
+    "labelAr": null,
+    "titleEn": "Forgot password · SIMF Control Panel",
+    "titleAr": "نسيت كلمة المرور · لوحة تحكم SIMF",
+    "hasPage": true
+  },
+  {
+    "route": "/login",
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Auth/SignIn.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Auth/SignIn.razor.cs",
+    "layout": null,
+    "permission": null,
+    "access": "anonymous",
+    "titleKey": "Auth.PageTitle.SignIn",
+    "actions": [],
+    "actionGates": [],
+    "columns": [],
+    "calls": [],
+    "slug": "login",
+    "inNavigation": false,
+    "labelEn": null,
+    "labelAr": null,
+    "titleEn": "Sign in · SIMF Control Panel",
+    "titleAr": "تسجيل الدخول · لوحة تحكم SIMF",
+    "hasPage": true
+  },
+  {
+    "route": "/login/enrol-2fa",
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Auth/TwoFactorEnrolment.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Auth/TwoFactorEnrolment.razor.cs",
+    "layout": null,
+    "permission": null,
+    "access": "anonymous",
+    "titleKey": "Auth.Enrol2fa.PageTitle",
+    "actions": [],
+    "actionGates": [],
+    "columns": [],
+    "calls": [],
+    "slug": "login-enrol-2fa",
+    "inNavigation": false,
+    "labelEn": null,
+    "labelAr": null,
+    "titleEn": "Set up two-factor authentication",
+    "titleAr": "إعداد المصادقة الثنائية",
+    "hasPage": true
+  },
+  {
+    "route": "/login/recovery",
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Auth/RecoveryCodeVerify.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Auth/RecoveryCodeVerify.razor.cs",
+    "layout": null,
+    "permission": null,
+    "access": "anonymous",
+    "titleKey": "Auth.PageTitle.RecoveryCode",
+    "actions": [],
+    "actionGates": [],
+    "columns": [],
+    "calls": [],
+    "slug": "login-recovery",
+    "inNavigation": false,
+    "labelEn": null,
+    "labelAr": null,
+    "titleEn": "Recovery code · SIMF Control Panel",
+    "titleAr": "رمز الاسترداد · لوحة تحكم SIMF",
+    "hasPage": true
+  },
+  {
+    "route": "/login/totp",
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Auth/TotpVerify.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Auth/TotpVerify.razor.cs",
+    "layout": null,
+    "permission": null,
+    "access": "anonymous",
+    "titleKey": "Auth.PageTitle.Totp",
+    "actions": [],
+    "actionGates": [],
+    "columns": [],
+    "calls": [],
+    "slug": "login-totp",
+    "inNavigation": false,
+    "labelEn": null,
+    "labelAr": null,
+    "titleEn": "Verify · SIMF Control Panel",
+    "titleAr": "التحقق · لوحة تحكم SIMF",
+    "hasPage": true
+  },
+  {
+    "route": "/m/{Module}",
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/ModulePlaceholder.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/ModulePlaceholder.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Sessions.View",
+    "access": "permission",
+    "titleKey": null,
+    "actions": [],
+    "actionGates": [],
+    "columns": [],
+    "calls": [],
+    "slug": "m-x",
+    "inNavigation": false,
+    "labelEn": null,
+    "labelAr": null,
+    "titleEn": null,
+    "titleAr": null,
+    "hasPage": true
+  },
+  {
+    "route": "/not-found",
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/NotFound.razor",
+    "codeBehind": null,
+    "layout": "CpShellLayout",
+    "permission": null,
+    "access": "anonymous",
+    "titleKey": "NotFound.Title",
+    "actions": [],
+    "actionGates": [],
+    "columns": [],
+    "calls": [],
+    "slug": "not-found",
+    "inNavigation": false,
+    "labelEn": null,
+    "labelAr": null,
+    "titleEn": "Page not found",
+    "titleAr": "الصفحة غير موجودة",
+    "hasPage": true
+  },
+  {
+    "route": "/not-permitted",
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/NotPermitted.razor",
+    "codeBehind": null,
+    "layout": "CpShellLayout",
+    "permission": null,
+    "access": "authenticated",
+    "titleKey": "NotPermitted.Title",
+    "actions": [],
+    "actionGates": [],
+    "columns": [],
+    "calls": [],
+    "slug": "not-permitted",
+    "inNavigation": false,
+    "labelEn": null,
+    "labelAr": null,
+    "titleEn": "Not permitted",
+    "titleAr": "غير مصرّح",
+    "hasPage": true
+  },
+  {
+    "route": "/reset-password",
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Auth/ResetPassword.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Auth/ResetPassword.razor.cs",
+    "layout": null,
+    "permission": null,
+    "access": "anonymous",
+    "titleKey": "Auth.PageTitle.Reset",
+    "actions": [],
+    "actionGates": [],
+    "columns": [],
+    "calls": [],
+    "slug": "reset-password",
+    "inNavigation": false,
+    "labelEn": null,
+    "labelAr": null,
+    "titleEn": "Reset password · SIMF Control Panel",
+    "titleAr": "إعادة تعيين كلمة المرور · لوحة تحكم SIMF",
+    "hasPage": true
+  },
+  {
+    "route": "/sessions/{SessionId:guid}/moderate",
+    "razor": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SessionModerationDesk.razor",
+    "codeBehind": "src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SessionModerationDesk.razor.cs",
+    "layout": "CpShellLayout",
+    "permission": "Questions.Moderate",
+    "access": "permission",
+    "titleKey": "Admin.SessionModeration.Title",
+    "actions": [],
+    "actionGates": [
+      {
+        "covers": "An action on the page",
+        "permission": "Questions.Moderate"
+      }
+    ],
+    "columns": [],
+    "calls": [
+      "/account/api/sessions/{SessionId}/questions/moderate",
+      "/account/api/sessions/{SessionId}/questions/{row.Id}/hide",
+      "/account/api/sessions/{SessionId}/questions/{row.Id}/push"
+    ],
+    "slug": "sessions-x-moderate",
+    "inNavigation": false,
+    "labelEn": null,
+    "labelAr": null,
+    "titleEn": "Session Q&A moderation",
+    "titleAr": "إدارة أسئلة الجلسات",
+    "hasPage": true
+  }
+]

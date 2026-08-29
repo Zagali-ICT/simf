@@ -5,7 +5,7 @@
 | **Route** | `/admin/operation-log` |
 | **Layout** | `CpShellLayout` |
 | **Audience** | Administrator |
-| **Auth** | `[Authorize(Roles = "Administrator")]` + `RequireApprovedAccount` |
+| **Auth** | `@attribute [RequirePermission(PermissionCatalog.OperationLog.View)]` + `RequireApprovedAccount` |
 | **Pattern** | D-117 + D-132 canonical read-only grid (no toolbar mutations). |
 | **Status** | ✅ Real (D-134 Sprint A) |
 | **Backend endpoints** | `POST /account/api/admin/operation-log/list`, `GET /account/api/admin/operation-log/{id}` |

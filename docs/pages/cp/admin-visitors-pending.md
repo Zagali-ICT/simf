@@ -6,7 +6,7 @@
 | **Layout** | `CpShellLayout` |
 | **Surface** | Control Panel |
 | **Audience** | Administrator |
-| **Auth** | `[Authorize(Roles = "Administrator")]` + Approved |
+| **Auth** | `@attribute [RequirePermission(PermissionCatalog.Visitors.View)]` + Approved |
 | **Pattern** | D-117 canonical CRUD + D-132 mandatory Multiselect/SimfBanner. Approval queue (no CRUD writes from the toolbar — per-row Approve / Reject / View only). |
 | **Status** | ✅ Real |
 | **Backend** | `POST /account/api/admin/visitors/pending/list`, `POST /admin/visitors/{id}/approve` (optional `ProfileTypeId`, D-386), `POST /admin/visitors/{id}/reject`, `GET /admin/visitors/{id}/profile-for-approval` (D-124, D-125; full profile via `PendingProfileResponse` + `AdminApprovalReadService`, D-385), `GET /admin/visitors/{id}/id-document` (face photo, D-387) |

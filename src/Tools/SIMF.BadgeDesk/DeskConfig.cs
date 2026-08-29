@@ -40,14 +40,20 @@ public sealed class DeskConfig
     /// issues 3,000,001 upward.</summary>
     public const long RangeWidth = 1_000_000L;
 
-    /// <summary>First sequence this desk may mint.</summary>
-    [JsonIgnore]
     /// <summary>The edition year the desk stamps into every badge it prints. It
     /// must match the year open on the API: a desk stamping any other year
     /// prints badges every gate refuses, which is why the pre-event checklist
     /// checks it against the API rather than trusting the default.</summary>
     public int EditionYear { get; set; } = 2026;
 
+    /// <summary>First sequence this desk may mint.</summary>
+    ///
+    /// <para>The [JsonIgnore] belongs to THIS computed property. It used to sit
+    /// above EditionYear, which had been inserted between this doc comment and
+    /// the property it describes - and because doc comments are trivia, the
+    /// attribute bound to EditionYear instead. Every desk therefore discarded
+    /// its configured year and silently stamped the 2026 default.</para>
+    [JsonIgnore]
     public long SequenceRangeStart => DeskNumber * RangeWidth + 1;
 
     /// <summary>Last sequence this desk may mint.</summary>

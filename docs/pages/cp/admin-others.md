@@ -6,7 +6,7 @@
 | **Layout** | `CpShellLayout` |
 | **Surface** | Control Panel |
 | **Audience** | Administrator |
-| **Auth** | `[Authorize(Roles = "Administrator")]` + Approved |
+| **Auth** | `@attribute [RequirePermission(PermissionCatalog.Others.View)]` + Approved |
 | **Pattern** | D-117 canonical CRUD (per-kind sibling of `/admin/visitors`) |
 | **Status** | ✅ Real |
 | **Backend** | `POST /account/api/admin/others/list`, `POST /admin/others/register-onsite` (D-127), `GET /admin/others/{id}/profile` (D-126), `POST /bulk-delete`, `POST /duplicate`, `POST /export`, `POST /import`, `POST /admin/others/{id}/id-document` (D-129) |

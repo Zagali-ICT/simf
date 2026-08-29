@@ -4,7 +4,7 @@
 |--|--|
 | **Route** | `/admin/reset-2fa` |
 | **Audience** | Administrator |
-| **Auth** | `[Authorize(Roles = "Administrator")]` |
+| **Auth** | `@attribute [RequirePermission(PermissionCatalog.Admins.ResetTwoFactor)]` |
 | **Pattern** | SimfBanner (D-132) + search-and-action form (no grid). |
 | **Status** | ✅ Real |
 | **Backend** | `GET /account/api/admin/users/search?q={email}`, `POST /account/api/admin/users/{id}/reset-2fa` (decision D-041) |

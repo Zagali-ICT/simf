@@ -161,7 +161,7 @@ public partial class OthersList
         CloseForm();
         ShowToast("success", wasEdit
             ? L["Admin.Edit.Saved"]
-            : string.Format(L["Admin.CreateUser.Success"], saved.Email));
+            : string.Format(L["Admin.CreateOther.Success"], saved.Email));
         await LoadAsync();
     }
 

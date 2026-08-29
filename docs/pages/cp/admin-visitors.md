@@ -6,7 +6,7 @@
 | **Layout** | `CpShellLayout` |
 | **Surface** | Control Panel |
 | **Audience** | Administrator (event desk staff at run-time) |
-| **Auth** | `[Authorize(Roles = "Administrator")]` + Approved account |
+| **Auth** | `@attribute [RequirePermission(PermissionCatalog.Visitors.View)]` + Approved account |
 | **Pattern** | D-117 canonical CRUD (per-kind variant of `UsersList.razor`) |
 | **Status** | ✅ Real |
 | **Implements use case(s)** | UC-VIS-LIST, UC-VIS-WALKIN-CREATE (D-127), UC-VIS-DETAILS-WITH-ID-IMAGE (D-129), UC-VIS-DELETE, UC-VIS-DUPLICATE, UC-VIS-IMPORT, UC-VIS-EXPORT _(pending UCS)_ |

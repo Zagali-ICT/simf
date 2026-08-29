@@ -587,8 +587,8 @@ Rules:
   audit row alongside both actor and subject user ids (the new
   `OperationLog.ActorUserId` column).
 
-The CP page is `/admin/reset-2fa` with a `[Authorize(Roles = "Administrator")]`
-gate, a confirmation dialog, and bilingual strings. Operator-level SQL
+The CP page is `/admin/reset-2fa`, gated by
+`@attribute [RequirePermission(PermissionCatalog.Admins.ResetTwoFactor)]`, a confirmation dialog, and bilingual strings. Operator-level SQL
 reset stays documented as the fallback for the super-administrator.
 
 Audit events: `Admin.TwoFactorReset`, `Admin.TwoFactorResetFailed`. An

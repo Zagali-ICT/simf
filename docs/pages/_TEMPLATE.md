@@ -32,8 +32,12 @@ Avoid restating the title — explain the job.
 
 - **Who can reach it:** {role list}
 - **Who can edit/write on it:** {role list} (if different from reach)
-- **Authorisation gates:** the policy attribute names + the BFF route guard
-  (e.g. `[Authorize(Roles = "Administrator")]` + `AdministratorOnly + RequireApprovedAccount`)
+- **Authorisation gates:** the page attribute + the API policy behind it
+  (e.g. `@attribute [RequirePermission(PermissionCatalog.Visitors.View)]` +
+  `RequireApprovedAccount`). Pages are gated by a NAMED PERMISSION, not by a
+  role — a role check would admit any Administrator to every page, which is
+  what the permission system exists to prevent. Copy the real code from the
+  page's `@attribute`; do not write a role here.
 - **What an unauthenticated user sees:** {redirect target / 401 / 403}
 
 ## 3. Screenshots

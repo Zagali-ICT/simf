@@ -1336,7 +1336,8 @@
   <data name="Admin.CreateVisitor.Submit" xml:space="preserve"><value>إضافة زائر</value></data>
   <data name="Admin.CreateVisitor.Submitting" xml:space="preserve"><value>جارٍ الحفظ</value></data>
   <data name="Admin.CreateVisitor.BackToList" xml:space="preserve"><value>الرجوع إلى القائمة</value></data>
-  <data name="Admin.CreateVisitor.Success" xml:space="preserve"><value>تم إرسال الدعوة إلى {0}.</value></data>
+  <data name="Admin.CreateVisitor.Success" xml:space="preserve"><value>تم تسجيل الزائر {0}.</value></data>
+  <data name="Admin.CreateOther.Success" xml:space="preserve"><value>تم تسجيل {0} وهو بانتظار الموافقة.</value></data>
   <data name="Admin.CreateVisitor.Fallback" xml:space="preserve"><value>تعذّر إنشاء الزائر.</value></data>
 
   <data name="Admin.Users.BulkDelete.Title" xml:space="preserve"><value>حذف المستخدمين</value></data>
@@ -1704,8 +1705,10 @@
   <data name="Profile.TwoFactor.ConfirmDisabled" xml:space="preserve"><value>تم تعطيل المصادقة الثنائية.</value></data>
 
   <data name="TotpPairing.Title" xml:space="preserve"><value>إعادة إقران تطبيق المصادقة</value></data>
-  <data name="TotpPairing.RevealInstruction" xml:space="preserve"><value>أدخل رمزاً حالياً من تطبيق المصادقة الذي لديك. لا يتم عرض رمز الاقتران إلا مقابل ذلك، لأنه يكشف المفتاح السري لهذا الحساب.</value></data>
-  <data name="TotpPairing.Reveal" xml:space="preserve"><value>عرض رمز الاقتران</value></data>
+  <data name="TotpPairing.RevealInstruction" xml:space="preserve"><value>أدخل رمزاً حالياً من تطبيق المصادقة الذي لديك. لا يتم عرض رمز الاقتران إلا مقابل ذلك، لأنه يكشف المفتاح السري لهذا الحساب.</value></data>
+
+  <data name="TotpPairing.Reveal" xml:space="preserve"><value>عرض رمز الاقتران</value></data>
+
   <data name="TotpPairing.Instruction" xml:space="preserve"><value>امسح رمز QR هذا باستخدام Google Authenticator (أو أي تطبيق متوافق مع TOTP). يبقى السر نفسه — إعادة المسح لا تؤثر على رموز الاسترداد الحالية.</value></data>
   <data name="TotpPairing.SecretHint" xml:space="preserve"><value>أو أدخل هذا السر يدويًا في التطبيق:</value></data>
   <data name="TotpPairing.NoSecret" xml:space="preserve"><value>لا يوجد سر مصادقة مرتبط بهذا الحساب بعد. استخدم صفحة الملف الشخصي للتسجيل.</value></data>
@@ -1805,7 +1808,7 @@
   <data name="Admin.Others.None" xml:space="preserve"><value>لا يوجد مستخدمون من نوع آخر بعد.</value></data>
   <data name="Admin.Others.LoadFailed" xml:space="preserve"><value>تعذّر تحميل المستخدمين الآخرين.</value></data>
   <data name="Admin.Others.New.Title" xml:space="preserve"><value>إضافة مستخدم من نوع آخر</value></data>
-  <data name="Admin.Others.New.Supporting" xml:space="preserve"><value>أنشئ مستخدمًا جديدًا من النوع "آخر". سيستلم المستخدم دعوة لتعيين كلمة المرور صالحة لمدة 7 أيام عبر البريد الإلكتروني.</value></data>
+  <data name="Admin.Others.New.Supporting" xml:space="preserve"><value>سجّل حساب شريك أو عارض أو إعلامي أو موظف. ينتظر الحساب الموافقة وليست له كلمة مرور — فالوصول يكون بالشارة التي تُصدر عند اعتماده.</value></data>
   <data name="Admin.Others.New.Submit" xml:space="preserve"><value>إنشاء مستخدم آخر</value></data>
   <data name="Admin.Others.New.ProfileTypeRequired" xml:space="preserve"><value>نوع الملف الشخصي مطلوب.</value></data>
   <data name="Admin.Others.ProfileType" xml:space="preserve"><value>نوع الملف الشخصي</value></data>

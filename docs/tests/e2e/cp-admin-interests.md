@@ -132,7 +132,7 @@ Scenario: Duplicate Name returns 409 with bilingual server message
   And fills Name="Naval Engineering" + Name (Arabic)="الهندسة البحرية" + Display order="0"
   And clicks "Create interest"
   Then the BFF forwards POST /admin/interests
-  And the API returns HTTP 409 with ApiResult.Error.Code = "InterestNameNotUnique"
+  And the API returns HTTP 409 with ApiResult.Error.Code = "InterestNameDuplicate"
   And the modal stays open
   And the error toast surfaces the bilingual MessageForCurrentCulture()
 ```

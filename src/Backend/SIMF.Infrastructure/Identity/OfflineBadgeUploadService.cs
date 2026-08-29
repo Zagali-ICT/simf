@@ -135,7 +135,11 @@ internal sealed class OfflineBadgeUploadService(
             AlreadyUploaded: results.Count(
                 r => r.Status == OfflineBadgeUploadStatus.AlreadyUploaded),
             Rejected: results.Count(r => r.Status == OfflineBadgeUploadStatus.Rejected),
-            Results: results);
+            Results: results,
+            // So a desk provisioned with the wrong key finds out on its first
+            // upload instead of at the gate, where a bad key and a garbage scan
+            // produce the identical denial.
+            ServerBadgeKeyVersion: walkInMode.CurrentValue.BadgeKeyVersion);
 
         await auditLog.WriteAsync(new AuditEntry
         {

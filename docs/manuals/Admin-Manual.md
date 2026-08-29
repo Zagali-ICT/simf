@@ -187,8 +187,8 @@ cannot drift out of step with the chapters again.
 
 ### 2.2 First sign-in (TOTP pairing)
 
-1. Open the Control Panel URL (provided by your team — typically
-   `https://cp.simf.local`).
+1. Open the Control Panel URL (provided by your team — `https://cp.simrsnf.com`
+   on the production estate, `http://localhost:5158` for a local run).
 2. Enter your email + password → **Sign in**.
 3. The browser sends you to `/account/totp-pairing`. The page shows a QR code
    and a manual-entry secret.
@@ -4236,18 +4236,27 @@ has the same role + state, fresh QR.
 
 | Symptom | Cause | Fix |
 |---------|-------|-----|
-| Edit button does nothing useful | Edit is a stub awaiting the User Management module | Use Delete + re-Add as a workaround |
+| The Edit dialog does not offer the field you want | Edit on this page manages the account's **roles** — it is not a stub. An administrator's own details are edited from the list for their account type | Change roles here; edit identity fields from Visitors or Others |
 | Bulk-delete reports "Deleted N, skipped 1" | Your own row was in the batch | Expected — self-delete is silently skipped |
 | Import shows 50 errors | XLSX header row missing or wrong column names | Open the Export sample as the template, re-fill, re-upload |
 | Toast: "Email already exists" | Trying to invite a duplicate | Find the existing admin first; if Deactivated, ask a developer (no re-activate exists yet) |
 
 #### What you cannot do here
 
-- **Edit existing admin fields** (Edit modal is a stub — awaits the User
-  Management module).
+- **Edit an administrator's email or display name** — the Edit action on this
+  page manages roles, not the account's own details.
 - **Reset their 2FA** — go to `/admin/reset-2fa` (per-target reset).
-- **Change their role** — admins are role-pinned at creation; you'd have to
-  delete + recreate.
+
+#### What you can do that this manual used to say you could not
+
+- **Change their roles.** Edit opens a role editor: tick and untick, then save.
+  Administrators are not role-pinned at creation, and deleting and recreating
+  an account to change a role has never been necessary. The action is gated by
+  `Admins.AssignRoles`, which is a different permission from the one that lets
+  you add an account at all — so somebody who may invite administrators cannot
+  quietly make one powerful. The last remaining Administrator cannot have that
+  role removed; the server refuses rather than leaving the system with nobody
+  who can administer it.
 
 #### Cross-references
 
@@ -4350,8 +4359,11 @@ Same shape as Admins (§10.1).
 
 #### What you cannot do here
 
-- **Edit a visitor's identity after walk-in** (Edit is a stub awaiting the
-  User Management module).
+- **Edit every identity field after walk-in.** Edit is not a stub: it opens the
+  shared account form, where the email address, display name, profile type,
+  nationality, both mobile numbers, the meeting preferences and the pictures are
+  all editable. What it does not reach is the identity document and the
+  interests, which are captured at registration.
 - **Mass-register from XLSX while populating profile fields** — the import
   XLSX covers email + display name + profile-type, not the full profile.
   Use the walk-in form for profile-complete registrations.

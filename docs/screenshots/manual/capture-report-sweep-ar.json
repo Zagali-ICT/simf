@@ -1,0 +1,1134 @@
+[
+  {
+    "slug": "dashboard",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/",
+    "file": "cp-dashboard-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-attendance",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/attendance",
+    "file": "cp-admin-attendance-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-sessions-live-hall",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/sessions/live-hall",
+    "file": "cp-admin-sessions-live-hall-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-statistics",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/statistics",
+    "file": "cp-admin-statistics-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-attendees",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/attendees",
+    "file": "cp-admin-attendees-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-visitors",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/visitors",
+    "file": "cp-admin-visitors-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-visitors-pending",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/visitors/pending",
+    "file": "cp-admin-visitors-pending-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-visitors-vip",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/visitors/vip",
+    "file": "cp-admin-visitors-vip-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-visitors-vip-export",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/visitors/vip/export",
+    "file": "cp-admin-visitors-vip-export-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-delegates",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/delegates",
+    "file": "cp-admin-delegates-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-visitors-badge-batches",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/visitors/badge-batches",
+    "file": "cp-admin-visitors-badge-batches-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-others",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/others",
+    "file": "cp-admin-others-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-others-pending",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/others/pending",
+    "file": "cp-admin-others-pending-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-print-bag",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/print-bag",
+    "file": "cp-admin-print-bag-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-admins",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/admins",
+    "file": "cp-admin-admins-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-admins-pending",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/admins/pending",
+    "file": "cp-admin-admins-pending-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-roles",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/roles",
+    "file": "cp-admin-roles-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-reset-2fa",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/reset-2fa",
+    "file": "cp-admin-reset-2fa-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-themes",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/themes",
+    "file": "cp-admin-themes-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-sessions",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/sessions",
+    "file": "cp-admin-sessions-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-session-categories",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/session-categories",
+    "file": "cp-admin-session-categories-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-programme-days",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/programme-days",
+    "file": "cp-admin-programme-days-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-programme-timeline",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/programme/timeline",
+    "file": "cp-admin-programme-timeline-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-halls",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/halls",
+    "file": "cp-admin-halls-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-halls-seat-layouts",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/halls/seat-layouts",
+    "file": "cp-admin-halls-seat-layouts-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-sessions-seat-plans",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/sessions/seat-plans",
+    "file": "cp-admin-sessions-seat-plans-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-speaker-meeting-requests",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/speaker-meeting-requests",
+    "file": "cp-admin-speaker-meeting-requests-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-speaker-availability",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/speaker-availability",
+    "file": "cp-admin-speaker-availability-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-hall-availability",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/hall-availability",
+    "file": "cp-admin-hall-availability-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-delegation-meetings",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/delegation-meetings",
+    "file": "cp-admin-delegation-meetings-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-delegation-availability",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/delegation-availability",
+    "file": "cp-admin-delegation-availability-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-document-requests",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/document-requests",
+    "file": "cp-admin-document-requests-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-badge-requests",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/badge-requests",
+    "file": "cp-admin-badge-requests-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-speakers",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/speakers",
+    "file": "cp-admin-speakers-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-speaker-presentations",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/speaker-presentations",
+    "file": "cp-admin-speaker-presentations-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-bookings",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/bookings",
+    "file": "cp-admin-bookings-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-meeting-tables",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/meeting-tables",
+    "file": "cp-admin-meeting-tables-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-business-meetings",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/business-meetings",
+    "file": "cp-admin-business-meetings-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-session-moderators",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/session-moderators",
+    "file": "cp-admin-session-moderators-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-question-queue",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/question-queue",
+    "file": "cp-admin-question-queue-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-session-summaries",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/session-summaries",
+    "file": "cp-admin-session-summaries-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-exhibitors",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/exhibitors",
+    "file": "cp-admin-exhibitors-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-booths",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/booths",
+    "file": "cp-admin-booths-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-sponsors",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/sponsors",
+    "file": "cp-admin-sponsors-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-venue-map",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/venue-map",
+    "file": "cp-admin-venue-map-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "m-live-sessions",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/m/live-sessions",
+    "file": "cp-m-live-sessions-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-ratings",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/ratings",
+    "file": "cp-admin-ratings-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-rating-config",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/rating-config",
+    "file": "cp-admin-rating-config-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-faq",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/faq",
+    "file": "cp-admin-faq-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-ai",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/ai",
+    "file": "cp-admin-ai-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-ai-services",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/ai/services",
+    "file": "cp-admin-ai-services-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-ai-prompts",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/ai/prompts",
+    "file": "cp-admin-ai-prompts-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-ai-invocations",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/ai/invocations",
+    "file": "cp-admin-ai-invocations-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-media-library",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/media-library",
+    "file": "cp-admin-media-library-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-content-blocks",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/content-blocks",
+    "file": "cp-admin-content-blocks-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-banners",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/banners",
+    "file": "cp-admin-banners-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-media",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/media",
+    "file": "cp-admin-media-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-news",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/news",
+    "file": "cp-admin-news-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-media-partners",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/media-partners",
+    "file": "cp-admin-media-partners-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-archive",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/archive",
+    "file": "cp-admin-archive-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-invitations",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/invitations",
+    "file": "cp-admin-invitations-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-vips",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/vips",
+    "file": "cp-admin-vips-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-announcements",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/announcements",
+    "file": "cp-admin-announcements-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-contact-inquiries",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/contact-inquiries",
+    "file": "cp-admin-contact-inquiries-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-gates",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/gates",
+    "file": "cp-admin-gates-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-gates-operator",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/gates/operator",
+    "file": "cp-admin-gates-operator-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-hall-arrivals",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/hall-arrivals",
+    "file": "cp-admin-hall-arrivals-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-gates-dashboard",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/gates/dashboard",
+    "file": "cp-admin-gates-dashboard-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-interests",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/interests",
+    "file": "cp-admin-interests-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-countries",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/countries",
+    "file": "cp-admin-countries-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-organisations",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/organisations",
+    "file": "cp-admin-organisations-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-regions",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/regions",
+    "file": "cp-admin-regions-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-profile-types-visitor",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/profile-types/visitor",
+    "file": "cp-admin-profile-types-visitor-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-profile-types-other",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/profile-types/other",
+    "file": "cp-admin-profile-types-other-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-configuration",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/configuration",
+    "file": "cp-admin-configuration-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-site-settings",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/site-settings",
+    "file": "cp-admin-site-settings-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-walk-in-mode",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/walk-in-mode",
+    "file": "cp-admin-walk-in-mode-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-email-templates",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/email/templates",
+    "file": "cp-admin-email-templates-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-organization-profile",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/organization-profile",
+    "file": "cp-admin-organization-profile-default-ar.png",
+    "consoleErrors": [
+      "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    ],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-logs",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/logs",
+    "file": "cp-admin-logs-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-ops-services",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/ops/services",
+    "file": "cp-admin-ops-services-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-operation-log",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/operation-log",
+    "file": "cp-admin-operation-log-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-operations",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/operations",
+    "file": "cp-admin-operations-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-editions",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/editions",
+    "file": "cp-admin-editions-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-reports",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/reports",
+    "file": "cp-admin-reports-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-reports-attendance",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/reports/attendance",
+    "file": "cp-admin-reports-attendance-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-reports-registrations",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/reports/registrations",
+    "file": "cp-admin-reports-registrations-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-reports-gates",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/reports/gates",
+    "file": "cp-admin-reports-gates-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-reports-sessions",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/reports/sessions",
+    "file": "cp-admin-reports-sessions-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-reports-ratings",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/reports/ratings",
+    "file": "cp-admin-reports-ratings-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-reports-partners",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/reports/partners",
+    "file": "cp-admin-reports-partners-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-reports-meetings",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/reports/meetings",
+    "file": "cp-admin-reports-meetings-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-reports-engagement",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/reports/engagement",
+    "file": "cp-admin-reports-engagement-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "error",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/Error",
+    "file": "cp-error-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "account-notifications",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/account/notifications",
+    "file": "cp-account-notifications-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "account-profile",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/account/profile",
+    "file": "cp-account-profile-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "account-totp-pairing",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/account/totp-pairing",
+    "file": "cp-account-totp-pairing-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-admins-new",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/admins/new",
+    "file": "cp-admin-admins-new-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-ai-services-x",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/ai/services/Assistant",
+    "file": "cp-admin-ai-services-x-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-others-new",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/others/new",
+    "file": "cp-admin-others-new-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-roles-x-permissions",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/roles/6FCE3042-2F3F-40D6-9E8D-08DF05E5C91F/permissions",
+    "file": "cp-admin-roles-x-permissions-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-visitors-new",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/admin/visitors/new",
+    "file": "cp-admin-visitors-new-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "auth-pending",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/",
+    "requested": "/auth/pending",
+    "redirected": true
+  },
+  {
+    "slug": "auth-rejected",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/",
+    "requested": "/auth/rejected",
+    "redirected": true
+  },
+  {
+    "slug": "forgot-password",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/forgot-password",
+    "file": "cp-forgot-password-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "login",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/login",
+    "file": "cp-login-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "login-enrol-2fa",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/login",
+    "requested": "/login/enrol-2fa",
+    "redirected": true
+  },
+  {
+    "slug": "login-recovery",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/login",
+    "requested": "/login/recovery",
+    "redirected": true
+  },
+  {
+    "slug": "login-totp",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/login",
+    "requested": "/login/totp",
+    "redirected": true
+  },
+  {
+    "slug": "m-x",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/m/live-sessions",
+    "file": "cp-m-x-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "not-found",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/not-found",
+    "file": "cp-not-found-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "not-permitted",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/not-permitted",
+    "file": "cp-not-permitted-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "reset-password",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/reset-password",
+    "file": "cp-reset-password-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "sessions-x-moderate",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/sessions/20588DDF-4ED3-4B32-984E-5C71C024E7F7/moderate",
+    "file": "cp-sessions-x-moderate-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  }
+]

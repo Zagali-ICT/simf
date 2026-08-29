@@ -4,7 +4,7 @@
 |--|--|
 | **Route** | `/admin/attendees` |
 | **Audience** | Administrator |
-| **Auth** | `[Authorize(Roles = "Administrator")]` + `RequireApprovedAccount` |
+| **Auth** | `@attribute [RequirePermission(PermissionCatalog.Attendees.View)]` + `RequireApprovedAccount` |
 | **Pattern** | D-117 + D-132 read-only canonical grid + filter row. |
 | **Status** | ✅ Real (D-134 Sprint A) |
 | **Backend endpoints** | `POST /account/api/admin/attendees/list` |

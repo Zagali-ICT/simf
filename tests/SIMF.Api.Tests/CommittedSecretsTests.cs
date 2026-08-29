@@ -430,24 +430,24 @@ public sealed class CommittedSecretsTests
             11,
             932,
             "d86de87544827a8b3f648148ea921eb300bf9e17f9971e851cff27f85da43cce",
-            new[]
-            {
-                // The SQL login in the API's two connection strings. D-916 tracked the
-                // five set-env scripts with their live values on purpose ("the five now
-                // carry live production values and are TRACKED"), and the owner has
-                // confirmed the credentials stay as they are, so this is a recorded
-                // exposure rather than an accident.
-                //
-                // It is listed here rather than the guard being softened, because the
-                // list is itself asserted: A_recorded_remainder_that_is_gone_is_deleted
-                // fails the build if the value ever leaves this file, so the entry can
-                // only be removed, never quietly kept past a rotation. The value is the
-                // same one already in git history from the deleted root txt.txt, so
-                // tracking this file republishes rather than newly discloses it.
-                //
-                // Retire this entry when the simf_app SQL login is rotated.
-                "deploy/set-env-api.ps1",
-            }),
+            // EMPTY as of 2026-08-29, and that is the point of the list only ever
+            // shrinking. The SQL login used to sit in deploy/set-env-api.ps1: D-916
+            // tracked the five set-env scripts WITH their live values on purpose and
+            // recorded the exposure here rather than softening the guard.
+            //
+            // That collided with DeploymentEnvTemplateTests, which requires a template
+            // to declare every secret but ship it EMPTY - and which had been red for
+            // weeks because a .gitignore rule then untracked the scripts altogether,
+            // leaving the repository with neither a template nor a tracked value. The
+            // deadlock is resolved the safe way: the scripts are tracked again as
+            // TEMPLATES with all 18 secrets declared and blank, and the filled values
+            // moved to a git-ignored deploy/set-env-api.local.ps1.
+            //
+            // ROTATION IS STILL OWED. The value remains in git history from the
+            // deleted root txt.txt, so every clone still carries it; removing it from
+            // the tip does not undo the disclosure. This entry going empty means the
+            // repository stopped republishing it, not that the account became safe.
+            Array.Empty<string>()),
 
         // Seed:DemoPassword — the D-585 demo-account shared password. Blanked
         // in config (round 1) and removed from the fixture + the two docs

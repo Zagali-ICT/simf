@@ -62,7 +62,7 @@
 | E2E-MOB014-015 | **Saved stat tiles → Coming soon (owner 2026-06-21):** the الإحصائيات tiles **مقابلات** and **جلسات محفوظة** still show their live counts but are now tappable; each opens the **ComingSoon** placeholder (saved meetings / saved sessions are not built yet) | happy | P2 | authored ✓ (widget — `KsaStatTile` fires `onTap`) |
 | E2E-MOB014-019 | The المزيد rows' forward "open" caret points to the inline end — right in LTR (English), left in RTL (Arabic) — via the shared SimfForwardChevron | i18n | P2 | authored ✓ (`test/app/widgets/simf_forward_chevron_test.dart`) |
 | E2E-MOB014-018 | **True guest gets guest copy + a way in (BUG-013):** a visitor with NO account reaching the Profile tab sees "sign in or create an account to see your profile and schedule" and working Sign in / Create account actions — never the "under review" copy | auth | P1 | authored ✓ (screen `BUG-013 — a TRUE guest gets the guest copy and a working sign-in CTA, never the under-review copy`) |
-| E2E-MOB014-019 | **Delete my account (Google Play in-app deletion path):** the Profile settings list offers حذف حسابي / "Delete my account"; cancelling changes nothing; confirming erases the profile, identity document and photos, revokes every session and device key, signs the user out and lands on sign-in; a server failure surfaces a toast rather than a false success | happy | P0 | authored ✓ (`test/features/myarea/delete_account_tile_test.dart`) |
+| E2E-MOB014-020 | **Delete my account (Google Play in-app deletion path):** the Profile settings list offers حذف حسابي / "Delete my account"; cancelling changes nothing; confirming erases the profile, identity document and photos, revokes every session and device key, signs the user out and lands on sign-in; a server failure surfaces a toast rather than a false success | happy | P0 | authored ✓ (`test/features/myarea/delete_account_tile_test.dart`) |
 | E2E-MOB014-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-MOB014-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
@@ -305,7 +305,7 @@ working sign-in CTA, never the under-review copy`.
 
 ---
 
-### E2E-MOB014-019 — Delete my account
+### E2E-MOB014-020 — Delete my account
 
 Google Play requires an in-app account-deletion path for any app that offers
 account creation. This is that path. It is irreversible, so the cancel branch
