@@ -149,6 +149,17 @@ public sealed class ManualCapture : IAsyncLifetime
         var pairedSecret = TotpSecret.Length > 0 ? TotpSecret : null;
         var password = Password;
 
+        // Switch the interface BEFORE signing in. The sign-in screens are the
+        // one-shot ones - a forced password change and the pairing QR render
+        // once per account, ever - so switching afterwards, as the sweep does,
+        // is too late to photograph them in the second language.
+        if (Lang == "ar")
+        {
+            await _page.GotoAsync(Cp + "/culture?culture=ar&redirectUri=%2Flogin",
+                new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
+            await SettleAsync();
+        }
+
         await _page.GotoAsync(Cp + "/login",
             new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
         if (capture) { await ShotAsync("login", "empty"); }

@@ -1,0 +1,62 @@
+[
+  {
+    "slug": "login",
+    "state": "empty",
+    "lang": "ar",
+    "url": "http://localhost:5158/login",
+    "file": "cp-login-empty-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "login",
+    "state": "filled",
+    "lang": "ar",
+    "url": "http://localhost:5158/login",
+    "file": "cp-login-filled-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "login-password-change",
+    "state": "empty",
+    "lang": "ar",
+    "url": "http://localhost:5158/login",
+    "file": "cp-login-password-change-empty-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "login-password-change",
+    "state": "filled",
+    "lang": "ar",
+    "url": "http://localhost:5158/login",
+    "file": "cp-login-password-change-filled-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "login-totp",
+    "state": "empty",
+    "lang": "ar",
+    "url": "http://localhost:5158/login/totp",
+    "file": "cp-login-totp-empty-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "dashboard",
+    "state": "default",
+    "lang": "ar",
+    "url": "http://localhost:5158/",
+    "file": "cp-dashboard-default-ar.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  }
+]
