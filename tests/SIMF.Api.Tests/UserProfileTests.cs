@@ -765,9 +765,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
     [InlineData("ابح1234", "ABJ1234")]    // Arabic letters → canonical Latin code
     [InlineData("ابح١٢٣٤", "ABJ1234")]    // Arabic letters + Arabic-Indic digits
     [InlineData("ABJ1", "ABJ1")]          // single digit
-    [InlineData("AB1234", "AB1234")]      // 2 letters + digits (relaxed)
-    [InlineData("ABJ", "ABJ")]            // letters only (relaxed)
-    [InlineData("1234", "1234")]          // digits only (relaxed)
+    [InlineData("AB1234", "AB1234")]      // 2 letters + digits
     public async Task POST_accepts_a_standard_plate_and_stores_it_normalized(
         string plate, string stored)
     {
@@ -1875,6 +1873,64 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
+    // ---- Owner rule, 2026-08-29: every field on the app form is mandatory
+    // except the plate number. These four pin the fields that were previously
+    // enforced ONLY in the Flutter form, or not at all, so a non-app caller
+    // could save a profile without them.
+
+    [Theory]
+    [InlineData("jobTitle")]
+    [InlineData("jobTitleArabic")]
+    [InlineData("placeOfBirth")]
+    public async Task POST_rejects_a_profile_missing_a_required_text_field(string field)
+    {
+        var token = await CreateUserAndSignInAsync();
+        var request = await ValidSaudiRequestAsync();
+        switch (field)
+        {
+            case "jobTitle": request.JobTitle = string.Empty; break;
+            case "jobTitleArabic": request.JobTitleArabic = string.Empty; break;
+            case "placeOfBirth": request.PlaceOfBirth = string.Empty; break;
+        }
+
+        var response = await PostAuthAsync(Path, request, token);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task POST_rejects_a_profile_with_no_gender_picked()
+    {
+        // Unspecified used to pass. It mattered because the face-photo rule is
+        // "male must supply one", so a caller that never picked a gender skipped
+        // the photo altogether. The shipped app pre-selects Male, so this closes
+        // a non-app caller rather than a hole in the UI.
+        var token = await CreateUserAndSignInAsync();
+        var request = await ValidSaudiRequestAsync();
+        request.Gender = Gender.Unspecified;
+
+        var response = await PostAuthAsync(Path, request, token);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("ABJ")]   // letters only
+    [InlineData("1234")]  // digits only
+    public async Task POST_rejects_a_plate_that_is_not_letters_AND_digits(string plate)
+    {
+        // The plate stays OPTIONAL - but one that is entered must carry at least
+        // one letter and at least one digit (owner 2026-08-29, tightening the
+        // 2026-07-06 relaxation that accepted either half alone).
+        var token = await CreateUserAndSignInAsync();
+        var request = await ValidSaudiRequestAsync();
+        request.PlateNumber = plate;
+
+        var response = await PostAuthAsync(Path, request, token);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
     private async Task<UpsertUserProfileRequest> ValidSaudiRequestAsync(
         // Names must be at least two parts in one script (Arabic-only / English-only).
         string englishName = "Test Visitor User Account",
@@ -1886,6 +1942,13 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         var organisationId = await SeedOrganisationAsync();
         return new UpsertUserProfileRequest
         {
+            // Required since 2026-08-29: every field on the app form is
+            // mandatory except the plate number. Female because the face-photo
+            // rule applies to males only, and these fixtures carry no avatar -
+            // a test that wants the male path sets Gender itself.
+            JobTitle = "Engineer",
+            JobTitleArabic = "مهندس",
+            Gender = Gender.Female,
             InterestIds = new List<Guid> { interestId },
             ArabicName = arabicName,
             EnglishName = englishName,

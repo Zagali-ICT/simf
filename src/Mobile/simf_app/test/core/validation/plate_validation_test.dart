@@ -14,14 +14,22 @@ void main() {
       expect(isStandardPlateNumber('ABJ1'), isTrue);
     });
 
-    // Relaxed rule (owner 2026-07-06): at least one letter and/or one digit,
-    // up to 3 letters + up to 4 digits.
-    test('accepts a partial plate — letters and/or digits', () {
+    // Owner 2026-08-29: a plate that IS entered must carry at least one letter
+    // AND at least one digit, up to 3 letters + up to 4 digits.
+    test('accepts a plate carrying letters AND digits', () {
       expect(isStandardPlateNumber('AB1234'), isTrue); // 2 letters + digits
-      expect(isStandardPlateNumber('ABJ'), isTrue); // letters only
-      expect(isStandardPlateNumber('1234'), isTrue); // digits only
-      expect(isStandardPlateNumber('A1'), isTrue); // one letter + one digit
-      expect(isStandardPlateNumber('ابح'), isTrue); // Arabic letters only
+      expect(isStandardPlateNumber('A1'), isTrue); // the floor
+      // Arabic letters + digits
+      expect(isStandardPlateNumber('ابح1234'), isTrue);
+    });
+
+    // These were ACCEPTED until 2026-08-29. The tightening is the point, so
+    // they are inverted rather than deleted.
+    test('rejects a plate missing letters or missing digits', () {
+      expect(isStandardPlateNumber('ABJ'), isFalse); // letters only
+      expect(isStandardPlateNumber('1234'), isFalse); // digits only
+      // Arabic letters only
+      expect(isStandardPlateNumber('ابح'), isFalse);
     });
 
     test('rejects out-of-range or non-plate characters', () {

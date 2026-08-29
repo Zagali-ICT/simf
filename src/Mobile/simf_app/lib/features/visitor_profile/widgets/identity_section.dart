@@ -100,9 +100,6 @@ class IdentitySection extends StatelessWidget {
               (v == null || v.trim().isEmpty) ? l10n.jobTitleRequired : null,
         ),
         const SizedBox(height: SimfTokens.space4),
-        // Optional Arabic job title - the backend + CP already carry
-        // UserProfile.JobTitleArabic; captured here too (server validates only
-        // when present).
         SimfLabeledTextField(
           label: l10n.jobTitleArabicLabel,
           controller: jobTitleArabic,
@@ -113,6 +110,11 @@ class IdentitySection extends StatelessWidget {
           inputFormatters: <TextInputFormatter>[
             FilteringTextInputFormatter.allow(arabicNameCharacters),
           ],
+          // Required, like every other field on this form. Only the plate
+          // number is optional (owner, 2026-08-29). It was the last field on
+          // the form with no validator at all.
+          validator: (v) =>
+              (v == null || v.trim().isEmpty) ? l10n.jobTitleRequired : null,
         ),
       ],
     );

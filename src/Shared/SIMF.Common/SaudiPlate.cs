@@ -63,16 +63,20 @@ public static class SaudiPlate
     private const string LatinClass = "ABDEGHJKLNRSTUVXZ";
     private const string ArabicClass = "ابحدرسصطعقكلمنهوى";
 
-    // Relaxed rule (owner 2026-07-06): at least one plate letter and/or at
-    // least one digit — up to 3 letters (from the 17-letter set, one script)
-    // and up to 4 digits, in either order. The (?=.) lookahead rejects an
-    // all-empty match. Mirrors the client (plate_validation.dart).
+    // Owner 2026-08-29: the plate is optional, but one that IS entered must
+    // carry at least one letter AND at least one digit — 1-3 letters (from the
+    // 17-letter set, one script) and 1-4 digits, in either order, never
+    // interleaved.
+    //
+    // This TIGHTENS the 2026-07-06 relaxation, whose {0,n} quantifiers accepted
+    // letters-only ("ABJ") and digits-only ("1234"). Mirrors the client
+    // (plate_validation.dart); the two must not drift.
     private static readonly Regex LatinPlate = new(
-        $"^(?=.)([{LatinClass}]{{0,3}}[0-9]{{0,4}}|[0-9]{{0,4}}[{LatinClass}]{{0,3}})$",
+        $"^([{LatinClass}]{{1,3}}[0-9]{{1,4}}|[0-9]{{1,4}}[{LatinClass}]{{1,3}})$",
         RegexOptions.Compiled);
 
     private static readonly Regex ArabicPlate = new(
-        $"^(?=.)([{ArabicClass}]{{0,3}}[0-9]{{0,4}}|[0-9]{{0,4}}[{ArabicClass}]{{0,3}})$",
+        $"^([{ArabicClass}]{{1,3}}[0-9]{{1,4}}|[0-9]{{1,4}}[{ArabicClass}]{{1,3}})$",
         RegexOptions.Compiled);
 
     /// <summary>Strips separators and folds the input to a canonical

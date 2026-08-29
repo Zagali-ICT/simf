@@ -121,6 +121,13 @@ public sealed class VisitorLifecycleTests : IClassFixture<SimfApiFactory>
         {
             Content = JsonContent.Create(new UpsertUserProfileRequest
             {
+                // Required since 2026-08-29: every field on the app form is
+                // mandatory except the plate number. Female because the face-photo
+                // rule applies to males only, and these fixtures carry no avatar -
+                // a test that wants the male path sets Gender itself.
+                JobTitle = "Engineer",
+                JobTitleArabic = "مهندس",
+                Gender = Gender.Female,
                 InterestIds = new List<Guid> { interestId },
                 ArabicName = "زائر دورة الحياة الكامل",
                 EnglishName = "Lifecycle Visitor Full Name",

@@ -22,11 +22,17 @@ public sealed class SaudiPlateTests
     [InlineData("ابح١٢٣٤")]   // + Arabic-Indic digits
     [InlineData("ABJ1")]
     [InlineData("AB1234")]    // 2 letters + digits
-    [InlineData("ABJ")]       // letters only
-    [InlineData("1234")]      // digits only
-    [InlineData("A1")]        // one letter + one digit
-    public void IsValid_accepts_plate_letters_and_or_digits(string value)
+    [InlineData("A1")]        // the floor: one letter + one digit
+    public void IsValid_accepts_a_plate_carrying_letters_AND_digits(string value)
         => Assert.True(SaudiPlate.IsValid(value));
+
+    // Owner 2026-08-29 tightened this: a plate that IS entered must carry both.
+    // Until then {0,n} quantifiers accepted either half alone.
+    [Theory]
+    [InlineData("ABJ")]       // letters only - accepted before 2026-08-29
+    [InlineData("1234")]      // digits only  - accepted before 2026-08-29
+    public void IsValid_rejects_a_plate_missing_letters_or_digits(string value)
+        => Assert.False(SaudiPlate.IsValid(value));
 
     [Theory]
     [InlineData("ABCD123")]   // 4 letters
