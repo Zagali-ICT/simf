@@ -30,6 +30,10 @@ internal sealed class OfflineBadgeUploadService(
     SimfIdentityDbContext identityDbContext,
     IAuditLog auditLog,
     IOptionsMonitor<WalkInModeOptions> walkInMode,
+    // Quick register is CP-controllable, so it resolves through the settings
+    // service rather than the monitor; reading options directly would ignore
+    // the admin's toggle.
+    SIMF.Application.Configuration.Abstractions.IWalkInModeSettings walkInModeSettings,
     TimeProvider timeProvider,
     ILogger<OfflineBadgeUploadService> logger) : IOfflineBadgeUploadService
 {
@@ -85,7 +89,7 @@ internal sealed class OfflineBadgeUploadService(
         // permits. Without it every row fails the full-desk nationality check, so
         // the whole batch is rejected one row at a time. Say so once, up front,
         // instead of returning 500 identical per-row rejections.
-        if (!walkInMode.CurrentValue.QuickRegisterActive(timeProvider.SimfNow()))
+        if (!await walkInModeSettings.QuickRegisterActiveAsync(cancellationToken))
         {
             throw new ApiException(
                 ErrorCodes.OfflineUploadDisabled, 403,

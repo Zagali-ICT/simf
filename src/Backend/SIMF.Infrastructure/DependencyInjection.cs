@@ -359,6 +359,12 @@ public static class DependencyInjection
         // keys (per-platform min/latest app version + store URL).
         services.AddScoped<SIMF.Application.Configuration.Abstractions.IAppVersionPolicyService,
             SIMF.Infrastructure.Configuration.AppVersionPolicyService>();
+        // The two walk-in desk modes: deployment configuration with a CP
+        // override on top. Every runtime reader of QuickRegisterActive /
+        // AutoApproveActive goes through this rather than the options monitor,
+        // or the admin's toggle would be silently ignored.
+        services.AddScoped<SIMF.Application.Configuration.Abstractions.IWalkInModeSettings,
+            SIMF.Infrastructure.Configuration.WalkInModeSettingsService>();
         // The singleton Organization / About profile: cached public read +
         // admin full-document upsert (the edition-generic forum config).
         services.AddScoped<SIMF.Application.Configuration.Abstractions.IOrganizationProfileReadService,

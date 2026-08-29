@@ -175,6 +175,7 @@ public static class CpNavigation
             // NAV-006 — gates on Edit, matching the page. It gated on View, so a
             // read-only role saw the item and was then bounced by the page.
             new("Module.SiteSettings", "/admin/site-settings", RequiredPermission: PermissionCatalog.Configuration.Edit, Icon: "globe"),
+            new("Module.WalkInMode", "/admin/walk-in-mode", RequiredPermission: PermissionCatalog.WalkInMode.View, Icon: "power"),
             new("Module.EmailTemplates", "/admin/email/templates", RequiredPermission: PermissionCatalog.EmailTemplates.View, Icon: "mail"),
             new("Module.OrganizationProfile", "/admin/organization-profile", RequiredPermission: PermissionCatalog.OrganizationProfile.View, Icon: "building"),
             new("Module.AdminLogs", "/admin/logs", RequiredPermission: PermissionCatalog.Logs.View, Icon: "file-text"),

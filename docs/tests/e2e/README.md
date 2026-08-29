@@ -157,7 +157,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/organization-profile` | [`cp-organization-profile.md`](cp-organization-profile.md) | E2E-ORGP-001..009 |
 | `/admin/contact-inquiries` | [`cp-contact-inquiries.md`](cp-contact-inquiries.md) | E2E-CINQ-001..008 |
 | `/admin/operations` | [`cp-admin-operations.md`](cp-admin-operations.md) | E2E-OPS-001..011 |
-| _(no page — armed from config)_ | [`cp-walk-in-mode.md`](cp-walk-in-mode.md) | E2E-WIM-001..030 |
+| `/admin/walk-in-mode` (the two modes; master switch still from config) | [`cp-walk-in-mode.md`](cp-walk-in-mode.md) | E2E-WIM-001..035 |
 | `/admin/operation-log` | [`cp-admin-operation-log.md`](cp-admin-operation-log.md) | E2E-OPL-001..018 |
 | `/admin/logs` | [`cp-admin-logs.md`](cp-admin-logs.md) | E2E-LOG-001..013 |
 | `/admin/ops/services` | [`cp-ops-services.md`](cp-ops-services.md) | E2E-SVCM-001..008 |
@@ -351,7 +351,7 @@ being quoted in planning as if current.
   196 against a pinned total of 197. Only the two bold totals are
   machine-checked, so the parts had drifted unnoticed; counting by prefix is
   reproducible with one `ls`.)
-- **Total scenarios:** 3187 Coverage-matrix rows, every id distinct. That
+- **Total scenarios:** 3205 Coverage-matrix rows, every id distinct. That
   includes the **360** generated element-sweep rows (`E2E-{NS}-ELS-001/002`, two
   per live page — see `tools/qa/generate_els_rows.py`); the hand-authored
   functional total is 2827.

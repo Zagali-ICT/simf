@@ -149,6 +149,20 @@ public sealed partial class SimfAdminClient
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
+    public Task<ApiCallResult<WalkInModeSettingsResponse>> GetWalkInModeAsync(
+        string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<WalkInModeSettingsResponse>(
+            HttpMethod.Get, "walk-in-mode", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<WalkInModeSettingsResponse>> UpdateWalkInModeAsync(
+        AdminUpdateWalkInModeRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<WalkInModeSettingsResponse>(
+            HttpMethod.Post, "walk-in-mode",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
     public Task<ApiCallResult<IReadOnlyList<AdminCountryDelegateOption>>> ListCountryDelegatesAsync(
         int countryId, string accessToken,
         CancellationToken cancellationToken = default) =>

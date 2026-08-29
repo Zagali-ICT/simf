@@ -9,9 +9,16 @@ armed from `appsettings` / `set-env-*`.
 **Operator guide:** [`SIMF-Offline-Badge-Desk-Guide.md`](../../manuals/SIMF-Offline-Badge-Desk-Guide.md)
 — provisioning and running the offline desk (E2E-WIM-017..024).
 
-This capability has **no Control Panel page of its own by design** — arming it
-requires server access, which is the access control. Scenarios below are driven
-through the walk-in desk, the gate console and the configuration file.
+**Split control, since D-947.** The two per-mode flags — quick register and
+auto-approve — are turned on and off by an admin on `/admin/walk-in-mode`,
+so they can change during an event without a deploy. The MASTER switch
+(`WalkInMode:Enabled` and its window) is still armed from `appsettings` /
+`set-env-*`, and that remains the access control: both modes resolve as
+`IsArmed(now) && flag`, so no toggle can arm walk-in registration on an estate
+that never enabled it.
+
+Scenarios below are driven through the walk-in desk, the gate console, the
+configuration file, and — for E2E-WIM-031..035 — the Control Panel page.
 
 ---
 
@@ -485,3 +492,81 @@ And each can be reviewed and either kept Approved or set to Disabled
   been mis-applied.
 - Denials are **HTTP 200 with a Denied outcome**, not an error envelope. Assert
   on the outcome and denial reason, never on the status code alone.
+
+## The Control Panel page (D-947)
+
+### Coverage matrix
+
+| Id | Scenario | Category | Priority | Status |
+|----|----------|----------|----------|--------|
+| E2E-WIM-031 | An admin turns quick register on from the CP, with no deploy | crud | P0 | _to author_ |
+| E2E-WIM-032 | An admin turns auto-approve off mid-event | crud | P0 | _to author_ |
+| E2E-WIM-033 | The page refuses to lie: a toggle is inert while disarmed | validation | P1 | _to author_ |
+| E2E-WIM-034 | A View-only holder sees the modes and cannot change them | auth | P0 | _to author_ |
+| E2E-WIM-035 | Turning a mode on is audited as its own event | audit | P1 | _to author_ |
+
+
+`/admin/walk-in-mode`. Gated by `WalkInMode.View`; the Save button by
+`WalkInMode.Manage`. Its own permission pair rather than `Configuration.*`,
+because auto-approve relaxes an approval gate and granting somebody the run of
+the configuration page should not hand them that switch by accident.
+
+### E2E-WIM-031 — an admin turns quick register on, with no deploy
+
+```gherkin
+Scenario: the toggle overrides deployment configuration immediately
+  Given WalkInMode:Enabled is true and WalkInMode:QuickRegister is false
+  And an Administrator is on /admin/walk-in-mode
+  When they tick "Quick register" and Save
+  Then the response is 200 and the page reports quick register ON
+  And a walk-in submitted with only a name and one identity document succeeds
+  And no application restart or deploy happened in between
+```
+
+### E2E-WIM-032 — an admin turns auto-approve off mid-event
+
+```gherkin
+Scenario: the override wins in the OFF direction too
+  Given WalkInMode:AutoApprove is true in configuration
+  And an Administrator is on /admin/walk-in-mode
+  When they untick "No approval needed" and Save
+  Then a subsequent on-site visitor lands PendingApproval with no QR
+  # Both directions matter: a service that quietly kept reading options would
+  # pass the ON case and fail this one.
+```
+
+### E2E-WIM-033 — the page refuses to lie about an inert toggle
+
+```gherkin
+Scenario: disarmed, the toggles show their value and say they do nothing
+  Given WalkInMode:Enabled is false
+  And an override sets quick register ON
+  When an Administrator opens /admin/walk-in-mode
+  Then the page shows quick register as ON
+  And a warning states that walk-in mode is switched off for this deployment
+  And a walk-in with the reduced field set is still REFUSED
+  # The master switch is not admin-editable. Showing the toggle as OFF would
+  # misreport what they set; hiding the warning would misreport its effect.
+```
+
+### E2E-WIM-034 — a View-only holder cannot change the modes
+
+```gherkin
+Scenario: read and write are separate grants
+  Given an admin holds WalkInMode.View but not WalkInMode.Manage
+  When they open /admin/walk-in-mode
+  Then the current modes are visible
+  And the Save button is not rendered
+  And POST /api/v1/admin/walk-in-mode answers 403 if called directly
+```
+
+### E2E-WIM-035 — the change is audited as its own event
+
+```gherkin
+Scenario: a SOC reader can find the moment a mode was switched on
+  Given an Administrator changes either mode on /admin/walk-in-mode
+  When the operation log is read
+  Then one Admin.WalkInModeChanged entry carries BOTH values
+  # One line for the pair, because the pair is what the operator changed and a
+  # reader correlating a burst of desk approvals needs them together.
+```

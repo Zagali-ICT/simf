@@ -77,6 +77,11 @@ internal sealed partial class AdminAccountService(
     // IOptionsMonitor so arming it in appsettings / set-env-* takes effect
     // without a restart.
     IOptionsMonitor<WalkInModeOptions> walkInMode,
+    // The two CP-controllable modes resolve through here, not the monitor: an
+    // admin's toggle overrides configuration and reading options directly
+    // would ignore it. The monitor stays for the options that are NOT
+    // CP-controlled (QuickRegisterRequiresIdentityDocument, arrival grace).
+    SIMF.Application.Configuration.Abstractions.IWalkInModeSettings walkInModeSettings,
     // Read to decide whether forcing TwoFactorEnabled at creation is safe;
     // see CreateAccountAsync.
     IOptions<IdentityLifecycleOptions> lifecycleOptions,
@@ -463,8 +468,7 @@ internal sealed partial class AdminAccountService(
         // With the mode disarmed, EnsureFullDeskFields reproduces the validator's
         // original checks with their exact bilingual messages, so behaviour is
         // byte-identical to before.
-        var quickRegister = walkInMode.CurrentValue
-            .QuickRegisterActive(timeProvider.SimfNow());
+        var quickRegister = await walkInModeSettings.QuickRegisterActiveAsync(cancellationToken);
         if (quickRegister)
         {
             EnsureQuickDeskFloor(
@@ -765,7 +769,7 @@ internal sealed partial class AdminAccountService(
         // staff powers with nobody reviewing. Same rule bulk badge generation
         // already enforces.
         if (expectedIsVisitor == true
-            && walkInMode.CurrentValue.AutoApproveActive(timeProvider.SimfNow()))
+            && await walkInModeSettings.AutoApproveActiveAsync(cancellationToken))
         {
             try
             {

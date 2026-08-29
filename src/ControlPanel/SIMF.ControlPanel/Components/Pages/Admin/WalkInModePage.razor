@@ -1,0 +1,68 @@
+@* CP "Walk-in mode" page: turn the two desk modes on or off during an event
+   without a deploy. Reads / writes /admin/walk-in-mode.
+
+   Gated by WalkInMode.* rather than Configuration.*, because auto-approve
+   relaxes an approval gate - granting somebody the run of the configuration
+   page should not hand them that switch by accident.
+
+   The MASTER switch (walk-in mode enabled, inside its window) stays in
+   deployment configuration and is shown read-only here. When it is off both
+   toggles are inert, and the banner says so rather than letting a switch lie
+   about its effect. *@
+@page "/admin/walk-in-mode"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.WalkInMode.View)]
+@using SIMF.Contracts.Configuration
+
+<PageTitle>@L["Admin.WalkInMode.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.WalkInMode.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toastMessage is not null)
+        {
+            <SimfAlert Variant="@_toastVariant">@_toastMessage</SimfAlert>
+        }
+
+        @if (_loading)
+        {
+            <p>@L["Admin.WalkInMode.Loading"]</p>
+        }
+        else
+        {
+            @if (!_armed)
+            {
+                <SimfAlert Variant="warning">@L["Admin.WalkInMode.Disarmed"]</SimfAlert>
+            }
+
+            <EditForm EditContext="_editContext" OnSubmit="SaveAsync" class="simf-form">
+                <div class="simf-form__fields">
+                    <h3>@L["Admin.WalkInMode.Section.Modes"]</h3>
+                    <p>@L["Admin.WalkInMode.Section.Modes.Hint"]</p>
+
+                    <SimfCheckbox @bind-Value="_model.QuickRegister" Disabled="_busy">
+                        @L["Admin.WalkInMode.Field.QuickRegister"]
+                    </SimfCheckbox>
+                    <p>@L["Admin.WalkInMode.Field.QuickRegister.Hint"]</p>
+
+                    <SimfCheckbox @bind-Value="_model.AutoApprove" Disabled="_busy">
+                        @L["Admin.WalkInMode.Field.AutoApprove"]
+                    </SimfCheckbox>
+                    <p>@L["Admin.WalkInMode.Field.AutoApprove.Hint"]</p>
+                </div>
+
+                <div class="simf-form__actions">
+                    @* The save is what actually relaxes the approval gate, so it
+                       carries the Manage permission while the page carries View:
+                       a read-only holder sees the state and cannot change it. *@
+                    <AuthorizedAction Permission="PermissionCatalog.WalkInMode.Manage">
+                        <SimfButton Loading="_busy" LoadingLabel="@L["Admin.WalkInMode.Saving"]">
+                            @L["Admin.WalkInMode.Save"]
+                        </SimfButton>
+                    </AuthorizedAction>
+                </div>
+            </EditForm>
+        }
+    </div>
+</div>
