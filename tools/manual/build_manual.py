@@ -109,6 +109,9 @@ class Builder:
         # landed somewhere else. They get an explanation, not a picture of
         # whatever page answered instead.
         self.redirected = redirected
+        # The resource strings in THIS volume's language, so a grid column can
+        # be named with the word the page itself puts in the header.
+        self.strings = read_resx(lang)
         self.figure_number = 0
         self.missing = []
         self.document = Document()
@@ -363,6 +366,78 @@ class Builder:
         for page in [p for p in self.pages if not p.get("inNavigation")]:
             self.page_entry(page, headers, strings)
 
+    def page_depth(self, page, strings):
+        """What the page offers, read out of the page itself.
+
+        Every row here is extracted from the razor and its code-behind, so it
+        describes the page as it is now. Nothing is written by hand, which is
+        why it can be given for all 114 pages instead of the dozen somebody
+        would realistically keep up to date.
+        """
+        actions = page.get("actions") or []
+        gate_list = page.get("actionGates") or []
+
+        # Which grid permission covers which toolbar action. Add, Duplicate and
+        # Paste share one, because they are the same verb: all three create a
+        # record. Only these have a grid parameter; anything else the page wraps
+        # itself, and those are listed separately below.
+        covered_by = {
+            "Add": "Add, Duplicate and Paste",
+            "Duplicate": "Add, Duplicate and Paste",
+            "Paste": "Add, Duplicate and Paste",
+            "Edit": "Edit",
+            "Delete": "Delete",
+            "Delete selected": "Delete",
+            "Approve selected": "Approve",
+            "Reject selected": "Reject",
+            "Import": "Import",
+            "Export": "Export",
+        }
+        grid_gates = {g["covers"]: g["permission"] for g in gate_list
+                      if g["covers"] != "An action on the page"}
+        # Kept as a LIST: a page may wrap several different buttons, each with
+        # its own permission, and collapsing them into a dictionary keyed by the
+        # label would report only the last one.
+        page_gates = [g["permission"] for g in gate_list
+                      if g["covers"] == "An action on the page"]
+
+        if actions or page_gates:
+            self.para(self._t(strings["actionsTitle"]), bold=True, size=10, space_after=3)
+            rows = []
+            for action in actions:
+                name = action["name"]
+                shown = self.label_for(action.get("labelKey") or "") or name
+                # Two callbacks can share one label - Delete and Delete selected
+                # both say "Delete" - so the row keeps the distinction the
+                # toolbar makes by position, not by wording alone.
+                if name.endswith(" selected") and not shown.lower().endswith("selected"):
+                    shown = f"{shown} ({self._t(strings['bulk'])})"
+                rows.append([shown,
+                             grid_gates.get(covered_by.get(name, ""))
+                             or self._t(strings["ungated"])])
+            for permission in sorted(set(page_gates)):
+                rows.append([self._t(strings["pageButton"]), permission])
+            self.table([self._t(h) for h in strings["actionsHeaders"]], rows)
+
+        columns = page.get("columns") or []
+        if columns:
+            names = []
+            for column in columns:
+                key = column.get("headerKey") or ""
+                names.append(self.label_for(key) or column.get("key", ""))
+            self.para(f"{self._t(strings['columnsLabel'])}: " + "  ·  ".join(names),
+                      size=9.5, color=MUTED, space_after=4)
+
+        calls = page.get("calls") or []
+        if calls:
+            self.mixed([(self._t(strings["callsLabel"]) + ": ", False),
+                        ("  ".join(calls), True)],
+                       size=8.5, color=MUTED, space_after=8)
+
+    def label_for(self, key):
+        """A resource string in this volume's language, or None."""
+        return self.strings.get(key)
+
     def page_entry(self, page, headers, strings):
         label = (page.get("labelAr") if self.rtl else page.get("labelEn")) \
             or (page.get("titleAr") if self.rtl else page.get("titleEn")) \
@@ -389,12 +464,27 @@ class Builder:
         # heading already carries its address - repeating it in the caption
         # reads as a mistake rather than as emphasis.
         caption_label = page.get("labelAr") if self.rtl else page.get("labelEn")
+        self.page_depth(page, strings)
+
         if page["slug"] in self.redirected:
             self.note(self._t(strings["redirected"]))
             return
         self.figure(f"cp-{page['slug']}-default",
                     f"{caption_label} — " if caption_label else "",
                     machine_suffix=page["route"])
+
+
+def read_resx(lang):
+    """name -> value for one language's Control Panel strings."""
+    import xml.etree.ElementTree as ET
+    name = "Strings.resx" if lang == "en" else f"Strings.{lang}.resx"
+    path = REPO / "src/ControlPanel/SIMF.ControlPanel/Resources" / name
+    values = {}
+    for data in ET.parse(path).getroot().findall("data"):
+        key, value = data.get("name"), data.find("value")
+        if key and value is not None and value.text is not None:
+            values[key] = value.text
+    return values
 
 
 def redirected_slugs(lang):

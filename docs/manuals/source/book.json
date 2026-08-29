@@ -3450,6 +3450,44 @@
       "en": "Pages reached from inside another page",
       "ar": "صفحات يُوصل إليها من داخل صفحة أخرى"
     },
+    "actionsTitle": {
+      "en": "What you can do here",
+      "ar": "ما يمكنك فعله هنا"
+    },
+    "actionsHeaders": [
+      {
+        "en": "Action",
+        "ar": "الإجراء"
+      },
+      {
+        "en": "Permission it needs",
+        "ar": "الصلاحية التي يتطلبها"
+      }
+    ],
+    "ungated": {
+      "en": "No permission of its own",
+      "ar": "بلا صلاحية خاصة به"
+    },
+    "bulk": {
+      "en": "on the selected rows",
+      "ar": "على الصفوف المحددة"
+    },
+    "pageButton": {
+      "en": "A button the page gates itself",
+      "ar": "زر تحرسه الصفحة بنفسها"
+    },
+    "columnsLabel": {
+      "en": "The list shows",
+      "ar": "يعرض الجدول"
+    },
+    "callsLabel": {
+      "en": "It calls",
+      "ar": "يستدعي"
+    },
+    "noActions": {
+      "en": "This page has no list toolbar: it is a form, a dashboard or a console rather than a list of records.",
+      "ar": "لا يحتوي هذا الصفحة على شريط أدوات جدول: فهي نموذج أو لوحة معلومات أو وحدة تشغيل، لا قائمة سجلات."
+    },
     "redirected": {
       "en": "No screenshot: this address cannot be opened directly by a signed-in reader. The two account-state pages redirect to the dashboard, and the three sign-in pages redirect back to the sign-in form, because each is reachable only at its own point in a flow.",
       "ar": "لا توجد صورة: لا يمكن فتح هذا العنوان مباشرة لقارئ مسجّل الدخول. فصفحتا حالة الحساب تُحوَّلان إلى لوحة المعلومات، وصفحات تسجيل الدخول الثلاث تُحوَّل إلى نموذج الدخول، لأن كلًّا منها لا تُبلغ إلا في موضعها من المسار."

@@ -582,6 +582,20 @@ def reference_strings():
                      "نعم — لم تُبنَ الوحدة بعد"),
         "nonNavTitle": t("Pages reached from inside another page",
                          "صفحات يُوصل إليها من داخل صفحة أخرى"),
+        "actionsTitle": t("What you can do here", "ما يمكنك فعله هنا"),
+        "actionsHeaders": [t("Action", "الإجراء"),
+                           t("Permission it needs", "الصلاحية التي يتطلبها")],
+        "ungated": t("No permission of its own", "بلا صلاحية خاصة به"),
+        "bulk": t("on the selected rows", "على الصفوف المحددة"),
+        "pageButton": t("A button the page gates itself",
+                        "زر تحرسه الصفحة بنفسها"),
+        "columnsLabel": t("The list shows", "يعرض الجدول"),
+        "callsLabel": t("It calls", "يستدعي"),
+        "noActions": t(
+            "This page has no list toolbar: it is a form, a dashboard or a "
+            "console rather than a list of records.",
+            "لا يحتوي هذا الصفحة على شريط أدوات جدول: فهي نموذج أو لوحة معلومات "
+            "أو وحدة تشغيل، لا قائمة سجلات."),
         "redirected": t(
             "No screenshot: this address cannot be opened directly by a "
             "signed-in reader. The two account-state pages redirect to the "
