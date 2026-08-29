@@ -1,0 +1,3462 @@
+{
+  "meta": {
+    "title": {
+      "en": "SIMF Control Panel",
+      "ar": "لوحة تحكم الملتقى البحري السعودي الدولي"
+    },
+    "subtitle": {
+      "en": "Operations manual — creating users, configuring the system, and deploying it",
+      "ar": "دليل التشغيل — إنشاء المستخدمين وتهيئة النظام ونشره"
+    },
+    "contentsTitle": {
+      "en": "Contents",
+      "ar": "المحتويات"
+    },
+    "factHeaders": [
+      {
+        "en": "",
+        "ar": ""
+      },
+      {
+        "en": "",
+        "ar": ""
+      }
+    ],
+    "facts": [
+      [
+        {
+          "en": "Audience",
+          "ar": "الفئة المستهدفة"
+        },
+        {
+          "en": "Control Panel administrators and the team deploying the system",
+          "ar": "مسؤولو لوحة التحكم والفريق القائم على نشر النظام"
+        }
+      ],
+      [
+        {
+          "en": "Covers",
+          "ar": "يغطي"
+        },
+        {
+          "en": "Every Control Panel page, account creation end to end, and the server deployment with its configuration",
+          "ar": "كل صفحات لوحة التحكم، وإنشاء الحسابات من أوله إلى آخره، ونشر الخادم مع تهيئته"
+        }
+      ],
+      [
+        {
+          "en": "Screenshots",
+          "ar": "الصور"
+        },
+        {
+          "en": "Captured from the running application, not drawn",
+          "ar": "ملتقطة من التطبيق أثناء تشغيله، وليست مرسومة"
+        }
+      ],
+      [
+        {
+          "en": "Volumes",
+          "ar": "المجلدات"
+        },
+        {
+          "en": "English and Arabic, published separately",
+          "ar": "الإنجليزية والعربية، يصدران منفصلين"
+        }
+      ]
+    ]
+  },
+  "chapters": [
+    {
+      "id": "getting-in",
+      "title": {
+        "en": "Signing in for the first time",
+        "ar": "تسجيل الدخول لأول مرة"
+      },
+      "blocks": [
+        {
+          "t": "p",
+          "en": "The Control Panel is the operations console for the Saudi International Maritime Forum. Everything in this manual is done from it, so this chapter comes first: it covers the sign-in screen, the password change the system forces on a new account, the second factor, and the recovery codes you are shown exactly once.",
+          "ar": "لوحة التحكم هي وحدة تشغيل الملتقى البحري السعودي الدولي. كل ما يرد في هذا الدليل يُنفَّذ من خلالها، ولذلك يأتي هذا الفصل أولًا: فهو يغطي شاشة تسجيل الدخول، وتغيير كلمة المرور الذي يفرضه النظام على الحساب الجديد، والعامل الثاني، ورموز الاسترداد التي تُعرض مرة واحدة فقط."
+        },
+        {
+          "t": "h2",
+          "en": "The sign-in screen",
+          "ar": "شاشة تسجيل الدخول"
+        },
+        {
+          "t": "p",
+          "en": "Open the Control Panel address in a browser. The sign-in page asks for an email address and a password, and offers a language switch and a light/dark switch in the top corner. The language switch changes the whole application, not just this page.",
+          "ar": "افتح عنوان لوحة التحكم في المتصفح. تطلب صفحة تسجيل الدخول البريد الإلكتروني وكلمة المرور، وتتيح في الزاوية العليا مبدّل اللغة ومبدّل المظهر الفاتح والداكن. يغيّر مبدّل اللغة التطبيق بأكمله، لا هذه الصفحة وحدها."
+        },
+        {
+          "t": "figure",
+          "image": "cp-login-default",
+          "caption": {
+            "en": "The sign-in page as it opens.",
+            "ar": "صفحة تسجيل الدخول عند فتحها."
+          }
+        },
+        {
+          "t": "h2",
+          "en": "The forced password change",
+          "ar": "تغيير كلمة المرور الإلزامي"
+        },
+        {
+          "t": "p",
+          "en": "A newly created account is issued a bootstrap password that the system insists is replaced. On the first sign-in the Control Panel therefore does not go to the dashboard: it opens a dialog over the sign-in page asking for a new password twice. Until that is done the account cannot get in.",
+          "ar": "يُمنح الحساب المُنشأ حديثًا كلمة مرور أولية يُصرّ النظام على استبدالها. لذلك لا تنتقل لوحة التحكم عند أول تسجيل دخول إلى لوحة المعلومات، بل تفتح نافذة فوق صفحة الدخول تطلب كلمة مرور جديدة مرتين. ولا يمكن للحساب الدخول قبل إتمام ذلك."
+        },
+        {
+          "t": "figure",
+          "image": "cp-login-password-change-empty",
+          "caption": {
+            "en": "The password change is a dialog over the sign-in page, not a separate address.",
+            "ar": "تغيير كلمة المرور نافذة فوق صفحة الدخول، وليس عنوانًا منفصلًا."
+          }
+        },
+        {
+          "t": "p",
+          "en": "The new password must satisfy the rules the server applies to every password in the system. They are stricter than the length rule most people expect, and the two that surprise operators are the last two:",
+          "ar": "يجب أن تستوفي كلمة المرور الجديدة القواعد التي يطبّقها الخادم على كل كلمات المرور في النظام. وهي أكثر صرامة من قاعدة الطول التي يتوقعها معظم الناس، وأكثر ما يفاجئ المشغّلين هما القاعدتان الأخيرتان:"
+        },
+        {
+          "t": "bullets",
+          "en": [
+            "Between 8 and 128 characters.",
+            "At least one capital letter, one small letter, one digit and one symbol.",
+            "No character repeated three times in a row — \"aa\" is allowed, \"aaa\" is not.",
+            "No run of three characters in sequence within one class — \"abc\", \"123\", \"cba\" and \"987\" are all rejected.",
+            "Not the account's own email address, and not a commonly used password (leet-speak spellings such as p@ssw0rd are folded back and rejected too)."
+          ],
+          "ar": [
+            "بين 8 و128 حرفًا.",
+            "حرف كبير واحد على الأقل، وحرف صغير، ورقم، ورمز.",
+            "لا يتكرر أي حرف ثلاث مرات متتالية — «aa» مقبولة و«aaa» مرفوضة.",
+            "لا تسلسل من ثلاثة أحرف متتابعة داخل الفئة نفسها — «abc» و«123» و«cba» و«987» جميعها مرفوضة.",
+            "ألا تكون البريد الإلكتروني للحساب نفسه، وألا تكون من كلمات المرور الشائعة (وتُردّ الكتابة المموّهة مثل p@ssw0rd إلى أصلها وتُرفض كذلك)."
+          ]
+        },
+        {
+          "t": "note",
+          "en": "These rules are enforced in PasswordPolicy.cs and applied by SimfPasswordValidator on every path that sets a password.",
+          "ar": "تُطبَّق هذه القواعد في PasswordPolicy.cs عبر SimfPasswordValidator في كل مسار يضبط كلمة مرور."
+        },
+        {
+          "t": "h2",
+          "en": "The second factor",
+          "ar": "العامل الثاني"
+        },
+        {
+          "t": "p",
+          "en": "The Control Panel requires two-factor authentication. After the password the system asks for the six-digit code from an authenticator application. If the account has never paired one, the system shows the pairing screen instead and will not let the account past it — enrolment is mandatory, not optional.",
+          "ar": "تشترط لوحة التحكم المصادقة الثنائية. بعد كلمة المرور يطلب النظام الرمز المكوّن من ستة أرقام من تطبيق المصادقة. وإذا لم يسبق للحساب إقران تطبيق، يعرض النظام شاشة الإقران ولا يسمح بتجاوزها — فالتسجيل إلزامي وليس اختياريًا."
+        },
+        {
+          "t": "figure",
+          "image": "cp-login-totp-empty",
+          "caption": {
+            "en": "The second-factor step, after the password has been accepted.",
+            "ar": "خطوة العامل الثاني بعد قبول كلمة المرور."
+          }
+        },
+        {
+          "t": "figure",
+          "image": "cp-login-enrol-2fa-qr",
+          "caption": {
+            "en": "The pairing screen an account meets when it has no authenticator yet. The QR code and the key beneath it are obscured here: they are a real credential, and a manual should never print one.",
+            "ar": "شاشة الإقران التي يواجهها الحساب الذي لا يملك تطبيق مصادقة بعد. وقد حُجب رمز الاستجابة السريعة والمفتاح أسفله هنا: فهما وثيقة حقيقية، ولا ينبغي لدليل أن يطبع واحدة."
+          }
+        },
+        {
+          "t": "note",
+          "en": "The requirement is controlled by IdentityLifecycle:RequireControlPanelTwoFactorEnrolment, which ships as true. It applies to the Control Panel only — the mobile application and the public website are not affected.",
+          "ar": "يتحكم في هذا الاشتراط المفتاح IdentityLifecycle:RequireControlPanelTwoFactorEnrolment، وقيمته الافتراضية true. وهو يخص لوحة التحكم وحدها — ولا يؤثر على تطبيق الجوال ولا على الموقع العام."
+        },
+        {
+          "t": "h2",
+          "en": "Recovery codes",
+          "ar": "رموز الاسترداد"
+        },
+        {
+          "t": "p",
+          "en": "When an account pairs its authenticator the system displays ten single-use recovery codes. They are shown once and never again. Print them or store them somewhere safe: they are what gets the account back in when the phone is lost. If they are lost as well, an administrator must reset the account's second factor from Reset user 2FA, which is covered later in this manual.",
+          "ar": "عند إقران الحساب لتطبيق المصادقة يعرض النظام عشرة رموز استرداد يُستخدم كل منها مرة واحدة. تُعرض مرة واحدة فقط ولا تظهر بعدها أبدًا. اطبعها أو احفظها في مكان آمن، فهي وسيلة استعادة الحساب عند فقدان الهاتف. وإذا فُقدت أيضًا، فيجب على مسؤول إعادة تعيين العامل الثاني للحساب من صفحة إعادة تعيين المصادقة الثنائية، وهو ما يتناوله هذا الدليل لاحقًا."
+        },
+        {
+          "t": "h2",
+          "en": "The dashboard",
+          "ar": "لوحة المعلومات"
+        },
+        {
+          "t": "p",
+          "en": "A completed sign-in lands on the dashboard: a summary of the event and, down the left, the menu that this manual follows chapter by chapter.",
+          "ar": "ينتهي تسجيل الدخول الناجح إلى لوحة المعلومات: ملخّص للفعالية، وعلى الجانب القائمة التي يتبعها هذا الدليل فصلًا بفصل."
+        },
+        {
+          "t": "figure",
+          "image": "cp-dashboard-default",
+          "caption": {
+            "en": "The dashboard after signing in.",
+            "ar": "لوحة المعلومات بعد تسجيل الدخول."
+          }
+        }
+      ]
+    },
+    {
+      "id": "creating-users",
+      "title": {
+        "en": "Creating a user by hand",
+        "ar": "إنشاء مستخدم يدويًا"
+      },
+      "blocks": [
+        {
+          "t": "p",
+          "en": "The Control Panel creates three kinds of account, and they are not variations of one form — they are three separate pipelines with different screens, different fields, different rules and different outcomes. Choosing the wrong one is the most common mistake, so this chapter starts with how to choose.",
+          "ar": "تنشئ لوحة التحكم ثلاثة أنواع من الحسابات، وهي ليست صيغًا مختلفة لنموذج واحد، بل ثلاثة مسارات منفصلة بشاشات وحقول وقواعد ونتائج مختلفة. واختيار المسار الخاطئ هو أكثر الأخطاء شيوعًا، ولذلك يبدأ هذا الفصل ببيان كيفية الاختيار."
+        },
+        {
+          "t": "table",
+          "headers": {
+            "en": [
+              "To create",
+              "Use",
+              "Address",
+              "The account ends up"
+            ],
+            "ar": [
+              "لإنشاء",
+              "استخدم",
+              "العنوان",
+              "ينتهي الحساب إلى"
+            ]
+          },
+          "rows": {
+            "en": [
+              [
+                "An operator of this Control Panel",
+                "Admins",
+                "/admin/admins",
+                "Awaiting approval, with a 7-day emailed invitation"
+              ],
+              [
+                "A visitor or guest attending the forum",
+                "Visitors",
+                "/admin/visitors",
+                "Awaiting approval, with no password and no email"
+              ],
+              [
+                "A partner, exhibitor, media or staff account",
+                "Others",
+                "/admin/others",
+                "Awaiting approval, always — never auto-approved"
+              ],
+              [
+                "A VIP or VVIP guest",
+                "VIP registration",
+                "/admin/visitors/vip",
+                "As a visitor, plus the VIP protocol fields"
+              ]
+            ],
+            "ar": [
+              [
+                "مشغّل للوحة التحكم هذه",
+                "المسؤولون",
+                "/admin/admins",
+                "بانتظار الموافقة، مع دعوة بالبريد صالحة 7 أيام"
+              ],
+              [
+                "زائر أو ضيف يحضر الملتقى",
+                "الزوار",
+                "/admin/visitors",
+                "بانتظار الموافقة، بلا كلمة مرور وبلا بريد"
+              ],
+              [
+                "حساب شريك أو عارض أو إعلامي أو موظف",
+                "مستخدمون آخرون",
+                "/admin/others",
+                "بانتظار الموافقة دائمًا — ولا يُعتمد تلقائيًا أبدًا"
+              ],
+              [
+                "ضيف من كبار الشخصيات",
+                "تسجيل كبار الشخصيات",
+                "/admin/visitors/vip",
+                "كالزائر، مع إضافة حقول مراسم كبار الشخصيات"
+              ]
+            ]
+          }
+        },
+        {
+          "t": "note",
+          "en": "The distinction that matters: an administrator receives an emailed invitation and sets a password. A visitor or partner receives neither — their credential is the QR badge, and the badge is only minted when the account is approved.",
+          "ar": "الفارق الجوهري: المسؤول يتلقى دعوة بالبريد ويضبط كلمة مرور. أما الزائر أو الشريك فلا يتلقى شيئًا من ذلك — إذ إن وثيقته هي شارة الاستجابة السريعة، ولا تُصدر الشارة إلا عند اعتماد الحساب."
+        },
+        {
+          "t": "pagebreak"
+        },
+        {
+          "t": "h2",
+          "en": "Creating an administrator",
+          "ar": "إنشاء مسؤول"
+        },
+        {
+          "t": "p",
+          "en": "An administrator is somebody who signs in to this Control Panel. Open the menu group Access control, choose Admins, and use the Add button on the grid toolbar. The form is deliberately short — an administrator has no visitor profile, no badge and no identity documents.",
+          "ar": "المسؤول هو من يسجّل الدخول إلى لوحة التحكم هذه. افتح مجموعة التحكم في الوصول واختر المسؤولون ثم استخدم زر الإضافة في شريط أدوات الجدول. والنموذج قصير عن قصد — فالمسؤول ليس له ملف زائر ولا شارة ولا وثائق هوية."
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-admins-default",
+          "caption": {
+            "en": "The administrators list. The Add button opens the create form.",
+            "ar": "قائمة المسؤولين. يفتح زر الإضافة نموذج الإنشاء."
+          }
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-admins-add-empty",
+          "caption": {
+            "en": "The create form: an email address, a display name, and one tick box per role.",
+            "ar": "نموذج الإنشاء: بريد إلكتروني، واسم معروض، ومربع اختيار لكل دور."
+          }
+        },
+        {
+          "t": "table",
+          "headers": {
+            "en": [
+              "Field",
+              "Required",
+              "Limit",
+              "Rule the server enforces"
+            ],
+            "ar": [
+              "الحقل",
+              "مطلوب",
+              "الحد",
+              "القاعدة التي يطبّقها الخادم"
+            ]
+          },
+          "rows": {
+            "en": [
+              [
+                "Email address",
+                "Yes",
+                "256 characters",
+                "Must be a valid email address, and must not already belong to an account."
+              ],
+              [
+                "Display name",
+                "Yes",
+                "2 to 128 characters",
+                "The name shown throughout the Control Panel."
+              ],
+              [
+                "Roles",
+                "No",
+                "—",
+                "One tick box per role. Assigning a role here requires the role-assignment permission as well as the create permission."
+              ]
+            ],
+            "ar": [
+              [
+                "البريد الإلكتروني",
+                "نعم",
+                "256 حرفًا",
+                "يجب أن يكون بريدًا إلكترونيًا صالحًا وألا يكون مستخدمًا في حساب آخر."
+              ],
+              [
+                "الاسم المعروض",
+                "نعم",
+                "من 2 إلى 128 حرفًا",
+                "الاسم الذي يظهر في أنحاء لوحة التحكم."
+              ],
+              [
+                "الأدوار",
+                "لا",
+                "—",
+                "مربع اختيار لكل دور. ويتطلب إسناد دور هنا صلاحية إسناد الأدوار إضافة إلى صلاحية الإنشاء."
+              ]
+            ]
+          }
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-admins-add-validation",
+          "caption": {
+            "en": "A refused submission. The email box is a typed field, so the browser catches a malformed address before the form is sent at all; the form's own checks report a short display name and a missing address the same way, and nothing reaches the server until both are right.",
+            "ar": "محاولة إرسال مرفوضة. حقل البريد حقل مُصنّف، فيلتقط المتصفح العنوان المشوّه قبل إرسال النموذج أصلًا؛ وتُبلغ فحوص النموذج نفسها عن الاسم المعروض القصير والعنوان الناقص بالطريقة ذاتها، ولا يصل شيء إلى الخادم حتى يصحّ كلاهما."
+          }
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-admins-add-filled",
+          "caption": {
+            "en": "The same form filled in and ready to submit.",
+            "ar": "النموذج نفسه بعد تعبئته وجاهزًا للإرسال."
+          }
+        },
+        {
+          "t": "p",
+          "en": "On save the account is created in the awaiting-approval state, an invitation valid for seven days is emailed to the address, and every other approved administrator is notified that an account is waiting. Two-factor is armed on the account from the moment it is created, so the new administrator will be taken through the pairing screen on their first sign-in.",
+          "ar": "عند الحفظ يُنشأ الحساب في حالة انتظار الموافقة، وتُرسل إلى العنوان دعوة صالحة سبعة أيام، ويُشعَر كل مسؤول معتمد آخر بوجود حساب ينتظر. وتُفعَّل المصادقة الثنائية على الحساب منذ لحظة إنشائه، فيمر المسؤول الجديد بشاشة الإقران عند أول تسجيل دخول له."
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-admins-add-result",
+          "caption": {
+            "en": "The new account in the list, awaiting approval, with the confirmation message.",
+            "ar": "الحساب الجديد في القائمة بانتظار الموافقة، مع رسالة التأكيد."
+          }
+        },
+        {
+          "t": "note",
+          "en": "A duplicate email is refused with the error ADMIN_EMAIL_ALREADY_REGISTERED and the form stays open. If the mail server is not configured the account is still created — only the invitation fails to arrive, and it fails quietly, in the background.",
+          "ar": "يُرفض البريد المكرر برمز الخطأ ADMIN_EMAIL_ALREADY_REGISTERED ويبقى النموذج مفتوحًا. وإذا لم يكن خادم البريد مهيّأً فسيُنشأ الحساب على أي حال — ولن تصل الدعوة فحسب، ويحدث ذلك بصمت في الخلفية."
+        },
+        {
+          "t": "pagebreak"
+        },
+        {
+          "t": "h2",
+          "en": "Creating a visitor",
+          "ar": "إنشاء زائر"
+        },
+        {
+          "t": "p",
+          "en": "A visitor is an attendee. The form is the on-site registration desk wizard, and it is long because it captures the identity the gate will check. It is organised into numbered sections; the fields that appear depend on two choices — the profile type, and whether the visitor is Saudi.",
+          "ar": "الزائر هو أحد الحضور. والنموذج هو معالج مكتب التسجيل في الموقع، وهو طويل لأنه يلتقط الهوية التي ستتحقق منها البوابة. وهو مقسّم إلى أقسام مرقّمة، وتتوقف الحقول الظاهرة على اختيارين: نوع الملف، وما إذا كان الزائر سعوديًا."
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-visitors-default",
+          "caption": {
+            "en": "The visitors list. Add opens the registration wizard.",
+            "ar": "قائمة الزوار. يفتح زر الإضافة معالج التسجيل."
+          }
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-visitors-add-top",
+          "caption": {
+            "en": "The wizard opens on the profile type, which decides much of what follows.",
+            "ar": "يفتح المعالج على نوع الملف، وهو ما يحدّد كثيرًا مما يليه."
+          }
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-visitors-add-middle",
+          "caption": {
+            "en": "The identity section.",
+            "ar": "قسم الهوية."
+          }
+        },
+        {
+          "t": "h3",
+          "en": "Identity",
+          "ar": "الهوية"
+        },
+        {
+          "t": "table",
+          "headers": {
+            "en": [
+              "Field",
+              "Required",
+              "Limit",
+              "Rule the server enforces"
+            ],
+            "ar": [
+              "الحقل",
+              "مطلوب",
+              "الحد",
+              "القاعدة التي يطبّقها الخادم"
+            ]
+          },
+          "rows": {
+            "en": [
+              [
+                "Name on badge",
+                "Yes",
+                "128 characters",
+                "—"
+              ],
+              [
+                "Full name (Arabic)",
+                "No",
+                "50 characters",
+                "The form allows 128 characters; the server rejects anything over 50. Keep to 50."
+              ],
+              [
+                "Full name (English)",
+                "No",
+                "50 characters",
+                "Same 128-versus-50 mismatch as the Arabic name."
+              ],
+              [
+                "Job title (optional)",
+                "No",
+                "100 characters",
+                "—"
+              ],
+              [
+                "Job title in Arabic (optional)",
+                "No",
+                "100 characters",
+                "—"
+              ],
+              [
+                "Place of birth",
+                "No",
+                "128 characters",
+                "A region picker for a Saudi visitor; free text otherwise."
+              ]
+            ],
+            "ar": [
+              [
+                "الاسم على الشارة",
+                "نعم",
+                "128 حرفًا",
+                "—"
+              ],
+              [
+                "الاسم الكامل (عربي)",
+                "لا",
+                "50 حرفًا",
+                "يسمح النموذج بـ128 حرفًا، لكن الخادم يرفض ما يتجاوز 50. فالتزم بـ50."
+              ],
+              [
+                "الاسم الكامل (إنجليزي)",
+                "لا",
+                "50 حرفًا",
+                "الاختلاف نفسه بين 128 و50 كما في الاسم العربي."
+              ],
+              [
+                "المسمى الوظيفي (اختياري)",
+                "لا",
+                "100 حرف",
+                "—"
+              ],
+              [
+                "المسمى الوظيفي بالعربية (اختياري)",
+                "لا",
+                "100 حرف",
+                "—"
+              ],
+              [
+                "مكان الميلاد",
+                "لا",
+                "128 حرفًا",
+                "قائمة مناطق للزائر السعودي، ونص حر لغيره."
+              ]
+            ]
+          }
+        },
+        {
+          "t": "h3",
+          "en": "Nationality and identity document",
+          "ar": "الجنسية ووثيقة الهوية"
+        },
+        {
+          "t": "table",
+          "headers": {
+            "en": [
+              "Field",
+              "Required",
+              "Limit",
+              "Rule the server enforces"
+            ],
+            "ar": [
+              "الحقل",
+              "مطلوب",
+              "الحد",
+              "القاعدة التي يطبّقها الخادم"
+            ]
+          },
+          "rows": {
+            "en": [
+              [
+                "Saudi national ID",
+                "No",
+                "10 digits",
+                "Saudi visitors. Must start with 1 and pass the check-digit test; a number that fails it is refused."
+              ],
+              [
+                "Iqama number",
+                "No",
+                "10 digits",
+                "Non-Saudi residents. Must start with 2 and pass the same check-digit test."
+              ],
+              [
+                "Passport number",
+                "No",
+                "20 characters",
+                "Length only — the desk applies no format check, so a passport the mobile application would reject is accepted here."
+              ]
+            ],
+            "ar": [
+              [
+                "الهوية الوطنية السعودية",
+                "لا",
+                "10 أرقام",
+                "للزوار السعوديين. يجب أن يبدأ بالرقم 1 وأن يجتاز اختبار رقم التحقق، ويُرفض الرقم الذي لا يجتازه."
+              ],
+              [
+                "رقم الإقامة",
+                "لا",
+                "10 أرقام",
+                "للمقيمين غير السعوديين. يجب أن يبدأ بالرقم 2 وأن يجتاز اختبار رقم التحقق نفسه."
+              ],
+              [
+                "رقم جواز السفر",
+                "لا",
+                "20 حرفًا",
+                "الطول فقط — لا يطبّق المكتب أي تحقق من الصيغة، فيُقبل هنا جواز سفر كان تطبيق الجوال ليرفضه."
+              ]
+            ]
+          }
+        },
+        {
+          "t": "note",
+          "en": "One profile may hold one document of each kind. The same number may appear on more than one profile — the constraint that once made a number unique across all profiles was removed deliberately, because it blocked legitimate registrations.",
+          "ar": "يمكن أن يحمل الملف الواحد وثيقة واحدة من كل نوع. وقد يظهر الرقم نفسه في أكثر من ملف — إذ أُزيل عن قصد القيد الذي كان يجعل الرقم فريدًا عبر كل الملفات، لأنه كان يمنع تسجيلات مشروعة."
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-visitors-add-lower",
+          "caption": {
+            "en": "The nationality section, which decides whether a national ID, an Iqama or a passport is asked for.",
+            "ar": "قسم الجنسية، وهو الذي يحدّد ما إذا كان المطلوب هوية وطنية أم إقامة أم جواز سفر."
+          }
+        },
+        {
+          "t": "h3",
+          "en": "Contact and organisation",
+          "ar": "التواصل والجهة"
+        },
+        {
+          "t": "table",
+          "headers": {
+            "en": [
+              "Field",
+              "Required",
+              "Limit",
+              "Rule the server enforces"
+            ],
+            "ar": [
+              "الحقل",
+              "مطلوب",
+              "الحد",
+              "القاعدة التي يطبّقها الخادم"
+            ]
+          },
+          "rows": {
+            "en": [
+              [
+                "Saudi mobile",
+                "No",
+                "32 characters",
+                "Must be 05XXXXXXXX or +9665XXXXXXXX."
+              ],
+              [
+                "International mobile",
+                "No",
+                "32 characters",
+                "Must be the international format: a plus sign, the country code, then the number."
+              ],
+              [
+                "Email (optional)",
+                "No",
+                "256 characters",
+                "—"
+              ],
+              [
+                "Organisation",
+                "Yes",
+                "150 characters",
+                "Chosen from the organisation list. If the employer is not listed, pick the \"Other\" entry and type the name — this is why that entry exists."
+              ]
+            ],
+            "ar": [
+              [
+                "الجوال السعودي",
+                "لا",
+                "32 حرفًا",
+                "يجب أن يكون بالصيغة 05XXXXXXXX أو ‎+9665XXXXXXXX."
+              ],
+              [
+                "الجوال الدولي",
+                "لا",
+                "32 حرفًا",
+                "يجب أن يكون بالصيغة الدولية: علامة زائد ثم رمز الدولة ثم الرقم."
+              ],
+              [
+                "البريد الإلكتروني (اختياري)",
+                "لا",
+                "256 حرفًا",
+                "—"
+              ],
+              [
+                "الجهة",
+                "نعم",
+                "150 حرفًا",
+                "تُختار من قائمة الجهات. وإذا لم تكن جهة العمل مدرجة فاختر «أخرى» واكتب الاسم — ولهذا وُجد هذا الخيار."
+              ]
+            ]
+          }
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-visitors-add-bottom",
+          "caption": {
+            "en": "The lower sections: contact, the identity document and the profile photo.",
+            "ar": "الأقسام السفلى: التواصل ووثيقة الهوية وصورة الملف."
+          }
+        },
+        {
+          "t": "note",
+          "en": "Interests are offered for visitors only, and at most ten may be chosen.",
+          "ar": "تُعرض الاهتمامات للزوار فقط، ويمكن اختيار عشرة منها كحد أقصى."
+        },
+        {
+          "t": "p",
+          "en": "On save the visitor is created awaiting approval, with no password and no badge. The badge is minted when the account is approved from the pending queue. There is a configuration option that approves a walk-in visitor immediately and prints the badge at the desk, but it ships switched off, and it never applies to partner accounts.",
+          "ar": "عند الحفظ يُنشأ الزائر بانتظار الموافقة، بلا كلمة مرور وبلا شارة. وتُصدر الشارة عند اعتماد الحساب من قائمة الانتظار. وثمة خيار إعدادات يعتمد الزائر الحاضر فورًا ويطبع الشارة عند المكتب، لكنه يُشحن مُعطّلًا، ولا ينطبق أبدًا على حسابات الشركاء."
+        },
+        {
+          "t": "pagebreak"
+        },
+        {
+          "t": "h2",
+          "en": "Creating a partner or staff account",
+          "ar": "إنشاء حساب شريك أو موظف"
+        },
+        {
+          "t": "p",
+          "en": "The Others page uses the same wizard as the visitor page, with two differences: there is no interests section, and the account is never approved automatically. Every account created here waits for a person to approve it.",
+          "ar": "تستخدم صفحة مستخدمون آخرون المعالج نفسه المستخدم في صفحة الزوار، مع فارقين: لا يوجد قسم اهتمامات، ولا يُعتمد الحساب تلقائيًا أبدًا. فكل حساب يُنشأ هنا ينتظر اعتماد شخص له."
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-others-default",
+          "caption": {
+            "en": "The partner and staff accounts list.",
+            "ar": "قائمة حسابات الشركاء والموظفين."
+          }
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-others-add-top",
+          "caption": {
+            "en": "The same wizard, without the interests section.",
+            "ar": "المعالج نفسه، بلا قسم الاهتمامات."
+          }
+        },
+        {
+          "t": "h2",
+          "en": "Registering a VIP",
+          "ar": "تسجيل أحد كبار الشخصيات"
+        },
+        {
+          "t": "p",
+          "en": "The VIP page is the visitor wizard with a protocol section added at the top, and a welcome photo alongside the profile photo.",
+          "ar": "صفحة كبار الشخصيات هي معالج الزائر نفسه مع إضافة قسم المراسم في أعلاه، وصورة ترحيب إلى جانب صورة الملف."
+        },
+        {
+          "t": "table",
+          "headers": {
+            "en": [
+              "Field",
+              "Required",
+              "Limit",
+              "Rule the server enforces"
+            ],
+            "ar": [
+              "الحقل",
+              "مطلوب",
+              "الحد",
+              "القاعدة التي يطبّقها الخادم"
+            ]
+          },
+          "rows": {
+            "en": [
+              [
+                "Mawj system ID (optional)",
+                "No",
+                "64 characters",
+                "—"
+              ],
+              [
+                "Honorific / title (optional)",
+                "No",
+                "64 characters",
+                "—"
+              ],
+              [
+                "Honorific / title in Arabic (optional)",
+                "No",
+                "64 characters",
+                "—"
+              ],
+              [
+                "Preferred language (optional)",
+                "No",
+                "16 characters",
+                "Arabic or English."
+              ]
+            ],
+            "ar": [
+              [
+                "المعرف في نظام موج (اختياري)",
+                "لا",
+                "64 حرفًا",
+                "—"
+              ],
+              [
+                "اللقب (اختياري)",
+                "لا",
+                "64 حرفًا",
+                "—"
+              ],
+              [
+                "اللقب بالعربية (اختياري)",
+                "لا",
+                "64 حرفًا",
+                "—"
+              ],
+              [
+                "اللغة المفضلة (اختياري)",
+                "لا",
+                "16 حرفًا",
+                "العربية أو الإنجليزية."
+              ]
+            ]
+          }
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-visitors-vip-default",
+          "caption": {
+            "en": "The VIP registration page.",
+            "ar": "صفحة تسجيل كبار الشخصيات."
+          }
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-visitors-vip-add-top",
+          "caption": {
+            "en": "The VIP wizard, with the protocol section above the identity section.",
+            "ar": "معالج كبار الشخصيات، مع قسم المراسم فوق قسم الهوية."
+          }
+        }
+      ]
+    },
+    {
+      "id": "profile-image",
+      "title": {
+        "en": "The profile picture",
+        "ar": "صورة الملف الشخصي"
+      },
+      "blocks": [
+        {
+          "t": "p",
+          "en": "A profile picture is stored in the system's central file store, encrypted, and served back only to the account itself or to an administrator holding the right permission. It is not a file sitting in a public folder, and it cannot be reached by guessing an address.",
+          "ar": "تُحفظ صورة الملف الشخصي في مخزن الملفات المركزي للنظام، مشفَّرة، ولا تُقدَّم إلا لصاحب الحساب نفسه أو لمسؤول يملك الصلاحية المناسبة. وهي ليست ملفًا في مجلد عام، ولا يمكن الوصول إليها بتخمين العنوان."
+        },
+        {
+          "t": "h2",
+          "en": "Where a picture is set",
+          "ar": "أين تُضبط الصورة"
+        },
+        {
+          "t": "bullets",
+          "en": [
+            "By the account owner, from My profile — this is the only place with a cropping tool.",
+            "By an administrator, on the edit form of a visitor or partner account.",
+            "By the registration desk, as part of the create wizard, alongside the identity document."
+          ],
+          "ar": [
+            "من صاحب الحساب، عبر صفحة ملفي الشخصي — وهي الموضع الوحيد الذي يتضمّن أداة القصّ.",
+            "من مسؤول، في نموذج تعديل حساب زائر أو شريك.",
+            "من مكتب التسجيل، ضمن معالج الإنشاء، إلى جانب وثيقة الهوية."
+          ]
+        },
+        {
+          "t": "figure",
+          "image": "cp-account-profile-default",
+          "caption": {
+            "en": "My profile, where an account sets its own picture.",
+            "ar": "صفحة ملفي الشخصي، حيث يضبط الحساب صورته."
+          }
+        },
+        {
+          "t": "h2",
+          "en": "What the system accepts",
+          "ar": "ما يقبله النظام"
+        },
+        {
+          "t": "table",
+          "headers": {
+            "en": [
+              "Rule",
+              "Value"
+            ],
+            "ar": [
+              "القاعدة",
+              "القيمة"
+            ]
+          },
+          "rows": {
+            "en": [
+              [
+                "File types",
+                "PNG, JPEG or WebP — nothing else"
+              ],
+              [
+                "Maximum size",
+                "2 MB for a profile picture; 5 MB for an identity document"
+              ],
+              [
+                "Checked how",
+                "The file's declared type must match its actual content, so renaming a file to .png does not get it past the check"
+              ],
+              [
+                "Cropping",
+                "Square, produced at 400 by 400 pixels"
+              ],
+              [
+                "Stored",
+                "Encrypted, one active picture per account"
+              ]
+            ],
+            "ar": [
+              [
+                "أنواع الملفات",
+                "PNG أو JPEG أو WebP — لا غير"
+              ],
+              [
+                "الحجم الأقصى",
+                "2 ميجابايت لصورة الملف، و5 ميجابايت لوثيقة الهوية"
+              ],
+              [
+                "كيفية التحقق",
+                "يجب أن يطابق نوع الملف المعلن محتواه الفعلي، فلا يجدي تغيير الامتداد إلى ‎.png"
+              ],
+              [
+                "القصّ",
+                "مربّع، بمقاس 400 × 400 بكسل"
+              ],
+              [
+                "التخزين",
+                "مشفَّرة، وصورة واحدة نشطة لكل حساب"
+              ]
+            ]
+          }
+        },
+        {
+          "t": "note",
+          "en": "There is no size check in the browser: an oversized file is uploaded and then refused by the server, so the failure appears after the wait rather than before it.",
+          "ar": "لا يوجد تحقق من الحجم في المتصفح: فالملف الكبير يُرفع ثم يرفضه الخادم، فيظهر الفشل بعد الانتظار لا قبله."
+        },
+        {
+          "t": "h2",
+          "en": "Replacing and removing",
+          "ar": "الاستبدال والحذف"
+        },
+        {
+          "t": "p",
+          "en": "Uploading a new picture retires the previous one in the same step; there is never more than one active picture on an account. Where an account has no picture the Control Panel shows a tile with the person's initials rather than a broken image, so an empty grid cell means no picture was ever set.",
+          "ar": "يؤدي رفع صورة جديدة إلى سحب السابقة في الخطوة نفسها؛ فلا توجد أبدًا أكثر من صورة نشطة واحدة للحساب. وحين لا يكون للحساب صورة تعرض لوحة التحكم مربعًا بالأحرف الأولى من الاسم بدلًا من صورة معطوبة، فالخانة الفارغة تعني أنه لم تُضبط صورة قط."
+        }
+      ]
+    },
+    {
+      "id": "changing-accounts",
+      "title": {
+        "en": "Changing an account after it exists",
+        "ar": "تعديل الحساب بعد إنشائه"
+      },
+      "blocks": [
+        {
+          "t": "p",
+          "en": "A new account is not usable yet. It waits in a queue until somebody approves it, and only then does it get its badge. This chapter covers the approval queues, editing an account, moving it between types, resetting a lost second factor, and withdrawing access.",
+          "ar": "الحساب الجديد ليس قابلًا للاستخدام بعد. فهو ينتظر في قائمة حتى يعتمده شخص، وعندها فقط يحصل على شارته. ويتناول هذا الفصل قوائم الاعتماد، وتعديل الحساب، ونقله بين الأنواع، وإعادة تعيين العامل الثاني المفقود، وسحب الوصول."
+        },
+        {
+          "t": "h2",
+          "en": "The approval queues",
+          "ar": "قوائم الاعتماد"
+        },
+        {
+          "t": "p",
+          "en": "There is one queue per kind of account, and each is a separate page with its own permissions. Approving is what mints the QR badge, so until it happens the person cannot pass a gate.",
+          "ar": "توجد قائمة لكل نوع من الحسابات، وكل منها صفحة مستقلة بصلاحياتها الخاصة. والاعتماد هو ما يُصدر شارة الاستجابة السريعة، فحتى يتم لا يستطيع الشخص العبور من أي بوابة."
+        },
+        {
+          "t": "table",
+          "headers": {
+            "en": [
+              "Queue",
+              "Address",
+              "Approve needs",
+              "Reject needs"
+            ],
+            "ar": [
+              "القائمة",
+              "العنوان",
+              "يتطلب الاعتماد",
+              "يتطلب الرفض"
+            ]
+          },
+          "rows": {
+            "en": [
+              [
+                "Pending visitors",
+                "/admin/visitors/pending",
+                "Visitors.Approve",
+                "Visitors.Reject"
+              ],
+              [
+                "Pending others",
+                "/admin/others/pending",
+                "Others.Approve",
+                "Others.Reject"
+              ],
+              [
+                "Pending admins",
+                "/admin/admins/pending",
+                "Admins.Approve",
+                "Admins.Reject"
+              ]
+            ],
+            "ar": [
+              [
+                "الزوار بانتظار الموافقة",
+                "/admin/visitors/pending",
+                "Visitors.Approve",
+                "Visitors.Reject"
+              ],
+              [
+                "مستخدمون آخرون بانتظار الموافقة",
+                "/admin/others/pending",
+                "Others.Approve",
+                "Others.Reject"
+              ],
+              [
+                "المسؤولون بانتظار الموافقة",
+                "/admin/admins/pending",
+                "Admins.Approve",
+                "Admins.Reject"
+              ]
+            ]
+          }
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-visitors-pending-default",
+          "caption": {
+            "en": "The pending visitors queue.",
+            "ar": "قائمة الزوار بانتظار الموافقة."
+          }
+        },
+        {
+          "t": "p",
+          "en": "Rows can be handled one at a time or in bulk. Rejecting requires a written reason of between 10 and 500 characters, and the button stays disabled until the reason is long enough. The reason is audited, so write something a colleague reading it in six months can act on.",
+          "ar": "يمكن معالجة الصفوف واحدًا واحدًا أو دفعة واحدة. ويتطلب الرفض سببًا مكتوبًا يتراوح بين 10 و500 حرف، ويبقى الزر معطّلًا حتى يبلغ السبب الطول الكافي. ويُدوَّن السبب في سجل التدقيق، فاكتب ما يستطيع زميل يقرؤه بعد ستة أشهر أن يتصرف بناءً عليه."
+        },
+        {
+          "t": "note",
+          "en": "When approving a visitor you may also set the tier at the same time, which saves editing the account afterwards.",
+          "ar": "عند اعتماد زائر يمكنك أيضًا ضبط فئته في الوقت نفسه، وهو ما يوفّر تعديل الحساب لاحقًا."
+        },
+        {
+          "t": "h2",
+          "en": "Editing an account",
+          "ar": "تعديل الحساب"
+        },
+        {
+          "t": "p",
+          "en": "The edit form is reached from the row actions on any of the account lists. It changes the email address, the display name, the profile type, the nationality, the two mobile numbers, the meeting preferences and the pictures. It does not change the password — nobody can set another person's password; the account resets its own from the sign-in page.",
+          "ar": "يُفتح نموذج التعديل من إجراءات الصف في أي من قوائم الحسابات. وهو يغيّر البريد الإلكتروني والاسم المعروض ونوع الملف والجنسية ورقمَي الجوال وتفضيلات الاجتماعات والصور. ولا يغيّر كلمة المرور — إذ لا يستطيع أحد ضبط كلمة مرور شخص آخر؛ فالحساب يعيد ضبطها بنفسه من صفحة تسجيل الدخول."
+        },
+        {
+          "t": "note",
+          "en": "For a partner or staff account the profile type is required, and the form will not save without one. For a visitor it is optional.",
+          "ar": "بالنسبة لحساب شريك أو موظف يكون نوع الملف مطلوبًا، ولن يُحفظ النموذج بدونه. أما للزائر فهو اختياري."
+        },
+        {
+          "t": "h2",
+          "en": "Moving an account between types",
+          "ar": "نقل الحساب بين الأنواع"
+        },
+        {
+          "t": "p",
+          "en": "An account created in the wrong pipeline does not have to be deleted and rebuilt. The account details view carries a change type control, gated by its own permission, which moves the account between the visitor and partner sides and asks for the profile type it should land on.",
+          "ar": "الحساب المُنشأ في المسار الخاطئ لا يلزم حذفه وإعادة بنائه. إذ تتضمّن صفحة تفاصيل الحساب أداة لتغيير النوع، محروسة بصلاحية خاصة بها، تنقل الحساب بين جانب الزوار وجانب الشركاء وتسأل عن نوع الملف الذي سينتقل إليه."
+        },
+        {
+          "t": "h2",
+          "en": "Resetting a lost second factor",
+          "ar": "إعادة تعيين عامل ثانٍ مفقود"
+        },
+        {
+          "t": "p",
+          "en": "When somebody loses the phone holding their authenticator, and has no recovery code left, an administrator clears the second factor from Reset user 2FA. The person then pairs a new authenticator on their next sign-in.",
+          "ar": "عند فقدان شخص للهاتف الذي يحمل تطبيق المصادقة، ولم يبقَ لديه رمز استرداد، يمسح المسؤول العامل الثاني من صفحة إعادة تعيين المصادقة الثنائية. ثم يقرن الشخص تطبيق مصادقة جديدًا عند تسجيل دخوله التالي."
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-reset-2fa-default",
+          "caption": {
+            "en": "Resetting a user's second factor.",
+            "ar": "إعادة تعيين العامل الثاني لمستخدم."
+          }
+        },
+        {
+          "t": "bullets",
+          "en": [
+            "A reason is required, 10 to 500 characters, and it is audited.",
+            "You cannot reset your own second factor here — use a recovery code, or ask another administrator.",
+            "You cannot reset another administrator's second factor. The most privileged accounts are re-paired through configuration on the server, deliberately, so that no single administrator can take over another."
+          ],
+          "ar": [
+            "يلزم إدخال سبب من 10 إلى 500 حرف، ويُدوَّن في سجل التدقيق.",
+            "لا يمكنك إعادة تعيين عاملك الثاني من هنا — استخدم رمز استرداد أو اطلب من مسؤول آخر.",
+            "ولا يمكنك إعادة تعيين العامل الثاني لمسؤول آخر. فأعلى الحسابات صلاحية يُعاد إقرانها عبر التهيئة على الخادم، عن قصد، كي لا يستطيع مسؤول واحد الاستيلاء على حساب آخر."
+          ]
+        },
+        {
+          "t": "h2",
+          "en": "Withdrawing access",
+          "ar": "سحب الوصول"
+        },
+        {
+          "t": "p",
+          "en": "Delete on an account list is not a deletion. It disables the account, revokes its sessions and notifies the person by email. The row action and the bulk action open the same dialog, which asks for an audited reason of 10 to 500 characters.",
+          "ar": "زر الحذف في قوائم الحسابات ليس حذفًا. فهو يعطّل الحساب ويُبطل جلساته ويُشعر الشخص بالبريد الإلكتروني. ويفتح إجراء الصف والإجراء الجماعي النافذة نفسها التي تطلب سببًا مُدوَّنًا من 10 إلى 500 حرف."
+        },
+        {
+          "t": "note",
+          "en": "Your own row is skipped if you include it, and the result reports it as skipped rather than failing — so a bulk action that reports one fewer than you selected is usually this.",
+          "ar": "يُتخطّى صفّك أنت إن أدرجته، وتُبلغ النتيجة عنه بأنه متخطّى لا فاشل — فإذا أبلغ إجراء جماعي عن عدد أقل بواحد مما حدّدت فهذا هو السبب غالبًا."
+        }
+      ]
+    },
+    {
+      "id": "roles",
+      "title": {
+        "en": "Roles and permissions",
+        "ar": "الأدوار والصلاحيات"
+      },
+      "blocks": [
+        {
+          "t": "p",
+          "en": "What an administrator can see and do is decided by permissions, and permissions are granted to roles, never to a person. To give somebody an ability you put them in a role that holds it. This is the whole model, and it has one deliberate exception: the Administrator role holds a wildcard that grants everything.",
+          "ar": "يُحدَّد ما يستطيع المسؤول رؤيته وفعله بالصلاحيات، وتُمنح الصلاحيات للأدوار لا للأشخاص أبدًا. ولمنح شخص قدرةً ما تضعه في دور يملكها. هذا هو النموذج كله، وله استثناء واحد مقصود: دور المسؤول العام يحمل رمزًا شاملًا يمنح كل شيء."
+        },
+        {
+          "t": "h2",
+          "en": "Permission names",
+          "ar": "أسماء الصلاحيات"
+        },
+        {
+          "t": "p",
+          "en": "A permission is written as the page it governs, a full stop, and the action — Visitors.Approve, Roles.AssignPermissions, Admins.ResetTwoFactor. Two permissions guard every page: one lets the page open at all, and one puts it in the menu. They are usually the same, and where they differ the manual's page reference lists both.",
+          "ar": "تُكتب الصلاحية على هيئة الصفحة التي تحكمها، ثم نقطة، ثم الإجراء — مثل Visitors.Approve وRoles.AssignPermissions وAdmins.ResetTwoFactor. وتحرس كل صفحة صلاحيتان: واحدة تسمح بفتح الصفحة أصلًا، وأخرى تُظهرها في القائمة. وهما متطابقتان غالبًا، وحين تختلفان يذكرهما مرجع الصفحات في هذا الدليل معًا."
+        },
+        {
+          "t": "note",
+          "en": "A button is gated by the permission of the endpoint it calls, which is not always the page's own. On a page holding two grids over two different things they differ, and on the partner queue the bulk approve and the per-row approve are gated separately because the server gates them separately.",
+          "ar": "يُحرس الزر بصلاحية الخدمة التي يستدعيها، وهي ليست دائمًا صلاحية الصفحة نفسها. ففي صفحة تحوي جدولين لشيئين مختلفين تختلفان، وفي قائمة الشركاء يُحرس الاعتماد الجماعي والاعتماد لكل صف كل على حدة لأن الخادم يحرسهما كذلك."
+        },
+        {
+          "t": "h2",
+          "en": "Creating a role",
+          "ar": "إنشاء دور"
+        },
+        {
+          "t": "p",
+          "en": "Open Roles and permissions and use Add. A role needs only a name, between 1 and 64 characters, and the name must be unique. A new role starts with no permissions at all, so it grants nothing until permissions are assigned to it.",
+          "ar": "افتح الأدوار والصلاحيات واستخدم الإضافة. لا يحتاج الدور إلا إلى اسم، بين حرف واحد و64 حرفًا، ويجب أن يكون الاسم فريدًا. ويبدأ الدور الجديد بلا أي صلاحيات، فلا يمنح شيئًا حتى تُسند إليه صلاحيات."
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-roles-default",
+          "caption": {
+            "en": "The roles list.",
+            "ar": "قائمة الأدوار."
+          }
+        },
+        {
+          "t": "h2",
+          "en": "Granting permissions to a role",
+          "ar": "منح الصلاحيات لدور"
+        },
+        {
+          "t": "p",
+          "en": "The permissions editor lists every permission in the system, grouped by the page it governs, with the ones the role already holds ticked. Tick, untick, and save.",
+          "ar": "يسرد محرّر الصلاحيات كل صلاحية في النظام، مجمّعة حسب الصفحة التي تحكمها، مع تحديد ما يملكه الدور منها. حدّد وألغِ التحديد ثم احفظ."
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-roles-x-permissions-default",
+          "caption": {
+            "en": "The permissions editor for one role.",
+            "ar": "محرّر الصلاحيات لدور واحد."
+          }
+        },
+        {
+          "t": "note",
+          "en": "The baseline roles that ship with the system are read-only here. They cannot be edited, renamed or deleted, because the system's own behaviour depends on them.",
+          "ar": "الأدوار الأساسية المشحونة مع النظام للقراءة فقط هنا. فلا يمكن تعديلها ولا إعادة تسميتها ولا حذفها، لأن سلوك النظام نفسه يعتمد عليها."
+        },
+        {
+          "t": "h2",
+          "en": "Giving a person a role",
+          "ar": "إسناد دور إلى شخص"
+        },
+        {
+          "t": "p",
+          "en": "Roles are assigned to administrators only — a visitor or partner account carries none, because it does not sign in to this Control Panel. Assign them either when creating the administrator, or afterwards from the Edit action on the administrators list.",
+          "ar": "تُسند الأدوار إلى المسؤولين فقط — فحساب الزائر أو الشريك لا يحمل أي دور، لأنه لا يسجّل الدخول إلى لوحة التحكم هذه. وتُسند إما عند إنشاء المسؤول، أو بعد ذلك من إجراء التعديل في قائمة المسؤولين."
+        },
+        {
+          "t": "figure",
+          "image": "cp-admin-admins-default",
+          "caption": {
+            "en": "The administrators list, where roles are assigned.",
+            "ar": "قائمة المسؤولين، حيث تُسند الأدوار."
+          }
+        },
+        {
+          "t": "h2",
+          "en": "The guards",
+          "ar": "الضمانات"
+        },
+        {
+          "t": "bullets",
+          "en": [
+            "The last administrator cannot have the Administrator role taken away. The system refuses, rather than leaving itself with nobody who can administer it.",
+            "A role still held by somebody cannot be deleted; the error says how many people hold it.",
+            "Assigning a role while creating an account needs the role-assignment permission on top of the create permission, so somebody who may add administrators cannot silently make one powerful."
+          ],
+          "ar": [
+            "لا يمكن نزع دور المسؤول العام عن آخر مسؤول. فالنظام يرفض ذلك بدلًا من أن يترك نفسه بلا من يديره.",
+            "لا يمكن حذف دور لا يزال أحد يحمله؛ وتذكر رسالة الخطأ عدد من يحملونه.",
+            "ويتطلب إسناد دور أثناء إنشاء حساب صلاحيةَ إسناد الأدوار فوق صلاحية الإنشاء، فلا يستطيع من يملك إضافة المسؤولين أن يجعل أحدهم واسع الصلاحية بصمت."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "deployment",
+      "title": {
+        "en": "Deploying to a server",
+        "ar": "النشر على الخادم"
+      },
+      "blocks": [
+        {
+          "t": "p",
+          "en": "SIMF is installed on premises, on Windows Server with IIS and SQL Server. A deployment is three separate things, done in this order: the pipeline copies the built files onto the server, an operator sets that server's configuration, and the application creates or updates its own database the first time it starts. Nothing else creates the database, and nothing in the pipeline sets a single configuration value.",
+          "ar": "يُثبَّت نظام SIMF محليًا على خادم ويندوز مع IIS وSQL Server. وعملية النشر ثلاثة أمور منفصلة تُنفَّذ بهذا الترتيب: يَنسخ خط الإنتاج الملفات المبنية إلى الخادم، ثم يضبط المشغّل تهيئة ذلك الخادم، ثم ينشئ التطبيق قاعدة بياناته أو يحدّثها عند أول تشغيل. لا شيء آخر ينشئ قاعدة البيانات، ولا شيء في خط الإنتاج يضبط أي قيمة تهيئة."
+        },
+        {
+          "t": "h2",
+          "en": "The estate",
+          "ar": "منظومة الخوادم"
+        },
+        {
+          "t": "p",
+          "en": "There are two servers, and each runs all four applications. The single most important thing to know before running a deployment is that the environment names are misleading:",
+          "ar": "يوجد خادمان، ويشغّل كل منهما التطبيقات الأربعة جميعها. وأهم ما يجب معرفته قبل تنفيذ أي نشر أن أسماء البيئات مضلِّلة:"
+        },
+        {
+          "t": "table",
+          "headers": {
+            "en": [
+              "Environment name",
+              "What it actually is",
+              "Address"
+            ],
+            "ar": [
+              "اسم البيئة",
+              "ما هي في الحقيقة",
+              "العنوان"
+            ]
+          },
+          "rows": {
+            "en": [
+              [
+                "SIMF-Prod",
+                "PRE-PRODUCTION",
+                "simf.zagali-ict.com"
+              ],
+              [
+                "SIM-RNSF",
+                "PRODUCTION",
+                "web / cp / api.simrsnf.com"
+              ]
+            ],
+            "ar": [
+              [
+                "SIMF-Prod",
+                "ما قبل الإنتاج",
+                "simf.zagali-ict.com"
+              ],
+              [
+                "SIM-RNSF",
+                "الإنتاج",
+                "web / cp / api.simrsnf.com"
+              ]
+            ]
+          }
+        },
+        {
+          "t": "note",
+          "en": "This is not a typo to be corrected. Those are the names as registered, and the one that reads like production is not. Anyone who \"fixes\" the mapping on sight deploys straight to production while believing they are rehearsing. Trust the job names in the pipeline, never the environment string.",
+          "ar": "ليس هذا خطأً مطبعيًا يُصحَّح. فهذه هي الأسماء كما هي مسجّلة، والاسم الذي يبدو وكأنه الإنتاج ليس كذلك. ومن «يصحّح» هذا الربط بمجرد رؤيته سينشر مباشرة إلى الإنتاج وهو يظن أنه يتدرّب. فاعتمد على أسماء المهام في خط الإنتاج، لا على اسم البيئة أبدًا."
+        },
+        {
+          "t": "h2",
+          "en": "The four applications",
+          "ar": "التطبيقات الأربعة"
+        },
+        {
+          "t": "table",
+          "headers": {
+            "en": [
+              "Application",
+              "IIS site",
+              "Folder on the server",
+              "Public address"
+            ],
+            "ar": [
+              "التطبيق",
+              "موقع IIS",
+              "المجلد على الخادم",
+              "العنوان العام"
+            ]
+          },
+          "rows": {
+            "en": [
+              [
+                "API",
+                "SIMF.API",
+                "D:\\System\\v1.0.1\\api",
+                "api.simrsnf.com (internal)"
+              ],
+              [
+                "Control Panel",
+                "SIMF.CP",
+                "D:\\System\\v1.0.1\\cp",
+                "cp.simrsnf.com"
+              ],
+              [
+                "Website",
+                "SIMF.WEB",
+                "D:\\System\\v1.0.1\\web",
+                "web.simrsnf.com"
+              ],
+              [
+                "Mobile edge",
+                "SIMF.EDGE",
+                "D:\\System\\v1.0.1\\edge",
+                "edge.simrsnf.com"
+              ]
+            ],
+            "ar": [
+              [
+                "واجهة البرمجة",
+                "SIMF.API",
+                "D:\\System\\v1.0.1\\api",
+                "api.simrsnf.com (داخلي)"
+              ],
+              [
+                "لوحة التحكم",
+                "SIMF.CP",
+                "D:\\System\\v1.0.1\\cp",
+                "cp.simrsnf.com"
+              ],
+              [
+                "الموقع",
+                "SIMF.WEB",
+                "D:\\System\\v1.0.1\\web",
+                "web.simrsnf.com"
+              ],
+              [
+                "حافة الجوال",
+                "SIMF.EDGE",
+                "D:\\System\\v1.0.1\\edge",
+                "edge.simrsnf.com"
+              ]
+            ]
+          }
+        },
+        {
+          "t": "note",
+          "en": "The IIS sites and application pools must already exist. The deployment copies files into them; it does not create them. Create them by hand in IIS Manager before the first deployment, with the .NET CLR version set to No Managed Code.",
+          "ar": "يجب أن تكون مواقع IIS ومجمّعات التطبيقات موجودة مسبقًا. فالنشر ينسخ الملفات إليها ولا ينشئها. أنشئها يدويًا في مدير IIS قبل أول نشر، مع ضبط إصدار CLR على «بدون تعليمات برمجية مُدارة»."
+        },
+        {
+          "t": "h2",
+          "en": "Before the first deployment",
+          "ar": "قبل أول عملية نشر"
+        },
+        {
+          "t": "bullets",
+          "en": [
+            "Windows Server with IIS and the ASP.NET Core hosting bundle installed — without the bundle the application pool starts and immediately stops.",
+            "SQL Server, reachable from the application server on port 1433.",
+            "A TLS certificate for each public host name. The one for the API is the one that gets forgotten, because it is internal.",
+            "The host time zone set to Arab Standard Time.",
+            "Write access, for each application pool identity, to the log directory and to the file-store directory.",
+            "For the Flutter web bundle only: the IIS URL Rewrite and Application Request Routing modules, with proxying enabled."
+          ],
+          "ar": [
+            "خادم ويندوز مع IIS وحزمة استضافة ASP.NET Core مثبّتة — فبدون الحزمة يبدأ مجمّع التطبيقات ثم يتوقف فورًا.",
+            "خادم SQL Server يمكن الوصول إليه من خادم التطبيق على المنفذ 1433.",
+            "شهادة TLS لكل اسم مضيف عام. وشهادة واجهة البرمجة هي التي تُنسى عادة لأنها داخلية.",
+            "ضبط المنطقة الزمنية للخادم على التوقيت العربي القياسي.",
+            "صلاحية الكتابة، لهوية كل مجمّع تطبيقات، على مجلد السجلات ومجلد مخزن الملفات.",
+            "لحزمة الويب المبنية بـFlutter فقط: وحدتا URL Rewrite وApplication Request Routing في IIS مع تفعيل الوكالة."
+          ]
+        },
+        {
+          "t": "h2",
+          "en": "The order of a deployment",
+          "ar": "ترتيب عملية النشر"
+        },
+        {
+          "t": "bullets",
+          "en": [
+            "The pipeline builds all four applications and publishes them as one artefact.",
+            "It confirms the target machine, and refuses to continue if the machine is the one named as forbidden for that job — this is what stops a pre-production run reaching production.",
+            "For each application in turn — API first, edge last — it stops the site and its pool, mirrors the files into place, and starts them again, proving both reached the started state.",
+            "The operator then runs that server's configuration scripts as an administrator.",
+            "The operator restarts IIS. Recycling the pool is not enough: the worker process inherits its environment from the service that launched it, so a recycled pool keeps the old values.",
+            "The API is started; it creates or migrates both databases and seeds the first administrator."
+          ],
+          "ar": [
+            "يبني خط الإنتاج التطبيقات الأربعة وينشرها كحزمة واحدة.",
+            "يتأكد من الجهاز الهدف، ويرفض المتابعة إذا كان الجهاز هو المحظور لتلك المهمة — وهذا ما يمنع تشغيل ما قبل الإنتاج من الوصول إلى الإنتاج.",
+            "ثم لكل تطبيق بالتتابع — واجهة البرمجة أولًا والحافة أخيرًا — يوقف الموقع ومجمّعه، وينسخ الملفات، ثم يعيد تشغيلهما ويتحقق من بلوغهما حالة التشغيل.",
+            "بعد ذلك يشغّل المشغّل نصوص تهيئة ذلك الخادم بصلاحيات المسؤول.",
+            "ثم يعيد المشغّل تشغيل IIS. ولا تكفي إعادة تدوير المجمّع: فعملية العامل ترث بيئتها من الخدمة التي شغّلتها، فيحتفظ المجمّع المُعاد تدويره بالقيم القديمة.",
+            "ثم تُشغَّل واجهة البرمجة، فتنشئ قاعدتَي البيانات أو تُرقّيهما وتزرع أول مسؤول."
+          ]
+        },
+        {
+          "t": "h2",
+          "en": "The databases",
+          "ar": "قواعد البيانات"
+        },
+        {
+          "t": "p",
+          "en": "There are two, deliberately kept apart: one holds accounts, roles and permissions, the other holds everything else. There is no manual migration step — the API applies its own migrations at startup, and it applies them to the second database before the first. That order is required, not incidental.",
+          "ar": "هناك قاعدتان مفصولتان عن عمد: إحداهما للحسابات والأدوار والصلاحيات، والأخرى لكل ما عداها. ولا توجد خطوة ترحيل يدوية — فواجهة البرمجة تطبّق ترحيلاتها عند الإقلاع، وتطبّقها على القاعدة الثانية قبل الأولى. وهذا الترتيب لازم وليس عرَضيًا."
+        },
+        {
+          "t": "p",
+          "en": "Booting the API against an empty database creates it. Content — the programme, the speakers, the news, the sponsors and the archive — is applied separately, by hand, from the seed scripts. One step in that process is copying the speaker photographs into the file store; without it every photograph returns not-found while the database rows look perfectly healthy.",
+          "ar": "يؤدي تشغيل واجهة البرمجة على قاعدة فارغة إلى إنشائها. أما المحتوى — البرنامج والمتحدثون والأخبار والرعاة والأرشيف — فيُطبَّق منفصلًا ويدويًا من نصوص البذر. وإحدى خطوات تلك العملية نسخ صور المتحدثين إلى مخزن الملفات؛ وبدونها تُرجع كل صورة «غير موجودة» بينما تبدو صفوف قاعدة البيانات سليمة تمامًا."
+        },
+        {
+          "t": "h2",
+          "en": "The first administrator",
+          "ar": "أول مسؤول"
+        },
+        {
+          "t": "p",
+          "en": "The system creates exactly one administrator on first boot, from configuration. Its email, its starting password and its authenticator secret are all configuration values. Once it has signed in, change the password, pair a fresh authenticator, and then change those configuration values to new throwaway ones. That last step is the line between deployed and secure.",
+          "ar": "ينشئ النظام مسؤولًا واحدًا فقط عند أول إقلاع، انطلاقًا من التهيئة. فبريده وكلمة مروره الأولى وسرّ تطبيق المصادقة كلها قيم تهيئة. وبعد تسجيل دخوله، غيّر كلمة المرور، وأقرِن تطبيق مصادقة جديدًا، ثم غيّر قيم التهيئة تلك إلى قيم مؤقتة جديدة. وهذه الخطوة الأخيرة هي الفارق بين «منشور» و«آمن»."
+        },
+        {
+          "t": "note",
+          "en": "Two traps. If the configured password or email is blank the seeder writes no administrator, logs the reason, and the system starts up perfectly healthy — every sign-in then fails with nothing visibly wrong. And a password containing a run such as 12345 is rejected by the password rules, with exactly the same silent outcome.",
+          "ar": "مِزلقان اثنان. إذا كانت كلمة المرور أو البريد المهيّأ فارغًا فلن يكتب البذّار أي مسؤول، وسيسجّل السبب، وسيقلع النظام سليمًا تمامًا — ثم يفشل كل تسجيل دخول دون أي خلل ظاهر. وكذلك كلمة مرور تحوي تسلسلًا مثل 12345 ترفضها قواعد كلمات المرور، بالنتيجة الصامتة نفسها."
+        }
+      ]
+    },
+    {
+      "id": "configuration",
+      "title": {
+        "en": "Every configuration value",
+        "ar": "كل قيم التهيئة"
+      },
+      "blocks": [
+        {
+          "t": "p",
+          "en": "Configuration reaches the applications as machine-wide environment variables set on the server. The files shipped inside each application carry only non-secret defaults, and they are overwritten by every deployment, so nothing that matters may be edited there.",
+          "ar": "تصل التهيئة إلى التطبيقات عبر متغيّرات بيئة على مستوى الجهاز تُضبط على الخادم. أما الملفات المشحونة داخل كل تطبيق فلا تحمل سوى القيم الافتراضية غير السرية، ويُعاد كتابتها مع كل نشر، فلا يجوز تعديل أي شيء مهم فيها."
+        },
+        {
+          "t": "h2",
+          "en": "How a variable name is built",
+          "ar": "كيف يُبنى اسم المتغيّر"
+        },
+        {
+          "t": "p",
+          "en": "Each application reads its own prefix, and a colon in the setting name becomes a double underscore in the variable name.",
+          "ar": "يقرأ كل تطبيق بادئته الخاصة، وتتحوّل النقطتان الرأسيتان في اسم الإعداد إلى شرطتين سفليتين في اسم المتغيّر."
+        },
+        {
+          "t": "table",
+          "headers": {
+            "en": [
+              "Application",
+              "Prefix",
+              "Example"
+            ],
+            "ar": [
+              "التطبيق",
+              "البادئة",
+              "مثال"
+            ]
+          },
+          "rows": {
+            "en": [
+              [
+                "API",
+                "SIMF_API_",
+                "SIMF_API_ConnectionStrings__SimfAppDb"
+              ],
+              [
+                "Control Panel",
+                "SIMF_CP_",
+                "SIMF_CP_Api__BaseUrl"
+              ],
+              [
+                "Website",
+                "SIMF_WEB_",
+                "SIMF_WEB_Api__BaseUrl"
+              ],
+              [
+                "Mobile edge",
+                "SIMF_EDGE_",
+                "SIMF_EDGE_ReverseProxy__KnownProxies__0"
+              ]
+            ],
+            "ar": [
+              [
+                "واجهة البرمجة",
+                "SIMF_API_",
+                "SIMF_API_ConnectionStrings__SimfAppDb"
+              ],
+              [
+                "لوحة التحكم",
+                "SIMF_CP_",
+                "SIMF_CP_Api__BaseUrl"
+              ],
+              [
+                "الموقع",
+                "SIMF_WEB_",
+                "SIMF_WEB_Api__BaseUrl"
+              ],
+              [
+                "حافة الجوال",
+                "SIMF_EDGE_",
+                "SIMF_EDGE_ReverseProxy__KnownProxies__0"
+              ]
+            ]
+          }
+        },
+        {
+          "t": "note",
+          "en": "A bare SIMF_ prefix binds to nothing. Worse, each application refuses to start if it finds variables using that retired prefix, naming them in the error — so an upgraded server must have the new variables written first and the old ones cleared afterwards, never the other way round. The one exception is ASPNETCORE_ENVIRONMENT, which is read before any prefix applies and stays unprefixed on every host.",
+          "ar": "البادئة SIMF_ المجرّدة لا ترتبط بشيء. والأسوأ أن كل تطبيق يرفض الإقلاع إذا وجد متغيّرات تستخدم تلك البادئة المتقاعدة، ويذكرها في رسالة الخطأ — لذا يجب على الخادم المُرقّى أن تُكتب فيه المتغيّرات الجديدة أولًا ثم تُمحى القديمة بعدها، لا العكس أبدًا. والاستثناء الوحيد هو ASPNETCORE_ENVIRONMENT الذي يُقرأ قبل تطبيق أي بادئة ويبقى بلا بادئة على كل الخوادم."
+        },
+        {
+          "t": "h2",
+          "en": "How to set one",
+          "ar": "كيف يُضبط المتغيّر"
+        },
+        {
+          "t": "p",
+          "en": "From an elevated PowerShell prompt on the server, machine scope, then restart IIS so the worker process picks up the new environment block:",
+          "ar": "من موجّه PowerShell بصلاحيات مرتفعة على الخادم، على نطاق الجهاز، ثم أعد تشغيل IIS لتلتقط عملية العامل كتلة البيئة الجديدة:"
+        },
+        {
+          "t": "code",
+          "en": "[Environment]::SetEnvironmentVariable(\n    'SIMF_API_ConnectionStrings__SimfAppDb',\n    'Server=...;Database=SIMF_App;...',\n    [EnvironmentVariableTarget]::Machine)\n\niisreset",
+          "ar": "[Environment]::SetEnvironmentVariable(\n    'SIMF_API_ConnectionStrings__SimfAppDb',\n    'Server=...;Database=SIMF_App;...',\n    [EnvironmentVariableTarget]::Machine)\n\niisreset"
+        },
+        {
+          "t": "note",
+          "en": "Recycling the application pool is not enough, and this is the most common reason a correctly set value appears to have no effect.",
+          "ar": "لا تكفي إعادة تدوير مجمّع التطبيقات، وهذا أشيع سبب يجعل قيمة مضبوطة بشكل صحيح تبدو بلا أثر."
+        },
+        {
+          "t": "h2",
+          "en": "The values that stop a server starting",
+          "ar": "القيم التي تمنع الخادم من الإقلاع"
+        },
+        {
+          "t": "p",
+          "en": "Seven values are boot gates: in production, the application refuses to start without its own. This is deliberate — each one protects something that would otherwise fail silently and much later.",
+          "ar": "سبع قيم تمثّل بوابات إقلاع: ففي الإنتاج يرفض التطبيق البدء بدون القيمة الخاصة به. وهذا مقصود — إذ تحمي كل واحدة منها أمرًا كان سيفشل بصمت وفي وقت متأخر جدًا."
+        },
+        {
+          "t": "table",
+          "headers": {
+            "en": [
+              "Variable",
+              "Application"
+            ],
+            "ar": [
+              "المتغيّر",
+              "التطبيق"
+            ]
+          },
+          "rows": {
+            "en": [
+              [
+                "SIMF_API_FileStorage__EncryptionKey",
+                "API"
+              ],
+              [
+                "SIMF_API_Storage__UserIdDocumentEncryptionKey",
+                "API"
+              ],
+              [
+                "SIMF_API_Ai__PromptHash__Secret",
+                "API"
+              ],
+              [
+                "SIMF_CP_DataProtection__KeyRingPath",
+                "Control Panel"
+              ],
+              [
+                "SIMF_WEB_DataProtection__KeyRingPath",
+                "Website"
+              ],
+              [
+                "SIMF_EDGE_ReverseProxy__Clusters__api__Destinations__primary__Address",
+                "Mobile edge"
+              ],
+              [
+                "SIMF_EDGE_ReverseProxy__KnownProxies__0",
+                "Mobile edge"
+              ]
+            ],
+            "ar": [
+              [
+                "SIMF_API_FileStorage__EncryptionKey",
+                "واجهة البرمجة"
+              ],
+              [
+                "SIMF_API_Storage__UserIdDocumentEncryptionKey",
+                "واجهة البرمجة"
+              ],
+              [
+                "SIMF_API_Ai__PromptHash__Secret",
+                "واجهة البرمجة"
+              ],
+              [
+                "SIMF_CP_DataProtection__KeyRingPath",
+                "لوحة التحكم"
+              ],
+              [
+                "SIMF_WEB_DataProtection__KeyRingPath",
+                "الموقع"
+              ],
+              [
+                "SIMF_EDGE_ReverseProxy__Clusters__api__Destinations__primary__Address",
+                "حافة الجوال"
+              ],
+              [
+                "SIMF_EDGE_ReverseProxy__KnownProxies__0",
+                "حافة الجوال"
+              ]
+            ]
+          }
+        },
+        {
+          "t": "p",
+          "en": "Two of the API's three are encryption keys, and they behave differently under change. The file-store key wraps a per-file key, so it has a rotation path in principle — but the job that finishes a rotation has never been built, so treat it as set once. The identity-document key has no such path at all: changing it strands every encrypted column permanently, with no way back. Escrow both, with the version number stamped alongside the file-store key, before the system carries any real data.",
+          "ar": "اثنان من مفاتيح واجهة البرمجة الثلاثة مفتاحا تشفير، ويسلكان سلوكًا مختلفًا عند التغيير. فمفتاح مخزن الملفات يغلّف مفتاحًا لكل ملف، فله من حيث المبدأ مسار تدوير — لكن المهمة التي تُتِمّ التدوير لم تُبنَ قط، فعامِله على أنه يُضبط مرة واحدة. أما مفتاح وثائق الهوية فلا مسار له إطلاقًا: وتغييره يعزل كل عمود مشفَّر نهائيًا بلا رجعة. فاحفظ نسخة موثوقة من المفتاحين، مع رقم إصدار مفتاح مخزن الملفات، قبل أن يحمل النظام أي بيانات حقيقية."
+        },
+        {
+          "t": "code",
+          "en": "# Generate a 32-byte key, base64-encoded:\nopenssl rand -base64 32\n\n# The JWT signing key wants more:\nopenssl rand -base64 48",
+          "ar": "# Generate a 32-byte key, base64-encoded:\nopenssl rand -base64 32\n\n# The JWT signing key wants more:\nopenssl rand -base64 48"
+        },
+        {
+          "t": "pagebreak"
+        },
+        {
+          "t": "h2",
+          "en": "The API",
+          "ar": "واجهة البرمجة"
+        },
+        {
+          "t": "p",
+          "en": "The API reads by far the most configuration — the connection strings, every key, the mail server, the bootstrap administrator and the AI provider. Its script on a provisioned server carries 82 variables.",
+          "ar": "تقرأ واجهة البرمجة أكبر قدر من التهيئة بفارق كبير — سلاسل الاتصال، وكل المفاتيح، وخادم البريد، والمسؤول الأول، ومزوّد الذكاء الاصطناعي. ويحمل نصّها على خادم مهيّأ 82 متغيّرًا."
+        },
+        {
+          "t": "h3",
+          "en": "Databases",
+          "ar": "قواعد البيانات"
+        },
+        {
+          "t": "table",
+          "headers": {
+            "en": [
+              "Variable",
+              "What it controls",
+              "Ships as",
+              "Set it to"
+            ],
+            "ar": [
+              "المتغيّر",
+              "ما يتحكم فيه",
+              "القيمة المُشحونة",
+              "اضبطه على"
+            ]
+          },
+          "rows": {
+            "en": [
+              [
+                "SIMF_API_ConnectionStrings__SimfIdentityDb",
+                "The accounts, roles and permissions database.",
+                "empty",
+                "Required"
+              ],
+              [
+                "SIMF_API_ConnectionStrings__SimfAppDb",
+                "Everything else — profiles, programme, gates, meetings.",
+                "empty",
+                "Required"
+              ]
+            ],
+            "ar": [
+              [
+                "SIMF_API_ConnectionStrings__SimfIdentityDb",
+                "قاعدة بيانات الحسابات والأدوار والصلاحيات.",
+                "فارغ",
+                "مطلوب"
+              ],
+              [
+                "SIMF_API_ConnectionStrings__SimfAppDb",
+                "كل ما عدا ذلك — الملفات والبرنامج والبوابات والاجتماعات.",
+                "فارغ",
+                "مطلوب"
+              ]
+            ]
+          }
+        },
+        {
+          "t": "note",
+          "en": "Both are required. The application throws on the first database access if either is missing — it does not start and then misbehave.",
+          "ar": "كلاهما مطلوب. ويُخفق التطبيق عند أول وصول لقاعدة البيانات إذا غاب أحدهما — فهو لا يقلع ثم يسيء التصرف."
+        },
+        {
+          "t": "h3",
+          "en": "Keys and tokens",
+          "ar": "المفاتيح والرموز"
+        },
+        {
+          "t": "table",
+          "headers": {
+            "en": [
+              "Variable",
+              "What it controls",
+              "Ships as",
+              "Set it to"
+            ],
+            "ar": [
+              "المتغيّر",
+              "ما يتحكم فيه",
+              "القيمة المُشحونة",
+              "اضبطه على"
+            ]
+          },
+          "rows": {
+            "en": [
+              [
+                "SIMF_API_Jwt__SigningKey",
+                "Signs every access token. Also derives the one-time-code and meeting-link hashes, so changing it invalidates those too.",
+                "empty",
+                "At least 32 bytes; 48 recommended"
+              ],
+              [
+                "SIMF_API_Jwt__Issuer",
+                "The token issuer name.",
+                "SIMF",
+                "SIMF"
+              ],
+              [
+                "SIMF_API_Jwt__Audience",
+                "The token audience name.",
+                "SIMF",
+                "SIMF"
+              ],
+              [
+                "SIMF_API_Jwt__AccessTokenMinutes",
+                "How long an access token stays valid.",
+                "5",
+                "5"
+              ],
+              [
+                "SIMF_API_Jwt__SessionLifetimeHours",
+                "How long a signed-in session may be refreshed for.",
+                "24",
+                "24"
+              ],
+              [
+                "SIMF_API_Storage__UserIdDocumentEncryptionKey",
+                "Encrypts the national ID, Iqama, passport and mobile columns. Cannot be changed once data exists.",
+                "empty",
+                "A secret — generate one per environment (32 bytes, base64)"
+              ],
+              [
+                "SIMF_API_FileStorage__EncryptionKey",
+                "Wraps the key of every encrypted stored file.",
+                "empty",
+                "A secret — generate one per environment (32 bytes, base64)"
+              ],
+              [
+                "SIMF_API_FileStorage__KekVersion",
+                "The version stamp written into every encrypted file. On a restore the right key under the wrong version fails every read.",
+                "1",
+                "1"
+              ],
+              [
+                "SIMF_API_FileStorage__PreviousEncryptionKey",
+                "The superseded key, during a rotation only.",
+                "empty",
+                "Leave empty"
+              ],
+              [
+                "SIMF_API_Ai__PromptHash__Secret",
+                "Signs the AI prompt fingerprints. Without it the application falls back to a publicly derivable key.",
+                "empty",
+                "A secret — generate one per environment"
+              ]
+            ],
+            "ar": [
+              [
+                "SIMF_API_Jwt__SigningKey",
+                "يوقّع كل رمز وصول. ومنه تُشتق تجزئات الرموز لمرة واحدة وروابط الاجتماعات، فتغييره يُبطلها أيضًا.",
+                "فارغ",
+                "32 بايت على الأقل، ويُفضَّل 48"
+              ],
+              [
+                "SIMF_API_Jwt__Issuer",
+                "اسم جهة إصدار الرمز.",
+                "SIMF",
+                "SIMF"
+              ],
+              [
+                "SIMF_API_Jwt__Audience",
+                "اسم الجمهور المستهدف للرمز.",
+                "SIMF",
+                "SIMF"
+              ],
+              [
+                "SIMF_API_Jwt__AccessTokenMinutes",
+                "مدة صلاحية رمز الوصول.",
+                "5",
+                "5"
+              ],
+              [
+                "SIMF_API_Jwt__SessionLifetimeHours",
+                "المدة التي يمكن خلالها تجديد جلسة مسجّلة الدخول.",
+                "24",
+                "24"
+              ],
+              [
+                "SIMF_API_Storage__UserIdDocumentEncryptionKey",
+                "يشفّر أعمدة الهوية الوطنية والإقامة وجواز السفر والجوال. ولا يمكن تغييره بعد وجود بيانات.",
+                "فارغ",
+                "سر — يُولَّد واحد لكل بيئة (32 بايت، base64)"
+              ],
+              [
+                "SIMF_API_FileStorage__EncryptionKey",
+                "يغلّف مفتاح كل ملف مخزَّن مشفَّر.",
+                "فارغ",
+                "سر — يُولَّد واحد لكل بيئة (32 بايت، base64)"
+              ],
+              [
+                "SIMF_API_FileStorage__KekVersion",
+                "ختم الإصدار المكتوب في كل ملف مشفَّر. وعند الاستعادة يُخفق كل قراءة إذا كان المفتاح صحيحًا والإصدار خاطئًا.",
+                "1",
+                "1"
+              ],
+              [
+                "SIMF_API_FileStorage__PreviousEncryptionKey",
+                "المفتاح السابق، أثناء التدوير فقط.",
+                "فارغ",
+                "اتركه فارغًا"
+              ],
+              [
+                "SIMF_API_Ai__PromptHash__Secret",
+                "يوقّع بصمات محفّزات الذكاء الاصطناعي. وبدونه يرجع التطبيق إلى مفتاح يمكن اشتقاقه علنًا.",
+                "فارغ",
+                "سر — يُولَّد واحد لكل بيئة"
+              ]
+            ]
+          }
+        },
+        {
+          "t": "h3",
+          "en": "The first administrator",
+          "ar": "أول مسؤول"
+        },
+        {
+          "t": "table",
+          "headers": {
+            "en": [
+              "Variable",
+              "What it controls",
+              "Ships as",
+              "Set it to"
+            ],
+            "ar": [
+              "المتغيّر",
+              "ما يتحكم فيه",
+              "القيمة المُشحونة",
+              "اضبطه على"
+            ]
+          },
+          "rows": {
+            "en": [
+              [
+                "SIMF_API_SuperAdmin__Email",
+                "The bootstrap administrator's address.",
+                "superadmin@simrsnf.com",
+                "The real address"
+              ],
+              [
+                "SIMF_API_SuperAdmin__TempPassword",
+                "Its starting password. Must satisfy the password rules, including the no-sequential-run rule.",
+                "empty",
+                "A secret — generate one per environment"
+              ],
+              [
+                "SIMF_API_SuperAdmin__TotpSecret",
+                "Its authenticator secret. Without it the most privileged account in the system is protected by a password alone.",
+                "empty",
+                "A secret — generate one per environment (base32)"
+              ],
+              [
+                "SIMF_API_SuperAdmin__PasswordChangeRequired",
+                "Force a password change at the first sign-in.",
+                "true",
+                "true"
+              ],
+              [
+                "SIMF_API_Seed__DemoPassword",
+                "The shared password of the sample accounts.",
+                "empty",
+                "Leave empty in production"
+              ],
+              [
+                "SIMF_API_Seed__EnableDemoAccounts",
+                "Create the sample accounts outside development.",
+                "false",
+                "false"
+              ]
+            ],
+            "ar": [
+              [
+                "SIMF_API_SuperAdmin__Email",
+                "بريد المسؤول الأول.",
+                "superadmin@simrsnf.com",
+                "العنوان الحقيقي"
+              ],
+              [
+                "SIMF_API_SuperAdmin__TempPassword",
+                "كلمة مروره الأولى. ويجب أن تستوفي قواعد كلمات المرور، ومنها قاعدة منع التسلسل.",
+                "فارغ",
+                "سر — يُولَّد واحد لكل بيئة"
+              ],
+              [
+                "SIMF_API_SuperAdmin__TotpSecret",
+                "سرّ تطبيق المصادقة الخاص به. وبدونه يكون أعلى حساب صلاحية في النظام محميًا بكلمة مرور وحدها.",
+                "فارغ",
+                "سر — يُولَّد واحد لكل بيئة (base32)"
+              ],
+              [
+                "SIMF_API_SuperAdmin__PasswordChangeRequired",
+                "فرض تغيير كلمة المرور عند أول تسجيل دخول.",
+                "true",
+                "true"
+              ],
+              [
+                "SIMF_API_Seed__DemoPassword",
+                "كلمة المرور المشتركة للحسابات التجريبية.",
+                "فارغ",
+                "اتركه فارغًا في الإنتاج"
+              ],
+              [
+                "SIMF_API_Seed__EnableDemoAccounts",
+                "إنشاء الحسابات التجريبية خارج بيئة التطوير.",
+                "false",
+                "false"
+              ]
+            ]
+          }
+        },
+        {
+          "t": "note",
+          "en": "The sample accounts must not exist on a production system. They are created only in development, or when the switch above is turned on deliberately.",
+          "ar": "يجب ألا توجد الحسابات التجريبية على نظام إنتاجي. فهي لا تُنشأ إلا في بيئة التطوير، أو عند تفعيل المفتاح أعلاه عمدًا."
+        },
+        {
+          "t": "h3",
+          "en": "Mail",
+          "ar": "البريد"
+        },
+        {
+          "t": "table",
+          "headers": {
+            "en": [
+              "Variable",
+              "What it controls",
+              "Ships as",
+              "Set it to"
+            ],
+            "ar": [
+              "المتغيّر",
+              "ما يتحكم فيه",
+              "القيمة المُشحونة",
+              "اضبطه على"
+            ]
+          },
+          "rows": {
+            "en": [
+              [
+                "SIMF_API_Email__Host",
+                "The mail server.",
+                "empty",
+                "Required"
+              ],
+              [
+                "SIMF_API_Email__Port",
+                "Its port.",
+                "587",
+                "587"
+              ],
+              [
+                "SIMF_API_Email__User",
+                "The mail account.",
+                "empty",
+                "Required"
+              ],
+              [
+                "SIMF_API_Email__Password",
+                "Its password.",
+                "empty",
+                "A secret — generate one per environment"
+              ],
+              [
+                "SIMF_API_Email__FromAddress",
+                "The address mail is sent from.",
+                "no-reply@ammn.com.sa",
+                "The verified sender"
+              ],
+              [
+                "SIMF_API_Email__FromName",
+                "The display name on sent mail.",
+                "SIMF",
+                "SIMF"
+              ],
+              [
+                "SIMF_API_Email__FailureAlertRecipients",
+                "Who is told when mail delivery starts failing.",
+                "empty",
+                "An operations address"
+              ]
+            ],
+            "ar": [
+              [
+                "SIMF_API_Email__Host",
+                "خادم البريد.",
+                "فارغ",
+                "مطلوب"
+              ],
+              [
+                "SIMF_API_Email__Port",
+                "منفذه.",
+                "587",
+                "587"
+              ],
+              [
+                "SIMF_API_Email__User",
+                "حساب البريد.",
+                "فارغ",
+                "مطلوب"
+              ],
+              [
+                "SIMF_API_Email__Password",
+                "كلمة مروره.",
+                "فارغ",
+                "سر — يُولَّد واحد لكل بيئة"
+              ],
+              [
+                "SIMF_API_Email__FromAddress",
+                "العنوان الذي تُرسل منه الرسائل.",
+                "no-reply@ammn.com.sa",
+                "المرسل الموثّق"
+              ],
+              [
+                "SIMF_API_Email__FromName",
+                "الاسم الظاهر على الرسائل المرسلة.",
+                "SIMF",
+                "SIMF"
+              ],
+              [
+                "SIMF_API_Email__FailureAlertRecipients",
+                "من يُبلَّغ عند بدء فشل تسليم البريد.",
+                "فارغ",
+                "عنوان فريق التشغيل"
+              ]
+            ]
+          }
+        },
+        {
+          "t": "note",
+          "en": "Mail failure is invisible from the interface. Sending is queued in the background, so a wrong password does not throw, does not appear on screen, and does not stop an account being created — the messages simply never arrive. Set the alert recipients, and test delivery after every change.",
+          "ar": "فشل البريد غير مرئي من الواجهة. فالإرسال يجري في الخلفية عبر طابور، فكلمة مرور خاطئة لا تُطلق خطأً ولا تظهر على الشاشة ولا تمنع إنشاء حساب — بل لا تصل الرسائل فحسب. فاضبط عناوين التنبيه، واختبر التسليم بعد كل تغيير."
+        },
+        {
+          "t": "note",
+          "en": "An EMPTY mail host is worse than a wrong one, and this was observed rather than reasoned about. With no host configured the first message to be sent fails in a way the retry logic does not catch, the background sender stops for good, and the health check reports the API as unhealthy from that moment — while the site keeps serving pages normally. If a load balancer is watching that endpoint it will take a working server out of rotation because nobody filled in an SMTP host.",
+          "ar": "أما مضيف البريد الفارغ فأسوأ من الخاطئ، وهذا أمر لوحظ عمليًا لا استُنتج. فمع عدم تهيئة أي مضيف تفشل أول رسالة بطريقة لا يلتقطها منطق إعادة المحاولة، فيتوقف المرسل الخلفي نهائيًا، ويُبلغ فحص السلامة عن اعتلال واجهة البرمجة منذ تلك اللحظة — بينما يواصل الموقع تقديم صفحاته بشكل طبيعي. وإذا كان موزّع الأحمال يراقب تلك النقطة فسيُخرج خادمًا سليمًا من الخدمة لأن أحدًا لم يملأ مضيف SMTP."
+        },
+        {
+          "t": "h3",
+          "en": "Network and limits",
+          "ar": "الشبكة والحدود"
+        },
+        {
+          "t": "table",
+          "headers": {
+            "en": [
+              "Variable",
+              "What it controls",
+              "Ships as",
+              "Set it to"
+            ],
+            "ar": [
+              "المتغيّر",
+              "ما يتحكم فيه",
+              "القيمة المُشحونة",
+              "اضبطه على"
+            ]
+          },
+          "rows": {
+            "en": [
+              [
+                "SIMF_API_ReverseProxy__KnownProxies__0",
+                "The trusted proxy, so a visitor's real address is recovered.",
+                "empty",
+                "The proxy's IP ADDRESS"
+              ],
+              [
+                "SIMF_API_Cors__WebAppOrigins__0",
+                "A browser origin allowed to call the API. Numbered from zero.",
+                "empty",
+                "Each public site address"
+              ],
+              [
+                "SIMF_API_RateLimit__PermitLimit",
+                "Requests allowed per address in the window.",
+                "20",
+                "20"
+              ],
+              [
+                "SIMF_API_RateLimit__WindowSeconds",
+                "The window, in seconds.",
+                "60",
+                "60"
+              ],
+              [
+                "SIMF_API_Swagger__AllowSwagger",
+                "Publish the interactive API documentation in production.",
+                "false",
+                "false"
+              ],
+              [
+                "SIMF_API_FileStorage__RootPath",
+                "Where uploaded files are written.",
+                "empty",
+                "An explicit path that is backed up"
+              ],
+              [
+                "SIMF_API_Storage__LogDirectory",
+                "Where the log files are written.",
+                "logs",
+                "An explicit path"
+              ]
+            ],
+            "ar": [
+              [
+                "SIMF_API_ReverseProxy__KnownProxies__0",
+                "الوكيل الموثوق، لاستعادة عنوان الزائر الحقيقي.",
+                "فارغ",
+                "عنوان IP للوكيل"
+              ],
+              [
+                "SIMF_API_Cors__WebAppOrigins__0",
+                "أصل متصفح مسموح له باستدعاء واجهة البرمجة. مرقّم من الصفر.",
+                "فارغ",
+                "عنوان كل موقع عام"
+              ],
+              [
+                "SIMF_API_RateLimit__PermitLimit",
+                "عدد الطلبات المسموح بها لكل عنوان في النافذة.",
+                "20",
+                "20"
+              ],
+              [
+                "SIMF_API_RateLimit__WindowSeconds",
+                "النافذة بالثواني.",
+                "60",
+                "60"
+              ],
+              [
+                "SIMF_API_Swagger__AllowSwagger",
+                "نشر وثائق واجهة البرمجة التفاعلية في الإنتاج.",
+                "false",
+                "false"
+              ],
+              [
+                "SIMF_API_FileStorage__RootPath",
+                "المكان الذي تُكتب فيه الملفات المرفوعة.",
+                "فارغ",
+                "مسار صريح مشمول بالنسخ الاحتياطي"
+              ],
+              [
+                "SIMF_API_Storage__LogDirectory",
+                "المكان الذي تُكتب فيه ملفات السجل.",
+                "logs",
+                "مسار صريح"
+              ]
+            ]
+          }
+        },
+        {
+          "t": "note",
+          "en": "The trusted-proxy entry must be an IP address. A host name is read, fails to parse, and is dropped without a word — the setting then looks configured while every visitor shares one rate-limit bucket. If the file-store path is left empty the files land in a default location under ProgramData that nobody chose and that a backup may not cover.",
+          "ar": "يجب أن يكون مدخل الوكيل الموثوق عنوان IP. أما اسم المضيف فيُقرأ ويفشل تحليله ويُسقَط دون أي إشعار — فيبدو الإعداد مضبوطًا بينما يتشارك كل الزوار حصة واحدة من حد المعدل. وإذا تُرك مسار مخزن الملفات فارغًا فستقع الملفات في موقع افتراضي ضمن ProgramData لم يختره أحد وقد لا يشمله النسخ الاحتياطي."
+        },
+        {
+          "t": "h3",
+          "en": "Walk-in desk and offline badges",
+          "ar": "مكتب الحضور والشارات دون اتصال"
+        },
+        {
+          "t": "p",
+          "en": "These govern the on-site registration desk. Every switch ships off, so the desk behaves conservatively until somebody deliberately opens it up for an event day.",
+          "ar": "تحكم هذه المفاتيح مكتب التسجيل في الموقع. وكلها مُشحونة مُعطّلة، فيتصرف المكتب بتحفّظ حتى يفتحه أحد عمدًا ليوم الفعالية."
+        },
+        {
+          "t": "table",
+          "headers": {
+            "en": [
+              "Variable",
+              "What it controls",
+              "Ships as",
+              "Set it to"
+            ],
+            "ar": [
+              "المتغيّر",
+              "ما يتحكم فيه",
+              "القيمة المُشحونة",
+              "اضبطه على"
+            ]
+          },
+          "rows": {
+            "en": [
+              [
+                "SIMF_API_WalkInMode__Enabled",
+                "The desk features as a whole.",
+                "false",
+                "true on event days"
+              ],
+              [
+                "SIMF_API_WalkInMode__ExpiresAt",
+                "When the desk switches itself off again.",
+                "empty",
+                "Blank means never"
+              ],
+              [
+                "SIMF_API_WalkInMode__QuickRegister",
+                "The shortened desk form.",
+                "false",
+                "false"
+              ],
+              [
+                "SIMF_API_WalkInMode__QuickRegisterRequiresIdentityDocument",
+                "Whether the short form still demands an identity document.",
+                "true",
+                "true"
+              ],
+              [
+                "SIMF_API_WalkInMode__AutoApprove",
+                "Approve a desk visitor immediately and print the badge. Never applies to partner accounts.",
+                "false",
+                "Only on an event day"
+              ],
+              [
+                "SIMF_API_WalkInMode__SessionWalkIn",
+                "Admission to a session at the door.",
+                "false",
+                "false"
+              ],
+              [
+                "SIMF_API_WalkInMode__ArrivalGraceMinutes",
+                "How late an arrival still counts. Capped at 240.",
+                "15",
+                "15"
+              ],
+              [
+                "SIMF_API_WalkInMode__AcceptOfflineBadges",
+                "Honour badges issued by a desk with no network.",
+                "false",
+                "false"
+              ],
+              [
+                "SIMF_API_WalkInMode__OfflineUpload",
+                "Accept a batch uploaded from an offline desk.",
+                "false",
+                "false"
+              ],
+              [
+                "SIMF_API_WalkInMode__AllowBadgeActivation",
+                "Let a badge be activated at the desk.",
+                "false",
+                "false"
+              ],
+              [
+                "SIMF_API_WalkInMode__BadgeKey",
+                "Signs offline badges. Only meaningful when offline badges are accepted.",
+                "empty",
+                "A secret — generate one per environment"
+              ],
+              [
+                "SIMF_API_WalkInMode__BadgeKeyVersion",
+                "Its version stamp.",
+                "0",
+                "0"
+              ],
+              [
+                "SIMF_API_WalkInMode__PreviousBadgeKey",
+                "The superseded badge key, during a rotation only.",
+                "empty",
+                "Leave empty"
+              ],
+              [
+                "SIMF_API_WalkInMode__PreviousBadgeKeyVersion",
+                "Its version stamp.",
+                "0",
+                "0"
+              ]
+            ],
+            "ar": [
+              [
+                "SIMF_API_WalkInMode__Enabled",
+                "خصائص المكتب ككل.",
+                "false",
+                "true في أيام الفعالية"
+              ],
+              [
+                "SIMF_API_WalkInMode__ExpiresAt",
+                "متى يُغلق المكتب نفسه من جديد.",
+                "فارغ",
+                "الفراغ يعني بلا انتهاء"
+              ],
+              [
+                "SIMF_API_WalkInMode__QuickRegister",
+                "نموذج المكتب المختصر.",
+                "false",
+                "false"
+              ],
+              [
+                "SIMF_API_WalkInMode__QuickRegisterRequiresIdentityDocument",
+                "هل يظل النموذج المختصر يشترط وثيقة هوية.",
+                "true",
+                "true"
+              ],
+              [
+                "SIMF_API_WalkInMode__AutoApprove",
+                "اعتماد زائر المكتب فورًا وطباعة الشارة. ولا ينطبق أبدًا على حسابات الشركاء.",
+                "false",
+                "في يوم الفعالية فقط"
+              ],
+              [
+                "SIMF_API_WalkInMode__SessionWalkIn",
+                "الدخول إلى جلسة عند الباب.",
+                "false",
+                "false"
+              ],
+              [
+                "SIMF_API_WalkInMode__ArrivalGraceMinutes",
+                "إلى أي حد يظل الوصول المتأخر محتسبًا. والحد الأقصى 240.",
+                "15",
+                "15"
+              ],
+              [
+                "SIMF_API_WalkInMode__AcceptOfflineBadges",
+                "قبول الشارات الصادرة من مكتب بلا شبكة.",
+                "false",
+                "false"
+              ],
+              [
+                "SIMF_API_WalkInMode__OfflineUpload",
+                "قبول دفعة مرفوعة من مكتب غير متصل.",
+                "false",
+                "false"
+              ],
+              [
+                "SIMF_API_WalkInMode__AllowBadgeActivation",
+                "السماح بتفعيل شارة عند المكتب.",
+                "false",
+                "false"
+              ],
+              [
+                "SIMF_API_WalkInMode__BadgeKey",
+                "يوقّع الشارات دون اتصال. ولا معنى له إلا عند قبول تلك الشارات.",
+                "فارغ",
+                "سر — يُولَّد واحد لكل بيئة"
+              ],
+              [
+                "SIMF_API_WalkInMode__BadgeKeyVersion",
+                "ختم إصداره.",
+                "0",
+                "0"
+              ],
+              [
+                "SIMF_API_WalkInMode__PreviousBadgeKey",
+                "مفتاح الشارة السابق، أثناء التدوير فقط.",
+                "فارغ",
+                "اتركه فارغًا"
+              ],
+              [
+                "SIMF_API_WalkInMode__PreviousBadgeKeyVersion",
+                "ختم إصداره.",
+                "0",
+                "0"
+              ]
+            ]
+          }
+        },
+        {
+          "t": "note",
+          "en": "The offline badge desk carries its own copy of the badge key and its version. The two must match the API values exactly, or every badge the desk issues is refused at the gate.",
+          "ar": "يحمل مكتب الشارات غير المتصل نسخته الخاصة من مفتاح الشارة وإصداره. ويجب أن يطابقا قيم واجهة البرمجة تمامًا، وإلا رُفضت عند البوابة كل شارة يصدرها المكتب."
+        },
+        {
+          "t": "h3",
+          "en": "Account lifecycle and devices",
+          "ar": "دورة حياة الحساب والأجهزة"
+        },
+        {
+          "t": "table",
+          "headers": {
+            "en": [
+              "Variable",
+              "What it controls",
+              "Ships as",
+              "Set it to"
+            ],
+            "ar": [
+              "المتغيّر",
+              "ما يتحكم فيه",
+              "القيمة المُشحونة",
+              "اضبطه على"
+            ]
+          },
+          "rows": {
+            "en": [
+              [
+                "SIMF_API_IdentityLifecycle__RequireControlPanelTwoFactorEnrolment",
+                "Force every Control Panel account through authenticator enrolment.",
+                "true",
+                "true"
+              ],
+              [
+                "SIMF_API_IdentityLifecycle__PasswordMaxAgeDays",
+                "Expire a password after this many days. Zero means never.",
+                "0",
+                "0"
+              ],
+              [
+                "SIMF_API_IdentityLifecycle__PasswordHistoryCount",
+                "How many previous passwords may not be reused. Zero disables it.",
+                "0",
+                "0"
+              ],
+              [
+                "SIMF_API_IdentityLifecycle__DormantAccountDisableDays",
+                "Disable an account unused for this long. Zero means never.",
+                "0",
+                "0"
+              ],
+              [
+                "SIMF_API_DeviceKey__RequireStepUpForEnrol",
+                "Demand a second factor before a device key is enrolled.",
+                "true",
+                "true"
+              ],
+              [
+                "SIMF_API_DeviceKey__MaxActiveKeysPerUser",
+                "How many devices one account may keep enrolled.",
+                "5",
+                "5"
+              ],
+              [
+                "SIMF_API_Jwt__StreamAudience",
+                "The audience of the short-lived token that authorises a video stream.",
+                "simf-stream",
+                "simf-stream"
+              ],
+              [
+                "SIMF_API_Jwt__StreamTokenMinutes",
+                "How long that token lasts.",
+                "180",
+                "180"
+              ]
+            ],
+            "ar": [
+              [
+                "SIMF_API_IdentityLifecycle__RequireControlPanelTwoFactorEnrolment",
+                "إلزام كل حساب في لوحة التحكم بإقران تطبيق مصادقة.",
+                "true",
+                "true"
+              ],
+              [
+                "SIMF_API_IdentityLifecycle__PasswordMaxAgeDays",
+                "انتهاء صلاحية كلمة المرور بعد هذا العدد من الأيام. والصفر يعني أبدًا.",
+                "0",
+                "0"
+              ],
+              [
+                "SIMF_API_IdentityLifecycle__PasswordHistoryCount",
+                "عدد كلمات المرور السابقة التي لا يجوز إعادة استخدامها. والصفر يعطّلها.",
+                "0",
+                "0"
+              ],
+              [
+                "SIMF_API_IdentityLifecycle__DormantAccountDisableDays",
+                "تعطيل الحساب غير المستخدم هذه المدة. والصفر يعني أبدًا.",
+                "0",
+                "0"
+              ],
+              [
+                "SIMF_API_DeviceKey__RequireStepUpForEnrol",
+                "اشتراط عامل ثانٍ قبل تسجيل مفتاح جهاز.",
+                "true",
+                "true"
+              ],
+              [
+                "SIMF_API_DeviceKey__MaxActiveKeysPerUser",
+                "عدد الأجهزة التي يمكن للحساب الواحد إبقاؤها مسجّلة.",
+                "5",
+                "5"
+              ],
+              [
+                "SIMF_API_Jwt__StreamAudience",
+                "جمهور الرمز قصير الأجل الذي يصرّح ببث فيديو.",
+                "simf-stream",
+                "simf-stream"
+              ],
+              [
+                "SIMF_API_Jwt__StreamTokenMinutes",
+                "مدة صلاحية ذلك الرمز.",
+                "180",
+                "180"
+              ]
+            ]
+          }
+        },
+        {
+          "t": "h3",
+          "en": "Artificial intelligence",
+          "ar": "الذكاء الاصطناعي"
+        },
+        {
+          "t": "p",
+          "en": "The AI features answer with a harmless echo until a provider is configured, so an unconfigured deployment degrades quietly rather than failing.",
+          "ar": "تجيب خصائص الذكاء الاصطناعي بصدى غير ضار حتى يُهيَّأ مزوّد، فتتراجع البيئة غير المهيّأة بهدوء بدل أن تفشل."
+        },
+        {
+          "t": "table",
+          "headers": {
+            "en": [
+              "Variable",
+              "What it controls",
+              "Ships as",
+              "Set it to"
+            ],
+            "ar": [
+              "المتغيّر",
+              "ما يتحكم فيه",
+              "القيمة المُشحونة",
+              "اضبطه على"
+            ]
+          },
+          "rows": {
+            "en": [
+              [
+                "SIMF_API_Ai__DefaultProvider",
+                "Which provider answers: Echo, Anthropic, Gemini or OpenAi.",
+                "Echo",
+                "Anthropic"
+              ],
+              [
+                "SIMF_API_Ai__Anthropic__ApiKey",
+                "The Anthropic key.",
+                "empty",
+                "A secret — generate one per environment"
+              ],
+              [
+                "SIMF_API_Ai__Anthropic__DefaultModel",
+                "The model used by default.",
+                "claude-haiku-4-5-20251001",
+                "claude-haiku-4-5-20251001"
+              ],
+              [
+                "SIMF_API_Ai__Anthropic__BaseUrl",
+                "The provider address.",
+                "https://api.anthropic.com",
+                "https://api.anthropic.com"
+              ],
+              [
+                "SIMF_API_Ai__Anthropic__DefaultMaxTokens",
+                "The reply length ceiling.",
+                "2048",
+                "2048"
+              ],
+              [
+                "SIMF_API_Ai__Gemini__ApiKey",
+                "The Gemini key, if used.",
+                "empty",
+                "Leave empty unless used"
+              ],
+              [
+                "SIMF_API_Ai__OpenAi__ApiKey",
+                "The OpenAI key, if used.",
+                "empty",
+                "Leave empty unless used"
+              ]
+            ],
+            "ar": [
+              [
+                "SIMF_API_Ai__DefaultProvider",
+                "أي مزوّد يجيب: Echo أو Anthropic أو Gemini أو OpenAi.",
+                "Echo",
+                "Anthropic"
+              ],
+              [
+                "SIMF_API_Ai__Anthropic__ApiKey",
+                "مفتاح Anthropic.",
+                "فارغ",
+                "سر — يُولَّد واحد لكل بيئة"
+              ],
+              [
+                "SIMF_API_Ai__Anthropic__DefaultModel",
+                "النموذج المستخدم افتراضيًا.",
+                "claude-haiku-4-5-20251001",
+                "claude-haiku-4-5-20251001"
+              ],
+              [
+                "SIMF_API_Ai__Anthropic__BaseUrl",
+                "عنوان المزوّد.",
+                "https://api.anthropic.com",
+                "https://api.anthropic.com"
+              ],
+              [
+                "SIMF_API_Ai__Anthropic__DefaultMaxTokens",
+                "الحد الأقصى لطول الإجابة.",
+                "2048",
+                "2048"
+              ],
+              [
+                "SIMF_API_Ai__Gemini__ApiKey",
+                "مفتاح Gemini إن استُخدم.",
+                "فارغ",
+                "اتركه فارغًا ما لم يُستخدم"
+              ],
+              [
+                "SIMF_API_Ai__OpenAi__ApiKey",
+                "مفتاح OpenAI إن استُخدم.",
+                "فارغ",
+                "اتركه فارغًا ما لم يُستخدم"
+              ]
+            ]
+          }
+        },
+        {
+          "t": "h3",
+          "en": "Uploads, media and links",
+          "ar": "الرفع والوسائط والروابط"
+        },
+        {
+          "t": "table",
+          "headers": {
+            "en": [
+              "Variable",
+              "What it controls",
+              "Ships as",
+              "Set it to"
+            ],
+            "ar": [
+              "المتغيّر",
+              "ما يتحكم فيه",
+              "القيمة المُشحونة",
+              "اضبطه على"
+            ]
+          },
+          "rows": {
+            "en": [
+              [
+                "SIMF_API_UploadScanning__Enabled",
+                "Scan every upload before it is stored.",
+                "true",
+                "true"
+              ],
+              [
+                "SIMF_API_FaceDetection__Enabled",
+                "Check that an identity photograph contains a face.",
+                "true",
+                "true"
+              ],
+              [
+                "SIMF_API_FaceDetection__MinConfidence",
+                "How sure that check must be.",
+                "0.5",
+                "0.5"
+              ],
+              [
+                "SIMF_API_SessionRecordingStorage__MaxUploadBytes",
+                "The largest session recording accepted (1 GB).",
+                "1073741824",
+                "1073741824"
+              ],
+              [
+                "SIMF_API_OrganizationHeroVideo__MaxUploadBytes",
+                "The largest banner video accepted (200 MB).",
+                "209715200",
+                "209715200"
+              ],
+              [
+                "SIMF_API_OrganizationHeroVideo__PublicApiBaseUrl",
+                "The address that video is served from publicly.",
+                "empty",
+                "The edge address"
+              ],
+              [
+                "SIMF_API_MeetingLinks__PublicWebBaseUrl",
+                "The site a meeting confirmation link points at. Without it the links in those emails go nowhere.",
+                "empty",
+                "https://web.simrsnf.com"
+              ],
+              [
+                "SIMF_API_MeetingLinks__TokenTtlHours",
+                "How long such a link stays valid.",
+                "72",
+                "72"
+              ],
+              [
+                "SIMF_API_Swagger__Username",
+                "Guards the interactive documentation when it is published.",
+                "empty",
+                "Required only if the documentation is published"
+              ],
+              [
+                "SIMF_API_Swagger__Password",
+                "Its password.",
+                "empty",
+                "A secret — generate one per environment"
+              ],
+              [
+                "SIMF_API_Serilog__MinimumLevel__Default",
+                "How much is logged.",
+                "Information",
+                "Information"
+              ],
+              [
+                "SIMF_API_AllowedHosts",
+                "The host names the API answers for.",
+                "*",
+                "api.simrsnf.com"
+              ]
+            ],
+            "ar": [
+              [
+                "SIMF_API_UploadScanning__Enabled",
+                "فحص كل ملف مرفوع قبل تخزينه.",
+                "true",
+                "true"
+              ],
+              [
+                "SIMF_API_FaceDetection__Enabled",
+                "التحقق من احتواء صورة الهوية على وجه.",
+                "true",
+                "true"
+              ],
+              [
+                "SIMF_API_FaceDetection__MinConfidence",
+                "درجة اليقين المطلوبة في ذلك التحقق.",
+                "0.5",
+                "0.5"
+              ],
+              [
+                "SIMF_API_SessionRecordingStorage__MaxUploadBytes",
+                "أكبر تسجيل جلسة مقبول (1 جيجابايت).",
+                "1073741824",
+                "1073741824"
+              ],
+              [
+                "SIMF_API_OrganizationHeroVideo__MaxUploadBytes",
+                "أكبر فيديو واجهة مقبول (200 ميجابايت).",
+                "209715200",
+                "209715200"
+              ],
+              [
+                "SIMF_API_OrganizationHeroVideo__PublicApiBaseUrl",
+                "العنوان الذي يُقدَّم منه ذلك الفيديو علنًا.",
+                "فارغ",
+                "عنوان الحافة"
+              ],
+              [
+                "SIMF_API_MeetingLinks__PublicWebBaseUrl",
+                "الموقع الذي يشير إليه رابط تأكيد الاجتماع. وبدونه لا تؤدي روابط تلك الرسائل إلى شيء.",
+                "فارغ",
+                "https://web.simrsnf.com"
+              ],
+              [
+                "SIMF_API_MeetingLinks__TokenTtlHours",
+                "مدة صلاحية ذلك الرابط.",
+                "72",
+                "72"
+              ],
+              [
+                "SIMF_API_Swagger__Username",
+                "يحرس الوثائق التفاعلية عند نشرها.",
+                "فارغ",
+                "مطلوب فقط إذا نُشرت الوثائق"
+              ],
+              [
+                "SIMF_API_Swagger__Password",
+                "كلمة مروره.",
+                "فارغ",
+                "سر — يُولَّد واحد لكل بيئة"
+              ],
+              [
+                "SIMF_API_Serilog__MinimumLevel__Default",
+                "مقدار ما يُسجَّل.",
+                "Information",
+                "Information"
+              ],
+              [
+                "SIMF_API_AllowedHosts",
+                "أسماء المضيفين التي تستجيب لها واجهة البرمجة.",
+                "*",
+                "api.simrsnf.com"
+              ]
+            ]
+          }
+        },
+        {
+          "t": "pagebreak"
+        },
+        {
+          "t": "h2",
+          "en": "The Control Panel",
+          "ar": "لوحة التحكم"
+        },
+        {
+          "t": "p",
+          "en": "The Control Panel holds no database of its own. It talks to the API, and it needs somewhere shared to keep the keys that protect its session cookies.",
+          "ar": "لا تملك لوحة التحكم قاعدة بيانات خاصة بها. فهي تتحدث إلى واجهة البرمجة، وتحتاج إلى موضع مشترك تحفظ فيه المفاتيح التي تحمي ملفات تعريف ارتباط الجلسة."
+        },
+        {
+          "t": "table",
+          "headers": {
+            "en": [
+              "Variable",
+              "What it controls",
+              "Ships as",
+              "Set it to"
+            ],
+            "ar": [
+              "المتغيّر",
+              "ما يتحكم فيه",
+              "القيمة المُشحونة",
+              "اضبطه على"
+            ]
+          },
+          "rows": {
+            "en": [
+              [
+                "SIMF_CP_Api__BaseUrl",
+                "The API address, with a trailing slash.",
+                "http://localhost:5175/",
+                "https://api.simrsnf.com/"
+              ],
+              [
+                "SIMF_CP_DataProtection__KeyRingPath",
+                "Where the cookie-protection keys live.",
+                "empty",
+                "A shared, backed-up path"
+              ],
+              [
+                "SIMF_CP_Session__LifetimeHours",
+                "How long a session lasts.",
+                "8",
+                "8"
+              ],
+              [
+                "SIMF_CP_Storage__LogDirectory",
+                "Where its logs are written.",
+                "logs",
+                "An explicit path"
+              ],
+              [
+                "SIMF_CP_AllowedHosts",
+                "The host names it will answer for.",
+                "*",
+                "cp.simrsnf.com"
+              ]
+            ],
+            "ar": [
+              [
+                "SIMF_CP_Api__BaseUrl",
+                "عنوان واجهة البرمجة، مع شرطة مائلة في آخره.",
+                "http://localhost:5175/",
+                "https://api.simrsnf.com/"
+              ],
+              [
+                "SIMF_CP_DataProtection__KeyRingPath",
+                "موضع مفاتيح حماية ملفات تعريف الارتباط.",
+                "فارغ",
+                "مسار مشترك مشمول بالنسخ الاحتياطي"
+              ],
+              [
+                "SIMF_CP_Session__LifetimeHours",
+                "مدة بقاء الجلسة.",
+                "8",
+                "8"
+              ],
+              [
+                "SIMF_CP_Storage__LogDirectory",
+                "موضع كتابة سجلاتها.",
+                "logs",
+                "مسار صريح"
+              ],
+              [
+                "SIMF_CP_AllowedHosts",
+                "أسماء المضيفين التي تستجيب لها.",
+                "*",
+                "cp.simrsnf.com"
+              ]
+            ]
+          }
+        },
+        {
+          "t": "note",
+          "en": "The Control Panel and the Website must be given the SAME API address and the SAME key-ring path. A build-time test fails if the two disagree.",
+          "ar": "يجب أن تُمنح لوحة التحكم والموقع العنوان نفسه لواجهة البرمجة والمسار نفسه لحلقة المفاتيح. ويُخفق اختبار عند البناء إذا اختلفا."
+        },
+        {
+          "t": "h2",
+          "en": "The Website",
+          "ar": "الموقع"
+        },
+        {
+          "t": "table",
+          "headers": {
+            "en": [
+              "Variable",
+              "What it controls",
+              "Ships as",
+              "Set it to"
+            ],
+            "ar": [
+              "المتغيّر",
+              "ما يتحكم فيه",
+              "القيمة المُشحونة",
+              "اضبطه على"
+            ]
+          },
+          "rows": {
+            "en": [
+              [
+                "SIMF_WEB_Api__BaseUrl",
+                "The API address; must match the Control Panel's.",
+                "http://localhost:5175/",
+                "https://api.simrsnf.com/"
+              ],
+              [
+                "SIMF_WEB_DataProtection__KeyRingPath",
+                "Its key ring; must match the Control Panel's path.",
+                "empty",
+                "The same shared path"
+              ],
+              [
+                "SIMF_WEB_AllowedHosts",
+                "The host names it will answer for.",
+                "*",
+                "web.simrsnf.com"
+              ]
+            ],
+            "ar": [
+              [
+                "SIMF_WEB_Api__BaseUrl",
+                "عنوان واجهة البرمجة؛ ويجب أن يطابق عنوان لوحة التحكم.",
+                "http://localhost:5175/",
+                "https://api.simrsnf.com/"
+              ],
+              [
+                "SIMF_WEB_DataProtection__KeyRingPath",
+                "حلقة مفاتيحه؛ ويجب أن تطابق مسار لوحة التحكم.",
+                "فارغ",
+                "المسار المشترك نفسه"
+              ],
+              [
+                "SIMF_WEB_AllowedHosts",
+                "أسماء المضيفين التي يستجيب لها.",
+                "*",
+                "web.simrsnf.com"
+              ]
+            ]
+          }
+        },
+        {
+          "t": "h2",
+          "en": "The mobile edge",
+          "ar": "حافة الجوال"
+        },
+        {
+          "t": "p",
+          "en": "The edge is the only application the mobile app talks to. It is a reverse proxy in front of the API, and it exists so the API itself never has to be published to the internet.",
+          "ar": "الحافة هي التطبيق الوحيد الذي يتحدث إليه تطبيق الجوال. وهي وكيل عكسي أمام واجهة البرمجة، ووُجدت كي لا يُضطر إلى نشر واجهة البرمجة نفسها على الإنترنت."
+        },
+        {
+          "t": "table",
+          "headers": {
+            "en": [
+              "Variable",
+              "What it controls",
+              "Ships as",
+              "Set it to"
+            ],
+            "ar": [
+              "المتغيّر",
+              "ما يتحكم فيه",
+              "القيمة المُشحونة",
+              "اضبطه على"
+            ]
+          },
+          "rows": {
+            "en": [
+              [
+                "SIMF_EDGE_ReverseProxy__Clusters__api__Destinations__primary__Address",
+                "Where the edge forwards to.",
+                "empty",
+                "https://api.simrsnf.com/"
+              ],
+              [
+                "SIMF_EDGE_ReverseProxy__KnownProxies__0",
+                "The trusted hop in front of the edge.",
+                "empty",
+                "The load balancer's IP ADDRESS"
+              ],
+              [
+                "SIMF_EDGE_AllowedHosts",
+                "The host names it will answer for.",
+                "*",
+                "edge.simrsnf.com"
+              ]
+            ],
+            "ar": [
+              [
+                "SIMF_EDGE_ReverseProxy__Clusters__api__Destinations__primary__Address",
+                "الوجهة التي تحوّل إليها الحافة.",
+                "فارغ",
+                "https://api.simrsnf.com/"
+              ],
+              [
+                "SIMF_EDGE_ReverseProxy__KnownProxies__0",
+                "الوسيط الموثوق أمام الحافة.",
+                "فارغ",
+                "عنوان IP لموزّع الأحمال"
+              ],
+              [
+                "SIMF_EDGE_AllowedHosts",
+                "أسماء المضيفين التي تستجيب لها.",
+                "*",
+                "edge.simrsnf.com"
+              ]
+            ]
+          }
+        },
+        {
+          "t": "h2",
+          "en": "The public web application",
+          "ar": "تطبيق الويب العام"
+        },
+        {
+          "t": "p",
+          "en": "The Flutter web bundle is different in kind: its settings are COMPILED INTO the build rather than read from the server, so changing one means rebuilding and redeploying the bundle, not setting a variable and restarting.",
+          "ar": "حزمة الويب المبنية بـFlutter مختلفة في طبيعتها: فإعداداتها تُدمج داخل البناء ولا تُقرأ من الخادم، فتغيير أحدها يعني إعادة بناء الحزمة ونشرها، لا ضبط متغيّر وإعادة التشغيل."
+        },
+        {
+          "t": "table",
+          "headers": {
+            "en": [
+              "Variable",
+              "What it controls",
+              "Ships as",
+              "Set it to"
+            ],
+            "ar": [
+              "المتغيّر",
+              "ما يتحكم فيه",
+              "القيمة المُشحونة",
+              "اضبطه على"
+            ]
+          },
+          "rows": {
+            "en": [
+              [
+                "ApiBase",
+                "The address the application calls. Must be https and must end in the API version path; the build refuses otherwise.",
+                "empty",
+                "https://edge.simrsnf.com/api/v1"
+              ],
+              [
+                "OutDir",
+                "Where the built bundle is written.",
+                "empty",
+                "The site folder"
+              ],
+              [
+                "AppKey",
+                "The application key, if the gate is in use.",
+                "empty",
+                "A secret — generate one per environment"
+              ],
+              [
+                "SupportPhone",
+                "The support number shown in the application.",
+                "empty",
+                "The real number"
+              ],
+              [
+                "SupportEmail",
+                "The support address.",
+                "empty",
+                "The real address"
+              ],
+              [
+                "SocialX, SocialInstagram, SocialLinkedIn, SocialYouTube, SocialTikTok",
+                "The social links in the footer. Any left empty is hidden.",
+                "empty",
+                "The real profiles"
+              ],
+              [
+                "VisitSaudiUrl",
+                "The tourism link.",
+                "https://www.visitsaudi.com",
+                "https://www.visitsaudi.com"
+              ]
+            ],
+            "ar": [
+              [
+                "ApiBase",
+                "العنوان الذي يستدعيه التطبيق. ويجب أن يكون https وأن ينتهي بمسار إصدار واجهة البرمجة، وإلا رفض البناء.",
+                "فارغ",
+                "https://edge.simrsnf.com/api/v1"
+              ],
+              [
+                "OutDir",
+                "المكان الذي تُكتب فيه الحزمة المبنية.",
+                "فارغ",
+                "مجلد الموقع"
+              ],
+              [
+                "AppKey",
+                "مفتاح التطبيق إن كانت البوابة مستخدمة.",
+                "فارغ",
+                "سر — يُولَّد واحد لكل بيئة"
+              ],
+              [
+                "SupportPhone",
+                "رقم الدعم الظاهر في التطبيق.",
+                "فارغ",
+                "الرقم الحقيقي"
+              ],
+              [
+                "SupportEmail",
+                "عنوان الدعم.",
+                "فارغ",
+                "العنوان الحقيقي"
+              ],
+              [
+                "SocialX, SocialInstagram, SocialLinkedIn, SocialYouTube, SocialTikTok",
+                "روابط التواصل في التذييل. ويُخفى ما يُترك منها فارغًا.",
+                "فارغ",
+                "الحسابات الحقيقية"
+              ],
+              [
+                "VisitSaudiUrl",
+                "رابط السياحة.",
+                "https://www.visitsaudi.com",
+                "https://www.visitsaudi.com"
+              ]
+            ]
+          }
+        },
+        {
+          "t": "h2",
+          "en": "Every host",
+          "ar": "كل الخوادم"
+        },
+        {
+          "t": "table",
+          "headers": {
+            "en": [
+              "Variable",
+              "What it controls",
+              "Ships as",
+              "Set it to"
+            ],
+            "ar": [
+              "المتغيّر",
+              "ما يتحكم فيه",
+              "القيمة المُشحونة",
+              "اضبطه على"
+            ]
+          },
+          "rows": {
+            "en": [
+              [
+                "ASPNETCORE_ENVIRONMENT",
+                "Which environment the application believes it is in. Unprefixed, and identical on every server.",
+                "not set",
+                "Production"
+              ]
+            ],
+            "ar": [
+              [
+                "ASPNETCORE_ENVIRONMENT",
+                "البيئة التي يظن التطبيق أنه يعمل فيها. بلا بادئة، وموحّدة على كل الخوادم.",
+                "غير مضبوط",
+                "Production"
+              ]
+            ]
+          }
+        },
+        {
+          "t": "note",
+          "en": "Setting this to anything other than Production disables the boot gates, turns on the sample-data seeding, and publishes the interactive API documentation. It is the single most consequential value on the server.",
+          "ar": "ضبط هذه القيمة على غير Production يعطّل بوابات الإقلاع، ويفعّل بذر البيانات التجريبية، وينشر وثائق واجهة البرمجة التفاعلية. وهي أكثر قيمة على الخادم أثرًا على الإطلاق."
+        }
+      ]
+    },
+    {
+      "id": "observations",
+      "title": {
+        "en": "Appendix — what writing this manual found",
+        "ar": "ملحق — ما كشفه إعداد هذا الدليل"
+      },
+      "blocks": [
+        {
+          "t": "p",
+          "en": "This appendix records what was noticed while every page was opened and every constraint checked against the code. Nothing here was changed: a manual describes the system, it does not quietly alter it. They are listed so that the next person does not spend the same hours discovering them again.",
+          "ar": "يسجّل هذا الملحق ما لوحظ أثناء فتح كل صفحة ومقارنة كل قيد بالشيفرة. ولم يُغيَّر شيء منها: فالدليل يصف النظام ولا يعدّله بصمت. وقد أُدرجت هنا كي لا يقضي من يأتي بعدُ الساعات ذاتها في اكتشافها من جديد."
+        },
+        {
+          "t": "h2",
+          "en": "Documents that disagree with the code",
+          "ar": "وثائق تخالف الشيفرة"
+        },
+        {
+          "t": "table",
+          "headers": {
+            "en": [
+              "What a document says",
+              "What the code does"
+            ],
+            "ar": [
+              "ما تقوله الوثيقة",
+              "ما تفعله الشيفرة"
+            ]
+          },
+          "rows": {
+            "en": [
+              [
+                "Several page references describe the page guard as a role check on Administrator",
+                "Pages are guarded by a named permission, not by a role"
+              ],
+              [
+                "The administrator manual says the Edit action on the administrators list is an unbuilt placeholder",
+                "Edit opens a working role editor and saves through a live endpoint"
+              ],
+              [
+                "The administrator manual gives the Control Panel address as cp.simf.local",
+                "The repository's own index gives localhost:5158 for a local run"
+              ],
+              [
+                "The operations document describes one shared configuration prefix",
+                "There have been four, one per application, since August 2026"
+              ],
+              [
+                "The operations document lists two storage paths as required",
+                "Both were removed; setting them does nothing"
+              ],
+              [
+                "The operations document gives the access-token lifetime as 30 minutes",
+                "It is 5"
+              ],
+              [
+                "The deployment guide says the API configuration script carries 62 values",
+                "It declares 82"
+              ],
+              [
+                "The recovery procedure says the seeder re-applies the configured authenticator secret on every start",
+                "It re-applies it only while two-factor is still switched on for that account"
+              ]
+            ],
+            "ar": [
+              [
+                "عدة مراجع صفحات تصف حارس الصفحة بأنه تحقق من دور المسؤول",
+                "الصفحات محروسة بصلاحية مسمّاة لا بدور"
+              ],
+              [
+                "دليل المسؤول يقول إن إجراء التعديل في قائمة المسؤولين عنصر نائب لم يُبنَ",
+                "التعديل يفتح محرّر أدوار عاملًا ويحفظ عبر خدمة حيّة"
+              ],
+              [
+                "دليل المسؤول يعطي عنوان لوحة التحكم على أنه cp.simf.local",
+                "فهرس المستودع نفسه يعطي localhost:5158 للتشغيل المحلي"
+              ],
+              [
+                "وثيقة التشغيل تصف بادئة تهيئة مشتركة واحدة",
+                "هناك أربع بادئات، واحدة لكل تطبيق، منذ أغسطس 2026"
+              ],
+              [
+                "وثيقة التشغيل تُدرج مسارَي تخزين على أنهما مطلوبان",
+                "أُزيل كلاهما، وضبطهما لا يفعل شيئًا"
+              ],
+              [
+                "وثيقة التشغيل تعطي عمر رمز الوصول بثلاثين دقيقة",
+                "هو خمس دقائق"
+              ],
+              [
+                "دليل النشر يقول إن نص تهيئة واجهة البرمجة يحمل 62 قيمة",
+                "وهو يعلن 82"
+              ],
+              [
+                "إجراء الاسترداد يقول إن البذّار يعيد تطبيق سرّ المصادقة المهيّأ عند كل تشغيل",
+                "وهو يعيد تطبيقه فقط ما دامت المصادقة الثنائية مفعّلة لذلك الحساب"
+              ]
+            ]
+          }
+        },
+        {
+          "t": "h2",
+          "en": "Wording in the product that no longer matches its behaviour",
+          "ar": "صياغات في المنتج لم تعد تطابق سلوكه"
+        },
+        {
+          "t": "bullets",
+          "en": [
+            "Saving a new visitor shows a message saying an invitation has been sent. No invitation is sent on that path — the wording predates the registration wizard that replaced it.",
+            "Saving a new partner account shows the administrators' message, which mentions an invitation email that this path never queues.",
+            "The registration form's own comment says the server approves and issues the badge in one step. That happens only when the walk-in mode is switched on, and it ships off."
+          ],
+          "ar": [
+            "يعرض حفظ زائر جديد رسالة تقول إن دعوة أُرسلت. ولا تُرسل أي دعوة في ذلك المسار — فالصياغة سابقة لمعالج التسجيل الذي حلّ محله.",
+            "ويعرض حفظ حساب شريك جديد رسالة المسؤولين، التي تذكر بريد دعوة لا يضعه هذا المسار في الطابور أصلًا.",
+            "ويقول تعليق نموذج التسجيل نفسه إن الخادم يعتمد ويصدر الشارة في خطوة واحدة. وهذا لا يحدث إلا عند تفعيل وضع الحضور، وهو مُشحون معطّلًا."
+          ]
+        },
+        {
+          "t": "h2",
+          "en": "Behaviour worth knowing before it surprises somebody",
+          "ar": "سلوك يجدر معرفته قبل أن يفاجئ أحدًا"
+        },
+        {
+          "t": "bullets",
+          "en": [
+            "With no mail host configured, the background sender stops for good the first time it is asked to send, and the health check reports the whole API as unhealthy from then on — while every page keeps working. Seen during the writing of this manual, after creating an account triggered its first notification.",
+            "On a fresh installation the organisation logo is absent, so its page requests an image that is not there. The page is unharmed; the logo simply has not been uploaded yet.",
+            "The registration desk accepts a passport format that the mobile application would reject, because only the desk skips the format check.",
+            "The Arabic and English name fields accept 128 characters in the browser and are refused above 50 by the server.",
+            "Walking quickly from page to page exhausts the per-address request allowance, because every page fetches the signed-in profile for its header. Nothing breaks; the header request is refused until the window rolls over."
+          ],
+          "ar": [
+            "مع عدم تهيئة مضيف بريد، يتوقف المرسل الخلفي نهائيًا عند أول طلب إرسال، ويُبلغ فحص السلامة عن اعتلال واجهة البرمجة كلها منذ تلك اللحظة — بينما تواصل كل الصفحات عملها. لوحظ ذلك أثناء إعداد هذا الدليل، بعد أن أطلق إنشاءُ حساب أولَ إشعار له.",
+            "في التثبيت الجديد لا يوجد شعار للجهة، فتطلب صفحته صورة غير موجودة. ولا ضرر على الصفحة، فالشعار لم يُرفع بعد فحسب.",
+            "يقبل مكتب التسجيل صيغة جواز سفر كان تطبيق الجوال ليرفضها، لأن المكتب وحده هو الذي يتخطى التحقق من الصيغة.",
+            "يقبل حقلا الاسم العربي والإنجليزي 128 حرفًا في المتصفح ويرفضهما الخادم فوق 50.",
+            "يستنفد التنقل السريع بين الصفحات حصة الطلبات لكل عنوان، لأن كل صفحة تجلب ملف المستخدم المسجّل لترويستها. ولا ينكسر شيء، إذ يُرفض طلب الترويسة حتى تتجدد النافذة."
+          ]
+        }
+      ]
+    }
+  ],
+  "reference": {
+    "title": {
+      "en": "Every page in the Control Panel",
+      "ar": "كل صفحة في لوحة التحكم"
+    },
+    "intro": {
+      "en": "This section lists every page the Control Panel serves, in the order the menu presents them. For each: the address, the file that implements it, the permission that gates the page, the permission that puts it in the menu, and a picture of the page as it renders. It is generated from the source code on every build, so it describes the system as it is rather than as it once was.",
+      "ar": "يسرد هذا القسم كل صفحة تقدّمها لوحة التحكم، بالترتيب الذي تعرضها به القائمة. ولكل صفحة: العنوان، والملف الذي ينفّذها، والصلاحية التي تحرس الصفحة، والصلاحية التي تُظهرها في القائمة، وصورة للصفحة كما تُعرض. ويُولَّد هذا القسم من الشيفرة المصدرية مع كل بناء، فيصف النظام كما هو لا كما كان."
+    },
+    "headers": [
+      {
+        "en": "Property",
+        "ar": "الخاصية"
+      },
+      {
+        "en": "Value",
+        "ar": "القيمة"
+      }
+    ],
+    "rowRoute": {
+      "en": "Address",
+      "ar": "العنوان"
+    },
+    "rowFile": {
+      "en": "Implemented by",
+      "ar": "ينفّذها"
+    },
+    "rowCodeBehind": {
+      "en": "Code-behind",
+      "ar": "ملف الشيفرة المصاحب"
+    },
+    "rowPermission": {
+      "en": "Page permission",
+      "ar": "صلاحية الصفحة"
+    },
+    "rowNavPermission": {
+      "en": "Menu permission",
+      "ar": "صلاحية القائمة"
+    },
+    "rowStub": {
+      "en": "Placeholder",
+      "ar": "صفحة مؤقتة"
+    },
+    "stubYes": {
+      "en": "Yes — the module is not built yet",
+      "ar": "نعم — لم تُبنَ الوحدة بعد"
+    },
+    "nonNavTitle": {
+      "en": "Pages reached from inside another page",
+      "ar": "صفحات يُوصل إليها من داخل صفحة أخرى"
+    },
+    "redirected": {
+      "en": "No screenshot: this address cannot be opened directly by a signed-in reader. The two account-state pages redirect to the dashboard, and the three sign-in pages redirect back to the sign-in form, because each is reachable only at its own point in a flow.",
+      "ar": "لا توجد صورة: لا يمكن فتح هذا العنوان مباشرة لقارئ مسجّل الدخول. فصفحتا حالة الحساب تُحوَّلان إلى لوحة المعلومات، وصفحات تسجيل الدخول الثلاث تُحوَّل إلى نموذج الدخول، لأن كلًّا منها لا تُبلغ إلا في موضعها من المسار."
+    },
+    "nonNavIntro": {
+      "en": "These pages have an address but no menu entry. They open from a button or a row inside another page, or they belong to the sign-in flow.",
+      "ar": "لهذه الصفحات عناوين لكنها بلا مدخل في القائمة. تُفتح من زر أو من صف داخل صفحة أخرى، أو تنتمي إلى مسار تسجيل الدخول."
+    }
+  }
+}
