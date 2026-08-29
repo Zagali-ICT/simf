@@ -138,8 +138,8 @@ public class UserProfile : BaseAuditEntity
     ///
     /// <para>Both halves are kept on purpose. Without the free text, "not in the
     /// list" was a dead end: the picker said no matches and the visitor could
-    /// not proceed, because organisation is a required field on the form
-    /// (D-221). Without the lookup row, every existing join, grid and export
+    /// not proceed, because organisation is a required field on the form.
+    /// Without the lookup row, every existing join, grid and export
     /// over <c>OrganisationId</c> would have had to learn a second, nullable
     /// path — so the id stays populated and reporting keeps working unchanged,
     /// while this column carries what the person actually wrote.</para>

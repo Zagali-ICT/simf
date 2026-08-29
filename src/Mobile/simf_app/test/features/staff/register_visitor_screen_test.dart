@@ -91,6 +91,9 @@ class _FakeStaffRepo implements StaffRepository {
   int avatarUploadCalls = 0;
 
   @override
+  Future<StaffWalkInMode> walkInMode() async => const StaffWalkInMode();
+
+  @override
   Future<StaffWalkInResult> registerVisitor(StaffWalkInRequest request) async {
     registerCalls++;
     lastRequest = request;

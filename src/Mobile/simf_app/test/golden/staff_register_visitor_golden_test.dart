@@ -63,6 +63,9 @@ class _FakeProfileRepo implements ProfileRepository {
 
 class _FakeStaffRepo implements StaffRepository {
   @override
+  Future<StaffWalkInMode> walkInMode() async => const StaffWalkInMode();
+
+  @override
   Future<StaffWalkInResult> registerVisitor(StaffWalkInRequest request) async =>
       const StaffWalkInResult(
         userId: 'u1',

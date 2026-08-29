@@ -170,7 +170,7 @@ public sealed class OfflineBadgeUploadTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task A_duplicate_identity_document_is_reported_not_written_twice()
+    public async Task A_duplicate_identity_document_is_now_written_for_both_rows()
     {
         // The one field the quick desk keeps. Two badges for the same person is
         // exactly what it exists to prevent, and the second upload must say so
@@ -195,11 +195,10 @@ public sealed class OfflineBadgeUploadTests : IClassFixture<SimfApiFactory>
         var body = (await response.Content
             .ReadFromJsonAsync<ApiResult<OfflineBadgeBatchResponse>>())!.Data!;
 
-        Assert.Equal(1, body.Created);
-        Assert.Equal(1, body.Rejected);
-        Assert.Equal(
-            ErrorCodes.DuplicateIdentity,
-            body.Results.Single(r => r.Status == OfflineBadgeUploadStatus.Rejected).ErrorCode);
+        // Both rows land now. The batch used to reject the second on the
+        // duplicate-identity guard, which was removed on owner instruction.
+        Assert.Equal(2, body.Created);
+        Assert.Equal(0, body.Rejected);
     }
 
     [Fact]
@@ -383,12 +382,11 @@ public sealed class OfflineBadgeUploadTests : IClassFixture<SimfApiFactory>
         // D-824. Before the desk had a correction path this could not be checked
         // at all: rejecting a row meant a printed badge nobody could fix. Now a
         // typo comes back named, the operator presses F3, and the SAME badge
-        // uploads - so the rule that makes the duplicate-identity guard mean
-        // anything can finally run on this path.
+        // uploads - so the check digit can finally be enforced on this path.
         //
-        // A mistyped id is still UNIQUE, so its blind index matches nothing, the
-        // duplicate guard never fires, and the same person collects a second
-        // badge at another desk. The Luhn digit is what catches it.
+        // It is now the ONLY defence: a mistyped id of the right shape belongs to
+        // nobody and is what gets printed, and since D-945 removed the duplicate
+        // guard nothing downstream notices the consequence.
         using var armed = CreateArmedFactory();
         using var client = armed.CreateClient();
         var token = await CreateAdminTokenAsync(client);

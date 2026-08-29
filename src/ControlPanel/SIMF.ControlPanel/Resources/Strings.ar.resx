@@ -3843,4 +3843,21 @@
   <data name="Admin.ChangeType.Confirm.Message" xml:space="preserve"><value>هل تريد تغيير هذا الحساب إلى "{0}"؟ سينتقل إلى المكتب الآخر وستتغير الإجراءات المتاحة له.</value></data>
   <data name="Admin.MediaLibrary.Deactivate.Confirm.Title" xml:space="preserve"><value>إلغاء تفعيل الملف</value></data>
   <data name="Admin.MediaLibrary.Deactivate.Confirm.Message" xml:space="preserve"><value>هل تريد إلغاء تفعيل ملف "{0}"؟ سيتوقف ظهوره في الموقع العام حتى تتم استعادته.</value></data>
+  <data name="Admin.WalkInMode.Title" xml:space="preserve"><value>وضع التسجيل الميداني</value></data>
+  <data name="Admin.WalkInMode.Loading" xml:space="preserve"><value>جارٍ تحميل أوضاع التسجيل الميداني...</value></data>
+  <data name="Admin.WalkInMode.LoadFailed" xml:space="preserve"><value>تعذّر تحميل أوضاع التسجيل الميداني.</value></data>
+  <data name="Admin.WalkInMode.Saved" xml:space="preserve"><value>تم حفظ أوضاع التسجيل الميداني.</value></data>
+  <data name="Admin.WalkInMode.SaveFailed" xml:space="preserve"><value>تعذّر حفظ أوضاع التسجيل الميداني.</value></data>
+  <data name="Admin.WalkInMode.Saving" xml:space="preserve"><value>جارٍ الحفظ...</value></data>
+  <data name="Admin.WalkInMode.Save" xml:space="preserve"><value>حفظ</value></data>
+  <data name="Admin.WalkInMode.Section.Modes" xml:space="preserve"><value>أوضاع المكتب</value></data>
+  <data name="Admin.WalkInMode.Section.Modes.Hint" xml:space="preserve"><value>تسري فوراً دون الحاجة إلى نشر جديد، وتتجاوز الإعداد المنشور حتى تغيّرها مرة أخرى.</value></data>
+  <data name="Admin.WalkInMode.Field.QuickRegister" xml:space="preserve"><value>التسجيل السريع</value></data>
+  <data name="Admin.WalkInMode.Field.QuickRegister.Hint" xml:space="preserve"><value>يلتقط المكتب حقولاً أقل: الاسم ووثيقة هوية واحدة.</value></data>
+  <data name="Admin.WalkInMode.Field.AutoApprove" xml:space="preserve"><value>لا حاجة إلى موافقة</value></data>
+  <data name="Admin.WalkInMode.Field.AutoApprove.Hint" xml:space="preserve"><value>تتم الموافقة على الزائر الميداني ومنحه البطاقة في المكتب بدلاً من انتظار المسؤول.</value></data>
+  <data name="Admin.WalkInMode.Disarmed" xml:space="preserve"><value>وضع التسجيل الميداني معطّل في هذا النشر، لذا لا يؤثر أي من الخيارين أدناه بعد. تفعيله إعداد على الخادم وليس من لوحة التحكم.</value></data>
+  <data name="Module.WalkInMode" xml:space="preserve"><value>وضع التسجيل الميداني</value></data>
+  <data name="Admin.WalkIn.Error.QuickNameRequired" xml:space="preserve"><value>الاسم مطلوب.</value></data>
+  <data name="Admin.WalkIn.Error.QuickDocumentRequired" xml:space="preserve"><value>رقم وثيقة الهوية مطلوب (الهوية الوطنية أو الإقامة أو جواز السفر).</value></data>
 </root>

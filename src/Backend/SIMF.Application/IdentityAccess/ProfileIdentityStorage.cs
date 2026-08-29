@@ -1,8 +1,9 @@
 // Tests: SIMF.Api.Tests/UserProfileTests.cs (a non-Saudi supplying BOTH an Iqama
 //        and a passport persists BOTH documents; the upsert round-trip still
 //        answers every shipped wire key)
-//        SIMF.Api.Tests/UserProfileIdentifierUniquenessTests.cs (the single
-//        digest index catches a CROSS-KIND duplicate)
+//        SIMF.Api.Tests/UserProfileIdentifierUniquenessTests.cs (two profiles
+//        may carry the same number; ONE profile still holds at most one
+//        document per kind)
 using SIMF.Application.Abstractions;
 using SIMF.Domain.Profiles;
 
@@ -18,9 +19,8 @@ namespace SIMF.Application.IdentityAccess;
 /// produce byte-identical storage: the self-service upsert
 /// (<c>UserProfileService</c>, in this assembly) and the walk-in desk
 /// (<c>AdminAccountService</c>, in Infrastructure, which also carries the offline
-/// badge upload). A second copy of the sync rule is exactly how the digest a
-/// unique index enforces and the digest a soft guard queries come to
-/// disagree.</para>
+/// badge upload). A second copy of the sync rule is exactly how the two paths
+/// come to store two different spellings of one number.</para>
 ///
 /// <para><b>What this deliberately does NOT do.</b> It does not decide WHICH
 /// documents a registrant may hold — the partition between a Saudi's national id
@@ -36,10 +36,12 @@ public static class ProfileIdentityStorage
     /// what the registrant no longer claims.
     ///
     /// <para>Rows are REMOVED rather than soft-deleted, which is the opposite of
-    /// this codebase's usual <c>IsActive = false</c>. A soft-deleted row keeps its
-    /// digest in the unique index, so a registrant who corrected a mistyped
-    /// passport would be permanently unable to register the corrected one — the
-    /// index would still be holding the typo against them.</para>
+    /// this codebase's usual <c>IsActive = false</c>. The original reason was the
+    /// cross-profile unique index, which a retired row would have kept occupying;
+    /// that index is gone. The behaviour stays because the reason that outlived it
+    /// is better: a document the registrant no longer claims is PII with no purpose,
+    /// and <c>(ProfileId, Kind)</c> admits one row per kind — a retired row would
+    /// block the correction that replaces it.</para>
     ///
     /// <para>The caller must have loaded the collection; an unloaded navigation
     /// looks empty and would silently insert a duplicate of every document.</para>

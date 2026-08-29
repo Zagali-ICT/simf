@@ -12,6 +12,7 @@ import 'package:simf_app/core/responsive/breakpoints.dart';
 import 'package:simf_app/features/account/data/app_gender.dart';
 import 'package:simf_app/features/account/data/profile_repository.dart';
 import 'package:simf_app/features/staff/data/register_visitor_validators.dart';
+import 'package:simf_app/features/staff/data/staff_models.dart';
 import 'package:simf_app/features/staff/data/staff_repository.dart';
 import 'package:simf_app/features/staff/data/walk_in_attachments.dart';
 import 'package:simf_app/features/staff/data/walk_in_field_errors.dart';
@@ -72,6 +73,9 @@ class _StaffRegisterVisitorScreenState
 
   bool _loading = true;
   String? _loadError;
+
+  /// Defaults STRICT, so a failed read leaves this form demanding every field.
+  StaffWalkInMode _mode = const StaffWalkInMode();
   bool _submitting = false;
   bool _triedSubmit = false;
 
@@ -104,10 +108,14 @@ class _StaffRegisterVisitorScreenState
     });
     try {
       final lookups = await loadWalkInLookups(repo);
+      // The server accepts the short form in quick mode; this screen refusing
+      // to submit it is what made the mode unusable from the tablet.
+      final mode = await loadWalkInMode(ref.read(staffRepositoryProvider));
       if (!mounted) {
         return;
       }
       setState(() {
+        _mode = mode;
         _lookups = lookups;
         _nationalityCode ??= lookups.defaultNationalityCode;
         _profileTypeId = lookups.defaultProfileTypeId;
@@ -133,13 +141,7 @@ class _StaffRegisterVisitorScreenState
   }
 
   void _setAttachment(WalkInAttachment which, WalkInAttachmentFile? file) {
-    setState(() {
-      if (which == WalkInAttachment.idDocument) {
-        _attachments.idDocument = file;
-      } else {
-        _attachments.photo = file;
-      }
-    });
+    setState(() => _attachments.set(which, file));
   }
 
   Future<void> _submit() async {
@@ -153,12 +155,19 @@ class _StaffRegisterVisitorScreenState
     // 19l — validate() reveals EVERY field error at once (it does not wait for
     // the per-field onUserInteraction gate), and the anchor below scrolls the
     // first problem into view.
-    final formValid = _formKey.currentState?.validate() ?? false;
-    final ok = formValid &&
-        _nationalityCode != null &&
-        _organisationId != null &&
-        _profileTypeId != null &&
-        _gender != AppGender.unspecified;
+    // Quick mode asks only for the server's floor; see meetsQuickDeskFloor.
+    final bool ok;
+    if (_mode.quickRegister) {
+      ok = meetsQuickDeskFloor(fields: _fields, mode: _mode) &&
+          _profileTypeId != null;
+    } else {
+      final formValid = _formKey.currentState?.validate() ?? false;
+      ok = formValid &&
+          _nationalityCode != null &&
+          _organisationId != null &&
+          _profileTypeId != null &&
+          _gender != AppGender.unspecified;
+    }
     if (!ok) {
       // Paints the lookups' own "required" messages, which are gated on a
       // submit having been tried, before the scroll lands on the first one.
@@ -273,14 +282,7 @@ class _StaffRegisterVisitorScreenState
 
   void _resetForm() {
     setState(() {
-      _fields.email.clear();
-      _fields.arabicName.clear();
-      _fields.englishName.clear();
-      _fields.jobTitle.clear();
-      _fields.jobTitleArabic.clear();
-      _fields.phone.clear();
-      _fields.nationalId.clear();
-      _fields.documentNumber.clear();
+      _fields.clear();
       _gender = AppGender.male;
       _docType = VisitorDocType.iqama;
       _attachments.clear();

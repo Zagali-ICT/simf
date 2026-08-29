@@ -15,11 +15,12 @@ namespace SIMF.Common;
 /// row would have been a third copy of the rule. Same reason
 /// <see cref="SaudiPlate"/> and <see cref="MobileNumber"/> already live here.</para>
 ///
-/// <para><b>Why the checksum matters more than the shape.</b> The
-/// duplicate-identity guard keys off a blind-index HMAC of these numbers. A
-/// mistyped id is still unique, so it hashes to a value that matches nothing,
-/// the guard never fires, and the same person collects a second badge at another
-/// desk. The Luhn check digit is what catches the typo.</para>
+/// <para><b>Why the checksum matters more than the shape.</b> A number of the
+/// right SHAPE but the wrong check digit is a plausible-looking id belonging to
+/// nobody, and it is what gets printed on the badge. The Luhn digit is what
+/// catches the typo — and since the cross-profile duplicate guard was removed,
+/// nothing downstream catches the consequence, so this is the whole
+/// defence.</para>
 /// </summary>
 public static class IdentityDocument
 {

@@ -48,9 +48,9 @@ public enum IdentityDocumentKind
 /// uniques this replaced on <see cref="UserProfile"/> could only ever catch a
 /// repeat of the SAME kind: a person registering once on a passport and again on
 /// an Iqama passed all three. A single unique index over
-/// <see cref="NumberHash"/> — one column holding every document number's
-/// digest — catches the cross-kind repeat as well, because both digests land in
-/// the same index. It is now the whole duplicate-identity constraint.</para>
+/// <see cref="NumberHash"/> replaced them and caught the cross-kind repeat too,
+/// because both digests landed in one column — but that index was dropped on
+/// owner instruction, so no cross-profile constraint remains.</para>
 ///
 /// <para><b>Encryption and determinism, carried over from the parent row.</b>
 /// <see cref="Number"/> is the plaintext the PII value converter encrypts at rest
@@ -100,8 +100,11 @@ public class ProfileIdentityDocument : BaseAuditEntity
     public string Number { get; set; } = string.Empty;
 
     /// <summary>The deterministic keyed-HMAC blind index of
-    /// <see cref="Number"/> (64 hex chars), and the only column the
-    /// duplicate-identity guard and its unique index can key off. Never
-    /// encrypted — see the class remarks.</summary>
+    /// <see cref="Number"/> (64 hex chars). Written on every save and read by
+    /// NOTHING since the cross-profile unique index was dropped: it is kept
+    /// because <see cref="Number"/> is encrypted under a random nonce and can
+    /// never be equality-queried, so this is the only seam a future
+    /// document-number lookup could use. Never encrypted — see the class
+    /// remarks.</summary>
     public string NumberHash { get; set; } = string.Empty;
 }

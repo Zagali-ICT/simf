@@ -3853,4 +3853,21 @@
   <data name="Admin.ChangeType.Confirm.Message" xml:space="preserve"><value>Change this account to "{0}"? It moves to the other desk and its available actions change.</value></data>
   <data name="Admin.MediaLibrary.Deactivate.Confirm.Title" xml:space="preserve"><value>Deactivate asset</value></data>
   <data name="Admin.MediaLibrary.Deactivate.Confirm.Message" xml:space="preserve"><value>Deactivate the asset for "{0}"? It stops appearing on the public site until it is restored.</value></data>
+  <data name="Admin.WalkInMode.Title" xml:space="preserve"><value>Walk-in Mode</value></data>
+  <data name="Admin.WalkInMode.Loading" xml:space="preserve"><value>Loading the walk-in modes...</value></data>
+  <data name="Admin.WalkInMode.LoadFailed" xml:space="preserve"><value>The walk-in modes could not be loaded.</value></data>
+  <data name="Admin.WalkInMode.Saved" xml:space="preserve"><value>Walk-in modes saved.</value></data>
+  <data name="Admin.WalkInMode.SaveFailed" xml:space="preserve"><value>The walk-in modes could not be saved.</value></data>
+  <data name="Admin.WalkInMode.Saving" xml:space="preserve"><value>Saving...</value></data>
+  <data name="Admin.WalkInMode.Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Admin.WalkInMode.Section.Modes" xml:space="preserve"><value>Desk modes</value></data>
+  <data name="Admin.WalkInMode.Section.Modes.Hint" xml:space="preserve"><value>These take effect immediately, with no deploy. They override the deployed configuration until you change them back.</value></data>
+  <data name="Admin.WalkInMode.Field.QuickRegister" xml:space="preserve"><value>Quick register</value></data>
+  <data name="Admin.WalkInMode.Field.QuickRegister.Hint" xml:space="preserve"><value>The desk captures a reduced field set: a name and one identity document.</value></data>
+  <data name="Admin.WalkInMode.Field.AutoApprove" xml:space="preserve"><value>No approval needed</value></data>
+  <data name="Admin.WalkInMode.Field.AutoApprove.Hint" xml:space="preserve"><value>An on-site visitor is approved and given a badge at the desk, instead of waiting for an administrator.</value></data>
+  <data name="Admin.WalkInMode.Disarmed" xml:space="preserve"><value>Walk-in mode is switched off for this deployment, so neither toggle below has any effect yet. Arming it is a server setting, not a Control Panel one.</value></data>
+  <data name="Module.WalkInMode" xml:space="preserve"><value>Walk-in Mode</value></data>
+  <data name="Admin.WalkIn.Error.QuickNameRequired" xml:space="preserve"><value>A name is required.</value></data>
+  <data name="Admin.WalkIn.Error.QuickDocumentRequired" xml:space="preserve"><value>An identity document number is required (national ID, Iqama or passport).</value></data>
 </root>

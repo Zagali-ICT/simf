@@ -794,6 +794,16 @@ public static class PermissionCatalog
         public const string Import = "Configuration.Import";
     }
 
+    /// <summary>The walk-in desk modes (quick register, auto-approve). Its OWN
+    /// permission rather than the generic Configuration pair, because
+    /// auto-approve relaxes an approval gate: granting somebody the run of the
+    /// configuration page should not hand them that switch by accident.</summary>
+    public static class WalkInMode
+    {
+        public const string View = "WalkInMode.View";
+        public const string Manage = "WalkInMode.Manage";
+    }
+
     /// <summary>The Organization / About profile editor (single-record
     /// edition-generic branding config). View opens it; Manage saves changes.</summary>
     public static class OrganizationProfile
@@ -1264,6 +1274,8 @@ public static class PermissionCatalog
             "Open a new event edition (closes the current year and clears every badge)", AdminOnly),
 
         // System Configuration settings.
+        new(WalkInMode.View, "WalkInMode", "View", "View the walk-in desk modes", AdminOnly),
+        new(WalkInMode.Manage, "WalkInMode", "Manage", "Turn the walk-in desk modes on or off", AdminOnly),
         new(Configuration.View, "Configuration", "View", "View system configuration", AdminOnly),
         new(Configuration.Create, "Configuration", "Create", "Create system settings", AdminOnly),
         new(Configuration.Edit, "Configuration", "Edit", "Edit system settings", AdminOnly),

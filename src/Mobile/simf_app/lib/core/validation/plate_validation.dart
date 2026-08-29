@@ -61,17 +61,19 @@ final Map<String, String> _enToAr = <String, String>{
 const String _latinClass = 'ABDEGHJKLNRSTUVXZ';
 const String _arabicClass = 'ابحدرسصطعقكلمنهوى';
 
-// Relaxed rule (owner 2026-07-06): at least one plate letter and/or at least
-// one digit — up to 3 letters (from the 17-letter set, one script) and up to 4
-// digits, in either order. The `(?=.)` lookahead rejects an all-empty match; a
-// non-empty value made only of allowed characters (letters-then-digits or
-// digits-then-letters, never interleaved) validates. Mirrored on the server
-// (`SaudiPlate`).
+// Owner 2026-08-29: the plate is optional, but one that IS entered must carry
+// at least one letter AND at least one digit — 1-3 letters (from the
+// 17-letter set, one script) and 1-4 digits, in either order, never
+// interleaved.
+//
+// This TIGHTENS the 2026-07-06 relaxation, whose {0,n} quantifiers accepted
+// letters-only ("ABJ") and digits-only ("1234"). Mirrored on the server
+// (`SaudiPlate`); the two must not drift.
 final RegExp _latinPlate = RegExp(
-  '^(?=.)([$_latinClass]{0,3}[0-9]{0,4}|[0-9]{0,4}[$_latinClass]{0,3})\$',
+  '^([$_latinClass]{1,3}[0-9]{1,4}|[0-9]{1,4}[$_latinClass]{1,3})\$',
 );
 final RegExp _arabicPlate = RegExp(
-  '^(?=.)([$_arabicClass]{0,3}[0-9]{0,4}|[0-9]{0,4}[$_arabicClass]{0,3})\$',
+  '^([$_arabicClass]{1,3}[0-9]{1,4}|[0-9]{1,4}[$_arabicClass]{1,3})\$',
 );
 
 /// Strips separators and folds the input to a canonical comparison form

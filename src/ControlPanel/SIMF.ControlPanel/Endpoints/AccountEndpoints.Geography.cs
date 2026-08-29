@@ -8,6 +8,7 @@ using SIMF.ApiClient;
 using SIMF.ControlPanel.Components.Assistant;
 using SIMF.Common;
 using SIMF.Contracts.Admin;
+using SIMF.Contracts.Configuration;
 using SIMF.Contracts.Ai;
 using SIMF.Contracts.Archive;
 using SIMF.Contracts.Authentication;
@@ -139,6 +140,27 @@ internal static partial class AccountEndpoints
             var token = await http.GetTokenAsync("access_token");
             if (token is null) return Results.Unauthorized();
             return Forward(await api.UpdateSiteSettingsAsync(body, token));
+        });
+        group.MapGet("/admin/walk-in-mode",
+            async (HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetWalkInModeAsync(token));
+        });
+        group.MapGet("/admin/walk-in-mode/desk",
+            async (HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetDeskWalkInModeAsync(token));
+        });
+        group.MapPost("/admin/walk-in-mode",
+            async (AdminUpdateWalkInModeRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.UpdateWalkInModeAsync(body, token));
         });
         group.MapGet("/admin/countries/{id:int}/delegates",
             async (int id, HttpContext http, SimfAdminClient api) =>

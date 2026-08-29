@@ -56,8 +56,18 @@ class _FakeProfileRepository implements ProfileRepository {
 
   @override
   Future<List<CountryItem>> getCountries() async => const <CountryItem>[
-        CountryItem(code: 'SA', name: 'Saudi Arabia', nameArabic: 'السعودية'),
-        CountryItem(code: 'US', name: 'United States', nameArabic: 'أمريكا'),
+        CountryItem(
+          code: 'SA',
+          name: 'Saudi Arabia',
+          nameArabic: 'السعودية',
+          phonePrefix: '+966',
+        ),
+        CountryItem(
+          code: 'US',
+          name: 'United States',
+          nameArabic: 'أمريكا',
+          phonePrefix: '+1',
+        ),
       ];
 
   @override

@@ -89,9 +89,11 @@ internal sealed class AccountDeletionService(
             return;
         }
 
-        // The identity documents are HARD-deleted, not blanked. A soft-deleted
-        // row keeps its number's digest in the globally unique index, which
-        // would bar that person from ever registering that document again.
+        // The identity documents are HARD-deleted, not blanked. The original
+        // reason was the globally unique digest index, which a retired row would
+        // have kept occupying; that index is gone. The behaviour stays for the
+        // reason that outlived it: this is an ERASURE request, and a blanked row
+        // that still carries the encrypted number has not erased anything.
         var documents = await appDb.Set<ProfileIdentityDocument>()
             .Where(d => d.ProfileId == profile.Id)
             .ToListAsync(cancellationToken);

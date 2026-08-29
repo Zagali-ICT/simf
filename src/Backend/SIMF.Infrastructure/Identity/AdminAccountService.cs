@@ -70,7 +70,6 @@ internal sealed partial class AdminAccountService(
     ITransactionRunner transactionRunner,
     SimfIdentityDbContext dbContext,
     SimfAppDbContext appDbContext,
-    IUserProfileRepository profiles,
     IPiiEncryptor pii,
     TimeProvider timeProvider,
     INotificationDispatcher notifications,
@@ -78,6 +77,11 @@ internal sealed partial class AdminAccountService(
     // IOptionsMonitor so arming it in appsettings / set-env-* takes effect
     // without a restart.
     IOptionsMonitor<WalkInModeOptions> walkInMode,
+    // The two CP-controllable modes resolve through here, not the monitor: an
+    // admin's toggle overrides configuration and reading options directly
+    // would ignore it. The monitor stays for the options that are NOT
+    // CP-controlled (QuickRegisterRequiresIdentityDocument, arrival grace).
+    SIMF.Application.Configuration.Abstractions.IWalkInModeSettings walkInModeSettings,
     // Read to decide whether forcing TwoFactorEnabled at creation is safe;
     // see CreateAccountAsync.
     IOptions<IdentityLifecycleOptions> lifecycleOptions,
@@ -153,9 +157,10 @@ internal sealed partial class AdminAccountService(
     /// Any single script satisfies it; the service mirrors it into the other
     /// language column, which is what keeps the NOT NULL pair valid.</para>
     ///
-    /// <para>An IDENTITY DOCUMENT, because it is the only thing preventing one
-    /// person from collecting several badges: the duplicate-identity guard and
-    /// its three filtered unique indexes key off a blind index of it. The
+    /// <para>An IDENTITY DOCUMENT, because it is how a person is identified on
+    /// the day at all. It no longer BOUNDS them to one badge: the cross-profile
+    /// duplicate guard was removed on owner instruction, so a repeated number is
+    /// now an operator-visible mistake rather than a server-side refusal. The
     /// plaintext columns are AES-GCM encrypted with a random nonce, so an id not
     /// captured at the desk can never be reconstructed afterwards. Made optional
     /// only by an explicit configuration choice, which the operator has to take
@@ -463,8 +468,7 @@ internal sealed partial class AdminAccountService(
         // With the mode disarmed, EnsureFullDeskFields reproduces the validator's
         // original checks with their exact bilingual messages, so behaviour is
         // byte-identical to before.
-        var quickRegister = walkInMode.CurrentValue
-            .QuickRegisterActive(timeProvider.SimfNow());
+        var quickRegister = await walkInModeSettings.QuickRegisterActiveAsync(cancellationToken);
         if (quickRegister)
         {
             EnsureQuickDeskFloor(
@@ -539,37 +543,21 @@ internal sealed partial class AdminAccountService(
             organisationId = requestedOrganisationId;
         }
 
-        // On-site duplicate-identity guard (soft, service-layer). A National
-        // ID / Iqama / passport already on a profile row must not be re-registered
-        // at the desk. The plaintext id columns are AES-GCM encrypted with a RANDOM
-        // nonce (SimfAppDbContext), so they can neither be equality-queried nor
-        // unique-indexed — the guard + its filtered UNIQUE indexes key off the
-        // deterministic blind-index HMAC (pii.BlindIndex) instead. This is a
-        // plain single-context read on appDbContext — no cross-DB JOIN. The
-        // validator forces two SEPARATE patterns — ^1[0-9]{9}$ (National ID) and
-        // ^2[0-9]{9}$ (Iqama) — so IsSaudi partitions the identifiers: at most one
-        // is non-null per request. Reads never crash on pre-existing data; a
-        // duplicate simply makes the guard match and rejects the new attempt.
+        // Normalise the three numbers before storage sees them, so the desk and
+        // the self-service upsert persist byte-identical strings.
+        //
+        // A duplicate-identity guard used to stand here and reject a number
+        // already held by another profile. It was removed on owner instruction:
+        // a visitor whose number sat on an earlier profile could not register at
+        // all, and the desk had no way to release it. Nothing detects a repeat
+        // now — the digest is still written, but no index or query reads it.
+        //
+        // The validator forces two SEPARATE patterns — ^1[0-9]{9}$ (National ID)
+        // and ^2[0-9]{9}$ (Iqama) — so IsSaudi partitions the identifiers: at
+        // most one is non-null per request.
         var nationalId = request.IsSaudi ? NormaliseOptional(request.NationalId) : null;
         var iqamaNumber = request.IsSaudi ? null : NormaliseOptional(request.IqamaNumber);
         var passportNumber = request.IsSaudi ? null : NormaliseOptional(request.PassportNumber);
-        var nationalIdHash = pii.BlindIndex(nationalId);
-        var iqamaNumberHash = pii.BlindIndex(iqamaNumber);
-        var passportNumberHash = pii.BlindIndex(passportNumber);
-
-        // Reuse the repository's single OR-query identity-exists check
-        // (IUserProfileRepository.AnyOtherProfileWithIdentityHashAsync). Guid.Empty
-        // excludes nobody — no real profile has UserId == Guid.Empty — so this NEW
-        // walk-in user is checked against every existing profile.
-        var duplicateIdentity = await profiles.AnyOtherProfileWithIdentityHashAsync(
-            Guid.Empty, nationalIdHash, iqamaNumberHash, passportNumberHash, cancellationToken);
-        if (duplicateIdentity)
-        {
-            await AuditFailure(
-                AuditEvents.AdminWalkInRegisterFailed, actorUserId, email, null,
-                ErrorCodes.DuplicateIdentity, cancellationToken);
-            throw ApiException.DuplicateIdentity();
-        }
 
         var now = timeProvider.SimfNow();
         var user = new SimfUser
@@ -698,11 +686,10 @@ internal sealed partial class AdminAccountService(
             profile.Id = presetProfileId;
         }
         // The three captured numbers, written to the only storage that holds
-        // them: one row per document, one unique digest index over all of them,
-        // which is what makes a CROSS-KIND duplicate visible at all. The
-        // already-normalised values are reused rather than re-derived, so the rows
-        // and the soft guard above key off the same strings — a trailing-space
-        // passport cannot slip past one and be stored by the other.
+        // them: one row per document, bounded per profile by (ProfileId, Kind).
+        // The already-normalised values from above are reused rather than
+        // re-derived, so the desk and the self-service upsert cannot store two
+        // different spellings of one number.
         ProfileIdentityStorage.SyncDocuments(
             profile, pii, nationalId, iqamaNumber, passportNumber);
         appDbContext.UserProfiles.Add(profile);
@@ -711,29 +698,9 @@ internal sealed partial class AdminAccountService(
         // path mints the QR badge. The QR is the access key, granted on
         // approval, not at the desk.
         // UserProfile lives on App DB now; save both contexts.
-        // The soft guard above is a non-atomic read-then-insert; a
-        // concurrent duplicate that slips it hits the filtered UNIQUE identity
-        // index here. Translate that race into the same 409 DuplicateIdentity
-        // instead of an uncaught 500 (narrow — any other violation rethrows).
         try
         {
             await appDbContext.SaveChangesAsync(cancellationToken);
-        }
-        // ONE index name now, where there used to be three per-kind ones beside
-        // it: the child table's single digest index is the whole duplicate-identity
-        // constraint, and it fires on a cross-kind duplicate the three could not
-        // see. Named from the constant, not a string, so removing the index cannot
-        // leave a filter that silently stops matching and turns this 409 into a
-        // 500. Deliberately NOT added to the QrId catch below, which answers a
-        // different conflict with a different code.
-        catch (DbUpdateException ex) when (ex.ViolatesAnyIndex(
-            Persistence.Configurations.App.ProfileIdentityDocumentConfiguration
-                .NumberHashIndexName))
-        {
-            await AuditFailure(
-                AuditEvents.AdminWalkInRegisterFailed, actorUserId, email, null,
-                ErrorCodes.DuplicateIdentity, cancellationToken);
-            throw ApiException.DuplicateIdentity();
         }
         // Two desks uploading the same batch at once. The pre-check in
         // the upload service is a non-atomic read-then-insert, so the loser lands
@@ -802,7 +769,7 @@ internal sealed partial class AdminAccountService(
         // staff powers with nobody reviewing. Same rule bulk badge generation
         // already enforces.
         if (expectedIsVisitor == true
-            && walkInMode.CurrentValue.AutoApproveActive(timeProvider.SimfNow()))
+            && await walkInModeSettings.AutoApproveActiveAsync(cancellationToken))
         {
             try
             {

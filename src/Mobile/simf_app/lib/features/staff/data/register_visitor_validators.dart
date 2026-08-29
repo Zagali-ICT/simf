@@ -3,6 +3,7 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/core/validation/phone_validation.dart';
 import 'package:simf_app/core/validation/required_validation.dart';
 import 'package:simf_app/core/validation/saudi_id_validation.dart';
+import 'package:simf_app/features/staff/data/staff_models.dart';
 import 'package:simf_app/features/staff/data/walk_in_field_errors.dart';
 import 'package:simf_app/features/staff/widgets/register_visitor_form_fields.dart';
 import 'package:simf_app/features/visitor_profile/data/visitor_profile_validators.dart';
@@ -165,4 +166,28 @@ class RegisterVisitorValidators {
     }
     return null;
   }
+}
+
+/// The QUICK-mode floor, mirroring the server's
+/// `AdminAccountService.EnsureQuickDeskFloor` exactly: ANY one name, and
+/// ANY one identity document when configuration still demands one.
+///
+/// Deliberately not a relaxed copy of the full rules above. The two have to
+/// agree, and the cheapest way to keep them agreeing is for this to state
+/// the same two conditions and nothing else. It lives here rather than in the
+/// screen so it can be tested without pumping a form.
+bool meetsQuickDeskFloor({
+  required RegisterVisitorFormFields fields,
+  required StaffWalkInMode mode,
+}) {
+  final hasName = fields.arabicName.text.trim().isNotEmpty ||
+      fields.englishName.text.trim().isNotEmpty;
+  if (!hasName) {
+    return false;
+  }
+  if (!mode.requiresIdentityDocument) {
+    return true;
+  }
+  return fields.nationalId.text.trim().isNotEmpty ||
+      fields.documentNumber.text.trim().isNotEmpty;
 }

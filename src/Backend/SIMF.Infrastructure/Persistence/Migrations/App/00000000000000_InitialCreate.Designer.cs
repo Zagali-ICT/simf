@@ -4215,10 +4215,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasKey("Id");
 
-                    b.HasIndex("NumberHash")
-                        .IsUnique()
-                        .HasDatabaseName("IX_ProfileIdentityDocuments_NumberHash");
-
                     b.HasIndex("ProfileId", "Kind")
                         .IsUnique();
 

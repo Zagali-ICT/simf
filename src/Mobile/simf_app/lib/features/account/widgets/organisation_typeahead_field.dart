@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/core/validation/field_limits.dart';
 import 'package:simf_app/core/widgets/simf_field_label.dart';
 import 'package:simf_app/core/widgets/simf_field_style.dart';
 import 'package:simf_app/features/account/data/profile_lookups.dart';
@@ -91,7 +92,7 @@ class OrganisationTypeaheadField extends StatelessWidget {
             key: const ValueKey<String>('organisationOtherField'),
             controller: otherController,
             style: simfInputStyle,
-            maxLength: 150,
+            maxLength: FieldLimits.organisationOther,
             textInputAction: TextInputAction.next,
             decoration: simfFieldDecoration(
               hintText: l10n.organisationOtherHint,

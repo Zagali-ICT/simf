@@ -558,29 +558,36 @@ filter + POST wiring). Live browser drive pending the E2E-VIS authoring pass.
   Where an E2E scenario fully covers one of these, the lower-layer case may be
   retired later — keep both during the transition.
 
-## On-site remediation (W4 — H-1 duplicate-identity guard)
+## On-site remediation (identity documents at the desk — guard removed by D-945)
 
 | Id | Scenario | Category | Priority | Status |
 |----|----------|----------|----------|--------|
-| E2E-VIS-027 | Walk-in with an already-registered National ID / Iqama / passport → `DUPLICATE_IDENTITY` (409) | conflict | P0 | _to author_ |
+| E2E-VIS-027 | Walk-in with an already-registered National ID / Iqama / passport is **accepted** — the cross-profile duplicate guard was removed (D-945). One profile still holds at most one document per kind | crud | P0 | _to author_ |
 | E2E-VIS-028 | Tier isolation on the ID document and the VIP photo (D-836): a `Visitors.*`-only admin cannot read or overwrite a **partner's** ID image through the visitors route, and the VIP-photo routes are audience-tier only — 404, never 403. Cross-referenced from [cp-admin-others.md](cp-admin-others.md) E2E-OTH-028 | auth | P0 | _to author_ |
 | E2E-VIS-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-VIS-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
-### E2E-VIS-027 — duplicate identity is rejected at the desk
+### E2E-VIS-027 — a repeated identity document is accepted at the desk (D-945)
 
 ```gherkin
-Scenario: a National ID that already belongs to a profile cannot be walked in again
+Scenario: a National ID that already belongs to a profile can be walked in again
   Given a visitor with National ID 1101798278 is already registered
   When staff submit a walk-in with the same National ID (different email)
-  Then the API responds 409 with error code DUPLICATE_IDENTITY
-  And the desk shows the bilingual message "An account is already registered with
-      this national ID, Iqama, or passport number." /
-      "يوجد حساب مسجّل بالفعل بهذه الهوية الوطنية أو رقم الإقامة أو جواز السفر."
-  And no new account is created
-  # Iqama and passport are matched the same way (via the identity blind index);
-  # a distinct identity still registers cleanly. The same guard covers the staff
-  # app twin POST /app/staff/visitors/register-onsite.
+  Then the API responds 200 and the account is created
+  And no DUPLICATE_IDENTITY error is returned — that code no longer exists
+  # The cross-profile guard and its unique index were removed on owner
+  # instruction (D-945): a visitor whose number already sat on an earlier
+  # profile could not register at all and the desk could not release it.
+  # Iqama and passport behave the same way, as does the staff app twin
+  # POST /app/staff/visitors/register-onsite.
+
+Scenario: one profile still cannot hold two documents of the same kind
+  Given a visitor profile already carries a passport
+  When a second passport is written to that SAME profile
+  Then the write is rejected by IX_ProfileIdentityDocuments_ProfileId_Kind
+  # This index SURVIVES D-945. It bounds a single profile, was never the
+  # registration blocker, and without it the read path would have to choose
+  # between two passports.
 ```
 
 ### E2E-VIS-028 — the list shows the visitor's profile-photo thumbnail (D-568)

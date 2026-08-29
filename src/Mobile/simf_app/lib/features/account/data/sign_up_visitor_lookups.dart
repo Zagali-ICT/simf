@@ -123,6 +123,48 @@ String? lockedVisitorProfileTypeId(List<ProfileTypeItem> profileTypes) {
 
 /// The country lookup as searchable options, matched on both names so an
 /// English query still finds an Arabic-labelled row and back.
+/// The calling-code sheet lists the CODES, not the countries.
+///
+/// The field sends a code, and several countries share one — `+1` alone covers
+/// the US, Canada and most of the Caribbean — so a list of country names made
+/// the visitor pick a country in order to express a number, and showed `+1`
+/// twenty times over if it did not. Deduped, and ordered by NUMERIC value so
+/// `+7` sorts before `+20` rather than after it, which is where a plain string
+/// sort puts it.
+List<PickerOption> callingCodePickerOptions(List<CountryItem> countries) {
+  final namesByPrefix = <String, List<String>>{};
+  for (final country in countries) {
+    final prefix = (country.phonePrefix ?? '').trim();
+    if (prefix.isEmpty) {
+      continue;
+    }
+    namesByPrefix
+        .putIfAbsent(prefix, () => <String>[])
+        .add('${country.name} ${country.nameArabic}');
+  }
+
+  final prefixes = namesByPrefix.keys.toList()
+    ..sort(
+      (a, b) => callingCodeSortValue(a).compareTo(callingCodeSortValue(b)),
+    );
+
+  return <PickerOption>[
+    for (final prefix in prefixes)
+      PickerOption(
+        value: prefix,
+        label: prefix,
+        // The list shows numbers, but typing a country name still finds its
+        // code — otherwise the only way in is knowing the number already.
+        search: '$prefix ${namesByPrefix[prefix]!.join(' ')}',
+      ),
+  ];
+}
+
+/// Digits of a `+`-prefixed calling code, for ordering. A non-numeric value
+/// sorts first rather than throwing; the seed never produces one.
+int callingCodeSortValue(String prefix) =>
+    int.tryParse(prefix.replaceAll(RegExp('[^0-9]'), '')) ?? 0;
+
 List<PickerOption> countryPickerOptions(
   List<CountryItem> countries, {
   required bool isArabic,

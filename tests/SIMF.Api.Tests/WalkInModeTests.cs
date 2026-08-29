@@ -225,7 +225,9 @@ public sealed class WalkInModeTests : IClassFixture<SimfApiFactory>
     }
 
     /// <summary>Arms the walk-in mode through configuration, which is the only
-    /// way it can be armed — there is deliberately no write endpoint.</summary>
+    /// way the MASTER switch can be armed: an admin may turn the two per-mode
+    /// flags on or off from the CP (see WalkInModeSettingsTests), but arming
+    /// walk-in registration at all still costs server access.</summary>
     private WebApplicationFactory<Program> CreateArmedFactory() =>
         _factory.WithWebHostBuilder(builder =>
         {
@@ -323,7 +325,8 @@ public sealed class WalkInModeTests : IClassFixture<SimfApiFactory>
 
     /// <summary>A syntactically valid Saudi national id (10 digits, leading 1,
     /// Luhn-correct) — the desk validator keeps the checksum even in quick mode,
-    /// because it is what keeps the duplicate-identity guard meaningful.</summary>
+    /// because since D-945 it is the only thing standing between a mistyped id and
+    /// the badge printed from it.</summary>
     private static string BuildLuhnNationalId()
     {
         var random = new Random(Guid.NewGuid().GetHashCode());

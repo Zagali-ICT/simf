@@ -9,9 +9,16 @@ armed from `appsettings` / `set-env-*`.
 **Operator guide:** [`SIMF-Offline-Badge-Desk-Guide.md`](../../manuals/SIMF-Offline-Badge-Desk-Guide.md)
 — provisioning and running the offline desk (E2E-WIM-017..024).
 
-This capability has **no Control Panel page of its own by design** — arming it
-requires server access, which is the access control. Scenarios below are driven
-through the walk-in desk, the gate console and the configuration file.
+**Split control, since D-947.** The two per-mode flags — quick register and
+auto-approve — are turned on and off by an admin on `/admin/walk-in-mode`,
+so they can change during an event without a deploy. The MASTER switch
+(`WalkInMode:Enabled` and its window) is still armed from `appsettings` /
+`set-env-*`, and that remains the access control: both modes resolve as
+`IsArmed(now) && flag`, so no toggle can arm walk-in registration on an estate
+that never enabled it.
+
+Scenarios below are driven through the walk-in desk, the gate console, the
+configuration file, and — for E2E-WIM-031..035 — the Control Panel page.
 
 ---
 
@@ -63,13 +70,13 @@ late.
 | E2E-WIM-012 | Quick register accepts a name and one identity document | Armed |
 | E2E-WIM-013 | Quick register still demands an identity document | Armed |
 | E2E-WIM-014 | A mistyped identity document is still rejected | Armed |
-| E2E-WIM-015 | The same person cannot collect two badges | Armed |
+| E2E-WIM-015 | A repeated national ID is accepted at the desk (D-945) | Armed |
 | E2E-WIM-016 | The arrival window widens | Armed |
 | E2E-WIM-017 | Offline upload is refused while disarmed | Disarmed |
 | E2E-WIM-018 | An uploaded badge works at the gate | Armed |
 | E2E-WIM-019 | Re-uploading a batch changes nothing | Armed |
 | E2E-WIM-020 | One bad row does not fail the batch | Armed |
-| E2E-WIM-021 | An uploaded duplicate identity is refused | Armed |
+| E2E-WIM-021 | An uploaded duplicate identity is accepted (D-945) | Armed |
 | E2E-WIM-022 | An uploaded badge is pending without auto-approve | Armed |
 | E2E-WIM-023 | A foreign-key badge is not recognised | Armed |
 | E2E-WIM-024 | The desk reconciles to zero | Armed |
@@ -230,9 +237,10 @@ When a desk operator submits a registration with no national ID,
 Then the response is HTTP 400
 And the message asks for an identity document, bilingually
 ```
-> This is the field quick mode keeps. It is the only thing preventing one person
-> collecting several badges, and the encrypted columns cannot be reconstructed
-> after the event.
+> This is the field quick mode keeps. It is how an attendee is identified on the
+> day at all, and the encrypted columns cannot be reconstructed after the event.
+> It does NOT bound one person to one badge — that was the cross-profile
+> duplicate guard, removed by D-945.
 
 ### E2E-WIM-014 — a mistyped identity document is still rejected
 ```gherkin
@@ -241,15 +249,20 @@ When a desk operator submits a national ID of the right shape
      but a wrong Luhn check digit
 Then the response is HTTP 400
 ```
-> Shape rules stayed in the validator and always apply: a mistyped id would
-> create a false-unique row and defeat duplicate detection permanently.
+> Shape rules stayed in the validator and always apply. They are now the ONLY
+> thing standing between a mistyped id and the badge printed from it, since
+> D-945 removed the duplicate guard that used to catch the consequence.
 
-### E2E-WIM-015 — the same person cannot collect two badges
+### E2E-WIM-015 — a repeated national ID is accepted at the desk (D-945)
 ```gherkin
 Given WalkInMode is armed with QuickRegister = true
 And a visitor already registered with national ID "1xxxxxxxxx"
 When a desk operator registers again with the same national ID
-Then the response is HTTP 409 DUPLICATE_IDENTITY
+Then the response is HTTP 200 and a second account is created
+# The cross-profile duplicate guard was removed on owner instruction: a
+# visitor whose number already sat on an earlier profile could not register
+# at all, and the desk had no way to release it. A second badge for one
+# person is now an operator-visible mistake, not a server-side refusal.
 ```
 
 ### E2E-WIM-016 — the arrival window widens
@@ -316,12 +329,15 @@ And two results are "Created" and two are "Rejected"
 And both rejections carry error code OFFLINE_BADGE_INVALID
 ```
 
-### E2E-WIM-021 — an uploaded duplicate identity is refused
+### E2E-WIM-021 — an uploaded duplicate identity is accepted (D-945)
 ```gherkin
 Given a batch of two rows carrying the SAME national ID
 When the desk uploads it
-Then one result is "Created"
-And the other is "Rejected" with error code DUPLICATE_IDENTITY
+Then BOTH results are "Created"
+And no row is rejected with DUPLICATE_IDENTITY — that code no longer exists
+# Batch rejection on a repeated identity went with the cross-profile guard.
+# The OFFLINE_BADGE_SEQUENCE_TAKEN conflict on IX_UserProfiles_QrId is a
+# different guard and still applies.
 ```
 
 ### E2E-WIM-022 — an uploaded badge is pending without auto-approve
@@ -424,9 +440,9 @@ And the first row is "Created"
 And the second is "Rejected" naming the national ID
 And the desk's "waiting to upload" counter still shows that one row
 ```
-> A mistyped id is still UNIQUE, so its blind index matches nothing and the
-> duplicate-identity guard never fires. Without the check digit the same person
-> collects a second badge at another desk.
+> The check digit is what keeps a mistyped id from being accepted as a real one.
+> Since D-945 nothing downstream catches the consequence — there is no
+> duplicate guard left to fire — so the validator is the whole defence.
 
 ### E2E-WIM-030 — F3 corrects a rejected row without reprinting
 ```gherkin
@@ -476,3 +492,81 @@ And each can be reviewed and either kept Approved or set to Disabled
   been mis-applied.
 - Denials are **HTTP 200 with a Denied outcome**, not an error envelope. Assert
   on the outcome and denial reason, never on the status code alone.
+
+## The Control Panel page (D-947)
+
+### Coverage matrix
+
+| Id | Scenario | Category | Priority | Status |
+|----|----------|----------|----------|--------|
+| E2E-WIM-031 | An admin turns quick register on from the CP, with no deploy | crud | P0 | _to author_ |
+| E2E-WIM-032 | An admin turns auto-approve off mid-event | crud | P0 | _to author_ |
+| E2E-WIM-033 | The page refuses to lie: a toggle is inert while disarmed | validation | P1 | _to author_ |
+| E2E-WIM-034 | A View-only holder sees the modes and cannot change them | auth | P0 | _to author_ |
+| E2E-WIM-035 | Turning a mode on is audited as its own event | audit | P1 | _to author_ |
+
+
+`/admin/walk-in-mode`. Gated by `WalkInMode.View`; the Save button by
+`WalkInMode.Manage`. Its own permission pair rather than `Configuration.*`,
+because auto-approve relaxes an approval gate and granting somebody the run of
+the configuration page should not hand them that switch by accident.
+
+### E2E-WIM-031 — an admin turns quick register on, with no deploy
+
+```gherkin
+Scenario: the toggle overrides deployment configuration immediately
+  Given WalkInMode:Enabled is true and WalkInMode:QuickRegister is false
+  And an Administrator is on /admin/walk-in-mode
+  When they tick "Quick register" and Save
+  Then the response is 200 and the page reports quick register ON
+  And a walk-in submitted with only a name and one identity document succeeds
+  And no application restart or deploy happened in between
+```
+
+### E2E-WIM-032 — an admin turns auto-approve off mid-event
+
+```gherkin
+Scenario: the override wins in the OFF direction too
+  Given WalkInMode:AutoApprove is true in configuration
+  And an Administrator is on /admin/walk-in-mode
+  When they untick "No approval needed" and Save
+  Then a subsequent on-site visitor lands PendingApproval with no QR
+  # Both directions matter: a service that quietly kept reading options would
+  # pass the ON case and fail this one.
+```
+
+### E2E-WIM-033 — the page refuses to lie about an inert toggle
+
+```gherkin
+Scenario: disarmed, the toggles show their value and say they do nothing
+  Given WalkInMode:Enabled is false
+  And an override sets quick register ON
+  When an Administrator opens /admin/walk-in-mode
+  Then the page shows quick register as ON
+  And a warning states that walk-in mode is switched off for this deployment
+  And a walk-in with the reduced field set is still REFUSED
+  # The master switch is not admin-editable. Showing the toggle as OFF would
+  # misreport what they set; hiding the warning would misreport its effect.
+```
+
+### E2E-WIM-034 — a View-only holder cannot change the modes
+
+```gherkin
+Scenario: read and write are separate grants
+  Given an admin holds WalkInMode.View but not WalkInMode.Manage
+  When they open /admin/walk-in-mode
+  Then the current modes are visible
+  And the Save button is not rendered
+  And POST /api/v1/admin/walk-in-mode answers 403 if called directly
+```
+
+### E2E-WIM-035 — the change is audited as its own event
+
+```gherkin
+Scenario: a SOC reader can find the moment a mode was switched on
+  Given an Administrator changes either mode on /admin/walk-in-mode
+  When the operation log is read
+  Then one Admin.WalkInModeChanged entry carries BOTH values
+  # One line for the pair, because the pair is what the operator changed and a
+  # reader correlating a burst of desk approvals needs them together.
+```

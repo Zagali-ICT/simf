@@ -252,6 +252,12 @@ public static class AuditEvents
     // System configuration settings
     public const string SystemSettingCreated = "SystemSetting.Created";
     public const string SystemSettingUpdated = "SystemSetting.Updated";
+
+    /// <summary>An admin turned a walk-in desk mode on or off from the CP.
+    /// Worth its own event rather than a generic setting update: auto-approve
+    /// relaxes an approval gate, so a SOC reader correlating a burst of desk
+    /// approvals needs to find the moment it was switched on.</summary>
+    public const string AdminWalkInModeChanged = "Admin.WalkInModeChanged";
     public const string SystemSettingDeactivated = "SystemSetting.Deactivated";
 
     // Organization / About profile

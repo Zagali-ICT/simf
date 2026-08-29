@@ -5,6 +5,7 @@ using FastEndpoints;
 using FluentValidation;
 using SIMF.Api.Endpoints.Auth.Validators;
 using SIMF.Common;
+using SIMF.Common.Enums;
 using SIMF.Contracts.UserProfile;
 using SIMF.Domain.Organisations;
 
@@ -156,13 +157,23 @@ public sealed class UpsertUserProfileRequestValidator
                 "Region id is not a valid identifier.",
                 "معرّف المنطقة غير صالح.");
 
-        // الجنس. Must be a defined enum value (Unspecified is
-        // allowed — the field is optional).
+        // الجنس. REQUIRED (owner 2026-08-29): every field on the app form is
+        // mandatory except the plate number.
+        //
+        // Unspecified used to be accepted here, which mattered more than it
+        // looks: the face-photo rule below is "male must supply one", so a
+        // caller that left gender Unspecified skipped the photo entirely. The
+        // shipped app always sends a value — it pre-selects Male on an empty
+        // profile — so this closes a NON-APP caller, not a hole in the UI.
         RuleFor(request => request.Gender)
             .IsInEnum()
             .Bilingual(
                 "The gender selection is not valid.",
-                "اختيار الجنس غير صالح.");
+                "اختيار الجنس غير صالح.")
+            .NotEqual(Gender.Unspecified)
+            .Bilingual(
+                "Gender is required.",
+                "الجنس مطلوب.");
 
         // Interests are saved in the SECOND step now (profile-first
         // save), so the profile save may legitimately carry 0 interests; the
@@ -211,19 +222,37 @@ public sealed class UpsertUserProfileRequestValidator
                 "Nationality code must be 2 characters (ISO 3166-1 alpha-2).",
                 "يجب أن يتكوّن رمز الجنسية من حرفين (ISO 3166-1).");
 
+        // REQUIRED (owner 2026-08-29). It was enforced only in the Flutter form
+        // until now, so any caller that was not the app could save a profile
+        // with it blank.
         RuleFor(request => request.PlaceOfBirth)
+            .NotEmpty()
+            .Bilingual(
+                "Place of birth is required.",
+                "مكان الميلاد مطلوب.")
             .MaximumLength(128);
 
-        // Optional job title, max 100 chars (owner 2026-07-06).
+        // REQUIRED (owner 2026-08-29), superseding the 2026-07-06 "optional".
+        // It was enforced only in the Flutter form.
         RuleFor(request => request.JobTitle)
-            .MaximumLength(100).When(r => !string.IsNullOrEmpty(r.JobTitle))
+            .NotEmpty()
+            .Bilingual(
+                "Job title is required.",
+                "المسمى الوظيفي مطلوب.")
+            .MaximumLength(100)
             .Bilingual(
                 "Job title must be at most 100 characters.",
                 "يجب ألا يتجاوز المسمى الوظيفي 100 حرف.");
 
-        // 2026-07-20 — the Arabic twin, same 100-char SSOT as JobTitle.
+        // The Arabic twin, same 100-char SSOT as JobTitle. REQUIRED as of
+        // 2026-08-29; it was the last field on the sign-up form with no
+        // validator in ANY layer.
         RuleFor(request => request.JobTitleArabic)
-            .MaximumLength(100).When(r => !string.IsNullOrEmpty(r.JobTitleArabic))
+            .NotEmpty()
+            .Bilingual(
+                "Job title (Arabic) is required.",
+                "المسمى الوظيفي بالعربية مطلوب.")
+            .MaximumLength(100)
             .Bilingual(
                 "Job title (Arabic) must be at most 100 characters.",
                 "يجب ألا يتجاوز المسمى الوظيفي (بالعربية) 100 حرف.");

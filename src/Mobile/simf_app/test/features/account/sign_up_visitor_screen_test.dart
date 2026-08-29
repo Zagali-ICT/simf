@@ -239,7 +239,8 @@ UserProfileResponse _completeProfile({
   String? plateNumber,
   String? jobTitle =
       'Engineer', // D-723 — required; pass null for the empty case
-  String? jobTitleArabic, // optional Arabic job title
+  // Required since 2026-08-29, like every field but the plate.
+  String? jobTitleArabic = 'مهندس',
   String? saudiMobile =
       '0512345678', // D-723 — required; pass null for empty case
   String placeOfBirth = 'Riyadh',
@@ -880,7 +881,9 @@ void main() {
         arabicName: 'راكان عبدالله أحمد السالم',
         englishName: 'Rakan Abdullah Ahmed Alsalem',
         nationalityCode: 'ZZ',
-        jobTitle: 'Engineer', // D-723 — job title is now required
+        jobTitle: 'Engineer',
+        // Both job titles required since 2026-08-29.
+        jobTitleArabic: 'مهندس',
         placeOfBirth: 'Riyadh',
         isSaudi: true,
         gender: AppGender.female,

@@ -69,6 +69,27 @@ class StaffWalkInRequest {
 /// empty [qrId] is the PendingApproval state (the QR is minted on approval,
 /// D-425) — the success screen treats it as "submitted for approval".
 @immutable
+/// What the tablet desk needs to decide which fields to demand.
+///
+/// Both default to the STRICT answer, so a failed read leaves the form asking
+/// for everything - the behaviour that existed before quick mode.
+class StaffWalkInMode {
+  const StaffWalkInMode({
+    this.quickRegister = false,
+    this.requiresIdentityDocument = true,
+  });
+
+  factory StaffWalkInMode.fromJson(Map<String, dynamic> json) =>
+      StaffWalkInMode(
+        quickRegister: json['quickRegister'] as bool? ?? false,
+        requiresIdentityDocument:
+            json['requiresIdentityDocument'] as bool? ?? true,
+      );
+
+  final bool quickRegister;
+  final bool requiresIdentityDocument;
+}
+
 class StaffWalkInResult {
   const StaffWalkInResult({
     required this.userId,

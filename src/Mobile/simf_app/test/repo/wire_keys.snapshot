@@ -276,6 +276,7 @@ questionId
 questionText
 questions
 queuedAtIso
+quickRegister
 rank
 rankArabic
 ratingTypeId
@@ -296,6 +297,7 @@ relatedEntityType
 requestedJobTitle
 requesterName
 requestingCountry
+requiresIdentityDocument
 reservationId
 reservedCells
 responseNote

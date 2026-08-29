@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
-import 'package:simf_app/features/account/data/profile_lookups.dart';
 import 'package:simf_app/features/account/widgets/mobile_field.dart';
 import 'package:simf_app/features/visitor_profile/data/visitor_profile_validators.dart';
 
@@ -18,8 +17,7 @@ class ContactSection extends StatelessWidget {
     required this.saudiMobile,
     required this.internationalMobile,
     this.callingCode = '',
-    this.countries = const <CountryItem>[],
-    this.onCallingCodeChanged,
+    this.onPickCallingCode,
     super.key,
   });
 
@@ -31,15 +29,13 @@ class ContactSection extends StatelessWidget {
   final TextEditingController saudiMobile;
   final TextEditingController internationalMobile;
 
-  /// The calling code in front of the number. Defaults from [isSaudi] /
-  /// the nationality, then belongs to the visitor — a Sudanese national
-  /// attending on a Saudi number picks +966 and keeps their nationality.
+  /// The calling code in front of the number. Defaults from the nationality,
+  /// then belongs to the visitor — a Sudanese national attending on a Saudi
+  /// number picks +966 and keeps their nationality.
   final String callingCode;
 
-  /// Supplies the codes; rows without a `phonePrefix` are skipped.
-  final List<CountryItem> countries;
-
-  final ValueChanged<String>? onCallingCodeChanged;
+  /// Opens the shared searchable country sheet.
+  final VoidCallback? onPickCallingCode;
 
   @override
   Widget build(BuildContext context) {
@@ -50,8 +46,7 @@ class ContactSection extends StatelessWidget {
           ? (v) => validateSaudiMobile(v, l10n)
           : (v) => validateInternationalMobile(v, l10n),
       callingCode: callingCode,
-      countries: countries,
-      onCallingCodeChanged: onCallingCodeChanged,
+      onPickCallingCode: onPickCallingCode,
     );
   }
 }

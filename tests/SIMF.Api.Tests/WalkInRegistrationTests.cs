@@ -553,10 +553,11 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task Walk_in_with_duplicate_national_id_returns_409()
+    public async Task Walk_in_with_duplicate_national_id_is_now_accepted()
     {
-        // H-1 — the same Saudi National ID cannot be walked in twice. The second
-        // attempt is blocked by the blind-index duplicate-identity guard (409).
+        // The duplicate-identity guard was removed on owner instruction
+        // (2026-08-29). The same National ID walking in twice is now accepted -
+        // it used to answer 409 and strand the second registration.
         var adminToken = await CreateAdministratorAndSignInAsync();
         var profileTypeId = await GetVisitorProfileTypeAsync();
         var organisationId = await GetOrganisationIdAsync();
@@ -570,13 +571,11 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
         var second = BuildRequest(profileTypeId, $"dupnid-2-{Guid.NewGuid():N}@simf.test", organisationId);
         second.NationalId = sharedId;
         var r2 = await PostAuthAsync("/api/v1/admin/visitors/register-onsite", second, adminToken);
-        Assert.Equal(HttpStatusCode.Conflict, r2.StatusCode);
-        var body = (await r2.Content.ReadFromJsonAsync<ApiResult<object>>())!;
-        Assert.Equal(ErrorCodes.DuplicateIdentity, body.Error!.Code);
+        Assert.Equal(HttpStatusCode.OK, r2.StatusCode);
     }
 
     [Fact]
-    public async Task Walk_in_with_duplicate_iqama_returns_409()
+    public async Task Walk_in_with_duplicate_iqama_is_now_accepted()
     {
         var adminToken = await CreateAdministratorAndSignInAsync();
         var profileTypeId = await GetVisitorProfileTypeAsync();
@@ -594,13 +593,11 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
             profileTypeId, $"dupiq-2-{Guid.NewGuid():N}@simf.test", organisationId,
             countryCode, iqamaNumber: sharedIqama);
         var r2 = await PostAuthAsync("/api/v1/admin/visitors/register-onsite", second, adminToken);
-        Assert.Equal(HttpStatusCode.Conflict, r2.StatusCode);
-        var body = (await r2.Content.ReadFromJsonAsync<ApiResult<object>>())!;
-        Assert.Equal(ErrorCodes.DuplicateIdentity, body.Error!.Code);
+        Assert.Equal(HttpStatusCode.OK, r2.StatusCode);
     }
 
     [Fact]
-    public async Task Walk_in_with_duplicate_passport_returns_409()
+    public async Task Walk_in_with_duplicate_passport_is_now_accepted()
     {
         var adminToken = await CreateAdministratorAndSignInAsync();
         var profileTypeId = await GetVisitorProfileTypeAsync();
@@ -618,9 +615,7 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
             profileTypeId, $"duppp-2-{Guid.NewGuid():N}@simf.test", organisationId,
             countryCode, passportNumber: sharedPassport);
         var r2 = await PostAuthAsync("/api/v1/admin/visitors/register-onsite", second, adminToken);
-        Assert.Equal(HttpStatusCode.Conflict, r2.StatusCode);
-        var body = (await r2.Content.ReadFromJsonAsync<ApiResult<object>>())!;
-        Assert.Equal(ErrorCodes.DuplicateIdentity, body.Error!.Code);
+        Assert.Equal(HttpStatusCode.OK, r2.StatusCode);
     }
 
     [Fact]
