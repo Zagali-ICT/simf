@@ -17,6 +17,7 @@ any older draft, prompt, chat note, or assumption.
 | `docs/SIMF-API-001-API-Specification.md` | API contract — `ApiResult<T>` envelope, standard headers, error model, HTTP status codes, pagination, authentication endpoints |
 | `docs/SIMF-SAD-001-Software-Architecture-Document.md` | Architecture — modular monolith, bounded contexts, security, integration, deployment |
 | `docs/SIMF-MAA-001-Mobile-Application-Architecture.md` | Flutter app architecture (Android + iOS) |
+| `docs/SIMF-REG-001-Registration-Rules.md` | Registration and profile rules — which fields the app demands, required vs needed-to-complete, the photo rules, approval before badge, the two desk modes. Every rule names where it is enforced and which test pins it |
 | `docs/SIMF-DMP-001-Documentation-Management-Plan.md` | Documentation management |
 | `docs/SIMF-Program-Plan.md` | Programme plan, stages and gates |
 
