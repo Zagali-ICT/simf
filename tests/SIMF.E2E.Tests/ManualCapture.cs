@@ -149,6 +149,17 @@ public sealed class ManualCapture : IAsyncLifetime
         var pairedSecret = TotpSecret.Length > 0 ? TotpSecret : null;
         var password = Password;
 
+        // Switch the interface BEFORE signing in. The sign-in screens are the
+        // one-shot ones - a forced password change and the pairing QR render
+        // once per account, ever - so switching afterwards, as the sweep does,
+        // is too late to photograph them in the second language.
+        if (Lang == "ar")
+        {
+            await _page.GotoAsync(Cp + "/culture?culture=ar&redirectUri=%2Flogin",
+                new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
+            await SettleAsync();
+        }
+
         await _page.GotoAsync(Cp + "/login",
             new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
         if (capture) { await ShotAsync("login", "empty"); }
@@ -194,7 +205,13 @@ public sealed class ManualCapture : IAsyncLifetime
                 pairedSecret = await ReadPairingSecretAsync()
                     ?? throw new InvalidOperationException(
                         "The enrolment page did not expose a manual-entry secret to pair with.");
-                await SubmitCodeAsync(pairedSecret);
+                await SubmitCodeAsync(pairedSecret, ReadPairingSecretAsync);
+
+                // The recovery codes replace the QR on the same page and are
+                // shown once, ever - so this shot is taken only once the list is
+                // actually on screen, never on the chance that the code worked.
+                var codes = _page.Locator("ol.simf-recovery-codes");
+                await codes.WaitForAsync(new LocatorWaitForOptions { Timeout = 20_000 });
                 if (capture) { await ShotAsync("login-enrol-2fa", "recovery-codes"); }
                 await ClickFirstAsync("button[type=submit]", "button.simf-button");
                 await SettleAsync();
@@ -257,13 +274,26 @@ public sealed class ManualCapture : IAsyncLifetime
         }
     }
 
-    private async Task SubmitCodeAsync(string secret)
+    /// <summary>Enters a verification code and submits it.</summary>
+    /// <param name="secret">The base32 secret to derive the code from.</param>
+    /// <param name="refresh">Optional. Re-reads the secret from the page before
+    /// a retry. Enrolment mints a fresh secret every time the page starts it, so
+    /// a code derived from an earlier read is refused - and retrying with the
+    /// same stale secret fails identically, forever.</param>
+    private async Task SubmitCodeAsync(string secret, Func<Task<string?>>? refresh = null)
     {
         var field = _page.Locator("input.simf-code__input, input[inputmode=numeric]").First;
         await field.WaitForAsync(new LocatorWaitForOptions { Timeout = 15_000 });
         for (var attempt = 1; attempt <= 2; attempt++)
         {
-            if (attempt > 1) { await WaitForNextWindowAsync(); }
+            if (attempt > 1)
+            {
+                if (refresh is not null)
+                {
+                    secret = await refresh() ?? secret;
+                }
+                await WaitForNextWindowAsync();
+            }
             // Fill, then re-type only if the bound model did not take it. The
             // key-by-key path is slower and, on the enrolment screen, waits on
             // an element the circuit re-renders underneath it - which times out
@@ -278,6 +308,16 @@ public sealed class ManualCapture : IAsyncLifetime
             await field.BlurAsync();
             await _page.ClickAsync("button[type=submit]");
             await SettleAsync();
+            // Success is NOT "the address changed". A completed enrolment renders
+            // the recovery codes in the same component, at the same address, so a
+            // URL test reports the one flow that DID work as a failure - and then
+            // retries a code the server has already accepted. Ask the page what
+            // it is showing instead.
+            if (await _page.Locator("ol.simf-recovery-codes").CountAsync() > 0)
+            {
+                return;
+            }
+
             var stillOnCode = _page.Url.Contains("/totp", StringComparison.OrdinalIgnoreCase)
                 || _page.Url.Contains("/enrol-2fa", StringComparison.OrdinalIgnoreCase);
             if (!stillOnCode) { return; }
@@ -564,6 +604,72 @@ public sealed class ManualCapture : IAsyncLifetime
         {
             _report.Add(new { slug = name, state = "flow", lang = Lang, error = exception.Message });
         }
+    }
+
+    /// <summary>The profile picture, from an empty avatar to a picture in the
+    /// grid.</summary>
+    /// <remarks>The manual can state the rules from the code, but it could not
+    /// SHOW a picture being set - the only image in that chapter was the
+    /// account page with no photo on it. This walks the real path: pick a file,
+    /// crop it, save it, and see it come back as a thumbnail where an initials
+    /// tile used to be.
+    /// <para>The file is supplied through the input directly. A file picker is
+    /// an operating-system dialog that no browser automation can drive, and it
+    /// is not what is being documented anyway.</para></remarks>
+    [SkippableFact]
+    public async Task Capture_profile_picture()
+    {
+        Skip.If(OutDir.Length == 0, "SIMF_MANUAL_OUT is not set.");
+        var image = Env("SIMF_MANUAL_AVATAR", "");
+        Skip.If(image.Length == 0 || !File.Exists(image),
+            "SIMF_MANUAL_AVATAR must point at an image to upload.");
+
+        await SignInCapturingFirstRunAsync(capture: false);
+        await AssertSignedInAsync();
+        if (Lang == "ar")
+        {
+            await _page.GotoAsync(Cp + "/culture?culture=ar&redirectUri=%2F",
+                new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
+            await SettleAsync();
+        }
+
+        var crop = Env("SIMF_MANUAL_CROP_LABEL", "Crop and save");
+
+        await StepAsync("avatar-before", async () =>
+        {
+            await _page.GotoAsync(Cp + "/account/profile",
+                new PageGotoOptions { WaitUntil = WaitUntilState.DOMContentLoaded });
+            await SettleAsync();
+            // The avatar card is well down the page; the shot has to show it.
+            await _page.Locator("#avatar-input").ScrollIntoViewIfNeededAsync();
+            await Task.Delay(500);
+            await ShotAsync("account-profile", "avatar-empty");
+        });
+
+        await StepAsync("avatar-cropper", async () =>
+        {
+            await _page.SetInputFilesAsync("#avatar-input", image);
+            await Task.Delay(2_500);          // the cropper loads the image itself
+            await ShotAsync("account-profile", "avatar-cropper");
+            await ClickButtonAsync(crop);
+            await Task.Delay(3_000);
+            await _page.Locator("#avatar-input").ScrollIntoViewIfNeededAsync();
+            await Task.Delay(500);
+            await ShotAsync("account-profile", "avatar-set");
+        });
+
+        // The grid is where the difference is visible: a picture where there was
+        // an initials tile, beside accounts that still have one.
+        await StepAsync("avatar-in-grid", async () =>
+        {
+            await _page.GotoAsync(Cp + "/admin/admins",
+                new PageGotoOptions { WaitUntil = WaitUntilState.DOMContentLoaded });
+            await SettleAsync();
+            await ShotAsync("admin-admins", "avatar-thumbnail");
+        });
+
+        WriteReport("profile-picture");
+        Assert.NotEmpty(_report);
     }
 
     /// <summary>Walks every route in SIMF_MANUAL_ROUTES and photographs it.</summary>

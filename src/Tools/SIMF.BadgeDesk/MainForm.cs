@@ -20,7 +20,6 @@ public sealed class MainForm : Form
 {
     private readonly DeskConfig _config;
     private readonly DeskStore _store;
-    private readonly UploadClient _uploader;
     private readonly PrinterSettings _printerSettings = new();
 
     private readonly TextBox _name = new();
@@ -42,11 +41,46 @@ public sealed class MainForm : Form
     /// exactly the outcome the correction path exists to prevent.</para></summary>
     private readonly List<OfflineBadgeUploadResult> _rejections = [];
 
+    /// <summary>Drains the backlog on its own once the network is back. It owns
+    /// the token, the backoff and the in-flight guard; this form only asks it to
+    /// try and renders what came back.</summary>
+    private readonly BacklogUploader _backlog;
+
+    /// <summary>Ticks once a second while a token is held.
+    ///
+    /// <para>A Forms timer, not a thread or a task loop: the tick arrives on the
+    /// message loop, so the handler touches the store, the labels and the
+    /// uploader with no marshalling and no locking of its own. One second is not
+    /// a polling rate — the uploader decides when it is next due — it is how
+    /// often the counters line can restate the wait honestly.</para></summary>
+    private readonly System.Windows.Forms.Timer _uploadTimer = new() { Interval = 1000 };
+
+    /// <summary>Cuts an upload in flight when the window closes. Safe mid-batch:
+    /// a batch is idempotent by sequence, so rows the server took but never
+    /// acknowledged come back as AlreadyUploaded on the next launch.</summary>
+    private readonly CancellationTokenSource _closing = new();
+
+    /// <summary>The failure already on screen.
+    ///
+    /// <para>An hour of dead venue wifi is ONE fact. Restating it every fifteen
+    /// seconds would scroll away the upload report an operator is reading in
+    /// order to correct the rows the server refused, and this label is not built
+    /// to be transient — the counters line is, and that is where the countdown
+    /// lives.</para></summary>
+    private string? _reportedFailure;
+
     public MainForm(DeskConfig config, DeskStore store, UploadClient uploader)
     {
         _config = config;
         _store = store;
-        _uploader = uploader;
+
+        // The form holds no upload logic: it hands the uploader the store and one
+        // way to send a batch, and puts the answer on screen.
+        _backlog = new BacklogUploader(
+            store,
+            (token, batch, cancellationToken) => uploader.UploadAsync(
+                config.ApiBaseUrl, token, config.DeskLabel, batch, cancellationToken));
+        _uploadTimer.Tick += OnUploadTick;
 
         Text = $"SIMF badge desk — {config.DeskLabel}";
         MinimumSize = new Size(760, 620);
@@ -140,7 +174,7 @@ public sealed class MainForm : Form
         Dock = DockStyle.Bottom,
         AutoSize = true,
         Text = "Enter = next field, print from the last  •  Esc = clear  •  "
-        + "F2 = reprint last  •  F3 = correct a rejected row  •  F5 = upload",
+        + "F2 = reprint last  •  F3 = correct a rejected row  •  F5 = upload now",
     };
 
     private void OnFieldKeyDown(object? sender, KeyEventArgs args)
@@ -174,7 +208,7 @@ public sealed class MainForm : Form
                 args.Handled = true;
                 break;
             case Keys.F5:
-                _ = UploadAsync();
+                StartUpload();
                 args.Handled = true;
                 break;
         }
@@ -344,6 +378,10 @@ public sealed class MainForm : Form
         };
         ApplyIdentityDocument(corrected, identityDocument);
 
+        // The upload timer goes on ticking while the dialog above is open, so a
+        // background batch can land in the middle of a correction. Harmless: the
+        // store refuses to correct a row the server has already accepted, and
+        // this is where that answer arrives.
         if (!_store.Correct(corrected))
         {
             ShowStatus(
@@ -351,6 +389,10 @@ public sealed class MainForm : Form
                 isError: true);
             return;
         }
+
+        // The reason this row was held out of the background loop has just been
+        // dealt with, so it belongs in the next batch.
+        _backlog.AllowRetry(target);
 
         // The badge prints the NAME as well as the QR. The QR is
         // unaffected by any correction (it carries only the badge type and the
@@ -513,10 +555,18 @@ public sealed class MainForm : Form
         record.PassportNumber = value;
     }
 
-    private async Task UploadAsync()
+    /// <summary>
+    /// F5: sign the shift in if it has not been, then upload NOW.
+    ///
+    /// <para>The operator is asked for a token once per launch. After that the
+    /// desk uploads on its own and F5 is a "don't wait" button: it resets the
+    /// backoff and releases the rows held back for correction, because a person
+    /// pressing it is a person saying they have dealt with whatever the last
+    /// report complained about.</para>
+    /// </summary>
+    private void StartUpload()
     {
-        var pending = _store.BuildPendingBatch(UploadClient.MaxBatchSize);
-        if (pending.Count == 0)
+        if (_store.PendingUploadCount == 0)
         {
             ShowStatus("Nothing to upload.", isError: false);
             return;
@@ -527,66 +577,141 @@ public sealed class MainForm : Form
             return;
         }
 
-        var token = PromptForToken();
-        if (string.IsNullOrWhiteSpace(token)) { return; }
+        if (!_backlog.HasToken)
+        {
+            var token = PromptForToken();
+            if (string.IsNullOrWhiteSpace(token)) { return; }
+            _backlog.UseToken(token);
+            // From here the shift uploads by itself; F5 only ever means "sooner".
+            _uploadTimer.Start();
+        }
 
-        ShowStatus($"Uploading {pending.Count} registrations…", isError: false);
+        var sending = Math.Min(_store.PendingUploadCount, UploadClient.MaxBatchSize);
+        ShowStatus($"Uploading {sending} registrations…", isError: false);
+        _ = DrainAsync(force: true);
+    }
+
+    private void OnUploadTick(object? sender, EventArgs args) => _ = DrainAsync(force: false);
+
+    /// <summary>
+    /// One attempt at the backlog, and whatever it produced put on screen.
+    ///
+    /// <para>Every path out of the uploader ends here, including the ones the
+    /// timer starts with nobody watching, which is why the catch is total. An
+    /// autonomous loop must not fail more quietly than the manual action it
+    /// replaced: an exception from a discarded task is swallowed by the runtime,
+    /// and the desk would go on ticking, uploading nothing, looking perfectly
+    /// healthy — the exact failure this loop exists to remove.</para>
+    /// </summary>
+    private async Task DrainAsync(bool force)
+    {
+        UploadAttempt attempt;
         try
         {
-            var response = await _uploader.UploadAsync(
-                _config.ApiBaseUrl, token, _config.DeskLabel, pending);
-
-            // Only rows the server actually accounted for are marked done. A
-            // rejected row stays pending so it is retried or chased by hand,
-            // which is what makes the reconciliation reach zero.
-            _store.MarkUploaded(response.Results
-                .Where(result => result.Status
-                    is Contracts.Badges.OfflineBadgeUploadStatus.Created
-                    or Contracts.Badges.OfflineBadgeUploadStatus.CreatedPendingApproval
-                    or Contracts.Badges.OfflineBadgeUploadStatus.AlreadyUploaded)
-                .Select(result => result.Sequence));
-
-            _rejections.Clear();
-            _rejections.AddRange(response.Results
-                .Where(result => result.Status == OfflineBadgeUploadStatus.Rejected)
-                .Reverse());
-
-            var summary =
-                $"Uploaded {response.Submitted}: {response.Created} approved, "
-                + $"{response.PendingApproval} awaiting approval, "
-                + $"{response.AlreadyUploaded} already known, {response.Rejected} rejected.";
-            if (_rejections.Count > 0)
-            {
-                // Name every refused row and why. An operator cannot correct what
-                // the console will not tell them.
-                summary += Environment.NewLine
-                    + string.Join(Environment.NewLine, _rejections.Select(
-                        result => $"  {result.Sequence}: {result.Message}"))
-                    + Environment.NewLine + "Press F3 to correct one.";
-            }
-            // A wrong badge key is the failure this desk cannot otherwise see: it
-            // prints happily for three days and every badge is refused at the
-            // gate with the same generic denial any garbage produces. The server
-            // echoes which key version IT holds, so a mismatch surfaces here, on
-            // the first upload, while the badges can still be reprinted.
-            var keyMismatch = response.ServerBadgeKeyVersion != _config.BadgeKeyVersion;
-            if (keyMismatch)
-            {
-                summary += Environment.NewLine
-                    + $"WARNING: this desk is keyed v{_config.BadgeKeyVersion}, the "
-                    + $"server holds v{response.ServerBadgeKeyVersion}. Badges printed "
-                    + "here will NOT scan. Stop and re-provision the key before "
-                    + "printing more.";
-            }
-
-            ShowStatus(summary, isError: response.Rejected > 0 || keyMismatch);
+            attempt = await _backlog.TryUploadAsync(force, _closing.Token);
         }
-        catch (Exception ex) when (ex is InvalidOperationException or HttpRequestException
-                                      or TaskCanceledException)
+        catch (Exception ex)
         {
-            ShowStatus($"Upload failed: {ex.Message}. Nothing was lost — retry.", isError: true);
+            // The uploader classifies everything the desk can meet in a hall.
+            // Anything left is a defect, and it is worth more on the operator's
+            // screen than in a task nobody awaited.
+            if (IsDisposed || Disposing) { return; }
+            ShowStatus($"Upload stopped unexpectedly: {ex.Message}", isError: true);
+            return;
         }
+
+        // The window can be closed while a batch is on the wire.
+        if (IsDisposed || Disposing) { return; }
+
+        switch (attempt.Kind)
+        {
+            case UploadAttemptKind.Uploaded when attempt.Response is { } response:
+                _reportedFailure = null;
+                ShowUploadReport(response);
+                break;
+
+            case UploadAttemptKind.Failed:
+                ReportFailure(attempt);
+                break;
+
+            case UploadAttemptKind.CredentialExpired:
+                // Reported in the server's own words: 401 means the pasted token
+                // has expired and 403 means the account cannot upload at all, and
+                // an operator handed a single canned sentence would chase the
+                // wrong one of those.
+                _reportedFailure = null;
+                _uploadTimer.Stop();
+                ShowStatus(
+                    $"The upload was refused: {attempt.FailureMessage}. Uploading is "
+                    + "paused — press F5 to paste a fresh token. Nothing was lost; "
+                    + "every registration is still recorded on this desk.",
+                    isError: true);
+                break;
+        }
+
         RefreshCounters();
+    }
+
+    /// <summary>Says a retry is coming, once per distinct failure. The live
+    /// countdown belongs to the counters line, which is rebuilt every tick by
+    /// design; this label holds the report an operator reads.</summary>
+    private void ReportFailure(UploadAttempt attempt)
+    {
+        if (_reportedFailure == attempt.FailureMessage) { return; }
+        _reportedFailure = attempt.FailureMessage;
+        ShowStatus(
+            $"Upload failed: {attempt.FailureMessage}. Nothing was lost — "
+            + $"retrying in {Describe(attempt.RetryIn)}.",
+            isError: true);
+    }
+
+    /// <summary>
+    /// The reconciliation report for one batch.
+    ///
+    /// <para>Rendered the same whether the operator pressed F5 or the timer did
+    /// it unattended. That is deliberate for the key-version warning below: a
+    /// desk keyed wrongly must learn it from whichever upload happens to be
+    /// first, and once uploads run by themselves that is usually not a human's.
+    /// </para>
+    /// </summary>
+    private void ShowUploadReport(OfflineBadgeBatchResponse response)
+    {
+        _rejections.Clear();
+        _rejections.AddRange(response.Results
+            .Where(result => result.Status == OfflineBadgeUploadStatus.Rejected)
+            .Reverse());
+
+        var summary =
+            $"Uploaded {response.Submitted}: {response.Created} approved, "
+            + $"{response.PendingApproval} awaiting approval, "
+            + $"{response.AlreadyUploaded} already known, {response.Rejected} rejected.";
+        if (_rejections.Count > 0)
+        {
+            // Name every refused row and why. An operator cannot correct what the
+            // console will not tell them. They are also held out of the automatic
+            // loop from here, so this text stays on screen to be acted on instead
+            // of being overwritten by the same rejection a few seconds later.
+            summary += Environment.NewLine
+                + string.Join(Environment.NewLine, _rejections.Select(
+                    result => $"  {result.Sequence}: {result.Message}"))
+                + Environment.NewLine + "Press F3 to correct one.";
+        }
+        // A wrong badge key is the failure this desk cannot otherwise see: it
+        // prints happily for three days and every badge is refused at the
+        // gate with the same generic denial any garbage produces. The server
+        // echoes which key version IT holds, so a mismatch surfaces here, on
+        // the first upload, while the badges can still be reprinted.
+        var keyMismatch = response.ServerBadgeKeyVersion != _config.BadgeKeyVersion;
+        if (keyMismatch)
+        {
+            summary += Environment.NewLine
+                + $"WARNING: this desk is keyed v{_config.BadgeKeyVersion}, the "
+                + $"server holds v{response.ServerBadgeKeyVersion}. Badges printed "
+                + "here will NOT scan. Stop and re-provision the key before "
+                + "printing more.";
+        }
+
+        ShowStatus(summary, isError: response.Rejected > 0 || keyMismatch);
     }
 
     private static string? PromptForToken()
@@ -596,10 +721,24 @@ public sealed class MainForm : Form
             Text = "Paste a Control Panel bearer token",
             FormBorderStyle = FormBorderStyle.FixedDialog,
             StartPosition = FormStartPosition.CenterParent,
-            ClientSize = new Size(560, 120),
+            ClientSize = new Size(560, 160),
             MinimizeBox = false,
             MaximizeBox = false,
         };
+        // Says what happens to it, because what happens to it is unusual: the
+        // desk keeps this token for the shift so uploads can run unattended, and
+        // still writes it nowhere. Being asked again after a restart is the
+        // visible half of that bargain, and an operator who is not told assumes
+        // something is broken.
+        var explain = new Label
+        {
+            Dock = DockStyle.Top,
+            AutoSize = false,
+            Height = 40,
+            Text = "Kept in memory for this shift only — it is never written to "
+                + "this machine, so it is asked for again after a restart.",
+        };
+        dialog.Controls.Add(explain);
         var input = new TextBox
         {
             Dock = DockStyle.Top,
@@ -624,15 +763,75 @@ public sealed class MainForm : Form
         _name.Select();
     }
 
-    private void RefreshCounters() =>
-        _counters.Text =
+    private void RefreshCounters()
+    {
+        var text =
             $"Registered this desk: {_store.Records.Count}   •   "
             + $"Waiting to upload: {_store.PendingUploadCount}   •   "
+            + $"Uploads: {DescribeUploads()}   •   "
             + $"Range {_config.SequenceRangeStart}–{_config.SequenceRangeEnd}";
+
+        // Assigned only when it has changed. This runs on every tick, and a Label
+        // repaints on every assignment even when the text is identical.
+        if (!string.Equals(_counters.Text, text, StringComparison.Ordinal))
+        {
+            _counters.Text = text;
+        }
+    }
+
+    /// <summary>
+    /// What the uploader is doing, in the line the operator already watches.
+    ///
+    /// <para>The honest answer to "is this desk uploading?", which a desk that
+    /// uploads by itself has to be able to give at a glance. Deliberately NOT in
+    /// the status label: that one holds the report being read to correct refused
+    /// rows, and a countdown rewritten every second would scroll it away.</para>
+    /// </summary>
+    private string DescribeUploads()
+    {
+        if (_backlog.IsUploading) { return "sending…"; }
+
+        var pending = _store.PendingUploadCount;
+        if (pending == 0) { return "up to date"; }
+        if (!_backlog.HasToken) { return "paused — press F5 to paste a token"; }
+        if (_backlog.HeldBackCount >= pending)
+        {
+            return $"{_backlog.HeldBackCount} rejected — press F3 to correct";
+        }
+
+        var wait = _backlog.RetryIn;
+        return wait > TimeSpan.Zero ? $"retrying in {Describe(wait)}" : "sending…";
+    }
+
+    /// <summary>A wait an operator can read at a glance: seconds under a minute,
+    /// minutes and seconds above it.</summary>
+    private static string Describe(TimeSpan wait) =>
+        wait < TimeSpan.FromMinutes(1)
+            ? $"{Math.Max(1, (int)Math.Ceiling(wait.TotalSeconds))}s"
+            : $"{(int)wait.TotalMinutes}:{wait.Seconds:D2}";
 
     private void ShowStatus(string message, bool isError)
     {
         _status.Text = message;
         _status.ForeColor = isError ? Color.Firebrick : Color.DarkGreen;
+    }
+
+    /// <summary>Stops the loop and cuts an upload in flight.
+    ///
+    /// <para>Closing the window mid-batch loses nothing. The batch is idempotent
+    /// by sequence, so any row the server took but never acknowledged is reported
+    /// as AlreadyUploaded the next time the desk sends it, and the local file —
+    /// which is the record that a badge was handed out — was written before the
+    /// badge was ever printed.</para></summary>
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _uploadTimer.Stop();
+            _uploadTimer.Dispose();
+            _closing.Cancel();
+            _closing.Dispose();
+        }
+        base.Dispose(disposing);
     }
 }

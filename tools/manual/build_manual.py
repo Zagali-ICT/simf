@@ -49,16 +49,12 @@ ACCESS_TEXT = {
                       "ar": "أي مستخدم مسجّل الدخول"},
 }
 
-# The only screens the Arabic volume may show in English: they render once per
-# account, during sign-in, and the account that produced them is spent. Every
-# OTHER missing Arabic capture is a fault, not a fallback.
-ENGLISH_ONLY = {
-    "cp-login-enrol-2fa-qr",
-    "cp-login-password-change-empty",
-    "cp-login-password-change-filled",
-    "cp-login-totp-empty",
-    "cp-login-filled",
-}
+# Screens the Arabic volume is allowed to show in English. It is EMPTY, and that
+# is the point: the sign-in screens render once per account and were the last
+# English images in the Arabic book, so the documentation database was recreated
+# and they were captured again with the interface switched to Arabic BEFORE
+# signing in. Any missing Arabic capture is now a fault, not a fallback.
+ENGLISH_ONLY = set()
 
 ACCENT = RGBColor(0x1B, 0x3A, 0x5C)
 MUTED = RGBColor(0x55, 0x61, 0x70)

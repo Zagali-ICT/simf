@@ -146,10 +146,20 @@ public sealed class DeskStore
         }
     }
 
-    /// <summary>The not-yet-uploaded registrations, as the upload contract.</summary>
-    public List<OfflineBadgeRegistration> BuildPendingBatch(int max) =>
+    /// <summary>
+    /// The not-yet-uploaded registrations, as the upload contract.
+    ///
+    /// <para><paramref name="holdBack"/> names sequences to leave out — the rows
+    /// the server has already refused, which the background uploader keeps out
+    /// of its own attempts until a human has corrected them. They are filtered
+    /// BEFORE the batch is capped, so a refused row never occupies a slot that a
+    /// later, perfectly good registration needed.</para>
+    /// </summary>
+    public List<OfflineBadgeRegistration> BuildPendingBatch(
+        int max, IReadOnlySet<long>? holdBack = null) =>
         _records
             .Where(record => !record.Uploaded)
+            .Where(record => holdBack is null || !holdBack.Contains(record.Sequence))
             .Take(max)
             .Select(record => new OfflineBadgeRegistration
             {

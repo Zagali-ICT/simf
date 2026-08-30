@@ -2,9 +2,9 @@
   {
     "slug": "login",
     "state": "empty",
-    "lang": "en",
+    "lang": "ar",
     "url": "http://localhost:5158/login",
-    "file": "cp-login-empty.png",
+    "file": "cp-login-empty-ar.png",
     "consoleErrors": [],
     "failedRequests": [],
     "horizontalOverflow": false
@@ -12,9 +12,9 @@
   {
     "slug": "login",
     "state": "filled",
-    "lang": "en",
+    "lang": "ar",
     "url": "http://localhost:5158/login",
-    "file": "cp-login-filled.png",
+    "file": "cp-login-filled-ar.png",
     "consoleErrors": [],
     "failedRequests": [],
     "horizontalOverflow": false
@@ -22,9 +22,9 @@
   {
     "slug": "login-enrol-2fa",
     "state": "qr",
-    "lang": "en",
+    "lang": "ar",
     "url": "http://localhost:5158/login/enrol-2fa",
-    "file": "cp-login-enrol-2fa-qr.png",
+    "file": "cp-login-enrol-2fa-qr-ar.png",
     "consoleErrors": [],
     "failedRequests": [],
     "horizontalOverflow": false
@@ -32,9 +32,9 @@
   {
     "slug": "login-enrol-2fa",
     "state": "recovery-codes",
-    "lang": "en",
+    "lang": "ar",
     "url": "http://localhost:5158/login/enrol-2fa",
-    "file": "cp-login-enrol-2fa-recovery-codes.png",
+    "file": "cp-login-enrol-2fa-recovery-codes-ar.png",
     "consoleErrors": [],
     "failedRequests": [],
     "horizontalOverflow": false
@@ -42,9 +42,9 @@
   {
     "slug": "dashboard",
     "state": "default",
-    "lang": "en",
+    "lang": "ar",
     "url": "http://localhost:5158/",
-    "file": "cp-dashboard-default.png",
+    "file": "cp-dashboard-default-ar.png",
     "consoleErrors": [],
     "failedRequests": [],
     "horizontalOverflow": false

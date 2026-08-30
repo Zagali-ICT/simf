@@ -268,4 +268,38 @@ public sealed class DeskStoreTests : IDisposable
         store.Records.Should().BeEmpty();
         store.PendingUploadCount.Should().Be(0);
     }
+
+    [Fact]
+    public void A_held_back_row_does_not_occupy_a_slot_a_later_registration_needed()
+    {
+        // The background uploader holds back the rows the server refused, so they
+        // are not sent again on every tick to be refused again. They have to be
+        // filtered BEFORE the batch is capped: dropped afterwards, a refused row
+        // at the head of the queue would eat a slot and the batch would go out
+        // short — at the extreme a whole cap of refused rows would upload nothing
+        // at all while perfectly good registrations sat behind them.
+        var store = new DeskStore(_path);
+        store.Append(Registration(3_000_001));
+        store.Append(Registration(3_000_002));
+
+        var batch = store.BuildPendingBatch(1, new HashSet<long> { 3_000_001 });
+
+        batch.Should().ContainSingle()
+            .Which.Sequence.Should().Be(
+                3_000_002,
+                "the held-back row is skipped and the cap is spent on a row that "
+                + "can actually be uploaded");
+    }
+
+    [Fact]
+    public void A_batch_holds_nothing_back_when_it_is_not_asked_to()
+    {
+        // F5 sends everything pending, refused rows included: a person pressing it
+        // is a person saying to try anyway.
+        var store = new DeskStore(_path);
+        store.Append(Registration(3_000_001));
+        store.Append(Registration(3_000_002));
+
+        store.BuildPendingBatch(500).Should().HaveCount(2);
+    }
 }

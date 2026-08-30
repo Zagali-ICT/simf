@@ -183,6 +183,13 @@ def chapter_getting_in():
                  "تطبيق الجوال ولا على الموقع العام."),
 
             h2("Recovery codes", "رموز الاسترداد"),
+            figure("cp-login-enrol-2fa-recovery-codes",
+                   "The ten recovery codes, shown once and never again. They are "
+                   "obscured here because they were real when this was taken — a "
+                   "manual that printed a working set would be handing them out.",
+                   "رموز الاسترداد العشرة، تُعرض مرة واحدة ولا تظهر بعدها أبدًا. وقد "
+                   "حُجبت هنا لأنها كانت حقيقية وقت التقاط الصورة — فالدليل الذي "
+                   "يطبع مجموعة صالحة إنما يوزّعها."),
             p("When an account pairs its authenticator the system displays ten "
               "single-use recovery codes. They are shown once and never again. "
               "Print them or store them somewhere safe: they are what gets the "
@@ -513,9 +520,20 @@ def chapter_profile_image():
                 "من مسؤول، في نموذج تعديل حساب زائر أو شريك.",
                 "من مكتب التسجيل، ضمن معالج الإنشاء، إلى جانب وثيقة الهوية.",
             ]),
-            figure("cp-account-profile-default",
-                   "My profile, where an account sets its own picture.",
-                   "صفحة ملفي الشخصي، حيث يضبط الحساب صورته."),
+            figure("cp-account-profile-avatar-empty",
+                   "The avatar card before a picture is set: a placeholder, the "
+                   "accepted formats and the size ceiling, and the file picker.",
+                   "بطاقة الصورة قبل ضبط أي صورة: عنصر نائب، والصيغ المقبولة والحد "
+                   "الأقصى للحجم، وأداة اختيار الملف."),
+            figure("cp-account-profile-avatar-cropper",
+                   "Choosing a file opens the cropper straight away. The frame is "
+                   "square because the stored picture is square; there is no "
+                   "separate upload button, and nothing is sent until this is saved.",
+                   "يفتح اختيار الملف أداة القص فورًا. والإطار مربّع لأن الصورة "
+                   "المحفوظة مربّعة؛ ولا يوجد زر رفع منفصل، ولا يُرسل شيء حتى يُحفظ هذا."),
+            figure("cp-account-profile-avatar-set",
+                   "The picture in place, with the option to remove it.",
+                   "الصورة بعد ضبطها، مع خيار إزالتها."),
 
             h2("What the system accepts", "ما يقبله النظام"),
             table(
@@ -542,6 +560,16 @@ def chapter_profile_image():
                  "الخادم، فيظهر الفشل بعد الانتظار لا قبله."),
 
             h2("Replacing and removing", "الاستبدال والحذف"),
+            figure("cp-admin-admins-avatar-thumbnail",
+                   "The difference in a list: an account with a picture shows a "
+                   "thumbnail, one without shows a tile of its initials. An empty "
+                   "cell therefore means no picture was ever set, not a picture "
+                   "that failed to load.",
+                   "الفارق كما يظهر في القائمة: الحساب الذي له صورة يعرض صورة "
+                   "مصغّرة، والذي لا صورة له يعرض مربعًا بالأحرف الأولى من اسمه. "
+                   "فالخانة الفارغة تعني أنه لم تُضبط صورة قط، لا أن صورة أخفقت "
+                   "في التحميل."),
+
             p("Uploading a new picture retires the previous one in the same "
               "step; there is never more than one active picture on an account. "
               "Where an account has no picture the Control Panel shows a tile "

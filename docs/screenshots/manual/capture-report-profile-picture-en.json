@@ -1,0 +1,42 @@
+[
+  {
+    "slug": "account-profile",
+    "state": "avatar-empty",
+    "lang": "en",
+    "url": "http://localhost:5158/account/profile",
+    "file": "cp-account-profile-avatar-empty.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "account-profile",
+    "state": "avatar-cropper",
+    "lang": "en",
+    "url": "http://localhost:5158/account/profile",
+    "file": "cp-account-profile-avatar-cropper.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "account-profile",
+    "state": "avatar-set",
+    "lang": "en",
+    "url": "http://localhost:5158/account/profile",
+    "file": "cp-account-profile-avatar-set.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  },
+  {
+    "slug": "admin-admins",
+    "state": "avatar-thumbnail",
+    "lang": "en",
+    "url": "http://localhost:5158/admin/admins",
+    "file": "cp-admin-admins-avatar-thumbnail.png",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "horizontalOverflow": false
+  }
+]
