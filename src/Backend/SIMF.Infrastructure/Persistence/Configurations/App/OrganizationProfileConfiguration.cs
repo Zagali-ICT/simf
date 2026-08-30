@@ -122,8 +122,15 @@ internal sealed class OrganizationProfileConfiguration
             TitleArabic = "الملتقى البحري السعودي الدولي",
             Version = "1.0.0",
             Status = ForumStatus.Open,
-            EventStartDate = new DateTime(2026, 1, 1, 0, 0, 0),
-            EventEndDate = new DateTime(2026, 4, 30, 0, 0, 0),
+            // The REAL edition, owner-confirmed 2026-08-30. These were
+            // 2026-01-01..04-30 - a placeholder the seeder then rewrote on every
+            // boot, so the migration shipped dates it knew were wrong and a
+            // second mechanism existed to correct them. Worse, the correction
+            // matched on those exact placeholder values, so regenerating the
+            // migration with any other default would have silently stopped it
+            // firing and left the wrong range live. One value, one place.
+            EventStartDate = OrganizationProfile.DefaultEventStart.ToDateTime(TimeOnly.MinValue),
+            EventEndDate = OrganizationProfile.DefaultEventEnd.ToDateTime(TimeOnly.MinValue),
             LocationText = "Saudi Arabia",
             LocationTextArabic = "السعودية",
             RegistrationSuccessMessage = SiteSettingKeys.DefaultRegistrationMessageEn,

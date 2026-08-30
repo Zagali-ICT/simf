@@ -13,6 +13,27 @@ public sealed class OrganizationProfile : BaseAuditEntity
     // In SIMF.Common so the Control Panel, which cannot reference the domain, hits the same row.
     public static readonly Guid SingletonId = SIMF.Common.OrganizationProfileIds.Singleton;
 
+    /// <summary>The event dates a fresh database starts with, owner-confirmed
+    /// 2026-08-30. They live HERE rather than in either consumer because two
+    /// need them and must agree: the seeded singleton
+    /// (<c>OrganizationProfileConfiguration</c>) and the landing hero's date
+    /// label (<c>IdentitySeeder</c>, formatted rather than written as a
+    /// literal).
+    ///
+    /// <para>They used to disagree by design. The migration seeded
+    /// 2026-01-01..04-30 and the seeder overwrote it on every boot with the real
+    /// range, matching on those exact placeholder values - so regenerating the
+    /// migration with any other default would have silently stopped the
+    /// correction firing and left the wrong dates live, with nothing to say
+    /// so.</para>
+    ///
+    /// <para>The row stays CP-editable; these are the starting values, not a
+    /// rule.</para></summary>
+    public static readonly DateOnly DefaultEventStart = new(2026, 11, 23);
+
+    /// <summary>The closing day of the edition. See <see cref="DefaultEventStart"/>.</summary>
+    public static readonly DateOnly DefaultEventEnd = new(2026, 11, 25);
+
     public OrganizationProfile()
     {
         Id = SingletonId;
