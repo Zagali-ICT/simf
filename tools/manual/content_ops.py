@@ -152,8 +152,8 @@ def chapter_deployment():
                 "يتحقق من الجهاز الهدف مقابل اسمين: الاسم الذي تتوقّعه تلك "
                 "المهمة، والجهاز المثبَّت للبيئة الأخرى وهو المحظور.",
                 "ثم لكل تطبيق بالتتابع — واجهة البرمجة أولًا والحافة أخيرًا — "
-                "يوقف الموقع ومجمّعه، وينسخ الملفات، ثم يعيد تشغيلهما ويتحقق من "
-                "بلوغهما حالة التشغيل.",
+                "يوقف الموقع ومجمّعه، وينسخ الملفات نسخًا مطابقًا إلى موضعها، ثم "
+                "يعيد تشغيلهما ويتحقق من بلوغهما حالة التشغيل.",
                 "بعد ذلك يشغّل المشغّل نصوص تهيئة ذلك الخادم بصلاحيات المسؤول.",
                 "ثم يعيد المشغّل تشغيل IIS. ولا تكفي إعادة تدوير المجمّع: فعملية "
                 "العامل ترث بيئتها من الخدمة التي شغّلتها، فيحتفظ المجمّع المُعاد "
@@ -411,7 +411,7 @@ def api_variable_blocks():
              "empty", "فارغ", R_EN, R_AR),
             ("SIMF_API_ConnectionStrings__SimfAppDb",
              "Everything else — profiles, programme, gates, meetings.",
-             "كل ما عدا ذلك — الملفات والبرنامج والبوابات والاجتماعات.",
+             "كل ما عدا ذلك — الملفات الشخصية والبرنامج والبوابات والاجتماعات.",
              "empty", "فارغ", R_EN, R_AR),
         ]),
         note("Both are required. The application throws on the first database "
@@ -678,7 +678,7 @@ def api_variable_blocks():
              "true", "true", "true", "true"),
             ("SIMF_API_IdentityLifecycle__PasswordMaxAgeDays",
              "Expire a password after this many days. Zero means never.",
-             "انتهاء صلاحية كلمة المرور بعد هذا العدد من الأيام. والصفر يعني أبدًا.",
+             "انتهاء صلاحية كلمة المرور بعد هذا العدد من الأيام. والصفر يعني بلا انتهاء.",
              "0", "0", "0", "0"),
             ("SIMF_API_IdentityLifecycle__PasswordHistoryCount",
              "How many previous passwords may not be reused. Zero disables it.",
@@ -686,7 +686,7 @@ def api_variable_blocks():
              "0", "0", "0", "0"),
             ("SIMF_API_IdentityLifecycle__DormantAccountDisableDays",
              "Disable an account unused for this long. Zero means never.",
-             "تعطيل الحساب غير المستخدم هذه المدة. والصفر يعني أبدًا.",
+             "تعطيل الحساب غير المستخدم هذه المدة. والصفر يعني ألّا يُعطَّل أبدًا.",
              "0", "0", "0", "0"),
             ("SIMF_API_DeviceKey__RequireStepUpForEnrol",
              "Demand a second factor before a device key is enrolled.",
@@ -1003,8 +1003,11 @@ def chapter_observations():
                      "on for that account"],
                 ],
                 [
-                    ["عدة مراجع صفحات تصف حارس الصفحة بأنه تحقق من دور المسؤول",
-                     "الصفحات محروسة بصلاحية مسمّاة لا بدور"],
+                    ["ثلاثة عشر مرجعَ صفحةٍ كانت تصف حارس الصفحة بأنه تحقق من "
+                     "دور المسؤول — لأن القالب الذي نُسخت عنه كان يصفه كذلك، "
+                     "ولهذا ظهر خطأ واحد ثلاث عشرة مرة",
+                     "الصفحات محروسة بصلاحية مسمّاة لا بدور. وصار القالب يقول "
+                     "ذلك ويبيّن السبب"],
                     ["دليل المسؤول يقول إن إجراء التعديل في قائمة المسؤولين "
                      "عنصر نائب لم يُبنَ",
                      "التعديل يفتح محرّر أدوار عاملًا ويحفظ عبر خدمة حيّة"],

@@ -55,7 +55,7 @@ def chapter_content():
                      "هنا", "لا"],
                     ["اللافتات", "نعم — الشريط المتحرك في الشاشة الرئيسية "
                      "للتطبيق", "لا"],
-                    ["المركز الإعلامي", "نعم — معرض الصور", "لا"],
+                    ["المركز الإعلامي", "نعم — معرض الصور والفيديوهات", "لا"],
                     ["الأخبار", "نعم — قائمة الأخبار وكل مقال", "لا — بطاقات "
                      "أخبار الموقع مثبَّتة داخل الموقع نفسه"],
                     ["الشركاء الإعلاميون", "نعم", "لا"],
@@ -138,8 +138,8 @@ def chapter_content():
               "كتلة؛ ولا تُعِد تسمية مفتاحها ما لم يكن التطبيق يتغيّر معها."),
             note("The value is shown as plain text. Typing HTML into it puts the "
                  "tags on the screen; it does not format anything.",
-                 "تُعرض القيمة نصًّا صِرفًا. فكتابة HTML فيها يضع الوسوم على الشاشة "
-                 "ولا ينسّق شيئًا."),
+                 "تُعرض القيمة نصًّا صِرفًا. فكتابة HTML فيها تضع الوسوم على الشاشة "
+                 "ولا تنسّق شيئًا."),
             p("The app re-reads a block every time the screen that uses it is "
               "opened, and again on pull-to-refresh, and keeps nothing between "
               "visits. So an edit shows up the next time a reader opens that "

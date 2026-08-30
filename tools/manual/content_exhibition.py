@@ -175,7 +175,7 @@ def chapter_exhibition():
             p("Linking checks three things before it agrees, and all three "
               "refusals are deliberate rather than defensive.",
               "يتحقق الربط من ثلاثة أمور قبل أن يوافق، وحالات الرفض الثلاث "
-              "مقصودة لا وقائية فحسب."),
+              "مقصودة لا وقائية."),
             table(
                 ["The refusal", "What it means", "What to do"],
                 ["الرفض", "ماذا يعني", "ما العمل"],
@@ -218,7 +218,7 @@ def chapter_exhibition():
                     ["الحساب مرتبط بالفعل",
                      "هذا الشخص يحمل عضوية سارية لدى عارض آخر. فالحساب الواحد "
                      "يتبع عارضًا واحدًا في الوقت الواحد، وقاعدة البيانات تفرض ذلك",
-                     "ألغِ العضوية السابقة ثم اربط — أو استخدم حسابًا آخر"],
+                     "اسحب العضوية السابقة ثم اربط — أو استخدم حسابًا آخر"],
                 ]),
 
             note("The most common failure in this whole chapter: an account "
