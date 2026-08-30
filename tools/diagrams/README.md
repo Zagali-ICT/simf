@@ -1,6 +1,6 @@
 # SIMF engineering diagrams
 
-Five sheets, each drawn in an established notation rather than to taste, and
+Six sheets, each drawn in an established notation rather than to taste, and
 each fact traceable to a named source. Sheet 1's outputs are **not** in the
 repository: LLD-003 v1.2 replaced that sheet with sheet 4 and the files were
 deleted in `02ca3c8f4`. Its script is kept and still runs, so re-running it
@@ -13,6 +13,7 @@ writes the `.svg` back; delete it again unless a document has asked for it.
 | System and data flow | Data flow diagram, Gane and Sarson | `docs/diagrams/SIMF-Fig3-Data-Flow.{svg,png}` |
 | Target tier separation | UML deployment diagram | `docs/diagrams/SIMF-Fig4-Target-Tier-Separation.{svg,png}` |
 | Security areas and egress | UML deployment diagram | `docs/diagrams/SIMF-Fig5-Security-Areas-And-Egress.{svg,png}` |
+| Phase one, on-site services | UML deployment diagram | `docs/diagrams/SIMF-Fig6-Phase-One-Security-Areas.{svg,png}` |
 
 Sheet 4 is the same notation as sheet 1 and a different estate, not a redraw of
 it. Sheet 1 puts the web, API and Control Panel hosts together in one
@@ -32,6 +33,16 @@ firewalls. Those four are owner decisions of 2026-08-20. The acronyms HSA and
 SSA are printed bare, with no expansion, because none was supplied and inventing
 one would put invented wording in front of the customer.
 
+**Sheet 6 is phase one**, and stands to sheet 5 as sheet 5 stands to sheet 4. It
+is a customer requirement of 2026-08-30 and moves five things: the API server
+out of SSA and into HSA, so it has no internet path; the AI from a cloud
+provider to an on-site **LLM server** in HSA, reached over an OpenAI-compatible
+API; mail from an external relay to an on-site **mail server** in HSA; the file
+store from a directory on a share to **MinIO** object storage in HSA, reached
+over the S3 API; and the one remaining internet call, the YouTube caption fetch,
+from the API to the **Control Panel**, which is the tier that has internet
+access. CP, WEB and the mobile edge stay in the presentation zone.
+
 Sheet 4 is the deployment figure **as published in LLD-003 v1.2** and its files
 are held at those bytes; sheet 5 is what v1.3 carries in its place. One
 consequence, because the zone typography changed with sheet 5 and lives in the
@@ -40,7 +51,7 @@ committed sheet 4** - it renders the same artwork with the newer zone name
 styling. That is expected. Do not commit the result unless a document has asked
 for a re-issued sheet 4.
 
-The `Fig1` to `Fig5` in the filenames identify the sheet, not its figure
+The `Fig1` to `Fig6` in the filenames identify the sheet, not its figure
 number. **The artwork carries no figure number**: each document numbers its own
 figures in order of appearance and states that number in the caption, so the same
 sheet is Figure 1 in one document and Figure 3 in another without any clash. Do
@@ -56,6 +67,8 @@ reissued at a new version.
 | `SIMF-HLD-004-MoD-HLD-External-v1.2` | **sheet 5** | sheet 2 | sheet 3 |
 | `SIMF-LLD-003-Solution-Design-Document-v1.2` | sheet 4 | sheet 2 | sheet 3 |
 | `SIMF-LLD-003-Solution-Design-Document-v1.3` | **sheet 5** | sheet 2 | sheet 3 |
+| `SIMF-HLD-004-MoD-HLD-External-v1.3` | **sheet 6** | sheet 2 | sheet 3 |
+| `SIMF-LLD-003-Solution-Design-Document-v1.4` | **sheet 6** | sheet 2 | sheet 3 |
 
 In the HLD the three figures sit together at the front, sized to a common
 height; in the LLD they sit at 2.1.1, 2.2 and 7.1, sized to a common width. A
@@ -74,6 +87,7 @@ python tools/diagrams/fig2_component.py
 python tools/diagrams/fig3_dataflow.py
 python tools/diagrams/fig4_tier_separation.py
 python tools/diagrams/fig5_security_areas.py
+python tools/diagrams/fig6_phase_one.py
 ```
 
 Each script writes the `.svg` only. Render the `.png` with headless Chrome. The
@@ -116,7 +130,8 @@ Start-Process -FilePath 'C:\Program Files\Google\Chrome\Application\chrome.exe' 
 ```
 
 Sheet sizes: figure 1 is 1660 x 1020, figure 2 is 1660 x 1220, figure 3 is
-1660 x 1200, figure 4 is 1660 x 1310, figure 5 is 1940 x 1682. At scale factor 2
+1660 x 1200, figure 4 is 1660 x 1310, figure 5 is 1940 x 1682,
+figure 6 is 1940 x 1706. At scale factor 2
 the PNG is twice that,
 which is enough for a full-page landscape print.
 
@@ -169,6 +184,9 @@ Taken from the published notation guidance, not from preference:
 | 5 | The HSA and SSA security areas, the API load balancer, the internet zone, and the two outbound calls | owner decisions of 2026-08-20 |
 | 5 | YouTube caption host `youtubei.googleapis.com` | `PlayerUrl` in `SIMF.Infrastructure/Programme/YoutubeTranscriptService.cs` |
 | 5 | Gemini host `generativelanguage.googleapis.com` | `BaseUrl` in `SIMF.Infrastructure/Ai/AiOptions.cs` |
+| 6 | Everything sheet 5 carries, except where phase one moves it | sheet 5, itself sourced as above |
+| 6 | API into HSA, on-site LLM and mail servers, MinIO, YouTube from the CP | customer requirement of 2026-08-30 |
+| 6 | SMTP port 587 | `Port` default in `SIMF.Common/Options/EmailOptions.cs` |
 
 The mobile edge and the file server carry **no node count and no specification**
 on sheets 4 and 5, and neither does sheet 5's API load balancer: the customer
