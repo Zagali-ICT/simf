@@ -103,8 +103,8 @@
         },
         {
           "t": "p",
-          "en": "A newly created account is issued a bootstrap password that the system insists is replaced. On the first sign-in the Control Panel therefore does not go to the dashboard: it opens a dialog over the sign-in page asking for a new password twice. Until that is done the account cannot get in.",
-          "ar": "يُمنح الحساب المُنشأ حديثًا كلمة مرور أولية يُصرّ النظام على استبدالها. لذلك لا تنتقل لوحة التحكم عند أول تسجيل دخول إلى لوحة المعلومات، بل تفتح نافذة فوق صفحة الدخول تطلب كلمة مرور جديدة مرتين. ولا يمكن للحساب الدخول قبل إتمام ذلك."
+          "en": "The first account on a new installation — the super-administrator the system seeds for itself — is given a temporary password that it insists is replaced. So its first sign-in does not reach the dashboard: a dialog opens over the sign-in page asking for a new password twice, and until that is done the account cannot get in. An administrator created later from the Control Panel never sees this, because that account is issued no password at all: it sets its own from the invitation email, as the next chapter describes.",
+          "ar": "أول حساب في التثبيت الجديد — وهو المسؤول الأعلى الذي يزرعه النظام لنفسه — يُمنح كلمة مرور مؤقتة يُصرّ على استبدالها. فلا يصل أول تسجيل دخول له إلى لوحة المعلومات: بل تُفتح نافذة فوق صفحة الدخول تطلب كلمة مرور جديدة مرتين، ولا يمكن للحساب الدخول قبل إتمام ذلك. أما المسؤول الذي يُنشأ لاحقًا من لوحة التحكم فلا يرى هذا، لأن حسابه لا يُمنح كلمة مرور إطلاقًا: بل يضبطها بنفسه من رسالة الدعوة، كما يصف الفصل التالي."
         },
         {
           "t": "figure",
@@ -187,8 +187,8 @@
         },
         {
           "t": "p",
-          "en": "When an account pairs its authenticator the system displays ten single-use recovery codes. They are shown once and never again. Print them or store them somewhere safe: they are what gets the account back in when the phone is lost. If they are lost as well, an administrator must reset the account's second factor from Reset user 2FA, which is covered later in this manual.",
-          "ar": "عند إقران الحساب لتطبيق المصادقة يعرض النظام عشرة رموز استرداد يُستخدم كل منها مرة واحدة. تُعرض مرة واحدة فقط ولا تظهر بعدها أبدًا. اطبعها أو احفظها في مكان آمن، فهي وسيلة استعادة الحساب عند فقدان الهاتف. وإذا فُقدت أيضًا، فيجب على مسؤول إعادة تعيين العامل الثاني للحساب من صفحة إعادة تعيين المصادقة الثنائية، وهو ما يتناوله هذا الدليل لاحقًا."
+          "en": "When an account pairs its authenticator the system displays ten single-use recovery codes. They are shown once and never again. Print them or store them somewhere safe: they are what gets the account back in when the phone is lost. If they are lost as well, another administrator resets the account's second factor from Reset user 2FA, which is covered later in this manual. That page cannot reset your own account, and it cannot reset an account holding the Administrator role — the super-administrator's authenticator is re-paired through configuration instead.",
+          "ar": "عند إقران الحساب لتطبيق المصادقة يعرض النظام عشرة رموز استرداد يُستخدم كل منها مرة واحدة. تُعرض مرة واحدة فقط ولا تظهر بعدها أبدًا. اطبعها أو احفظها في مكان آمن، فهي وسيلة استعادة الحساب عند فقدان الهاتف. وإذا فُقدت أيضًا، أعاد مسؤولٌ آخر تعيين العامل الثاني للحساب من صفحة إعادة تعيين المصادقة الثنائية، وهو ما يتناوله هذا الدليل لاحقًا. ولا تستطيع تلك الصفحة إعادة تعيين حسابك أنت، ولا حسابًا يحمل دور Administrator — إذ يُعاد ربط مصادقة المسؤول الأعلى عبر الإعدادات بدلًا من ذلك."
         },
         {
           "t": "h2",
@@ -308,8 +308,8 @@
         },
         {
           "t": "p",
-          "en": "An administrator is somebody who signs in to this Control Panel. Open the menu group Access control, choose Admins, and use the Add button on the grid toolbar. The form is deliberately short — an administrator has no visitor profile, no badge and no identity documents.",
-          "ar": "المسؤول هو من يسجّل الدخول إلى لوحة التحكم هذه. افتح مجموعة التحكم في الوصول واختر المسؤولون ثم استخدم زر الإضافة في شريط أدوات الجدول. والنموذج قصير عن قصد — فالمسؤول ليس له ملف زائر ولا شارة ولا وثائق هوية."
+          "en": "An administrator is somebody who signs in to this Control Panel. Open the menu group Access control, choose Admins, and use the Add button on the grid toolbar. The form is deliberately short — an administrator fills in no visitor profile and no identity documents. A bare profile and a badge are created when the account is approved, as they are for every account, but nothing on this form asks for them.",
+          "ar": "المسؤول هو من يسجّل الدخول إلى لوحة التحكم هذه. افتح مجموعة التحكم في الوصول واختر المسؤولون ثم استخدم زر الإضافة في شريط أدوات الجدول. والنموذج قصير عن قصد — فالمسؤول لا يملأ ملف زائر ولا وثائق هوية. ويُنشأ له ملف مجرّد وشارة عند اعتماد الحساب، كما يحدث لكل حساب، لكن لا شيء في هذا النموذج يطلبهما."
         },
         {
           "t": "figure",
@@ -430,8 +430,8 @@
         },
         {
           "t": "p",
-          "en": "A visitor is an attendee. The form is the on-site registration desk wizard, and it is long because it captures the identity the gate will check. It is organised into numbered sections; the fields that appear depend on two choices — the profile type, and whether the visitor is Saudi.",
-          "ar": "الزائر هو أحد الحضور. والنموذج هو معالج مكتب التسجيل في الموقع، وهو طويل لأنه يلتقط الهوية التي ستتحقق منها البوابة. وهو مقسّم إلى أقسام مرقّمة، وتتوقف الحقول الظاهرة على اختيارين: نوع الملف، وما إذا كان الزائر سعوديًا."
+          "en": "A visitor is an attendee. The form is the on-site registration desk wizard, and it is long because it captures the identity the gate will check. It is organised into numbered sections. What changes which fields appear is whether the visitor is Saudi and, for a non-Saudi, whether an Iqama or a passport is being recorded. The profile type chosen first sets the tier and the badge colour, not the shape of the form.",
+          "ar": "الزائر هو أحد الحضور. والنموذج هو معالج مكتب التسجيل في الموقع، وهو طويل لأنه يلتقط الهوية التي ستتحقق منها البوابة. وهو مقسّم إلى أقسام مرقّمة. والذي يغيّر الحقول الظاهرة هو كون الزائر سعوديًّا، ثم — لغير السعودي — أيُسجَّل رقم إقامة أم جواز سفر. أما نوع الملف المختار أولًا فيحدّد الفئة ولون الشارة، لا شكل النموذج."
         },
         {
           "t": "figure",
@@ -445,8 +445,8 @@
           "t": "figure",
           "image": "cp-admin-visitors-add-top",
           "caption": {
-            "en": "The wizard opens on the profile type, which decides much of what follows.",
-            "ar": "يفتح المعالج على نوع الملف، وهو ما يحدّد كثيرًا مما يليه."
+            "en": "The wizard opens on the profile type, which sets the tier and the badge colour.",
+            "ar": "يفتح المعالج على نوع الملف، وهو يحدّد الفئة ولون الشارة."
           }
         },
         {
@@ -488,13 +488,13 @@
               ],
               [
                 "Full name (Arabic)",
-                "No",
+                "Yes",
                 "50 characters",
                 "The form allows 128 characters; the server rejects anything over 50. Keep to 50."
               ],
               [
                 "Full name (English)",
-                "No",
+                "Yes",
                 "50 characters",
                 "Same 128-versus-50 mismatch as the Arabic name."
               ],
@@ -526,13 +526,13 @@
               ],
               [
                 "الاسم الكامل (عربي)",
-                "لا",
+                "نعم",
                 "50 حرفًا",
                 "يسمح النموذج بـ128 حرفًا، لكن الخادم يرفض ما يتجاوز 50. فالتزم بـ50."
               ],
               [
                 "الاسم الكامل (إنجليزي)",
-                "لا",
+                "نعم",
                 "50 حرفًا",
                 "الاختلاف نفسه بين 128 و50 كما في الاسم العربي."
               ],
@@ -582,19 +582,19 @@
             "en": [
               [
                 "Saudi national ID",
-                "No",
+                "Yes, for a Saudi visitor",
                 "10 digits",
                 "Saudi visitors. Must start with 1 and pass the check-digit test; a number that fails it is refused."
               ],
               [
                 "Iqama number",
-                "No",
+                "One of the two, for a non-Saudi visitor",
                 "10 digits",
                 "Non-Saudi residents. Must start with 2 and pass the same check-digit test."
               ],
               [
                 "Passport number",
-                "No",
+                "One of the two, for a non-Saudi visitor",
                 "20 characters",
                 "Length only — the desk applies no format check, so a passport the mobile application would reject is accepted here."
               ]
@@ -602,19 +602,19 @@
             "ar": [
               [
                 "الهوية الوطنية السعودية",
-                "لا",
+                "نعم، للزائر السعودي",
                 "10 أرقام",
                 "للزوار السعوديين. يجب أن يبدأ بالرقم 1 وأن يجتاز اختبار رقم التحقق، ويُرفض الرقم الذي لا يجتازه."
               ],
               [
                 "رقم الإقامة",
-                "لا",
+                "أحدهما، للزائر غير السعودي",
                 "10 أرقام",
                 "للمقيمين غير السعوديين. يجب أن يبدأ بالرقم 2 وأن يجتاز اختبار رقم التحقق نفسه."
               ],
               [
                 "رقم جواز السفر",
-                "لا",
+                "أحدهما، للزائر غير السعودي",
                 "20 حرفًا",
                 "الطول فقط — لا يطبّق المكتب أي تحقق من الصيغة، فيُقبل هنا جواز سفر كان تطبيق الجوال ليرفضه."
               ]
@@ -659,13 +659,13 @@
             "en": [
               [
                 "Saudi mobile",
-                "No",
+                "One of the two",
                 "32 characters",
                 "Must be 05XXXXXXXX or +9665XXXXXXXX."
               ],
               [
                 "International mobile",
-                "No",
+                "One of the two",
                 "32 characters",
                 "Must be the international format: a plus sign, the country code, then the number."
               ],
@@ -679,19 +679,19 @@
                 "Organisation",
                 "Yes",
                 "150 characters",
-                "Chosen from the organisation list. If the employer is not listed, pick the \"Other\" entry and type the name — this is why that entry exists."
+                "Chosen from the organisation list. If the employer is not listed, pick the \"Other\" entry — that is why it exists. The desk cannot type the real name; the visitor supplies it later on their own profile."
               ]
             ],
             "ar": [
               [
                 "الجوال السعودي",
-                "لا",
+                "أحدهما",
                 "32 حرفًا",
                 "يجب أن يكون بالصيغة 05XXXXXXXX أو ‎+9665XXXXXXXX."
               ],
               [
                 "الجوال الدولي",
-                "لا",
+                "أحدهما",
                 "32 حرفًا",
                 "يجب أن يكون بالصيغة الدولية: علامة زائد ثم رمز الدولة ثم الرقم."
               ],
@@ -705,10 +705,15 @@
                 "الجهة",
                 "نعم",
                 "150 حرفًا",
-                "تُختار من قائمة الجهات. وإذا لم تكن جهة العمل مدرجة فاختر «أخرى» واكتب الاسم — ولهذا وُجد هذا الخيار."
+                "تُختار من قائمة الجهات. وإذا لم تكن جهة العمل مدرجة فاختر «أخرى» — ولهذا وُجد هذا الخيار. ولا يستطيع المكتب كتابة الاسم الحقيقي؛ بل يقدّمه الزائر لاحقًا في ملفه."
               ]
             ]
           }
+        },
+        {
+          "t": "note",
+          "en": "Those requirements are the desk in its normal mode. When quick registration is armed — see the walk-in mode page — the desk asks for less, and a visitor can be registered without the fields marked required above. It ships disarmed.",
+          "ar": "تلك المتطلبات هي المكتب في وضعه المعتاد. فحين يُسلَّح التسجيل السريع — انظر صفحة وضع الحضور المباشر — يطلب المكتب أقل، ويمكن تسجيل زائر بلا الحقول الموسومة بأنها مطلوبة أعلاه. ويُشحن غير مسلَّح."
         },
         {
           "t": "figure",
@@ -1105,8 +1110,8 @@
         },
         {
           "t": "p",
-          "en": "The edit form is reached from the row actions on any of the account lists. It changes the email address, the display name, the profile type, the nationality, the two mobile numbers, the meeting preferences and the pictures. It does not change the password — nobody can set another person's password; the account resets its own from the sign-in page.",
-          "ar": "يُفتح نموذج التعديل من إجراءات الصف في أي من قوائم الحسابات. وهو يغيّر البريد الإلكتروني والاسم المعروض ونوع الملف والجنسية ورقمَي الجوال وتفضيلات الاجتماعات والصور. ولا يغيّر كلمة المرور — إذ لا يستطيع أحد ضبط كلمة مرور شخص آخر؛ فالحساب يعيد ضبطها بنفسه من صفحة تسجيل الدخول."
+          "en": "The edit form is reached from the row actions on the visitor and partner account lists. It changes the email address, the display name, the profile type, the nationality, the two mobile numbers, the meeting preferences and the pictures. It does not change the password — nobody can set another person's password; the account resets its own from the sign-in page. On the administrators list the Edit action manages that administrator's roles instead — an administrator's details cannot be edited from the account lists at all.",
+          "ar": "يُفتح نموذج التعديل من إجراءات الصف في قائمتَي الزوار والشركاء. وهو يغيّر البريد الإلكتروني والاسم المعروض ونوع الملف والجنسية ورقمَي الجوال وتفضيلات الاجتماعات والصور. ولا يغيّر كلمة المرور — إذ لا يستطيع أحد ضبط كلمة مرور شخص آخر؛ فالحساب يعيد ضبطها بنفسه من صفحة تسجيل الدخول. أما في قائمة المسؤولين فيدير إجراء التعديل أدوار ذلك المسؤول بدلًا من ذلك — فبيانات المسؤول لا تُعدَّل من قوائم الحسابات إطلاقًا."
         },
         {
           "t": "note",
@@ -1130,8 +1135,8 @@
         },
         {
           "t": "p",
-          "en": "When somebody loses the phone holding their authenticator, and has no recovery code left, an administrator clears the second factor from Reset user 2FA. The person then pairs a new authenticator on their next sign-in.",
-          "ar": "عند فقدان شخص للهاتف الذي يحمل تطبيق المصادقة، ولم يبقَ لديه رمز استرداد، يمسح المسؤول العامل الثاني من صفحة إعادة تعيين المصادقة الثنائية. ثم يقرن الشخص تطبيق مصادقة جديدًا عند تسجيل دخوله التالي."
+          "en": "When somebody loses the phone holding their authenticator, and has no recovery code left, an administrator clears the second factor from Reset user 2FA. A Control Panel account is then held at its next sign-in until it pairs a new authenticator. A visitor or partner signs in on their password alone, and pairs a new authenticator from their own profile page whenever they choose.",
+          "ar": "عند فقدان شخص للهاتف الذي يحمل تطبيق المصادقة، ولم يبقَ لديه رمز استرداد، يمسح المسؤول العامل الثاني من صفحة إعادة تعيين المصادقة الثنائية. ثم يُوقَف حساب لوحة التحكم عند تسجيل دخوله التالي حتى يقرن تطبيق مصادقة جديدًا. أما الزائر أو الشريك فيسجّل دخوله بكلمة المرور وحدها، ويقرن تطبيق مصادقة جديدًا من صفحة ملفه الشخصي متى شاء."
         },
         {
           "t": "figure",
@@ -1161,8 +1166,8 @@
         },
         {
           "t": "p",
-          "en": "Delete on an account list is not a deletion. It disables the account, revokes its sessions and notifies the person by email. The row action and the bulk action open the same dialog, which asks for an audited reason of 10 to 500 characters.",
-          "ar": "زر الحذف في قوائم الحسابات ليس حذفًا. فهو يعطّل الحساب ويُبطل جلساته ويُشعر الشخص بالبريد الإلكتروني. ويفتح إجراء الصف والإجراء الجماعي النافذة نفسها التي تطلب سببًا مُدوَّنًا من 10 إلى 500 حرف."
+          "en": "Delete on an account list is not a deletion. It disables the account, revokes its sessions and withdraws its admission. The row action and the bulk action open the same dialog, which asks for an audited reason of 10 to 500 characters. **The dialog says the people are notified by email; no such email is sent, so do not promise one.**",
+          "ar": "زر الحذف في قوائم الحسابات ليس حذفًا. فهو يعطّل الحساب ويُبطل جلساته ويسحب اعتماده. ويفتح إجراء الصف والإجراء الجماعي النافذة نفسها التي تطلب سببًا مُدوَّنًا من 10 إلى 500 حرف. **وتقول النافذة إنه يجري إشعار الأشخاص بالبريد الإلكتروني، ولا يُرسَل أي بريد، فلا تَعِد به.**"
         },
         {
           "t": "note",
@@ -1195,8 +1200,8 @@
         },
         {
           "t": "note",
-          "en": "A button is gated by the permission of the endpoint it calls, which is not always the page's own. On a page holding two grids over two different things they differ, and on the partner queue the bulk approve and the per-row approve are gated separately because the server gates them separately.",
-          "ar": "يُحرس الزر بصلاحية الخدمة التي يستدعيها، وهي ليست دائمًا صلاحية الصفحة نفسها. ففي صفحة تحوي جدولين لشيئين مختلفين تختلفان، وفي قائمة الشركاء يُحرس الاعتماد الجماعي والاعتماد لكل صف كل على حدة لأن الخادم يحرسهما كذلك."
+          "en": "A button is gated by the permission of the endpoint it calls, which is not always the page's own. On a page holding two grids over two different things they differ, so read the permission off the action, not off the page.",
+          "ar": "يُحرس الزر بصلاحية الخدمة التي يستدعيها، وهي ليست دائمًا صلاحية الصفحة نفسها. ففي صفحة تحوي جدولين لشيئين مختلفين تختلفان، فاقرأ الصلاحية من الإجراء لا من الصفحة."
         },
         {
           "t": "h2",
@@ -1404,13 +1409,13 @@
         },
         {
           "t": "p",
-          "en": "Because a session finds its day by date, a missing programme day does not stop anybody scheduling anything. What it does instead is quiet and worse. The forum's own date boundary is calculated as the earliest and latest ACTIVE programme day, and every meeting slot and availability window must fall inside it. When there are no active days that boundary is nothing at all, and the check stops applying — so an administrator can set a speaker's availability in the wrong month and nothing objects.",
-          "ar": "لأن الجلسة تجد يومها بالتاريخ، فإن غياب يوم برنامج لا يمنع أحدًا من جدولة أي شيء. لكن ما يفعله بدلًا من ذلك أهدأ وأسوأ. إذ يُحسب حدّ تواريخ الملتقى بأبكر وأحدث يوم برنامج نشط، ويجب أن يقع كل موعد اجتماع وكل نافذة إتاحة داخله. وحين لا توجد أيام نشطة ينعدم ذلك الحد ويتوقف التحقق — فيستطيع المسؤول ضبط إتاحة متحدث في شهر خاطئ دون أن يعترض شيء."
+          "en": "Because a session finds its day by date, a missing programme day does not stop anybody scheduling anything. What it does instead is quiet and worse. The forum's own date boundary is calculated as the earliest and latest ACTIVE programme day. Business meetings, hall allocations, and speaker and delegation availability windows must all fall inside it. Two things are not checked against it: a HALL availability window, and the slot a meeting is finally bound to — that slot comes out of a hall window, so it carries whatever dates the hall window carries. When there are no active days the boundary is nothing at all, and even the checks that do apply stop applying — so an administrator can set a speaker's availability in the wrong month and nothing objects.",
+          "ar": "لأن الجلسة تجد يومها بالتاريخ، فإن غياب يوم برنامج لا يمنع أحدًا من جدولة أي شيء. لكن ما يفعله بدلًا من ذلك أهدأ وأسوأ. إذ يُحسب حدّ تواريخ الملتقى بأبكر وأحدث يوم برنامج نشط. ويجب أن تقع داخله اجتماعات الأعمال وتخصيصات القاعات ونوافذ إتاحة المتحدثين والوفود. وأمران لا يُفحصان مقابله: نافذة إتاحة القاعة، والموعد الذي يُربط به الاجتماع في النهاية — فهذا الموعد مأخوذ من نافذة قاعة، فيحمل ما تحمله تلك النافذة من تواريخ. وحين لا توجد أيام نشطة ينعدم ذلك الحد ويتوقف حتى ما يسري من عمليات التحقق — فيستطيع المسؤول ضبط إتاحة متحدث في شهر خاطئ دون أن يعترض شيء."
         },
         {
           "t": "note",
-          "en": "The boundary is read from the programme days deliberately, and not from the event start and end dates on the organisation profile — those hold a placeholder range that has been stale for some time. If meetings are landing outside the forum, check the programme days are present AND active before anything else.",
-          "ar": "يُقرأ الحد من أيام البرنامج عن قصد، لا من تاريخَي بداية الفعالية ونهايتها في ملف الجهة — فهذان يحملان نطاقًا مؤقتًا قديمًا منذ مدة. فإذا وقعت اجتماعات خارج أيام الملتقى، فتحقق أولًا من وجود أيام البرنامج ومن كونها نشطة."
+          "en": "The boundary is read from the programme days deliberately, and not from the event start and end dates on the organisation profile — those hold a placeholder range that has been stale for some time. If meetings are landing outside the forum, check the programme days are present AND active first, then look for a hall availability window authored outside them.",
+          "ar": "يُقرأ الحد من أيام البرنامج عن قصد، لا من تاريخَي بداية الفعالية ونهايتها في ملف الجهة — فهذان يحملان نطاقًا مؤقتًا قديمًا منذ مدة. فإذا وقعت اجتماعات خارج أيام الملتقى، فتحقق أولًا من وجود أيام البرنامج ومن كونها نشطة، ثم ابحث عن نافذة إتاحة قاعة أُنشئت خارجها."
         },
         {
           "t": "note",
@@ -1597,13 +1602,13 @@
         },
         {
           "t": "note",
-          "en": "The state that causes the most confusion is the one between accept and confirm. When an administrator accepts a speaker request and binds it to a slot, the request is not yet booked: it waits for the speaker's own click on an emailed link, and while it waits the ATTENDEE'S APP STILL SHOWS IT AS PENDING. Telling them it is confirmed at that point is telling them something the app contradicts. The slot is held throughout, so offering it to somebody else will fail.",
-          "ar": "أكثر الحالات إثارةً للّبس هي التي بين القبول والتأكيد. فحين يقبل المسؤول طلب مقابلة متحدث ويربطه بموعد، لا يكون الطلب محجوزًا بعد: بل ينتظر نقرة المتحدث نفسه على رابط في بريده، وأثناء الانتظار يظل تطبيق صاحب الطلب يعرضه «قيد الانتظار». وإخباره بأنه مؤكد في تلك اللحظة إخبارٌ بما يناقضه التطبيق. والموعد محجوز طوال ذلك، فعرضه على شخص آخر سيُخفق."
+          "en": "The state that causes the most confusion is the one between accept and confirm. Approve accepts a speaker request and binds it to a slot, but it does not book it: it waits for the speaker's own click on an emailed link, and while it waits the ATTENDEE'S APP STILL SHOWS IT AS PENDING. Telling them it is confirmed at that point is telling them something the app contradicts. Confirm is the other path, for when you already have the speaker's word: it books the slot at once, sends no link at all, and the app shows the meeting as accepted straight away. A third button, Accept without a hall, accepts the request but books no room. The slot is held on either binding path, so offering it to somebody else will fail.",
+          "ar": "أكثر الحالات إثارةً للّبس هي التي بين القبول والتأكيد. فزر «موافقة» يقبل طلب مقابلة المتحدث ويربطه بموعد، لكنه لا يحجزه: بل ينتظر نقرة المتحدث نفسه على رابط في بريده، وأثناء الانتظار يظل تطبيق صاحب الطلب يعرضه «قيد الانتظار». وإخباره بأنه مؤكد في تلك اللحظة إخبارٌ بما يناقضه التطبيق. أما زر «تأكيد» فهو المسار الآخر، ولا يُستعمل إلا حين تكون قد أخذت موافقة المتحدث شفويًا: فهو يحجز الموعد فورًا ولا يرسل أي رابط، ويعرض التطبيق الاجتماع مقبولًا من فوره. وثمّة زر ثالث، «قبول بدون قاعة»، يقبل الطلب دون حجز قاعة. والموعد محجوز في كلا مسارَي الربط، فعرضه على شخص آخر سيُخفق."
         },
         {
           "t": "p",
-          "en": "The three availability pages — speaker, hall and delegation — exist to produce the bookable slots those requests choose from. Each window is a start and an end divided into fixed slots, half an hour by default, and each must fall inside the forum days. Deleting a window does not cancel a meeting already booked in it; the meeting keeps its time.",
-          "ar": "صفحات الإتاحة الثلاث — للمتحدثين والقاعات والوفود — موجودة لإنتاج المواعيد القابلة للحجز التي تختار منها تلك الطلبات. وكل نافذة بداية ونهاية مقسّمة إلى مواعيد ثابتة، نصف ساعة افتراضيًا، ويجب أن تقع كل منها داخل أيام الملتقى. وحذف النافذة لا يلغي اجتماعًا حُجز فيها؛ إذ يحتفظ الاجتماع بوقته."
+          "en": "The three availability pages — speaker, hall and delegation — exist to produce the bookable slots those requests choose from. Each window is a start and an end divided into fixed slots, half an hour by default. A speaker or delegation window must fall inside the forum days; a hall window is never checked against them, so it can be authored outside the event entirely — and because both meeting desks take their slots from the hall, such a window quietly produces bookable meetings outside the forum. Deleting a window does not cancel a meeting already booked in it; the meeting keeps its time.",
+          "ar": "صفحات الإتاحة الثلاث — للمتحدثين والقاعات والوفود — موجودة لإنتاج المواعيد القابلة للحجز التي تختار منها تلك الطلبات. وكل نافذة بداية ونهاية مقسّمة إلى مواعيد ثابتة، نصف ساعة افتراضيًا. ويجب أن تقع نافذة المتحدث أو الوفد داخل أيام الملتقى؛ أما نافذة القاعة فلا تُفحص مقابلها إطلاقًا، فيمكن إنشاؤها خارج أيام الفعالية كلها — ولأن مكتبَي الاجتماعات يأخذان مواعيدهما من القاعة، فإن نافذة كهذه تُنتج بهدوء اجتماعات قابلة للحجز خارج أيام الملتقى. وحذف النافذة لا يلغي اجتماعًا حُجز فيها؛ إذ يحتفظ الاجتماع بوقته."
         },
         {
           "t": "figure",
@@ -1639,8 +1644,8 @@
         },
         {
           "t": "note",
-          "en": "The allow-list is the single most dangerous control on this page, because it is not read the way it looks. An EMPTY list admits everybody. A list with entries admits only those. And a list whose every entry has been DEACTIVATED admits nobody at all — it does not fall back to allow-all. That is deliberate: denying visibly was judged safer than silently turning a VIP gate into a public one. The consequence on the day is that the gate refuses everyone, and because ten refusals inside a minute trip the gate's failure circuit, it then starts refusing its own operator too.",
-          "ar": "قائمة السماح أخطر أداة في هذه الصفحة، لأنها لا تُقرأ كما تبدو. فالقائمة الفارغة تسمح للجميع. والقائمة التي فيها مدخلات لا تسمح إلا لها. أما القائمة التي عُطّلت كل مدخلاتها فلا تسمح لأحد إطلاقًا — ولا ترجع إلى السماح للجميع. وهذا مقصود: فقد رُئي أن المنع الظاهر أسلم من تحويل بوابة كبار الشخصيات بصمت إلى بوابة عامة. وأثر ذلك في اليوم أن البوابة ترفض الجميع، ولأن عشر رفضات في دقيقة واحدة تُفعّل قاطع الأعطال في البوابة، فإنها تبدأ عندئذ برفض مشغّلها نفسه أيضًا."
+          "en": "The allow-list is the single most dangerous control on this page, because it is not read the way it looks. An EMPTY list admits everybody. A list with entries admits only those. And a list whose every entry has been DEACTIVATED admits nobody at all — it does not fall back to allow-all. That is deliberate: denying visibly was judged safer than silently turning a VIP gate into a public one. The consequence on the day is that the gate refuses everyone, one badge at a time, and it goes on doing so. Do not wait for it to stop itself: the gate's failure circuit counts backend faults, not refusals, so no number of refused badges will ever trip it. It has to be put right on the gate's own page.",
+          "ar": "قائمة السماح أخطر أداة في هذه الصفحة، لأنها لا تُقرأ كما تبدو. فالقائمة الفارغة تسمح للجميع. والقائمة التي فيها مدخلات لا تسمح إلا لها. أما القائمة التي عُطّلت كل مدخلاتها فلا تسمح لأحد إطلاقًا — ولا ترجع إلى السماح للجميع. وهذا مقصود: فقد رُئي أن المنع الظاهر أسلم من تحويل بوابة كبار الشخصيات بصمت إلى بوابة عامة. وأثر ذلك في اليوم أن البوابة ترفض الجميع، شارةً بعد شارة، وتمضي في ذلك. ولا تنتظر أن تتوقف من تلقاء نفسها: فقاطع الأعطال في البوابة يعدّ أعطال الخادم لا الرفضات، فلن يُفعّله أي عدد من الشارات المرفوضة. ولا بد من تصحيح ذلك في صفحة البوابة نفسها."
         },
         {
           "t": "figure",
@@ -1794,8 +1799,8 @@
         },
         {
           "t": "p",
-          "en": "Attendees submit questions from the app while a session is on. They travel through three hands: an AI screen, the scientific committee, and then the session's own moderator. Each of those is a different page and a different permission.",
-          "ar": "يرسل الحضور أسئلتهم من التطبيق أثناء الجلسة. وتمرّ عبر ثلاث جهات: فرز بالذكاء الاصطناعي، ثم اللجنة العلمية، ثم مشرف الجلسة نفسه. وكل من هذه صفحة مختلفة وصلاحية مختلفة."
+          "en": "Attendees submit questions from the app. Where a question goes depends on when it was asked. One sent before the session starts travels through three hands: an AI screen, the scientific committee, and then the session's own moderator. One sent once the session is live skips the first two by design; it lands approved on the session moderator's desk, and the moderator is the only gate on it. Each of those is a different page and a different permission.",
+          "ar": "يرسل الحضور أسئلتهم من التطبيق. ووجهة السؤال تتوقف على وقت إرساله. فالمرسَل قبل بداية الجلسة يمرّ عبر ثلاث جهات: فرز بالذكاء الاصطناعي، ثم اللجنة العلمية، ثم مشرف الجلسة نفسه. أما المرسَل بعد أن تصير الجلسة مباشرة فيتخطى الجهتين الأوليين عن قصد؛ إذ يصل معتمدًا إلى مكتب مشرف الجلسة، ويكون المشرف هو الجهة الوحيدة عليه. وكل من هذه صفحة مختلفة وصلاحية مختلفة."
         },
         {
           "t": "bullets",
@@ -1819,8 +1824,8 @@
         },
         {
           "t": "p",
-          "en": "A question is only accepted while its session is open to them: shortly before the start and until the end. Where the hall has a geofence the attendee must actually be recorded as present, so somebody watching remotely is refused — which is the intended behaviour, not a fault.",
-          "ar": "لا يُقبل السؤال إلا ما دامت جلسته مفتوحة له: قبيل البداية وحتى النهاية. وحيث تكون للقاعة حدود جغرافية يجب أن يكون الحاضر مسجّلًا فعلًا بأنه موجود، فيُرفض من يتابع عن بُعد — وهذا هو السلوك المقصود لا عطل."
+          "en": "An active session takes questions at any time up to the moment it ends — days ahead of the start is fine. Once the end time passes it takes none, with no grace at all; a session that has been deactivated takes none either way. The venue check applies only once the session is live: where the hall has a geofence the attendee must have a hall arrival on record for that session — they arrived at some point, whether or not they are still in the room — so somebody watching a live session remotely is refused, which is the intended behaviour, not a fault. Before the start, and in a hall with no geofence, there is no venue check at all.",
+          "ar": "تستقبل الجلسة النشطة الأسئلة في أي وقت حتى لحظة انتهائها — ولا بأس بإرسالها قبل بدايتها بأيام. فإذا مضى وقت النهاية لم تعد تستقبل شيئًا، بلا أي مهلة؛ والجلسة المعطّلة لا تستقبل في الحالين. ولا يسري فحص الحضور إلا بعد أن تصير الجلسة مباشرة: فحيث تكون للقاعة حدود جغرافية يجب أن يكون للحاضر تسجيل وصول إلى القاعة في تلك الجلسة — أي أنه وصل في وقت ما، سواء أبقي في القاعة أم لا — فيُرفض من يتابع جلسة مباشرة عن بُعد، وهذا هو السلوك المقصود لا عطل. أما قبل البداية، وفي قاعة بلا حدود جغرافية، فلا فحص حضور إطلاقًا."
         },
         {
           "t": "h2",
@@ -1930,13 +1935,13 @@
             "en": [
               [
                 "Exhibitors",
-                "An exhibiting company: bilingual name, contact email, phone and website, a tier, social links, city, map coordinates, country and its own logo",
+                "An exhibiting company: bilingual name, contact email, phone and website, a tier, social links, city, a latitude and longitude — degrees on the globe, not the booth's venue-map coordinates — country and its own logo",
                 "Nothing above it. Booths point at it, not the reverse"
               ],
               [
                 "Booths",
                 "The stand itself: a floor code such as A-12, a bilingual booth name, a hall, and a booth officer — the person standing on it, who is a different party from the company",
-                "A hall, and optionally one exhibitor. The exhibitor link may be left empty for as long as the stand is unsold"
+                "Optionally a hall, and optionally one exhibitor. The hall may be left empty — the form carries a \"no hall\" choice — and the exhibitor for as long as the stand is unsold"
               ],
               [
                 "Sponsors",
@@ -1946,19 +1951,19 @@
               [
                 "Venue map",
                 "One labelled point: a hall, a zone, a booth or a point of interest, placed at an X and Y",
-                "Optionally a hall or a booth, so tapping the point in the app opens that record"
+                "Optionally a hall or a booth. Tapping any point opens its info card; only a booth point offers a way through to the booth's record"
               ]
             ],
             "ar": [
               [
                 "العارضون",
-                "شركة عارضة: اسم بلغتين، وبريد وهاتف وموقع للتواصل، وفئة، وروابط تواصل اجتماعي، ومدينة، وإحداثيات، ودولة، وشعار خاص بها",
+                "شركة عارضة: اسم بلغتين، وبريد وهاتف وموقع للتواصل، وفئة، وروابط تواصل اجتماعي، ومدينة، وخط عرض وخط طول — درجات على الكرة الأرضية، لا إحداثيات الجناح على خريطة الموقع — ودولة، وشعار خاص بها",
                 "لا شيء فوقه. الأجنحة تشير إليه، لا العكس"
               ],
               [
                 "الأجنحة",
                 "الجناح نفسه: رمز أرضي مثل A-12، واسم جناح بلغتين، وقاعة، ومسؤول جناح — وهو الشخص الواقف فيه، وطرف مختلف عن الشركة",
-                "قاعة، وعارض واحد اختياريًّا. ويجوز ترك رابط العارض فارغًا ما دام الجناح غير مباع"
+                "قاعة اختياريًّا، وعارض واحد اختياريًّا. ويجوز ترك القاعة فارغة — ففي النموذج خيار «بلا قاعة» — كما يجوز ترك العارض فارغًا ما دام الجناح غير مباع"
               ],
               [
                 "الرعاة",
@@ -1968,7 +1973,7 @@
               [
                 "خريطة الموقع",
                 "نقطة معنونة واحدة: قاعة أو منطقة أو جناح أو معلم، توضع عند إحداثي س وص",
-                "قاعة أو جناح اختياريًّا، فيفتح النقر على النقطة في التطبيق ذلك السجل"
+                "قاعة أو جناح اختياريًّا. والنقر على أي نقطة يفتح بطاقة تعريفها؛ ونقطة الجناح وحدها تتيح المرور إلى سجل الجناح"
               ]
             ]
           }
@@ -1977,8 +1982,8 @@
           "t": "figure",
           "image": "cp-admin-exhibitors-default",
           "caption": {
-            "en": "The exhibitors list. Each row is a company, and the account count on the row is what tells you whether anybody from it can scan a visitor.",
-            "ar": "قائمة العارضين. كل سجل شركة، وعدد الحسابات في السجل هو ما يخبرك إن كان أحد من الشركة يستطيع مسح زائر."
+            "en": "The exhibitors list. Each row is a company, and the account count is the number of live memberships on it — it goes on counting after the company is deactivated, when nobody there can scan.",
+            "ar": "قائمة العارضين. كل سجل شركة، وعدد الحسابات هو عدد العضويات السارية فيها — ويظل يعدّها بعد تعطيل الشركة، حين لا يستطيع أحد فيها المسح."
           }
         },
         {
@@ -2016,8 +2021,8 @@
         },
         {
           "t": "p",
-          "en": "This is the part of the exhibition module that is genuinely a procedure, and it is the part that goes wrong. Exhibitor sign-up inside the app does not exist and was dropped on purpose: an account is created here, in the Control Panel, or it is not created at all. Open an exhibitor's row and use its Accounts button; there are two ways in and they are not interchangeable.",
-          "ar": "هذا هو الجزء الذي يمثل إجراءً فعليًّا في وحدة المعرض، وهو الجزء الذي يقع فيه الخطأ. فتسجيل العارض من داخل التطبيق غير موجود وقد أُسقط عمدًا: الحساب يُنشأ هنا في لوحة التحكم، أو لا يُنشأ أصلًا. افتح سجل العارض واستخدم زر الحسابات؛ فأمامك طريقان وهما غير متكافئين."
+          "en": "This is the part of the exhibition module that is genuinely a procedure, and it is the part that goes wrong. A person can sign up in the app as an exhibitor: the sign-up screen's registration-type tab has an Other side, and the exhibitor profile type is offered there. What that sign-up cannot create is the exhibitor company itself, or the membership tying the account to it — so a self-registered account arrives carrying the profile type, no membership and no way to scan. Both of those are made here, in the Control Panel. Open an exhibitor's row and use its Accounts button; there are two ways in and they are not interchangeable.",
+          "ar": "هذا هو الجزء الذي يمثل إجراءً فعليًّا في وحدة المعرض، وهو الجزء الذي يقع فيه الخطأ. ويستطيع الشخص أن يسجّل نفسه عارضًا من داخل التطبيق: ففي شاشة التسجيل تبويب «نوع التسجيل» وفي جانبه الآخر يُعرض نوع ملف العارض. لكن ذلك التسجيل لا ينشئ شركة العارض نفسها ولا العضوية التي تربط الحساب بها — فيصل الحساب المسجَّل ذاتيًّا حاملًا نوع الملف، بلا عضوية ولا قدرة على المسح. وكلتاهما تُنشأ هنا في لوحة التحكم. افتح سجل العارض واستخدم زر الحسابات؛ فأمامك طريقان وهما غير متكافئين."
         },
         {
           "t": "bullets",
@@ -2037,8 +2042,8 @@
         },
         {
           "t": "p",
-          "en": "Linking checks two things before it agrees, and both refusals are deliberate rather than defensive.",
-          "ar": "يتحقق الربط من أمرين قبل أن يوافق، وكلا الرفضين مقصود لا وقائي فحسب."
+          "en": "Linking checks three things before it agrees, and all three refusals are deliberate rather than defensive.",
+          "ar": "يتحقق الربط من ثلاثة أمور قبل أن يوافق، وحالات الرفض الثلاث مقصودة لا وقائية فحسب."
         },
         {
           "t": "table",
@@ -2057,6 +2062,11 @@
           "rows": {
             "en": [
               [
+                "The exhibitor is closed",
+                "Its own Active switch is off. This is checked before anything else, and a closed exhibitor takes on no new accounts. The Accounts button is still offered on a deactivated row, so this is the refusal you meet first",
+                "Reactivate the exhibitor, then link. It is the one place Link and Revoke differ: Revoke still works on a closed exhibitor"
+              ],
+              [
                 "The account is not eligible",
                 "The account does not carry an active profile type whose app role is Exhibitor. The Control Panel will not quietly change the profile type here, because that would silently overwrite an app role another administrator assigned",
                 "Set an exhibitor profile type on the account first, on the Others page, then link"
@@ -2068,6 +2078,11 @@
               ]
             ],
             "ar": [
+              [
+                "العارض مغلق",
+                "مفتاح تفعيله مطفأ. ويُفحص هذا قبل كل شيء، والعارض المغلق لا يقبل حسابات جديدة. وزر الحسابات يظل معروضًا على السجل المعطَّل، فهذا أول رفض تلقاه",
+                "أعد تفعيل العارض ثم اربط. وهذا هو الموضع الوحيد الذي يختلف فيه الربط عن السحب: فالسحب يعمل على عارض مغلق"
+              ],
               [
                 "الحساب غير مؤهل",
                 "لا يحمل الحساب نوع ملف مفعَّلًا يكون دوره في التطبيق «عارض». ولن تغيّر لوحة التحكم نوع الملف هنا بصمت، لأن ذلك يعني الكتابة فوق دور في التطبيق أسنده مسؤول آخر",
@@ -2083,8 +2098,8 @@
         },
         {
           "t": "note",
-          "en": "The most common failure in this whole chapter: an account was created on the Others page with an exhibitor profile type, and everybody assumes it is ready. It is not. It has the profile type and no membership, so the app refuses its badge scans and its visitor list, and nothing on the Exhibitors page ties it to a stand. The instinct is to create the account again from the Accounts panel, which fails on the duplicate email address. The fix is Link, not Create.",
-          "ar": "أشهر إخفاق في هذا الفصل كله: حساب أُنشئ في صفحة الحسابات الأخرى بنوع ملف عارض، فيفترض الجميع أنه جاهز. وليس كذلك. فهو يحمل نوع الملف ولا يحمل عضوية، فيرفض التطبيق عمليات مسح الشارات وقائمة الزوار لديه، ولا شيء في صفحة العارضين يربطه بجناح. ويكون الميل إلى إنشاء الحساب مجددًا من لوحة الحسابات، فيفشل بسبب تكرار البريد الإلكتروني. والحل هو الربط لا الإنشاء."
+          "en": "The most common failure in this whole chapter: an account carries an exhibitor profile type — set on the Others page, or picked by the person at sign-up — and everybody assumes it is ready. It is not. It has the profile type and no membership, so the app refuses its badge scans and its visitor list, and nothing on the Exhibitors page ties it to a stand. The instinct is to create the account again from the Accounts panel, which fails on the duplicate email address. The fix is Link, not Create.",
+          "ar": "أشهر إخفاق في هذا الفصل كله: حساب يحمل نوع ملف عارض — أُسند له في صفحة الحسابات الأخرى، أو اختاره صاحبه عند التسجيل — فيفترض الجميع أنه جاهز. وليس كذلك. فهو يحمل نوع الملف ولا يحمل عضوية، فيرفض التطبيق عمليات مسح الشارات وقائمة الزوار لديه، ولا شيء في صفحة العارضين يربطه بجناح. ويكون الميل إلى إنشاء الحساب مجددًا من لوحة الحسابات، فيفشل بسبب تكرار البريد الإلكتروني. والحل هو الربط لا الإنشاء."
         },
         {
           "t": "h3",
@@ -2093,8 +2108,8 @@
         },
         {
           "t": "p",
-          "en": "Two things together authorise lead capture: the exhibitor profile type on the account, and a live membership against an exhibitor. With both, that person's app can scan a visitor's entry badge and keep the resulting contact card, list the visitors they collected, delete one, and export a card as a vCard. They also become a recipient of the business-meeting notifications sent to the exhibitor.",
-          "ar": "أمران معًا يمنحان صلاحية التقاط العملاء: نوع ملف العارض على الحساب، وعضوية سارية لدى عارض. فبهما معًا يستطيع تطبيق ذلك الشخص مسح شارة دخول الزائر والاحتفاظ ببطاقة التواصل الناتجة، وعرض قائمة الزوار الذين جمعهم، وحذف واحدة منها، وتصدير البطاقة كملف vCard. ويصبح كذلك من متلقّي إشعارات لقاءات الأعمال المرسلة إلى العارض."
+          "en": "Three things together authorise lead capture: an active account carrying the exhibitor profile type, a live membership against an exhibitor, and an exhibitor that is itself still active. With all three, that person's app can scan a visitor's entry badge and keep the resulting contact card, list the visitors they collected, delete one, and export a card as a vCard. They also become a recipient of the business-meeting notifications sent to the exhibitor. **Deactivating the exhibitor takes all of that away from every one of its officers at once**, without a single membership being touched.",
+          "ar": "ثلاثة أمور معًا تمنح صلاحية التقاط العملاء: حساب مفعَّل يحمل نوع ملف العارض، وعضوية سارية لدى عارض، وعارض ما زال هو نفسه مفعَّلًا. فبها جميعًا يستطيع تطبيق ذلك الشخص مسح شارة دخول الزائر والاحتفاظ ببطاقة التواصل الناتجة، وعرض قائمة الزوار الذين جمعهم، وحذف واحدة منها، وتصدير البطاقة كملف vCard. ويصبح كذلك من متلقّي إشعارات لقاءات الأعمال المرسلة إلى العارض. **وتعطيل العارض يسلب ذلك كله من جميع مسؤوليه دفعةً واحدة**، دون المساس بأي عضوية."
         },
         {
           "t": "h3",
@@ -2118,8 +2133,8 @@
         },
         {
           "t": "p",
-          "en": "Sponsors carry four tiers — Platinum, Gold, Silver and Bronze — and a new sponsor starts at Bronze. The public surface groups them by tier with Platinum first, and within a tier orders by the display-order number and then by Arabic name.",
-          "ar": "للرعاة أربع فئات — بلاتيني وذهبي وفضي وبرونزي — ويبدأ الراعي الجديد عند البرونزي. وتجمعهم الواجهة العامة بحسب الفئة والبلاتيني أولًا، وترتبهم داخل الفئة الواحدة بحسب رقم ترتيب العرض ثم بالاسم العربي."
+          "en": "Sponsors carry four tiers — Platinum, Gold, Silver and Bronze — and the tier is always chosen, never inherited: a blank Add form opens on Platinum, the API refuses anything that is not one of the four, and an Excel import requires a Tier column and rejects any row that leaves it blank. The public surface groups them by tier with Platinum first, and within a tier orders by the display-order number and then by Arabic name.",
+          "ar": "للرعاة أربع فئات — بلاتيني وذهبي وفضي وبرونزي — والفئة تُختار دائمًا ولا تُورَّث: فنموذج الإضافة الفارغ يفتح على البلاتيني، وترفض الواجهة البرمجية أي قيمة خارج الأربع، ويشترط الاستيراد من Excel عمود Tier ويرفض أي سجل يتركه فارغًا. وتجمعهم الواجهة العامة بحسب الفئة والبلاتيني أولًا، وترتبهم داخل الفئة الواحدة بحسب رقم ترتيب العرض ثم بالاسم العربي."
         },
         {
           "t": "note",
@@ -2141,8 +2156,8 @@
         },
         {
           "t": "p",
-          "en": "The map is a set of labelled points, each one a hall, a zone, a booth or a point of interest, placed at an X and Y in relative units of roughly nought to a thousand which the app scales onto its own canvas. A point may carry a hall or a booth, which is what makes it tappable. It is a two-dimensional map of points, not the three-dimensional isometric floor plan FDS-006 describes.",
-          "ar": "الخريطة مجموعة نقاط معنونة، كل نقطة قاعة أو منطقة أو جناح أو معلم، توضع عند إحداثي س وص بوحدات نسبية من صفر إلى ألف تقريبًا يقيسها التطبيق على مساحته. وقد تحمل النقطة قاعة أو جناحًا، وهو ما يجعلها قابلة للنقر. وهي خريطة نقاط ثنائية الأبعاد، لا المخطط المجسَّم ثلاثي الأبعاد الذي يصفه المستند FDS-006."
+          "en": "The map is a set of labelled points, each one a hall, a zone, a booth or a point of interest, placed at an X and Y. Nought to a thousand is the convention the field documents, but nothing enforces it and the app never reads the absolute numbers: on each load it takes the smallest and largest X and Y among the points it received and stretches that spread across its canvas. Only the positions of the points relative to one another matter, **so moving one outlying point shifts where every other point lands.** Every point is tappable and opens an info card, whatever it carries; only a booth point offers a way through to the booth's own record, and it needs the booth link to have anything to show there. A hall link reaches the app, but nothing there opens a hall. It is a two-dimensional map of points, not the three-dimensional isometric floor plan FDS-006 describes.",
+          "ar": "الخريطة مجموعة نقاط معنونة، كل نقطة قاعة أو منطقة أو جناح أو معلم، توضع عند إحداثي س وص. ومن صفر إلى ألف هو العُرف الذي يوثّقه الحقل، لكن لا شيء يفرضه، والتطبيق لا يقرأ القيم المطلقة أصلًا: فهو في كل تحميل يأخذ أصغر وأكبر قيمتَي س وص بين النقاط التي وصلته، ويمدّ ذلك المدى ليملأ مساحته. فلا يهم إلا موضع النقاط بعضها من بعض، **ولذلك فتحريك نقطة واحدة شاذة يزيح موضع كل نقطة أخرى.** وكل نقطة قابلة للنقر وتفتح بطاقة تعريفها مهما حملت؛ ونقطة الجناح وحدها تتيح المرور إلى سجل الجناح، وتحتاج إلى رابط الجناح كي يكون لديها ما تعرضه هناك. أما رابط القاعة فيصل إلى التطبيق، لكن لا شيء فيه يفتح قاعة. وهي خريطة نقاط ثنائية الأبعاد، لا المخطط المجسَّم ثلاثي الأبعاد الذي يصفه المستند FDS-006."
         },
         {
           "t": "note",
@@ -2274,8 +2289,8 @@
         },
         {
           "t": "note",
-          "en": "This is the single most useful fact in the chapter. A news article, a banner, a gallery item, a media partner or a content block is published for the mobile app. The website reads sponsors, previous editions, the programme sessions and the speakers live, and nothing else — the aggregating endpoint that once fed the rest of the landing page is still there and no shipped page calls it, and the landing's news cards are written into the site. Check the app, not the website, and the save you were about to repeat will turn out to have worked.",
-          "ar": "هذه أنفع حقيقة في الفصل. فالمقال الإخباري واللافتة وعنصر المعرض والشريك الإعلامي وكتلة المحتوى تُنشر لتطبيق الجوال. أما الموقع فيقرأ مباشرةً الرعاة والدورات السابقة وجلسات البرنامج والمتحدثين، ولا شيء غير ذلك — فنقطة القراءة المجمِّعة التي كانت تغذّي بقية الصفحة الرئيسية ما زالت موجودة ولا تستدعيها أي صفحة منشورة، وبطاقات الأخبار في الصفحة الرئيسية مكتوبة داخل الموقع. تحقّق من التطبيق لا من الموقع، وسيتبيّن أن الحفظ الذي كدت تعيده قد نجح."
+          "en": "This is the single most useful fact in the chapter. A news article, a banner, a gallery item, a media partner or a content block is published for the mobile app. Of the pages on this menu the website reads only sponsors and previous editions live; beyond the menu it also reads the programme sessions, the speakers, and the organisation profile — the landing hero's background video and the forum dates that the landing, Speakers and Venue pages show. Nothing else on this menu reaches it — the aggregating endpoint that once fed the rest of the landing page is still there and no shipped page calls it, and the landing's news cards are written into the site. Check the app, not the website, and the save you were about to repeat will turn out to have worked.",
+          "ar": "هذه أنفع حقيقة في الفصل. فالمقال الإخباري واللافتة وعنصر المعرض والشريك الإعلامي وكتلة المحتوى تُنشر لتطبيق الجوال. ومن صفحات هذه القائمة لا يقرأ الموقع مباشرةً إلا الرعاة والدورات السابقة؛ وخارجها يقرأ أيضًا جلسات البرنامج والمتحدثين وملف الجهة — مقطع الخلفية في واجهة الصفحة الرئيسية وتواريخ الملتقى التي تعرضها الصفحة الرئيسية وصفحتا المتحدثين والمقر. ولا يصله شيء آخر من هذه القائمة — فنقطة القراءة المجمِّعة التي كانت تغذّي بقية الصفحة الرئيسية ما زالت موجودة ولا تستدعيها أي صفحة منشورة، وبطاقات الأخبار في الصفحة الرئيسية مكتوبة داخل الموقع. تحقّق من التطبيق لا من الموقع، وسيتبيّن أن الحفظ الذي كدت تعيده قد نجح."
         },
         {
           "t": "h2",
@@ -2315,7 +2330,7 @@
                 "What makes it visible",
                 "Being active",
                 "Being active and the present moment falling inside its start and end",
-                "Its publish date having passed"
+                "Being active and its publish date having passed"
               ],
               [
                 "Ordering",
@@ -2341,7 +2356,7 @@
                 "ما يجعله ظاهرًا",
                 "أن يكون مفعَّلًا",
                 "أن يكون مفعَّلًا وأن تقع اللحظة الحالية بين بدايته ونهايته",
-                "أن يكون تاريخ نشره قد مضى"
+                "أن يكون مفعَّلًا وأن يكون تاريخ نشره قد مضى"
               ],
               [
                 "الترتيب",
@@ -2375,8 +2390,8 @@
         },
         {
           "t": "p",
-          "en": "Clients cache these and re-check them against the block's last-updated time, so an edit reaches devices on their next check rather than instantly on every phone at once.",
-          "ar": "يخزّن العملاء هذه مؤقتًا ويعيدون فحصها مقابل وقت آخر تحديث للكتلة، فيصل التعديل إلى الأجهزة عند فحصها التالي لا فوريًّا على كل هاتف دفعة واحدة."
+          "en": "The app re-reads a block every time the screen that uses it is opened, and again on pull-to-refresh, and keeps nothing between visits. So an edit shows up the next time a reader opens that screen, not on every phone the moment you save. There is no cache to wait out.",
+          "ar": "يعيد التطبيق قراءة الكتلة كلما فُتحت الشاشة التي تستخدمها، ومرةً أخرى عند السحب للتحديث، ولا يحتفظ بشيء بين الزيارتين. فيظهر التعديل حين يفتح القارئ تلك الشاشة في المرة التالية، لا على كل هاتف لحظة الحفظ. وليس هناك تخزين مؤقت تنتظر انقضاءه."
         },
         {
           "t": "figure",
@@ -2398,15 +2413,15 @@
         },
         {
           "t": "note",
-          "en": "The link on a banner is stored as a plain address because it is navigation rather than media: it is where tapping the banner takes the reader, and it is optional.",
-          "ar": "يُحفظ رابط اللافتة عنوانًا صِرفًا لأنه تنقّل لا وسائط: فهو الموضع الذي ينتقل إليه القارئ بالنقر على اللافتة، وهو اختياري."
+          "en": "The link on a banner is stored as a plain address rather than an uploaded file, and it is optional. Nothing acts on it today: tapping the banner always opens the news list, whatever the link holds. Filling it in changes nothing on screen.",
+          "ar": "يُحفظ رابط اللافتة عنوانًا صِرفًا لا ملفًّا مرفوعًا، وهو اختياري. ولا شيء يعمل به اليوم: فالنقر على اللافتة يفتح قائمة الأخبار دائمًا مهما كان الرابط. وكتابته لا تغيّر شيئًا على الشاشة."
         },
         {
           "t": "figure",
           "image": "cp-admin-banners-default",
           "caption": {
-            "en": "The banners. Start, end and display order are what decide whether one is on screen right now.",
-            "ar": "اللافتات. البداية والنهاية وترتيب العرض هي ما يحدد إن كانت اللافتة على الشاشة الآن."
+            "en": "The banners. Being active, and the present moment falling inside the start and end, are what decide whether one is on screen right now; display order decides the sequence.",
+            "ar": "اللافتات. كون اللافتة مفعَّلة ووقوع اللحظة الحالية بين بدايتها ونهايتها هما ما يحدد إن كانت على الشاشة الآن؛ وترتيب العرض يحدد التسلسل."
           }
         },
         {
@@ -2416,18 +2431,18 @@
         },
         {
           "t": "p",
-          "en": "An article becomes public when its publish date has passed. Dating one ahead is how an article is written today and released on Sunday — and it is why an article can be plainly visible on this page and absent from the app. The admin grid shows every article regardless of its date, on purpose.",
-          "ar": "يصبح المقال عامًّا حين يمضي تاريخ نشره. وتأريخه إلى الأمام هو الطريقة التي يُكتب بها المقال اليوم ويصدر يوم الأحد — وهو سبب أن يكون المقال ظاهرًا تمامًا في هذه الصفحة وغائبًا عن التطبيق. وتعرض شبكة الإدارة كل المقالات بصرف النظر عن تاريخها، وذلك مقصود."
+          "en": "An article becomes public when it is active and its publish date has passed. Dating one ahead is how an article is written today and released on Sunday — and it is why an article can be plainly visible on this page and absent from the app. The admin grid shows every article regardless of its date, on purpose.",
+          "ar": "يصبح المقال عامًّا حين يكون مفعَّلًا ويمضي تاريخ نشره. وتأريخه إلى الأمام هو الطريقة التي يُكتب بها المقال اليوم ويصدر يوم الأحد — وهو سبب أن يكون المقال ظاهرًا تمامًا في هذه الصفحة وغائبًا عن التطبيق. وتعرض شبكة الإدارة كل المقالات بصرف النظر عن تاريخها، وذلك مقصود."
         },
         {
           "t": "bullets",
           "en": [
-            "The excerpt is optional — leave it empty and the app derives one from the body.",
+            "The excerpt is optional, and nothing shows it today. Nothing is derived from the body; the app's news card carries only the picture, the date and the title, and the article screen has no excerpt at all. Leaving it empty changes nothing on screen.",
             "The category is the small kicker printed above the title. It is free text typed on the article, not a list to choose from, so spelling it differently on two articles produces two different kickers. FDS-010 describes it as a managed list; it is not one.",
             "Both title and body are bilingual, and both languages are wanted: the app shows the reader whichever matches their language."
           ],
           "ar": [
-            "المقتطف اختياري — اتركه فارغًا فيشتقّه التطبيق من المتن.",
+            "المقتطف اختياري، ولا شيء يعرضه اليوم. فلا يُشتقّ شيء من المتن، وبطاقة الخبر في التطبيق لا تحمل إلا الصورة والتاريخ والعنوان، وشاشة المقال لا تحمل مقتطفًا إطلاقًا. وتركه فارغًا لا يغيّر شيئًا على الشاشة.",
             "التصنيف هو العنوان الصغير المطبوع فوق العنوان. وهو نص حر يُكتب على المقال، لا قائمة يُختار منها، فكتابته بصيغتين على مقالين تُنتج عنوانين صغيرين مختلفين. ويصفه المستند FDS-010 قائمةً مُدارة؛ وليس كذلك.",
             "العنوان والمتن كلاهما بلغتين، وكلتا اللغتين مطلوبة: إذ يعرض التطبيق للقارئ ما يوافق لغته."
           ]
@@ -2452,15 +2467,15 @@
         },
         {
           "t": "p",
-          "en": "The Media library is not content at all. It is a view across every image the system holds, whoever uploaded it and whatever it belongs to — speaker photographs, sponsor and exhibitor and booth logos, archive covers, news pictures, programme-day images, the organisation logo, banner images. It exists so somebody can find a file, look at it, and deactivate or restore it without hunting through the page that owns it. Deactivating a file here removes it from wherever it was being shown.",
-          "ar": "أما مكتبة الوسائط فليست محتوى إطلاقًا. بل هي عرض شامل لكل صورة يحملها النظام، أيًّا كان من رفعها وأيًّا كان ما تتبعه — صور المتحدثين، وشعارات الرعاة والعارضين والأجنحة، وأغلفة الأرشيف، وصور الأخبار، وصور أيام البرنامج، وشعار الجهة، وصور اللافتات. وهي موجودة ليتمكن أحدهم من إيجاد ملف والنظر إليه وتعطيله أو استعادته دون التنقيب في الصفحة التي تملكه. وتعطيل ملف هنا يزيله من حيث كان يُعرض."
+          "en": "The Media library is not content at all. It is a view across the images that belong to a page — speaker photographs, media-partner and sponsor and exhibitor and booth logos, archive covers, archive past-speaker and archive gallery photographs, news pictures, programme-day images, the organisation logo, banner images. It does not reach personal files — account photographs, identity documents, VIP photos — and it does not reach the Media Center's own gallery pictures, which are managed on their own page. It exists so somebody can find a file, look at it, and deactivate or restore it without hunting through the page that owns it. Deactivating a file here removes it from wherever it was being shown.",
+          "ar": "أما مكتبة الوسائط فليست محتوى إطلاقًا. بل هي عرض للصور التي تتبع صفحةً من الصفحات — صور المتحدثين، وشعارات الشركاء الإعلاميين والرعاة والعارضين والأجنحة، وأغلفة الأرشيف، وصور متحدثي الدورات السابقة وصور معارضها، وصور الأخبار، وصور أيام البرنامج، وشعار الجهة، وصور اللافتات. وهي لا تصل إلى الملفات الشخصية — صور الحسابات ووثائق الهوية وصور كبار الشخصيات — ولا تصل إلى صور معرض المركز الإعلامي التي تُدار في صفحتها الخاصة. وهي موجودة ليتمكن أحدهم من إيجاد ملف والنظر إليه وتعطيله أو استعادته دون التنقيب في الصفحة التي تملكه. وتعطيل ملف هنا يزيله من حيث كان يُعرض."
         },
         {
           "t": "figure",
           "image": "cp-admin-media-library-default",
           "caption": {
-            "en": "The media library: every uploaded image in the system, whatever page it belongs to.",
-            "ar": "مكتبة الوسائط: كل صورة مرفوعة في النظام، أيًّا كانت الصفحة التي تتبعها."
+            "en": "The media library: every picture a page owns, whatever page that is — not personal files and not the Media Center's gallery.",
+            "ar": "مكتبة الوسائط: كل صورة تملكها صفحة، أيًّا كانت تلك الصفحة — لا الملفات الشخصية ولا معرض المركز الإعلامي."
           }
         },
         {
@@ -2480,8 +2495,8 @@
         },
         {
           "t": "note",
-          "en": "Whether the archive is publicly visible at all is not a setting on an edition. It is one switch for the whole archive, on the Operations page: turn it off and the public list comes back empty and each edition's page reports not found. FDS-010 describes a visibility flag per edition; the system has a single global one.",
-          "ar": "وكون الأرشيف ظاهرًا للعموم أصلًا ليس إعدادًا على الدورة. بل هو مفتاح واحد للأرشيف كله في صفحة العمليات: أوقفه فتعود القائمة العامة فارغة وتُبلِّغ صفحة كل دورة بعدم الوجود. ويصف المستند FDS-010 راية ظهور لكل دورة؛ وفي النظام مفتاح عام واحد."
+          "en": "Whether the archive is publicly visible at all is not a setting on an edition. It is one switch for the whole archive, on the Operations page: turn it off and the public list comes back empty — the app's archive screen shows its empty state and each edition's page reports not found. The website does not go blank: its Archive page and Archive menu fall back to a fixed set of edition cards built into the site, with the site's own totals, so check the switch in the app rather than on the website. FDS-010 describes a visibility flag per edition; the system has a single global one.",
+          "ar": "وكون الأرشيف ظاهرًا للعموم أصلًا ليس إعدادًا على الدورة. بل هو مفتاح واحد للأرشيف كله في صفحة العمليات: أوقفه فتعود القائمة العامة فارغة — فتعرض شاشة الأرشيف في التطبيق حالتها الفارغة وتُبلِّغ صفحة كل دورة بعدم الوجود. أما الموقع فلا يفرغ: إذ ترجع صفحة الأرشيف وقائمة الأرشيف فيه إلى مجموعة ثابتة من بطاقات الدورات مبنيّة داخل الموقع بإجمالياته الخاصة، فتحقّق من المفتاح في التطبيق لا في الموقع. ويصف المستند FDS-010 راية ظهور لكل دورة؛ وفي النظام مفتاح عام واحد."
         },
         {
           "t": "figure",
@@ -2619,8 +2634,8 @@
         },
         {
           "t": "p",
-          "en": "There is no VIP table and no VIP switch. The VIPs page shows every profile whose profile type is named VVIP, VIP or Gold — those three names, exactly. Somebody becomes a VIP by being given one of those profile types, and stops being one by being given a different type. Nothing on the VIPs page itself changes who is on it.",
-          "ar": "لا يوجد جدول لكبار الشخصيات ولا مفتاح لهم. فصفحة كبار الشخصيات تعرض كل ملف يكون نوعه مسمًّى VVIP أو VIP أو Gold — هذه الأسماء الثلاثة تحديدًا. ويصير المرء من كبار الشخصيات بمنحه أحد هذه الأنواع، ويكفّ عن ذلك بمنحه نوعًا آخر. ولا شيء في صفحة كبار الشخصيات نفسها يغيّر من عليها."
+          "en": "There is no VIP table, and nothing on the VIPs page itself changes who is on it. The page shows every profile whose profile type is named VVIP, VIP or Gold — those three names, exactly. Somebody becomes a VIP by being given one of those profile types, and stops being one by being given a different type. The \"VIP tier\" checkbox on the visitor profile-type form is a different switch: it decides who may reserve a VIP-tier seat for themselves and whether the app shows the VIP marker, and it puts nobody on this page. The two do not line up out of the box — Gold is on this page, but only VVIP and VIP start out marked as the VIP tier, so a Gold guest is listed here and still cannot reserve a VIP seat for themselves.",
+          "ar": "لا يوجد جدول لكبار الشخصيات، ولا شيء في صفحة كبار الشخصيات نفسها يغيّر من عليها. فالصفحة تعرض كل ملف يكون نوعه مسمًّى VVIP أو VIP أو Gold — هذه الأسماء الثلاثة تحديدًا. ويصير المرء من كبار الشخصيات بمنحه أحد هذه الأنواع، ويكفّ عن ذلك بمنحه نوعًا آخر. أمّا خانة «فئة كبار الشخصيات» في نموذج نوع ملف الزائر فمفتاح آخر: هي التي تقرّر من يحجز لنفسه مقعدًا من فئة كبار الشخصيات، وهل يُظهر التطبيق علامة كبار الشخصيات، ولا تُدخل أحدًا إلى هذه الصفحة. والاثنان لا يتطابقان ابتداءً — فـ Gold على هذه الصفحة، لكن المعلَّم بفئة كبار الشخصيات في الأصل هو VVIP وVIP فقط، فيظهر ضيف Gold هنا ولا يستطيع مع ذلك أن يحجز لنفسه مقعد كبار الشخصيات."
         },
         {
           "t": "note",
@@ -2629,8 +2644,8 @@
         },
         {
           "t": "p",
-          "en": "The notify action on this page sends to the profiles you have selected. It refuses more than five hundred in one send, and it quietly skips anybody in the selection who is not actually a VIP or who has no account to notify — then tells you, on the result, how many it skipped. That report is the useful part: it is the difference between believing a hundred people were told and knowing that eighty-three were.",
-          "ar": "يرسل إجراء الإشعار في هذه الصفحة إلى الملفات التي حدّدتها. ويرفض ما زاد على خمسمائة في الإرسالة الواحدة، ويتخطى بهدوء كل من في التحديد ممن ليس فعلًا من كبار الشخصيات أو ليس له حساب يُشعَر — ثم يخبرك في النتيجة بعدد من تخطاهم. وذلك التقرير هو الجزء النافع: فهو الفرق بين اعتقاد أن مئةً قد أُبلغوا ومعرفة أن ثلاثةً وثمانين أُبلغوا."
+          "en": "The notify action on this page sends to the profiles you have selected. It refuses more than five hundred in one send, and it quietly skips anybody in the selection who is not actually a VIP or who has no account to notify. The result tells you how many VIPs it reached and how many emails were queued, and nothing more: there is no skipped count on the screen, and the message stays a green success even when part of your selection was dropped. So compare the number it reports against the number you ticked — that is the difference between believing a hundred people were told and knowing that eighty-three were. How many it skipped goes to the audit log, not to you.",
+          "ar": "يرسل إجراء الإشعار في هذه الصفحة إلى الملفات التي حدّدتها. ويرفض ما زاد على خمسمائة في الإرسالة الواحدة، ويتخطى بهدوء كل من في التحديد ممن ليس فعلًا من كبار الشخصيات أو ليس له حساب يُشعَر. وتخبرك النتيجة بعدد من بلغتهم من كبار الشخصيات وبعدد رسائل البريد في الطابور، ولا شيء غير ذلك: فلا يظهر على الشاشة عدد من تخطاهم، وتبقى الرسالة نجاحًا أخضر وإن سقط جزء من تحديدك. فقابِل الرقم الذي تعرضه بعدد من أشّرت عليهم — فهو الفرق بين اعتقاد أن مئةً قد أُبلغوا ومعرفة أن ثلاثةً وثمانين أُبلغوا. أمّا عدد من تخطاهم فيُكتب في سجل التدقيق ولا يُعرض عليك."
         },
         {
           "t": "figure",
@@ -2671,7 +2686,7 @@
             "en": [
               [
                 "A session",
-                "Everybody holding a live seat reservation in that session"
+                "Everybody with a sign-in account who holds a live seat reservation in that session. A seat-holder with no account — a walk-in, say — has no inbox, and drops out of both the send and the estimate"
               ],
               [
                 "Approved app users",
@@ -2679,7 +2694,7 @@
               ],
               [
                 "Event attendees",
-                "Everybody holding a live seat reservation in at least one session"
+                "Everybody with a sign-in account who holds a live seat reservation in at least one session, with the same exclusion"
               ],
               [
                 "Everyone including pending",
@@ -2689,7 +2704,7 @@
             "ar": [
               [
                 "جلسة",
-                "كل من يحمل حجز مقعد ساريًا في تلك الجلسة"
+                "كل من له حساب دخول ويحمل حجز مقعد ساريًا في تلك الجلسة. ومن يحمل مقعدًا بلا حساب — كالحاضر المباشر — لا صندوق له، فيسقط من الإرسال ومن التقدير معًا"
               ],
               [
                 "مستخدمو التطبيق المعتمدون",
@@ -2697,7 +2712,7 @@
               ],
               [
                 "حضور الفعالية",
-                "كل من يحمل حجز مقعد ساريًا في جلسة واحدة على الأقل"
+                "كل من له حساب دخول ويحمل حجز مقعد ساريًا في جلسة واحدة على الأقل، بالاستثناء نفسه"
               ],
               [
                 "الجميع بمن فيهم قيد الانتظار",
@@ -2784,8 +2799,8 @@
         },
         {
           "t": "h2",
-          "en": "The FAQ has three readers",
-          "ar": "للأسئلة الشائعة ثلاثة قرّاء"
+          "en": "The FAQ has two readers",
+          "ar": "للأسئلة الشائعة قارئان"
         },
         {
           "t": "p",
@@ -2796,13 +2811,13 @@
           "t": "bullets",
           "en": [
             "**The app's questions screen** reads them directly and shows them as they are.",
-            "**The website's chat bubble** does not: it asks the AI to answer the visitor's question, and the answer is composed rather than quoted. A blank answer is reported as a failure instead of appearing as an empty bubble.",
-            "**The in-app assistant** is given the whole FAQ, the programme sessions and the booth list as its grounding, so it can only talk about real, active data. That grounding is rebuilt about once a minute: a FAQ edit reaches the assistant when the old copy expires, not the instant it is saved."
+            "**The website's chat bubble** is not one of them: it sends the visitor's question to the AI with none of these entries attached, so the answer comes from the model's own knowledge and editing an entry does not change what the bubble says. A blank answer is reported as a failure instead of appearing as an empty bubble.",
+            "**The in-app assistant** is given the programme sessions, the FAQ and the booth list as its grounding, so it can only talk about real, active data. The three share one budget of a few thousand characters and are assembled in that order, so a long programme or a few long answers can push the FAQ or the booths out of it entirely; an entry the assistant never mentions may simply not have fitted, and shortening the answers is what brings it back. That grounding is rebuilt about once a minute: a FAQ edit reaches the assistant when the old copy expires, not the instant it is saved."
           ],
           "ar": [
             "**شاشة الأسئلة في التطبيق** تقرؤها مباشرة وتعرضها كما هي.",
-            "**فقاعة المحادثة في الموقع** لا تفعل ذلك: بل تطلب من الذكاء الاصطناعي أن يجيب سؤال الزائر، فتكون الإجابة مؤلَّفة لا منقولة. والإجابة الفارغة يُبلَّغ عنها كإخفاق بدل أن تظهر فقاعة خالية.",
-            "**المساعد داخل التطبيق** يُعطى الأسئلة الشائعة كاملةً وجلسات البرنامج وقائمة الأجنحة أساسًا له، فلا يستطيع الحديث إلا عن بيانات حقيقية مفعَّلة. ويُعاد بناء ذلك الأساس كل دقيقة تقريبًا: فتعديل سؤال شائع يصل إلى المساعد حين تنتهي صلاحية النسخة القديمة، لا لحظة حفظه."
+            "**فقاعة المحادثة في الموقع** ليست منهما: فهي ترسل سؤال الزائر إلى الذكاء الاصطناعي دون أن تُرفق به شيئًا من هذه المدخلات، فتأتي الإجابة من معرفة النموذج نفسه، وتعديل مدخلة لا يغيّر ما تقوله الفقاعة. والإجابة الفارغة يُبلَّغ عنها كإخفاق بدل أن تظهر فقاعة خالية.",
+            "**المساعد داخل التطبيق** يُعطى جلسات البرنامج والأسئلة الشائعة وقائمة الأجنحة أساسًا له، فلا يستطيع الحديث إلا عن بيانات حقيقية مفعَّلة. وتتقاسم الثلاثة حدًّا واحدًا من بضعة آلاف حرف وتُجمَّع بهذا الترتيب، فبرنامجٌ طويل أو إجاباتٌ طويلة قد تُخرج الأسئلة الشائعة أو الأجنحة منه كليًّا؛ والمدخلة التي لا يذكرها المساعد قط قد تكون ببساطة لم تتّسع، واختصار الإجابات هو ما يعيدها. ويُعاد بناء ذلك الأساس كل دقيقة تقريبًا: فتعديل سؤال شائع يصل إلى المساعد حين تنتهي صلاحية النسخة القديمة، لا لحظة حفظه."
           ]
         },
         {
@@ -2820,20 +2835,20 @@
         },
         {
           "t": "p",
-          "en": "A service is one AI feature — the question filter, the FAQ answering, the assistant, translation, live translation, live sign language, session summaries and the Control Panel's own help assistant. The services page is read-only: it collects, for every feature, which prompt is active on it, which provider and model that prompt uses, and whether that provider is hosted outside the organisation. It exists so the question \"what runs the translation, and where?\" has one place to be answered. Nothing is changed there.",
-          "ar": "الخدمة هي خاصية ذكاء اصطناعي واحدة — مرشّح الأسئلة، والإجابة عن الأسئلة الشائعة، والمساعد، والترجمة، والترجمة الفورية، ولغة الإشارة الفورية، وملخصات الجلسات، ومساعد لوحة التحكم نفسه. وصفحة الخدمات للقراءة فقط: إذ تجمع لكل خاصية الموجّه المفعَّل عليها، والمزوّد والنموذج الذي يستخدمه ذلك الموجّه، وهل ذلك المزوّد مستضاف خارج الجهة. وهي موجودة ليكون لسؤال «ما الذي يشغّل الترجمة، وأين؟» موضع واحد يُجاب فيه. ولا يُغيَّر فيها شيء."
+          "en": "A service is one AI feature — the question filter, the FAQ answering, the assistant, translation, live translation, live sign language, session summaries and the Control Panel's own help assistant. The services page is almost entirely read-only: it collects, for every feature, which prompt is active on it, which provider and model that prompt uses, and whether that provider is hosted outside the organisation. It exists so the question \"what runs the translation, and where?\" has one place to be answered. The one thing it changes is routing: an administrator holding the prompt-edit permission gets an edit button on any row with an active prompt, and can set that prompt's provider, model, temperature and output ceiling from there. It saves through the same update the catalogue uses, so the version goes up and the change lands in the prompt's history and the audit trail. The wording of a prompt is still only editable in the catalogue.",
+          "ar": "الخدمة هي خاصية ذكاء اصطناعي واحدة — مرشّح الأسئلة، والإجابة عن الأسئلة الشائعة، والمساعد، والترجمة، والترجمة الفورية، ولغة الإشارة الفورية، وملخصات الجلسات، ومساعد لوحة التحكم نفسه. وصفحة الخدمات للقراءة في معظمها: إذ تجمع لكل خاصية الموجّه المفعَّل عليها، والمزوّد والنموذج الذي يستخدمه ذلك الموجّه، وهل ذلك المزوّد مستضاف خارج الجهة. وهي موجودة ليكون لسؤال «ما الذي يشغّل الترجمة، وأين؟» موضع واحد يُجاب فيه. والشيء الوحيد الذي تغيّره هو التوجيه: فالمسؤول الذي يملك صلاحية تحرير الموجّهات يجد زرَّ تحرير في كل سجل له موجّه مفعَّل، ويستطيع منه ضبط مزوّد ذلك الموجّه ونموذجه ودرجة التنويع وسقف المخرجات. ويُحفظ ذلك بالتحديث نفسه الذي يستخدمه الفهرس، فيزيد رقم الإصدار ويُسجَّل التغيير في تاريخ الموجّه وفي أثر التدقيق. أما صياغة الموجّه فلا تُحرَّر إلا في الفهرس."
         },
         {
           "t": "note",
-          "en": "The page warns when a sensitive feature is routed to a provider that is definitely in the cloud. Sensitive here means the four that carry the audience's own words or a session's contents: session summaries, the assistant, live translation and live sign language. One provider is shown as depending on its endpoint rather than flagged, because it can be pointed at an internal address and the row alone cannot tell.",
-          "ar": "تحذّر الصفحة حين تُوجَّه خاصية حساسة إلى مزوّد في السحابة قطعًا. والحساس هنا هو الخصائص الأربع التي تحمل كلام الجمهور نفسه أو محتوى جلسة: ملخصات الجلسات، والمساعد، والترجمة الفورية، ولغة الإشارة الفورية. ويُعرض أحد المزودين على أنه رهنٌ بعنوان نقطته بدل تعليمه بتحذير، لأنه يمكن توجيهه إلى عنوان داخلي ولا يستطيع السجل وحده أن يعرف."
+          "en": "The page warns when a sensitive feature is pinned to a provider that is definitely in the cloud. Sensitive here means the four that carry the audience's own words or a session's contents: session summaries, the assistant, live translation and live sign language. One provider is shown as depending on its endpoint rather than flagged, because it can be pointed at an internal address and the row alone cannot tell. **Read the badge and the warning as describing the pin, not the destination:** the page reads the provider stored on the prompt and does not follow the Echo redirect described below, so a prompt still on Echo shows as offline and raises no warning even while the estate's default provider is serving it from the cloud. Where a sensitive feature matters, pin its prompt to the provider you intend rather than leaving it on Echo.",
+          "ar": "تحذّر الصفحة حين تُثبَّت خاصية حساسة على مزوّد في السحابة قطعًا. والحساس هنا هو الخصائص الأربع التي تحمل كلام الجمهور نفسه أو محتوى جلسة: ملخصات الجلسات، والمساعد، والترجمة الفورية، ولغة الإشارة الفورية. ويُعرض أحد المزودين على أنه رهنٌ بعنوان نقطته بدل تعليمه بتحذير، لأنه يمكن توجيهه إلى عنوان داخلي ولا يستطيع السجل وحده أن يعرف. **واقرأ الشارة والتحذير على أنهما يصفان التثبيت لا الوجهة:** فالصفحة تقرأ المزوّد المحفوظ على الموجّه ولا تتبع تحويل Echo الموصوف أدناه، فالموجّه الذي ما زال على Echo يظهر غير متصل ولا يرفع تحذيرًا ولو كان المزوّد الافتراضي للمنشأة يخدمه من السحابة. وحيثما كانت الخاصية الحساسة مهمة، ثبّت موجّهها على المزوّد الذي تقصده بدل تركها على Echo."
         },
         {
           "t": "figure",
           "image": "cp-admin-ai-services-default",
           "caption": {
-            "en": "The services view: one row per AI feature, with the prompt, provider and model actually serving it.",
-            "ar": "عرض الخدمات: سجل لكل خاصية ذكاء اصطناعي، ومعه الموجّه والمزوّد والنموذج الذي يخدمها فعلًا."
+            "en": "The services view: one row per AI feature, with the prompt, provider and model it is configured with.",
+            "ar": "عرض الخدمات: سجل لكل خاصية ذكاء اصطناعي، ومعه الموجّه والمزوّد والنموذج المهيَّأة له."
           }
         },
         {
@@ -2902,13 +2917,13 @@
             "en": [
               [
                 "The provider is chosen but has no key",
-                "The service is unavailable, refused before any call goes out",
+                "The service is unavailable, refused before any call goes out; the failure is still recorded in the invocations log",
                 "The provider's key in the deployment configuration — see the configuration chapter"
               ],
               [
                 "The provider is not wired up at all",
-                "The service is unavailable, and a failed call is recorded in the invocations log first",
-                "The invocations page, which will hold the row with its error code"
+                "The service is unavailable, and the failure is recorded in the invocations log",
+                "The provider chosen on the prompt"
               ],
               [
                 "The prompt is deactivated",
@@ -2919,13 +2934,13 @@
             "ar": [
               [
                 "المزوّد مختار ولا مفتاح له",
-                "الخدمة غير متاحة، ويُرفض الطلب قبل خروج أي استدعاء",
+                "الخدمة غير متاحة، ويُرفض الطلب قبل خروج أي استدعاء، ومع ذلك يُسجَّل الإخفاق في سجل الاستدعاءات",
                 "مفتاح المزوّد في تهيئة النشر — انظر فصل التهيئة"
               ],
               [
                 "المزوّد غير موصول أصلًا",
-                "الخدمة غير متاحة، ويُسجَّل الاستدعاء الفاشل في سجل الاستدعاءات أولًا",
-                "صفحة الاستدعاءات، وفيها السجل مع رمز خطئه"
+                "الخدمة غير متاحة، ويُسجَّل الإخفاق في سجل الاستدعاءات",
+                "المزوّد المختار على الموجّه"
               ],
               [
                 "الموجّه معطَّل",
@@ -2936,14 +2951,19 @@
           }
         },
         {
+          "t": "note",
+          "en": "Both provider failures write their row under the same error code, so a row in the log tells you a provider problem happened, not which of the two it was. **Check the key first:** every provider but AzureOpenAi is wired up in every deployment, so a missing key is by far the commoner cause. A deactivated prompt is the one case that writes no row at all.",
+          "ar": "يكتب كلا إخفاقَي المزوّد سجلَّه برمز الخطأ نفسه، فوجود السجل يخبرك أن مشكلة مزوّد وقعت، لا أيّهما هي. **وابدأ بالمفتاح:** فكل المزودين عدا AzureOpenAi موصولون في كل نشر، فالمفتاح الناقص هو السبب الأغلب بكثير. أما الموجّه المعطَّل فهو الحالة الوحيدة التي لا تكتب سجلًّا البتة."
+        },
+        {
           "t": "h2",
           "en": "Seeing what it did",
           "ar": "رؤية ما فعله"
         },
         {
           "t": "p",
-          "en": "Every AI call writes one row, whether it succeeded or failed: which prompt and feature, which provider and model, the inputs after personal data and secrets have been stripped out, the output text, how many tokens went in and came out, how long it took, an error code when there was one, and who the caller was — anonymous, a visitor, staff, an administrator or a moderator. The dashboard is the same data summarised.",
-          "ar": "يكتب كل استدعاء للذكاء الاصطناعي سجلًّا واحدًا، نجح أم فشل: أي موجّه وأي خاصية، وأي مزوّد وأي نموذج، والمدخلات بعد تجريدها من البيانات الشخصية والأسرار، ونص المخرجات، وكم رمزًا دخل وخرج، وكم استغرق، ورمز الخطأ إن وُجد، ومن كان المستدعي — مجهولًا أو زائرًا أو موظفًا أو مسؤولًا أو مشرف جلسة. ولوحة المؤشرات هي البيانات نفسها ملخَّصة."
+          "en": "Every AI call writes one row, whether it succeeded or failed: which prompt and feature, which provider and model the prompt is configured with, the inputs after personal data and secrets have been stripped out, the output text, how many tokens went in and came out, how long it took, an error code when there was one, and who the caller was — anonymous, a visitor, staff, an administrator or a moderator. The dashboard is the same data summarised. Read the provider and model columns as the prompt's own settings rather than a record of where the text went: a prompt left on Echo and redirected by the estate's default provider still logs as Echo, with the model \"echo\", even though a real provider answered and chose its own model.",
+          "ar": "يكتب كل استدعاء للذكاء الاصطناعي سجلًّا واحدًا، نجح أم فشل: أي موجّه وأي خاصية، والمزوّد والنموذج المضبوطان على الموجّه، والمدخلات بعد تجريدها من البيانات الشخصية والأسرار، ونص المخرجات، وكم رمزًا دخل وخرج، وكم استغرق، ورمز الخطأ إن وُجد، ومن كان المستدعي — مجهولًا أو زائرًا أو موظفًا أو مسؤولًا أو مشرف جلسة. ولوحة المؤشرات هي البيانات نفسها ملخَّصة. واقرأ عمودَي المزوّد والنموذج على أنهما إعدادات الموجّه نفسه لا سجلٌّ لوجهة النص: فالموجّه الذي تُرك على Echo وحوّله المزوّد الافتراضي للمنشأة يُسجَّل مع ذلك على أنه Echo وبالنموذج «echo»، ولو أجاب مزوّد حقيقي واختار نموذجه بنفسه."
         },
         {
           "t": "note",
@@ -2973,8 +2993,8 @@
         },
         {
           "t": "p",
-          "en": "The Test button on a prompt is limited to twenty calls an hour, counted per administrator on a rolling window rather than per computer — so two administrators sharing an office each get their own twenty, and one administrator moving between machines does not get forty. The Control Panel's own help assistant has a separate, larger allowance of forty an hour.",
-          "ar": "زر الاختبار في الموجّه محدود بعشرين استدعاءً في الساعة، تُحسب لكل مسؤول على نافذة متحركة لا لكل جهاز — فمسؤولان يتشاركان مكتبًا لكلٍّ منهما عشرونه، ومسؤول واحد ينتقل بين الأجهزة لا يحصل على أربعين. ولمساعد لوحة التحكم نفسه مخصَّص منفصل أكبر: أربعون في الساعة."
+          "en": "The Test button on a prompt draws on an allowance of twenty calls an hour, counted per administrator rather than per computer — so two administrators sharing an office each get their own twenty, and one administrator moving between machines does not get forty. The hour is a fixed window rather than a rolling one: the whole twenty comes back at once when the window turns over, instead of each call freeing up on its own. That same twenty also covers opening an invocation's full detail from the log, so twenty drill-downs will refuse a test with nothing on screen to explain why; the log list itself, and the error-code column on it, cost nothing. The Control Panel's own help assistant has a separate, larger allowance of forty an hour.",
+          "ar": "زر الاختبار في الموجّه يسحب من مخصَّص قدره عشرون استدعاءً في الساعة، تُحسب لكل مسؤول لا لكل جهاز — فمسؤولان يتشاركان مكتبًا لكلٍّ منهما عشرونه، ومسؤول واحد ينتقل بين الأجهزة لا يحصل على أربعين. والساعة نافذة ثابتة لا متحركة: فتعود العشرون كلها دفعةً واحدة حين تنقلب النافذة، لا أن يتحرر كل استدعاء وحده. وتلك العشرون نفسها تشمل فتح تفصيل استدعاء كاملًا من السجل، فمن فتح عشرين سجلًّا في الساعة يُرفض اختباره دون ما يفسّر ذلك على الشاشة؛ أما قائمة السجل نفسها وعمود رمز الخطأ فيها فلا يكلّفان شيئًا. ولمساعد لوحة التحكم نفسه مخصَّص منفصل أكبر: أربعون في الساعة."
         }
       ]
     },
@@ -3014,7 +3034,7 @@
               [
                 "Configuration",
                 "Free key/value rows: a machine key, a value, and a description for whoever edits it next",
-                "Whatever the organisation decides to keep there. It ships empty on purpose — the list of keys is the client's to decide"
+                "Whatever the organisation decides to keep there, on top of the six app-update rows it ships with: the minimum and latest app version and the store link, for Android and for iOS. They arrive empty, and an empty value leaves that rule off"
               ],
               [
                 "Site settings",
@@ -3036,7 +3056,7 @@
               [
                 "التهيئة",
                 "سجلات مفتاح/قيمة حرة: مفتاح آلي، وقيمة، ووصف لمن يحرّرها بعدك",
-                "ما تقرر الجهة الاحتفاظ به هناك. وتُشحن فارغة عمدًا — فقائمة المفاتيح من شأن العميل"
+                "ما تقرر الجهة الاحتفاظ به هناك، فوق ستة سجلات تحديث التطبيق التي تُشحن معها: أدنى إصدار وأحدث إصدار ورابط المتجر، لـ Android ولـ iOS. وتصل فارغة، والقيمة الفارغة تُبقي تلك القاعدة معطّلة"
               ],
               [
                 "إعدادات الموقع",
@@ -3086,8 +3106,8 @@
         },
         {
           "t": "p",
-          "en": "The two switches here sit on top of what the servers were deployed with. Leave one alone and the deployed setting applies; set it and your setting wins; clear it and the deployed setting applies again. The page shows you which of the two is in force, so a switch that currently agrees with the deployment is distinguishable from one that is overriding it.",
-          "ar": "المفتاحان هنا يجلسان فوق ما نُشرت به الخوادم. فاترك أحدهما وشأنه يسرِ الإعداد المنشور؛ واضبطه يغلب إعدادك؛ وامسحه يعُد الإعداد المنشور. وتُظهر لك الصفحة أيَّهما النافذ، فيتميز المفتاح الموافق حاليًّا للنشر عن المفتاح المتجاوز له."
+          "en": "The two switches here sit on top of what the servers were deployed with. Until this page is saved the deployed setting applies to both. Saving writes an override for both — not only the switch you moved — and from then on your setting wins. Nothing on the page says where a value came from: a switch that agrees with the deployment looks exactly like one overriding it. To see the difference, or to hand a mode back to the deployment, go to the Configuration page and find the walkInMode.quickRegister and walkInMode.autoApprove rows. An active row holding true or false is an override; untick Active on it, or use Delete there — which deactivates the row rather than removing it — and the deployed setting applies again. The value itself cannot be blanked: that form refuses an empty value.",
+          "ar": "المفتاحان هنا يجلسان فوق ما نُشرت به الخوادم. وحتى تُحفظ هذه الصفحة يسري الإعداد المنشور على كليهما. والحفظ يكتب تجاوزًا لكليهما — لا للمفتاح الذي حرّكته وحده — ومن ثَمّ يغلب إعدادك. ولا تقول الصفحة من أين جاءت القيمة: فالمفتاح الموافق للنشر يبدو تمامًا كالمفتاح المتجاوز له. ولترى الفرق، أو لتعيد وضعًا إلى ما نُشرت به الخوادم، اذهب إلى صفحة التهيئة وابحث عن سجلَّي walkInMode.quickRegister و walkInMode.autoApprove. فالسجل المفعّل الذي يحمل true أو false تجاوزٌ؛ فأزل عنه علامة «مُفعّل»، أو استخدم الحذف هناك — وهو يعطّل السجل ولا يزيله — فيعود الإعداد المنشور. أما القيمة نفسها فلا يمكن إفراغها: فذلك النموذج يرفض القيمة الفارغة."
         },
         {
           "t": "note",
@@ -3122,8 +3142,8 @@
         },
         {
           "t": "note",
-          "en": "**Opening a year cancels every badge that exists.** Every attendee's badge is cleared and a fresh one is issued in its place, in one operation. Printed badges, emailed badges and badges on a phone all stop opening gates the moment it completes, and every attendee carried forward needs their new one sent or printed. This is not a side effect: the gate refuses a badge that does not carry the open year, so the re-issue is what keeps returning attendees able to get in at all. The confirmation states how many badges will be affected before you agree.",
-          "ar": "**فتح سنة يُلغي كل شارة قائمة.** فتُمسح شارة كل حاضر وتُصدر له شارة جديدة مكانها، في عملية واحدة. والشارات المطبوعة والمرسلة بالبريد والموجودة على الهواتف كلها تكفّ عن فتح البوابات لحظة اكتمال العملية، ويحتاج كل حاضر مُرحَّل إلى إرسال شارته الجديدة أو طباعتها. وليس هذا أثرًا جانبيًّا: فالبوابة ترفض الشارة التي لا تحمل السنة المفتوحة، وإعادة الإصدار هي ما يُبقي العائدين قادرين على الدخول أصلًا. ويذكر التأكيد عدد الشارات التي ستتأثر قبل أن توافق."
+          "en": "**Opening a year cancels every badge that exists.** Every attendee's badge is cleared and a fresh one is issued in its place, in one operation. Printed badges, emailed badges and badges on a phone all stop opening gates the moment it completes, and every attendee carried forward needs their new one sent or printed. This is not a side effect: the gate refuses a badge that does not carry the open year, so the re-issue is what keeps returning attendees able to get in at all. The confirmation states the consequence before you agree, and says plainly that it cannot be undone. It carries no number: the count is not known until the server has done the work, and it is reported the moment the operation finishes.",
+          "ar": "**فتح سنة يُلغي كل شارة قائمة.** فتُمسح شارة كل حاضر وتُصدر له شارة جديدة مكانها، في عملية واحدة. والشارات المطبوعة والمرسلة بالبريد والموجودة على الهواتف كلها تكفّ عن فتح البوابات لحظة اكتمال العملية، ويحتاج كل حاضر مُرحَّل إلى إرسال شارته الجديدة أو طباعتها. وليس هذا أثرًا جانبيًّا: فالبوابة ترفض الشارة التي لا تحمل السنة المفتوحة، وإعادة الإصدار هي ما يُبقي العائدين قادرين على الدخول أصلًا. ويذكر التأكيد العاقبة قبل أن توافق، ويقول صراحةً إن الإجراء لا رجعة فيه. ولا يحمل عددًا: فالعدد لا يُعرف حتى ينتهي الخادم من العمل، ويُذكر لحظة اكتمال العملية."
         },
         {
           "t": "bullets",
@@ -3242,8 +3262,8 @@
         },
         {
           "t": "p",
-          "en": "Thirteen background workers do the things nobody presses a button for. This page shows whether each is running, when it last ran, how many times it has run and failed, and its last error. It refreshes itself and has no actions — it is a health display, not a control panel.",
-          "ar": "ثلاثة عشر عاملًا في الخلفية تؤدي ما لا يضغط أحد زرًّا لأجله. وتُظهر هذه الصفحة هل يعمل كلٌّ منها، ومتى عمل آخر مرة، وكم مرة عمل وأخفق، وآخر خطأ له. وهي تحدّث نفسها ولا إجراءات فيها — فهي عرض حالة لا لوحة تحكم."
+          "en": "Thirteen background workers do the things nobody presses a button for. Fourteen services report their health to this page: those thirteen, plus the email sender. It shows whether each is running, when it last ran, how many times it has run and failed, and its last error. It refreshes itself and has no actions — it is a health display, not a control panel.",
+          "ar": "ثلاثة عشر عاملًا في الخلفية تؤدي ما لا يضغط أحد زرًّا لأجله. وأربع عشرة خدمة تُبلّغ هذه الصفحة بحالتها: هذه الثلاثة عشر، ومرسل البريد معها. وتُظهر هل يعمل كلٌّ منها، ومتى عمل آخر مرة، وكم مرة عمل وأخفق، وآخر خطأ له. وهي تحدّث نفسها ولا إجراءات فيها — فهي عرض حالة لا لوحة تحكم."
         },
         {
           "t": "table",
@@ -3370,8 +3390,8 @@
         },
         {
           "t": "note",
-          "en": "Each of these runs on exactly one server, whatever the size of the estate, because two copies would send everything twice. The email sender is the exception and runs everywhere on purpose: its queue lives inside each server, so a server that is not sending is a server whose emails never leave. It retries a message three times, and can be configured to email an operations address when a send fails.",
-          "ar": "يعمل كلٌّ من هذه على خادم واحد بالضبط مهما كان حجم المنشأة، لأن نسختين ترسلان كل شيء مرتين. ومرسل البريد استثناء ويعمل في كل مكان عمدًا: إذ يقيم طابوره داخل كل خادم، فالخادم الذي لا يرسل خادمٌ لا يغادره بريده. ويعيد محاولة الرسالة ثلاث مرات، ويمكن تهيئته ليراسل عنوان عمليات عند إخفاق الإرسال."
+          "en": "Each of these runs on exactly one server, whatever the size of the estate, because two copies would send everything twice. The email sender is the exception and runs everywhere on purpose: its queue lives inside each server, so a server that is not sending is a server whose emails never leave. It hands a message to the mail relay three times at most — one send and two retries — and only while the failure looks temporary; a relay that refuses the message outright, for an unknown recipient or bad credentials, ends it on the first failure. It can also be configured to email an operations address when a send fails.",
+          "ar": "يعمل كلٌّ من هذه على خادم واحد بالضبط مهما كان حجم المنشأة، لأن نسختين ترسلان كل شيء مرتين. ومرسل البريد استثناء ويعمل في كل مكان عمدًا: إذ يقيم طابوره داخل كل خادم، فالخادم الذي لا يرسل خادمٌ لا يغادره بريده. ويسلّم الرسالة إلى مُرحِّل البريد ثلاث مرات على الأكثر — إرسالة وإعادتان — وذلك ما دام الإخفاق يبدو مؤقتًا؛ أما المُرحِّل الذي يرفض الرسالة رفضًا صريحًا، لمستقبِل مجهول أو بيانات اعتماد خاطئة، فينتهي أمرها عند أول إخفاق. ويمكن تهيئته أيضًا ليراسل عنوان عمليات عند إخفاق الإرسال."
         },
         {
           "t": "figure",
@@ -3396,12 +3416,12 @@
           "en": [
             "The database holds only your changes. A template you never touched is sent from the wording built into the application, so a fresh installation sends correct emails with an empty table.",
             "The tokens are per template and are offered as chips beside the editor — the code and its expiry for the code emails, the count and generation time for the bulk-badge note, the new address for the change-of-email alert. A token that does not belong to the template is rejected on save.",
-            "**The notification emails are not here.** Booking confirmed, session reminder, registration approved or rejected, badge ready, the VIP notice and announcements are written in the code and cannot be reworded from the Control Panel. The one place their text is yours is the announcement composer, where you type it per send."
+            "**The notification emails are not here.** Registration approved or rejected and badge ready are written in the code and cannot be reworded from the Control Panel. Two messages are yours to write per send instead: the announcement composer, and the notify-VIPs message on the VIPs page — each takes a bilingual title and body and sends exactly what you type. Two others reach nobody by email at all: the session reminder is sent with email switched off, so it arrives only as a message inside the app, and a booking confirmation goes out on no channel — the kind exists in the app's notification list, and nothing in the system sends it."
           ],
           "ar": [
             "لا تحمل قاعدة البيانات إلا تغييراتك. فالقالب الذي لم تمسسه يُرسل بالصياغة المضمَّنة في التطبيق، فيرسل التثبيت الجديد رسائل صحيحة والجدول فارغ.",
             "والرموز البديلة خاصة بكل قالب وتُعرض شارات إلى جانب المحرّر — الرمز ومدة صلاحيته في رسائل الرموز، والعدد ووقت التوليد في رسالة الشارات الجماعية، والعنوان الجديد في تنبيه تغيّر البريد. ويُرفض عند الحفظ أي رمز لا يخص القالب.",
-            "**ورسائل الإشعارات ليست هنا.** فتأكيد الحجز، وتذكير الجلسة، واعتماد التسجيل أو رفضه، وجاهزية الشارة، وإشعار كبار الشخصيات، والإعلانات مكتوبة في الشيفرة ولا يمكن إعادة صياغتها من لوحة التحكم. والموضع الوحيد الذي يكون نصّها فيه لك هو محرّر الإعلانات، حيث تكتبه في كل إرسالة."
+            "**ورسائل الإشعارات ليست هنا.** فاعتماد التسجيل أو رفضه وجاهزية الشارة مكتوبان في الشيفرة ولا يمكن إعادة صياغتهما من لوحة التحكم. ورسالتان تكتبهما أنت في كل إرسالة بدل ذلك: محرّر الإعلانات، ورسالة إشعار كبار الشخصيات في صفحة كبار الشخصيات — كلتاهما تأخذ عنوانًا ونصًّا بلغتين وترسل ما تكتبه بحرفه. ورسالتان لا تصلان بالبريد أصلًا: فتذكير الجلسة يُرسل والبريد مُطفأ، فلا يصل إلا رسالةً داخل التطبيق، وتأكيد الحجز لا يخرج على أي قناة — فالنوع موجود في قائمة إشعارات التطبيق، ولا شيء في النظام يرسله."
           ]
         },
         {
@@ -3434,8 +3454,8 @@
           "t": "figure",
           "image": "cp-admin-configuration-default",
           "caption": {
-            "en": "The Configuration table. It ships empty; the keys it holds are the organisation's to decide.",
-            "ar": "جدول التهيئة. يُشحن فارغًا؛ والمفاتيح التي يحملها من شأن الجهة."
+            "en": "The Configuration table. It ships with the six app-update policy keys already created and empty, ready for their values; the software adds rows of its own here too — the walk-in overrides, and the end-of-programme rating marker — and a key an operator invents is stored but read by nothing.",
+            "ar": "جدول التهيئة. يُشحن ومفاتيح سياسة تحديث التطبيق الستة منشأة فيه وفارغة، جاهزة لقيمها؛ والبرنامج يضيف هنا سجلات من عنده أيضًا — تجاوزات الحضور المباشر، وعلامة تقييم نهاية البرنامج — والمفتاح الذي يخترعه المشغّل يُحفَظ ولا يقرؤه شيء."
           }
         }
       ]
@@ -3638,8 +3658,8 @@
       "blocks": [
         {
           "t": "p",
-          "en": "Six pages hold lists that nothing else works without. They look like the least interesting screens in the Control Panel and they are the ones that stop a registration dead when they are empty: a visitor cannot finish signing up without an organisation to belong to, and cannot be given a badge without a profile type. Fill these before an event opens, not during it.",
-          "ar": "ست صفحات تحمل قوائم لا يعمل شيء آخر بدونها. تبدو أقل شاشات لوحة التحكم إثارة، وهي التي توقف التسجيل تمامًا حين تكون فارغة: فالزائر لا يستطيع إتمام تسجيله بلا جهة ينتمي إليها، ولا يمكن منحه شارة بلا نوع ملف. املأ هذه قبل افتتاح الفعالية، لا أثناءها."
+          "en": "Six pages hold lists that nothing else works without. They look like the least interesting screens in the Control Panel and they are the ones that stop a registration dead when they are empty: a visitor cannot finish signing up without an organisation to belong to, and cannot be registered at the walk-in desk — nor given a bulk-minted badge — without a profile type. Approving a visitor still issues the badge whether or not a tier is picked. Fill these before an event opens, not during it.",
+          "ar": "ست صفحات تحمل قوائم لا يعمل شيء آخر بدونها. تبدو أقل شاشات لوحة التحكم إثارة، وهي التي توقف التسجيل تمامًا حين تكون فارغة: فالزائر لا يستطيع إتمام تسجيله بلا جهة ينتمي إليها، ولا يمكن تسجيله عند المكتب — ولا منحه شارة ضمن دفعة — بلا نوع ملف. أما اعتماد الزائر فيصدر شارته سواء اختيرت له فئة أم لا. املأ هذه قبل افتتاح الفعالية، لا أثناءها."
         },
         {
           "t": "h2",
@@ -3675,17 +3695,17 @@
               [
                 "Countries",
                 "Nationality on every profile, and the calling-code picker",
-                "A non-Saudi visitor cannot state a nationality"
+                "No visitor can state a nationality — Saudi Arabia is a row in this list like any other. App sign-up and the desk's full registration are both refused, for Saudis as much as foreigners; only a quick walk-in taken with no nationality at all still completes"
               ],
               [
                 "Regions",
                 "Place of birth for a Saudi visitor",
-                "The place-of-birth picker is empty; the field is optional, so registration still completes"
+                "Nothing — the picker falls back to the thirteen official Saudi regions built into both the app and the desk. Place of birth itself is required on every app sign-up, though the desk may leave it blank"
               ],
               [
                 "Visitor profile types",
                 "Which tier a visitor is approved into, and what the badge says",
-                "An account cannot be approved into a tier, so no badge is issued"
+                "The account is still approved and still gets a working badge, but in no tier — the badge shows no tier line and falls back to the default gold strip, and any gate with an allow-list refuses it"
               ],
               [
                 "Other profile types",
@@ -3707,17 +3727,17 @@
               [
                 "البلدان",
                 "الجنسية في كل ملف، وقائمة رموز الاتصال",
-                "لا يستطيع الزائر غير السعودي تحديد جنسيته"
+                "لا يستطيع أي زائر تحديد جنسيته — فالسعودية سجل في هذه القائمة كسائر السجلات. فيُرفض التسجيل في التطبيق ويُرفض التسجيل الكامل عند المكتب، للسعوديين كما لغيرهم؛ ولا يكتمل إلا تسجيل سريع عند المكتب بلا جنسية أصلًا"
               ],
               [
                 "المناطق",
                 "مكان الميلاد للزائر السعودي",
-                "تكون قائمة مكان الميلاد فارغة؛ والحقل اختياري، فيكتمل التسجيل رغم ذلك"
+                "لا شيء — إذ ترجع القائمة إلى مناطق السعودية الرسمية الثلاث عشرة المضمَّنة في التطبيق وفي المكتب معًا. ومكان الميلاد نفسه مطلوب في كل تسجيل عبر التطبيق، وإن جاز تركه فارغًا عند المكتب"
               ],
               [
                 "أنواع ملفات الزوار",
                 "الفئة التي يُعتمد فيها الزائر، وما تعرضه الشارة",
-                "لا يمكن اعتماد الحساب في أي فئة، فلا تُصدر شارة"
+                "يُعتمد الحساب وتصدر له شارة عاملة، لكن بلا فئة — فلا يظهر على الشارة سطر الفئة ويعود شريطها إلى الذهبي الافتراضي، وترفضه أي بوابة لها قائمة سماح"
               ],
               [
                 "أنواع الملفات الأخرى",
@@ -3739,8 +3759,8 @@
         },
         {
           "t": "p",
-          "en": "Removing an entry from any of these lists deactivates it. It stops being offered to anybody choosing from now on, and every profile that already points at it keeps pointing at it — a visitor who chose an interest does not lose it because the interest was retired. Re-activating puts it back in the picker. This is why the lists can be tidied during an event without breaking the people already registered.",
-          "ar": "إزالة أي مدخل من هذه القوائم تعطّله. فيتوقف عرضه على من يختار من الآن فصاعدًا، ويظل كل ملف يشير إليه مشيرًا إليه — فالزائر الذي اختار اهتمامًا لا يفقده لأن الاهتمام قد أُوقف. وإعادة تفعيله تعيده إلى القائمة. ولهذا يمكن ترتيب القوائم أثناء الفعالية دون الإضرار بمن سجّلوا بالفعل."
+          "en": "Removing an entry from any of these lists deactivates it. It stops being offered to anybody choosing from now on, and every profile that already points at it keeps pointing at it — a visitor who chose an interest does not lose it because the interest was retired. Re-activating puts it back in the picker. This is why four of these lists — interests, organisations, countries and regions — can be tidied during an event without breaking the people already registered. A profile type is stricter: it refuses to be removed at all while any account is still assigned to it, and the Control Panel shows you that refusal, so retiring one means re-assigning its holders first.",
+          "ar": "إزالة أي مدخل من هذه القوائم تعطّله. فيتوقف عرضه على من يختار من الآن فصاعدًا، ويظل كل ملف يشير إليه مشيرًا إليه — فالزائر الذي اختار اهتمامًا لا يفقده لأن الاهتمام قد أُوقف. وإعادة تفعيله تعيده إلى القائمة. ولهذا يمكن ترتيب أربع من هذه القوائم — الاهتمامات والجهات والبلدان والمناطق — أثناء الفعالية دون الإضرار بمن سجّلوا بالفعل. أما نوع الملف فأشدّ: يرفض أن يُزال ما دام مُسندًا إلى أي حساب، وتعرض لوحة التحكم هذا الرفض، فإيقاف نوعٍ يقتضي نقل حامليه إلى غيره أولًا."
         },
         {
           "t": "h2",
@@ -3944,7 +3964,7 @@
           "t": "bullets",
           "en": [
             "The pipeline builds all four applications and publishes them as one artefact.",
-            "It confirms the target machine, and refuses to continue if the machine is the one named as forbidden for that job — this is what stops a pre-production run reaching production.",
+            "It checks the target machine against two names: the one that job expects, and the machine pinned to the other environment, which is forbidden.",
             "For each application in turn — API first, edge last — it stops the site and its pool, mirrors the files into place, and starts them again, proving both reached the started state.",
             "The operator then runs that server's configuration scripts as an administrator.",
             "The operator restarts IIS. Recycling the pool is not enough: the worker process inherits its environment from the service that launched it, so a recycled pool keeps the old values.",
@@ -3952,12 +3972,17 @@
           ],
           "ar": [
             "يبني خط الإنتاج التطبيقات الأربعة وينشرها كحزمة واحدة.",
-            "يتأكد من الجهاز الهدف، ويرفض المتابعة إذا كان الجهاز هو المحظور لتلك المهمة — وهذا ما يمنع تشغيل ما قبل الإنتاج من الوصول إلى الإنتاج.",
+            "يتحقق من الجهاز الهدف مقابل اسمين: الاسم الذي تتوقّعه تلك المهمة، والجهاز المثبَّت للبيئة الأخرى وهو المحظور.",
             "ثم لكل تطبيق بالتتابع — واجهة البرمجة أولًا والحافة أخيرًا — يوقف الموقع ومجمّعه، وينسخ الملفات، ثم يعيد تشغيلهما ويتحقق من بلوغهما حالة التشغيل.",
             "بعد ذلك يشغّل المشغّل نصوص تهيئة ذلك الخادم بصلاحيات المسؤول.",
             "ثم يعيد المشغّل تشغيل IIS. ولا تكفي إعادة تدوير المجمّع: فعملية العامل ترث بيئتها من الخدمة التي شغّلتها، فيحتفظ المجمّع المُعاد تدويره بالقيم القديمة.",
             "ثم تُشغَّل واجهة البرمجة، فتنشئ قاعدتَي البيانات أو تُرقّيهما وتزرع أول مسؤول."
           ]
+        },
+        {
+          "t": "note",
+          "en": "The forbidden name is the only half of that check armed on production today. The production machine's name has never been read, so the name production expects is blank — and a job whose expected name is blank warns and carries on rather than refusing. Pre-production is the mirror: the name forbidden to it is production's, which is that same blank, so what stops a pre-production run reaching production is its expected name, not the forbidden one. Filling in the production machine name closes both halves.",
+          "ar": "الاسم المحظور هو النصف الوحيد المفعَّل من ذلك التحقق على الإنتاج اليوم. فاسم جهاز الإنتاج لم يُقرأ قط، فالاسم الذي يتوقّعه الإنتاج فارغ — والمهمة التي يكون اسمها المتوقّع فارغًا تُحذّر وتمضي بدل أن ترفض. وما قبل الإنتاج صورة معكوسة: فالاسم المحظور عليه هو اسم الإنتاج، وهو ذلك الفراغ نفسه، فما يمنع تشغيل ما قبل الإنتاج من الوصول إلى الإنتاج هو اسمه المتوقّع لا المحظور. ويسدّ ملءُ اسم جهاز الإنتاج النصفين معًا."
         },
         {
           "t": "figure",
@@ -3994,8 +4019,8 @@
         },
         {
           "t": "note",
-          "en": "Two traps. If the configured password or email is blank the seeder writes no administrator, logs the reason, and the system starts up perfectly healthy — every sign-in then fails with nothing visibly wrong. And a password containing a run such as 12345 is rejected by the password rules, with exactly the same silent outcome.",
-          "ar": "مِزلقان اثنان. إذا كانت كلمة المرور أو البريد المهيّأ فارغًا فلن يكتب البذّار أي مسؤول، وسيسجّل السبب، وسيقلع النظام سليمًا تمامًا — ثم يفشل كل تسجيل دخول دون أي خلل ظاهر. وكذلك كلمة مرور تحوي تسلسلًا مثل 12345 ترفضها قواعد كلمات المرور، بالنتيجة الصامتة نفسها."
+          "en": "Two traps, and they fail differently. If the configured email or password is blank the seeder writes no administrator, logs the reason, and the system starts up perfectly healthy — every sign-in then fails with nothing visibly wrong. But a password the rules reject — one containing a run such as 12345 — fails the boot outright in production, and the error names the rule that broke. Outside production that second case is logged and skipped like the first.",
+          "ar": "مِزلقان اثنان، ويفشلان على نحوين مختلفين. إذا كان البريد أو كلمة المرور المهيّأة فارغًا فلن يكتب البذّار أي مسؤول، وسيسجّل السبب، وسيقلع النظام سليمًا تمامًا — ثم يفشل كل تسجيل دخول دون أي خلل ظاهر. أما كلمة المرور التي ترفضها القواعد — كالتي تحوي تسلسلًا مثل 12345 — فتُسقِط الإقلاع نفسه في الإنتاج، ويذكر الخطأ القاعدة التي انكسرت. وخارج الإنتاج تُسجّل هذه الحالة الثانية وتُتخطّى مثل الأولى."
         }
       ]
     },
@@ -4135,88 +4160,139 @@
         },
         {
           "t": "p",
-          "en": "Seven values are boot gates: in production, the application refuses to start without its own. This is deliberate — each one protects something that would otherwise fail silently and much later.",
-          "ar": "سبع قيم تمثّل بوابات إقلاع: ففي الإنتاج يرفض التطبيق البدء بدون القيمة الخاصة به. وهذا مقصود — إذ تحمي كل واحدة منها أمرًا كان سيفشل بصمت وفي وقت متأخر جدًا."
+          "en": "Ten values are boot gates: leave one empty and the application refuses to start. They do not all hold in the same places, and where a gate holds matters as much as its name. This is deliberate — each one protects something that would otherwise fail silently and much later.",
+          "ar": "عشر قيم تمثّل بوابات إقلاع: فإذا تُركت إحداها فارغة رفض التطبيق البدء. وهي لا تسري كلها في المواضع نفسها، وموضع سريان البوابة لا يقلّ أهمية عن اسمها. وهذا مقصود — إذ تحمي كل واحدة منها أمرًا كان سيفشل بصمت وفي وقت متأخر جدًا."
         },
         {
           "t": "table",
           "headers": {
             "en": [
               "Variable",
-              "Application"
+              "Application",
+              "Where it holds"
             ],
             "ar": [
               "المتغيّر",
-              "التطبيق"
+              "التطبيق",
+              "أين تسري"
             ]
           },
           "rows": {
             "en": [
               [
-                "SIMF_API_FileStorage__EncryptionKey",
-                "API"
+                "SIMF_API_Jwt__SigningKey",
+                "API",
+                "Every environment"
               ],
               [
-                "SIMF_API_Storage__UserIdDocumentEncryptionKey",
-                "API"
-              ],
-              [
-                "SIMF_API_Ai__PromptHash__Secret",
-                "API"
+                "SIMF_API_ReverseProxy__KnownProxies__0",
+                "API",
+                "Outside development"
               ],
               [
                 "SIMF_CP_DataProtection__KeyRingPath",
-                "Control Panel"
+                "Control Panel",
+                "Outside development"
               ],
               [
                 "SIMF_WEB_DataProtection__KeyRingPath",
-                "Website"
+                "Website",
+                "Outside development"
               ],
               [
                 "SIMF_EDGE_ReverseProxy__Clusters__api__Destinations__primary__Address",
-                "Mobile edge"
+                "Mobile edge",
+                "Outside development"
               ],
               [
                 "SIMF_EDGE_ReverseProxy__KnownProxies__0",
-                "Mobile edge"
+                "Mobile edge",
+                "Outside development"
+              ],
+              [
+                "SIMF_API_FileStorage__EncryptionKey",
+                "API",
+                "Production only"
+              ],
+              [
+                "SIMF_API_Storage__UserIdDocumentEncryptionKey",
+                "API",
+                "Production only"
+              ],
+              [
+                "SIMF_API_Ai__PromptHash__Secret",
+                "API",
+                "Production only"
+              ],
+              [
+                "SIMF_API_SuperAdmin__TotpSecret",
+                "API",
+                "Production only"
               ]
             ],
             "ar": [
               [
-                "SIMF_API_FileStorage__EncryptionKey",
-                "واجهة البرمجة"
+                "SIMF_API_Jwt__SigningKey",
+                "واجهة البرمجة",
+                "كل البيئات"
               ],
               [
-                "SIMF_API_Storage__UserIdDocumentEncryptionKey",
-                "واجهة البرمجة"
-              ],
-              [
-                "SIMF_API_Ai__PromptHash__Secret",
-                "واجهة البرمجة"
+                "SIMF_API_ReverseProxy__KnownProxies__0",
+                "واجهة البرمجة",
+                "خارج بيئة التطوير"
               ],
               [
                 "SIMF_CP_DataProtection__KeyRingPath",
-                "لوحة التحكم"
+                "لوحة التحكم",
+                "خارج بيئة التطوير"
               ],
               [
                 "SIMF_WEB_DataProtection__KeyRingPath",
-                "الموقع"
+                "الموقع",
+                "خارج بيئة التطوير"
               ],
               [
                 "SIMF_EDGE_ReverseProxy__Clusters__api__Destinations__primary__Address",
-                "حافة الجوال"
+                "حافة الجوال",
+                "خارج بيئة التطوير"
               ],
               [
                 "SIMF_EDGE_ReverseProxy__KnownProxies__0",
-                "حافة الجوال"
+                "حافة الجوال",
+                "خارج بيئة التطوير"
+              ],
+              [
+                "SIMF_API_FileStorage__EncryptionKey",
+                "واجهة البرمجة",
+                "الإنتاج فقط"
+              ],
+              [
+                "SIMF_API_Storage__UserIdDocumentEncryptionKey",
+                "واجهة البرمجة",
+                "الإنتاج فقط"
+              ],
+              [
+                "SIMF_API_Ai__PromptHash__Secret",
+                "واجهة البرمجة",
+                "الإنتاج فقط"
+              ],
+              [
+                "SIMF_API_SuperAdmin__TotpSecret",
+                "واجهة البرمجة",
+                "الإنتاج فقط"
               ]
             ]
           }
         },
         {
+          "t": "note",
+          "en": "One more value stops a boot without being empty. The Control Panel and the Website refuse to start unless their API address is https outside development, and both ship http://localhost:5175/ — so the shipped default is itself a refused boot on any server that is not a development box.",
+          "ar": "وثمّة قيمة أخرى تمنع الإقلاع دون أن تكون فارغة. فلوحة التحكم والموقع يرفضان البدء ما لم يكن عنوان واجهة البرمجة لديهما https خارج بيئة التطوير، وكلاهما يُشحن بـ http://localhost:5175/ — فالقيمة المشحونة نفسها إقلاعٌ مرفوض على أي خادم غير خادم تطوير."
+        },
+        {
           "t": "p",
-          "en": "Two of the API's three are encryption keys, and they behave differently under change. The file-store key wraps a per-file key, so it has a rotation path in principle — but the job that finishes a rotation has never been built, so treat it as set once. The identity-document key has no such path at all: changing it strands every encrypted column permanently, with no way back. Escrow both, with the version number stamped alongside the file-store key, before the system carries any real data.",
-          "ar": "اثنان من مفاتيح واجهة البرمجة الثلاثة مفتاحا تشفير، ويسلكان سلوكًا مختلفًا عند التغيير. فمفتاح مخزن الملفات يغلّف مفتاحًا لكل ملف، فله من حيث المبدأ مسار تدوير — لكن المهمة التي تُتِمّ التدوير لم تُبنَ قط، فعامِله على أنه يُضبط مرة واحدة. أما مفتاح وثائق الهوية فلا مسار له إطلاقًا: وتغييره يعزل كل عمود مشفَّر نهائيًا بلا رجعة. فاحفظ نسخة موثوقة من المفتاحين، مع رقم إصدار مفتاح مخزن الملفات، قبل أن يحمل النظام أي بيانات حقيقية."
+          "en": "Two of the API's gates are encryption keys, and they behave differently under change. The file-store key wraps a per-file key, so it has a rotation path in principle — but the job that finishes a rotation has never been built, so treat it as set once. The identity-document key has no such path at all: changing it strands every encrypted column permanently, with no way back. Escrow both, with the version number stamped alongside the file-store key, before the system carries any real data.",
+          "ar": "بوابتان من بوابات واجهة البرمجة مفتاحا تشفير، ويسلكان سلوكًا مختلفًا عند التغيير. فمفتاح مخزن الملفات يغلّف مفتاحًا لكل ملف، فله من حيث المبدأ مسار تدوير — لكن المهمة التي تُتِمّ التدوير لم تُبنَ قط، فعامِله على أنه يُضبط مرة واحدة. أما مفتاح وثائق الهوية فلا مسار له إطلاقًا: وتغييره يعزل كل عمود مشفَّر نهائيًا بلا رجعة. فاحفظ نسخة موثوقة من المفتاحين، مع رقم إصدار مفتاح مخزن الملفات، قبل أن يحمل النظام أي بيانات حقيقية."
         },
         {
           "t": "code",
@@ -4478,7 +4554,7 @@
               ],
               [
                 "SIMF_API_SuperAdmin__TotpSecret",
-                "Its authenticator secret. Without it the most privileged account in the system is protected by a password alone.",
+                "Its authenticator secret, and a boot gate: in production the API refuses to start without it. Outside production there is no gate, and the most privileged account in the system is then protected by a password alone.",
                 "empty",
                 "A secret — generate one per environment (base32)"
               ],
@@ -4516,7 +4592,7 @@
               ],
               [
                 "SIMF_API_SuperAdmin__TotpSecret",
-                "سرّ تطبيق المصادقة الخاص به. وبدونه يكون أعلى حساب صلاحية في النظام محميًا بكلمة مرور وحدها.",
+                "سرّ تطبيق المصادقة الخاص به، وهو بوابة إقلاع: ففي الإنتاج ترفض واجهة البرمجة البدء بدونه. وخارج الإنتاج لا بوابة، فيكون أعلى حساب صلاحية في النظام حينها محميًا بكلمة مرور وحدها.",
                 "فارغ",
                 "سر — يُولَّد واحد لكل بيئة (base32)"
               ],
@@ -4665,8 +4741,8 @@
         },
         {
           "t": "note",
-          "en": "An EMPTY mail host is worse than a wrong one, and this was observed rather than reasoned about. With no host configured the first message to be sent fails in a way the retry logic does not catch, the background sender stops for good, and the health check reports the API as unhealthy from that moment — while the site keeps serving pages normally. If a load balancer is watching that endpoint it will take a working server out of rotation because nobody filled in an SMTP host.",
-          "ar": "أما مضيف البريد الفارغ فأسوأ من الخاطئ، وهذا أمر لوحظ عمليًا لا استُنتج. فمع عدم تهيئة أي مضيف تفشل أول رسالة بطريقة لا يلتقطها منطق إعادة المحاولة، فيتوقف المرسل الخلفي نهائيًا، ويُبلغ فحص السلامة عن اعتلال واجهة البرمجة منذ تلك اللحظة — بينما يواصل الموقع تقديم صفحاته بشكل طبيعي. وإذا كان موزّع الأحمال يراقب تلك النقطة فسيُخرج خادمًا سليمًا من الخدمة لأن أحدًا لم يملأ مضيف SMTP."
+          "en": "An EMPTY mail host is worse than a wrong one, and this was observed rather than reasoned about. With no host configured every message fails in a way the retry logic treats as permanent, so each one is dropped on its first attempt rather than retried. The sender itself does not stop — it keeps draining the queue — but nothing is delivered, and the health check reports the API as unhealthy from that first failure until a send finally succeeds, while the site keeps serving pages normally. If a load balancer is watching that endpoint it will take a working server out of rotation because nobody filled in an SMTP host, and restarting the API will not clear it.",
+          "ar": "أما مضيف البريد الفارغ فأسوأ من الخاطئ، وهذا أمر لوحظ عمليًا لا استُنتج. فمع عدم تهيئة أي مضيف تفشل كل رسالة بطريقة يعدّها منطق إعادة المحاولة عطلًا دائمًا، فتُسقَط كل رسالة من محاولتها الأولى بلا إعادة. والمرسل نفسه لا يتوقف — بل يواصل تفريغ الطابور — لكن لا شيء يصل، ويُبلغ فحص السلامة عن اعتلال واجهة البرمجة منذ ذلك الفشل الأول وحتى ينجح إرسال، بينما يواصل الموقع تقديم صفحاته بشكل طبيعي. وإذا كان موزّع الأحمال يراقب تلك النقطة فسيُخرج خادمًا سليمًا من الخدمة لأن أحدًا لم يملأ مضيف SMTP، ولن تُزيل إعادةُ تشغيل واجهة البرمجة ذلك."
         },
         {
           "t": "h3",
@@ -5293,7 +5369,7 @@
               ],
               [
                 "SIMF_API_MeetingLinks__PublicWebBaseUrl",
-                "The site a meeting confirmation link points at. Without it the links in those emails go nowhere.",
+                "The site a meeting confirmation link points at. Without it the Control Panel refuses the speaker approve and resend actions and names this setting in the error — no link is minted and no email is sent.",
                 "empty",
                 "https://web.simrsnf.com"
               ],
@@ -5367,7 +5443,7 @@
               ],
               [
                 "SIMF_API_MeetingLinks__PublicWebBaseUrl",
-                "الموقع الذي يشير إليه رابط تأكيد الاجتماع. وبدونه لا تؤدي روابط تلك الرسائل إلى شيء.",
+                "الموقع الذي يشير إليه رابط تأكيد الاجتماع. وبدونه ترفض لوحة التحكم إجراءَي اعتماد المتحدّث وإعادة الإرسال، ويذكر الخطأ هذا الإعداد — فلا يُولّد رابط ولا تُرسل رسالة.",
                 "فارغ",
                 "https://web.simrsnf.com"
               ],
@@ -5668,14 +5744,14 @@
             "en": [
               [
                 "ApiBase",
-                "The address the application calls. Must be https and must end in the API version path; the build refuses otherwise.",
-                "empty",
+                "The address the application calls. Must be https and must end in the API version path; the build refuses otherwise. A bundle built without it falls back to a localhost address baked into the app.",
+                "https://edge.simrsnf.com/api/v1",
                 "https://edge.simrsnf.com/api/v1"
               ],
               [
                 "OutDir",
-                "Where the built bundle is written.",
-                "empty",
+                "Where the built bundle is written. The script DELETES this folder and recreates it on every run, so check the path before the first build.",
+                "D:\\System\\v1.0.1\\appweb",
                 "The site folder"
               ],
               [
@@ -5712,14 +5788,14 @@
             "ar": [
               [
                 "ApiBase",
-                "العنوان الذي يستدعيه التطبيق. ويجب أن يكون https وأن ينتهي بمسار إصدار واجهة البرمجة، وإلا رفض البناء.",
-                "فارغ",
+                "العنوان الذي يستدعيه التطبيق. ويجب أن يكون https وأن ينتهي بمسار إصدار واجهة البرمجة، وإلا رفض البناء. والحزمة المبنية بدونه ترجع إلى عنوان localhost مدمج داخل التطبيق.",
+                "https://edge.simrsnf.com/api/v1",
                 "https://edge.simrsnf.com/api/v1"
               ],
               [
                 "OutDir",
-                "المكان الذي تُكتب فيه الحزمة المبنية.",
-                "فارغ",
+                "المكان الذي تُكتب فيه الحزمة المبنية. ويحذف النص هذا المجلد ثم ينشئه من جديد في كل تشغيل، فتحقّق من المسار قبل أول بناء.",
+                "D:\\System\\v1.0.1\\appweb",
                 "مجلد الموقع"
               ],
               [
@@ -5797,8 +5873,8 @@
         },
         {
           "t": "note",
-          "en": "Setting this to anything other than Production disables the boot gates, turns on the sample-data seeding, and publishes the interactive API documentation. It is the single most consequential value on the server.",
-          "ar": "ضبط هذه القيمة على غير Production يعطّل بوابات الإقلاع، ويفعّل بذر البيانات التجريبية، وينشر وثائق واجهة البرمجة التفاعلية. وهي أكثر قيمة على الخادم أثرًا على الإطلاق."
+          "en": "Setting this to anything other than Production disables the four Production-only boot gates — the two encryption keys, the AI prompt-hash secret and the super-admin authenticator seed — and publishes the interactive API documentation. The other gates key off Development rather than Production, so they still hold on a Staging server, and nothing anywhere disables the JWT signing-key check. Sample-data seeding is a separate rule again: Development turns it on, or the Seed switch set deliberately. It is still the single most consequential value on the server.",
+          "ar": "ضبط هذه القيمة على غير Production يعطّل بوابات الإقلاع الأربع الخاصة بالإنتاج — مفتاحَي التشفير، وسرّ بصمة محفّزات الذكاء الاصطناعي، وبذرة تطبيق المصادقة للمسؤول الأعلى — وينشر وثائق واجهة البرمجة التفاعلية. أما البوابات الأخرى فمرجعها بيئة التطوير لا الإنتاج، فتظل سارية على خادم Staging، ولا شيء البتة يعطّل التحقق من مفتاح توقيع JWT. وبذر البيانات التجريبية قاعدة منفصلة أخرى: تفعّله بيئة التطوير، أو مفتاح Seed إذا ضُبط عمدًا. وتبقى هذه أكثر قيمة على الخادم أثرًا على الإطلاق."
         }
       ]
     },
@@ -5928,7 +6004,7 @@
             "en": [
               [
                 "FDS-006: sponsor tiers are Strategic, Premium and Gold",
-                "They are Platinum, Gold, Silver and Bronze, and a new sponsor starts at Bronze. Exhibitors carry a separate tier list of their own"
+                "They are Platinum, Gold, Silver and Bronze, and the Add form opens a new sponsor on Platinum. Exhibitors carry a separate tier list of their own"
               ],
               [
                 "FDS-006: the venue map is a three-dimensional isometric floor plan",
@@ -5952,13 +6028,13 @@
               ],
               [
                 "FDS-012: registration is opened and closed from the System Configuration page",
-                "It is on the Operations page. The Configuration table ships empty and holds no registration control"
+                "It is on the Operations page. The Configuration table ships with the six app-update keys the seeder creates, their values empty, and holds no registration control"
               ]
             ],
             "ar": [
               [
                 "FDS-006: فئات الرعاة استراتيجي وبريميوم وذهبي",
-                "هي بلاتيني وذهبي وفضي وبرونزي، ويبدأ الراعي الجديد عند البرونزي. وللعارضين قائمة فئات منفصلة خاصة بهم"
+                "هي بلاتيني وذهبي وفضي وبرونزي، ويفتح نموذجُ الإضافة الراعيَ الجديد على البلاتيني. وللعارضين قائمة فئات منفصلة خاصة بهم"
               ],
               [
                 "FDS-006: خريطة الموقع مخطط مجسَّم ثلاثي الأبعاد",
@@ -5982,7 +6058,7 @@
               ],
               [
                 "FDS-012: يُفتح التسجيل ويُغلق من صفحة تهيئة النظام",
-                "بل من صفحة العمليات. وجدول التهيئة يُشحن فارغًا ولا يحمل أي تحكم في التسجيل"
+                "بل من صفحة العمليات. ويُشحن جدول التهيئة بمفاتيح تحديث التطبيق الستة التي ينشئها البذّار، وقيمها فارغة، ولا يحمل أي تحكم في التسجيل"
               ]
             ]
           }
@@ -6013,18 +6089,18 @@
         {
           "t": "bullets",
           "en": [
-            "With no mail host configured, the background sender stops for good the first time it is asked to send, and the health check reports the whole API as unhealthy from then on — while every page keeps working. Seen during the writing of this manual, after creating an account triggered its first notification.",
+            "With no mail host configured, every send fails and each message is dropped on its first attempt, so no backlog is waiting to go out later — but the sender itself does not stop, it keeps draining the queue. The health check reports the whole API as unhealthy from that first failure until a send finally succeeds, while every page keeps working. Seen during the writing of this manual, after creating an account triggered its first notification.",
             "On a fresh installation the organisation logo is absent, so its page requests an image that is not there. The page is unharmed; the logo simply has not been uploaded yet.",
             "The registration desk accepts a passport format that the mobile application would reject, because only the desk skips the format check.",
             "The Arabic and English name fields accept 128 characters in the browser and are refused above 50 by the server.",
-            "Walking quickly from page to page exhausts the per-address request allowance, because every page fetches the signed-in profile for its header. Nothing breaks; the header request is refused until the window rolls over."
+            "Walking quickly from page to page exhausts the per-address request allowance, because the whole Control Panel reaches the API from one address and many of its admin calls share the same twenty-a-minute window. Nothing breaks; the refused call fails until the window rolls over."
           ],
           "ar": [
-            "مع عدم تهيئة مضيف بريد، يتوقف المرسل الخلفي نهائيًا عند أول طلب إرسال، ويُبلغ فحص السلامة عن اعتلال واجهة البرمجة كلها منذ تلك اللحظة — بينما تواصل كل الصفحات عملها. لوحظ ذلك أثناء إعداد هذا الدليل، بعد أن أطلق إنشاءُ حساب أولَ إشعار له.",
+            "مع عدم تهيئة مضيف بريد، يفشل كل إرسال وتُسقَط كل رسالة من محاولتها الأولى، فلا يبقى متراكم ينتظر الخروج لاحقًا — لكن المرسل نفسه لا يتوقف، بل يواصل تفريغ الطابور. ويُبلغ فحص السلامة عن اعتلال واجهة البرمجة كلها منذ ذلك الفشل الأول وحتى ينجح إرسال، بينما تواصل كل الصفحات عملها. لوحظ ذلك أثناء إعداد هذا الدليل، بعد أن أطلق إنشاءُ حساب أولَ إشعار له.",
             "في التثبيت الجديد لا يوجد شعار للجهة، فتطلب صفحته صورة غير موجودة. ولا ضرر على الصفحة، فالشعار لم يُرفع بعد فحسب.",
             "يقبل مكتب التسجيل صيغة جواز سفر كان تطبيق الجوال ليرفضها، لأن المكتب وحده هو الذي يتخطى التحقق من الصيغة.",
             "يقبل حقلا الاسم العربي والإنجليزي 128 حرفًا في المتصفح ويرفضهما الخادم فوق 50.",
-            "يستنفد التنقل السريع بين الصفحات حصة الطلبات لكل عنوان، لأن كل صفحة تجلب ملف المستخدم المسجّل لترويستها. ولا ينكسر شيء، إذ يُرفض طلب الترويسة حتى تتجدد النافذة."
+            "يستنفد التنقل السريع بين الصفحات حصة الطلبات لكل عنوان، لأن لوحة التحكم كلها تصل إلى واجهة البرمجة من عنوان واحد، ويتشارك كثير من استدعاءاتها الإدارية النافذة نفسها البالغة عشرين طلبًا في الدقيقة. ولا ينكسر شيء، إذ يفشل الطلب المرفوض حتى تتجدد النافذة."
           ]
         }
       ]

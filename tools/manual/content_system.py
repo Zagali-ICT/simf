@@ -40,9 +40,11 @@ def chapter_system():
                 [
                     ["Configuration", "Free key/value rows: a machine key, a "
                      "value, and a description for whoever edits it next",
-                     "Whatever the organisation decides to keep there. It ships "
-                     "empty on purpose — the list of keys is the client's to "
-                     "decide"],
+                     "Whatever the organisation decides to keep there, on top of "
+                     "the six app-update rows it ships with: the minimum and "
+                     "latest app version and the store link, for Android and "
+                     "for iOS. They arrive empty, and an empty value leaves "
+                     "that rule off"],
                     ["Site settings", "A typed form: the bilingual registration "
                      "welcome message and the partner-directory switch",
                      "The handful of settings the app and the website read "
@@ -60,8 +62,10 @@ def chapter_system():
                 [
                     ["التهيئة", "سجلات مفتاح/قيمة حرة: مفتاح آلي، وقيمة، ووصف لمن "
                      "يحرّرها بعدك",
-                     "ما تقرر الجهة الاحتفاظ به هناك. وتُشحن فارغة عمدًا — فقائمة "
-                     "المفاتيح من شأن العميل"],
+                     "ما تقرر الجهة الاحتفاظ به هناك، فوق ستة سجلات تحديث "
+                     "التطبيق التي تُشحن معها: أدنى إصدار وأحدث إصدار ورابط "
+                     "المتجر، لـ Android ولـ iOS. وتصل فارغة، والقيمة الفارغة "
+                     "تُبقي تلك القاعدة معطّلة"],
                     ["إعدادات الموقع", "نموذج محدَّد الحقول: رسالة ترحيب التسجيل "
                      "بلغتين، ومفتاح دليل الشركاء",
                      "الإعدادات القليلة التي يقرؤها التطبيق والموقع عبر نقطة "
@@ -105,15 +109,29 @@ def chapter_system():
             h3("Walk-in mode overrides configuration; it does not replace it",
                "وضع الحضور المباشر يتجاوز التهيئة ولا يحل محلها"),
             p("The two switches here sit on top of what the servers were deployed "
-              "with. Leave one alone and the deployed setting applies; set it and "
-              "your setting wins; clear it and the deployed setting applies "
-              "again. The page shows you which of the two is in force, so a "
-              "switch that currently agrees with the deployment is "
-              "distinguishable from one that is overriding it.",
-              "المفتاحان هنا يجلسان فوق ما نُشرت به الخوادم. فاترك أحدهما وشأنه "
-              "يسرِ الإعداد المنشور؛ واضبطه يغلب إعدادك؛ وامسحه يعُد الإعداد "
-              "المنشور. وتُظهر لك الصفحة أيَّهما النافذ، فيتميز المفتاح الموافق "
-              "حاليًّا للنشر عن المفتاح المتجاوز له."),
+              "with. Until this page is saved the deployed setting applies to "
+              "both. Saving writes an override for both — not only the switch "
+              "you moved — and from then on your setting wins. Nothing on the "
+              "page says where a value came from: a switch that agrees with the "
+              "deployment looks exactly like one overriding it. To see the "
+              "difference, or to hand a mode back to the deployment, go to the "
+              "Configuration page and find the walkInMode.quickRegister and "
+              "walkInMode.autoApprove rows. An active row holding true or false "
+              "is an override; untick Active on it, or use Delete there — which "
+              "deactivates the row rather than removing it — and the deployed "
+              "setting applies again. The value itself cannot be blanked: that "
+              "form refuses an empty value.",
+              "المفتاحان هنا يجلسان فوق ما نُشرت به الخوادم. وحتى تُحفظ هذه "
+              "الصفحة يسري الإعداد المنشور على كليهما. والحفظ يكتب تجاوزًا "
+              "لكليهما — لا للمفتاح الذي حرّكته وحده — ومن ثَمّ يغلب إعدادك. ولا "
+              "تقول الصفحة من أين جاءت القيمة: فالمفتاح الموافق للنشر يبدو "
+              "تمامًا كالمفتاح المتجاوز له. ولترى الفرق، أو لتعيد وضعًا إلى ما "
+              "نُشرت به الخوادم، اذهب إلى صفحة التهيئة وابحث عن سجلَّي "
+              "walkInMode.quickRegister و walkInMode.autoApprove. فالسجل المفعّل "
+              "الذي يحمل true أو false تجاوزٌ؛ فأزل عنه علامة «مُفعّل»، أو استخدم "
+              "الحذف هناك — وهو يعطّل السجل ولا يزيله — فيعود الإعداد المنشور. "
+              "أما القيمة نفسها فلا يمكن إفراغها: فذلك النموذج يرفض القيمة "
+              "الفارغة."),
             note("The master switch — whether walk-in mode is armed at all, and "
                  "the window it is armed in — is deliberately not editable here. "
                  "An administrator may turn automatic approval off in the middle "
@@ -154,16 +172,19 @@ def chapter_system():
                  "one sent or printed. This is not a side effect: the gate "
                  "refuses a badge that does not carry the open year, so the "
                  "re-issue is what keeps returning attendees able to get in at "
-                 "all. The confirmation states how many badges will be affected "
-                 "before you agree.",
+                 "all. The confirmation states the consequence before you agree, "
+                 "and says plainly that it cannot be undone. It carries no "
+                 "number: the count is not known until the server has done the "
+                 "work, and it is reported the moment the operation finishes.",
                  "**فتح سنة يُلغي كل شارة قائمة.** فتُمسح شارة كل حاضر وتُصدر له "
                  "شارة جديدة مكانها، في عملية واحدة. والشارات المطبوعة والمرسلة "
                  "بالبريد والموجودة على الهواتف كلها تكفّ عن فتح البوابات لحظة "
                  "اكتمال العملية، ويحتاج كل حاضر مُرحَّل إلى إرسال شارته الجديدة "
                  "أو طباعتها. وليس هذا أثرًا جانبيًّا: فالبوابة ترفض الشارة التي لا "
                  "تحمل السنة المفتوحة، وإعادة الإصدار هي ما يُبقي العائدين قادرين "
-                 "على الدخول أصلًا. ويذكر التأكيد عدد الشارات التي ستتأثر قبل أن "
-                 "توافق."),
+                 "على الدخول أصلًا. ويذكر التأكيد العاقبة قبل أن توافق، ويقول "
+                 "صراحةً إن الإجراء لا رجعة فيه. ولا يحمل عددًا: فالعدد لا يُعرف "
+                 "حتى ينتهي الخادم من العمل، ويُذكر لحظة اكتمال العملية."),
             bullets(
                 ["The year must be four digits between 2000 and 2999. A typed "
                  "\"202\" or \"20265\" is refused, because the year is printed "
@@ -254,14 +275,16 @@ def chapter_system():
 
             h2("Background services", "خدمات الخلفية"),
             p("Thirteen background workers do the things nobody presses a button "
-              "for. This page shows whether each is running, when it last ran, "
-              "how many times it has run and failed, and its last error. It "
-              "refreshes itself and has no actions — it is a health display, not "
-              "a control panel.",
-              "ثلاثة عشر عاملًا في الخلفية تؤدي ما لا يضغط أحد زرًّا لأجله. وتُظهر "
-              "هذه الصفحة هل يعمل كلٌّ منها، ومتى عمل آخر مرة، وكم مرة عمل وأخفق، "
-              "وآخر خطأ له. وهي تحدّث نفسها ولا إجراءات فيها — فهي عرض حالة لا "
-              "لوحة تحكم."),
+              "for. Fourteen services report their health to this page: those "
+              "thirteen, plus the email sender. It shows whether each is "
+              "running, when it last ran, how many times it has run and failed, "
+              "and its last error. It refreshes itself and has no actions — it "
+              "is a health display, not a control panel.",
+              "ثلاثة عشر عاملًا في الخلفية تؤدي ما لا يضغط أحد زرًّا لأجله. وأربع "
+              "عشرة خدمة تُبلّغ هذه الصفحة بحالتها: هذه الثلاثة عشر، ومرسل البريد "
+              "معها. وتُظهر هل يعمل كلٌّ منها، ومتى عمل آخر مرة، وكم مرة عمل "
+              "وأخفق، وآخر خطأ له. وهي تحدّث نفسها ولا إجراءات فيها — فهي عرض "
+              "حالة لا لوحة تحكم."),
             table(
                 ["Worker", "What it does"],
                 ["العامل", "ماذا يفعل"],
@@ -323,14 +346,21 @@ def chapter_system():
                  "the estate, because two copies would send everything twice. The "
                  "email sender is the exception and runs everywhere on purpose: "
                  "its queue lives inside each server, so a server that is not "
-                 "sending is a server whose emails never leave. It retries a "
-                 "message three times, and can be configured to email an "
-                 "operations address when a send fails.",
+                 "sending is a server whose emails never leave. It hands a "
+                 "message to the mail relay three times at most — one send and "
+                 "two retries — and only while the failure looks temporary; a "
+                 "relay that refuses the message outright, for an unknown "
+                 "recipient or bad credentials, ends it on the first failure. It "
+                 "can also be configured to email an operations address when a "
+                 "send fails.",
                  "يعمل كلٌّ من هذه على خادم واحد بالضبط مهما كان حجم المنشأة، لأن "
                  "نسختين ترسلان كل شيء مرتين. ومرسل البريد استثناء ويعمل في كل "
                  "مكان عمدًا: إذ يقيم طابوره داخل كل خادم، فالخادم الذي لا يرسل "
-                 "خادمٌ لا يغادره بريده. ويعيد محاولة الرسالة ثلاث مرات، ويمكن "
-                 "تهيئته ليراسل عنوان عمليات عند إخفاق الإرسال."),
+                 "خادمٌ لا يغادره بريده. ويسلّم الرسالة إلى مُرحِّل البريد ثلاث "
+                 "مرات على الأكثر — إرسالة وإعادتان — وذلك ما دام الإخفاق يبدو "
+                 "مؤقتًا؛ أما المُرحِّل الذي يرفض الرسالة رفضًا صريحًا، لمستقبِل "
+                 "مجهول أو بيانات اعتماد خاطئة، فينتهي أمرها عند أول إخفاق. "
+                 "ويمكن تهيئته أيضًا ليراسل عنوان عمليات عند إخفاق الإرسال."),
             figure("cp-admin-ops-services-default",
                    "The background services monitor. No actions — the value is "
                    "in the last-run and failure columns.",
@@ -363,12 +393,17 @@ def chapter_system():
                  "count and generation time for the bulk-badge note, the new "
                  "address for the change-of-email alert. A token that does not "
                  "belong to the template is rejected on save.",
-                 "**The notification emails are not here.** Booking confirmed, "
-                 "session reminder, registration approved or rejected, badge "
-                 "ready, the VIP notice and announcements are written in the "
-                 "code and cannot be reworded from the Control Panel. The one "
-                 "place their text is yours is the announcement composer, where "
-                 "you type it per send."],
+                 "**The notification emails are not here.** Registration approved "
+                 "or rejected and badge ready are written in the code and cannot "
+                 "be reworded from the Control Panel. Two messages are yours to "
+                 "write per send instead: the announcement composer, and the "
+                 "notify-VIPs message on the VIPs page — each takes a bilingual "
+                 "title and body and sends exactly what you type. Two others "
+                 "reach nobody by email at all: the session reminder is sent "
+                 "with email switched off, so it arrives only as a message "
+                 "inside the app, and a booking confirmation goes out on no "
+                 "channel — the kind exists in the app's notification list, and "
+                 "nothing in the system sends it."],
                 ["لا تحمل قاعدة البيانات إلا تغييراتك. فالقالب الذي لم تمسسه "
                  "يُرسل بالصياغة المضمَّنة في التطبيق، فيرسل التثبيت الجديد رسائل "
                  "صحيحة والجدول فارغ.",
@@ -376,11 +411,15 @@ def chapter_system():
                  "الرمز ومدة صلاحيته في رسائل الرموز، والعدد ووقت التوليد في "
                  "رسالة الشارات الجماعية، والعنوان الجديد في تنبيه تغيّر البريد. "
                  "ويُرفض عند الحفظ أي رمز لا يخص القالب.",
-                 "**ورسائل الإشعارات ليست هنا.** فتأكيد الحجز، وتذكير الجلسة، "
-                 "واعتماد التسجيل أو رفضه، وجاهزية الشارة، وإشعار كبار الشخصيات، "
-                 "والإعلانات مكتوبة في الشيفرة ولا يمكن إعادة صياغتها من لوحة "
-                 "التحكم. والموضع الوحيد الذي يكون نصّها فيه لك هو محرّر "
-                 "الإعلانات، حيث تكتبه في كل إرسالة."]),
+                 "**ورسائل الإشعارات ليست هنا.** فاعتماد التسجيل أو رفضه "
+                 "وجاهزية الشارة مكتوبان في الشيفرة ولا يمكن إعادة صياغتهما من "
+                 "لوحة التحكم. ورسالتان تكتبهما أنت في كل إرسالة بدل ذلك: محرّر "
+                 "الإعلانات، ورسالة إشعار كبار الشخصيات في صفحة كبار الشخصيات — "
+                 "كلتاهما تأخذ عنوانًا ونصًّا بلغتين وترسل ما تكتبه بحرفه. "
+                 "ورسالتان لا تصلان بالبريد أصلًا: فتذكير الجلسة يُرسل والبريد "
+                 "مُطفأ، فلا يصل إلا رسالةً داخل التطبيق، وتأكيد الحجز لا يخرج "
+                 "على أي قناة — فالنوع موجود في قائمة إشعارات التطبيق، ولا شيء "
+                 "في النظام يرسله."]),
             figure("cp-admin-email-templates-default",
                    "The email templates. Edit is the only row action; the set "
                    "itself is fixed.",
@@ -407,9 +446,14 @@ def chapter_system():
                    "home of the social links.",
                    "ملف الجهة: تفاصيل الملتقى نفسه، وموطن روابط التواصل."),
             figure("cp-admin-configuration-default",
-                   "The Configuration table. It ships empty; the keys it holds "
-                   "are the organisation's to decide.",
-                   "جدول التهيئة. يُشحن فارغًا؛ والمفاتيح التي يحملها من شأن "
-                   "الجهة."),
+                   "The Configuration table. It ships with the six app-update "
+                   "policy keys already created and empty, ready for their "
+                   "values; the software adds rows of its own here too — the "
+                   "walk-in overrides, and the end-of-programme rating marker — "
+                   "and a key an operator invents is stored but read by nothing.",
+                   "جدول التهيئة. يُشحن ومفاتيح سياسة تحديث التطبيق الستة منشأة "
+                   "فيه وفارغة، جاهزة لقيمها؛ والبرنامج يضيف هنا سجلات من عنده "
+                   "أيضًا — تجاوزات الحضور المباشر، وعلامة تقييم نهاية البرنامج "
+                   "— والمفتاح الذي يخترعه المشغّل يُحفَظ ولا يقرؤه شيء."),
         ],
     }

@@ -41,17 +41,20 @@ def chapter_event_day():
                  "all — it does not fall back to allow-all. That is deliberate: "
                  "denying visibly was judged safer than silently turning a VIP "
                  "gate into a public one. The consequence on the day is that the "
-                 "gate refuses everyone, and because ten refusals inside a minute "
-                 "trip the gate's failure circuit, it then starts refusing its "
-                 "own operator too.",
+                 "gate refuses everyone, one badge at a time, and it goes on "
+                 "doing so. Do not wait for it to stop itself: the gate's "
+                 "failure circuit counts backend faults, not refusals, so no "
+                 "number of refused badges will ever trip it. It has to be put "
+                 "right on the gate's own page.",
                  "قائمة السماح أخطر أداة في هذه الصفحة، لأنها لا تُقرأ كما تبدو. "
                  "فالقائمة الفارغة تسمح للجميع. والقائمة التي فيها مدخلات لا تسمح "
                  "إلا لها. أما القائمة التي عُطّلت كل مدخلاتها فلا تسمح لأحد إطلاقًا "
                  "— ولا ترجع إلى السماح للجميع. وهذا مقصود: فقد رُئي أن المنع "
                  "الظاهر أسلم من تحويل بوابة كبار الشخصيات بصمت إلى بوابة عامة. "
-                 "وأثر ذلك في اليوم أن البوابة ترفض الجميع، ولأن عشر رفضات في "
-                 "دقيقة واحدة تُفعّل قاطع الأعطال في البوابة، فإنها تبدأ عندئذ برفض "
-                 "مشغّلها نفسه أيضًا."),
+                 "وأثر ذلك في اليوم أن البوابة ترفض الجميع، شارةً بعد شارة، وتمضي "
+                 "في ذلك. ولا تنتظر أن تتوقف من تلقاء نفسها: فقاطع الأعطال في "
+                 "البوابة يعدّ أعطال الخادم لا الرفضات، فلن يُفعّله أي عدد من "
+                 "الشارات المرفوضة. ولا بد من تصحيح ذلك في صفحة البوابة نفسها."),
             figure("cp-admin-gates-default",
                    "The gates list. Each row is an entrance with its own direction "
                    "and allow-list.",
@@ -168,13 +171,20 @@ def chapter_event_day():
 
             h2("Questions, and who may touch them",
                "الأسئلة، ومن يجوز له التعامل معها"),
-            p("Attendees submit questions from the app while a session is on. "
-              "They travel through three hands: an AI screen, the scientific "
-              "committee, and then the session's own moderator. Each of those is "
-              "a different page and a different permission.",
-              "يرسل الحضور أسئلتهم من التطبيق أثناء الجلسة. وتمرّ عبر ثلاث جهات: "
-              "فرز بالذكاء الاصطناعي، ثم اللجنة العلمية، ثم مشرف الجلسة نفسه. وكل "
-              "من هذه صفحة مختلفة وصلاحية مختلفة."),
+            p("Attendees submit questions from the app. Where a question goes "
+              "depends on when it was asked. One sent before the session starts "
+              "travels through three hands: an AI screen, the scientific "
+              "committee, and then the session's own moderator. One sent once "
+              "the session is live skips the first two by design; it lands "
+              "approved on the session moderator's desk, and the moderator is "
+              "the only gate on it. Each of those is a different page and a "
+              "different permission.",
+              "يرسل الحضور أسئلتهم من التطبيق. ووجهة السؤال تتوقف على وقت "
+              "إرساله. فالمرسَل قبل بداية الجلسة يمرّ عبر ثلاث جهات: فرز بالذكاء "
+              "الاصطناعي، ثم اللجنة العلمية، ثم مشرف الجلسة نفسه. أما المرسَل بعد "
+              "أن تصير الجلسة مباشرة فيتخطى الجهتين الأوليين عن قصد؛ إذ يصل "
+              "معتمدًا إلى مكتب مشرف الجلسة، ويكون المشرف هو الجهة الوحيدة عليه. "
+              "وكل من هذه صفحة مختلفة وصلاحية مختلفة."),
             bullets([
                 "The AI verdict is ADVISORY. It blocks nothing and hides nothing, "
                 "and in the shipped configuration the filter is a stub until it "
@@ -207,15 +217,24 @@ def chapter_event_day():
                  "دور «مشرف» في تطبيق الجوال فلا يمنح منها شيئًا. فمن يُمنح دور "
                  "التطبيق بلا تفويض يفتح مكتبًا فارغًا ويبلّغ عن عطل في النظام؛ ومن "
                  "يُمنح التفويض يشرف على الجلسة المذكورة فيه تحديدًا."),
-            p("A question is only accepted while its session is open to them: "
-              "shortly before the start and until the end. Where the hall has a "
-              "geofence the attendee must actually be recorded as present, so "
-              "somebody watching remotely is refused — which is the intended "
-              "behaviour, not a fault.",
-              "لا يُقبل السؤال إلا ما دامت جلسته مفتوحة له: قبيل البداية وحتى "
-              "النهاية. وحيث تكون للقاعة حدود جغرافية يجب أن يكون الحاضر مسجّلًا "
-              "فعلًا بأنه موجود، فيُرفض من يتابع عن بُعد — وهذا هو السلوك المقصود لا "
-              "عطل."),
+            p("An active session takes questions at any time up to the moment it "
+              "ends — days ahead of the start is fine. Once the end time passes "
+              "it takes none, with no grace at all; a session that has been "
+              "deactivated takes none either way. The venue check applies only "
+              "once the session is live: where the hall has a geofence the "
+              "attendee must have a hall arrival on record for that session — "
+              "they arrived at some point, whether or not they are still in the "
+              "room — so somebody watching a live session remotely is refused, "
+              "which is the intended behaviour, not a fault. Before the start, "
+              "and in a hall with no geofence, there is no venue check at all.",
+              "تستقبل الجلسة النشطة الأسئلة في أي وقت حتى لحظة انتهائها — ولا بأس "
+              "بإرسالها قبل بدايتها بأيام. فإذا مضى وقت النهاية لم تعد تستقبل "
+              "شيئًا، بلا أي مهلة؛ والجلسة المعطّلة لا تستقبل في الحالين. ولا "
+              "يسري فحص الحضور إلا بعد أن تصير الجلسة مباشرة: فحيث تكون للقاعة "
+              "حدود جغرافية يجب أن يكون للحاضر تسجيل وصول إلى القاعة في تلك "
+              "الجلسة — أي أنه وصل في وقت ما، سواء أبقي في القاعة أم لا — فيُرفض "
+              "من يتابع جلسة مباشرة عن بُعد، وهذا هو السلوك المقصود لا عطل. أما "
+              "قبل البداية، وفي قاعة بلا حدود جغرافية، فلا فحص حضور إطلاقًا."),
 
             h2("Session summaries", "ملخصات الجلسات"),
             p("The committee's minutes for a session are drafted by the AI "

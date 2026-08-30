@@ -91,26 +91,35 @@ def chapter_programme():
             p("Because a session finds its day by date, a missing programme day "
               "does not stop anybody scheduling anything. What it does instead is "
               "quiet and worse. The forum's own date boundary is calculated as "
-              "the earliest and latest ACTIVE programme day, and every meeting "
-              "slot and availability window must fall inside it. When there are "
-              "no active days that boundary is nothing at all, and the check "
-              "stops applying — so an administrator can set a speaker's "
-              "availability in the wrong month and nothing objects.",
+              "the earliest and latest ACTIVE programme day. Business meetings, "
+              "hall allocations, and speaker and delegation availability windows "
+              "must all fall inside it. Two things are not checked against it: a "
+              "HALL availability window, and the slot a meeting is finally bound "
+              "to — that slot comes out of a hall window, so it carries whatever "
+              "dates the hall window carries. When there are no active days the "
+              "boundary is nothing at all, and even the checks that do apply stop "
+              "applying — so an administrator can set a speaker's availability in "
+              "the wrong month and nothing objects.",
               "لأن الجلسة تجد يومها بالتاريخ، فإن غياب يوم برنامج لا يمنع أحدًا من "
               "جدولة أي شيء. لكن ما يفعله بدلًا من ذلك أهدأ وأسوأ. إذ يُحسب حدّ "
-              "تواريخ الملتقى بأبكر وأحدث يوم برنامج نشط، ويجب أن يقع كل موعد "
-              "اجتماع وكل نافذة إتاحة داخله. وحين لا توجد أيام نشطة ينعدم ذلك الحد "
-              "ويتوقف التحقق — فيستطيع المسؤول ضبط إتاحة متحدث في شهر خاطئ دون أن "
-              "يعترض شيء."),
+              "تواريخ الملتقى بأبكر وأحدث يوم برنامج نشط. ويجب أن تقع داخله "
+              "اجتماعات الأعمال وتخصيصات القاعات ونوافذ إتاحة المتحدثين والوفود. "
+              "وأمران لا يُفحصان مقابله: نافذة إتاحة القاعة، والموعد الذي يُربط به "
+              "الاجتماع في النهاية — فهذا الموعد مأخوذ من نافذة قاعة، فيحمل ما "
+              "تحمله تلك النافذة من تواريخ. وحين لا توجد أيام نشطة ينعدم ذلك الحد "
+              "ويتوقف حتى ما يسري من عمليات التحقق — فيستطيع المسؤول ضبط إتاحة "
+              "متحدث في شهر خاطئ دون أن يعترض شيء."),
             note("The boundary is read from the programme days deliberately, and "
                  "not from the event start and end dates on the organisation "
                  "profile — those hold a placeholder range that has been stale "
                  "for some time. If meetings are landing outside the forum, check "
-                 "the programme days are present AND active before anything else.",
+                 "the programme days are present AND active first, then look for "
+                 "a hall availability window authored outside them.",
                  "يُقرأ الحد من أيام البرنامج عن قصد، لا من تاريخَي بداية الفعالية "
                  "ونهايتها في ملف الجهة — فهذان يحملان نطاقًا مؤقتًا قديمًا منذ مدة. "
                  "فإذا وقعت اجتماعات خارج أيام الملتقى، فتحقق أولًا من وجود أيام "
-                 "البرنامج ومن كونها نشطة."),
+                 "البرنامج ومن كونها نشطة، ثم ابحث عن نافذة إتاحة قاعة أُنشئت "
+                 "خارجها."),
             note("Run of Show is a read-only view. It groups the same sessions by "
                  "day on one screen and authors nothing — there is no edit "
                  "permission for it because there is nothing to edit.",
@@ -271,30 +280,45 @@ def chapter_programme():
                      "يضيف المسؤول طاولات إلى قاعة اجتماعات"],
                 ]),
             note("The state that causes the most confusion is the one between "
-                 "accept and confirm. When an administrator accepts a speaker "
-                 "request and binds it to a slot, the request is not yet booked: "
-                 "it waits for the speaker's own click on an emailed link, and "
-                 "while it waits the ATTENDEE'S APP STILL SHOWS IT AS PENDING. "
-                 "Telling them it is confirmed at that point is telling them "
-                 "something the app contradicts. The slot is held throughout, so "
+                 "accept and confirm. Approve accepts a speaker request and binds "
+                 "it to a slot, but it does not book it: it waits for the "
+                 "speaker's own click on an emailed link, and while it waits the "
+                 "ATTENDEE'S APP STILL SHOWS IT AS PENDING. Telling them it is "
+                 "confirmed at that point is telling them something the app "
+                 "contradicts. Confirm is the other path, for when you already "
+                 "have the speaker's word: it books the slot at once, sends no "
+                 "link at all, and the app shows the meeting as accepted straight "
+                 "away. A third button, Accept without a hall, accepts the request "
+                 "but books no room. The slot is held on either binding path, so "
                  "offering it to somebody else will fail.",
-                 "أكثر الحالات إثارةً للّبس هي التي بين القبول والتأكيد. فحين يقبل "
-                 "المسؤول طلب مقابلة متحدث ويربطه بموعد، لا يكون الطلب محجوزًا بعد: "
+                 "أكثر الحالات إثارةً للّبس هي التي بين القبول والتأكيد. فزر "
+                 "«موافقة» يقبل طلب مقابلة المتحدث ويربطه بموعد، لكنه لا يحجزه: "
                  "بل ينتظر نقرة المتحدث نفسه على رابط في بريده، وأثناء الانتظار "
                  "يظل تطبيق صاحب الطلب يعرضه «قيد الانتظار». وإخباره بأنه مؤكد في "
-                 "تلك اللحظة إخبارٌ بما يناقضه التطبيق. والموعد محجوز طوال ذلك، "
-                 "فعرضه على شخص آخر سيُخفق."),
+                 "تلك اللحظة إخبارٌ بما يناقضه التطبيق. أما زر «تأكيد» فهو المسار "
+                 "الآخر، ولا يُستعمل إلا حين تكون قد أخذت موافقة المتحدث شفويًا: "
+                 "فهو يحجز الموعد فورًا ولا يرسل أي رابط، ويعرض التطبيق الاجتماع "
+                 "مقبولًا من فوره. وثمّة زر ثالث، «قبول بدون قاعة»، يقبل الطلب دون "
+                 "حجز قاعة. والموعد محجوز في كلا مسارَي الربط، فعرضه على شخص آخر "
+                 "سيُخفق."),
             p("The three availability pages — speaker, hall and delegation — exist "
               "to produce the bookable slots those requests choose from. Each "
               "window is a start and an end divided into fixed slots, half an "
-              "hour by default, and each must fall inside the forum days. "
-              "Deleting a window does not cancel a meeting already booked in it; "
-              "the meeting keeps its time.",
+              "hour by default. A speaker or delegation window must fall inside "
+              "the forum days; a hall window is never checked against them, so it "
+              "can be authored outside the event entirely — and because both "
+              "meeting desks take their slots from the hall, such a window quietly "
+              "produces bookable meetings outside the forum. Deleting a window "
+              "does not cancel a meeting already booked in it; the meeting keeps "
+              "its time.",
               "صفحات الإتاحة الثلاث — للمتحدثين والقاعات والوفود — موجودة لإنتاج "
               "المواعيد القابلة للحجز التي تختار منها تلك الطلبات. وكل نافذة بداية "
-              "ونهاية مقسّمة إلى مواعيد ثابتة، نصف ساعة افتراضيًا، ويجب أن تقع كل "
-              "منها داخل أيام الملتقى. وحذف النافذة لا يلغي اجتماعًا حُجز فيها؛ إذ "
-              "يحتفظ الاجتماع بوقته."),
+              "ونهاية مقسّمة إلى مواعيد ثابتة، نصف ساعة افتراضيًا. ويجب أن تقع "
+              "نافذة المتحدث أو الوفد داخل أيام الملتقى؛ أما نافذة القاعة فلا "
+              "تُفحص مقابلها إطلاقًا، فيمكن إنشاؤها خارج أيام الفعالية كلها — ولأن "
+              "مكتبَي الاجتماعات يأخذان مواعيدهما من القاعة، فإن نافذة كهذه تُنتج "
+              "بهدوء اجتماعات قابلة للحجز خارج أيام الملتقى. وحذف النافذة لا يلغي "
+              "اجتماعًا حُجز فيها؛ إذ يحتفظ الاجتماع بوقته."),
             figure("cp-admin-business-meetings-default",
                    "Business meetings — created here, never requested.",
                    "اجتماعات الأعمال — تُنشأ هنا ولا تُطلب."),

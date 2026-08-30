@@ -81,6 +81,14 @@ YES = t("Yes", "نعم")
 NO = t("No", "لا")
 DASH = t("—", "—")
 
+# Required, but only down one branch of the form. The desk demands an identity
+# document and a mobile number; WHICH one depends on the visitor, so a plain
+# "Yes" on each row would read as "all of them".
+IF_SAUDI = t("Yes, for a Saudi visitor", "نعم، للزائر السعودي")
+IF_NOT_SAUDI = t("One of the two, for a non-Saudi visitor",
+                 "أحدهما، للزائر غير السعودي")
+ONE_OF_TWO = t("One of the two", "أحدهما")
+
 
 # ---------------------------------------------------------------- chapters --
 
@@ -116,15 +124,22 @@ def chapter_getting_in():
                    "صفحة تسجيل الدخول عند فتحها."),
 
             h2("The forced password change", "تغيير كلمة المرور الإلزامي"),
-            p("A newly created account is issued a bootstrap password that the "
-              "system insists is replaced. On the first sign-in the Control "
-              "Panel therefore does not go to the dashboard: it opens a dialog "
-              "over the sign-in page asking for a new password twice. Until "
-              "that is done the account cannot get in.",
-              "يُمنح الحساب المُنشأ حديثًا كلمة مرور أولية يُصرّ النظام على "
-              "استبدالها. لذلك لا تنتقل لوحة التحكم عند أول تسجيل دخول إلى لوحة "
-              "المعلومات، بل تفتح نافذة فوق صفحة الدخول تطلب كلمة مرور جديدة "
-              "مرتين. ولا يمكن للحساب الدخول قبل إتمام ذلك."),
+            p("The first account on a new installation — the "
+              "super-administrator the system seeds for itself — is given a "
+              "temporary password that it insists is replaced. So its first "
+              "sign-in does not reach the dashboard: a dialog opens over the "
+              "sign-in page asking for a new password twice, and until that is "
+              "done the account cannot get in. An administrator created later "
+              "from the Control Panel never sees this, because that account is "
+              "issued no password at all: it sets its own from the invitation "
+              "email, as the next chapter describes.",
+              "أول حساب في التثبيت الجديد — وهو المسؤول الأعلى الذي يزرعه النظام "
+              "لنفسه — يُمنح كلمة مرور مؤقتة يُصرّ على استبدالها. فلا يصل أول "
+              "تسجيل دخول له إلى لوحة المعلومات: بل تُفتح نافذة فوق صفحة الدخول "
+              "تطلب كلمة مرور جديدة مرتين، ولا يمكن للحساب الدخول قبل إتمام "
+              "ذلك. أما المسؤول الذي يُنشأ لاحقًا من لوحة التحكم فلا يرى هذا، "
+              "لأن حسابه لا يُمنح كلمة مرور إطلاقًا: بل يضبطها بنفسه من رسالة "
+              "الدعوة، كما يصف الفصل التالي."),
             figure("cp-login-password-change-empty",
                    "The password change is a dialog over the sign-in page, not a separate address.",
                    "تغيير كلمة المرور نافذة فوق صفحة الدخول، وليس عنوانًا منفصلًا."),
@@ -203,14 +218,20 @@ def chapter_getting_in():
               "single-use recovery codes. They are shown once and never again. "
               "Print them or store them somewhere safe: they are what gets the "
               "account back in when the phone is lost. If they are lost as well, "
-              "an administrator must reset the account's second factor from "
-              "Reset user 2FA, which is covered later in this manual.",
+              "another administrator resets the account's second factor from "
+              "Reset user 2FA, which is covered later in this manual. That "
+              "page cannot reset your own account, and it cannot reset an "
+              "account holding the Administrator role — the "
+              "super-administrator's authenticator is re-paired through "
+              "configuration instead.",
               "عند إقران الحساب لتطبيق المصادقة يعرض النظام عشرة رموز استرداد "
               "يُستخدم كل منها مرة واحدة. تُعرض مرة واحدة فقط ولا تظهر بعدها "
               "أبدًا. اطبعها أو احفظها في مكان آمن، فهي وسيلة استعادة الحساب عند "
-              "فقدان الهاتف. وإذا فُقدت أيضًا، فيجب على مسؤول إعادة تعيين العامل "
-              "الثاني للحساب من صفحة إعادة تعيين المصادقة الثنائية، وهو ما يتناوله "
-              "هذا الدليل لاحقًا."),
+              "فقدان الهاتف. وإذا فُقدت أيضًا، أعاد مسؤولٌ آخر تعيين العامل الثاني "
+              "للحساب من صفحة إعادة تعيين المصادقة الثنائية، وهو ما يتناوله هذا "
+              "الدليل لاحقًا. ولا تستطيع تلك الصفحة إعادة تعيين حسابك أنت، ولا "
+              "حسابًا يحمل دور Administrator — إذ يُعاد ربط مصادقة المسؤول الأعلى "
+              "عبر الإعدادات بدلًا من ذلك."),
 
             h2("The dashboard", "لوحة المعلومات"),
             p("A completed sign-in lands on the dashboard: a summary of the "
@@ -286,12 +307,16 @@ def chapter_creating_users():
             p("An administrator is somebody who signs in to this Control Panel. "
               "Open the menu group " + EN["Nav.AccessControl"] + ", choose "
               + EN["Module.AdminAdmins"] + ", and use the Add button on the grid "
-              "toolbar. The form is deliberately short — an administrator has no "
-              "visitor profile, no badge and no identity documents.",
+              "toolbar. The form is deliberately short — an administrator fills "
+              "in no visitor profile and no identity documents. A bare profile "
+              "and a badge are created when the account is approved, as they "
+              "are for every account, but nothing on this form asks for them.",
               "المسؤول هو من يسجّل الدخول إلى لوحة التحكم هذه. افتح مجموعة "
               + AR["Nav.AccessControl"] + " واختر " + AR["Module.AdminAdmins"] +
               " ثم استخدم زر الإضافة في شريط أدوات الجدول. والنموذج قصير عن قصد "
-              "— فالمسؤول ليس له ملف زائر ولا شارة ولا وثائق هوية."),
+              "— فالمسؤول لا يملأ ملف زائر ولا وثائق هوية. ويُنشأ له ملف مجرّد "
+              "وشارة عند اعتماد الحساب، كما يحدث لكل حساب، لكن لا شيء في هذا "
+              "النموذج يطلبهما."),
             figure("cp-admin-admins-default",
                    "The administrators list. The Add button opens the create form.",
                    "قائمة المسؤولين. يفتح زر الإضافة نموذج الإنشاء."),
@@ -358,20 +383,23 @@ def chapter_creating_users():
             h2("Creating a visitor", "إنشاء زائر"),
             p("A visitor is an attendee. The form is the on-site registration "
               "desk wizard, and it is long because it captures the identity the "
-              "gate will check. It is organised into numbered sections; the "
-              "fields that appear depend on two choices — the profile type, and "
-              "whether the visitor is Saudi.",
+              "gate will check. It is organised into numbered sections. What "
+              "changes which fields appear is whether the visitor is Saudi "
+              "and, for a non-Saudi, whether an Iqama or a passport is being "
+              "recorded. The profile type chosen first sets the tier and the "
+              "badge colour, not the shape of the form.",
               "الزائر هو أحد الحضور. والنموذج هو معالج مكتب التسجيل في الموقع، "
               "وهو طويل لأنه يلتقط الهوية التي ستتحقق منها البوابة. وهو مقسّم إلى "
-              "أقسام مرقّمة، وتتوقف الحقول الظاهرة على اختيارين: نوع الملف، وما إذا "
-              "كان الزائر سعوديًا."),
+              "أقسام مرقّمة. والذي يغيّر الحقول الظاهرة هو كون الزائر سعوديًّا، ثم — "
+              "لغير السعودي — أيُسجَّل رقم إقامة أم جواز سفر. أما نوع الملف "
+              "المختار أولًا فيحدّد الفئة ولون الشارة، لا شكل النموذج."),
             figure("cp-admin-visitors-default",
                    "The visitors list. Add opens the registration wizard.",
                    "قائمة الزوار. يفتح زر الإضافة معالج التسجيل."),
             figure("cp-admin-visitors-add-top",
-                   "The wizard opens on the profile type, which decides much of "
-                   "what follows.",
-                   "يفتح المعالج على نوع الملف، وهو ما يحدّد كثيرًا مما يليه."),
+                   "The wizard opens on the profile type, which sets the tier and "
+                   "the badge colour.",
+                   "يفتح المعالج على نوع الملف، وهو يحدّد الفئة ولون الشارة."),
             figure("cp-admin-visitors-add-middle",
                    "The identity section.",
                    "قسم الهوية."),
@@ -379,11 +407,11 @@ def chapter_creating_users():
             h3("Identity", "الهوية"),
             field_table([
                 ("Admin.WalkIn.Field.DisplayName", YES, t("128 characters", "128 حرفًا"), DASH),
-                ("Admin.WalkIn.Field.ArabicName", NO, t("50 characters", "50 حرفًا"),
+                ("Admin.WalkIn.Field.ArabicName", YES, t("50 characters", "50 حرفًا"),
                  t("The form allows 128 characters; the server rejects anything "
                    "over 50. Keep to 50.",
                    "يسمح النموذج بـ128 حرفًا، لكن الخادم يرفض ما يتجاوز 50. فالتزم بـ50.")),
-                ("Admin.WalkIn.Field.EnglishName", NO, t("50 characters", "50 حرفًا"),
+                ("Admin.WalkIn.Field.EnglishName", YES, t("50 characters", "50 حرفًا"),
                  t("Same 128-versus-50 mismatch as the Arabic name.",
                    "الاختلاف نفسه بين 128 و50 كما في الاسم العربي.")),
                 ("Admin.WalkIn.Field.JobTitle", NO, t("100 characters", "100 حرف"), DASH),
@@ -395,17 +423,17 @@ def chapter_creating_users():
 
             h3("Nationality and identity document", "الجنسية ووثيقة الهوية"),
             field_table([
-                ("Admin.WalkIn.Field.NationalId", NO, t("10 digits", "10 أرقام"),
+                ("Admin.WalkIn.Field.NationalId", IF_SAUDI, t("10 digits", "10 أرقام"),
                  t("Saudi visitors. Must start with 1 and pass the check-digit "
                    "test; a number that fails it is refused.",
                    "للزوار السعوديين. يجب أن يبدأ بالرقم 1 وأن يجتاز اختبار رقم "
                    "التحقق، ويُرفض الرقم الذي لا يجتازه.")),
-                ("Admin.WalkIn.Field.IqamaNumber", NO, t("10 digits", "10 أرقام"),
+                ("Admin.WalkIn.Field.IqamaNumber", IF_NOT_SAUDI, t("10 digits", "10 أرقام"),
                  t("Non-Saudi residents. Must start with 2 and pass the same "
                    "check-digit test.",
                    "للمقيمين غير السعوديين. يجب أن يبدأ بالرقم 2 وأن يجتاز اختبار "
                    "رقم التحقق نفسه.")),
-                ("Admin.WalkIn.Field.PassportNumber", NO, t("20 characters", "20 حرفًا"),
+                ("Admin.WalkIn.Field.PassportNumber", IF_NOT_SAUDI, t("20 characters", "20 حرفًا"),
                  t("Length only — the desk applies no format check, so a "
                    "passport the mobile application would reject is accepted here.",
                    "الطول فقط — لا يطبّق المكتب أي تحقق من الصيغة، فيُقبل هنا جواز "
@@ -427,21 +455,32 @@ def chapter_creating_users():
 
             h3("Contact and organisation", "التواصل والجهة"),
             field_table([
-                ("Admin.WalkIn.Field.SaudiMobile", NO, t("32 characters", "32 حرفًا"),
+                ("Admin.WalkIn.Field.SaudiMobile", ONE_OF_TWO, t("32 characters", "32 حرفًا"),
                  t("Must be 05XXXXXXXX or +9665XXXXXXXX.",
                    "يجب أن يكون بالصيغة 05XXXXXXXX أو ‎+9665XXXXXXXX.")),
-                ("Admin.WalkIn.Field.InternationalMobile", NO, t("32 characters", "32 حرفًا"),
+                ("Admin.WalkIn.Field.InternationalMobile", ONE_OF_TWO, t("32 characters", "32 حرفًا"),
                  t("Must be the international format: a plus sign, the country "
                    "code, then the number.",
                    "يجب أن يكون بالصيغة الدولية: علامة زائد ثم رمز الدولة ثم الرقم.")),
                 ("Admin.WalkIn.Field.Email", NO, t("256 characters", "256 حرفًا"), DASH),
                 (t("Organisation", "الجهة"), YES, t("150 characters", "150 حرفًا"),
                  t("Chosen from the organisation list. If the employer is not "
-                   "listed, pick the \"Other\" entry and type the name — this is "
-                   "why that entry exists.",
+                   "listed, pick the \"Other\" entry — that is why it exists. The "
+                   "desk cannot type the real name; the visitor supplies it "
+                   "later on their own profile.",
                    "تُختار من قائمة الجهات. وإذا لم تكن جهة العمل مدرجة فاختر "
-                   "«أخرى» واكتب الاسم — ولهذا وُجد هذا الخيار.")),
+                   "«أخرى» — ولهذا وُجد هذا الخيار. ولا يستطيع المكتب كتابة الاسم "
+                   "الحقيقي؛ بل يقدّمه الزائر لاحقًا في ملفه.")),
             ]),
+            note("Those requirements are the desk in its normal mode. When "
+                 "quick registration is armed — see the walk-in mode page — the "
+                 "desk asks for less, and a visitor can be registered without "
+                 "the fields marked required above. It ships disarmed.",
+                 "تلك المتطلبات هي المكتب في وضعه المعتاد. فحين يُسلَّح التسجيل "
+                 "السريع — انظر صفحة وضع الحضور المباشر — يطلب المكتب أقل، "
+                 "ويمكن تسجيل زائر بلا الحقول الموسومة بأنها مطلوبة أعلاه. "
+                 "ويُشحن غير مسلَّح."),
+
             figure("cp-admin-visitors-add-bottom",
                    "The lower sections: contact, the identity document and the "
                    "profile photo.",

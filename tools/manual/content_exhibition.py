@@ -43,49 +43,58 @@ def chapter_exhibition():
                 [
                     ["Exhibitors", "An exhibiting company: bilingual name, "
                      "contact email, phone and website, a tier, social links, "
-                     "city, map coordinates, country and its own logo",
+                     "city, a latitude and longitude — degrees on the globe, "
+                     "not the booth's venue-map coordinates — country and its "
+                     "own logo",
                      "Nothing above it. Booths point at it, not the reverse"],
                     ["Booths", "The stand itself: a floor code such as A-12, a "
                      "bilingual booth name, a hall, and a booth officer — the "
                      "person standing on it, who is a different party from the "
                      "company",
-                     "A hall, and optionally one exhibitor. The exhibitor link "
-                     "may be left empty for as long as the stand is unsold"],
+                     "Optionally a hall, and optionally one exhibitor. The "
+                     "hall may be left empty — the form carries a \"no hall\" "
+                     "choice — and the exhibitor for as long as the stand is "
+                     "unsold"],
                     ["Sponsors", "A sponsorship: tier, tagline, about text, "
                      "contact block and logo",
                      "Nothing. A sponsor is not a booth and not an exhibitor, "
                      "and giving a company a booth does not make it a sponsor"],
                     ["Venue map", "One labelled point: a hall, a zone, a booth "
                      "or a point of interest, placed at an X and Y",
-                     "Optionally a hall or a booth, so tapping the point in the "
-                     "app opens that record"],
+                     "Optionally a hall or a booth. Tapping any point opens "
+                     "its info card; only a booth point offers a way through "
+                     "to the booth's record"],
                 ],
                 [
                     ["العارضون", "شركة عارضة: اسم بلغتين، وبريد وهاتف وموقع "
-                     "للتواصل، وفئة، وروابط تواصل اجتماعي، ومدينة، وإحداثيات، "
-                     "ودولة، وشعار خاص بها",
+                     "للتواصل، وفئة، وروابط تواصل اجتماعي، ومدينة، وخط عرض "
+                     "وخط طول — درجات على الكرة الأرضية، لا إحداثيات الجناح على "
+                     "خريطة الموقع — ودولة، وشعار خاص بها",
                      "لا شيء فوقه. الأجنحة تشير إليه، لا العكس"],
                     ["الأجنحة", "الجناح نفسه: رمز أرضي مثل A-12، واسم جناح "
                      "بلغتين، وقاعة، ومسؤول جناح — وهو الشخص الواقف فيه، وطرف "
                      "مختلف عن الشركة",
-                     "قاعة، وعارض واحد اختياريًّا. ويجوز ترك رابط العارض فارغًا ما "
-                     "دام الجناح غير مباع"],
+                     "قاعة اختياريًّا، وعارض واحد اختياريًّا. ويجوز ترك القاعة "
+                     "فارغة — ففي النموذج خيار «بلا قاعة» — كما يجوز ترك العارض "
+                     "فارغًا ما دام الجناح غير مباع"],
                     ["الرعاة", "رعاية: فئة، وعبارة تعريفية، ونبذة، وبيانات "
                      "تواصل، وشعار",
                      "لا شيء. فالراعي ليس جناحًا ولا عارضًا، ومنح شركةٍ جناحًا لا "
                      "يجعلها راعيًا"],
                     ["خريطة الموقع", "نقطة معنونة واحدة: قاعة أو منطقة أو جناح "
                      "أو معلم، توضع عند إحداثي س وص",
-                     "قاعة أو جناح اختياريًّا، فيفتح النقر على النقطة في التطبيق "
-                     "ذلك السجل"],
+                     "قاعة أو جناح اختياريًّا. والنقر على أي نقطة يفتح بطاقة "
+                     "تعريفها؛ ونقطة الجناح وحدها تتيح المرور إلى سجل الجناح"],
                 ]),
 
             figure("cp-admin-exhibitors-default",
                    "The exhibitors list. Each row is a company, and the account "
-                   "count on the row is what tells you whether anybody from it "
-                   "can scan a visitor.",
-                   "قائمة العارضين. كل سجل شركة، وعدد الحسابات في السجل هو ما "
-                   "يخبرك إن كان أحد من الشركة يستطيع مسح زائر."),
+                   "count is the number of live memberships on it — it goes on "
+                   "counting after the company is deactivated, when nobody there "
+                   "can scan.",
+                   "قائمة العارضين. كل سجل شركة، وعدد الحسابات هو عدد العضويات "
+                   "السارية فيها — ويظل يعدّها بعد تعطيل الشركة، حين لا يستطيع "
+                   "أحد فيها المسح."),
 
             h2("The booth is the space, and it comes first",
                "الجناح هو المساحة، وهو يأتي أولًا"),
@@ -128,17 +137,24 @@ def chapter_exhibition():
             h2("Giving somebody on a stand the ability to scan visitors",
                "منح شخص في الجناح القدرة على مسح الزوار"),
             p("This is the part of the exhibition module that is genuinely a "
-              "procedure, and it is the part that goes wrong. Exhibitor sign-up "
-              "inside the app does not exist and was dropped on purpose: an "
-              "account is created here, in the Control Panel, or it is not "
-              "created at all. Open an exhibitor's row and use its Accounts "
-              "button; there are two ways in and they are not "
+              "procedure, and it is the part that goes wrong. A person can sign "
+              "up in the app as an exhibitor: the sign-up screen's "
+              "registration-type tab has an Other side, and the exhibitor "
+              "profile type is offered there. What that sign-up cannot create is "
+              "the exhibitor company itself, or the membership tying the account "
+              "to it — so a self-registered account arrives carrying the profile "
+              "type, no membership and no way to scan. Both of those are made "
+              "here, in the Control Panel. Open an exhibitor's row and use its "
+              "Accounts button; there are two ways in and they are not "
               "interchangeable.",
               "هذا هو الجزء الذي يمثل إجراءً فعليًّا في وحدة المعرض، وهو الجزء "
-              "الذي يقع فيه الخطأ. فتسجيل العارض من داخل التطبيق غير موجود وقد "
-              "أُسقط عمدًا: الحساب يُنشأ هنا في لوحة التحكم، أو لا يُنشأ أصلًا. "
-              "افتح سجل العارض واستخدم زر الحسابات؛ فأمامك طريقان وهما غير "
-              "متكافئين."),
+              "الذي يقع فيه الخطأ. ويستطيع الشخص أن يسجّل نفسه عارضًا من داخل "
+              "التطبيق: ففي شاشة التسجيل تبويب «نوع التسجيل» وفي جانبه الآخر "
+              "يُعرض نوع ملف العارض. لكن ذلك التسجيل لا ينشئ شركة العارض نفسها "
+              "ولا العضوية التي تربط الحساب بها — فيصل الحساب المسجَّل ذاتيًّا "
+              "حاملًا نوع الملف، بلا عضوية ولا قدرة على المسح. وكلتاهما تُنشأ هنا "
+              "في لوحة التحكم. افتح سجل العارض واستخدم زر الحسابات؛ فأمامك "
+              "طريقان وهما غير متكافئين."),
             bullets(
                 ["**Create a new account.** The Control Panel provisions a "
                  "fresh identity, sets the exhibitor profile type on it, and "
@@ -156,14 +172,22 @@ def chapter_exhibition():
 
             h3("Why Link refuses, and what to do about it",
                "لماذا يرفض الربط، وما العمل"),
-            p("Linking checks two things before it agrees, and both refusals are "
-              "deliberate rather than defensive.",
-              "يتحقق الربط من أمرين قبل أن يوافق، وكلا الرفضين مقصود لا وقائي "
-              "فحسب."),
+            p("Linking checks three things before it agrees, and all three "
+              "refusals are deliberate rather than defensive.",
+              "يتحقق الربط من ثلاثة أمور قبل أن يوافق، وحالات الرفض الثلاث "
+              "مقصودة لا وقائية فحسب."),
             table(
                 ["The refusal", "What it means", "What to do"],
                 ["الرفض", "ماذا يعني", "ما العمل"],
                 [
+                    ["The exhibitor is closed",
+                     "Its own Active switch is off. This is checked before "
+                     "anything else, and a closed exhibitor takes on no new "
+                     "accounts. The Accounts button is still offered on a "
+                     "deactivated row, so this is the refusal you meet first",
+                     "Reactivate the exhibitor, then link. It is the one place "
+                     "Link and Revoke differ: Revoke still works on a closed "
+                     "exhibitor"],
                     ["The account is not eligible",
                      "The account does not carry an active profile type whose "
                      "app role is Exhibitor. The Control Panel will not quietly "
@@ -179,6 +203,12 @@ def chapter_exhibition():
                      "different account"],
                 ],
                 [
+                    ["العارض مغلق",
+                     "مفتاح تفعيله مطفأ. ويُفحص هذا قبل كل شيء، والعارض المغلق لا "
+                     "يقبل حسابات جديدة. وزر الحسابات يظل معروضًا على السجل "
+                     "المعطَّل، فهذا أول رفض تلقاه",
+                     "أعد تفعيل العارض ثم اربط. وهذا هو الموضع الوحيد الذي يختلف "
+                     "فيه الربط عن السحب: فالسحب يعمل على عارض مغلق"],
                     ["الحساب غير مؤهل",
                      "لا يحمل الحساب نوع ملف مفعَّلًا يكون دوره في التطبيق «عارض». "
                      "ولن تغيّر لوحة التحكم نوع الملف هنا بصمت، لأن ذلك يعني "
@@ -191,35 +221,43 @@ def chapter_exhibition():
                      "ألغِ العضوية السابقة ثم اربط — أو استخدم حسابًا آخر"],
                 ]),
 
-            note("The most common failure in this whole chapter: an account was "
-                 "created on the Others page with an exhibitor profile type, and "
-                 "everybody assumes it is ready. It is not. It has the profile "
-                 "type and no membership, so the app refuses its badge scans and "
+            note("The most common failure in this whole chapter: an account "
+                 "carries an exhibitor profile type — set on the Others page, or "
+                 "picked by the person at sign-up — and everybody assumes it is "
+                 "ready. It is not. It has the profile type and no membership, "
+                 "so the app refuses its badge scans and "
                  "its visitor list, and nothing on the Exhibitors page ties it to "
                  "a stand. The instinct is to create the account again from the "
                  "Accounts panel, which fails on the duplicate email address. "
                  "The fix is Link, not Create.",
-                 "أشهر إخفاق في هذا الفصل كله: حساب أُنشئ في صفحة الحسابات الأخرى "
-                 "بنوع ملف عارض، فيفترض الجميع أنه جاهز. وليس كذلك. فهو يحمل نوع "
-                 "الملف ولا يحمل عضوية، فيرفض التطبيق عمليات مسح الشارات وقائمة "
+                 "أشهر إخفاق في هذا الفصل كله: حساب يحمل نوع ملف عارض — أُسند له "
+                 "في صفحة الحسابات الأخرى، أو اختاره صاحبه عند التسجيل — فيفترض "
+                 "الجميع أنه جاهز. وليس كذلك. فهو يحمل نوع الملف ولا يحمل "
+                 "عضوية، فيرفض التطبيق عمليات مسح الشارات وقائمة "
                  "الزوار لديه، ولا شيء في صفحة العارضين يربطه بجناح. ويكون الميل "
                  "إلى إنشاء الحساب مجددًا من لوحة الحسابات، فيفشل بسبب تكرار "
                  "البريد الإلكتروني. والحل هو الربط لا الإنشاء."),
 
             h3("What a live membership actually grants",
                "ماذا تمنحه العضوية السارية فعلًا"),
-            p("Two things together authorise lead capture: the exhibitor profile "
-              "type on the account, and a live membership against an exhibitor. "
-              "With both, that person's app can scan a visitor's entry badge and "
+            p("Three things together authorise lead capture: an active account "
+              "carrying the exhibitor profile type, a live membership against an "
+              "exhibitor, and an exhibitor that is itself still active. With all "
+              "three, that person's app can scan a visitor's entry badge and "
               "keep the resulting contact card, list the visitors they collected, "
               "delete one, and export a card as a vCard. They also become a "
               "recipient of the business-meeting notifications sent to the "
-              "exhibitor.",
-              "أمران معًا يمنحان صلاحية التقاط العملاء: نوع ملف العارض على "
-              "الحساب، وعضوية سارية لدى عارض. فبهما معًا يستطيع تطبيق ذلك الشخص "
-              "مسح شارة دخول الزائر والاحتفاظ ببطاقة التواصل الناتجة، وعرض قائمة "
+              "exhibitor. **Deactivating the exhibitor takes all of that away "
+              "from every one of its officers at once**, without a single "
+              "membership being touched.",
+              "ثلاثة أمور معًا تمنح صلاحية التقاط العملاء: حساب مفعَّل يحمل نوع ملف "
+              "العارض، وعضوية سارية لدى عارض، وعارض ما زال هو نفسه مفعَّلًا. فبها "
+              "جميعًا يستطيع تطبيق ذلك الشخص مسح شارة دخول الزائر والاحتفاظ "
+              "ببطاقة التواصل الناتجة، وعرض قائمة "
               "الزوار الذين جمعهم، وحذف واحدة منها، وتصدير البطاقة كملف vCard. "
-              "ويصبح كذلك من متلقّي إشعارات لقاءات الأعمال المرسلة إلى العارض."),
+              "ويصبح كذلك من متلقّي إشعارات لقاءات الأعمال المرسلة إلى العارض. "
+              "**وتعطيل العارض يسلب ذلك كله من جميع مسؤوليه دفعةً واحدة**، دون "
+              "المساس بأي عضوية."),
 
             h3("Revoking access", "سحب الصلاحية"),
             p("Revoking deactivates the membership; it never deletes it. The row "
@@ -246,13 +284,18 @@ def chapter_exhibition():
 
             h2("Sponsors and their tiers", "الرعاة وفئاتهم"),
             p("Sponsors carry four tiers — Platinum, Gold, Silver and Bronze — "
-              "and a new sponsor starts at Bronze. The public surface groups them "
+              "and the tier is always chosen, never inherited: a blank Add form "
+              "opens on Platinum, the API refuses anything that is not one of the "
+              "four, and an Excel import requires a Tier column and rejects any "
+              "row that leaves it blank. The public surface groups them "
               "by tier with Platinum first, and within a tier orders by the "
               "display-order number and then by Arabic name.",
-              "للرعاة أربع فئات — بلاتيني وذهبي وفضي وبرونزي — ويبدأ الراعي "
-              "الجديد عند البرونزي. وتجمعهم الواجهة العامة بحسب الفئة والبلاتيني "
-              "أولًا، وترتبهم داخل الفئة الواحدة بحسب رقم ترتيب العرض ثم بالاسم "
-              "العربي."),
+              "للرعاة أربع فئات — بلاتيني وذهبي وفضي وبرونزي — والفئة تُختار دائمًا "
+              "ولا تُورَّث: فنموذج الإضافة الفارغ يفتح على البلاتيني، وترفض الواجهة "
+              "البرمجية أي قيمة خارج الأربع، ويشترط الاستيراد من Excel عمود Tier "
+              "ويرفض أي سجل يتركه فارغًا. وتجمعهم الواجهة العامة بحسب الفئة "
+              "والبلاتيني أولًا، وترتبهم داخل الفئة الواحدة بحسب رقم ترتيب "
+              "العرض ثم بالاسم العربي."),
             note("FDS-006 describes the sponsor tiers as Strategic, Premium and "
                  "Gold. The system does not use those; the four above are what it "
                  "offers and what the public listing groups by. Separately, "
@@ -272,15 +315,29 @@ def chapter_exhibition():
 
             h2("The venue map", "خريطة الموقع"),
             p("The map is a set of labelled points, each one a hall, a zone, a "
-              "booth or a point of interest, placed at an X and Y in relative "
-              "units of roughly nought to a thousand which the app scales onto "
-              "its own canvas. A point may carry a hall or a booth, which is what "
-              "makes it tappable. It is a two-dimensional map of points, not the "
+              "booth or a point of interest, placed at an X and Y. Nought to a "
+              "thousand is the convention the field documents, but nothing "
+              "enforces it and the app never reads the absolute numbers: on each "
+              "load it takes the smallest and largest X and Y among the points it "
+              "received and stretches that spread across its canvas. Only the "
+              "positions of the points relative to one another matter, **so "
+              "moving one outlying point shifts where every other point lands.** "
+              "Every point is tappable and opens an info card, whatever it "
+              "carries; only a booth point offers a way through to the booth's "
+              "own record, and it needs the booth link to have anything to show "
+              "there. A hall link reaches the app, but nothing there opens a "
+              "hall. It is a two-dimensional map of points, not the "
               "three-dimensional isometric floor plan FDS-006 describes.",
               "الخريطة مجموعة نقاط معنونة، كل نقطة قاعة أو منطقة أو جناح أو معلم، "
-              "توضع عند إحداثي س وص بوحدات نسبية من صفر إلى ألف تقريبًا يقيسها "
-              "التطبيق على مساحته. وقد تحمل النقطة قاعة أو جناحًا، وهو ما يجعلها "
-              "قابلة للنقر. وهي خريطة نقاط ثنائية الأبعاد، لا المخطط المجسَّم "
+              "توضع عند إحداثي س وص. ومن صفر إلى ألف هو العُرف الذي يوثّقه الحقل، "
+              "لكن لا شيء يفرضه، والتطبيق لا يقرأ القيم المطلقة أصلًا: فهو في كل "
+              "تحميل يأخذ أصغر وأكبر قيمتَي س وص بين النقاط التي وصلته، ويمدّ ذلك "
+              "المدى ليملأ مساحته. فلا يهم إلا موضع النقاط بعضها من بعض، **ولذلك "
+              "فتحريك نقطة واحدة شاذة يزيح موضع كل نقطة أخرى.** وكل نقطة قابلة "
+              "للنقر وتفتح بطاقة تعريفها مهما حملت؛ ونقطة الجناح وحدها تتيح "
+              "المرور إلى سجل الجناح، وتحتاج إلى رابط الجناح كي يكون لديها ما "
+              "تعرضه هناك. أما رابط القاعة فيصل إلى التطبيق، لكن لا شيء فيه يفتح "
+              "قاعة. وهي خريطة نقاط ثنائية الأبعاد، لا المخطط المجسَّم "
               "ثلاثي الأبعاد الذي يصفه المستند FDS-006."),
             note("A booth also has its own map coordinates on the booths page. "
                  "They are stored and published, and no map is drawn from them — "

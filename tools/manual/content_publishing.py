@@ -67,17 +67,24 @@ def chapter_content():
 
             note("This is the single most useful fact in the chapter. A news "
                  "article, a banner, a gallery item, a media partner or a content "
-                 "block is published for the mobile app. The website reads "
-                 "sponsors, previous editions, the programme sessions and the "
-                 "speakers live, and nothing else — the aggregating endpoint that "
-                 "once fed the rest of the landing page is still there and no "
+                 "block is published for the mobile app. Of the pages on this "
+                 "menu the website reads only sponsors and previous editions "
+                 "live; beyond the menu it also reads the programme sessions, "
+                 "the speakers, and the organisation profile — the landing "
+                 "hero's background video and the forum dates that the landing, "
+                 "Speakers and Venue pages show. Nothing else on this menu "
+                 "reaches it — the aggregating endpoint that once fed the rest "
+                 "of the landing page is still there and no "
                  "shipped page calls it, and the landing's news cards are written "
                  "into the site. Check the app, not the website, and the save you "
                  "were about to repeat will turn out to have worked.",
                  "هذه أنفع حقيقة في الفصل. فالمقال الإخباري واللافتة وعنصر المعرض "
-                 "والشريك الإعلامي وكتلة المحتوى تُنشر لتطبيق الجوال. أما الموقع "
-                 "فيقرأ مباشرةً الرعاة والدورات السابقة وجلسات البرنامج "
-                 "والمتحدثين، ولا شيء غير ذلك — فنقطة القراءة المجمِّعة التي كانت "
+                 "والشريك الإعلامي وكتلة المحتوى تُنشر لتطبيق الجوال. ومن صفحات "
+                 "هذه القائمة لا يقرأ الموقع مباشرةً إلا الرعاة والدورات "
+                 "السابقة؛ وخارجها يقرأ أيضًا جلسات البرنامج والمتحدثين وملف "
+                 "الجهة — مقطع الخلفية في واجهة الصفحة الرئيسية وتواريخ الملتقى "
+                 "التي تعرضها الصفحة الرئيسية وصفحتا المتحدثين والمقر. ولا يصله "
+                 "شيء آخر من هذه القائمة — فنقطة القراءة المجمِّعة التي كانت "
                  "تغذّي بقية الصفحة الرئيسية ما زالت موجودة ولا تستدعيها أي صفحة "
                  "منشورة، وبطاقات الأخبار في الصفحة الرئيسية مكتوبة داخل الموقع. "
                  "تحقّق من التطبيق لا من الموقع، وسيتبيّن أن الحفظ الذي كدت تعيده "
@@ -98,7 +105,8 @@ def chapter_content():
                      "Its display order", "Its publish date and order"],
                     ["What makes it visible", "Being active",
                      "Being active and the present moment falling inside its "
-                     "start and end", "Its publish date having passed"],
+                     "start and end",
+                     "Being active and its publish date having passed"],
                     ["Ordering", "None — clients ask for the key they want",
                      "Display order, zero first; ties break on the start date",
                      "Publish date and display order"],
@@ -109,7 +117,7 @@ def chapter_content():
                      "ترتيب عرضه", "تاريخ نشره وترتيبه"],
                     ["ما يجعله ظاهرًا", "أن يكون مفعَّلًا",
                      "أن يكون مفعَّلًا وأن تقع اللحظة الحالية بين بدايته ونهايته",
-                     "أن يكون تاريخ نشره قد مضى"],
+                     "أن يكون مفعَّلًا وأن يكون تاريخ نشره قد مضى"],
                     ["الترتيب", "لا يوجد — يطلب العملاء المفتاح الذي يريدونه",
                      "ترتيب العرض والصفر أولًا، ويُفصل التعادل بتاريخ البداية",
                      "تاريخ النشر ثم ترتيب العرض"],
@@ -132,12 +140,15 @@ def chapter_content():
                  "tags on the screen; it does not format anything.",
                  "تُعرض القيمة نصًّا صِرفًا. فكتابة HTML فيها يضع الوسوم على الشاشة "
                  "ولا ينسّق شيئًا."),
-            p("Clients cache these and re-check them against the block's "
-              "last-updated time, so an edit reaches devices on their next check "
-              "rather than instantly on every phone at once.",
-              "يخزّن العملاء هذه مؤقتًا ويعيدون فحصها مقابل وقت آخر تحديث للكتلة، "
-              "فيصل التعديل إلى الأجهزة عند فحصها التالي لا فوريًّا على كل هاتف "
-              "دفعة واحدة."),
+            p("The app re-reads a block every time the screen that uses it is "
+              "opened, and again on pull-to-refresh, and keeps nothing between "
+              "visits. So an edit shows up the next time a reader opens that "
+              "screen, not on every phone the moment you save. There is no cache "
+              "to wait out.",
+              "يعيد التطبيق قراءة الكتلة كلما فُتحت الشاشة التي تستخدمها، ومرةً "
+              "أخرى عند السحب للتحديث، ولا يحتفظ بشيء بين الزيارتين. فيظهر "
+              "التعديل حين يفتح القارئ تلك الشاشة في المرة التالية، لا على كل "
+              "هاتف لحظة الحفظ. وليس هناك تخزين مؤقت تنتظر انقضاءه."),
             figure("cp-admin-content-blocks-default",
                    "The content blocks. The key column is what the app is coded "
                    "against; the text beside it is what it shows.",
@@ -157,31 +168,39 @@ def chapter_content():
               "تظهر تكون خارج تواريخها أكثر بكثير مما تكون معطَّلة. ويحدّد ترتيب "
               "العرض التسلسل والصفر في الأعلى، ويُفصل بين لافتتين لهما الترتيب "
               "نفسه بتاريخ البداية."),
-            note("The link on a banner is stored as a plain address because it is "
-                 "navigation rather than media: it is where tapping the banner "
-                 "takes the reader, and it is optional.",
-                 "يُحفظ رابط اللافتة عنوانًا صِرفًا لأنه تنقّل لا وسائط: فهو الموضع "
-                 "الذي ينتقل إليه القارئ بالنقر على اللافتة، وهو اختياري."),
+            note("The link on a banner is stored as a plain address rather than "
+                 "an uploaded file, and it is optional. Nothing acts on it "
+                 "today: tapping the banner always opens the news list, whatever "
+                 "the link holds. Filling it in changes nothing on screen.",
+                 "يُحفظ رابط اللافتة عنوانًا صِرفًا لا ملفًّا مرفوعًا، وهو اختياري. "
+                 "ولا شيء يعمل به اليوم: فالنقر على اللافتة يفتح قائمة الأخبار "
+                 "دائمًا مهما كان الرابط. وكتابته لا تغيّر شيئًا على الشاشة."),
             figure("cp-admin-banners-default",
-                   "The banners. Start, end and display order are what decide "
-                   "whether one is on screen right now.",
-                   "اللافتات. البداية والنهاية وترتيب العرض هي ما يحدد إن كانت "
-                   "اللافتة على الشاشة الآن."),
+                   "The banners. Being active, and the present moment falling "
+                   "inside the start and end, are what decide whether one is on "
+                   "screen right now; display order decides the sequence.",
+                   "اللافتات. كون اللافتة مفعَّلة ووقوع اللحظة الحالية بين "
+                   "بدايتها ونهايتها هما ما يحدد إن كانت على الشاشة الآن؛ وترتيب "
+                   "العرض يحدد التسلسل."),
 
             h3("News: the publish date is the gate",
                "الأخبار: تاريخ النشر هو البوابة"),
-            p("An article becomes public when its publish date has passed. Dating "
-              "one ahead is how an article is written today and released on "
+            p("An article becomes public when it is active and its publish date "
+              "has passed. Dating one ahead is how an article is written today "
+              "and released on "
               "Sunday — and it is why an article can be plainly visible on this "
               "page and absent from the app. The admin grid shows every article "
               "regardless of its date, on purpose.",
-              "يصبح المقال عامًّا حين يمضي تاريخ نشره. وتأريخه إلى الأمام هو "
-              "الطريقة التي يُكتب بها المقال اليوم ويصدر يوم الأحد — وهو سبب أن "
+              "يصبح المقال عامًّا حين يكون مفعَّلًا ويمضي تاريخ نشره. وتأريخه إلى "
+              "الأمام هو الطريقة التي يُكتب بها المقال اليوم ويصدر يوم الأحد "
+              "— وهو سبب أن "
               "يكون المقال ظاهرًا تمامًا في هذه الصفحة وغائبًا عن التطبيق. وتعرض "
               "شبكة الإدارة كل المقالات بصرف النظر عن تاريخها، وذلك مقصود."),
             bullets(
-                ["The excerpt is optional — leave it empty and the app derives "
-                 "one from the body.",
+                ["The excerpt is optional, and nothing shows it today. Nothing "
+                 "is derived from the body; the app's news card carries only the "
+                 "picture, the date and the title, and the article screen has no "
+                 "excerpt at all. Leaving it empty changes nothing on screen.",
                  "The category is the small kicker printed above the title. It is "
                  "free text typed on the article, not a list to choose from, so "
                  "spelling it differently on two articles produces two different "
@@ -189,7 +208,10 @@ def chapter_content():
                  "Both title and body are bilingual, and both languages are "
                  "wanted: the app shows the reader whichever matches their "
                  "language."],
-                ["المقتطف اختياري — اتركه فارغًا فيشتقّه التطبيق من المتن.",
+                ["المقتطف اختياري، ولا شيء يعرضه اليوم. فلا يُشتقّ شيء من المتن، "
+                 "وبطاقة الخبر في التطبيق لا تحمل إلا الصورة والتاريخ والعنوان، "
+                 "وشاشة المقال لا تحمل مقتطفًا إطلاقًا. وتركه فارغًا لا يغيّر "
+                 "شيئًا على الشاشة.",
                  "التصنيف هو العنوان الصغير المطبوع فوق العنوان. وهو نص حر يُكتب "
                  "على المقال، لا قائمة يُختار منها، فكتابته بصيغتين على مقالين "
                  "تُنتج عنوانين صغيرين مختلفين. ويصفه المستند FDS-010 قائمةً "
@@ -211,26 +233,34 @@ def chapter_content():
               "المركز الإعلامي هو المعرض العام: كل عنصر فيه إما صورة رُفعت إليه "
               "أو مقطع مرئي محفوظ كرابط إلى موضع تشغيله، مجموعةً في ألبومات "
               "ومرتَّبة. وهذا محتوى يتصفحه الجمهور."),
-            p("The Media library is not content at all. It is a view across every "
-              "image the system holds, whoever uploaded it and whatever it "
-              "belongs to — speaker photographs, sponsor and exhibitor and booth "
-              "logos, archive covers, news pictures, programme-day images, the "
-              "organisation logo, banner images. It exists so somebody can find a "
+            p("The Media library is not content at all. It is a view across the "
+              "images that belong to a page — speaker photographs, media-partner "
+              "and sponsor and exhibitor and booth logos, archive covers, "
+              "archive past-speaker and archive gallery photographs, news "
+              "pictures, programme-day images, the organisation logo, banner "
+              "images. It does not reach personal files — account photographs, "
+              "identity documents, VIP photos — and it does not reach the Media "
+              "Center's own gallery pictures, which are managed on their own "
+              "page. It exists so somebody can find a "
               "file, look at it, and deactivate or restore it without hunting "
               "through the page that owns it. Deactivating a file here removes it "
               "from wherever it was being shown.",
-              "أما مكتبة الوسائط فليست محتوى إطلاقًا. بل هي عرض شامل لكل صورة "
-              "يحملها النظام، أيًّا كان من رفعها وأيًّا كان ما تتبعه — صور "
-              "المتحدثين، وشعارات الرعاة والعارضين والأجنحة، وأغلفة الأرشيف، وصور "
-              "الأخبار، وصور أيام البرنامج، وشعار الجهة، وصور اللافتات. وهي موجودة "
+              "أما مكتبة الوسائط فليست محتوى إطلاقًا. بل هي عرض للصور التي تتبع "
+              "صفحةً من الصفحات — صور المتحدثين، وشعارات الشركاء الإعلاميين "
+              "والرعاة والعارضين والأجنحة، وأغلفة الأرشيف، وصور متحدثي الدورات "
+              "السابقة وصور معارضها، وصور الأخبار، وصور أيام البرنامج، وشعار "
+              "الجهة، وصور اللافتات. وهي لا تصل إلى الملفات الشخصية — صور "
+              "الحسابات ووثائق الهوية وصور كبار الشخصيات — ولا تصل إلى صور معرض "
+              "المركز الإعلامي التي تُدار في صفحتها الخاصة. وهي موجودة "
               "ليتمكن أحدهم من إيجاد ملف والنظر إليه وتعطيله أو استعادته دون "
               "التنقيب في الصفحة التي تملكه. وتعطيل ملف هنا يزيله من حيث كان "
               "يُعرض."),
             figure("cp-admin-media-library-default",
-                   "The media library: every uploaded image in the system, "
-                   "whatever page it belongs to.",
-                   "مكتبة الوسائط: كل صورة مرفوعة في النظام، أيًّا كانت الصفحة "
-                   "التي تتبعها."),
+                   "The media library: every picture a page owns, whatever page "
+                   "that is — not personal files and not the Media Center's "
+                   "gallery.",
+                   "مكتبة الوسائط: كل صورة تملكها صفحة، أيًّا كانت تلك الصفحة — "
+                   "لا الملفات الشخصية ولا معرض المركز الإعلامي."),
 
             h2("Previous editions are not the event edition",
                "الدورات السابقة ليست دورة الفعالية"),
@@ -255,12 +285,21 @@ def chapter_content():
             note("Whether the archive is publicly visible at all is not a setting "
                  "on an edition. It is one switch for the whole archive, on the "
                  "Operations page: turn it off and the public list comes back "
-                 "empty and each edition's page reports not found. FDS-010 "
-                 "describes a visibility flag per edition; the system has a "
+                 "empty — the app's archive screen shows its empty state and "
+                 "each edition's page reports not found. The website does not go "
+                 "blank: its Archive page and Archive menu fall back to a fixed "
+                 "set of edition cards built into the site, with the site's own "
+                 "totals, so check the switch in the app rather than on the "
+                 "website. FDS-010 describes a visibility flag per edition; the "
+                 "system has a "
                  "single global one.",
                  "وكون الأرشيف ظاهرًا للعموم أصلًا ليس إعدادًا على الدورة. بل هو "
                  "مفتاح واحد للأرشيف كله في صفحة العمليات: أوقفه فتعود القائمة "
-                 "العامة فارغة وتُبلِّغ صفحة كل دورة بعدم الوجود. ويصف المستند "
+                 "العامة فارغة — فتعرض شاشة الأرشيف في التطبيق حالتها الفارغة "
+                 "وتُبلِّغ صفحة كل دورة بعدم الوجود. أما الموقع فلا يفرغ: إذ ترجع "
+                 "صفحة الأرشيف وقائمة الأرشيف فيه إلى مجموعة ثابتة من بطاقات "
+                 "الدورات مبنيّة داخل الموقع بإجمالياته الخاصة، فتحقّق من المفتاح "
+                 "في التطبيق لا في الموقع. ويصف المستند "
                  "FDS-010 راية ظهور لكل دورة؛ وفي النظام مفتاح عام واحد."),
             figure("cp-admin-archive-default",
                    "Previous editions. The attendee, session and speaker totals "

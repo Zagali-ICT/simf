@@ -24,12 +24,16 @@ def chapter_reference_data():
               "like the least interesting screens in the Control Panel and they "
               "are the ones that stop a registration dead when they are empty: a "
               "visitor cannot finish signing up without an organisation to belong "
-              "to, and cannot be given a badge without a profile type. Fill these "
+              "to, and cannot be registered at the walk-in desk — nor given a "
+              "bulk-minted badge — without a profile type. Approving a visitor "
+              "still issues the badge whether or not a tier is picked. Fill these "
               "before an event opens, not during it.",
               "ست صفحات تحمل قوائم لا يعمل شيء آخر بدونها. تبدو أقل شاشات لوحة "
               "التحكم إثارة، وهي التي توقف التسجيل تمامًا حين تكون فارغة: فالزائر "
-              "لا يستطيع إتمام تسجيله بلا جهة ينتمي إليها، ولا يمكن منحه شارة بلا "
-              "نوع ملف. املأ هذه قبل افتتاح الفعالية، لا أثناءها."),
+              "لا يستطيع إتمام تسجيله بلا جهة ينتمي إليها، ولا يمكن تسجيله عند "
+              "المكتب — ولا منحه شارة ضمن دفعة — بلا نوع ملف. أما اعتماد الزائر "
+              "فيصدر شارته سواء اختيرت له فئة أم لا. املأ هذه قبل افتتاح "
+              "الفعالية، لا أثناءها."),
 
             h2("What each list feeds", "ما تغذّيه كل قائمة"),
             table(
@@ -47,14 +51,22 @@ def chapter_reference_data():
                      "first production install"],
                     ["Countries", "Nationality on every profile, and the "
                      "calling-code picker",
-                     "A non-Saudi visitor cannot state a nationality"],
+                     "No visitor can state a nationality — Saudi Arabia is a row "
+                     "in this list like any other. App sign-up and the desk's "
+                     "full registration are both refused, for Saudis as much as "
+                     "foreigners; only a quick walk-in taken with no nationality "
+                     "at all still completes"],
                     ["Regions", "Place of birth for a Saudi visitor",
-                     "The place-of-birth picker is empty; the field is optional, "
-                     "so registration still completes"],
+                     "Nothing — the picker falls back to the thirteen official "
+                     "Saudi regions built into both the app and the desk. Place "
+                     "of birth itself is required on every app sign-up, though "
+                     "the desk may leave it blank"],
                     ["Visitor profile types", "Which tier a visitor is approved "
                      "into, and what the badge says",
-                     "An account cannot be approved into a tier, so no badge is "
-                     "issued"],
+                     "The account is still approved and still gets a working "
+                     "badge, but in no tier — the badge shows no tier line and "
+                     "falls back to the default gold strip, and any gate with an "
+                     "allow-list refuses it"],
                     ["Other profile types", "The same, for partner, exhibitor, "
                      "media and staff accounts",
                      "A partner account cannot be saved — its profile type is "
@@ -70,13 +82,20 @@ def chapter_reference_data():
                      "لا يمكن إتمام التسجيل — فالجهة مطلوبة. وهذا ليس افتراضًا: "
                      "فقد وقع فعلًا عند أول تثبيت إنتاجي"],
                     ["البلدان", "الجنسية في كل ملف، وقائمة رموز الاتصال",
-                     "لا يستطيع الزائر غير السعودي تحديد جنسيته"],
+                     "لا يستطيع أي زائر تحديد جنسيته — فالسعودية سجل في هذه "
+                     "القائمة كسائر السجلات. فيُرفض التسجيل في التطبيق ويُرفض "
+                     "التسجيل الكامل عند المكتب، للسعوديين كما لغيرهم؛ ولا "
+                     "يكتمل إلا تسجيل سريع عند المكتب بلا جنسية أصلًا"],
                     ["المناطق", "مكان الميلاد للزائر السعودي",
-                     "تكون قائمة مكان الميلاد فارغة؛ والحقل اختياري، فيكتمل "
-                     "التسجيل رغم ذلك"],
+                     "لا شيء — إذ ترجع القائمة إلى مناطق السعودية الرسمية الثلاث "
+                     "عشرة المضمَّنة في التطبيق وفي المكتب معًا. ومكان الميلاد "
+                     "نفسه مطلوب في كل تسجيل عبر التطبيق، وإن جاز تركه فارغًا "
+                     "عند المكتب"],
                     ["أنواع ملفات الزوار", "الفئة التي يُعتمد فيها الزائر، وما "
                      "تعرضه الشارة",
-                     "لا يمكن اعتماد الحساب في أي فئة، فلا تُصدر شارة"],
+                     "يُعتمد الحساب وتصدر له شارة عاملة، لكن بلا فئة — فلا يظهر "
+                     "على الشارة سطر الفئة ويعود شريطها إلى الذهبي الافتراضي، "
+                     "وترفضه أي بوابة لها قائمة سماح"],
                     ["أنواع الملفات الأخرى", "الشيء نفسه لحسابات الشركاء "
                      "والعارضين والإعلاميين والموظفين",
                      "لا يمكن حفظ حساب الشريك — فنوع ملفه مطلوب"],
@@ -98,14 +117,21 @@ def chapter_reference_data():
               "being offered to anybody choosing from now on, and every profile "
               "that already points at it keeps pointing at it — a visitor who "
               "chose an interest does not lose it because the interest was "
-              "retired. Re-activating puts it back in the picker. This is why the "
-              "lists can be tidied during an event without breaking the people "
-              "already registered.",
+              "retired. Re-activating puts it back in the picker. This is why "
+              "four of these lists — interests, organisations, countries and "
+              "regions — can be tidied during an event without breaking the "
+              "people already registered. A profile type is stricter: it refuses "
+              "to be removed at all while any account is still assigned to it, "
+              "and the Control Panel shows you that refusal, so retiring one "
+              "means re-assigning its holders first.",
               "إزالة أي مدخل من هذه القوائم تعطّله. فيتوقف عرضه على من يختار من "
               "الآن فصاعدًا، ويظل كل ملف يشير إليه مشيرًا إليه — فالزائر الذي اختار "
               "اهتمامًا لا يفقده لأن الاهتمام قد أُوقف. وإعادة تفعيله تعيده إلى "
-              "القائمة. ولهذا يمكن ترتيب القوائم أثناء الفعالية دون الإضرار بمن "
-              "سجّلوا بالفعل."),
+              "القائمة. ولهذا يمكن ترتيب أربع من هذه القوائم — الاهتمامات "
+              "والجهات والبلدان والمناطق — أثناء الفعالية دون الإضرار بمن سجّلوا "
+              "بالفعل. أما نوع الملف فأشدّ: يرفض أن يُزال ما دام مُسندًا إلى أي "
+              "حساب، وتعرض لوحة التحكم هذا الرفض، فإيقاف نوعٍ يقتضي نقل حامليه "
+              "إلى غيره أولًا."),
 
             h2("Profile types are not just labels",
                "أنواع الملفات ليست مجرد تسميات"),

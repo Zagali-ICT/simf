@@ -2,9 +2,9 @@
 
 The four pages differ in reach by three orders of magnitude, and the Control
 Panel does not make that obvious. An invitation reaches one person. A VIP notice
-reaches at most five hundred and tells you who it skipped. An announcement has
-no ceiling at all, can include accounts nobody has approved yet, and cannot be
-recalled once the worker has claimed it.
+reaches at most five hundred and never shows you who it skipped. An announcement
+has no ceiling at all, can include accounts nobody has approved yet, and cannot
+be recalled once the worker has claimed it.
 
 That asymmetry - the page that looks like the careful one is the bounded one,
 and the page that looks routine is the unbounded one - is the chapter's spine.
@@ -98,17 +98,28 @@ def chapter_public_relations():
 
             h2("VIPs are a profile type, not a list you edit",
                "كبار الشخصيات نوع ملف، لا قائمة تحرّرها"),
-            p("There is no VIP table and no VIP switch. The VIPs page shows every "
-              "profile whose profile type is named VVIP, VIP or Gold — those "
-              "three names, exactly. Somebody becomes a VIP by being given one of "
-              "those profile types, and stops being one by being given a "
-              "different type. Nothing on the VIPs page itself changes who is on "
-              "it.",
-              "لا يوجد جدول لكبار الشخصيات ولا مفتاح لهم. فصفحة كبار الشخصيات "
-              "تعرض كل ملف يكون نوعه مسمًّى VVIP أو VIP أو Gold — هذه الأسماء "
-              "الثلاثة تحديدًا. ويصير المرء من كبار الشخصيات بمنحه أحد هذه "
-              "الأنواع، ويكفّ عن ذلك بمنحه نوعًا آخر. ولا شيء في صفحة كبار "
-              "الشخصيات نفسها يغيّر من عليها."),
+            p("There is no VIP table, and nothing on the VIPs page itself "
+              "changes who is on it. The page shows every profile whose profile "
+              "type is named VVIP, VIP or Gold — those three names, exactly. "
+              "Somebody becomes a VIP by being given one of those profile types, "
+              "and stops being one by being given a different type. The \"VIP "
+              "tier\" checkbox on the visitor profile-type form is a different "
+              "switch: it decides who may reserve a VIP-tier seat for themselves "
+              "and whether the app shows the VIP marker, and it puts nobody on "
+              "this page. The two do not line up out of the box — Gold is on this "
+              "page, but only VVIP and VIP start out marked as the VIP tier, so a "
+              "Gold guest is listed here and still cannot reserve a VIP seat for "
+              "themselves.",
+              "لا يوجد جدول لكبار الشخصيات، ولا شيء في صفحة كبار الشخصيات "
+              "نفسها يغيّر من عليها. فالصفحة تعرض كل ملف يكون نوعه مسمًّى VVIP "
+              "أو VIP أو Gold — هذه الأسماء الثلاثة تحديدًا. ويصير المرء من كبار "
+              "الشخصيات بمنحه أحد هذه الأنواع، ويكفّ عن ذلك بمنحه نوعًا آخر. أمّا "
+              "خانة «فئة كبار الشخصيات» في نموذج نوع ملف الزائر فمفتاح آخر: هي "
+              "التي تقرّر من يحجز لنفسه مقعدًا من فئة كبار الشخصيات، وهل يُظهر "
+              "التطبيق علامة كبار الشخصيات، ولا تُدخل أحدًا إلى هذه الصفحة. "
+              "والاثنان لا يتطابقان ابتداءً — فـ Gold على هذه الصفحة، لكن المعلَّم بفئة كبار "
+              "الشخصيات في الأصل هو VVIP وVIP فقط، فيظهر ضيف Gold هنا ولا يستطيع مع ذلك أن "
+              "يحجز لنفسه مقعد كبار الشخصيات."),
             note("Guests with no sign-in account are listed here without an email "
                  "address rather than left out. They are real invitees and hiding "
                  "them would make the list disagree with the guest list.",
@@ -118,15 +129,23 @@ def chapter_public_relations():
             p("The notify action on this page sends to the profiles you have "
               "selected. It refuses more than five hundred in one send, and it "
               "quietly skips anybody in the selection who is not actually a VIP "
-              "or who has no account to notify — then tells you, on the result, "
-              "how many it skipped. That report is the useful part: it is the "
-              "difference between believing a hundred people were told and "
-              "knowing that eighty-three were.",
+              "or who has no account to notify. The result tells you how many "
+              "VIPs it reached and how many emails were queued, and nothing "
+              "more: there is no skipped count on the screen, and the message "
+              "stays a green success even when part of your selection was "
+              "dropped. So compare the number it reports against the number you "
+              "ticked — that is the difference between believing a hundred "
+              "people were told and knowing that eighty-three were. How many it "
+              "skipped goes to the audit log, not to you.",
               "يرسل إجراء الإشعار في هذه الصفحة إلى الملفات التي حدّدتها. ويرفض ما "
               "زاد على خمسمائة في الإرسالة الواحدة، ويتخطى بهدوء كل من في التحديد "
-              "ممن ليس فعلًا من كبار الشخصيات أو ليس له حساب يُشعَر — ثم يخبرك في "
-              "النتيجة بعدد من تخطاهم. وذلك التقرير هو الجزء النافع: فهو الفرق "
-              "بين اعتقاد أن مئةً قد أُبلغوا ومعرفة أن ثلاثةً وثمانين أُبلغوا."),
+              "ممن ليس فعلًا من كبار الشخصيات أو ليس له حساب يُشعَر. وتخبرك النتيجة "
+              "بعدد من بلغتهم من كبار الشخصيات وبعدد رسائل البريد في الطابور، ولا "
+              "شيء غير ذلك: فلا يظهر على الشاشة عدد من تخطاهم، وتبقى الرسالة نجاحًا "
+              "أخضر وإن سقط جزء من تحديدك. فقابِل الرقم الذي تعرضه بعدد من "
+              "أشّرت عليهم — فهو الفرق بين اعتقاد أن مئةً قد أُبلغوا ومعرفة أن "
+              "ثلاثةً وثمانين أُبلغوا. أمّا عدد من تخطاهم فيُكتب في سجل التدقيق "
+              "ولا يُعرض عليك."),
             figure("cp-admin-vips-default",
                    "The VIPs page. Everybody on it is here because of their "
                    "profile type, and that is the only way on or off.",
@@ -148,21 +167,26 @@ def chapter_public_relations():
                 ["Target", "Who that is"],
                 ["الهدف", "من هم"],
                 [
-                    ["A session", "Everybody holding a live seat reservation in "
-                     "that session"],
+                    ["A session", "Everybody with a sign-in account who holds a "
+                     "live seat reservation in that session. A seat-holder with "
+                     "no account — a walk-in, say — has no inbox, and drops out "
+                     "of both the send and the estimate"],
                     ["Approved app users", "Every approved non-administrator "
                      "account"],
-                    ["Event attendees", "Everybody holding a live seat "
-                     "reservation in at least one session"],
+                    ["Event attendees", "Everybody with a sign-in account who "
+                     "holds a live seat reservation in at least one session, "
+                     "with the same exclusion"],
                     ["Everyone including pending", "Every non-administrator "
                      "account whatever its state — including sign-ups nobody has "
                      "approved yet"],
                 ],
                 [
-                    ["جلسة", "كل من يحمل حجز مقعد ساريًا في تلك الجلسة"],
+                    ["جلسة", "كل من له حساب دخول ويحمل حجز مقعد ساريًا في تلك "
+                     "الجلسة. ومن يحمل مقعدًا بلا حساب — كالحاضر المباشر — لا "
+                     "صندوق له، فيسقط من الإرسال ومن التقدير معًا"],
                     ["مستخدمو التطبيق المعتمدون", "كل حساب معتمد ليس مسؤولًا"],
-                    ["حضور الفعالية", "كل من يحمل حجز مقعد ساريًا في جلسة واحدة "
-                     "على الأقل"],
+                    ["حضور الفعالية", "كل من له حساب دخول ويحمل حجز مقعد ساريًا "
+                     "في جلسة واحدة على الأقل، بالاستثناء نفسه"],
                     ["الجميع بمن فيهم قيد الانتظار", "كل حساب ليس مسؤولًا أيًّا "
                      "كانت حالته — بمن فيهم المسجَّلون الذين لم يعتمدهم أحد بعد"],
                 ]),

@@ -33,7 +33,7 @@ def chapter_knowledge_ai():
               "الشائعة، ثم ما الذي يعمل الآن، ثم كيف يُغيَّر، ثم كيف يُرى ما "
               "فعله."),
 
-            h2("The FAQ has three readers", "للأسئلة الشائعة ثلاثة قرّاء"),
+            h2("The FAQ has two readers", "للأسئلة الشائعة قارئان"),
             p("Entries are grouped, ordered inside their group, and only the "
               "active ones are published. What is worth knowing is who reads "
               "them.",
@@ -42,25 +42,37 @@ def chapter_knowledge_ai():
             bullets(
                 ["**The app's questions screen** reads them directly and shows "
                  "them as they are.",
-                 "**The website's chat bubble** does not: it asks the AI to "
-                 "answer the visitor's question, and the answer is composed "
-                 "rather than quoted. A blank answer is reported as a failure "
-                 "instead of appearing as an empty bubble.",
-                 "**The in-app assistant** is given the whole FAQ, the programme "
-                 "sessions and the booth list as its grounding, so it can only "
-                 "talk about real, active data. That grounding is rebuilt about "
-                 "once a minute: a FAQ edit reaches the assistant when the old "
-                 "copy expires, not the instant it is saved."],
+                 "**The website's chat bubble** is not one of them: it sends the "
+                 "visitor's question to the AI with none of these entries "
+                 "attached, so the answer comes from the model's own knowledge "
+                 "and editing an entry does not change what the bubble says. A "
+                 "blank answer is reported as a failure instead of appearing as "
+                 "an empty bubble.",
+                 "**The in-app assistant** is given the programme sessions, the "
+                 "FAQ and the booth list as its grounding, so it can only talk "
+                 "about real, active data. The three share one budget of a few "
+                 "thousand characters and are assembled in that order, so a long "
+                 "programme or a few long answers can push the FAQ or the booths "
+                 "out of it entirely; an entry the assistant never mentions may "
+                 "simply not have fitted, and shortening the answers is what "
+                 "brings it back. That grounding is rebuilt about once a minute: "
+                 "a FAQ edit reaches the assistant when the old copy expires, "
+                 "not the instant it is saved."],
                 ["**شاشة الأسئلة في التطبيق** تقرؤها مباشرة وتعرضها كما هي.",
-                 "**فقاعة المحادثة في الموقع** لا تفعل ذلك: بل تطلب من الذكاء "
-                 "الاصطناعي أن يجيب سؤال الزائر، فتكون الإجابة مؤلَّفة لا "
-                 "منقولة. والإجابة الفارغة يُبلَّغ عنها كإخفاق بدل أن تظهر فقاعة "
-                 "خالية.",
-                 "**المساعد داخل التطبيق** يُعطى الأسئلة الشائعة كاملةً وجلسات "
-                 "البرنامج وقائمة الأجنحة أساسًا له، فلا يستطيع الحديث إلا عن "
-                 "بيانات حقيقية مفعَّلة. ويُعاد بناء ذلك الأساس كل دقيقة تقريبًا: "
-                 "فتعديل سؤال شائع يصل إلى المساعد حين تنتهي صلاحية النسخة "
-                 "القديمة، لا لحظة حفظه."]),
+                 "**فقاعة المحادثة في الموقع** ليست منهما: فهي ترسل سؤال الزائر "
+                 "إلى الذكاء الاصطناعي دون أن تُرفق به شيئًا من هذه المدخلات، "
+                 "فتأتي الإجابة من معرفة النموذج نفسه، وتعديل مدخلة لا يغيّر ما "
+                 "تقوله الفقاعة. والإجابة الفارغة يُبلَّغ عنها كإخفاق بدل أن تظهر "
+                 "فقاعة خالية.",
+                 "**المساعد داخل التطبيق** يُعطى جلسات البرنامج والأسئلة الشائعة "
+                 "وقائمة الأجنحة أساسًا له، فلا يستطيع الحديث إلا عن بيانات "
+                 "حقيقية مفعَّلة. وتتقاسم الثلاثة حدًّا واحدًا من بضعة آلاف حرف "
+                 "وتُجمَّع بهذا الترتيب، فبرنامجٌ طويل أو إجاباتٌ طويلة قد تُخرج "
+                 "الأسئلة الشائعة أو الأجنحة منه كليًّا؛ والمدخلة التي لا يذكرها "
+                 "المساعد قط قد تكون ببساطة لم تتّسع، واختصار الإجابات هو ما "
+                 "يعيدها. ويُعاد بناء ذلك الأساس كل دقيقة تقريبًا: فتعديل سؤال "
+                 "شائع يصل إلى المساعد حين تنتهي صلاحية النسخة القديمة، لا لحظة "
+                 "حفظه."]),
             figure("cp-admin-faq-default",
                    "The FAQ. Groups and their entries, in the order the app "
                    "shows them.",
@@ -72,37 +84,61 @@ def chapter_knowledge_ai():
             p("A service is one AI feature — the question filter, the FAQ "
               "answering, the assistant, translation, live translation, live "
               "sign language, session summaries and the Control Panel's own help "
-              "assistant. The services page is read-only: it collects, for every "
-              "feature, which prompt is active on it, which provider and model "
-              "that prompt uses, and whether that provider is hosted outside the "
-              "organisation. It exists so the question \"what runs the "
-              "translation, and where?\" has one place to be answered. Nothing is "
-              "changed there.",
+              "assistant. The services page is almost entirely read-only: it "
+              "collects, for every feature, which prompt is active on it, which "
+              "provider and model that prompt uses, and whether that provider is "
+              "hosted outside the organisation. It exists so the question \"what "
+              "runs the translation, and where?\" has one place to be answered. "
+              "The one thing it changes is routing: an administrator holding the "
+              "prompt-edit permission gets an edit button on any row with an "
+              "active prompt, and can set that prompt's provider, model, "
+              "temperature and output ceiling from there. It saves through the "
+              "same update the catalogue uses, so the version goes up and the "
+              "change lands in the prompt's history and the audit trail. The "
+              "wording of a prompt is still only editable in the catalogue.",
               "الخدمة هي خاصية ذكاء اصطناعي واحدة — مرشّح الأسئلة، والإجابة عن "
               "الأسئلة الشائعة، والمساعد، والترجمة، والترجمة الفورية، ولغة "
               "الإشارة الفورية، وملخصات الجلسات، ومساعد لوحة التحكم نفسه. وصفحة "
-              "الخدمات للقراءة فقط: إذ تجمع لكل خاصية الموجّه المفعَّل عليها، "
-              "والمزوّد والنموذج الذي يستخدمه ذلك الموجّه، وهل ذلك المزوّد مستضاف "
-              "خارج الجهة. وهي موجودة ليكون لسؤال «ما الذي يشغّل الترجمة، وأين؟» "
-              "موضع واحد يُجاب فيه. ولا يُغيَّر فيها شيء."),
-            note("The page warns when a sensitive feature is routed to a provider "
+              "الخدمات للقراءة في معظمها: إذ تجمع لكل خاصية الموجّه المفعَّل "
+              "عليها، والمزوّد والنموذج الذي يستخدمه ذلك الموجّه، وهل ذلك المزوّد "
+              "مستضاف خارج الجهة. وهي موجودة ليكون لسؤال «ما الذي يشغّل الترجمة، "
+              "وأين؟» موضع واحد يُجاب فيه. والشيء الوحيد الذي تغيّره هو التوجيه: "
+              "فالمسؤول الذي يملك صلاحية تحرير الموجّهات يجد زرَّ تحرير في كل سجل "
+              "له موجّه مفعَّل، ويستطيع منه ضبط مزوّد ذلك الموجّه ونموذجه ودرجة "
+              "التنويع وسقف المخرجات. ويُحفظ ذلك بالتحديث نفسه الذي يستخدمه "
+              "الفهرس، فيزيد رقم الإصدار ويُسجَّل التغيير في تاريخ الموجّه وفي أثر "
+              "التدقيق. أما صياغة الموجّه فلا تُحرَّر إلا في الفهرس."),
+            note("The page warns when a sensitive feature is pinned to a provider "
                  "that is definitely in the cloud. Sensitive here means the four "
                  "that carry the audience's own words or a session's contents: "
                  "session summaries, the assistant, live translation and live "
                  "sign language. One provider is shown as depending on its "
                  "endpoint rather than flagged, because it can be pointed at an "
-                 "internal address and the row alone cannot tell.",
-                 "تحذّر الصفحة حين تُوجَّه خاصية حساسة إلى مزوّد في السحابة قطعًا. "
+                 "internal address and the row alone cannot tell. **Read the "
+                 "badge and the warning as describing the pin, not the "
+                 "destination:** the page reads the provider stored on the "
+                 "prompt and does not follow the Echo redirect described below, "
+                 "so a prompt still on Echo shows as offline and raises no "
+                 "warning even while the estate's default provider is serving it "
+                 "from the cloud. Where a sensitive feature matters, pin its "
+                 "prompt to the provider you intend rather than leaving it on "
+                 "Echo.",
+                 "تحذّر الصفحة حين تُثبَّت خاصية حساسة على مزوّد في السحابة قطعًا. "
                  "والحساس هنا هو الخصائص الأربع التي تحمل كلام الجمهور نفسه أو "
                  "محتوى جلسة: ملخصات الجلسات، والمساعد، والترجمة الفورية، ولغة "
                  "الإشارة الفورية. ويُعرض أحد المزودين على أنه رهنٌ بعنوان نقطته "
                  "بدل تعليمه بتحذير، لأنه يمكن توجيهه إلى عنوان داخلي ولا يستطيع "
-                 "السجل وحده أن يعرف."),
+                 "السجل وحده أن يعرف. **واقرأ الشارة والتحذير على أنهما يصفان "
+                 "التثبيت لا الوجهة:** فالصفحة تقرأ المزوّد المحفوظ على الموجّه "
+                 "ولا تتبع تحويل Echo الموصوف أدناه، فالموجّه الذي ما زال على "
+                 "Echo يظهر غير متصل ولا يرفع تحذيرًا ولو كان المزوّد الافتراضي "
+                 "للمنشأة يخدمه من السحابة. وحيثما كانت الخاصية الحساسة مهمة، "
+                 "ثبّت موجّهها على المزوّد الذي تقصده بدل تركها على Echo."),
             figure("cp-admin-ai-services-default",
                    "The services view: one row per AI feature, with the prompt, "
-                   "provider and model actually serving it.",
+                   "provider and model it is configured with.",
                    "عرض الخدمات: سجل لكل خاصية ذكاء اصطناعي، ومعه الموجّه "
-                   "والمزوّد والنموذج الذي يخدمها فعلًا."),
+                   "والمزوّد والنموذج المهيَّأة له."),
 
             h3("A prompt is the whole unit of behaviour",
                "الموجّه هو وحدة السلوك كاملةً"),
@@ -174,44 +210,62 @@ def chapter_knowledge_ai():
                 [
                     ["The provider is chosen but has no key",
                      "The service is unavailable, refused before any call goes "
-                     "out",
+                     "out; the failure is still recorded in the invocations log",
                      "The provider's key in the deployment configuration — see "
                      "the configuration chapter"],
                     ["The provider is not wired up at all",
-                     "The service is unavailable, and a failed call is recorded "
-                     "in the invocations log first",
-                     "The invocations page, which will hold the row with its "
-                     "error code"],
+                     "The service is unavailable, and the failure is recorded in "
+                     "the invocations log",
+                     "The provider chosen on the prompt"],
                     ["The prompt is deactivated",
                      "The feature reports itself disabled", "The prompt "
                      "catalogue"],
                 ],
                 [
                     ["المزوّد مختار ولا مفتاح له",
-                     "الخدمة غير متاحة، ويُرفض الطلب قبل خروج أي استدعاء",
+                     "الخدمة غير متاحة، ويُرفض الطلب قبل خروج أي استدعاء، ومع "
+                     "ذلك يُسجَّل الإخفاق في سجل الاستدعاءات",
                      "مفتاح المزوّد في تهيئة النشر — انظر فصل التهيئة"],
                     ["المزوّد غير موصول أصلًا",
-                     "الخدمة غير متاحة، ويُسجَّل الاستدعاء الفاشل في سجل "
-                     "الاستدعاءات أولًا",
-                     "صفحة الاستدعاءات، وفيها السجل مع رمز خطئه"],
+                     "الخدمة غير متاحة، ويُسجَّل الإخفاق في سجل الاستدعاءات",
+                     "المزوّد المختار على الموجّه"],
                     ["الموجّه معطَّل", "تُبلِّغ الخاصية بأنها معطَّلة", "فهرس "
                      "الموجّهات"],
                 ]),
+            note("Both provider failures write their row under the same error "
+                 "code, so a row in the log tells you a provider problem "
+                 "happened, not which of the two it was. **Check the key "
+                 "first:** every provider but AzureOpenAi is wired up in every "
+                 "deployment, so a missing key is by far the commoner cause. A "
+                 "deactivated prompt is the one case that writes no row at all.",
+                 "يكتب كلا إخفاقَي المزوّد سجلَّه برمز الخطأ نفسه، فوجود السجل "
+                 "يخبرك أن مشكلة مزوّد وقعت، لا أيّهما هي. **وابدأ بالمفتاح:** "
+                 "فكل المزودين عدا AzureOpenAi موصولون في كل نشر، فالمفتاح "
+                 "الناقص هو السبب الأغلب بكثير. أما الموجّه المعطَّل فهو الحالة "
+                 "الوحيدة التي لا تكتب سجلًّا البتة."),
 
             h2("Seeing what it did", "رؤية ما فعله"),
             p("Every AI call writes one row, whether it succeeded or failed: "
-              "which prompt and feature, which provider and model, the inputs "
-              "after personal data and secrets have been stripped out, the output "
-              "text, how many tokens went in and came out, how long it took, an "
-              "error code when there was one, and who the caller was — anonymous, "
-              "a visitor, staff, an administrator or a moderator. The dashboard "
-              "is the same data summarised.",
+              "which prompt and feature, which provider and model the prompt is "
+              "configured with, the inputs after personal data and secrets have "
+              "been stripped out, the output text, how many tokens went in and "
+              "came out, how long it took, an error code when there was one, and "
+              "who the caller was — anonymous, a visitor, staff, an administrator "
+              "or a moderator. The dashboard is the same data summarised. Read "
+              "the provider and model columns as the prompt's own settings rather "
+              "than a record of where the text went: a prompt left on Echo and "
+              "redirected by the estate's default provider still logs as Echo, "
+              "with the model \"echo\", even though a real provider answered and "
+              "chose its own model.",
               "يكتب كل استدعاء للذكاء الاصطناعي سجلًّا واحدًا، نجح أم فشل: أي "
-              "موجّه وأي خاصية، وأي مزوّد وأي نموذج، والمدخلات بعد تجريدها من "
-              "البيانات الشخصية والأسرار، ونص المخرجات، وكم رمزًا دخل وخرج، وكم "
-              "استغرق، ورمز الخطأ إن وُجد، ومن كان المستدعي — مجهولًا أو زائرًا أو "
-              "موظفًا أو مسؤولًا أو مشرف جلسة. ولوحة المؤشرات هي البيانات نفسها "
-              "ملخَّصة."),
+              "موجّه وأي خاصية، والمزوّد والنموذج المضبوطان على الموجّه، والمدخلات "
+              "بعد تجريدها من البيانات الشخصية والأسرار، ونص المخرجات، وكم رمزًا "
+              "دخل وخرج، وكم استغرق، ورمز الخطأ إن وُجد، ومن كان المستدعي — "
+              "مجهولًا أو زائرًا أو موظفًا أو مسؤولًا أو مشرف جلسة. ولوحة المؤشرات "
+              "هي البيانات نفسها ملخَّصة. واقرأ عمودَي المزوّد والنموذج على أنهما "
+              "إعدادات الموجّه نفسه لا سجلٌّ لوجهة النص: فالموجّه الذي تُرك على "
+              "Echo وحوّله المزوّد الافتراضي للمنشأة يُسجَّل مع ذلك على أنه Echo "
+              "وبالنموذج «echo»، ولو أجاب مزوّد حقيقي واختار نموذجه بنفسه."),
             note("The prompt text itself is not on those rows. Prompt wording is "
                  "kept separately: every edit is stored in full in the prompt's "
                  "own history, which is never pruned, and the audit trail records "
@@ -234,16 +288,26 @@ def chapter_knowledge_ai():
 
             h2("How often you may test a prompt",
                "كم مرة يجوز لك اختبار موجّه"),
-            p("The Test button on a prompt is limited to twenty calls an hour, "
-              "counted per administrator on a rolling window rather than per "
-              "computer — so two administrators sharing an office each get their "
-              "own twenty, and one administrator moving between machines does not "
-              "get forty. The Control Panel's own help assistant has a separate, "
+            p("The Test button on a prompt draws on an allowance of twenty calls "
+              "an hour, counted per administrator rather than per computer — so "
+              "two administrators sharing an office each get their own twenty, "
+              "and one administrator moving between machines does not get forty. "
+              "The hour is a fixed window rather than a rolling one: the whole "
+              "twenty comes back at once when the window turns over, instead of "
+              "each call freeing up on its own. That same twenty also covers "
+              "opening an invocation's full detail from the log, so twenty "
+              "drill-downs will refuse a test with nothing on screen to explain "
+              "why; the log list itself, and the error-code column on it, cost "
+              "nothing. The Control Panel's own help assistant has a separate, "
               "larger allowance of forty an hour.",
-              "زر الاختبار في الموجّه محدود بعشرين استدعاءً في الساعة، تُحسب لكل "
-              "مسؤول على نافذة متحركة لا لكل جهاز — فمسؤولان يتشاركان مكتبًا "
+              "زر الاختبار في الموجّه يسحب من مخصَّص قدره عشرون استدعاءً في "
+              "الساعة، تُحسب لكل مسؤول لا لكل جهاز — فمسؤولان يتشاركان مكتبًا "
               "لكلٍّ منهما عشرونه، ومسؤول واحد ينتقل بين الأجهزة لا يحصل على "
-              "أربعين. ولمساعد لوحة التحكم نفسه مخصَّص منفصل أكبر: أربعون في "
-              "الساعة."),
+              "أربعين. والساعة نافذة ثابتة لا متحركة: فتعود العشرون كلها دفعةً "
+              "واحدة حين تنقلب النافذة، لا أن يتحرر كل استدعاء وحده. وتلك "
+              "العشرون نفسها تشمل فتح تفصيل استدعاء كاملًا من السجل، فمن فتح "
+              "عشرين سجلًّا في الساعة يُرفض اختباره دون ما يفسّر ذلك على الشاشة؛ "
+              "أما قائمة السجل نفسها وعمود رمز الخطأ فيها فلا يكلّفان شيئًا. "
+              "ولمساعد لوحة التحكم نفسه مخصَّص منفصل أكبر: أربعون في الساعة."),
         ],
     }
