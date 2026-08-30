@@ -3,7 +3,7 @@
 The rules behind the page — the keyed-upsert model, normalisation, soft-delete,
 the public read the app consumes, and the seeded core content. Grounded in
 `AdminCmsService.cs`, `PublicCmsEndpoints.cs`, `ContentBlock.cs`,
-`IdentitySeeder.cs`, and the razor pages.
+`SIMF_App_ContentBlocks.sql`, and the razor pages.
 
 Last updated: 2026-06-13 — CP config-page documentation (D-380).
 
@@ -82,17 +82,19 @@ change. The well-known keys this page governs:
 |-----|-------------|-----------|
 | `terms` | App Page 009 — الشروط والأحكام · Terms | `GET /api/v1/app/content/terms` |
 | `about` | App Home / static About (Page 013 group) | `GET /api/v1/app/content/about` |
-| `cyber.*` | App cybersecurity-policy screen | seeded by `IdentitySeeder` |
+| `cyber.*` | App cybersecurity-policy screen | seeded by `SIMF_App_ContentBlocks.sql` |
 
 `terms` returns the T&C body the app splits into lines (Page_009_Logic);
 `about` backs the static About copy. Editing/deactivating/renaming any of these
 from this page changes (or breaks) the live app screen.
 
 ## L-9 — Core-content seed (D-377)
-`IdentitySeeder.EnsureCoreAppContentAsync` inserts the **`terms` + `about`**
-blocks **per absent key** (the same insert-when-absent shape as the cyber +
-landing content seeds), so every fresh environment boots with non-empty T&C /
-About pages. The first production install shipped with these keys missing
+`docs/migrations/2026/SIMF_App_ContentBlocks.sql` inserts the **`terms` +
+`about`** blocks **per absent key** (the same insert-when-absent shape as the
+cyber + landing content seeds in the same file). This was
+`IdentitySeeder.EnsureCoreAppContentAsync` until D-950 moved it, and the move
+changed WHEN it happens: no environment boots with these blocks any more, so the
+T&C and About screens are empty until someone runs `Run_All_App_Seeds.sql`. The first production install shipped with these keys missing
 (empty T&C/About) — D-377 moved the reviewed production copy into the startup
 seed. Data-only, idempotent, no migration. The seed never resurrects a key an
 admin deliberately deleted at runtime once it exists (insert-when-absent).

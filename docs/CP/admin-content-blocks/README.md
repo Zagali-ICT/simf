@@ -36,7 +36,7 @@ The pages + endpoints below were read this session and are the binding source:
 - Contracts: `src/Shared/SIMF.Contracts/Admin/Cms.cs` (admin) · `src/Shared/SIMF.Contracts/Cms/ContentBlocks.cs` (public)
 - Entity: `src/Backend/SIMF.Domain/Cms/ContentBlock.cs`
 - Permissions: `src/Shared/SIMF.Common/PermissionCatalog.cs` (`ContentBlocks.*`)
-- Seed: `src/Backend/SIMF.Infrastructure/Identity/IdentitySeeder.cs` (`EnsureCoreAppContentAsync` — `terms` + `about`, D-377)
+- Seed: `docs/migrations/2026/SIMF_App_ContentBlocks.sql` (all 54 blocks — `terms`, `about`, `cyber.*`, `hero.*` and the landing sections; moved out of `IdentitySeeder` by D-950, run by hand)
 - Decisions: `docs/decisions/DECISIONS_LOG.md` D-173, D-255, D-353, D-356, D-377
 
 ## How the app reads what this page writes
@@ -47,8 +47,8 @@ anonymously through `GET /api/v1/app/content/{key}`:
   See [`docs/App/Page_009/`](../../App/Page_009/README.md).
 - **`about`** → app static About content — `GET /api/v1/app/content/about`.
   Home is [`docs/App/Page_013/`](../../App/Page_013/README.md); the `about`
-  block is seeded alongside `terms` by D-377 (`EnsureCoreAppContentAsync`).
-- **`cyber.*`** → app cybersecurity-policy screen (seeded by `IdentitySeeder`;
+  block is seeded alongside `terms` by `SIMF_App_ContentBlocks.sql` (D-377, D-950).
+- **`cyber.*`** → app cybersecurity-policy screen (seeded by `SIMF_App_ContentBlocks.sql`;
   a Flutter **wire contract** — renaming/deactivating breaks the app).
 
 Inactive blocks are hidden from the public read (404). Renaming a `Key` is a

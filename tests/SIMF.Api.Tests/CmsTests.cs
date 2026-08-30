@@ -288,11 +288,12 @@ public sealed class CmsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task Cybersecurity_policy_blocks_are_seeded_by_IdentitySeeder()
+    public async Task Cybersecurity_policy_blocks_are_seeded_by_the_sql_content_lane()
     {
         // D-174 (gap doc G11, Mockup page 39) — the Flutter mobile app
         // reads these well-known keys; their presence is a wire
-        // contract enforced by the seeder.
+        // contract, seeded by docs/migrations/2026/SIMF_App_ContentBlocks.sql
+        // (they were written by IdentitySeeder until 2026-08-30).
         var keys = new[]
         {
             "cyber.title",

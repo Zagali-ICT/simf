@@ -151,6 +151,192 @@ public sealed class SqlContentSeederTests : IClassFixture<SimfApiFactory>
         }
     }
 
+    [Fact]
+    public async Task Seeds_the_registration_baseline_lookups_and_is_idempotent()
+    {
+        // The profile save REQUIRES interests + an organisation, so a fresh
+        // environment must come up with both populated - an empty table blocks
+        // registration outright, which is how the first production install ended
+        // up having its rows typed in by hand. These moved out of IdentitySeeder
+        // into SIMF_App_Lookups.sql on 2026-08-30; the double run proves the
+        // guards still hold (the counts must not grow on the second pass).
+        await RunRosterAsync();
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+
+        var interestCount = await db.Interests.CountAsync();
+        var organisationCount = await db.Organisations.CountAsync();
+
+        // The ten baseline interests and the nine baseline organisations, plus
+        // the migration-seeded catch-all organisation.
+        Assert.Equal(10, interestCount);
+        Assert.Equal(10, organisationCount);
+        Assert.Contains(db.Interests, interest => interest.Name == "Maritime Security");
+        Assert.Contains(db.Organisations, o => o.Name == "Royal Saudi Naval Forces");
+        // The catch-all keeps a visitor whose organisation is missing from being
+        // blocked. It is seeded by the migration under a FIXED id, so it is
+        // asserted by that id rather than by a name anyone can edit.
+        Assert.Contains(
+            db.Organisations,
+            o => o.Id == SIMF.Domain.Organisations.Organisation.OtherId);
+
+        await RunRosterAsync();
+        Assert.Equal(interestCount, await db.Interests.CountAsync());
+        Assert.Equal(organisationCount, await db.Organisations.CountAsync());
+    }
+
+    [Fact]
+    public async Task Seeds_the_eight_profile_types_with_their_tier_and_picker_flags()
+    {
+        // Three separate guarantees ride on these rows, and all three used to be
+        // asserted against IdentitySeeder:
+        //  * VVIP / VIP exist, are visitor-side (so they flow through the standard
+        //    visitor approval queue) and carry IsVipTier - the flag that decides
+        //    who may self-reserve a VIP-tier seat and what the app reads as isVip.
+        //  * IsAppRegisterable follows MobileAppRole: the CP-only operational
+        //    types (Staff, Moderator) ship HIDDEN from the app sign-up picker.
+        //  * "Normal" - the single type a self-registering visitor is locked to -
+        //    is NEVER hidden, which would silently break mobile self-registration.
+        await RunRosterAsync();
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        SIMF.Domain.Profiles.UserProfileType Type(string name) =>
+            db.ProfileTypes.Single(profileType => profileType.Name == name);
+
+        Assert.True(Type("VVIP").IsForVisitor, "VVIP must be a visitor-side tier");
+        Assert.True(Type("VIP").IsForVisitor, "VIP must be a visitor-side tier");
+        Assert.True(Type("VVIP").IsVipTier, "VVIP must be marked as a VIP tier");
+        Assert.True(Type("VIP").IsVipTier, "VIP must be marked as a VIP tier");
+        Assert.False(Type("Normal").IsVipTier, "Normal is not a VIP tier");
+
+        Assert.False(Type("Staff").IsAppRegisterable, "Staff must be CP-only");
+        Assert.False(Type("Moderator").IsAppRegisterable, "Moderator must be CP-only");
+        Assert.True(Type("Normal").IsAppRegisterable, "Normal must stay registerable");
+        Assert.True(Type("VVIP").IsAppRegisterable);
+        Assert.True(Type("VIP").IsAppRegisterable);
+        Assert.True(Type("Media").IsAppRegisterable);
+        Assert.True(Type("Sponsor").IsAppRegisterable);
+        Assert.True(Type("Exhibitor").IsAppRegisterable);
+
+        // Every seeded type carries a badge code, and no two share one. Code 0
+        // means "unassigned" and is invisible to the offline badge desk, so a
+        // seed that forgot to allocate one would not fail anything until a gate
+        // was offline at the venue.
+        var codes = await db.ProfileTypes.Where(type => type.IsActive)
+            .Select(type => type.Code).ToListAsync();
+        Assert.DoesNotContain((short)0, codes);
+        Assert.Equal(codes.Count, codes.Distinct().Count());
+    }
+
+    [Fact]
+    public async Task Seeds_every_cms_content_block_the_app_and_the_landing_read()
+    {
+        // 54 bilingual blocks, and the point of the test is that not one of them
+        // can go missing quietly: a dropped row does not fail a build, it just
+        // renders an empty section at the venue. The landing keys come from the
+        // SHARED constants the Website proxy reads, so the SQL and the proxy
+        // cannot drift on a key string - the same guarantee the C# seeder had
+        // when it referenced those constants directly.
+        await RunRosterAsync();
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+
+        string[] cyberKeys =
+        [
+            "cyber.title", "cyber.intro",
+            "cyber.pillar.01.title", "cyber.pillar.01.body",
+            "cyber.pillar.02.title", "cyber.pillar.02.body",
+            "cyber.pillar.03.title", "cyber.pillar.03.body",
+            "cyber.pillar.04.title", "cyber.pillar.04.body",
+            "cyber.pillar.05.title", "cyber.pillar.05.body",
+            "cyber.reference",
+        ];
+        var expected = cyberKeys
+            .Concat(SIMF.Common.LandingHeroContentKeys.All)
+            .Concat(SIMF.Common.LandingSectionContentKeys.All)
+            .Concat(["terms", "about"])
+            .ToList();
+        Assert.Equal(54, expected.Count);
+
+        var seeded = await db.ContentBlocks.AsNoTracking()
+            .Where(block => expected.Contains(block.Key))
+            .ToListAsync();
+
+        var missing = expected.Except(seeded.Select(block => block.Key)).ToList();
+        Assert.True(
+            missing.Count == 0,
+            "SIMF_App_ContentBlocks.sql did not seed: " + string.Join(", ", missing));
+        Assert.All(seeded, block =>
+        {
+            Assert.True(block.IsActive, $"{block.Key} must be active");
+            Assert.False(string.IsNullOrWhiteSpace(block.Content), $"{block.Key} has no English copy");
+            Assert.False(string.IsNullOrWhiteSpace(block.ContentArabic), $"{block.Key} has no Arabic copy");
+        });
+
+        // The app splits Terms and About on the newline and renders each line as
+        // one card, so a stray carriage return would show up on every card. The
+        // SQL builds them with NCHAR(10) concatenation for exactly this reason.
+        foreach (var key in new[] { "terms", "about" })
+        {
+            var block = seeded.Single(candidate => candidate.Key == key);
+            Assert.DoesNotContain('\r', block.Content);
+            Assert.DoesNotContain('\r', block.ContentArabic);
+            Assert.Contains('\n', block.Content);
+            Assert.Contains('\n', block.ContentArabic);
+        }
+
+        await RunRosterAsync();
+        Assert.Equal(
+            seeded.Count,
+            await db.ContentBlocks.CountAsync(block => expected.Contains(block.Key)));
+    }
+
+    [Fact]
+    public async Task Seeds_the_default_ai_prompt_catalogue()
+    {
+        // One prompt per AI feature, all on the offline Echo provider so a fresh
+        // install and this suite run with no key configured.
+        await RunRosterAsync();
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+
+        string[] expected =
+        [
+            "question-filter", "faq-answer", "assistance", "translate",
+            "live-translation", "live-sign-language", "session-summary", "cp-assistant",
+        ];
+        var seeded = await db.AiPrompts.AsNoTracking()
+            .Where(prompt => expected.Contains(prompt.Key))
+            .ToListAsync();
+
+        var missing = expected.Except(seeded.Select(prompt => prompt.Key)).ToList();
+        Assert.True(
+            missing.Count == 0,
+            "SIMF_App_AiPrompts.sql did not seed: " + string.Join(", ", missing));
+        Assert.All(seeded, prompt =>
+        {
+            Assert.Equal(SIMF.Common.Enums.AiProvider.Echo, prompt.Provider);
+            Assert.Equal(1, prompt.Version);
+            Assert.True(prompt.IsActive);
+            Assert.False(string.IsNullOrWhiteSpace(prompt.SystemPrompt));
+            Assert.False(string.IsNullOrWhiteSpace(prompt.UserPromptTemplate));
+        });
+        // Every feature is covered exactly once, so a caller resolving a prompt
+        // by feature can never find the catalogue silently empty.
+        Assert.Equal(
+            Enum.GetValues<SIMF.Common.Enums.AiFeature>().Length,
+            seeded.Select(prompt => prompt.Feature).Distinct().Count());
+
+        await RunRosterAsync();
+        Assert.Equal(
+            seeded.Count,
+            await db.AiPrompts.CountAsync(prompt => expected.Contains(prompt.Key)));
+    }
+
     private async Task RunRosterAsync()
     {
         using var scope = _factory.Services.CreateScope();

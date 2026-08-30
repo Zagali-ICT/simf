@@ -100,6 +100,17 @@ public class SimfApiFactory : WebApplicationFactory<Program>
     /// </summary>
     private static readonly string DemoSeedPassword = ResolveDemoSeedPassword();
 
+    /// <summary>The password <see cref="DemoAccountSeeder"/> creates the demo
+    /// accounts with, for the tests that sign in as one.</summary>
+    internal static string DemoAccountPassword => DemoSeedPassword;
+
+    /// <summary>Whether <see cref="EnsureDatabaseCreated"/> creates the demo
+    /// <c>@simf.local</c> matrix. Only
+    /// <see cref="DemoAccountsDisabledApiFactory"/> turns it off, so
+    /// <see cref="DemoAccountSeedGateTests"/> can prove that nothing in the
+    /// production boot path creates one.</summary>
+    protected virtual bool SeedDemoAccounts => true;
+
     /// <summary>
     /// A generated demo password that actually satisfies the product's password
     /// policy, checked with the product's own rules.
@@ -264,16 +275,15 @@ public class SimfApiFactory : WebApplicationFactory<Program>
         // extract the token secret from the returned link).
         Environment.SetEnvironmentVariable(
             "MeetingLinks__PublicWebBaseUrl", "https://test.simf.local");
-        // Round-1 held item #1 — the demo @simf.local accounts (D-585) now seed
-        // ONLY in Development or behind Seed:EnableDemoAccounts (default false),
-        // and DemoSeedOptions.DemoPassword has no hardcoded default. The general
-        // suite (BadgeSignInTests, WalkInRegistrationTests, AdminCreateUserTests,
-        // IdentitySeederTests, …) relies on those accounts, and the host runs as
-        // "Testing" (not Development), so opt IN explicitly and supply the
-        // demo password. Reset here (process-wide vars) so a prior
-        // DemoAccountsDisabledApiFactory cannot leak EnableDemoAccounts=false
-        // into later classes. DEF-SEC-001 — the password itself is never
-        // committed; see DemoSeedPassword above.
+        // The demo @simf.local accounts are no longer seeded by IdentitySeeder at
+        // all — a fixture has no business running inside production startup — so
+        // this fixture creates them itself in DemoAccountSeeder. The flag below
+        // still gates DemoOperationalConfigSeeder, which assigns the demo staff
+        // account to the demo gates and the demo moderator to the programme Q&A
+        // sessions, and that seeder does still run in the host. Reset here
+        // (process-wide vars) so a prior DemoAccountsDisabledApiFactory cannot
+        // leak EnableDemoAccounts=false into later classes. DEF-SEC-001 — the
+        // password itself is never committed; see DemoSeedPassword above.
         Environment.SetEnvironmentVariable("Seed__EnableDemoAccounts", "true");
         Environment.SetEnvironmentVariable("Seed__DemoPassword", DemoSeedPassword);
     }
@@ -406,6 +416,16 @@ public class SimfApiFactory : WebApplicationFactory<Program>
         services.GetRequiredService<SIMF.Infrastructure.Seeding.SqlContentSeeder>()
             .RunAsync(SIMF.Infrastructure.Seeding.SqlContentSeeder.RosterFiles)
             .GetAwaiter().GetResult();
+        // The demo @simf.local matrix. It is NOT part of the production boot path
+        // any more (IdentitySeeder bootstraps identity and nothing else), so the
+        // fixture creates it. AFTER the SQL seed above, which supplies the profile
+        // types it looks up by name; BEFORE DemoOperationalConfigSeeder below,
+        // which needs staff@ and moderator@ to exist.
+        if (SeedDemoAccounts)
+        {
+            DemoAccountSeeder.SeedAsync(services, DemoSeedPassword)
+                .GetAwaiter().GetResult();
+        }
         // BUG-023 — the demo OPERATIONAL configuration (gates + operator
         // assignment, per-session moderator grants, the main hall's seat grid).
         // Mirrors Program.cs: it runs LAST because it configures the content the

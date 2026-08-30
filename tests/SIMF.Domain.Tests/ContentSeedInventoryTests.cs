@@ -8,10 +8,12 @@ namespace SIMF.Domain.Tests;
 ///
 /// <para>Owner rule, 2026-08-30: <em>"All sql seed has one script to run and all
 /// seed in one location."</em> The location half already held. The runner half
-/// did not, and could not be checked: the nine content seeds are named in TWO
-/// hand-maintained lists - <c>SqlContentSeeder.AllFiles</c> in C#, which runs
-/// them on a Development boot, and the <c>:r</c> includes in
-/// <c>Run_All_App_Seeds.sql</c>, which an operator runs by hand in production -
+/// did not, and could not be checked: the content seeds are named in THREE
+/// hand-maintained lists - <c>SqlContentSeeder.AllFiles</c> in C# (the API test
+/// fixture runs <c>RosterFiles</c>, the subset it is built from); the <c>:r</c>
+/// includes in <c>Run_All_App_Seeds.sql</c>,
+/// which an operator runs from SSMS; and the <c>$seeds</c> array in
+/// <c>Run-AppSeeds.ps1</c>, the terminal runner the README calls preferred -
 /// with nothing detecting disagreement between them.</para>
 ///
 /// <para>They agree today. That is the moment to pin it: two lists of the same
@@ -62,11 +64,23 @@ public sealed class ContentSeedInventoryTests
             "an UPDATE, not a seed: the history-carrying twin of the above.",
     };
 
+    /// <summary>The PowerShell runner, which is the PREFERRED production route
+    /// and a third hand-maintained copy of the same list.</summary>
+    private const string PowerShellRunnerFile = "Run-AppSeeds.ps1";
+
     /// <summary>The <c>:r</c> includes, in order.</summary>
     private static readonly Regex RunnerInclude =
         new(@":r\s+\$\(MigrationDir\)\\(?<file>[A-Za-z0-9_]+\.sql)", RegexOptions.Compiled);
 
-    /// <summary>The C# list the Development boot drives.</summary>
+    /// <summary>The quoted entries of the PowerShell runner's <c>$seeds</c>
+    /// array. Read as text for the same reason the C# list is: the test cannot
+    /// execute PowerShell, and matching the literal filenames is the whole
+    /// question.</summary>
+    private static readonly Regex PowerShellSeedEntry =
+        new("'(?<file>[A-Za-z0-9_]+\\.sql)'", RegexOptions.Compiled);
+
+    /// <summary>The C# list. Nothing drives it at run time any more - the
+    /// integration fixture builds its database from the roster subset of it.</summary>
     private static readonly Regex SeederEntry =
         new("\"(?<file>[A-Za-z0-9_]+\\.sql)\"", RegexOptions.Compiled);
 
@@ -91,12 +105,13 @@ public sealed class ContentSeedInventoryTests
     }
 
     [Fact]
-    public void The_runner_and_the_development_seeder_name_the_same_files()
+    public void The_runner_and_the_csharp_list_name_the_same_files()
     {
-        // The runner is what production executes by hand; the C# list is what a
-        // Development boot executes for itself. A file in one and not the other
-        // means dev and prod seed differently, which is discovered as "that page
-        // is empty on the server" long after the change that caused it.
+        // The runner is what production executes by hand; the C# list is what the
+        // integration fixture builds its database from. A file in one and not the
+        // other means the suite proves a page works against content production
+        // never receives - discovered as "that page is empty on the server" long
+        // after the change that caused it.
         var runner = RunnerFiles();
         var seeder = SeederFiles();
 
@@ -106,10 +121,43 @@ public sealed class ContentSeedInventoryTests
         Assert.True(
             onlyInRunner.Count == 0 && onlyInSeeder.Count == 0,
             "The two seed lists disagree. Run_All_App_Seeds.sql is what an "
-            + "operator runs in production; SqlContentSeeder.AllFiles is what a "
-            + "Development boot runs. They must name the same files.\n"
+            + "operator runs in production; SqlContentSeeder.AllFiles is what the "
+            + "integration fixture is built from. They must name the same files.\n"
             + "  only in the runner: " + Describe(onlyInRunner) + "\n"
             + "  only in the seeder: " + Describe(onlyInSeeder));
+
+        static string Describe(List<string> names) =>
+            names.Count == 0 ? "(none)" : string.Join(", ", names);
+    }
+
+    [Fact]
+    public void The_powershell_runner_names_the_same_files_as_the_sql_runner()
+    {
+        // There is a THIRD copy of this list, and it is the one production is
+        // told to use: Run-AppSeeds.ps1 is documented as preferred over the
+        // SSMS runner, so a seed present in the .sql runner and absent here does
+        // not get run on the server at all - while every check that existed
+        // before this one passed. That is not hypothetical: the 2026-08-30 move
+        // of the lookups, content blocks and AI prompts out of IdentitySeeder
+        // added three files, and the .sql runner and the C# list were both
+        // updated by a test that could see them while this file was not covered
+        // by anything.
+        var sqlRunner = RunnerFiles();
+        var powerShell = PowerShellSeedEntry
+            .Matches(File.ReadAllText(Path.Combine(SeedFolder(), PowerShellRunnerFile)))
+            .Select(match => match.Groups["file"].Value)
+            .ToHashSet(StringComparer.Ordinal);
+
+        var onlyInSql = sqlRunner.Except(powerShell).OrderBy(n => n, StringComparer.Ordinal).ToList();
+        var onlyInPowerShell = powerShell.Except(sqlRunner).OrderBy(n => n, StringComparer.Ordinal).ToList();
+
+        Assert.True(
+            onlyInSql.Count == 0 && onlyInPowerShell.Count == 0,
+            "Run-AppSeeds.ps1 and Run_All_App_Seeds.sql disagree. Both run the "
+            + "content seeds in production - the first from a terminal or a deploy "
+            + "script, the second from SSMS - so they must name the same files.\n"
+            + "  only in Run_All_App_Seeds.sql: " + Describe(onlyInSql) + "\n"
+            + "  only in Run-AppSeeds.ps1: " + Describe(onlyInPowerShell));
 
         static string Describe(List<string> names) =>
             names.Count == 0 ? "(none)" : string.Join(", ", names);

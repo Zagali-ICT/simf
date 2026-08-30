@@ -3,7 +3,7 @@
 The state/data model behind the page: the entity, soft-delete, audit stamping,
 list filtering, uniqueness/ordering, how the lookup reaches the app, and seeding.
 Verified against `Organisation.cs`, `AdminOrganisationService.cs`,
-`PublicOrganisationService.cs`, `OrganisationSeeder.cs` this session.
+`PublicOrganisationService.cs` this session.
 
 Last updated: 2026-06-13 — CP config-page documentation (D-380).
 
@@ -146,13 +146,20 @@ the inherited `CreatedBy`/`UpdatedBy` stamps.
 
 ## Seeding
 
-- **Dev only:** `OrganisationSeeder.SeedFakeAsync` inserts a small realistic
-  sample of 12 Saudi maritime / defence / energy bodies (Royal Saudi Naval
-  Forces, SAMI, Saudi Aramco, Mawani, Bahri, …), idempotent on the
-  commercial-registration number (re-running inserts only the missing rows).
-- The seeder's own XML doc states it is **NOT run in production** — in production
-  the lookup is populated by the **real government Excel import** (the CP "Import
-  Excel" affordance, B3 / D-220).
+- **Every environment, one script:** the nine baseline organisations (Royal
+  Saudi Naval Forces, Ministry of Defense, Mawani, SAMI, Bahri, Saudi Aramco,
+  Zamil Offshore, KFUPM, KAUST) are seeded by
+  `docs/migrations/2026/SIMF_App_Lookups.sql`, run by hand from
+  `Run_All_App_Seeds.sql`. Guarded on "no organisation other than the model's
+  catch-all `Other` row exists", so re-running is a no-op.
+- A Development-only `OrganisationSeeder.SeedFakeAsync` used to insert twelve
+  *sample* organisations on boot. It was **deleted on 2026-08-30**: it wrote the
+  same table the curated seed writes, and because it ran first it left the guard
+  above unsatisfied, so a developer's database silently ended up with the twelve
+  samples and none of the curated nine.
+- Production has always populated the lookup from the **real government Excel
+  import** (the CP "Import Excel" affordance, B3 / D-220); that is unchanged, and
+  the curated nine are the pre-import baseline.
 - I did **not** find a D-377 "baseline organisations" production-seed in the code
   read this session; the production population path is the gov-Excel import, not a
   code seed. (The task brief raised D-377 as a possibility — recorded here as

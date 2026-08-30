@@ -28,12 +28,19 @@ namespace SIMF.Infrastructure.Seeding;
 /// (<c>docs/migrations/2026/*.sql</c>) runs against <c>SIMF_App</c> only, and every
 /// row here binds an App entity to an <b>Identity</b> user id (the demo staff
 /// operator, the demo moderator). Resolving those ids in SQL would mean a cross-database
-/// join, which is forbidden outright. So this stays in C# next to the demo-account
-/// seeder that mints those users, and is gated exactly like it: Development, or an
-/// explicit <c>Seed:EnableDemoAccounts</c> opt-in. Production is clean by construction.</para>
+/// join, which is forbidden outright. So this stays in C#, next to the code that
+/// mints those users.</para>
 ///
-/// <para>It runs AFTER the SQL content seed because it configures the content that
-/// seed creates (the MAIN hall and the programme sessions). Everything it writes is
+/// <para><b>The host no longer calls this.</b> The demo accounts were deleted from
+/// production startup on 2026-08-30, so the two users this resolves exist only in
+/// the integration fixture, which calls the seeder itself after creating them. The
+/// environment gate below is kept because the class is still reachable through DI,
+/// but it is no longer what keeps production clean - production is clean because
+/// nothing invokes this outside a test.</para>
+///
+/// <para>Its caller must run it AFTER the SQL content seed, because it configures
+/// the content that seed creates (the MAIN hall and the programme sessions), and
+/// after the demo accounts exist. Everything it writes is
 /// keyed on a stable identifier and inserted only when absent, so re-running is a
 /// no-op and an admin edit is never overwritten.</para>
 /// </summary>
@@ -84,9 +91,9 @@ public sealed class DemoOperationalConfigSeeder(
 
     public async Task SeedAsync(CancellationToken cancellationToken = default)
     {
-        // Same gate as the demo accounts themselves (IdentitySeeder): this
-        // configuration only makes sense alongside them, and it must never exist in
-        // production.
+        // The configuration only makes sense alongside the demo accounts, which
+        // no production path creates. Kept as a second line of defence for a
+        // caller that reaches this through DI.
         if (!hostEnvironment.IsDevelopment() && !demoOptions.Value.EnableDemoAccounts)
         {
             logger.LogInformation(

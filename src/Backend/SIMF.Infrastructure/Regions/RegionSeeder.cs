@@ -15,9 +15,8 @@ namespace SIMF.Infrastructure.Regions;
 /// the rows that are missing — it never overwrites admin edits.
 ///
 /// <para>Runs in <b>every</b> environment (regions are required reference data
-/// the app depends on, unlike the dev-only <c>OrganisationSeeder</c>) and is
-/// invoked explicitly by the host after migrations, mirroring
-/// <c>RatingSeeder</c> / <c>IdentitySeeder</c>.</para>
+/// the app depends on) and is invoked explicitly by the host after migrations,
+/// mirroring <c>RatingSeeder</c> / <c>IdentitySeeder</c>.</para>
 /// </summary>
 public sealed class RegionSeeder(
     SimfAppDbContext appDbContext,

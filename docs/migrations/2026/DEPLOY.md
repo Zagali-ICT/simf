@@ -50,10 +50,13 @@ SELECT MigrationId FROM SIMF_Identity.dbo.__EFMigrationsHistory_Identity ORDER B
 Note the **per-context** history table names — there is no plain
 `__EFMigrationsHistory`.
 
-Lookups (countries, regions, permissions, roles, profile types) seed themselves
-on boot. Content does not — that is step 3.
+Countries, regions, the permission catalogue, the Control Panel roles and the
+super-administrator seed themselves on boot. **Profile types no longer do** — they
+moved to the SQL lane with the interests and organisations on 2026-08-30, so
+step 3 is now what stands between a migrated database and one a visitor can
+register against.
 
-## 3. Seed content — by hand
+## 3. Seed lookups and content — by hand
 
 ```powershell
 cd docs\migrations\2026

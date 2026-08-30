@@ -156,11 +156,12 @@ request's `If-Modified-Since` is at or after that instant. The public read also
 |-----------|----------|----------------|
 | `terms` | Page 009 — الشروط والأحكام · Terms | `GET /api/v1/app/content/terms` |
 | `about` | Home / static About (Page 013 group) | `GET /api/v1/app/content/about` |
-| `cyber.*` | App cybersecurity-policy screen | seeded by `IdentitySeeder` — Flutter **wire contract** |
+| `cyber.*` | App cybersecurity-policy screen | seeded by `SIMF_App_ContentBlocks.sql` — Flutter **wire contract** |
 
-`terms` + `about` are seeded by `IdentitySeeder.EnsureCoreAppContentAsync`
-(D-377) **per absent key**, so a fresh environment boots with non-empty T&C /
-About. An admin editing them here updates the live app copy with no redeploy.
+`terms` + `about` are seeded by `docs/migrations/2026/SIMF_App_ContentBlocks.sql`
+(D-377, moved out of C# by D-950) **per absent key**. Note that a fresh
+environment no longer BOOTS with them: nothing seeds on start-up, so the T&C and
+About screens are empty until `Run_All_App_Seeds.sql` has been run. An admin editing them here updates the live app copy with no redeploy.
 
 ## Tests
 - API integration: `tests/SIMF.Api.Tests/CmsTests.cs` (per `// Tests:` headers on

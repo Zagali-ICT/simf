@@ -636,39 +636,43 @@ if (!app.Environment.IsEnvironment("Testing"))
     // this used to seed moved to the by-hand SQL lane.)
     await services.GetRequiredService<SIMF.Infrastructure.Seeding.DefaultContentSeeder>().SeedAsync();
 
-    // In Development only, seed a few sample organisations so the
-    // registration organisation picker has data before the gov Excel import.
-    if (app.Environment.IsDevelopment())
-    {
-        await services.GetRequiredService<SIMF.Infrastructure.Organisations.OrganisationSeeder>()
-            .SeedFakeAsync();
+    // NOTHING SEEDS THE ORGANISATION LOOKUP ON BOOT. A Development-only
+    // OrganisationSeeder.SeedFakeAsync used to insert twelve sample
+    // organisations here, which collided with the curated nine in
+    // SIMF_App_Lookups.sql: that seed is guarded on "no organisation other than
+    // the model's catch-all exists", so a Development boot filled the table
+    // first and the curated rows then never landed. Dev and prod would have
+    // disagreed on the organisation list with no seed file edited - the exact
+    // divergence the one-location rule exists to stop. The seeder is deleted;
+    // the lookups come from the one script, in every environment.
 
-        // NO SQL RUNS HERE. Owner rule, 2026-08-30: the hand-run content seed is
-        // a deliberate step, not a side effect of starting the API. This block
-        // used to execute docs/migrations/2026/*.sql on every Development boot,
-        // which meant a developer's database and a production database were
-        // populated by two different mechanisms and could disagree without
-        // anyone touching a seed file.
-        //
-        // A fresh Development database therefore starts EMPTY of event content -
-        // no speakers, programme, news or sponsors - until someone runs
-        // docs/migrations/2026/Run_All_App_Seeds.sql against it. That is the
-        // same one script production runs, which is the point: one script, one
-        // location, one behaviour everywhere. The seeds are idempotent, so
-        // running it twice costs nothing.
-        //
-        // SqlContentSeeder itself is kept: the API test fixture calls it to
-        // build its database, and that is a test seeding itself deliberately
-        // rather than EF seeding as a side effect.
-    }
+    // NO SQL RUNS HERE. Owner rule, 2026-08-30: the hand-run content seed is
+    // a deliberate step, not a side effect of starting the API. The host used
+    // to execute docs/migrations/2026/*.sql on every Development boot, which
+    // meant a developer's database and a production database were populated by
+    // two different mechanisms and could disagree without anyone touching a
+    // seed file.
+    //
+    // A fresh database therefore starts EMPTY of event content and of the
+    // profile-type / interest / organisation lookups - no speakers, programme,
+    // news or sponsors, and no registration lookups - until someone runs
+    // docs/migrations/2026/Run_All_App_Seeds.sql against it. That is the same
+    // one script production runs, which is the point: one script, one location,
+    // one behaviour everywhere. The seeds are idempotent, so running it twice
+    // costs nothing.
+    //
+    // SqlContentSeeder itself is kept: the API test fixture calls it to
+    // build its database, and that is a test seeding itself deliberately
+    // rather than EF seeding as a side effect.
 
-    // The demo OPERATIONAL configuration (gates + the demo staff
-    // operator assignment, the demo moderator's per-session grants, and the main
-    // hall's seat grid). Runs LAST because it configures the content the SQL seed
-    // above creates. Self-gated to Development / Seed:EnableDemoAccounts, so
-    // production is a no-op; idempotent.
-    await services.GetRequiredService<SIMF.Infrastructure.Seeding.DemoOperationalConfigSeeder>()
-        .SeedAsync();
+    // DemoOperationalConfigSeeder is NOT called here any more. It assigned the
+    // demo gate operator and the demo moderator by looking up staff@simf.local
+    // and moderator@simf.local, and nothing outside the integration fixture
+    // creates those accounts now, so every pass took its "user not found" branch
+    // and returned. Production was already a no-op (it is gated off there), so
+    // this call had become dead in every environment while still reading as
+    // working code. The fixture calls the seeder itself, after it mints the demo
+    // accounts, which is the only place the configuration means anything.
 }
 
 // Recover the real client IP — but only from a trusted proxy (see above).

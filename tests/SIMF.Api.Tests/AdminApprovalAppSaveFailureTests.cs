@@ -45,7 +45,7 @@ public sealed class AppSaveFailingOnApproveApiFactory : SimfApiFactory
             // Last registration wins for GetRequiredService<IQrIdMinter> — the
             // approve path resolves this poisoning minter instead of the real one.
             // The poison is gated on PoisonEnabled so that DB seeding (which also
-            // mints QRs via EnsureDemoAccountsAsync) is left intact; the test flips
+            // mints QRs for the demo accounts) is left intact; the test flips
             // it on only for the approve call under test.
             services.AddScoped<IQrIdMinter>(serviceProvider =>
                 new AppSavePoisoningQrIdMinter(

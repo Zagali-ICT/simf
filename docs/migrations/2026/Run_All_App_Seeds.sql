@@ -42,7 +42,7 @@
                        Not sure which one? Run this on the server and pick the hit:
                          SELECT name FROM sys.databases
                          WHERE OBJECT_ID(QUOTENAME(name)+'.dbo.Speakers') IS NOT NULL;
-   4) Execute (F5). The Messages tab shows [1/9]…[9/9] progress.
+   4) Execute (F5). The Messages tab shows [1/12]…[12/12] progress.
 
    ── NOT run by this file ──────────────────────────────────────────────────
    • SIMF_App_RegistrationReferenceSequence_Hotfix.sql — a SEPARATE, prod-ONLY
@@ -76,39 +76,51 @@ GO
 PRINT '=== SIMF_App 2026 content seed — running on [' + DB_NAME() + '] ===';
 GO
 
-PRINT '--- [1/9] Programme  (hall - themes - days - sessions) ---';
+PRINT '--- [1/12] Lookups  (profile types - interests - organisations) ---';
+GO
+:r $(MigrationDir)\SIMF_App_Lookups.sql
+GO
+PRINT '--- [2/12] Content blocks  (cyber - landing hero + sections - terms/about) ---';
+GO
+:r $(MigrationDir)\SIMF_App_ContentBlocks.sql
+GO
+PRINT '--- [3/12] AI prompts  (default catalogue, Echo provider) ---';
+GO
+:r $(MigrationDir)\SIMF_App_AiPrompts.sql
+GO
+PRINT '--- [4/12] Programme  (hall - themes - days - sessions) ---';
 GO
 :r $(MigrationDir)\SIMF_App_Programme.sql
 GO
-PRINT '--- [2/9] News ---';
+PRINT '--- [5/12] News ---';
 GO
 :r $(MigrationDir)\SIMF_App_News.sql
 GO
-PRINT '--- [3/9] Sponsors ---';
+PRINT '--- [6/12] Sponsors ---';
 GO
 :r $(MigrationDir)\SIMF_App_Sponsors.sql
 GO
-PRINT '--- [4/9] Media partners ---';
+PRINT '--- [7/12] Media partners ---';
 GO
 :r $(MigrationDir)\SIMF_App_MediaPartners.sql
 GO
-PRINT '--- [5/9] Archive editions ---';
+PRINT '--- [8/12] Archive editions ---';
 GO
 :r $(MigrationDir)\SIMF_App_Archive.sql
 GO
-PRINT '--- [6/9] Organisation  (about - vision - social) ---';
+PRINT '--- [9/12] Organisation  (about - vision - social) ---';
 GO
 :r $(MigrationDir)\SIMF_App_Organization.sql
 GO
-PRINT '--- [7/9] Speakers ---';
+PRINT '--- [10/12] Speakers ---';
 GO
 :r $(MigrationDir)\SIMF_App_Speakers.sql
 GO
-PRINT '--- [8/9] Speaker photos  (StoredFile rows) ---';
+PRINT '--- [11/12] Speaker photos  (StoredFile rows) ---';
 GO
 :r $(MigrationDir)\SIMF_App_SpeakerPhotos.sql
 GO
-PRINT '--- [9/9] SeedGaps  (booths - delegations - FAQ - venue map) ---';
+PRINT '--- [12/12] SeedGaps  (booths - delegations - FAQ - venue map) ---';
 GO
 :r $(MigrationDir)\SIMF_App_SeedGaps.sql
 GO

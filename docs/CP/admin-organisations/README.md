@@ -36,7 +36,7 @@ Last updated: 2026-06-13 — CP config-page documentation (D-380).
 - Excel export endpoint: [`OrganisationExcelEndpoints.cs`](../../../src/Backend/SIMF.Api/Endpoints/Admin/OrganisationExcelEndpoints.cs)
 - Admin service: [`AdminOrganisationService.cs`](../../../src/Backend/SIMF.Infrastructure/Organisations/AdminOrganisationService.cs)
 - Public picker service: [`PublicOrganisationService.cs`](../../../src/Backend/SIMF.Infrastructure/Organisations/PublicOrganisationService.cs)
-- Dev seeder: [`OrganisationSeeder.cs`](../../../src/Backend/SIMF.Infrastructure/Organisations/OrganisationSeeder.cs)
+- Baseline seed: [`SIMF_App_Lookups.sql`](../../migrations/2026/SIMF_App_Lookups.sql) (the dev-only `OrganisationSeeder` was deleted 2026-08-30)
 - Contracts: [`OrganisationContracts.cs`](../../../src/Shared/SIMF.Contracts/Organisations/OrganisationContracts.cs)
 - Entity: [`Organisation.cs`](../../../src/Backend/SIMF.Domain/Organisations/Organisation.cs)
 - Permission catalogue: [`PermissionCatalog.cs`](../../../src/Shared/SIMF.Common/PermissionCatalog.cs) (`Organisations` nested class, lines 161–169 + `All` entries 659–664)

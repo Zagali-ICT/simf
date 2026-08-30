@@ -75,9 +75,20 @@ public sealed class SqlContentSeeder(
     /// (speakers before their photos; programme before nothing else here).
     /// This is the set applied in <b>Testing</b>: it deliberately EXCLUDES
     /// <c>SIMF_App_SeedGaps.sql</c>, whose delegation <c>UserProfiles</c> would
-    /// skew the profile-count integration tests.</summary>
+    /// skew the profile-count integration tests.
+    ///
+    /// <para>The first three are the BASELINE files that
+    /// <c>IdentitySeeder</c> used to write in C#: the profile-type / interest /
+    /// organisation lookups, the CMS content blocks and the default AI prompt
+    /// catalogue. They run first because a profile cannot exist without a
+    /// profile type, and they are in the roster (not only in
+    /// <see cref="AllFiles"/>) because registration, the CMS surfaces and the AI
+    /// module are all exercised by the integration suite.</para></summary>
     public static readonly IReadOnlyList<string> RosterFiles = new[]
     {
+        "SIMF_App_Lookups.sql",
+        "SIMF_App_ContentBlocks.sql",
+        "SIMF_App_AiPrompts.sql",
         "SIMF_App_Speakers.sql",
         "SIMF_App_SpeakerPhotos.sql",
         "SIMF_App_Programme.sql",

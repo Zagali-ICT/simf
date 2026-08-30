@@ -364,8 +364,8 @@ Scenario: Deactivate requires explicit SimfConfirm — Cancel skips, confirm fir
   import and no generic grid export — the seeded 13-row baseline plus manual CRUD
   is the whole surface. Do not assume an Import/Export toolbar action.
 - **Seeder runs in all environments.** `RegionSeeder` is invoked unconditionally
-  after migration on every start-up (modelled on `RatingSeeder` / `IdentitySeeder`,
-  NOT the dev-only `OrganisationSeeder` guard), so the 13 regions exist in prod too.
+  after migration on every start-up (modelled on `RatingSeeder` / `IdentitySeeder`),
+  so the 13 regions exist in prod too.
 
 ---
 

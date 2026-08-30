@@ -9,8 +9,33 @@ See `docs/decisions/DECISIONS_LOG.md` D-718.
 
 | Lane | What | How | When it runs |
 |------|------|-----|--------------|
-| **Lookups / basic data** | `Country`, `Region`, `SessionCategory`, `Organisation`, and similar stable reference tables | EF `HasData` in the entity's `*Configuration.cs`, or a C# seeder | **Automatically** on migrate / boot |
-| **Content / business data** | Speakers, Sponsors, News, Sessions/Programme, Booths, Delegations, FAQ, Archive editions, Media gallery, … | A **manual SQL** file in this folder (`SIMF_App_*.sql`) | **By hand only** — never auto-run |
+| **Lookups the model owns** | `Country`, `Region`, `SessionCategory`, the `Organisation` "Other" catch-all, `BadgeBatch.DirectRegistration` — rows that must exist the instant the database does | EF `HasData` in the entity's `*Configuration.cs` | **Automatically**, as part of the migration |
+| **Everything else** | Profile types, interests, the organisation list, CMS content blocks, AI prompts, Speakers, Sponsors, News, Sessions/Programme, Booths, Delegations, FAQ, Archive editions, … | A **manual SQL** file in this folder (`SIMF_App_*.sql`) | **By hand only** — never auto-run |
+
+> **Owner rule, 2026-08-30 — "all SQL seed has one script to run and all seed in
+> one location".** The second lane grew on that date: the profile-type / interest
+> / organisation lookups, the 54 CMS content blocks and the 8 default AI prompts
+> were all written by `IdentitySeeder` in C#, and are now
+> `SIMF_App_Lookups.sql`, `SIMF_App_ContentBlocks.sql` and
+> `SIMF_App_AiPrompts.sql`. `IdentitySeeder` keeps ONLY the identity bootstrap —
+> the Control Panel roles, the permission catalogue (generated from
+> `PermissionCatalog`, which four test suites compare the database against) and
+> **one** super-administrator. The demo `@simf.local` account matrix it also used
+> to create was deleted rather than moved: a fixture has no business running
+> inside production startup, and the integration suite creates its own in
+> `tests/SIMF.Api.Tests/DemoAccountSeeder.cs`.
+>
+> A Development-only `OrganisationSeeder` used to insert twelve *sample*
+> organisations on boot. It was deleted with the same change: it wrote the table
+> `SIMF_App_Lookups.sql` writes, and it ran first, so the curated nine below
+> never landed on a developer's machine. Two seeders for one table is the
+> duplication this rule exists to remove.
+>
+> **Run `SIMF_App_Lookups.sql` before anyone registers.** All three of its
+> lookups are REQUIRED by the visitor profile save — the picker demands 1-10
+> interests and one organisation, and a profile cannot exist without a profile
+> type. An environment where any of those tables is empty makes registration
+> impossible, which is exactly what happened on the first production install.
 
 **Why:** production content must be curated and reviewed (real, vetted rows), not
 auto-populated with demo/placeholder data on every deploy. Lookups are stable
@@ -34,14 +59,17 @@ reference data every environment needs identically, so migrations are their home
   as well as the regeneration — see `tools/migrations/Regenerate-Migration.ps1`.
   Adding a missing lookup *value* an admin could add via the CP (e.g. a `Country`
   row) is allowed as a guarded `INSERT` — it is data, not a schema change.
-- Do **not** add content rosters to `IdentitySeeder` / `DefaultContentSeeder`.
+- Do **not** add seed data to `IdentitySeeder` / `DefaultContentSeeder`. A new
+  file here must be added to **both** lists — the `:r` includes in
+  `Run_All_App_Seeds.sql` and `SqlContentSeeder.AllFiles` — or
+  `tests/SIMF.Domain.Tests/ContentSeedInventoryTests.cs` fails the build.
 
 ## How to run
 
 Order matters: `SIMF_App_Programme.sql` creates the **`MAIN` hall** that
 `SIMF_App_SeedGaps.sql` (booths + venue-map nodes) references, so Programme runs
 **before** SeedGaps; `SpeakerPhotos` must run **after** `Speakers` (it points at
-those speaker rows). Both options below run the **same 9 content files** in that
+those speaker rows). Both options below run the **same 12 content files** in that
 order.
 
 **Target database.** These seeds go to the **App / content** database — the one
@@ -59,7 +87,7 @@ cd docs\migrations6
 .\Run-AppSeeds.ps1 -Server "PROD\SQL01" -Database SIMF_Data   # local dev: just .\Run-AppSeeds.ps1
 ```
 
-Runs all 9 seeds in order, stops on the first error, and refuses to run against a
+Runs all 12 seeds in order, stops on the first error, and refuses to run against a
 database with no `dbo.Speakers` (so it cannot be pointed at `SIMF_Identity`).
 Idempotent. Then do the speaker-photo copy step below.
 
@@ -69,7 +97,7 @@ Open **`Run_All_App_Seeds.sql`** in SSMS, turn on **SQLCMD Mode**
 (*Query → SQLCMD Mode* — **required**, or the `:r` / `:setvar` lines error with
 "Incorrect syntax near ':'"), edit its two `:setvar` lines at the top
 (`MigrationDir` = the full path to this folder; `AppDb` = the App/content DB —
-`SIMF_Data` on the server, `SIMF_App` on local dev), then press **F5**. It runs all 9 content seeds in order, prints `[1/9]…[9/9]`
+`SIMF_Data` on the server, `SIMF_App` on local dev), then press **F5**. It runs all 12 content seeds in order, prints `[1/12]…[12/12]`
 progress, and stops on the first error (`:on error exit`, so no partial data).
 Idempotent — safe to re-run. Then do the speaker-photo copy step below.
 
@@ -81,6 +109,9 @@ not the default local instance:
 
 ```powershell
 $Db = "SIMF_Data"
+sqlcmd -d $Db -f 65001 -i docs\migrations\2026\SIMF_App_Lookups.sql
+sqlcmd -d $Db -f 65001 -i docs\migrations\2026\SIMF_App_ContentBlocks.sql
+sqlcmd -d $Db -f 65001 -i docs\migrations\2026\SIMF_App_AiPrompts.sql
 sqlcmd -d $Db -f 65001 -i docs\migrations\2026\SIMF_App_Programme.sql
 sqlcmd -d $Db -f 65001 -i docs\migrations\2026\SIMF_App_News.sql
 sqlcmd -d $Db -f 65001 -i docs\migrations\2026\SIMF_App_Sponsors.sql
@@ -100,13 +131,16 @@ sqlcmd -d $Db -f 65001 -i docs\migrations\2026\SIMF_App_SeedGaps.sql
 > page, each Arabic character becomes 2-3 Latin-1 characters, and the run dies on
 > `Msg 2628 ... would be truncated`.
 
-> **Dev / Test auto-run (D-747).** In **Development** and **Testing** these files
-> are applied automatically by `SqlContentSeeder` (dev boot runs all of them;
-> the test fixture runs the roster set, i.e. everything except `SeedGaps`), so a
-> fresh dev/test DB is not empty. **Production still runs them by hand** with the
-> commands above. The content that used to be seeded in C# (`DefaultContentSeeder`
-> hall/programme/news; `IdentitySeeder` speakers/sponsors/media-partners/archive/
-> org-about) now lives ONLY in these files.
+> **Nothing applies these files as a side effect of starting the API, in any
+> environment** (owner rule, 2026-08-30). The only remaining caller of
+> `SqlContentSeeder` is the API **test fixture**, which applies the roster set
+> (everything except `SeedGaps`) to build a populated throwaway database. A fresh
+> **Development** database therefore starts empty of event content — and empty of
+> profile types, interests and organisations, so **registration will not work
+> until you run the seeds yourself**, with `Run-AppSeeds.ps1` or one of the
+> options above. That is deliberate: a developer's database and a production
+> database are now populated by the same mechanism, and cannot drift without
+> someone touching a seed file.
 
 ## Files
 
@@ -122,7 +156,7 @@ Not content seeds:
 > itself, and a file in one and not the other shows up as "that page is empty on
 > the server" long after the change that caused it.
 
-- **`Run_All_App_Seeds.sql`** — the SSMS one-click runner (Option B). Runs the 9
+- **`Run_All_App_Seeds.sql`** — the SSMS one-click runner (Option B). Runs the 12
   content seeds below, in order, via SQLCMD-Mode `:r` includes.
 - **`DEPLOY.md`** — the one-page deploy / migrate / sign-in runbook card. The
   authoritative operations document is `docs/SIMF-OPS-001`.
@@ -150,15 +184,18 @@ Not content seeds:
 - **`SIMF_App_AssistancePromptGrounding.sql`** / **`SIMF_App_AssistancePromptHistory.sql`**
   — idempotent one-shot updates that re-point an **already-seeded** `assistance`
   AI prompt at the grounded / history-carrying template. A freshly-seeded DB
-  already has it (`IdentitySeeder`), so they update 0 rows there; they exist for
+  already has it (`SIMF_App_AiPrompts.sql`), so they update 0 rows there; they exist for
   databases seeded before that change. `SIMF-OPS-001` §"Existing databases and the
   grounded assistant prompt" instructs operators to run the first one. **Not part
   of the seed run.**
 
-The 9 content seeds (run in this order):
+The 12 content seeds (run in this order):
 
 | File | Seeds | Decision |
 |------|-------|----------|
+| `SIMF_App_Lookups.sql` | 8 profile types (with their badge codes, VIP-tier and app-picker flags) · 10 baseline interests · 9 baseline organisations | owner rule 2026-08-30 (was `IdentitySeeder`) |
+| `SIMF_App_ContentBlocks.sql` | 54 bilingual CMS blocks: the cybersecurity-policy screen (13) · the landing hero (7) · the landing About/stats/pillars/goals sections (32) · the app's Terms + About (2) | owner rule 2026-08-30 (was `IdentitySeeder`) |
+| `SIMF_App_AiPrompts.sql` | The 8 default AI prompts, one per feature, all on the offline Echo provider | owner rule 2026-08-30 (was `IdentitySeeder`) |
 | `SIMF_App_Programme.sql` | Main hall · 5 themes (axes) · 3 programme days (23-25 Nov 2026) · 59 real run-of-show sessions + session↔theme links (soft-deletes the old placeholder days/sessions) | D-747 (was `DefaultContentSeeder`, D-681); real 2026 deck |
 | `SIMF_App_News.sql` | One "Highlights" news item | D-747 (was `DefaultContentSeeder`, D-681) |
 | `SIMF_App_Sponsors.sql` | 10 sponsors (SAMI Platinum · GAMI/RSNF/GADD Gold · 6 Silver fillers) | D-747 (was `IdentitySeeder`, D-348) |

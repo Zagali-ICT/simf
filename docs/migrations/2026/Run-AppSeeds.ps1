@@ -72,7 +72,15 @@ if ($sqlcmdHelp -match '\-C\b') {
 
 # Order matters: Programme creates the MAIN hall that SeedGaps (booths + venue
 # map) references, and Speakers creates the rows SpeakerPhotos points at.
+#
+# This list is pinned by tests/SIMF.Domain.Tests/ContentSeedInventoryTests.cs
+# against Run_All_App_Seeds.sql and SqlContentSeeder.AllFiles. All three must
+# name the same files: this script is what a terminal or a deploy runs, the .sql
+# runner is what SSMS runs, and the C# list is what the test fixture runs.
 $seeds = @(
+    'SIMF_App_Lookups.sql',
+    'SIMF_App_ContentBlocks.sql',
+    'SIMF_App_AiPrompts.sql',
     'SIMF_App_Programme.sql',
     'SIMF_App_News.sql',
     'SIMF_App_Sponsors.sql',
