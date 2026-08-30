@@ -39,9 +39,11 @@ out of SSA and into HSA, so it has no internet path; the AI from a cloud
 provider to an on-site **LLM server** in HSA, reached over an OpenAI-compatible
 API; mail from an external relay to an on-site **mail server** in HSA; the file
 store from a directory on a share to **MinIO** object storage in HSA, reached
-over the S3 API; and the one remaining internet call, the YouTube caption fetch,
-from the API to the **Control Panel**, which is the tier that has internet
-access. CP, WEB and the mobile edge stay in the presentation zone.
+over the S3 API; and the one remaining internet call, the YouTube caption
+fetch, from the API to the **Control Panel**, which is the tier that has
+internet access. The model is the SITE-hosted **GPT OSS 120B**, served over an
+OpenAI-compatible API. CP, WEB and the mobile edge stay in the presentation
+zone.
 
 Sheet 4 is the deployment figure **as published in LLD-003 v1.2** and its files
 are held at those bytes; sheet 5 is what v1.3 carries in its place. One
@@ -67,8 +69,10 @@ reissued at a new version.
 | `SIMF-HLD-004-MoD-HLD-External-v1.2` | **sheet 5** | sheet 2 | sheet 3 |
 | `SIMF-LLD-003-Solution-Design-Document-v1.2` | sheet 4 | sheet 2 | sheet 3 |
 | `SIMF-LLD-003-Solution-Design-Document-v1.3` | **sheet 5** | sheet 2 | sheet 3 |
-| `SIMF-HLD-004-MoD-HLD-External-v1.3` | **sheet 6** | sheet 2 | sheet 3 |
-| `SIMF-LLD-003-Solution-Design-Document-v1.4` | **sheet 6** | sheet 2 | sheet 3 |
+| `SIMF-HLD-004-MoD-HLD-External-v1.3` | sheet 6 | sheet 2 | sheet 3 |
+| `SIMF-LLD-003-Solution-Design-Document-v1.4` | sheet 6 | sheet 2 | sheet 3 |
+| `SIMF-HLD-004-MoD-HLD-External-v1.4` | **sheet 6** | sheet 2 | sheet 3 |
+| `SIMF-LLD-003-Solution-Design-Document-v1.5` | **sheet 6** | sheet 2 | sheet 3 |
 
 In the HLD the three figures sit together at the front, sized to a common
 height; in the LLD they sit at 2.1.1, 2.2 and 7.1, sized to a common width. A

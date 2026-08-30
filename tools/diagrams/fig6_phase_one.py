@@ -9,8 +9,8 @@ sheet 5 beside sheet 4.
 Phase one is a customer requirement of 2026-08-30 and moves five things:
 
   * the API server moves OUT of SSA and into HSA, so it has no internet path;
-  * the AI provider stops being Gemini and becomes an on-site LLM server in
-    HSA, reached over an OpenAI-compatible API;
+  * the AI provider stops being Gemini and becomes the SITE-hosted GPT OSS 120B
+    model on an on-site LLM server in HSA, over an OpenAI-compatible API;
   * mail stops going to an external relay and goes to an on-site mail server
     in HSA;
   * the file store stops writing into a directory over SMB and becomes MinIO
@@ -127,7 +127,7 @@ s.band(LEFT, Y_APPLICATION, LW, 332, "Application zone", "Windows Server 2022")
 s.box(C2, 1030, NW, 72, "API load balancer", "device",
       "distributes to the API nodes", fill=NODE_FILL)
 s.node(C1, Y_ROW, NW, 164, "LLM SERVER", "server", TBC,
-       ["On-site model", "OpenAI-compatible API"])
+       ["GPT OSS 120B", "OpenAI-compatible API"])
 s.node(C2, Y_ROW, NW, 164, "API   x 4", "server", COMMON, ["SIMF.Api"])
 s.node(C3, Y_ROW, NW, 164, "MAIL SERVER", "server", TBC, ["On-site SMTP relay"])
 
@@ -210,9 +210,9 @@ ry += s.note(RX, ry, RW, [
     "Phase one puts every service that holds or",
     "processes SIMF data inside HSA: the API, the AI",
     "model, the mail relay and the file store.",
-    "The AI runs on an on-site LLM server reached over",
-    "an OpenAI-compatible API, in place of a cloud",
-    "provider. Mail goes to an on-site SMTP relay.",
+    "The AI runs on the SITE-hosted GPT OSS 120B model on an",
+    "on-site LLM server, reached over an OpenAI-compatible",
+    "API. Mail goes to an on-site SMTP relay.",
     "Files are written to MinIO object storage over the",
     "S3 API, in place of a directory on a file share.",
     "One internet call remains, and the Control Panel",

@@ -106,7 +106,7 @@
 <text x="326.0" y="1229" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">specification to be</text>
 <text x="326.0" y="1244" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">confirmed with the site</text>
 <line x1="186" y1="1248" x2="466" y2="1248" stroke="#9CA3AF" stroke-width="1"/>
-<text x="326.0" y="1260" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">«artifact»  On-site model</text>
+<text x="326.0" y="1260" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">«artifact»  GPT OSS 120B</text>
 <text x="326.0" y="1275" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">«artifact»  OpenAI-compatible API</text>
 <polygon points="565,1148 578,1135 878,1135 865,1148" fill="#D3DDE8" stroke="#1A1A1A" stroke-width="1.3"/>
 <polygon points="865,1148 878,1135 878,1299 865,1312" fill="#D3DDE8" stroke="#1A1A1A" stroke-width="1.3"/>
@@ -229,9 +229,9 @@
 <text x="1487" y="465" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">Phase one puts every service that holds or</text>
 <text x="1487" y="482" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">processes SIMF data inside HSA: the API, the AI</text>
 <text x="1487" y="499" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">model, the mail relay and the file store.</text>
-<text x="1487" y="516" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">The AI runs on an on-site LLM server reached over</text>
-<text x="1487" y="533" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">an OpenAI-compatible API, in place of a cloud</text>
-<text x="1487" y="550" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">provider. Mail goes to an on-site SMTP relay.</text>
+<text x="1487" y="516" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">The AI runs on the SITE-hosted GPT OSS 120B model on an</text>
+<text x="1487" y="533" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">on-site LLM server, reached over an OpenAI-compatible</text>
+<text x="1487" y="550" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">API. Mail goes to an on-site SMTP relay.</text>
 <text x="1487" y="567" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">Files are written to MinIO object storage over the</text>
 <text x="1487" y="584" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">S3 API, in place of a directory on a file share.</text>
 <text x="1487" y="601" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">One internet call remains, and the Control Panel</text>
