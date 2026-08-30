@@ -113,6 +113,15 @@ sqlcmd -d $Db -f 65001 -i docs\migrations\2026\SIMF_App_SeedGaps.sql
 Not content seeds:
 
 - **`Run-AppSeeds.ps1`** — the terminal runner (Option A above). Preferred.
+> **The inventory is pinned by a test, not by this list.**
+> `tests/SIMF.Domain.Tests/ContentSeedInventoryTests.cs` fails the build when a
+> `.sql` file here belongs to neither the runner nor its named-exception list,
+> and when the runner and `SqlContentSeeder.AllFiles` stop naming the same files.
+> Those two lists are hand-maintained and must stay identical: one is what an
+> operator runs in production, the other is what a Development boot runs for
+> itself, and a file in one and not the other shows up as "that page is empty on
+> the server" long after the change that caused it.
+
 - **`Run_All_App_Seeds.sql`** — the SSMS one-click runner (Option B). Runs the 9
   content seeds below, in order, via SQLCMD-Mode `:r` includes.
 - **`DEPLOY.md`** — the one-page deploy / migrate / sign-in runbook card. The
