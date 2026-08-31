@@ -1,6 +1,6 @@
 # SIMF engineering diagrams
 
-Six sheets, each drawn in an established notation rather than to taste, and
+Eight sheets, each drawn in an established notation rather than to taste, and
 each fact traceable to a named source. Sheet 1's outputs are **not** in the
 repository: LLD-003 v1.2 replaced that sheet with sheet 4 and the files were
 deleted in `02ca3c8f4`. Its script is kept and still runs, so re-running it
@@ -14,6 +14,8 @@ writes the `.svg` back; delete it again unless a document has asked for it.
 | Target tier separation | UML deployment diagram | `docs/diagrams/SIMF-Fig4-Target-Tier-Separation.{svg,png}` |
 | Security areas and egress | UML deployment diagram | `docs/diagrams/SIMF-Fig5-Security-Areas-And-Egress.{svg,png}` |
 | Phase one, on-site services | UML deployment diagram | `docs/diagrams/SIMF-Fig6-Phase-One-Security-Areas.{svg,png}` |
+| Phase one components | UML component diagram, C4 container discipline | `docs/diagrams/SIMF-Fig7-Phase-One-Components.{svg,png}` |
+| Phase one system and data flow | Data flow diagram, Gane and Sarson | `docs/diagrams/SIMF-Fig8-Phase-One-Data-Flow.{svg,png}` |
 
 Sheet 4 is the same notation as sheet 1 and a different estate, not a redraw of
 it. Sheet 1 puts the web, API and Control Panel hosts together in one
@@ -45,6 +47,27 @@ internet access. The model is the SITE-hosted **GPT OSS 120B**, served over an
 OpenAI-compatible API. CP, WEB and the mobile edge stay in the presentation
 zone.
 
+**Sheets 7 and 8 are phase one for the other two notations**, and stand to
+sheets 2 and 3 exactly as sheet 6 stands to sheet 5. Sheet 6 alone was not
+enough: the deployment sheet said MinIO and GPT OSS 120B while, two pages later
+in the same document, the component sheet still drew a **file share over SMB**
+and a **background-worker box**, and the data-flow sheet still named the AI
+service **Gemini API**. A reader comparing the text to the pictures found the
+pictures disagreeing with it and with each other. Sheet 7 drops the worker box,
+because the API host runs its scheduled jobs in-process and there is no second
+deployable to draw, and replaces the share with MinIO over `S3 HTTPS 443`.
+Sheet 8 renames the three services to what phase one leaves them and corrects
+one flow that was wrong before phase one and is now conspicuous: it sent
+"live stream, summary video" **to** the video platform, which SIMF has never
+done. The media team publishes to the channel; SIMF sends one **public video
+id** and gets a caption track back. Both levels now carry that.
+
+The three services are still absent from the component sheet even though two of
+them now run on site. That is the 2026-08-10 owner decision, unchanged: what
+matters about a called service is the data that crosses to it, which is a
+data-flow question, and boxing it on an architecture sheet implies a design
+commitment the system does not make.
+
 Sheet 4 is the deployment figure **as published in LLD-003 v1.2** and its files
 are held at those bytes; sheet 5 is what v1.3 carries in its place. One
 consequence, because the zone typography changed with sheet 5 and lives in the
@@ -53,7 +76,7 @@ committed sheet 4** - it renders the same artwork with the newer zone name
 styling. That is expected. Do not commit the result unless a document has asked
 for a re-issued sheet 4.
 
-The `Fig1` to `Fig6` in the filenames identify the sheet, not its figure
+The `Fig1` to `Fig8` in the filenames identify the sheet, not its figure
 number. **The artwork carries no figure number**: each document numbers its own
 figures in order of appearance and states that number in the caption, so the same
 sheet is Figure 1 in one document and Figure 3 in another without any clash. Do
@@ -71,8 +94,8 @@ reissued at a new version.
 | `SIMF-LLD-003-Solution-Design-Document-v1.3` | **sheet 5** | sheet 2 | sheet 3 |
 | `SIMF-HLD-004-MoD-HLD-External-v1.3` | sheet 6 | sheet 2 | sheet 3 |
 | `SIMF-LLD-003-Solution-Design-Document-v1.4` | sheet 6 | sheet 2 | sheet 3 |
-| `SIMF-HLD-004-MoD-HLD-External-v1.4` | **sheet 6** | sheet 2 | sheet 3 |
-| `SIMF-LLD-003-Solution-Design-Document-v1.5` | **sheet 6** | sheet 2 | sheet 3 |
+| `SIMF-HLD-004-MoD-HLD-External-v1.4` | sheet 6 | **sheet 7** | **sheet 8** |
+| `SIMF-LLD-003-Solution-Design-Document-v1.5` | sheet 6 | **sheet 7** | **sheet 8** |
 
 In the HLD the three figures sit together at the front, sized to a common
 height; in the LLD they sit at 2.1.1, 2.2 and 7.1, sized to a common width. A
@@ -132,6 +155,10 @@ Start-Process -FilePath 'C:\Program Files\Google\Chrome\Application\chrome.exe' 
     '--window-size=<the sheet width>,<the sheet height>',
     '--screenshot=<absolute .png path>', 'file:///<absolute .svg path>')
 ```
+
+Sheets 7 and 8 carry the sizes, and therefore the aspect ratios, of the sheets
+they replace, so re-embedding them moves no frame. Assert the ratio anyway: a
+silent stretch is the one embedding defect that survives a glance.
 
 Sheet sizes: figure 1 is 1660 x 1020, figure 2 is 1660 x 1220, figure 3 is
 1660 x 1200, figure 4 is 1660 x 1310, figure 5 is 1940 x 1682,
