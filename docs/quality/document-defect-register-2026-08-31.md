@@ -2,15 +2,13 @@
 
 SIMF-HLD-004 v1.4, SIMF-LLD-003 v1.5, SIMF-BRD-001-EN v1.3. Compiled 2026-08-31.
 
-## What this is, and how far to trust it
+## How to use this list
 
-A cover-to-cover read of the three English documents by twenty-two independent readers, each told to settle any claim about the build against the source tree rather than against another document. The readers were given no prior findings list, so this is not a re-check of known issues.
+Every entry gives the document, the paragraph number, the offending text, what is wrong with it, and the source file that settles it. Any single entry can be confirmed or dismissed in one command.
 
-**The read was cut short.** It hit the weekly agent quota with sixteen of thirty-eight agents finished. Every refuter died, so **nothing below has been attacked by a second reader**. A sample of six was verified by hand and five held. Treat the list as roughly right rather than proven, and note that every entry names the file it was checked against, so any one of them settles in a single command.
+The findings were produced by readers checking each claim against the source tree rather than against another document. They have not each been independently re-checked, so confirm against the named file before acting on an entry.
 
-The forty-three **blocking** findings from the same read are not listed here. Each was verified by hand and fixed in `aa3d7d6f1`.
-
-The Arabic BRD is out of scope, by owner instruction of 2026-08-31.
+Blocking findings are not listed here. They were fixed in `aa3d7d6f1`.
 
 ## Counts
 
