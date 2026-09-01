@@ -245,47 +245,48 @@ stages:
       displayName: 'Publish the android-release artifact'
 
 # ---------------------------------------------------------------------------
-- stage: AndroidPublish
-  displayName: 'Android - upload to Google Play'
-  dependsOn: Android
-  condition: and(succeeded(), eq('${{ parameters.publishAndroid }}', 'true'))
-  jobs:
-  - deployment: PlayUpload
-    displayName: 'Upload the bundle to Google Play'
-    pool:
-      name: Default
-      demands:
-      - Agent.OS -equals Windows_NT
-    # A store upload is irreversible on the production track, so it runs against
-    # an Environment and inherits whatever approval is configured on it.
-    environment: 'Google-Play'
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - download: current
-            artifact: android-release
+- ${{ if eq(parameters.publishAndroid, true) }}:
+  - stage: AndroidPublish
+    displayName: 'Android - upload to Google Play'
+    dependsOn: Android
+    condition: and(succeeded(), eq('${{ parameters.publishAndroid }}', 'true'))
+    jobs:
+    - deployment: PlayUpload
+      displayName: 'Upload the bundle to Google Play'
+      pool:
+        name: Default
+        demands:
+        - Agent.OS -equals Windows_NT
+      # A store upload is irreversible on the production track, so it runs against
+      # an Environment and inherits whatever approval is configured on it.
+      environment: 'Google-Play'
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+            - download: current
+              artifact: android-release
 
-          - task: DownloadSecureFile@1
-            name: playServiceAccount
-            displayName: 'Download the Play service account'
-            inputs:
-              secureFile: 'simf-play-service-account.json'
+            - task: DownloadSecureFile@1
+              name: playServiceAccount
+              displayName: 'Download the Play service account'
+              inputs:
+                secureFile: 'simf-play-service-account.json'
 
-          # NOTE: the very FIRST release cannot go through this task. Google
-          # Play will not create the app entry, the store listing, the content
-          # rating or the Data Safety form over the API - all four are console
-          # work. From release two onward this is the whole upload.
-          - task: GooglePlayRelease@4
-            displayName: 'Upload to the ${{ parameters.androidTrack }} track'
-            inputs:
-              authType: JsonFile
-              serviceAccountKey: '$(playServiceAccount.secureFilePath)'
-              applicationId: 'com.simrsnf.simf'
-              action: SingleBundle
-              bundleFile: '$(Pipeline.Workspace)/android-release/app-release.aab'
-              track: '${{ parameters.androidTrack }}'
-              changesNotSentForReview: false
+            # NOTE: the very FIRST release cannot go through this task. Google
+            # Play will not create the app entry, the store listing, the content
+            # rating or the Data Safety form over the API - all four are console
+            # work. From release two onward this is the whole upload.
+            - task: GooglePlayRelease@4
+              displayName: 'Upload to the ${{ parameters.androidTrack }} track'
+              inputs:
+                authType: JsonFile
+                serviceAccountKey: '$(playServiceAccount.secureFilePath)'
+                applicationId: 'com.simrsnf.simf'
+                action: SingleBundle
+                bundleFile: '$(Pipeline.Workspace)/android-release/app-release.aab'
+                track: '${{ parameters.androidTrack }}'
+                changesNotSentForReview: false
 
 # ---------------------------------------------------------------------------
 - stage: IOS
@@ -496,55 +497,56 @@ stages:
       displayName: 'Publish the ios-release artifact'
 
 # ---------------------------------------------------------------------------
-- stage: IosPublish
-  displayName: 'iOS - upload to TestFlight'
-  dependsOn: IOS
-  condition: and(succeeded(), eq('${{ parameters.publishIos }}', 'true'))
-  jobs:
-  - deployment: TestFlightUpload
-    displayName: 'Upload the archive to TestFlight'
-    pool:
-      vmImage: 'macOS-latest'
-    environment: 'Apple-TestFlight'
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - download: current
-            artifact: ios-release
+- ${{ if eq(parameters.publishIos, true) }}:
+  - stage: IosPublish
+    displayName: 'iOS - upload to TestFlight'
+    dependsOn: IOS
+    condition: and(succeeded(), eq('${{ parameters.publishIos }}', 'true'))
+    jobs:
+    - deployment: TestFlightUpload
+      displayName: 'Upload the archive to TestFlight'
+      pool:
+        vmImage: 'macOS-latest'
+      environment: 'Apple-TestFlight'
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+            - download: current
+              artifact: ios-release
 
-          - task: DownloadSecureFile@1
-            name: appStoreKey
-            displayName: 'Download the App Store Connect API key'
-            inputs:
-              secureFile: 'simf-appstore-api-key.p8'
+            - task: DownloadSecureFile@1
+              name: appStoreKey
+              displayName: 'Download the App Store Connect API key'
+              inputs:
+                secureFile: 'simf-appstore-api-key.p8'
 
-          - bash: |
-              set -euo pipefail
-              # AppStoreRelease@1's `apitoken` input is the base64-encoded
-              # CONTENT of the .p8, NOT a path to it - the task hands the value
-              # straight to fastlane with is_key_content_base64=true, so a path
-              # gets base64-DECODED into binary garbage and authentication
-              # fails after the archive is already built. The path arrives via
-              # `env:` so Azure's $(...) macro substitution cannot collide with
-              # bash command substitution.
-              key=$(base64 -i "${P8_PATH}" | tr -d '\n')
-              echo "##vso[task.setvariable variable=appStoreKeyB64;issecret=true]${key}"
-            displayName: 'Base64-encode the App Store Connect key'
-            env:
-              P8_PATH: $(appStoreKey.secureFilePath)
+            - bash: |
+                set -euo pipefail
+                # AppStoreRelease@1's `apitoken` input is the base64-encoded
+                # CONTENT of the .p8, NOT a path to it - the task hands the value
+                # straight to fastlane with is_key_content_base64=true, so a path
+                # gets base64-DECODED into binary garbage and authentication
+                # fails after the archive is already built. The path arrives via
+                # `env:` so Azure's $(...) macro substitution cannot collide with
+                # bash command substitution.
+                key=$(base64 -i "${P8_PATH}" | tr -d '\n')
+                echo "##vso[task.setvariable variable=appStoreKeyB64;issecret=true]${key}"
+              displayName: 'Base64-encode the App Store Connect key'
+              env:
+                P8_PATH: $(appStoreKey.secureFilePath)
 
-          # As on the Android side, the FIRST submission needs console work: the
-          # app record, the listing, the privacy questionnaire and the
-          # export-compliance answer. This task uploads builds, nothing else.
-          - task: AppStoreRelease@1
-            displayName: 'Upload the build to TestFlight'
-            inputs:
-              authType: ApiKey
-              apiKeyId: $(appStoreKeyId)
-              apiKeyIssuerId: $(appStoreIssuerId)
-              apitoken: $(appStoreKeyB64)
-              releaseTrack: TestFlight
-              appIdentifier: 'com.simrsnf.simf'
-              ipaPath: '$(Pipeline.Workspace)/ios-release/*.ipa'
-              shouldSkipWaitingForProcessing: true
+            # As on the Android side, the FIRST submission needs console work: the
+            # app record, the listing, the privacy questionnaire and the
+            # export-compliance answer. This task uploads builds, nothing else.
+            - task: AppStoreRelease@1
+              displayName: 'Upload the build to TestFlight'
+              inputs:
+                authType: ApiKey
+                apiKeyId: $(appStoreKeyId)
+                apiKeyIssuerId: $(appStoreIssuerId)
+                apitoken: $(appStoreKeyB64)
+                releaseTrack: TestFlight
+                appIdentifier: 'com.simrsnf.simf'
+                ipaPath: '$(Pipeline.Workspace)/ios-release/*.ipa'
+                shouldSkipWaitingForProcessing: true
