@@ -56,19 +56,6 @@ public sealed class IdentitySeeder(
     // ISO-3166 numeric code, seeded via CountryConfiguration.HasData).
     private const int SaudiArabiaCountryId = 682;
 
-    // The real edition dates and the single source of truth for the seeded
-    // OrganizationProfile forum dates. The row is CP-editable after seeding; the
-    // seeder only writes these when the row still carries the stale placeholder
-    // (2026-01-01..04-30) a migration's InsertData baked in, so a CP edit is
-    // never overwritten on restart. The hero MetaDate label is derived from the
-    // same dates via the shared EventDateRange formatter (no hardcoded literal).
-    private static readonly DateOnly EventStartDate = new(2026, 11, 23);
-    private static readonly DateOnly EventEndDate = new(2026, 11, 25);
-    private static readonly DateTime StalePlaceholderStart =
-        new(2026, 1, 1, 0, 0, 0);
-    private static readonly DateTime StalePlaceholderEnd =
-        new(2026, 4, 30, 0, 0, 0);
-
     private const string AdministratorRole = AppRoles.Administrator;
 
     // ASP.NET Core Identity's internal token coordinates for the TOTP
@@ -349,11 +336,6 @@ public sealed class IdentitySeeder(
         // missing, matches the existing EnsureProfileTypeAsync pattern.
         await EnsureCybersecurityPolicyContentAsync(admin.Id, cancellationToken);
 
-        // Set the CP-editable forum dates to the real edition
-        // (2026-11-23..25), correcting the stale placeholder the migration
-        // seeded, so every surface that reads OrganizationProfile renders the real
-        // range. Idempotent + admin-edit-safe (only rewrites the known placeholder).
-        await EnsureOrganizationProfileEventDatesAsync(cancellationToken);
 
         // Seed the public marketing landing's hero CMS text blocks so the
         // Website's /content/site proxy can serve them and the CP CMS editor
@@ -1168,38 +1150,6 @@ public sealed class IdentitySeeder(
         }
     }
 
-    /// <summary>Correct the singleton OrganizationProfile's forum dates to
-    /// the real edition (<see cref="EventStartDate"/>..<see cref="EventEndDate"/>).
-    /// The migration seeds the row with a stale placeholder (2026-01-01..04-30);
-    /// this rewrites it in place so the app + Website read the real range. Idempotent
-    /// and admin-edit-safe: it writes only when the row is null-dated or still carries
-    /// the exact placeholder, so a CP edit survives every restart.</summary>
-    private async Task EnsureOrganizationProfileEventDatesAsync(CancellationToken cancellationToken)
-    {
-        var profile = await appDbContext.OrganizationProfile
-            .SingleOrDefaultAsync(p => p.Id == OrganizationProfile.SingletonId, cancellationToken);
-        if (profile is null)
-        {
-            return;
-        }
-
-        var isUncorrected =
-            (profile.EventStartDate is null && profile.EventEndDate is null)
-            || (profile.EventStartDate == StalePlaceholderStart
-                && profile.EventEndDate == StalePlaceholderEnd);
-        if (!isUncorrected)
-        {
-            return;
-        }
-
-        profile.EventStartDate = ToLocalMidnight(EventStartDate);
-        profile.EventEndDate = ToLocalMidnight(EventEndDate);
-        await appDbContext.SaveChangesAsync(cancellationToken);
-        logger.LogInformation(
-            "OrganizationProfile forum dates set to the real edition ({Start}..{End}).",
-            EventStartDate, EventEndDate);
-    }
-
     /// <summary>Midnight on the given Saudi calendar date. Was ToUtcMidnight and
     /// attached a +00:00 offset; stored values are Saudi-local now, so the name
     /// would have been a lie and the offset a three-hour shift.</summary>
@@ -1235,8 +1185,12 @@ public sealed class IdentitySeeder(
             // Derived from the seeded event dates (not a literal), so the
             // hero label tracks OrganizationProfile.EventStartDate/EventEndDate.
             (LandingHeroContentKeys.MetaDate,
-             EventDateRange.Format(EventStartDate, EventEndDate, arabic: false),
-             EventDateRange.Format(EventStartDate, EventEndDate, arabic: true)),
+             EventDateRange.Format(
+                 OrganizationProfile.DefaultEventStart,
+                 OrganizationProfile.DefaultEventEnd, arabic: false),
+             EventDateRange.Format(
+                 OrganizationProfile.DefaultEventStart,
+                 OrganizationProfile.DefaultEventEnd, arabic: true)),
             (LandingHeroContentKeys.MetaVenue,
              "Sofitel Riyadh Hotel & Convention Centre",
              "فندق ومركز مؤتمرات سوفيتيل الرياض"),

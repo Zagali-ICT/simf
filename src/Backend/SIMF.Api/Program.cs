@@ -643,14 +643,23 @@ if (!app.Environment.IsEnvironment("Testing"))
         await services.GetRequiredService<SIMF.Infrastructure.Organisations.OrganisationSeeder>()
             .SeedFakeAsync();
 
-        // In Development only, apply the by-hand 2026 content-seed SQL
-        // (docs/migrations/2026/*.sql: speakers, programme, news, sponsors, media
-        // partners, archive, org about + the booths/delegations/FAQ/venue-map
-        // gaps) so a fresh dev DB renders populated screens. Idempotent. In
-        // production this SQL is run by hand; this never runs outside
-        // Development.
-        await services.GetRequiredService<SIMF.Infrastructure.Seeding.SqlContentSeeder>()
-            .RunAsync(SIMF.Infrastructure.Seeding.SqlContentSeeder.AllFiles);
+        // NO SQL RUNS HERE. Owner rule, 2026-08-30: the hand-run content seed is
+        // a deliberate step, not a side effect of starting the API. This block
+        // used to execute docs/migrations/2026/*.sql on every Development boot,
+        // which meant a developer's database and a production database were
+        // populated by two different mechanisms and could disagree without
+        // anyone touching a seed file.
+        //
+        // A fresh Development database therefore starts EMPTY of event content -
+        // no speakers, programme, news or sponsors - until someone runs
+        // docs/migrations/2026/Run_All_App_Seeds.sql against it. That is the
+        // same one script production runs, which is the point: one script, one
+        // location, one behaviour everywhere. The seeds are idempotent, so
+        // running it twice costs nothing.
+        //
+        // SqlContentSeeder itself is kept: the API test fixture calls it to
+        // build its database, and that is a test seeding itself deliberately
+        // rather than EF seeding as a side effect.
     }
 
     // The demo OPERATIONAL configuration (gates + the demo staff

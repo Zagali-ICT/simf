@@ -134,9 +134,9 @@ def chapter_deployment():
             bullets([
                 "The pipeline builds all four applications and publishes them as "
                 "one artefact.",
-                "It confirms the target machine, and refuses to continue if the "
-                "machine is the one named as forbidden for that job — this is "
-                "what stops a pre-production run reaching production.",
+                "It checks the target machine against two names: the one that "
+                "job expects, and the machine pinned to the other environment, "
+                "which is forbidden.",
                 "For each application in turn — API first, edge last — it stops "
                 "the site and its pool, mirrors the files into place, and starts "
                 "them again, proving both reached the started state.",
@@ -149,12 +149,11 @@ def chapter_deployment():
                 "seeds the first administrator.",
             ], [
                 "يبني خط الإنتاج التطبيقات الأربعة وينشرها كحزمة واحدة.",
-                "يتأكد من الجهاز الهدف، ويرفض المتابعة إذا كان الجهاز هو المحظور "
-                "لتلك المهمة — وهذا ما يمنع تشغيل ما قبل الإنتاج من الوصول إلى "
-                "الإنتاج.",
+                "يتحقق من الجهاز الهدف مقابل اسمين: الاسم الذي تتوقّعه تلك "
+                "المهمة، والجهاز المثبَّت للبيئة الأخرى وهو المحظور.",
                 "ثم لكل تطبيق بالتتابع — واجهة البرمجة أولًا والحافة أخيرًا — "
-                "يوقف الموقع ومجمّعه، وينسخ الملفات، ثم يعيد تشغيلهما ويتحقق من "
-                "بلوغهما حالة التشغيل.",
+                "يوقف الموقع ومجمّعه، وينسخ الملفات نسخًا مطابقًا إلى موضعها، ثم "
+                "يعيد تشغيلهما ويتحقق من بلوغهما حالة التشغيل.",
                 "بعد ذلك يشغّل المشغّل نصوص تهيئة ذلك الخادم بصلاحيات المسؤول.",
                 "ثم يعيد المشغّل تشغيل IIS. ولا تكفي إعادة تدوير المجمّع: فعملية "
                 "العامل ترث بيئتها من الخدمة التي شغّلتها، فيحتفظ المجمّع المُعاد "
@@ -162,6 +161,22 @@ def chapter_deployment():
                 "ثم تُشغَّل واجهة البرمجة، فتنشئ قاعدتَي البيانات أو تُرقّيهما وتزرع "
                 "أول مسؤول.",
             ]),
+            note("The forbidden name is the only half of that check armed on "
+                 "production today. The production machine's name has never been "
+                 "read, so the name production expects is blank — and a job whose "
+                 "expected name is blank warns and carries on rather than refusing. "
+                 "Pre-production is the mirror: the name forbidden to it is "
+                 "production's, which is that same blank, so what stops a "
+                 "pre-production run reaching production is its expected name, not "
+                 "the forbidden one. Filling in the production machine name closes "
+                 "both halves.",
+                 "الاسم المحظور هو النصف الوحيد المفعَّل من ذلك التحقق على "
+                 "الإنتاج اليوم. فاسم جهاز الإنتاج لم يُقرأ قط، فالاسم الذي "
+                 "يتوقّعه الإنتاج فارغ — والمهمة التي يكون اسمها المتوقّع "
+                 "فارغًا تُحذّر وتمضي بدل أن ترفض. وما قبل الإنتاج صورة معكوسة: "
+                 "فالاسم المحظور عليه هو اسم الإنتاج، وهو ذلك الفراغ نفسه، فما "
+                 "يمنع تشغيل ما قبل الإنتاج من الوصول إلى الإنتاج هو اسمه "
+                 "المتوقّع لا المحظور. ويسدّ ملءُ اسم جهاز الإنتاج النصفين معًا."),
 
             figure("cp-admin-ops-services-default",
                    "After a deployment, this is where you confirm the background "
@@ -205,17 +220,21 @@ def chapter_deployment():
               "تسجيل دخوله، غيّر كلمة المرور، وأقرِن تطبيق مصادقة جديدًا، ثم غيّر "
               "قيم التهيئة تلك إلى قيم مؤقتة جديدة. وهذه الخطوة الأخيرة هي الفارق "
               "بين «منشور» و«آمن»."),
-            note("Two traps. If the configured password or email is blank the "
-                 "seeder writes no administrator, logs the reason, and the "
-                 "system starts up perfectly healthy — every sign-in then fails "
-                 "with nothing visibly wrong. And a password containing a run "
-                 "such as 12345 is rejected by the password rules, with exactly "
-                 "the same silent outcome.",
-                 "مِزلقان اثنان. إذا كانت كلمة المرور أو البريد المهيّأ فارغًا فلن "
-                 "يكتب البذّار أي مسؤول، وسيسجّل السبب، وسيقلع النظام سليمًا "
-                 "تمامًا — ثم يفشل كل تسجيل دخول دون أي خلل ظاهر. وكذلك كلمة مرور "
-                 "تحوي تسلسلًا مثل 12345 ترفضها قواعد كلمات المرور، بالنتيجة "
-                 "الصامتة نفسها."),
+            note("Two traps, and they fail differently. If the configured email "
+                 "or password is blank the seeder writes no administrator, logs "
+                 "the reason, and the system starts up perfectly healthy — every "
+                 "sign-in then fails with nothing visibly wrong. But a password "
+                 "the rules reject — one containing a run such as 12345 — fails "
+                 "the boot outright in production, and the error names the rule "
+                 "that broke. Outside production that second case is logged and "
+                 "skipped like the first.",
+                 "مِزلقان اثنان، ويفشلان على نحوين مختلفين. إذا كان البريد أو "
+                 "كلمة المرور المهيّأة فارغًا فلن يكتب البذّار أي مسؤول، وسيسجّل "
+                 "السبب، وسيقلع النظام سليمًا تمامًا — ثم يفشل كل تسجيل دخول دون "
+                 "أي خلل ظاهر. أما كلمة المرور التي ترفضها القواعد — كالتي تحوي "
+                 "تسلسلًا مثل 12345 — فتُسقِط الإقلاع نفسه في الإنتاج، ويذكر الخطأ "
+                 "القاعدة التي انكسرت. وخارج الإنتاج تُسجّل هذه الحالة الثانية "
+                 "وتُتخطّى مثل الأولى."),
         ],
     }
 
@@ -305,31 +324,49 @@ def chapter_configuration():
 
             h2("The values that stop a server starting",
                "القيم التي تمنع الخادم من الإقلاع"),
-            p("Seven values are boot gates: in production, the application "
-              "refuses to start without its own. This is deliberate — each one "
-              "protects something that would otherwise fail silently and much "
-              "later.",
-              "سبع قيم تمثّل بوابات إقلاع: ففي الإنتاج يرفض التطبيق البدء بدون "
-              "القيمة الخاصة به. وهذا مقصود — إذ تحمي كل واحدة منها أمرًا كان "
-              "سيفشل بصمت وفي وقت متأخر جدًا."),
+            p("Ten values are boot gates: leave one empty and the application "
+              "refuses to start. They do not all hold in the same places, and "
+              "where a gate holds matters as much as its name. This is "
+              "deliberate — each one protects something that would otherwise "
+              "fail silently and much later.",
+              "عشر قيم تمثّل بوابات إقلاع: فإذا تُركت إحداها فارغة رفض التطبيق "
+              "البدء. وهي لا تسري كلها في المواضع نفسها، وموضع سريان البوابة "
+              "لا يقلّ أهمية عن اسمها. وهذا مقصود — إذ تحمي كل واحدة منها أمرًا "
+              "كان سيفشل بصمت وفي وقت متأخر جدًا."),
             table(
-                ["Variable", "Application"],
-                ["المتغيّر", "التطبيق"],
-                [["SIMF_API_FileStorage__EncryptionKey", "API"],
-                 ["SIMF_API_Storage__UserIdDocumentEncryptionKey", "API"],
-                 ["SIMF_API_Ai__PromptHash__Secret", "API"],
-                 ["SIMF_CP_DataProtection__KeyRingPath", "Control Panel"],
-                 ["SIMF_WEB_DataProtection__KeyRingPath", "Website"],
-                 ["SIMF_EDGE_ReverseProxy__Clusters__api__Destinations__primary__Address", "Mobile edge"],
-                 ["SIMF_EDGE_ReverseProxy__KnownProxies__0", "Mobile edge"]],
-                [["SIMF_API_FileStorage__EncryptionKey", "واجهة البرمجة"],
-                 ["SIMF_API_Storage__UserIdDocumentEncryptionKey", "واجهة البرمجة"],
-                 ["SIMF_API_Ai__PromptHash__Secret", "واجهة البرمجة"],
-                 ["SIMF_CP_DataProtection__KeyRingPath", "لوحة التحكم"],
-                 ["SIMF_WEB_DataProtection__KeyRingPath", "الموقع"],
-                 ["SIMF_EDGE_ReverseProxy__Clusters__api__Destinations__primary__Address", "حافة الجوال"],
-                 ["SIMF_EDGE_ReverseProxy__KnownProxies__0", "حافة الجوال"]]),
-            p("Two of the API's three are encryption keys, and they behave "
+                ["Variable", "Application", "Where it holds"],
+                ["المتغيّر", "التطبيق", "أين تسري"],
+                [["SIMF_API_Jwt__SigningKey", "API", "Every environment"],
+                 ["SIMF_API_ReverseProxy__KnownProxies__0", "API", "Outside development"],
+                 ["SIMF_CP_DataProtection__KeyRingPath", "Control Panel", "Outside development"],
+                 ["SIMF_WEB_DataProtection__KeyRingPath", "Website", "Outside development"],
+                 ["SIMF_EDGE_ReverseProxy__Clusters__api__Destinations__primary__Address", "Mobile edge", "Outside development"],
+                 ["SIMF_EDGE_ReverseProxy__KnownProxies__0", "Mobile edge", "Outside development"],
+                 ["SIMF_API_FileStorage__EncryptionKey", "API", "Production only"],
+                 ["SIMF_API_Storage__UserIdDocumentEncryptionKey", "API", "Production only"],
+                 ["SIMF_API_Ai__PromptHash__Secret", "API", "Production only"],
+                 ["SIMF_API_SuperAdmin__TotpSecret", "API", "Production only"]],
+                [["SIMF_API_Jwt__SigningKey", "واجهة البرمجة", "كل البيئات"],
+                 ["SIMF_API_ReverseProxy__KnownProxies__0", "واجهة البرمجة", "خارج بيئة التطوير"],
+                 ["SIMF_CP_DataProtection__KeyRingPath", "لوحة التحكم", "خارج بيئة التطوير"],
+                 ["SIMF_WEB_DataProtection__KeyRingPath", "الموقع", "خارج بيئة التطوير"],
+                 ["SIMF_EDGE_ReverseProxy__Clusters__api__Destinations__primary__Address", "حافة الجوال", "خارج بيئة التطوير"],
+                 ["SIMF_EDGE_ReverseProxy__KnownProxies__0", "حافة الجوال", "خارج بيئة التطوير"],
+                 ["SIMF_API_FileStorage__EncryptionKey", "واجهة البرمجة", "الإنتاج فقط"],
+                 ["SIMF_API_Storage__UserIdDocumentEncryptionKey", "واجهة البرمجة", "الإنتاج فقط"],
+                 ["SIMF_API_Ai__PromptHash__Secret", "واجهة البرمجة", "الإنتاج فقط"],
+                 ["SIMF_API_SuperAdmin__TotpSecret", "واجهة البرمجة", "الإنتاج فقط"]]),
+            note("One more value stops a boot without being empty. The Control "
+                 "Panel and the Website refuse to start unless their API address "
+                 "is https outside development, and both ship "
+                 "http://localhost:5175/ — so the shipped default is itself a "
+                 "refused boot on any server that is not a development box.",
+                 "وثمّة قيمة أخرى تمنع الإقلاع دون أن تكون فارغة. فلوحة التحكم "
+                 "والموقع يرفضان البدء ما لم يكن عنوان واجهة البرمجة لديهما "
+                 "https خارج بيئة التطوير، وكلاهما يُشحن بـ http://localhost:5175/ — "
+                 "فالقيمة المشحونة نفسها إقلاعٌ مرفوض على أي خادم غير خادم "
+                 "تطوير."),
+            p("Two of the API's gates are encryption keys, and they behave "
               "differently under change. The file-store key wraps a per-file "
               "key, so it has a rotation path in principle — but the job that "
               "finishes a rotation has never been built, so treat it as set "
@@ -337,7 +374,7 @@ def chapter_configuration():
               "changing it strands every encrypted column permanently, with no "
               "way back. Escrow both, with the version number stamped alongside "
               "the file-store key, before the system carries any real data.",
-              "اثنان من مفاتيح واجهة البرمجة الثلاثة مفتاحا تشفير، ويسلكان سلوكًا "
+              "بوابتان من بوابات واجهة البرمجة مفتاحا تشفير، ويسلكان سلوكًا "
               "مختلفًا عند التغيير. فمفتاح مخزن الملفات يغلّف مفتاحًا لكل ملف، فله "
               "من حيث المبدأ مسار تدوير — لكن المهمة التي تُتِمّ التدوير لم تُبنَ "
               "قط، فعامِله على أنه يُضبط مرة واحدة. أما مفتاح وثائق الهوية فلا "
@@ -374,7 +411,7 @@ def api_variable_blocks():
              "empty", "فارغ", R_EN, R_AR),
             ("SIMF_API_ConnectionStrings__SimfAppDb",
              "Everything else — profiles, programme, gates, meetings.",
-             "كل ما عدا ذلك — الملفات والبرنامج والبوابات والاجتماعات.",
+             "كل ما عدا ذلك — الملفات الشخصية والبرنامج والبوابات والاجتماعات.",
              "empty", "فارغ", R_EN, R_AR),
         ]),
         note("Both are required. The application throws on the first database "
@@ -444,10 +481,13 @@ def api_variable_blocks():
              "منع التسلسل.",
              "empty", "فارغ", S_EN, S_AR),
             ("SIMF_API_SuperAdmin__TotpSecret",
-             "Its authenticator secret. Without it the most privileged account "
-             "in the system is protected by a password alone.",
-             "سرّ تطبيق المصادقة الخاص به. وبدونه يكون أعلى حساب صلاحية في النظام "
-             "محميًا بكلمة مرور وحدها.",
+             "Its authenticator secret, and a boot gate: in production the API "
+             "refuses to start without it. Outside production there is no gate, "
+             "and the most privileged account in the system is then protected by "
+             "a password alone.",
+             "سرّ تطبيق المصادقة الخاص به، وهو بوابة إقلاع: ففي الإنتاج ترفض "
+             "واجهة البرمجة البدء بدونه. وخارج الإنتاج لا بوابة، فيكون أعلى "
+             "حساب صلاحية في النظام حينها محميًا بكلمة مرور وحدها.",
              "empty", "فارغ",
              S_EN + " (base32)", S_AR + " (base32)"),
             ("SIMF_API_SuperAdmin__PasswordChangeRequired",
@@ -501,19 +541,25 @@ def api_variable_blocks():
              "حساب — بل لا تصل الرسائل فحسب. فاضبط عناوين التنبيه، واختبر التسليم "
              "بعد كل تغيير."),
         note("An EMPTY mail host is worse than a wrong one, and this was "
-             "observed rather than reasoned about. With no host configured the "
-             "first message to be sent fails in a way the retry logic does not "
-             "catch, the background sender stops for good, and the health check "
-             "reports the API as unhealthy from that moment — while the site "
-             "keeps serving pages normally. If a load balancer is watching that "
-             "endpoint it will take a working server out of rotation because "
-             "nobody filled in an SMTP host.",
+             "observed rather than reasoned about. With no host configured "
+             "every message fails in a way the retry logic treats as permanent, "
+             "so each one is dropped on its first attempt rather than retried. "
+             "The sender itself does not stop — it keeps draining the queue — "
+             "but nothing is delivered, and the health check reports the API as "
+             "unhealthy from that first failure until a send finally succeeds, "
+             "while the site keeps serving pages normally. If a load balancer is "
+             "watching that endpoint it will take a working server out of "
+             "rotation because nobody filled in an SMTP host, and restarting the "
+             "API will not clear it.",
              "أما مضيف البريد الفارغ فأسوأ من الخاطئ، وهذا أمر لوحظ عمليًا لا "
-             "استُنتج. فمع عدم تهيئة أي مضيف تفشل أول رسالة بطريقة لا يلتقطها "
-             "منطق إعادة المحاولة، فيتوقف المرسل الخلفي نهائيًا، ويُبلغ فحص "
-             "السلامة عن اعتلال واجهة البرمجة منذ تلك اللحظة — بينما يواصل الموقع "
-             "تقديم صفحاته بشكل طبيعي. وإذا كان موزّع الأحمال يراقب تلك النقطة "
-             "فسيُخرج خادمًا سليمًا من الخدمة لأن أحدًا لم يملأ مضيف SMTP."),
+             "استُنتج. فمع عدم تهيئة أي مضيف تفشل كل رسالة بطريقة يعدّها منطق "
+             "إعادة المحاولة عطلًا دائمًا، فتُسقَط كل رسالة من محاولتها الأولى "
+             "بلا إعادة. والمرسل نفسه لا يتوقف — بل يواصل تفريغ الطابور — "
+             "لكن لا شيء يصل، ويُبلغ فحص السلامة عن اعتلال واجهة البرمجة منذ "
+             "ذلك الفشل الأول وحتى ينجح إرسال، بينما يواصل الموقع تقديم "
+             "صفحاته بشكل طبيعي. وإذا كان موزّع الأحمال يراقب تلك النقطة "
+             "فسيُخرج خادمًا سليمًا من الخدمة لأن أحدًا لم يملأ مضيف SMTP، ولن "
+             "تُزيل إعادةُ تشغيل واجهة البرمجة ذلك."),
 
         h3("Network and limits", "الشبكة والحدود"),
         env_table([
@@ -632,7 +678,7 @@ def api_variable_blocks():
              "true", "true", "true", "true"),
             ("SIMF_API_IdentityLifecycle__PasswordMaxAgeDays",
              "Expire a password after this many days. Zero means never.",
-             "انتهاء صلاحية كلمة المرور بعد هذا العدد من الأيام. والصفر يعني أبدًا.",
+             "انتهاء صلاحية كلمة المرور بعد هذا العدد من الأيام. والصفر يعني بلا انتهاء.",
              "0", "0", "0", "0"),
             ("SIMF_API_IdentityLifecycle__PasswordHistoryCount",
              "How many previous passwords may not be reused. Zero disables it.",
@@ -640,7 +686,7 @@ def api_variable_blocks():
              "0", "0", "0", "0"),
             ("SIMF_API_IdentityLifecycle__DormantAccountDisableDays",
              "Disable an account unused for this long. Zero means never.",
-             "تعطيل الحساب غير المستخدم هذه المدة. والصفر يعني أبدًا.",
+             "تعطيل الحساب غير المستخدم هذه المدة. والصفر يعني ألّا يُعطَّل أبدًا.",
              "0", "0", "0", "0"),
             ("SIMF_API_DeviceKey__RequireStepUpForEnrol",
              "Demand a second factor before a device key is enrolled.",
@@ -716,9 +762,12 @@ def api_variable_blocks():
              "empty", "فارغ", "The edge address", "عنوان الحافة"),
             ("SIMF_API_MeetingLinks__PublicWebBaseUrl",
              "The site a meeting confirmation link points at. Without it the "
-             "links in those emails go nowhere.",
-             "الموقع الذي يشير إليه رابط تأكيد الاجتماع. وبدونه لا تؤدي روابط تلك "
-             "الرسائل إلى شيء.",
+             "Control Panel refuses the speaker approve and resend actions and "
+             "names this setting in the error — no link is minted and no email "
+             "is sent.",
+             "الموقع الذي يشير إليه رابط تأكيد الاجتماع. وبدونه ترفض لوحة "
+             "التحكم إجراءَي اعتماد المتحدّث وإعادة الإرسال، ويذكر الخطأ هذا "
+             "الإعداد — فلا يُولّد رابط ولا تُرسل رسالة.",
              "empty", "فارغ", "https://web.simrsnf.com", "https://web.simrsnf.com"),
             ("SIMF_API_MeetingLinks__TokenTtlHours",
              "How long such a link stays valid.", "مدة صلاحية ذلك الرابط.",
@@ -823,14 +872,21 @@ def other_host_blocks():
         env_table([
             ("ApiBase",
              "The address the application calls. Must be https and must end in "
-             "the API version path; the build refuses otherwise.",
+             "the API version path; the build refuses otherwise. A bundle built "
+             "without it falls back to a localhost address baked into the app.",
              "العنوان الذي يستدعيه التطبيق. ويجب أن يكون https وأن ينتهي بمسار "
-             "إصدار واجهة البرمجة، وإلا رفض البناء.",
-             "empty", "فارغ",
+             "إصدار واجهة البرمجة، وإلا رفض البناء. والحزمة المبنية بدونه ترجع "
+             "إلى عنوان localhost مدمج داخل التطبيق.",
+             "https://edge.simrsnf.com/api/v1", "https://edge.simrsnf.com/api/v1",
              "https://edge.simrsnf.com/api/v1", "https://edge.simrsnf.com/api/v1"),
-            ("OutDir", "Where the built bundle is written.",
-             "المكان الذي تُكتب فيه الحزمة المبنية.",
-             "empty", "فارغ", "The site folder", "مجلد الموقع"),
+            ("OutDir",
+             "Where the built bundle is written. The script DELETES this folder "
+             "and recreates it on every run, so check the path before the first "
+             "build.",
+             "المكان الذي تُكتب فيه الحزمة المبنية. ويحذف النص هذا المجلد ثم "
+             "ينشئه من جديد في كل تشغيل، فتحقّق من المسار قبل أول بناء.",
+             "D:\\System\\v1.0.1\\appweb", "D:\\System\\v1.0.1\\appweb",
+             "The site folder", "مجلد الموقع"),
             ("AppKey", "The application key, if the gate is in use.",
              "مفتاح التطبيق إن كانت البوابة مستخدمة.",
              "empty", "فارغ", SECRET_EN, SECRET_AR),
@@ -856,13 +912,23 @@ def other_host_blocks():
              "الخوادم.",
              "not set", "غير مضبوط", "Production", "Production"),
         ]),
-        note("Setting this to anything other than Production disables the boot "
-             "gates, turns on the sample-data seeding, and publishes the "
-             "interactive API documentation. It is the single most consequential "
-             "value on the server.",
-             "ضبط هذه القيمة على غير Production يعطّل بوابات الإقلاع، ويفعّل بذر "
-             "البيانات التجريبية، وينشر وثائق واجهة البرمجة التفاعلية. وهي أكثر "
-             "قيمة على الخادم أثرًا على الإطلاق."),
+        note("Setting this to anything other than Production disables the four "
+             "Production-only boot gates — the two encryption keys, the AI "
+             "prompt-hash secret and the super-admin authenticator seed — and "
+             "publishes the interactive API documentation. The other gates key "
+             "off Development rather than Production, so they still hold on a "
+             "Staging server, and nothing anywhere disables the JWT signing-key "
+             "check. Sample-data seeding is a separate rule again: Development "
+             "turns it on, or the Seed switch set deliberately. It is still the "
+             "single most consequential value on the server.",
+             "ضبط هذه القيمة على غير Production يعطّل بوابات الإقلاع الأربع "
+             "الخاصة بالإنتاج — مفتاحَي التشفير، وسرّ بصمة محفّزات الذكاء "
+             "الاصطناعي، وبذرة تطبيق المصادقة للمسؤول الأعلى — وينشر وثائق "
+             "واجهة البرمجة التفاعلية. أما البوابات الأخرى فمرجعها بيئة التطوير "
+             "لا الإنتاج، فتظل سارية على خادم Staging، ولا شيء البتة يعطّل "
+             "التحقق من مفتاح توقيع JWT. وبذر البيانات التجريبية قاعدة منفصلة "
+             "أخرى: تفعّله بيئة التطوير، أو مفتاح Seed إذا ضُبط عمدًا. وتبقى هذه "
+             "أكثر قيمة على الخادم أثرًا على الإطلاق."),
     ]
 
 
@@ -883,19 +949,22 @@ def chapter_observations():
                    "ملحق — ما كشفه إعداد هذا الدليل"),
         "blocks": [
             p("This appendix records what was found while every page was opened "
-              "and every constraint checked against the code. The first two "
-              "groups were CORRECTED in the same change that produced this "
-              "manual, and are kept here because the pattern matters more than "
-              "any single line: a document and the code drift apart silently, "
-              "and the drift is only visible to somebody reading both. The "
-              "third group is behaviour, not error - nothing to fix, but worth "
-              "knowing before it surprises somebody.",
+              "and every constraint checked against the code. Four groups. The "
+              "first and the third were CORRECTED in the same change that "
+              "produced this manual, and are kept here because the pattern "
+              "matters more than any single line: a document and the code drift "
+              "apart silently, and the drift is only visible to somebody reading "
+              "both. The second group is differences with the requirements "
+              "documents, which are recorded here and left for their owners to "
+              "amend. The fourth is behaviour, not error - nothing to fix, but "
+              "worth knowing before it surprises somebody.",
               "يسجّل هذا الملحق ما وُجد أثناء فتح كل صفحة ومقارنة كل قيد بالشيفرة. "
-              "وقد صُحّحت المجموعتان الأوليان في التغيير نفسه الذي أنتج هذا الدليل، "
-              "وأُبقيتا هنا لأن النمط أهم من أي سطر بعينه: فالوثيقة والشيفرة "
-              "تتباعدان بصمت، ولا يرى هذا التباعد إلا من يقرأ الاثنتين معًا. أما "
-              "المجموعة الثالثة فسلوك لا خطأ — لا شيء يُصلَح فيها، لكنها جديرة "
-              "بالمعرفة قبل أن تفاجئ أحدًا."),
+              "وهي أربع مجموعات. صُحّحت الأولى والثالثة في التغيير نفسه الذي أنتج "
+              "هذا الدليل، وأُبقيتا هنا لأن النمط أهم من أي سطر بعينه: فالوثيقة "
+              "والشيفرة تتباعدان بصمت، ولا يرى هذا التباعد إلا من يقرأ الاثنتين "
+              "معًا. أما المجموعة الثانية ففروق مع وثائق المتطلبات، تُسجَّل هنا "
+              "ويُترك تعديلها لمالكيها. والرابعة سلوك لا خطأ — لا شيء يُصلَح فيها، "
+              "لكنها جديرة بالمعرفة قبل أن تفاجئ أحدًا."),
 
             h2("Documents that disagreed with the code — corrected",
                "وثائق كانت تخالف الشيفرة — صُحّحت"),
@@ -934,8 +1003,11 @@ def chapter_observations():
                      "on for that account"],
                 ],
                 [
-                    ["عدة مراجع صفحات تصف حارس الصفحة بأنه تحقق من دور المسؤول",
-                     "الصفحات محروسة بصلاحية مسمّاة لا بدور"],
+                    ["ثلاثة عشر مرجعَ صفحةٍ كانت تصف حارس الصفحة بأنه تحقق من "
+                     "دور المسؤول — لأن القالب الذي نُسخت عنه كان يصفه كذلك، "
+                     "ولهذا ظهر خطأ واحد ثلاث عشرة مرة",
+                     "الصفحات محروسة بصلاحية مسمّاة لا بدور. وصار القالب يقول "
+                     "ذلك ويبيّن السبب"],
                     ["دليل المسؤول يقول إن إجراء التعديل في قائمة المسؤولين "
                      "عنصر نائب لم يُبنَ",
                      "التعديل يفتح محرّر أدوار عاملًا ويحفظ عبر خدمة حيّة"],
@@ -953,6 +1025,82 @@ def chapter_observations():
                      "المهيّأ عند كل تشغيل",
                      "وهو يعيد تطبيقه فقط ما دامت المصادقة الثنائية مفعّلة لذلك "
                      "الحساب"],
+                ]),
+
+            h2("Requirements documents that describe something the system does "
+               "not do — recorded, not corrected",
+               "وثائق متطلبات تصف ما لا يفعله النظام — مسجَّلة لا مصحَّحة"),
+            p("These came out of writing the module chapters. They are "
+              "differences between a controlled requirements document and the "
+              "built system, and unlike the group above they were NOT changed "
+              "here: a requirements document is amended by the person who owns "
+              "it, through the process that governs it, not by the writer of a "
+              "manual. Each is stated in the chapter it belongs to as well, so a "
+              "reader of that chapter is not misled by the document.",
+              "خرجت هذه من كتابة فصول الوحدات. وهي فروق بين وثيقة متطلبات مضبوطة "
+              "والنظام المبني، وخلافًا للمجموعة أعلاه لم تُغيَّر هنا: فوثيقة "
+              "المتطلبات يعدّلها مالكها عبر الإجراء الذي يحكمها، لا كاتب دليل. "
+              "وكلٌّ منها مذكور كذلك في الفصل الذي يخصه، فلا يُضلَّل قارئ ذلك "
+              "الفصل بالوثيقة."),
+            table(
+                ["What the document says", "What the system does"],
+                ["ما تقوله الوثيقة", "ما يفعله النظام"],
+                [
+                    ["FDS-006: sponsor tiers are Strategic, Premium and Gold",
+                     "They are Platinum, Gold, Silver and Bronze, and the Add "
+                     "form opens a new sponsor on Platinum. Exhibitors carry a "
+                     "separate tier list of their own"],
+                    ["FDS-006: the venue map is a three-dimensional isometric "
+                     "floor plan",
+                     "It is a two-dimensional set of labelled points, and the "
+                     "public website shows a static exported image rather than "
+                     "drawing it"],
+                    ["FDS-009: notifications go out over text message and "
+                     "messaging applications as well",
+                     "There are two channels: a notification inside the app and "
+                     "an email. The others were never built"],
+                    ["FDS-010: a news article's category is a managed list",
+                     "It is free text typed on the article, so two articles can "
+                     "carry two spellings of one category"],
+                    ["FDS-010: each previous edition carries its own visibility "
+                     "flag",
+                     "There is one switch for the whole archive, on the "
+                     "Operations page"],
+                    ["FDS-012: a content-block edit shows on the website and the "
+                     "app without a release",
+                     "The app reads content blocks. No shipped website page "
+                     "does"],
+                    ["FDS-012: registration is opened and closed from the System "
+                     "Configuration page",
+                     "It is on the Operations page. The Configuration table "
+                     "ships with the six app-update keys the seeder creates, "
+                     "their values empty, and holds no registration control"],
+                ],
+                [
+                    ["FDS-006: فئات الرعاة استراتيجي وبريميوم وذهبي",
+                     "هي بلاتيني وذهبي وفضي وبرونزي، ويفتح نموذجُ الإضافة "
+                     "الراعيَ الجديد على البلاتيني. وللعارضين قائمة فئات منفصلة "
+                     "خاصة بهم"],
+                    ["FDS-006: خريطة الموقع مخطط مجسَّم ثلاثي الأبعاد",
+                     "هي مجموعة نقاط معنونة ثنائية الأبعاد، والموقع العام يعرض "
+                     "صورة مصدَّرة ثابتة بدل رسمها"],
+                    ["FDS-009: تخرج الإشعارات عبر الرسائل النصية وتطبيقات "
+                     "المراسلة أيضًا",
+                     "القناتان اثنتان: إشعار داخل التطبيق وبريد إلكتروني. ولم "
+                     "تُبنَ الأخريات قط"],
+                    ["FDS-010: تصنيف الخبر قائمة مُدارة",
+                     "هو نص حر يُكتب على المقال، فقد يحمل مقالان صيغتين لتصنيف "
+                     "واحد"],
+                    ["FDS-010: لكل دورة سابقة راية ظهور خاصة بها",
+                     "هناك مفتاح واحد للأرشيف كله في صفحة العمليات"],
+                    ["FDS-012: تعديل كتلة المحتوى يظهر في الموقع والتطبيق بلا "
+                     "إصدار",
+                     "التطبيق يقرأ كتل المحتوى. ولا تقرؤها أي صفحة منشورة في "
+                     "الموقع"],
+                    ["FDS-012: يُفتح التسجيل ويُغلق من صفحة تهيئة النظام",
+                     "بل من صفحة العمليات. ويُشحن جدول التهيئة بمفاتيح تحديث "
+                     "التطبيق الستة التي ينشئها البذّار، وقيمها فارغة، ولا يحمل أي "
+                     "تحكم في التسجيل"],
                 ]),
 
             h2("Wording in the product that no longer matched its behaviour — corrected",
@@ -983,11 +1131,14 @@ def chapter_observations():
             h2("Behaviour worth knowing before it surprises somebody",
                "سلوك يجدر معرفته قبل أن يفاجئ أحدًا"),
             bullets([
-                "With no mail host configured, the background sender stops for "
-                "good the first time it is asked to send, and the health check "
-                "reports the whole API as unhealthy from then on — while every "
-                "page keeps working. Seen during the writing of this manual, "
-                "after creating an account triggered its first notification.",
+                "With no mail host configured, every send fails and each message "
+                "is dropped on its first attempt, so no backlog is waiting to go "
+                "out later — but the sender itself does not stop, it keeps "
+                "draining the queue. The health check reports the whole API as "
+                "unhealthy from that first failure until a send finally "
+                "succeeds, while every page keeps working. Seen during the "
+                "writing of this manual, after creating an account triggered its "
+                "first notification.",
                 "On a fresh installation the organisation logo is absent, so its "
                 "page requests an image that is not there. The page is unharmed; "
                 "the logo simply has not been uploaded yet.",
@@ -997,13 +1148,16 @@ def chapter_observations():
                 "The Arabic and English name fields accept 128 characters in the "
                 "browser and are refused above 50 by the server.",
                 "Walking quickly from page to page exhausts the per-address "
-                "request allowance, because every page fetches the signed-in "
-                "profile for its header. Nothing breaks; the header request is "
-                "refused until the window rolls over.",
+                "request allowance, because the whole Control Panel reaches the "
+                "API from one address and many of its admin calls share the same "
+                "twenty-a-minute window. Nothing breaks; the refused call fails "
+                "until the window rolls over.",
             ], [
-                "مع عدم تهيئة مضيف بريد، يتوقف المرسل الخلفي نهائيًا عند أول "
-                "طلب إرسال، ويُبلغ فحص السلامة عن اعتلال واجهة البرمجة كلها منذ "
-                "تلك اللحظة — بينما تواصل كل الصفحات عملها. لوحظ ذلك أثناء إعداد "
+                "مع عدم تهيئة مضيف بريد، يفشل كل إرسال وتُسقَط كل رسالة من "
+                "محاولتها الأولى، فلا يبقى متراكم ينتظر الخروج لاحقًا — لكن "
+                "المرسل نفسه لا يتوقف، بل يواصل تفريغ الطابور. ويُبلغ فحص "
+                "السلامة عن اعتلال واجهة البرمجة كلها منذ ذلك الفشل الأول وحتى "
+                "ينجح إرسال، بينما تواصل كل الصفحات عملها. لوحظ ذلك أثناء إعداد "
                 "هذا الدليل، بعد أن أطلق إنشاءُ حساب أولَ إشعار له.",
                 "في التثبيت الجديد لا يوجد شعار للجهة، فتطلب صفحته صورة غير "
                 "موجودة. ولا ضرر على الصفحة، فالشعار لم يُرفع بعد فحسب.",
@@ -1011,9 +1165,11 @@ def chapter_observations():
                 "المكتب وحده هو الذي يتخطى التحقق من الصيغة.",
                 "يقبل حقلا الاسم العربي والإنجليزي 128 حرفًا في المتصفح ويرفضهما "
                 "الخادم فوق 50.",
-                "يستنفد التنقل السريع بين الصفحات حصة الطلبات لكل عنوان، لأن كل "
-                "صفحة تجلب ملف المستخدم المسجّل لترويستها. ولا ينكسر شيء، إذ "
-                "يُرفض طلب الترويسة حتى تتجدد النافذة.",
+                "يستنفد التنقل السريع بين الصفحات حصة الطلبات لكل عنوان، لأن "
+                "لوحة التحكم كلها تصل إلى واجهة البرمجة من عنوان واحد، ويتشارك "
+                "كثير من استدعاءاتها الإدارية النافذة نفسها البالغة عشرين طلبًا في "
+                "الدقيقة. ولا ينكسر شيء، إذ يفشل الطلب المرفوض حتى تتجدد "
+                "النافذة.",
             ]),
         ],
     }

@@ -12,13 +12,22 @@ using FileSourceType = SIMF.Common.Enums.FileSourceType;
 namespace SIMF.Infrastructure.Seeding;
 
 /// <summary>
-/// Development / Testing convenience runner that applies the by-hand
-/// 2026 content-seed SQL files (<c>docs/migrations/2026/*.sql</c>) against
-/// <c>SIMF_App</c> so a fresh dev or test database is not empty. The content
-/// lane moved out of the C# seeders into these SQL files;
-/// this runner is the ONLY thing that auto-applies them, and it runs ONLY in
-/// Development and Testing. <b>Production never runs it</b> — production content
-/// is curated and applied by hand (see <c>docs/migrations/2026/README.md</c>).
+/// Applies the 2026 content-seed SQL files (<c>docs/migrations/2026/*.sql</c>)
+/// against <c>SIMF_App</c>. Its ONE remaining caller is the API test fixture,
+/// which uses it to build a populated database for the integration suite.
+///
+/// <para><b>Nothing applies these files as a side effect of starting the API,
+/// in any environment</b> (owner rule, 2026-08-30). It used to run on every
+/// Development boot, which meant a developer's database and a production
+/// database were populated by two different mechanisms and could disagree
+/// without anyone touching a seed file. A fresh Development database now starts
+/// empty of event content until someone runs
+/// <c>docs/migrations/2026/Run_All_App_Seeds.sql</c> — the same one script
+/// production runs.</para>
+///
+/// <para>A test fixture calling this is not the same thing: that is a test
+/// seeding itself deliberately, in-process, against a database it owns and
+/// throws away.</para>
 ///
 /// <para>Idempotent by virtue of the files themselves: every INSERT is guarded
 /// by <c>IF NOT EXISTS</c>, so re-running only inserts what is missing.</para>

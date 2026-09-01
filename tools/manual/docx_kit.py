@@ -106,6 +106,18 @@ def run_rtl(run, rtl):
     _flag(run._r.get_or_add_rPr(), "w:rtl", rtl)
 
 
+def run_bold(run, bold=True):
+    """Bold a run in BOTH scripts.
+
+    ``w:b`` bolds Latin text only. Arabic is complex script and takes its
+    weight from ``w:bCs``, so python-docx's own ``run.bold`` - which writes
+    ``w:b`` alone - bolds the English volume and leaves the Arabic one plain.
+    """
+    r_pr = run._r.get_or_add_rPr()
+    _flag(r_pr, "w:b", bold)
+    _flag(r_pr, "w:bCs", bold)
+
+
 def run_font(run, latin=LATIN_FONT, complex_script=ARABIC_FONT, size_pt=None):
     """Set the Latin AND complex-script face (and size) on one run.
 

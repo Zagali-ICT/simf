@@ -62,17 +62,22 @@ def chapter_changing_accounts():
                  "تعديل الحساب لاحقًا."),
 
             h2("Editing an account", "تعديل الحساب"),
-            p("The edit form is reached from the row actions on any of the "
-              "account lists. It changes the email address, the display name, "
-              "the profile type, the nationality, the two mobile numbers, the "
-              "meeting preferences and the pictures. It does not change the "
+            p("The edit form is reached from the row actions on the visitor and "
+              "partner account lists. It changes the email address, the display "
+              "name, the profile type, the nationality, the two mobile numbers, "
+              "the meeting preferences and the pictures. It does not change the "
               "password — nobody can set another person's password; the account "
-              "resets its own from the sign-in page.",
-              "يُفتح نموذج التعديل من إجراءات الصف في أي من قوائم الحسابات. وهو "
+              "resets its own from the sign-in page. On the administrators list "
+              "the Edit action manages that administrator's roles instead — an "
+              "administrator's details cannot be edited from the account lists "
+              "at all.",
+              "يُفتح نموذج التعديل من إجراءات الصف في قائمتَي الزوار والشركاء. وهو "
               "يغيّر البريد الإلكتروني والاسم المعروض ونوع الملف والجنسية ورقمَي "
               "الجوال وتفضيلات الاجتماعات والصور. ولا يغيّر كلمة المرور — إذ لا "
               "يستطيع أحد ضبط كلمة مرور شخص آخر؛ فالحساب يعيد ضبطها بنفسه من صفحة "
-              "تسجيل الدخول."),
+              "تسجيل الدخول. أما في قائمة المسؤولين فيدير إجراء التعديل أدوار ذلك "
+              "المسؤول بدلًا من ذلك — فبيانات المسؤول لا تُعدَّل من قوائم الحسابات "
+              "إطلاقًا."),
             note("For a partner or staff account the profile type is required, "
                  "and the form will not save without one. For a visitor it is "
                  "optional.",
@@ -93,11 +98,15 @@ def chapter_changing_accounts():
             h2("Resetting a lost second factor", "إعادة تعيين عامل ثانٍ مفقود"),
             p("When somebody loses the phone holding their authenticator, and "
               "has no recovery code left, an administrator clears the second "
-              "factor from Reset user 2FA. The person then pairs a new "
-              "authenticator on their next sign-in.",
+              "factor from Reset user 2FA. A Control Panel account is then held "
+              "at its next sign-in until it pairs a new authenticator. A visitor "
+              "or partner signs in on their password alone, and pairs a new "
+              "authenticator from their own profile page whenever they choose.",
               "عند فقدان شخص للهاتف الذي يحمل تطبيق المصادقة، ولم يبقَ لديه رمز "
               "استرداد، يمسح المسؤول العامل الثاني من صفحة إعادة تعيين المصادقة "
-              "الثنائية. ثم يقرن الشخص تطبيق مصادقة جديدًا عند تسجيل دخوله التالي."),
+              "الثنائية. ثم يُوقَف حساب لوحة التحكم عند تسجيل دخوله التالي حتى يقرن "
+              "تطبيق مصادقة جديدًا. أما الزائر أو الشريك فيسجّل دخوله بكلمة المرور "
+              "وحدها، ويقرن تطبيق مصادقة جديدًا من صفحة ملفه الشخصي متى شاء."),
             figure("cp-admin-reset-2fa-default",
                    "Resetting a user's second factor.",
                    "إعادة تعيين العامل الثاني لمستخدم."),
@@ -120,12 +129,15 @@ def chapter_changing_accounts():
 
             h2("Withdrawing access", "سحب الوصول"),
             p("Delete on an account list is not a deletion. It disables the "
-              "account, revokes its sessions and notifies the person by email. "
+              "account, revokes its sessions and withdraws its admission. "
               "The row action and the bulk action open the same dialog, which "
-              "asks for an audited reason of 10 to 500 characters.",
+              "asks for an audited reason of 10 to 500 characters. **The dialog "
+              "says the people are notified by email; no such email is sent, so "
+              "do not promise one.**",
               "زر الحذف في قوائم الحسابات ليس حذفًا. فهو يعطّل الحساب ويُبطل جلساته "
-              "ويُشعر الشخص بالبريد الإلكتروني. ويفتح إجراء الصف والإجراء الجماعي "
-              "النافذة نفسها التي تطلب سببًا مُدوَّنًا من 10 إلى 500 حرف."),
+              "ويسحب اعتماده. ويفتح إجراء الصف والإجراء الجماعي النافذة نفسها "
+              "التي تطلب سببًا مُدوَّنًا من 10 إلى 500 حرف. **وتقول النافذة إنه يجري "
+              "إشعار الأشخاص بالبريد الإلكتروني، ولا يُرسَل أي بريد، فلا تَعِد به.**"),
             note("Your own row is skipped if you include it, and the result "
                  "reports it as skipped rather than failing — so a bulk action "
                  "that reports one fewer than you selected is usually this.",
@@ -148,7 +160,7 @@ def chapter_roles():
               "Administrator role holds a wildcard that grants everything.",
               "يُحدَّد ما يستطيع المسؤول رؤيته وفعله بالصلاحيات، وتُمنح الصلاحيات "
               "للأدوار لا للأشخاص أبدًا. ولمنح شخص قدرةً ما تضعه في دور يملكها. "
-              "هذا هو النموذج كله، وله استثناء واحد مقصود: دور المسؤول العام يحمل "
+              "هذا هو النموذج كله، وله استثناء واحد مقصود: دور Administrator يحمل "
               "رمزًا شاملًا يمنح كل شيء."),
 
             h2("Permission names", "أسماء الصلاحيات"),
@@ -165,13 +177,11 @@ def chapter_roles():
               "الصفحات في هذا الدليل معًا."),
             note("A button is gated by the permission of the endpoint it calls, "
                  "which is not always the page's own. On a page holding two "
-                 "grids over two different things they differ, and on the "
-                 "partner queue the bulk approve and the per-row approve are "
-                 "gated separately because the server gates them separately.",
+                 "grids over two different things they differ, so read the "
+                 "permission off the action, not off the page.",
                  "يُحرس الزر بصلاحية الخدمة التي يستدعيها، وهي ليست دائمًا صلاحية "
-                 "الصفحة نفسها. ففي صفحة تحوي جدولين لشيئين مختلفين تختلفان، وفي "
-                 "قائمة الشركاء يُحرس الاعتماد الجماعي والاعتماد لكل صف كل على "
-                 "حدة لأن الخادم يحرسهما كذلك."),
+                 "الصفحة نفسها. ففي صفحة تحوي جدولين لشيئين مختلفين تختلفان، "
+                 "فاقرأ الصلاحية من الإجراء لا من الصفحة."),
 
             h2("Creating a role", "إنشاء دور"),
             p("Open Roles and permissions and use Add. A role needs only a name, "
@@ -225,7 +235,7 @@ def chapter_roles():
                 "somebody who may add administrators cannot silently make one "
                 "powerful.",
             ], [
-                "لا يمكن نزع دور المسؤول العام عن آخر مسؤول. فالنظام يرفض ذلك "
+                "لا يمكن نزع دور Administrator عن آخر مسؤول. فالنظام يرفض ذلك "
                 "بدلًا من أن يترك نفسه بلا من يديره.",
                 "لا يمكن حذف دور لا يزال أحد يحمله؛ وتذكر رسالة الخطأ عدد من "
                 "يحملونه.",
