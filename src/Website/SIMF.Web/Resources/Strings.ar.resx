@@ -386,6 +386,8 @@
   <data name="Privacy.Delete.Body1" xml:space="preserve"><value>يمكنك حذف حسابك في تطبيق الملتقى البحري السعودي الدولي في أي وقت ومن داخل التطبيق نفسه: افتح "منطقتي"، ثم اختر "حذف الحساب"، ثم أكّد العملية.</value></data>
   <data name="Privacy.Delete.Body2" xml:space="preserve"><value>عند حذف الحساب نقوم بمسح بياناتك الشخصية من ملفك الشخصي، وإتلاف صورك ووثيقة هويتك المرفوعة، وإلغاء جميع جلساتك وأجهزتك المسجلة، وتعطيل الحساب نهائيًا. العملية غير قابلة للتراجع. ونحتفظ فقط بالحد الأدنى من سجل عملية الحذف نفسها للامتثال للالتزامات القانونية والتدقيق الأمني.</value></data>
   <data name="Privacy.Delete.Body3" xml:space="preserve"><value>إذا لم تتمكن من الوصول إلى التطبيق، يمكنك طلب حذف حسابك وبياناتك بمراسلتنا عبر البريد الإلكتروني:</value></data>
+  <data name="Privacy.Delete.RequestLink" xml:space="preserve"><value>طلب حذف الحساب والبيانات عبر البريد الإلكتروني</value></data>
+  <data name="Privacy.Delete.EmailSubject" xml:space="preserve"><value>طلب حذف حساب SIMF</value></data>
   <data name="Privacy.Changes.Title" xml:space="preserve"><value>التعديلات على سياسة الخصوصية</value></data>
   <data name="Privacy.Changes.Body" xml:space="preserve"><value>قد نقوم بتحديث سياسة الخصوصية هذه من وقت لآخر. وسنخطرك بأي تغييرات جوهرية من خلال تحديث تاريخ "آخر تحديث" الموضح أعلاه في هذه السياسة.</value></data>
   <data name="Privacy.Contact.Title" xml:space="preserve"><value>التواصل معنا</value></data>

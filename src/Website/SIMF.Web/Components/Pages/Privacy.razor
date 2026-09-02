@@ -82,6 +82,9 @@
                     @L["Privacy.Delete.Body3"]
                     <a class="ln-legal__mail" href="mailto:@ContactEmail">@ContactEmail</a>
                 </p>
+                <p class="ln-legal__p">
+                    <a class="ln-legal__mail" href="@DeleteRequestHref">@L["Privacy.Delete.RequestLink"]</a>
+                </p>
 
                 <h2 class="ln-legal__h2">@L["Privacy.Changes.Title"]</h2>
                 <p class="ln-legal__p">@L["Privacy.Changes.Body"]</p>
@@ -103,4 +106,7 @@
     // policy prints an address, so changing the published contact is a two-line
     // edit (Strings.resx + Strings.ar.resx) rather than a hunt through markup.
     private string ContactEmail => L["Privacy.Contact.Email"].Value;
+
+    private string DeleteRequestHref =>
+        $"mailto:{ContactEmail}?subject={Uri.EscapeDataString(L["Privacy.Delete.EmailSubject"].Value)}";
 }
