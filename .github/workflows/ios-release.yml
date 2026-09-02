@@ -56,66 +56,70 @@ jobs:
           "${flutter_home}/bin/flutter" --version
           "${flutter_home}/bin/flutter" precache --ios
 
-      - name: Install code signing tools
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 -m pip install --user codemagic-cli-tools
-          echo "$(python3 -m site --user-base)/bin" >> "${GITHUB_PATH}"
-
-      - name: Fetch Apple signing assets
+      - name: Install Apple signing assets
         shell: bash
         env:
-          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
-          APP_STORE_CONNECT_API_KEY_P8_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_P8_BASE64 }}
-          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          IOS_DISTRIBUTION_CERTIFICATE_BASE64: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_BASE64 }}
+          IOS_DISTRIBUTION_CERTIFICATE_PASSWORD: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_PASSWORD }}
+          IOS_PROVISION_PROFILE_BASE64: ${{ secrets.IOS_PROVISION_PROFILE_BASE64 }}
         run: |
           set -euo pipefail
 
-          : "${APP_STORE_CONNECT_API_KEY_ID:?Missing GitHub secret APP_STORE_CONNECT_API_KEY_ID}"
-          : "${APP_STORE_CONNECT_API_KEY_P8_BASE64:?Missing GitHub secret APP_STORE_CONNECT_API_KEY_P8_BASE64}"
-          : "${APP_STORE_CONNECT_ISSUER_ID:?Missing GitHub secret APP_STORE_CONNECT_ISSUER_ID}"
+          : "${APPLE_TEAM_ID:?Missing GitHub secret APPLE_TEAM_ID}"
+          : "${IOS_DISTRIBUTION_CERTIFICATE_BASE64:?Missing GitHub secret IOS_DISTRIBUTION_CERTIFICATE_BASE64}"
+          : "${IOS_DISTRIBUTION_CERTIFICATE_PASSWORD:?Missing GitHub secret IOS_DISTRIBUTION_CERTIFICATE_PASSWORD}"
+          : "${IOS_PROVISION_PROFILE_BASE64:?Missing GitHub secret IOS_PROVISION_PROFILE_BASE64}"
 
-          asc_key_path="${RUNNER_TEMP}/AuthKey_${APP_STORE_CONNECT_API_KEY_ID}.p8"
-          certificate_key_path="${RUNNER_TEMP}/simf-apple-certificate.key"
+          certificate_path="${RUNNER_TEMP}/simf-distribution.p12"
+          profile_path="${RUNNER_TEMP}/simf-appstore.mobileprovision"
+          profile_plist="${RUNNER_TEMP}/simf-appstore.plist"
+          keychain_path="${RUNNER_TEMP}/simf-signing.keychain-db"
+          keychain_password="$(uuidgen)"
 
-          export ASC_KEY_PATH="${asc_key_path}"
+          export CERTIFICATE_PATH="${certificate_path}"
+          export PROFILE_PATH="${profile_path}"
           python3 - <<'PY'
           import base64
           import os
           from pathlib import Path
 
-          Path(os.environ["ASC_KEY_PATH"]).write_bytes(
-              base64.b64decode(os.environ["APP_STORE_CONNECT_API_KEY_P8_BASE64"])
+          Path(os.environ["CERTIFICATE_PATH"]).write_bytes(
+              base64.b64decode(os.environ["IOS_DISTRIBUTION_CERTIFICATE_BASE64"])
+          )
+          Path(os.environ["PROFILE_PATH"]).write_bytes(
+              base64.b64decode(os.environ["IOS_PROVISION_PROFILE_BASE64"])
           )
           PY
 
-          openssl genrsa -out "${certificate_key_path}" 2048
-          chmod 600 "${asc_key_path}" "${certificate_key_path}"
+          security create-keychain -p "${keychain_password}" "${keychain_path}"
+          security set-keychain-settings -lut 21600 "${keychain_path}"
+          security unlock-keychain -p "${keychain_password}" "${keychain_path}"
+          security import "${certificate_path}" \
+            -P "${IOS_DISTRIBUTION_CERTIFICATE_PASSWORD}" \
+            -A \
+            -t cert \
+            -f pkcs12 \
+            -k "${keychain_path}"
+          security set-key-partition-list \
+            -S apple-tool:,apple:,codesign: \
+            -s \
+            -k "${keychain_password}" \
+            "${keychain_path}"
+          security list-keychains -d user -s "${keychain_path}"
+          security default-keychain -s "${keychain_path}"
 
-          keychain initialize
-          app-store-connect fetch-signing-files "${APP_IDENTIFIER}" \
-            --type IOS_APP_STORE \
-            --strict-match-identifier \
-            --create \
-            --key-id "${APP_STORE_CONNECT_API_KEY_ID}" \
-            --issuer-id "${APP_STORE_CONNECT_ISSUER_ID}" \
-            --private-key "@file:${asc_key_path}" \
-            --certificate-key "@file:${certificate_key_path}"
-          keychain add-certificates
+          security cms -D -i "${profile_path}" > "${profile_plist}"
+          profile_uuid="$(/usr/libexec/PlistBuddy -c 'Print UUID' "${profile_plist}")"
+          profile_name="$(/usr/libexec/PlistBuddy -c 'Print Name' "${profile_plist}")"
 
-          export_options_plist="${RUNNER_TEMP}/ExportOptions.plist"
-          cd "${FLUTTER_APP}"
-          xcode-project use-profiles \
-            --project ios/Runner.xcodeproj \
-            --archive-method app-store \
-            --export-options-plist "${export_options_plist}" \
-            --custom-export-options '{"method":"app-store-connect","uploadBitcode":false,"uploadSymbols":true}' \
-            --code-signing-setup-verbose-logging
+          mkdir -p "${HOME}/Library/MobileDevice/Provisioning Profiles"
+          cp "${profile_path}" "${HOME}/Library/MobileDevice/Provisioning Profiles/${profile_uuid}.mobileprovision"
 
-          echo "EXPORT_OPTIONS_PLIST=${export_options_plist}" >> "${GITHUB_ENV}"
-          echo "ASC_KEY_PATH=${asc_key_path}" >> "${GITHUB_ENV}"
-          echo "CERTIFICATE_KEY_PATH=${certificate_key_path}" >> "${GITHUB_ENV}"
+          echo "APPLE_TEAM_ID=${APPLE_TEAM_ID}" >> "${GITHUB_ENV}"
+          echo "IOS_PROFILE_NAME=${profile_name}" >> "${GITHUB_ENV}"
+          echo "IOS_PROFILE_UUID=${profile_uuid}" >> "${GITHUB_ENV}"
+          echo "IOS_KEYCHAIN_PATH=${keychain_path}" >> "${GITHUB_ENV}"
 
       - name: Write release configuration
         shell: bash
@@ -132,8 +136,18 @@ jobs:
           set -euo pipefail
 
           : "${SIMF_APP_KEY:?Missing GitHub secret SIMF_APP_KEY}"
+          : "${APPLE_TEAM_ID:?Missing APPLE_TEAM_ID from signing step}"
+          : "${IOS_PROFILE_NAME:?Missing IOS_PROFILE_NAME from signing step}"
 
           cd "${FLUTTER_APP}"
+
+          cat > ios/Flutter/Signing.xcconfig <<CFG
+          DEVELOPMENT_TEAM = ${APPLE_TEAM_ID}
+          CODE_SIGN_STYLE = Manual
+          CODE_SIGN_IDENTITY = Apple Distribution
+          CODE_SIGN_IDENTITY[sdk=iphoneos*] = Apple Distribution
+          PROVISIONING_PROFILE_SPECIFIER = ${IOS_PROFILE_NAME}
+          CFG
 
           export DEFINES_FILE="${RUNNER_TEMP}/simf-defines.json"
           python3 - <<'PY'
@@ -171,12 +185,27 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-
-          : "${EXPORT_OPTIONS_PLIST:?Missing ExportOptions.plist from signing step}"
-
           cd "${FLUTTER_APP}"
+
+          export_plist="${RUNNER_TEMP}/ExportOptions.plist"
+          cat > "${export_plist}" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>teamID</key><string>${APPLE_TEAM_ID}</string>
+            <key>signingStyle</key><string>manual</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>${APP_IDENTIFIER}</key><string>${IOS_PROFILE_NAME}</string>
+            </dict>
+          </dict>
+          </plist>
+          PLIST
+
           flutter build ipa --release \
-            --export-options-plist="${EXPORT_OPTIONS_PLIST}" \
+            --export-options-plist="${export_plist}" \
             --dart-define-from-file="${RUNNER_TEMP}/simf-defines.json"
 
       - name: Package dSYMs
@@ -241,10 +270,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          rm -f "${RUNNER_TEMP}/simf-defines.json" \
-                "${EXPORT_OPTIONS_PLIST:-}" \
-                "${ASC_KEY_PATH:-}" \
-                "${CERTIFICATE_KEY_PATH:-}"
-          if command -v keychain >/dev/null 2>&1; then
-            keychain use-login || true
+          rm -f "${RUNNER_TEMP}/simf-distribution.p12" \
+                "${RUNNER_TEMP}/simf-appstore.mobileprovision" \
+                "${RUNNER_TEMP}/simf-appstore.plist" \
+                "${RUNNER_TEMP}/simf-defines.json" \
+                "${RUNNER_TEMP}/ExportOptions.plist"
+          if [ -n "${IOS_PROFILE_UUID:-}" ]; then
+            rm -f "${HOME}/Library/MobileDevice/Provisioning Profiles/${IOS_PROFILE_UUID}.mobileprovision"
+          fi
+          if [ -n "${IOS_KEYCHAIN_PATH:-}" ]; then
+            security delete-keychain "${IOS_KEYCHAIN_PATH}" || true
           fi
