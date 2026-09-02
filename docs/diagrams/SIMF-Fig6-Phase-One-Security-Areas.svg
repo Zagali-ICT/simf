@@ -47,7 +47,7 @@
 <text x="1297" y="507" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#6B7280" text-anchor="end">published entry point</text>
 <rect x="565" y="518" width="300" height="72" rx="3" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
 <text x="715.0" y="539" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#6B7280" text-anchor="middle">«device»</text>
-<text x="715.0" y="558" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#1A1A1A" font-weight="600" text-anchor="middle">WAF and load balancer</text>
+<text x="715.0" y="558" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#1A1A1A" font-weight="600" text-anchor="middle">WAF and load balancer   x 2</text>
 <text x="715.0" y="575" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">TLS terminates here</text>
 <rect x="58" y="634" width="1327" height="222" rx="4" fill="#F7F8FA" stroke="#6B7280" stroke-width="1.2" stroke-dasharray="7 4"/>
 <text x="146" y="657" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="16.5" fill="#1A1A1A" font-weight="700" text-anchor="start">Presentation zone</text>
@@ -56,13 +56,14 @@
 <polygon points="476,680 489,667 489,831 476,844" fill="#D3DDE8" stroke="#1A1A1A" stroke-width="1.3"/>
 <rect x="176" y="680" width="300" height="164" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
 <text x="326.0" y="700" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#6B7280" text-anchor="middle">«server»</text>
-<text x="326.0" y="720" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="15" fill="#1A1A1A" font-weight="600" text-anchor="middle">EDGE API</text>
+<text x="326.0" y="720" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="15" fill="#1A1A1A" font-weight="600" text-anchor="middle">EDGE API   x 2</text>
 <line x1="186" y1="730" x2="466" y2="730" stroke="#9CA3AF" stroke-width="1"/>
 <text x="326.0" y="746" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">Windows Server 2022</text>
-<text x="326.0" y="761" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">specification to be</text>
-<text x="326.0" y="776" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">confirmed with the site</text>
-<line x1="186" y1="780" x2="466" y2="780" stroke="#9CA3AF" stroke-width="1"/>
-<text x="326.0" y="792" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">«artifact»  SIMF.MobileEdge</text>
+<text x="326.0" y="761" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">16 GB RAM, 8 vCPU</text>
+<text x="326.0" y="776" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">100 GB storage</text>
+<text x="326.0" y="791" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">proposed minimum</text>
+<line x1="186" y1="795" x2="466" y2="795" stroke="#9CA3AF" stroke-width="1"/>
+<text x="326.0" y="807" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">«artifact»  SIMF.MobileEdge</text>
 <polygon points="565,680 578,667 878,667 865,680" fill="#D3DDE8" stroke="#1A1A1A" stroke-width="1.3"/>
 <polygon points="865,680 878,667 878,831 865,844" fill="#D3DDE8" stroke="#1A1A1A" stroke-width="1.3"/>
 <rect x="565" y="680" width="300" height="164" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
@@ -89,12 +90,12 @@
 <text x="1104.0" y="807" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">«artifact»  SIMF.ControlPanel</text>
 <rect x="58" y="908" width="1327" height="30" fill="url(#brick)" stroke="#1A1A1A" stroke-width="1.3"/>
 <rect x="40" y="962" width="1363" height="704" rx="6" fill="none" stroke="#1A1A1A" stroke-width="2"/>
-<rect x="58" y="996" width="1327" height="332" rx="4" fill="#F7F8FA" stroke="#6B7280" stroke-width="1.2" stroke-dasharray="7 4"/>
-<text x="146" y="1019" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="16.5" fill="#1A1A1A" font-weight="700" text-anchor="start">Application zone</text>
+<rect x="58" y="996" width="1327" height="652" rx="4" fill="#F7F8FA" stroke="#6B7280" stroke-width="1.2" stroke-dasharray="7 4"/>
+<text x="146" y="1019" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="16.5" fill="#1A1A1A" font-weight="700" text-anchor="start">HSA zone</text>
 <text x="1297" y="1019" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#6B7280" text-anchor="end">Windows Server 2022</text>
 <rect x="565" y="1030" width="300" height="72" rx="3" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
 <text x="715.0" y="1051" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#6B7280" text-anchor="middle">«device»</text>
-<text x="715.0" y="1070" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#1A1A1A" font-weight="600" text-anchor="middle">API load balancer</text>
+<text x="715.0" y="1070" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#1A1A1A" font-weight="600" text-anchor="middle">API load balancer   x 2</text>
 <text x="715.0" y="1087" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">distributes to the API nodes</text>
 <polygon points="176,1148 189,1135 489,1135 476,1148" fill="#D3DDE8" stroke="#1A1A1A" stroke-width="1.3"/>
 <polygon points="476,1148 489,1135 489,1299 476,1312" fill="#D3DDE8" stroke="#1A1A1A" stroke-width="1.3"/>
@@ -102,12 +103,10 @@
 <text x="326.0" y="1168" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#6B7280" text-anchor="middle">«server»</text>
 <text x="326.0" y="1188" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="15" fill="#1A1A1A" font-weight="600" text-anchor="middle">LLM SERVER</text>
 <line x1="186" y1="1198" x2="466" y2="1198" stroke="#9CA3AF" stroke-width="1"/>
-<text x="326.0" y="1214" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">Windows Server 2022</text>
-<text x="326.0" y="1229" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">specification to be</text>
-<text x="326.0" y="1244" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">confirmed with the site</text>
-<line x1="186" y1="1248" x2="466" y2="1248" stroke="#9CA3AF" stroke-width="1"/>
-<text x="326.0" y="1260" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">«artifact»  GPT OSS 120B</text>
-<text x="326.0" y="1275" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">«artifact»  OpenAI-compatible API</text>
+<text x="326.0" y="1214" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">Provided by SITE</text>
+<line x1="186" y1="1218" x2="466" y2="1218" stroke="#9CA3AF" stroke-width="1"/>
+<text x="326.0" y="1230" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">«artifact»  GPT OSS 120B</text>
+<text x="326.0" y="1245" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">«artifact»  OpenAI-compatible API</text>
 <polygon points="565,1148 578,1135 878,1135 865,1148" fill="#D3DDE8" stroke="#1A1A1A" stroke-width="1.3"/>
 <polygon points="865,1148 878,1135 878,1299 865,1312" fill="#D3DDE8" stroke="#1A1A1A" stroke-width="1.3"/>
 <rect x="565" y="1148" width="300" height="164" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
@@ -126,15 +125,9 @@
 <text x="1104.0" y="1168" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#6B7280" text-anchor="middle">«server»</text>
 <text x="1104.0" y="1188" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="15" fill="#1A1A1A" font-weight="600" text-anchor="middle">MAIL SERVER</text>
 <line x1="964" y1="1198" x2="1244" y2="1198" stroke="#9CA3AF" stroke-width="1"/>
-<text x="1104.0" y="1214" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">Windows Server 2022</text>
-<text x="1104.0" y="1229" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">specification to be</text>
-<text x="1104.0" y="1244" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">confirmed with the site</text>
-<line x1="964" y1="1248" x2="1244" y2="1248" stroke="#9CA3AF" stroke-width="1"/>
-<text x="1104.0" y="1260" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">«artifact»  On-site SMTP relay</text>
-<rect x="58" y="1362" width="1327" height="30" fill="url(#brick)" stroke="#1A1A1A" stroke-width="1.3"/>
-<rect x="58" y="1426" width="1327" height="222" rx="4" fill="#F7F8FA" stroke="#6B7280" stroke-width="1.2" stroke-dasharray="7 4"/>
-<text x="146" y="1449" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="16.5" fill="#1A1A1A" font-weight="700" text-anchor="start">Data zone</text>
-<text x="1297" y="1449" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#6B7280" text-anchor="end">Windows Server 2022</text>
+<text x="1104.0" y="1214" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">Provided by SITE</text>
+<line x1="964" y1="1218" x2="1244" y2="1218" stroke="#9CA3AF" stroke-width="1"/>
+<text x="1104.0" y="1230" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">«artifact»  On-site SMTP relay</text>
 <polygon points="565,1472 578,1459 878,1459 865,1472" fill="#D3DDE8" stroke="#1A1A1A" stroke-width="1.3"/>
 <polygon points="865,1472 878,1459 878,1614 865,1627" fill="#D3DDE8" stroke="#1A1A1A" stroke-width="1.3"/>
 <rect x="565" y="1472" width="300" height="155" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
@@ -151,14 +144,15 @@
 <polygon points="1254,1472 1267,1459 1267,1614 1254,1627" fill="#D3DDE8" stroke="#1A1A1A" stroke-width="1.3"/>
 <rect x="954" y="1472" width="300" height="155" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
 <text x="1104.0" y="1492" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#6B7280" text-anchor="middle">«server»</text>
-<text x="1104.0" y="1512" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="15" fill="#1A1A1A" font-weight="600" text-anchor="middle">MinIO</text>
+<text x="1104.0" y="1512" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="15" fill="#1A1A1A" font-weight="600" text-anchor="middle">MinIO   x 2</text>
 <line x1="964" y1="1522" x2="1244" y2="1522" stroke="#9CA3AF" stroke-width="1"/>
 <text x="1104.0" y="1538" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">Windows Server 2022</text>
-<text x="1104.0" y="1553" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">specification to be</text>
-<text x="1104.0" y="1568" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">confirmed with the site</text>
-<line x1="964" y1="1572" x2="1244" y2="1572" stroke="#9CA3AF" stroke-width="1"/>
-<text x="1104.0" y="1584" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">«artifact»  Object storage, S3 API</text>
-<text x="1104.0" y="1599" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">«artifact»  Stored files</text>
+<text x="1104.0" y="1553" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">16 GB RAM, 8 vCPU</text>
+<text x="1104.0" y="1568" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">4 TB storage</text>
+<text x="1104.0" y="1583" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">proposed minimum</text>
+<line x1="964" y1="1587" x2="1244" y2="1587" stroke="#9CA3AF" stroke-width="1"/>
+<text x="1104.0" y="1599" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">«artifact»  Object storage, S3 API</text>
+<text x="1104.0" y="1614" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">«artifact»  Stored files</text>
 <path d="M 326 392 L 326 502 L 615 502 L 615 518" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
 <rect x="294.5725" y="410.4" width="62.855000000000004" height="11.3" fill="#FFFFFF" stroke="none"/>
 <text x="326" y="419" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">HTTPS 443</text>
@@ -199,8 +193,8 @@
 <rect x="887.62" y="1224.4" width="56.760000000000005" height="11.3" fill="#FFFFFF" stroke="none"/>
 <text x="916" y="1233" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">SMTP 587</text>
 <path d="M 680 1312 L 680 1472" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
-<rect x="651.62" y="1332.4" width="56.760000000000005" height="11.3" fill="#FFFFFF" stroke="none"/>
-<text x="680" y="1341" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">TCP 1433</text>
+<rect x="651.62" y="1376.4" width="56.760000000000005" height="11.3" fill="#FFFFFF" stroke="none"/>
+<text x="680" y="1385" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">TCP 1433</text>
 <path d="M 750 1312 L 750 1406 L 1104 1406 L 1104 1472" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
 <rect x="886.43" y="1390.4" width="81.14" height="11.3" fill="#FFFFFF" stroke="none"/>
 <text x="927" y="1399" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">S3 HTTPS 443</text>
@@ -218,47 +212,52 @@
 <text x="1533" y="239" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="start">Firewall, with the traffic it permits</text>
 <path d="M 1489 256 H 1517" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
 <text x="1533" y="260" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="start">Communication path, labelled with protocol and port</text>
-<rect x="1473" y="294" width="420" height="106" rx="3" fill="#FFFFFF" stroke="#6B7280" stroke-width="1.2"/>
+<rect x="1473" y="294" width="420" height="123" rx="3" fill="#FFFFFF" stroke="#6B7280" stroke-width="1.2"/>
 <text x="1487" y="315" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="13" fill="#1A1A1A" font-weight="600" text-anchor="start">Security areas</text>
 <text x="1487" y="335" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">SSA holds the access, perimeter and presentation</text>
 <text x="1487" y="352" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">zones, and is the area that reaches the internet.</text>
-<text x="1487" y="369" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">HSA holds the application and data zones, and</text>
-<text x="1487" y="386" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">carries internal traffic only.</text>
-<rect x="1473" y="424" width="420" height="208" rx="3" fill="#FFFFFF" stroke="#6B7280" stroke-width="1.2"/>
-<text x="1487" y="445" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="13" fill="#1A1A1A" font-weight="600" text-anchor="start">Phase one, on site</text>
-<text x="1487" y="465" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">Phase one puts every service that holds or</text>
-<text x="1487" y="482" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">processes SIMF data inside HSA: the API, the AI</text>
-<text x="1487" y="499" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">model, the mail relay and the file store.</text>
-<text x="1487" y="516" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">The AI runs on the SITE-hosted GPT OSS 120B model on an</text>
-<text x="1487" y="533" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">on-site LLM server, reached over an OpenAI-compatible</text>
-<text x="1487" y="550" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">API. Mail goes to an on-site SMTP relay.</text>
-<text x="1487" y="567" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">Files are written to MinIO object storage over the</text>
-<text x="1487" y="584" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">S3 API, in place of a directory on a file share.</text>
-<text x="1487" y="601" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">One internet call remains, and the Control Panel</text>
-<text x="1487" y="618" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">makes it: the caption fetch to YouTube.</text>
-<rect x="1473" y="1271" width="420" height="395" rx="3" fill="#FFFFFF" stroke="#6B7280" stroke-width="1.2"/>
-<text x="1487" y="1292" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="13" fill="#1A1A1A" font-weight="600" text-anchor="start">Sources</text>
-<text x="1487" y="1312" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">Node counts and specifications: customer server</text>
-<text x="1487" y="1329" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">requirements workbook, sheet List.</text>
-<text x="1487" y="1346" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">Mobile distribution channels: same workbook,</text>
-<text x="1487" y="1363" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">sheet NEW1.</text>
-<text x="1487" y="1380" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">Deployed artifact names: SIMF solution source tree.</text>
-<text x="1487" y="1397" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">Zone model, firewalls and WAF: SIMF-HLD-004 as</text>
-<text x="1487" y="1414" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">delivered.</text>
-<text x="1487" y="1431" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">The mobile edge, the file server and the application</text>
-<text x="1487" y="1448" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">zone holding the API alone are owner decisions of</text>
-<text x="1487" y="1465" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">2026-08-10.</text>
-<text x="1487" y="1482" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">The security areas, the API load balancer and the</text>
-<text x="1487" y="1499" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">internet zone are owner decisions of 2026-08-20.</text>
-<text x="1487" y="1516" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">The API in HSA, the on-site LLM server, the on-site</text>
-<text x="1487" y="1533" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">mail server, MinIO in place of a file share, and the</text>
-<text x="1487" y="1550" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">YouTube call moving to the Control Panel are a</text>
-<text x="1487" y="1567" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">customer requirement of 2026-08-30.</text>
-<text x="1487" y="1584" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">SMTP port 587: the EmailOptions.Port default.</text>
-<text x="1487" y="1601" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">YouTube caption host: YoutubeTranscriptService.cs.</text>
-<text x="1487" y="1618" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">The workbook lists none of the edge, LLM, mail,</text>
-<text x="1487" y="1635" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">MinIO or load balancer servers, so no count or</text>
-<text x="1487" y="1652" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">specification is stated for them.</text>
+<text x="1487" y="369" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">HSA holds one zone and carries internal traffic</text>
+<text x="1487" y="386" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">only. There is no firewall inside it: the API and</text>
+<text x="1487" y="403" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">the database sit in the same zone.</text>
+<rect x="1473" y="441" width="420" height="208" rx="3" fill="#FFFFFF" stroke="#6B7280" stroke-width="1.2"/>
+<text x="1487" y="462" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="13" fill="#1A1A1A" font-weight="600" text-anchor="start">Phase one, on site</text>
+<text x="1487" y="482" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">Phase one puts every service that holds or</text>
+<text x="1487" y="499" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">processes SIMF data inside HSA: the API, the AI</text>
+<text x="1487" y="516" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">model, the mail relay and the file store.</text>
+<text x="1487" y="533" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">The AI runs on the SITE-hosted GPT OSS 120B model on an</text>
+<text x="1487" y="550" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">on-site LLM server, reached over an OpenAI-compatible</text>
+<text x="1487" y="567" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">API. Mail goes to an on-site SMTP relay.</text>
+<text x="1487" y="584" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">Files are written to MinIO object storage over the</text>
+<text x="1487" y="601" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">S3 API, in place of a directory on a file share.</text>
+<text x="1487" y="618" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">One internet call remains, and the Control Panel</text>
+<text x="1487" y="635" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">makes it: the caption fetch to YouTube.</text>
+<rect x="1473" y="1203" width="420" height="463" rx="3" fill="#FFFFFF" stroke="#6B7280" stroke-width="1.2"/>
+<text x="1487" y="1224" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="13" fill="#1A1A1A" font-weight="600" text-anchor="start">Sources</text>
+<text x="1487" y="1244" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">Node counts and specifications: customer server</text>
+<text x="1487" y="1261" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">requirements workbook, sheet List.</text>
+<text x="1487" y="1278" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">Mobile distribution channels: same workbook,</text>
+<text x="1487" y="1295" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">sheet NEW1.</text>
+<text x="1487" y="1312" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">Deployed artifact names: SIMF solution source tree.</text>
+<text x="1487" y="1329" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">Zone model, firewalls and WAF: SIMF-HLD-004 as</text>
+<text x="1487" y="1346" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">delivered.</text>
+<text x="1487" y="1363" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">The mobile edge, the file server and the application</text>
+<text x="1487" y="1380" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">zone holding the API alone are owner decisions of</text>
+<text x="1487" y="1397" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">2026-08-10.</text>
+<text x="1487" y="1414" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">The security areas, the API load balancer and the</text>
+<text x="1487" y="1431" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">internet zone are owner decisions of 2026-08-20.</text>
+<text x="1487" y="1448" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">The API in HSA, the on-site LLM server, the on-site</text>
+<text x="1487" y="1465" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">mail server, MinIO in place of a file share, and the</text>
+<text x="1487" y="1482" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">YouTube call moving to the Control Panel are a</text>
+<text x="1487" y="1499" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">customer requirement of 2026-08-30.</text>
+<text x="1487" y="1516" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">SMTP port 587: the EmailOptions.Port default.</text>
+<text x="1487" y="1533" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">YouTube caption host: YoutubeTranscriptService.cs.</text>
+<text x="1487" y="1550" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">The workbook lists none of the edge, MinIO or load</text>
+<text x="1487" y="1567" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">balancer servers. Their counts and specifications</text>
+<text x="1487" y="1584" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">are SIMF proposals, confirmed with the site.</text>
+<text x="1487" y="1601" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">The LLM and mail servers are provided by SITE,</text>
+<text x="1487" y="1618" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">which supplies the host with the service.</text>
+<text x="1487" y="1635" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">One HSA zone, and no firewall between the API and</text>
+<text x="1487" y="1652" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">the database: owner decision of 2026-09-02.</text>
 <rect x="124" y="264.8" width="38.21" height="18.6" fill="#FFFFFF" stroke="none"/>
 <text x="128" y="279" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="19" fill="#1A1A1A" font-weight="700" text-anchor="start">SSA</text>
 <rect x="1138.75" y="269.6" width="180.25" height="12.2" fill="#FFFFFF" stroke="none"/>
@@ -275,8 +274,4 @@
 <text x="128" y="989" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="19" fill="#1A1A1A" font-weight="700" text-anchor="start">HSA</text>
 <rect x="1171.875" y="979.6" width="147.125" height="12.2" fill="#FFFFFF" stroke="none"/>
 <text x="1315" y="989" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#6B7280" text-anchor="end">internal traffic only</text>
-<rect x="142" y="1371.1" width="138.645" height="14.2" fill="#E3E6EA" stroke="none"/>
-<text x="146" y="1382" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14.5" fill="#1A1A1A" font-weight="700" text-anchor="start">Internal firewall</text>
-<rect x="888.875" y="1372.6" width="412.125" height="12.2" fill="#E3E6EA" stroke="none"/>
-<text x="1297" y="1382" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" text-anchor="end">permits TCP 1433 and HTTPS 443 from the application zone only</text>
 </svg>

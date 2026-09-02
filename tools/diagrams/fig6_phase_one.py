@@ -22,9 +22,16 @@ What that leaves is a clean statement of the estate: everything that holds or
 processes SIMF data sits in HSA and never reaches the internet, and the single
 egress belongs to the one tier that is allowed one.
 
-CP, WEB and the mobile edge stay in the presentation zone. The zone model is
-otherwise sheet 5's, and the server specifications are still reproduced from the
-customer server requirements workbook, sheet `List`, without interpretation.
+CP, WEB and the mobile edge stay in the presentation zone. Specifications the
+customer server requirements workbook states are still transcribed from it,
+sheet `List`, without interpretation.
+
+Two later owner decisions are also drawn here. HSA is ONE zone: there is no
+firewall between the API and the database, so the boundary the presentation
+tier crosses is the only internal one left. And the servers the workbook does
+not list are no longer blank: the edge and MinIO carry a SIMF proposal, marked
+as one, while the LLM and mail servers are provided by SITE along with the
+service, so this sheet states the interface and not the machine.
 
 Layout note. The egress riser runs in a channel OUTSIDE the node columns, at
 RISER_R. Every cross-route on the sheet runs between a column centre and an API
@@ -67,9 +74,8 @@ Y_PRESENTATION = 634
 Y_FW_HSA = 908
 Y_HSA = 962
 Y_APPLICATION = 996
-Y_FW_DATA = 1362
-Y_DATA = 1426
 H_SSA, H_HSA = 622, 704
+H_HSA_ZONE = 652                      # one zone, application through data
 
 # Cross-routes run in the clear gap below a firewall bar; the egress riser turns
 # in the gap above the SSA frame.
@@ -86,7 +92,17 @@ s = Sheet(1940, 1706,
 
 COMMON = ["Windows Server 2022", "32 GB RAM, 16 vCPU", "300 GB storage",
           "Server + DR"]
-TBC = ["Windows Server 2022", "specification to be", "confirmed with the site"]
+
+# The workbook does not list these two, so the specification is SIMF's own and
+# is labelled as a proposal rather than transcribed like the rows above.
+EDGE = ["Windows Server 2022", "16 GB RAM, 8 vCPU", "100 GB storage",
+        "proposed minimum"]
+STORE = ["Windows Server 2022", "16 GB RAM, 8 vCPU", "4 TB storage",
+         "proposed minimum"]
+
+# SITE supplies the host as well as the service, so SIMF states the interface it
+# consumes and nothing about the machine.
+BY_SITE = ["Provided by SITE"]
 
 # ---------------------------------------------------------------- internet
 s.band(LEFT, Y_INTERNET, LW, 118, "Internet", "one third party service")
@@ -108,12 +124,13 @@ s.firewall(LEFT, Y_FW_PERIMETER, LW, "Perimeter firewall",
 
 # --------------------------------------------------------- perimeter zone
 s.band(LEFT, Y_PERIMETER, LW, 118, "Perimeter zone", "published entry point")
-s.box(C2, 518, NW, 72, "WAF and load balancer", "device", "TLS terminates here",
+s.box(C2, 518, NW, 72, "WAF and load balancer   x 2", "device",
+      "TLS terminates here",
       fill=NODE_FILL)
 
 # ------------------------------------------------------ presentation zone
 s.band(LEFT, Y_PRESENTATION, LW, 222, "Presentation zone", "Windows Server 2022")
-s.node(C1, 680, NW, 164, "EDGE API", "server", TBC, ["SIMF.MobileEdge"])
+s.node(C1, 680, NW, 164, "EDGE API   x 2", "server", EDGE, ["SIMF.MobileEdge"])
 s.node(C2, 680, NW, 164, "WEB   x 2", "server", COMMON, ["SIMF.Web"])
 s.node(C3, 680, NW, 164, "CP   x 2", "server", COMMON, ["SIMF.ControlPanel"])
 
@@ -122,24 +139,22 @@ s.firewall(LEFT, Y_FW_HSA, LW, "Internal firewall",
 
 s.group(FRAME_X, Y_HSA, FRAME_W, H_HSA, "HSA", "internal traffic only")
 
-# ------------------------------------------------------- application zone
-s.band(LEFT, Y_APPLICATION, LW, 332, "Application zone", "Windows Server 2022")
-s.box(C2, 1030, NW, 72, "API load balancer", "device",
+# --------------------------------------------------------------- HSA zone
+# One zone, not two. There is no firewall between the API and the database:
+# the whole of HSA is a single zone, so the boundary the presentation tier
+# crosses is the only internal one on the sheet.
+s.band(LEFT, Y_APPLICATION, LW, H_HSA_ZONE, "HSA zone", "Windows Server 2022")
+s.box(C2, 1030, NW, 72, "API load balancer   x 2", "device",
       "distributes to the API nodes", fill=NODE_FILL)
-s.node(C1, Y_ROW, NW, 164, "LLM SERVER", "server", TBC,
+s.node(C1, Y_ROW, NW, 164, "LLM SERVER", "server", BY_SITE,
        ["GPT OSS 120B", "OpenAI-compatible API"])
 s.node(C2, Y_ROW, NW, 164, "API   x 4", "server", COMMON, ["SIMF.Api"])
-s.node(C3, Y_ROW, NW, 164, "MAIL SERVER", "server", TBC, ["On-site SMTP relay"])
+s.node(C3, Y_ROW, NW, 164, "MAIL SERVER", "server", BY_SITE, ["On-site SMTP relay"])
 
-s.firewall(LEFT, Y_FW_DATA, LW, "Internal firewall",
-           "permits TCP 1433 and HTTPS 443 from the application zone only")
-
-# -------------------------------------------------------------- data zone
-s.band(LEFT, Y_DATA, LW, 222, "Data zone", "Windows Server 2022")
 s.node(C2, 1472, NW, 155, "DATABASE   x 2", "server",
        ["Windows Server 2022", "64 GB RAM, 8 vCPU", "2 TB storage", "Server + DR"],
        ["SIMF_Identity + SIMF_App"])
-s.node(C3, 1472, NW, 155, "MinIO", "server", TBC,
+s.node(C3, 1472, NW, 155, "MinIO   x 2", "server", STORE,
        ["Object storage, S3 API", "Stored files"])
 
 # ---------------------------------------------------------------- paths
@@ -180,9 +195,10 @@ s.path([(C2_LEFT, Y_ROW_MID), (C1_RIGHT, Y_ROW_MID)], "HTTPS 443",
 s.path([(C2_RIGHT, Y_ROW_MID), (C3, Y_ROW_MID)], "SMTP 587",
        label_at=((C2_RIGHT + C3) // 2, Y_ROW_MID), label_dy=3)
 
-# The application tier is the only caller of the data tier.
+# The API is the only caller of the database and the file store, and both
+# calls stay inside the one HSA zone.
 s.path([(DB_LINK, 1312), (DB_LINK, 1472)], "TCP 1433",
-       label_at=(DB_LINK, Y_FW_DATA - 14))
+       label_at=(DB_LINK, 1392))
 s.path([(FILE_LINK, 1312), (FILE_LINK, 1406), (COL3, 1406), (COL3, 1472)],
        "S3 HTTPS 443", label_at=((FILE_LINK + COL3) // 2, 1406))
 
@@ -202,8 +218,9 @@ ry += s.legend(RX, ry, RW, [
 ry += s.note(RX, ry, RW, [
     "SSA holds the access, perimeter and presentation",
     "zones, and is the area that reaches the internet.",
-    "HSA holds the application and data zones, and",
-    "carries internal traffic only.",
+    "HSA holds one zone and carries internal traffic",
+    "only. There is no firewall inside it: the API and",
+    "the database sit in the same zone.",
 ], "Security areas") + GAP
 
 ry += s.note(RX, ry, RW, [
@@ -238,9 +255,13 @@ SOURCES = [
     "customer requirement of 2026-08-30.",
     "SMTP port 587: the EmailOptions.Port default.",
     "YouTube caption host: YoutubeTranscriptService.cs.",
-    "The workbook lists none of the edge, LLM, mail,",
-    "MinIO or load balancer servers, so no count or",
-    "specification is stated for them.",
+    "The workbook lists none of the edge, MinIO or load",
+    "balancer servers. Their counts and specifications",
+    "are SIMF proposals, confirmed with the site.",
+    "The LLM and mail servers are provided by SITE,",
+    "which supplies the host with the service.",
+    "One HSA zone, and no firewall between the API and",
+    "the database: owner decision of 2026-09-02.",
 ]
 s.note(RX, Y_HSA + H_HSA - Sheet.note_height(SOURCES), RW, SOURCES, "Sources")
 

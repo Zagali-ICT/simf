@@ -127,6 +127,120 @@ plays.
 working feature into a broken one, and it breaks on a firewall change rather
 than on a code change.
 
+---
+
+# Part two. The security hardening the documents describe
+
+**Read this first.** On 2026-09-02 the owner directed that the customer review
+be answered in the documents now and reflected in the code after the customer
+approves. SIMF-HLD-004 v1.4 and SIMF-LLD-003 v1.5 therefore describe the items
+below **in the present tense, as the agreed design**. They are not in the code.
+
+That is a deliberate choice, not an oversight, and this section is the only
+record of the gap. Nothing here may be dropped without the owner saying so.
+
+Items 4 to 8 are the ones a reviewer can test. Items 12 to 14 are infrastructure
+rather than code and belong to whoever provisions the estate.
+
+## Already true, and worth knowing before anyone "fixes" it
+
+Three of the customer's findings are already answered by the build. Do not open
+work for them:
+
+- **Scheduled jobs do not run four times.** `WorkerLease` takes an exclusive
+  `sp_getapplock` and `LeasedHostedService` runs each worker only while its node
+  holds the lease, standing down when it is lost. Seventeen workers are wrapped.
+- **The JWT signing key never leaves HSA.** `AddJwtBearer` appears only in
+  `SIMF.Api`; the Control Panel is a BFF and the mobile edge is a pass-through
+  proxy. Moving to RS256 is still worth doing, but not for the reason given.
+- **The file store already rotates its key.** `FileStorageOptions` carries
+  `KekVersion`, `PreviousEncryptionKey` and `PreviousKekVersion`.
+
+## 4. RS256 in place of HS256
+
+`src/Backend/SIMF.Api/Authentication/JwtBearerSetup.cs` pins
+`SecurityAlgorithms.HmacSha256` and builds a `SymmetricSecurityKey` from
+`Jwt:SigningKey`; `JwtTokenService` signs with the same. Move to an asymmetric
+key pair: the API holds the private key, verifiers hold only the public key.
+Keep the algorithm pinned, so `alg:none` and confusion attacks stay rejected.
+
+**Verify.** A token signed with the old symmetric key is rejected. The public
+key alone cannot mint a token.
+
+## 5. Keys in a key management service, and a rotation path for the PII key
+
+`StorageOptions.UserIdDocumentEncryptionKey` is a single key with no version and
+no previous-key field, so the PII columns have no rotation path at all. Give it
+the versioning the file store already has, then move both keys plus the JWT key
+out of environment variables into the key service the ministry provides.
+
+**Verify.** Rotate the PII key with rows encrypted under the old one; every row
+still reads, and re-wrapping completes without downtime.
+
+## 6. Mutual TLS between the presentation tier and the API
+
+Nothing in `SIMF.ApiClient` or the API host requests or validates a client
+certificate. Add it in both directions so reaching the API needs a credential
+rather than a network position.
+
+## 7. Hardware-bound mobile keys
+
+The app stores the ES256 private key in `EncryptedSharedPreferences` and the iOS
+Keychain. Generate it inside the Android Keystore (StrongBox where present) and
+the iOS Secure Enclave instead, non-exportable, with user authentication
+required at the key. The server contract does not change: it still receives a
+SubjectPublicKeyInfo and verifies an ES256 signature.
+
+## 8. Prompt sanitisation before the model
+
+No sanitisation exists on the path into `OpenAiProvider`. Imported YouTube
+transcripts and attendee question text reach the model as-is, so an instruction
+hidden in a transcript can steer a summary. Add a sanitising layer with tests
+carrying real injection strings.
+
+## 9. Least-privilege database accounts
+
+`src/Backend/SIMF.Api/Program.cs:617-618` runs `MigrateAsync()` on both contexts
+at startup, so the runtime account holds DDL rights. Split it: migrations run in
+the deployment step under an account with DDL, and the runtime account gets DML
+only. This also removes a schema change from the request-serving hot path.
+
+## 10. Audit trails that cannot be erased by the actor
+
+`OperationLog` and `RowAudit` live in `SimfAppDbContext`, the database they
+audit. Deny UPDATE and DELETE on both tables to the runtime account, and ship
+every entry to the ministry log collector so a copy exists outside the database.
+
+## 11. The polling budget
+
+The documents state a 30-second interval, conditional requests and cache-served
+304s, giving about 1,000 requests a second at the 30,000-attendee peak. Confirm
+the app's actual interval, add response caching with ETag handling on the poll
+endpoints, and prove the figure under load rather than asserting it.
+
+## 12. A caching layer in front of MinIO
+
+Session recordings are served through the API nodes as HTTP 206 ranges. Put a
+cache in front of the store so a viewing burst consumes cache bandwidth instead
+of API capacity. Depends on item 3.
+
+## 13. Cross-database reconciliation
+
+D-157 forbids cross-database foreign keys, so nothing at the database level
+stops a business row outliving its identity owner. Add a scheduled
+reconciliation that resolves each cross-database reference and reports the
+orphans, under the same worker lease as every other job.
+
+## 14. Infrastructure, not code
+
+A second WAF/load balancer and a second API load balancer as active/passive
+pairs; the mobile edge at two nodes and MinIO at two nodes, both sized as the
+HLD's proposed minimums; staging on SQL Server Enterprise in an Availability
+Group; and the disaster-recovery site with its RTO and RPO, which is still an
+open item with the site.
+
+---
+
 ## Fixed, not to be changed by this work
 
 The two databases and their separation, the five network zones and two security
