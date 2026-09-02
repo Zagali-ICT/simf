@@ -102,6 +102,40 @@ void main() {
       }
     });
 
+    test('Android edge-to-edge stays on the supported Activity API', () {
+      final gradle = File('android/app/build.gradle.kts').readAsStringSync();
+      final activity = File(
+        'android/app/src/main/kotlin/com/simrsnf/simf/MainActivity.kt',
+      ).readAsStringSync();
+      final systemUi = File('lib/app/theme/system_ui.dart').readAsStringSync();
+      final mainSource = File('lib/main.dart').readAsStringSync();
+
+      expect(gradle, contains('androidx.activity:activity-ktx:1.12.4'));
+      expect(activity, contains('import androidx.activity.enableEdgeToEdge'));
+      expect(activity, contains('enableEdgeToEdge()'));
+      expect(activity, isNot(contains('WindowCompat.enableEdgeToEdge')));
+      expect(mainSource, isNot(contains('setEnabledSystemUIMode')));
+      expect(
+        activity.indexOf('enableEdgeToEdge()'),
+        lessThan(activity.indexOf('super.onCreate(savedInstanceState)')),
+        reason: 'Edge-to-edge must be enabled before Flutter creates content.',
+      );
+
+      for (final deprecatedParameter in <String>[
+        'statusBarColor:',
+        'systemNavigationBarColor:',
+        'systemNavigationBarDividerColor:',
+        'systemStatusBarContrastEnforced:',
+      ]) {
+        expect(
+          systemUi,
+          isNot(contains(deprecatedParameter)),
+          reason: '$deprecatedParameter makes Flutter call a deprecated '
+              'Android Window API.',
+        );
+      }
+    });
+
     test('the manifest keeps the CAMERA + USE_BIOMETRIC permissions', () {
       final manifest =
           File('android/app/src/main/AndroidManifest.xml').readAsStringSync();

@@ -16,10 +16,9 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Android 15/API 35+ enforces edge-to-edge, and Android 16 removes the
-  // opt-out. Request it explicitly so Android 10-14 get the same layout path
-  // and the app always draws under transparent system bars.
-  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  // MainActivity enables edge-to-edge before Flutter creates its content.
+  // Flutter owns only icon brightness; AndroidX owns the system-bar layout and
+  // backward-compatible transparent/translucent protection.
   SystemChrome.setSystemUIOverlayStyle(SimfSystemUi.edgeToEdge);
 
   // Portrait-only: the SIMF app is designed for vertical use, so lock out

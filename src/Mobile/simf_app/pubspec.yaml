@@ -14,7 +14,7 @@ description: SIMF Maritime Forum — the Flutter mobile application for Android 
 # fail-open by design (it needs both a minimum version and a usable store URL),
 # so an empty value simply keeps it off until a real store URL exists to send
 # people to. Any value set later must be <= the shipped version below.
-version: 1.0.1+22
+version: 1.0.1+24
 publish_to: none
 
 environment:
@@ -67,7 +67,7 @@ dependencies:
   # C7 (D-371) — on-device human-face check over the profile camera capture
   # (instant feedback; the server's offline FaceAiSharp gate is the
   # authority). Android/iOS only — web/test runtimes defer to the server.
-  google_mlkit_face_detection: ^0.13.1
+  google_mlkit_face_detection: ^0.15.1
   # ID-document image picker for the visitor profile (Page_007). C7 (D-371):
   # camera-only capture → bytes → multipart upload via simf_data_pkg. Its
   # permission strings are COMMITTED, not generated: READ_EXTERNAL_STORAGE in

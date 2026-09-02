@@ -1,24 +1,16 @@
 import 'package:flutter/services.dart';
-import 'package:simf_app/app/theme/tokens.dart';
 
-/// The system bars' appearance under Android edge-to-edge, where the app draws
-/// behind the status and navigation bars and both must disappear into it.
+/// The system-bar icon appearance while the native Activity owns edge-to-edge.
 ///
-/// The fills come from [SimfTokens.transparent] rather than
-/// `Colors.transparent`: `design_token_ratchet_test` fails the build on a raw
-/// colour anywhere outside `tokens.dart`, and this file reddened it from the
-/// moment edge-to-edge landed.
+/// Do not set system-bar colors here. AndroidX `enableEdgeToEdge()` provides
+/// the backward-compatible transparent bars, while Android 15 deprecates the
+/// Window color APIs that Flutter uses for those color parameters.
 class SimfSystemUi {
   const SimfSystemUi._();
 
   static const SystemUiOverlayStyle edgeToEdge = SystemUiOverlayStyle(
-    statusBarColor: SimfTokens.transparent,
     statusBarBrightness: Brightness.dark,
     statusBarIconBrightness: Brightness.light,
-    systemNavigationBarColor: SimfTokens.transparent,
-    systemNavigationBarDividerColor: SimfTokens.transparent,
     systemNavigationBarIconBrightness: Brightness.light,
-    systemNavigationBarContrastEnforced: false,
-    systemStatusBarContrastEnforced: false,
   );
 }
