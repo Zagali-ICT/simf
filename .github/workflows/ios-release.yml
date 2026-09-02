@@ -1,0 +1,283 @@
+name: iOS release
+
+on:
+  workflow_dispatch:
+    inputs:
+      upload_testflight:
+        description: Upload the IPA to TestFlight after the build
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  APP_IDENTIFIER: com.simrsnf.simf
+  FLUTTER_APP: src/Mobile/simf_app
+  FLUTTER_VERSION: 3.44.0
+
+jobs:
+  build-ios:
+    name: Build signed IPA
+    runs-on: macos-26
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode 26
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          xcode_path="$(find /Applications -maxdepth 1 -name 'Xcode_26*.app' -print | sort -r | head -n 1)"
+          if [ -z "${xcode_path}" ]; then
+            echo 'Xcode 26 was not found on the GitHub-hosted macOS image.'
+            find /Applications -maxdepth 1 -name 'Xcode*.app' -print | sort
+            exit 1
+          fi
+
+          sudo xcode-select -s "${xcode_path}/Contents/Developer"
+          xcodebuild -version
+
+      - name: Install Flutter
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter_home="${RUNNER_TEMP}/flutter"
+          git clone --depth 1 --branch "${FLUTTER_VERSION}" https://github.com/flutter/flutter.git "${flutter_home}"
+          echo "${flutter_home}/bin" >> "${GITHUB_PATH}"
+          "${flutter_home}/bin/flutter" --version
+          "${flutter_home}/bin/flutter" precache --ios
+
+      - name: Install Apple signing assets
+        shell: bash
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          IOS_DISTRIBUTION_CERTIFICATE_BASE64: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_BASE64 }}
+          IOS_DISTRIBUTION_CERTIFICATE_PASSWORD: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_PASSWORD }}
+          IOS_PROVISION_PROFILE_BASE64: ${{ secrets.IOS_PROVISION_PROFILE_BASE64 }}
+        run: |
+          set -euo pipefail
+
+          : "${APPLE_TEAM_ID:?Missing GitHub secret APPLE_TEAM_ID}"
+          : "${IOS_DISTRIBUTION_CERTIFICATE_BASE64:?Missing GitHub secret IOS_DISTRIBUTION_CERTIFICATE_BASE64}"
+          : "${IOS_DISTRIBUTION_CERTIFICATE_PASSWORD:?Missing GitHub secret IOS_DISTRIBUTION_CERTIFICATE_PASSWORD}"
+          : "${IOS_PROVISION_PROFILE_BASE64:?Missing GitHub secret IOS_PROVISION_PROFILE_BASE64}"
+
+          certificate_path="${RUNNER_TEMP}/simf-distribution.p12"
+          profile_path="${RUNNER_TEMP}/simf-appstore.mobileprovision"
+          profile_plist="${RUNNER_TEMP}/simf-appstore.plist"
+          keychain_path="${RUNNER_TEMP}/simf-signing.keychain-db"
+          keychain_password="$(uuidgen)"
+
+          export CERTIFICATE_PATH="${certificate_path}"
+          export PROFILE_PATH="${profile_path}"
+          python3 - <<'PY'
+          import base64
+          import os
+          from pathlib import Path
+
+          Path(os.environ["CERTIFICATE_PATH"]).write_bytes(
+              base64.b64decode(os.environ["IOS_DISTRIBUTION_CERTIFICATE_BASE64"])
+          )
+          Path(os.environ["PROFILE_PATH"]).write_bytes(
+              base64.b64decode(os.environ["IOS_PROVISION_PROFILE_BASE64"])
+          )
+          PY
+
+          security create-keychain -p "${keychain_password}" "${keychain_path}"
+          security set-keychain-settings -lut 21600 "${keychain_path}"
+          security unlock-keychain -p "${keychain_password}" "${keychain_path}"
+          security import "${certificate_path}" \
+            -P "${IOS_DISTRIBUTION_CERTIFICATE_PASSWORD}" \
+            -A \
+            -t cert \
+            -f pkcs12 \
+            -k "${keychain_path}"
+          security set-key-partition-list \
+            -S apple-tool:,apple:,codesign: \
+            -s \
+            -k "${keychain_password}" \
+            "${keychain_path}"
+          security list-keychains -d user -s "${keychain_path}"
+          security default-keychain -s "${keychain_path}"
+
+          security cms -D -i "${profile_path}" > "${profile_plist}"
+          profile_uuid="$(/usr/libexec/PlistBuddy -c 'Print UUID' "${profile_plist}")"
+          profile_name="$(/usr/libexec/PlistBuddy -c 'Print Name' "${profile_plist}")"
+
+          mkdir -p "${HOME}/Library/MobileDevice/Provisioning Profiles"
+          cp "${profile_path}" "${HOME}/Library/MobileDevice/Provisioning Profiles/${profile_uuid}.mobileprovision"
+
+          echo "APPLE_TEAM_ID=${APPLE_TEAM_ID}" >> "${GITHUB_ENV}"
+          echo "IOS_PROFILE_NAME=${profile_name}" >> "${GITHUB_ENV}"
+          echo "IOS_PROFILE_UUID=${profile_uuid}" >> "${GITHUB_ENV}"
+          echo "IOS_KEYCHAIN_PATH=${keychain_path}" >> "${GITHUB_ENV}"
+
+      - name: Write release configuration
+        shell: bash
+        env:
+          SIMF_APP_KEY: ${{ secrets.SIMF_APP_KEY }}
+          SIMF_SOCIAL_INSTAGRAM: ${{ vars.SIMF_SOCIAL_INSTAGRAM }}
+          SIMF_SOCIAL_LINKEDIN: ${{ vars.SIMF_SOCIAL_LINKEDIN }}
+          SIMF_SOCIAL_TIKTOK: ${{ vars.SIMF_SOCIAL_TIKTOK }}
+          SIMF_SOCIAL_X: ${{ vars.SIMF_SOCIAL_X }}
+          SIMF_SOCIAL_YOUTUBE: ${{ vars.SIMF_SOCIAL_YOUTUBE }}
+          SIMF_SUPPORT_EMAIL: ${{ vars.SIMF_SUPPORT_EMAIL }}
+          SIMF_SUPPORT_PHONE: ${{ vars.SIMF_SUPPORT_PHONE }}
+        run: |
+          set -euo pipefail
+
+          : "${SIMF_APP_KEY:?Missing GitHub secret SIMF_APP_KEY}"
+          : "${APPLE_TEAM_ID:?Missing APPLE_TEAM_ID from signing step}"
+          : "${IOS_PROFILE_NAME:?Missing IOS_PROFILE_NAME from signing step}"
+
+          cd "${FLUTTER_APP}"
+
+          cat > ios/Flutter/Signing.xcconfig <<CFG
+          DEVELOPMENT_TEAM = ${APPLE_TEAM_ID}
+          CODE_SIGN_STYLE = Manual
+          CODE_SIGN_IDENTITY = Apple Distribution
+          CODE_SIGN_IDENTITY[sdk=iphoneos*] = Apple Distribution
+          PROVISIONING_PROFILE_SPECIFIER = ${IOS_PROFILE_NAME}
+          CFG
+
+          export DEFINES_FILE="${RUNNER_TEMP}/simf-defines.json"
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          names = [
+              "SIMF_BUILD",
+              "SIMF_APP_KEY",
+              "SIMF_SUPPORT_PHONE",
+              "SIMF_SUPPORT_EMAIL",
+              "SIMF_SOCIAL_X",
+              "SIMF_SOCIAL_INSTAGRAM",
+              "SIMF_SOCIAL_LINKEDIN",
+              "SIMF_SOCIAL_YOUTUBE",
+              "SIMF_SOCIAL_TIKTOK",
+          ]
+          data = {name: os.environ.get(name, "") for name in names}
+          data["SIMF_BUILD"] = "prod"
+          Path(os.environ["DEFINES_FILE"]).write_text(json.dumps(data), encoding="utf-8")
+          PY
+
+      - name: Resolve Flutter packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "${FLUTTER_APP}"
+          for target in . packages/simf_auth_pkg packages/simf_data_pkg; do
+            echo "flutter pub get -> ${target}"
+            ( cd "${target}" && flutter pub get )
+          done
+
+      - name: Build IPA
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "${FLUTTER_APP}"
+
+          export_plist="${RUNNER_TEMP}/ExportOptions.plist"
+          cat > "${export_plist}" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>teamID</key><string>${APPLE_TEAM_ID}</string>
+            <key>signingStyle</key><string>manual</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>${APP_IDENTIFIER}</key><string>${IOS_PROFILE_NAME}</string>
+            </dict>
+          </dict>
+          </plist>
+          PLIST
+
+          flutter build ipa --release \
+            --export-options-plist="${export_plist}" \
+            --dart-define-from-file="${RUNNER_TEMP}/simf-defines.json"
+
+      - name: Package dSYMs
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive_dir="${FLUTTER_APP}/build/ios/archive/Runner.xcarchive"
+          if [ -d "${archive_dir}/dSYMs" ]; then
+            ( cd "${archive_dir}" && zip -qr "${RUNNER_TEMP}/dSYMs.zip" dSYMs )
+          fi
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-release
+          path: |
+            ${{ env.FLUTTER_APP }}/build/ios/ipa/*.ipa
+            ${{ runner.temp }}/dSYMs.zip
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload to TestFlight
+        if: ${{ inputs.upload_testflight }}
+        shell: bash
+        env:
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_API_KEY_P8_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_P8_BASE64 }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+        run: |
+          set -euo pipefail
+
+          : "${APP_STORE_CONNECT_API_KEY_ID:?Missing GitHub secret APP_STORE_CONNECT_API_KEY_ID}"
+          : "${APP_STORE_CONNECT_API_KEY_P8_BASE64:?Missing GitHub secret APP_STORE_CONNECT_API_KEY_P8_BASE64}"
+          : "${APP_STORE_CONNECT_ISSUER_ID:?Missing GitHub secret APP_STORE_CONNECT_ISSUER_ID}"
+
+          mkdir -p "${HOME}/.appstoreconnect/private_keys"
+          export ASC_KEY_PATH="${HOME}/.appstoreconnect/private_keys/AuthKey_${APP_STORE_CONNECT_API_KEY_ID}.p8"
+          python3 - <<'PY'
+          import base64
+          import os
+          from pathlib import Path
+
+          Path(os.environ["ASC_KEY_PATH"]).write_bytes(
+              base64.b64decode(os.environ["APP_STORE_CONNECT_API_KEY_P8_BASE64"])
+          )
+          PY
+
+          ipa_path="$(find "${FLUTTER_APP}/build/ios/ipa" -name '*.ipa' -print | head -n 1)"
+          if [ -z "${ipa_path}" ]; then
+            echo 'No IPA was produced.'
+            exit 1
+          fi
+
+          xcrun altool --upload-app \
+            --type ios \
+            --file "${ipa_path}" \
+            --apiKey "${APP_STORE_CONNECT_API_KEY_ID}" \
+            --apiIssuer "${APP_STORE_CONNECT_ISSUER_ID}"
+
+      - name: Clean signing material
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f "${RUNNER_TEMP}/simf-distribution.p12" \
+                "${RUNNER_TEMP}/simf-appstore.mobileprovision" \
+                "${RUNNER_TEMP}/simf-appstore.plist" \
+                "${RUNNER_TEMP}/simf-defines.json" \
+                "${RUNNER_TEMP}/ExportOptions.plist"
+          if [ -n "${IOS_PROFILE_UUID:-}" ]; then
+            rm -f "${HOME}/Library/MobileDevice/Provisioning Profiles/${IOS_PROFILE_UUID}.mobileprovision"
+          fi
+          if [ -n "${IOS_KEYCHAIN_PATH:-}" ]; then
+            security delete-keychain "${IOS_KEYCHAIN_PATH}" || true
+          fi
