@@ -9,9 +9,12 @@ answer below is a claim a reviewer verifies by opening the app. A claim they
 disprove in ninety seconds turns "Information Needed" into a credibility
 problem, and the second rejection then cites our own instructions as evidence.
 
-Two placeholders are marked `<<CONFIRM>>` and one is marked `<<CREDENTIALS>>`.
-The reply is not sendable until all three are resolved. Passwords go into App
-Store Connect directly and never into this file or any other file in the repo.
+**Placeholders.** `<<CREDENTIALS>>` appears four times (two accounts, in both
+Part 1 and Part 2) and `<<CONFIRM: AI provider>>` twice. The reply is not
+sendable until every one is resolved. Passwords go into App Store Connect
+directly and never into this file or any other file in the repo.
+
+_Last updated 2026-09-04, after the app fixes below landed._
 
 ---
 
@@ -290,8 +293,14 @@ on an older iOS can be bounced on that alone.
   - [ ] `PasswordChangeRequired == 0`. A seeded or admin-rotated password is a
         hard 403 on the app surface.
   - [ ] No admin role. Admin accounts are refused on the app audience.
-  - [ ] `UserProfile.IdImageFileId` set (and an avatar if the profile is male),
-        or `profileComplete` is false and the reviewer is dumped into ID capture.
+  - [ ] `profileComplete` is true. It is FOUR facts, not one, and a demo
+        account can satisfy three and still bounce the reviewer into the
+        registration form: both name fields, **at least one interest**, the
+        identity document (`IdImageFileId`, every registrant), and the face
+        photo (`SimfUser.AvatarFileId`, **men only** - women are exempt). The
+        interest is the one people forget; the validator demands one to ten on
+        every save, so an account seeded straight into the database can easily
+        have none.
   - [ ] `QrId` minted, or the badge screen records as a lock icon.
   - [ ] Production iOS minimum version empty or at most 1.0.1, and no app-key
         gate configured, or the reviewer's build is hard-blocked with no way for
@@ -314,50 +323,137 @@ on an older iOS can be bounced on that alone.
       other host uses. If it bounces, Apple's follow-up on this thread goes
       nowhere. App Store Connect also requires a Support URL, and no such URL is
       recorded anywhere in this repo.
+- [ ] **Rebuild and upload.** Everything under "Fixed in the app" below is in
+      the working tree, not in the binary Apple has. The build they reviewed
+      still has the four dead accessibility switches and no deletion link for a
+      pending account. Increment the build number, upload, and attach the new
+      build to the submission before replying.
 
 ### Blocking, and it is content in the production database
 
-- [ ] **Delete the twelve fabricated delegation heads.** The Delegations screen
-      is seeded with invented named individuals presented as serving heads of
-      foreign navies. This is reachable from the signed-in home.
-- [ ] **Replace the three `placehold.co` media-partner logos.** The app renders
-      the placeholder-image-service URL verbatim.
-- [ ] **Replace the filler archive speakers** ("Mr. Ali", "Dr. Khalid",
-      "Eng. Ahmed") and the headline counters copied from the Figma mock.
-- [ ] **Populate the media gallery or remove the tab.** It has no seed at all and
-      opens on an empty state.
+**None of this needs a developer, a migration or SQL.** All four are Control
+Panel pages an admin edits. The evidence for each is a seed file under
+`docs/migrations/2026/`, which is a script in the repo and NOT proof that anyone
+ran it against production.
+
+- [ ] **Step zero: open the four pages on the PRODUCTION Control Panel and look.**
+      If a seed was never run there, the item does not exist and there is
+      nothing to fix. Do this before spending time on any of the four.
+- [ ] **Delete the twelve fabricated delegation heads** - `/admin/delegates`.
+      Invented named individuals presented as serving heads of foreign navies
+      ("James Whitfield, First Sea Lord"), reachable from the signed-in home.
+      Each is a `UserProfile` row with `IsDelegate = 1`, plus the country's
+      `HeadOfDelegationUserProfileId` pointer. **Deleting them leaves nothing
+      broken**: the seed's own comment (`SIMF_App_SeedGaps.sql:166-168`) records
+      that the head and the member count resolve from real delegate
+      registrations at read time, so the screen simply shows countries with no
+      head yet, which is the truth before the event.
+- [ ] **Replace the three `placehold.co` media-partner logos** -
+      `/admin/media-partners`. The app renders the placeholder-image-service URL
+      verbatim, so a reviewer sees three grey stub images for three named
+      companies. Upload the real logos, or deactivate the three entries until
+      they exist.
+- [ ] **Fix the archive** - `/admin/archive`, the 2024 edition. Two things, and
+      the second is the one people miss: replace the five filler speakers ("Mr.
+      Ali", "Dr. Khalid", "Eng. Ahmed", "Ms. Sara", "Eng. Fahd"), **and correct
+      the headline counters**, which the seed hard-set to `Speakers = 250,
+      Sessions = 30` with a comment saying they were aligned to the Figma mock.
+      They are design numbers, not 2024's real figures. Replacing the names and
+      leaving the counters still ships invented data.
+- [ ] **Populate the media gallery** - `/admin/media` (with
+      `/admin/media-library` for the uploads). It has no seed at all and opens
+      on an empty state. Removing the tab instead is a code change, not an
+      admin one.
+
+**If you can only do two, do delegations and media partners.** They are the
+likeliest to be opened, and fabricated named individuals attributed as serving
+foreign military officers is a materially worse look than an empty gallery. An
+empty gallery before an event is defensible; twelve invented admirals are not.
 
 ### Blocking, and it is the store listing
 
 - [ ] **Remove the three onboarding-carousel screenshots** from every size. They
       are title art, which is the exact failure Apple's letter named. Five
       in-use shots remain, and Apple accepts one to ten.
-- [ ] **Decide iPad.** The app ships universal but has never been built or run on
-      an iPad, and the uploaded 13-inch screenshots are an Android phone capture
-      letterboxed with navy bars. Dropping iPad support removes both problems at
-      once and is the honest option given nothing has been tested there. This is
-      a project-settings change and is the owner's to make.
+- [ ] **Decide iPad.** The app ships universal but has never been built or run
+      on an iPad, and the uploaded 13-inch screenshots are an Android phone
+      capture letterboxed with navy bars. Dropping iPad removes both problems at
+      once. This is a project-settings change and is the owner's to make, so the
+      exact edits are written out rather than applied:
 
-### Fixed in this changeset
+  1. `ios/Runner.xcodeproj/project.pbxproj`, lines **367, 493 and 546**:
+     `TARGETED_DEVICE_FAMILY = "1,2";` becomes `TARGETED_DEVICE_FAMILY = 1;`.
+     All three build configurations carry it, or the Release build still ships
+     universal.
+  2. `ios/Runner/Info.plist`, delete lines **79 to 85**, the
+     `UISupportedInterfaceOrientations~ipad` array. This is why the iPad risk is
+     real rather than theoretical: it declares **landscape**, and there is no
+     `UIRequiresFullScreen` key, so iOS treats the app as Split View and Slide
+     Over capable and **ignores the Flutter portrait lock**. The app is
+     portrait-locked everywhere except the one device nobody has run it on.
+  3. Delete `store-screenshots/appstore-ready/ipad-13/` (8 files) and remove the
+     13-inch set in App Store Connect.
+  4. Bump the build number and upload. The device family lives in the binary, so
+     App Store Connect only stops demanding iPad screenshots once a
+     non-universal build is attached.
 
-- [x] Account deletion is now reachable by a pending account, not only an
-      approved one. It was a live 5.1.1(v) violation, and it is the subject of
-      Apple's own question 1.
-- [x] Four non-functional accessibility controls withdrawn. They were reachable
-      signed out, so a reviewer needed no credentials to find them.
-- [x] The day card in the meeting request sheet no longer overflows at the two
-      larger text sizes.
-- [x] The live caption strip no longer draws an empty placeholder box.
-- [x] Text size now composes with iOS Dynamic Type instead of ignoring it.
-- [x] The Face ID button no longer appears on a device with nothing enrolled,
-      and names the account it will open.
+  Both files are tracked in git, so this goes through CI normally, and the
+  repo's iOS ratchet test pins only the six permission usage strings, so
+  removing the iPad orientations does not trip it. **Do it before first
+  release**: Apple restricts removing a device family from an app that is
+  already live, and nothing has shipped yet. Worth confirming against current
+  App Store Connect behaviour before relying on it.
+
+  **What keeping iPad costs**, so the choice is fair: a Mac to build on, an iPad
+  to run it on, real 13-inch captures, a decision on multitasking versus adding
+  `UIRequiresFullScreen`, and at least one real bug fixed first -
+  `seat_map_repository.dart:127` calls `Share.share` with no
+  `sharePositionOrigin`, which every other share site in the app passes, so on
+  iPad "Share my seat" silently does nothing. It works on iPhone, which is why
+  nobody noticed.
+
+### Fixed in the app, and NOT yet in a build Apple has
+
+Committed 2026-09-04 (D-955). `flutter analyze lib test integration_test
+packages` reports no issues; 1776 app tests, 70 in `simf_auth_pkg`, 17 in
+`simf_data_pkg`. One golden, `email_otp_verify_golden_test`, fails on `main`
+independently of this work and was reproduced there before it started.
+
+- [x] **Account deletion is reachable by a pending account**, not only an
+      approved one. A live 5.1.1(v) violation, and the subject of Apple's own
+      question 1: the one account state you can create in the app was the one
+      state you could not delete from it.
+- [x] **Four non-functional accessibility controls withdrawn** - high contrast,
+      reduce motion, the screen-reader announcer, captions. They were reachable
+      SIGNED OUT, so a reviewer needed no credentials to find them.
+- [x] **Their EFFECTS withdrawn too.** Removing only the switches left a stored
+      `true` applied with nothing able to turn it off, and for a signed-in
+      account the server copy replays onto every fresh install. Pinned by
+      `test/repo/withdrawn_accessibility_flags_test.dart`.
+- [x] **Text size composes with iOS Dynamic Type** instead of discarding it, and
+      the chips **disable themselves with a line saying why** once the device
+      setting alone meets the app's ceiling - rather than four live-looking
+      pills that all render the same size, which is the same complaint again.
+- [x] **The Face ID button names the account it opens** and no longer appears on
+      a device with nothing enrolled. Deleting the account clears the credential
+      too, or the sign-in screen would advertise the erased address.
+- [x] **The meeting day card** no longer overflows at the two larger text sizes.
+- [x] **The live caption strip** draws nothing rather than an empty placeholder
+      box.
 
 ### Still open, not blocking this reply
 
 - The "Ask the moderator" tile on the signed-in home pushes the question screen
   with no session, so it always renders the empty state, and pull-to-refresh
-  there dereferences a null session id. Reachable in the first five minutes.
+  there dereferences a null session id. Reachable in the first five minutes, and
+  the strongest remaining candidate for a bugs-and-crashes finding.
+- `lib/app/widgets/screen_announcer.dart` is now orphaned: nothing mounts it.
+  Delete it, or rebuild it as a `NavigatorObserver` so it fires on navigation
+  rather than on mount. Left in place because this change did not create it.
 - The `email_otp` golden test fails on `main`, independently of this work.
+- Nothing pins that `DELETE /app/account` accepts a token from a non-approved
+  account. The endpoint's own remarks say it is ungated for exactly that holder,
+  and the app now mounts the button for them, so the pairing deserves a test.
 
 ---
 
