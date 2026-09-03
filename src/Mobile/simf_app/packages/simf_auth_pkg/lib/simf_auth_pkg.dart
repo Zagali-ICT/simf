@@ -20,6 +20,7 @@ export 'src/data/dto/verify_email_request.dart';
 export 'src/domain/app_role.dart';
 export 'src/domain/auth_failure.dart';
 export 'src/domain/current_user.dart';
+export 'src/domain/device_key_binding.dart';
 export 'src/domain/preferred_language.dart';
 export 'src/domain/registration_status.dart';
 export 'src/domain/session.dart';

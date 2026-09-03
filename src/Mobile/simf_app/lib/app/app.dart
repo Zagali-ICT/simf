@@ -44,13 +44,16 @@ class SimfApp extends ConsumerWidget {
       // built on the dark/navy tokens, so themeMode is pinned to dark and the
       // OS light/dark setting is ignored — on a light-mode device the on-navy
       // text would otherwise sit on a light scaffold and be unreadable.
-      // High-contrast swaps the dark slot to the high-contrast-dark theme
-      // (white-on-black). The light slots stay wired for a possible future
-      // light mode but are not selected while themeMode is pinned to dark.
-      theme:
-          a11y.highContrast ? SimfTheme.highContrastLight() : SimfTheme.light(),
-      darkTheme:
-          a11y.highContrast ? SimfTheme.highContrastDark() : SimfTheme.dark(),
+
+      // The high-contrast themes are NOT selected: the control that turned the
+      // flag off went with the accessibility screen's dead switches, so reading
+      // it here would strand anyone holding a stored `true` in a theme they
+      // cannot leave - and for a signed-in account it replays from the server
+      // onto every fresh install. `SimfTheme.highContrast*()` stay defined,
+      // because the flag is still persisted and the day the theme is real this
+      // is the one line that changes back.
+      theme: SimfTheme.light(),
+      darkTheme: SimfTheme.dark(),
       themeMode: ThemeMode.dark,
       locale: locale,
       supportedLocales: AppL10n.supportedLocales,
@@ -60,14 +63,17 @@ class SimfApp extends ConsumerWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      // Apply the accessibility text-scale + reduce-motion choices app-wide by
-      // overriding the MediaQuery the whole app sees (Page 038).
+      // Apply the accessibility text-scale choice app-wide by overriding the
+      // MediaQuery the whole app sees (Page 038).
       builder: (context, child) {
         final mq = MediaQuery.of(context);
         return MediaQuery(
           data: mq.copyWith(
-            textScaler: TextScaler.linear(a11y.textSize.scaleFactor),
-            disableAnimations: a11y.reduceMotion || mq.disableAnimations,
+            textScaler: composedTextScaler(mq.textScaler, a11y.textSize),
+            // The PLATFORM's reduce-motion setting only. The app's own flag is
+            // no longer read: its switch is withdrawn, and nothing under lib/
+            // consumed this anyway.
+            disableAnimations: mq.disableAnimations,
           ),
           // D-726 (item 11) — the app-wide session auto-extend guard wraps
           // every screen: it marks activity on each touch, silently refreshes

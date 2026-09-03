@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_app/features/accessibility/data/accessibility_preferences_repository.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
@@ -10,6 +10,37 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// cases can be reordered freely and an unknown stored value falls back to
 /// [normal].
 enum AppTextSize { small, normal, large, extraLarge }
+
+/// The app's own text-size choice composed ON TOP of the platform's.
+///
+/// `TextScaler.linear(choice)` discarded the platform scaler outright, so iOS
+/// Dynamic Type and the Android font slider were ignored: a user who had
+/// already enlarged text system-wide saw an app that did not respond, which is
+/// the first thing an accessibility reviewer tries.
+
+/// Clamped because the platform scale reaches ~3.1 at the iOS accessibility
+/// sizes, and multiplying that by the app's own 1.3 hands the layout a scale
+/// nothing here is drawn for. Once the platform alone meets the ceiling the
+/// chips can no longer move anything, which the screen says rather than
+/// leaving four live-looking pills that render identically.
+TextScaler composedTextScaler(TextScaler platform, AppTextSize choice) {
+  // scale(1) reads the platform's effective factor at a 1pt font, which is the
+  // only way to get a number back out of a possibly non-linear scaler.
+  final composed = platform.scale(1) * choice.scaleFactor;
+  return TextScaler.linear(composed.clamp(minTextScale, maxTextScale));
+}
+
+/// The smallest composite scale. Matches [AppTextSize.small] so the app's own
+/// "صغير" stays reachable when the platform is at its default.
+const double minTextScale = 0.85;
+
+/// The largest composite text scale the screens are drawn against.
+const double maxTextScale = 1.3;
+
+/// Whether the platform's own text scale already meets the ceiling, so the
+/// app's four size chips can no longer move anything and must say so.
+bool platformTextScaleAtCeiling(TextScaler platform) =>
+    platform.scale(1) >= maxTextScale;
 
 extension AppTextSizeScale on AppTextSize {
   double get scaleFactor {

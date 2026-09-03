@@ -150,6 +150,7 @@ Future<void> _pump(
   _FakePrefs prefs, {
   bool profileComplete = true,
   bool biometricAvailable = false,
+  EnrolledDeviceKey? enrolledDeviceKey,
 }) async {
   final router = GoRouter(
     initialLocation: '/sign-in',
@@ -218,6 +219,8 @@ Future<void> _pump(
         // pin it so the button's visibility is deterministic in the test.
         biometricAvailableProvider
             .overrideWith((ref) async => biometricAvailable),
+        enrolledDeviceKeyProvider
+            .overrideWith((ref) async => enrolledDeviceKey),
       ],
       child: MaterialApp.router(
         routerConfig: router,
@@ -346,7 +349,10 @@ void main() {
       expect(find.text('Sign in with Face ID'), findsNothing);
     });
 
-    testWidgets('the Face-ID button shows when a biometric is available',
+    // The button needs BOTH a device that can prompt AND a credential enrolled
+    // on this install. Hardware alone used to be enough, so a phone that had
+    // never enrolled offered a button whose only outcome was "not enrolled".
+    testWidgets('the Face-ID button is hidden when nothing is enrolled',
         (tester) async {
       await _pump(
         tester,
@@ -354,7 +360,72 @@ void main() {
         _FakePrefs(),
         biometricAvailable: true,
       );
-      expect(find.text('Sign in with Face ID'), findsOneWidget);
+      expect(find.textContaining('Continue as'), findsNothing);
+    });
+
+    testWidgets('an enrolled device NAMES the account the button opens',
+        (tester) async {
+      await _pump(
+        tester,
+        _Outcome.success,
+        _FakePrefs(),
+        biometricAvailable: true,
+        enrolledDeviceKey: _enrolledFor('visitor@example.sa'),
+      );
+      // The device key resolves its own account server-side, so an anonymous
+      // button signs the holder into whoever last enrolled here whatever the
+      // form says. Naming the account is what removes that ambiguity.
+      expect(find.text('Continue as v***@example.sa'), findsOneWidget);
+    });
+
+    testWidgets('typing a DIFFERENT address disables it with the reason',
+        (tester) async {
+      await _pump(
+        tester,
+        _Outcome.success,
+        _FakePrefs(),
+        biometricAvailable: true,
+        enrolledDeviceKey: _enrolledFor('visitor@example.sa'),
+      );
+      await tester.enterText(
+        find.byType(TextFormField).first,
+        'someone.else@example.sa',
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.textContaining('is set up for v***@example.sa'),
+        findsOneWidget,
+      );
+      final button = tester.widget<OutlinedButton>(
+        find
+            .ancestor(
+              of: find.text('Continue as v***@example.sa'),
+              matching: find.byType(OutlinedButton),
+            )
+            .first,
+      );
+      expect(button.onPressed, isNull);
+    });
+
+    testWidgets('the enrolled address itself keeps the button live',
+        (tester) async {
+      await _pump(
+        tester,
+        _Outcome.success,
+        _FakePrefs(),
+        biometricAvailable: true,
+        enrolledDeviceKey: _enrolledFor('visitor@example.sa'),
+      );
+      await tester.enterText(
+        find.byType(TextFormField).first,
+        '  VISITOR@Example.SA  ',
+      );
+      await tester.pumpAndSettle();
+
+      // Trimmed and case-folded on both sides: a reader's capitalisation must
+      // never lock them out of their own credential.
+      expect(find.textContaining('is set up for'), findsNothing);
     });
 
     testWidgets('unchecking remember-me skips storing the email',
@@ -561,4 +632,19 @@ void main() {
       expect(prefs.getString(StorageKeys.preferredLanguage), equals('en'));
     });
   });
+}
+
+/// A device key enrolled for [email], built the way the app builds it so the
+/// digest under test is the real one rather than a fixture that agrees with
+/// itself.
+EnrolledDeviceKey _enrolledFor(String email) {
+  const id = 'key-1';
+  return (
+    id: id,
+    binding: DeviceKeyBinding.create(
+      userId: 'u1',
+      deviceKeyId: id,
+      email: email,
+    ),
+  );
 }

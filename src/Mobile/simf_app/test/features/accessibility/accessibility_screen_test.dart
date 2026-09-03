@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
@@ -33,42 +34,16 @@ Future<void> _pump(WidgetTester tester, FakePrefs prefs) async {
   await tester.pumpAndSettle();
 }
 
-/// The Switch inside the row that carries [title] (frame 1116:16630).
-Finder _switchFor(String title) => find.descendant(
-      of: find.ancestor(of: find.text(title), matching: find.byType(Row)).first,
-      matching: find.byType(Switch),
-    );
-
 void main() {
   group('AccessibilityScreen (Page 038 — frame 1116:16630)', () {
-    testWidgets('renders the display + sound sections and their controls',
+    testWidgets('renders the display section and the four size chips',
         (tester) async {
       await _pump(tester, FakePrefs());
-      // العرض — four font-size chips.
       expect(find.text('Display'), findsOneWidget);
       expect(find.text('Small'), findsOneWidget);
       expect(find.text('Medium'), findsOneWidget);
       expect(find.text('Large'), findsOneWidget);
       expect(find.text('Extra large'), findsOneWidget);
-      // Four switches: high contrast, reduce motion, screen reader, captions.
-      expect(find.byType(Switch), findsNWidgets(4));
-      expect(find.text('High contrast'), findsOneWidget);
-      expect(find.text('Reduce motion'), findsOneWidget);
-      // الصوت والقراءة section.
-      expect(find.text('Sound & reading'), findsOneWidget);
-      expect(find.text('Screen reader'), findsOneWidget);
-      expect(find.text('Captions (for sessions)'), findsOneWidget);
-    });
-
-    testWidgets('toggling high-contrast flips it and persists', (tester) async {
-      final prefs = FakePrefs();
-      await _pump(tester, prefs);
-      final highContrast = _switchFor('High contrast');
-      expect(tester.widget<Switch>(highContrast).value, isFalse);
-      await tester.tap(highContrast);
-      await tester.pumpAndSettle();
-      expect(tester.widget<Switch>(highContrast).value, isTrue);
-      expect(prefs.getBool(StorageKeys.accessibilityHighContrast), isTrue);
     });
 
     testWidgets('picking a text size persists the choice', (tester) async {
@@ -82,25 +57,44 @@ void main() {
       );
     });
 
-    testWidgets('screen-reader assist defaults off and persists on',
-        (tester) async {
-      final prefs = FakePrefs();
-      await _pump(tester, prefs);
-      final screenReader = _switchFor('Screen reader');
-      expect(tester.widget<Switch>(screenReader).value, isFalse);
-      await tester.tap(screenReader);
-      await tester.pumpAndSettle();
-      expect(prefs.getBool(StorageKeys.accessibilityScreenReader), isTrue);
+    testWidgets('offers NO control that does not work', (tester) async {
+      // The screen used to carry four switches - high contrast, reduce motion,
+      // the screen-reader announcer and captions - each wired to a provider and
+      // each observably inert. Apple rejects non-functional features, and these
+      // were reachable SIGNED OUT, so a reviewer needed no account to
+      // find them.
+      await _pump(tester, FakePrefs());
+      expect(find.byType(Switch), findsNothing);
+      for (final gone in <String>[
+        'High contrast',
+        'Reduce motion',
+        'Sound & reading',
+        'Screen reader',
+        'Captions (for sessions)',
+      ]) {
+        expect(
+          find.text(gone),
+          findsNothing,
+          reason: '"$gone" did not work',
+        );
+      }
     });
 
-    testWidgets('captions default on and persist off', (tester) async {
-      final prefs = FakePrefs();
+    testWidgets('keeps the persisted shape so nothing stored is orphaned',
+        (tester) async {
+      // The controller fields and storage keys survive the withdrawal: a value
+      // already on a device (or synced from the server) still round-trips, so
+      // restoring a control later is a UI change and not a migration.
+      final prefs = FakePrefs(<String, Object>{
+        StorageKeys.accessibilityHighContrast: true,
+        StorageKeys.accessibilityCaptions: false,
+      });
       await _pump(tester, prefs);
-      final captions = _switchFor('Captions (for sessions)');
-      expect(tester.widget<Switch>(captions).value, isTrue);
-      await tester.tap(captions);
-      await tester.pumpAndSettle();
-      expect(prefs.getBool(StorageKeys.accessibilityCaptions), isFalse);
+      final settings = ProviderScope.containerOf(
+        tester.element(find.byType(AccessibilityScreen)),
+      ).read(accessibilityControllerProvider);
+      expect(settings.highContrast, isTrue);
+      expect(settings.captions, isFalse);
     });
   });
 }

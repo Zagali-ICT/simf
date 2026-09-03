@@ -52,7 +52,7 @@ void main() {
   'features/gates/data/gates_repository.dart': 13,
   'features/gates/data/offline_badge.dart': 15,
   'features/home/widgets/hero_background_video.dart': 18,
-  'features/live/widgets/caption_strip.dart': 13,
+  'features/live/widgets/caption_strip.dart': 8,
   'features/meetings/widgets/meeting_card.dart': 14,
   'features/myarea/data/liveness.dart': 18,
   'features/onboarding/widgets/onboarding_background.dart': 14,

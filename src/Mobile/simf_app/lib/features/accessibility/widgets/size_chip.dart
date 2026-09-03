@@ -5,13 +5,15 @@ class SizeChip extends StatelessWidget {
   const SizeChip({
     required this.label,
     required this.selected,
-    required this.onTap,
+    this.onTap,
     super.key,
   });
 
   final String label;
   final bool selected;
-  final VoidCallback onTap;
+  /// Null disables the chip: the device text size is already at the ceiling,
+  /// so picking one cannot change anything.
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {

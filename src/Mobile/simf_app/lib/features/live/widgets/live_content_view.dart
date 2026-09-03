@@ -89,7 +89,6 @@ class LiveContentView extends StatelessWidget {
             // P5 — D-439: the admin-set AI caption when present, else the
             // placeholder hint (YouTube CC supplies captions meanwhile).
             caption: session.localizedCaption(isArabic: isArabic),
-            captionHint: l10n.liveCaptionHint,
           )
         else if (session.hasRecording)
           RecordingSurface(message: l10n.liveRecordingAvailable)

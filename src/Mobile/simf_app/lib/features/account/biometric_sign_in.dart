@@ -20,6 +20,7 @@ Future<void> runBiometricSignIn({
   required AppL10n l10n,
   required void Function(String? message) onError,
   required void Function({required bool busy}) onBusy,
+  String? expectedEmail,
 }) async {
   final biometric = ref.read(biometricAuthProvider);
   final notifier = ref.read(authControllerProvider.notifier);
@@ -33,7 +34,9 @@ Future<void> runBiometricSignIn({
     return;
   }
 
-  // (2) Face login needs a device key, enrolled on a prior sign-in.
+  // (2) Face login needs a device key, enrolled on a prior sign-in AND carrying
+  // the account it belongs to (an upgraded install without that binding reads
+  // as not enrolled, because nothing can say which account it would open).
   // BiometricAuth owns the device-key wiring (D-441) and already degrades a
   // failed secure-storage read to "not enrolled"; this used to re-write that
   // try/catch around the same notifier BiometricAuth itself reads.
@@ -60,7 +63,21 @@ Future<void> runBiometricSignIn({
   onError(null);
   Object? unexpectedError;
   try {
-    await notifier.signInWithDeviceKey();
+    final outcome =
+        await notifier.signInWithDeviceKey(expectedEmail: expectedEmail);
+    switch (outcome) {
+      case DeviceKeySignInOutcome.signedIn:
+        break;
+      case DeviceKeySignInOutcome.notEnrolled:
+        // The key went away between (2) and here - revoked from another
+        // device, or an upgraded install whose key carries no owner.
+        onError(l10n.biometricNotEnrolled);
+      case DeviceKeySignInOutcome.accountMismatch:
+        // This device's credential opens a different account. The button is
+        // normally disabled with the same explanation, so reaching this means
+        // the form changed under the OS prompt.
+        onError(l10n.biometricNotEnrolled);
+    }
   } on AuthFailure catch (failure) {
     onError(failure.source.localizedMessage(l10n));
   } on Object catch (e) {

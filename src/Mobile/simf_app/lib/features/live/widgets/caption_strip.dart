@@ -1,43 +1,29 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_app/app/theme/tokens.dart';
-import 'package:simf_app/features/accessibility/data/accessibility_controller.dart';
 
 /// The gold-bordered organiser caption strip under the player (frame 934:3613).
-/// P5 — D-439: when the session carries admin-typed [caption] text it is shown
-/// in readable white; otherwise the muted placeholder [hint] is shown (and for
-/// a YouTube feed the player's own CC supplies captions meanwhile).
+/// P5 — D-439: shown only when the session carries admin-typed [caption] text.
 ///
-/// A15 (2026-07-26) — the strip used to carry a gold "AI" badge next to copy
-/// promising live translation of the spoken audio. It renders a STATIC
-/// admin-typed string (`Session.LiveCaptions`) that never changes during the
-/// broadcast, so the AI branding and the live-translation promise were a false
-/// capability claim and are gone. Real speech-to-text + streaming translation
-/// is a feature, not a defect fix (see the dead
-/// `/app/ai/live-translation/chunk` endpoint) — it is an owner decision, not
-/// something this surface fakes.
-class CaptionStrip extends ConsumerWidget {
-  const CaptionStrip({required this.hint, super.key, this.caption});
+/// It used to fall back to a placeholder reading "caption text written by the
+/// organiser appears here", which drew an empty bordered box on every session
+/// without a note — a feature that looks broken rather than unused, and no
+/// toggle removed it. A strip with nothing to say now says nothing. For a
+/// YouTube feed the player's own CC stays available and user-controlled.
+class CaptionStrip extends StatelessWidget {
+  const CaptionStrip({super.key, this.caption});
 
-  /// The organiser's caption text, or null to show the placeholder [hint].
+  /// The organiser's caption text. Null means the strip does not render.
   final String? caption;
-  final String hint;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // Page-038 captions toggle: when the user turns captions off, hide the
-    // strip entirely (the YouTube player's own CC stays user-controlled).
-    // Defaults to shown when the accessibility DI isn't wired (widget tests).
-    bool captionsEnabled;
-    try {
-      captionsEnabled = ref.watch(accessibilityControllerProvider).captions;
-    } on Object catch (_) {
-      captionsEnabled = true;
-    }
-    if (!captionsEnabled) {
+  Widget build(BuildContext context) {
+    // The Page-038 captions flag is no longer read. Its switch is withdrawn,
+    // so a stored `false` would hide every organiser caption with nothing left
+    // to turn it back on. The YouTube player's own CC stays user-controlled.
+    final text = caption;
+    if (text == null) {
       return const SizedBox.shrink();
     }
-    final hasCaption = caption != null;
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: SimfTokens.space3,
@@ -51,12 +37,10 @@ class CaptionStrip extends ConsumerWidget {
         ),
       ),
       child: Text(
-        caption ?? hint,
+        text,
         textAlign: TextAlign.start,
-        style: TextStyle(
-          // A real caption reads in white; the placeholder is the frame's soft
-          // caption colour (#DDE4F0, 934:3613).
-          color: hasCaption ? SimfTokens.surface : SimfTokens.captionText,
+        style: const TextStyle(
+          color: SimfTokens.surface,
           fontSize: SimfTokens.textSm,
         ),
       ),

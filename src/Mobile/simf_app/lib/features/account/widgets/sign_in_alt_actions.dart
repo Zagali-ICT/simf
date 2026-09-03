@@ -7,23 +7,36 @@ import 'package:simf_app/app/widgets/simf_svg_icon.dart';
 import 'package:simf_app/features/account/widgets/auth_chrome.dart';
 
 /// The sign-in card's alternative entry methods below the "or" divider:
-/// Face-ID sign-in (shown only when a biometric is usable), the printed-badge
+/// Face-ID sign-in (shown only when this install has an enrolled credential and
+/// the device can prompt for it), the printed-badge
 /// QR sign-in (Part B, D-430 — a deliberate addition beyond Figma 168:2800),
 /// and the guest-mode link (627:2390). Extracted so the screen composes this
 /// block rather than defining it inline.
 class SignInAltActions extends StatelessWidget {
   const SignInAltActions({
-    required this.biometricAvailable,
     required this.busy,
     required this.onBiometric,
     required this.onBadge,
     required this.onGuest,
     super.key,
+    this.biometricLabel,
+    this.biometricBlockedHint,
   });
 
-  /// Whether the device has a usable biometric — the Face-ID button is hidden
-  /// entirely on sensorless devices rather than shown then erroring.
-  final bool biometricAvailable;
+  /// The Face-ID button's label, or null to hide the button entirely.
+  ///
+  /// Null covers both "this device has no usable biometric" and "no account is
+  /// enrolled on this install" — in either case the button could only ever
+  /// error, and the screen already documents that showing-then-erroring is the
+  /// behaviour to avoid. When non-null it NAMES the account the credential
+  /// opens, because the credential, not the form, decides that.
+  final String? biometricLabel;
+
+  /// Non-null when the typed address is not the one the enrolled credential
+  /// opens: the button stays visible but disabled, and this reads beneath it.
+  /// Visible-but-disabled rather than hidden, because a button that vanishes as
+  /// you type reads as a bug and explains nothing.
+  final String? biometricBlockedHint;
 
   /// While true every action is disabled (a sign-in is in flight).
   final bool busy;
@@ -57,16 +70,26 @@ class SignInAltActions extends StatelessWidget {
           ],
         ),
         const SizedBox(height: SimfTokens.space6),
-        if (biometricAvailable) ...<Widget>[
+        if (biometricLabel != null) ...<Widget>[
           AuthAltButton(
-            label: l10n.faceIdSignInButton,
+            label: biometricLabel!,
             icon: const SimfSvgIcon(
               AppAssets.authFaceId,
               size: SimfTokens.signInAltActionsSize,
               color: SimfTokens.goldSoft,
             ),
-            onPressed: busy ? null : onBiometric,
+            onPressed:
+                (busy || biometricBlockedHint != null) ? null : onBiometric,
           ),
+          if (biometricBlockedHint != null)
+            Padding(
+              padding: const EdgeInsets.only(top: SimfTokens.space2),
+              child: Text(
+                biometricBlockedHint!,
+                textAlign: TextAlign.start,
+                style: SimfTokens.bodyGreySm,
+              ),
+            ),
           const SizedBox(height: SimfTokens.space3),
         ],
         AuthAltButton(

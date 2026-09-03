@@ -5,10 +5,37 @@
 > (D-465).** Tested in
 > `src/Mobile/simf_app/test/features/accessibility/accessibility_screen_test.dart`
 > + `accessibility_controller_test.dart` + `accessibility_server_sync_test.dart`.
-> Choices are **persisted** (prefs) and **applied app-wide**: the text scaler +
-> reduce-motion ride the root MediaQuery, high-contrast swaps the theme (D-327),
-> the **screen-reader** assist announces each titled screen, and the **captions**
-> toggle gates the live-broadcast caption strip.
+> Choices are **persisted** (prefs) and **applied app-wide**.
+
+> **FOUR CONTROLS WITHDRAWN (2026-09-04), before the App Store resubmission.**
+> The screen now offers the **font size card only**. High contrast, reduce
+> motion, the screen-reader announcer and captions were each wired to a
+> provider, persisted, and server-synced - and each observably inert on a real
+> device. Apple rejects non-functional features under Guideline 2.1, and this
+> screen is reachable **signed out**, so a reviewer needed no account to find
+> them. Measured before removal:
+>
+> - **high contrast** swapped `ThemeData`, but the app reads colour from
+>   `SimfTokens` constants in 323 files and from `ColorScheme` in exactly ONE
+>   (`simf_confirm_dialog.dart`, whose value is identical in all four themes).
+>   It also LOST contrast: the drawer's white row titles fell back to the
+>   Material default, and the high-contrast button styles drop the brand Arabic
+>   font, re-breaking the D-549 lesson.
+> - **reduce motion** set `MediaQueryData.disableAnimations`, which in this
+>   Flutter version is read by one framework widget, to pause animated GIF/WebP.
+>   The app ships no animated images and the backend rejects GIF outright.
+> - **the screen-reader announcer** fired on widget MOUNT, not on navigation, so
+>   under the shell's IndexedStack it spoke three overlapping screen names at
+>   launch and nothing on a tab change or a back.
+> - **captions** gated a strip holding one static admin-typed string, not a
+>   caption track - and before the forum, with no stream URL configured, it
+>   gated nothing at all.
+>
+> **The controller fields, the prefs keys and the wire contract are all KEPT**,
+> so a value already on a device or in an account still round-trips and nothing
+> stored is orphaned. Restoring a control means building the behaviour first;
+> each is a programme, not a re-render. The text scaler additionally now
+> **composes with** the platform's Dynamic Type instead of replacing it.
 
 > **Server sync (`accessibility-server-sync`, 2026-07-30).** The five flags used
 > to be **device prefs only**, so they did not follow the user to a second device
@@ -42,19 +69,35 @@
 
 ## Layout (D-465)
 
-- **العرض**: حجم الخط — four chips صغير / متوسط / كبير / **أكبر** (`extraLarge`, ×1.3); تباين عالٍ switch; تقليل الحركة switch.
-- **الصوت والقراءة**: قارئ الشاشة switch (default off); الترجمة النصية (للجلسات) switch (default **on**).
+- **العرض**: حجم الخط — four chips صغير / متوسط / كبير / **أكبر** (`extraLarge`, ×1.3).
+- That is the whole screen. The تباين عالٍ / تقليل الحركة / قارئ الشاشة /
+  الترجمة النصية switches were withdrawn on 2026-09-04 (see the note at the
+  top), and their EFFECTS were withdrawn with them: nothing under `lib/`
+  reads the four flags any more, pinned by
+  `test/repo/withdrawn_accessibility_flags_test.dart`. Removing only the
+  switches would have left a stored `true` applied with nothing able to
+  turn it off, and for a signed-in account the server copy replays it onto
+  every fresh install.
+- The chips are **disabled**, with a line saying so, when the device's own
+  text size already meets the app's 1.3 ceiling: the composite is clamped
+  there, so every chip would resolve to the same number and the card would
+  be a live-looking control that changes nothing.
 
 ## Coverage matrix
 
 | ID | Scenario | Type | Priority | Status |
 |----|----------|------|----------|--------|
-| E2E-MOB038-001 | Both sections render: 4 font chips + 4 switches | happy | P0 | authored ✓ (screen `renders the display + sound sections and their controls`) |
-| E2E-MOB038-002 | Toggling high-contrast flips it and persists | happy | P0 | authored ✓ (screen `toggling high-contrast flips it and persists`) |
+| E2E-MOB038-001 | The display section renders: 4 font chips, and NO switch | happy | P0 | authored ✓ (screen `renders the display section and the four size chips`) |
+| E2E-MOB038-002 | ~~Toggling high-contrast flips it and persists~~ | — | — | **WITHDRAWN 2026-09-04** — the control is gone; the field is kept (see -013) |
 | E2E-MOB038-003 | Picking a text size (أكبر) persists `extraLarge` | happy | P1 | authored ✓ (screen `picking a text size persists the choice`) |
-| E2E-MOB038-004 | Screen-reader assist defaults off, persists on | happy | P1 | authored ✓ (screen `screen-reader assist defaults off and persists on`) |
-| E2E-MOB038-005 | Captions default on, persist off → live strip hidden | happy | P1 | authored ✓ (screen `captions default on and persist off`) + live-broadcast strip gating |
-| E2E-MOB038-006 | Choices persisted to prefs + applied app-wide (scale / contrast / motion) | happy | P1 | covered (controller test persists; app applies via root MediaQuery + theme) |
+| E2E-MOB038-004 | ~~Screen-reader assist defaults off, persists on~~ | — | — | **WITHDRAWN 2026-09-04** — the control is gone; the field is kept (see -013) |
+| E2E-MOB038-005 | ~~Captions default on, persist off → live strip hidden~~ | — | — | **WITHDRAWN 2026-09-04** — the control is gone. The strip still honours the stored flag, and now renders NOTHING when the session carries no caption (was: a placeholder box) |
+| E2E-MOB038-006 | The text scale is persisted and applied app-wide, **composed on top of** the platform's Dynamic Type rather than replacing it, and clamped to the 1.3 the screens are drawn against | happy | P1 | covered (controller test persists; `app.dart` composes via the root MediaQuery) |
+| E2E-MOB038-013 | **No non-functional control is offered.** The screen renders zero switches, and none of "High contrast" / "Reduce motion" / "Sound & reading" / "Screen reader" / "Captions (for sessions)" appears. Reachable SIGNED OUT, so an App Review reviewer reaches it with no credentials | element | P0 | authored ✓ (screen `offers NO control that does not work`) |
+| E2E-MOB038-014 | **Nothing stored is orphaned.** A device or account carrying `highContrast=true` / `captions=false` still round-trips through the controller after the controls were withdrawn | edge | P1 | authored ✓ (screen `keeps the persisted shape so nothing stored is orphaned`) |
+| E2E-MOB038-015 | **The size chips are accessibly NAMED** (`SizeChip` passes `label`). `AccessibilityToggleRow` also gained a `MergeSemantics` so its title and switch surface as ONE named control instead of an unnamed toggle (the BUG-012 shape this screen was missed out of) — but this screen no longer renders it, so that fix is banked for whoever builds one of these for real, not shipped behaviour here | element | P1 | partial (chips authored ✓; the toggle row has no call site under `lib/`) |
+| E2E-MOB038-016 | **The withdrawn flags have no reader left.** No file under `lib/` outside the accessibility data layer reads `highContrast`, `reduceMotion`, `screenReaderAssist` or `captions`. Withdrawing a control without withdrawing its effect strands anyone holding a stored `true` | element | P0 | authored ✓ (`test/repo/withdrawn_accessibility_flags_test.dart`) |
+| E2E-MOB038-017 | **The chips are disabled and say why** when the platform text scale already meets the 1.3 ceiling, rather than rendering four pills that all resolve to the same size | edge | P1 | authored ✓ (`accessibility_text_scale_test.dart`) |
 | E2E-MOB038-007 | **Write-through (`accessibility-server-sync`):** every one of the five setters pushes the WHOLE settings object to `PUT /app/account/preferences` | happy | P1 | authored ✓ (`accessibility_server_sync_test` — `each change is pushed to the account`) |
 | E2E-MOB038-008 | **A failed push never disturbs the local choice** — offline / signed-out / 5xx leaves both the state and the prefs on the value the user just picked | resilience | P0 | authored ✓ (`accessibility_server_sync_test` — `a failed push never disturbs the local choice`) |
 | E2E-MOB038-009 | **Hydrate at sign-in** — the account copy replaces the local one on the device *and* is written to prefs, so the next cold start reads it instantly and offline | happy | P1 | authored ✓ (`accessibility_server_sync_test` — `the account copy replaces the local one, prefs included`) |
@@ -72,28 +115,28 @@ Feature: Accessibility settings (client-local, Figma 1116:16630)
 Scenario: The two sections render their controls
   When the user opens /settings/accessibility
   Then the العرض section shows the four size chips (Small/Medium/Large/Extra large)
-  And the تباين عالٍ and تقليل الحركة switches are shown
-  And the الصوت والقراءة section shows the قارئ الشاشة and الترجمة النصية switches
+  And no switch is rendered
 
-Scenario: Toggling high-contrast persists
-  Given the high-contrast switch is off
-  When the user taps it
-  Then it flips on and accessibility_high_contrast is written to prefs
+Scenario: The screen offers no control that does not work
+  Given the app is running and the user is SIGNED OUT
+  When they open More then Accessibility
+  Then the display section and the four font-size chips are shown
+  And no switch is rendered
+  And none of "High contrast", "Reduce motion", "Sound & reading",
+      "Screen reader" or "Captions (for sessions)" appears
 
-Scenario: Picking the largest text size persists extraLarge
-  When the user taps "أكبر"
-  Then accessibility_text_size = "extraLarge" is written and the app text scaler becomes 1.3
+Scenario: A stored value survives the withdrawal
+  Given prefs already hold accessibility_high_contrast = true
+  And prefs already hold accessibility_captions = false
+  When the accessibility screen loads
+  Then the controller still reads highContrast = true and captions = false
+  And nothing stored is orphaned or rewritten
 
-Scenario: The screen-reader assist persists and announces
-  Given the screen-reader switch is off
-  When the user turns it on
-  Then accessibility_screen_reader = true is written
-  And subsequently opening a titled screen announces its name via the platform a11y channel
-
-Scenario: Turning captions off hides the live caption strip
-  Given captions default on
-  When the user turns captions off
-  Then accessibility_captions = false is written
+Scenario: The text scale composes with the platform setting
+  Given the device is at an enlarged system font size
+  When the user picks "أكبر" in the app
+  Then the rendered scale is the platform scale times the app choice
+  And the result is clamped to 1.3, the largest the screens are drawn against
   And the live-broadcast AI caption strip is no longer rendered
 ```
 

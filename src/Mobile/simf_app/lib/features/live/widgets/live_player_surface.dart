@@ -12,7 +12,6 @@ import 'package:simf_app/features/live/widgets/live_video_player.dart';
 class LivePlayerSurface extends ConsumerStatefulWidget {
   const LivePlayerSurface({
     required this.url,
-    required this.captionHint,
     this.liveLabel,
     this.caption,
     super.key,
@@ -27,7 +26,6 @@ class LivePlayerSurface extends ConsumerStatefulWidget {
 
   /// P5 — D-439: the admin-typed caption text for this session, or null.
   final String? caption;
-  final String captionHint;
 
   @override
   ConsumerState<LivePlayerSurface> createState() => _LivePlayerSurfaceState();
@@ -62,7 +60,7 @@ class _LivePlayerSurfaceState extends ConsumerState<LivePlayerSurface> {
             const SizedBox(height: SimfTokens.space4),
             LiveVideoPlayer(url: widget.url),
             const SizedBox(height: SimfTokens.space4),
-            CaptionStrip(caption: widget.caption, hint: widget.captionHint),
+            CaptionStrip(caption: widget.caption),
           ],
         ),
       ),

@@ -161,6 +161,16 @@ final biometricEnabledProvider = FutureProvider.autoDispose<bool>(
   (ref) => ref.read(biometricAuthProvider).isEnabled(),
 );
 
+/// This install's biometric credential and the account it opens, or null when
+/// none is enrolled. The sign-in screen names that account on the button rather
+/// than offering an anonymous one - the credential resolves its own account on
+/// the server, so the form's email has no say in which session comes back, and
+/// a button that does not say whose it is invites exactly that confusion.
+final enrolledDeviceKeyProvider =
+    FutureProvider.autoDispose<EnrolledDeviceKey?>(
+  (ref) => ref.read(authControllerProvider.notifier).enrolledDeviceKey(),
+);
+
 /// Caps the capability/storage probe in the post-sign-in nudge so a stalled
 /// platform call can never wedge the route home (it runs while the sign-in
 /// button spinner is up).

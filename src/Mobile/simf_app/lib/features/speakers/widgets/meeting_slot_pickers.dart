@@ -31,7 +31,7 @@ class MeetingDayCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(SimfTokens.radius),
         child: Container(
           width: SimfTokens.dayCardWidth,
-          height: SimfTokens.dayCardHeight,
+          height: meetingDayCardHeight(context),
           padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space1),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(SimfTokens.radius),
@@ -126,3 +126,15 @@ class MeetingTimeChip extends StatelessWidget {
     );
   }
 }
+
+/// The day card's height, grown with the reader's text scale.
+///
+/// Three text lines sat in a hard 64pt box: about 60pt at scale 1.0, ~69 at
+/// "Large" and ~78 at "Extra large", so it overflowed. The two `FittedBox`es
+/// could not save it — a `Column` hands a non-flex child unbounded main-axis
+/// constraints, so each reports its natural height and scales nothing.
+
+/// The horizontal list hosting these cards must use the SAME value for its
+/// viewport, which is why this is a shared function, not a constant per file.
+double meetingDayCardHeight(BuildContext context) =>
+    MediaQuery.textScalerOf(context).scale(SimfTokens.dayCardHeight);

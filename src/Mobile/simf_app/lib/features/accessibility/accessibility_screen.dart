@@ -6,17 +6,22 @@ import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/features/accessibility/data/accessibility_controller.dart';
 import 'package:simf_app/features/accessibility/widgets/accessibility_font_size_card.dart';
-import 'package:simf_app/features/accessibility/widgets/accessibility_screen_reader_row.dart';
 import 'package:simf_app/features/accessibility/widgets/accessibility_section_heading.dart';
-import 'package:simf_app/features/accessibility/widgets/accessibility_toggle_row.dart';
 
 /// Accessibility — إمكانية الوصول · route: `RouteNames.accessibility`
 /// Figma 1116:16630
-/// Contract: every choice is persisted ([AccessibilityController]) and applied
-/// app-wide — the text scaler + reduce-motion ride the root MediaQuery and
-/// high-contrast swaps the theme (`app/app.dart`); the screen-reader switch
-/// drives the navigation announcer (`router.dart`); the captions switch gates
-/// the live-broadcast caption strip.
+///
+/// ONE control, deliberately. The text scaler is real: it rides the root
+/// MediaQuery (`app/app.dart`), composed on top of the platform's own Dynamic
+/// Type rather than replacing it.
+
+/// High contrast, reduce motion, the screen-reader announcer and captions were
+/// each wired to a provider and each observably inert — the theme swap reached
+/// almost nothing (the app paints from `SimfTokens`, not `ColorScheme`),
+/// `disableAnimations` is read here by nothing, the announcer fired on mount
+/// rather than on navigation, and the "caption" was one static admin string.
+/// The controller fields, storage keys and wire contract are all KEPT; only the
+/// dead controls are withdrawn. Restoring one means building it first.
 class AccessibilityScreen extends ConsumerWidget {
   const AccessibilityScreen({super.key});
 
@@ -36,34 +41,9 @@ class AccessibilityScreen extends ConsumerWidget {
           AccessibilityFontSizeCard(
             value: settings.textSize,
             onChanged: controller.setTextSize,
-          ),
-          const SizedBox(height: SimfTokens.space3),
-          AccessibilityToggleRow(
-            title: l10n.accessibilityHighContrastTitle,
-            hint: l10n.accessibilityHighContrastSubtitle,
-            value: settings.highContrast,
-            onChanged: controller.setHighContrast,
-          ),
-          const SizedBox(height: SimfTokens.space3),
-          AccessibilityToggleRow(
-            title: l10n.accessibilityReduceMotionTitle,
-            hint: l10n.accessibilityReduceMotionSubtitle,
-            value: settings.reduceMotion,
-            onChanged: controller.setReduceMotion,
-          ),
-          const SizedBox(height: SimfTokens.space5),
-          AccessibilitySectionHeading(l10n.accessibilitySectionSound),
-          const SizedBox(height: SimfTokens.space3),
-          AccessibilityScreenReaderRow(
-            value: settings.screenReaderAssist,
-            onChanged: controller.setScreenReaderAssist,
-          ),
-          const SizedBox(height: SimfTokens.space3),
-          AccessibilityToggleRow(
-            title: l10n.accessibilityCaptionsTitle,
-            hint: l10n.accessibilityCaptionsSubtitle,
-            value: settings.captions,
-            onChanged: controller.setCaptions,
+            note: platformTextScaleAtCeiling(MediaQuery.textScalerOf(context))
+                ? l10n.accessibilityTextSizeSystemControls
+                : null,
           ),
         ],
       ),

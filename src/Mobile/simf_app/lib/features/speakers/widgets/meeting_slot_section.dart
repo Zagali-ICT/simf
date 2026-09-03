@@ -93,7 +93,7 @@ class MeetingSlotSection extends StatelessWidget {
       children: <Widget>[
         MeetingFieldLabel(text: l10n.meetingChooseDateLabel), // اختر التاريخ
         const SizedBox(height: SimfTokens.space2),
-        _dayCards(),
+        _dayCards(context),
         const SizedBox(height: SimfTokens.space4),
         MeetingFieldLabel(text: l10n.meetingChooseTimeLabel), // اختر الوقت
         const SizedBox(height: SimfTokens.space2),
@@ -105,10 +105,10 @@ class MeetingSlotSection extends StatelessWidget {
     );
   }
 
-  Widget _dayCards() {
+  Widget _dayCards(BuildContext context) {
     final days = _daysWithSlots;
     return SizedBox(
-      height: SimfTokens.dayCardHeight,
+      height: meetingDayCardHeight(context),
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: days.length,

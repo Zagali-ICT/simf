@@ -5,6 +5,13 @@ import 'package:simf_app/app/theme/tokens.dart';
 /// One labelled switch row (frame 1116:16630): the navy-deep box with the title
 /// at the inline start and the gold switch at the inline end. [hint] rides the
 /// switch as a semantics hint (this is the accessibility screen, after all).
+///
+/// The row is wrapped in [MergeSemantics] so the title and the switch surface
+/// as ONE control: without it the [Text] is a sibling node and a reader landing
+/// on the switch itself announces an unnamed toggle. That is the same shape
+/// BUG-012 fixed across the form fields (see `account_remember_forgot.dart`),
+/// which this screen was missed out of. The label is left to the [Text] rather
+/// than repeated on the [Semantics] below, or the merged node says it twice.
 class AccessibilityToggleRow extends StatelessWidget {
   const AccessibilityToggleRow({
     required this.title,
@@ -30,29 +37,31 @@ class AccessibilityToggleRow extends StatelessWidget {
         color: SimfTokens.navyDeep,
         borderRadius: BorderRadius.circular(SimfTokens.radius),
       ),
-      child: Row(
-        children: <Widget>[
-          Expanded(
-            child: Text(
-              title,
-              textAlign: TextAlign.start,
-              style: SimfTokens.labelWhiteMedium,
+      child: MergeSemantics(
+        child: Row(
+          children: <Widget>[
+            Expanded(
+              child: Text(
+                title,
+                textAlign: TextAlign.start,
+                style: SimfTokens.labelWhiteMedium,
+              ),
             ),
-          ),
-          Semantics(
-            hint: hint,
-            child: Switch(
-              value: value,
-              onChanged: onChanged,
-              activeThumbColor: SimfTokens.surface,
-              activeTrackColor: SimfTokens.accent,
-              inactiveThumbColor: SimfTokens.surface,
-              inactiveTrackColor: SimfTokens.navy,
-              trackOutlineColor:
-                  WidgetStateProperty.all(SimfTokens.beigeBorder),
+            Semantics(
+              hint: hint,
+              child: Switch(
+                value: value,
+                onChanged: onChanged,
+                activeThumbColor: SimfTokens.surface,
+                activeTrackColor: SimfTokens.accent,
+                inactiveThumbColor: SimfTokens.surface,
+                inactiveTrackColor: SimfTokens.navy,
+                trackOutlineColor:
+                    WidgetStateProperty.all(SimfTokens.beigeBorder),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

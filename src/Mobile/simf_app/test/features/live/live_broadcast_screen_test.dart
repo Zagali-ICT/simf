@@ -13,6 +13,7 @@ import 'package:simf_app/core/utils/saudi_time.dart';
 import 'package:simf_app/features/live/data/live_models.dart';
 import 'package:simf_app/features/live/data/live_repository.dart';
 import 'package:simf_app/features/live/live_broadcast_screen.dart';
+import 'package:simf_app/features/live/widgets/caption_strip.dart';
 import 'package:simf_app/features/live/widgets/live_badges.dart';
 import 'package:simf_app/features/live/widgets/live_notice_banner.dart';
 import 'package:simf_app/features/live/widgets/live_player_surface.dart';
@@ -432,10 +433,12 @@ void main() {
       expect(find.text('AI'), findsNothing);
       expect(find.textContaining('Live captions of the spoken word'),
           findsNothing,);
-      // The honest placeholder names who wrote the caption instead.
+      // Nor the placeholder that replaced the AI copy: naming who writes the
+      // caption was honest, but it still drew an empty bordered box on a
+      // session that has no note, which reads as loading or broken.
       expect(
         find.textContaining('written by the organiser'),
-        findsOneWidget,
+        findsNothing,
       );
     });
 
@@ -628,8 +631,7 @@ void main() {
       expect(tester.widget<Text>(caption).style!.color, SimfTokens.surface);
     });
 
-    testWidgets(
-        'P5 — a live session with no caption shows the placeholder hint',
+    testWidgets('P5 — a live session with no caption renders no strip',
         (tester) async {
       await _pump(
         tester,
@@ -642,13 +644,18 @@ void main() {
         settle: false,
       );
 
-      final hint = find.text(
-        'Caption text written by the organiser for this session appears here.',
+      // A strip with nothing to say says nothing. The placeholder it used to
+      // show drew a bordered box on every session without an organiser note,
+      // and no accessibility toggle removed it - the placeholder rendered
+      // whether captions were switched on or off.
+      expect(find.byType(CaptionStrip), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(CaptionStrip),
+          matching: find.byType(Text),
+        ),
+        findsNothing,
       );
-      expect(hint, findsOneWidget);
-      // The placeholder reads in the frame's soft caption colour (#DDE4F0,
-      // 934:3613) — assert the token so a re-tint can't silently pass.
-      expect(tester.widget<Text>(hint).style!.color, SimfTokens.captionText);
     });
 
     testWidgets('P5 — the caption renders the Arabic text under the ar locale',

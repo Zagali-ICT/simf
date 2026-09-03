@@ -10,6 +10,7 @@ import 'package:simf_auth_pkg/src/data/dto/device_key_dtos.dart';
 import 'package:simf_auth_pkg/src/domain/app_role.dart';
 import 'package:simf_auth_pkg/src/domain/auth_failure.dart';
 import 'package:simf_auth_pkg/src/domain/current_user.dart';
+import 'package:simf_auth_pkg/src/domain/device_key_binding.dart';
 import 'package:simf_auth_pkg/src/domain/preferred_language.dart';
 import 'package:simf_auth_pkg/src/domain/registration_status.dart';
 import 'package:simf_auth_pkg/src/domain/session.dart';
@@ -192,6 +193,7 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
       case SignInSession(:final session):
         await _persistSession(session);
         _setSignedIn(session);
+        await _reconcileDeviceKeyOwner(session);
         // The sign-in payload's user (AuthUser) carries only id/email/display
         // name — hydrate the authoritative app-role + registration status from
         // GET /app/users/me so the app does not treat the user as Guest.
@@ -218,6 +220,7 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
       case SignInSession(:final session):
         await _persistSession(session);
         _setSignedIn(session);
+        await _reconcileDeviceKeyOwner(session);
         await reloadCurrentUser();
       case SignInOtpChallenge(:final otpToken):
         state = AuthStateAwaitingOtp(otpToken, email: displayEmail);
@@ -235,6 +238,7 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
     );
     await _persistSession(session);
     _setSignedIn(session);
+    await _reconcileDeviceKeyOwner(session);
     // Hydrate the authoritative privilege (the token payload omits it) — L-4.
     await reloadCurrentUser();
   }
@@ -358,6 +362,40 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
       StorageKeys.deviceKeyPrivate,
       pair.privateKeyBase64,
     );
+    // Record WHOSE key this is, in the same breath that stores it. The guard
+    // at the top of this method has already proved a session, so the owner is
+    // in hand; writing the key without the owner is what let a later sign-in
+    // use it for whatever address happened to be typed.
+    final user = (state as AuthStateSignedIn).session.user;
+    await _secureStorage.write(
+      StorageKeys.deviceKeyAccountJson,
+      jsonEncode(
+        DeviceKeyBinding.create(
+          userId: user.id,
+          deviceKeyId: id,
+          email: user.email,
+        ).toJson(),
+      ),
+    );
+  }
+
+  /// Which account this install's biometric key belongs to, or null when there
+  /// is no usable key. The sign-in screen reads this to name the account on the
+  /// button instead of offering an anonymous one.
+  Future<DeviceKeyBinding?> deviceKeyBinding() async {
+    final raw = await _secureStorage.read(StorageKeys.deviceKeyAccountJson);
+    if (raw == null || raw.isEmpty) {
+      return null;
+    }
+    try {
+      return DeviceKeyBinding.fromJson(
+        jsonDecode(raw) as Map<String, dynamic>,
+      );
+    } on Object catch (_) {
+      // Unreadable binding = unusable key. Fall through to "not enrolled"
+      // rather than guessing an owner.
+      return null;
+    }
   }
 
   /// #7a — request an emailed step-up code before enrolling biometric sign-in;
@@ -379,10 +417,37 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
     }
   }
 
-  /// Whether a device key is enrolled on this device — the sign-in screen only
-  /// offers the biometric button when this is true.
+  /// Whether a USABLE device key is enrolled on this device — the sign-in
+  /// screen only offers the biometric button when this is true.
+  ///
+  /// A key with no owner binding is deliberately reported as not enrolled, and
+  /// cleared. That is an install upgraded across this fix: keeping it would
+  /// preserve the exact defect on precisely the devices that already have it,
+  /// since nothing can say which account it opens. The cost is one re-enrolment
+  /// through the existing step-up flow, and the server's own key row stays
+  /// listed under My Devices until revoked from another device.
   Future<bool> hasEnrolledDeviceKey() async =>
-      await enrolledDeviceKeyId() != null;
+      await enrolledDeviceKey() != null;
+
+  /// This install's usable biometric credential: its server-issued id together
+  /// with the account it belongs to, or null when there is none.
+  ///
+  /// The id comes back with the binding because the caller needs both to answer
+  /// "is the address on this form the one this key opens?" - the id is the
+  /// digest's salt. Returning them separately would make every caller read two
+  /// values and hope they belong together.
+  Future<EnrolledDeviceKey?> enrolledDeviceKey() async {
+    final id = await enrolledDeviceKeyId();
+    if (id == null) {
+      return null;
+    }
+    final binding = await deviceKeyBinding();
+    if (binding == null) {
+      await _clearLocalDeviceKey();
+      return null;
+    }
+    return (id: id, binding: binding);
+  }
 
   /// This device's own device-key id, or null when none is enrolled. The My
   /// Devices screen uses it to mark which row is the phone in the user's hand.
@@ -393,13 +458,32 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
 
   /// Biometric re-open (Page_003 L-2): challenge → sign →
   /// sign-in-with-device-key → tokens. The caller gates this behind a
-  /// successful on-device biometric prompt (local_auth). No-op if no device key
-  /// is enrolled.
-  Future<void> signInWithDeviceKey() async {
+  /// successful on-device biometric prompt (local_auth).
+  ///
+  /// [expectedEmail] is the address typed on the sign-in form. When it is given
+  /// and does not belong to this install's key, the attempt is refused HERE,
+  /// before the challenge - the server cannot make this check, because the
+  /// device-key request carries no address and the endpoint is anonymous, and
+  /// adding one would put a plaintext address on an unauthenticated endpoint
+  /// and turn "wrong owner" into an account-enumeration oracle. Pass null for
+  /// an empty field, which means "whoever this device is set up for".
+  Future<DeviceKeySignInOutcome> signInWithDeviceKey({
+    String? expectedEmail,
+  }) async {
     final id = await _secureStorage.read(StorageKeys.deviceKeyId);
     final privateKey = await _secureStorage.read(StorageKeys.deviceKeyPrivate);
     if (id == null || id.isEmpty || privateKey == null || privateKey.isEmpty) {
-      return;
+      return DeviceKeySignInOutcome.notEnrolled;
+    }
+    final binding = await deviceKeyBinding();
+    if (binding == null) {
+      await _clearLocalDeviceKey();
+      return DeviceKeySignInOutcome.notEnrolled;
+    }
+    final typed = expectedEmail?.trim() ?? '';
+    if (typed.isNotEmpty &&
+        !binding.matchesEmail(deviceKeyId: id, email: typed)) {
+      return DeviceKeySignInOutcome.accountMismatch;
     }
     final challenge = await _repository.issueDeviceKeyChallenge(id);
     final signature = _deviceKeyClient.sign(
@@ -421,6 +505,26 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
     } on Object catch (_) {
       // Best-effort — the user is signed in; a hydrate failure must not
       // skip the post-sign-in navigation.
+    }
+    return DeviceKeySignInOutcome.signedIn;
+  }
+
+  /// Drops this install's biometric key when a DIFFERENT account establishes a
+  /// session here.
+  ///
+  /// Without it, B signs in with a password on A's handset, signs out, and the
+  /// sign-in screen offers "Continue as a***@…" - showing B a masked form of
+  /// A's address and a way into A's account. A loses Face ID and re-enrols,
+  /// which is the right way round for a device two people share.
+  Future<void> _reconcileDeviceKeyOwner(Session session) async {
+    try {
+      final binding = await deviceKeyBinding();
+      if (binding != null && binding.userId != session.user.id) {
+        await _clearLocalDeviceKey();
+      }
+    } on Object catch (_) {
+      // Best-effort: the caller is already signed in, and a secure-storage
+      // failure must not turn a successful sign-in into an error.
     }
   }
 
@@ -453,6 +557,11 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
     }
     try {
       await _secureStorage.delete(StorageKeys.deviceKeyPrivate);
+    } on Object catch (_) {
+      // best-effort
+    }
+    try {
+      await _secureStorage.delete(StorageKeys.deviceKeyAccountJson);
     } on Object catch (_) {
       // best-effort
     }
@@ -541,6 +650,8 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
         final session = await _repository.refresh(refreshToken: refresh);
         await _persistSession(session);
         _setSignedIn(session);
+        // No owner reconcile here: a refresh re-establishes the SAME account
+        // from tokens already on this device, so the binding cannot disagree.
         // The token payload's user (AuthUser) carries only id/email/displayName,
         // so the privilege would default to Guest — hydrate the real app-role +
         // registration status from GET /app/users/me before route-out (L-4).

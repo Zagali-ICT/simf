@@ -8,7 +8,6 @@ import 'package:simf_app/app/localization/locale_controller.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/more_drawer.dart';
-import 'package:simf_app/app/widgets/screen_announcer.dart';
 import 'package:simf_app/app/widgets/simf_bottom_nav.dart';
 import 'package:simf_app/app/widgets/simf_language_toggle.dart';
 import 'package:simf_app/app/widgets/simf_nav_controls.dart';
@@ -115,7 +114,12 @@ class SimfPageShell extends StatelessWidget {
           if (showSweep) const SimfSweepBackground(),
           // Page-038 screen-reader assist: announces this page's title once on
           // mount when the user has enabled it (invisible; self-guards).
-          ScreenAnnouncer(title: title),
+          // No ScreenAnnouncer: it announced on widget MOUNT rather than on
+          // navigation, so under this shell's IndexedStack it spoke three
+          // screen names at launch and nothing on a tab change or a back.
+          // VoiceOver already reads the new screen's first focusable element on
+          // a route change. Its switch is withdrawn; re-mounting it needs a
+          // NavigatorObserver, not this line.
           SafeArea(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,

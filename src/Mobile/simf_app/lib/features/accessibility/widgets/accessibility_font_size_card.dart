@@ -12,10 +12,17 @@ class AccessibilityFontSizeCard extends StatelessWidget {
     required this.value,
     required this.onChanged,
     super.key,
+    this.note,
   });
 
   final AppTextSize value;
   final ValueChanged<AppTextSize> onChanged;
+
+  /// Shown under the chips, which are disabled while it is set. Non-null when
+  /// the device's own text-size setting already meets the app's ceiling, so
+  /// picking a chip cannot change anything. Saying so beats four live-looking
+  /// pills that all render identically.
+  final String? note;
 
   @override
   Widget build(BuildContext context) {
@@ -50,12 +57,20 @@ class AccessibilityFontSizeCard extends StatelessWidget {
                   child: SizeChip(
                     label: label,
                     selected: size == value,
-                    onTap: () => onChanged(size),
+                    onTap: note == null ? () => onChanged(size) : null,
                   ),
                 ),
               ],
             ],
           ),
+          if (note != null) ...<Widget>[
+            const SizedBox(height: SimfTokens.space3),
+            Text(
+              note!,
+              textAlign: TextAlign.start,
+              style: SimfTokens.bodyGreySm,
+            ),
+          ],
         ],
       ),
     );

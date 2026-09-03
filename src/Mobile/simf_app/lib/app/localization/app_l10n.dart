@@ -541,6 +541,35 @@ class AppL10n {
   String get faceIdSignInButton =>
       _t('التسجيل ببصمة الوجه', 'Sign in with Face ID');
 
+  /// The Face-ID button names the account it will open.
+  ///
+  /// The device key is a discoverable credential: the server resolves the
+  /// account from the key, so the address typed on the form has no bearing on
+  /// which session comes back. An unnamed button therefore reads as "sign in as
+  /// whoever I typed" while doing something else entirely.
+  /// Shown under the size chips when the device's own text setting already
+  /// meets the app's ceiling, so the chips cannot move anything.
+  String get accessibilityTextSizeSystemControls => _t(
+        'حجم الخط في هذا الجهاز مضبوط بالفعل على الحد الأقصى الذي يدعمه التطبيق، '
+            'لذلك يتحكم إعداد النظام في الحجم هنا.',
+        'The text size set on this device is already the largest the app '
+            'supports, so the system setting is in control here.',
+      );
+
+  String faceIdContinueAs(String maskedEmail) => _t(
+        'المتابعة باسم $maskedEmail',
+        'Continue as $maskedEmail',
+      );
+
+  /// Shown under a disabled Face-ID button when the typed address is not the
+  /// one this device's credential opens.
+  String faceIdOtherAccount(String maskedEmail) => _t(
+        'بصمة الوجه على هذا الجهاز مُفعّلة لحساب $maskedEmail. '
+            'أدخل هذا البريد، أو سجّل الدخول بكلمة المرور.',
+        'Face ID on this device is set up for $maskedEmail. '
+            'Enter that address, or sign in with your password.',
+      );
+
   String get biometricSignInTooltip =>
       _t('الدخول بالبصمة / الوجه', 'Sign in with biometrics');
 

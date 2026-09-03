@@ -190,6 +190,11 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         context: context,
         ref: ref,
         l10n: AppL10n.of(context),
+        // The typed address, so the controller can refuse a credential that
+        // belongs to someone else BEFORE the challenge. The button is already
+        // disabled in that case; this is the backstop for any future caller
+        // that forgets, and it is what the package test pins.
+        expectedEmail: _email.text,
         onError: (message) {
           if (mounted) setState(() => _error = message);
         },
@@ -252,13 +257,33 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   }
 
   Widget _buildCard(AppL10n l10n) {
-    // Only show the Face-ID sign-in button on a device with a usable biometric
-    // (hardware + an OS-enrolled face/finger); hidden entirely on sensorless
-    // devices (loading / unsupported → hidden) rather than shown then erroring.
+    // The Face-ID button needs BOTH halves: a device that can prompt, and a
+    // credential enrolled on this install. Hardware alone used to be enough,
+    // so a fresh phone offered a button whose only outcome was "not enrolled".
+
+    // When both hold it NAMES the account the credential opens: the request
+    // carries no address and the server resolves the account from the key, so
+    // an anonymous button signs the holder into whoever last enrolled here.
+    // A different address disables it with the reason — hiding it explains
+    // nothing, and refusing after the OS prompt spends the user's face.
     final biometricAvailable = ref.watch(biometricAvailableProvider).maybeWhen(
           data: (available) => available,
           orElse: () => false,
         );
+    final enrolled = ref.watch(enrolledDeviceKeyProvider).value;
+    String? biometricLabel;
+    String? biometricBlockedHint;
+    if (biometricAvailable && enrolled != null) {
+      final masked = enrolled.binding.maskedEmail;
+      biometricLabel = l10n.faceIdContinueAs(masked);
+      final typed = _email.text.trim();
+      final mismatch = typed.isNotEmpty &&
+          !enrolled.binding.matchesEmail(
+            deviceKeyId: enrolled.id,
+            email: typed,
+          );
+      biometricBlockedHint = mismatch ? l10n.faceIdOtherAccount(masked) : null;
+    }
     return AccountCard(
       // AutofillGroup + the fields' hints let the OS treat this as one login
       // form and, on a successful submit, save the FINAL credentials (see
@@ -337,7 +362,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
               ),
               const SizedBox(height: SimfTokens.space6),
               SignInAltActions(
-                biometricAvailable: biometricAvailable,
+                biometricLabel: biometricLabel,
+                biometricBlockedHint: biometricBlockedHint,
                 busy: _busy,
                 onBiometric: () => unawaited(_biometricSignIn()),
                 onBadge: () => context.pushNamed(RouteNames.badgeSignIn),

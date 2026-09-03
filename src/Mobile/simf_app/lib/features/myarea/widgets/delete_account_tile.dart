@@ -62,9 +62,29 @@ class _DeleteAccountTileState extends ConsumerState<DeleteAccountTile> {
       return;
     }
 
+    // The dialog above was awaited, and a token refresh can dispose this State
+    // while it is open - the same reason the router and messenger are captured
+    // before it. setState on a disposed State throws.
+    if (!mounted) {
+      return;
+    }
     setState(() => _busy = true);
     try {
       await repository.deleteMyAccount();
+      // Drop this device's biometric credential BEFORE signing out. signOut
+      // deliberately keeps the device key so a re-open can use it, which is
+      // right for a sign-out and wrong for an erasure: the sign-in screen names
+      // the account a key belongs to, so leaving it would advertise the erased
+      // address on a pre-auth screen and spend the user's face on a credential
+      // the server already revoked.
+      try {
+        await auth.disableDeviceKey();
+      } on Object catch (_) {
+        // Best-effort, and it has two expected failures: the server revoke is
+        // a call against a key deletion has already revoked, and secure
+        // storage can refuse. Neither may strand the holder on this screen
+        // with an error for an account the server has already erased.
+      }
       // The server has already revoked the session, so this clears local state
       // rather than asking permission to end something that is already over.
       await auth.signOut();

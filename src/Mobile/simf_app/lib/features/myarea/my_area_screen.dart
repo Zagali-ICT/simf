@@ -16,6 +16,7 @@ import 'package:simf_app/features/myarea/data/liveness.dart'
     show CapturedSelfie;
 import 'package:simf_app/features/myarea/data/myarea_models.dart';
 import 'package:simf_app/features/myarea/data/myarea_repository.dart';
+import 'package:simf_app/features/myarea/widgets/delete_account_tile.dart';
 import 'package:simf_app/features/myarea/widgets/my_area_dashboard_body.dart';
 import 'package:simf_app/features/myarea/widgets/my_area_identity_card.dart';
 import 'package:simf_app/features/myarea/widgets/my_area_more_row.dart';
@@ -149,6 +150,15 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
 
   /// The signed-in-but-pending view: the identity card from the cached account
   /// plus an under-review note. No counters / schedule / badge / share (L-5).
+  ///
+  /// It DOES carry "delete my account". Apple's rule is that an app offering
+  /// account creation must offer deletion, and it is not conditioned on the
+  /// organiser having approved anyone - a holder waiting on a decision, or
+  /// refused one, is exactly the person most likely to want erasing, which is
+  /// why `AccountDeleteEndpoint` is deliberately not gated on approval. The
+  /// tile used to sit only on the approved dashboard below, so the one account
+  /// state that could be created in the app was the one state that could not be
+  /// deleted from it.
   Widget _buildLimited(AppL10n l10n) {
     final user = _currentUser;
     final name = user?.displayName ?? '';
@@ -164,6 +174,8 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
             label: l10n.moreTitle,
             onTap: () => context.pushNamed(RouteNames.more),
           ),
+          const SizedBox(height: SimfTokens.space2),
+          const DeleteAccountTile(),
           // Sign-out lives in the shell's side drawer now (D-396).
         ],
       ),

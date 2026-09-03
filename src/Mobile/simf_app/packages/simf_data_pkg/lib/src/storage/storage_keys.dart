@@ -18,6 +18,15 @@ class StorageKeys {
   static const String deviceKeyId = 'simf.auth.device_key_id';
   static const String deviceKeyPrivate = 'simf.auth.device_key_private';
 
+  /// Which account the device key above belongs to (a `DeviceKeyBinding`).
+  /// Written at enrolment and cleared with the key. A key WITHOUT this is
+  /// treated as not enrolled: the credential resolves its own account on the
+  /// server, so an unbound key is one the app cannot name before using, which
+  /// is exactly how a sign-out then a different email on the form used to land
+  /// the holder in the previous account.
+  static const String deviceKeyAccountJson =
+      'simf.auth.device_key_account_json';
+
   /// A stable per-install identifier, minted once and reused, so two enrolments
   /// from the same install carry the same suffix. Only ever used to build the
   /// device label; never sent anywhere on its own.
