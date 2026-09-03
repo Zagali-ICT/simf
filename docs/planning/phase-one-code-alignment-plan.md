@@ -167,15 +167,55 @@ Keep the algorithm pinned, so `alg:none` and confusion attacks stay rejected.
 **Verify.** A token signed with the old symmetric key is rejected. The public
 key alone cannot mint a token.
 
-## 5. Keys in a key management service, and a rotation path for the PII key
+## 5. Keys in an HSM-backed key management service, and a rotation path for the PII key
 
-`StorageOptions.UserIdDocumentEncryptionKey` is a single key with no version and
-no previous-key field, so the PII columns have no rotation path at all. Give it
-the versioning the file store already has, then move both keys plus the JWT key
-out of environment variables into the key service the ministry provides.
+**Decided, not optional.** On 2026-09-03 the owner directed that an HSM be added,
+and that it be carried in this plan. HLD-004 v1.4 section 2.9 already states the
+end state in the present tense, as part two's preamble allows: "Both keys live in
+the central key management service, backed by a hardware security module; no key
+material sits in application configuration." This item is what makes that sentence
+true. It is no longer a choice between correcting the document downward and
+building the control; the control is being built.
+
+The owner had asked for this before and it was not recorded anywhere, so it was
+lost and had to be asked for twice. That is why it now carries a decision row.
+
+Three pieces, in order:
+
+1. **Version the PII key.** `StorageOptions.UserIdDocumentEncryptionKey` is a
+   single key with no version and no previous-key field, so the PII columns have
+   no rotation path at all: changing the value strands every encrypted column with
+   no window and no way back. Give it the `KekVersion` / `PreviousEncryptionKey` /
+   `PreviousKekVersion` shape `FileStorageOptions` already has, and put a version
+   marker in the ciphertext envelope the way `AesGcmEnvelopeCipher` does. Do this
+   first: it is a prerequisite for rotating anything, and it is the only piece
+   that needs no external dependency.
+
+2. **Move custody to the HSM-backed service the host provides.** Both data keys
+   (`Storage:UserIdDocumentEncryptionKey`, `FileStorage:EncryptionKey`) and the
+   JWT signing key of item 4 leave the machine-scope environment variables set by
+   `deploy/set-env-api.ps1` and are fetched from the key service instead. Behind
+   `IPiiEncryptor` and `IFileCipher` this is a provider swap: neither the blob
+   format nor the `enc:1:` column marker changes, so no stored data is rewritten
+   and no schema moves. Keep an environment-variable provider for Development and
+   Test, selected by configuration, or every developer machine needs the appliance.
+
+3. **Build the re-wrap pass.** SIMF-OPS-001 amendment C.7 designs it and says
+   plainly that it does not exist, which is why the operations document tells the
+   reader to "treat both data keys as set-once for the life of the store". Without
+   it, custody moves but rotation still cannot complete. `StoredFile.KekVersion`
+   already makes progress a `GROUP BY`, so the pass has its progress marker.
+
+**Blocked on the host.** Which appliance or service, its access protocol
+(PKCS#11, KMIP, or an HTTP key service), and the credential the API authenticates
+with. Ask the host for these three together with the AI endpoint of item 1 and the
+mail relay of item 2, since all three come from the same provider.
 
 **Verify.** Rotate the PII key with rows encrypted under the old one; every row
-still reads, and re-wrapping completes without downtime.
+still reads, and re-wrapping completes without downtime. Then assert the negative:
+no key material remains in any `set-env-*.ps1` entry or in any `appsettings*.json`,
+and the API refuses to start in Production when the key service is unreachable
+rather than falling back to a local key.
 
 ## 6. Mutual TLS between the presentation tier and the API
 
@@ -239,10 +279,56 @@ HLD's proposed minimums; staging on SQL Server Enterprise in an Availability
 Group; and the disaster-recovery site with its RTO and RPO, which is still an
 open item with the site.
 
+## 15. Backup and restore, as the documents now state it
+
+HLD-004 section 2.9 states a backup set of four artefacts, and says a restore is
+only valid when all four come from the same point: the SIMF_App database, the
+SIMF_Identity database, the object store contents, and an escrowed copy of the
+encryption keys.
+
+The keys are the part that is easy to leave out and fatal to leave out. The PII
+columns and every stored file are encrypted, so a byte-perfect restore of both
+databases and the whole object store, without the keys, returns unreadable data.
+It also cuts the other way: a byte-level restore reverses a crypto-shred, so a
+record erased by destroying its key comes back readable if an older key is
+restored over it.
+
+Two things follow, and neither exists today. The escrow itself, which lands with
+item 5 because it is the key service that holds the keys. And a restore
+rehearsal on a cycle: a backup nobody has ever restored is not evidence of
+recovery, and the failure it hides is usually the one artefact that was never in
+the set.
+
+**Verify.** A restore into a clean environment, from one point in time, yields a
+system whose encrypted columns and stored files both decrypt.
+
+## 16. A retention schedule, and disposal that uses the erasure path
+
+HLD-004 section 2.9 now states the PDPL position in full. Every obligation on it
+is met by something that exists: consent is the terms acceptance at the last step
+of registration; access and correction are the profile screens; erasure is
+`DELETE /api/v1/app/account`, which removes the personal data, destroys the
+identity document and the photographs, revokes every session and device key, and
+is deliberately open to a pending or rejected holder; residency is HSA.
+
+One is not met. Nothing disposes of a record whose holder never asks. The
+retention period is a business input rather than an engineering choice, and it is
+on the owner decision list. What is engineering: a scheduled sweep that applies
+it, and it must call the same erasure service the holder calls rather than
+growing a second deletion path that will drift from it.
+
+**Verify.** With a retention period set, a profile past it is erased by the sweep,
+and the erasure is indistinguishable from a self-service deletion.
+
 ---
 
 ## Fixed, not to be changed by this work
 
-The two databases and their separation, the five network zones and two security
+The two databases and their separation, the four network zones and two security
 areas, the permission model, the EF schema (frozen under D-895), and the mobile
 wire contract, which stays append-only.
+
+The zone count is four, not five: HLD-004 v1.4 collapsed the application and
+data bands into one HSA zone on owner instruction, and removed the internal
+firewall between the API and the databases with them. A plan that still says
+five is describing a diagram that no longer exists.
