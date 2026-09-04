@@ -1,0 +1,207 @@
+Yes. For **Google Play Console > Data safety > Data usage and handling**, use these answers for SIMF.
+
+Google says the form must include data collected by the app and third-party SDKs/libraries, so this should match the real app behavior. Source: Google Android data-use guidance: https://developer.android.com/privacy-and-security/declare-data-use
+
+**General Answers**
+
+| Question | Answer |
+|---|---|
+| Does your app collect or share required user data types? | **Yes** |
+| Is data encrypted in transit? | **Yes** |
+| Can users request data deletion? | **Yes** |
+| Delete account/data URL | `https://web.simrsnf.com/privacy#delete-account` |
+| Independent security review? | **No** |
+| Families / Kids app? | **No** |
+
+**Select These Data Types**
+
+| Data type | Collected / Shared | Ephemeral? | Required? | Purpose |
+|---|---|---|---|---|
+| Name | Collected only | No | Required | App functionality, Account management |
+| Email address | Collected only | No | Required | App functionality, Account management |
+| Phone number | Collected only | No | Required | App functionality, Account management |
+| User IDs | Collected only | No | Required | App functionality, Account management, Security |
+| Other personal info | Collected only | No | Required | App functionality, Account management, Fraud prevention/security/compliance |
+| Photos | Collected only | No | Required | App functionality, Identity verification, Security/compliance |
+| Contacts | Collected only | No | Optional | App functionality |
+| Other in-app messages | Collected only | No | Optional | App functionality |
+| Device or other IDs | Collected only | No | Required | App functionality, Fraud prevention/security/compliance |
+
+For **Other personal info**, this covers things like national ID/passport/iqama number, date of birth, gender, nationality, organization, vehicle plate, etc.
+
+For **Other in-app messages**, if the AI chat sends messages to OpenAI/Gemini/Anthropic and they are not only acting as your service provider, mark it as **Collected and shared**. Otherwise keep **Collected only**.
+
+**Do Not Select These Unless You Know They Exist**
+
+Do not select Location, Financial info, Health/fitness, Videos, Audio files, Calendar, Web browsing, Advertising ID, Crash logs, Analytics, or App performance. Also, biometric login does **not** mean you collect biometric data, because fingerprint/Face ID stays inside the phone OS.
+
+
+
+
+
+
+
+
+Primary Category: Business
+Secondary Category: Navigation
+
+
+
+
+
+
+
+
+
+
+
+أكيد. هذا نص جاهز تقدر تضيفه في App Store Connect.
+
+**Promotional Text**
+```text
+Your official companion for SIMF: agenda, sessions, badge access, speakers, venue map, updates, and event services in one secure mobile app.
+```
+
+**Subtitle**
+```text
+Official SIMF event companion
+```
+
+**Description**
+```text
+SIMF is the official mobile companion for the Saudi International Maritime Forum.
+
+The app helps attendees access the forum experience from one place, including the event agenda, session details, speakers, badge access, venue map, media updates, and personal account services.
+
+With SIMF, attendees can:
+
+- View the forum programme and session schedule
+- Browse speaker and session information
+- Access their event badge and QR code
+- Navigate the venue map
+- Manage their profile and account
+- Receive event information and support details
+- Access media, updates, and forum services
+
+The application is designed for registered attendees and authorized participants of the forum. Some features may require sign-in or event registration approval.
+```
+
+**Keywords**
+```text
+SIMF,maritime,forum,event,Saudi,conference,agenda,badge,sessions,speakers
+```
+
+**What's New**
+```text
+Initial App Store release for SIMF attendees, including agenda, badge access, profile services, venue map, and event information.
+```
+
+**Review Notes**
+```text
+This is the official SIMF attendee application. The app is intended for registered forum participants.
+
+If Apple Review requires access, please use the provided demo account credentials. The app includes attendee agenda, badge QR, profile, venue map, and event information features.
+
+No non-exempt encryption is used. The app uses standard HTTPS connections only.
+```
+
+**Privacy Policy URL**
+```text
+https://web.simrsnf.com/privacy
+```
+
+For the demo account section, use:
+
+```text
+Username: [add demo email or mobile]
+Password: [add demo password]
+```
+
+Do not submit without a working demo account if login is required.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+نعم، هذه إجابات مقترحة لتطبيق **SIMF** إذا هو فقط: agenda, badge, profile, map, media/news, support, login.
+
+**Age Rating Answers**
+استخدم هذه غالبا:
+
+```text
+Cartoon or Fantasy Violence: None
+Realistic Violence: None
+Violent Themes: None
+Sexual Content or Nudity: None
+Mature or Suggestive Themes: None
+Horror/Fear Themes: None
+Profanity or Crude Humor: None
+Alcohol, Tobacco, Drug Use or References: None
+Medical or Treatment Information: None
+Gambling: No
+Simulated Gambling: None
+Contests: None
+Loot Boxes: No
+Unrestricted Web Access: No
+```
+
+**Important Questions**
+إذا سألك عن هذه:
+
+```text
+Messaging or Chat: No
+```
+
+إلا إذا المستخدمين يقدرون يراسلون بعض داخل التطبيق.
+
+```text
+Social Media Capabilities: No
+```
+
+لأن وجود روابط X/Instagram/LinkedIn فقط لا يعني social media capability.
+
+```text
+User-Generated Content: No
+```
+
+إذا المستخدم فقط يرسل طلب/سؤال للإدارة ولا يظهر للناس.
+
+لكن إذا التطبيق فيه comments أو Q&A تظهر للمستخدمين الآخرين، اختر:
+
+```text
+User-Generated Content: Yes
+Content moderation: Yes
+Reporting/blocking: Yes only if موجود فعلا
+```
+
+**Age Category And Override**
+اختر:
+
+```text
+Not Applicable
+```
+
+لا تختر `Made for Kids`.
+
+إذا Apple حسبت لك `4+` أو `9+` عادي. لا تعمل override إلا إذا عندكم سياسة تقول التطبيق لمن هم 13+ أو 16+.
+
+**ملخص اختياري تكتبه عندك**
+```text
+SIMF is an official event companion app. It does not contain objectionable content, gambling, unrestricted web browsing, or social media capabilities. Any account or attendee features are for event access and services.
+```
+
+Apple تقول إن Age Rating يعتمد على إجابات questionnaire داخل App Store Connect، وفي 2026 أضافت أسئلة social media capabilities.  
+Sources:  
+https://developer.apple.com/help/app-store-connect/manage-app-information/set-an-app-age-rating/  
+https://developer.apple.com/news/?id=tlur8uvi

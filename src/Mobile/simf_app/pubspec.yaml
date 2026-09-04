@@ -47,6 +47,7 @@ dependencies:
   # win32 ^5.5.3, so the two cannot co-exist. 12.x carries every field used here.
   # Do not bump this without also moving package_info_plus and re-testing the
   # update-policy check.
+  cupertino_icons: ^1.0.8
   device_info_plus: ^12.4.0
   flutter:
     sdk: flutter
