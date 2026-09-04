@@ -124,6 +124,12 @@ set-env-*.local.ps1
 # ── UI-audit scratch (generated screenshots, run logs, helper scripts) ─
 /.ui-audit/
 
+# ── PDF page renders written by the codex reader when it opens a PDF ─
+# Regenerated on demand from the PDF itself, and 11.4 MB of PNGs would sit
+# in every future clone forever.
+/.codex_pdf_pages/
+/.codex_pdf_pages_high/
+
 # ── OS files ───────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
