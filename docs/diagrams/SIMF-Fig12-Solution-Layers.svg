@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1720" height="850" viewBox="0 0 1720 850">
+<defs>
+  <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7"
+          markerHeight="7" orient="auto-start-reverse">
+    <path d="M 0 0 L 10 5 L 0 10 z" fill="#2F5D8C"/>
+  </marker>
+  <marker id="ai" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7"
+          markerHeight="7" orient="auto-start-reverse">
+    <path d="M 0 0 L 10 5 L 0 10 z" fill="#1A1A1A"/>
+  </marker>
+  <pattern id="brick" width="20" height="10" patternUnits="userSpaceOnUse">
+    <rect width="20" height="10" fill="#E3E6EA"/>
+    <path d="M0 0 H20 M0 5 H20 M10 0 V5 M0 5 V10 M20 5 V10"
+          stroke="#9CA3AF" stroke-width="0.9" fill="none"/>
+  </pattern>
+</defs>
+<rect x="0" y="0" width="1720" height="850" fill="#FFFFFF"/>
+<text x="40" y="46" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="25" fill="#1A1A1A" font-weight="600" text-anchor="start">SIMF layered solution structure</text>
+<text x="40" y="74" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="15" fill="#6B7280" text-anchor="start">A modular monolith with domain-driven layering. Each layer encloses the layer it depends on, so a dependency can only point inward.</text>
+<line x1="40" y1="90" x2="1680" y2="90" stroke="#6B7280" stroke-width="1.2"/>
+<text x="170" y="150" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="16.5" fill="#1A1A1A" font-weight="700" text-anchor="start">Clients</text>
+<rect x="170.0" y="168" width="248.0" height="86" rx="3" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="294.0" y="190" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="13.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">Mobile application</text>
+<text x="294.0" y="208" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#6B7280" text-anchor="middle">Flutter</text>
+<text x="294.0" y="228" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10.5" fill="#1A1A1A" text-anchor="middle">lib/app, lib/core, lib/features, over</text>
+<text x="294.0" y="243" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10.5" fill="#1A1A1A" text-anchor="middle">simf_data_pkg and simf_auth_pkg</text>
+<rect x="436.0" y="168" width="248.0" height="86" rx="3" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="560.0" y="190" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="13.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">Control Panel</text>
+<text x="560.0" y="208" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#6B7280" text-anchor="middle">Blazor Server</text>
+<text x="560.0" y="228" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10.5" fill="#1A1A1A" text-anchor="middle">Interactive server render, cookie auth</text>
+<text x="560.0" y="243" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10.5" fill="#1A1A1A" text-anchor="middle">simf.cp.auth, tokens held per circuit</text>
+<rect x="702.0" y="168" width="248.0" height="86" rx="3" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="826.0" y="190" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="13.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">Public website</text>
+<text x="826.0" y="208" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#6B7280" text-anchor="middle">Blazor SSR</text>
+<text x="826.0" y="228" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10.5" fill="#1A1A1A" text-anchor="middle">Static public content. No sign-in and no</text>
+<text x="826.0" y="243" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10.5" fill="#1A1A1A" text-anchor="middle">personal data</text>
+<path d="M 560.0 254 L 560.0 310" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
+<rect x="415.815" y="277.4" width="288.37" height="11.3" fill="#FFFFFF" stroke="none"/>
+<text x="560.0" y="286" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">HTTPS, through the typed client SIMF.ApiClient</text>
+<rect x="170" y="314" width="780" height="400" rx="5" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.6"/>
+<text x="186" y="340" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="15" fill="#1A1A1A" font-weight="700" text-anchor="start">API host</text>
+<text x="934" y="340" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#6B7280" text-anchor="end">SIMF.Api</text>
+<text x="186" y="359" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">FastEndpoints host, middleware, authentication, policies, in-process scheduled jobs</text>
+<rect x="204" y="376" width="712" height="312" rx="5" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.6"/>
+<text x="220" y="402" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="15" fill="#1A1A1A" font-weight="700" text-anchor="start">Infrastructure</text>
+<text x="900" y="402" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#6B7280" text-anchor="end">SIMF.Infrastructure</text>
+<text x="220" y="421" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">EF Core contexts, storage, e-mail, identity, JWT, audit interceptors</text>
+<rect x="238" y="438" width="644" height="224" rx="5" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.6"/>
+<text x="254" y="464" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="15" fill="#1A1A1A" font-weight="700" text-anchor="start">Application</text>
+<text x="866" y="464" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#6B7280" text-anchor="end">SIMF.Application</text>
+<text x="254" y="483" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">Use cases and service abstractions. No ASP.NET and no EF Core</text>
+<rect x="272" y="500" width="576" height="136" rx="5" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.6"/>
+<text x="288" y="526" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="15" fill="#1A1A1A" font-weight="700" text-anchor="start">Domain</text>
+<text x="832" y="526" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#6B7280" text-anchor="end">SIMF.Domain</text>
+<text x="288" y="545" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">Entities, aggregates, enums and domain rules</text>
+<path d="M 136 698 L 136 354" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
+<text x="124" y="490" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="end">dependencies</text>
+<text x="124" y="506" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="end">point inward</text>
+<text x="124" y="522" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="end">only</text>
+<rect x="990" y="150" width="372" height="450" rx="5" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.6"/>
+<text x="1006" y="178" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="15" fill="#1A1A1A" font-weight="700" text-anchor="start">Cross-cutting concerns</text>
+<text x="1006" y="198" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#6B7280" text-anchor="start">Implemented once, applied across every context.</text>
+<text x="1006" y="228" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="start">Authentication</text>
+<text x="1006" y="244" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10.5" fill="#1A1A1A" text-anchor="start">JWT bearer (RS256), plus a StreamToken scheme</text>
+<text x="1006" y="268" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="start">Authorisation</text>
+<text x="1006" y="284" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10.5" fill="#1A1A1A" text-anchor="start">Named policies and a dynamic permission provider</text>
+<text x="1006" y="308" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="start">Validation</text>
+<text x="1006" y="324" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10.5" fill="#1A1A1A" text-anchor="start">FluentValidation, a failure becomes HTTP 400</text>
+<text x="1006" y="348" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="start">Correlation</text>
+<text x="1006" y="364" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10.5" fill="#1A1A1A" text-anchor="start">CorrelationIdMiddleware enriches every log</text>
+<text x="1006" y="388" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="start">Error handling</text>
+<text x="1006" y="404" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10.5" fill="#1A1A1A" text-anchor="start">ErrorHandlingMiddleware returns ApiResult.Fail</text>
+<text x="1006" y="428" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="start">Logging</text>
+<text x="1006" y="444" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10.5" fill="#1A1A1A" text-anchor="start">Serilog, correlation enriched</text>
+<text x="1006" y="468" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="start">Auditing</text>
+<text x="1006" y="484" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10.5" fill="#1A1A1A" text-anchor="start">Two save-changes interceptors, plus OperationLog</text>
+<text x="1006" y="508" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="start">Soft delete</text>
+<text x="1006" y="524" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10.5" fill="#1A1A1A" text-anchor="start">Deactivate flips IsActive; list queries filter on it</text>
+<text x="1006" y="548" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="start">Rate limiting</text>
+<text x="1006" y="564" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10.5" fill="#1A1A1A" text-anchor="start">A global per-IP cap plus six named policies</text>
+<rect x="1394" y="150" width="268" height="228" rx="5" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.6"/>
+<text x="1410" y="178" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="15" fill="#1A1A1A" font-weight="700" text-anchor="start">Shared libraries</text>
+<text x="1410" y="198" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#6B7280" text-anchor="start">Referenced by every layer</text>
+<rect x="1410" y="214" width="236" height="30" rx="3" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.2"/>
+<text x="1528.0" y="234" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" text-anchor="middle">SIMF.Common</text>
+<rect x="1410" y="252" width="236" height="30" rx="3" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.2"/>
+<text x="1528.0" y="272" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" text-anchor="middle">SIMF.Contracts</text>
+<rect x="1410" y="290" width="236" height="30" rx="3" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.2"/>
+<text x="1528.0" y="310" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" text-anchor="middle">SIMF.ApiClient</text>
+<rect x="1410" y="328" width="236" height="30" rx="3" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.2"/>
+<text x="1528.0" y="348" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" text-anchor="middle">SIMF.Components</text>
+<rect x="1394" y="400" width="268" height="140" rx="3" fill="#FFFFFF" stroke="#6B7280" stroke-width="1.2"/>
+<text x="1408" y="421" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="13" fill="#1A1A1A" font-weight="600" text-anchor="start">Real time</text>
+<text x="1408" y="441" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">Live updates are polled over REST</text>
+<text x="1408" y="458" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">on a bounded 30-second interval,</text>
+<text x="1408" y="475" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">conditional and cache-answered.</text>
+<text x="1408" y="492" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start"></text>
+<text x="1408" y="509" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">No server-push transport ships in</text>
+<text x="1408" y="526" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">this build.</text>
+<rect x="1394" y="564" width="268" height="191" rx="3" fill="#FFFFFF" stroke="#6B7280" stroke-width="1.2"/>
+<text x="1408" y="585" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="13" fill="#1A1A1A" font-weight="600" text-anchor="start">Persistence</text>
+<text x="1408" y="605" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">Two physically separate SQL Server</text>
+<text x="1408" y="622" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">2022 databases, reached only through</text>
+<text x="1408" y="639" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">Infrastructure:</text>
+<text x="1408" y="656" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start"></text>
+<text x="1408" y="673" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">SIMF_Identity, identity and access.</text>
+<text x="1408" y="690" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">SIMF_App, everything else.</text>
+<text x="1408" y="707" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start"></text>
+<text x="1408" y="724" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">No cross-database foreign key, join</text>
+<text x="1408" y="741" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">or transaction.</text>
+</svg>

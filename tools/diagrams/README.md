@@ -1,6 +1,6 @@
 # SIMF engineering diagrams
 
-Nine sheets, each drawn in an established notation rather than to taste, and
+Twelve sheets, each drawn in an established notation rather than to taste, and
 each fact traceable to a named source. Sheet 1's outputs are **not** in the
 repository: LLD-003 v1.2 replaced that sheet with sheet 4 and the files were
 deleted in `02ca3c8f4`. Its script is kept and still runs, so re-running it
@@ -17,6 +17,9 @@ writes the `.svg` back; delete it again unless a document has asked for it.
 | Phase one components | UML component diagram, C4 container discipline | `docs/diagrams/SIMF-Fig7-Phase-One-Components.{svg,png}` |
 | Phase one system and data flow | Data flow diagram, Gane and Sarson | `docs/diagrams/SIMF-Fig8-Phase-One-Data-Flow.{svg,png}` |
 | Phase one end-to-end sequence | UML sequence diagram | `docs/diagrams/SIMF-Fig9-Phase-One-Sequence.{svg,png}` |
+| Core data model | Entity relationship diagram, crow's foot | `docs/diagrams/SIMF-Fig10-Data-Model.{svg,png}` |
+| API request and response pipeline | Pipeline, request descending and response ascending | `docs/diagrams/SIMF-Fig11-Request-Pipeline.{svg,png}` |
+| Layered solution structure | Nested layer diagram, domain-driven layering | `docs/diagrams/SIMF-Fig12-Solution-Layers.{svg,png}` |
 
 Sheet 4 is the same notation as sheet 1 and a different estate, not a redraw of
 it. Sheet 1 puts the web, API and Control Panel hosts together in one
@@ -77,14 +80,37 @@ committed sheet 4** - it renders the same artwork with the newer zone name
 styling. That is expected. Do not commit the result unless a document has asked
 for a re-issued sheet 4.
 
-The `Fig1` to `Fig9` in the filenames identify the sheet, not its figure
+**Sheets 10, 11 and 12 are the first detailed-design sheets.** Sheets 1 to 9
+are architecture: estates, zones, components and one end-to-end sequence, and
+they belong to the High Level Design. The Solution Design Document had been
+borrowing three of them, which meant its figures answered architecture questions
+its own text had already moved past, while the two pictures a detailed design
+most needs did not exist anywhere.
+
+Sheet 10 is one of those. Section 6.2 of the LLD was titled "ER Diagram" and
+carried no diagram, only a table of relationships introduced as coming "from the
+mermaid ERD" - an artefact outside the delivered set. Sheet 10 is that diagram,
+drawn from the same relationships, so the section is self-contained. It is also
+the only sheet that draws the two databases as separate frames, because a
+relationship crossing that frame cannot be a foreign key and no other sheet
+makes that visible.
+
+Sheet 11 draws the middleware pipeline as a two-way channel rather than the
+table of classes the document had. The table states membership; it cannot show
+that the same stages are traversed outbound, which is the point, because error
+handling does its work only on the way back.
+
+Sheet 12 draws the layering by nesting rather than as a row of arrows, so the
+illegal dependency direction is undrawable.
+
+The `Fig1` to `Fig12` in the filenames identify the sheet, not its figure
 number. **The artwork carries no figure number**: each document numbers its own
 figures in order of appearance and states that number in the caption, so the same
 sheet is Figure 1 in one document and Figure 3 in another without any clash. Do
 not put a number back into a sheet title.
 
-**Three documents embed these sheets.** Whenever a sheet is re-rendered, its
-image in each of them is stale until that document is reissued at a new version.
+**Documents embed these sheets.** Whenever a sheet is re-rendered, its image in
+each of them is stale until that document is reissued at a new version.
 HLD-005 is the exception to the three-column shape below: it carries no
 component sheet, because it is capped at three figures and the sequence sheet
 earned that slot instead.
@@ -100,9 +126,28 @@ earned that slot instead.
 | `SIMF-HLD-004-MoD-HLD-External-v1.4` | sheet 6 | **sheet 7** | **sheet 8** | none |
 | `SIMF-LLD-003-Solution-Design-Document-v1.5` | sheet 6 | **sheet 7** | **sheet 8** | none |
 | `SIMF-HLD-005-MoD-HLD-External-v2.0` | sheet 6 | none | **sheet 8** | **sheet 9** |
+| `SIMF-LLD-004-Solution-Design-Document-v2.0` | none | none | none | none |
+
+That last row is not a mistake and not an omission. **LLD-004 v2.0 embeds no
+architecture sheet at all**, which is why the four columns above are empty for
+it: its three figures are sheets 11, 10 and 12, in that order, at 2.1.4, 6.2
+and 7.1. The split is deliberate. Two documents were carrying the same three
+pictures, so a reader who opened both saw the estate twice and the schema
+never. Architecture sheets now belong to the HLD and detailed-design sheets to
+the LLD, and neither borrows from the other.
+
+| Document | Figure 1 | Figure 2 | Figure 3 |
+|---|---|---|---|
+| `SIMF-HLD-005-MoD-HLD-External-v2.0` | sheet 6, deployment | sheet 8, data flow | sheet 9, sequence |
+| `SIMF-LLD-004-Solution-Design-Document-v2.0` | **sheet 11**, pipeline | **sheet 10**, data model | **sheet 12**, layers |
+
+`SIMF-BRD-001-Business-Requirements-Document-EN-v2.0` also carries three
+figures and none of them come from here: they are BPMN process diagrams
+carried forward as images from v1.3, and no script in this directory
+regenerates them.
 
 In the HLD the three figures sit together at the front, sized to a common
-height; in the LLD they sit at 2.1.1, 2.2 and 7.1, sized to a common width. A
+height; in the LLD they sit at 2.1.4, 6.2 and 7.1, sized to a common width. A
 sheet whose aspect ratio differs from the one it replaces must be re-scaled on
 the axis the document does not fix, or the picture is silently stretched.
 
@@ -123,6 +168,9 @@ python tools/diagrams/fig6_phase_one.py
 python tools/diagrams/fig7_phase_one_components.py
 python tools/diagrams/fig8_phase_one_dataflow.py
 python tools/diagrams/fig9_phase_one_sequence.py
+python tools/diagrams/fig10_data_model.py
+python tools/diagrams/fig11_request_pipeline.py
+python tools/diagrams/fig12_solution_layers.py
 ```
 
 Each script writes the `.svg` only. Render the `.png` with headless Chrome. The
@@ -226,6 +274,17 @@ Taken from the published notation guidance, not from preference:
 | 6 | Everything sheet 5 carries, except where phase one moves it | sheet 5, itself sourced as above |
 | 6 | API into HSA, on-site LLM and mail servers, MinIO, YouTube from the CP | customer requirement of 2026-08-30 |
 | 6 | SMTP port 587 | `Port` default in `SIMF.Common/Options/EmailOptions.cs` |
+| 10 | The 29 core relationships, their cardinality and their wording | `SIMF-LLD-003` v1.5 section 6.2, the core relationship table |
+| 10 | The two-database split, and that a crossing is a logical reference and never a foreign key | `SIMF-LLD-003` v1.5 section 6.2 |
+| 10 | Email and ReferenceNumber unique; every entity carries a GUID identifier | `SIMF-LLD-003` v1.5 section 6.2 |
+| 10 | Lookup, configuration and audit tables omitted from the core | `SIMF-LLD-003` v1.5 section 6.2, which says so itself |
+| 11 | The five middleware classes, their order and their responsibilities | `SIMF-LLD-003` v1.5 section 2.1.4 |
+| 11 | The two authentication schemes, the policies, the allow-list, the limiters and GET /health | `SIMF-LLD-003` v1.5 section 2.1.4 |
+| 11 | The six named rate-limiting policies | `SIMF-LLD-003` v1.5 section 7.1.3 |
+| 12 | The four layers, their projects and the inward dependency rule | `SIMF-LLD-003` v1.5 section 7.1.1 |
+| 12 | The client shells and the four shared libraries | `SIMF-LLD-003` v1.5 section 7.1.2 |
+| 12 | The nine cross-cutting concerns and their mechanisms | `SIMF-LLD-003` v1.5 section 7.1.3 |
+| 12 | The 30-second poll interval, conditional and cache-answered | `SIMF-LLD-003` v1.5 section 7.1.1 |
 
 The mobile edge and the file server carry **no node count and no specification**
 on sheets 4 and 5, and neither does sheet 5's API load balancer: the customer

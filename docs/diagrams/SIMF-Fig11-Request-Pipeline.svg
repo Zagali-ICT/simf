@@ -1,0 +1,138 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1560" height="1330" viewBox="0 0 1560 1330">
+<defs>
+  <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7"
+          markerHeight="7" orient="auto-start-reverse">
+    <path d="M 0 0 L 10 5 L 0 10 z" fill="#2F5D8C"/>
+  </marker>
+  <marker id="ai" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7"
+          markerHeight="7" orient="auto-start-reverse">
+    <path d="M 0 0 L 10 5 L 0 10 z" fill="#1A1A1A"/>
+  </marker>
+  <pattern id="brick" width="20" height="10" patternUnits="userSpaceOnUse">
+    <rect width="20" height="10" fill="#E3E6EA"/>
+    <path d="M0 0 H20 M0 5 H20 M10 0 V5 M0 5 V10 M20 5 V10"
+          stroke="#9CA3AF" stroke-width="0.9" fill="none"/>
+  </pattern>
+</defs>
+<rect x="0" y="0" width="1560" height="1330" fill="#FFFFFF"/>
+<text x="40" y="46" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="25" fill="#1A1A1A" font-weight="600" text-anchor="start">SIMF API request and response pipeline</text>
+<text x="40" y="74" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="15" fill="#6B7280" text-anchor="start">Every request descends the stack and every response ascends it. The stage order is the order section 2.1.4 lists.</text>
+<line x1="40" y1="90" x2="1520" y2="90" stroke="#6B7280" stroke-width="1.2"/>
+<rect x="430" y="116" width="470" height="70" rx="3" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="665.0" y="137" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#6B7280" text-anchor="middle">«caller»</text>
+<text x="665.0" y="156" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#1A1A1A" font-weight="600" text-anchor="middle">Client</text>
+<text x="665.0" y="173" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">Mobile application, mobile edge, Control Panel, badge desk</text>
+<rect x="430" y="214" width="470" height="62" rx="4" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="665.0" y="239" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#1A1A1A" font-weight="600" text-anchor="middle">CorrelationIdMiddleware</text>
+<text x="665.0" y="259" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">Read or generate X-Correlation-Id, enrich logs</text>
+<rect x="430" y="292" width="470" height="62" rx="4" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="665.0" y="317" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#1A1A1A" font-weight="600" text-anchor="middle">SecurityHeadersMiddleware</text>
+<text x="665.0" y="337" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">Apply the baseline security response headers</text>
+<rect x="430" y="370" width="470" height="62" rx="4" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="665.0" y="395" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#1A1A1A" font-weight="600" text-anchor="middle">ErrorHandlingMiddleware</text>
+<text x="665.0" y="415" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">Convert an exception to ApiResult.Fail with its status</text>
+<rect x="430" y="448" width="470" height="62" rx="4" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="665.0" y="473" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#1A1A1A" font-weight="600" text-anchor="middle">EmailRateLimitKeyMiddleware</text>
+<text x="665.0" y="493" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">Extract the e-mail from a credential body, to throttle per e-mail</text>
+<rect x="430" y="526" width="470" height="62" rx="4" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="665.0" y="551" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#1A1A1A" font-weight="600" text-anchor="middle">SwaggerBasicAuthMiddleware</text>
+<text x="665.0" y="571" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">Gate the OpenAPI user interface in production</text>
+<rect x="430" y="604" width="470" height="62" rx="4" fill="#D8D2C8" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="665.0" y="629" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#1A1A1A" font-weight="600" text-anchor="middle">Rate limiting</text>
+<text x="665.0" y="649" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">Global per-IP cap, plus six named policies</text>
+<rect x="430" y="682" width="470" height="62" rx="4" fill="#D8D2C8" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="665.0" y="707" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#1A1A1A" font-weight="600" text-anchor="middle">Authentication</text>
+<text x="665.0" y="727" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">JWT bearer (RS256), and a distinct StreamToken scheme</text>
+<rect x="430" y="760" width="470" height="62" rx="4" fill="#D8D2C8" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="665.0" y="785" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#1A1A1A" font-weight="600" text-anchor="middle">Authorisation</text>
+<text x="665.0" y="805" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">Named policies, and a dynamic permission policy provider</text>
+<rect x="430" y="838" width="470" height="62" rx="4" fill="#D8D2C8" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="665.0" y="863" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#1A1A1A" font-weight="600" text-anchor="middle">Validation</text>
+<text x="665.0" y="883" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">FluentValidation, a failure becomes HTTP 400 VALIDATION_FAILED</text>
+<rect x="430" y="924" width="470" height="60" rx="3" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="665.0" y="945" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#6B7280" text-anchor="middle">«FastEndpoints»</text>
+<text x="665.0" y="964" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#1A1A1A" font-weight="600" text-anchor="middle">Endpoint</text>
+<text x="665.0" y="981" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">The feature handler for the route</text>
+<rect x="430" y="1008" width="470" height="70" rx="3" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="665.0" y="1029" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#6B7280" text-anchor="middle">«use case»</text>
+<text x="665.0" y="1048" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#1A1A1A" font-weight="600" text-anchor="middle">SIMF.Application</text>
+<text x="665.0" y="1065" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">Service abstractions, no ASP.NET and no EF Core</text>
+<rect x="430" y="1100" width="470" height="70" rx="3" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="665.0" y="1121" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#6B7280" text-anchor="middle">«adapter»</text>
+<text x="665.0" y="1140" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#1A1A1A" font-weight="600" text-anchor="middle">SIMF.Infrastructure</text>
+<text x="665.0" y="1157" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">EF Core contexts, storage, e-mail, identity, tokens</text>
+<path d="M 430 1196 H 654 M 430 1248 H 654" stroke="#1A1A1A" stroke-width="1.4" fill="none"/>
+<rect x="430" y="1196" width="224" height="52" fill="#D8D2C8" stroke="none"/>
+<path d="M 430 1196 H 654 M 430 1248 H 654 M 430 1196 V 1248 M 472 1196 V 1248" stroke="#1A1A1A" stroke-width="1.4" fill="none"/>
+<text x="451" y="1227.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#1A1A1A" font-weight="600" text-anchor="middle">D1</text>
+<text x="484" y="1219.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="13.5" fill="#1A1A1A" font-weight="600" text-anchor="start">SIMF_Identity</text>
+<text x="484" y="1237.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">SQL Server 2022</text>
+<path d="M 676 1196 H 900 M 676 1248 H 900" stroke="#1A1A1A" stroke-width="1.4" fill="none"/>
+<rect x="676" y="1196" width="224" height="52" fill="#D8D2C8" stroke="none"/>
+<path d="M 676 1196 H 900 M 676 1248 H 900 M 676 1196 V 1248 M 718 1196 V 1248" stroke="#1A1A1A" stroke-width="1.4" fill="none"/>
+<text x="697" y="1227.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#1A1A1A" font-weight="600" text-anchor="middle">D2</text>
+<text x="730" y="1219.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="13.5" fill="#1A1A1A" font-weight="600" text-anchor="start">SIMF_App</text>
+<text x="730" y="1237.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">SQL Server 2022</text>
+<path d="M 378 186 V 236" fill="none" stroke="#2F5D8C" stroke-width="1.8" marker-end="url(#ar)"/>
+<text x="388" y="215.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">request</text>
+<path d="M 378 236 H 426" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M 378 240 V 310" fill="none" stroke="#2F5D8C" stroke-width="1.8" marker-end="url(#ar)"/>
+<path d="M 378 314 H 426" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M 378 318 V 388" fill="none" stroke="#2F5D8C" stroke-width="1.8" marker-end="url(#ar)"/>
+<path d="M 378 392 H 426" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M 378 396 V 466" fill="none" stroke="#2F5D8C" stroke-width="1.8" marker-end="url(#ar)"/>
+<path d="M 378 470 H 426" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M 378 474 V 544" fill="none" stroke="#2F5D8C" stroke-width="1.8" marker-end="url(#ar)"/>
+<path d="M 378 548 H 426" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M 378 552 V 622" fill="none" stroke="#2F5D8C" stroke-width="1.8" marker-end="url(#ar)"/>
+<path d="M 378 626 H 426" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M 378 630 V 700" fill="none" stroke="#2F5D8C" stroke-width="1.8" marker-end="url(#ar)"/>
+<path d="M 378 704 H 426" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M 378 708 V 778" fill="none" stroke="#2F5D8C" stroke-width="1.8" marker-end="url(#ar)"/>
+<path d="M 378 782 H 426" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M 378 786 V 856" fill="none" stroke="#2F5D8C" stroke-width="1.8" marker-end="url(#ar)"/>
+<path d="M 378 860 H 426" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M 378 864 V 950" fill="none" stroke="#2F5D8C" stroke-width="1.8" marker-end="url(#ar)"/>
+<path d="M 378 954 H 426" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M 665.0 984 V 1008" fill="none" stroke="#1A1A1A" stroke-width="1.6" marker-end="url(#ai)"/>
+<path d="M 665.0 1078 V 1100" fill="none" stroke="#1A1A1A" stroke-width="1.6" marker-end="url(#ai)"/>
+<path d="M 665.0 1170 V 1196" fill="none" stroke="#1A1A1A" stroke-width="1.6" marker-end="url(#ai)"/>
+<path d="M 900 954 H 974 V 158" fill="none" stroke="#2F5D8C" stroke-width="1.8" stroke-dasharray="7 4" marker-end="url(#ar)"/>
+<path d="M 974 158 H 755.0" fill="none" stroke="#2F5D8C" stroke-width="1.8" stroke-dasharray="7 4" marker-end="url(#ar)"/>
+<text x="986" y="700" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">response, as an</text>
+<text x="986" y="717" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">ApiResult envelope</text>
+<path d="M 974 410 H 904" fill="none" stroke="#2F5D8C" stroke-width="1.6" stroke-dasharray="7 4" marker-end="url(#ar)"/>
+<rect x="830.975" y="394.8" width="212.05" height="10.8" fill="#FFFFFF" stroke="none"/>
+<text x="937.0" y="403" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11" fill="#1A1A1A" text-anchor="middle">an exception becomes ApiResult.Fail</text>
+<rect x="58" y="214" width="300" height="361" rx="3" fill="#FFFFFF" stroke="#6B7280" stroke-width="1.2"/>
+<text x="72" y="235" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="13" fill="#1A1A1A" font-weight="600" text-anchor="start">Host configuration</text>
+<text x="72" y="255" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">Applied by the host rather than traversed</text>
+<text x="72" y="272" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">as a stage in sequence:</text>
+<text x="72" y="289" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start"></text>
+<text x="72" y="306" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">Two authentication schemes, JWT bearer</text>
+<text x="72" y="323" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">as the default and StreamToken for</text>
+<text x="72" y="340" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">recording playback.</text>
+<text x="72" y="357" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start"></text>
+<text x="72" y="374" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">Named authorisation policies and a</text>
+<text x="72" y="391" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">dynamic permission policy provider over</text>
+<text x="72" y="408" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">the permission catalogue.</text>
+<text x="72" y="425" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start"></text>
+<text x="72" y="442" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">An explicit CORS allow-list.</text>
+<text x="72" y="459" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start"></text>
+<text x="72" y="476" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">Per-IP rate limiting and six named</text>
+<text x="72" y="493" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">policies: auth, auth-email, ai-test,</text>
+<text x="72" y="510" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">ai-assistant, operational and lookup.</text>
+<text x="72" y="527" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start"></text>
+<text x="72" y="544" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">GET /health, which is unauthenticated</text>
+<text x="72" y="561" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">and is the probe the load balancer uses.</text>
+<rect x="58" y="706" width="300" height="118" rx="3" fill="#FFFFFF" stroke="#6B7280" stroke-width="1.2"/>
+<text x="72" y="728" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="13.5" fill="#1A1A1A" font-weight="600" text-anchor="start">Key</text>
+<rect x="74" y="741" width="30" height="13" rx="2" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1"/><rect x="94" y="743" width="7" height="6" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="0.9"/>
+<text x="118" y="751" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="start">A middleware class in the pipeline</text>
+<rect x="74" y="762" width="30" height="13" fill="#D8D2C8" stroke="none"/><path d="M 74 762 H 104 M 74 775 H 104 M 74 762 V 775 M 85 762 V 775" stroke="#1A1A1A" stroke-width="1" fill="none"/>
+<text x="118" y="772" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="start">A gate applied from host configuration</text>
+<path d="M 74 789 H 102" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
+<text x="118" y="793" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="start">Request, descending</text>
+<path d="M 74 810 H 102" stroke="#2F5D8C" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#ar)"/>
+<text x="118" y="814" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="start">Response, ascending</text>
+</svg>
