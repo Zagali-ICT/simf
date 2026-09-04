@@ -1,6 +1,6 @@
 # SIMF engineering diagrams
 
-Eight sheets, each drawn in an established notation rather than to taste, and
+Nine sheets, each drawn in an established notation rather than to taste, and
 each fact traceable to a named source. Sheet 1's outputs are **not** in the
 repository: LLD-003 v1.2 replaced that sheet with sheet 4 and the files were
 deleted in `02ca3c8f4`. Its script is kept and still runs, so re-running it
@@ -16,6 +16,7 @@ writes the `.svg` back; delete it again unless a document has asked for it.
 | Phase one, on-site services | UML deployment diagram | `docs/diagrams/SIMF-Fig6-Phase-One-Security-Areas.{svg,png}` |
 | Phase one components | UML component diagram, C4 container discipline | `docs/diagrams/SIMF-Fig7-Phase-One-Components.{svg,png}` |
 | Phase one system and data flow | Data flow diagram, Gane and Sarson | `docs/diagrams/SIMF-Fig8-Phase-One-Data-Flow.{svg,png}` |
+| Phase one end-to-end sequence | UML sequence diagram | `docs/diagrams/SIMF-Fig9-Phase-One-Sequence.{svg,png}` |
 
 Sheet 4 is the same notation as sheet 1 and a different estate, not a redraw of
 it. Sheet 1 puts the web, API and Control Panel hosts together in one
@@ -76,35 +77,39 @@ committed sheet 4** - it renders the same artwork with the newer zone name
 styling. That is expected. Do not commit the result unless a document has asked
 for a re-issued sheet 4.
 
-The `Fig1` to `Fig8` in the filenames identify the sheet, not its figure
+The `Fig1` to `Fig9` in the filenames identify the sheet, not its figure
 number. **The artwork carries no figure number**: each document numbers its own
 figures in order of appearance and states that number in the caption, so the same
 sheet is Figure 1 in one document and Figure 3 in another without any clash. Do
 not put a number back into a sheet title.
 
-**Two documents embed these sheets, and both embed all three.** Whenever a sheet
-is re-rendered, its image in each of them is stale until that document is
-reissued at a new version.
+**Three documents embed these sheets.** Whenever a sheet is re-rendered, its
+image in each of them is stale until that document is reissued at a new version.
+HLD-005 is the exception to the three-column shape below: it carries no
+component sheet, because it is capped at three figures and the sequence sheet
+earned that slot instead.
 
-| Document | Deployment | Components | Data flow |
-|---|---|---|---|
-| `SIMF-HLD-004-MoD-HLD-External-v1.1` | sheet 4 | sheet 2 | sheet 3 |
-| `SIMF-HLD-004-MoD-HLD-External-v1.2` | **sheet 5** | sheet 2 | sheet 3 |
-| `SIMF-LLD-003-Solution-Design-Document-v1.2` | sheet 4 | sheet 2 | sheet 3 |
-| `SIMF-LLD-003-Solution-Design-Document-v1.3` | **sheet 5** | sheet 2 | sheet 3 |
-| `SIMF-HLD-004-MoD-HLD-External-v1.3` | sheet 6 | sheet 2 | sheet 3 |
-| `SIMF-LLD-003-Solution-Design-Document-v1.4` | sheet 6 | sheet 2 | sheet 3 |
-| `SIMF-HLD-004-MoD-HLD-External-v1.4` | sheet 6 | **sheet 7** | **sheet 8** |
-| `SIMF-LLD-003-Solution-Design-Document-v1.5` | sheet 6 | **sheet 7** | **sheet 8** |
+| Document | Deployment | Components | Data flow | Sequence |
+|---|---|---|---|---|
+| `SIMF-HLD-004-MoD-HLD-External-v1.1` | sheet 4 | sheet 2 | sheet 3 | none |
+| `SIMF-HLD-004-MoD-HLD-External-v1.2` | **sheet 5** | sheet 2 | sheet 3 | none |
+| `SIMF-LLD-003-Solution-Design-Document-v1.2` | sheet 4 | sheet 2 | sheet 3 | none |
+| `SIMF-LLD-003-Solution-Design-Document-v1.3` | **sheet 5** | sheet 2 | sheet 3 | none |
+| `SIMF-HLD-004-MoD-HLD-External-v1.3` | sheet 6 | sheet 2 | sheet 3 | none |
+| `SIMF-LLD-003-Solution-Design-Document-v1.4` | sheet 6 | sheet 2 | sheet 3 | none |
+| `SIMF-HLD-004-MoD-HLD-External-v1.4` | sheet 6 | **sheet 7** | **sheet 8** | none |
+| `SIMF-LLD-003-Solution-Design-Document-v1.5` | sheet 6 | **sheet 7** | **sheet 8** | none |
+| `SIMF-HLD-005-MoD-HLD-External-v2.0` | sheet 6 | none | **sheet 8** | **sheet 9** |
 
 In the HLD the three figures sit together at the front, sized to a common
 height; in the LLD they sit at 2.1.1, 2.2 and 7.1, sized to a common width. A
 sheet whose aspect ratio differs from the one it replaces must be re-scaled on
 the axis the document does not fix, or the picture is silently stretched.
 
-`SIMF-HLD-005` is named in older notes as a consumer. **It is not on disk**: it
-was deleted in `02ca3c8f4` along with sheet 1's outputs. HLD-004 is the HLD that
-exists.
+`SIMF-HLD-005` exists again, and is not the file the older notes meant. That one
+was deleted in `02ca3c8f4` along with sheet 1's outputs. The current
+`SIMF-HLD-005-MoD-HLD-External-v2.0` is a rebuild of HLD-004: the same Ministry
+template, every word rewritten, and three figures in place of four.
 
 ## Regenerate
 
@@ -115,6 +120,9 @@ python tools/diagrams/fig3_dataflow.py
 python tools/diagrams/fig4_tier_separation.py
 python tools/diagrams/fig5_security_areas.py
 python tools/diagrams/fig6_phase_one.py
+python tools/diagrams/fig7_phase_one_components.py
+python tools/diagrams/fig8_phase_one_dataflow.py
+python tools/diagrams/fig9_phase_one_sequence.py
 ```
 
 Each script writes the `.svg` only. Render the `.png` with headless Chrome. The
@@ -235,3 +243,17 @@ document body, not on the artwork, which states no caveats.
 
 `SIMF.RealTime` appears in none of the sheets: the project was removed from the
 solution in commit `7160a9ba`.
+
+**Sheet 9 is the only sheet with a time axis.** Sheets 1 to 8 answer where a
+thing runs, what it talks to and what data crosses; none of them can answer when
+a thing happens or in what order, because none carries a lifeline. Sheet 9 is a
+UML sequence diagram over nine participants and twenty-one ordered messages,
+covering registration and approval, sign-in with the second factor, and the gate
+scan. Participants, protocols and ports come from the communication matrix, and
+the endpoint paths are read from the FastEndpoints route declarations rather
+than invented.
+
+It elides two things, and says so on the sheet rather than hiding them: the hop
+chain from the attendee through the WAF and the mobile edge is drawn in full at
+steps 1 to 3 and referenced afterwards, and the API load balancer is folded into
+the SIMF.Api lifeline because it forwards without participating.

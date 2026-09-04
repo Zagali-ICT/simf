@@ -1,0 +1,187 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1820" height="1560" viewBox="0 0 1820 1560">
+<defs>
+  <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7"
+          markerHeight="7" orient="auto-start-reverse">
+    <path d="M 0 0 L 10 5 L 0 10 z" fill="#2F5D8C"/>
+  </marker>
+  <marker id="ai" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7"
+          markerHeight="7" orient="auto-start-reverse">
+    <path d="M 0 0 L 10 5 L 0 10 z" fill="#1A1A1A"/>
+  </marker>
+  <pattern id="brick" width="20" height="10" patternUnits="userSpaceOnUse">
+    <rect width="20" height="10" fill="#E3E6EA"/>
+    <path d="M0 0 H20 M0 5 H20 M10 0 V5 M0 5 V10 M20 5 V10"
+          stroke="#9CA3AF" stroke-width="0.9" fill="none"/>
+  </pattern>
+</defs>
+<rect x="0" y="0" width="1820" height="1560" fill="#FFFFFF"/>
+<text x="40" y="46" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="25" fill="#1A1A1A" font-weight="600" text-anchor="start">SIMF phase one, end-to-end sequence</text>
+<text x="40" y="74" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="15" fill="#6B7280" text-anchor="start">UML sequence diagram. Ordered messages between the participants of section 2.3, each labelled with its protocol and port.</text>
+<line x1="40" y1="90" x2="1780" y2="90" stroke="#6B7280" stroke-width="1.2"/>
+<rect x="49.0" y="112" width="175.3" height="62" rx="3" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="136.66666666666669" y="137" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="13.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">Attendee</text>
+<text x="136.66666666666669" y="154" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10.5" fill="#1A1A1A" text-anchor="middle">mobile app, Flutter</text>
+<line x1="136.7" y1="174" x2="136.7" y2="1330" stroke="#9CA3AF" stroke-width="1.2" stroke-dasharray="6 5"/>
+<rect x="242.3" y="112" width="175.3" height="62" rx="3" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="330.0" y="137" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="13.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">WAF + Load Balancer</text>
+<text x="330.0" y="154" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10.5" fill="#1A1A1A" text-anchor="middle">SSA perimeter</text>
+<line x1="330.0" y1="174" x2="330.0" y2="1330" stroke="#9CA3AF" stroke-width="1.2" stroke-dasharray="6 5"/>
+<rect x="435.7" y="112" width="175.3" height="62" rx="3" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="523.3333333333334" y="137" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="13.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">SIMF.MobileEdge</text>
+<text x="523.3333333333334" y="154" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10.5" fill="#1A1A1A" text-anchor="middle">SSA presentation</text>
+<line x1="523.3" y1="174" x2="523.3" y2="1330" stroke="#9CA3AF" stroke-width="1.2" stroke-dasharray="6 5"/>
+<rect x="629.0" y="112" width="175.3" height="62" rx="3" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="716.6666666666667" y="137" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="13.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">SIMF.Api</text>
+<text x="716.6666666666667" y="154" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10.5" fill="#1A1A1A" text-anchor="middle">HSA, four nodes behind the</text>
+<text x="716.6666666666667" y="167" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10.5" fill="#1A1A1A" text-anchor="middle">API load balancer</text>
+<line x1="716.7" y1="174" x2="716.7" y2="1330" stroke="#9CA3AF" stroke-width="1.2" stroke-dasharray="6 5"/>
+<rect x="822.3" y="112" width="175.3" height="62" rx="3" fill="#D8D2C8" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="910.0" y="137" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="13.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">SQL Server</text>
+<text x="910.0" y="154" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10.5" fill="#1A1A1A" text-anchor="middle">SIMF_Identity + SIMF_App, HSA</text>
+<line x1="910.0" y1="174" x2="910.0" y2="1330" stroke="#9CA3AF" stroke-width="1.2" stroke-dasharray="6 5"/>
+<rect x="1015.7" y="112" width="175.3" height="62" rx="3" fill="#D8D2C8" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="1103.3333333333335" y="137" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="13.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">MinIO</text>
+<text x="1103.3333333333335" y="154" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10.5" fill="#1A1A1A" text-anchor="middle">object storage, HSA</text>
+<line x1="1103.3" y1="174" x2="1103.3" y2="1330" stroke="#9CA3AF" stroke-width="1.2" stroke-dasharray="6 5"/>
+<rect x="1209.0" y="112" width="175.3" height="62" rx="3" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="1296.6666666666667" y="137" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="13.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">Mail server</text>
+<text x="1296.6666666666667" y="154" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10.5" fill="#1A1A1A" text-anchor="middle">on-site SMTP relay, HSA</text>
+<line x1="1296.7" y1="174" x2="1296.7" y2="1330" stroke="#9CA3AF" stroke-width="1.2" stroke-dasharray="6 5"/>
+<rect x="1402.3" y="112" width="175.3" height="62" rx="3" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="1490.0000000000002" y="137" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="13.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">Administrator</text>
+<text x="1490.0000000000002" y="154" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10.5" fill="#1A1A1A" text-anchor="middle">Control Panel, SSA</text>
+<line x1="1490.0" y1="174" x2="1490.0" y2="1330" stroke="#9CA3AF" stroke-width="1.2" stroke-dasharray="6 5"/>
+<rect x="1595.7" y="112" width="175.3" height="62" rx="3" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="1683.3333333333335" y="137" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="13.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">Gate operator</text>
+<text x="1683.3333333333335" y="154" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10.5" fill="#1A1A1A" text-anchor="middle">mobile app staff screens</text>
+<line x1="1683.3" y1="174" x2="1683.3" y2="1330" stroke="#9CA3AF" stroke-width="1.2" stroke-dasharray="6 5"/>
+<line x1="40" y1="236" x2="1780" y2="236" stroke="#6B7280" stroke-width="1" stroke-dasharray="3 4"/>
+<text x="46" y="231" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#6B7280" font-weight="600" text-anchor="start">Registration and approval</text>
+<path d="M 136.7 292.0 L 330.0 292.0" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
+<circle cx="136.7" cy="292.0" r="9" fill="#FFFFFF" stroke="#2F5D8C" stroke-width="1.4"/>
+<text x="136.66666666666669" y="296" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11" fill="#2F5D8C" font-weight="600" text-anchor="middle">1</text>
+<text x="233.33333333333334" y="283" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="middle">POST /app/auth/sign-up, e-mail and password</text>
+<text x="233.33333333333334" y="307" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10.5" fill="#6B7280" text-anchor="middle">HTTPS 443</text>
+<path d="M 330.0 336.0 L 523.3 336.0" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
+<circle cx="330.0" cy="336.0" r="9" fill="#FFFFFF" stroke="#2F5D8C" stroke-width="1.4"/>
+<text x="330.0" y="340" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11" fill="#2F5D8C" font-weight="600" text-anchor="middle">2</text>
+<text x="426.6666666666667" y="327" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="middle">forward to the presentation tier</text>
+<text x="426.6666666666667" y="351" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10.5" fill="#6B7280" text-anchor="middle">HTTPS 443, internal SSA</text>
+<path d="M 523.3 380.0 L 716.7 380.0" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
+<circle cx="523.3" cy="380.0" r="9" fill="#FFFFFF" stroke="#2F5D8C" stroke-width="1.4"/>
+<text x="523.3333333333334" y="384" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11" fill="#2F5D8C" font-weight="600" text-anchor="middle">3</text>
+<text x="620.0" y="371" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="middle">forward through the API load balancer</text>
+<text x="620.0" y="395" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10.5" fill="#6B7280" text-anchor="middle">HTTPS 443, SSA to HSA, across the internal firewall</text>
+<path d="M 716.7 424.0 L 910.0 424.0" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
+<circle cx="716.7" cy="424.0" r="9" fill="#FFFFFF" stroke="#2F5D8C" stroke-width="1.4"/>
+<text x="716.6666666666667" y="428" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11" fill="#2F5D8C" font-weight="600" text-anchor="middle">4</text>
+<text x="813.3333333333334" y="415" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="middle">create the account, state Registered, PBKDF2 password hash</text>
+<text x="813.3333333333334" y="439" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10.5" fill="#6B7280" text-anchor="middle">TCP 1433</text>
+<path d="M 716.7 468.0 L 1296.7 468.0" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
+<circle cx="716.7" cy="468.0" r="9" fill="#FFFFFF" stroke="#2F5D8C" stroke-width="1.4"/>
+<text x="716.6666666666667" y="472" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11" fill="#2F5D8C" font-weight="600" text-anchor="middle">5</text>
+<text x="1006.6666666666667" y="459" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="middle">queue the six-digit e-mail verification code, stored hashed</text>
+<text x="1006.6666666666667" y="483" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10.5" fill="#6B7280" text-anchor="middle">SMTP with STARTTLS, 587</text>
+<path d="M 136.7 512.0 L 716.7 512.0" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
+<circle cx="136.7" cy="512.0" r="9" fill="#FFFFFF" stroke="#2F5D8C" stroke-width="1.4"/>
+<text x="136.66666666666669" y="516" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11" fill="#2F5D8C" font-weight="600" text-anchor="middle">6</text>
+<text x="426.66666666666674" y="503" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="middle">POST /app/auth/verify-email, the six-digit code</text>
+<text x="426.66666666666674" y="527" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10.5" fill="#6B7280" text-anchor="middle">HTTPS 443, via steps 1 to 3</text>
+<path d="M 136.7 556.0 L 716.7 556.0" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
+<circle cx="136.7" cy="556.0" r="9" fill="#FFFFFF" stroke="#2F5D8C" stroke-width="1.4"/>
+<text x="136.66666666666669" y="560" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11" fill="#2F5D8C" font-weight="600" text-anchor="middle">7</text>
+<text x="426.66666666666674" y="547" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="middle">POST /app/account/user-profile and /id-image, profile, identity image and face photo</text>
+<text x="426.66666666666674" y="571" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10.5" fill="#6B7280" text-anchor="middle">HTTPS 443, via steps 1 to 3</text>
+<path d="M 716.7 600.0 L 1103.3 600.0" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
+<circle cx="716.7" cy="600.0" r="9" fill="#FFFFFF" stroke="#2F5D8C" stroke-width="1.4"/>
+<text x="716.6666666666667" y="604" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11" fill="#2F5D8C" font-weight="600" text-anchor="middle">8</text>
+<text x="910.0000000000001" y="591" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="middle">store both, AES-GCM encrypted at rest</text>
+<text x="910.0000000000001" y="615" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10.5" fill="#6B7280" text-anchor="middle">S3 over HTTPS 443</text>
+<path d="M 716.7 644.0 L 910.0 644.0" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
+<circle cx="716.7" cy="644.0" r="9" fill="#FFFFFF" stroke="#2F5D8C" stroke-width="1.4"/>
+<text x="716.6666666666667" y="648" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11" fill="#2F5D8C" font-weight="600" text-anchor="middle">9</text>
+<text x="813.3333333333334" y="635" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="middle">profile saved, state Pending approval</text>
+<text x="813.3333333333334" y="659" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10.5" fill="#6B7280" text-anchor="middle">TCP 1433</text>
+<path d="M 1490.0 688.0 L 716.7 688.0" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
+<circle cx="1490.0" cy="688.0" r="9" fill="#FFFFFF" stroke="#2F5D8C" stroke-width="1.4"/>
+<text x="1490.0000000000002" y="692" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11" fill="#2F5D8C" font-weight="600" text-anchor="middle">10</text>
+<text x="1103.3333333333335" y="679" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="middle">POST /admin/visitors/{id}/approve</text>
+<text x="1103.3333333333335" y="703" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10.5" fill="#6B7280" text-anchor="middle">HTTPS 443, SSA to HSA</text>
+<path d="M 716.7 732.0 L 910.0 732.0" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
+<circle cx="716.7" cy="732.0" r="9" fill="#FFFFFF" stroke="#2F5D8C" stroke-width="1.4"/>
+<text x="716.6666666666667" y="736" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11" fill="#2F5D8C" font-weight="600" text-anchor="middle">11</text>
+<text x="813.3333333333334" y="723" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="middle">state Approved, QR badge issued, OperationLog entry</text>
+<text x="813.3333333333334" y="747" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10.5" fill="#6B7280" text-anchor="middle">TCP 1433</text>
+<path d="M 716.7 776.0 L 1296.7 776.0" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
+<circle cx="716.7" cy="776.0" r="9" fill="#FFFFFF" stroke="#2F5D8C" stroke-width="1.4"/>
+<text x="716.6666666666667" y="780" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11" fill="#2F5D8C" font-weight="600" text-anchor="middle">12</text>
+<text x="1006.6666666666667" y="767" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="middle">queue the approval notice</text>
+<text x="1006.6666666666667" y="791" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10.5" fill="#6B7280" text-anchor="middle">SMTP with STARTTLS, 587</text>
+<path d="M 716.7 820.0 L 136.7 820.0" fill="none" stroke="#2F5D8C" stroke-width="1.6" stroke-dasharray="7 4" marker-end="url(#ar)"/>
+<circle cx="716.7" cy="820.0" r="9" fill="#FFFFFF" stroke="#2F5D8C" stroke-width="1.4"/>
+<text x="716.6666666666667" y="824" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11" fill="#2F5D8C" font-weight="600" text-anchor="middle">13</text>
+<text x="426.66666666666674" y="811" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="middle">notification: approved, digital badge available</text>
+<text x="426.66666666666674" y="835" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10.5" fill="#6B7280" text-anchor="middle">HTTPS 443, back along steps 3 to 1</text>
+<line x1="40" y1="872" x2="1780" y2="872" stroke="#6B7280" stroke-width="1" stroke-dasharray="3 4"/>
+<text x="46" y="867" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#6B7280" font-weight="600" text-anchor="start">Sign-in with the second factor</text>
+<path d="M 136.7 928.0 L 716.7 928.0" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
+<circle cx="136.7" cy="928.0" r="9" fill="#FFFFFF" stroke="#2F5D8C" stroke-width="1.4"/>
+<text x="136.66666666666669" y="932" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11" fill="#2F5D8C" font-weight="600" text-anchor="middle">14</text>
+<text x="426.66666666666674" y="919" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="middle">POST /app/auth/sign-in, e-mail and password</text>
+<text x="426.66666666666674" y="943" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10.5" fill="#6B7280" text-anchor="middle">HTTPS 443, via steps 1 to 3</text>
+<path d="M 716.7 972.0 L 910.0 972.0" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
+<circle cx="716.7" cy="972.0" r="9" fill="#FFFFFF" stroke="#2F5D8C" stroke-width="1.4"/>
+<text x="716.6666666666667" y="976" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11" fill="#2F5D8C" font-weight="600" text-anchor="middle">15</text>
+<text x="813.3333333333334" y="963" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="middle">verify the stored hash, write the hashed one-time code</text>
+<text x="813.3333333333334" y="987" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10.5" fill="#6B7280" text-anchor="middle">TCP 1433</text>
+<path d="M 716.7 1016.0 L 1296.7 1016.0" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
+<circle cx="716.7" cy="1016.0" r="9" fill="#FFFFFF" stroke="#2F5D8C" stroke-width="1.4"/>
+<text x="716.6666666666667" y="1020" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11" fill="#2F5D8C" font-weight="600" text-anchor="middle">16</text>
+<text x="1006.6666666666667" y="1007" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="middle">queue the one-time code, single use and time limited</text>
+<text x="1006.6666666666667" y="1031" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10.5" fill="#6B7280" text-anchor="middle">SMTP with STARTTLS, 587</text>
+<path d="M 136.7 1060.0 L 716.7 1060.0" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
+<circle cx="136.7" cy="1060.0" r="9" fill="#FFFFFF" stroke="#2F5D8C" stroke-width="1.4"/>
+<text x="136.66666666666669" y="1064" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11" fill="#2F5D8C" font-weight="600" text-anchor="middle">17</text>
+<text x="426.66666666666674" y="1051" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="middle">POST /app/auth/verify-otp, the one-time code</text>
+<text x="426.66666666666674" y="1075" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10.5" fill="#6B7280" text-anchor="middle">HTTPS 443, via steps 1 to 3</text>
+<path d="M 716.7 1104.0 L 136.7 1104.0" fill="none" stroke="#2F5D8C" stroke-width="1.6" stroke-dasharray="7 4" marker-end="url(#ar)"/>
+<circle cx="716.7" cy="1104.0" r="9" fill="#FFFFFF" stroke="#2F5D8C" stroke-width="1.4"/>
+<text x="716.6666666666667" y="1108" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11" fill="#2F5D8C" font-weight="600" text-anchor="middle">18</text>
+<text x="426.66666666666674" y="1095" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="middle">access token, 5-minute cap, and a rotating refresh token</text>
+<text x="426.66666666666674" y="1119" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10.5" fill="#6B7280" text-anchor="middle">HTTPS 443, back along steps 3 to 1</text>
+<line x1="40" y1="1156" x2="1780" y2="1156" stroke="#6B7280" stroke-width="1" stroke-dasharray="3 4"/>
+<text x="46" y="1151" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#6B7280" font-weight="600" text-anchor="start">Gate scan on the forum days</text>
+<path d="M 1683.3 1212.0 L 716.7 1212.0" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
+<circle cx="1683.3" cy="1212.0" r="9" fill="#FFFFFF" stroke="#2F5D8C" stroke-width="1.4"/>
+<text x="1683.3333333333335" y="1216" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11" fill="#2F5D8C" font-weight="600" text-anchor="middle">19</text>
+<text x="1200.0" y="1203" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="middle">POST /app/gates/{gateId}/scans, the attendee badge QR</text>
+<text x="1200.0" y="1227" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10.5" fill="#6B7280" text-anchor="middle">HTTPS 443, via steps 1 to 3</text>
+<path d="M 716.7 1256.0 L 910.0 1256.0" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
+<circle cx="716.7" cy="1256.0" r="9" fill="#FFFFFF" stroke="#2F5D8C" stroke-width="1.4"/>
+<text x="716.6666666666667" y="1260" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11" fill="#2F5D8C" font-weight="600" text-anchor="middle">20</text>
+<text x="813.3333333333334" y="1247" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="middle">validate the badge, the approval state and the gate's allowed profile types; record the scan idempotently</text>
+<text x="813.3333333333334" y="1271" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10.5" fill="#6B7280" text-anchor="middle">TCP 1433</text>
+<path d="M 716.7 1300.0 L 1683.3 1300.0" fill="none" stroke="#2F5D8C" stroke-width="1.6" stroke-dasharray="7 4" marker-end="url(#ar)"/>
+<circle cx="716.7" cy="1300.0" r="9" fill="#FFFFFF" stroke="#2F5D8C" stroke-width="1.4"/>
+<text x="716.6666666666667" y="1304" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11" fill="#2F5D8C" font-weight="600" text-anchor="middle">21</text>
+<text x="1200.0" y="1291" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="middle">entry or exit outcome</text>
+<text x="1200.0" y="1315" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10.5" fill="#6B7280" text-anchor="middle">HTTPS 443, back along steps 3 to 1</text>
+<rect x="1350" y="1356" width="430" height="118" rx="3" fill="#FFFFFF" stroke="#6B7280" stroke-width="1.2"/>
+<text x="1364" y="1378" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="13.5" fill="#1A1A1A" font-weight="600" text-anchor="start">Key</text>
+<rect x="1366" y="1391" width="30" height="13" rx="2" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1"/>
+<text x="1410" y="1401" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="start">Actor or client application</text>
+<rect x="1366" y="1412" width="30" height="13" rx="2" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1"/><rect x="1386" y="1414" width="7" height="6" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="0.9"/>
+<text x="1410" y="1422" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="start">Server component</text>
+<rect x="1366" y="1433" width="30" height="13" fill="#D8D2C8" stroke="none"/><path d="M 1366 1433 H 1396 M 1366 1446 H 1396 M 1366 1433 V 1446 M 1377 1433 V 1446" stroke="#1A1A1A" stroke-width="1" fill="none"/>
+<text x="1410" y="1443" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="start">Data store</text>
+<path d="M 1366 1460 H 1394" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
+<text x="1410" y="1464" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="start">Message, numbered, with its protocol and port</text>
+<rect x="40" y="1356" width="1290" height="140" rx="3" fill="#FFFFFF" stroke="#6B7280" stroke-width="1.2"/>
+<text x="54" y="1377" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="13" fill="#1A1A1A" font-weight="600" text-anchor="start">Sources and conventions</text>
+<text x="54" y="1397" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">Workflows: SIMF-HLD-004 section 2.3.</text>
+<text x="54" y="1414" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">Participants, zones, protocols and ports: the Communication Requirements Matrix, SIMF-HLD-004 section 2.8.</text>
+<text x="54" y="1431" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">Endpoint paths: the FastEndpoints route declarations in the SIMF solution source tree.</text>
+<text x="54" y="1448" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">Every attendee message crosses the WAF and load balancer and then SIMF.MobileEdge. That chain is drawn in full at steps 1 to 3 and elided afterwards, which each arrow states.</text>
+<text x="54" y="1465" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">The API load balancer forwards and does not participate, so it is folded into the SIMF.Api lifeline rather than given one of its own.</text>
+<text x="54" y="1482" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">A dashed arrow is a reply, a solid arrow a call.</text>
+</svg>
