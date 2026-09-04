@@ -12,8 +12,8 @@ The official companion app for the Saudi International Maritime Forum, a public 
 
 3. SETUP AND ACCESS
 Most of the app needs no account: on the sign-in screen tap "Enter as guest", then "Continue as guest". The demo accounts below have two-factor disabled, are pre-approved and have a complete profile, so email and password sign in directly with no emailed code.
-Visitor: <<EMAIL>> / <<PASSWORD>>
-Moderator: <<EMAIL>> / <<PASSWORD>>
+Visitor: zagali.sust@gmail.com / Qazwsx@1885
+Moderator: mohaned@apexium.com.sa / Qazwsx@1885
 Visitor is the primary role; Moderator also shows the question-moderation desk. Other staff credentials on request; no sample files needed. Language switches with the EN/AR control on the first screen.
 
 4. EXTERNAL SERVICES
