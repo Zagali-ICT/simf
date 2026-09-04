@@ -1,0 +1,26 @@
+Thank you for the review. All six points are answered below and repeated in App Review Information.
+
+ACCOUNT TYPE: we have asked to convert this account to an Organization account and are awaiting your response. The authorisation letter in point 6 is issued in the organisation's name, so the letter and the account will name the same entity once that completes. Please tell us if you would prefer to hold this submission until then.
+
+1. SCREEN RECORDING
+Attached, captured on a physical iPhone on the current iOS. From launch it shows guest browsing, sign-in, the programme, seat reservation, the badge QR, a question, contact exchange, registration with the identity step, and deletion.
+Deletion is fully in-app: Profile > My Area > "Delete my account" > confirm. Immediate and irreversible, with no support ticket. It erases the profile data, the identity document, the ID image and face photograph, every session and device, and the sign-in address. It is available to accounts awaiting organiser approval as well as approved ones.
+User content: no public feed, chat, comment wall or public Q&A. Questions sent to a session reach only a staff moderator and are never shown to other attendees. The only attendee-written content another attendee sees is a meeting request's subject line, read by the invited counterpart alone. Every account is identity-verified with a government ID and a live face capture and approved by the organiser, so no attendee is anonymous and the organiser can disable any account.
+
+2. PURPOSE AND AUDIENCE
+The official companion app for the Saudi International Maritime Forum, a public maritime event in Saudi Arabia, for the general public attending it. It carries the programme, seat booking, a scannable admission badge, the venue and exhibition maps, and contact exchange, in Arabic and English. A few staff screens (gate scanning, a moderator desk) are assigned by an administrator and cannot be self-selected; the app is otherwise entirely a public attendee product, which is why we seek public distribution.
+
+3. SETUP AND ACCESS
+Most of the app needs no account: on the sign-in screen tap "Enter as guest", then "Continue as guest". The demo accounts below have two-factor disabled, are pre-approved and have a complete profile, so email and password sign in directly with no emailed code.
+Visitor: <<EMAIL>> / <<PASSWORD>>
+Moderator: <<EMAIL>> / <<PASSWORD>>
+Visitor is the primary role; Moderator also shows the question-moderation desk. Other staff credentials on request; no sample files needed. Language switches with the EN/AR control on the first screen.
+
+4. EXTERNAL SERVICES
+Our own backend at edge.simrsnf.com (content, accounts, bookings, badges). Google ML Kit, bundled, for on-device face detection: no image is sent to Google, though the SDK reports usage metrics to Google. YouTube, on the live session screen only. Behind our backend: <<AI PROVIDER>> for the in-app assistant, which receives only the typed message and conversation, never a name, email, document or photo; and an SMTP provider for one-time codes. Identity verification runs on our own servers. No analytics, advertising, push, payment, crash-reporting or location service; the app requests no location permission.
+
+5. REGIONAL DIFFERENCES
+No country or geographic gating and no geo-IP lookup: behaviour is identical worldwide, and the app never accesses device location. Session times display in Riyadh time (UTC+3). The app opens in Arabic, with an English toggle on the first screen. The forum has not yet taken place, so live and on-site features show a "not yet" notice rather than content.
+
+6. AUTHORISATION
+The forum is organised by the Royal Saudi Naval Forces. A signed authorisation letter from the organiser, naming our organisation as the authorised developer and publisher of this app, is attached. Further documentation is available on request.
