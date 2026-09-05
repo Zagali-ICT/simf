@@ -375,42 +375,33 @@ empty gallery before an event is defensible; twelve invented admirals are not.
 - [ ] **Remove the three onboarding-carousel screenshots** from every size. They
       are title art, which is the exact failure Apple's letter named. Five
       in-use shots remain, and Apple accepts one to ten.
-- [ ] **Decide iPad.** The app ships universal but has never been built or run
-      on an iPad, and the uploaded 13-inch screenshots are an Android phone
-      capture letterboxed with navy bars. Dropping iPad removes both problems at
-      once. This is a project-settings change and is the owner's to make, so the
-      exact edits are written out rather than applied:
+- [x] **iPad dropped, 2026-09-04.** The app shipped universal but had never been
+      built or run on an iPad, and the uploaded 13-inch screenshots were an
+      Android phone capture letterboxed with navy bars. Both problems are gone:
 
-  1. `ios/Runner.xcodeproj/project.pbxproj`, lines **367, 493 and 546**:
-     `TARGETED_DEVICE_FAMILY = "1,2";` becomes `TARGETED_DEVICE_FAMILY = 1;`.
-     All three build configurations carry it, or the Release build still ships
-     universal.
-  2. `ios/Runner/Info.plist`, delete lines **79 to 85**, the
-     `UISupportedInterfaceOrientations~ipad` array. This is why the iPad risk is
-     real rather than theoretical: it declares **landscape**, and there is no
-     `UIRequiresFullScreen` key, so iOS treats the app as Split View and Slide
-     Over capable and **ignores the Flutter portrait lock**. The app is
-     portrait-locked everywhere except the one device nobody has run it on.
-  3. Delete `store-screenshots/appstore-ready/ipad-13/` (8 files) and remove the
-     13-inch set in App Store Connect.
-  4. Bump the build number and upload. The device family lives in the binary, so
-     App Store Connect only stops demanding iPad screenshots once a
-     non-universal build is attached.
+  - `TARGETED_DEVICE_FAMILY` is `1` in all three build configurations of
+    `ios/Runner.xcodeproj/project.pbxproj` (was `"1,2"`).
+  - `UISupportedInterfaceOrientations~ipad` is removed from
+    `ios/Runner/Info.plist`. That array was the real risk rather than a
+    theoretical one: it declared **landscape**, and with no `UIRequiresFullScreen`
+    key iOS treated the app as Split View and Slide Over capable and ignored the
+    Flutter portrait lock. The app was portrait-locked everywhere except the one
+    device nobody had run it on.
+  - `store-screenshots/appstore-ready/ipad-13/` is deleted (8 files).
 
-  Both files are tracked in git, so this goes through CI normally, and the
-  repo's iOS ratchet test pins only the six permission usage strings, so
-  removing the iPad orientations does not trip it. **Do it before first
-  release**: Apple restricts removing a device family from an app that is
-  already live, and nothing has shipped yet. Worth confirming against current
-  App Store Connect behaviour before relying on it.
+  **Still owed, and it is the half that makes the change take effect:** the
+  device family lives in the BINARY. Bump the build number, build, and attach a
+  new build to the submission. App Store Connect keeps demanding 13-inch
+  screenshots until a non-universal build is uploaded, and the 13-inch set must
+  also be removed in the console. Done before first release, which is the cheap
+  moment: Apple restricts removing a device family from an app that is already
+  live.
 
-  **What keeping iPad costs**, so the choice is fair: a Mac to build on, an iPad
-  to run it on, real 13-inch captures, a decision on multitasking versus adding
-  `UIRequiresFullScreen`, and at least one real bug fixed first -
-  `seat_map_repository.dart:127` calls `Share.share` with no
-  `sharePositionOrigin`, which every other share site in the app passes, so on
-  iPad "Share my seat" silently does nothing. It works on iPhone, which is why
-  nobody noticed.
+  One iPad-only bug is left behind rather than fixed, because nothing now ships
+  to iPad: `seat_map_repository.dart:127` calls `Share.share` with no
+  `sharePositionOrigin`, which every other share site in the app passes, so
+  "Share my seat" silently did nothing there. If iPad is ever re-enabled, fix
+  that first.
 
 ### Fixed in the app, and NOT yet in a build Apple has
 
