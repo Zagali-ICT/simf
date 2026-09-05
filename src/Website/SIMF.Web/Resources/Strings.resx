@@ -386,6 +386,8 @@
   <data name="Privacy.Delete.Body1" xml:space="preserve"><value>You can delete your Saudi International Maritime Forum app account at any time from inside the app itself: open "My area", choose "Delete account", then confirm.</value></data>
   <data name="Privacy.Delete.Body2" xml:space="preserve"><value>When an account is deleted we erase the personal data on your profile, destroy your uploaded photos and identity document, revoke every session and registered device, and permanently disable the account. The action cannot be undone. We retain only a minimal record of the deletion itself, to meet our legal obligations and for security auditing.</value></data>
   <data name="Privacy.Delete.Body3" xml:space="preserve"><value>If you cannot reach the app, you can request deletion of your account and data by writing to us at:</value></data>
+  <data name="Privacy.Delete.RequestLink" xml:space="preserve"><value>Request account and data deletion by email</value></data>
+  <data name="Privacy.Delete.EmailSubject" xml:space="preserve"><value>SIMF account deletion request</value></data>
   <data name="Privacy.Changes.Title" xml:space="preserve"><value>Changes to this privacy policy</value></data>
   <data name="Privacy.Changes.Body" xml:space="preserve"><value>We may update this privacy policy from time to time. We will notify you of any material changes by updating the "Last updated" date shown above in this policy.</value></data>
   <data name="Privacy.Contact.Title" xml:space="preserve"><value>Contact us</value></data>
