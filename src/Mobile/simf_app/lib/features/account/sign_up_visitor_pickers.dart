@@ -114,3 +114,16 @@ Future<String?> pickVisitorNationality(
     searchFieldKey: const ValueKey<String>('countrySearchField'),
   );
 }
+
+/// Leaving the profile-completion form.
+///
+/// It is usually the ROOT route, not a push: both `splash_controller` and
+/// `routeAfterAuth` send an account whose profile is incomplete straight here,
+/// so there is nothing to pop and back has to mean home.
+void signUpVisitorBack(BuildContext context) {
+  if (context.canPop()) {
+    context.pop();
+    return;
+  }
+  context.go('/');
+}

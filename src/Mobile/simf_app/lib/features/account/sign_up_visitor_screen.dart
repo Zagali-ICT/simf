@@ -17,6 +17,7 @@ import 'package:simf_app/features/account/data/sign_up_visitor_form.dart';
 import 'package:simf_app/features/account/data/sign_up_visitor_lookups.dart';
 import 'package:simf_app/features/account/sign_up_visitor_pickers.dart';
 import 'package:simf_app/features/account/sign_up_visitor_submit.dart';
+import 'package:simf_app/features/account/widgets/sign_up_visitor_delete_footer.dart';
 import 'package:simf_app/features/account/widgets/sign_up_visitor_form_card.dart';
 import 'package:simf_app/features/account/widgets/sign_up_visitor_load_error.dart';
 import 'package:simf_app/features/account/widgets/sign_up_visitor_place_of_birth_field.dart';
@@ -301,14 +302,6 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     }
   }
 
-  void _back() {
-    if (context.canPop()) {
-      context.pop();
-      return;
-    }
-    context.go('/');
-  }
-
   // ---- Build ---------------------------------------------------------------
 
   @override
@@ -321,7 +314,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     ref.watch(regionsProvider);
     return SimfFormScaffold(
       pinnedHeader: true,
-      onBack: _back,
+      onBack: () => signUpVisitorBack(context),
       // The profile screen's sweep sits at the top-right, not the auth default.
       sweep: const SimfAuthSweep(top: -180, left: null, right: -40),
       child: _buildBody(l10n),
@@ -350,42 +343,49 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         // fills a phone but doesn't stretch edge-to-edge on a tablet.
         child: MaxWidthBody(
           maxWidth: SimfTokens.signUpVisitorScreenMaxWidth,
-          child: SignUpVisitorFormCard(
-            form: _fields,
-            picks: _form,
-            type: _type,
-            initialOrganisations: _initialOrganisations,
-            saveError: _saveError,
-            saving: _saving,
-            onTypeChanged: (isVisitor) => unawaited(_onTypeChanged(isVisitor)),
-            onRetryProfileTypes: () => unawaited(_fetchProfileTypes()),
-            onProfileTypeChanged: (id) =>
-                setState(() => _form.profileTypeId = id),
-            onGenderChanged: (value) => setState(() => _form.gender = value),
-            onPickMobileCallingCode: () =>
-                unawaited(_pickMobileCallingCode(l10n)),
-            onOrganisationSelected: (organisation) => setState(
-              () => _fields.setOrganisation(
-                _form,
-                organisation,
-                isArabic: l10n.isArabic,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+                SignUpVisitorFormCard(
+              form: _fields,
+              picks: _form,
+              type: _type,
+              initialOrganisations: _initialOrganisations,
+              saveError: _saveError,
+              saving: _saving,
+              onTypeChanged: (isVisitor) =>
+                  unawaited(_onTypeChanged(isVisitor)),
+              onRetryProfileTypes: () => unawaited(_fetchProfileTypes()),
+              onProfileTypeChanged: (id) =>
+                  setState(() => _form.profileTypeId = id),
+              onGenderChanged: (value) => setState(() => _form.gender = value),
+              onPickMobileCallingCode: () =>
+                  unawaited(_pickMobileCallingCode(l10n)),
+              onOrganisationSelected: (organisation) => setState(
+                () => _fields.setOrganisation(
+                  _form,
+                  organisation,
+                  isArabic: l10n.isArabic,
+                ),
               ),
-            ),
-            onOrganisationCleared: () =>
-                setState(() => _fields.clearOrganisation(_form)),
-            onPickNationality: () => unawaited(_pickNationality(l10n)),
-            onDocTypeChanged: (value) => setState(() {
-              _form.docType = value;
-              _fields.documentNumber.clear();
-            }),
-            onPickDateOfBirth: () => unawaited(_pickDateOfBirth()),
-            onBirthRegionPicked: (code, name) =>
-                setState(() => _fields.setBirthRegion(code, name)),
-            onPlateChanged: () => setState(() {}),
-            onAttachIdImage: () => unawaited(_pickIdImage()),
-            onRemoveIdImage: () => setState(_fields.clearIdImage),
-            onCaptureFacePhoto: () => unawaited(_pickFacePhoto()),
-            onNext: _next,
+              onOrganisationCleared: () =>
+                  setState(() => _fields.clearOrganisation(_form)),
+              onPickNationality: () => unawaited(_pickNationality(l10n)),
+              onDocTypeChanged: (value) => setState(() {
+                _form.docType = value;
+                _fields.documentNumber.clear();
+              }),
+              onPickDateOfBirth: () => unawaited(_pickDateOfBirth()),
+              onBirthRegionPicked: (code, name) =>
+                  setState(() => _fields.setBirthRegion(code, name)),
+              onPlateChanged: () => setState(() {}),
+              onAttachIdImage: () => unawaited(_pickIdImage()),
+              onRemoveIdImage: () => setState(_fields.clearIdImage),
+              onCaptureFacePhoto: () => unawaited(_pickFacePhoto()),
+                onNext: _next,
+              ),
+              const SignUpVisitorDeleteFooter(),
+            ],
           ),
         ),
       ),
