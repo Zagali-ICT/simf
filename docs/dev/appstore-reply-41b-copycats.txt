@@ -1,65 +1,36 @@
 Thank you for the review.
 
-This is the official application of the 4th Saudi International Maritime Forum, a
-government-sponsored maritime conference held at the Sofitel Riyadh Hotel and
-Conference Centre from 23 to 25 November 2026, with the Royal Saudi Naval Forces
-as its sponsor. It is not a copy of another application and it does not
-impersonate any entity. It is the forum's only official app for this edition, and
-it is published with written authorization from the licensed event organizer.
+This is the official app of the 4th Saudi International Maritime Forum, a
+government-sponsored conference held in Riyadh from 23 to 25 November 2026, with
+the Royal Saudi Naval Forces as its sponsor. It is not a copy of another app.
 
-Apps for earlier editions of this forum
+Earlier editions of the forum had their own apps, published by whichever vendor
+the organizer contracted at the time. If your review compared this submission
+with one of those, that is the likely reason. We have no relationship with those
+publishers and no control over their listings; Startime Events Company, as the
+licensed organizer, can confirm that directly to Apple.
 
-The forum has been held before, and earlier editions were served by their own
-apps, published by whichever technical vendor the organizer had contracted at the
-time. Those authorizations covered those editions only. If your review has
-compared this submission with one of them, that is the likely reason. We have no
-relationship with the publishers of those apps and no control over their
-listings. Startime Events Company, as the licensed organizer, can confirm
-directly to Apple that any earlier listing is not the official app of the 4th
-edition, and can request its removal.
-
-The chain of authority, and the documents that evidence it
+Our authority, evidenced in the two attached PDFs:
 
 1. The Saudi Conventions and Exhibitions General Authority licensed the event to
-Startime Events Company under permit 26/3175, issued 17 May 2026.
+Startime Events Company, permit 26/3175, 17 May 2026.
 
-2. Startime Events Company (Commercial Registration 1010273439, Unified National
-Number 7001604854) authorized our company in writing on 1 September 2026 to
-develop, submit, publish and manage the official mobile application on the Apple
-App Store, valid until 26 November 2027. The letter is signed and stamped by
-Shaya Al-Qahtani, Chief Executive Officer. It writes the name as "Zagali Multi
-Activities Limited"; the registered name is "Zagali For Multi Activities
-Limited", D-U-N-S 228874121, and it is the same entity.
+2. Startime Events Company (Commercial Registration 1010273439) authorized us in
+writing on 1 September 2026 to publish and manage the official app, valid to
+26 November 2027, signed and stamped by Shaya Al-Qahtani, CEO. The letter writes
+"Zagali Multi Activities Limited"; the registered name is "Zagali For Multi
+Activities Limited", D-U-N-S 228874121, and it is the same entity.
 
-3. Zagali For Multi Activities Limited is registered at Companies House in
-England and Wales, company number 14061452, incorporated 22 April 2022. Its
-certificate of incorporation carries an apostille issued in London on 15 June
-2026 under the Hague Convention.
+3. Zagali For Multi Activities Limited is registered at Companies House, England
+and Wales, number 14061452, its certificate of incorporation apostilled in London
+on 15 June 2026.
 
-4. Mohaned Zagali Mohamed Abdalrady holds all 100 shares in that company, is its
-sole person with significant control, and is its director. He is the holder of
-this Apple Developer account.
+4. Mohaned Zagali Mohamed Abdalrady owns all 100 shares in that company, is its
+sole person with significant control and a director, and holds this Apple
+Developer account.
 
-Attachments
+The account is at present an Individual account in his name. A request to convert
+it to an Organization account for Zagali For Multi Activities Limited is with
+Apple and awaiting a response.
 
-The first PDF holds the authorization letter (page 1), the event licence with a
-certified English translation (pages 2 to 4) and Startime's commercial
-registration (page 5). The second PDF holds the Companies House record for Zagali
-For Multi Activities Limited: certificate of incorporation with apostille,
-confirmation statement, shareholder details, person with significant control, and
-appointment of director.
-
-The developer account
-
-The account is at present an Individual account in the name of Mohaned Zagali
-Mohamed Abdalrady. We have submitted a request to Apple to convert it to an
-Organization account in the name of Zagali For Multi Activities Limited, and we
-are awaiting the outcome. If you would prefer to approve this app only once that
-conversion has completed, we are happy to wait.
-
-The app's content is limited to this single event: the programme and session
-agenda, speakers, exhibitors and sponsors, the venue map, forum news, and the
-attendee's own registration and entry badge. All branding in the app belongs to
-the forum and is used under the authorization attached.
-
-Please let us know if any further documentation would help.
+Please tell us if anything further would help.
