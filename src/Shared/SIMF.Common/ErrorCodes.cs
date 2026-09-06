@@ -426,6 +426,22 @@ public static class ErrorCodes
     public const string BiometricStepUpRequired = "BIOMETRIC_STEP_UP_REQUIRED";
     public const string BiometricStepUpInvalid = "BIOMETRIC_STEP_UP_INVALID";
 
+    // Emailed-OTP confirmation before a holder erases their own account.
+    //
+    // These are answered 403, never 401, and that is load-bearing rather than
+    // stylistic: on a 401 the mobile client refreshes and REPLAYS the same
+    // request (simf_api_client.dart, _execute), so a single mistyped code would
+    // burn two of the five attempts - and if the refresh fails it calls
+    // onSessionExpired and signs the holder out in the middle of deleting.
+    //
+    // Expired is split from Invalid so the app can zero its resend countdown and
+    // offer a new code immediately, instead of showing "wrong code" against a
+    // timer. The pair is not an enumeration oracle: reaching either already
+    // requires the account's own bearer token.
+    public const string AccountDeletionCodeRequired = "ACCOUNT_DELETION_CODE_REQUIRED";
+    public const string AccountDeletionCodeInvalid = "ACCOUNT_DELETION_CODE_INVALID";
+    public const string AccountDeletionCodeExpired = "ACCOUNT_DELETION_CODE_EXPIRED";
+
     // Invitations + VIP notify — the public-relations module.
     public const string InvitationInvalid = "INVITATION_INVALID";
     public const string InvitationNotFound = "INVITATION_NOT_FOUND";

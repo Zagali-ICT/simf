@@ -12,6 +12,7 @@ import 'package:simf_app/features/account/badge_password_screen.dart';
 import 'package:simf_app/features/account/badge_sign_in_screen.dart';
 import 'package:simf_app/features/account/biometric_step_up_screen.dart';
 import 'package:simf_app/features/account/data/sign_up_profile_draft.dart';
+import 'package:simf_app/features/account/delete_account_code_screen.dart';
 import 'package:simf_app/features/account/email_otp_verify_screen.dart';
 import 'package:simf_app/features/account/forgot_password_screen.dart';
 import 'package:simf_app/features/account/my_devices_screen.dart';
@@ -598,6 +599,15 @@ const List<_Route> _auxRoutes = <_Route>[
       path: '/auth/biometric-step-up',
       labelAr: 'تأكيد بصمة الوجه',
       labelEn: 'Confirm Face ID',),
+  // The emailed-code confirmation before an account is erased. Backend
+  // enforced for the same reason as the step-up above, and deliberately open
+  // to a pending or disabled holder.
+  _Route(
+      number: 0,
+      name: RouteNames.deleteAccountCode,
+      path: '/account/delete-code',
+      labelAr: 'تأكيد حذف الحساب',
+      labelEn: 'Confirm account deletion',),
   _Route(
       number: 0,
       name: RouteNames.myDevices,
@@ -995,6 +1005,16 @@ Widget _auxScreenFor(BuildContext context, GoRouterState state, _Route r) {
   }
   if (r.name == RouteNames.biometricStepUp) {
     return const BiometricStepUpScreen();
+  }
+  if (r.name == RouteNames.deleteAccountCode) {
+    // The tile hands over its own erase call rather than the screen reaching
+    // for a repository: the tile stays the thing that knows what deleting
+    // means, and the screen stays reusable. A null extra is the Android
+    // process-death restore, where the screen refuses instead of guessing.
+    final erase = state.extra;
+    return DeleteAccountCodeScreen(
+      erase: erase is Future<void> Function(String) ? erase : null,
+    );
   }
   if (r.name == RouteNames.myDevices) {
     return const MyDevicesScreen();

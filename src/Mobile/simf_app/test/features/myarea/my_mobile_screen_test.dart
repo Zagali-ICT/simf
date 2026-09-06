@@ -61,7 +61,11 @@ class _FakeProfileRepository implements ProfileRepository {
   UpsertUserProfileRequest? upserted;
 
   @override
-  Future<void> deleteMyAccount() async {}
+  Future<void> deleteMyAccount(String code) async {}
+
+  @override
+  Future<AccountDeletionCode> sendDeletionCode() async =>
+      const AccountDeletionCode(maskedEmail: '', expiresInSeconds: 0);
 
   @override
   Future<UserProfileResponse> getMyProfile() async {

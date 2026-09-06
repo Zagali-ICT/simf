@@ -500,6 +500,40 @@ class AppL10n {
             'cannot be undone.',
       );
   String get deleteAccountConfirmAction => _t('حذف نهائي', 'Delete for ever');
+
+  // The emailed confirmation step. Deletion is irreversible, so it earns the
+  // same second factor enrolling a credential does.
+  String get deleteAccountCodeTitle =>
+      _t('تأكيد حذف الحساب', 'Confirm account deletion');
+  String get deleteAccountCodeHeading =>
+      _t('أدخل رمز التأكيد', 'Enter the confirmation code');
+  String get deleteAccountCodeBody => _t(
+        'أرسلنا رمزًا من ستة أرقام للتأكد من أنك من طلب حذف الحساب.',
+        'We sent a six-digit code to confirm it is you who asked to delete the '
+            'account.',
+      );
+  String get deleteAccountCodeSendFailed => _t(
+        'تعذر إرسال رمز التأكيد. حاول مرة أخرى.',
+        'Could not send the confirmation code. Please try again.',
+      );
+  String get deleteAccountCodeInvalid => _t(
+        'رمز التأكيد غير صحيح. تحقق منه وحاول مرة أخرى.',
+        'That confirmation code is not correct. Check it and try again.',
+      );
+  String get deleteAccountCodeExpired => _t(
+        'انتهت صلاحية الرمز. اطلب رمزًا جديدًا.',
+        'The code has expired. Request a new one.',
+      );
+  String get deleteAccountCodeTooMany => _t(
+        'تم طلب رموز كثيرة. حاول مرة أخرى بعد ساعة.',
+        'Too many codes requested. Try again in an hour.',
+      );
+  /// The Android process-death restore case: the route came back without the
+  /// erase callback, so the screen must refuse rather than pretend.
+  String get deleteAccountCodeUnavailable => _t(
+        'تعذّر بدء حذف الحساب. أعد المحاولة من صفحة حسابك.',
+        'Could not start account deletion. Try again from your account page.',
+      );
   String get deleteAccountFailed => _t(
         'تعذر حذف الحساب. حاول مرة أخرى.',
         'Could not delete the account. Please try again.',

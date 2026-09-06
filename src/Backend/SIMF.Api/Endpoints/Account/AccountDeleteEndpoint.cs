@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
+using SIMF.Contracts.Account;
 
 namespace SIMF.Api.Endpoints.Account;
 
@@ -13,6 +14,11 @@ namespace SIMF.Api.Endpoints.Account;
 /// <remarks>
 /// <para>Google Play requires an in-app deletion path for any app that offers
 /// account creation. This is it.</para>
+/// <para>Carries an emailed confirmation code (<c>POST
+/// /app/account/delete/send-code</c>) when
+/// <c>AccountDeletion:RequireCodeForDeletion</c> is on. The code applies to
+/// every account state for the same reason the endpoint is ungated: the people
+/// most likely to want erasing are the ones an approval check would exclude.</para>
 /// <para>Deliberately NOT gated on <c>RequireApprovedAccount</c>. A pending,
 /// rejected or disabled holder is exactly the person who most wants to be
 /// erased, and gating on approval would leave them with no way out — the
@@ -21,7 +27,7 @@ namespace SIMF.Api.Endpoints.Account;
 /// the subject is the <c>sub</c> claim, never a route parameter.</para>
 /// </remarks>
 public sealed class AccountDeleteEndpoint(IAccountDeletionService deletion)
-    : EndpointWithoutRequest<ApiResult<bool>>
+    : Endpoint<DeleteAccountRequest, ApiResult<bool>>
 {
     public override void Configure()
     {
@@ -38,9 +44,9 @@ public sealed class AccountDeleteEndpoint(IAccountDeletionService deletion)
         });
     }
 
-    public override async Task HandleAsync(CancellationToken ct)
+    public override async Task HandleAsync(DeleteAccountRequest req, CancellationToken ct)
     {
-        await deletion.DeleteOwnAccountAsync(User.ActorId(), ct);
+        await deletion.DeleteOwnAccountAsync(User.ActorId(), req.Code, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
 }

@@ -344,6 +344,12 @@ public static class AuditEvents
     public const string DeviceKeyStepUpIssued = "DeviceKey.StepUpIssued";
     public const string DeviceKeyStepUpRejected = "DeviceKey.StepUpRejected";
 
+    // Emailed-OTP confirmation before a holder erases their own account. The
+    // rejection reason (missing / expired / mismatch) rides the entry detail,
+    // because the error code deliberately does not distinguish them.
+    public const string AccountDeletionCodeIssued = "Account.DeletionCodeIssued";
+    public const string AccountDeletionCodeRejected = "Account.DeletionCodeRejected";
+
     // CMS: ContentBlock + Banner
     public const string ContentBlockUpserted = "ContentBlock.Upserted";
     public const string ContentBlockDeactivated = "ContentBlock.Deactivated";

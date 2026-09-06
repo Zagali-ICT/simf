@@ -38,14 +38,15 @@ public sealed class EmailTemplateAdminTests : IClassFixture<SimfApiFactory>
     // -- List ----------------------------------------------------------------
 
     [Fact]
-    public async Task List_returns_all_ten_templates_clean_by_default()
+    public async Task List_returns_all_eleven_templates_clean_by_default()
     {
         // Order-independent: every mutating test in this class resets its
         // override so, with parallelism disabled, the DB is clean at every
-        // test boundary and the grid shows the ten catalogue defaults (#24 added
-        // EmailChangeVerification + EmailChangedNotice; the assertion was stale at
-        // 6 on the base branch after D-751 added BulkBadgeDelivery, the 7th;
-        // BUG-024 appended ExhibitorLeadCapture, the 10th).
+        // test boundary and the grid shows the eleven catalogue defaults (#24
+        // added EmailChangeVerification + EmailChangedNotice; the assertion was
+        // stale at 6 on the base branch after D-751 added BulkBadgeDelivery, the
+        // 7th; BUG-024 appended ExhibitorLeadCapture, the 10th; the
+        // account-deletion confirmation code is the 11th).
         var admin = await CreateAdministratorAndSignInAsync();
 
         var response = await PostAuthAsync(
@@ -54,7 +55,7 @@ public sealed class EmailTemplateAdminTests : IClassFixture<SimfApiFactory>
 
         var page = (await response.Content
             .ReadFromJsonAsync<ApiResult<GridPage<AdminEmailTemplateSummary>>>())!.Data!;
-        Assert.Equal(10, page.Items.Count);
+        Assert.Equal(11, page.Items.Count);
         Assert.All(page.Items, row =>
         {
             Assert.False(row.IsOverride);
@@ -78,13 +79,13 @@ public sealed class EmailTemplateAdminTests : IClassFixture<SimfApiFactory>
         Assert.Equal(4, first.Items.Count);
         // The defect: Total was rows.Count of the page, so the CP footer read
         // "1-4 of 4" and the pager offered a single page.
-        Assert.Equal(10, first.Total);
+        Assert.Equal(11, first.Total);
         Assert.Equal(0, first.Skip);
         Assert.Equal(4, first.Top);
 
         var last = await ListAsync(new GridQuery { Skip = 8, Top = 4 }, admin);
-        Assert.Equal(2, last.Items.Count);
-        Assert.Equal(10, last.Total);
+        Assert.Equal(3, last.Items.Count);
+        Assert.Equal(11, last.Total);
 
         // A page window that is ignored returns the same rows every time.
         Assert.Empty(first.Items.Select(row => row.Type)
@@ -104,7 +105,9 @@ public sealed class EmailTemplateAdminTests : IClassFixture<SimfApiFactory>
         var ascendingNames = ascending.Items.Select(row => row.TypeName).ToList();
         var descendingNames = descending.Items.Select(row => row.TypeName).ToList();
 
-        Assert.Equal("AccountExists", ascendingNames[0]);
+        // AccountDeletion sorts ahead of AccountExists; it was appended to the
+        // catalogue for the emailed deletion-confirmation code.
+        Assert.Equal("AccountDeletion", ascendingNames[0]);
         Assert.Equal("SignInOtp", descendingNames[0]);
         // A sort that is silently dropped flips the header arrow without moving a
         // single row, which is exactly what this asserts cannot happen.

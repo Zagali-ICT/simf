@@ -1,3 +1,5 @@
+using SIMF.Contracts.Account;
+
 namespace SIMF.Application.IdentityAccess.Abstractions;
 
 /// <summary>
@@ -28,5 +30,26 @@ public interface IAccountDeletionService
     /// that retries after a half-landed cross-database write completes it.
     /// </summary>
     /// <param name="userId">The signed-in caller. Never an admin acting on someone else.</param>
-    Task DeleteOwnAccountAsync(Guid userId, CancellationToken cancellationToken = default);
+    /// <param name="code">The emailed confirmation code from
+    /// <see cref="SendDeletionCodeAsync"/>. Ignored when the gate is configured
+    /// off; otherwise a missing or wrong value refuses the erasure.</param>
+    Task DeleteOwnAccountAsync(
+        Guid userId, string? code, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Emails the caller a one-time code confirming they mean to erase their own
+    /// account, and returns the masked address it went to.
+    /// </summary>
+    /// <remarks>
+    /// <para>Deletion is irreversible, so it earns the same second factor that
+    /// enrolling a credential does: an unlocked phone alone must not be able to
+    /// destroy an account.</para>
+    /// <para>Unlike the biometric step-up this mirrors, it is deliberately open
+    /// to a PENDING, REJECTED or DISABLED holder. Those are exactly the people
+    /// the deletion endpoint exists for, and gating the code behind an approved
+    /// account would leave them able to ask for erasure and never complete
+    /// it.</para>
+    /// </remarks>
+    Task<SendAccountDeletionCodeResponse> SendDeletionCodeAsync(
+        Guid userId, CancellationToken cancellationToken = default);
 }

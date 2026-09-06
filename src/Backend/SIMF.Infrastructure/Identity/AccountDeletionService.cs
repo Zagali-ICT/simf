@@ -1,11 +1,19 @@
 // Tests: SIMF.Api.Tests/AccountDeletionTests.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using SIMF.Application.Auditing;
+using SIMF.Application.Email;
 using SIMF.Application.Files.Abstractions;
+using SIMF.Application.IdentityAccess;
+using SIMF.Application.Security;
 using SIMF.Application.IdentityAccess.Abstractions;
+using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Options;
+using SIMF.Contracts.Account;
 using SIMF.Domain.Auditing;
+using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Profiles;
 using SIMF.Infrastructure.Persistence;
 
@@ -17,6 +25,10 @@ internal sealed class AccountDeletionService(
     IRefreshTokenRepository refreshTokens,
     IDeviceKeyService deviceKeys,
     IFileService files,
+    IAccountCodeRepository accountCodes,
+    IEmailQueue emailQueue,
+    IEmailTemplateResolver emailTemplates,
+    IOptions<AccountDeletionOptions> deletionOptions,
     SimfAppDbContext appDb,
     IAuditLog auditLog,
     TimeProvider timeProvider,
@@ -32,8 +44,163 @@ internal sealed class AccountDeletionService(
         FileService.VipPhoto,
     };
 
-    public async Task DeleteOwnAccountAsync(
+    // Same shape as the biometric enrolment step-up, deliberately: one emailed
+    // code, short-lived, single-use, rate-limited per account and burned after
+    // a handful of wrong guesses.
+    private static readonly TimeSpan CodeLifetime = TimeSpan.FromMinutes(10);
+    private static readonly TimeSpan CodeRequestWindow = TimeSpan.FromHours(1);
+    private const int MaxCodeRequestsPerWindow = 5;
+    private const int MaxCodeAttempts = 5;
+
+    public async Task<SendAccountDeletionCodeResponse> SendDeletionCodeAsync(
         Guid userId, CancellationToken cancellationToken = default)
+    {
+        var user = await accounts.FindByIdAsync(userId, cancellationToken);
+        if (user is null || string.IsNullOrWhiteSpace(user.Email))
+        {
+            throw new ApiException(
+                ErrorCodes.AuthAccountNotFound, 401,
+                "Sign in again to request an account deletion code.",
+                "سجّل الدخول مرة أخرى لطلب رمز حذف الحساب.");
+        }
+
+        // NOTE the divergence from the biometric step-up this otherwise mirrors:
+        // it refuses a Disabled account, and its endpoint demands an approved
+        // one. Neither applies here. A pending, rejected or disabled holder is
+        // precisely who the deletion endpoint exists for, and gating the code
+        // would let them ask to be erased and never finish.
+        var now = timeProvider.SimfNow();
+
+        var recent = await accountCodes.CountCreatedSinceAsync(
+            userId, AccountCodePurpose.AccountDeletion,
+            now - CodeRequestWindow, cancellationToken);
+        if (recent >= MaxCodeRequestsPerWindow)
+        {
+            await AuditCodeRejectedAsync(userId, user.Email, "rate_limited", cancellationToken);
+            throw new ApiException(
+                ErrorCodes.RateLimitExceeded, 429,
+                "Too many deletion codes have been requested. Try again later.",
+                "تم طلب رموز حذف كثيرة. حاول مرة أخرى لاحقًا.");
+        }
+
+        // Only the newest code stays valid - consume any prior unconsumed one.
+        var previous = await accountCodes.GetLatestUnconsumedAsync(
+            userId, AccountCodePurpose.AccountDeletion, cancellationToken);
+        if (previous is not null)
+        {
+            await accountCodes.TryConsumeAsync(previous.Id, now, cancellationToken);
+        }
+
+        // Only the keyed hash is stored; the plaintext is emailed and never persisted.
+        var plaintext = VerificationCodeGenerator.Generate();
+        await accountCodes.AddAsync(new AccountCode
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            Purpose = AccountCodePurpose.AccountDeletion,
+            Code = AccountCodeHasher.Hash(plaintext),
+            CreatedAt = now,
+            ExpiresAt = now.Add(CodeLifetime),
+        }, cancellationToken);
+
+        await emailQueue.TryEnqueueAsync(
+            await emailTemplates.RenderAsync(
+                EmailTemplateType.AccountDeletion, user.Email,
+                EmailTokens.ForCode(plaintext, CodeLifetime), cancellationToken),
+            purpose: "AccountDeletion",
+            subjectEmail: user.Email,
+            subjectUserId: userId,
+            auditLog: auditLog,
+            logger: logger,
+            cancellationToken: cancellationToken);
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.AccountDeletionCodeIssued,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = userId,
+            SubjectUserId = userId,
+            SubjectEmail = user.Email,
+        }, cancellationToken);
+
+        return new SendAccountDeletionCodeResponse(
+            EmailMask.Mask(user.Email), (int)CodeLifetime.TotalSeconds);
+    }
+
+    /// <summary>
+    /// Validates the supplied code WITHOUT consuming it, and returns the row so
+    /// the caller can burn it only once the erasure has actually happened.
+    /// </summary>
+    /// <remarks>
+    /// Deferring consumption matters: a code burned before the erase would leave
+    /// a holder whose deletion half-failed with a dead code and an "incorrect"
+    /// message on retry. Returns null when the gate is configured off.
+    /// </remarks>
+    private async Task<AccountCode?> ValidateDeletionCodeAsync(
+        Guid userId, string? supplied, DateTime now, string? email,
+        CancellationToken cancellationToken)
+    {
+        if (!deletionOptions.Value.RequireCodeForDeletion)
+        {
+            return null;
+        }
+
+        var stored = await accountCodes.GetLatestUnconsumedAsync(
+            userId, AccountCodePurpose.AccountDeletion, cancellationToken);
+        if (stored is null || string.IsNullOrWhiteSpace(supplied))
+        {
+            await AuditCodeRejectedAsync(userId, email, "missing", cancellationToken);
+            // Worded for an OLD installed build, which sends no code at all and
+            // is the only caller that reaches this in practice: the current app
+            // always has a code by the time it submits.
+            throw new ApiException(
+                ErrorCodes.AccountDeletionCodeRequired, 403,
+                "A confirmation code is required. Update the SIMF app to delete your account.",
+                "يلزم رمز تأكيد. حدّث تطبيق سيمف لحذف حسابك.");
+        }
+
+        if (stored.ExpiresAt <= now)
+        {
+            await accountCodes.TryConsumeAsync(stored.Id, now, cancellationToken);
+            await AuditCodeRejectedAsync(userId, email, "expired", cancellationToken);
+            throw new ApiException(
+                ErrorCodes.AccountDeletionCodeExpired, 403,
+                "That code has expired. Request a new one.",
+                "انتهت صلاحية الرمز. اطلب رمزًا جديدًا.");
+        }
+
+        if (!ConstantTime.Matches(AccountCodeHasher.Hash(supplied.Trim()), stored.Code))
+        {
+            var attempts = await accountCodes.IncrementAttemptCountAsync(
+                stored.Id, cancellationToken);
+            if (attempts >= MaxCodeAttempts)
+            {
+                await accountCodes.TryConsumeAsync(stored.Id, now, cancellationToken);
+            }
+            await AuditCodeRejectedAsync(userId, email, "mismatch", cancellationToken);
+            throw new ApiException(
+                ErrorCodes.AccountDeletionCodeInvalid, 403,
+                "That code is not correct. Check it and try again.",
+                "الرمز غير صحيح. تحقق منه وحاول مرة أخرى.");
+        }
+
+        return stored;
+    }
+
+    private Task AuditCodeRejectedAsync(
+        Guid userId, string? email, string reason, CancellationToken cancellationToken) =>
+        auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.AccountDeletionCodeRejected,
+            Outcome = AuditOutcome.Failure,
+            ActorUserId = userId,
+            SubjectUserId = userId,
+            SubjectEmail = email,
+            Detail = $"reason={reason}",
+        }, cancellationToken);
+
+    public async Task DeleteOwnAccountAsync(
+        Guid userId, string? code, CancellationToken cancellationToken = default)
     {
         var user = await accounts.FindByIdAsync(userId, cancellationToken);
         if (user is null)
@@ -41,6 +208,12 @@ internal sealed class AccountDeletionService(
             // Idempotent by contract: nothing to erase is a success, not a 404.
             return;
         }
+
+        // The code's clock is SimfNow, matching every other AccountCode path.
+        // The erasure stamps below keep GetUtcNow: sharing one "now" between the
+        // two would put the expiry math out by the Saudi offset.
+        var deletionCode = await ValidateDeletionCodeAsync(
+            userId, code, timeProvider.SimfNow(), user.Email, cancellationToken);
 
         var now = timeProvider.GetUtcNow().UtcDateTime;
         // Captured BEFORE the scrub - the audit row is the record of who asked,
@@ -59,6 +232,13 @@ internal sealed class AccountDeletionService(
         await refreshTokens.RevokeAllForUserAsync(user.Id, now, cancellationToken);
         await deviceKeys.RevokeAllForUserAsync(user.Id, cancellationToken);
         await AnonymiseAccountAsync(user, now, cancellationToken);
+
+        // Single-use, burned only now the erasure has committed.
+        if (deletionCode is not null)
+        {
+            await accountCodes.TryConsumeAsync(
+                deletionCode.Id, timeProvider.SimfNow(), cancellationToken);
+        }
 
         await auditLog.WriteAsync(
             new AuditEntry

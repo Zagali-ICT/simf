@@ -340,3 +340,25 @@ class UserProfileResponse {
         jobTitleArabic: jobTitleArabic,
       );
 }
+
+/// Where the account-deletion confirmation code was sent, and how long it lasts
+/// (`POST /app/account/delete/send-code`).
+///
+/// The address arrives MASKED. The screen that shows it sits behind nothing but
+/// a confirm dialog, so the full address has no business being there.
+class AccountDeletionCode {
+  const AccountDeletionCode({
+    required this.maskedEmail,
+    required this.expiresInSeconds,
+  });
+
+  factory AccountDeletionCode.fromJson(Map<String, dynamic> json) =>
+      AccountDeletionCode(
+        maskedEmail: json['maskedEmail'] as String? ?? '',
+        // Server-driven so the countdown cannot drift from the real lifetime.
+        expiresInSeconds: (json['expiresInSeconds'] as num?)?.toInt() ?? 0,
+      );
+
+  final String maskedEmail;
+  final int expiresInSeconds;
+}

@@ -94,6 +94,7 @@ public sealed class AppWireContractPinTests
         typeof(RecommendationsResponse),            // GET    /app/account/recommendations/meet-like-you
         typeof(RecoveryCodesResponse),              // POST   /app/account/recovery-codes/regenerate
         typeof(MyAreaSessions),                     // GET    /app/account/sessions
+        typeof(SendAccountDeletionCodeResponse),    // POST   /app/account/delete/send-code
         typeof(VisitorShareTokenResponse),          // GET    /app/account/share-token
         typeof(UserProfileResponse),                // GET    /app/account/user-profile
         typeof(CountryListResponse),                // GET    /app/account/user-profile/countries
@@ -213,6 +214,7 @@ public sealed class AppWireContractPinTests
         "SIMF.Contracts.Account.MyAreaScheduleItem: end,hallNameAr,hallNameEn,kind,meetingId,sessionId,start,status,subject,titleAr,titleEn",
         "SIMF.Contracts.Account.MyAreaSessionItem: attended,categoryNameAr,categoryNameEn,end,hallNameAr,hallNameEn,id,isFavourite,speakerNameAr,speakerNameEn,speakerTitle,start,status,title,titleArabic",
         "SIMF.Contracts.Account.MyAreaSessions: items",
+        "SIMF.Contracts.Account.SendAccountDeletionCodeResponse: expiresInSeconds,maskedEmail",
         "SIMF.Contracts.Admin.ArchiveVisibilityState: isVisible,lastChangedAt,lastChangedByUserId",
         "SIMF.Contracts.Ai.AiCallResult: feature,invocationId,isStub,latencyMs,model,outputText,promptKey,provider,tokensInput,tokensOutput",
         "SIMF.Contracts.Ai.AiChatTurn: content,role",

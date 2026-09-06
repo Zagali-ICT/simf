@@ -18,9 +18,14 @@ abstract final class AccountEndpoints {
   static const String avatar = '/app/account/avatar';
   static const String regions = '/app/regions';
 
-  /// DELETE — erases the signed-in user's own account (Google Play requires an
-  /// in-app deletion path for any app that offers account creation).
+  /// DELETE — erases the signed-in user's own account (both stores require an
+  /// in-app deletion path for any app that offers account creation). Carries
+  /// the confirmation code from [deletionCode] in its body.
   static const String deleteMe = '/app/account';
+
+  /// POST — emails a one-time code confirming the holder means to erase their
+  /// account, and returns the masked address it went to.
+  static const String deletionCode = '/app/account/delete/send-code';
 
   /// Another user's avatar bytes, by user id.
   static String avatarOf(String userId) => '/app/account/avatar/$userId';

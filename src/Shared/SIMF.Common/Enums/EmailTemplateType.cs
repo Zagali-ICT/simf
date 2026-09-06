@@ -44,4 +44,10 @@ public enum EmailTemplateType
     /// address after they scan a visitor's badge at their booth. Appended
     /// (persisted by name — see the type doc).</summary>
     ExhibitorLeadCapture = 9,
+
+    /// <summary>The confirmation code emailed before a holder erases their own
+    /// account, so an irreversible action needs the account's inbox and not
+    /// just an unlocked phone. Appended (persisted by name — see the type
+    /// doc).</summary>
+    AccountDeletion = 10,
 }

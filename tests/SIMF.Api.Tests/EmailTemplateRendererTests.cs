@@ -107,13 +107,14 @@ public sealed class EmailTemplateRendererTests
     }
 
     [Fact]
-    public void Catalog_all_lists_the_ten_transactional_templates()
+    public void Catalog_all_lists_the_eleven_transactional_templates()
     {
         // #24 added EmailChangeVerification (8th) + EmailChangedNotice (9th). NB:
         // this assertion was stale at 6 on the base branch after D-751 added
         // BulkBadgeDelivery (7th) without updating it. BUG-024 appended
-        // ExhibitorLeadCapture (10th) — 10 is the true current count.
-        Assert.Equal(10, EmailTemplateCatalog.All.Count);
+        // ExhibitorLeadCapture (10th), and the account-deletion confirmation
+        // code appended the 11th — 11 is the true current count.
+        Assert.Equal(11, EmailTemplateCatalog.All.Count);
     }
 
     [Fact]

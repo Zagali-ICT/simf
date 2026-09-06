@@ -270,6 +270,12 @@ public class SimfApiFactory : WebApplicationFactory<Program>
         // DeviceKeyStepUpTests re-enables it via BiometricStepUpApiFactory to
         // exercise the real gate.
         Environment.SetEnvironmentVariable("DeviceKey__RequireStepUpForEnrol", "false");
+        // Same shape for self-service deletion: the general suite erases without
+        // a code, and AccountDeletionCodeTests re-enables the gate through its
+        // own factory. Reset here rather than left unset, so a specialised
+        // factory from an earlier class cannot leak "true" into a later one.
+        Environment.SetEnvironmentVariable(
+            "AccountDeletion__RequireCodeForDeletion", "false");
         // D-717 (item 7, GAP-3) — a public Website base URL so the speaker
         // action-link mint builds real URLs (and so MeetingActionTokenTests can
         // extract the token secret from the returned link).

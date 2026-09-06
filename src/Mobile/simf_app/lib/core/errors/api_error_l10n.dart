@@ -21,6 +21,19 @@ extension ApiFailureL10n on ApiFailure {
       case ApiErrorCodes.clientCancelled:
         return l10n.errorGenericBody;
     }
+    // Account deletion is the one flow whose refusals are worded here rather
+    // than taken from the envelope: the owner asked for copy that says what to
+    // do next, and the server's REQUIRED text deliberately speaks to an OLD
+    // installed build that sends no code at all.
+    switch (code) {
+      case _deletionCodeInvalid:
+        return l10n.deleteAccountCodeInvalid;
+      case _deletionCodeExpired:
+      case _deletionCodeRequired:
+        // REQUIRED reaches a current build only once the attempt cap has burned
+        // the code, which to the holder is the same fact as an expired one.
+        return l10n.deleteAccountCodeExpired;
+    }
     // A field-validation failure carries the specific per-field reason(s) in
     // `details`, while the envelope's top-level message is only the generic
     // "one or more fields are invalid". Surface the specific reason(s) so the
@@ -41,3 +54,7 @@ extension ApiFailureL10n on ApiFailure {
     return serverMessage.isEmpty ? l10n.errorGenericBody : serverMessage;
   }
 }
+
+const String _deletionCodeRequired = 'ACCOUNT_DELETION_CODE_REQUIRED';
+const String _deletionCodeInvalid = 'ACCOUNT_DELETION_CODE_INVALID';
+const String _deletionCodeExpired = 'ACCOUNT_DELETION_CODE_EXPIRED';

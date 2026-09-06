@@ -39,4 +39,13 @@ public enum AccountCodePurpose
     /// value (appending new enum values is allowed); display falls back
     /// to the enum name (these codes are never enumerated in a UI).</summary>
     EmailChangeVerification = 5,
+
+    /// <summary>A one-time code emailed to a signed-in user before their own
+    /// account is erased, so a borrowed-but-unlocked phone cannot destroy an
+    /// account without also holding its email. Deletion is irreversible, which
+    /// is the whole reason it earns a second factor the way enrolling a
+    /// credential does. Additive value (appending new enum values is allowed);
+    /// display falls back to the enum name (these codes are never enumerated in
+    /// a UI).</summary>
+    AccountDeletion = 6,
 }

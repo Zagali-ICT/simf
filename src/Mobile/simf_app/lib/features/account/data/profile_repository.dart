@@ -117,15 +117,31 @@ class ProfileRepository {
     );
   }
 
+  /// `POST /app/account/delete/send-code` — emails the confirmation code.
+  ///
+  /// Open to any signed-in holder, including one still pending approval or
+  /// already disabled: those are the people most likely to want erasing, and a
+  /// code they could request but never use would be worse than none.
+  Future<AccountDeletionCode> sendDeletionCode() {
+    return _client.post<AccountDeletionCode>(
+      AccountEndpoints.deletionCode,
+      decodeData: (data) => AccountDeletionCode.fromJson(_asMap(data)),
+    );
+  }
+
   /// `DELETE /app/account` — permanently erases the signed-in user's account.
   ///
   /// Irreversible: the server scrubs the profile, destroys the identity
   /// document and photos, revokes every session and device key, and disables
   /// the account. Idempotent, so a retry after a dropped connection is safe.
   /// The caller must sign out afterwards — the session is dead on the server.
-  Future<void> deleteMyAccount() {
+  ///
+  /// [code] is the one from [sendDeletionCode]. The server decides whether a
+  /// missing one is acceptable, so this never tries to pre-empt it.
+  Future<void> deleteMyAccount(String code) {
     return _client.delete<bool>(
       AccountEndpoints.deleteMe,
+      body: <String, dynamic>{'code': code},
       decodeData: (_) => true,
     );
   }

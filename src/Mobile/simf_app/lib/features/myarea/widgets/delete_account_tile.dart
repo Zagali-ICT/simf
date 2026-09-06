@@ -96,8 +96,23 @@ class _DeleteAccountTileState extends ConsumerState<DeleteAccountTile> {
       return;
     }
     setState(() => _busy = true);
+    // The code screen submits the erase, and is handed this tile's own call to
+    // do it with. Keeping the call HERE keeps the tile the thing that knows
+    // what deleting means; letting the SCREEN submit is what stops a mistyped
+    // digit costing a whole new code, because five sends an hour is the cap and
+    // popping back here on every wrong digit would burn them in four typos.
+    final erased = await router.pushNamed<bool>(
+      RouteNames.deleteAccountCode,
+      extra: repository.deleteMyAccount,
+    );
+    if (!mounted) {
+      return;
+    }
+    if (erased != true) {
+      setState(() => _busy = false);
+      return;
+    }
     try {
-      await repository.deleteMyAccount();
       // Drop this device's biometric credential BEFORE signing out. signOut
       // deliberately keeps the device key so a re-open can use it, which is
       // right for a sign-out and wrong for an erasure: the sign-in screen names
@@ -117,6 +132,8 @@ class _DeleteAccountTileState extends ConsumerState<DeleteAccountTile> {
       await auth.signOut();
       router.goNamed(RouteNames.signIn);
     } on ApiFailure catch (failure) {
+      // The account is already erased by this point - only the local teardown
+      // can still fail - so this reports rather than implying nothing happened.
       final message = failure.localizedMessage(l10n).trim();
       messenger.showSnackBar(
         SnackBar(

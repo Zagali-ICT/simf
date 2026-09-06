@@ -183,6 +183,11 @@ class RouteNames {
   // POST /app/auth/device-keys/step-up + the gated register.
   static const String biometricStepUp = 'biometricStepUp';
 
+  /// The emailed-code confirmation before an account is erased. Like the
+  /// step-up above it is backend-enforced, not redirect-gated: a pending or
+  /// disabled holder must be able to reach it.
+  static const String deleteAccountCode = 'deleteAccountCode';
+
   /// S10 — the enrolled biometric device keys on the account, with a per-row
   /// revoke. Pushed from the Face-ID toggle's row in the profile / side menu.
   /// Backend GET /app/auth/device-keys + DELETE /app/auth/device-keys/{id}.

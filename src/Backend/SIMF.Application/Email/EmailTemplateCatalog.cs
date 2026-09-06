@@ -182,6 +182,20 @@ public static class EmailTemplateCatalog
             "<p>البطاقة الكاملة مع بيانات التواصل متاحة في <strong>زوار جناحي</strong> " +
             "داخل التطبيق.</p>",
             ExhibitorLeadTokens),
+
+        new(EmailTemplateType.AccountDeletion,
+            "SIMF account deletion code",
+            "<p>Your SIMF account deletion code is <strong>{Code}</strong>.</p>" +
+            "<p>The code expires in {ExpiryMinutes} minutes. Enter it in the app to " +
+            "erase your account. This removes your profile, your identity document " +
+            "and your photos, and cannot be undone.</p>" +
+            "<p>If you did not ask to delete your account, ignore this message and " +
+            "your account stays exactly as it is.</p>",
+            "<p>رمز حذف حسابك في سيمف هو <strong>{Code}</strong>.</p>" +
+            "<p>ينتهي الرمز خلال {ExpiryMinutes} دقائق. أدخله في التطبيق لحذف حسابك. " +
+            "يؤدي ذلك إلى إزالة ملفك الشخصي ووثيقة هويتك وصورك، ولا يمكن التراجع عنه.</p>" +
+            "<p>إذا لم تطلب حذف حسابك فتجاهل هذه الرسالة، وسيبقى حسابك كما هو.</p>",
+            CodeTokens),
     ];
 
     private static readonly IReadOnlyDictionary<EmailTemplateType, EmailTemplateDefinition> Map =

@@ -227,6 +227,8 @@ public static class DependencyInjection
         // Biometric device-key enrolment step-up toggle (default on).
         services.Configure<DeviceKeyOptions>(
             configuration.GetSection(DeviceKeyOptions.SectionName));
+        services.Configure<AccountDeletionOptions>(
+            configuration.GetSection(AccountDeletionOptions.SectionName));
         // The speaker email-link base URL + TTL.
         services.Configure<MeetingLinksOptions>(
             configuration.GetSection(MeetingLinksOptions.SectionName));

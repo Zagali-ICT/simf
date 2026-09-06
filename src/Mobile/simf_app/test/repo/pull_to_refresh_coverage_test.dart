@@ -63,6 +63,10 @@ const Map<String, String> _exempt = <String, String>{
   'account/badge_password_screen.dart': 'auth form',
   'account/badge_sign_in_screen.dart': 'auth form',
   'account/biometric_step_up_screen.dart': 'auth form',
+  // It does fetch - it asks the server to email a code - but a pull would
+  // send ANOTHER one, and five an hour is the cap. The resend link is the
+  // deliberate, rate-aware way to ask again.
+  'account/delete_account_code_screen.dart': 'auth form; resend is the retry',
   'account/email_otp_verify_screen.dart': 'auth form',
   'account/forgot_password_screen.dart': 'auth form',
   'account/reset_password_screen.dart': 'auth form',
