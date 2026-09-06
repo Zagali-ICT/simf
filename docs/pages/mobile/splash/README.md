@@ -38,7 +38,7 @@ the Home hero already did.
 
 `ServerAppUpdateChecker` (`lib/core/startup/server_app_update_checker.dart` +
 `app_version_policy.dart`) fetches the anonymous `GET /app/version-policy`
-(per-platform `minVersion` / `latestVersion` / `storeUrl` from the six
+(per-platform `minVersion` / `minVersionEnforcedFrom` / `latestVersion` / `storeUrl` from the eight
 `appUpdate.android.*` / `appUpdate.ios.*` SystemSettings keys, admin-edited on
 the CP `/admin/configuration` page) and compares it against the REAL installed
 version (`package_info_plus`, resolved once in `main()` into
@@ -46,8 +46,15 @@ version (`package_info_plus`, resolved once in `main()` into
 (`pub_semver`, leading-`v` tolerated):
 
 - **installed < `minVersion`** + usable store URL → the FORCED non-dismissible
-  dialog "تحديث مطلوب / Update required"; the only action ("تحديث الآن /
-  Update now") opens the store URL — the app is unusable until updated.
+  dialog "تحديث مطلوب / Update required"; "تحديث الآن / Update now" opens the
+  store URL, and the app is otherwise unusable until updated. The **server**
+  withholds `minVersion` until `minVersionEnforcedFrom` has passed, so a minimum
+  alone never reaches this branch — that is the grace period, and it works on
+  builds that predate the key because they already read a null as "rule off".
+  The dialog also carries "حذف حسابي / Delete my account", which opens
+  `/privacy#delete-account` and deliberately does NOT close the dialog: the gate
+  is raised before auth resolves, so without it an account holder on an old
+  build would have no route to deletion at all (App Store 5.1.1(v)).
 - **`minVersion` ≤ installed < `latestVersion`** + store URL → the dismissible
   soft prompt "يتوفر تحديث / Update available" (لاحقاً/Later · تحديث الآن/
   Update now). Dismissing it ANY way snoozes THAT version for 3 days (prefs

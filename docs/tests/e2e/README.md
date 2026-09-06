@@ -242,7 +242,7 @@ API endpoints land (D-249). The per-screen design docs live under
 
 | App screen | File | Scenarios |
 |------------|------|-----------|
-| #1 `splash` (`POST /app/auth/refresh` + `GET /app/users/me` + `GET /app/version-policy` — D-736) | [`mobile-splash.md`](mobile-splash.md) | E2E-MOB001-001..017 |
+| #1 `splash` (`POST /app/auth/refresh` + `GET /app/users/me` + `GET /app/version-policy` — D-736; the forced-update grace period + its account-deletion escape) | [`mobile-splash.md`](mobile-splash.md) | E2E-MOB001-001..022 |
 | #2 `onboarding` (no API) | [`mobile-onboarding.md`](mobile-onboarding.md) | E2E-MOB002-001..008 |
 | #3 `signIn` (+ verify-otp / forgot / reset) | [`mobile-sign-in.md`](mobile-sign-in.md) | E2E-MOB003-001..021 |
 | ~~#4 `signUpType`~~ **REMOVED (D-332)** — invented; not in the mockup | [`mobile-sign-up-type.md`](mobile-sign-up-type.md) | _(retired — E2E-MOB004-* removed)_ |
@@ -257,7 +257,8 @@ API endpoints land (D-249). The per-screen design docs live under
 | #10 `registrationSuccess` (no API — static confirmation) | [`mobile-registration-success.md`](mobile-registration-success.md) | E2E-MOB010-001..007 |
 | #11 `registrationStatus` (`GET /app/users/me`) | [`mobile-registration-status.md`](mobile-registration-status.md) | E2E-MOB011-001..007 |
 | #13 `home` (`GET /app/bootstrap`; Moderator home also `GET /app/sessions/moderated` — FR-MOD-001 جلساتي) | [`mobile-home.md`](mobile-home.md) | E2E-MOB013-001..027 |
-| #14 `myArea` (`GET /app/account/dashboard` + `.ics` + `.vcf`) | [`mobile-my-area.md`](mobile-my-area.md) | E2E-MOB014-001..019 |
+| #14 `myArea` (`GET /app/account/dashboard` + `.ics` + `.vcf`) | [`mobile-my-area.md`](mobile-my-area.md) | E2E-MOB014-001..020 |
+| `deleteAccountCode` (`POST /app/account/delete/send-code` + `DELETE /app/account`) — the emailed code that confirms an irreversible deletion; reached from all five screens that can hold an account (App Store 5.1.1(v)) | [`mobile-delete-account-code.md`](mobile-delete-account-code.md) | E2E-MOBDEL-001..012 |
 | #103 `identityVerification` (`POST /app/account/avatar`) | [`mobile-identity-verification.md`](mobile-identity-verification.md) | E2E-MOBIDV-001..004 |
 | #104 `sessionModerate` (`GET/PUT /app/sessions/{id}/questions/moderate·push·hide·reorder`; FR-MOD-001 `GET /app/sessions/moderated` discovery + جلساتي on the moderator home; FR-MOD-003 drag-to-reorder the desk queue) | [`mobile-session-moderate.md`](mobile-session-moderate.md) | E2E-MOBMOD-001..010 |
 | #105 `gateScanner` (`GET /app/gates/my-assignments` · `POST /app/gates/{id}/scans`) | [`mobile-gate-scan.md`](mobile-gate-scan.md) | E2E-MOBGATE-000..008 |
@@ -340,7 +341,7 @@ again without failing the build. They had been left at the 2026-06-02 figures �
 "74 pages / ~1044 scenarios" — while the catalogue more than doubled, and were
 being quoted in planning as if current.
 
-- **Pages catalogued:** 198, now broken down by filename prefix so the parts add
+- **Pages catalogued:** 199, now broken down by filename prefix so the parts add
   up to the whole: 98 `cp-*` + 70 `mobile-*` + 19 `web-*` + 10 `api-*` API-only
   surfaces + 1 `bi-*` cross-surface flow. Two of the `cp-*` files are
   cross-cutting rather than per-page and carry no route of their own
@@ -351,7 +352,7 @@ being quoted in planning as if current.
   196 against a pinned total of 197. Only the two bold totals are
   machine-checked, so the parts had drifted unnoticed; counting by prefix is
   reproducible with one `ls`.)
-- **Total scenarios:** 3205 Coverage-matrix rows, every id distinct. That
+- **Total scenarios:** 3233 Coverage-matrix rows, every id distinct. That
   includes the **360** generated element-sweep rows (`E2E-{NS}-ELS-001/002`, two
   per live page — see `tools/qa/generate_els_rows.py`); the hand-authored
   functional total is 2827.

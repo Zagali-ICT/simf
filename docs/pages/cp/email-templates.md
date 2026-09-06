@@ -5,19 +5,18 @@
 | **Route** | `/admin/email/templates` |
 | **Audience** | Administrator |
 | **Auth** | `[RequirePermission(PermissionCatalog.EmailTemplates.View)]` (page) + per-action permission at the API — reads (`list` / `{type}` / `preview`) gated `EmailTemplates.View`, writes (`PUT {type}` / `{type}/reset`) gated `EmailTemplates.Edit` — plus `RequireApprovedAccount`. |
-| **Pattern** | D-735 DB-backed **override** editor for the six transactional identity emails. Bilingual, token-templated messages with a code catalogue supplying defaults; `SimfDataGrid`-based fixed six-row list feeding an inline editor. |
+| **Pattern** | D-735 DB-backed **override** editor for the transactional identity emails. Bilingual, token-templated messages with a code catalogue supplying defaults; `SimfDataGrid`-based fixed list, one row per `EmailTemplateType`, feeding an inline editor. |
 | **Status** | ✅ Real (D-735) |
 | **Backend endpoints** | BFF `/account/api/admin/email/templates/*` → API `/api/v1/admin/email/templates/*`: `POST .../list`, `GET .../{type}`, `PUT .../{type}`, `POST .../{type}/reset`, `POST .../{type}/preview` |
 | **Tests** | [`docs/tests/e2e/cp-admin-email-templates.md`](../../tests/e2e/cp-admin-email-templates.md) (E2E-EMT-001..013) |
-| **Last reviewed** | 2026-07-10 |
+| **Last reviewed** | 2026-09-06 |
 
 ## 1. Purpose
 
-The single place for an administrator to edit the wording of the six
-**transactional identity emails** the platform sends — the sign-in OTP, the
-sign-up email-verification code, the "an account already exists" notice, the
-password-reset code, the badge-activation code, and the biometric step-up code —
-without a redeploy. Each email is a **bilingual (EN + AR), token-templated**
+The single place for an administrator to edit the wording of the
+**transactional emails** the platform sends — every type in §3, from the sign-in
+OTP to the account-deletion code — without a redeploy. Each email is a
+**bilingual (EN + AR), token-templated**
 message. The database stores **overrides only**: a code **catalogue** supplies the
 built-in default subject + body for every type, so the table starts empty and the
 resolver always falls back to the default when no override exists. The admin walks
@@ -38,11 +37,17 @@ override or reset back to the built-in copy.
   call is 401. A signed-in admin lacking `EmailTemplates.View` is redirected to
   `/not-permitted` and the "Email templates" nav item is hidden.
 
-## 3. The six templates + their tokens
+## 3. The templates + their tokens
 
 The set is **fixed** — one row per `EmailTemplateType`; there is no create or delete.
 Tokens are single-brace placeholders (`{Code}`, `{ExpiryMinutes}`), and each type
 declares its own allowed token set in the catalogue.
+
+There were six when this page shipped and there are now **eleven**. The count is
+not repeated in prose anywhere else in this document, on purpose: it went stale
+for five of them, across four separate changes, before anyone noticed. The
+authority is `EmailTemplateCatalog.Definitions` and the row count asserted by
+`tests/SIMF.Api.Tests/EmailTemplateRendererTests.cs`.
 
 | `EmailTemplateType` | Email | Tokens |
 |---------------------|-------|--------|
@@ -52,6 +57,11 @@ declares its own allowed token set in the catalogue.
 | `PasswordReset` | The code emailed for the forgot-password flow | `{Code}`, `{ExpiryMinutes}` |
 | `BadgeActivation` | The code emailed for passwordless badge activation (D-430) | `{Code}`, `{ExpiryMinutes}` |
 | `BiometricStepUp` | The code emailed to enrol / step-up a biometric device key (D-486 / D-554) | `{Code}`, `{ExpiryMinutes}` |
+| `BulkBadgeDelivery` | The cover note for a generated badge batch; the badges ride as a ZIP attachment, so there is no code | `{Count}`, `{GeneratedAt}` |
+| `EmailChangeVerification` | **Dead but still listed.** Self-service email change was removed by owner decision (G1, 2026-07-30) and nothing sends this any more. The catalogue entry and its grid row remain because the enum value is frozen against removal | `{Code}`, `{ExpiryMinutes}` |
+| `EmailChangedNotice` | The security alert to the OLD address after a login email is changed (now only an administrator can do that) | `{NewEmail}` |
+| `ExhibitorLeadCapture` | The lead card emailed to an exhibitor after a booth badge scan (BUG-024). Deliberately carries no national ID and no raw badge QR id | 8 bilingual field tokens — `{VisitorName}` / `{VisitorNameArabic}`, `{JobTitle}` / `{JobTitleArabic}`, `{Organisation}` / `{OrganisationArabic}`, `{ScannedAt}`, `{Note}` |
+| `AccountDeletion` | The code that confirms an irreversible self-deletion (App Store 5.1.1(v)). Warns the reader to ignore it if they did not ask to delete | `{Code}`, `{ExpiryMinutes}` |
 
 ## 4. UI
 
@@ -121,9 +131,9 @@ forwards to the API at `/api/v1/admin/email/templates/*`. Each returns the
 | Reset to default | `POST .../{type}/reset` | `POST .../{type}/reset` | `EmailTemplates.Edit` | `AdminEmailTemplateDetail` (override removed) |
 | Preview | `POST .../{type}/preview` | `POST .../{type}/preview` | `EmailTemplates.View` | `EmailTemplatePreviewResult { Subject, HtmlBody, UnknownTokens }` |
 
-- **List** returns all six types over the override table; each summary carries
+- **List** returns every type over the override table; each summary carries
   `IsOverride` (and `Version` when overridden). An empty override table still lists
-  six rows, all `IsOverride=false`.
+  the full set, all `IsOverride=false`.
 - **Get detail** returns the effective copy — the override if one exists, otherwise
   the catalogue default — plus `IsOverride` and the type's allowed token list.
 - **Save (PUT)** writes/updates the override and **bumps `Version`**. It re-validates
@@ -153,10 +163,10 @@ forwards to the API at `/api/v1/admin/email/templates/*`. Each returns the
 
 ## 7. Edge cases
 
-- **Fixed set, no CRUD.** The six types are the whole catalogue — there is no Add,
+- **Fixed set, no CRUD.** The catalogue IS the set — there is no Add,
   Delete, Import or rename; only edit + reset per type.
 - **Overrides-only + fallback.** A fresh install has an empty override table yet the
-  page lists six templates; every send falls back to the built-in catalogue default
+  page lists every template; every send falls back to the built-in catalogue default
   until an override is saved.
 - **Reset removes, not copies.** Reset deletes the override so the email reverts to
   the built-in copy; it never writes a duplicate of the default back into the table.
@@ -184,14 +194,14 @@ messages are themselves bilingual (EN + AR).
   `123456` / `10` sample values, and save the override.
 - Localise or soften the "account already exists" notice in both languages.
 - Roll a template back to its shipped copy with Reset-to-default.
-- Audit which of the six emails have been customised at a glance (the "Customised"
+- Audit which emails have been customised at a glance (the "Customised"
   vs "Default" pill on the grid).
 
 ## 11. E2E
 
 See [`docs/tests/e2e/cp-admin-email-templates.md`](../../tests/e2e/cp-admin-email-templates.md):
 E2E-EMT-001 golden path (open SignInOtp → insert `{Code}` chip → preview `123456` →
-Save → Version bump + "Customised"), 002 six-row list with the `IsOverride` flag,
+Save → Version bump + "Customised"), 002 the full-set list with the `IsOverride` flag,
 003 auth gate (anonymous → login/401), 004 auth gate (admin lacking
 `EmailTemplates.View` → 403), 005 token-chip insertion, 006 live bilingual preview,
 007 Save blocked on unknown `{Foo}` (`EMAIL_TEMPLATE_INVALID` + preview
@@ -213,6 +223,9 @@ reset-to-default removes the override, 010 invalid `{type}` (`EMAIL_TEMPLATE_NOT
 
 | Date | Decision | Change |
 |------|----------|--------|
-| 2026-07-10 | D-735 | New page — DB-backed override editor for the six transactional identity emails (bilingual token templates, token chips, live bilingual preview with sample values, block-on-unknown-token, reset-to-default). `EmailTemplates.View` / `.Edit` permission split; overrides-only table with a code-catalogue fallback. |
+| 2026-09-06 | — | `AccountDeletion` template added (App Store 5.1.1(v): an emailed code now confirms an irreversible self-deletion). While adding it, §1 and §3 were corrected: they still described **six** templates and listed six rows, and five had shipped since — `BulkBadgeDelivery`, `EmailChangeVerification` (dead since G1 but still catalogued), `EmailChangedNotice`, `ExhibitorLeadCapture` and now `AccountDeletion`. The prose no longer carries a count. |
+| 2026-07-10 | D-735 | New page — DB-backed override editor for the six transactional identity emails that existed then (bilingual token templates, token chips, live bilingual preview with sample values, block-on-unknown-token, reset-to-default). `EmailTemplates.View` / `.Edit` permission split; overrides-only table with a code-catalogue fallback. |
 
-_Last reviewed:_ 2026-07-10 by Claude (D-735 — Email templates admin editor).
+_Last reviewed:_ 2026-09-06 by SIMF Team (the `AccountDeletion` template, and the
+five-template drift in the six-template prose). _Prior:_ 2026-07-10 (D-735 — Email
+templates admin editor).

@@ -164,6 +164,32 @@ void main() {
       expect(repository.sendCalls, 2);
     });
 
+    testWidgets('a burned code frees the resend, like an expired one',
+        (tester) async {
+      // The attempt cap answers REQUIRED, not EXPIRED, and the app already
+      // shows the expired copy for it. If the countdown were not zeroed too,
+      // the screen would say "request a new one" beside a disabled button.
+      final repository = _FakeProfileRepository();
+      await _pump(
+        tester,
+        repository,
+        erase: (_) async => throw const ApiFailure(
+          code: 'ACCOUNT_DELETION_CODE_REQUIRED',
+          message: '',
+          httpStatus: 403,
+        ),
+      );
+
+      await _enterCode(tester, '123456');
+      await tester.tap(find.text('Delete for ever'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('expired'), findsOneWidget);
+      await tester.tap(find.textContaining("Didn't get the code?"));
+      await tester.pumpAndSettle();
+      expect(repository.sendCalls, 2);
+    });
+
     testWidgets('a rate-limited send is reported in the app own copy',
         (tester) async {
       final repository = _FakeProfileRepository()

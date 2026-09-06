@@ -13,7 +13,7 @@ namespace SIMF.Infrastructure.Seeding;
 /// Seeds the app-update policy config keys so the CP configuration grid is not
 /// empty on a fresh database.
 ///
-/// <para>Pre-creates the six <c>AppUpdateSettingKeys</c> rows (empty
+/// <para>Pre-creates every <c>AppUpdateSettingKeys</c> row (empty
 /// values) so the CP configuration grid is the menu of app-update policy keys:
 /// an admin edits values in place instead of hand-typing exact key names (a
 /// typo'd key is silently ignored by the whitelist read). Empty = that rule
@@ -46,8 +46,8 @@ public sealed class DefaultContentSeeder(
         // Tolerates a concurrent first boot: several API instances run this
         // seeder against the same empty database, so the unique index on
         // SystemSettings.Key rejects whichever one arrives second. The log line
-        // below is gated on the result because "inserted 6 row(s)" would be
-        // untrue on the instance that lost.
+        // below is gated on the result because its row count would be untrue on
+        // the instance that lost.
         if (await appDbContext.SaveToleratingFirstBootRaceAsync(
             logger, "Default config seed", cancellationToken))
         {
@@ -66,22 +66,32 @@ public sealed class DefaultContentSeeder(
         {
             [AppUpdateSettingKeys.AndroidMinVersion] =
                 "Minimum supported Android app version (semver, e.g. 1.2.0). "
-                + "Older installs are blocked until they update. Empty = no forced-update gate.",
+                + "Blocks older installs, but ONLY from the date in "
+                + "appUpdate.android.minVersionEnforcedFrom. Empty = no forced-update gate.",
             [AppUpdateSettingKeys.AndroidLatestVersion] =
                 "Latest released Android app version (semver, e.g. 1.4.0). "
-                + "Older installs get a dismissible update prompt. Empty = no prompt.",
+                + "Older installs get a dismissible update prompt. "
+                + "Empty falls back to the minimum version above, so setting only a "
+                + "minimum still warns users during the grace period.",
             [AppUpdateSettingKeys.AndroidStoreUrl] =
                 "Google Play listing URL the app's Update button opens (absolute https). "
                 + "Empty disables both the forced gate and the prompt on Android.",
+            [AppUpdateSettingKeys.AndroidMinVersionEnforcedFrom] = EnforcedFromDescription(
+                AppUpdateSettingKeys.AndroidMinVersion, "a Play staged rollout"),
             [AppUpdateSettingKeys.IosMinVersion] =
                 "Minimum supported iOS app version (semver, e.g. 1.2.0). "
-                + "Older installs are blocked until they update. Empty = no forced-update gate.",
+                + "Blocks older installs, but ONLY from the date in "
+                + "appUpdate.ios.minVersionEnforcedFrom. Empty = no forced-update gate.",
             [AppUpdateSettingKeys.IosLatestVersion] =
                 "Latest released iOS app version (semver, e.g. 1.4.0). "
-                + "Older installs get a dismissible update prompt. Empty = no prompt.",
+                + "Older installs get a dismissible update prompt. "
+                + "Empty falls back to the minimum version above, so setting only a "
+                + "minimum still warns users during the grace period.",
             [AppUpdateSettingKeys.IosStoreUrl] =
                 "App Store listing URL the app's Update button opens (absolute https). "
                 + "Empty disables both the forced gate and the prompt on iOS.",
+            [AppUpdateSettingKeys.IosMinVersionEnforcedFrom] = EnforcedFromDescription(
+                AppUpdateSettingKeys.IosMinVersion, "iOS Phased Release"),
         };
 
         var wanted = AppUpdateSettingKeys.All.ToList();
@@ -114,4 +124,20 @@ public sealed class DefaultContentSeeder(
         }
         return added;
     }
+
+    /// <summary>The operator-facing description of an enforced-from key. It
+    /// carries the date format and the rollout rule because
+    /// <c>/admin/configuration</c> is generic key/value CRUD with no per-key
+    /// validation and no help text of its own — this string is the only place
+    /// an admin is told either. Both matter: a date in any other format is
+    /// silently ignored (the gate stays off, which is safe but confusing), and
+    /// enforcing while a rollout is still staged blocks users who cannot yet
+    /// install the build they are being told to install.</summary>
+    private static string EnforcedFromDescription(string minVersionKey, string rollout) =>
+        $"Date from which {minVersionKey} is actually enforced, as "
+        + $"{AppUpdateSettingKeys.EnforcedFromDateFormat} (e.g. 2026-10-15). "
+        + "Empty, inactive or any other format = the minimum is NOT enforced and "
+        + "nobody is blocked; a past date enforces immediately. Until this date "
+        + "users only get the dismissible update prompt. Never set it while "
+        + $"{rollout} is still in progress, and allow at least 14 days.";
 }

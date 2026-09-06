@@ -164,6 +164,27 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                   onPressed: () => Navigator.of(dialogContext).pop(),
                   child: Text(l10n.updateLaterLabel),
                 ),
+              if (hard)
+                // The hard dialog is a locked door by design, and it is raised
+                // BEFORE sign-in resolves. Without a way out, an account holder
+                // on an old build cannot reach the in-app deletion at all —
+                // which is the App Store 5.1.1(v) failure this app has already
+                // been rejected for twice, just relocated. Shown without
+                // checking for a session precisely because the forced verdict
+                // short-circuits before auth: the app does not yet know whether
+                // this user has an account, and a signed-out user opening a
+                // public policy page is harmless next to a signed-in user with
+                // no route out.
+                TextButton(
+                  onPressed: () => unawaited(
+                    ref.read(appUpdateCheckerProvider).openAccountDeletion(),
+                  ),
+                  // Deliberately does NOT pop: the user leaves to the browser
+                  // and comes back to the same block, which is the correct
+                  // outcome — the escape is from the dead end, not from the
+                  // update requirement.
+                  child: Text(l10n.deleteAccountLink),
+                ),
               FilledButton(
                 onPressed: () {
                   unawaited(

@@ -46,9 +46,42 @@ actions; the pending copy is unchanged for a genuinely pending/rejected account.
 | بطاقتي / الطلبات / احجز مقعداً / المزيد | push respective routes | — |
 | تحديث صورة الهوية | gallery pick → upload | `POST` ID image |
 | Face-ID toggle | enable/disable (self-hides w/o biometric) | — |
+| حذف حسابي / Delete my account | `DeleteAccountTile` → confirm → code screen | `POST …/delete/send-code`, then `DELETE /app/account` |
 | Retry / pull-to-refresh | `_load()` | `GET …/dashboard` |
 
 All data repo-backed; no missing API.
+
+## 3.1 Account deletion (App Store 5.1.1(v) / Google Play)
+
+The control is a **full-width outlined destructive button** with a trash icon
+(`lib/features/myarea/widgets/delete_account_tile.dart`), mounted here twice —
+`my_area_screen.dart` and `my_area_more_section.dart`. It was a quiet red line of
+text until 2026-09-05, and Apple rejected the app under 5.1.1(v) for it.
+
+**This screen is not the only place it lives, and that is the whole point.** The
+bottom navigation that reaches My Area only appears once an account is approved,
+and `post_auth_route.dart` sends any account with `profileComplete == false` back
+to the ID-capture form on every launch — so for a half-registered account that
+form *is* the whole app, and a reviewer standing there could not find deletion at
+all. `AccountDeletionFooter`
+(`lib/core/widgets/account_deletion_footer.dart`) therefore mounts the same
+control on the sign-up visitor form, the interests step and the approval-status
+screen; the two here mount `DeleteAccountTile` directly.
+`test/repo/account_deletion_reachable_test.dart` pins all five sites with a
+reason each and fails the build if one is dropped.
+
+**Confirming is not the point of no return.** The dialog opens
+`DeleteAccountCodeScreen`, which asks the server to email a six-digit code and
+submits the deletion itself — it does not hand a verified code back, because
+there is no verify-only endpoint and re-entering would send a fresh code (five
+sends an hour, so four typos would lock deletion out for an hour). Refusals
+answer **403, never 401**: on a 401 the API client refreshes and replays, which
+would burn two attempts, and a failed refresh signs the holder out mid-deletion.
+Deletion also revokes the biometric device key before signing out, so Face-ID
+cannot resume a session for an account that no longer exists.
+
+Catalogue: [`mobile-delete-account-code.md`](../../../tests/e2e/mobile-delete-account-code.md)
+(E2E-MOBDEL) and E2E-MOB014-020 in this page's own file.
 
 ## 4. Clean-code freeze (D-607)
 **790 → 269-line screen** + 3 widget files (all <400; the Approved dashboard

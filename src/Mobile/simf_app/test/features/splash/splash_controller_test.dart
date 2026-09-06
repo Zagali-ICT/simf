@@ -34,6 +34,9 @@ class _StubUpdateChecker implements AppUpdateChecker {
 
   @override
   Future<void> openStoreListing() async {}
+
+  @override
+  Future<void> openAccountDeletion() async {}
 }
 
 /// In-memory [SimfPrefsStorage] so the test needs no platform channel.

@@ -65,10 +65,12 @@
 | E2E-MOB001-011 | Optional update (server policy) → dismissible dialog, then continue | edge | P2 | authored ✓ (`SplashController` test + screen tests) |
 | E2E-MOB001-012 | Minimum logo display time honoured (no sub-100 ms flash) | ux | P2 | authored (min-display provider) |
 | E2E-MOB001-013 | RTL render of the splash + update dialog (Arabic primary) | i18n | P1 | authored (screen) |
-| E2E-MOB001-014 | Forced-update gate — admin `appUpdate.android.minVersion` above installed + store URL → app blocked until updated (D-736) | edge | P0 | authored ✓ (`ServerAppUpdateChecker` test) |
+| E2E-MOB001-014 | Forced-update gate — admin `appUpdate.android.minVersion` above installed + store URL + an `minVersionEnforcedFrom` date **that has arrived** → app blocked until updated (D-736) | edge | P0 | authored ✓ (`ServerAppUpdateChecker` test + `AppVersionPolicyPublicTests`) |
 | E2E-MOB001-015 | Soft update + snooze — "لاحقاً" continues; the same version stays quiet for 3 days; a newer version prompts again (D-736) | happy | P1 | authored ✓ (checker snooze tests + screen Later/scrim tests) |
 | E2E-MOB001-016 | Fail-open — API stopped/unreachable → normal boot, no dialog (D-736) | resilience | P0 | authored ✓ (`ServerAppUpdateChecker` test) |
 | E2E-MOB001-017 | Anti-brick — `minVersion` set but `storeUrl` EMPTY → no gate, normal boot (D-736) | resilience | P0 | authored ✓ (`ServerAppUpdateChecker` test) |
+| E2E-MOB001-021 | Grace period — `minVersion` set but `minVersionEnforcedFrom` blank/future/unparseable → **no gate**, and the dismissible prompt appears instead | resilience | P0 | authored ✓ (`AppVersionPolicyPublicTests`) |
+| E2E-MOB001-022 | The forced gate offers account deletion and does not close when it is used (App Store 5.1.1(v)) | auth | P0 | authored ✓ (`splash_screen_test`) |
 | E2E-MOB001-018 | **Edition line is data, not a literal (#40-residual):** the date/location line renders `OrganizationProfile.eventStartDate/eventEndDate` + `locationText` through the shared bilingual formatter; the bundled literal is the fallback only | happy | P1 | authored ✓ (screen — `the event line comes from the configured edition dates …`) |
 | E2E-MOB001-019 | Configured edition line renders in Arabic, and drops the ` · ` separator when the edition has no location (#40-residual) | i18n | P1 | authored ✓ (screen — Arabic + no-location cases) |
 | E2E-MOB001-020 | First-ever run / an edition with no dates set falls back to the bundled literal, so the splash is never blank (#40-residual) | resilience | P1 | authored ✓ (screen — `an edition with no dates falls back to the bundled literal`) |
@@ -218,7 +220,10 @@ Scenario: A mandatory update gates entry
   When the app cold-starts
   Then a non-dismissible dialog titled "تحديث مطلوب" / "Update required" is
         shown over the logo
-  And the only action "تحديث الآن" / "Update now" opens the store listing URL
+  And "تحديث الآن" / "Update now" opens the store listing URL
+  And "حذف حسابي" / "Delete my account" is the only other action, and it does
+        NOT close the dialog (E2E-MOB001-022)
+  And there is no "لاحقاً" / "Later"
   And the app does not route into its screens
 ```
 
@@ -264,12 +269,18 @@ Scenario: Arabic-primary splash renders right-to-left
 
 ### E2E-MOB001-014 — Forced-update gate from the admin policy (D-736)
 
+**A minimum alone no longer blocks anyone.** The gate needs a `minVersionEnforcedFrom`
+date that has arrived; without one the server withholds `minVersion` entirely. That
+is the grace period, and E2E-MOB001-021 is its half of this pair. This scenario was
+written before the date existed and asserted the opposite until 2026-09-06.
+
 ```gherkin
-Scenario: An admin-set minimum version above the installed one blocks the app
+Scenario: An admin-set minimum blocks the app once its enforcement date arrives
   Given the installed Android app version is "1.0.0" (the real package_info_plus
-        version; pubspec 1.0.0+2)
+        version)
   And an administrator on /admin/configuration sets
         appUpdate.android.minVersion = "2.0.0"
+  And sets appUpdate.android.minVersionEnforcedFrom to today's date, "yyyy-MM-dd"
   And sets appUpdate.android.storeUrl to a valid Google Play listing URL
         (absolute https)
   When the app is relaunched
@@ -279,11 +290,81 @@ Scenario: An admin-set minimum version above the installed one blocks the app
         splash
   And pressing the system back button does nothing — the dialog stays and the
         app never routes into its screens
-  And the only action "تحديث الآن" / "Update now" opens the Google Play listing
-  And the app is unusable until it is updated
+  And "تحديث الآن" / "Update now" opens the Google Play listing
+  And "حذف حسابي" / "Delete my account" is also offered (E2E-MOB001-022)
+  And the app is otherwise unusable until it is updated
 ```
 
-**Evidence:** `server_app_update_checker_test` — "installed below the minimum → forced"; `splash_controller_test` — "a forced update short-circuits to SplashUpdateRequired".
+**Evidence:** `server_app_update_checker_test` — "installed below the minimum → forced";
+`splash_controller_test` — "a forced update short-circuits to SplashUpdateRequired";
+`AppVersionPolicyPublicTests` — `A_minimum_is_enforced_from_its_date_and_not_before`.
+
+### E2E-MOB001-021 — The grace period: a minimum with no date blocks nobody
+
+```gherkin
+Scenario Outline: The gate stays off until the date is both set and readable
+  Given the installed Android app version is "1.0.0"
+  And appUpdate.android.minVersion = "2.0.0" with a valid store URL
+  And appUpdate.android.minVersionEnforcedFrom is <value>
+  When the app is relaunched
+  Then GET /api/v1/app/version-policy returns android.minVersion null
+  And NO forced dialog appears
+  And a DISMISSIBLE "Update available" prompt appears instead, because a blank
+        latestVersion falls back to the minimum
+  And the app boots normally
+
+Examples:
+  | value                          | why                                   |
+  | (blank)                        | the default — a minimum alone is inert |
+  | tomorrow's date                | the grace window has not closed        |
+  | "15/10/2026"                   | not yyyy-MM-dd, so unreadable          |
+  | today's date, but IsActive off | unticking IsActive is the off switch   |
+```
+
+**Why each row matters.** Blank must fail open because `/admin/configuration`
+refuses to save an empty value, so unticking `IsActive` is an operator's only way
+to clear a gate. Unreadable must fail open because a culture-sensitive parse would
+read `06/10/2026` as June or October depending on where the server runs, and
+guessing wrong on this key blocks the fleet months early.
+
+**Evidence:** `AppVersionPolicyPublicTests` —
+`A_minimum_with_no_enforced_from_date_blocks_nobody`,
+`An_enforced_from_date_in_any_other_format_fails_open`,
+`Deactivating_the_enforced_from_key_lifts_the_gate`,
+`A_minimum_alone_still_prompts_during_the_grace_period`.
+
+### E2E-MOB001-022 — The forced gate is not a locked door for an account holder
+
+App Store guideline 5.1.1(v). The forced dialog is deliberately inescapable and is
+raised **before** authentication resolves, so an account holder on an old build had
+no route to the in-app deletion at all. That is the same rejection the app has
+already taken twice, relocated to the splash.
+
+```gherkin
+Scenario: Deletion is reachable from the block, and the block survives it
+  Given a forced update is in effect
+  And I hold a SIMF account
+  Then the dialog offers "حذف حسابي" / "Delete my account"
+  When I tap it
+  Then the privacy policy opens in the browser at #delete-account
+  And the dialog does NOT close
+  When I return to the app
+  Then the same forced dialog is still showing
+
+Scenario: The soft prompt does not carry the action
+  Given only an optional update is available
+  Then the dismissible prompt shows "Later" and "Update now" only
+  And no deletion action is offered, because the app is about to open anyway
+```
+
+**Shown without checking for a session**, deliberately: the forced verdict
+short-circuits before auth resolves, so the app does not yet know whether this user
+has an account. A signed-out user opening a public policy page is harmless next to
+a signed-in user with no way out.
+
+**Evidence:** `splash_screen_test` — "forced update — the gate still offers account
+deletion, and stays up after it" and "optional update — no deletion action on the
+soft prompt".
 
 ### E2E-MOB001-015 — Soft update prompts once, then snoozes 3 days (D-736)
 
@@ -399,7 +480,10 @@ the offline/first-run fallback; it is no longer the primary source.
 
 ---
 
-_Last reviewed:_ `2026-07-30` by `SIMF Team` (#40-residual — the splash edition
+_Last reviewed:_ `2026-09-06` by `SIMF Team` — **the forced-update gate now needs
+an enforcement date (E2E-MOB001-014 rewritten, it asserted the opposite), and the
+gate offers account deletion (E2E-MOB001-021/022 added, App Store 5.1.1(v)).**
+_Prior:_ `2026-07-30` (#40-residual — the splash edition
 line now renders the CP-configured dates; appended 018–020. Prior review
 2026-07-10, D-736 — server version-policy update gate; rewrote
 E2E-MOB001-010/011 off the old store-native contract, appended 014–017).

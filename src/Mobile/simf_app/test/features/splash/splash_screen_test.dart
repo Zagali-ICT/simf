@@ -61,6 +61,7 @@ OrgProfile _edition({
 class _RecordingUpdateChecker implements AppUpdateChecker {
   int snoozeCalls = 0;
   int openStoreCalls = 0;
+  int openDeletionCalls = 0;
 
   @override
   Future<AppUpdateStatus> check() async => AppUpdateStatus.upToDate;
@@ -70,6 +71,9 @@ class _RecordingUpdateChecker implements AppUpdateChecker {
 
   @override
   Future<void> openStoreListing() async => openStoreCalls++;
+
+  @override
+  Future<void> openAccountDeletion() async => openDeletionCalls++;
 }
 
 Future<void> _pump(
@@ -297,6 +301,48 @@ void main() {
       expect(popped, isTrue);
       expect(find.text('Update required'), findsOneWidget);
       expect(checker.snoozeCalls, 0); // a forced gate never snoozes
+    });
+
+    testWidgets(
+        'forced update — the gate still offers account deletion, and stays up '
+        'after it', (tester) async {
+      // Apple 5.1.1(v). The gate is raised before auth resolves and cannot be
+      // dismissed, so without this an account holder on an old build has no
+      // route to deletion at all — the same rejection, relocated to the splash.
+      final checker = _RecordingUpdateChecker();
+      await _pump(tester, const SplashUpdateRequired(), checker: checker);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Delete my account'), findsOneWidget);
+
+      await tester.tap(find.text('Delete my account'));
+      await tester.pumpAndSettle();
+
+      expect(checker.openDeletionCalls, 1);
+      // It must NOT pop. The user leaves to the browser and comes back to the
+      // same block: the escape is from the dead end, not from the update.
+      expect(find.text('Update required'), findsOneWidget);
+      expect(find.text('SIGN-IN'), findsNothing);
+    });
+
+    testWidgets('optional update — no deletion action on the soft prompt',
+        (tester) async {
+      // The soft prompt is dismissible and routes on into the app, where the
+      // real deletion buttons live. A third action there would be clutter, not
+      // compliance.
+      final checker = _RecordingUpdateChecker();
+      await _pump(
+        tester,
+        const SplashReady(
+          routeName: RouteNames.signIn,
+          softUpdate: true,
+        ),
+        checker: checker,
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Update available'), findsOneWidget);
+      expect(find.text('Delete my account'), findsNothing);
     });
   });
 }

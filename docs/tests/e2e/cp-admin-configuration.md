@@ -14,7 +14,7 @@
 > (`View` gates the page, `Create` / `Edit` / `Delete` gate the actions). The
 > store **ships empty** — the team seeds keys once the client confirms the list
 > (FDS-012 OI-2), so the empty state is the default first-run experience.
-> **Update (D-736):** `DefaultContentSeeder` now pre-creates the six mobile
+> **Update (D-736):** `DefaultContentSeeder` now pre-creates the eight mobile
 > app-update policy keys `appUpdate.{android|ios}.{minVersion|latestVersion|storeUrl}`
 > with EMPTY values and format-documenting Descriptions, so a fresh grid lists
 > them ready to edit — their values drive the anonymous
@@ -493,7 +493,7 @@ Scenario: A bad / wrong-sheet upload is rejected without creating anything
 
 ```gherkin
 Scenario: Editing the seeded appUpdate keys changes the anonymous version policy
-  Given the six app-update keys are pre-seeded EMPTY by DefaultContentSeeder
+  Given the eight app-update keys are pre-seeded EMPTY by DefaultContentSeeder
         (appUpdate.android.minVersion / appUpdate.android.latestVersion /
         appUpdate.android.storeUrl + the matching appUpdate.ios.* trio),
         each with a Description documenting its format
@@ -556,4 +556,4 @@ Scenario: Editing the seeded appUpdate keys changes the anonymous version policy
 
 ---
 
-_Last reviewed:_ 2026-07-10 by Claude (D-736 — appended E2E-CFG-024: the six seeded `appUpdate.*` keys flow through the anonymous `GET /api/v1/app/version-policy` with D-467 store-URL sanitisation. Prior: 2026-06-10, D-356 Phase 5 — Excel + toggle; appended E2E-CFG-018..023, corrected the stale native-confirm delete note to CrudShell + SimfConfirm).
+_Last reviewed:_ 2026-09-06 by SIMF Team (the two `minVersionEnforcedFrom` keys join the set, making it eight: a minimum now blocks nobody until its date arrives, and blank/inactive/unparseable all fail open). Prior: 2026-07-10 (D-736 — appended E2E-CFG-024: the then-six seeded `appUpdate.*` keys flow through the anonymous `GET /api/v1/app/version-policy` with D-467 store-URL sanitisation. Prior: 2026-06-10, D-356 Phase 5 — Excel + toggle; appended E2E-CFG-018..023, corrected the stale native-confirm delete note to CrudShell + SimfConfirm).

@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/core/env/build_config.dart';
 import 'package:simf_app/core/external_link.dart';
 import 'package:simf_app/core/startup/app_update_checker.dart';
 import 'package:simf_app/core/startup/app_version_policy.dart';
@@ -85,6 +86,17 @@ class ServerAppUpdateChecker implements AppUpdateChecker {
     }
     await launchExternalUri(
       Uri.parse(url),
+      mode: LaunchMode.externalApplication,
+    );
+  }
+
+  @override
+  Future<void> openAccountDeletion() async {
+    // Unlike the store URL this is never null: BuildConfig.privacyPolicyUrl
+    // carries a real default, on purpose, so the escape route cannot be
+    // configured away.
+    await launchExternalUri(
+      Uri.parse('${BuildConfig.privacyPolicyUrl}#delete-account'),
       mode: LaunchMode.externalApplication,
     );
   }

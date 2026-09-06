@@ -23,7 +23,7 @@ endpoint E3 below; the owner reversed the old "no SIMF version API" contract).
 | App privilege | None |
 | Status | **Exists (D-736).** `GetAppVersionPolicyEndpoint` (`src/Backend/SIMF.Api/Endpoints/Public/AppVersionPolicyEndpoint.cs`). |
 | Returns | `ApiResult<AppVersionPolicyResponse>` |
-| Source | The six whitelisted `AppUpdateSettingKeys` rows (`appUpdate.{android\|ios}.{minVersion\|latestVersion\|storeUrl}`) in `SystemSettings`, admin-edited on the CP configuration page (`/admin/configuration`); seeded empty by `DefaultContentSeeder`. |
+| Source | The eight whitelisted `AppUpdateSettingKeys` rows (`appUpdate.{android\|ios}.{minVersion\|minVersionEnforcedFrom\|latestVersion\|storeUrl}`) in `SystemSettings`, admin-edited on the CP configuration page (`/admin/configuration`); seeded empty by `DefaultContentSeeder`. **`minVersion` is served only once `minVersionEnforcedFrom` has arrived** — the grace period is decided here, not on the device, so it works on builds that predate the key. |
 
 ```jsonc
 // Response data (AppVersionPolicyResponse) — every field null when unconfigured

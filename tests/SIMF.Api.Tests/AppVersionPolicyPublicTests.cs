@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Net.Http.Json;
 using Microsoft.EntityFrameworkCore;
@@ -17,6 +18,13 @@ namespace SIMF.Api.Tests;
 /// values, sanitises the store URL to http(s)-only (D-467) and ignores
 /// deactivated keys. Each case writes its own keys immediately before the GET —
 /// xUnit runs a class serially, so the reads always see the case's own state.
+///
+/// <para>Also covers the forced-update grace period: <c>minVersion</c> is
+/// withheld until <c>minVersionEnforcedFrom</c> arrives, every unreadable or
+/// deactivated date fails open, and <c>latestVersion</c> falls back to the
+/// minimum so the window is a warning rather than silence. The gate lives on
+/// the server precisely so it works on builds that shipped before it existed.
+/// </para>
 /// </summary>
 [Trait(TestAreas.TraitName, TestAreas.Ops)]
 [Trait(TestAreas.SpeedTraitName, TestAreas.Seeded)]
@@ -41,8 +49,10 @@ public sealed class AppVersionPolicyPublicTests : IClassFixture<SimfApiFactory>
         var body = (await response.Content
             .ReadFromJsonAsync<ApiResult<AppVersionPolicyResponse>>())!;
         Assert.True(body.Success);
-        // iOS minVersion is never set by any other case, so it always reads
-        // null (absent row or a seeded empty value) regardless of test order.
+        // No case sets iOS minVersion to a value, so it always reads null -
+        // absent, seeded empty, or blanked by the fall-back case below - whatever
+        // order the class runs in. iOS enforced-from is never set either, so this
+        // would read null even if that changed.
         Assert.Null(body.Data!.Ios.MinVersion);
     }
 
@@ -50,6 +60,9 @@ public sealed class AppVersionPolicyPublicTests : IClassFixture<SimfApiFactory>
     public async Task GET_returns_the_admin_configured_values()
     {
         await UpsertAsync(AppUpdateSettingKeys.AndroidMinVersion, "1.2.0");
+        // The minimum only reaches the app once its enforced-from date has
+        // arrived; a past date is how an admin asks for immediate enforcement.
+        await UpsertAsync(AppUpdateSettingKeys.AndroidMinVersionEnforcedFrom, Days(-1));
         await UpsertAsync(AppUpdateSettingKeys.AndroidLatestVersion, "1.4.0");
         await UpsertAsync(AppUpdateSettingKeys.AndroidStoreUrl,
             "https://play.google.com/store/apps/details?id=sa.simf.app");
@@ -67,8 +80,9 @@ public sealed class AppVersionPolicyPublicTests : IClassFixture<SimfApiFactory>
     public async Task GET_returns_the_ios_configured_values()
     {
         // iOS decodes on its own branch. Sets-then-asserts its own fields
-        // (latest + store) so the case stays order-independent on the shared DB;
-        // the "unset" test above owns Ios.MinVersion, which nothing here touches.
+        // (latest + store) so the case stays order-independent on the shared DB.
+        // Setting latest explicitly also keeps it independent of the
+        // latest-falls-back-to-minimum rule.
         await UpsertAsync(AppUpdateSettingKeys.IosLatestVersion, "1.4.0");
         await UpsertAsync(AppUpdateSettingKeys.IosStoreUrl,
             "https://apps.apple.com/app/id123456789");
@@ -85,6 +99,9 @@ public sealed class AppVersionPolicyPublicTests : IClassFixture<SimfApiFactory>
         // The seeder pre-creates the keys with empty values — an untouched
         // (or whitespace-edited) row must read as "rule off", not "".
         await UpsertAsync(AppUpdateSettingKeys.IosLatestVersion, "   ");
+        // A blank latest falls back to the minimum, so the minimum has to be
+        // blank too for "no latest" to mean no latest.
+        await UpsertAsync(AppUpdateSettingKeys.IosMinVersion, string.Empty);
 
         var body = await GetPolicyAsync();
 
@@ -107,6 +124,9 @@ public sealed class AppVersionPolicyPublicTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task GET_ignores_a_deactivated_key()
     {
+        // Blanked so the latest-falls-back-to-minimum rule cannot answer for
+        // the deactivated key and hide the very thing under test.
+        await UpsertAsync(AppUpdateSettingKeys.AndroidMinVersion, string.Empty);
         await UpsertAsync(AppUpdateSettingKeys.AndroidLatestVersion, "9.9.9");
         Assert.Equal("9.9.9", (await GetPolicyAsync()).Android.LatestVersion);
 
@@ -114,6 +134,102 @@ public sealed class AppVersionPolicyPublicTests : IClassFixture<SimfApiFactory>
 
         Assert.Null((await GetPolicyAsync()).Android.LatestVersion);
     }
+
+    [Fact]
+    public async Task A_minimum_with_no_enforced_from_date_blocks_nobody()
+    {
+        // The default, and the point of the whole key: typing a minimum into
+        // /admin/configuration used to block the entire fleet on its next
+        // launch. Now it does nothing at all until a date is set.
+        await UpsertAsync(AppUpdateSettingKeys.AndroidMinVersion, "9.9.9");
+        await UpsertAsync(AppUpdateSettingKeys.AndroidMinVersionEnforcedFrom, string.Empty);
+
+        Assert.Null((await GetPolicyAsync()).Android.MinVersion);
+    }
+
+    [Fact]
+    public async Task A_minimum_is_enforced_from_its_date_and_not_before()
+    {
+        await UpsertAsync(AppUpdateSettingKeys.AndroidMinVersion, "9.9.9");
+
+        await UpsertAsync(AppUpdateSettingKeys.AndroidMinVersionEnforcedFrom, Days(1));
+        Assert.Null((await GetPolicyAsync()).Android.MinVersion);
+
+        // Inclusive: the gate is live on the date itself, not the day after.
+        await UpsertAsync(AppUpdateSettingKeys.AndroidMinVersionEnforcedFrom, Days(0));
+        Assert.Equal("9.9.9", (await GetPolicyAsync()).Android.MinVersion);
+
+        await UpsertAsync(AppUpdateSettingKeys.AndroidMinVersionEnforcedFrom, Days(-30));
+        Assert.Equal("9.9.9", (await GetPolicyAsync()).Android.MinVersion);
+    }
+
+    [Theory]
+    [InlineData("15/10/2026")]   // day-first: a culture-sensitive parse would take it
+    [InlineData("10/15/2026")]   // month-first: so would the other culture
+    [InlineData("2026-10-15T00:00:00")]
+    [InlineData("2026/10/15")]
+    [InlineData("tomorrow")]
+    public async Task An_enforced_from_date_in_any_other_format_fails_open(string value)
+    {
+        // Every one of these must be ignored rather than guessed at. A
+        // culture-sensitive parse would read 06/10/2026 as June or October
+        // depending on where the process runs, and guessing wrong on THIS key
+        // blocks the whole fleet months early.
+        await UpsertAsync(AppUpdateSettingKeys.AndroidMinVersion, "9.9.9");
+        await UpsertAsync(AppUpdateSettingKeys.AndroidMinVersionEnforcedFrom, value);
+
+        Assert.Null((await GetPolicyAsync()).Android.MinVersion);
+    }
+
+    [Fact]
+    public async Task Deactivating_the_enforced_from_key_lifts_the_gate()
+    {
+        // The CP refuses to save an empty value, so unticking IsActive is the
+        // only off switch an operator has. It has to work, because it is what
+        // they will reach for when a forced update is blocking real users.
+        await UpsertAsync(AppUpdateSettingKeys.AndroidMinVersion, "9.9.9");
+        await UpsertAsync(AppUpdateSettingKeys.AndroidMinVersionEnforcedFrom, Days(-1));
+        Assert.Equal("9.9.9", (await GetPolicyAsync()).Android.MinVersion);
+
+        await UpsertAsync(
+            AppUpdateSettingKeys.AndroidMinVersionEnforcedFrom, Days(-1), isActive: false);
+
+        Assert.Null((await GetPolicyAsync()).Android.MinVersion);
+    }
+
+    [Fact]
+    public async Task A_minimum_alone_still_prompts_during_the_grace_period()
+    {
+        // Otherwise the grace period is silence followed by a wall. The
+        // dismissible prompt is what makes the window useful to the user.
+        await UpsertAsync(AppUpdateSettingKeys.AndroidMinVersion, "9.9.9");
+        await UpsertAsync(AppUpdateSettingKeys.AndroidMinVersionEnforcedFrom, Days(14));
+        await UpsertAsync(AppUpdateSettingKeys.AndroidLatestVersion, string.Empty);
+
+        var body = await GetPolicyAsync();
+
+        Assert.Null(body.Android.MinVersion);
+        Assert.Equal("9.9.9", body.Android.LatestVersion);
+    }
+
+    [Fact]
+    public async Task An_explicit_latest_version_wins_over_the_minimum()
+    {
+        await UpsertAsync(AppUpdateSettingKeys.AndroidMinVersion, "9.9.9");
+        await UpsertAsync(AppUpdateSettingKeys.AndroidLatestVersion, "9.9.10");
+
+        Assert.Equal("9.9.10", (await GetPolicyAsync()).Android.LatestVersion);
+    }
+
+    /// <summary>An enforced-from value relative to the API's own clock, in the
+    /// one format it accepts. Taken from the fake provider the server reads, so
+    /// the case cannot drift with the wall clock or the runner's timezone.</summary>
+    private string Days(int offset) =>
+        DateOnly.FromDateTime(_factory.Time.SimfNow())
+            .AddDays(offset)
+            .ToString(
+                AppUpdateSettingKeys.EnforcedFromDateFormat,
+                CultureInfo.InvariantCulture);
 
     private async Task<AppVersionPolicyResponse> GetPolicyAsync()
     {

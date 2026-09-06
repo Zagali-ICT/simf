@@ -163,7 +163,11 @@ class _DeleteAccountCodeScreenState
       setState(() => _error = failure.localizedMessage(l10n));
       // An expired code is not a typo: free the resend immediately rather than
       // showing "request a new one" against a timer that has not run down.
-      if (failure.code == _expiredCode) {
+      // REQUIRED is here for the same reason and is easy to miss: on a current
+      // build it means the attempt cap has BURNED the code, and the app already
+      // shows the expired copy for it. Without this line the screen would tell
+      // the holder to request a new code beside a disabled resend button.
+      if (failure.code == _expiredCode || failure.code == _requiredCode) {
         _ticker?.cancel();
         setState(() => _secondsLeft = 0);
       }
@@ -274,3 +278,4 @@ class _DeleteAccountCodeScreenState
 }
 
 const String _expiredCode = 'ACCOUNT_DELETION_CODE_EXPIRED';
+const String _requiredCode = 'ACCOUNT_DELETION_CODE_REQUIRED';

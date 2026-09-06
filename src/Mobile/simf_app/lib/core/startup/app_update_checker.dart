@@ -41,6 +41,19 @@ abstract class AppUpdateChecker {
   /// Opens the store listing configured for this platform. A no-op when the
   /// policy carries no usable store URL.
   Future<void> openStoreListing();
+
+  /// Opens the public account-deletion section of the privacy policy.
+  ///
+  /// The forced-update dialog is deliberately inescapable — no Later button, a
+  /// blocked back gesture, and Update-now does not close it — and it is raised
+  /// before sign-in has resolved. Without this the app is a locked door for
+  /// anyone holding an account: they cannot reach the in-app deletion, which is
+  /// exactly the App Store 5.1.1(v) failure the deletion work exists to fix.
+  ///
+  /// It lives on this seam rather than being a `launchExternalUri` call inside
+  /// the dialog because that function is top-level and cannot be faked, which
+  /// would leave the escape route untested.
+  Future<void> openAccountDeletion();
 }
 
 /// The inert default for web builds and tests: always up-to-date, never opens
@@ -57,6 +70,9 @@ class NoopAppUpdateChecker implements AppUpdateChecker {
 
   @override
   Future<void> openStoreListing() async {}
+
+  @override
+  Future<void> openAccountDeletion() async {}
 }
 
 /// The active update checker: the server-policy implementation on device

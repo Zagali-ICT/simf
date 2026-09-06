@@ -62,6 +62,12 @@ public sealed class ContentSeedInventoryTests
             + "grounded template. Updates zero rows on a fresh database.",
         ["SIMF_App_AssistancePromptHistory.sql"] =
             "an UPDATE, not a seed: the history-carrying twin of the above.",
+        ["SIMF_App_D956_AppUpdateEnforcedFrom_Hotfix.sql"] =
+            "prod-only: adds the two minVersionEnforcedFrom config keys and "
+            + "rewrites four app-update descriptions whose MEANING changed. A "
+            + "fresh database gets all eight keys with the new wording from "
+            + "DefaultContentSeeder on first boot, so enlisting it in the runner "
+            + "would only re-run work the seeder has already done.",
     };
 
     /// <summary>The PowerShell runner, which is the PREFERRED production route

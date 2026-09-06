@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using SIMF.Common;
 using SIMF.Infrastructure.Persistence;
 using SIMF.Infrastructure.Seeding;
 using Xunit;
@@ -10,7 +11,7 @@ namespace SIMF.Api.Tests;
 /// Tests for the default config seed. Since D-747 the 2026 event CONTENT (hall,
 /// programme days + sessions, Highlights news) moved to the by-hand SQL lane
 /// (<c>docs/migrations/2026/*.sql</c>, covered by <see cref="SqlContentSeederTests"/>);
-/// this seeder now only pre-creates the six app-update policy config keys so the
+/// this seeder now only pre-creates the app-update policy config keys so the
 /// CP configuration grid is not empty. The production fixture skips this seeder,
 /// so the tests invoke it explicitly against their own isolated database.
 /// </summary>
@@ -35,14 +36,17 @@ public sealed class DefaultContentSeederTests : IClassFixture<SimfApiFactory>
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
 
-        // D-736 — the six app-update policy keys land once (existence keyed on
+        // D-736 — every app-update policy key lands once (existence keyed on
         // Key; a sibling test may have edited one value, so only the count is
         // asserted here — the empty-default + no-overwrite behaviour is covered
         // by Reseeding_never_overwrites_an_edited_app_update_value below).
+        // Counted against the whitelist rather than a literal: the seeder's job
+        // IS to materialise exactly that list, and a hardcoded number reds this
+        // test on every key added without saying anything the whitelist doesn't.
         var updateKeys = await db.SystemSettings
             .Where(s => s.Key.StartsWith("appUpdate."))
             .ToListAsync();
-        Assert.Equal(6, updateKeys.Count);
+        Assert.Equal(AppUpdateSettingKeys.All.Count, updateKeys.Count);
     }
 
     [Fact]
@@ -66,7 +70,9 @@ public sealed class DefaultContentSeederTests : IClassFixture<SimfApiFactory>
         var edited = await verifyDb.SystemSettings
             .SingleAsync(s => s.Key == SIMF.Common.AppUpdateSettingKeys.IosMinVersion);
         Assert.Equal("1.0.0", edited.Value);
-        Assert.Equal(6, await verifyDb.SystemSettings.CountAsync(s => s.Key.StartsWith("appUpdate.")));
+        Assert.Equal(
+            AppUpdateSettingKeys.All.Count,
+            await verifyDb.SystemSettings.CountAsync(s => s.Key.StartsWith("appUpdate.")));
     }
 
     [Fact]

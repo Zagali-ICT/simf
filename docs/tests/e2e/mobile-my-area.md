@@ -62,7 +62,7 @@
 | E2E-MOB014-015 | **Saved stat tiles → Coming soon (owner 2026-06-21):** the الإحصائيات tiles **مقابلات** and **جلسات محفوظة** still show their live counts but are now tappable; each opens the **ComingSoon** placeholder (saved meetings / saved sessions are not built yet) | happy | P2 | authored ✓ (widget — `KsaStatTile` fires `onTap`) |
 | E2E-MOB014-019 | The المزيد rows' forward "open" caret points to the inline end — right in LTR (English), left in RTL (Arabic) — via the shared SimfForwardChevron | i18n | P2 | authored ✓ (`test/app/widgets/simf_forward_chevron_test.dart`) |
 | E2E-MOB014-018 | **True guest gets guest copy + a way in (BUG-013):** a visitor with NO account reaching the Profile tab sees "sign in or create an account to see your profile and schedule" and working Sign in / Create account actions — never the "under review" copy | auth | P1 | authored ✓ (screen `BUG-013 — a TRUE guest gets the guest copy and a working sign-in CTA, never the under-review copy`) |
-| E2E-MOB014-020 | **Delete my account (Google Play in-app deletion path):** the Profile settings list offers حذف حسابي / "Delete my account"; cancelling changes nothing; confirming erases the profile, identity document and photos, revokes every session and device key, signs the user out and lands on sign-in; a server failure surfaces a toast rather than a false success | happy | P0 | authored ✓ (`test/features/myarea/delete_account_tile_test.dart`) |
+| E2E-MOB014-020 | **Delete my account (App Store 5.1.1(v) + Play in-app deletion path):** the Profile settings list offers a full-width destructive **button** reading حذف حسابي / "Delete my account"; cancelling changes nothing; confirming opens the emailed-code screen and erases NOTHING yet; entering the code erases the profile, identity document and photos, revokes every session and device key, signs the user out and lands on sign-in; abandoning the code screen leaves the account intact | happy | P0 | authored ✓ (`test/features/myarea/delete_account_tile_test.dart`) |
 | E2E-MOB014-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-MOB014-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
@@ -307,16 +307,26 @@ working sign-in CTA, never the under-review copy`.
 
 ### E2E-MOB014-020 — Delete my account
 
-Google Play requires an in-app account-deletion path for any app that offers
-account creation. This is that path. It is irreversible, so the cancel branch
-matters as much as the delete branch.
+Both stores require an in-app account-deletion path for any app that offers
+account creation. This is that path. It is irreversible, so the cancel and
+abandon branches matter as much as the delete branch.
+
+The control is a **full-width outlined destructive button**, not a line of red
+text. It was the latter until 2026-09-05 and Apple rejected the app under
+5.1.1(v) twice, so "is it discoverable as a control" is part of the assertion,
+not a styling note.
+
+Confirming the dialog is deliberately **not** the point of no return: it opens
+the emailed-code screen ([`mobile-delete-account-code.md`](mobile-delete-account-code.md),
+E2E-MOBDEL), and only the code erases anything.
 
 ```gherkin
 Scenario: Cancelling the confirmation changes nothing
   Given I am signed in as an approved visitor
   And I am on the Profile tab (/my-area)
   When I scroll to the settings list
-  Then I see a row reading "حذف حسابي" (ar) / "Delete my account" (en)
+  Then I see a full-width outlined button with a trash icon
+  And it reads "حذف حسابي" (ar) / "Delete my account" (en)
   When I tap it
   Then a destructive confirmation appears titled "حذف الحساب نهائياً" / "Delete account permanently"
   And its body warns that data, photos and the identity document are erased for ever
@@ -324,10 +334,24 @@ Scenario: Cancelling the confirmation changes nothing
   Then no request is sent
   And I remain signed in on the Profile tab
 
-Scenario: Confirming erases the account and ends the session
-  Given I am signed in as an approved visitor with an uploaded ID document and avatar
+Scenario: Confirming opens the code screen and erases nothing yet
+  Given I am signed in as an approved visitor
   When I tap "Delete my account" and confirm with "حذف نهائي" / "Delete for ever"
-  Then the app calls DELETE /api/v1/app/account
+  Then the account-deletion code screen opens
+  And no DELETE request has been sent
+  And my account still exists
+
+Scenario: Abandoning the code screen leaves the account intact
+  Given I have confirmed the dialog and am on the code screen
+  When I go back without entering a code
+  Then no DELETE request is sent
+  And I am still signed in on the Profile tab
+
+Scenario: Entering the code erases the account and ends the session
+  Given I am signed in as an approved visitor with an uploaded ID document and avatar
+  And I have confirmed the dialog and received the emailed code
+  When I enter the six-digit code
+  Then the app calls DELETE /api/v1/app/account carrying the code
   And the server returns 200 with ApiResult.Ok(true)
   And I am signed out and land on the sign-in screen
   And signing in again with the same credentials fails with AUTH_INVALID_CREDENTIALS
@@ -339,26 +363,27 @@ Scenario: Confirming erases the account and ends the session
   And in SIMF_Identity the account's Email is "deleted+{id:N}@invalid" and AccountState is Disabled
   And every RefreshToken and DeviceKey for that user carries RevokedAt
   And an OperationLog row records Account.SelfDeleted with the pre-erasure email
-
-Scenario: A server failure is reported, never swallowed
-  Given I am signed in and the API returns 500 for DELETE /api/v1/app/account
-  When I confirm the deletion
-  Then a toast shows the server message, or the localized fallback
-  And I remain signed in
-  And nothing in my profile has changed
 ```
 
-**Evidence:** `test/features/myarea/delete_account_tile_test.dart` (three cases:
-cancel, confirm, failure) and `tests/SIMF.Api.Tests/AccountDeletionTests.cs`.
+**Evidence:** `test/features/myarea/delete_account_tile_test.dart` (cancel,
+confirm-opens-code-screen, abandon, erase-with-code, failure) and
+`tests/SIMF.Api.Tests/AccountDeletionTests.cs` +
+`tests/SIMF.Api.Tests/AccountDeletionCodeTests.cs`.
 
-**Known gap, deliberate:** the row renders on the **approved** My Area branch
-only. A `PendingApproval` holder sees the limited card and has no in-app route
-to deletion. Play expects the option to be readily discoverable for every
-account that exists, so this is tracked as an open item, not a shipped state.
+**The old known gap is CLOSED.** The control used to render on the **approved**
+My Area branch only, so a `PendingApproval` holder — who cannot reach My Area at
+all, because the bottom navigation appears only after approval — had no in-app
+route to deletion. That was the substance of both App Store rejections. The
+shared `AccountDeletionFooter` now mounts it on every screen that can hold an
+account, and `test/repo/account_deletion_reachable_test.dart` fails the build if
+one of those mount sites is removed.
 
 
-_Last reviewed:_ `2026-07-26` by `SIMF Team` — **bug fix: the true-guest state on
-the Profile tab (E2E-MOB014-018, BUG-013).** _Prior:_ `2026-07-24` — bug fix: the header back chevron
+_Last reviewed:_ `2026-09-06` by `SIMF Team` — **App Store 5.1.1(v): the deletion
+control became a real button, reachable from every screen that can hold an
+account, and now needs an emailed code (E2E-MOB014-020, E2E-MOBDEL).**
+_Prior:_ `2026-07-26` — the true-guest state on
+the Profile tab (E2E-MOB014-018, BUG-013); `2026-07-24` — bug fix: the header back chevron
 on the in-shell Profile tab was a dead no-op; the shared `backOrHome` now switches
 the shell to the Home tab when there is nothing to pop (E2E-MOB014-017);
 `2026-06-19` by `SIMF Team` (D-447).

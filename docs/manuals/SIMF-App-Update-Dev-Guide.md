@@ -26,15 +26,16 @@ On launch the splash calls the anonymous `GET /api/v1/app/version-policy`, which
 returns a per-platform `{ minVersion, latestVersion, storeUrl }`. The app compares
 its **real installed version** (`package_info_plus`, semver) against the policy:
 below `minVersion` → a **non-dismissible "Update required"** gate (the app is
-unusable until updated); at/above `minVersion` but below `latestVersion` → a
+unusable until updated, though it does offer account deletion — see §4); at/above
+`minVersion` but below `latestVersion` → a
 **dismissible "Update available"** prompt (snoozed 3 days per version); otherwise
 boot continues. The same endpoint backs a manual **"Check for updates"** row in
 About-the-app. Everything **fails open** — any error/timeout means the app boots
 normally.
 
-## 3. The policy — six SystemSettings keys
+## 3. The policy — eight SystemSettings keys
 
-The policy is **not** a new table or entity. It is six rows in the existing
+The policy is **not** a new table or entity. It is eight rows in the existing
 `SystemSettings` key/value store (D-229), edited on the CP **System Configuration**
 page (`/admin/configuration`, `PermissionCatalog.Configuration.*`). The keys are
 centralised as constants in `SIMF.Common.AppUpdateSettingKeys`:
@@ -42,13 +43,27 @@ centralised as constants in `SIMF.Common.AppUpdateSettingKeys`:
 | Key | Meaning | Format | Empty ⇒ |
 |-----|---------|--------|---------|
 | `appUpdate.android.minVersion`    | Minimum supported Android version | semver, e.g. `1.2.0` | no forced gate |
-| `appUpdate.android.latestVersion` | Latest released Android version   | semver, e.g. `1.4.0` | no soft prompt |
+| `appUpdate.android.minVersionEnforcedFrom` | **The date the Android minimum starts blocking.** Until it arrives, `minVersion` is not served at all | `yyyy-MM-dd` and nothing else, e.g. `2026-10-15` | **no forced gate — the minimum above does nothing** |
+| `appUpdate.android.latestVersion` | Latest released Android version   | semver, e.g. `1.4.0` | falls back to `minVersion`, so a minimum alone still prompts |
 | `appUpdate.android.storeUrl`      | Google Play listing the Update button opens | absolute `https://…` | gate + prompt **both off** for Android |
 | `appUpdate.ios.minVersion`        | Minimum supported iOS version     | semver | no forced gate |
-| `appUpdate.ios.latestVersion`     | Latest released iOS version       | semver | no soft prompt |
+| `appUpdate.ios.minVersionEnforcedFrom` | **The date the iOS minimum starts blocking.** Same rule | `yyyy-MM-dd` | **no forced gate** |
+| `appUpdate.ios.latestVersion`     | Latest released iOS version       | semver | falls back to `minVersion` |
 | `appUpdate.ios.storeUrl`          | App Store listing the Update button opens | absolute `https://…` (or `itms-apps://` — but the server only serves http(s)) | gate + prompt **both off** for iOS |
 
-The six rows are **seeded empty** by `DefaultContentSeeder` (with the meaning above
+> **A minimum with no enforced-from date blocks nobody.** This is the single most
+> important line in this document. Setting `minVersion` used to take effect on the
+> fleet's next launch; it now does nothing at all until you also set the date. If
+> you need to force an upgrade *now*, enter **today's date or any past date**.
+>
+> The date is compared **on the server**, not on the device, so the grace period
+> works on builds that shipped before the key existed. It is also why the format is
+> unforgiving: `yyyy-MM-dd`, parsed `TryParseExact` + `InvariantCulture`. Anything
+> else — `15/10/2026`, `2026/10/15`, a timestamp — is ignored and the gate stays
+> **off**. Safe, but silent: if a gate you expected is not appearing, check the
+> format first.
+
+The eight rows are **seeded empty** by `DefaultContentSeeder` (with the meaning above
 as each row's Description) so they appear on the CP grid ready to edit — an admin
 never hand-types a key name (a typo'd key is silently ignored by the whitelist).
 Seeding is idempotent, keyed on the key name alone: it never overwrites an admin
@@ -74,7 +89,21 @@ policy is all-null and every app is "up to date" — nothing is gated.
   unrecoverable brick. A leading `v` is tolerated; anything unparseable disables
   that rule.
 - **`min` and `latest` are separate knobs.** `latest` moves every release (soft
-  nudge); `min` moves rarely and deliberately (hard gate).
+  nudge); `min` moves rarely and deliberately (hard gate). A blank `latest` now
+  falls back to `min`, so setting only a minimum still warns rather than saying
+  nothing until the block lands.
+- **The enforced-from date fails open in every direction.** Absent, blank,
+  deactivated, unparseable, or still in the future all mean *no gate*. Blank has
+  to fail open: `/admin/configuration` refuses to save an empty value, so
+  unticking **IsActive** is the operator's only off switch, and it is the first
+  thing anyone reaches for when a forced update is blocking real users.
+- **The hard gate offers account deletion.** The forced dialog is deliberately
+  inescapable and is raised *before* sign-in resolves, so without a way out an
+  account holder on an old build could not reach the in-app deletion at all —
+  which is the App Store 5.1.1(v) failure the app was rejected for twice, simply
+  relocated. A third action opens `/privacy#delete-account` and deliberately does
+  **not** close the dialog: the user leaves to the browser and comes back to the
+  same block, because the escape is from the dead end, not from the update.
 - **Store-URL sanitisation (D-467).** The server drops any non-`http(s)` value
   (e.g. a `javascript:` string entered via the generic CRUD) to null before it
   ever reaches the app as a launch target.
@@ -90,16 +119,27 @@ When you ship a new app build:
    listing URL.
 3. **Raise `latestVersion`** to the new version → existing users get the dismissible
    "Update available" prompt (snoozed 3 days per version).
-4. **Raise `minVersion` ONLY when you must force the upgrade, and ONLY after the new
-   build is live in EVERY channel at 100%** (both stores, no staged/phased
-   rollout). Forcing users while a staged rollout still gates availability strands
-   the ones who can't yet download it — the Update button would have nothing to
-   install.
-5. To **un-brick** in an emergency (a bad `minVersion`), just lower or blank it —
-   the next launch's live fetch clears the gate immediately (no app redeploy).
+4. **Raise `minVersion` when you intend to force the upgrade eventually** — this
+   alone blocks nobody, so it is safe to set on release day. Leaving
+   `latestVersion` blank is fine: it falls back to the minimum, so users get the
+   dismissible prompt from day 0 rather than silence followed by a wall.
+5. **Set `minVersionEnforcedFrom` to the date the block should begin.** Two rules,
+   both learned the hard way:
+   - **Never a date that falls while a rollout is still staged.** The build must be
+     at 100% on Play and out of iOS Phased Release. Forcing users while a staged
+     rollout still gates availability strands the ones who cannot yet download it —
+     the Update button would have nothing to install.
+   - **Allow at least 14 days.** Two to three days for auto-update to do its work,
+     then a week or so of the dismissible prompt, and only then the block. Reserve a
+     shorter window for something that genuinely warrants it, such as a security fix.
+6. To **un-brick** in an emergency, blank or untick `minVersionEnforcedFrom` — the
+   next launch's live fetch clears the gate immediately (no app redeploy). Lowering
+   or blanking `minVersion` still works too. Note that unticking **IsActive** is the
+   only way to empty a value from the CP: `/admin/configuration` refuses to save a
+   blank one. That is exactly why an inactive key fails open.
 
-Rule of thumb: **`latest` up on every release; `min` up only to force, only after
-100% availability.**
+Rule of thumb: **`latest` and `min` up on every release; the enforced-from date set
+separately, only after 100% availability, and never less than 14 days out.**
 
 ## 6. Where the code lives
 
@@ -125,9 +165,11 @@ Rule of thumb: **`latest` up on every release; `min` up only to force, only afte
 ## 7. Testing
 
 - Backend: `tests/SIMF.Api.Tests/AppVersionPolicyPublicTests.cs` (anonymous read,
-  configured values, blank→null, non-http→null, deactivated-key ignored) +
-  `DefaultContentSeederTests` (seeds 6 empty, idempotent, never resurrects a
-  deactivated key).
+  configured values, blank→null, non-http→null, deactivated-key ignored, plus the
+  enforced-from gate: no date blocks nobody, the date is inclusive, any other
+  format fails open, deactivating the date lifts the gate, and a minimum alone
+  still prompts) + `DefaultContentSeederTests` (seeds every key empty, idempotent,
+  never resurrects a deactivated key).
 - App: `test/core/startup/app_version_policy_test.dart` (semver / anti-brick /
   build-metadata / fail-open) + `server_app_update_checker_test.dart` (forced /
   optional / snooze window / platform branch / fail-open) + the splash and
