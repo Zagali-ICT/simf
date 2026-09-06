@@ -1,4 +1,22 @@
-Thank you for the review.
+Thank you for the review. Both guidelines are addressed below.
+
+Guideline 5.1.1(v), account deletion
+
+Deletion is entirely in the app and needs no email or support request.
+
+The "Delete my account" button now appears on every screen that can hold an
+account, including the registration form and the approval-status screen. That is
+the fix: previously it was only in My Area, which an account awaiting organiser
+approval never reaches, so a reviewer stopped at the registration step could not
+find it.
+
+To test it: sign in with the demo account, tap "Delete my account", confirm, then
+enter the six-digit code we email to the account's own address. The demo mailbox
+login is in App Review Information so you can read that code. Deleting erases the
+profile, the identity document and the photographs, revokes every session and
+device, and cannot be undone.
+
+Guideline 4.1(b), copycats
 
 This is the official app of the 4th Saudi International Maritime Forum, a
 government-sponsored conference held in Riyadh from 23 to 25 November 2026, with
