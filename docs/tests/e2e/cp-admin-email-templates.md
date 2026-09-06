@@ -16,11 +16,14 @@
 > requires the `RequireApprovedAccount` policy. All responses use the
 > `ApiResult<T>` envelope; `{type}` in a route is an `EmailTemplateType` **name**
 > (`SignInOtp`, `EmailVerification`, `AccountExists`, `PasswordReset`,
-> `BadgeActivation`, `BiometricStepUp`).
+> `BadgeActivation`, `BiometricStepUp`, `BulkBadgeDelivery`, `EmailChangedNotice`,
+> `ExhibitorLeadCapture`, `AccountDeletion`). It was six when this page shipped;
+> the count is deliberately not repeated below, because it went stale through
+> four separate changes before anyone noticed.
 >
 > **Model.** The `EmailTemplate` table stores **overrides only**. A code
-> **catalogue** supplies the built-in default subject + bilingual body for each of
-> the six types, so the table starts **empty** and the resolver always falls back
+> **catalogue** supplies the built-in default subject + bilingual body for each
+> catalogued type, so the table starts **empty** and the resolver always falls back
 > to the catalogue default when no override row exists. Editing writes/updates the
 > override (and bumps `Version`); **Reset** deletes the override so the email
 > reverts to the built-in copy. Tokens are single-brace placeholders — `{Code}`,
@@ -32,7 +35,7 @@
 | ID | Scenario | Type | Priority | Status |
 |----|----------|------|----------|--------|
 | E2E-EMT-001 | Golden path — open SignInOtp → insert `{Code}` chip → preview renders `123456` → Save → `Version` bumps + grid shows "Customised" | happy | P0 | _to author_ |
-| E2E-EMT-002 | List shows all six built-in templates with the `IsOverride` flag ("Default" when the override table is empty) | happy | P1 | _to author_ |
+| E2E-EMT-002 | List shows every built-in template with the `IsOverride` flag ("Default" when the override table is empty) | happy | P1 | _to author_ |
 | E2E-EMT-003 | Auth gate: anonymous visitor → login redirect / 401 on the API | auth | P0 | _to author_ |
 | E2E-EMT-004 | Auth gate: signed-in admin lacking `EmailTemplates.View` → `/not-permitted` (403) | auth | P0 | _to author_ |
 | E2E-EMT-005 | Token chip: clicking the `{ExpiryMinutes}` chip inserts the token at the cursor of the focused body field | happy | P1 | _to author_ |
@@ -41,6 +44,7 @@
 | E2E-EMT-008 | Save BLOCKED on an empty body → 400 `EMAIL_TEMPLATE_INVALID` bilingual toast | error | P1 | _to author_ |
 | E2E-EMT-009 | Reset-to-default removes the override → the email reverts to the built-in copy, the grid flips to "Default", `Version` clears | happy | P0 | _to author_ |
 | E2E-EMT-010 | Invalid `{type}` in the route → 404 `EMAIL_TEMPLATE_NOT_FOUND` | error | P1 | _to author_ |
+| E2E-EMT-014 | A VALID enum value with no catalogue entry (`EmailChangeVerification`) → 404 on every route, and absent from the grid | error | P0 | authored ✓ (`EmailTemplateAdminTests.An_uncatalogued_type_is_404_on_every_route_not_500`) |
 | E2E-EMT-011 | Server 500 on `/list` → bilingual fallback toast, no rows | resilience | P2 | _to author_ |
 | E2E-EMT-012 | RTL render: the Arabic body field + the live preview mirror to RTL | i18n | P1 | _to author_ |
 | E2E-EMT-013 | Edit-permission gate: an admin with `EmailTemplates.View` but not `.Edit` sees a read-only editor — Save / Reset fire 403 | auth | P1 | _to author_ |
@@ -98,15 +102,20 @@ Scenario: Customise the sign-in OTP email and see the version bump
   (`/list` POST, `SignInOtp` GET, `SignInOtp/preview` POST, `SignInOtp` PUT)
 - Audit row: an `OperationLog` row for the template override write with the actor's id.
 
-### E2E-EMT-002 — List shows the six built-in templates with the override flag
+### E2E-EMT-002 — List shows every built-in template with the override flag
 
 ```gherkin
-Scenario: A fresh install lists six templates, all "Default"
+Scenario: A fresh install lists the catalogue, all "Default"
   Given the EmailTemplate override table is empty
   When the administrator opens /admin/email/templates
-  Then POST /account/api/admin/email/templates/list returns 200 with Total = 6
-  And the grid renders exactly six rows — one per EmailTemplateType: SignInOtp,
-      EmailVerification, AccountExists, PasswordReset, BadgeActivation, BiometricStepUp
+  Then POST /account/api/admin/email/templates/list returns 200
+  And Total equals the number of catalogued types (ten today, and asserted
+      against EmailTemplateCatalog.All rather than a literal)
+  And the grid renders one row per catalogued EmailTemplateType:
+      SignInOtp, EmailVerification, AccountExists, PasswordReset,
+      BadgeActivation, BiometricStepUp, BulkBadgeDelivery, EmailChangedNotice,
+      ExhibitorLeadCapture, AccountDeletion
+  And EmailChangeVerification is NOT among them (E2E-EMT-014)
   And every row's Override column reads "Default" / "افتراضي" (IsOverride=false)
   And no row can be created or deleted (the set is fixed — the toolbar exposes no
       Add/Delete; only per-row open-editor is offered)
@@ -300,11 +309,41 @@ Scenario: An admin with only EmailTemplates.View gets a read-only editor
   and `tests/SIMF.Api.Tests/PermissionEnforcementTests.cs` fail the build if a gate
   is missing, so E2E-EMT-004 (page gate) and E2E-EMT-013 (`.Edit` action gate) have a
   build-time backstop.
-- **Lower-layer API integration tests** for this surface should cover: the six-row
-  list over an empty table, GET fallback to the catalogue default, PUT version-bump +
+- **Lower-layer API integration tests** for this surface should cover: the full
+  catalogue list over an empty table, GET fallback to the catalogue default, PUT version-bump +
   override persistence, PUT reject on unknown token + empty body, reset deletes the
   override, preview `UnknownTokens`, and the 404 on an invalid `{type}`.
 
+### E2E-EMT-014 — A valid enum value with no catalogue entry
+
+The enum is a **superset** of the catalogue and always will be: values are frozen
+against removal, so a withdrawn feature keeps its slot after its definition is
+deleted. `EmailChangeVerification` (7) is that case — self-service email change
+was removed by owner decision (G1, 2026-07-30). Every route binds the enum, so the
+type still reaches the service; before the guard the first `Catalog.Default` call
+threw `KeyNotFoundException` out of the request and answered **500**.
+
+```gherkin
+Scenario: The API says it does not have it, rather than failing
+  Given an administrator with EmailTemplates.View and .Edit
+  When they call GET, PUT, POST .../reset or POST .../preview for
+       EmailChangeVerification
+  Then every one answers 404 with ErrorCode EMAIL_TEMPLATE_NOT_FOUND
+  And the message names the type, in both languages
+  And the grid does not list it, so nobody is invited to edit it
+```
+
+**Evidence:** `EmailTemplateAdminTests.An_uncatalogued_type_is_404_on_every_route_not_500`
+and `EmailTemplateRendererTests.Catalog_no_longer_carries_email_change_verification`.
+
 ---
 
-_Last reviewed:_ 2026-07-10 by Claude (D-735 — Email templates admin editor): authored E2E-EMT-001..013 from the D-735 contract (six `EmailTemplateType` overrides, token chips + live bilingual preview + block-on-unknown-token + reset-to-default, `EmailTemplates.View`/`.Edit` split).
+_Last reviewed:_ 2026-09-06 by SIMF Team — the catalogue is **ten** types, not the
+six this file described: `BulkBadgeDelivery`, `EmailChangedNotice`,
+`ExhibitorLeadCapture` and `AccountDeletion` had been added without updating it,
+and `EmailChangeVerification`'s dead definition was removed (G1 deleted the
+feature in 2026-07). Added **E2E-EMT-014** — a valid enum value with no catalogue
+entry must answer 404 on every route, not throw a 500 out of `Catalog.Default`.
+_Prior:_ 2026-07-10 (D-735 — authored E2E-EMT-001..013 from the D-735 contract:
+token chips + live bilingual preview + block-on-unknown-token + reset-to-default,
+`EmailTemplates.View`/`.Edit` split).

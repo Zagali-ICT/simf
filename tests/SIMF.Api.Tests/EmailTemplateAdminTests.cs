@@ -1,6 +1,6 @@
 // D-735 — integration tests for the CP admin email-template surface: the DB
 // holds only overrides, the code catalogue backs every read so the grid always
-// shows all nine templates, save validates the copy references no unknown token
+// shows every catalogued template, save validates the copy references no unknown token
 // and bumps a version, reset drops the override, preview renders sample values.
 // All routes are gated RequireApprovedAccount + an EmailTemplates permission and
 // return the ApiResult<T> envelope; {type} is the EmailTemplateType name
@@ -10,6 +10,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
+using SIMF.Application.Email;
 using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
@@ -38,15 +39,15 @@ public sealed class EmailTemplateAdminTests : IClassFixture<SimfApiFactory>
     // -- List ----------------------------------------------------------------
 
     [Fact]
-    public async Task List_returns_all_eleven_templates_clean_by_default()
+    public async Task List_returns_all_ten_templates_clean_by_default()
     {
         // Order-independent: every mutating test in this class resets its
         // override so, with parallelism disabled, the DB is clean at every
-        // test boundary and the grid shows the eleven catalogue defaults (#24
-        // added EmailChangeVerification + EmailChangedNotice; the assertion was
-        // stale at 6 on the base branch after D-751 added BulkBadgeDelivery, the
-        // 7th; BUG-024 appended ExhibitorLeadCapture, the 10th; the
-        // account-deletion confirmation code is the 11th).
+        // test boundary and the grid shows the ten catalogue defaults. The
+        // count is asserted against the catalogue rather than a literal because
+        // a literal here has been stale more often than not — 6 through three
+        // separate additions, then 11, now 10 after EmailChangeVerification's
+        // dead definition was dropped.
         var admin = await CreateAdministratorAndSignInAsync();
 
         var response = await PostAuthAsync(
@@ -55,7 +56,7 @@ public sealed class EmailTemplateAdminTests : IClassFixture<SimfApiFactory>
 
         var page = (await response.Content
             .ReadFromJsonAsync<ApiResult<GridPage<AdminEmailTemplateSummary>>>())!.Data!;
-        Assert.Equal(11, page.Items.Count);
+        Assert.Equal(EmailTemplateCatalog.All.Count, page.Items.Count);
         Assert.All(page.Items, row =>
         {
             Assert.False(row.IsOverride);
@@ -66,26 +67,31 @@ public sealed class EmailTemplateAdminTests : IClassFixture<SimfApiFactory>
     // -- List: the GridQuery is actually applied -------------------------------
     //
     // ListAsync used to accept a GridQuery and ignore every part of it, returning
-    // all ten rows in catalogue order with Total set to the PAGE length. These
-    // pin each part of the query down. The catalogue is fixed and every test in
-    // this class resets its override, so the ten default rows are the fixture.
+    // every row in catalogue order with Total set to the PAGE length. These pin
+    // each part of the query down. The catalogue is fixed and every test in this
+    // class resets its override, so the default rows are the fixture.
 
     [Fact]
     public async Task List_pages_and_reports_the_true_total_not_the_page_length()
     {
         var admin = await CreateAdministratorAndSignInAsync();
 
+        var total = EmailTemplateCatalog.All.Count;
+
         var first = await ListAsync(new GridQuery { Skip = 0, Top = 4 }, admin);
         Assert.Equal(4, first.Items.Count);
         // The defect: Total was rows.Count of the page, so the CP footer read
         // "1-4 of 4" and the pager offered a single page.
-        Assert.Equal(11, first.Total);
+        Assert.Equal(total, first.Total);
         Assert.Equal(0, first.Skip);
         Assert.Equal(4, first.Top);
 
+        // A last page that is deliberately RAGGED - the point is that Top is a
+        // ceiling, not a promise - so it is sized from the catalogue rather than
+        // written as a literal that goes stale on the next template.
         var last = await ListAsync(new GridQuery { Skip = 8, Top = 4 }, admin);
-        Assert.Equal(3, last.Items.Count);
-        Assert.Equal(11, last.Total);
+        Assert.Equal(total - 8, last.Items.Count);
+        Assert.Equal(total, last.Total);
 
         // A page window that is ignored returns the same rows every time.
         Assert.Empty(first.Items.Select(row => row.Type)
@@ -119,14 +125,15 @@ public sealed class EmailTemplateAdminTests : IClassFixture<SimfApiFactory>
     {
         var admin = await CreateAdministratorAndSignInAsync();
 
-        // Lower-case "otp" against "SignInOtp": the grid matches case-insensitively,
-        // and SignInOtp is the only one of the ten whose name contains it.
+        // Lower-case "otp" against "SignInOtp": the grid matches
+        // case-insensitively, and SignInOtp is the only catalogue name that
+        // contains it.
         var page = await ListAsync(
             new GridQuery { Top = 100, Filters = { ["type"] = "otp" } }, admin);
 
         var row = Assert.Single(page.Items);
         Assert.Equal(EmailTemplateType.SignInOtp, row.Type);
-        // Total follows the filter; an ignored filter would report all ten.
+        // Total follows the filter; an ignored filter would report every row.
         Assert.Equal(1, page.Total);
     }
 
@@ -388,6 +395,55 @@ public sealed class EmailTemplateAdminTests : IClassFixture<SimfApiFactory>
         var response = await PostAuthAsync(
             "/api/v1/admin/email/templates/list", new GridQuery(), visitor);
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task An_uncatalogued_type_is_404_on_every_route_not_500()
+    {
+        // The enum is a SUPERSET of the catalogue and always will be: values are
+        // frozen against removal, so a withdrawn feature keeps its slot after
+        // its definition goes. EmailChangeVerification is that case today (G1
+        // deleted self-service email change), and the routes bind the enum, so
+        // `7` still reaches the service. Before the guard, the first
+        // Catalog.Default call threw KeyNotFoundException out of the request and
+        // the admin got a 500 for something that is simply not there.
+        var admin = await CreateAdministratorAndSignInAsync();
+        const EmailTemplateType gone = EmailTemplateType.EmailChangeVerification;
+
+        var get = await GetAuthAsync(RouteFor(gone), admin);
+        Assert.Equal(HttpStatusCode.NotFound, get.StatusCode);
+        Assert.Equal(
+            ErrorCodes.EmailTemplateNotFound,
+            (await get.Content.ReadFromJsonAsync<ApiResult<object>>())!.Error!.Code);
+
+        var save = await PutAuthAsync(
+            RouteFor(gone),
+            new UpdateEmailTemplateRequest
+            {
+                Subject = "s",
+                BodyEn = "<p>b</p>",
+                BodyAr = "<p>ب</p>",
+            },
+            admin);
+        Assert.Equal(HttpStatusCode.NotFound, save.StatusCode);
+
+        var reset = await PostAuthAsync(RouteFor(gone, "reset"), EmptyBody, admin);
+        Assert.Equal(HttpStatusCode.NotFound, reset.StatusCode);
+
+        var preview = await PostAuthAsync(
+            RouteFor(gone, "preview"),
+            new PreviewEmailTemplateRequest
+            {
+                Subject = "s",
+                BodyEn = "<p>b</p>",
+                BodyAr = "<p>ب</p>",
+            },
+            admin);
+        Assert.Equal(HttpStatusCode.NotFound, preview.StatusCode);
+
+        // And it is gone from the grid, so nobody is invited to edit it.
+        var page = await ListAsync(new GridQuery { Top = 100 }, admin);
+        Assert.DoesNotContain(page.Items, i => i.Type == gone);
     }
 
     // -- Helpers -------------------------------------------------------------

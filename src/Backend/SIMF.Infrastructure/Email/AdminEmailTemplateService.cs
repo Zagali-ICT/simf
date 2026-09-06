@@ -237,6 +237,7 @@ internal sealed class AdminEmailTemplateService(
     public async Task<AdminEmailTemplateDetail> GetAsync(
         EmailTemplateType type, CancellationToken cancellationToken = default)
     {
+        RequireCatalogued(type);
         var row = await appDbContext.EmailTemplates
             .AsNoTracking()
             .SingleOrDefaultAsync(t => t.Type == type, cancellationToken);
@@ -249,6 +250,8 @@ internal sealed class AdminEmailTemplateService(
         UpdateEmailTemplateRequest request,
         CancellationToken cancellationToken = default)
     {
+        RequireCatalogued(type);
+
         var subject = (request.Subject ?? string.Empty).Trim();
         var bodyEn = (request.BodyEn ?? string.Empty).Trim();
         var bodyAr = (request.BodyAr ?? string.Empty).Trim();
@@ -332,6 +335,7 @@ internal sealed class AdminEmailTemplateService(
         EmailTemplateType type,
         CancellationToken cancellationToken = default)
     {
+        RequireCatalogued(type);
         var row = await appDbContext.EmailTemplates
             .SingleOrDefaultAsync(t => t.Type == type, cancellationToken);
 
@@ -353,6 +357,8 @@ internal sealed class AdminEmailTemplateService(
     public EmailTemplatePreviewResult Preview(
         EmailTemplateType type, PreviewEmailTemplateRequest request)
     {
+        RequireCatalogued(type);
+
         var subject = request.Subject ?? string.Empty;
         var bodyEn = request.BodyEn ?? string.Empty;
         var bodyAr = request.BodyAr ?? string.Empty;
@@ -381,6 +387,29 @@ internal sealed class AdminEmailTemplateService(
             .Concat(EmailTemplateRenderer.FindUnknownTokens(bodyAr, known))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
+    }
+
+    /// <summary>Refuses a type the catalogue does not carry, before anything
+    /// reads a definition for it.
+    ///
+    /// <para>The enum is a SUPERSET of the catalogue: values are frozen against
+    /// removal, so a withdrawn feature keeps its slot after its definition is
+    /// deleted (today <c>EmailChangeVerification</c>, dropped when self-service
+    /// email change was removed by G1). Every route here binds the enum, so
+    /// <c>7</c> still reaches this service. Without this the first
+    /// <c>Catalog.Default</c> call would throw <c>KeyNotFoundException</c> out of
+    /// the request and answer 500 for something that is simply not there.</para></summary>
+    private static void RequireCatalogued(EmailTemplateType type)
+    {
+        if (EmailTemplateCatalog.IsCatalogued(type))
+        {
+            return;
+        }
+
+        throw new ApiException(
+            ErrorCodes.EmailTemplateNotFound, 404,
+            $"There is no email template '{type}'.",
+            $"لا يوجد قالب بريد إلكتروني باسم '{type}'.");
     }
 
     private static AdminEmailTemplateDetail ToDetail(EmailTemplateType type, EmailTemplate? row)

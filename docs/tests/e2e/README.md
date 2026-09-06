@@ -152,7 +152,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/gates/operator` | [`cp-admin-gates-operator.md`](cp-admin-gates-operator.md) | E2E-GOP-001..017 |
 | `/admin/gates/dashboard` | [`cp-admin-gates-dashboard.md`](cp-admin-gates-dashboard.md) | E2E-GDS-001..011 |
 | `/admin/configuration` | [`cp-admin-configuration.md`](cp-admin-configuration.md) | E2E-CFG-001..024 |
-| `/admin/email/templates` | [`cp-admin-email-templates.md`](cp-admin-email-templates.md) | E2E-EMT-001..013 |
+| `/admin/email/templates` | [`cp-admin-email-templates.md`](cp-admin-email-templates.md) | E2E-EMT-001..014 |
 | `/admin/site-settings` | [`cp-site-settings.md`](cp-site-settings.md) | E2E-CPSET-001..009 |
 | `/admin/organization-profile` | [`cp-organization-profile.md`](cp-organization-profile.md) | E2E-ORGP-001..009 |
 | `/admin/contact-inquiries` | [`cp-contact-inquiries.md`](cp-contact-inquiries.md) | E2E-CINQ-001..008 |
@@ -352,7 +352,7 @@ being quoted in planning as if current.
   196 against a pinned total of 197. Only the two bold totals are
   machine-checked, so the parts had drifted unnoticed; counting by prefix is
   reproducible with one `ls`.)
-- **Total scenarios:** 3233 Coverage-matrix rows, every id distinct. That
+- **Total scenarios:** 3234 Coverage-matrix rows, every id distinct. That
   includes the **360** generated element-sweep rows (`E2E-{NS}-ELS-001/002`, two
   per live page — see `tools/qa/generate_els_rows.py`); the hand-authored
   functional total is 2827.

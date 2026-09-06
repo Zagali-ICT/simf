@@ -43,11 +43,16 @@ The set is **fixed** — one row per `EmailTemplateType`; there is no create or 
 Tokens are single-brace placeholders (`{Code}`, `{ExpiryMinutes}`), and each type
 declares its own allowed token set in the catalogue.
 
-There were six when this page shipped and there are now **eleven**. The count is
-not repeated in prose anywhere else in this document, on purpose: it went stale
-for five of them, across four separate changes, before anyone noticed. The
-authority is `EmailTemplateCatalog.Definitions` and the row count asserted by
+There were six when this page shipped and there are now **ten**. The count is not
+repeated in prose anywhere else in this document, on purpose: it went stale for
+five of them, across four separate changes, before anyone noticed. The authority
+is `EmailTemplateCatalog.Definitions` and the row count asserted by
 `tests/SIMF.Api.Tests/EmailTemplateRendererTests.cs`.
+
+**The enum is a SUPERSET of this table.** Enum values are frozen against removal,
+so a withdrawn feature keeps its slot after its definition goes —
+`EmailTemplateType.EmailChangeVerification` (7) is exactly that. Its routes still
+bind, and every one of them answers **404 `EMAIL_TEMPLATE_NOT_FOUND`**.
 
 | `EmailTemplateType` | Email | Tokens |
 |---------------------|-------|--------|
@@ -58,7 +63,6 @@ authority is `EmailTemplateCatalog.Definitions` and the row count asserted by
 | `BadgeActivation` | The code emailed for passwordless badge activation (D-430) | `{Code}`, `{ExpiryMinutes}` |
 | `BiometricStepUp` | The code emailed to enrol / step-up a biometric device key (D-486 / D-554) | `{Code}`, `{ExpiryMinutes}` |
 | `BulkBadgeDelivery` | The cover note for a generated badge batch; the badges ride as a ZIP attachment, so there is no code | `{Count}`, `{GeneratedAt}` |
-| `EmailChangeVerification` | **Dead but still listed.** Self-service email change was removed by owner decision (G1, 2026-07-30) and nothing sends this any more. The catalogue entry and its grid row remain because the enum value is frozen against removal | `{Code}`, `{ExpiryMinutes}` |
 | `EmailChangedNotice` | The security alert to the OLD address after a login email is changed (now only an administrator can do that) | `{NewEmail}` |
 | `ExhibitorLeadCapture` | The lead card emailed to an exhibitor after a booth badge scan (BUG-024). Deliberately carries no national ID and no raw badge QR id | 8 bilingual field tokens — `{VisitorName}` / `{VisitorNameArabic}`, `{JobTitle}` / `{JobTitleArabic}`, `{Organisation}` / `{OrganisationArabic}`, `{ScannedAt}`, `{Note}` |
 | `AccountDeletion` | The code that confirms an irreversible self-deletion (App Store 5.1.1(v)). Warns the reader to ignore it if they did not ask to delete | `{Code}`, `{ExpiryMinutes}` |
@@ -223,6 +227,7 @@ reset-to-default removes the override, 010 invalid `{type}` (`EMAIL_TEMPLATE_NOT
 
 | Date | Decision | Change |
 |------|----------|--------|
+| 2026-09-06 | — | `EmailChangeVerification`'s definition **removed**: G1 deleted self-service email change in 2026-07 and nothing has been able to send it since, so it was a dead grid row inviting an admin to reword an email that is never sent. The enum value stays (frozen), and its routes now answer 404 `EMAIL_TEMPLATE_NOT_FOUND` instead of throwing a 500 out of `Catalog.Default`. Ten templates. |
 | 2026-09-06 | — | `AccountDeletion` template added (App Store 5.1.1(v): an emailed code now confirms an irreversible self-deletion). While adding it, §1 and §3 were corrected: they still described **six** templates and listed six rows, and five had shipped since — `BulkBadgeDelivery`, `EmailChangeVerification` (dead since G1 but still catalogued), `EmailChangedNotice`, `ExhibitorLeadCapture` and now `AccountDeletion`. The prose no longer carries a count. |
 | 2026-07-10 | D-735 | New page — DB-backed override editor for the six transactional identity emails that existed then (bilingual token templates, token chips, live bilingual preview with sample values, block-on-unknown-token, reset-to-default). `EmailTemplates.View` / `.Edit` permission split; overrides-only table with a code-catalogue fallback. |
 

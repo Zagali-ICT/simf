@@ -107,14 +107,15 @@ public sealed class EmailTemplateRendererTests
     }
 
     [Fact]
-    public void Catalog_all_lists_the_eleven_transactional_templates()
+    public void Catalog_all_lists_the_ten_transactional_templates()
     {
-        // #24 added EmailChangeVerification (8th) + EmailChangedNotice (9th). NB:
-        // this assertion was stale at 6 on the base branch after D-751 added
-        // BulkBadgeDelivery (7th) without updating it. BUG-024 appended
-        // ExhibitorLeadCapture (10th), and the account-deletion confirmation
-        // code appended the 11th — 11 is the true current count.
-        Assert.Equal(11, EmailTemplateCatalog.All.Count);
+        // The count has been wrong more often than right: it sat stale at 6 on
+        // the base branch through D-751 (BulkBadgeDelivery), #24
+        // (EmailChangeVerification + EmailChangedNotice) and BUG-024
+        // (ExhibitorLeadCapture). It reached 11 with the account-deletion code,
+        // then back to 10 when EmailChangeVerification's definition was dropped
+        // — G1 removed the feature in 2026-07, and nothing could send it after.
+        Assert.Equal(10, EmailTemplateCatalog.All.Count);
     }
 
     [Fact]
@@ -135,14 +136,33 @@ public sealed class EmailTemplateRendererTests
     }
 
     [Fact]
-    public void Catalog_default_email_change_verification_has_the_code_tokens()
+    public void Catalog_no_longer_carries_email_change_verification()
     {
-        var def = EmailTemplateCatalog.Default(EmailTemplateType.EmailChangeVerification);
+        // G1 (owner, 2026-07-30) deleted self-service email change — the screen,
+        // both endpoints and EmailChangeService — so nothing has been able to
+        // send this since. Its definition survived as a dead row on the admin
+        // grid, inviting someone to reword an email that is never sent.
+        Assert.False(
+            EmailTemplateCatalog.IsCatalogued(EmailTemplateType.EmailChangeVerification));
+        Assert.DoesNotContain(
+            EmailTemplateCatalog.All,
+            d => d.Type == EmailTemplateType.EmailChangeVerification);
 
-        Assert.Equal("SIMF email change verification", def.Subject);
-        Assert.Contains("{Code}", def.BodyEn, StringComparison.Ordinal);
-        Assert.Contains("{ExpiryMinutes}", def.BodyEn, StringComparison.Ordinal);
-        Assert.Equal(2, def.Tokens.Count);
+        // The ENUM value stays: it is frozen against removal, and
+        // AccountCodePurpose.EmailChangeVerification is still persisted by name
+        // on historical AccountCode rows.
+        Assert.Equal(7, (int)EmailTemplateType.EmailChangeVerification);
+    }
+
+    [Fact]
+    public void Catalog_default_throws_for_an_uncatalogued_type_rather_than_guessing()
+    {
+        // The enum is a SUPERSET of the catalogue and always will be. Default
+        // must not quietly hand back some other template's copy for a type it
+        // does not have — DefaultOrFallback is the never-throw variant, and it
+        // exists for the resolver alone.
+        Assert.Throws<KeyNotFoundException>(
+            () => EmailTemplateCatalog.Default(EmailTemplateType.EmailChangeVerification));
     }
 
     [Fact]

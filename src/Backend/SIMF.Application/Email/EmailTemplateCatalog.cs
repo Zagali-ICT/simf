@@ -143,17 +143,16 @@ public static class EmailTemplateCatalog
             "<p>صور رموز QR للشارات مرفقة بهذه الرسالة في ملف مضغوط واحد، صورة PNG لكل شارة.</p>",
             BulkBadgeTokens),
 
-        new(EmailTemplateType.EmailChangeVerification,
-            "SIMF email change verification",
-            "<p>Your SIMF email change verification code is <strong>{Code}</strong>.</p>" +
-            "<p>The code expires in {ExpiryMinutes} minutes. Enter it in the app to " +
-            "confirm this is your new email address. " +
-            "If you did not request an email change, ignore this message.</p>",
-            "<p>رمز تأكيد تغيير البريد الإلكتروني الخاص بك هو <strong>{Code}</strong>.</p>" +
-            "<p>ينتهي الرمز خلال {ExpiryMinutes} دقائق. أدخله في التطبيق لتأكيد أن هذا " +
-            "بريدك الإلكتروني الجديد. " +
-            "إذا لم تطلب تغيير البريد الإلكتروني فتجاهل هذه الرسالة.</p>",
-            CodeTokens),
+        // EmailTemplateType.EmailChangeVerification (7) is deliberately ABSENT.
+        // Self-service email change was removed by owner decision (G1,
+        // 2026-07-30): the screen, both endpoints and EmailChangeService went,
+        // and ChangeEmailRemovedTests pins both routes at 404. Nothing has been
+        // able to send this since, so its definition was a dead row on the admin
+        // grid inviting an administrator to reword an email that is never sent.
+        //
+        // The ENUM value stays — it is frozen against removal and reorder, and
+        // AccountCodePurpose.EmailChangeVerification is still persisted by name
+        // on historical rows. A catalogue entry was never what kept it alive.
 
         new(EmailTemplateType.EmailChangedNotice,
             "SIMF login email changed",
@@ -204,8 +203,20 @@ public static class EmailTemplateCatalog
     /// <summary>Every transactional-email type, in catalogue order.</summary>
     public static IReadOnlyList<EmailTemplateDefinition> All => Definitions;
 
-    /// <summary>The code-owned default for a type. Always present.</summary>
+    /// <summary>The code-owned default for a type. Throws for a type the
+    /// catalogue does not carry — call <see cref="IsCatalogued"/> first on any
+    /// path that takes a type from a caller.</summary>
     public static EmailTemplateDefinition Default(EmailTemplateType type) => Map[type];
+
+    /// <summary>Whether the catalogue carries a definition for this type.
+    ///
+    /// <para>The enum is a superset of the catalogue and always will be: values
+    /// are frozen against removal, so a type whose feature is withdrawn (today
+    /// <c>EmailChangeVerification</c>) keeps its enum slot while its definition
+    /// goes. An admin route binds the enum, so without this check
+    /// <see cref="Default"/> would throw out of the request and answer 500 for a
+    /// type the API should simply say it does not have.</para></summary>
+    public static bool IsCatalogued(EmailTemplateType type) => Map.ContainsKey(type);
 
     /// <summary>Like <see cref="Default"/> but never throws: an unmapped type
     /// (e.g. a future enum value appended without a catalogue entry) degrades to
