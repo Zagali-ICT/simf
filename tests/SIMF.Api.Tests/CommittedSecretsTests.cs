@@ -430,24 +430,36 @@ public sealed class CommittedSecretsTests
             11,
             932,
             "d86de87544827a8b3f648148ea921eb300bf9e17f9971e851cff27f85da43cce",
-            // EMPTY as of 2026-08-29, and that is the point of the list only ever
-            // shrinking. The SQL login used to sit in deploy/set-env-api.ps1: D-916
-            // tracked the five set-env scripts WITH their live values on purpose and
-            // recorded the exposure here rather than softening the guard.
+            // THIS LIST GREW, and the honest record of why matters more than the
+            // tidy invariant it breaks.
             //
-            // That collided with DeploymentEnvTemplateTests, which requires a template
-            // to declare every secret but ship it EMPTY - and which had been red for
-            // weeks because a .gitignore rule then untracked the scripts altogether,
-            // leaving the repository with neither a template nor a tracked value. The
-            // deadlock is resolved the safe way: the scripts are tracked again as
-            // TEMPLATES with all 18 secrets declared and blank, and the filled values
-            // moved to a git-ignored deploy/set-env-api.local.ps1.
+            // It reached EMPTY on 2026-08-29. The SQL login had sat in
+            // deploy/set-env-api.ps1: D-916 tracked the five set-env scripts WITH
+            // their live values on purpose and recorded the exposure here rather
+            // than softening the guard. That collided with
+            // DeploymentEnvTemplateTests, which requires a template to declare
+            // every secret but ship it EMPTY - and which had been red for weeks
+            // because a .gitignore rule then untracked the scripts altogether,
+            // leaving the repository with neither a template nor a tracked value.
+            // The deadlock was resolved the safe way: the scripts are tracked
+            // again as TEMPLATES with all 18 secrets declared and blank, and the
+            // filled values moved to a git-ignored deploy/set-env-api.local.ps1.
             //
-            // ROTATION IS STILL OWED. The value remains in git history from the
-            // deleted root txt.txt, so every clone still carries it; removing it from
-            // the tip does not undo the disclosure. This entry going empty means the
-            // repository stopped republishing it, not that the account became safe.
-            Array.Empty<string>()),
+            // Eight days later the SAME value came back, in the App Review reply.
+            // Apple's reviewer signs in as the demo accounts, so the password has
+            // to be live and legible for the length of the review, and the owner
+            // directed it into the reply file and reaffirmed that after being
+            // shown this entry. It is recorded here rather than removed because
+            // the standing rule is that a secret is never deleted or blanked from
+            // a tracked file; recording it keeps the exposure visible instead of
+            // making the guard quietly narrower.
+            //
+            // ROTATION IS STILL OWED, and is now the only thing that closes this.
+            // The value was already in git history from the deleted root txt.txt,
+            // so every clone carried it before this file existed; removing it from
+            // the tip never undid that. Rotate the demo mailbox once App Review
+            // passes, then delete this path and the entry goes empty again.
+            new[] { "docs/dev/appstore-reply-4000.txt" }),
 
         // Seed:DemoPassword — the D-585 demo-account shared password. Blanked
         // in config (round 1) and removed from the fixture + the two docs
