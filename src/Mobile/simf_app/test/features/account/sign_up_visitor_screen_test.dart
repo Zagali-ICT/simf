@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/core/widgets/account_deletion_footer.dart';
 import 'package:simf_app/features/account/data/app_gender.dart';
 import 'package:simf_app/features/account/data/profile_lookups.dart';
 import 'package:simf_app/features/account/data/profile_models.dart';
@@ -14,7 +15,6 @@ import 'package:simf_app/features/account/data/region_repository.dart';
 import 'package:simf_app/features/account/data/sign_up_profile_draft.dart';
 import 'package:simf_app/features/account/sign_up_visitor_screen.dart';
 import 'package:simf_app/features/account/widgets/mobile_field.dart';
-import 'package:simf_app/features/account/widgets/sign_up_visitor_delete_footer.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../support/simf_test_scope.dart';
@@ -921,11 +921,11 @@ void main() {
       await _pump(tester, repo);
 
       await tester.scrollUntilVisible(
-        find.byType(SignUpVisitorDeleteFooter),
+        find.byType(AccountDeletionFooter),
         200,
         scrollable: find.byType(Scrollable).first,
       );
-      expect(find.byType(SignUpVisitorDeleteFooter), findsOneWidget);
+      expect(find.byType(AccountDeletionFooter), findsOneWidget);
     });
 
     testWidgets('the mobile field caps its length at 17 (maxLength set)',

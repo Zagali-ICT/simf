@@ -8,6 +8,7 @@ import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/core/responsive/grid_columns.dart';
 import 'package:simf_app/core/responsive/max_width_body.dart';
+import 'package:simf_app/core/widgets/account_deletion_footer.dart';
 import 'package:simf_app/features/account/data/profile_lookups.dart';
 import 'package:simf_app/features/account/data/sign_up_profile_draft.dart';
 import 'package:simf_app/features/account/widgets/auth_chrome.dart';
@@ -146,6 +147,10 @@ class SignUpInterestsBody extends StatelessWidget {
                       style: SimfTokens.labelDangerSm,
                     ),
                   ],
+                  const SizedBox(height: SimfTokens.space6),
+                  // Step two of profile completion still holds an account and
+                  // still has no bottom nav, so deletion belongs here too.
+                  const AccountDeletionFooter(),
                   const SizedBox(height: SimfTokens.space6),
                 ],
               ),

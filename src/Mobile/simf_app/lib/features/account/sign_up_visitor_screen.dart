@@ -9,6 +9,7 @@ import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_form_scaffold.dart';
 import 'package:simf_app/core/errors/api_error_l10n.dart';
 import 'package:simf_app/core/responsive/max_width_body.dart';
+import 'package:simf_app/core/widgets/account_deletion_footer.dart';
 import 'package:simf_app/core/widgets/simf_auth_sweep.dart';
 import 'package:simf_app/features/account/data/profile_lookups.dart';
 import 'package:simf_app/features/account/data/profile_repository.dart';
@@ -17,7 +18,6 @@ import 'package:simf_app/features/account/data/sign_up_visitor_form.dart';
 import 'package:simf_app/features/account/data/sign_up_visitor_lookups.dart';
 import 'package:simf_app/features/account/sign_up_visitor_pickers.dart';
 import 'package:simf_app/features/account/sign_up_visitor_submit.dart';
-import 'package:simf_app/features/account/widgets/sign_up_visitor_delete_footer.dart';
 import 'package:simf_app/features/account/widgets/sign_up_visitor_form_card.dart';
 import 'package:simf_app/features/account/widgets/sign_up_visitor_load_error.dart';
 import 'package:simf_app/features/account/widgets/sign_up_visitor_place_of_birth_field.dart';
@@ -384,7 +384,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
               onCaptureFacePhoto: () => unawaited(_pickFacePhoto()),
                 onNext: _next,
               ),
-              const SignUpVisitorDeleteFooter(),
+              const AccountDeletionFooter(),
             ],
           ),
         ),

@@ -30,15 +30,42 @@ class _DeleteAccountTileState extends ConsumerState<DeleteAccountTile> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    return TextButton(
-      onPressed: _busy ? null : () => _confirmAndDelete(l10n),
-      style: TextButton.styleFrom(
-        alignment: AlignmentDirectional.centerStart,
-        padding: const EdgeInsets.symmetric(vertical: SimfTokens.space3),
-      ),
-      child: Text(
-        l10n.deleteAccountLink,
-        style: SimfTokens.bodyBeigeMd.copyWith(color: SimfTokens.danger),
+    // A BUTTON, not a red line of text. Apple rejected this app twice under
+    // 5.1.1(v) for "no option to initiate account deletion"; the option was
+    // there both times, styled as a quiet link at the foot of a screen, and the
+    // reviewer did not see it. A destructive control should look like one.
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: _busy ? null : () => _confirmAndDelete(l10n),
+        icon: _busy
+            ? const SizedBox(
+                width: SimfTokens.signInAltActionsSize,
+                height: SimfTokens.signInAltActionsSize,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: SimfTokens.danger,
+                ),
+              )
+            : const Icon(
+                Icons.delete_outline,
+                size: SimfTokens.signInAltActionsSize,
+                color: SimfTokens.danger,
+              ),
+        label: Text(
+          l10n.deleteAccountLink,
+          style: SimfTokens.bodyBeigeMd.copyWith(
+            color: SimfTokens.danger,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        style: OutlinedButton.styleFrom(
+          side: const BorderSide(color: SimfTokens.danger),
+          minimumSize: const Size.fromHeight(SimfTokens.buttonHeight),
+          shape: const RoundedRectangleBorder(
+            borderRadius: SimfTokens.borderRadiusSmall,
+          ),
+        ),
       ),
     );
   }

@@ -7,6 +7,7 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/core/utils/refresh.dart';
+import 'package:simf_app/core/widgets/account_deletion_footer.dart';
 import 'package:simf_app/features/registration/data/registration_providers.dart';
 import 'package:simf_app/features/registration/widgets/registration_primary_button.dart';
 import 'package:simf_app/features/registration/widgets/registration_secondary_button.dart';
@@ -161,6 +162,11 @@ class _RegistrationStatusScreenState
                     label: l10n.signOutLink,
                     onTap: () => unawaited(_signOut()),
                   ),
+                  // Signing out is not deleting. An account waiting on the
+                  // organiser is exactly the holder most likely to want out,
+                  // and this gate has no bottom nav, so My Area is unreachable
+                  // from here.
+                  const AccountDeletionFooter(),
                 ],
               ),
             ),
