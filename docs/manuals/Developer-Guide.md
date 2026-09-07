@@ -567,36 +567,60 @@ resolved on read; there is no cross-DB transaction. The legacy table schema
 qualifiers (`identity` / `app`) are a harmless artefact of the old shared-DB
 design.
 
-### 17.2 Changing the schema — regenerate, do not add
+### 17.2 Changing the schema — add a migration, never regenerate (D-959)
 
-Each context has exactly **one** migration, `InitialCreate`, and it *is* the
-schema (D-110, re-instated by D-895). So a schema change is not a new migration:
-it is a regeneration of the existing one, and there is a script for it.
+`00000000000000_InitialCreate` is the **baseline the live databases are already
+at**, not a description of the current model. A schema change is a **new
+migration**, added with the tool:
 
 ```powershell
-# Both contexts, or pass -Context App / -Context Identity for one
-./tools/migrations/Regenerate-Migration.ps1
+dotnet ef migrations add <Name> `
+    --project src/Backend/SIMF.Infrastructure `
+    --startup-project src/Backend/SIMF.Infrastructure `
+    --context SimfAppDbContext `
+    --output-dir Persistence/Migrations/App
 
-# Then prove the model and the migration agree — this is the whole check
+# Then prove the model and the migrations agree — this is the whole check
 dotnet ef migrations has-pending-model-changes `
     --project src/Backend/SIMF.Infrastructure `
     --startup-project src/Backend/SIMF.Infrastructure `
     --context SimfAppDbContext
 ```
 
-**Use the script rather than `dotnet ef migrations add` directly.** The id is
-pinned to `00000000000000_InitialCreate`, and the script re-pins it after EF
-stamps a fresh timestamp. That is not cosmetic. A timestamped id gives every
-branch a different filename, so two branches that both regenerate the migration
-merge with **no conflict** — git sees two unrelated files, the pull request
-reports `mergeStatus: succeeded`, and `main` ends up with two classes named
-`InitialCreate` and no longer compiles. It happened twice on 2026-08-16, three
-migrations deep each time. A pinned id turns that into an ordinary content
-conflict on one path, which is loud and which you resolve by running the script
-once on the merged model.
+**This reverses the previous instruction, and `tools/migrations/Regenerate-Migration.ps1`
+now refuses to run.** The reason is worth knowing, because the old rule looked
+safe: **a regenerated migration never reaches a database that already has one.**
+`__EFMigrationsHistory` records the pinned id as applied, `MigrateAsync` finds
+nothing pending, and the regenerated file describes a schema the live database
+never receives. Every change therefore reached a live database only if somebody
+also hand-wrote a `docs/migrations/2026/*_Hotfix.sql` delta. D-944 shipped without
+one on 2026-08-28 and broke every visitor profile read in production.
 
-`SchemaFreezeTests` fails the build if either context carries more than one
-migration, or if its id is not the pinned one.
+**Read the generated `Up()` before you trust it.** EF's differ pairs a dropped
+column with an added column of similar type and infers a `RenameColumn` with **no
+knowledge of meaning**. `SyncBaseline` scaffolded fourteen, including
+`UserProfiles.PassportNumber -> MobileNumber`. A wrong rename does not fail
+loudly — it moves data from one business field into an unrelated one, and it is
+invisible on a dev database where the source column is empty while being
+destructive on production where it is not. EF prints *"review the migration for
+accuracy"* for exactly this. Turning a bad rename into `DropColumn` +
+`AddColumn` is part of the tool workflow, not hand-authoring.
+
+**Rehearse anything that touches data.** The design-time factories read
+`SIMF_DESIGN_TIME_APP_CONNECTION` / `SIMF_DESIGN_TIME_IDENTITY_CONNECTION`, so
+`BACKUP` / `RESTORE ... AS <db>_Rehearsal`, point the variable at the copy, and
+run `database update` there first. A collation `AlterColumn` fails on any column
+inside an index, CHECK or FK; an `AddCheckConstraint` fails against rows that
+violate it; a NOT NULL `AddColumn` with no default fails on a non-empty table.
+None of that is visible by reading the file.
+
+`SchemaFreezeTests` fails the build on a second `InitialCreate`, on a baseline id
+other than the pinned one, on **two migrations sharing a class name** — the merge
+hazard that pinning used to prevent, and the one thing that still needs guarding,
+because two branches adding a migration with the same name produce different
+timestamps, merge cleanly, and leave `main` with two classes of that name in one
+namespace — and on a filename that has drifted from its `[Migration("...")]`
+attribute.
 
 **Never pass `--no-build`.** EF reads the model from the compiled assembly, so a
 stale build silently generates the *previous* schema.

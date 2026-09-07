@@ -12,8 +12,8 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Persistence.Migrations.App
 {
     [DbContext(typeof(SimfAppDbContext))]
-    [Migration("00000000000000_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260907080012_SyncBaseline")]
+    partial class SyncBaseline
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -53,7 +53,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("DescriptionArabic")
                         .HasMaxLength(1024)
-                        .HasColumnType("nvarchar(1024)");
+                        .HasColumnType("nvarchar(1024)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<int>("DirectionMode")
                         .HasColumnType("int");
@@ -72,7 +73,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("NameArabic")
                         .IsRequired()
                         .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(128)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -89,7 +91,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("IsActive", "Name");
 
-                    b.ToTable("Gates", (string)null);
+                    b.ToTable("Gates", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Gates_DirectionModeRange", "[DirectionMode] BETWEEN 0 AND 2");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.AccessControl.GateAssignment", b =>
@@ -98,11 +103,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("CreateBy")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("GateId")
                         .HasColumnType("uniqueidentifier");
@@ -129,7 +134,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("UserId", "IsActive");
 
-                    b.ToTable("GateAssignments", (string)null);
+                    b.ToTable("GateAssignments", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_GateAssignments_RevocationPin", "([IsActive] = 1 AND [RevokedAt] IS NULL AND [RevokedByUserId] IS NULL) OR ([IsActive] = 0 AND [RevokedAt] IS NOT NULL AND [RevokedByUserId] IS NOT NULL)");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.AccessControl.GateProfileTypeAllow", b =>
@@ -226,19 +234,29 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .IsDescending(false, true)
                         .HasDatabaseName("IX_GateScan_ScannedBy_ScannedAt");
 
-                    b.HasIndex("UserProfileId", "ScannedAt")
-                        .IsDescending(false, true)
-                        .HasDatabaseName("IX_GateScan_UserProfile_LastAllowed")
-                        .HasFilter("[Outcome] = 0 AND [UserProfileId] IS NOT NULL");
-
                     b.HasIndex("GateId", "UserProfileId", "ScannedAt")
                         .IsDescending(false, false, true)
                         .HasDatabaseName("IX_GateScan_Gate_UserProfile_5sWindow")
                         .HasFilter("[UserProfileId] IS NOT NULL");
 
+                    b.HasIndex(new[] { "UserProfileId", "ScannedAt" }, "IX_GateScan_UserProfile_LastAllowed")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("IX_GateScan_UserProfile_LastAllowed")
+                        .HasFilter("[Outcome] = 0 AND [UserProfileId] IS NOT NULL");
+
+                    b.HasIndex(new[] { "UserProfileId", "ScannedAt" }, "IX_GateScan_UserProfile_ScannedAt")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("IX_GateScan_UserProfile_ScannedAt");
+
                     b.ToTable("GateScans", null, t =>
                         {
                             t.HasCheckConstraint("CK_GateScans_DenialPin", "([Outcome] = 1 AND [DenialReasonCode] IS NOT NULL) OR ([Outcome] = 0 AND [DenialReasonCode] IS NULL)");
+
+                            t.HasCheckConstraint("CK_GateScans_DenialReasonRange", "[DenialReasonCode] IS NULL OR [DenialReasonCode] BETWEEN 0 AND 8");
+
+                            t.HasCheckConstraint("CK_GateScans_DirectionRange", "[Direction] BETWEEN 0 AND 1");
+
+                            t.HasCheckConstraint("CK_GateScans_SourceRange", "[Source] BETWEEN 0 AND 2");
                         });
                 });
 
@@ -253,13 +271,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("RequestHash")
                         .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
-
-                    b.Property<string>("ResponseHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasMaxLength(64)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(64)");
 
                     b.Property<long?>("ScanId")
                         .HasColumnType("bigint");
@@ -283,8 +297,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("Content")
                         .IsRequired()
-                        .HasMaxLength(4000)
-                        .HasColumnType("nvarchar(4000)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -301,7 +314,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("UserId", "CreatedAt");
 
-                    b.ToTable("AiChatMessages", (string)null);
+                    b.ToTable("AiChatMessages", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_AiChatMessages_Role", "[Role] IN ('user', 'assistant')");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.Ai.AiInvocation", b =>
@@ -368,7 +384,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("Feature", "CreatedAt");
 
-                    b.ToTable("AiInvocations", (string)null);
+                    b.ToTable("AiInvocations", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_AiInvocations_CallerKind", "[CallerKind] IN ('Anonymous', 'Visitor', 'Staff', 'Admin', 'Moderator')");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.Ai.AiPrompt", b =>
@@ -386,7 +405,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("DescriptionArabic")
                         .HasMaxLength(512)
-                        .HasColumnType("nvarchar(512)");
+                        .HasColumnType("nvarchar(512)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("DisplayName")
                         .IsRequired()
@@ -396,7 +416,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("DisplayNameArabic")
                         .IsRequired()
                         .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(128)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<int>("Feature")
                         .HasColumnType("int");
@@ -447,7 +468,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("Feature", "IsActive");
 
-                    b.ToTable("AiPrompts", (string)null);
+                    b.ToTable("AiPrompts", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_AiPrompts_MaxOutputTokens", "[MaxOutputTokens] >= 1 AND [MaxOutputTokens] <= 8000");
+
+                            t.HasCheckConstraint("CK_AiPrompts_Temperature", "[Temperature] >= 0 AND [Temperature] <= 2");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.Ai.AiPromptHistory", b =>
@@ -520,9 +546,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<int>("Attendees")
                         .HasColumnType("int");
 
-                    b.Property<string>("CoverImageRelativePath")
-                        .HasMaxLength(512)
-                        .HasColumnType("nvarchar(512)");
+                    b.Property<Guid?>("CoverImageFileId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -587,12 +612,19 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CoverImageFileId");
+
                     b.HasIndex("Year")
                         .IsUnique();
 
                     b.HasIndex("IsActive", "Year");
 
-                    b.ToTable("ArchiveEditions", (string)null);
+                    b.ToTable("ArchiveEditions", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_ArchiveEditions_CountersNonNegative", "[Attendees] >= 0 AND [Sessions] >= 0 AND [Speakers] >= 0");
+
+                            t.HasCheckConstraint("CK_ArchiveEditions_YearRange", "[Year] >= 2000 AND [Year] <= 2100");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.Archive.ArchiveMediaItem", b =>
@@ -618,12 +650,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<int>("Kind")
                         .HasColumnType("int");
 
-                    b.Property<string>("Url")
-                        .IsRequired()
-                        .HasMaxLength(512)
-                        .HasColumnType("nvarchar(512)");
+                    b.Property<Guid?>("MediaFileId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("MediaFileId");
 
                     b.HasIndex("ArchiveEditionId", "DisplayOrder");
 
@@ -655,13 +687,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");
 
-                    b.Property<string>("PhotoRelativePath")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                    b.Property<Guid?>("PhotoFileId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
                     b.HasIndex("CountryId");
+
+                    b.HasIndex("PhotoFileId");
 
                     b.HasIndex("ArchiveEditionId", "DisplayOrder");
 
@@ -836,11 +869,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("CountsSummary")
-                        .IsRequired()
-                        .HasMaxLength(512)
-                        .HasColumnType("nvarchar(512)");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -864,14 +892,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("NameArabic")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("nvarchar(200)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("RecipientEmail")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
-
-                    b.Property<int>("TotalCount")
-                        .HasColumnType("int");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -889,15 +915,46 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         new
                         {
                             Id = new Guid("0f1e2d3c-4b5a-6978-8796-a5b4c3d2e1f0"),
-                            CountsSummary = "Direct registration",
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             CreatedBy = new Guid("00000000-0000-0000-0000-000000000000"),
                             IsActive = true,
                             IsDelegate = false,
                             Name = "Direct registration",
-                            NameArabic = "تسجيل مباشر",
-                            TotalCount = 0
+                            NameArabic = "تسجيل مباشر"
                         });
+                });
+
+            modelBuilder.Entity("SIMF.Domain.Badges.BadgeBatchItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BadgeBatchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Count")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("ProfileTypeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProfileTypeId");
+
+                    b.HasIndex("BadgeBatchId", "DisplayOrder");
+
+                    b.ToTable("BadgeBatchItems", (string)null);
                 });
 
             modelBuilder.Entity("SIMF.Domain.BusinessMeetings.BusinessMeeting", b =>
@@ -1044,6 +1101,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.ToTable("DelegationAvailabilityWindows", null, t =>
                         {
+                            t.HasCheckConstraint("CK_DelegationAvailabilityWindows_SlotMinutes", "[SlotMinutes] >= 5 AND [SlotMinutes] <= 480");
+
                             t.HasCheckConstraint("CK_DelegationAvailabilityWindows_TimeWindow", "[End] > [Start]");
                         });
                 });
@@ -1066,7 +1125,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("TokenHash")
                         .IsRequired()
                         .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
+                        .IsUnicode(false)
+                        .HasColumnType("char(64)")
+                        .IsFixedLength();
 
                     b.Property<DateTime?>("UsedAt")
                         .HasColumnType("datetime2");
@@ -1090,9 +1151,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<int>("AttendeeCount")
                         .HasColumnType("int");
 
-                    b.Property<Guid?>("AvailabilityWindowId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<DateTime?>("CheckedInAt")
                         .HasColumnType("datetime2");
 
@@ -1114,7 +1172,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid?>("MeetingTableId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime?>("ReminderSent")
+                    b.Property<DateTime?>("ReminderSentAt")
                         .HasColumnType("datetime2");
 
                     b.Property<Guid>("RequestedByUserId")
@@ -1152,8 +1210,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AvailabilityWindowId");
-
                     b.HasIndex("MeetingTableId");
 
                     b.HasIndex("RequestedByUserId");
@@ -1164,10 +1220,18 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .IsUnique()
                         .HasFilter("[HallId] IS NOT NULL AND [SlotStart] IS NOT NULL AND [Status] <> 0 AND [Status] <> 2 AND [Status] <> 3");
 
+                    b.HasIndex("RequestedByUserId", "TargetCountryId")
+                        .IsUnique()
+                        .HasFilter("[Status] = 0");
+
                     b.HasIndex("TargetCountryId", "Status", "CreatedAt");
 
                     b.ToTable("DelegationMeetingRequests", null, t =>
                         {
+                            t.HasCheckConstraint("CK_DelegationMeetingRequests_AttendeeCount", "[AttendeeCount] >= 1 AND [AttendeeCount] <= 100");
+
+                            t.HasCheckConstraint("CK_DelegationMeetingRequests_NotSelf", "[RequestingCountryId] <> [TargetCountryId]");
+
                             t.HasCheckConstraint("CK_DelegationMeetingRequests_Slot", "[SlotStart] IS NULL OR [SlotEnd] IS NULL OR [SlotEnd] > [SlotStart]");
                         });
                 });
@@ -1219,7 +1283,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.ToTable("HallAllocations", null, t =>
                         {
+                            t.HasCheckConstraint("CK_HallAllocations_RowColumnSpec", "([Mode] = 2 AND [RowColumnSpec] IS NOT NULL) OR ([Mode] <> 2 AND [RowColumnSpec] IS NULL)");
+
                             t.HasCheckConstraint("CK_HallAllocations_TimeWindow", "[End] > [Start]");
+
+                            t.HasCheckConstraint("CK_HallAllocations_UnitCount", "([Mode] = 1 AND [UnitCount] >= 1) OR ([Mode] <> 1 AND [UnitCount] IS NULL)");
                         });
                 });
 
@@ -1263,6 +1331,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.ToTable("HallAvailabilityWindows", null, t =>
                         {
+                            t.HasCheckConstraint("CK_HallAvailabilityWindows_SlotMinutes", "[SlotMinutes] >= 5 AND [SlotMinutes] <= 480");
+
                             t.HasCheckConstraint("CK_HallAvailabilityWindows_TimeWindow", "[End] > [Start]");
                         });
                 });
@@ -1288,7 +1358,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("TokenHash")
                         .IsRequired()
                         .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
+                        .IsUnicode(false)
+                        .HasColumnType("char(64)")
+                        .IsFixedLength();
 
                     b.Property<DateTime?>("UsedAt")
                         .HasColumnType("datetime2");
@@ -1344,7 +1416,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("HallId", "IsActive");
 
-                    b.ToTable("MeetingTables", (string)null);
+                    b.ToTable("MeetingTables", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_MeetingTables_Capacity", "[Capacity] >= 2 AND [Capacity] <= 100");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.BusinessMeetings.SpeakerAvailabilityWindow", b =>
@@ -1387,6 +1462,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.ToTable("SpeakerAvailabilityWindows", null, t =>
                         {
+                            t.HasCheckConstraint("CK_SpeakerAvailabilityWindows_SlotMinutes", "[SlotMinutes] >= 5 AND [SlotMinutes] <= 480");
+
                             t.HasCheckConstraint("CK_SpeakerAvailabilityWindows_TimeWindow", "[End] > [Start]");
                         });
                 });
@@ -1415,7 +1492,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid?>("MeetingTableId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime?>("ReminderSent")
+                    b.Property<DateTime?>("ReminderSentAt")
                         .HasColumnType("datetime2");
 
                     b.Property<Guid>("RequestedByUserId")
@@ -1468,6 +1545,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .IsUnique()
                         .HasFilter("[HallId] IS NOT NULL AND [SlotStart] IS NOT NULL AND [Status] <> 0 AND [Status] <> 2 AND [Status] <> 3");
 
+                    b.HasIndex("RequestedByUserId", "SpeakerId")
+                        .IsUnique()
+                        .HasFilter("[Status] = 0");
+
                     b.HasIndex("SpeakerId", "SlotStart")
                         .IsUnique()
                         .HasFilter("[SlotStart] IS NOT NULL AND [Status] <> 0 AND [Status] <> 2 AND [Status] <> 3");
@@ -1494,7 +1575,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("BodyArabic")
                         .IsRequired()
                         .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
+                        .HasColumnType("nvarchar(2000)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -1511,9 +1593,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<DateTime>("End")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("ImageUrl")
-                        .HasMaxLength(1024)
-                        .HasColumnType("nvarchar(1024)");
+                    b.Property<Guid?>("ImageFileId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -1533,7 +1614,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("TitleArabic")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(256)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -1542,6 +1624,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ImageFileId");
 
                     b.HasIndex("IsActive", "Start", "End", "DisplayOrder");
 
@@ -1565,7 +1649,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("ContentArabic")
                         .IsRequired()
                         .HasMaxLength(8000)
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(max)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -1633,7 +1718,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("NameArabic")
                         .IsRequired()
                         .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(128)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("PhonePrefix")
                         .HasMaxLength(8)
@@ -1651,7 +1737,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("IsActive", "DisplayOrder");
 
-                    b.ToTable("Countries", (string)null);
+                    b.ToTable("Countries", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Countries_DelegationWindow", "[DelegationArrivalDate] IS NULL OR [DelegationDepartureDate] IS NULL OR [DelegationDepartureDate] >= [DelegationArrivalDate]");
+                        });
 
                     b.HasData(
                         new
@@ -2427,7 +2516,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .IsUnique()
                         .HasFilter("[IsActive] = 1");
 
-                    b.ToTable("SavedContacts", (string)null);
+                    b.ToTable("SavedContacts", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_SavedContacts_NotSelf", "[OwnerUserId] <> [SubjectUserId]");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.Contacts.VisitorShareToken", b =>
@@ -2453,8 +2545,15 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("Token")
                         .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
+                        .HasMaxLength(256)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(256)");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(64)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -2467,14 +2566,17 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Token")
+                    b.HasIndex("TokenHash")
                         .IsUnique();
 
                     b.HasIndex("UserId")
                         .IsUnique()
                         .HasFilter("[IsActive] = 1");
 
-                    b.ToTable("VisitorShareTokens", (string)null);
+                    b.ToTable("VisitorShareTokens", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_VisitorShareTokens_RevocationPin", "([IsActive] = 1 AND [RevokedAt] IS NULL) OR ([IsActive] = 0 AND [RevokedAt] IS NOT NULL)");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.Editions.EventEdition", b =>
@@ -2492,15 +2594,15 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<DateTime>("OpenedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid?>("OpenedByUserId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<int>("Year")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
-                    b.ToTable("EventEdition", (string)null);
+                    b.ToTable("EventEdition", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_EventEdition_Year", "[Year] BETWEEN 2000 AND 2999");
+                        });
 
                     b.HasData(
                         new
@@ -2585,7 +2687,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("DescriptionArabic")
                         .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
+                        .HasColumnType("nvarchar(2048)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<Guid?>("ExhibitorId")
                         .HasColumnType("uniqueidentifier");
@@ -2596,13 +2699,17 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("ExhibitorNameArabic")
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(256)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<Guid?>("HallId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
+
+                    b.Property<Guid?>("LogoFileId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<double?>("MapX")
                         .HasColumnType("float");
@@ -2618,7 +2725,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("NameArabic")
                         .IsRequired()
                         .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(128)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("OfficerCity")
                         .HasMaxLength(128)
@@ -2626,7 +2734,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("OfficerCityArabic")
                         .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(128)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<int?>("OfficerCountryId")
                         .HasColumnType("int");
@@ -2659,7 +2768,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("OfficerNameArabic")
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(256)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("OfficerPhone")
                         .HasMaxLength(32)
@@ -2683,7 +2793,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("SectorArabic")
                         .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(128)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -2702,9 +2813,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("IsActive");
 
+                    b.HasIndex("LogoFileId");
+
                     b.HasIndex("OfficerCountryId");
 
-                    b.ToTable("Booths", (string)null);
+                    b.ToTable("Booths", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Booths_OfficerCoordinates", "([OfficerLatitude] IS NULL AND [OfficerLongitude] IS NULL) OR ([OfficerLatitude] IS NOT NULL AND [OfficerLongitude] IS NOT NULL AND [OfficerLatitude] >= -90 AND [OfficerLatitude] <= 90 AND [OfficerLongitude] >= -180 AND [OfficerLongitude] <= 180)");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.Exhibitors.Exhibitor", b =>
@@ -2719,7 +2835,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("CityArabic")
                         .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(128)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("ContactEmail")
                         .HasMaxLength(320)
@@ -2759,6 +2876,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
+                    b.Property<Guid?>("LogoFileId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<double?>("Longitude")
                         .HasColumnType("float");
 
@@ -2770,7 +2890,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("NameArabic")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(256)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("PhoneSecondary")
                         .HasMaxLength(32)
@@ -2797,9 +2918,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("CountryId");
 
+                    b.HasIndex("LogoFileId");
+
                     b.HasIndex("IsActive", "NameArabic");
 
-                    b.ToTable("Exhibitors", (string)null);
+                    b.ToTable("Exhibitors", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Exhibitors_Coordinates", "([Latitude] IS NULL AND [Longitude] IS NULL) OR ([Latitude] IS NOT NULL AND [Longitude] IS NOT NULL AND [Latitude] >= -90 AND [Latitude] <= 90 AND [Longitude] >= -180 AND [Longitude] <= 180)");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.Exhibitors.ExhibitorMembership", b =>
@@ -2916,7 +3042,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("AnswerArabic")
                         .IsRequired()
                         .HasMaxLength(4000)
-                        .HasColumnType("nvarchar(4000)");
+                        .HasColumnType("nvarchar(4000)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -2944,7 +3071,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("QuestionArabic")
                         .IsRequired()
                         .HasMaxLength(512)
-                        .HasColumnType("nvarchar(512)");
+                        .HasColumnType("nvarchar(512)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -2988,7 +3116,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("NameArabic")
                         .IsRequired()
                         .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(128)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -3069,7 +3198,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("TextArabic")
                         .IsRequired()
                         .HasMaxLength(512)
-                        .HasColumnType("nvarchar(512)");
+                        .HasColumnType("nvarchar(512)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -3115,7 +3245,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("NameArabic")
                         .IsRequired()
                         .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(128)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<Guid>("RatingTypeId")
                         .HasColumnType("uniqueidentifier");
@@ -3177,6 +3308,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("RatingTypeId");
 
+                    b.HasIndex("TargetId", "IsActive");
+
                     b.HasIndex("UserId", "RatingTypeId", "TargetId")
                         .IsUnique();
 
@@ -3206,7 +3339,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("CommentLabelArabic")
                         .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(128)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -3237,7 +3371,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("NameArabic")
                         .IsRequired()
                         .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(128)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<int>("Scope")
                         .HasColumnType("int");
@@ -3296,6 +3431,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<bool>("IsEncrypted")
                         .HasColumnType("bit");
 
+                    b.Property<byte?>("KekVersion")
+                        .HasColumnType("tinyint");
+
                     b.Property<string>("OriginalFileName")
                         .HasMaxLength(260)
                         .HasColumnType("nvarchar(260)");
@@ -3309,7 +3447,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<DateTime?>("RetainUntil")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime?>("SecureDestroyed")
+                    b.Property<DateTime?>("SecureDestroyedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<int>("SensitivityTier")
@@ -3320,7 +3458,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("Sha256")
                         .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
+                        .IsUnicode(false)
+                        .HasColumnType("char(64)")
+                        .IsFixedLength();
 
                     b.Property<long?>("SizeBytes")
                         .HasColumnType("bigint");
@@ -3342,6 +3482,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("CreatedBy");
 
+                    b.HasIndex("KekVersion")
+                        .HasFilter("[IsEncrypted] = 1");
+
                     b.HasIndex("RetainUntil")
                         .HasFilter("[IsActive] = 1 AND [RetainUntil] IS NOT NULL");
 
@@ -3350,7 +3493,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("Service", "IsActive");
 
-                    b.ToTable("StoredFiles", (string)null);
+                    b.HasIndex("Service", "OwnerEntityId")
+                        .IsUnique()
+                        .HasFilter("[IsActive] = 1 AND [OwnerEntityId] IS NOT NULL AND [Service] IN (0, 4, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17, 23, 24)");
+
+                    b.ToTable("StoredFiles", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_StoredFiles_SizeBytes", "[SizeBytes] IS NULL OR [SizeBytes] > 0");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.Media.MediaItem", b =>
@@ -3365,7 +3515,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("AlbumArabic")
                         .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("nvarchar(200)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -3388,16 +3539,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<int>("Kind")
                         .HasColumnType("int");
 
-                    b.Property<Guid?>("ThumbnailFileId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("Title")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("TitleArabic")
                         .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("nvarchar(200)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -3405,11 +3554,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("Url")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
+                    b.Property<Guid?>("VideoFileId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ImageFileId");
+
+                    b.HasIndex("VideoFileId");
 
                     b.HasIndex("IsActive", "Album", "DisplayOrder");
 
@@ -3436,6 +3588,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
+                    b.Property<Guid?>("PairHighUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("PairLowUserId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<Guid>("RequesterUserId")
                         .HasColumnType("uniqueidentifier");
 
@@ -3460,7 +3618,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("TargetUserId");
 
-                    b.ToTable("Connections", (string)null);
+                    b.HasIndex("PairLowUserId", "PairHighUserId")
+                        .IsUnique()
+                        .HasFilter("[IsActive] = 1 AND [PairLowUserId] IS NOT NULL");
+
+                    b.ToTable("Connections", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Connections_NotSelf", "[RequesterUserId] <> [TargetUserId]");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.Notifications.NotificationBroadcast", b =>
@@ -3481,7 +3646,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("BodyArabic")
                         .IsRequired()
                         .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
+                        .HasColumnType("nvarchar(2000)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime?>("CompletedAt")
                         .HasColumnType("datetime2");
@@ -3534,7 +3700,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("TitleArabic")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("nvarchar(200)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<int>("TotalRecipients")
                         .HasColumnType("int");
@@ -3543,7 +3710,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("Status", "CreatedAt");
 
-                    b.ToTable("NotificationBroadcasts");
+                    b.ToTable("NotificationBroadcasts", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_NotificationBroadcasts_TargetArc", "([TargetMode] = 'Session' AND [SessionId] IS NOT NULL AND [AudienceScope] IS NULL) OR ([TargetMode] = 'Audience' AND [AudienceScope] IS NOT NULL AND [SessionId] IS NULL)");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.Operations.ArchiveVisibility", b =>
@@ -3616,8 +3786,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasColumnType("nvarchar(128)");
 
                     b.Property<string>("CommercialRegistration")
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
+                        .HasMaxLength(700)
+                        .HasColumnType("nvarchar(700)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -3642,7 +3812,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("NameArabic")
                         .IsRequired()
                         .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
+                        .HasColumnType("nvarchar(150)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("Phone")
                         .HasMaxLength(32)
@@ -3671,6 +3842,17 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.HasIndex("IsActive", "NameArabic");
 
                     b.ToTable("Organisations", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("a17e9c42-0b6d-4f58-9e31-7c2a8d5f60b4"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedBy = new Guid("00000000-0000-0000-0000-000000000000"),
+                            IsActive = true,
+                            Name = "Other",
+                            NameArabic = "أخرى"
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.Organization.OrganizationAboutItem", b =>
@@ -3705,7 +3887,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("TextArabic")
                         .IsRequired()
                         .HasMaxLength(4000)
-                        .HasColumnType("nvarchar(4000)");
+                        .HasColumnType("nvarchar(4000)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -3715,7 +3898,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("TitleArabic")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(256)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -3759,7 +3943,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("NameArabic")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(256)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<Guid>("OrganizationProfileId")
                         .HasColumnType("uniqueidentifier");
@@ -3777,7 +3962,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("ValueArabic")
                         .HasMaxLength(1024)
-                        .HasColumnType("nvarchar(1024)");
+                        .HasColumnType("nvarchar(1024)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.HasKey("Id");
 
@@ -3792,9 +3978,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("BackgroundVideoUrl")
-                        .HasMaxLength(1024)
-                        .HasColumnType("nvarchar(1024)");
+                    b.Property<Guid?>("BackgroundVideoFileId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Bio")
                         .HasMaxLength(4000)
@@ -3802,7 +3987,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("BioArabic")
                         .HasMaxLength(4000)
-                        .HasColumnType("nvarchar(4000)");
+                        .HasColumnType("nvarchar(4000)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("ContactEmail")
                         .HasMaxLength(256)
@@ -3821,9 +4007,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("CurrentYear")
-                        .HasColumnType("int");
 
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("datetime2");
@@ -3853,9 +4036,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(1024)
                         .HasColumnType("nvarchar(1024)");
 
-                    b.Property<string>("LiveStreamUrl")
-                        .HasMaxLength(1024)
-                        .HasColumnType("nvarchar(1024)");
+                    b.Property<Guid?>("LiveStreamFileId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("LocationText")
                         .HasMaxLength(512)
@@ -3863,7 +4045,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("LocationTextArabic")
                         .HasMaxLength(512)
-                        .HasColumnType("nvarchar(512)");
+                        .HasColumnType("nvarchar(512)")
+                        .UseCollation("Arabic_CI_AI");
+
+                    b.Property<Guid?>("LogoFileId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal?>("Longitude")
                         .HasPrecision(10, 6)
@@ -3877,7 +4063,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("NameArabic")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(256)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<bool>("PartnerDirectoryEnabled")
                         .ValueGeneratedOnAdd()
@@ -3890,10 +4077,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("RegistrationSuccessMessageArabic")
                         .HasMaxLength(1024)
-                        .HasColumnType("nvarchar(1024)");
-
-                    b.Property<DateTime?>("ReleaseDate")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("nvarchar(1024)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("Slogan")
                         .HasMaxLength(512)
@@ -3901,7 +4086,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("SloganArabic")
                         .HasMaxLength(512)
-                        .HasColumnType("nvarchar(512)");
+                        .HasColumnType("nvarchar(512)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("SnapchatUrl")
                         .HasMaxLength(1024)
@@ -3926,7 +4112,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("TitleArabic")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(256)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -3938,9 +4125,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
 
-                    b.Property<DateTime?>("VersionDate")
-                        .HasColumnType("datetime2");
-
                     b.Property<string>("XUrl")
                         .HasMaxLength(1024)
                         .HasColumnType("nvarchar(1024)");
@@ -3951,7 +4135,18 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasKey("Id");
 
-                    b.ToTable("OrganizationProfile", (string)null);
+                    b.HasIndex("BackgroundVideoFileId");
+
+                    b.HasIndex("LiveStreamFileId");
+
+                    b.HasIndex("LogoFileId");
+
+                    b.ToTable("OrganizationProfile", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_OrganizationProfile_Coordinates", "([Latitude] IS NULL OR ([Latitude] >= -90 AND [Latitude] <= 90)) AND ([Longitude] IS NULL OR ([Longitude] >= -180 AND [Longitude] <= 180))");
+
+                            t.HasCheckConstraint("CK_OrganizationProfile_EventWindow", "[EventStartDate] IS NULL OR [EventEndDate] IS NULL OR [EventEndDate] >= [EventStartDate]");
+                        });
 
                     b.HasData(
                         new
@@ -3959,9 +4154,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             Id = new Guid("00000000-0000-0000-0000-000000000003"),
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             CreatedBy = new Guid("00000000-0000-0000-0000-000000000000"),
-                            CurrentYear = 2026,
-                            EventEndDate = new DateTime(2026, 4, 30, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            EventStartDate = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            EventEndDate = new DateTime(2026, 11, 25, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            EventStartDate = new DateTime(2026, 11, 23, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             IsActive = true,
                             LocationText = "Saudi Arabia",
                             LocationTextArabic = "السعودية",
@@ -3975,6 +4169,56 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             TitleArabic = "الملتقى البحري السعودي الدولي",
                             Version = "1.0.0"
                         });
+                });
+
+            modelBuilder.Entity("SIMF.Domain.Profiles.ProfileIdentityDocument", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<string>("Number")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("NumberHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<Guid>("ProfileId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProfileId", "Kind")
+                        .IsUnique();
+
+                    b.ToTable("ProfileIdentityDocuments", (string)null);
                 });
 
             modelBuilder.Entity("SIMF.Domain.Profiles.UserInterest", b =>
@@ -4006,7 +4250,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("NameArabic")
                         .IsRequired()
                         .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(128)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -4104,7 +4349,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("HonorificArabic")
                         .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
+                        .HasColumnType("nvarchar(64)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<Guid?>("IdImageFileId")
                         .HasColumnType("uniqueidentifier");
@@ -4112,14 +4358,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("InternationalMobile")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
-
-                    b.Property<string>("IqamaNumber")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<string>("IqamaNumberHash")
-                        .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -4136,11 +4374,16 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("JobTitleArabic")
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("nvarchar(100)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("MawjId")
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("MobileNumber")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -4150,15 +4393,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("NameArabic")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("NationalId")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<string>("NationalIdHash")
-                        .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
+                        .HasColumnType("nvarchar(50)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<int>("NationalityId")
                         .HasColumnType("int");
@@ -4166,13 +4402,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid?>("OrganisationId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("PassportNumber")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<string>("PassportNumberHash")
-                        .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
+                    b.Property<string>("OrganisationOther")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
 
                     b.Property<string>("PlaceOfBirth")
                         .IsRequired()
@@ -4207,7 +4439,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("RejectionReasonArabic")
                         .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("nvarchar(500)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("SaudiMobile")
                         .HasMaxLength(256)
@@ -4244,21 +4477,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("IdImageFileId");
 
-                    b.HasIndex("IqamaNumberHash")
-                        .IsUnique()
-                        .HasFilter("[IqamaNumberHash] IS NOT NULL");
-
-                    b.HasIndex("NationalIdHash")
-                        .IsUnique()
-                        .HasFilter("[NationalIdHash] IS NOT NULL");
-
                     b.HasIndex("NationalityId");
 
                     b.HasIndex("OrganisationId");
-
-                    b.HasIndex("PassportNumberHash")
-                        .IsUnique()
-                        .HasFilter("[PassportNumberHash] IS NOT NULL");
 
                     b.HasIndex("ProfileTypeId");
 
@@ -4278,7 +4499,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("VipPhotoFileId");
 
-                    b.ToTable("UserProfiles", (string)null);
+                    b.ToTable("UserProfiles", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_UserProfiles_AccessibilityTextSize", "[AccessibilityTextSize] IN ('small', 'normal', 'large', 'extraLarge')");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.Profiles.UserProfileType", b =>
@@ -4286,11 +4510,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<bool>("AllowsVipMeetingSlots")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false);
 
                     b.Property<short>("Code")
                         .ValueGeneratedOnAdd()
@@ -4319,6 +4538,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasColumnType("bit")
                         .HasDefaultValue(true);
 
+                    b.Property<bool>("IsVipTier")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
                     b.Property<string>("MobileAppRole")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
@@ -4334,7 +4558,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("NameArabic")
                         .IsRequired()
                         .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(128)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("PageColor")
                         .IsRequired()
@@ -4403,7 +4628,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("UserId", "CapturedAt");
 
-                    b.ToTable("DevicePositionPings", (string)null);
+                    b.ToTable("DevicePositionPings", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_DevicePositionPings_Coordinates", "[Latitude] >= -90 AND [Latitude] <= 90 AND [Longitude] >= -180 AND [Longitude] <= 180");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.Programme.Hall", b =>
@@ -4432,7 +4660,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("EquipmentNotes")
+                    b.Property<string>("FacilityNotes")
                         .HasMaxLength(1024)
                         .HasColumnType("nvarchar(1024)");
 
@@ -4460,7 +4688,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("NameArabic")
                         .IsRequired()
                         .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(128)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<int>("Purpose")
                         .HasColumnType("int");
@@ -4485,7 +4714,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             t.HasCheckConstraint("CK_Halls_ArrivalGrace", "[ArrivalGraceMinutes] IS NULL OR ([ArrivalGraceMinutes] >= 0 AND [ArrivalGraceMinutes] <= 240)");
 
-                            t.HasCheckConstraint("CK_Halls_Geofence", "([GeofenceCenterLat] IS NULL AND [GeofenceCenterLon] IS NULL AND [GeofenceRadiusMeters] IS NULL) OR ([GeofenceCenterLat] IS NOT NULL AND [GeofenceCenterLon] IS NOT NULL AND [GeofenceRadiusMeters] IS NOT NULL AND [GeofenceRadiusMeters] > 0)");
+                            t.HasCheckConstraint("CK_Halls_Capacity", "[Capacity] >= 0");
+
+                            t.HasCheckConstraint("CK_Halls_Geofence", "([GeofenceCenterLat] IS NULL AND [GeofenceCenterLon] IS NULL AND [GeofenceRadiusMeters] IS NULL) OR ([GeofenceCenterLat] IS NOT NULL AND [GeofenceCenterLon] IS NOT NULL AND [GeofenceRadiusMeters] IS NOT NULL AND [GeofenceCenterLat] >= -90 AND [GeofenceCenterLat] <= 90 AND [GeofenceCenterLon] >= -180 AND [GeofenceCenterLon] <= 180 AND [GeofenceRadiusMeters] > 0 AND [GeofenceRadiusMeters] <= 100000)");
                         });
                 });
 
@@ -4500,9 +4731,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<DateTime>("Enter")
                         .HasColumnType("datetime2");
-
-                    b.Property<Guid>("HallId")
-                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime?>("Leave")
                         .HasColumnType("datetime2");
@@ -4523,13 +4751,16 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("UserProfileId");
 
-                    b.HasIndex("HallId", "Leave");
-
                     b.HasIndex("SessionId", "UserProfileId")
                         .IsUnique()
                         .HasFilter("[Leave] IS NULL");
 
-                    b.ToTable("HallAttendances", (string)null);
+                    b.HasIndex("SessionId", "UserProfileId", "Leave");
+
+                    b.ToTable("HallAttendances", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_HallAttendances_LeaveOrder", "[Leave] IS NULL OR [Leave] >= [Enter]");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.Programme.ProgrammeDay", b =>
@@ -4553,6 +4784,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("int");
 
+                    b.Property<Guid?>("ImageFileId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
@@ -4567,7 +4801,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("TitleArabic")
                         .IsRequired()
                         .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(128)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -4580,6 +4815,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.HasIndex("Date")
                         .IsUnique()
                         .HasFilter("[IsActive] = 1");
+
+                    b.HasIndex("ImageFileId");
 
                     b.HasIndex("IsActive", "DisplayOrder", "Date");
 
@@ -4621,7 +4858,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("DescriptionArabic")
                         .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
+                        .HasColumnType("nvarchar(2048)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime>("End")
                         .HasColumnType("datetime2");
@@ -4638,7 +4876,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("LanguageArabic")
                         .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
+                        .HasColumnType("nvarchar(64)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("LiveCaptions")
                         .HasMaxLength(2048)
@@ -4646,7 +4885,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("LiveCaptionsArabic")
                         .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
+                        .HasColumnType("nvarchar(2048)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("LiveNotice")
                         .HasMaxLength(512)
@@ -4654,44 +4894,25 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("LiveNoticeArabic")
                         .HasMaxLength(512)
-                        .HasColumnType("nvarchar(512)");
+                        .HasColumnType("nvarchar(512)")
+                        .UseCollation("Arabic_CI_AI");
 
-                    b.Property<string>("LiveSignLanguageUrl")
-                        .HasMaxLength(1024)
-                        .HasColumnType("nvarchar(1024)");
+                    b.Property<Guid?>("LiveSignLanguageFileId")
+                        .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("LiveStreamUrl")
-                        .HasMaxLength(1024)
-                        .HasColumnType("nvarchar(1024)");
+                    b.Property<Guid?>("LiveStreamFileId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime?>("PublishedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime?>("RatingPromptSent")
+                    b.Property<DateTime?>("RatingPromptSentAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("RecordingContentType")
-                        .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
-
-                    b.Property<string>("RecordingFileName")
-                        .HasMaxLength(260)
-                        .HasColumnType("nvarchar(260)");
-
-                    b.Property<long?>("RecordingSizeBytes")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("RecordingStoredFileName")
-                        .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
-
-                    b.Property<DateTime?>("RecordingUploadedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("RecordingUploadedByUserId")
+                    b.Property<Guid?>("RecordingFileId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime?>("ReminderSent")
+                    b.Property<DateTime?>("ReminderSentAt")
                         .HasColumnType("datetime2");
 
                     b.Property<int?>("SeatSelectionModeOverride")
@@ -4711,7 +4932,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("TitleArabic")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(256)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<int?>("Type")
                         .HasColumnType("int");
@@ -4729,6 +4951,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.HasIndex("Code")
                         .IsUnique();
 
+                    b.HasIndex("LiveSignLanguageFileId");
+
+                    b.HasIndex("LiveStreamFileId");
+
+                    b.HasIndex("RecordingFileId");
+
                     b.HasIndex("HallId", "Start");
 
                     b.HasIndex("IsActive", "Start");
@@ -4738,6 +4966,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.ToTable("Sessions", null, t =>
                         {
                             t.HasCheckConstraint("CK_Sessions_ArrivalGrace", "[ArrivalGraceMinutesOverride] IS NULL OR ([ArrivalGraceMinutesOverride] >= 0 AND [ArrivalGraceMinutesOverride] <= 240)");
+
+                            t.HasCheckConstraint("CK_Sessions_CapacityOverride", "[CapacityOverride] IS NULL OR [CapacityOverride] >= 0");
+
+                            t.HasCheckConstraint("CK_Sessions_PublishedAtPin", "([Status] = 3 AND [PublishedAt] IS NOT NULL) OR ([Status] <> 3 AND [PublishedAt] IS NULL)");
+
+                            t.HasCheckConstraint("CK_Sessions_RecordedHasRecording", "[Status] NOT IN (2, 3) OR [RecordingFileId] IS NOT NULL");
 
                             t.HasCheckConstraint("CK_Sessions_TimeWindow", "[End] > [Start]");
                         });
@@ -4772,7 +5006,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("NameArabic")
                         .IsRequired()
                         .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(128)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -4848,7 +5083,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("TextArabic")
                         .IsRequired()
                         .HasMaxLength(512)
-                        .HasColumnType("nvarchar(512)");
+                        .HasColumnType("nvarchar(512)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -4858,7 +5094,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasKey("Id");
 
-                    b.HasIndex("SessionId", "IsActive", "DisplayOrder");
+                    b.HasIndex("SessionId", "DisplayOrder");
 
                     b.ToTable("SessionOutcomes", (string)null);
                 });
@@ -4892,7 +5128,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("AiDraftFullTextArabic")
                         .HasMaxLength(8000)
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(max)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime?>("AiDraftGeneratedAt")
                         .HasColumnType("datetime2");
@@ -4918,7 +5155,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("FullTextArabic")
                         .IsRequired()
                         .HasMaxLength(8000)
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(max)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -4931,7 +5169,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("KeyPointsArabic")
                         .IsRequired()
                         .HasMaxLength(4000)
-                        .HasColumnType("nvarchar(4000)");
+                        .HasColumnType("nvarchar(4000)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime?>("PublishedAt")
                         .HasColumnType("datetime2");
@@ -4947,7 +5186,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("RecommendationsArabic")
                         .IsRequired()
                         .HasMaxLength(4000)
-                        .HasColumnType("nvarchar(4000)");
+                        .HasColumnType("nvarchar(4000)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime?>("ReviewSubmittedAt")
                         .HasColumnType("datetime2");
@@ -4966,11 +5206,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("SpeakersArabic")
                         .IsRequired()
                         .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
+                        .HasColumnType("nvarchar(1000)")
+                        .UseCollation("Arabic_CI_AI");
 
-                    b.Property<string>("SummaryVideoUrl")
-                        .HasMaxLength(1024)
-                        .HasColumnType("nvarchar(1024)");
+                    b.Property<Guid?>("SummaryVideoFileId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -4983,10 +5223,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.HasIndex("SessionId")
                         .IsUnique();
 
-                    b.HasIndex("IsActive", "PublishedAt");
+                    b.HasIndex("SummaryVideoFileId");
 
                     b.ToTable("SessionSummaries", null, t =>
                         {
+                            t.HasCheckConstraint("CK_SessionSummaries_PublishPin", "([PublishedAt] IS NULL AND [PublishedByUserId] IS NULL) OR ([PublishedAt] IS NOT NULL AND [PublishedByUserId] IS NOT NULL AND [ApprovedAt] IS NOT NULL)");
+
                             t.HasCheckConstraint("CK_SessionSummaries_ReviewOrder", "[ApprovedAt] IS NULL OR ([ReviewSubmittedAt] IS NOT NULL AND [ApprovedAt] >= [ReviewSubmittedAt])");
                         });
                 });
@@ -5024,7 +5266,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("AwardsArabic")
                         .HasMaxLength(1024)
-                        .HasColumnType("nvarchar(1024)");
+                        .HasColumnType("nvarchar(1024)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("Bio")
                         .HasMaxLength(2048)
@@ -5032,7 +5275,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("BioArabic")
                         .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
+                        .HasColumnType("nvarchar(2048)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("City")
                         .HasMaxLength(128)
@@ -5040,7 +5284,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("CityArabic")
                         .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(128)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("Code")
                         .IsRequired()
@@ -5095,7 +5340,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("NameArabic")
                         .IsRequired()
                         .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(128)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("PhonePrimary")
                         .HasMaxLength(32)
@@ -5105,9 +5351,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(32)
                         .HasColumnType("nvarchar(32)");
 
-                    b.Property<string>("PhotoRelativePath")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                    b.Property<Guid?>("PhotoFileId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Qualifications")
                         .HasMaxLength(1024)
@@ -5115,7 +5360,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("QualificationsArabic")
                         .HasMaxLength(1024)
-                        .HasColumnType("nvarchar(1024)");
+                        .HasColumnType("nvarchar(1024)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("Rank")
                         .HasMaxLength(256)
@@ -5123,7 +5369,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("RankArabic")
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(256)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("TrainingExperience")
                         .HasMaxLength(1024)
@@ -5131,7 +5378,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("TrainingExperienceArabic")
                         .HasMaxLength(1024)
-                        .HasColumnType("nvarchar(1024)");
+                        .HasColumnType("nvarchar(1024)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -5157,11 +5405,20 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("CountryId");
 
-                    b.HasIndex("UserProfileId");
+                    b.HasIndex("PhotoFileId");
+
+                    b.HasIndex("UserProfileId")
+                        .IsUnique()
+                        .HasFilter("[UserProfileId] IS NOT NULL");
 
                     b.HasIndex("IsActive", "DisplayOrder");
 
-                    b.ToTable("Speakers", (string)null);
+                    b.ToTable("Speakers", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Speakers_DisplayOrder", "[DisplayOrder] >= 0");
+
+                            t.HasCheckConstraint("CK_Speakers_Location", "([Latitude] IS NULL AND [Longitude] IS NULL) OR ([Latitude] IS NOT NULL AND [Longitude] IS NOT NULL AND [Latitude] >= -90 AND [Latitude] <= 90 AND [Longitude] >= -180 AND [Longitude] <= 180)");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.Programme.SpeakerPresentation", b =>
@@ -5169,11 +5426,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("ContentType")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -5184,27 +5436,17 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("FileName")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
                     b.Property<Guid>("SessionId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<long>("SizeBytes")
-                        .HasColumnType("bigint");
-
                     b.Property<Guid>("SpeakerId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("StoredFileName")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                    b.Property<Guid>("StoredFileId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -5212,12 +5454,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("UploadedByUserId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.HasKey("Id");
 
                     b.HasIndex("SessionId");
+
+                    b.HasIndex("StoredFileId");
 
                     b.HasIndex("SpeakerId", "IsActive");
 
@@ -5250,7 +5491,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("DescriptionArabic")
                         .HasMaxLength(1024)
-                        .HasColumnType("nvarchar(1024)");
+                        .HasColumnType("nvarchar(1024)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("int");
@@ -5266,7 +5508,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("NameArabic")
                         .IsRequired()
                         .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(128)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("PageColor")
                         .IsRequired()
@@ -5286,7 +5529,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("IsActive", "DisplayOrder");
 
-                    b.ToTable("Themes", (string)null);
+                    b.ToTable("Themes", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Themes_DisplayOrder", "[DisplayOrder] >= 0");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.PublicRelations.Invitation", b =>
@@ -5337,7 +5583,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("IsActive", "State", "CreatedAt");
 
-                    b.ToTable("Invitations", (string)null);
+                    b.ToTable("Invitations", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Invitations_ResponsePin", "([State] = 0 AND [RespondedAt] IS NULL) OR ([State] <> 0 AND [RespondedAt] IS NOT NULL)");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.PublicRelations.MediaPartner", b =>
@@ -5352,7 +5601,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("CityArabic")
                         .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(128)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<int?>("CountryId")
                         .HasColumnType("int");
@@ -5391,9 +5641,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
-                    b.Property<string>("LogoRelativePath")
-                        .HasMaxLength(512)
-                        .HasColumnType("nvarchar(512)");
+                    b.Property<Guid?>("LogoFileId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<double?>("Longitude")
                         .HasColumnType("float");
@@ -5406,7 +5655,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("NameArabic")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(256)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("PhonePrimary")
                         .HasMaxLength(32)
@@ -5434,9 +5684,17 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("CountryId");
 
+                    b.HasIndex("LogoFileId");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
                     b.HasIndex("IsActive", "DisplayOrder");
 
-                    b.ToTable("MediaPartners", (string)null);
+                    b.ToTable("MediaPartners", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_MediaPartners_Coordinates", "([Latitude] IS NULL AND [Longitude] IS NULL) OR ([Latitude] IS NOT NULL AND [Longitude] IS NOT NULL AND [Latitude] >= -90 AND [Latitude] <= 90 AND [Longitude] >= -180 AND [Longitude] <= 180)");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.PublicRelations.News", b =>
@@ -5453,7 +5711,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("BodyArabic")
                         .IsRequired()
                         .HasMaxLength(8000)
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(max)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("Category")
                         .IsRequired()
@@ -5463,7 +5722,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("CategoryArabic")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("nvarchar(100)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -5483,11 +5743,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("ExcerptArabic")
                         .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("nvarchar(500)")
+                        .UseCollation("Arabic_CI_AI");
 
-                    b.Property<string>("ImageRelativePath")
-                        .HasMaxLength(512)
-                        .HasColumnType("nvarchar(512)");
+                    b.Property<Guid?>("ImageFileId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -5503,7 +5763,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("TitleArabic")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("nvarchar(200)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -5512,6 +5773,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ImageFileId");
 
                     b.HasIndex("IsActive", "PublishedAt");
 
@@ -5548,7 +5811,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("NameArabic")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(256)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<int>("SortOrder")
                         .HasColumnType("int");
@@ -5693,7 +5957,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.HasIndex("HallId")
                         .IsUnique();
 
-                    b.ToTable("HallSeatLayouts", (string)null);
+                    b.ToTable("HallSeatLayouts", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_HallSeatLayouts_SeatsPerRow", "[SeatsPerRow] >= 1 AND [SeatsPerRow] <= 80");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.SeatReservations.SeatReservation", b =>
@@ -5708,34 +5975,28 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid>("CreatedByUserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime?>("Expires")
-                        .HasColumnType("datetime2");
-
                     b.Property<string>("GuestHint")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
                     b.Property<string>("GuestHintArabic")
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(256)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<int>("Kind")
                         .HasColumnType("int");
 
-                    b.Property<string>("RejectionReason")
-                        .HasMaxLength(512)
-                        .HasColumnType("nvarchar(512)");
+                    b.Property<DateTime?>("NoShowReleaseAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("ReleasedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid?>("ReservedForProfileId")
+                    b.Property<Guid?>("ReleasedByUserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime?>("ReviewedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("ReviewedByUserId")
+                    b.Property<Guid?>("ReservedForProfileId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("RowLabel")
@@ -5753,8 +6014,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Expires")
-                        .HasFilter("[ReleasedAt] IS NULL AND [Expires] IS NOT NULL");
+                    b.HasIndex("NoShowReleaseAt")
+                        .HasFilter("[ReleasedAt] IS NULL AND [NoShowReleaseAt] IS NOT NULL");
 
                     b.HasIndex("ReservedForProfileId", "ReleasedAt");
 
@@ -5770,7 +6031,16 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .IsUnique()
                         .HasFilter("[ReleasedAt] IS NULL AND [RowLabel] IS NOT NULL");
 
-                    b.ToTable("SeatReservations", (string)null);
+                    b.ToTable("SeatReservations", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_SeatReservations_AdminBlockHasNoHolder", "([Kind] = 1 AND [ReservedForProfileId] IS NULL) OR ([Kind] <> 1 AND [ReservedForProfileId] IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_SeatReservations_ReleasePin", "[ReleasedAt] IS NULL OR [Status] = 3");
+
+                            t.HasCheckConstraint("CK_SeatReservations_SeatNumber", "[SeatNumber] >= 1");
+
+                            t.HasCheckConstraint("CK_SeatReservations_SeatPair", "([RowLabel] IS NULL AND [SeatNumber] IS NULL) OR ([RowLabel] IS NOT NULL AND [SeatNumber] IS NOT NULL)");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.SessionQuestions.SessionModerator", b =>
@@ -5817,9 +6087,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid?>("EscalatedByUserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<bool>("IsHidden")
-                        .HasColumnType("bit");
-
                     b.Property<bool>("IsPushed")
                         .HasColumnType("bit");
 
@@ -5854,15 +6121,18 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasKey("Id");
 
-                    b.HasIndex("SubmittedByUserId");
-
                     b.HasIndex("Status", "CreatedAt");
 
-                    b.HasIndex("SessionId", "IsHidden", "Order");
+                    b.HasIndex("SessionId", "IsPushed", "Order");
 
                     b.HasIndex("SessionId", "Status", "Order");
 
-                    b.ToTable("SessionQuestions", (string)null);
+                    b.ToTable("SessionQuestions", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_SessionQuestions_EscalationTrio", "([AssignedToRole] IS NULL AND [EscalatedByUserId] IS NULL AND [EscalatedAt] IS NULL) OR ([AssignedToRole] IS NOT NULL AND [EscalatedByUserId] IS NOT NULL AND [EscalatedAt] IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_SessionQuestions_PushedPair", "([IsPushed] = 0 AND [PushedAt] IS NULL) OR ([IsPushed] = 1 AND [PushedAt] IS NOT NULL)");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.Sponsors.Sponsor", b =>
@@ -5877,7 +6147,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("AboutArabic")
                         .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
+                        .HasColumnType("nvarchar(2048)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("City")
                         .HasMaxLength(128)
@@ -5885,7 +6156,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("CityArabic")
                         .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(128)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<int?>("CountryId")
                         .HasColumnType("int");
@@ -5924,9 +6196,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
-                    b.Property<string>("LogoRelativePath")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                    b.Property<Guid?>("LogoFileId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<double?>("Longitude")
                         .HasColumnType("float");
@@ -5939,7 +6210,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("NameArabic")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(256)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<string>("PhonePrimary")
                         .HasMaxLength(32)
@@ -5955,7 +6227,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("TaglineArabic")
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(256)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<int>("Tier")
                         .HasColumnType("int");
@@ -5978,9 +6251,18 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("CountryId");
 
+                    b.HasIndex("LogoFileId");
+
+                    b.HasIndex("Tier", "NameArabic")
+                        .IsUnique()
+                        .HasFilter("[IsActive] = 1");
+
                     b.HasIndex("IsActive", "Tier", "DisplayOrder");
 
-                    b.ToTable("Sponsors", (string)null);
+                    b.ToTable("Sponsors", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Sponsors_Coordinates", "([Latitude] IS NULL AND [Longitude] IS NULL) OR ([Latitude] IS NOT NULL AND [Longitude] IS NOT NULL AND [Latitude] >= -90 AND [Latitude] <= 90 AND [Longitude] >= -180 AND [Longitude] <= 180)");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.Support.ContactInquiry", b =>
@@ -6038,7 +6320,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("IsHandled", "CreatedAt");
 
-                    b.ToTable("ContactInquiries", (string)null);
+                    b.ToTable("ContactInquiries", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_ContactInquiries_HandledPin", "([IsHandled] = 0 AND [HandledAt] IS NULL AND [HandledByUserId] IS NULL) OR ([IsHandled] = 1 AND [HandledAt] IS NOT NULL AND [HandledByUserId] IS NOT NULL)");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.Venue.VenueMapNode", b =>
@@ -6076,7 +6361,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("LabelArabic")
                         .IsRequired()
                         .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(128)")
+                        .UseCollation("Arabic_CI_AI");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -6165,7 +6451,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasOne("SIMF.Domain.Profiles.UserProfile", "UserProfile")
                         .WithMany()
-                        .HasForeignKey("UserProfileId");
+                        .HasForeignKey("UserProfileId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Gate");
 
@@ -6181,6 +6468,16 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("SIMF.Domain.Archive.ArchiveEdition", b =>
+                {
+                    b.HasOne("SIMF.Domain.Files.StoredFile", "CoverImageFile")
+                        .WithMany()
+                        .HasForeignKey("CoverImageFileId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("CoverImageFile");
+                });
+
             modelBuilder.Entity("SIMF.Domain.Archive.ArchiveMediaItem", b =>
                 {
                     b.HasOne("SIMF.Domain.Archive.ArchiveEdition", "Edition")
@@ -6189,7 +6486,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("SIMF.Domain.Files.StoredFile", "MediaFile")
+                        .WithMany()
+                        .HasForeignKey("MediaFileId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Edition");
+
+                    b.Navigation("MediaFile");
                 });
 
             modelBuilder.Entity("SIMF.Domain.Archive.ArchivePastSpeaker", b =>
@@ -6205,7 +6509,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasForeignKey("CountryId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("SIMF.Domain.Files.StoredFile", "PhotoFile")
+                        .WithMany()
+                        .HasForeignKey("PhotoFileId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Edition");
+
+                    b.Navigation("PhotoFile");
                 });
 
             modelBuilder.Entity("SIMF.Domain.Archive.ArchiveSessionTitle", b =>
@@ -6217,6 +6528,23 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .IsRequired();
 
                     b.Navigation("Edition");
+                });
+
+            modelBuilder.Entity("SIMF.Domain.Badges.BadgeBatchItem", b =>
+                {
+                    b.HasOne("SIMF.Domain.Badges.BadgeBatch", "BadgeBatch")
+                        .WithMany("Items")
+                        .HasForeignKey("BadgeBatchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SIMF.Domain.Profiles.UserProfileType", null)
+                        .WithMany()
+                        .HasForeignKey("ProfileTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("BadgeBatch");
                 });
 
             modelBuilder.Entity("SIMF.Domain.BusinessMeetings.BusinessMeeting", b =>
@@ -6272,11 +6600,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
             modelBuilder.Entity("SIMF.Domain.BusinessMeetings.DelegationMeetingRequest", b =>
                 {
-                    b.HasOne("SIMF.Domain.BusinessMeetings.DelegationAvailabilityWindow", null)
-                        .WithMany()
-                        .HasForeignKey("AvailabilityWindowId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("SIMF.Domain.Programme.Hall", "Hall")
                         .WithMany()
                         .HasForeignKey("HallId")
@@ -6389,6 +6712,16 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Navigation("Speaker");
                 });
 
+            modelBuilder.Entity("SIMF.Domain.Cms.Banner", b =>
+                {
+                    b.HasOne("SIMF.Domain.Files.StoredFile", "ImageFile")
+                        .WithMany()
+                        .HasForeignKey("ImageFileId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ImageFile");
+                });
+
             modelBuilder.Entity("SIMF.Domain.Common.Country", b =>
                 {
                     b.HasOne("SIMF.Domain.Profiles.UserProfile", null)
@@ -6409,6 +6742,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasForeignKey("HallId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("SIMF.Domain.Files.StoredFile", "LogoFile")
+                        .WithMany()
+                        .HasForeignKey("LogoFileId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("SIMF.Domain.Common.Country", "OfficerCountry")
                         .WithMany()
                         .HasForeignKey("OfficerCountryId")
@@ -6417,6 +6755,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Navigation("Exhibitor");
 
                     b.Navigation("Hall");
+
+                    b.Navigation("LogoFile");
 
                     b.Navigation("OfficerCountry");
                 });
@@ -6428,7 +6768,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasForeignKey("CountryId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("SIMF.Domain.Files.StoredFile", "LogoFile")
+                        .WithMany()
+                        .HasForeignKey("LogoFileId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Country");
+
+                    b.Navigation("LogoFile");
                 });
 
             modelBuilder.Entity("SIMF.Domain.Exhibitors.ExhibitorMembership", b =>
@@ -6530,6 +6877,23 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Navigation("Type");
                 });
 
+            modelBuilder.Entity("SIMF.Domain.Media.MediaItem", b =>
+                {
+                    b.HasOne("SIMF.Domain.Files.StoredFile", "ImageFile")
+                        .WithMany()
+                        .HasForeignKey("ImageFileId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("SIMF.Domain.Files.StoredFile", "VideoFile")
+                        .WithMany()
+                        .HasForeignKey("VideoFileId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ImageFile");
+
+                    b.Navigation("VideoFile");
+                });
+
             modelBuilder.Entity("SIMF.Domain.Organization.OrganizationAboutItem", b =>
                 {
                     b.HasOne("SIMF.Domain.Organization.OrganizationProfile", "Profile")
@@ -6552,6 +6916,41 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Navigation("Profile");
                 });
 
+            modelBuilder.Entity("SIMF.Domain.Organization.OrganizationProfile", b =>
+                {
+                    b.HasOne("SIMF.Domain.Files.StoredFile", "BackgroundVideoFile")
+                        .WithMany()
+                        .HasForeignKey("BackgroundVideoFileId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("SIMF.Domain.Files.StoredFile", "LiveStreamFile")
+                        .WithMany()
+                        .HasForeignKey("LiveStreamFileId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("SIMF.Domain.Files.StoredFile", "LogoFile")
+                        .WithMany()
+                        .HasForeignKey("LogoFileId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("BackgroundVideoFile");
+
+                    b.Navigation("LiveStreamFile");
+
+                    b.Navigation("LogoFile");
+                });
+
+            modelBuilder.Entity("SIMF.Domain.Profiles.ProfileIdentityDocument", b =>
+                {
+                    b.HasOne("SIMF.Domain.Profiles.UserProfile", "Profile")
+                        .WithMany("IdentityDocuments")
+                        .HasForeignKey("ProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Profile");
+                });
+
             modelBuilder.Entity("SIMF.Domain.Profiles.UserProfile", b =>
                 {
                     b.HasOne("SIMF.Domain.Badges.BadgeBatch", "BadgeBatch")
@@ -6560,7 +6959,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("SIMF.Domain.Files.StoredFile", null)
+                    b.HasOne("SIMF.Domain.Files.StoredFile", "IdImageFile")
                         .WithMany()
                         .HasForeignKey("IdImageFileId")
                         .OnDelete(DeleteBehavior.Restrict);
@@ -6580,28 +6979,26 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasForeignKey("RegionId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("SIMF.Domain.Files.StoredFile", null)
+                    b.HasOne("SIMF.Domain.Files.StoredFile", "VipPhotoFile")
                         .WithMany()
                         .HasForeignKey("VipPhotoFileId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("BadgeBatch");
 
+                    b.Navigation("IdImageFile");
+
                     b.Navigation("Organisation");
 
                     b.Navigation("ProfileType");
 
                     b.Navigation("Region");
+
+                    b.Navigation("VipPhotoFile");
                 });
 
             modelBuilder.Entity("SIMF.Domain.Programme.HallAttendance", b =>
                 {
-                    b.HasOne("SIMF.Domain.Programme.Hall", "Hall")
-                        .WithMany()
-                        .HasForeignKey("HallId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("SIMF.Domain.Programme.Session", "Session")
                         .WithMany()
                         .HasForeignKey("SessionId")
@@ -6614,11 +7011,19 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Hall");
-
                     b.Navigation("Session");
 
                     b.Navigation("UserProfile");
+                });
+
+            modelBuilder.Entity("SIMF.Domain.Programme.ProgrammeDay", b =>
+                {
+                    b.HasOne("SIMF.Domain.Files.StoredFile", "ImageFile")
+                        .WithMany()
+                        .HasForeignKey("ImageFileId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ImageFile");
                 });
 
             modelBuilder.Entity("SIMF.Domain.Programme.Session", b =>
@@ -6634,9 +7039,30 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("SIMF.Domain.Files.StoredFile", "LiveSignLanguageFile")
+                        .WithMany()
+                        .HasForeignKey("LiveSignLanguageFileId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("SIMF.Domain.Files.StoredFile", "LiveStreamFile")
+                        .WithMany()
+                        .HasForeignKey("LiveStreamFileId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("SIMF.Domain.Files.StoredFile", "RecordingFile")
+                        .WithMany()
+                        .HasForeignKey("RecordingFileId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Category");
 
                     b.Navigation("Hall");
+
+                    b.Navigation("LiveSignLanguageFile");
+
+                    b.Navigation("LiveStreamFile");
+
+                    b.Navigation("RecordingFile");
                 });
 
             modelBuilder.Entity("SIMF.Domain.Programme.SessionFavourite", b =>
@@ -6688,7 +7114,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("SIMF.Domain.Files.StoredFile", "SummaryVideoFile")
+                        .WithMany()
+                        .HasForeignKey("SummaryVideoFileId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Session");
+
+                    b.Navigation("SummaryVideoFile");
                 });
 
             modelBuilder.Entity("SIMF.Domain.Programme.SessionTheme", b =>
@@ -6717,12 +7150,19 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasForeignKey("CountryId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("SIMF.Domain.Files.StoredFile", "PhotoFile")
+                        .WithMany()
+                        .HasForeignKey("PhotoFileId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("SIMF.Domain.Profiles.UserProfile", null)
                         .WithMany()
                         .HasForeignKey("UserProfileId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Country");
+
+                    b.Navigation("PhotoFile");
                 });
 
             modelBuilder.Entity("SIMF.Domain.Programme.SpeakerPresentation", b =>
@@ -6739,9 +7179,17 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("SIMF.Domain.Files.StoredFile", "StoredFile")
+                        .WithMany()
+                        .HasForeignKey("StoredFileId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.Navigation("Session");
 
                     b.Navigation("Speaker");
+
+                    b.Navigation("StoredFile");
                 });
 
             modelBuilder.Entity("SIMF.Domain.PublicRelations.Invitation", b =>
@@ -6760,7 +7208,24 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasForeignKey("CountryId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("SIMF.Domain.Files.StoredFile", "LogoFile")
+                        .WithMany()
+                        .HasForeignKey("LogoFileId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Country");
+
+                    b.Navigation("LogoFile");
+                });
+
+            modelBuilder.Entity("SIMF.Domain.PublicRelations.News", b =>
+                {
+                    b.HasOne("SIMF.Domain.Files.StoredFile", "ImageFile")
+                        .WithMany()
+                        .HasForeignKey("ImageFileId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ImageFile");
                 });
 
             modelBuilder.Entity("SIMF.Domain.SeatReservations.HallSeatLayout", b =>
@@ -6821,7 +7286,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasForeignKey("CountryId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("SIMF.Domain.Files.StoredFile", "LogoFile")
+                        .WithMany()
+                        .HasForeignKey("LogoFileId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Country");
+
+                    b.Navigation("LogoFile");
                 });
 
             modelBuilder.Entity("SIMF.Domain.Venue.VenueMapNode", b =>
@@ -6872,6 +7344,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Navigation("SessionTitles");
                 });
 
+            modelBuilder.Entity("SIMF.Domain.Badges.BadgeBatch", b =>
+                {
+                    b.Navigation("Items");
+                });
+
             modelBuilder.Entity("SIMF.Domain.BusinessMeetings.BusinessMeeting", b =>
                 {
                     b.Navigation("Participants");
@@ -6904,6 +7381,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Navigation("AboutItems");
 
                     b.Navigation("Details");
+                });
+
+            modelBuilder.Entity("SIMF.Domain.Profiles.UserProfile", b =>
+                {
+                    b.Navigation("IdentityDocuments");
                 });
 
             modelBuilder.Entity("SIMF.Domain.Programme.Session", b =>

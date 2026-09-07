@@ -19,6 +19,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Page = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Action = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    DisplayName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     Code = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false)
                 },
                 constraints: table =>
@@ -165,7 +168,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AccountCodes", x => x.Id);
-                    table.CheckConstraint("CK_AccountCodes_OneOwner", "([UserId] IS NOT NULL AND [UserProfileId] IS NULL) OR ([UserId] IS NULL AND [UserProfileId] IS NOT NULL)");
                     table.ForeignKey(
                         name: "FK_AccountCodes_Users_UserId",
                         column: x => x.UserId,
@@ -192,7 +194,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_DeviceKeys", x => x.Id);
-                    table.CheckConstraint("CK_DeviceKeys_ChallengePin", "([CurrentChallenge] IS NULL AND [ChallengeExpiresAt] IS NULL) OR ([CurrentChallenge] IS NOT NULL AND [ChallengeExpiresAt] IS NOT NULL)");
                     table.ForeignKey(
                         name: "FK_DeviceKeys_Users_UserId",
                         column: x => x.UserId,
@@ -209,9 +210,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Kind = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: false),
                     Title = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
-                    TitleArabic = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false, collation: "Arabic_CI_AI"),
+                    TitleArabic = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
                     Body = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: false),
-                    BodyArabic = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: false, collation: "Arabic_CI_AI"),
+                    BodyArabic = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: false),
                     Severity = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false),
                     ReadAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -223,7 +224,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Notifications", x => x.Id);
-                    table.CheckConstraint("CK_Notifications_GroupCode", "[GroupCode] IN ('Account', 'Vip', 'Bookings', 'Sessions', 'Meetings', 'Ratings')");
                     table.ForeignKey(
                         name: "FK_Notifications_Users_UserId",
                         column: x => x.UserId,
@@ -448,6 +448,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                 name: "IX_Permissions_Code",
                 table: "Permissions",
                 column: "Code",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Permissions_Page_Action",
+                table: "Permissions",
+                columns: new[] { "Page", "Action" },
                 unique: true);
 
             migrationBuilder.CreateIndex(

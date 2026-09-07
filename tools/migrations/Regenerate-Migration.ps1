@@ -1,51 +1,63 @@
 <#
 .SYNOPSIS
-    Regenerates a context's single InitialCreate migration and re-pins its id.
+    RETIRED. Regenerating a migration is no longer how SIMF changes the schema.
 
 .DESCRIPTION
-    The schema is described by exactly ONE migration per context (D-110, re-instated
-    by D-895), so a schema change is not a new migration - it is a regeneration of
-    the existing one. `dotnet ef migrations add` stamps a fresh UTC timestamp every
-    time, which is what made the regeneration dangerous:
+    This script used to delete every migration in a context's folder and re-add a
+    single InitialCreate at a pinned id. Owner instruction on 2026-09-07 ended that
+    workflow (D-959): the databases are PRODUCTION, nothing is dropped,
+    InitialCreate is the baseline they are already AT, and every later schema change
+    is its own `dotnet ef migrations add`.
 
-        branch A regenerates -> 20260816081717_InitialCreate.cs
-        branch B regenerates -> 20260816145611_InitialCreate.cs
+    The script is kept rather than deleted because its reasoning is the record of
+    why the old workflow existed, and because a reader who finds it referenced in an
+    older document needs to land here rather than on a missing file. It refuses to
+    run.
 
-    Two different paths, so git merges both without a conflict, Azure reports
-    mergeStatus "succeeded", and `main` ends up with two classes named
-    InitialCreate in one namespace and no longer compiles. That happened twice on
-    2026-08-16, three migrations deep each time.
+    WHY IT HAD TO GO, in one line: a regenerated migration never reaches a database
+    that already has one. __EFMigrationsHistory records
+    00000000000000_InitialCreate as applied, MigrateAsync finds nothing pending, and
+    the regenerated file describes a schema the live database never receives. The
+    old header said so itself and asked for a hand-run docs/migrations/2026/ delta
+    alongside every regeneration. That instruction was followed sometimes. D-944
+    shipped without it on 2026-08-28 and broke every visitor profile read in
+    production; the local development pair was later found missing
+    ProfileIdentityDocuments, BadgeBatchItems and UserProfile.OrganisationOther
+    while EF believed the schema was current.
 
-    So the id is PINNED. Every regeneration lands on the same filename and the same
-    [Migration("...")] attribute, which turns the silent double-add into an ordinary
-    content conflict that git raises and a human resolves - by running this script
-    once on the merged model, which is the only correct resolution anyway.
+    It also deleted files. Under incremental migrations that is destructive: the
+    migrations in those folders may already be applied to a live database, and a
+    deleted migration is one EF will try to apply again.
 
-    An all-zero id is deliberately not a timestamp: nothing about it invites a
-    reader to believe it records when anything happened. It sorts before any real
-    timestamp, so a future delta migration still applies after it.
+    WHAT REPLACES IT
 
-    A REGENERATED MIGRATION DOES NOT REACH A DATABASE THAT ALREADY HAS ONE.
-    __EFMigrationsHistory records `00000000000000_InitialCreate` as applied, so
-    MigrateAsync finds nothing pending and applies nothing - the regenerated file
-    describes a newer schema the live database never receives. A FRESH database
-    (drop + MigrateAsync) is correct and needs nothing extra.
+        dotnet ef migrations add <Name> `
+            --project src/Backend/SIMF.Infrastructure `
+            --startup-project src/Backend/SIMF.Infrastructure `
+            --context Simf{App|Identity}DbContext `
+            --output-dir Persistence/Migrations/{App|Identity}
 
-    So any schema change landing on a database with data needs a hand-run delta
-    in docs/migrations/2026/ ALONGSIDE this regeneration. Skipping it deploys
-    code that selects a column the database does not have, which is an immediate
-    500 on every read of that table - not a slow-burn defect. D-944 shipped
-    exactly that on 2026-08-28 and broke every visitor profile read in
-    production; SIMF_App_D944_OrganisationOther_Hotfix.sql is the remedy and the
-    worked example. D-881 hid the trap by dropping both databases, which it could
-    only do because there was no data worth preserving.
+    Never --no-build: EF builds the model from the compiled assembly, so a stale
+    build silently generates the PREVIOUS schema.
 
-.PARAMETER Context
-    App or Identity. Omit to regenerate both.
+    Then READ the generated Up(). EF's differ pairs a dropped column with an added
+    column of similar type and infers a RenameColumn, with no knowledge of meaning.
+    That inference is often wrong, and a wrong rename does not fail loudly - it
+    moves data from one business field into an unrelated one. EF prints "review the
+    migration for accuracy" for this reason. Correcting a scaffolded rename into
+    DropColumn + AddColumn is part of the tool workflow, not hand-authoring.
 
-.EXAMPLE
-    ./tools/migrations/Regenerate-Migration.ps1
-    ./tools/migrations/Regenerate-Migration.ps1 -Context App
+    The design-time factories read SIMF_DESIGN_TIME_APP_CONNECTION and
+    SIMF_DESIGN_TIME_IDENTITY_CONNECTION, so a migration can be rehearsed against a
+    restored copy of a database without editing appsettings.
+
+    The baseline id stays pinned at 00000000000000_InitialCreate. Existing
+    databases - production included - record that exact id, and re-stamping it makes
+    every one of them look un-migrated.
+    tests/SIMF.Domain.Tests/SchemaFreezeTests.cs fails the build on any other
+    baseline id, on a second InitialCreate, and on two migrations sharing a class
+    name - which is the merge hazard the old pinning existed to prevent and the one
+    thing here that still needs guarding.
 #>
 [CmdletBinding()]
 param(
@@ -53,64 +65,24 @@ param(
     [string] $Context
 )
 
-$ErrorActionPreference = 'Stop'
-
-# Keep in step with SchemaFreezeTests.PinnedMigrationId, which fails the build
-# when a migration on disk carries any other id.
-$PinnedId = '00000000000000_InitialCreate'
-
-# Two-argument Join-Path: Windows PowerShell 5.1 has no multi-segment overload.
-$repoRoot = Resolve-Path (Join-Path (Join-Path $PSScriptRoot '..') '..')
-$project = Join-Path $repoRoot 'src/Backend/SIMF.Infrastructure'
-$contexts = if ($Context) { @($Context) } else { @('App', 'Identity') }
-
-foreach ($name in $contexts) {
-    $dbContext = "Simf${name}DbContext"
-    $folder = Join-Path $project "Persistence/Migrations/$name"
-
-    Write-Host "Regenerating $dbContext" -ForegroundColor Cyan
-
-    # Delete every migration file first. `dotnet ef migrations remove` refuses once
-    # the migration has been applied to a local database, and a merge can leave
-    # several migrations here at once - neither case is worth arguing with.
-    if (Test-Path $folder) {
-        Get-ChildItem $folder -Filter '*.cs' | Remove-Item -Force
-    }
-
-    # No --no-build. EF builds the model from the compiled assembly, so a stale
-    # build silently generates the PREVIOUS schema.
-    dotnet ef migrations add InitialCreate `
-        --project $project `
-        --startup-project $project `
-        --context $dbContext `
-        --output-dir "Persistence/Migrations/$name"
-    if ($LASTEXITCODE -ne 0) {
-        throw "dotnet ef migrations add failed for $dbContext"
-    }
-
-    $generated = Get-ChildItem $folder -Filter '*_InitialCreate.cs' |
-        Where-Object { $_.Name -notlike '*.Designer.cs' }
-    if ($generated.Count -ne 1) {
-        throw "Expected exactly one InitialCreate in $folder, found $($generated.Count)"
-    }
-
-    $generatedId = $generated.BaseName
-    if ($generatedId -ne $PinnedId) {
-        # The attribute is the id EF actually reads; the filenames only have to
-        # agree with it by convention. Rewrite both.
-        $designer = Join-Path $folder "${generatedId}.Designer.cs"
-        (Get-Content $designer -Raw).Replace($generatedId, $PinnedId) |
-            Set-Content $designer -NoNewline -Encoding utf8
-
-        Move-Item $designer (Join-Path $folder "${PinnedId}.Designer.cs") -Force
-        Move-Item $generated.FullName (Join-Path $folder "${PinnedId}.cs") -Force
-    }
-
-    Write-Host "  pinned to $PinnedId" -ForegroundColor Green
-}
-
 Write-Host ''
-Write-Host 'Now verify the model and the migration agree:' -ForegroundColor Yellow
-foreach ($name in $contexts) {
-    Write-Host "  dotnet ef migrations has-pending-model-changes --project $project --startup-project $project --context Simf${name}DbContext"
-}
+Write-Host 'Regenerate-Migration.ps1 is RETIRED (D-959).' -ForegroundColor Red
+Write-Host ''
+Write-Host 'Regenerating the baseline does not reach a database that already has it,' -ForegroundColor Yellow
+Write-Host 'and deleting migrations that are already applied breaks them permanently.' -ForegroundColor Yellow
+Write-Host ''
+Write-Host 'Add a migration instead:' -ForegroundColor Cyan
+Write-Host ''
+Write-Host '  dotnet ef migrations add <Name> `'
+Write-Host '      --project src/Backend/SIMF.Infrastructure `'
+Write-Host '      --startup-project src/Backend/SIMF.Infrastructure `'
+Write-Host '      --context Simf{App|Identity}DbContext `'
+Write-Host '      --output-dir Persistence/Migrations/{App|Identity}'
+Write-Host ''
+Write-Host 'Then read the generated Up(): EF infers RenameColumn from type similarity'
+Write-Host 'alone, and a wrong rename silently moves data between unrelated fields.'
+Write-Host ''
+Write-Host 'See the comment header of this file, and CLAUDE.md.' -ForegroundColor DarkGray
+Write-Host ''
+
+exit 1
