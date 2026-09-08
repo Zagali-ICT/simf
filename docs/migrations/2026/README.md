@@ -49,16 +49,20 @@ reference data every environment needs identically, so migrations are their home
   back (no partial data). Set `QUOTED_IDENTIFIER`/`ANSI_NULLS` ON explicitly.
 - Use the system actor `@sys = '00000000-0000-0000-0000-000000000000'` for
   `CreatedBy` (matches the app seeders) and `@now = SYSDATETIMEOFFSET()`.
-- Respect the D-110 schema freeze: **data rows only**, no `ALTER`/`CREATE` —
-  in the CONTENT SEEDS. The prod-only `*_Hotfix.sql` files are the stated
-  exception and do carry DDL, because of this:
-  **a regenerated `InitialCreate` is a no-op against a database that already
-  has one.** `__EFMigrationsHistory` records it as applied, so `MigrateAsync`
-  applies nothing and the live DB never receives the newer schema. Any schema
-  change landing on a database with data therefore needs a hand-run delta here
-  as well as the regeneration — see `tools/migrations/Regenerate-Migration.ps1`.
+- Respect the D-110 schema freeze: **data rows only**, no `ALTER`/`CREATE`.
   Adding a missing lookup *value* an admin could add via the CP (e.g. a `Country`
   row) is allowed as a guarded `INSERT` — it is data, not a schema change.
+
+  **DDL no longer belongs here at all (D-959, 2026-09-07).** The `*_Hotfix.sql`
+  files that carry DDL exist because of a workflow that has been retired: a
+  regenerated `InitialCreate` is a no-op against a database that already has one
+  (`__EFMigrationsHistory` records it as applied, so `MigrateAsync` applies
+  nothing), so every schema change needed a hand-run delta here to reach a live
+  database — and when one was forgotten, as with D-944 on 2026-08-28, production
+  broke. A schema change is now its own `dotnet ef migrations add` migration,
+  which reaches every database through `MigrateAsync` on its own. The existing
+  DDL-bearing hotfixes are kept as the record of what was applied by hand; do not
+  add another.
 - Do **not** add seed data to `IdentitySeeder` / `DefaultContentSeeder`. A new
   file here must be added to **both** lists — the `:r` includes in
   `Run_All_App_Seeds.sql` and `SqlContentSeeder.AllFiles` — or
