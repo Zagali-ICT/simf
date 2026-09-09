@@ -159,7 +159,7 @@ def build():
 
     # ------------------------------------------------------------ real time
     sheet.note(sx, by + 250, sw, [
-        "Live updates are polled over REST",
+        "Updates are polled over REST",
         "on a bounded 30-second interval,",
         "conditional and cache-answered.",
         "",
