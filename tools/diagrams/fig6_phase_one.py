@@ -85,9 +85,9 @@ Y_ROW = 1148                          # the application zone's second row
 Y_ROW_MID = Y_ROW + 82                # where the API's side links leave it
 
 s = Sheet(1940, 1706,
-          "SIMF phase one deployment, security areas and on-site services",
-          "UML deployment diagram.  Server specifications are reproduced from the "
-          "customer server requirements workbook.",
+          "SIMF deployment, security areas and network zones",
+          "UML deployment diagram.  One box per hosting server, every connection "
+          "labelled with its protocol and port.",
           zone_pad=PAD)
 
 COMMON = ["Windows Server 2022", "32 GB RAM, 16 vCPU", "300 GB storage",
@@ -102,7 +102,7 @@ STORE = ["Windows Server 2022", "16 GB RAM, 8 vCPU", "4 TB storage",
 
 # SITE supplies the host as well as the service, so SIMF states the interface it
 # consumes and nothing about the machine.
-BY_SITE = ["Provided by SITE"]
+BY_SITE = ["Supplied by SITE"]
 
 # ---------------------------------------------------------------- internet
 s.band(LEFT, Y_INTERNET, LW, 118, "Internet", "one third party service")
@@ -224,45 +224,26 @@ ry += s.note(RX, ry, RW, [
 ], "Security areas") + GAP
 
 ry += s.note(RX, ry, RW, [
-    "Phase one puts every service that holds or",
-    "processes SIMF data inside HSA: the API, the AI",
-    "model, the mail relay and the file store.",
+    "Every service that holds or processes SIMF",
+    "data sits inside HSA: the API, the AI model,",
+    "the mail relay and the file store.",
     "The AI runs on the SITE-hosted GPT OSS 120B model on an",
     "on-site LLM server, reached over an OpenAI-compatible",
     "API. Mail goes to an on-site SMTP relay.",
-    "Files are written to MinIO object storage over the",
-    "S3 API, in place of a directory on a file share.",
+    "Files are written to MinIO object storage, reached",
+    "over the S3 API.",
     "One internet call remains, and the Control Panel",
     "makes it: the caption fetch to YouTube.",
-], "Phase one, on site") + GAP
+], "On-site services") + GAP
 
-SOURCES = [
-    "Node counts and specifications: customer server",
-    "requirements workbook, sheet List.",
-    "Mobile distribution channels: same workbook,",
-    "sheet NEW1.",
-    "Deployed artifact names: SIMF solution source tree.",
-    "Zone model, firewalls and WAF: SIMF-HLD-004 as",
-    "delivered.",
-    "The mobile edge, the file server and the application",
-    "zone holding the API alone are owner decisions of",
-    "2026-08-10.",
-    "The security areas, the API load balancer and the",
-    "internet zone are owner decisions of 2026-08-20.",
-    "The API in HSA, the on-site LLM server, the on-site",
-    "mail server, MinIO in place of a file share, and the",
-    "YouTube call moving to the Control Panel are a",
-    "customer requirement of 2026-08-30.",
-    "SMTP port 587: the EmailOptions.Port default.",
-    "YouTube caption host: YoutubeTranscriptService.cs.",
-    "The workbook lists none of the edge, MinIO or load",
-    "balancer servers. Their counts and specifications",
-    "are SIMF proposals, confirmed with the site.",
-    "The LLM and mail servers are provided by SITE,",
-    "which supplies the host with the service.",
-    "One HSA zone, and no firewall between the API and",
-    "the database: owner decision of 2026-09-02.",
+NOTES = [
+    "Node counts and specifications are as agreed with",
+    "the customer. The mobile edge and MinIO figures",
+    "are a supplier proposal, drawn as a proposed minimum.",
+    "The LLM and mail servers are supplied by SITE with",
+    "the service, so this sheet states the interface",
+    "consumed and nothing about the machine.",
 ]
-s.note(RX, Y_HSA + H_HSA - Sheet.note_height(SOURCES), RW, SOURCES, "Sources")
+s.note(RX, Y_HSA + H_HSA - Sheet.note_height(NOTES), RW, NOTES, "Specifications")
 
 s.save(OUT)

@@ -42,7 +42,7 @@
 <text x="665.0" y="649" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">Global per-IP cap, plus six named policies</text>
 <rect x="430" y="682" width="470" height="62" rx="4" fill="#D8D2C8" stroke="#1A1A1A" stroke-width="1.4"/>
 <text x="665.0" y="707" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#1A1A1A" font-weight="600" text-anchor="middle">Authentication</text>
-<text x="665.0" y="727" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">JWT bearer (RS256), and a distinct StreamToken scheme</text>
+<text x="665.0" y="727" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">JWT bearer (RS256) as the default scheme</text>
 <rect x="430" y="760" width="470" height="62" rx="4" fill="#D8D2C8" stroke="#1A1A1A" stroke-width="1.4"/>
 <text x="665.0" y="785" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#1A1A1A" font-weight="600" text-anchor="middle">Authorisation</text>
 <text x="665.0" y="805" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">Named policies, and a dynamic permission policy provider</text>
@@ -109,9 +109,9 @@
 <text x="72" y="255" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">Applied by the host rather than traversed</text>
 <text x="72" y="272" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">as a stage in sequence:</text>
 <text x="72" y="289" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start"></text>
-<text x="72" y="306" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">Two authentication schemes, JWT bearer</text>
-<text x="72" y="323" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">as the default and StreamToken for</text>
-<text x="72" y="340" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">recording playback.</text>
+<text x="72" y="306" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">JWT bearer authentication as the default</text>
+<text x="72" y="323" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">scheme, validated on issuer, audience,</text>
+<text x="72" y="340" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">lifetime and signature.</text>
 <text x="72" y="357" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start"></text>
 <text x="72" y="374" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">Named authorisation policies and a</text>
 <text x="72" y="391" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">dynamic permission policy provider over</text>

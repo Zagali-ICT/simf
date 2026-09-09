@@ -51,7 +51,7 @@ CLIENTS = [
 ]
 
 CONCERNS = [
-    ("Authentication", "JWT bearer (RS256), plus a StreamToken scheme"),
+    ("Authentication", "JWT bearer (RS256) as the default scheme"),
     ("Authorisation", "Named policies and a dynamic permission provider"),
     ("Validation", "FluentValidation, a failure becomes HTTP 400"),
     ("Correlation", "CorrelationIdMiddleware enriches every log"),

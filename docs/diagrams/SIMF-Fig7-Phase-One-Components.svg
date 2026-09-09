@@ -15,7 +15,7 @@
   </pattern>
 </defs>
 <rect x="0" y="0" width="1660" height="1220" fill="#FFFFFF"/>
-<text x="40" y="46" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="25" fill="#1A1A1A" font-weight="600" text-anchor="start">SIMF phase one components and their interaction</text>
+<text x="40" y="46" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="25" fill="#1A1A1A" font-weight="600" text-anchor="start">SIMF components and their interaction</text>
 <text x="40" y="74" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="15" fill="#6B7280" text-anchor="start">UML component diagram.  Every component carries its technology and every call carries its protocol.</text>
 <line x1="40" y1="90" x2="1620" y2="90" stroke="#6B7280" stroke-width="1.2"/>
 <rect x="40" y="140" width="1000" height="150" rx="4" fill="#F7F8FA" stroke="#6B7280" stroke-width="1.2" stroke-dasharray="7 4"/>
@@ -139,9 +139,9 @@
 <text x="1240" y="629" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="start">Call, labelled with protocol and port</text>
 <rect x="40" y="1080" width="1000" height="123" rx="3" fill="#FFFFFF" stroke="#6B7280" stroke-width="1.2"/>
 <text x="54" y="1101" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="13" fill="#1A1A1A" font-weight="600" text-anchor="start">Sources</text>
-<text x="54" y="1121" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">Component names and layering: SIMF solution source tree.</text>
-<text x="54" y="1138" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">Inward dependency rule Api, Infrastructure, Application, Domain: SIMF-LLD-003 section 7.1.</text>
-<text x="54" y="1155" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">The API host runs its scheduled jobs in-process, as IHostedService registrations. There is no separate worker deployable.</text>
-<text x="54" y="1172" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">Protocols and component roles: SIMF-LLD-003 section 2.1.</text>
-<text x="54" y="1189" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">MinIO over the S3 API in place of a directory on a share: customer requirement of 2026-08-30, drawn on the phase one deployment sheet.</text>
+<text x="54" y="1121" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">Component names, layers and shared libraries: SIMF-LLD-004 section 7.1.</text>
+<text x="54" y="1138" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">Inward dependency rule Api, Infrastructure, Application, Domain: SIMF-LLD-004 section 7.1.</text>
+<text x="54" y="1155" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">The API host runs its scheduled jobs in process as hosted services, and there is no separate worker deployable: SIMF-LLD-004 section 2.1.</text>
+<text x="54" y="1172" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">Protocols and component roles: SIMF-LLD-004 section 2.1.</text>
+<text x="54" y="1189" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">File store, MinIO object storage over the S3 API: SIMF-LLD-004 section 7.1.</text>
 </svg>

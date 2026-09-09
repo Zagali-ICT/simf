@@ -70,20 +70,20 @@ VIA = "HTTPS 443, via steps 1 to 3"
 #   kind "g" is a journey band, "m" a call, "r" a reply.
 ROWS = [
     ("g", None, None, "Registration and approval", ""),
-    ("m", A, WAF, "POST /app/auth/sign-up, e-mail and password", "HTTPS 443"),
+    ("m", A, WAF, "sign-up request, e-mail and password", "HTTPS 443"),
     ("m", WAF, EDGE, "forward to the presentation tier", "HTTPS 443, internal SSA"),
     ("m", EDGE, API, "forward through the API load balancer",
      "HTTPS 443, SSA to HSA, across the internal firewall"),
-    ("m", API, SQL, "create the account, state Registered, PBKDF2 password hash",
+    ("m", API, SQL, "create the account, state Registered, password stored hashed",
      "TCP 1433"),
     ("m", API, MAIL, "queue the six-digit e-mail verification code, stored hashed",
      "SMTP with STARTTLS, 587"),
-    ("m", A, API, "POST /app/auth/verify-email, the six-digit code", VIA),
-    ("m", A, API, "POST /app/account/user-profile and /id-image, "
-     "profile, identity image and face photo", VIA),
+    ("m", A, API, "verify the e-mail address, the six-digit code", VIA),
+    ("m", A, API, "complete the profile, with the identity image and "
+     "face photo", VIA),
     ("m", API, MINIO, "store both, AES-GCM encrypted at rest", "S3 over HTTPS 443"),
     ("m", API, SQL, "profile saved, state Pending approval", "TCP 1433"),
-    ("m", ADMIN, API, "POST /admin/visitors/{id}/approve",
+    ("m", ADMIN, API, "approve the visitor registration",
      "HTTPS 443, SSA to HSA"),
     ("m", API, SQL, "state Approved, QR badge issued, OperationLog entry",
      "TCP 1433"),
@@ -92,26 +92,26 @@ ROWS = [
      "HTTPS 443, back along steps 3 to 1"),
 
     ("g", None, None, "Sign-in with the second factor", ""),
-    ("m", A, API, "POST /app/auth/sign-in, e-mail and password", VIA),
+    ("m", A, API, "sign-in request, e-mail and password", VIA),
     ("m", API, SQL, "verify the stored hash, write the hashed one-time code",
      "TCP 1433"),
     ("m", API, MAIL, "queue the one-time code, single use and time limited",
      "SMTP with STARTTLS, 587"),
-    ("m", A, API, "POST /app/auth/verify-otp, the one-time code", VIA),
-    ("r", API, A, "access token, 5-minute cap, and a rotating refresh token",
+    ("m", A, API, "supply the second factor, the one-time code", VIA),
+    ("r", API, A, "a short-lived access token with a rotating refresh token",
      "HTTPS 443, back along steps 3 to 1"),
 
     ("g", None, None, "Gate scan on the forum days", ""),
-    ("m", GATE, API, "POST /app/gates/{gateId}/scans, the attendee badge QR",
+    ("m", GATE, API, "scan the attendee's QR badge",
      VIA),
     ("m", API, SQL, "validate the badge, the approval state and the gate's "
      "allowed profile types; record the scan idempotently", "TCP 1433"),
     ("r", API, GATE, "entry or exit outcome", "HTTPS 443, back along steps 3 to 1"),
 ]
 
-s = Sheet(W, H, "SIMF phase one, end-to-end sequence",
-          "UML sequence diagram. Ordered messages between the participants of "
-          "section 2.3, each labelled with its protocol and port.")
+s = Sheet(W, H, "SIMF end-to-end sequence",
+          "UML sequence diagram. Ordered messages covering registration and "
+          "approval, sign-in and the gate scan, each with its protocol and port.")
 
 # ------------------------------------------------------------------ lanes
 span = (W - 80) / len(LANES)
@@ -194,11 +194,9 @@ s.legend(W - 40 - LEG_W, foot_y + 26, LEG_W, [
 ])
 
 s.note(40, foot_y + 26, W - 40 - LEG_W - 60, [
-    "Workflows: SIMF-HLD-004 section 2.3.",
-    "Participants, zones, protocols and ports: the Communication Requirements "
-    "Matrix, SIMF-HLD-004 section 2.8.",
-    "Endpoint paths: the FastEndpoints route declarations in the SIMF solution "
-    "source tree.",
+    "Workflows: section 2.3.",
+    "Participants, zones, protocols and ports: the communication requirements "
+    "matrix in section 2.8.",
     "Every attendee message crosses the WAF and load balancer and then "
     "SIMF.MobileEdge. That chain is drawn in full at steps 1 to 3 and elided "
     "afterwards, which each arrow states.",

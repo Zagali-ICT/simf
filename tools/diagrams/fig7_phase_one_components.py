@@ -36,7 +36,7 @@ from svgkit import Sheet, NODE_FILL  # noqa: E402
 OUT = r"d:\SIMF\System\V1.0.0\docs\diagrams\SIMF-Fig7-Phase-One-Components"
 
 s = Sheet(1660, 1220,
-          "SIMF phase one components and their interaction",
+          "SIMF components and their interaction",
           "UML component diagram.  Every component carries its technology and "
           "every call carries its protocol.")
 
@@ -117,14 +117,14 @@ s.legend(1180, 500, 440, [
 ])
 
 s.note(40, 1080, 1000, [
-    "Component names and layering: SIMF solution source tree.",
+    "Component names, layers and shared libraries: SIMF-LLD-004 section 7.1.",
     "Inward dependency rule Api, Infrastructure, Application, Domain: "
-    "SIMF-LLD-003 section 7.1.",
-    "The API host runs its scheduled jobs in-process, as IHostedService "
-    "registrations. There is no separate worker deployable.",
-    "Protocols and component roles: SIMF-LLD-003 section 2.1.",
-    "MinIO over the S3 API in place of a directory on a share: customer "
-    "requirement of 2026-08-30, drawn on the phase one deployment sheet.",
+    "SIMF-LLD-004 section 7.1.",
+    "The API host runs its scheduled jobs in process as hosted services, and "
+    "there is no separate worker deployable: SIMF-LLD-004 section 2.1.",
+    "Protocols and component roles: SIMF-LLD-004 section 2.1.",
+    "File store, MinIO object storage over the S3 API: "
+    "SIMF-LLD-004 section 7.1.",
 ], "Sources")
 
 s.save(OUT)

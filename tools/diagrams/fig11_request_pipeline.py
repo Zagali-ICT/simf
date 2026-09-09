@@ -102,7 +102,7 @@ def build():
     sheet.stage(gate_y, "Rate limiting",
                 "Global per-IP cap, plus six named policies", STORE_FILL)
     sheet.stage(gate_y + STEP, "Authentication",
-                "JWT bearer (RS256), and a distinct StreamToken scheme",
+                "JWT bearer (RS256) as the default scheme",
                 STORE_FILL)
     sheet.stage(gate_y + 2 * STEP, "Authorisation",
                 "Named policies, and a dynamic permission policy provider",
@@ -175,9 +175,9 @@ def build():
         "Applied by the host rather than traversed",
         "as a stage in sequence:",
         "",
-        "Two authentication schemes, JWT bearer",
-        "as the default and StreamToken for",
-        "recording playback.",
+        "JWT bearer authentication as the default",
+        "scheme, validated on issuer, audience,",
+        "lifetime and signature.",
         "",
         "Named authorisation policies and a",
         "dynamic permission policy provider over",
