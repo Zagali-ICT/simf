@@ -78,6 +78,7 @@ class _MyDevicesScreenState extends ConsumerState<MyDevicesScreen> {
     final l10n = AppL10n.of(context);
     return SimfPageShell(
       title: l10n.myDevicesTitle,
+      onBack: () => backOrHome(context),
       showBottomNav: false,
       body: SimfPullToRefresh(
         onRefresh: _refresh,
